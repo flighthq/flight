@@ -3393,18 +3393,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     if invocation.mac.tokens.is_empty() {
                         return BindingFact::Unknown;
                     }
-                    let repeat_parser = |input: syn::parse::ParseStream<'_>| {
-                        let value = input.parse::<Expr>()?;
-                        input.parse::<Token![;]>()?;
-                        let _: Expr = input.parse()?;
-                        if !input.is_empty() {
-                            return Err(input.error("unexpected tokens after `vec!` repeat length"));
-                        }
-                        return Ok(value);
-                    };
-                    let element = if let Ok(value) =
-                        repeat_parser.parse2(invocation.mac.tokens.clone())
-                    {
+                    let element = if let Ok((value, _)) = parse_vec_repeat(&invocation.mac) {
                         self.initializer_fact(&value)
                     } else if let Ok(values) = Punctuated::<Expr, Token![,]>::parse_terminated
                         .parse2(invocation.mac.tokens.clone())
@@ -11523,16 +11512,7 @@ fn emit_macro_expression(
         return Err(compile_error("Rust macro expression has an empty path"));
     };
     if name.ident == "vec" {
-        let repeat_parser = |input: syn::parse::ParseStream<'_>| {
-            let value = input.parse::<Expr>()?;
-            input.parse::<Token![;]>()?;
-            let length = input.parse::<Expr>()?;
-            if !input.is_empty() {
-                return Err(input.error("unexpected tokens after `vec!` repeat length"));
-            }
-            return Ok((value, length));
-        };
-        if let Ok((value, length)) = repeat_parser.parse2(rust_macro.tokens.clone()) {
+        if let Ok((value, length)) = parse_vec_repeat(rust_macro) {
             return Ok(format!(
                 "new Array({}).fill({})",
                 emit_expression(&length, entities)?,
@@ -11584,24 +11564,9 @@ fn emit_matches_macro(
     rust_macro: &syn::Macro,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    let parser = |input: syn::parse::ParseStream<'_>| {
-        let value = input.parse::<Expr>()?;
-        input.parse::<Token![,]>()?;
-        let pattern = Pat::parse_multi_with_leading_vert(input)?;
-        let guarded = input.peek(Token![if]);
-        if guarded {
-            input.parse::<Token![if]>()?;
-            input.parse::<Expr>()?;
-        }
-        if input.peek(Token![,]) {
-            input.parse::<Token![,]>()?;
-        }
-        return Ok((value, pattern, guarded));
-    };
-    let (value, pattern, guarded) = parser
-        .parse2(rust_macro.tokens.clone())
+    let (value, pattern, guard) = parse_matches_arguments(rust_macro)
         .map_err(|error| compile_error(format!("failed to parse `matches!` arguments: {error}")))?;
-    if guarded {
+    if guard.is_some() {
         return Err(compile_error("portable `matches!` cannot use a guard"));
     }
     let text = emit_expression(&value, entities)?;
@@ -14298,12 +14263,64 @@ impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
     }
 }
 
+// `matches!(value, pattern [if guard] [,])`: the value, the pattern (`|` alternatives and `ref`
+// bindings included) and the optional guard, as the emitter and import discovery both read them.
+fn parse_matches_arguments(rust_macro: &syn::Macro) -> syn::Result<(Expr, Pat, Option<Expr>)> {
+    let parser = |input: syn::parse::ParseStream<'_>| {
+        let value = input.parse::<Expr>()?;
+        input.parse::<Token![,]>()?;
+        let pattern = Pat::parse_multi_with_leading_vert(input)?;
+        let guard = if input.peek(Token![if]) {
+            input.parse::<Token![if]>()?;
+            Some(input.parse::<Expr>()?)
+        } else {
+            None
+        };
+        if input.peek(Token![,]) {
+            input.parse::<Token![,]>()?;
+        }
+        return Ok((value, pattern, guard));
+    };
+    return parser.parse2(rust_macro.tokens.clone());
+}
+
+// `vec![value; length]`: the repeated value and the length.
+fn parse_vec_repeat(rust_macro: &syn::Macro) -> syn::Result<(Expr, Expr)> {
+    let parser = |input: syn::parse::ParseStream<'_>| {
+        let value = input.parse::<Expr>()?;
+        input.parse::<Token![;]>()?;
+        let length = input.parse::<Expr>()?;
+        if !input.is_empty() {
+            return Err(input.error("unexpected tokens after `vec!` repeat length"));
+        }
+        return Ok((value, length));
+    };
+    return parser.parse2(rust_macro.tokens.clone());
+}
+
 // A macro body (`assert!`, `assert_eq!`, `vec!`, …) is opaque tokens to the syntax visitor, but the
 // emitter lowers its arguments as expressions; parsing them records the foreign items they use.
 fn visit_cross_crate_macro_arguments(
     collector: &mut CrossCrateUsageCollector<'_>,
     mac: &syn::Macro,
 ) {
+    if mac.path.is_ident("matches")
+        && let Ok((value, pattern, guard)) = parse_matches_arguments(mac)
+    {
+        Visit::visit_expr(collector, &value);
+        Visit::visit_pat(collector, &pattern);
+        if let Some(guard) = &guard {
+            Visit::visit_expr(collector, guard);
+        }
+        return;
+    }
+    if mac.path.is_ident("vec")
+        && let Ok((value, length)) = parse_vec_repeat(mac)
+    {
+        Visit::visit_expr(collector, &value);
+        Visit::visit_expr(collector, &length);
+        return;
+    }
     if let Ok(arguments) = mac.parse_body_with(Punctuated::<Expr, syn::Token![,]>::parse_terminated)
     {
         for argument in &arguments {

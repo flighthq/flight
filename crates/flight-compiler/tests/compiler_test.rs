@@ -1104,6 +1104,55 @@ describe("foreignAssertions", () => {
     }
 
     #[test]
+    fn imports_foreign_items_inside_matches_ref_patterns_and_vec_repeats() {
+        let source = r#"
+//! flight-compiler: data-union Payload
+
+use flight_codec::decode_payload;
+
+pub enum Payload {
+    Count(i32),
+    Label(String),
+}
+
+pub fn is_label(value: i32) -> bool {
+    return matches!(decode_payload(value), Payload::Label(ref text));
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"import { decodePayload } from "@flighthq/codec/contract";
+
+export type Payload = number | string;
+
+export function isLabel(value: number): boolean {
+  return ((value) => typeof value === "string")(decodePayload(value));
+}
+"#
+        );
+
+        let tests = r#"
+use flight_entity::has_entity_runtime;
+
+mod foreign_macro_arguments {
+    use super::*;
+
+    #[test]
+    fn reads_foreign_values_inside_vec_repeats() {
+        let flags = vec![has_entity_runtime(&1); 2];
+        assert_eq!(flags.len(), 2);
+    }
+}
+"#;
+        let output = compile_vitest(tests, "./contract.ts").unwrap();
+        assert!(
+            output.contains("import { hasEntityRuntime } from \"@flighthq/entity/contract\";"),
+            "{output}"
+        );
+        assert!(!output.contains("./contract.ts"), "{output}");
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment

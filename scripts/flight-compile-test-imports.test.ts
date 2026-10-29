@@ -32,6 +32,35 @@ mod foreign_assertions {
 }
 `;
 
+// A foreign function reached only through a `vec![value; length]` repeat in a test, and only through the
+// value of a `matches!` whose pattern binds by `ref` in production code.
+const VEC_REPEAT_FIXTURE = `use flight_entity::has_entity_runtime;
+
+mod foreign_macro_arguments {
+    use super::*;
+
+    #[test]
+    fn reads_foreign_values_inside_vec_repeats() {
+        let flags = vec![has_entity_runtime(&1); 2];
+        assert_eq!(flags.len(), 2);
+    }
+}
+`;
+
+const MATCHES_REF_FIXTURE = `//! flight-compiler: data-union Payload
+
+use flight_codec::decode_payload;
+
+pub enum Payload {
+    Count(i32),
+    Label(String),
+}
+
+pub fn is_label(value: i32) -> bool {
+    return matches!(decode_payload(value), Payload::Label(ref text));
+}
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -62,6 +91,57 @@ function generateTests(rust: string): string {
 }
 
 describe('flight-compile generate-tests foreign imports', () => {
+  it('imports a foreign function used only inside a vec! repeat', () => {
+    const typescript = generateTests(VEC_REPEAT_FIXTURE);
+    expect(typescript).toContain('import { hasEntityRuntime } from "@flighthq/entity/contract";');
+    expect(typescript).not.toContain('./contract.ts');
+  });
+
+  it('imports a foreign function used only inside a matches! with a ref pattern, and runs', () => {
+    const source = join(workDirectory, 'payload.rs');
+    const out = join(workDirectory, 'payload.ts');
+    writeFileSync(source, MATCHES_REF_FIXTURE);
+    const result = spawnSync(compilerPath, ['generate', '--source', source, '--out', out], { encoding: 'utf8' });
+    expect(result.stderr.trim()).toBe('');
+    const typescript = readFileSync(out, 'utf8');
+    expect(typescript).toContain('import { decodePayload } from "@flighthq/codec/contract";');
+    const codec = join(workDirectory, 'codec-contract.ts');
+    writeFileSync(
+      codec,
+      "export function decodePayload(value: number): number | string {\n  return value > 0 ? 'label' : value;\n}\n",
+    );
+    const program = ts.createProgram([out], {
+      baseUrl: workDirectory,
+      lib: ['lib.es2022.d.ts'],
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      noEmit: true,
+      paths: { '@flighthq/codec/contract': [codec] },
+      strict: true,
+      target: ts.ScriptTarget.ES2022,
+      types: [],
+    });
+    expect(
+      ts
+        .getPreEmitDiagnostics(program)
+        .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')),
+    ).toEqual([]);
+    const transpile = (path: string): string =>
+      ts.transpileModule(readFileSync(path, 'utf8'), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      }).outputText;
+    const codecModule = { exports: {} as Record<string, unknown> };
+    new Function('exports', 'module', transpile(codec))(codecModule.exports, codecModule);
+    const payloadModule = { exports: {} as { isLabel: (value: number) => boolean } };
+    new Function('exports', 'module', 'require', transpile(out))(
+      payloadModule.exports,
+      payloadModule,
+      () => codecModule.exports,
+    );
+    expect(payloadModule.exports.isLabel(1)).toBe(true);
+    expect(payloadModule.exports.isLabel(-1)).toBe(false);
+  });
+
   it('imports a foreign function used only inside assertions from its owner', () => {
     const typescript = generateTests(ASSERTION_FIXTURE);
     expect(typescript).toContain('import { hasEntityRuntime } from "@flighthq/entity/contract";');
