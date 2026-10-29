@@ -1,6 +1,18 @@
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityRaw, EntityRuntime, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
+export interface Matrix extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  tx: number;
+  ty: number;
+}
+
+export type MatrixLike = EntityWithoutRuntime<Matrix>;
+
 export interface Rectangle extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
   height: number;

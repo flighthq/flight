@@ -4,13 +4,13 @@ import type {
   Matrix3Like,
   Matrix4,
   Matrix4Like,
-  MatrixLike,
   QuaternionLike,
   Vector3Like,
   Vector4Like,
 } from '@flighthq/types/contract';
 
 import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool.ts';
+import type { MatrixLike } from './types.ts';
 
 /**
  * Appends a matrix in world space: `other` applies AFTER everything already in `source`.

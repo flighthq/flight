@@ -1,18 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Matrix,
-  Matrix3Like,
-  Matrix4Like,
-  MatrixLike,
-  Vector3Like,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Matrix3Like, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
 
-import type { RectangleLike, Vector2Like } from './types.ts';
-
-// The TS counterpart of Rust `flight_geometry::Matrix`, owned here while `@flighthq/types` remains the
-// transitional aggregator of the structural identity.
-export type { Matrix } from '@flighthq/types/contract';
+import type { Matrix, MatrixLike, RectangleLike, Vector2Like } from './types.ts';
 
 export function cloneMatrix(source: Readonly<MatrixLike>): Matrix {
   const m = createMatrix();

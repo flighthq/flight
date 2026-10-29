@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { EntityConstruction, MatrixLike, Transform2D, Transform2DLike } from '@flighthq/types/contract';
+import type { EntityConstruction, Transform2D, Transform2DLike } from '@flighthq/types/contract';
+
+import type { MatrixLike } from './types.ts';
 
 // Allocates a decomposed 2D transform carrier. Defaults are the identity transform (no translation,
 // no rotation, unit scale, no skew, pivot at origin).

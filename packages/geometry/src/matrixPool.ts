@@ -1,8 +1,8 @@
 import { detachEntityBinding } from '@flighthq/entity/contract';
-import type { Matrix } from '@flighthq/types/contract';
 
 import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 import { createMatrix, setMatrixIdentity } from './matrix.ts';
+import type { Matrix } from './types.ts';
 
 export function acquireIdentityMatrix(): Matrix {
   const m = acquireMatrix();
