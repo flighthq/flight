@@ -25,7 +25,7 @@ export function hasByteReaderBytes(reader: Readonly<ByteReader>, count: number):
 
 export function readByteReaderU16(reader: ByteReader): number {
   const offset = reader.offset;
-  const value = reader.view[offset] | (reader.view[offset + 1] << 8);
+  const value = (reader.view[offset] & 0xffff) | ((reader.view[offset + 1] & 0xffff) << 8);
   reader.offset += 2;
   return value;
 }
