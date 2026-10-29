@@ -9709,14 +9709,45 @@ pub(crate) fn emit_format_template(
         };
         let value = if specifier.is_empty() {
             value
+        } else if specifier == "?" {
+            format!("JSON.stringify({value})")
         } else if specifier == "x" {
             format!("({value}).toString(16)")
+        } else if specifier == "X" {
+            format!("({value}).toString(16).toUpperCase()")
+        } else if specifier == "e" {
+            format!("({value}).toExponential()")
+        } else if specifier == "E" {
+            format!("({value}).toExponential().toUpperCase()")
         } else if let Some(width) = specifier
             .strip_prefix('0')
             .and_then(|value| value.strip_suffix('x'))
             .and_then(|value| value.parse::<usize>().ok())
         {
             format!("({value}).toString(16).padStart({width}, \"0\")")
+        } else if let Some(width) = specifier
+            .strip_prefix('0')
+            .and_then(|value| value.strip_suffix('X'))
+            .and_then(|value| value.parse::<usize>().ok())
+        {
+            format!("({value}).toString(16).toUpperCase().padStart({width}, \"0\")")
+        } else if let Some(precision) = specifier
+            .strip_prefix('.')
+            .and_then(|value| value.parse::<usize>().ok())
+        {
+            format!("({value}).toFixed({precision})")
+        } else if let Some(precision) = specifier
+            .strip_prefix('.')
+            .and_then(|value| value.strip_suffix('e'))
+            .and_then(|value| value.parse::<usize>().ok())
+        {
+            format!("({value}).toExponential({precision})")
+        } else if let Some(precision) = specifier
+            .strip_prefix('.')
+            .and_then(|value| value.strip_suffix('E'))
+            .and_then(|value| value.parse::<usize>().ok())
+        {
+            format!("({value}).toExponential({precision}).toUpperCase()")
         } else {
             return Err(compile_error(format!(
                 "{error_prefix} uses unsupported format specifier `:{specifier}`"

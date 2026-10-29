@@ -11310,6 +11310,44 @@ pub fn collect(count: usize) -> Vec<i32> {
     }
 
     #[test]
+    fn lowers_format_specifiers_debug_hex_precision_scientific() {
+        let source = r#"
+pub fn debug_repr(items: &Vec<i32>) -> String {
+    return format!("items: {:?}", items);
+}
+
+pub fn upper_hex(value: u32) -> String {
+    return format!("{:X}", value);
+}
+
+pub fn padded_upper_hex(value: u32) -> String {
+    return format!("{:08X}", value);
+}
+
+pub fn fixed_precision(value: f64) -> String {
+    return format!("{:.2}", value);
+}
+
+pub fn scientific(value: f64) -> String {
+    return format!("{:e}", value);
+}
+
+pub fn scientific_precision(value: f64) -> String {
+    return format!("{:.3e}", value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("${JSON.stringify(items)}"));
+        assert!(output.contains("${(value).toString(16).toUpperCase()}"));
+        assert!(output.contains("${(value).toString(16).toUpperCase().padStart(8, \"0\")}"));
+        assert!(output.contains("${(value).toFixed(2)}"));
+        assert!(output.contains("${(value).toExponential()}"));
+        assert!(output.contains("${(value).toExponential(3)}"));
+    }
+
+    #[test]
     fn preserves_receivers_for_optional_member_calls() {
         let source = r#"
 use std::sync::Arc;
