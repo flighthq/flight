@@ -22,7 +22,7 @@ export interface HostTextSegmentCapabilities {
 }
 
 export interface HostTextSegmenterCapability {
-  segment(text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[];
+  segment(text: string, granularity: TextSegmentGranularity, locale?: string): TextSegment[];
 }
 
 export type TextSegmenterKind = 'custom' | 'web-intl';

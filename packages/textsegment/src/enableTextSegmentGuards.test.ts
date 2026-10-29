@@ -29,7 +29,7 @@ describe('disableTextSegmentGuards', () => {
     enableTextSegmentGuards(logState, () => 0);
     disableTextSegmentGuards();
     vi.stubGlobal('Intl', { Segmenter: undefined });
-    segmentGraphemes(backend, 'text');
+    segmentGraphemes([], backend, 'text');
     expect(entries).toEqual([]);
   });
 });
@@ -38,15 +38,15 @@ describe('enableTextSegmentGuards', () => {
   it('warns once and names the provider type when Intl.Segmenter is absent', () => {
     enableTextSegmentGuards(logState, () => 0);
     vi.stubGlobal('Intl', { Segmenter: undefined });
-    segmentGraphemes(backend, 'first');
-    segmentGraphemes(backend, 'second');
+    segmentGraphemes([], backend, 'first');
+    segmentGraphemes([], backend, 'second');
     expect(entries).toHaveLength(1);
     expect(String((entries[0].data as { message?: unknown }).message)).toContain('HostTextSegmenterCapability');
   });
 
   it('stays silent when the bundled Intl provider is available', () => {
     enableTextSegmentGuards(logState, () => 0);
-    segmentGraphemes(backend, 'text');
+    segmentGraphemes([], backend, 'text');
     expect(entries).toEqual([]);
   });
 });

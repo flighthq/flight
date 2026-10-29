@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { explainTextSegmenterBackend, webTextSegmenterBackend } from './textSegmenterBackend.ts';
+import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from './types.ts';
 
 interface RecordingBackend extends HostTextSegmenterCapability {
   calls: Array<{ text: string; granularity: TextSegmentGranularity; locale: string | undefined }>;
@@ -13,7 +13,7 @@ function recordingBackend(): RecordingBackend {
   const calls: RecordingBackend['calls'] = [];
   const out = allocateEntity<any>();
   out.calls = calls;
-  out.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
+  out.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): TextSegment[] => {
     calls.push({ text, granularity, locale });
     return [{ start: 0, end: text.length, text }];
   };

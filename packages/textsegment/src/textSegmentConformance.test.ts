@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { segmentGraphemes } from './textSegment.ts';
 import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
+import type { TextSegment } from './types.ts';
 
 const backend = webTextSegmenterBackend;
 
@@ -14,8 +15,10 @@ const graphemeFixtures: ReadonlyArray<{ clusters: string[]; text: string }> = [
 
 describe('text segment conformance fixtures', () => {
   it('covers regional indicators, ZWJ emoji, CRLF, and Hangul jamo', () => {
+    const segments: TextSegment[] = [];
     for (const fixture of graphemeFixtures) {
-      expect(segmentGraphemes(backend, fixture.text).map((segment) => segment.text)).toEqual(fixture.clusters);
+      segmentGraphemes(segments, backend, fixture.text);
+      expect(segments.map((segment) => segment.text)).toEqual(fixture.clusters);
     }
   });
 });

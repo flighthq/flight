@@ -1,12 +1,6 @@
-import type {
-  HostTextSegmenterCapability,
-  TextSegment,
-  TextSegmentGranularity,
-  TextSegmentRange,
-} from '@flighthq/types/contract';
-
 import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
 import { reportTextSegmenterUnavailable } from './textSegmentGuards.ts';
+import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity, TextSegmentRange } from './types.ts';
 
 export function getNextGraphemeBoundary(
   textSegmenter: Readonly<HostTextSegmenterCapability>,

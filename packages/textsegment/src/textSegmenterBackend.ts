@@ -1,11 +1,10 @@
+import { reportTextSegmenterUnavailable } from './textSegmentGuards.ts';
 import type {
   HostTextSegmenterCapability,
   TextSegment,
   TextSegmentGranularity,
   TextSegmenterExplanation,
-} from '@flighthq/types/contract';
-
-import { reportTextSegmenterUnavailable } from './textSegmentGuards.ts';
+} from './types.ts';
 
 // Stable bundled web provider. Hosts can import this directly when composing their explicit
 // capability object.
@@ -68,11 +67,7 @@ function hasIntlSegmenter(): boolean {
   return typeof Intl !== 'undefined' && typeof Intl.Segmenter !== 'undefined';
 }
 
-function segmentWithIntlSegmenter(
-  text: string,
-  granularity: TextSegmentGranularity,
-  locale?: string,
-): readonly TextSegment[] {
+function segmentWithIntlSegmenter(text: string, granularity: TextSegmentGranularity, locale?: string): TextSegment[] {
   const segmenter = getCachedSegmenter(locale, granularity);
   if (segmenter === null) return [];
 

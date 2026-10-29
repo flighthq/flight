@@ -1,4 +1,4 @@
-import type { TextSegmentGuard } from '@flighthq/types/contract';
+import type { TextSegmentGuard } from './types.ts';
 
 export function reportTextSegmenterUnavailable(): void {
   _guard?.();

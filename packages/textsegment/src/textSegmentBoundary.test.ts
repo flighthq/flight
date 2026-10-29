@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostTextSegmenterCapability } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -12,6 +11,7 @@ import {
   getWordRangeAt,
 } from './textSegmentBoundary.ts';
 import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
+import type { HostTextSegmenterCapability } from './types.ts';
 
 const backend = webTextSegmenterBackend;
 
