@@ -7,6 +7,9 @@ pub(crate) use flight_platform::{
     PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
 };
 
+pub(crate) type UserAgentPointerWidth = i32;
+pub(crate) type UserAgentRuntimeWindow<'a> = Option<&'a Record<Unknown>>;
+
 pub(crate) fn detect_endianness_native() -> PlatformEndianness {
     let bytes = 0x0102_u16.to_ne_bytes();
     if bytes[0] == 0x01 {
@@ -18,7 +21,7 @@ pub(crate) fn detect_endianness_native() -> PlatformEndianness {
     return PlatformEndianness::Unknown;
 }
 
-pub(crate) fn parse_user_agent_runtime_native(win: Option<&Record<Unknown>>) -> PlatformRuntime {
+pub(crate) fn parse_user_agent_runtime_native(win: UserAgentRuntimeWindow<'_>) -> PlatformRuntime {
     let Some(win) = win else {
         return PlatformRuntime::Unknown;
     };
