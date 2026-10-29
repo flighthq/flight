@@ -1,15 +1,24 @@
+import type { InputIngressSource } from '@flighthq/host/contract';
+import type { HostInputIngressCapability } from '@flighthq/input/contract';
 import type {
-  HostInputIngressCapability,
   InputGamepadAxisData,
   InputGamepadButtonData,
   InputGamepadConnectData,
-  InputIngressSource,
   InputKeyboardData,
   InputPointerData,
   InputTextData,
   MouseWheelMode,
 } from '@flighthq/types/contract';
 import { KeyCode, KeyModifier } from '@flighthq/types/contract';
+
+/**
+ * Wraps a Web event target as a host-neutral input source. The source carries the provider token of
+ * `webHostInputIngress`, and Input keys every attachment by the `handle` identity, so two sources wrapping the
+ * same target attach as one.
+ */
+export function createWebInputIngressSource(target: EventTarget): InputIngressSource {
+  return { provider: webHostInputIngress.provider, handle: target };
+}
 
 /**
  * Returns coalesced pointer event data for a `pointermove` event, iterating
@@ -70,6 +79,7 @@ export function getWebMouseWheelModeFromWheelEvent(event: Readonly<WheelEvent>):
 
 /** Explicit browser adapter for input ingress. */
 export const webHostInputIngress: HostInputIngressCapability = {
+  provider: {},
   attachGamepad: (source, sink): (() => void) => {
     const target = getWebInputEventTarget(source);
     if (target === null) return noopInputIngressRelease;
@@ -295,16 +305,21 @@ export function setWebInputPointerCapture(element: HTMLElement, pointerId: numbe
 }
 
 function getWebInputEventTarget(source: InputIngressSource): EventTarget | null {
-  const candidate = source as Partial<EventTarget>;
+  return getWebEventTarget(source.handle);
+}
+
+function getWebEventTarget(handle: object): EventTarget | null {
+  const candidate = handle as Partial<EventTarget>;
   return typeof candidate.addEventListener === 'function' && typeof candidate.removeEventListener === 'function'
     ? (candidate as EventTarget)
     : null;
 }
 
 function getWebInputOwnerDocumentTarget(source: InputIngressSource): EventTarget | null {
-  if (!('ownerDocument' in source)) return null;
-  const ownerDocument = (source as { readonly ownerDocument?: object | null }).ownerDocument;
-  return ownerDocument === undefined || ownerDocument === null ? null : getWebInputEventTarget(ownerDocument);
+  const handle = source.handle;
+  if (!('ownerDocument' in handle)) return null;
+  const ownerDocument = (handle as { readonly ownerDocument?: object | null }).ownerDocument;
+  return ownerDocument === undefined || ownerDocument === null ? null : getWebEventTarget(ownerDocument);
 }
 
 function getWebKeyCodeFromKeyboardCode(code: string, location: number): number {

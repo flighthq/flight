@@ -1,5 +1,6 @@
 import {
   allocateWebCursorBackend,
+  createWebInputIngressSource,
   webHostAudioDevice,
   webHostAudioMixer,
   webHostInputIngress,
@@ -92,7 +93,7 @@ const interactionManager = createInteractionManager(root, {
   cursorBackend: allocateWebCursorBackend(canvasElement),
 });
 const inputManager = createInputManager();
-attachPointerInput(webHostInputIngress, inputManager, canvasElement);
+attachPointerInput(webHostInputIngress, inputManager, createWebInputIngressSource(canvasElement));
 connectInputToInteraction(inputManager, interactionManager, scale);
 
 // Audio mixer with two buses: sfx and music. The Web host resolves the opaque device, graph, source,

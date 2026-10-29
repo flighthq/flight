@@ -1,4 +1,4 @@
-import { createWebImageResourceFromCanvas, webHostInputIngress } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, createWebInputIngressSource, webHostInputIngress } from '@flighthq/host-web';
 import type { CollisionAabb2D, CollisionManifold2D, FlowGuardState, FlowState, Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -85,7 +85,7 @@ let onGround = false;
 
 const inputManager = createInputManager();
 const inputState = createInputState();
-attachKeyboardInput(webHostInputIngress, inputManager, document);
+attachKeyboardInput(webHostInputIngress, inputManager, createWebInputIngressSource(document));
 connectInputStateToInputManager(inputState, inputManager);
 
 const playerImage = document.createElement('canvas');

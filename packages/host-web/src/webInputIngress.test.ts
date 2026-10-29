@@ -21,6 +21,7 @@ import { KeyCode, KeyModifier } from '@flighthq/types/contract';
 import * as hostWebPublic from './index.ts';
 import { webHostInput } from './webInputHost.ts';
 import {
+  createWebInputIngressSource,
   getWebCoalescedPointerEvents,
   getWebKeyCodeFromKeyboardEvent,
   getWebKeyModifierFromKeyboardEvent,
@@ -33,6 +34,16 @@ import {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+});
+
+describe('createWebInputIngressSource', () => {
+  it('wraps the target as the handle and shares the Web ingress provider token', () => {
+    const target = new EventTarget();
+    const source = createWebInputIngressSource(target);
+    expect(source.handle).toBe(target);
+    expect(source.provider).toBe(webHostInputIngress.provider);
+    expect(createWebInputIngressSource(target)).not.toBe(source);
+  });
 });
 
 describe('getWebCoalescedPointerEvents', () => {
@@ -171,10 +182,10 @@ describe('web input ingress listeners', () => {
     const target = document.createElement('input');
     const received: number[] = [];
     connectSignal(manager.onKeyDown, (data) => received.push(data.keyCode));
-    attachKeyboardInput(webHostInputIngress, manager, target);
+    attachKeyboardInput(webHostInputIngress, manager, createWebInputIngressSource(target));
 
     target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
-    detachKeyboardInput(manager, target);
+    detachKeyboardInput(manager, createWebInputIngressSource(target));
     target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyB', key: 'b' }));
     expect(received).toEqual([KeyCode.A]);
   });
@@ -185,17 +196,17 @@ describe('web input ingress listeners', () => {
     const second = document.createElement('div');
     const received: InputPointerData[] = [];
     connectSignal(manager.onPointerDown, (data) => received.push({ ...data }));
-    attachPointerInput(webHostInputIngress, manager, first);
-    attachPointerInput(webHostInputIngress, manager, second);
+    attachPointerInput(webHostInputIngress, manager, createWebInputIngressSource(first));
+    attachPointerInput(webHostInputIngress, manager, createWebInputIngressSource(second));
 
     first.dispatchEvent(createPointerEvent('pointerdown', { clientX: 20, clientY: 30, pointerId: 4 }));
-    detachPointerInput(manager, first);
+    detachPointerInput(manager, createWebInputIngressSource(first));
     first.dispatchEvent(createPointerEvent('pointerdown'));
     second.dispatchEvent(createPointerEvent('pointerdown', { pressure: 0.5, tiltX: 10 }));
     expect(received).toHaveLength(2);
     expect(received[0]).toMatchObject({ pointerId: 4, x: 20, y: 30 });
     expect(received[1]).toMatchObject({ pressure: 0.5, tiltX: 10 });
-    detachPointerInput(manager, second);
+    detachPointerInput(manager, createWebInputIngressSource(second));
   });
 
   it('normalizes relative pointer input from the owner document', () => {
@@ -205,7 +216,9 @@ describe('web input ingress listeners', () => {
     connectSignal(manager.onPointerMoveRelative, (data) => {
       received = { ...data };
     });
-    attachRelativePointerInput(webHostInputIngress, manager, element, { preventDefault: true });
+    attachRelativePointerInput(webHostInputIngress, manager, createWebInputIngressSource(element), {
+      preventDefault: true,
+    });
 
     const event = new MouseEvent('mousemove', {
       cancelable: true,
@@ -225,7 +238,7 @@ describe('web input ingress listeners', () => {
       y: 9,
     });
     expect(event.defaultPrevented).toBe(true);
-    detachRelativePointerInput(manager, element);
+    detachRelativePointerInput(manager, createWebInputIngressSource(element));
   });
 
   it('normalizes text and composition input', () => {
@@ -234,11 +247,11 @@ describe('web input ingress listeners', () => {
     const received: Array<Readonly<{ composing: boolean; text: string }>> = [];
     connectSignal(manager.onTextInput, (data) => received.push({ composing: data.isComposing, text: data.text }));
     connectSignal(manager.onTextEdit, (data) => received.push({ composing: data.isComposing, text: data.text }));
-    attachTextInput(webHostInputIngress, manager, element);
+    attachTextInput(webHostInputIngress, manager, createWebInputIngressSource(element));
 
     element.dispatchEvent(new InputEvent('beforeinput', { data: 'x' }));
     element.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'hi' }));
-    detachTextInput(manager, element);
+    detachTextInput(manager, createWebInputIngressSource(element));
     element.dispatchEvent(new InputEvent('beforeinput', { data: 'ignored' }));
     expect(received).toEqual([
       { composing: false, text: 'x' },
@@ -253,11 +266,11 @@ describe('web input ingress listeners', () => {
     connectSignal(manager.onWheel, (data) => {
       received = { ...data };
     });
-    attachWheelInput(webHostInputIngress, manager, element);
+    attachWheelInput(webHostInputIngress, manager, createWebInputIngressSource(element));
 
     element.dispatchEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_LINE, deltaY: -3 }));
     expect(received).toMatchObject({ deltaY: -3, wheelMode: 'lines' });
-    detachWheelInput(manager, element);
+    detachWheelInput(manager, createWebInputIngressSource(element));
   });
 
   it('does not deliver any family while its sink is disabled', () => {
@@ -267,15 +280,15 @@ describe('web input ingress listeners', () => {
     let fired = 0;
     connectSignal(manager.onKeyDown, () => fired++);
     connectSignal(manager.onPointerDown, () => fired++);
-    attachKeyboardInput(webHostInputIngress, manager, keyboard);
-    attachPointerInput(webHostInputIngress, manager, pointer);
+    attachKeyboardInput(webHostInputIngress, manager, createWebInputIngressSource(keyboard));
+    attachPointerInput(webHostInputIngress, manager, createWebInputIngressSource(pointer));
     manager.enabled = false;
 
     keyboard.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
     pointer.dispatchEvent(createPointerEvent('pointerdown'));
     expect(fired).toBe(0);
-    detachKeyboardInput(manager, keyboard);
-    detachPointerInput(manager, pointer);
+    detachKeyboardInput(manager, createWebInputIngressSource(keyboard));
+    detachPointerInput(manager, createWebInputIngressSource(pointer));
   });
 });
 
@@ -299,7 +312,7 @@ describe('webHostInputIngress', () => {
     const buttons: number[] = [];
     connectSignal(manager.onGamepadAxisMove, (data) => axes.push(data.value));
     connectSignal(manager.onGamepadButtonUp, (data) => buttons.push(data.value));
-    attachGamepadInput(webHostInputIngress, manager, window);
+    attachGamepadInput(webHostInputIngress, manager, createWebInputIngressSource(window));
 
     const initial = createGamepad(0, 'Pad', [0.25], [{ pressed: true, touched: true, value: 1 }]);
     getGamepads.mockReturnValue([initial]);
@@ -315,7 +328,7 @@ describe('webHostInputIngress', () => {
     frames.runAllCurrent();
     expect(axes).toEqual([0.75]);
     expect(buttons).toEqual([0]);
-    detachGamepadInput(manager, window);
+    detachGamepadInput(manager, createWebInputIngressSource(window));
   });
 
   it('keeps Web polling state and releases independent per source', () => {
@@ -330,16 +343,16 @@ describe('webHostInputIngress', () => {
     let secondMoves = 0;
     connectSignal(firstManager.onGamepadAxisMove, () => firstMoves++);
     connectSignal(secondManager.onGamepadAxisMove, () => secondMoves++);
-    attachGamepadInput(webHostInputIngress, firstManager, firstSource);
-    attachGamepadInput(webHostInputIngress, secondManager, secondSource);
+    attachGamepadInput(webHostInputIngress, firstManager, createWebInputIngressSource(firstSource));
+    attachGamepadInput(webHostInputIngress, secondManager, createWebInputIngressSource(secondSource));
 
     frames.runAllCurrent();
     expect([firstMoves, secondMoves]).toEqual([1, 1]);
-    detachGamepadInput(firstManager, firstSource);
+    detachGamepadInput(firstManager, createWebInputIngressSource(firstSource));
     getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [])]);
     frames.runAllCurrent();
     expect([firstMoves, secondMoves]).toEqual([1, 2]);
-    detachGamepadInput(secondManager, secondSource);
+    detachGamepadInput(secondManager, createWebInputIngressSource(secondSource));
     expect(frames.pending.size).toBe(0);
   });
 
@@ -350,8 +363,8 @@ describe('webHostInputIngress', () => {
       value: () => [createGamepad(0, 'Pad', [0.5], [])],
     });
     const manager = createInputManager();
-    connectSignal(manager.onGamepadAxisMove, () => detachGamepadInput(manager, window));
-    attachGamepadInput(webHostInputIngress, manager, window);
+    connectSignal(manager.onGamepadAxisMove, () => detachGamepadInput(manager, createWebInputIngressSource(window)));
+    attachGamepadInput(webHostInputIngress, manager, createWebInputIngressSource(window));
 
     frames.runAllCurrent();
     expect(frames.pending.size).toBe(0);
@@ -371,8 +384,8 @@ describe('webHostInputIngress', () => {
     const secondEvents: number[] = [];
     connectSignal(firstManager.onKeyDown, (data) => firstEvents.push(data.keyCode));
     connectSignal(secondManager.onKeyDown, (data) => secondEvents.push(data.keyCode));
-    attachKeyboardInput(webHostInputIngress, firstManager, firstWindow);
-    attachKeyboardInput(webHostInputIngress, secondManager, secondWindow);
+    attachKeyboardInput(webHostInputIngress, firstManager, createWebInputIngressSource(firstWindow));
+    attachKeyboardInput(webHostInputIngress, secondManager, createWebInputIngressSource(secondWindow));
 
     firstWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
     expect(firstEvents).toEqual([KeyCode.A]);
@@ -382,8 +395,8 @@ describe('webHostInputIngress', () => {
     expect(firstEvents).toEqual([KeyCode.A]);
     expect(secondEvents).toEqual([KeyCode.B]);
 
-    detachKeyboardInput(firstManager, firstWindow);
-    detachKeyboardInput(secondManager, secondWindow);
+    detachKeyboardInput(firstManager, createWebInputIngressSource(firstWindow));
+    detachKeyboardInput(secondManager, createWebInputIngressSource(secondWindow));
     firstFrame.remove();
     secondFrame.remove();
   });
@@ -391,7 +404,7 @@ describe('webHostInputIngress', () => {
   it('returns inert releases for native source identities the Web adapter cannot interpret', () => {
     const frames = installManualAnimationFrames();
     const backend = webHostInputIngress;
-    const source = {};
+    const source = { provider: backend.provider, handle: {} };
     const sink = {} as InputIngressSink;
     expect(() => backend.attachKeyboard(source, sink)()).not.toThrow();
     expect(() => backend.attachGamepad(source, sink)()).not.toThrow();
