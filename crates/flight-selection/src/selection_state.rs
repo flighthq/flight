@@ -199,14 +199,14 @@ mod sugar_tests {
     }
 }
 
-pub fn create_selection_state_core() -> SelectionState {
+pub(crate) fn create_selection_state_core() -> SelectionState {
     let mut out: SelectionState = allocate_entity();
     initialize_selection_state_core(&mut out);
     return out;
 }
 
 // flight-lint: allow(conform-extra) D12 construction initializer required by the Rust IR
-pub fn initialize_selection_state_core(out: &mut SelectionState) {
+pub(crate) fn initialize_selection_state_core(out: &mut SelectionState) {
     out.state = flight_entity::Ref::new(std::sync::RwLock::new(SelectionStateRuntime {
         active_node: None,
         selected_node_set: Vec::new(),
@@ -259,7 +259,7 @@ fn clear_selection_mutation(runtime: &mut SelectionStateRuntime) -> Option<Selec
     });
 }
 
-pub fn add_node_to_selection_core(state: &SelectionState, node: &NodeRef) {
+pub(crate) fn add_node_to_selection_core(state: &SelectionState, node: &NodeRef) {
     let mutation = add_node_mutation(&mut state.state.write().unwrap(), node);
     if mutation.is_none() {
         return;
@@ -267,7 +267,7 @@ pub fn add_node_to_selection_core(state: &SelectionState, node: &NodeRef) {
     emit_selection_changes(state, mutation.unwrap().previous_active_node);
 }
 
-pub fn clear_selection_core(state: &SelectionState) {
+pub(crate) fn clear_selection_core(state: &SelectionState) {
     let mutation = clear_selection_mutation(&mut state.state.write().unwrap());
     if mutation.is_none() {
         return;
@@ -321,12 +321,12 @@ fn emit_selection_changes(state: &SelectionState, previous_active_node: Option<N
     }
 }
 
-pub fn get_active_node_core(state: &SelectionState) -> Option<NodeRef> {
+pub(crate) fn get_active_node_core(state: &SelectionState) -> Option<NodeRef> {
     return state.state.read().unwrap().active_node.clone();
 }
 
 // flight-lint: allow(conform-params) D24 (Principal 21f7557f): the selection fills a caller-owned out, cleared first
-pub fn get_selected_nodes_core(out: &mut Vec<NodeRef>, state: &SelectionState) {
+pub(crate) fn get_selected_nodes_core(out: &mut Vec<NodeRef>, state: &SelectionState) {
     out.clear();
     let selected_nodes = state.state.read().unwrap().selected_nodes.clone();
     for node in selected_nodes {
@@ -334,19 +334,19 @@ pub fn get_selected_nodes_core(out: &mut Vec<NodeRef>, state: &SelectionState) {
     }
 }
 
-pub fn get_selection_count_core(state: &SelectionState) -> usize {
+pub(crate) fn get_selection_count_core(state: &SelectionState) -> usize {
     return state.state.read().unwrap().selected_nodes.len();
 }
 
-pub fn get_selection_signals_core(state: &SelectionState) -> SelectionSignals {
+pub(crate) fn get_selection_signals_core(state: &SelectionState) -> SelectionSignals {
     return state.state.read().unwrap().signals.clone();
 }
 
-pub fn has_selection_core(state: &SelectionState) -> bool {
+pub(crate) fn has_selection_core(state: &SelectionState) -> bool {
     return !state.state.read().unwrap().selected_nodes.is_empty();
 }
 
-pub fn is_node_selected_core(state: &SelectionState, node: &NodeRef) -> bool {
+pub(crate) fn is_node_selected_core(state: &SelectionState, node: &NodeRef) -> bool {
     return contains_node(&state.state.read().unwrap().selected_node_set, node);
 }
 
@@ -370,7 +370,7 @@ fn remove_node_mutation(
     });
 }
 
-pub fn remove_node_from_selection_core(state: &SelectionState, node: &NodeRef) {
+pub(crate) fn remove_node_from_selection_core(state: &SelectionState, node: &NodeRef) {
     let mutation = remove_node_mutation(&mut state.state.write().unwrap(), node);
     if mutation.is_none() {
         return;
@@ -416,7 +416,7 @@ fn replace_selection_mutation(
     });
 }
 
-pub fn select_all_nodes_core(state: &SelectionState, candidates: &[NodeRef]) {
+pub(crate) fn select_all_nodes_core(state: &SelectionState, candidates: &[NodeRef]) {
     let mut selected_nodes: Vec<NodeRef> = Vec::new();
     for candidate in candidates {
         if !contains_node(&selected_nodes, candidate) {
@@ -431,7 +431,7 @@ pub fn select_all_nodes_core(state: &SelectionState, candidates: &[NodeRef]) {
     emit_selection_changes(state, mutation.unwrap().previous_active_node);
 }
 
-pub fn select_node_core(state: &SelectionState, node: &NodeRef) {
+pub(crate) fn select_node_core(state: &SelectionState, node: &NodeRef) {
     let mutation =
         replace_selection_mutation(&mut state.state.write().unwrap(), vec![node.clone()]);
     if mutation.is_none() {
@@ -440,7 +440,7 @@ pub fn select_node_core(state: &SelectionState, node: &NodeRef) {
     emit_selection_changes(state, mutation.unwrap().previous_active_node);
 }
 
-pub fn toggle_node_selection_core(state: &SelectionState, node: &NodeRef) {
+pub(crate) fn toggle_node_selection_core(state: &SelectionState, node: &NodeRef) {
     if is_node_selected_core(state, node) {
         remove_node_from_selection_core(state, node);
     } else {

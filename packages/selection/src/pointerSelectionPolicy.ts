@@ -12,7 +12,7 @@ import {
 } from './selectionState.ts';
 import type { SelectionModifierStateRaw, SelectionStateRaw } from './types.ts';
 
-export function applyPointerSelectionPolicyCore(
+function applyPointerSelectionPolicyCore(
   state: SelectionStateRaw,
   hit: Readonly<NodeRef> | null,
   modifiers: Readonly<SelectionModifierStateRaw>,
@@ -39,7 +39,7 @@ export function applyPointerSelectionPolicyCore(
   }
 }
 
-export function applyPointerUpSelectionPolicyCore(
+function applyPointerUpSelectionPolicyCore(
   state: SelectionStateRaw,
   hit: Readonly<NodeRef> | null,
   modifiers: Readonly<SelectionModifierStateRaw>,
@@ -61,3 +61,5 @@ function hasAnyModifier(modifiers: Readonly<SelectionModifierStateRaw>): boolean
 function hasToggleModifier(modifiers: Readonly<SelectionModifierStateRaw>): boolean {
   return modifiers.ctrlKey || modifiers.metaKey || modifiers.shiftKey;
 }
+
+export { applyPointerSelectionPolicyCore, applyPointerUpSelectionPolicyCore };

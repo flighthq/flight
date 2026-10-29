@@ -22,20 +22,19 @@ interface ActiveChangeEvent {
   activeNode: NodeRef | null;
 }
 
-export function addNodeToSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
-  const mutation = addNodeMutation(selectionStateStateStore.get(state)!, node);
-  if (mutation === null) {
-    return;
-  }
-  emitSelectionChanges(state, mutation!.previousActiveNode);
+function createSelectionStateCore(): SelectionStateRaw {
+  let out: SelectionStateRaw = allocateEntity<SelectionStateRaw>();
+  initializeSelectionStateCore(out);
+  return out;
 }
 
-export function clearSelectionCore(state: SelectionStateRaw): void {
-  const mutation = clearSelectionMutation(selectionStateStateStore.get(state)!);
-  if (mutation === null) {
-    return;
-  }
-  emitSelectionChanges(state, mutation!.previousActiveNode);
+function initializeSelectionStateCore(out: SelectionStateRaw): void {
+  selectionStateStateStore.set(out, {
+    activeNode: null,
+    selectedNodeSet: [],
+    selectedNodes: [],
+    signals: { onActiveChange: createSignal(), onChange: createSignal() },
+  });
 }
 
 function addNodeMutation(runtime: SelectionStateRuntime, node: Readonly<NodeRef>): SelectionMutation | null {
@@ -60,14 +59,20 @@ function clearSelectionMutation(runtime: SelectionStateRuntime): SelectionMutati
   return { previousActiveNode: previousActiveNode };
 }
 
-export function createSelectionStateCore(): SelectionStateRaw {
-  let out: SelectionStateRaw = allocateEntity<SelectionStateRaw>();
-  initializeSelectionStateCore(out);
-  return out;
+function addNodeToSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
+  const mutation = addNodeMutation(selectionStateStateStore.get(state)!, node);
+  if (mutation === null) {
+    return;
+  }
+  emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
-export function getActiveNodeCore(state: SelectionStateRaw): NodeRef | null {
-  return selectionStateStateStore.get(state)!.activeNode;
+function clearSelectionCore(state: SelectionStateRaw): void {
+  const mutation = clearSelectionMutation(selectionStateStateStore.get(state)!);
+  if (mutation === null) {
+    return;
+  }
+  emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
 function containsNode(nodes: Readonly<NodeRef[]>, node: Readonly<NodeRef>): boolean {
@@ -103,7 +108,11 @@ function emitSelectionChanges(state: SelectionStateRaw, previousActiveNode: Node
   }
 }
 
-export function getSelectedNodesCore(out: NodeRef[], state: SelectionStateRaw): void {
+function getActiveNodeCore(state: SelectionStateRaw): NodeRef | null {
+  return selectionStateStateStore.get(state)!.activeNode;
+}
+
+function getSelectedNodesCore(out: NodeRef[], state: SelectionStateRaw): void {
   out.length = 0;
   const selectedNodes = selectionStateStateStore.get(state)!.selectedNodes;
   for (const node of selectedNodes) {
@@ -111,28 +120,19 @@ export function getSelectedNodesCore(out: NodeRef[], state: SelectionStateRaw): 
   }
 }
 
-export function getSelectionCountCore(state: SelectionStateRaw): number {
+function getSelectionCountCore(state: SelectionStateRaw): number {
   return selectionStateStateStore.get(state)!.selectedNodes.length;
 }
 
-export function getSelectionSignalsCore(state: SelectionStateRaw): SelectionSignals {
+function getSelectionSignalsCore(state: SelectionStateRaw): SelectionSignals {
   return selectionStateStateStore.get(state)!.signals;
 }
 
-export function hasSelectionCore(state: SelectionStateRaw): boolean {
+function hasSelectionCore(state: SelectionStateRaw): boolean {
   return selectionStateStateStore.get(state)!.selectedNodes.length !== 0;
 }
 
-export function initializeSelectionStateCore(out: SelectionStateRaw): void {
-  selectionStateStateStore.set(out, {
-    activeNode: null,
-    selectedNodeSet: [],
-    selectedNodes: [],
-    signals: { onActiveChange: createSignal(), onChange: createSignal() },
-  });
-}
-
-export function isNodeSelectedCore(state: SelectionStateRaw, node: Readonly<NodeRef>): boolean {
+function isNodeSelectedCore(state: SelectionStateRaw, node: Readonly<NodeRef>): boolean {
   return containsNode(selectionStateStateStore.get(state)!.selectedNodeSet, node);
 }
 
@@ -187,7 +187,7 @@ function removeNodeMutation(runtime: SelectionStateRuntime, node: Readonly<NodeR
   return { previousActiveNode: previousActiveNode };
 }
 
-export function removeNodeFromSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
+function removeNodeFromSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
   const mutation = removeNodeMutation(selectionStateStateStore.get(state)!, node);
   if (mutation === null) {
     return;
@@ -230,7 +230,7 @@ function replaceSelectionMutation(runtime: SelectionStateRuntime, selectedNodes:
   return { previousActiveNode: previousActiveNode };
 }
 
-export function selectAllNodesCore(state: SelectionStateRaw, candidates: Readonly<NodeRef[]>): void {
+function selectAllNodesCore(state: SelectionStateRaw, candidates: Readonly<NodeRef[]>): void {
   let selectedNodes: NodeRef[] = [] as never[];
   for (const candidate of candidates) {
     if (!containsNode(selectedNodes, candidate)) {
@@ -244,7 +244,7 @@ export function selectAllNodesCore(state: SelectionStateRaw, candidates: Readonl
   emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
-export function selectNodeCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
+function selectNodeCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
   const mutation = replaceSelectionMutation(selectionStateStateStore.get(state)!, [node]);
   if (mutation === null) {
     return;
@@ -252,10 +252,27 @@ export function selectNodeCore(state: SelectionStateRaw, node: Readonly<NodeRef>
   emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
-export function toggleNodeSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
+function toggleNodeSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
   if (isNodeSelectedCore(state, node)) {
     removeNodeFromSelectionCore(state, node);
   } else {
     addNodeToSelectionCore(state, node);
   }
 }
+
+export {
+  addNodeToSelectionCore,
+  clearSelectionCore,
+  createSelectionStateCore,
+  getActiveNodeCore,
+  getSelectedNodesCore,
+  getSelectionCountCore,
+  getSelectionSignalsCore,
+  hasSelectionCore,
+  initializeSelectionStateCore,
+  isNodeSelectedCore,
+  removeNodeFromSelectionCore,
+  selectAllNodesCore,
+  selectNodeCore,
+  toggleNodeSelectionCore,
+};

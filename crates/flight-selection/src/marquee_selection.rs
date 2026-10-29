@@ -73,14 +73,14 @@ mod sugar_tests {
     }
 }
 
-pub fn create_marquee_selection_core() -> MarqueeSelection {
+pub(crate) fn create_marquee_selection_core() -> MarqueeSelection {
     let mut out: MarqueeSelection = allocate_entity();
     initialize_marquee_selection_core(&mut out);
     return out;
 }
 
 // flight-lint: allow(conform-extra) D12 construction initializer required by the Rust IR
-pub fn initialize_marquee_selection_core(out: &mut MarqueeSelection) {
+pub(crate) fn initialize_marquee_selection_core(out: &mut MarqueeSelection) {
     out.state = MarqueeSelectionRuntime {
         active: false,
         rectangle: create_rectangle(0.0, 0.0, 0.0, 0.0),
@@ -89,7 +89,11 @@ pub fn initialize_marquee_selection_core(out: &mut MarqueeSelection) {
     };
 }
 
-pub fn begin_marquee_selection_core(selection: &mut MarqueeSelection, start_x: f32, start_y: f32) {
+pub(crate) fn begin_marquee_selection_core(
+    selection: &mut MarqueeSelection,
+    start_x: f32,
+    start_y: f32,
+) {
     selection.state.active = true;
     selection.state.start_x = start_x;
     selection.state.start_y = start_y;
@@ -102,13 +106,13 @@ pub fn begin_marquee_selection_core(selection: &mut MarqueeSelection, start_x: f
     );
 }
 
-pub fn end_marquee_selection_core(selection: &mut MarqueeSelection) -> &Rectangle {
+pub(crate) fn end_marquee_selection_core(selection: &mut MarqueeSelection) -> &Rectangle {
     selection.state.active = false;
     return &selection.state.rectangle;
 }
 
 // flight-lint: allow(conform-params) D24 (Principal 21f7557f): the matches fill a caller-owned out, cleared first
-pub fn find_nodes_in_marquee_selection_into(
+pub(crate) fn find_nodes_in_marquee_selection_into(
     out: &mut Vec<NodeRef>,
     selection: &MarqueeSelection,
     candidates: &[NodeRef],
@@ -132,7 +136,7 @@ pub fn find_nodes_in_marquee_selection_into(
     }
 }
 
-pub fn get_marquee_rectangle_core(selection: &MarqueeSelection) -> &Rectangle {
+pub(crate) fn get_marquee_rectangle_core(selection: &MarqueeSelection) -> &Rectangle {
     return &selection.state.rectangle;
 }
 
@@ -149,7 +153,7 @@ fn set_marquee_rectangle(
     rectangle.height = (end_y - start_y).abs();
 }
 
-pub fn update_marquee_selection_core(
+pub(crate) fn update_marquee_selection_core(
     selection: &mut MarqueeSelection,
     current_x: f32,
     current_y: f32,

@@ -11,25 +11,34 @@ import type { MarqueeSelectionRaw } from './types.ts';
 import { MarqueeSelectionModeRaw } from './types.ts';
 import { marqueeSelectionStateStore } from './types.ts';
 
-export function beginMarqueeSelectionCore(selection: MarqueeSelectionRaw, startX: number, startY: number): void {
+function createMarqueeSelectionCore(): MarqueeSelectionRaw {
+  let out: MarqueeSelectionRaw = allocateEntity<MarqueeSelectionRaw>();
+  initializeMarqueeSelectionCore(out);
+  return out;
+}
+
+function initializeMarqueeSelectionCore(out: MarqueeSelectionRaw): void {
+  marqueeSelectionStateStore.set(out, {
+    active: false,
+    rectangle: createRectangle(0.0, 0.0, 0.0, 0.0),
+    startX: 0.0,
+    startY: 0.0,
+  });
+}
+
+function beginMarqueeSelectionCore(selection: MarqueeSelectionRaw, startX: number, startY: number): void {
   marqueeSelectionStateStore.get(selection)!.active = true;
   marqueeSelectionStateStore.get(selection)!.startX = startX;
   marqueeSelectionStateStore.get(selection)!.startY = startY;
   setMarqueeRectangle(marqueeSelectionStateStore.get(selection)!.rectangle, startX, startY, startX, startY);
 }
 
-export function createMarqueeSelectionCore(): MarqueeSelectionRaw {
-  let out: MarqueeSelectionRaw = allocateEntity<MarqueeSelectionRaw>();
-  initializeMarqueeSelectionCore(out);
-  return out;
-}
-
-export function endMarqueeSelectionCore(selection: MarqueeSelectionRaw): Readonly<Rectangle> {
+function endMarqueeSelectionCore(selection: MarqueeSelectionRaw): Readonly<Rectangle> {
   marqueeSelectionStateStore.get(selection)!.active = false;
   return marqueeSelectionStateStore.get(selection)!.rectangle;
 }
 
-export function findNodesInMarqueeSelectionInto(
+function findNodesInMarqueeSelectionInto(
   out: NodeRef[],
   selection: Readonly<MarqueeSelectionRaw>,
   candidates: Readonly<NodeRef[]>,
@@ -58,17 +67,8 @@ export function findNodesInMarqueeSelectionInto(
   }
 }
 
-export function getMarqueeRectangleCore(selection: Readonly<MarqueeSelectionRaw>): Readonly<Rectangle> {
+function getMarqueeRectangleCore(selection: Readonly<MarqueeSelectionRaw>): Readonly<Rectangle> {
   return marqueeSelectionStateStore.get(selection)!.rectangle;
-}
-
-export function initializeMarqueeSelectionCore(out: MarqueeSelectionRaw): void {
-  marqueeSelectionStateStore.set(out, {
-    active: false,
-    rectangle: createRectangle(0.0, 0.0, 0.0, 0.0),
-    startX: 0.0,
-    startY: 0.0,
-  });
 }
 
 function setMarqueeRectangle(rectangle: Rectangle, startX: number, startY: number, endX: number, endY: number): void {
@@ -78,7 +78,7 @@ function setMarqueeRectangle(rectangle: Rectangle, startX: number, startY: numbe
   rectangle.height = Math.abs(endY - startY);
 }
 
-export function updateMarqueeSelectionCore(selection: MarqueeSelectionRaw, currentX: number, currentY: number): void {
+function updateMarqueeSelectionCore(selection: MarqueeSelectionRaw, currentX: number, currentY: number): void {
   if (!marqueeSelectionStateStore.get(selection)!.active) {
     return;
   }
@@ -90,3 +90,13 @@ export function updateMarqueeSelectionCore(selection: MarqueeSelectionRaw, curre
     currentY,
   );
 }
+
+export {
+  beginMarqueeSelectionCore,
+  createMarqueeSelectionCore,
+  endMarqueeSelectionCore,
+  findNodesInMarqueeSelectionInto,
+  getMarqueeRectangleCore,
+  initializeMarqueeSelectionCore,
+  updateMarqueeSelectionCore,
+};

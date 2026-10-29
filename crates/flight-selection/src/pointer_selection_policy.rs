@@ -109,7 +109,7 @@ mod sugar_tests {
     }
 }
 
-pub fn apply_pointer_selection_policy_core(
+pub(crate) fn apply_pointer_selection_policy_core(
     state: &SelectionState,
     hit: Option<&NodeRef>,
     modifiers: &SelectionModifierStateRaw,
@@ -139,7 +139,7 @@ pub fn apply_pointer_selection_policy_core(
     }
 }
 
-pub fn apply_pointer_up_selection_policy_core(
+pub(crate) fn apply_pointer_up_selection_policy_core(
     state: &SelectionState,
     hit: Option<&NodeRef>,
     modifiers: &SelectionModifierStateRaw,

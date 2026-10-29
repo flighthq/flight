@@ -69,33 +69,37 @@ mod sugar_tests {
 
 // flight-lint: allow-file(f64) lasso coordinates feed canonical f64 Path.data without truncation
 
-pub fn create_lasso_selection_core() -> LassoSelection {
+pub(crate) fn create_lasso_selection_core() -> LassoSelection {
     let mut out: LassoSelection = allocate_entity();
     initialize_lasso_selection_core(&mut out);
     return out;
 }
 
-pub fn initialize_lasso_selection_core(out: &mut LassoSelection) {
+pub(crate) fn initialize_lasso_selection_core(out: &mut LassoSelection) {
     out.state = LassoSelectionRuntime {
         active: false,
         path: create_lasso_path(),
     };
 }
 
-pub fn add_lasso_selection_point_core(selection: &mut LassoSelection, x: f64, y: f64) {
+pub(crate) fn add_lasso_selection_point_core(selection: &mut LassoSelection, x: f64, y: f64) {
     if !selection.state.active {
         return;
     }
     append_lasso_line_to(&mut selection.state.path, x, y);
 }
 
-pub fn begin_lasso_selection_core(selection: &mut LassoSelection, start_x: f64, start_y: f64) {
+pub(crate) fn begin_lasso_selection_core(
+    selection: &mut LassoSelection,
+    start_x: f64,
+    start_y: f64,
+) {
     selection.state.active = true;
     clear_lasso_path(&mut selection.state.path);
     append_lasso_move_to(&mut selection.state.path, start_x, start_y);
 }
 
-pub fn end_lasso_selection_core(selection: &mut LassoSelection) -> &Path {
+pub(crate) fn end_lasso_selection_core(selection: &mut LassoSelection) -> &Path {
     if selection.state.active {
         append_lasso_close(&mut selection.state.path);
     }
@@ -104,7 +108,7 @@ pub fn end_lasso_selection_core(selection: &mut LassoSelection) -> &Path {
 }
 
 // flight-lint: allow(conform-params) D24 (Principal 21f7557f): the matches fill a caller-owned out, cleared first
-pub fn find_nodes_in_lasso_selection_into(
+pub(crate) fn find_nodes_in_lasso_selection_into(
     out: &mut Vec<NodeRef>,
     selection: &LassoSelection,
     candidates: &[NodeRef],
@@ -124,7 +128,7 @@ pub fn find_nodes_in_lasso_selection_into(
     }
 }
 
-pub fn get_lasso_selection_path_core(selection: &LassoSelection) -> &Path {
+pub(crate) fn get_lasso_selection_path_core(selection: &LassoSelection) -> &Path {
     return &selection.state.path;
 }
 

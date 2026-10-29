@@ -16,26 +16,30 @@ import {
 import type { LassoSelectionRaw } from './types.ts';
 import { lassoSelectionStateStore } from './types.ts';
 
-export function addLassoSelectionPointCore(selection: LassoSelectionRaw, x: number, y: number): void {
+function createLassoSelectionCore(): LassoSelectionRaw {
+  let out: LassoSelectionRaw = allocateEntity<LassoSelectionRaw>();
+  initializeLassoSelectionCore(out);
+  return out;
+}
+
+function initializeLassoSelectionCore(out: LassoSelectionRaw): void {
+  lassoSelectionStateStore.set(out, { active: false, path: createLassoPath() });
+}
+
+function addLassoSelectionPointCore(selection: LassoSelectionRaw, x: number, y: number): void {
   if (!lassoSelectionStateStore.get(selection)!.active) {
     return;
   }
   appendLassoLineTo(lassoSelectionStateStore.get(selection)!.path, x, y);
 }
 
-export function beginLassoSelectionCore(selection: LassoSelectionRaw, startX: number, startY: number): void {
+function beginLassoSelectionCore(selection: LassoSelectionRaw, startX: number, startY: number): void {
   lassoSelectionStateStore.get(selection)!.active = true;
   clearLassoPath(lassoSelectionStateStore.get(selection)!.path);
   appendLassoMoveTo(lassoSelectionStateStore.get(selection)!.path, startX, startY);
 }
 
-export function createLassoSelectionCore(): LassoSelectionRaw {
-  let out: LassoSelectionRaw = allocateEntity<LassoSelectionRaw>();
-  initializeLassoSelectionCore(out);
-  return out;
-}
-
-export function endLassoSelectionCore(selection: LassoSelectionRaw): Readonly<Path> {
+function endLassoSelectionCore(selection: LassoSelectionRaw): Readonly<Path> {
   if (lassoSelectionStateStore.get(selection)!.active) {
     appendLassoClose(lassoSelectionStateStore.get(selection)!.path);
   }
@@ -43,7 +47,7 @@ export function endLassoSelectionCore(selection: LassoSelectionRaw): Readonly<Pa
   return lassoSelectionStateStore.get(selection)!.path;
 }
 
-export function findNodesInLassoSelectionInto(
+function findNodesInLassoSelectionInto(
   out: NodeRef[],
   selection: Readonly<LassoSelectionRaw>,
   candidates: Readonly<NodeRef[]>,
@@ -62,12 +66,8 @@ export function findNodesInLassoSelectionInto(
   }
 }
 
-export function getLassoSelectionPathCore(selection: Readonly<LassoSelectionRaw>): Readonly<Path> {
+function getLassoSelectionPathCore(selection: Readonly<LassoSelectionRaw>): Readonly<Path> {
   return lassoSelectionStateStore.get(selection)!.path;
-}
-
-export function initializeLassoSelectionCore(out: LassoSelectionRaw): void {
-  lassoSelectionStateStore.set(out, { active: false, path: createLassoPath() });
 }
 
 function isPointInPolygon(points: Readonly<number[]>, x: number, y: number): boolean {
@@ -106,3 +106,13 @@ function isPointOnSegment(x: number, y: number, startX: number, startY: number, 
     y <= Math.max(startY, endY)
   );
 }
+
+export {
+  addLassoSelectionPointCore,
+  beginLassoSelectionCore,
+  createLassoSelectionCore,
+  endLassoSelectionCore,
+  findNodesInLassoSelectionInto,
+  getLassoSelectionPathCore,
+  initializeLassoSelectionCore,
+};
