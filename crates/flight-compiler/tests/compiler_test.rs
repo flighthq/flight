@@ -3103,6 +3103,217 @@ pub fn pairs(keys: Vec<String>, values: Vec<i32>) -> Vec<(String, i32)> {
     }
 
     #[test]
+    fn lowers_as_bytes_with_string_provenance() {
+        let source = r#"
+pub fn byte_length(text: String) -> usize {
+    return text.as_bytes().len();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("new TextEncoder().encode(text)"), "{output}");
+    }
+
+    #[test]
+    fn rejects_as_bytes_without_string_provenance() {
+        let source = "pub fn bad(value: i32) -> usize { return value.as_bytes().len(); }\n";
+
+        let error = compile_typescript(source, None).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "portable `.as_bytes()` requires a receiver known to be `String` or `str`"
+        );
+    }
+
+    #[test]
+    fn lowers_as_str_to_identity() {
+        let source = r#"
+pub fn label(value: String) -> String {
+    return value.as_str().to_string();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(!output.contains(".as_str"), "{output}");
+    }
+
+    #[test]
+    fn lowers_filter_map_to_map_then_filter() {
+        let source = r#"
+pub fn positive_doubles(values: Vec<i32>) -> Vec<i32> {
+    return values.into_iter().filter_map(|value| if value > 0 { Some(value * 2) } else { None }).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".map("), "{output}");
+        assert!(output.contains(".filter("), "{output}");
+    }
+
+    #[test]
+    fn lowers_hypot_to_math_hypot() {
+        let source = "pub fn distance(dx: f64, dy: f64) -> f64 { return dx.hypot(dy); }\n";
+
+        assert!(
+            compile_typescript(source, None)
+                .unwrap()
+                .contains("Math.hypot(dx, dy)"),
+        );
+    }
+
+    #[test]
+    fn lowers_into_boxed_slice_to_identity() {
+        let source = r#"
+pub fn freeze(values: Vec<i32>) -> Box<[i32]> {
+    return values.into_boxed_slice();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(!output.contains("into_boxed_slice"), "{output}");
+        assert!(!output.contains("intoBoxedSlice"), "{output}");
+    }
+
+    #[test]
+    fn lowers_into_keys_and_into_values() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn keys(map: HashMap<String, i32>) -> Vec<String> {
+    return map.into_keys().collect();
+}
+
+pub fn values(map: HashMap<String, i32>) -> Vec<i32> {
+    return map.into_values().collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("[...map.keys()]"), "{output}");
+        assert!(output.contains("[...map.values()]"), "{output}");
+    }
+
+    #[test]
+    fn lowers_is_some_and_and_is_none_or() {
+        let source = r#"
+pub fn has_positive(value: Option<i32>) -> bool {
+    return value.is_some_and(|v| v > 0);
+}
+
+pub fn missing_or_zero(value: Option<i32>) -> bool {
+    return value.is_none_or(|v| v == 0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("!== undefined"), "{output}");
+        assert!(output.contains("=== undefined"), "{output}");
+    }
+
+    #[test]
+    fn lowers_join_to_array_join() {
+        let source = r#"
+pub fn comma_separated(values: Vec<String>) -> String {
+    return values.join(", ");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("values.join(\", \")"), "{output}");
+    }
+
+    #[test]
+    fn lowers_map_or_else_on_proven_options() {
+        let source = r#"
+pub fn describe(value: Option<i32>) -> String {
+    return value.map_or_else(|| "none".to_string(), |v| v.to_string());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("fallback()"), "{output}");
+        assert!(output.contains("map(value)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_or_else_to_nullish_coalescing_call() {
+        let source = r#"
+pub fn fallback(value: Option<i32>) -> Option<i32> {
+    return value.or_else(|| Some(42));
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("??"), "{output}");
+    }
+
+    #[test]
+    fn lowers_resize_on_proven_sequences() {
+        let source = r#"
+pub fn grow(values: &mut Vec<f32>, size: usize) {
+    values.resize(size, 0.0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("items.push(value)"), "{output}");
+        assert!(output.contains("items.length = length"), "{output}");
+    }
+
+    #[test]
+    fn lowers_case_conversion_with_string_provenance() {
+        let source = r#"
+pub fn shout(text: String) -> String {
+    return text.to_uppercase();
+}
+
+pub fn whisper(text: String) -> String {
+    return text.to_lowercase();
+}
+
+pub fn ascii_shout(text: String) -> String {
+    return text.to_ascii_uppercase();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("text.toUpperCase()"), "{output}");
+        assert!(output.contains("text.toLowerCase()"), "{output}");
+    }
+
+    #[test]
+    fn rejects_case_conversion_without_string_provenance() {
+        for (source, expected) in [
+            (
+                "pub fn bad(value: i32) -> String { return value.to_uppercase(); }\n",
+                "portable `.to_uppercase()` requires a receiver known to be `String` or `str`",
+            ),
+            (
+                "pub fn bad(value: i32) -> String { return value.to_lowercase(); }\n",
+                "portable `.to_lowercase()` requires a receiver known to be `String` or `str`",
+            ),
+            (
+                "pub fn bad(value: i32) -> String { return value.to_ascii_uppercase(); }\n",
+                "portable `.to_ascii_uppercase()` requires a receiver known to be `String` or `str`",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    #[test]
     fn lowers_real_velocity_sources_with_nullable_option_semantics() {
         let sample_source = include_str!("../../flight-velocity/src/velocity_sample.rs");
         let sample_output = compile_typescript(sample_source, None).unwrap();

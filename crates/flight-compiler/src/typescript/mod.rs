@@ -2514,6 +2514,12 @@ fn emit_hash_collection_method(
         ("HashMap", "remove", [key]) => Ok(option(format!(
             "(<K, V>(entries: Map<K, V>, key: K): V | undefined => {{ const previous = entries.get(key); entries.delete(key); return previous; }})({receiver}, {key})"
         ))),
+        ("HashMap", "into_keys", []) | ("HashMap", "keys", []) => {
+            Ok(format!("[...{receiver}.keys()]"))
+        }
+        ("HashMap", "into_values", []) | ("HashMap", "values", []) => {
+            Ok(format!("[...{receiver}.values()]"))
+        }
         _ => Err(compile_error(format!(
             "portable `{owner}::{method}` with {} argument(s) has no portable lowering",
             arguments.len()
@@ -10059,6 +10065,13 @@ fn emit_method_call(
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
         "fract" if arguments.is_empty() => Ok(format!("({receiver} % 1)")),
         "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
+        "filter_map" if arguments.len() == 1 => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "{receiver}.map({}).filter((value) => value !== {absent})",
+                arguments[0]
+            ))
+        }
         "flat_map" if arguments.len() == 1 => Ok(format!("{receiver}.flatMap({})", arguments[0])),
         "flatten" if arguments.is_empty() => Ok(format!("{receiver}.flat()")),
         "fetch_add" if arguments.len() == 2 => Ok(format!(
@@ -10075,6 +10088,9 @@ fn emit_method_call(
         "get" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}[{}]", arguments[0]))
         }
+        "hypot" if arguments.len() == 1 => {
+            Ok(format!("Math.hypot({receiver}, {})", arguments[0]))
+        }
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
         "is_none" if arguments.is_empty() => Ok(format!(
@@ -10085,6 +10101,20 @@ fn emit_method_call(
             "{receiver} !== {}",
             option_absent_value(&call.receiver, entities)
         )),
+        "is_some_and" if arguments.len() == 1 => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "({receiver} !== {absent} && ({})({receiver}))",
+                arguments[0]
+            ))
+        }
+        "is_none_or" if arguments.len() == 1 => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "({receiver} === {absent} || ({})({receiver}))",
+                arguments[0]
+            ))
+        }
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
         "insert" if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
@@ -10093,11 +10123,22 @@ fn emit_method_call(
             ))
         }
         "into" if arguments.is_empty() => Ok(receiver),
+        "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
+        "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_ref" if arguments.is_empty() => Ok(receiver),
         "as_mut" if arguments.is_empty() => Ok(receiver),
+        "as_bytes" if arguments.is_empty()
+            && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("new TextEncoder().encode({receiver})"))
+        }
+        "as_bytes" if arguments.is_empty() => Err(compile_error(
+            "portable `.as_bytes()` requires a receiver known to be `String` or `str`",
+        )),
         "as_deref" if arguments.is_empty() => Ok(receiver),
+        "as_str" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "last" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}.at(-1)"))
@@ -10115,8 +10156,21 @@ fn emit_method_call(
                 arguments[0], arguments[1]
             ))
         }
+        "map_or_else"
+            if arguments.len() == 2
+                && option_expression_payload(&call.receiver, entities).is_some() =>
+        {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "(<T, U>(value: T | {absent}, fallback: () => U, map: (value: T) => U): U => value === {absent} ? fallback() : map(value))({receiver}, {}, {})",
+                arguments[0], arguments[1]
+            ))
+        }
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
+        "or_else" if arguments.len() == 1 => {
+            Ok(format!("({receiver} ?? ({})())", arguments[0]))
+        }
         "next"
             if arguments.is_empty()
                 && matches!(call.receiver.as_ref(), Expr::MethodCall(chars)
@@ -10166,6 +10220,12 @@ fn emit_method_call(
         "repeat" if arguments.len() == 1 => Err(compile_error(
             "portable `.repeat()` requires a receiver known to be `String` or `str`",
         )),
+        "resize" if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!(
+                "(<T>(items: T[], length: number, value: T): void => {{ while (items.length < length) {{ items.push(value); }} items.length = length; }})({receiver}, {}, {})",
+                arguments[0], arguments[1]
+            ))
+        }
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
         "saturating_sub" if arguments.len() == 1 => {
@@ -10277,6 +10337,30 @@ fn emit_method_call(
         }
         "to_ascii_lowercase" if arguments.is_empty() => Err(compile_error(
             "portable `.to_ascii_lowercase()` requires a receiver known to be `String` or `str`",
+        )),
+        "to_ascii_uppercase"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.toUpperCase()"))
+        }
+        "to_ascii_uppercase" if arguments.is_empty() => Err(compile_error(
+            "portable `.to_ascii_uppercase()` requires a receiver known to be `String` or `str`",
+        )),
+        "to_lowercase"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.toLowerCase()"))
+        }
+        "to_lowercase" if arguments.is_empty() => Err(compile_error(
+            "portable `.to_lowercase()` requires a receiver known to be `String` or `str`",
+        )),
+        "to_uppercase"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.toUpperCase()"))
+        }
+        "to_uppercase" if arguments.is_empty() => Err(compile_error(
+            "portable `.to_uppercase()` requires a receiver known to be `String` or `str`",
         )),
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
