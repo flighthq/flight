@@ -74,14 +74,14 @@ export function addNodeChildAt<Fields extends object>(target: Node<Fields>, chil
   invalidateNodeChildren(targetRuntime);
   if (!wasChild) invalidateNodeWorldBounds(target);
   const targetSignals = targetRuntime.nodeSignals;
-  if (targetSignals !== null) emitSignal(targetSignals.onChildrenChanged);
+  if (targetSignals !== null) emitSignal(targetSignals.onChildrenChanged, undefined);
 
   if (parent !== target) {
     childRuntime.parent = targetNode;
     invalidateNodeSubtreeWorldRevisions(childNode);
     if (targetSignals !== null) emitSignal(targetSignals.onChildAdded, child);
     const childSignals = childRuntime.nodeSignals;
-    if (childSignals !== null) emitSignal(childSignals.onParentChanged);
+    if (childSignals !== null) emitSignal(childSignals.onParentChanged, undefined);
     invalidateNodeParentReference(child);
   }
 }
@@ -271,7 +271,7 @@ export function removeNodeChild<Fields extends object>(target: Node<Fields>, chi
     childRuntime.parent = null;
     invalidateNodeSubtreeWorldRevisions(childNode);
     const childSignals = childRuntime.nodeSignals;
-    if (childSignals !== null) emitSignal(childSignals.onParentChanged);
+    if (childSignals !== null) emitSignal(childSignals.onParentChanged, undefined);
     invalidateNodeParentReference(child);
     const i = children.indexOf(childNode);
     if (i !== -1) {
@@ -282,7 +282,7 @@ export function removeNodeChild<Fields extends object>(target: Node<Fields>, chi
     const targetSignals = targetRuntime.nodeSignals;
     if (targetSignals !== null) {
       emitSignal(targetSignals.onChildRemoved, child);
-      emitSignal(targetSignals.onChildrenChanged);
+      emitSignal(targetSignals.onChildrenChanged, undefined);
     }
   }
 }
@@ -423,7 +423,7 @@ export function setNodeChildIndex<Fields extends object>(
       children.splice(destination, 0, childNode);
       invalidateNodeChildren(targetRuntime as NodeRuntime<Fields>);
       const targetSignals = targetRuntime.nodeSignals;
-      if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
+      if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged, undefined);
     }
   }
 }
@@ -461,7 +461,7 @@ export function swapNodeChildren<Fields extends object>(
     children[index2] = firstChildNode;
     invalidateNodeChildren(targetRuntime as NodeRuntime<Fields>);
     const targetSignals = (getNodeRuntime(target) as NodeRuntime<Fields>).nodeSignals;
-    if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
+    if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged, undefined);
   }
 }
 
@@ -483,7 +483,7 @@ export function swapNodeChildrenAt<Fields extends object>(target: Node<Fields>, 
   children[index2] = swap;
   invalidateNodeChildren(targetRuntime as NodeRuntime<Fields>);
   const targetSignals = targetRuntime.nodeSignals;
-  if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
+  if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged, undefined);
 }
 
 // Child arrays are package-owned and mutate only through this module, so structural revision bumps

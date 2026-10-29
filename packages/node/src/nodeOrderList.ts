@@ -111,7 +111,7 @@ export function applyNodeOrderList<Fields extends object = NodeFields>(
   if (!moved) return;
   targetRuntime.childrenId = (targetRuntime.childrenId + 1) >>> 0;
   const targetSignals = targetRuntime.nodeSignals;
-  if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
+  if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged, undefined);
 }
 
 /**

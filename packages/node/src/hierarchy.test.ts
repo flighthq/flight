@@ -1,7 +1,15 @@
 import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity/contract';
 import { cloneMatrix } from '@flighthq/geometry/contract';
-import { connectSignal } from '@flighthq/signals/contract';
-import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime, NodeFields } from '@flighthq/types/contract';
+import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
+import type {
+  HasTransform2D,
+  HasTransform2DRuntime,
+  Node,
+  NodeAny,
+  NodeRuntime,
+  NodeFields,
+} from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
@@ -171,6 +179,19 @@ describe('addNodeChild', () => {
     });
     addNodeChild(container, childA);
     expect(added).toBe(childA);
+  });
+
+  it('types the hierarchy signals by payload and stops a slot disconnected by its SlotId', () => {
+    const container = createNode(NodeKind);
+    const signals = enableNodeSignals(container);
+    expectTypeOf(signals.onChildAdded).toEqualTypeOf<Signal<NodeAny>>();
+    expectTypeOf(signals.onChildrenChanged).toEqualTypeOf<Signal<void>>();
+    let changes = 0;
+    const id: SlotId = connectSignal(signals.onChildrenChanged, () => changes++);
+    addNodeChild(container, createNode(NodeKind));
+    disconnectSignal(signals.onChildrenChanged, id);
+    addNodeChild(container, createNode(NodeKind));
+    expect(changes).toBe(1);
   });
 
   it('does not call onChildAdded when reordering within the same parent', () => {
