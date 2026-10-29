@@ -3,7 +3,6 @@ import type {
   AabbLike,
   BoundingSphereLike,
   EntityConstruction,
-  Matrix4Like,
   PlaneLike,
   Ray3D,
   Ray3DLike,
@@ -11,6 +10,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
+import type { Matrix4Like } from './types.ts';
 import { createVector3 } from './vector3.ts';
 
 // Creates a Ray3D with an explicit origin and normalized direction. Both vectors are allocated

@@ -5,7 +5,6 @@ import type {
   EntityConstruction,
   Frustum,
   FrustumLike,
-  Matrix4Like,
   ObbLike,
   Plane,
   PlaneLike,
@@ -13,6 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { createPlane } from './plane.ts';
+import type { Matrix4Like } from './types.ts';
 
 /**
  * Creates a view frustum as six bounding planes, each with an inward-pointing normal. The

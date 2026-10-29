@@ -3,12 +3,13 @@ import type {
   AabbLike,
   BoundingSphereLike,
   EntityConstruction,
-  Matrix4Like,
   Obb,
   ObbLike,
   Ray3DLike,
   Vector3Like,
 } from '@flighthq/types/contract';
+
+import type { Matrix4Like } from './types.ts';
 
 /**
  * Creates an oriented bounding box from a center, half-extents, and an orientation quaternion

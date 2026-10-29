@@ -393,6 +393,8 @@ export type {
   Matrix,
   Matrix3,
   Matrix3Like,
+  Matrix4,
+  Matrix4Like,
   MatrixLike,
   Rectangle,
   RectangleLike,

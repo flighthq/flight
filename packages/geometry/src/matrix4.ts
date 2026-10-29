@@ -1,15 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Matrix4,
-  Matrix4Like,
-  QuaternionLike,
-  Vector3Like,
-  Vector4Like,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { QuaternionLike, Vector3Like, Vector4Like } from '@flighthq/types/contract';
 
 import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool.ts';
-import type { Matrix3Like, MatrixLike } from './types.ts';
+import type { Matrix3Like, Matrix4, Matrix4Like, MatrixLike } from './types.ts';
 
 /**
  * Appends a matrix in world space: `other` applies AFTER everything already in `source`.

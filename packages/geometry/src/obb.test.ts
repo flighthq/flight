@@ -19,9 +19,10 @@ import {
   setObb,
   transformObbByMatrix4,
 } from '@flighthq/geometry/contract';
-import type { Matrix4, Obb, Vector3 } from '@flighthq/types/contract';
+import type { Obb, Vector3 } from '@flighthq/types/contract';
 
 import { initializeObb } from './obb.ts';
+import type { Matrix4 } from './types.ts';
 
 describe('createObb', () => {
   it('stores center, half-extents, and orientation', () => {

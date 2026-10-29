@@ -1,15 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Matrix4Like,
-  Quaternion,
-  Transform3D,
-  Transform3DLike,
-  Vector3,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, Quaternion, Transform3D, Transform3DLike, Vector3 } from '@flighthq/types/contract';
 
 import { composeMatrix4, decomposeMatrix4 } from './matrix4.ts';
 import { createQuaternion } from './quaternion.ts';
+import type { Matrix4Like } from './types.ts';
 import { createVector3 } from './vector3.ts';
 
 // Composes a carrier's translation/rotation/scale into `out`. Canonical and lossless (TRS -> matrix).
