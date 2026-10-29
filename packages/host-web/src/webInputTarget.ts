@@ -16,7 +16,7 @@ interface WebHostTargetStyle extends CSSStyleDeclaration {
 
 export const webHostInputDropFile = (() => {
   const out = {} as HostInputDropFileCapability;
-  out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
+  out.subscribe = (target: Readonly<InputTargetHandle>, listener: (path: string) => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     const onDragOver = (event: DragEvent): void => event.preventDefault();
@@ -36,7 +36,7 @@ export const webHostInputDropFile = (() => {
 
 export const webHostInputFocus = (() => {
   const out = {} as HostInputFocusCapability;
-  out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
+  out.subscribe = (target: Readonly<InputTargetHandle>, onFocus: () => void, onBlur: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     element.addEventListener('focus', onFocus);
@@ -69,7 +69,7 @@ export const webHostInputPointerLock = (() => {
     }
     return observation.outcome;
   };
-  out.request = (target: InputTargetHandle) => {
+  out.request = (target: Readonly<InputTargetHandle>) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return Promise.resolve(POINTER_LOCK_TARGET_NOT_FOUND);
     const requestPointerLock = element.requestPointerLock;
@@ -94,7 +94,7 @@ export const webHostInputPointerLock = (() => {
 
 export const webHostInputTarget = (() => {
   const out = {} as HostInputTargetCapability;
-  out.prepare = (target: InputTargetHandle) => {
+  out.prepare = (target: Readonly<InputTargetHandle>) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;
     element.style.touchAction = 'none';
@@ -116,11 +116,10 @@ export function initializeWebInputTargetHandle(
   target: EntityConstruction<InputTargetHandle>,
   element: HTMLElement,
 ): void {
-  target.__brand = 'InputTargetHandle' as const;
   _inputTargets.set(target, element);
 }
 
-let _inputTargets = new WeakMap<InputTargetHandle, HTMLElement>();
+let _inputTargets = new WeakMap<Readonly<InputTargetHandle>, HTMLElement>();
 const _inputTargetSubscriptionCleanups = new Set<() => void>();
 
 export function resetWebInputTargetBackendForTest(): void {

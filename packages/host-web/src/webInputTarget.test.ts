@@ -343,6 +343,19 @@ describe('webHostInputPointerLock', () => {
 
     await expect(webHostInputPointerLock.request(target)).resolves.toEqual({ reason: 'target-not-found' });
   });
+
+  it('reports target-not-found for an entity never registered as a web input target', async () => {
+    const target = finishEntity(allocateEntity<InputTargetHandle>());
+
+    await expect(webHostInputPointerLock.request(target)).resolves.toEqual({ reason: 'target-not-found' });
+    expect(() => webHostInputTarget.prepare(target)).not.toThrow();
+    const releaseDrop = webHostInputDropFile.subscribe(target, vi.fn());
+    const releaseFocus = webHostInputFocus.subscribe(target, vi.fn(), vi.fn());
+    expect(() => {
+      releaseDrop();
+      releaseFocus();
+    }).not.toThrow();
+  });
 });
 
 describe('webHostInputTarget', () => {
