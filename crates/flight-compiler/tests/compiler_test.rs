@@ -5026,6 +5026,40 @@ pub fn listed(p: f64) -> Vec<f64> {
     }
 
     #[test]
+    fn emits_the_final_option_match_arm_as_the_exhaustive_else() {
+        let source = r#"pub fn pattern(dash: Option<Vec<f64>>) -> Vec<f64> {
+    let pattern: Vec<f64> = match dash {
+        Some(values) => values,
+        None => Vec::new(),
+    };
+    return pattern;
+}
+
+pub fn absent_first(value: Option<f64>) -> f64 {
+    let resolved: f64 = match value {
+        None => -1.0,
+        Some(present) => present,
+    };
+    return resolved;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains(
+                "  const pattern: number[] = (() => {\n  const matchValue = dash;\n  if (matchValue !== undefined) {\n    const values = matchValue;\n    return values;\n  }\n  else {\n"
+            ),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "  if (matchValue === undefined) {\n    return -1.0;\n  }\n  else {\n    const present = matchValue;\n    return present;\n  }\n"
+            ),
+            "{output}"
+        );
+        assert!(!output.contains("else if (matchValue"), "{output}");
+    }
+
+    #[test]
     fn resolves_nullable_fields_through_proven_standard_arc() {
         let compile = |source: &str| {
             return compile_typescript_with_module_sources(

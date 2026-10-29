@@ -12664,14 +12664,22 @@ fn emit_match_expression(
         out.push_str(&emit_expression(&expression.expr, entities)?);
         out.push_str(";\n");
         let absent = option_absent_value(&expression.expr, entities);
+        let last = expression.arms.len() - 1;
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
             if arm.guard.is_some() {
                 return Err(compile_error("portable Rust match arms cannot use guards"));
             }
-            let prefix = if index == 0 { "if" } else { "else if" };
-            let operator = if info.present { "!==" } else { "===" };
-            writeln!(out, "  {prefix} (matchValue {operator} {absent}) {{")
-                .expect("writing to a String cannot fail");
+            // Rust proves the match exhaustive, so the final arm is the remaining case. Emitting it
+            // as a plain `else` keeps the IIFE's inferred type to its arms' values, without the
+            // `undefined` an unreachable fall-through would add.
+            if index > 0 && index == last {
+                out.push_str("  else {\n");
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                let operator = if info.present { "!==" } else { "===" };
+                writeln!(out, "  {prefix} (matchValue {operator} {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            }
             if let Some(binding) = info.binding {
                 writeln!(out, "    const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
