@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 
@@ -6,7 +8,7 @@ use flight_log::{
     LogData, LogLevel, LogStateRef, LogValue, add_log_sink, create_log_state,
     create_memory_log_sink, get_memory_log_sink_entries,
 };
-use flight_textbidi::*;
+use flight_textbidi::contract::*;
 
 use crate::lock_text_bidi_guard_test;
 

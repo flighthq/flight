@@ -1,4 +1,6 @@
-use flight_textbidi::*;
+//! flight-compiler: target-native
+
+use flight_textbidi::contract::*;
 
 const RLI: &str = "\u{2067}";
 const PDI: &str = "\u{2069}";
@@ -69,7 +71,7 @@ mod bidi_conformance_fixtures {
         let mut levels = Vec::new();
         resolve_bidi_levels(&mut levels, kernel, text, BidiDirection::Rtl);
         let mut visual: Vec<usize> = Vec::new();
-        reorder_bidi_line(&mut visual, &levels, 0, levels.len());
+        reorder_bidi_line(&levels, 0, levels.len(), &mut visual);
         assert_eq!(visual, vec![3, 4, 2, 1, 0]);
     }
 }

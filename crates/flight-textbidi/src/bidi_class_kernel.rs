@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+//! flight-compiler: root compactBidiClassKernel explainBidiClassKernel
+//! flight-compiler: export-name COMPACT_BIDI_CLASS_KERNEL compactBidiClassKernel
+
 use std::sync::LazyLock;
 
 use flight_entity::allocate_entity;
@@ -84,7 +88,7 @@ fn get_compact_bidi_class_coverage_ranges() -> Vec<BidiCodePointRange> {
 }
 
 fn is_compact_bidi_class_table_valid() -> bool {
-    if RANGES.len() % 3 != 0 {
+    if !RANGES.len().is_multiple_of(3) {
         return false;
     }
     let mut previous_end: i64 = -1;

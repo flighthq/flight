@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only — public TypeScript bidi types are owned by @flighthq/types.
+
 use std::sync::Arc;
 
 use flight_entity::EntityRuntimeSlot;

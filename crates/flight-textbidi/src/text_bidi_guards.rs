@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Mutex, PoisonError};
 
 use crate::types::TextBidiGuard;

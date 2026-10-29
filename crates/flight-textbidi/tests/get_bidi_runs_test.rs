@@ -1,5 +1,7 @@
+//! flight-compiler: target-native
+
 use flight_entity::allocate_entity;
-use flight_textbidi::*;
+use flight_textbidi::contract::*;
 
 // Hebrew word (four strong-R letters).
 const HEBREW: &str = "\u{05E9}\u{05DC}\u{05D5}\u{05DD}";

@@ -1,6 +1,8 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex};
 
-use flight_textbidi::*;
+use flight_textbidi::contract::*;
 
 use crate::lock_text_bidi_guard_test;
 

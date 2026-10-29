@@ -1,7 +1,9 @@
+//! flight-compiler: target-native
+//! flight-compiler: root reorderBidiLine
+
 use flight_entity::{Uint8Array, throw_range_error};
 
-// flight-lint: allow(conform-params) D9: caller-owned out parameters are first; the pinned TS source still places out last
-pub fn reorder_bidi_line(out: &mut Vec<usize>, levels: &Uint8Array, start: usize, end: usize) {
+pub fn reorder_bidi_line(levels: &Uint8Array, start: usize, end: usize, out: &mut Vec<usize>) {
     if end < start {
         throw_range_error("Invalid array length");
     }
@@ -36,9 +38,7 @@ pub fn reorder_bidi_line(out: &mut Vec<usize>, levels: &Uint8Array, start: usize
                 let mut lo = k;
                 let mut hi = j - 1;
                 while lo < hi {
-                    let tmp = out[lo];
-                    out[lo] = out[hi];
-                    out[hi] = tmp;
+                    out.swap(lo, hi);
                     lo += 1;
                     hi -= 1;
                 }

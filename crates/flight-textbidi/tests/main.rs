@@ -12,13 +12,13 @@ pub(crate) fn lock_text_bidi_guard_test() -> TextBidiGuardTestLock {
     let lock = GUARD_TEST_LOCK
         .lock()
         .unwrap_or_else(PoisonError::into_inner);
-    flight_textbidi::set_text_bidi_guard(None);
+    flight_textbidi::contract::set_text_bidi_guard(None);
     return TextBidiGuardTestLock { _lock: lock };
 }
 
 impl Drop for TextBidiGuardTestLock {
     fn drop(&mut self) {
-        flight_textbidi::set_text_bidi_guard(None);
+        flight_textbidi::contract::set_text_bidi_guard(None);
     }
 }
 

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_textbidi::contract::*;
 
 mod get_bidi_class_kernel_coverage_string {

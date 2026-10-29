@@ -1,3 +1,6 @@
+//! flight-compiler: target-native
+//! flight-compiler: root getBidiRuns
+
 use crate::resolve_bidi_levels::resolve_bidi_levels;
 use crate::types::BidiClassKernel;
 use crate::types::BidiDirection;

@@ -1,3 +1,6 @@
+//! flight-compiler: target-native
+//! flight-compiler: root resolveBidiLevels
+
 use std::collections::HashMap;
 
 use crate::types::BidiClass;
@@ -153,9 +156,9 @@ fn apply_line_reset(original: &[BidiClass], level_array: &mut [i32], paragraph_l
 
 fn codepoint_at_utf16(utf16: &[u16], i: usize) -> u32 {
     let unit = utf16[i] as u32;
-    if unit >= 0xD800 && unit <= 0xDBFF && i + 1 < utf16.len() {
+    if (0xD800..=0xDBFF).contains(&unit) && i + 1 < utf16.len() {
         let low = utf16[i + 1] as u32;
-        if low >= 0xDC00 && low <= 0xDFFF {
+        if (0xDC00..=0xDFFF).contains(&low) {
             return 0x10000 + ((unit - 0xD800) << 10) + (low - 0xDC00);
         }
     }
@@ -164,8 +167,7 @@ fn codepoint_at_utf16(utf16: &[u16], i: usize) -> u32 {
 
 fn compute_paragraph_level(types: &[BidiClass], start: usize, end: usize) -> i32 {
     let mut isolate_depth: i32 = 0;
-    for i in start..end {
-        let t = types[i];
+    for &t in &types[start..end] {
         if t == BidiClass::LRI || t == BidiClass::RLI || t == BidiClass::FSI {
             isolate_depth += 1;
         } else if t == BidiClass::PDI {
@@ -332,8 +334,8 @@ fn resolve_isolating_run_sequences(
     let length = original.len();
 
     let mut kept: Vec<usize> = Vec::new();
-    for i in 0..length {
-        if working[i] != BidiClass::BN {
+    for (i, &bidi_class) in working.iter().enumerate().take(length) {
+        if bidi_class != BidiClass::BN {
             kept.push(i);
         }
     }
@@ -346,10 +348,7 @@ fn resolve_isolating_run_sequences(
     let mut k: usize = 1;
     while k <= kept.len() {
         if k == kept.len() || level_array[kept[k]] != level_array[kept[run_start]] {
-            let mut indices: Vec<usize> = Vec::new();
-            for m in run_start..k {
-                indices.push(kept[m]);
-            }
+            let indices = kept[run_start..k].to_vec();
             runs.push(LevelRun {
                 indices,
                 kept_start: run_start,
@@ -361,8 +360,8 @@ fn resolve_isolating_run_sequences(
     }
 
     let mut run_by_first: HashMap<usize, usize> = HashMap::new();
-    for r in 0..runs.len() {
-        run_by_first.insert(runs[r].indices[0], r);
+    for (r, run) in runs.iter().enumerate() {
+        run_by_first.insert(run.indices[0], r);
     }
 
     for r in 0..runs.len() {
@@ -456,8 +455,8 @@ fn resolve_paired_brackets(
     for &(open, close) in &pairs {
         let mut contains_embedding_direction = false;
         let mut contains_opposite_direction = false;
-        for i in (open + 1)..close {
-            let direction = strong_bidi_direction(types[i]);
+        for &bidi_class in &types[(open + 1)..close] {
+            let direction = strong_bidi_direction(bidi_class);
             if direction == Some(embedding_direction) {
                 contains_embedding_direction = true;
                 break;
@@ -537,16 +536,13 @@ fn resolve_sequence(
     };
 
     let len = sequence.len();
-    let mut ty: Vec<BidiClass> = vec![BidiClass::L; len];
-    for k in 0..len {
-        ty[k] = _working[sequence[k]];
-    }
+    let mut ty: Vec<BidiClass> = sequence.iter().map(|&index| _working[index]).collect();
 
     // W1: resolve NSM
     let mut prev: BidiClass = sos;
-    for k in 0..len {
-        if ty[k] == BidiClass::NSM {
-            ty[k] = if prev == BidiClass::LRI
+    for bidi_class in &mut ty {
+        if *bidi_class == BidiClass::NSM {
+            *bidi_class = if prev == BidiClass::LRI
                 || prev == BidiClass::RLI
                 || prev == BidiClass::FSI
                 || prev == BidiClass::PDI
@@ -556,24 +552,24 @@ fn resolve_sequence(
                 prev
             };
         }
-        prev = ty[k];
+        prev = *bidi_class;
     }
 
     // W2: EN after AL becomes AN
     let mut strong: BidiClass = sos;
-    for k in 0..len {
-        let c = ty[k];
+    for bidi_class in &mut ty {
+        let c = *bidi_class;
         if c == BidiClass::L || c == BidiClass::R || c == BidiClass::AL {
             strong = c;
         } else if c == BidiClass::EN && strong == BidiClass::AL {
-            ty[k] = BidiClass::AN;
+            *bidi_class = BidiClass::AN;
         }
     }
 
     // W3: AL becomes R
-    for k in 0..len {
-        if ty[k] == BidiClass::AL {
-            ty[k] = BidiClass::R;
+    for bidi_class in &mut ty {
+        if *bidi_class == BidiClass::AL {
+            *bidi_class = BidiClass::R;
         }
     }
 
@@ -603,9 +599,7 @@ fn resolve_sequence(
                 let before = if k > 0 { ty[k - 1] } else { sos };
                 let after = if j < len { ty[j] } else { eos };
                 if before == BidiClass::EN || after == BidiClass::EN {
-                    for m in k..j {
-                        ty[m] = BidiClass::EN;
-                    }
+                    ty[k..j].fill(BidiClass::EN);
                 }
                 k = j;
             } else {
@@ -615,20 +609,23 @@ fn resolve_sequence(
     }
 
     // W6: remaining ES/ET/CS becomes ON
-    for k in 0..len {
-        if ty[k] == BidiClass::ES || ty[k] == BidiClass::ET || ty[k] == BidiClass::CS {
-            ty[k] = BidiClass::ON;
+    for bidi_class in &mut ty {
+        if *bidi_class == BidiClass::ES
+            || *bidi_class == BidiClass::ET
+            || *bidi_class == BidiClass::CS
+        {
+            *bidi_class = BidiClass::ON;
         }
     }
 
     // W7: EN after L becomes L
     strong = sos;
-    for k in 0..len {
-        let c = ty[k];
+    for bidi_class in &mut ty {
+        let c = *bidi_class;
         if c == BidiClass::L || c == BidiClass::R {
             strong = c;
         } else if c == BidiClass::EN && strong == BidiClass::L {
-            ty[k] = BidiClass::L;
+            *bidi_class = BidiClass::L;
         }
     }
 
@@ -664,9 +661,7 @@ fn resolve_sequence(
                 } else {
                     embedding_dir
                 };
-                for m in k..j {
-                    ty[m] = resolved;
-                }
+                ty[k..j].fill(resolved);
                 k = j;
             } else {
                 k += 1;
