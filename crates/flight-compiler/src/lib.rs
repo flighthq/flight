@@ -198,27 +198,28 @@ fn compile_typescript_sources(
         .iter()
         .flat_map(|external| external.metadata.styles.keys().cloned())
         .collect::<std::collections::BTreeSet<_>>();
-    let mut output = typescript::emit_program(
-        &program,
+    let all_source_paths = (0..=alias_sources.len())
+        .map(|index| source_paths.get(index).map(|path| (*path).to_string()))
+        .chain(
+            visibility_sources
+                .iter()
+                .map(|visibility_source| Some(visibility_source.path.to_string())),
+        )
+        .collect::<Vec<_>>();
+    let mut output = typescript::emit_program(&typescript::EmitProgramInput {
+        program: &program,
         entity_module,
-        &alias_programs,
-        &external_alias_programs,
-        &external_nullable_program_refs,
-        &external_record_structs,
-        &dependency_export_names,
-        &external_string_unions,
-        module_identities.as_deref(),
-        &visibility_programs,
-        &visibility_identities,
-        &(0..=alias_sources.len())
-            .map(|index| source_paths.get(index).map(|path| (*path).to_string()))
-            .chain(
-                visibility_sources
-                    .iter()
-                    .map(|visibility_source| Some(visibility_source.path.to_string())),
-            )
-            .collect::<Vec<_>>(),
-    )?;
+        alias_programs: &alias_programs,
+        external_alias_programs: &external_alias_programs,
+        external_nullable_programs: &external_nullable_program_refs,
+        external_record_structs: &external_record_structs,
+        dependency_export_names: &dependency_export_names,
+        external_string_unions: &external_string_unions,
+        module_identities: module_identities.as_deref(),
+        visibility_programs: &visibility_programs,
+        visibility_identities: &visibility_identities,
+        source_paths: &all_source_paths,
+    })?;
     output =
         lower_string_union_variants(output, &program.string_unions, &program.string_union_values)?;
     output = lower_numeric_union_variants(output, &program.numeric_unions)?;

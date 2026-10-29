@@ -21,6 +21,21 @@ use safety::{
     reject_unsupported_array_like_uses,
 };
 
+pub(crate) struct EmitProgramInput<'a> {
+    pub program: &'a Program,
+    pub entity_module: Option<&'a str>,
+    pub alias_programs: &'a [Program],
+    pub external_alias_programs: &'a [(BTreeMap<String, String>, &'a str)],
+    pub external_nullable_programs: &'a [(&'a str, &'a ExternalNullableOptionProgram)],
+    pub external_record_structs: &'a [ItemStruct],
+    pub dependency_export_names: &'a [(BTreeMap<String, String>, &'a str)],
+    pub external_string_unions: &'a BTreeSet<String>,
+    pub module_identities: Option<&'a [String]>,
+    pub visibility_programs: &'a [Program],
+    pub visibility_identities: &'a [Option<String>],
+    pub source_paths: &'a [Option<String>],
+}
+
 type PreferredAliases = HashMap<String, String>;
 
 const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
@@ -12636,20 +12651,19 @@ pub(crate) fn test_cross_crate_imports(
 }
 
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules
-pub(crate) fn emit_program(
-    program: &Program,
-    entity_module: Option<&str>,
-    alias_programs: &[Program],
-    external_alias_programs: &[(BTreeMap<String, String>, &str)],
-    external_nullable_programs: &[(&str, &ExternalNullableOptionProgram)],
-    external_record_structs: &[ItemStruct],
-    dependency_export_names: &[(BTreeMap<String, String>, &str)],
-    external_string_unions: &BTreeSet<String>,
-    module_identities: Option<&[String]>,
-    visibility_programs: &[Program],
-    visibility_identities: &[Option<String>],
-    source_paths: &[Option<String>],
-) -> Result<String, CompileError> {
+pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileError> {
+    let program = input.program;
+    let entity_module = input.entity_module;
+    let alias_programs = input.alias_programs;
+    let external_alias_programs = input.external_alias_programs;
+    let external_nullable_programs = input.external_nullable_programs;
+    let external_record_structs = input.external_record_structs;
+    let dependency_export_names = input.dependency_export_names;
+    let external_string_unions = input.external_string_unions;
+    let module_identities = input.module_identities;
+    let visibility_programs = input.visibility_programs;
+    let visibility_identities = input.visibility_identities;
+    let source_paths = input.source_paths;
     let programs = std::iter::once(program)
         .chain(alias_programs)
         .collect::<Vec<_>>();
