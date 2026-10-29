@@ -3,7 +3,8 @@ use flight_node::{NodeRef, get_node_local_bounds_rectangle};
 use flight_path::Path;
 
 use crate::path_compat::{
-    append_lasso_close, append_lasso_line_to, append_lasso_move_to, create_lasso_path,
+    append_lasso_close, append_lasso_line_to, append_lasso_move_to, clear_lasso_path,
+    create_lasso_path,
 };
 use crate::types::*;
 
@@ -90,8 +91,7 @@ pub fn add_lasso_selection_point_core(selection: &mut LassoSelection, x: f64, y:
 
 pub fn begin_lasso_selection_core(selection: &mut LassoSelection, start_x: f64, start_y: f64) {
     selection.state.active = true;
-    selection.state.path.commands.clear();
-    selection.state.path.data.clear();
+    clear_lasso_path(&mut selection.state.path);
     append_lasso_move_to(&mut selection.state.path, start_x, start_y);
 }
 

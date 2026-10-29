@@ -15,6 +15,11 @@ export function appendLassoMoveTo(path: Path, x: number, y: number): void {
   path.data.push(x, y);
 }
 
+export function clearLassoPath(path: Path): void {
+  path.commands.length = 0;
+  path.data.length = 0;
+}
+
 export function createLassoPath(): Path {
   return createPath('evenOdd');
 }

@@ -6,7 +6,13 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import type { Path } from '@flighthq/path/contract';
 
-import { appendLassoClose, appendLassoLineTo, appendLassoMoveTo, createLassoPath } from './pathCompat.ts';
+import {
+  appendLassoClose,
+  appendLassoLineTo,
+  appendLassoMoveTo,
+  clearLassoPath,
+  createLassoPath,
+} from './pathCompat.ts';
 import type { LassoSelectionRaw } from './types.ts';
 import { lassoSelectionStateStore } from './types.ts';
 
@@ -19,8 +25,7 @@ export function addLassoSelectionPointCore(selection: LassoSelectionRaw, x: numb
 
 export function beginLassoSelectionCore(selection: LassoSelectionRaw, startX: number, startY: number): void {
   lassoSelectionStateStore.get(selection)!.active = true;
-  lassoSelectionStateStore.get(selection)!.path.commands.length = 0;
-  lassoSelectionStateStore.get(selection)!.path.data.length = 0;
+  clearLassoPath(lassoSelectionStateStore.get(selection)!.path);
   appendLassoMoveTo(lassoSelectionStateStore.get(selection)!.path, startX, startY);
 }
 
