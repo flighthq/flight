@@ -6,21 +6,14 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll, Wake, Waker};
+use std::task::{Context, Poll, Waker};
 
 use flight_host::contract::*;
 
 type SpawnedFuture = Pin<Box<dyn Future<Output = ()> + Send>>;
 
-struct NoopWake;
-
-impl Wake for NoopWake {
-    fn wake(self: Arc<Self>) {}
-}
-
 fn drive(mut future: SpawnedFuture) {
-    let waker = Waker::from(Arc::new(NoopWake));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     loop {
         if let Poll::Ready(()) = future.as_mut().poll(&mut context) {
             return;
