@@ -12,11 +12,12 @@ use crate::typescript::{
     emit_local, emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding,
     emit_parameter, emit_type, export_name, frozen_object_name, function_expression_context,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
-    insert_vitest_rebound_struct_context, is_data_union_variant, is_string_union,
-    is_vitest_function, is_vitest_struct, lexical_pattern_context, numeric_literal_spelling,
-    option_scrutinee_is_rereadable, snake_to_lower_camel, update_vitest_local_function_context,
-    update_vitest_struct_local_context, validate_vitest_function_provenance,
-    vitest_function_path_binding_name, vitest_struct_path_binding_name, write_indent,
+    insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
+    is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_struct,
+    lexical_pattern_context, numeric_literal_spelling, option_scrutinee_is_rereadable,
+    snake_to_lower_camel, update_vitest_local_function_context, update_vitest_struct_local_context,
+    validate_vitest_function_provenance, vitest_function_path_binding_name,
+    vitest_struct_path_binding_name, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -111,11 +112,11 @@ fn collect_contract_symbols(
         }
 
         fn record_type_name(&mut self, name: String) {
-            let name = if self.context.contains(&name) {
-                format!("{name}Raw")
-            } else {
-                name
-            };
+            let name = emit_type(
+                &syn::parse_str::<syn::Type>(&name).expect("identifier is a type"),
+                self.context,
+            )
+            .expect("a named type can be emitted");
             if !self.declared.contains(&name)
                 && !self.helper_names.contains(&name)
                 && !self.standard_constants.contains(&name)
@@ -252,6 +253,7 @@ fn collect_contract_symbols(
                         .chars()
                         .next()
                         .is_some_and(|character| character.is_ascii_uppercase())
+                    && !is_lowered_cross_crate_value(&segment.ident.to_string())
                     && !matches!(
                         segment.ident.to_string().as_str(),
                         "Arc"
@@ -319,6 +321,7 @@ fn collect_contract_symbols(
                     .chars()
                     .next()
                     .is_some_and(|character| character.is_ascii_uppercase())
+                    && !is_lowered_cross_crate_type(&first.ident.to_string())
                     && !matches!(
                         first.ident.to_string().as_str(),
                         "Arc"

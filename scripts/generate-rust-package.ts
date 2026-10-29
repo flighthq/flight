@@ -288,7 +288,12 @@ function dependencySources(command: string): DependencySource[] {
       .sort()) {
       const path = join(sourceRoot, fileName);
       const rust = readFileSync(path, 'utf8');
-      if (collectRustExportNames(rust).size > 0 || hasRustConstGroup(rust) || hasRustPublicRecordDeclaration(rust)) {
+      if (
+        collectRustExportNames(rust).size > 0 ||
+        hasRustConstGroup(rust) ||
+        hasRustGenerationSemantics(rust) ||
+        hasRustPublicRecordDeclaration(rust)
+      ) {
         sources.push({ module, path });
       }
     }

@@ -1745,6 +1745,10 @@ pub fn take_last(values: &mut Vec<i32>) -> i32 {
 pub fn remove_spaces(value: &str) -> String {
     return value.replace(' ', "");
 }
+
+pub fn utf16_units_to_string(values: &[u16]) -> String {
+    return String::from_utf16_lossy(values);
+}
 "#;
 
         let output = compile_typescript(source, None).unwrap();
@@ -1758,6 +1762,10 @@ pub fn remove_spaces(value: &str) -> String {
         );
         assert!(
             output.contains("return value.replaceAll(\" \", \"\");"),
+            "{output}"
+        );
+        assert!(
+            output.contains("String.fromCharCode(...units.slice"),
             "{output}"
         );
     }
@@ -3221,7 +3229,7 @@ pub fn allocate_native_entity() -> NativeEntity {
         )
         .unwrap();
 
-        assert!(output.contains("return allocateEntity<NativeEntityRaw>();"));
+        assert!(output.contains("return allocateEntity<NativeEntity>();"));
         assert!(!output.contains("Object.assign"));
     }
 
@@ -6138,6 +6146,75 @@ mod call_decoder {
         assert_eq!(
             error.to_string(),
             "`flight-compiler: export-name` item `decode_utf8` imported from `@flighthq/codec/contract` as `decodeUTF8` collides with the local mapping `decodeUtf8Text`"
+        );
+    }
+
+    #[test]
+    fn imports_dependency_entities_as_raw_contracts_and_lowers_their_string_unions() {
+        let dependency = r#"
+//! flight-compiler: companion widget.ts
+//! flight-compiler: string-union WidgetMode
+
+use flight_entity::EntityRuntimeSlot;
+
+pub enum WidgetMode {
+    Ready,
+}
+
+pub struct Widget {
+    runtime: EntityRuntimeSlot,
+    pub mode: WidgetMode,
+}
+
+flight_entity::impl_entity!(Widget);
+"#;
+        let externals = [ExternalAliasSource {
+            source: dependency,
+            module: "@flighthq/widget/contract",
+        }];
+        let consumer = r#"
+use flight_widget::{Widget, WidgetMode};
+
+pub fn is_ready(widget: &Widget) -> bool {
+    return widget.mode == WidgetMode::Ready;
+}
+"#;
+
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
+                .unwrap(),
+            "import type { WidgetRaw } from \"@flighthq/widget/contract\";\n\nexport function isReady(widget: Readonly<WidgetRaw>): boolean {\n  return widget.mode === \"ready\";\n}\n"
+        );
+    }
+
+    #[test]
+    fn keeps_exact_dependency_entity_names_without_companion_wrappers() {
+        let dependency = r#"
+use flight_entity::EntityRuntimeSlot;
+
+pub struct Rectangle {
+    runtime: EntityRuntimeSlot,
+    pub width: f32,
+}
+
+flight_entity::impl_entity!(Rectangle);
+"#;
+        let externals = [ExternalAliasSource {
+            source: dependency,
+            module: "@flighthq/geometry/contract",
+        }];
+        let consumer = r#"
+use flight_geometry::Rectangle;
+
+pub fn rectangle_width(rectangle: &Rectangle) -> f32 {
+    return rectangle.width;
+}
+"#;
+
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
+                .unwrap(),
+            "import type { Rectangle } from \"@flighthq/geometry/contract\";\n\nexport function rectangleWidth(rectangle: Readonly<Rectangle>): number {\n  return rectangle.width;\n}\n"
         );
     }
 

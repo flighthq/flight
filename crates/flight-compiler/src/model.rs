@@ -952,6 +952,41 @@ pub(crate) fn parse_public_record_structs(source: &str) -> Result<Vec<ItemStruct
         .collect());
 }
 
+pub(crate) fn parse_entity_names(source: &str) -> Result<HashSet<String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let mut entities = HashSet::new();
+    for item in &file.items {
+        if let Item::Struct(structure) = item
+            && has_entity_runtime(structure)
+        {
+            entities.insert(structure.ident.to_string());
+        }
+        if let Item::Macro(item_macro) = item
+            && item_macro
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == "impl_entity")
+            && let Ok(entity_type) = syn::parse2::<Type>(item_macro.mac.tokens.clone())
+            && let Some(name) = type_name(&entity_type)
+        {
+            entities.insert(name);
+        }
+    }
+    return Ok(entities);
+}
+
+pub(crate) fn has_companion_metadata(source: &str) -> Result<bool, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    return Ok(file.attrs.iter().any(|attribute| {
+        doc_directive(attribute)
+            .is_some_and(|directive| directive.split_whitespace().next() == Some("companion"))
+    }));
+}
+
 fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool, CompileError> {
     let mut found = false;
     for attribute in attributes {

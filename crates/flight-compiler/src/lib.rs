@@ -120,6 +120,13 @@ fn compile_typescript_sources(
         .flatten()
         .collect::<Vec<_>>();
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
+    let external_string_unions = external_alias_sources
+        .iter()
+        .map(|external| model::parse_string_union_metadata(external.source))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flat_map(|metadata| metadata.styles.into_keys())
+        .collect::<std::collections::BTreeSet<_>>();
     let mut output = typescript::emit_program(
         &program,
         entity_module,
@@ -127,6 +134,7 @@ fn compile_typescript_sources(
         &external_alias_programs,
         &external_record_structs,
         &dependency_export_names,
+        &external_string_unions,
         module_identities.as_deref(),
         &visibility_programs,
         &visibility_identities,
@@ -149,6 +157,10 @@ fn compile_typescript_sources(
             &alias_program.string_union_values,
         )?;
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
+    }
+    for external in external_alias_sources {
+        let metadata = model::parse_string_union_metadata(external.source)?;
+        output = lower_string_union_variants(output, &metadata.styles, &metadata.values)?;
     }
     validate_const_group_bindings(&output, &program.const_groups)?;
     return Ok(output);
@@ -359,6 +371,14 @@ fn compile_vitest_with_contract_alias_sources_internal(
         &external_record_structs,
         contract_source,
     )?;
+    let external_string_unions = external_alias_sources
+        .iter()
+        .map(|external| model::parse_string_union_metadata(external.source))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flat_map(|metadata| metadata.styles.into_keys())
+        .collect::<std::collections::BTreeSet<_>>();
+    typescript::insert_string_union_context(&mut context, external_string_unions.iter());
     if program.nullable_options {
         typescript::insert_nullable_options_context(&mut context);
         typescript::insert_vitest_nullable_call_context(
@@ -430,6 +450,10 @@ fn compile_vitest_with_contract_alias_sources_internal(
         )?;
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
+    for external in external_alias_sources {
+        let metadata = model::parse_string_union_metadata(external.source)?;
+        output = lower_string_union_variants(output, &metadata.styles, &metadata.values)?;
+    }
     return Ok(output);
 }
 
@@ -442,10 +466,18 @@ fn dependency_export_names<'a>(
             if external.module.is_empty() {
                 return Err(compile_error("external alias module cannot be empty"));
             }
-            return Ok((
-                model::parse_export_name_metadata(external.source)?,
-                external.module,
-            ));
+            let mut names = model::parse_export_name_metadata(external.source)?;
+            // A dependency entity keeps its exact contract name unless its Rust owner declares a
+            // companion wrapper. Then the generated record is the `Raw` representation and the
+            // unsuffixed TypeScript name belongs to the companion class.
+            if model::has_companion_metadata(external.source)? {
+                for entity in model::parse_entity_names(external.source)? {
+                    names
+                        .entry(entity.clone())
+                        .or_insert_with(|| format!("{entity}Raw"));
+                }
+            }
+            return Ok((names, external.module));
         })
         .collect();
 }

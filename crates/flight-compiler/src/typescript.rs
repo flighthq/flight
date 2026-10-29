@@ -61,6 +61,9 @@ const CURRENT_SOURCE_MARKER: &str = "@current-source:";
 // `{field}␟{Owner}` so an access whose receiver type cannot be resolved fails closed.
 const ENTITY_RUNTIME_STATE_MARKER: &str = "@entity-runtime-state:";
 const ENTITY_RUNTIME_STATE_FIELD_MARKER: &str = "@entity-runtime-state-field:";
+// An entity declared by a target-native sibling keeps the type name that sibling owns. Generated
+// entity declarations still reserve the unsuffixed name for their wrapper and emit `NameRaw`.
+const TARGET_NATIVE_ENTITY_MARKER: &str = "@target-native-entity:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
 const RESERVED_KEY_DATA_UNION_VARIANT_MARKER: &str = "@reserved-key-data-union-variant:";
@@ -5017,6 +5020,14 @@ fn generation_context_with_types(
             &public_struct_module_bindings,
         );
         context.extend(program.entities.iter().cloned());
+        if program.source_mode == crate::SourceMode::TargetNative {
+            context.extend(
+                program
+                    .entities
+                    .iter()
+                    .map(|entity| format!("{TARGET_NATIVE_ENTITY_MARKER}{entity}")),
+            );
+        }
         context.extend(
             program
                 .frozen_objects
@@ -6727,6 +6738,14 @@ fn emit_expression_value(
             }
             if expression_is_associated_path(&call.func, "String", "new") && call.args.is_empty() {
                 return Ok("''".to_string());
+            }
+            if expression_is_associated_path(&call.func, "String", "from_utf16_lossy")
+                && call.args.len() == 1
+            {
+                let units = emit_expression(&call.args[0], entities)?;
+                return Ok(format!(
+                    "((units: Readonly<number[]>): string => {{ let value = ''; for (let index = 0; index < units.length; index += 0x8000) value += String.fromCharCode(...units.slice(index, index + 0x8000)); return value; }})({units})"
+                ));
             }
             if expression_is_associated_path(&call.func, "Vec", "new") && call.args.is_empty() {
                 return Ok("[] as never[]".to_string());
@@ -13037,7 +13056,7 @@ fn import_specifier(symbol: &CrossCrateSymbol, context: &HashSet<String>) -> Str
     return format!("{imported} as {local}");
 }
 
-fn is_lowered_cross_crate_type(name: &str) -> bool {
+pub(crate) fn is_lowered_cross_crate_type(name: &str) -> bool {
     return matches!(
         name,
         "EntityRuntimeSlot"
@@ -13054,14 +13073,15 @@ fn is_lowered_cross_crate_type(name: &str) -> bool {
     );
 }
 
-fn is_lowered_cross_crate_value(name: &str) -> bool {
+pub(crate) fn is_lowered_cross_crate_value(name: &str) -> bool {
     return matches!(
         name,
-        "allocate_entity" | "Ref" | "throw_error" | "throw_range_error"
+        "allocate_entity" | "AtomicU32" | "Ordering" | "Ref" | "throw_error" | "throw_range_error"
     );
 }
 
 struct CrossCrateUsageCollector<'a> {
+    context: &'a HashSet<String>,
     symbols: &'a BTreeMap<String, CrossCrateSymbol>,
     struct_literals_are_types: bool,
     type_names: BTreeSet<String>,
@@ -13093,6 +13113,11 @@ impl CrossCrateUsageCollector<'_> {
 impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
     fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
         if expression.qself.is_none() {
+            if let Some((owner, _)) = path_owner_and_member(&expression.path)
+                && is_string_union(self.context, &owner)
+            {
+                return;
+            }
             self.record_value_path(&expression.path);
         }
         syn::visit::visit_expr_path(self, expression);
@@ -13239,6 +13264,7 @@ fn finish_cross_crate_imports(
     BTreeMap<String, BTreeSet<String>>,
 ) {
     let CrossCrateUsageCollector {
+        context: _,
         symbols,
         mut type_names,
         value_names,
@@ -13273,6 +13299,7 @@ fn cross_crate_imports(
 ) {
     let symbols = cross_crate_symbols(&program.uses);
     let mut collector = CrossCrateUsageCollector {
+        context,
         symbols: &symbols,
         struct_literals_are_types: false,
         type_names: BTreeSet::new(),
@@ -13351,6 +13378,7 @@ pub(crate) fn test_cross_crate_imports(
     validate_test_foreign_crate_aliases(&program.uses, context)?;
     let top_level_symbols = test_cross_crate_symbols(&program.uses, context);
     let mut collector = CrossCrateUsageCollector {
+        context,
         symbols: &top_level_symbols,
         struct_literals_are_types: true,
         type_names: BTreeSet::new(),
@@ -13379,6 +13407,7 @@ pub(crate) fn test_cross_crate_imports(
         let mut symbols = top_level_symbols.clone();
         symbols.extend(test_cross_crate_symbols(&suite.uses, &suite_context));
         let mut collector = CrossCrateUsageCollector {
+            context: &suite_context,
             symbols: &symbols,
             struct_literals_are_types: true,
             type_names: BTreeSet::new(),
@@ -13415,6 +13444,7 @@ pub(crate) fn emit_program(
     external_alias_programs: &[(BTreeMap<String, String>, &str)],
     external_record_structs: &[ItemStruct],
     dependency_export_names: &[(BTreeMap<String, String>, &str)],
+    external_string_unions: &BTreeSet<String>,
     module_identities: Option<&[String]>,
     visibility_programs: &[Program],
     visibility_identities: &[Option<String>],
@@ -13457,6 +13487,7 @@ pub(crate) fn emit_program(
         None,
         false,
     )?;
+    insert_string_union_context(&mut expression_context, external_string_unions.iter());
     expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));
     reject_const_group_wildcard_imports(
         dependency_export_names,
@@ -14226,10 +14257,16 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Ref" => emit_single_generic_type(segment, entities),
-                _ if entities.contains(&name) => Ok(format!("{name}Raw")),
+                _ if entities.contains(&name) => {
+                    if entities.contains(&format!("{TARGET_NATIVE_ENTITY_MARKER}{name}")) {
+                        Ok(name)
+                    } else {
+                        Ok(format!("{name}Raw"))
+                    }
+                }
                 _ => {
                     if matches!(segment.arguments, PathArguments::None) {
-                        Ok(name)
+                        Ok(export_name(entities, &name).unwrap_or(&name).to_string())
                     } else {
                         let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
                             return Err(compile_error(format!(
@@ -14997,11 +15034,7 @@ fn expression_is_none(expression: &Expr) -> bool {
     let Expr::Path(path) = expression else {
         return false;
     };
-    return path
-        .path
-        .segments
-        .last()
-        .is_some_and(|segment| segment.ident == "None");
+    return path.path.is_ident("None");
 }
 
 pub(crate) fn expression_is_path(expression: &Expr, expected: &str) -> bool {

@@ -56,6 +56,7 @@ export { RuntimeValue, type RuntimeType } from './runtime.ts';
           exportNames: new Map<string, string>(),
           module: '@flighthq/widget/contract',
           symbols: new Map([
+            ['WidgetRaw', { hasType: true, hasValue: false, isClass: false }],
             ['Widget', { hasType: true, hasValue: true, isClass: true }],
             ['WidgetConfig', { hasType: true, hasValue: false, isClass: false }],
             ['createWidget', { hasType: false, hasValue: true, isClass: false }],
@@ -66,10 +67,10 @@ export { RuntimeValue, type RuntimeType } from './runtime.ts';
 
     expect(resolveExternalContractExports(uses, contracts)).toEqual({
       output:
-        "export { Widget, createWidget } from '@flighthq/widget/contract';\n" +
-        "export type { WidgetConfig } from '@flighthq/widget/contract';\n",
+        "export { createWidget } from '@flighthq/widget/contract';\n" +
+        "export type { WidgetConfig, WidgetRaw } from '@flighthq/widget/contract';\n",
       symbols: new Map([
-        ['Widget', { fileName: 'contract.ts', hasType: true, hasValue: true, isClass: true }],
+        ['WidgetRaw', { fileName: 'contract.ts', hasType: true, hasValue: false, isClass: false }],
         ['WidgetConfig', { fileName: 'contract.ts', hasType: true, hasValue: false, isClass: false }],
         ['createWidget', { fileName: 'contract.ts', hasType: false, hasValue: true, isClass: false }],
       ]),
@@ -84,7 +85,7 @@ describe('collectFlightDependencyCrates', () => {
     '',
     '[dependencies]',
     'flight-entity = { workspace = true }',
-    'flight-encoding = { workspace = true }',
+    'flight-encoding.workspace = true',
     'serde = "1"',
     '',
     '[dev-dependencies]',
@@ -168,9 +169,9 @@ describe('hasRustPublicRecordDeclaration', () => {
 });
 
 describe('hasRustGenerationSemantics', () => {
-  it('selects cross-module data unions without selecting target-native lowering directives', () => {
+  it('selects cross-module unions without selecting target-native surface directives', () => {
     expect(hasRustGenerationSemantics('//! flight-compiler: data-union MarkupResult=reserved-key\n')).toBe(true);
-    expect(hasRustGenerationSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(false);
+    expect(hasRustGenerationSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(true);
     expect(
       hasRustGenerationSemantics('//! flight-compiler: target-native\n//! flight-compiler: contract Value\n'),
     ).toBe(false);

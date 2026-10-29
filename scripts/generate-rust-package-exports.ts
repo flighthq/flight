@@ -78,7 +78,7 @@ export function collectFlightDependencyCrates(cargoToml: string, includeDevelopm
       continue;
     }
     if (section !== 'dependencies' && !(includeDevelopment && section === 'dev-dependencies')) continue;
-    const dependency = /^\s*(flight-[a-z0-9-]+)\s*=/.exec(line);
+    const dependency = /^\s*(flight-[a-z0-9-]+)(?:\.[A-Za-z0-9_-]+)*\s*=/.exec(line);
     if (dependency) crates.add(dependency[1]);
   }
   return [...crates].sort();
@@ -489,7 +489,7 @@ export function hasRustPublicRecordDeclaration(rust: string): boolean {
 // target-native file's own surface or lowering and deliberately stay out: native implementation
 // details must not become sibling compiler inputs merely because the file contributes exports.
 export function hasRustGenerationSemantics(rust: string): boolean {
-  return /^\/\/!\s*flight-compiler:\s*data-union\b/m.test(rust);
+  return /^\/\/!\s*flight-compiler:\s*(?:data-union|string-union(?:-value)?)\b/m.test(rust);
 }
 
 export function hasGeneratedProvenanceHeader(contents: string): boolean {
@@ -617,7 +617,13 @@ export function resolveRustExportName(
 ): string {
   const mapped = exportNames.get(rustName);
   const name = snakeToLowerCamel(rustName);
-  const candidates = mapped === undefined ? [name, `${name}Raw`] : [mapped];
+  const direct = symbols.get(name);
+  const candidates =
+    mapped === undefined && direct?.hasValue === true && symbols.has(`${name}Raw`)
+      ? [`${name}Raw`, name]
+      : mapped === undefined
+        ? [name, `${name}Raw`]
+        : [mapped];
   for (const candidate of candidates) {
     const owner = symbols.get(candidate);
     if (owner && (ownerFileName === undefined || owner.fileName === ownerFileName)) return candidate;
