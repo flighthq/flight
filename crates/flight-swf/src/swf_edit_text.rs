@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_color::pack_color;
 use flight_entity::Ref;
 use flight_text::{RichText, create_rich_text};
-use flight_text_markup::{create_text_markup_guard_state, parse_text_markup};
+use flight_text_markup::contract::{create_text_markup_guard_state, parse_text_markup};
 use flight_textformat::{TextFormat, TextFormatAlign};
 
 use crate::SwfReader;
