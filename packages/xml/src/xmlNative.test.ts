@@ -3,13 +3,22 @@ import { describe, expect, it } from 'vitest';
 import { parseXmlAttributes, parseXmlDocument } from './contract.ts';
 import {
   createXmlRecord,
+  createXmlScanner,
+  decodeXmlEntitiesNative,
+  expandXmlEntitiesNative,
   getXmlRecordValue,
+  parseXmlAttributesNative,
   parseXmlNumberNative,
+  prepareXmlDocumentNative,
   pushXmlElementContent,
   pushXmlTextContent,
   setXmlRecordValue,
   xmlIsWhitespace,
   xmlRecordIsEmpty,
+  xmlScannerFind,
+  xmlScannerLength,
+  xmlScannerStartsWith,
+  xmlScannerUnitAt,
   xmlStringFromCodePoint,
   xmlTrim,
   xmlUtf16Slice,
@@ -21,6 +30,25 @@ describe('createXmlRecord', () => {
   });
 });
 
+describe('createXmlScanner', () => {
+  it('preserves the source used by scanner operations', () => {
+    const scanner = createXmlScanner('<root/>');
+    expect(xmlScannerLength(scanner)).toBe(7);
+  });
+});
+
+describe('decodeXmlEntitiesNative', () => {
+  it('decodes named, decimal, and hexadecimal entities', () => {
+    expect(decodeXmlEntitiesNative('&lt;&#65;&#x42;')).toBe('<AB');
+  });
+});
+
+describe('expandXmlEntitiesNative', () => {
+  it('expands nested document entities', () => {
+    expect(expandXmlEntitiesNative('&outer;', { inner: 'value', outer: '&inner;' })).toBe('value');
+  });
+});
+
 describe('getXmlRecordValue', () => {
   it('distinguishes stored values from missing keys', () => {
     expect(getXmlRecordValue({ present: '' }, 'present')).toBe('');
@@ -28,10 +56,25 @@ describe('getXmlRecordValue', () => {
   });
 });
 
+describe('parseXmlAttributesNative', () => {
+  it('parses quoted attributes and decodes their values', () => {
+    expect(parseXmlAttributesNative(`first="&lt;" second='value'`)).toEqual({ first: '<', second: 'value' });
+  });
+});
+
 describe('parseXmlNumberNative', () => {
   it('uses JavaScript number parsing with an explicit invalid result', () => {
     expect(parseXmlNumberNative('12.5')).toBe(12.5);
     expect(parseXmlNumberNative('not-a-number')).toBeNull();
+  });
+});
+
+describe('prepareXmlDocumentNative', () => {
+  it('normalizes markup and collects internal entities', () => {
+    const entities = createXmlRecord();
+    const xml = '<?xml version="1.0"?><!DOCTYPE root [<!ENTITY value "ok">]><!-- note --><root/>';
+    expect(prepareXmlDocumentNative(xml, entities)).toBe('<root/>');
+    expect(entities.value).toBe('ok');
   });
 });
 
@@ -111,6 +154,34 @@ describe('xmlRecordIsEmpty', () => {
   it('detects own enumerable keys', () => {
     expect(xmlRecordIsEmpty({})).toBe(true);
     expect(xmlRecordIsEmpty({ present: '' })).toBe(false);
+  });
+});
+
+describe('xmlScannerFind', () => {
+  it('returns UTF-16 offsets and null for missing patterns', () => {
+    const scanner = createXmlScanner('a😀tail');
+    expect(xmlScannerFind(scanner, 'tail', 0)).toBe(3);
+    expect(xmlScannerFind(scanner, 'missing', 0)).toBeNull();
+  });
+});
+
+describe('xmlScannerLength', () => {
+  it('measures UTF-16 code units', () => {
+    expect(xmlScannerLength(createXmlScanner('a😀'))).toBe(3);
+  });
+});
+
+describe('xmlScannerStartsWith', () => {
+  it('matches a pattern at the requested offset', () => {
+    const scanner = createXmlScanner('<root/>');
+    expect(xmlScannerStartsWith(scanner, 1, 'root')).toBe(true);
+    expect(xmlScannerStartsWith(scanner, 2, 'root')).toBe(false);
+  });
+});
+
+describe('xmlScannerUnitAt', () => {
+  it('reads a UTF-16 code unit at the requested offset', () => {
+    expect(xmlScannerUnitAt(createXmlScanner('<root/>'), 0)).toBe('<'.charCodeAt(0));
   });
 });
 
