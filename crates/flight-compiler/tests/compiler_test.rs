@@ -342,7 +342,7 @@ pub fn call_nullable_contract() {
         assert!(transform_output.starts_with(
             r#"import { copyMatrix, createMatrix } from "@flighthq/geometry/contract";
 import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from "@flighthq/node/contract";
-import type { NodeRef, NodeRevisionState } from "@flighthq/node/contract";
+import type { NodeRef } from "@flighthq/node/contract";
 
 "#
         ));
