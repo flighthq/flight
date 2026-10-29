@@ -13,5 +13,12 @@
   "proseWrap": "never",
   "embeddedLanguageFormatting": "auto",
   "sortPackageJson": false,
-  "ignorePatterns": ["OVERVIEW.md", "agents/", "crates/", "**/.cache/**", "**/*.toml"]
+  "ignorePatterns": [
+    "OVERVIEW.md",
+    "agents/",
+    "crates/",
+    "packages/haptics/src/callableTypes.test.ts",
+    "**/.cache/**",
+    "**/*.toml"
+  ]
 }

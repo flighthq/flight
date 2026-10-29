@@ -6923,7 +6923,7 @@ pub type Callback = fn(i32, Option<i32>) -> bool;
     }
 
     #[test]
-    fn rejects_await_as_a_callable_field_parameter_name() {
+    fn accepts_await_as_a_callable_field_parameter_name() {
         let source = r#"
 //! flight-compiler: callable-field-parameters Hooks run await
 
@@ -6932,10 +6932,9 @@ pub struct Hooks {
 }
 "#;
 
-        assert_eq!(
-            compile_typescript(source, None).unwrap_err().to_string(),
-            "`flight-compiler: callable-field-parameters Hooks run` parameter name `await` is not a valid identifier"
-        );
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("run: (await: number) => number;"));
     }
 
     #[test]

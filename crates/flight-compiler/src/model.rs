@@ -1945,6 +1945,11 @@ fn is_valid_callable_parameter_name(name: &str) -> bool {
     return is_valid_callable_parameter_identifier(name) && !is_javascript_binding_reserved(name);
 }
 
+fn is_valid_callable_field_parameter_name(name: &str) -> bool {
+    return is_valid_callable_parameter_identifier(name)
+        && (name == "await" || !is_javascript_binding_reserved(name));
+}
+
 fn is_valid_callable_parameter_identifier(name: &str) -> bool {
     return !name.starts_with("r#") && syn::Ident::parse_any.parse_str(name).is_ok();
 }
@@ -2038,7 +2043,7 @@ fn parse_callable_field_parameters(
         let mut names = Vec::new();
         let mut seen = HashSet::new();
         for name in fields {
-            if !is_valid_callable_parameter_name(name) {
+            if !is_valid_callable_field_parameter_name(name) {
                 return Err(compile_error(format!(
                     "`flight-compiler: callable-field-parameters {owner} {field}` parameter name `{name}` is not a valid identifier"
                 )));
