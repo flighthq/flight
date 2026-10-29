@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use syn::ext::IdentExt;
 use syn::parse::Parser;
@@ -21,6 +21,9 @@ pub(crate) struct Program {
     pub(crate) frozen_objects: BTreeMap<String, String>,
     pub(crate) functions: Vec<ItemFn>,
     pub(crate) nullable_options: bool,
+    // Unit enums lowered to a type-only TS union of their declared integer discriminants, in
+    // declaration order (`numeric-union`).
+    pub(crate) numeric_unions: BTreeMap<String, Vec<(String, i64)>>,
     pub(crate) standard_constants: HashSet<String>,
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
@@ -155,6 +158,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "frozen-object"
             | "identity-alias"
             | "nullable-options"
+            | "numeric-union"
             | "readonly-fields"
             | "root"
             | "string-union"
@@ -201,6 +205,21 @@ fn doc_directive(attribute: &Attribute) -> Option<String> {
         .map(str::to_string);
 }
 
+fn integer_discriminant_value(expression: &syn::Expr) -> Option<i64> {
+    return match expression {
+        syn::Expr::Lit(literal) => match &literal.lit {
+            syn::Lit::Int(integer) => integer.base10_parse::<i64>().ok(),
+            _ => None,
+        },
+        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
+            integer_discriminant_value(&unary.expr).and_then(i64::checked_neg)
+        }
+        syn::Expr::Group(group) => integer_discriminant_value(&group.expr),
+        syn::Expr::Paren(paren) => integer_discriminant_value(&paren.expr),
+        _ => None,
+    };
+}
+
 fn next_directive_field(value: &str) -> Option<(&str, &str)> {
     let value = value.trim_start();
     if value.is_empty() {
@@ -224,6 +243,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
+    let numeric_union_names = parse_numeric_unions(&file.attrs)?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
     let mut enums = Vec::new();
@@ -295,6 +315,12 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     validate_callable_field_parameters(&callable_field_parameters, &structs)?;
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
+    let numeric_unions = validate_numeric_union_directives(
+        &numeric_union_names,
+        &enums,
+        &data_unions,
+        &string_unions,
+    )?;
     validate_frozen_objects(&frozen_objects, &constants)?;
     validate_export_names(
         &export_names,
@@ -316,6 +342,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         frozen_objects,
         functions,
         nullable_options,
+        numeric_unions,
         standard_constants,
         statics,
         structs,
@@ -350,6 +377,38 @@ fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool
         found = true;
     }
     return Ok(found);
+}
+
+fn parse_numeric_unions(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
+    let mut names = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("numeric-union") {
+            continue;
+        }
+        let enum_names = fields.collect::<Vec<_>>();
+        if enum_names.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: numeric-union` requires at least one enum name",
+            ));
+        }
+        for name in enum_names {
+            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+                return Err(compile_error(format!(
+                    "`flight-compiler: numeric-union` enum name `{name}` is not a valid identifier"
+                )));
+            }
+            if !names.insert(name.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: numeric-union` directive for enum `{name}`"
+                )));
+            }
+        }
+    }
+    return Ok(names);
 }
 
 fn parse_string_union_metadata_from_attributes(
@@ -1307,6 +1366,62 @@ fn validate_data_union_directives(
         }
     }
     return Ok(());
+}
+
+fn validate_numeric_union_directives(
+    numeric_union_names: &BTreeSet<String>,
+    enums: &[ItemEnum],
+    data_unions: &HashSet<String>,
+    string_unions: &BTreeMap<String, StringUnionStyle>,
+) -> Result<BTreeMap<String, Vec<(String, i64)>>, CompileError> {
+    let mut unions = BTreeMap::new();
+    for name in numeric_union_names {
+        if data_unions.contains(name) || string_unions.contains_key(name) {
+            return Err(compile_error(format!(
+                "enum `{name}` cannot combine `flight-compiler: numeric-union` with another union directive"
+            )));
+        }
+        let Some(rust_enum) = enums.iter().find(|rust_enum| rust_enum.ident == name) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: numeric-union` enum `{name}` does not exist"
+            )));
+        };
+        let mut variants = Vec::new();
+        let mut seen_discriminants = BTreeSet::new();
+        for variant in &rust_enum.variants {
+            if !matches!(variant.fields, Fields::Unit) {
+                return Err(compile_error(format!(
+                    "numeric union variant `{name}::{}` must be a unit variant",
+                    variant.ident
+                )));
+            }
+            let Some((_, discriminant)) = &variant.discriminant else {
+                return Err(compile_error(format!(
+                    "numeric union variant `{name}::{}` requires an explicit integer discriminant",
+                    variant.ident
+                )));
+            };
+            let Some(value) = integer_discriminant_value(discriminant) else {
+                return Err(compile_error(format!(
+                    "numeric union variant `{name}::{}` discriminant must be an integer literal",
+                    variant.ident
+                )));
+            };
+            if !seen_discriminants.insert(value) {
+                return Err(compile_error(format!(
+                    "numeric union `{name}` repeats discriminant `{value}`"
+                )));
+            }
+            variants.push((variant.ident.to_string(), value));
+        }
+        if variants.is_empty() {
+            return Err(compile_error(format!(
+                "numeric union `{name}` requires at least one variant"
+            )));
+        }
+        unions.insert(name.clone(), variants);
+    }
+    return Ok(unions);
 }
 
 fn validate_string_union_directives(

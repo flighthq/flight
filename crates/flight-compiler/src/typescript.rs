@@ -4425,6 +4425,7 @@ fn emit_enum(
     rust_enum: &syn::ItemEnum,
     string_union: Option<StringUnionStyle>,
     string_union_values: Option<&BTreeMap<String, String>>,
+    numeric_union: Option<&Vec<(String, i64)>>,
     data_union: bool,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
@@ -4434,6 +4435,20 @@ fn emit_enum(
     } else {
         ""
     };
+    if let Some(variants) = numeric_union {
+        let values = variants
+            .iter()
+            .map(|(_, value)| value.to_string())
+            .collect::<Vec<_>>();
+        writeln!(
+            out,
+            "{export}type {} = {};",
+            rust_enum.ident,
+            values.join(" | ")
+        )
+        .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     if data_union {
         let named = rust_enum
             .variants
@@ -8852,6 +8867,7 @@ pub(crate) fn emit_program(
             program
                 .string_union_values
                 .get(&rust_enum.ident.to_string()),
+            program.numeric_unions.get(&rust_enum.ident.to_string()),
             program.data_unions.contains(&rust_enum.ident.to_string()),
             &source_context,
         )?;

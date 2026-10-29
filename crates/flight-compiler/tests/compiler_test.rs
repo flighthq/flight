@@ -2071,6 +2071,55 @@ pub fn default_facet() -> Facet {
     }
 
     #[test]
+    fn rejects_malformed_numeric_unions() {
+        for (source, expected) in [
+            (
+                "//! flight-compiler: numeric-union\n",
+                "`flight-compiler: numeric-union` requires at least one enum name",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction Direction\npub enum Direction { Forward = 1 }\n",
+                "duplicate `flight-compiler: numeric-union` directive for enum `Direction`",
+            ),
+            (
+                "//! flight-compiler: numeric-union Missing\npub enum Direction { Forward = 1 }\n",
+                "`flight-compiler: numeric-union` enum `Missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward = 1, Backward }\n",
+                "numeric union variant `Direction::Backward` requires an explicit integer discriminant",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward(f32) }\n",
+                "unsupported enum variant `Direction::Forward`; only unit variants are portable",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward = 1 + 1 }\n",
+                "unsupported enum discriminant `Direction::Forward`; explicit discriminants must be integer literals",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward = 1, Backward = 1 }\n",
+                "numeric union `Direction` repeats discriminant `1`",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction\n//! flight-compiler: data-union Direction\npub enum Direction { Forward(f32), Backward(f32) }\n",
+                "enum `Direction` cannot combine `flight-compiler: numeric-union` with another union directive",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction\n//! flight-compiler: string-union Direction\npub enum Direction { Forward = 1 }\n",
+                "enum `Direction` cannot combine `flight-compiler: numeric-union` with another union directive",
+            ),
+            (
+                "//! flight-compiler: numeric-union Direction\npub enum Direction { Backward = -1 }\npub fn negated() -> i8 { return -Direction::Backward as i8; }\n",
+                "numeric union `Direction::Backward` cannot follow a unary or binary sign",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+    }
+
+    #[test]
     fn rejects_malformed_string_union_styles() {
         for (source, expected) in [
             (
@@ -2136,6 +2185,74 @@ pub fn default_facet() -> Facet {
         assert!(test_output.contains("getVelocityReasonString(\"no-sample\")"));
         assert!(test_output.contains("parseVelocityReason(\"derived-zero\")"));
         assert!(!test_output.contains("VelocityReason.NoSample"));
+    }
+
+    #[test]
+    fn emits_numeric_unions_as_type_only_integer_aliases() {
+        let source = r#"
+//! flight-compiler: numeric-union Direction
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(i8)]
+pub enum Direction {
+    Forward = 1,
+    Backward = -1,
+}
+
+pub struct Marker {
+    pub direction: Direction,
+}
+
+pub fn reverse(marker: &mut Marker) {
+    marker.direction = match marker.direction {
+        Direction::Forward => Direction::Backward,
+        Direction::Backward => Direction::Forward,
+    };
+}
+
+pub fn is_forward(marker: &Marker) -> bool {
+    return marker.direction == Direction::Forward;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export type Direction = 1 | -1;"));
+        assert!(!output.contains("enum Direction"));
+        assert!(!output.contains("Direction.Forward"));
+        assert!(!output.contains("Direction.Backward"));
+        assert!(output.contains("case 1:"));
+        assert!(output.contains("case -1:"));
+        assert!(output.contains("return marker.direction === 1;"));
+    }
+
+    #[test]
+    fn inherits_numeric_union_discriminants_in_sibling_production_sources() {
+        let union = r#"
+//! flight-compiler: numeric-union Direction
+
+pub enum Direction {
+    Forward = 1,
+    Backward = -1,
+}
+"#;
+        let source = r#"
+use crate::Direction;
+
+pub struct Marker {
+    pub direction: Direction,
+}
+
+pub fn create_marker() -> Marker {
+    return Marker { direction: Direction::Backward };
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(source, None, &[union]).unwrap();
+
+        assert!(output.contains("direction: Direction;"));
+        assert!(output.contains("return { direction: -1 };"));
+        assert!(!output.contains("Direction.Backward"));
     }
 
     #[test]
@@ -7148,6 +7265,48 @@ mod ease_steps {
         assert!(!output.contains("  StepPosition,"));
         assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn inherits_numeric_union_discriminants_from_production_sources() {
+        let production = r#"
+//! flight-compiler: numeric-union Direction
+
+pub enum Direction {
+    Forward = 1,
+    Backward = -1,
+}
+
+pub fn reverse(direction: Direction) -> Direction {
+    return match direction {
+        Direction::Forward => Direction::Backward,
+        Direction::Backward => Direction::Forward,
+    };
+}
+"#;
+        let source = r#"
+use flight_motionpath::*;
+
+mod reverse {
+    use super::*;
+
+    #[test]
+    fn flips_the_direction() {
+        assert_eq!(reverse(Direction::Forward), Direction::Backward);
+    }
+}
+"#;
+
+        let output = compile_vitest_with_alias_sources(
+            source,
+            "@flighthq/motionpath/contract",
+            &[production],
+        )
+        .unwrap();
+
+        assert!(output.contains("expect(reverse(1)).toEqual(-1);"));
+        assert!(!output.contains("Direction.Forward"));
+        assert!(!output.contains("  Direction,"));
     }
 
     #[test]

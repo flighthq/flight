@@ -109,6 +109,7 @@ fn compile_typescript_sources(
         &program.string_union_values,
         false,
     )?;
+    output = lower_numeric_union_variants(output, &program.numeric_unions)?;
     for alias_program in &alias_programs {
         output = lower_string_union_variants(
             output,
@@ -116,6 +117,7 @@ fn compile_typescript_sources(
             &alias_program.string_union_values,
             false,
         )?;
+        output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
     return Ok(output);
 }
@@ -292,6 +294,56 @@ fn compile_vitest_with_contract_alias_sources_internal(
             &alias_program.string_union_values,
             false,
         )?;
+        output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
+    }
+    return Ok(output);
+}
+
+// Replaces each emitted `Owner.Variant` reference to a numeric union with the variant's declared
+// integer discriminant and drops the owner from value import lists: the TypeScript declaration is a
+// type-only alias, so no runtime value exists. A reference to an undeclared variant, or one whose
+// replacement would read as a different expression (adjacent to an identifier, `.`, `+` or `-`),
+// fails closed.
+fn lower_numeric_union_variants(
+    mut output: String,
+    numeric_unions: &std::collections::BTreeMap<String, Vec<(String, i64)>>,
+) -> Result<String, CompileError> {
+    for (owner, variants) in numeric_unions {
+        let prefix = format!("{owner}.");
+        let mut cursor = 0;
+        while let Some(relative_start) = output[cursor..].find(&prefix) {
+            let start = cursor + relative_start;
+            let variant_start = start + prefix.len();
+            let preceding = output[..start].chars().next_back();
+            if preceding.is_some_and(|character| {
+                character.is_ascii_alphanumeric() || character == '_' || character == '.'
+            }) {
+                cursor = variant_start;
+                continue;
+            }
+            let variant_length = output[variant_start..]
+                .chars()
+                .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')
+                .map(char::len_utf8)
+                .sum::<usize>();
+            let end = variant_start + variant_length;
+            let variant = &output[variant_start..end];
+            let Some((_, value)) = variants.iter().find(|(name, _)| name == variant) else {
+                return Err(compile_error(format!(
+                    "numeric union `{owner}` has no variant `{variant}`"
+                )));
+            };
+            let before = output[..start].trim_end().chars().next_back();
+            if *value < 0 && before.is_some_and(|character| character == '-' || character == '+') {
+                return Err(compile_error(format!(
+                    "numeric union `{owner}::{variant}` cannot follow a unary or binary sign"
+                )));
+            }
+            let literal = value.to_string();
+            output.replace_range(start..end, &literal);
+            cursor = start + literal.len();
+        }
+        output = remove_numeric_union_value_import(output, owner);
     }
     return Ok(output);
 }
@@ -378,6 +430,55 @@ fn module_identity_from_path(path: &str) -> Option<String> {
                 .all(|character| character.is_ascii_alphanumeric() || character == '_')
     });
     return valid.then(|| identity.join("::"));
+}
+
+// Removes `owner` from every value import list (the type-only alias has no runtime binding), and
+// drops an import declaration left empty. Type imports and export lists are left untouched.
+fn remove_numeric_union_value_import(output: String, owner: &str) -> String {
+    let mut lines: Vec<String> = Vec::new();
+    let mut block: Option<Vec<String>> = None;
+    for line in output.lines() {
+        if let Some(names) = block.as_mut() {
+            let trimmed = line.trim();
+            if trimmed.starts_with('}') {
+                let names = std::mem::take(names);
+                block = None;
+                if !names.is_empty() {
+                    lines.push("import {".to_string());
+                    lines.extend(names);
+                    lines.push(line.to_string());
+                }
+                continue;
+            }
+            if trimmed.trim_end_matches(',') != owner {
+                names.push(line.to_string());
+            }
+            continue;
+        }
+        if line == "import {" {
+            block = Some(Vec::new());
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("import {")
+            && let Some((list, tail)) = rest.split_once('}')
+        {
+            let names = list
+                .split(',')
+                .map(str::trim)
+                .filter(|name| !name.is_empty() && *name != owner)
+                .collect::<Vec<_>>();
+            if !names.is_empty() {
+                lines.push(format!("import {{ {} }}{tail}", names.join(", ")));
+            }
+            continue;
+        }
+        lines.push(line.to_string());
+    }
+    let mut result = lines.join("\n");
+    if output.ends_with('\n') {
+        result.push('\n');
+    }
+    return result;
 }
 
 /// Reads the source-local generation mode for a Rust module or test file.
