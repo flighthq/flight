@@ -1,45 +1,103 @@
-import { clonePath, copyPath } from './copyPath.ts';
-import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
+// Generated from crates/flight-path/tests/copy_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
+
+import {
+  PathCommand,
+  appendPathLineTo,
+  appendPathMoveTo,
+  appendPathRectangle,
+  clonePath,
+  copyPath,
+  createPath,
+} from './contract.ts';
 
 describe('clonePath', () => {
-  it('returns a new path with the same commands and data', () => {
-    const source = createPath('evenOdd');
-    appendPathRectangle(source, 0, 0, 100, 50);
-    const clone = clonePath(source);
-    expect(clone).not.toBe(source);
-    expect(clone.commands).toStrictEqual(source.commands);
-    expect(clone.data).toStrictEqual(source.data);
-    expect(clone.winding).toBe('evenOdd');
+  // Rust-only: allocates independent storage and entity identity
+  it('returns new path with same commands and data', () => {
+    let source = createPath('nonZero');
+    source.winding = 'evenOdd';
+    appendPathRectangle(source, 0.0, 0.0, 100.0, 50.0);
+    const cloned = clonePath(source);
+    expect(cloned.commands).toEqual(source.commands);
+    expect(cloned.data).toEqual(source.data);
+    expect(cloned.winding).toEqual('evenOdd');
   });
-
-  it('mutations to the clone do not affect the source', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    const clone = clonePath(source);
-    clone.commands.push(99);
-    expect(source.commands.length).toBe(1);
+  it('mutations to clone do not affect source', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    let cloned = clonePath(source);
+    cloned.commands.push(99);
+    expect(source.commands.length).toEqual(1);
   });
 });
 
 describe('copyPath', () => {
-  it('writes into out', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 1, 2);
-    appendPathLineTo(source, 3, 4);
-    const out = createPath('evenOdd');
-    copyPath(out, source);
-    expect(out.commands).toStrictEqual(source.commands);
-    expect(out.data).toStrictEqual(source.data);
-    expect(out.winding).toBe('nonZero');
+  // Rust-only: preserves destination identity and existing field storage
+  // Rust-only: supports geometry clone form for source and output
+  it('writes into required out with same contents', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 5.0, 10.0);
+    let result = createPath('nonZero');
+    copyPath(result, source);
+    expect(result.commands).toEqual(source.commands);
+    expect(result.data).toEqual(source.data);
   });
-
-  it('is a no-op when out is the same object as source', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 7, 8);
+  it('clears existing data when source is empty', () => {
+    let source = createPath('nonZero');
+    source.winding = 'evenOdd';
+    let out = createPath('nonZero');
+    appendPathRectangle(out, 10.0, 20.0, 30.0, 40.0);
+    copyPath(out, source);
+    expect(out.commands.length === 0).toBe(true);
+    expect(out.data.length === 0).toBe(true);
+    expect(out.winding).toEqual('evenOdd');
+  });
+  it('writes into out', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 1.0, 2.0);
+    appendPathLineTo(source, 3.0, 4.0);
+    let out = createPath('evenOdd');
+    copyPath(out, source);
+    expect(out.commands.length).toEqual(2);
+    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(out.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(out.data.length).toEqual(4);
+    for (let i = 0; i < 4; i += 1) {
+      expect(out.data[i]).toEqual(source.data[i]);
+    }
+    expect(out.winding).toEqual('nonZero');
+  });
+  it('writes into out with correct winding', () => {
+    let source = createPath('nonZero');
+    source.winding = 'evenOdd';
+    appendPathMoveTo(source, 1.0, 2.0);
+    appendPathLineTo(source, 3.0, 4.0);
+    let out = createPath('nonZero');
+    copyPath(out, source);
+    expect(out.commands).toEqual(source.commands);
+    expect(out.data).toEqual(source.data);
+    expect(out.winding).toEqual('evenOdd');
+  });
+  it('preserves contents when copying a snapshot', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 7.0, 8.0);
     const cmdsBefore = source.commands.slice();
     const dataBefore = source.data.slice();
-    copyPath(source, source);
-    expect(source.commands).toStrictEqual(cmdsBefore);
-    expect(source.data).toStrictEqual(dataBefore);
+    const snapshot = source;
+    copyPath(source, snapshot);
+    expect(source.commands).toEqual(cmdsBefore);
+    expect(source.data).toEqual(dataBefore);
+  });
+  it('copies into existing path', () => {
+    let source = createPath('nonZero');
+    source.winding = 'evenOdd';
+    appendPathMoveTo(source, 5.0, 6.0);
+    let out = createPath('nonZero');
+    copyPath(out, source);
+    expect(out.commands).toEqual(source.commands);
+    expect(out.data).toEqual(source.data);
+    expect(out.winding).toEqual('evenOdd');
   });
 });

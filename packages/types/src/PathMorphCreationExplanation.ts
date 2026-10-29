@@ -1,10 +1,1 @@
-import type { PathMorphCreationReason } from './PathMorphCreationReason.ts';
-
-// Detached plain-data diagnostic for createPathMorph. `contour` identifies the first incompatible
-// zero-based contour (including a closedness or traversal-orientation mismatch), or is null when the
-// issue applies to the whole path pair.
-export interface PathMorphCreationExplanation {
-  readonly contour: number | null;
-  readonly reason: PathMorphCreationReason;
-  readonly supported: boolean;
-}
+export type { PathMorphCreationExplanation } from '@flighthq/path/contract';

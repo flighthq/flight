@@ -111,7 +111,7 @@ mod create_glyph_outline_source_from_open_type_font {
             glyphs: Some(vec![empty_synthetic_glyph(), square_synthetic_glyph(100.0)]),
             ..font_options()
         }));
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         path.winding = PathWinding::EvenOdd;
         assert!((source.get_glyph_outline)(&mut path, 1));
         assert_eq!(path.commands, [1, 2, 2, 2, 7]);
@@ -126,7 +126,7 @@ mod create_glyph_outline_source_from_open_type_font {
             glyphs: Some(vec![empty_synthetic_glyph()]),
             ..font_options()
         }));
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         assert!((source.get_glyph_outline)(&mut path, 0));
         assert!(path.commands.is_empty());
     }
@@ -134,11 +134,11 @@ mod create_glyph_outline_source_from_open_type_font {
     fn returns_false_for_glyph_indices_the_font_does_not_have() {
         let source = source_from_options(None);
         assert!(!(source.get_glyph_outline)(
-            &mut create_path(flight_path::PathWinding::NonZero),
+            &mut create_path(Some(flight_path::PathWinding::NonZero)),
             99
         ));
         assert!(!(source.get_glyph_outline)(
-            &mut create_path(flight_path::PathWinding::NonZero),
+            &mut create_path(Some(flight_path::PathWinding::NonZero)),
             -1
         ));
     }
@@ -209,7 +209,7 @@ mod create_glyph_outline_source_from_open_type_font {
             ]),
             ..font_options()
         }));
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         assert!((source.get_glyph_outline)(&mut path, 1));
         assert_eq!(path.commands, [1, 6, 7]);
     }
@@ -228,8 +228,8 @@ mod create_glyph_outline_source_from_open_type_font {
             flavor: Some(SyntheticFontFlavor::OpenType),
             ..font_options()
         }));
-        let mut first = create_path(flight_path::PathWinding::NonZero);
-        let mut second = create_path(flight_path::PathWinding::NonZero);
+        let mut first = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut second = create_path(Some(flight_path::PathWinding::NonZero));
         assert!((source.get_glyph_outline)(&mut first, 0));
         assert!((source.get_glyph_outline)(&mut second, 1));
         assert_ne!(first.data, second.data);
@@ -251,7 +251,7 @@ mod create_glyph_outline_source_from_open_type_font {
             None,
         )
         .unwrap();
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         assert!((source.get_glyph_outline)(&mut path, 1));
         assert_eq!(
             path.data,
@@ -363,13 +363,13 @@ mod create_glyph_outline_source_from_open_type_font {
         );
         let metrics = (source.get_glyph_outline_metrics)();
         assert!(Arc::ptr_eq(&metrics, &(source.get_glyph_outline_metrics)()));
-        let mut before = create_path(flight_path::PathWinding::NonZero);
+        let mut before = create_path(Some(flight_path::PathWinding::NonZero));
         assert!((source.get_glyph_outline)(&mut before, 0));
         get_array_buffer_storage(&owner.buffer).write().unwrap()
             [3 + coordinate..3 + coordinate + 2]
             .copy_from_slice(&10u16.to_be_bytes());
         drop(input);
-        let mut after = create_path(flight_path::PathWinding::NonZero);
+        let mut after = create_path(Some(flight_path::PathWinding::NonZero));
         assert!((source.get_glyph_outline)(&mut after, 0));
         assert_eq!(before.data[0], 0.0);
         assert_eq!(after.data[0], 10.0);
@@ -638,7 +638,7 @@ mod initialize_glyph_outline_source_from_open_type_font {
         assert_eq!((out.get_glyph_outline_advance)(99), 0.0);
         codepoints.write().unwrap().insert(65, 0);
         assert_eq!((out.get_glyph_outline_index_for_code_point)(65), 0);
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         assert!((out.get_glyph_outline)(&mut path, 0));
         assert!(!path.commands.is_empty());
         ranges.write().unwrap()[1] = 0;

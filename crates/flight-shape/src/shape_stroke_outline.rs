@@ -36,7 +36,7 @@ fn flush_outline(
         *deferred = true;
         return;
     }
-    let mut outline = flight_path::contract::create_path(flight_path::PathWinding::NonZero);
+    let mut outline = flight_path::contract::create_path(Some(flight_path::PathWinding::NonZero));
     compact_stroke_path(&mut outline, &current, &current_style, None);
     if !outline.commands.is_empty() {
         regions.push(ShapeFillRegion {
@@ -92,15 +92,15 @@ pub fn get_shape_stroke_outline_regions(
                     .and_then(|token| token.as_str())
                     .unwrap_or("round");
                 style = Some(StrokeStyle {
-                    cap: stroke_cap(caps),
-                    dash: Vec::new(),
-                    dash_offset: 0.0,
-                    join: stroke_join(joints),
-                    miter_limit: number_at(commands, argument_index + 7),
-                    width: thickness,
+                    cap: Some(stroke_cap(caps)),
+                    dash: Some(Vec::new()),
+                    dash_offset: Some(0.0),
+                    join: Some(stroke_join(joints)),
+                    miter_limit: Some(number_at(commands, argument_index + 7)),
+                    width: Some(thickness),
                 });
                 centerline = Some(flight_path::contract::create_path(
-                    flight_path::PathWinding::NonZero,
+                    Some(flight_path::PathWinding::NonZero),
                 ));
             } else {
                 style = None;
@@ -109,7 +109,7 @@ pub fn get_shape_stroke_outline_regions(
         } else if is_shape_geometry_command(name) {
             if let Some(path) = centerline.as_mut() {
                 if path.commands.is_empty() && name != "moveTo" {
-                    path.commands.push(PathCommand::MoveTo as u8);
+                    path.commands.push(PathCommand::MOVE_TO as u8);
                     path.data.push(pen_x);
                     path.data.push(pen_y);
                 }
@@ -148,11 +148,11 @@ fn is_centerline_closed(path: &Path) -> bool {
     let mut segments = 0;
     for command in &path.commands {
         let verb = *command;
-        if verb == PathCommand::Close as u8 {
+        if verb == PathCommand::CLOSE as u8 {
             return true;
         }
         let operand_count = get_path_command_operand_count(verb);
-        if verb == PathCommand::MoveTo as u8 || verb == PathCommand::WideMoveTo as u8 {
+        if verb == PathCommand::MOVE_TO as u8 || verb == PathCommand::WIDE_MOVE_TO as u8 {
             if segments >= 2
                 && (last_x - subpath_start_x).abs() < CLOSE_EPSILON
                 && (last_y - subpath_start_y).abs() < CLOSE_EPSILON

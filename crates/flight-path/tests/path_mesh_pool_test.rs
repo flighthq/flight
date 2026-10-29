@@ -1,12 +1,14 @@
+//! flight-compiler: rust-only — exercises the explicit Rust pool / boxed typed-array API; TypeScript keeps its target-native module and tests
 use flight_path::contract::*;
 
 mod acquire_path_mesh {
     use super::*;
 
     #[test]
+    /// flight-compiler: rust-only — JavaScript arrays expose no allocation identity to compare.
     fn pool_reuses_a_released_mesh_object_identity() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         append_path_line_to(&mut path, 5.0, 10.0);
@@ -23,7 +25,7 @@ mod acquire_path_mesh {
     #[test]
     fn returns_mesh_for_empty_path() {
         let mut pool = create_path_mesh_pool();
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         let mesh = acquire_path_mesh(&mut pool, &path, Some(0.25));
         release_path_mesh(&mut pool, mesh);
     }
@@ -31,7 +33,7 @@ mod acquire_path_mesh {
     #[test]
     fn returns_mesh_with_triangles_for_non_degenerate_path() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 10.0, 10.0);
         let mesh = acquire_path_mesh(&mut pool, &path, Some(0.25));
         assert!(mesh.indices.len() > 0);
@@ -42,7 +44,7 @@ mod acquire_path_mesh {
     #[test]
     fn returns_consistent_tessellation_regardless_of_pooling() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 20.0, 20.0);
         let fresh = acquire_path_mesh(&mut pool, &path, Some(0.25));
         let fresh_indices = fresh.indices.clone();
@@ -55,7 +57,7 @@ mod acquire_path_mesh {
     #[test]
     fn tessellates_path_into_acquired_mesh() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 100.0);
         let mesh = acquire_path_mesh(&mut pool, &path, Some(0.25));
         assert!(!mesh.vertices.is_empty());
@@ -69,7 +71,7 @@ mod acquire_path_mesh_typed {
     #[test]
     fn returns_a_path_mesh_typed_with_float32_and_uint32_arrays() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 5.0, 5.0);
         let mesh = acquire_path_mesh_typed(&mut pool, &path, None);
         let _vertices: &[f32] = &mesh.vertices;
@@ -80,7 +82,7 @@ mod acquire_path_mesh_typed {
     #[test]
     fn returns_non_empty_typed_arrays_for_a_rectangle() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
         let mesh = acquire_path_mesh_typed(&mut pool, &path, None);
         assert!(!mesh.vertices.is_empty());
@@ -88,9 +90,10 @@ mod acquire_path_mesh_typed {
     }
 
     #[test]
+    /// flight-compiler: rust-only — JavaScript arrays expose no allocation identity to compare.
     fn reuses_a_released_wrapper_and_its_typed_arrays() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
         let first = acquire_path_mesh_typed(&mut pool, &path, None);
         let vertices = first.vertices.as_ptr();
@@ -117,7 +120,7 @@ mod release_path_mesh {
     #[test]
     fn returns_mesh_to_pool_for_reuse() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 100.0);
         let mesh = acquire_path_mesh(&mut pool, &path, Some(0.25));
         release_path_mesh(&mut pool, mesh);
@@ -128,7 +131,7 @@ mod release_path_mesh {
     #[test]
     fn can_be_called_without_error() {
         let mut pool = create_path_mesh_pool();
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         let mesh = acquire_path_mesh(&mut pool, &path, Some(0.25));
         release_path_mesh(&mut pool, mesh);
     }
@@ -140,7 +143,7 @@ mod release_path_mesh_typed {
     #[test]
     fn can_be_called_on_an_acquired_typed_mesh_without_error() {
         let mut pool = create_path_mesh_pool();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 10.0, 10.0);
         let mesh = acquire_path_mesh_typed(&mut pool, &path, None);
         release_path_mesh_typed(&mut pool, mesh);

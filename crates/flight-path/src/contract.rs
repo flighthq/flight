@@ -21,6 +21,9 @@ pub use super::get_path_point_at_distance::*;
 pub use super::get_path_segment_at_parameter::*;
 pub use super::get_path_signed_area::*;
 pub use super::path::*;
+// The TypeScript-only `Path`/`PathMorph` aliases; the generator derives the contract lane from this re-export.
+#[allow(unused_imports)]
+pub use super::path_compat::*;
 pub use super::path_mesh_pool::*;
 pub use super::path_morph::*;
 pub use super::path_morph_geometry::*;

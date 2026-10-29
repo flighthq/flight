@@ -1,17 +1,10 @@
-import type { Path, StrokeStyle } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/stroke_path_geometry.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
 import { flattenPath } from './flattenPath.ts';
+import type { PathRaw, StrokeCap, StrokeJoin, StrokePathTessellationReason, StrokeStyle } from './path.ts';
 
-export const StrokePathTessellationIssueNone = 0;
-export const StrokePathTessellationIssueInvalidStyle = 1;
-export const StrokePathTessellationIssueInvalidPath = 2;
-export const StrokePathTessellationIssueSelfIntersectingCenterline = 3;
-export const StrokePathTessellationIssueReversingJoin = 4;
-export const StrokePathTessellationIssueSelfIntersectingOutline = 5;
-
-type StrokePathTessellationIssue = 0 | 1 | 2 | 3 | 4 | 5;
-
-interface StrokePathPieceGeometry {
+export interface StrokePathPieceGeometry {
   closed: boolean;
   endCap: number[];
   left: number[];
@@ -19,9 +12,9 @@ interface StrokePathPieceGeometry {
   startCap: number[];
 }
 
-interface StrokePathGeometry {
-  issue: StrokePathTessellationIssue;
-  issueSubpath: number | null;
+export interface StrokePathGeometry {
+  issue: StrokePathTessellationReason;
+  issueSubpath?: number;
   pieces: StrokePathPieceGeometry[];
 }
 
@@ -38,126 +31,410 @@ interface SegmentFrame {
   ty: number;
 }
 
-// Shared stroke kernel used by both strokePath (outline emission) and tessellateStrokePath (direct
-// non-overlapping triangles). Curves flatten once here, dashes split once here, and both consumers see
-// the same offset/join/cap samples. The numeric issue code carries no diagnostic prose into core bundles;
-// explainStrokePathTessellation maps it to plain-data reasons in its separately importable module.
-export function buildStrokePathGeometry(
-  path: Readonly<Path>,
-  style: Readonly<StrokeStyle>,
-  tolerance: number,
-): StrokePathGeometry {
-  const width = style.width ?? 1;
-  const dashOffset = style.dashOffset ?? 0;
-  const miterLimit = style.miterLimit ?? 4;
-  if (
-    !Number.isFinite(width) ||
-    width <= 0 ||
-    !Number.isFinite(tolerance) ||
-    tolerance <= 0 ||
-    !Number.isFinite(dashOffset) ||
-    !Number.isFinite(miterLimit) ||
-    miterLimit < 0
-  ) {
-    return { issue: StrokePathTessellationIssueInvalidStyle, issueSubpath: null, pieces: [] };
-  }
-  const dash = style.dash ?? EMPTY_DASH;
-  for (let i = 0; i < dash.length; i++) {
-    if (!Number.isFinite(dash[i]) || dash[i] < 0) {
-      return { issue: StrokePathTessellationIssueInvalidStyle, issueSubpath: null, pieces: [] };
-    }
-  }
-
-  const source = createStrokeSubpaths(path, tolerance);
-  for (let i = 0; i < source.length; i++) {
-    if (!areFinitePoints(source[i].points)) {
-      return { issue: StrokePathTessellationIssueInvalidPath, issueSubpath: source[i].sourceIndex, pieces: [] };
-    }
-  }
-  const centerlineIntersection = findCenterlineIntersection(source);
-  let issue: StrokePathTessellationIssue =
-    centerlineIntersection === null
-      ? StrokePathTessellationIssueNone
-      : StrokePathTessellationIssueSelfIntersectingCenterline;
-  let issueSubpath = centerlineIntersection;
-
-  const pieces: StrokePathPieceGeometry[] = [];
-  const halfWidth = width / 2;
-  const cap = style.cap ?? 'butt';
-  const join = style.join ?? 'miter';
-  for (let i = 0; i < source.length; i++) {
-    const subpath = source[i];
-    const spans = dash.length > 0 ? applyDash(subpath, dash, dashOffset) : [subpath];
-    for (let j = 0; j < spans.length; j++) {
-      const built = buildStrokePiece(spans[j], halfWidth, join, cap, miterLimit, tolerance);
-      if (built.piece !== null) {
-        pieces.push(built.piece);
-        if (issue === StrokePathTessellationIssueNone && hasInvalidOutline(built.piece)) {
-          issue = StrokePathTessellationIssueSelfIntersectingOutline;
-          issueSubpath = subpath.sourceIndex;
-        }
-      }
-      if (issue === StrokePathTessellationIssueNone && built.issue !== StrokePathTessellationIssueNone) {
-        issue = built.issue;
-        issueSubpath = subpath.sourceIndex;
-      }
-    }
-  }
-
-  return { issue, issueSubpath, pieces };
+interface BuildResult {
+  issue: StrokePathTessellationReason;
+  piece?: StrokePathPieceGeometry;
 }
 
-function createStrokeSubpaths(path: Readonly<Path>, tolerance: number): StrokeSubpath[] {
+/**
+ * Numeric stroke tessellation issue codes, in the order of the matching reason enum (TS `StrokePathTessellationIssueNone`…).
+ */
+export const StrokePathTessellationIssueNone: number = 0;
+
+export const StrokePathTessellationIssueInvalidStyle: number = 1;
+
+export const StrokePathTessellationIssueInvalidPath: number = 2;
+
+export const StrokePathTessellationIssueSelfIntersectingCenterline: number = 3;
+
+export const StrokePathTessellationIssueReversingJoin: number = 4;
+
+export const StrokePathTessellationIssueSelfIntersectingOutline: number = 5;
+
+const GEOMETRY_EPSILON: number = 1e-8;
+
+function createArcInteriorPoints(
+  cx: number,
+  cy: number,
+  radius: number,
+  startAngle: number,
+  sweep: number,
+  tolerance: number,
+): number[] {
+  const points = createArcPoints(cx, cy, radius, startAngle, sweep, tolerance);
+  if (points.length <= 4) {
+    return [] as never[];
+  }
+  return [...points.slice(2, points.length - 2)];
+}
+
+function createArcPoints(
+  cx: number,
+  cy: number,
+  radius: number,
+  startAngle: number,
+  sweep: number,
+  tolerance: number,
+): number[] {
+  const ratio = Math.min(Math.max(1.0 - tolerance / radius, -1.0), 1.0);
+  const maxStep = Math.max(Math.PI / 32.0, 2.0 * Math.acos(ratio));
+  const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxStep));
+  let points: number[] = [] as never[];
+  for (let i = 0; i <= steps; i += 1) {
+    const angle = startAngle + (sweep * i) / steps;
+    points.push(cx + Math.cos(angle) * radius);
+    points.push(cy + Math.sin(angle) * radius);
+  }
+  return points;
+}
+
+function createStrokeSubpaths(path: Readonly<PathRaw>, tolerance: number): StrokeSubpath[] {
   const contours = flattenPath(path, tolerance);
-  const result: StrokeSubpath[] = [];
-  for (let i = 0; i < contours.length; i++) {
+  let result: StrokeSubpath[] = [] as never[];
+  for (let i = 0; i < contours.length; i += 1) {
     const points = removeConsecutiveDuplicates(contours[i]);
-    if (points.length < 4) continue;
+    if (points.length < 4) {
+      continue;
+    }
     const last = points.length - 2;
     const closed =
       points.length >= 8 &&
       approximatelyEqual(points[0], points[last]) &&
       approximatelyEqual(points[1], points[last + 1]);
+    let pts = points;
     if (closed) {
-      points[last] = points[0];
-      points[last + 1] = points[1];
+      pts[last] = pts[0];
+      pts[last + 1] = pts[1];
     }
-    result.push({ closed, points, sourceIndex: i });
+    result.push({ closed: closed, points: pts, sourceIndex: i });
   }
   return result;
 }
 
-function buildStrokePiece(
-  subpath: StrokeSubpath,
+function appendEndpointSection(
+  piece: StrokePathPieceGeometry,
+  px: number,
+  py: number,
+  frame: Readonly<SegmentFrame>,
   halfWidth: number,
-  join: 'bevel' | 'miter' | 'round',
-  cap: 'butt' | 'round' | 'square',
+  cap: StrokeCap,
+  start: boolean,
+  tolerance: number,
+): void {
+  const extension = cap === 'square' ? (start ? -halfWidth : halfWidth) : 0.0;
+  const cx = px + frame.tx * extension;
+  const cy = py + frame.ty * extension;
+  appendSection(
+    piece,
+    cx + frame.nx * halfWidth,
+    cy + frame.ny * halfWidth,
+    cx - frame.nx * halfWidth,
+    cy - frame.ny * halfWidth,
+  );
+  if (cap !== 'round') {
+    return;
+  }
+  if (start) {
+    piece.startCap = createArcInteriorPoints(px, py, halfWidth, Math.atan2(-frame.ny, -frame.nx), -Math.PI, tolerance);
+  } else {
+    piece.endCap = createArcInteriorPoints(px, py, halfWidth, Math.atan2(frame.ny, frame.nx), -Math.PI, tolerance);
+  }
+}
+
+function appendJoinSections(
+  piece: StrokePathPieceGeometry,
+  px: number,
+  py: number,
+  previous: Readonly<SegmentFrame>,
+  next: Readonly<SegmentFrame>,
+  halfWidth: number,
+  join: StrokeJoin,
   miterLimit: number,
   tolerance: number,
-): { issue: StrokePathTessellationIssue; piece: StrokePathPieceGeometry | null } {
-  const points = subpath.points;
-  const pointCount = points.length >> 1;
-  const segmentCount = pointCount - 1;
-  if (segmentCount < 1) return { issue: StrokePathTessellationIssueNone, piece: null };
+): StrokePathTessellationReason {
+  const turn = cross(previous.tx, previous.ty, next.tx, next.ty);
+  const direction = previous.tx * next.tx + previous.ty * next.ty;
+  if (Math.abs(turn) <= GEOMETRY_EPSILON) {
+    if (direction < 0.0) {
+      return 'reversing-join';
+    }
+    appendSection(
+      piece,
+      px + next.nx * halfWidth,
+      py + next.ny * halfWidth,
+      px - next.nx * halfWidth,
+      py - next.ny * halfWidth,
+    );
+    return 'ok';
+  }
+  const left0x = px + previous.nx * halfWidth;
+  const left0y = py + previous.ny * halfWidth;
+  const left1x = px + next.nx * halfWidth;
+  const left1y = py + next.ny * halfWidth;
+  const right0x = px - previous.nx * halfWidth;
+  const right0y = py - previous.ny * halfWidth;
+  const right1x = px - next.nx * halfWidth;
+  const right1y = py - next.ny * halfWidth;
+  const leftIntersection = intersectLines(left0x, left0y, previous.tx, previous.ty, left1x, left1y, next.tx, next.ty);
+  const rightIntersection = intersectLines(
+    right0x,
+    right0y,
+    previous.tx,
+    previous.ty,
+    right1x,
+    right1y,
+    next.tx,
+    next.ty,
+  );
+  if (leftIntersection === undefined || rightIntersection === undefined) {
+    return 'reversing-join';
+  }
+  const leftInt = leftIntersection!;
+  const rightInt = rightIntersection!;
+  const outerIntersection = turn > 0.0 ? rightInt : leftInt;
+  const outerDistance = Math.sqrt(Math.pow(outerIntersection[0] - px, 2) + Math.pow(outerIntersection[1] - py, 2));
+  if (join === 'miter' && Number.isFinite(miterLimit) && outerDistance <= halfWidth * Math.max(miterLimit, 0.0)) {
+    appendSection(piece, leftInt[0], leftInt[1], rightInt[0], rightInt[1]);
+    return 'ok';
+  }
+  const inner = turn > 0.0 ? leftInt : rightInt;
+  if (join === 'round') {
+    const outer0x = turn > 0.0 ? right0x : left0x;
+    const outer0y = turn > 0.0 ? right0y : left0y;
+    const outerStartAngle = Math.atan2(outer0y - py, outer0x - px);
+    const sweep = signedJoinSweep(previous, next, turn);
+    const outer = createArcPoints(px, py, halfWidth, outerStartAngle, sweep, tolerance);
+    let i = 0;
+    while (i < outer.length) {
+      if (turn > 0.0) {
+        appendSection(piece, inner[0], inner[1], outer[i], outer[i + 1]);
+      } else {
+        appendSection(piece, outer[i], outer[i + 1], inner[0], inner[1]);
+      }
+      i += 2;
+    }
+  } else {
+    if (turn > 0.0) {
+      appendSection(piece, inner[0], inner[1], right0x, right0y);
+      appendSection(piece, inner[0], inner[1], right1x, right1y);
+    } else {
+      appendSection(piece, left0x, left0y, inner[0], inner[1]);
+      appendSection(piece, left1x, left1y, inner[0], inner[1]);
+    }
+  }
+  return 'ok';
+}
 
-  const frames: SegmentFrame[] = [];
-  for (let i = 0; i < segmentCount; i++) {
+function appendSection(piece: StrokePathPieceGeometry, lx: number, ly: number, rx: number, ry: number): void {
+  piece.left.push(lx);
+  piece.left.push(ly);
+  piece.right.push(rx);
+  piece.right.push(ry);
+}
+
+function applyDash(subpath: Readonly<StrokeSubpath>, dash: Readonly<number[]>, dashOffset: number): StrokeSubpath[] {
+  let pattern: number[] = [...dash];
+  if (dash.length % 2 !== 0) {
+    for (let index = 0, count = dash.length; index < count; index++) {
+      pattern.push(dash[index]);
+    }
+  }
+  const total: number = pattern.reduce((sum, value) => sum + value, 0);
+  if (total <= GEOMETRY_EPSILON) {
+    return [{ closed: subpath.closed, points: subpath.points.slice(), sourceIndex: subpath.sourceIndex }];
+  }
+  const offset = ((dashOffset % total) + total) % total;
+  let patternIndex: number = 0;
+  let consumedOffset = offset;
+  for (;;) {
+    if (pattern[patternIndex] > GEOMETRY_EPSILON && consumedOffset < pattern[patternIndex]) {
+      break;
+    }
+    if (pattern[patternIndex] > GEOMETRY_EPSILON) {
+      consumedOffset -= pattern[patternIndex];
+    }
+    patternIndex = (patternIndex + 1) % pattern.length;
+  }
+  let remaining = pattern[patternIndex] - consumedOffset;
+  let on = patternIndex % 2 === 0;
+  let result: StrokeSubpath[] = [] as never[];
+  let current: number[] | undefined = undefined;
+  const points = subpath.points;
+  const segCount = Math.trunc(points.length / 2) - 1;
+  for (let segment = 0; segment < segCount; segment += 1) {
+    const x0 = points[segment * 2];
+    const y0 = points[segment * 2 + 1];
+    const x1 = points[(segment + 1) * 2];
+    const y1 = points[(segment + 1) * 2 + 1];
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    let distance: number = 0.0;
+    while (distance < length - GEOMETRY_EPSILON) {
+      while (remaining <= GEOMETRY_EPSILON) {
+        patternIndex = (patternIndex + 1) % pattern.length;
+        remaining = pattern[patternIndex];
+        on = patternIndex % 2 === 0;
+        if (!on) {
+          if (current !== undefined) {
+            const c = current;
+            current = undefined;
+            pushDash(result, c, subpath.sourceIndex);
+          }
+        }
+      }
+      const step = Math.min(remaining, length - distance);
+      const startX = x0 + (dx * distance) / length;
+      const startY = y0 + (dy * distance) / length;
+      distance += step;
+      const endX = x0 + (dx * distance) / length;
+      const endY = y0 + (dy * distance) / length;
+      if (on) {
+        if (current === undefined) {
+          current = [startX, startY];
+        }
+        current!.push(endX);
+        current!.push(endY);
+      } else {
+        if (current !== undefined) {
+          const c = current;
+          current = undefined;
+          pushDash(result, c, subpath.sourceIndex);
+        }
+      }
+      remaining -= step;
+    }
+  }
+  if (current !== undefined) {
+    const c = current;
+    pushDash(result, c, subpath.sourceIndex);
+  }
+  return result;
+}
+
+function approximatelyEqual(a: number, b: number): boolean {
+  return Math.abs(a - b) <= GEOMETRY_EPSILON;
+}
+
+function areFinitePoints(points: Readonly<number[]>): boolean {
+  for (let i = 0; i < points.length; i += 1) {
+    if (!Number.isFinite(points[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Shared stroke kernel used by both strokePath and tessellateStrokePath.
+ */
+export function buildStrokePathGeometry(
+  path: Readonly<PathRaw>,
+  style: Readonly<StrokeStyle>,
+  tolerance: number,
+): StrokePathGeometry {
+  const width = style.width ?? 1.0;
+  const dashOffset = style.dashOffset ?? 0.0;
+  const miterLimit = style.miterLimit ?? 4.0;
+  if (
+    !Number.isFinite(width) ||
+    width <= 0.0 ||
+    !Number.isFinite(tolerance) ||
+    tolerance <= 0.0 ||
+    !Number.isFinite(dashOffset) ||
+    !Number.isFinite(miterLimit) ||
+    miterLimit < 0.0
+  ) {
+    return { issue: 'invalid-style', issueSubpath: undefined, pieces: [] };
+  }
+  const dashPattern: number[] = (() => {
+    const matchValue = style.dash;
+    if (matchValue !== undefined) {
+      const pattern = matchValue;
+      return pattern;
+    } else if (matchValue === undefined) {
+      return [] as never[];
+    }
+  })();
+  const dash = dashPattern;
+  for (let i = 0; i < dash.length; i += 1) {
+    if (!Number.isFinite(dash[i]) || dash[i] < 0.0) {
+      return { issue: 'invalid-style', issueSubpath: undefined, pieces: [] };
+    }
+  }
+  const source = createStrokeSubpaths(path, tolerance);
+  for (let i = 0; i < source.length; i += 1) {
+    if (!areFinitePoints(source[i].points)) {
+      return { issue: 'invalid-path', issueSubpath: source[i].sourceIndex, pieces: [] };
+    }
+  }
+  const centerlineIntersection = findCenterlineIntersection(source);
+  let issue = centerlineIntersection === undefined ? 'ok' : 'self-intersecting-centerline';
+  let issueSubpath = centerlineIntersection;
+  let pieces: StrokePathPieceGeometry[] = [] as never[];
+  const halfWidth = width / 2.0;
+  const cap = style.cap ?? 'butt';
+  const join = style.join ?? 'miter';
+  for (let i = 0; i < source.length; i += 1) {
+    const subpath = source[i];
+    const spans =
+      dash.length !== 0
+        ? applyDash(subpath, dash, dashOffset)
+        : [{ closed: subpath.closed, points: subpath.points, sourceIndex: subpath.sourceIndex }];
+    for (let j = 0; j < spans.length; j += 1) {
+      const built = buildStrokePiece(spans[j], halfWidth, join, cap, miterLimit, tolerance);
+      if (built.piece !== undefined) {
+        const piece = built.piece;
+        if (issue === 'ok' && hasInvalidOutline(piece)) {
+          issue = 'self-intersecting-outline';
+          issueSubpath = subpath.sourceIndex;
+        }
+        pieces.push(piece);
+      }
+      if (issue === 'ok' && built.issue !== 'ok') {
+        issue = built.issue;
+        issueSubpath = subpath.sourceIndex;
+      }
+    }
+  }
+  return { issue: issue, issueSubpath: issueSubpath, pieces: pieces };
+}
+
+function buildStrokePiece(
+  subpath: Readonly<StrokeSubpath>,
+  halfWidth: number,
+  join: StrokeJoin,
+  cap: StrokeCap,
+  miterLimit: number,
+  tolerance: number,
+): BuildResult {
+  const points = subpath.points;
+  const pointCount = Math.trunc(points.length / 2);
+  const segmentCount = pointCount - 1;
+  if (segmentCount < 1) {
+    return { issue: 'ok', piece: undefined };
+  }
+  let frames: SegmentFrame[] = [] as never[];
+  for (let i = 0; i < segmentCount; i += 1) {
     const x0 = points[i * 2];
     const y0 = points[i * 2 + 1];
     const dx = points[(i + 1) * 2] - x0;
     const dy = points[(i + 1) * 2 + 1] - y0;
     const length = Math.sqrt(dx * dx + dy * dy);
-    if (length <= GEOMETRY_EPSILON) continue;
+    if (length <= GEOMETRY_EPSILON) {
+      continue;
+    }
     const tx = dx / length;
     const ty = dy / length;
-    frames.push({ nx: -ty, ny: tx, tx, ty });
+    frames.push({ nx: -ty, ny: tx, tx: tx, ty: ty });
   }
-  if (frames.length !== segmentCount) return { issue: StrokePathTessellationIssueInvalidPath, piece: null };
-
-  const piece: StrokePathPieceGeometry = { closed: subpath.closed, endCap: [], left: [], right: [], startCap: [] };
+  if (frames.length !== segmentCount) {
+    return { issue: 'invalid-path', piece: undefined };
+  }
+  let piece: StrokePathPieceGeometry = { closed: subpath.closed, endCap: [], left: [], right: [], startCap: [] };
   if (!subpath.closed) {
     appendEndpointSection(piece, points[0], points[1], frames[0], halfWidth, cap, true, tolerance);
-    for (let i = 1; i < pointCount - 1; i++) {
+    for (let i = 1; i < pointCount - 1; i += 1) {
       const issue = appendJoinSections(
         piece,
         points[i * 2],
@@ -169,7 +446,9 @@ function buildStrokePiece(
         miterLimit,
         tolerance,
       );
-      if (issue !== StrokePathTessellationIssueNone) return { issue, piece };
+      if (issue !== 'ok') {
+        return { issue: issue, piece: piece };
+      }
     }
     appendEndpointSection(
       piece,
@@ -183,7 +462,7 @@ function buildStrokePiece(
     );
   } else {
     const uniquePointCount = pointCount - 1;
-    for (let i = 0; i < uniquePointCount; i++) {
+    for (let i = 0; i < uniquePointCount; i += 1) {
       const issue = appendJoinSections(
         piece,
         points[i * 2],
@@ -195,157 +474,112 @@ function buildStrokePiece(
         miterLimit,
         tolerance,
       );
-      if (issue !== StrokePathTessellationIssueNone) return { issue, piece };
+      if (issue !== 'ok') {
+        return { issue: issue, piece: piece };
+      }
     }
   }
-  return { issue: StrokePathTessellationIssueNone, piece };
+  return { issue: 'ok', piece: piece };
 }
 
-function appendEndpointSection(
-  piece: StrokePathPieceGeometry,
-  px: number,
-  py: number,
-  frame: SegmentFrame,
-  halfWidth: number,
-  cap: 'butt' | 'round' | 'square',
-  start: boolean,
-  tolerance: number,
-): void {
-  const extension = cap === 'square' ? (start ? -halfWidth : halfWidth) : 0;
-  const cx = px + frame.tx * extension;
-  const cy = py + frame.ty * extension;
-  appendSection(
-    piece,
-    cx + frame.nx * halfWidth,
-    cy + frame.ny * halfWidth,
-    cx - frame.nx * halfWidth,
-    cy - frame.ny * halfWidth,
-  );
-  if (cap !== 'round') return;
-  if (start) {
-    piece.startCap = createArcInteriorPoints(px, py, halfWidth, Math.atan2(-frame.ny, -frame.nx), -Math.PI, tolerance);
-  } else {
-    piece.endCap = createArcInteriorPoints(px, py, halfWidth, Math.atan2(frame.ny, frame.nx), -Math.PI, tolerance);
+function cross(ax: number, ay: number, bx: number, by: number): number {
+  return ax * by - ay * bx;
+}
+
+function doPolylinesIntersect(
+  a: Readonly<number[]>,
+  aClosed: boolean,
+  b: Readonly<number[]>,
+  bClosed: boolean,
+): boolean {
+  const aCount = getPolylinePointCount(a, aClosed);
+  const bCount = getPolylinePointCount(b, bClosed);
+  const aSegments = aClosed ? aCount : aCount - 1;
+  const bSegments = bClosed ? bCount : bCount - 1;
+  for (let i = 0; i < aSegments; i += 1) {
+    const iNext = (i + 1) % aCount;
+    if (samePoint(a, i, iNext)) {
+      continue;
+    }
+    for (let j = 0; j < bSegments; j += 1) {
+      const jNext = (j + 1) % bCount;
+      if (samePoint(b, j, jNext)) {
+        continue;
+      }
+      if (segmentsIntersect(a, i, iNext, b, j, jNext)) {
+        return true;
+      }
+    }
   }
+  return false;
 }
 
-function appendJoinSections(
-  piece: StrokePathPieceGeometry,
-  px: number,
-  py: number,
-  previous: SegmentFrame,
-  next: SegmentFrame,
-  halfWidth: number,
-  join: 'bevel' | 'miter' | 'round',
-  miterLimit: number,
-  tolerance: number,
-): StrokePathTessellationIssue {
-  const turn = cross(previous.tx, previous.ty, next.tx, next.ty);
-  const direction = previous.tx * next.tx + previous.ty * next.ty;
-  if (Math.abs(turn) <= GEOMETRY_EPSILON) {
-    if (direction < 0) return StrokePathTessellationIssueReversingJoin;
-    appendSection(
-      piece,
-      px + next.nx * halfWidth,
-      py + next.ny * halfWidth,
-      px - next.nx * halfWidth,
-      py - next.ny * halfWidth,
+function findCenterlineIntersection(subpaths: Readonly<StrokeSubpath[]>): number | undefined {
+  for (let i = 0; i < subpaths.length; i += 1) {
+    if (hasPolylineSelfIntersection(subpaths[i].points, subpaths[i].closed)) {
+      return subpaths[i].sourceIndex;
+    }
+    for (let j = 0; j < i; j += 1) {
+      if (doPolylinesIntersect(subpaths[i].points, subpaths[i].closed, subpaths[j].points, subpaths[j].closed)) {
+        return subpaths[i].sourceIndex;
+      }
+    }
+  }
+  return undefined;
+}
+
+function getPolylinePointCount(points: Readonly<number[]>, closed: boolean): number {
+  const count = Math.trunc(points.length / 2);
+  if (closed && count > 1 && samePoint(points, 0, count - 1)) {
+    return count - 1;
+  }
+  return count;
+}
+
+function hasInvalidOutline(piece: Readonly<StrokePathPieceGeometry>): boolean {
+  const left = removeConsecutiveDuplicates(piece.left);
+  const right = removeConsecutiveDuplicates(piece.right);
+  if (piece.closed) {
+    return (
+      hasPolylineSelfIntersection(left, true) ||
+      hasPolylineSelfIntersection(right, true) ||
+      doPolylinesIntersect(left, true, right, true)
     );
-    return StrokePathTessellationIssueNone;
   }
-
-  const left0X = px + previous.nx * halfWidth;
-  const left0Y = py + previous.ny * halfWidth;
-  const left1X = px + next.nx * halfWidth;
-  const left1Y = py + next.ny * halfWidth;
-  const right0X = px - previous.nx * halfWidth;
-  const right0Y = py - previous.ny * halfWidth;
-  const right1X = px - next.nx * halfWidth;
-  const right1Y = py - next.ny * halfWidth;
-  const leftIntersection = intersectLines(left0X, left0Y, previous.tx, previous.ty, left1X, left1Y, next.tx, next.ty);
-  const rightIntersection = intersectLines(
-    right0X,
-    right0Y,
-    previous.tx,
-    previous.ty,
-    right1X,
-    right1Y,
-    next.tx,
-    next.ty,
-  );
-  if (leftIntersection === null || rightIntersection === null) return StrokePathTessellationIssueReversingJoin;
-
-  const outerIntersection = turn > 0 ? rightIntersection : leftIntersection;
-  const outerDistance = Math.hypot(outerIntersection[0] - px, outerIntersection[1] - py);
-  if (join === 'miter' && Number.isFinite(miterLimit) && outerDistance <= halfWidth * Math.max(0, miterLimit)) {
-    appendSection(piece, leftIntersection[0], leftIntersection[1], rightIntersection[0], rightIntersection[1]);
-    return StrokePathTessellationIssueNone;
+  let outline = left;
+  for (let index = 0, count = piece.endCap.length; index < count; index++) {
+    outline.push(piece.endCap[index]);
   }
+  const revRight = reversePoints(right);
+  for (let index = 0, count = revRight.length; index < count; index++) {
+    outline.push(revRight[index]);
+  }
+  for (let index = 0, count = piece.startCap.length; index < count; index++) {
+    outline.push(piece.startCap[index]);
+  }
+  outline = removeConsecutiveDuplicates(outline);
+  return hasPolylineSelfIntersection(outline, true);
+}
 
-  const inner = turn > 0 ? leftIntersection : rightIntersection;
-  if (join === 'round') {
-    const outer0X = turn > 0 ? right0X : left0X;
-    const outer0Y = turn > 0 ? right0Y : left0Y;
-    const outerStartAngle = Math.atan2(outer0Y - py, outer0X - px);
-    const sweep = signedJoinSweep(previous, next, turn);
-    const outer = createArcPoints(px, py, halfWidth, outerStartAngle, sweep, tolerance);
-    for (let i = 0; i < outer.length; i += 2) {
-      if (turn > 0) appendSection(piece, inner[0], inner[1], outer[i], outer[i + 1]);
-      else appendSection(piece, outer[i], outer[i + 1], inner[0], inner[1]);
+function hasPolylineSelfIntersection(points: Readonly<number[]>, closed: boolean): boolean {
+  const count = getPolylinePointCount(points, closed);
+  const segmentCount = closed ? count : count - 1;
+  for (let i = 0; i < segmentCount; i += 1) {
+    const iNext = (i + 1) % count;
+    if (samePoint(points, i, iNext)) {
+      continue;
     }
-  } else if (turn > 0) {
-    appendSection(piece, inner[0], inner[1], right0X, right0Y);
-    appendSection(piece, inner[0], inner[1], right1X, right1Y);
-  } else {
-    appendSection(piece, left0X, left0Y, inner[0], inner[1]);
-    appendSection(piece, left1X, left1Y, inner[0], inner[1]);
+    for (let j = i + 1; j < segmentCount; j += 1) {
+      const jNext = (j + 1) % count;
+      if (samePoint(points, j, jNext) || segmentsAreAdjacent(i, j, segmentCount, closed)) {
+        continue;
+      }
+      if (segmentsIntersect(points, i, iNext, points, j, jNext)) {
+        return true;
+      }
+    }
   }
-  return StrokePathTessellationIssueNone;
-}
-
-function signedJoinSweep(previous: SegmentFrame, next: SegmentFrame, turn: number): number {
-  const start = turn > 0 ? Math.atan2(-previous.ny, -previous.nx) : Math.atan2(previous.ny, previous.nx);
-  const end = turn > 0 ? Math.atan2(-next.ny, -next.nx) : Math.atan2(next.ny, next.nx);
-  let sweep = end - start;
-  if (turn > 0 && sweep < 0) sweep += Math.PI * 2;
-  if (turn < 0 && sweep > 0) sweep -= Math.PI * 2;
-  return sweep;
-}
-
-function appendSection(piece: StrokePathPieceGeometry, lx: number, ly: number, rx: number, ry: number): void {
-  piece.left.push(lx, ly);
-  piece.right.push(rx, ry);
-}
-
-function createArcInteriorPoints(
-  cx: number,
-  cy: number,
-  radius: number,
-  startAngle: number,
-  sweep: number,
-  tolerance: number,
-): number[] {
-  const points = createArcPoints(cx, cy, radius, startAngle, sweep, tolerance);
-  return points.slice(2, -2);
-}
-
-function createArcPoints(
-  cx: number,
-  cy: number,
-  radius: number,
-  startAngle: number,
-  sweep: number,
-  tolerance: number,
-): number[] {
-  const ratio = Math.max(-1, Math.min(1, 1 - tolerance / radius));
-  const maxStep = Math.max(Math.PI / 32, 2 * Math.acos(ratio));
-  const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxStep));
-  const points: number[] = [];
-  for (let i = 0; i <= steps; i++) {
-    const angle = startAngle + (sweep * i) / steps;
-    points.push(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
-  }
-  return points;
+  return false;
 }
 
 function intersectLines(
@@ -357,146 +591,76 @@ function intersectLines(
   by: number,
   bdx: number,
   bdy: number,
-): [number, number] | null {
+): readonly [number, number] | undefined {
   const denominator = cross(adx, ady, bdx, bdy);
-  if (Math.abs(denominator) <= GEOMETRY_EPSILON) return null;
+  if (Math.abs(denominator) <= GEOMETRY_EPSILON) {
+    return undefined;
+  }
   const scale = cross(bx - ax, by - ay, bdx, bdy) / denominator;
   return [ax + adx * scale, ay + ady * scale];
 }
 
-function applyDash(subpath: StrokeSubpath, dash: readonly number[], dashOffset: number): StrokeSubpath[] {
-  const pattern = dash.length % 2 === 0 ? dash : dash.concat(dash);
-  const total = pattern.reduce((sum, value) => sum + value, 0);
-  if (total <= GEOMETRY_EPSILON) return [subpath];
-
-  const offset = ((dashOffset % total) + total) % total;
-  let patternIndex = 0;
-  let consumedOffset = offset;
-  while (pattern[patternIndex] <= GEOMETRY_EPSILON || consumedOffset >= pattern[patternIndex]) {
-    if (pattern[patternIndex] > GEOMETRY_EPSILON) consumedOffset -= pattern[patternIndex];
-    patternIndex = (patternIndex + 1) % pattern.length;
-  }
-  let remaining = pattern[patternIndex] - consumedOffset;
-  let on = patternIndex % 2 === 0;
-  const result: StrokeSubpath[] = [];
-  let current: number[] | null = null;
-  const points = subpath.points;
-  for (let segment = 0; segment < (points.length >> 1) - 1; segment++) {
-    const x0 = points[segment * 2];
-    const y0 = points[segment * 2 + 1];
-    const x1 = points[(segment + 1) * 2];
-    const y1 = points[(segment + 1) * 2 + 1];
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const length = Math.hypot(dx, dy);
-    let distance = 0;
-    while (distance < length - GEOMETRY_EPSILON) {
-      while (remaining <= GEOMETRY_EPSILON) {
-        patternIndex = (patternIndex + 1) % pattern.length;
-        remaining = pattern[patternIndex];
-        on = patternIndex % 2 === 0;
-        if (!on && current !== null) {
-          pushDash(result, current, subpath.sourceIndex);
-          current = null;
-        }
-      }
-      const step = Math.min(remaining, length - distance);
-      const startX = x0 + (dx * distance) / length;
-      const startY = y0 + (dy * distance) / length;
-      distance += step;
-      const endX = x0 + (dx * distance) / length;
-      const endY = y0 + (dy * distance) / length;
-      if (on) {
-        current ??= [startX, startY];
-        current.push(endX, endY);
-      } else if (current !== null) {
-        pushDash(result, current, subpath.sourceIndex);
-        current = null;
-      }
-      remaining -= step;
-    }
-  }
-  if (current !== null) pushDash(result, current, subpath.sourceIndex);
-  return result;
+function pointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): boolean {
+  return (
+    px >= Math.min(ax, bx) - GEOMETRY_EPSILON &&
+    px <= Math.max(ax, bx) + GEOMETRY_EPSILON &&
+    py >= Math.min(ay, by) - GEOMETRY_EPSILON &&
+    py <= Math.max(ay, by) + GEOMETRY_EPSILON
+  );
 }
 
 function pushDash(result: StrokeSubpath[], points: number[], sourceIndex: number): void {
-  if (points.length >= 4) result.push({ closed: false, points, sourceIndex });
+  if (points.length >= 4) {
+    result.push({ closed: false, points: points, sourceIndex: sourceIndex });
+  }
 }
 
-function findCenterlineIntersection(subpaths: readonly StrokeSubpath[]): number | null {
-  for (let i = 0; i < subpaths.length; i++) {
-    if (hasPolylineSelfIntersection(subpaths[i].points, subpaths[i].closed)) return subpaths[i].sourceIndex;
-    for (let j = 0; j < i; j++) {
-      if (doPolylinesIntersect(subpaths[i].points, subpaths[i].closed, subpaths[j].points, subpaths[j].closed)) {
-        return subpaths[i].sourceIndex;
-      }
+function removeConsecutiveDuplicates(source: Readonly<number[]>): number[] {
+  let result: number[] = [] as never[];
+  let i = 0;
+  while (i < source.length) {
+    if (
+      result.length > 0 &&
+      approximatelyEqual(result[result.length - 2], source[i]) &&
+      approximatelyEqual(result[result.length - 1], source[i + 1])
+    ) {
+      i += 2;
+      continue;
     }
+    result.push(source[i]);
+    result.push(source[i + 1]);
+    i += 2;
   }
-  return null;
+  return result;
 }
 
-function hasInvalidOutline(piece: StrokePathPieceGeometry): boolean {
-  const left = removeConsecutiveDuplicates(piece.left);
-  const right = removeConsecutiveDuplicates(piece.right);
-  if (piece.closed) {
-    return (
-      hasPolylineSelfIntersection(left, true) ||
-      hasPolylineSelfIntersection(right, true) ||
-      doPolylinesIntersect(left, true, right, true)
-    );
+function reversePoints(points: Readonly<number[]>): number[] {
+  let result: number[] = [] as never[];
+  let i = points.length - 2;
+  while (i >= 0) {
+    result.push(points[i]);
+    result.push(points[i + 1]);
+    i -= 2;
   }
-  const outline = left.concat(piece.endCap, reversePoints(right), piece.startCap);
-  return hasPolylineSelfIntersection(removeConsecutiveDuplicates(outline), true);
+  return result;
 }
 
-function hasPolylineSelfIntersection(points: readonly number[], closed: boolean): boolean {
-  const count = getPolylinePointCount(points, closed);
-  const segmentCount = closed ? count : count - 1;
-  for (let i = 0; i < segmentCount; i++) {
-    const iNext = (i + 1) % count;
-    if (samePoint(points, i, iNext)) continue;
-    for (let j = i + 1; j < segmentCount; j++) {
-      const jNext = (j + 1) % count;
-      if (samePoint(points, j, jNext) || segmentsAreAdjacent(i, j, segmentCount, closed)) continue;
-      if (segmentsIntersect(points, i, iNext, points, j, jNext)) return true;
-    }
-  }
-  return false;
-}
-
-function doPolylinesIntersect(a: readonly number[], aClosed: boolean, b: readonly number[], bClosed: boolean): boolean {
-  const aCount = getPolylinePointCount(a, aClosed);
-  const bCount = getPolylinePointCount(b, bClosed);
-  const aSegments = aClosed ? aCount : aCount - 1;
-  const bSegments = bClosed ? bCount : bCount - 1;
-  for (let i = 0; i < aSegments; i++) {
-    const iNext = (i + 1) % aCount;
-    if (samePoint(a, i, iNext)) continue;
-    for (let j = 0; j < bSegments; j++) {
-      const jNext = (j + 1) % bCount;
-      if (samePoint(b, j, jNext)) continue;
-      if (segmentsIntersect(a, i, iNext, b, j, jNext)) return true;
-    }
-  }
-  return false;
-}
-
-function getPolylinePointCount(points: readonly number[], closed: boolean): number {
-  const count = points.length >> 1;
-  return closed && count > 1 && samePoint(points, 0, count - 1) ? count - 1 : count;
+function samePoint(points: Readonly<number[]>, a: number, b: number): boolean {
+  return approximatelyEqual(points[a * 2], points[b * 2]) && approximatelyEqual(points[a * 2 + 1], points[b * 2 + 1]);
 }
 
 function segmentsAreAdjacent(a: number, b: number, segmentCount: number, closed: boolean): boolean {
-  if (b === a + 1) return true;
+  if (b === a + 1) {
+    return true;
+  }
   return closed && a === 0 && b === segmentCount - 1;
 }
 
 function segmentsIntersect(
-  a: readonly number[],
+  a: Readonly<number[]>,
   ai: number,
   aj: number,
-  b: readonly number[],
+  b: Readonly<number[]>,
   bi: number,
   bj: number,
 ): boolean {
@@ -518,57 +682,27 @@ function segmentsIntersect(
   ) {
     return true;
   }
-  if (Math.abs(abC) <= GEOMETRY_EPSILON && pointOnSegment(cx, cy, ax, ay, bx, by)) return true;
-  if (Math.abs(abD) <= GEOMETRY_EPSILON && pointOnSegment(dx, dy, ax, ay, bx, by)) return true;
-  if (Math.abs(cdA) <= GEOMETRY_EPSILON && pointOnSegment(ax, ay, cx, cy, dx, dy)) return true;
+  if (Math.abs(abC) <= GEOMETRY_EPSILON && pointOnSegment(cx, cy, ax, ay, bx, by)) {
+    return true;
+  }
+  if (Math.abs(abD) <= GEOMETRY_EPSILON && pointOnSegment(dx, dy, ax, ay, bx, by)) {
+    return true;
+  }
+  if (Math.abs(cdA) <= GEOMETRY_EPSILON && pointOnSegment(ax, ay, cx, cy, dx, dy)) {
+    return true;
+  }
   return Math.abs(cdB) <= GEOMETRY_EPSILON && pointOnSegment(bx, by, cx, cy, dx, dy);
 }
 
-function pointOnSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): boolean {
-  return (
-    px >= Math.min(ax, bx) - GEOMETRY_EPSILON &&
-    px <= Math.max(ax, bx) + GEOMETRY_EPSILON &&
-    py >= Math.min(ay, by) - GEOMETRY_EPSILON &&
-    py <= Math.max(ay, by) + GEOMETRY_EPSILON
-  );
-}
-
-function removeConsecutiveDuplicates(source: readonly number[]): number[] {
-  const result: number[] = [];
-  for (let i = 0; i < source.length; i += 2) {
-    if (
-      result.length > 0 &&
-      approximatelyEqual(result[result.length - 2], source[i]) &&
-      approximatelyEqual(result[result.length - 1], source[i + 1])
-    )
-      continue;
-    result.push(source[i], source[i + 1]);
+function signedJoinSweep(previous: Readonly<SegmentFrame>, next: Readonly<SegmentFrame>, turn: number): number {
+  const start = turn > 0.0 ? Math.atan2(-previous.ny, -previous.nx) : Math.atan2(previous.ny, previous.nx);
+  const end = turn > 0.0 ? Math.atan2(-next.ny, -next.nx) : Math.atan2(next.ny, next.nx);
+  let sweep = end - start;
+  if (turn > 0.0 && sweep < 0.0) {
+    sweep += Math.PI * 2.0;
   }
-  return result;
+  if (turn < 0.0 && sweep > 0.0) {
+    sweep -= Math.PI * 2.0;
+  }
+  return sweep;
 }
-
-function reversePoints(points: readonly number[]): number[] {
-  const result: number[] = [];
-  for (let i = points.length - 2; i >= 0; i -= 2) result.push(points[i], points[i + 1]);
-  return result;
-}
-
-function areFinitePoints(points: readonly number[]): boolean {
-  for (let i = 0; i < points.length; i++) if (!Number.isFinite(points[i])) return false;
-  return true;
-}
-
-function samePoint(points: readonly number[], a: number, b: number): boolean {
-  return approximatelyEqual(points[a * 2], points[b * 2]) && approximatelyEqual(points[a * 2 + 1], points[b * 2 + 1]);
-}
-
-function approximatelyEqual(a: number, b: number): boolean {
-  return Math.abs(a - b) <= GEOMETRY_EPSILON;
-}
-
-function cross(ax: number, ay: number, bx: number, by: number): number {
-  return ax * by - ay * bx;
-}
-
-const EMPTY_DASH: readonly number[] = [];
-const GEOMETRY_EPSILON = 1e-8;

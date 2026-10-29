@@ -12,7 +12,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn square(x: f64, y: f64, size: f64) -> Path {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         append_path_rectangle(&mut out, x, y, size, size);
         return out;
     }
@@ -20,8 +20,8 @@ mod sugar_tests {
     #[test]
     fn kernel_offset_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(flight_path::PathWinding::NonZero);
-        let mut ob = create_path(flight_path::PathWinding::NonZero);
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.offset_path(
             &mut oa,
             &square(0.0, 0.0, 10.0),
@@ -463,8 +463,7 @@ pub fn offset_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     let point_eps_sq = get_contour_point_eps(&contours).powi(2);
 
     let mut raw_rings: Vec<Vec<f64>> = Vec::new();

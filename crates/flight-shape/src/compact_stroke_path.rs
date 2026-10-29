@@ -328,14 +328,20 @@ pub fn compact_stroke_path(
     tolerance: Option<f64>,
 ) {
     let tolerance = tolerance.unwrap_or(0.25);
-    let half_width = style.width / 2.0;
+    let half_width = style.width.unwrap_or(1.0) / 2.0;
+    let dash_offset = style.dash_offset.unwrap_or(0.0);
+    let empty_dash: Vec<f64> = Vec::new();
+    let dash_pattern = match &style.dash {
+        Some(dash) => dash,
+        None => &empty_dash,
+    };
     out.commands.clear();
     out.data.clear();
     let subpaths = decode_subpaths(path, tolerance);
-    let dash = if style.dash.is_empty() {
+    let dash = if dash_pattern.is_empty() {
         None
     } else {
-        Some(style.dash.as_slice())
+        Some(dash_pattern.as_slice())
     };
     for subpath in subpaths {
         if subpath.points.len() < 4 {
@@ -343,7 +349,7 @@ pub fn compact_stroke_path(
         }
         let segments = match dash {
             Some(pattern) => {
-                apply_dash(&subpath.points, subpath.closed, pattern, style.dash_offset)
+                apply_dash(&subpath.points, subpath.closed, pattern, dash_offset)
             }
             None => vec![DashSegment {
                 closed: subpath.closed,
@@ -358,9 +364,9 @@ pub fn compact_stroke_path(
                 &segment.points,
                 segment.closed,
                 half_width,
-                style.join,
-                style.cap,
-                style.miter_limit,
+                style.join.unwrap_or(StrokeJoin::Miter),
+                style.cap.unwrap_or(StrokeCap::Butt),
+                style.miter_limit.unwrap_or(4.0),
                 out,
                 tolerance,
             );
@@ -721,12 +727,12 @@ fn stroke_subpath(
     if left.len() < 4 {
         return;
     }
-    out.commands.push(PathCommand::MoveTo as u8);
+    out.commands.push(PathCommand::MOVE_TO as u8);
     out.data.push(left[0]);
     out.data.push(left[1]);
     let mut index = 2;
     while index < left.len() {
-        out.commands.push(PathCommand::LineTo as u8);
+        out.commands.push(PathCommand::LINE_TO as u8);
         out.data.push(left[index]);
         out.data.push(left[index + 1]);
         index += 2;
@@ -734,9 +740,9 @@ fn stroke_subpath(
     let mut index = right.len();
     while index >= 2 {
         index -= 2;
-        out.commands.push(PathCommand::LineTo as u8);
+        out.commands.push(PathCommand::LINE_TO as u8);
         out.data.push(right[index]);
         out.data.push(right[index + 1]);
     }
-    out.commands.push(PathCommand::Close as u8);
+    out.commands.push(PathCommand::CLOSE as u8);
 }

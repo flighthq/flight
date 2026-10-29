@@ -1,3 +1,8 @@
+//! flight-compiler: export-name PATH_MORPH_ISSUE_NONE PathMorphIssueNone
+//! flight-compiler: export-name PATH_MORPH_ISSUE_WINDING_MISMATCH PathMorphIssueWindingMismatch
+//! flight-compiler: export-name PATH_MORPH_ISSUE_CONTOUR_COUNT_MISMATCH PathMorphIssueContourCountMismatch
+//! flight-compiler: export-name PATH_MORPH_ISSUE_CONTOUR_CLOSEDNESS_MISMATCH PathMorphIssueContourClosednessMismatch
+//! flight-compiler: export-name PATH_MORPH_ISSUE_CONTOUR_ORIENTATION_MISMATCH PathMorphIssueContourOrientationMismatch
 use flight_entity::allocate_entity;
 
 use crate::for_each_path_segment::for_each_path_segment;
@@ -5,12 +10,19 @@ use crate::path::{
     Path, PathCommand, PathMorph, PathMorphCreationReason, PathSegment, PathWinding,
 };
 
+/// Numeric path-morph creation issue codes, in the order of the matching reason enum (TS `PathMorphIssueNone`…).
+pub const PATH_MORPH_ISSUE_NONE: u8 = 0;
+pub const PATH_MORPH_ISSUE_WINDING_MISMATCH: u8 = 1;
+pub const PATH_MORPH_ISSUE_CONTOUR_COUNT_MISMATCH: u8 = 2;
+pub const PATH_MORPH_ISSUE_CONTOUR_CLOSEDNESS_MISMATCH: u8 = 3;
+pub const PATH_MORPH_ISSUE_CONTOUR_ORIENTATION_MISMATCH: u8 = 4;
+
 #[cfg(test)]
 mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -20,7 +32,7 @@ mod sugar_tests {
     }
 
     fn other_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 1.0, 1.0);
         append_path_line_to(&mut out, 12.0, 1.0);
         append_path_quadratic_curve_to(&mut out, 15.0, 5.0, 12.0, 12.0);
@@ -149,7 +161,7 @@ fn append_cubic_contour_pair(
     start: &CubicContour,
     end: &CubicContour,
 ) {
-    commands.push(PathCommand::MoveTo as u8);
+    commands.push(PathCommand::MOVE_TO as u8);
     start_data.push(start.x);
     start_data.push(start.y);
     end_data.push(end.x);
@@ -157,7 +169,7 @@ fn append_cubic_contour_pair(
     for i in 0..start.segments.len() {
         let a = &start.segments[i];
         let b = &end.segments[i];
-        commands.push(PathCommand::CubicCurveTo as u8);
+        commands.push(PathCommand::CUBIC_CURVE_TO as u8);
         start_data.push(a.control_x1);
         start_data.push(a.control_y1);
         start_data.push(a.control_x2);
@@ -172,7 +184,7 @@ fn append_cubic_contour_pair(
         end_data.push(b.y1);
     }
     if start.closed {
-        commands.push(PathCommand::Close as u8);
+        commands.push(PathCommand::CLOSE as u8);
     }
 }
 
@@ -295,14 +307,12 @@ pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
         );
     }
 
+    let mut morph: PathMorph = allocate_entity();
+    initialize_path_morph(&mut morph, commands, end_data, start_data, start.winding);
     return PathMorphBuildResult {
         contour: None,
         issue: PathMorphCreationReason::Ok,
-        morph: Some({
-            let mut out: PathMorph = allocate_entity();
-            initialize_path_morph(&mut out, commands, end_data, start_data, start.winding);
-            out
-        }),
+        morph: Some(morph),
     };
 }
 
@@ -476,6 +486,7 @@ fn get_cubic_power_coefficients(p0: f64, p1: f64, p2: f64, p3: f64) -> [f64; 4] 
     ];
 }
 
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn normalize_cubic_contour_orientations(
     start: &[CubicContour],
     end: &mut [CubicContour],
@@ -530,7 +541,9 @@ fn point_distance(x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
 
 fn reverse_closed_cubic_contour(contour: &mut CubicContour) {
     let mut reversed: Vec<CubicSegment> = Vec::new();
-    for i in (0..contour.segments.len()).rev() {
+    let mut i = contour.segments.len();
+    while i > 0 {
+        i -= 1;
         let segment = &contour.segments[i];
         reversed.push(CubicSegment {
             control_x1: segment.control_x2,
@@ -598,9 +611,9 @@ fn subdivide_cubic_segments(
     point_y: f64,
 ) -> Vec<CubicSegment> {
     if source.len() == target_count {
-        return source
-            .iter()
-            .map(|s| CubicSegment {
+        let mut copies: Vec<CubicSegment> = Vec::new();
+        for s in source {
+            copies.push(CubicSegment {
                 control_x1: s.control_x1,
                 control_y1: s.control_y1,
                 control_x2: s.control_x2,
@@ -609,8 +622,9 @@ fn subdivide_cubic_segments(
                 y0: s.y0,
                 x1: s.x1,
                 y1: s.y1,
-            })
-            .collect();
+            });
+        }
+        return copies;
     }
     if source.is_empty() {
         let mut segments: Vec<CubicSegment> = Vec::new();

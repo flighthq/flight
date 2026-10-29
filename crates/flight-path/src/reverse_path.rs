@@ -8,7 +8,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -19,8 +19,8 @@ mod sugar_tests {
 
     #[test]
     fn path_reverse_matches_reverse_path() {
-        let mut oa0 = create_path(PathWinding::NonZero);
-        let mut ob0 = create_path(PathWinding::NonZero);
+        let mut oa0 = create_path(Some(PathWinding::NonZero));
+        let mut ob0 = create_path(Some(PathWinding::NonZero));
         let s = test_path();
         s.reverse(&mut oa0);
         reverse_path(&s, &mut ob0);
@@ -167,7 +167,7 @@ fn encode_reversed_subpath(subpath: &Subpath, out: &mut Path) {
         return;
     }
     let last = &pts[pts.len() - 1];
-    out.commands.push(PathCommand::MoveTo as u8);
+    out.commands.push(PathCommand::MOVE_TO as u8);
     out.data.push(last.x);
     out.data.push(last.y);
     let mut i = pts.len() as isize - 1;
@@ -176,19 +176,19 @@ fn encode_reversed_subpath(subpath: &Subpath, out: &mut Path) {
         let to = &pts[(i - 1) as usize];
         match from.kind {
             SubpathPointKind::Line | SubpathPointKind::Move => {
-                out.commands.push(PathCommand::LineTo as u8);
+                out.commands.push(PathCommand::LINE_TO as u8);
                 out.data.push(to.x);
                 out.data.push(to.y);
             }
             SubpathPointKind::Quad { cx, cy } => {
-                out.commands.push(PathCommand::QuadraticCurveTo as u8);
+                out.commands.push(PathCommand::QUADRATIC_CURVE_TO as u8);
                 out.data.push(cx);
                 out.data.push(cy);
                 out.data.push(to.x);
                 out.data.push(to.y);
             }
             SubpathPointKind::Cubic { c1x, c1y, c2x, c2y } => {
-                out.commands.push(PathCommand::CubicCurveTo as u8);
+                out.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
                 out.data.push(c2x);
                 out.data.push(c2y);
                 out.data.push(c1x);
@@ -200,7 +200,7 @@ fn encode_reversed_subpath(subpath: &Subpath, out: &mut Path) {
         i -= 1;
     }
     if subpath.closed {
-        out.commands.push(PathCommand::Close as u8);
+        out.commands.push(PathCommand::CLOSE as u8);
     }
 }
 

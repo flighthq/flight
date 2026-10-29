@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -41,6 +41,7 @@ mod sugar_tests {
 }
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool {
     let ax = contour[a * 2];
     let ay = contour[a * 2 + 1];
@@ -120,7 +121,9 @@ fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec
 
     let mut ring: Vec<usize> = Vec::new();
     if twice_area < 0.0 {
-        for i in (0..count).rev() {
+        let mut i = count;
+        while i > 0 {
+            i -= 1;
             ring.push(i);
         }
     } else {
@@ -141,7 +144,9 @@ fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec
                 indices.push(base + a as u32);
                 indices.push(base + b as u32);
                 indices.push(base + c as u32);
-                ring.remove(i);
+                let mut remaining_ring: Vec<usize> = ring[0..i].to_vec();
+                remaining_ring.extend_from_slice(&ring[i + 1..ring.len()]);
+                ring = remaining_ring;
                 clipped = true;
                 break;
             }
@@ -159,12 +164,12 @@ fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh {
     let tolerance = tolerance.unwrap_or(0.25);
     let mut vertices: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut vertices, &mut indices);
     }
@@ -173,12 +178,12 @@ pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh {
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f64>) {
     let tolerance = tolerance.unwrap_or(0.25);
     out.vertices.clear();
     out.indices.clear();
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut out.vertices, &mut out.indices);
     }

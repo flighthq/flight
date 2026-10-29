@@ -1,7 +1,7 @@
 use flight_path::contract::*;
 
 fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
-    let mut path = create_path(PathWinding::NonZero);
+    let mut path = create_path(Some(PathWinding::NonZero));
     path.commands = commands;
     path.data = data;
     return path;
@@ -49,7 +49,7 @@ mod for_each_path_segment {
 
     #[test]
     fn visits_nothing_for_empty_path() {
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         let mut segments: Vec<PathSegment> = Vec::new();
         for_each_path_segment(&path, &mut |segment| segments.push(segment));
         assert!(segments.is_empty());
@@ -57,7 +57,7 @@ mod for_each_path_segment {
 
     #[test]
     fn yields_move_to_and_line_to_segments_in_order() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 1.0, 2.0);
         append_path_line_to(&mut path, 3.0, 4.0);
         let mut segments: Vec<PathSegment> = Vec::new();
@@ -69,7 +69,7 @@ mod for_each_path_segment {
 
     #[test]
     fn yields_quadratic_curve_to_with_correct_coordinates() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 10.0, 20.0, 30.0, 0.0);
         let mut segments: Vec<PathSegment> = Vec::new();
@@ -87,7 +87,7 @@ mod for_each_path_segment {
 
     #[test]
     fn yields_cubic_curve_to_with_correct_coordinates() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
         let mut segments: Vec<PathSegment> = Vec::new();
@@ -107,7 +107,7 @@ mod for_each_path_segment {
 
     #[test]
     fn yields_close_segment() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         append_path_close(&mut path);
@@ -118,9 +118,12 @@ mod for_each_path_segment {
 
     #[test]
     fn normalizes_wide_move_to_to_move_to() {
-        let mut path = create_path(PathWinding::NonZero);
-        path.commands.push(PathCommand::WideMoveTo as u8);
-        path.data.extend_from_slice(&[0.0, 0.0, 5.0, 6.0]);
+        let mut path = create_path(Some(PathWinding::NonZero));
+        path.commands.push(PathCommand::WIDE_MOVE_TO as u8);
+        path.data.push(0.0);
+        path.data.push(0.0);
+        path.data.push(5.0);
+        path.data.push(6.0);
         let mut segments: Vec<PathSegment> = Vec::new();
         for_each_path_segment(&path, &mut |segment| segments.push(segment));
         assert_eq!(segments.len(), 1);
@@ -129,11 +132,17 @@ mod for_each_path_segment {
 
     #[test]
     fn normalizes_wide_line_to() {
-        let mut path = create_path(PathWinding::NonZero);
-        path.commands.push(PathCommand::WideMoveTo as u8);
-        path.data.extend_from_slice(&[0.0, 0.0, 0.0, 0.0]);
-        path.commands.push(PathCommand::WideLineTo as u8);
-        path.data.extend_from_slice(&[0.0, 0.0, 7.0, 8.0]);
+        let mut path = create_path(Some(PathWinding::NonZero));
+        path.commands.push(PathCommand::WIDE_MOVE_TO as u8);
+        path.data.push(0.0);
+        path.data.push(0.0);
+        path.data.push(0.0);
+        path.data.push(0.0);
+        path.commands.push(PathCommand::WIDE_LINE_TO as u8);
+        path.data.push(0.0);
+        path.data.push(0.0);
+        path.data.push(7.0);
+        path.data.push(8.0);
         let mut segments: Vec<PathSegment> = Vec::new();
         for_each_path_segment(&path, &mut |segment| segments.push(segment));
         assert_eq!(segments[1], PathSegment::LineTo { x: 7.0, y: 8.0 });

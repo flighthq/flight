@@ -25,7 +25,7 @@ pub fn append_lottie_dashed_shape_paths(
     };
     for path in paths {
         let path = path.read().unwrap();
-        let mut output = create_path(flight_path::PathWinding::NonZero);
+        let mut output = create_path(Some(flight_path::PathWinding::NonZero));
         output.winding = path.winding;
         dash_path(&path, dash, dash_offset, &mut output, None);
         append_shape_path(

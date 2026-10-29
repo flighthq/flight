@@ -1,4 +1,4 @@
-use flight_geometry::Vector2;
+use flight_geometry::Vector2Like;
 
 use crate::flatten_path::flatten_path;
 use crate::path::Path;
@@ -10,7 +10,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -35,16 +35,16 @@ mod sugar_tests {
 /// Finds the closest point on `path` to (px, py), writing the result into `out`.
 /// Returns the distance from (px, py) to the nearest point. Returns -1 and leaves
 /// `out` unchanged for an empty path.
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn get_path_nearest_point(
     path: &Path,
     px: f64,
     py: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
     tolerance: Option<f64>,
 ) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     let mut best_dist_sq = f64::INFINITY;
     let mut best_x: f64 = 0.0;
     let mut best_y: f64 = 0.0;
@@ -99,7 +99,7 @@ impl Path {
         &self,
         px: f64,
         py: f64,
-        out: &mut Vector2,
+        out: &mut Vector2Like,
         tolerance: Option<f64>,
     ) -> f64 {
         return get_path_nearest_point(self, px, py, out, tolerance);

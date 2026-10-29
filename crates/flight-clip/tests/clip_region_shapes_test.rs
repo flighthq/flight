@@ -35,7 +35,7 @@ mod create_clip_region_from_path {
 
     #[test]
     fn preserves_path_winding() {
-        let mut path = create_path(PathWinding::EvenOdd);
+        let mut path = create_path(Some(PathWinding::EvenOdd));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 2.0, 0.0);
         append_path_line_to(&mut path, 1.0, 2.0);
@@ -63,7 +63,7 @@ mod initialize_clip_region_from_path {
 
     #[test]
     fn initializes_existing_storage() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 2.0, 0.0);
         append_path_line_to(&mut path, 1.0, 2.0);

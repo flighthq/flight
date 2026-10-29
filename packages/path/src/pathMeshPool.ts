@@ -1,5 +1,5 @@
-import type { Path, PathMesh, PathMeshTyped } from '@flighthq/types/contract';
-
+import type { PathMesh, PathMeshTyped } from './path.ts';
+import type { Path } from './pathCompat.ts';
 import { tessellatePathInto } from './tessellatePath.ts';
 import { tessellatePathTypedInto } from './tessellatePathTyped.ts';
 

@@ -558,7 +558,7 @@ mod append_shape_path {
         let shape = shape();
         append_shape_path(
             &shape,
-            &[PathCommand::MoveTo as u8, PathCommand::LineTo as u8],
+            &[PathCommand::MOVE_TO as u8, PathCommand::LINE_TO as u8],
             &[0.0, 0.0, 100.0, 100.0],
             Some(flight_path::PathWinding::NonZero),
         );
@@ -595,7 +595,7 @@ mod append_shape_path {
         let shape = shape();
         append_shape_path(
             &shape,
-            &[PathCommand::MoveTo as u8, PathCommand::CubicCurveTo as u8],
+            &[PathCommand::MOVE_TO as u8, PathCommand::CUBIC_CURVE_TO as u8],
             &[0.0, 0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
             None,
         );
@@ -611,7 +611,7 @@ mod append_shape_path {
     fn invalidates_content_on_the_shape() {
         let shape = shape();
         let revision = get_node_local_content_revision(&*shape.read().unwrap());
-        append_shape_path(&shape, &[PathCommand::MoveTo as u8], &[10.0, 20.0], None);
+        append_shape_path(&shape, &[PathCommand::MOVE_TO as u8], &[10.0, 20.0], None);
         assert_eq!(
             get_node_local_content_revision(&*shape.read().unwrap()),
             revision + 1
@@ -624,7 +624,7 @@ mod append_shape_path {
         append_shape_begin_fill(&shape, 0x00ff00ff, Some(1.0));
         append_shape_path(
             &shape,
-            &[PathCommand::MoveTo as u8, PathCommand::LineTo as u8],
+            &[PathCommand::MOVE_TO as u8, PathCommand::LINE_TO as u8],
             &[0.0, 0.0, 100.0, 100.0],
             None,
         );
@@ -878,13 +878,13 @@ mod path_command {
 
     #[test]
     fn has_expected_numeric_values() {
-        assert_eq!(PathCommand::NoOp as u8, 0);
-        assert_eq!(PathCommand::MoveTo as u8, 1);
-        assert_eq!(PathCommand::LineTo as u8, 2);
-        assert_eq!(PathCommand::QuadraticCurveTo as u8, 3);
-        assert_eq!(PathCommand::WideMoveTo as u8, 4);
-        assert_eq!(PathCommand::WideLineTo as u8, 5);
-        assert_eq!(PathCommand::CubicCurveTo as u8, 6);
+        assert_eq!(PathCommand::NO_OP as u8, 0);
+        assert_eq!(PathCommand::MOVE_TO as u8, 1);
+        assert_eq!(PathCommand::LINE_TO as u8, 2);
+        assert_eq!(PathCommand::QUADRATIC_CURVE_TO as u8, 3);
+        assert_eq!(PathCommand::WIDE_MOVE_TO as u8, 4);
+        assert_eq!(PathCommand::WIDE_LINE_TO as u8, 5);
+        assert_eq!(PathCommand::CUBIC_CURVE_TO as u8, 6);
     }
 }
 
@@ -895,11 +895,11 @@ mod path_command_bridge {
     fn bridges_a_rectangle_path_from_canonical_path_command_constants() {
         let shape = shape();
         let cmds = [
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
+            PathCommand::MOVE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
         ];
         let data = [0.0, 0.0, 100.0, 0.0, 100.0, 50.0, 0.0, 50.0, 0.0, 0.0];
         append_shape_path(

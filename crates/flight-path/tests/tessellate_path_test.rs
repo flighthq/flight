@@ -20,7 +20,7 @@ fn mesh_area(mesh: &PathMesh) -> f64 {
 }
 
 fn polygon(points: &[f64]) -> Path {
-    let mut path = create_path(PathWinding::NonZero);
+    let mut path = create_path(Some(PathWinding::NonZero));
     append_path_move_to(&mut path, points[0], points[1]);
     let mut i = 2;
     while i < points.len() {
@@ -77,7 +77,7 @@ mod tessellate_path {
 
     #[test]
     fn returns_empty_for_empty_path() {
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         let mesh = tessellate_path(&path, Some(0.25));
         assert!(mesh.vertices.is_empty());
         assert!(mesh.indices.is_empty());
@@ -85,7 +85,7 @@ mod tessellate_path {
 
     #[test]
     fn triangulates_rectangle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 100.0);
         let mesh = tessellate_path(&path, Some(0.25));
         assert!(mesh.vertices.len() >= 8);
@@ -123,6 +123,7 @@ mod tessellate_path_into {
     }
 
     #[test]
+    /// flight-compiler: rust-only — JavaScript arrays expose no allocation identity to compare.
     fn reuses_output_vertex_and_index_storage_across_calls() {
         let path = polygon(&[0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
         let mut out = PathMesh {

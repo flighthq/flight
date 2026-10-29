@@ -5,7 +5,7 @@ use flight_path::{
 };
 
 pub fn create_lasso_path() -> Path {
-    return create_path(PathWinding::EvenOdd);
+    return create_path(Some(PathWinding::EvenOdd));
 }
 
 pub fn append_lasso_move_to(path: &mut Path, x: f64, y: f64) {

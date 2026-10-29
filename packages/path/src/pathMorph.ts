@@ -1,51 +1,46 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Path, PathMorph } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/path_morph.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-export type { PathMorph } from '@flighthq/types/contract';
-
+import type { PathMorphRaw, PathRaw } from './path.ts';
 import { buildPathMorph } from './pathMorphGeometry.ts';
 
-// Allocates a prepared interpolation between two paths. The paths may use different line, quadratic,
-// and cubic verbs and may contain different segment counts; preparation converts them to exact cubic
-// equivalents and subdivides the smaller side. Corresponding contours must have the same ordering,
-// winding, count, and open/closed topology. Closed traversal direction is normalized when doing so
-// preserves the fill; returns null when a non-zero path reverses only a subset of its contours.
-export function createPathMorph(start: Readonly<Path>, end: Readonly<Path>): PathMorph | null {
-  const morph = buildPathMorph(start, end).morph;
-  if (morph === null) return null;
-  const out = allocateEntity<PathMorph>();
-  initializePathMorph(out, morph);
-  return finishEntity(out);
+/**
+ * Allocates a prepared interpolation between two paths. Returns `undefined` when the paths
+ * are incompatible (different winding, contour count, closedness, or orientation).
+ */
+export function createPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphRaw | null {
+  const result = buildPathMorph(start, end);
+  return result.morph ?? null;
 }
 
-function initializePathMorph(out: EntityConstruction<PathMorph>, morph: Readonly<PathMorph>): void {
-  out.commands = morph.commands;
-  out.endData = morph.endData;
-  out.startData = morph.startData;
-  out.winding = morph.winding;
-}
-
-// Samples a prepared morph into `out`. Reuses the existing command and coordinate arrays, making
-// repeated calls allocation-free once they have sufficient capacity. Progress is not clamped: 0 and
-// 1 are the endpoints, while values outside that range permit deliberate easing overshoot.
-export function samplePathMorph(out: Path, morph: Readonly<PathMorph>, progress: number): void {
+/**
+ * Samples a prepared morph into `out`. Progress is not clamped: 0 and 1 are the endpoints,
+ * while values outside that range permit deliberate easing overshoot.
+ */
+export function samplePathMorph(out: PathRaw, morph: Readonly<PathMorphRaw>, progress: number): void {
   const commands = morph.commands;
-  out.commands.length = commands.length;
-  for (let i = 0; i < commands.length; i++) out.commands[i] = commands[i];
-
+  out.commands.length = 0;
+  for (let i = 0; i < commands.length; i += 1) {
+    out.commands.push(commands[i]);
+  }
   const startData = morph.startData;
   const endData = morph.endData;
-  out.data.length = startData.length;
-  if (progress === 0 || progress === 1) {
-    const endpoint = progress === 0 ? startData : endData;
-    for (let i = 0; i < endpoint.length; i++) out.data[i] = endpoint[i];
+  out.data.length = 0;
+  for (let _ = 0; _ < startData.length; _ += 1) {
+    out.data.push(0.0);
+  }
+  if (progress === 0.0 || progress === 1.0) {
+    const endpoint = progress === 0.0 ? startData : endData;
+    for (let i = 0; i < endpoint.length; i += 1) {
+      out.data[i] = endpoint[i];
+    }
     out.winding = morph.winding;
     return;
   }
-  for (let i = 0; i < startData.length; i++) {
-    const start = startData[i];
-    const end = endData[i];
-    out.data[i] = start + (end - start) * progress;
+  for (let i = 0; i < startData.length; i += 1) {
+    const s = startData[i];
+    const e = endData[i];
+    out.data[i] = s + (e - s) * progress;
   }
   out.winding = morph.winding;
 }

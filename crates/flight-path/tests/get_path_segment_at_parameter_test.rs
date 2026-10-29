@@ -76,16 +76,15 @@ mod get_path_segment_curvature_at_parameter {
 
     #[test]
     fn returns_none_for_out_of_range_segment_index() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 1.0, 0.0);
-        let result = get_path_segment_curvature_at_parameter(&path, 5, 0.5);
-        assert!(result.is_none());
+        assert!(get_path_segment_curvature_at_parameter(&path, 5, 0.5).is_none());
     }
 
     #[test]
     fn returns_zero_for_a_line_segment() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         let result = get_path_segment_curvature_at_parameter(&path, 0, 0.5);
@@ -94,7 +93,7 @@ mod get_path_segment_curvature_at_parameter {
 
     #[test]
     fn returns_nonzero_for_a_quadratic_bezier_segment() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 100.0, 100.0, 0.0);
         let result = get_path_segment_curvature_at_parameter(&path, 0, 0.5);
@@ -104,7 +103,7 @@ mod get_path_segment_curvature_at_parameter {
 
     #[test]
     fn returns_nonzero_for_a_cubic_bezier_segment() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
         let result = get_path_segment_curvature_at_parameter(&path, 0, 0.5);
@@ -118,7 +117,7 @@ mod get_path_segment_point_at_parameter {
 
     #[test]
     fn returns_false_for_out_of_range_segment_index() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 1.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -128,7 +127,7 @@ mod get_path_segment_point_at_parameter {
 
     #[test]
     fn evaluates_midpoint_of_a_line_segment() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -140,7 +139,7 @@ mod get_path_segment_point_at_parameter {
 
     #[test]
     fn evaluates_start_and_end_of_a_line_segment() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 2.0, 3.0);
         append_path_line_to(&mut path, 8.0, 9.0);
         let mut start = create_vector2(0.0, 0.0);
@@ -155,7 +154,7 @@ mod get_path_segment_point_at_parameter {
 
     #[test]
     fn selects_the_correct_segment_by_index_in_a_multi_segment_path() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         append_path_line_to(&mut path, 10.0, 10.0);
@@ -168,7 +167,7 @@ mod get_path_segment_point_at_parameter {
 
     #[test]
     fn evaluates_midpoint_of_a_quadratic_bezier() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 1.0, 2.0, 2.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -180,7 +179,7 @@ mod get_path_segment_point_at_parameter {
 
     #[test]
     fn evaluates_midpoint_of_a_cubic_bezier() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -196,7 +195,7 @@ mod get_path_segment_tangent_at_parameter {
 
     #[test]
     fn returns_false_for_out_of_range_segment_index() {
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         let mut out = create_vector2(0.0, 0.0);
         let result = get_path_segment_tangent_at_parameter(&path, 0, 0.5, &mut out);
         assert!(!result);
@@ -204,7 +203,7 @@ mod get_path_segment_tangent_at_parameter {
 
     #[test]
     fn returns_the_tangent_direction_for_a_horizontal_line() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -216,7 +215,7 @@ mod get_path_segment_tangent_at_parameter {
 
     #[test]
     fn returns_a_non_zero_tangent_at_t_zero_for_a_cubic_bezier() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 1.0, 3.0, 2.0, 3.0, 3.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);

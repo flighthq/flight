@@ -1,290 +1,283 @@
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/path_morph_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
 
 import {
-  appendPathClose,
+  PathCommand,
   appendPathCircle,
+  appendPathClose,
   appendPathCubicCurveTo,
-  appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
+  appendPathQuadraticCurveTo,
   appendPathRectangle,
   createPath,
-} from './path.ts';
-import { createPathMorph, samplePathMorph } from './pathMorph.ts';
+  createPathMorph,
+  samplePathMorph,
+} from './contract.ts';
 
 describe('createPathMorph', () => {
-  it('normalizes different line and quadratic verbs to one cubic command stream', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 6, 0);
-    const end = createPath();
-    appendPathMoveTo(end, 2, 2);
-    appendPathQuadraticCurveTo(end, 5, 8, 8, 2);
-
+  it('normalizes different line and quadratic verbs to cubic', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    appendPathLineTo(start, 6.0, 0.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 2.0, 2.0);
+    appendPathQuadraticCurveTo(end, 5.0, 8.0, 8.0, 2.0);
     const morph = createPathMorph(start, end)!;
-
-    expect(morph.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO]);
-    expect(morph.startData).toStrictEqual([0, 0, 2, 0, 4, 0, 6, 0]);
-    expect(morph.endData).toStrictEqual([2, 2, 4, 6, 6, 6, 8, 2]);
+    expect(morph.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO]);
+    expect(morph.startData).toEqual([0.0, 0.0, 2.0, 0.0, 4.0, 0.0, 6.0, 0.0]);
+    expect(morph.endData).toEqual([2.0, 2.0, 4.0, 6.0, 6.0, 6.0, 8.0, 2.0]);
   });
-
   it('preserves authored cubic control points', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 9, 0);
-    const end = createPath();
-    appendPathMoveTo(end, 1, 2);
-    appendPathCubicCurveTo(end, 3, 4, 6, 8, 10, 12);
-
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    appendPathLineTo(start, 9.0, 0.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 1.0, 2.0);
+    appendPathCubicCurveTo(end, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0);
     const morph = createPathMorph(start, end)!;
-
-    expect(morph.endData).toStrictEqual([1, 2, 3, 4, 6, 8, 10, 12]);
+    expect(morph.endData).toEqual([1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0]);
   });
-
-  it('subdivides the lower segment count without changing its endpoint geometry', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 10, 0);
-    const end = createPath();
-    appendPathMoveTo(end, 0, 0);
-    appendPathLineTo(end, 5, 0);
-    appendPathLineTo(end, 10, 0);
-
-    const morph = createPathMorph(start, end)!;
-
-    expect(morph.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO, PathCommand.CUBIC_CURVE_TO]);
-    for (let i = 0; i < morph.startData.length; i++) {
-      expect(morph.startData[i]).toBeCloseTo(morph.endData[i]);
-    }
-    expect(morph.startData.slice(-2)).toStrictEqual([10, 0]);
-  });
-
-  it('aligns equivalent closed contours authored from different starting vertices', () => {
-    const start = createPath();
-    appendPathRectangle(start, 0, 0, 10, 10);
-    const end = createPath();
-    appendPathMoveTo(end, 10, 0);
-    appendPathLineTo(end, 10, 10);
-    appendPathLineTo(end, 0, 10);
-    appendPathLineTo(end, 0, 0);
+  it('aligns equivalent closed contours from different starting vertices', () => {
+    let start = createPath('nonZero');
+    appendPathRectangle(start, 0.0, 0.0, 10.0, 10.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 10.0, 0.0);
+    appendPathLineTo(end, 10.0, 10.0);
+    appendPathLineTo(end, 0.0, 10.0);
+    appendPathLineTo(end, 0.0, 0.0);
     appendPathClose(end);
-
     const morph = createPathMorph(start, end)!;
-
     expect(morph.startData).toEqual(morph.endData);
-    expect(morph.commands[morph.commands.length - 1]).toBe(PathCommand.CLOSE);
+    expect(morph.commands[morph.commands.length - 1]).toEqual(PathCommand.CLOSE);
   });
-
-  it('prepares a closed line rectangle against a closed cubic circle', () => {
-    const start = createPath();
-    appendPathRectangle(start, -10, -10, 20, 20);
-    const end = createPath();
-    appendPathCircle(end, 0, 0, 10);
-
-    const morph = createPathMorph(start, end)!;
-
-    expect(morph.commands).toStrictEqual([
-      PathCommand.MOVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CLOSE,
-    ]);
-  });
-
-  it('normalizes wide move and line commands without retaining their dummy coordinates', () => {
-    const start = createPath();
-    start.commands.push(PathCommand.WIDE_MOVE_TO, PathCommand.WIDE_LINE_TO);
-    start.data.push(99, 98, 1, 2, 97, 96, 7, 8);
-    const end = createPath();
-    appendPathMoveTo(end, 1, 2);
-    appendPathLineTo(end, 7, 8);
-
-    const morph = createPathMorph(start, end)!;
-
-    expect(morph.startData).toEqual(morph.endData);
-    expect(morph.startData).toStrictEqual([1, 2, 3, 4, 5, 6, 7, 8]);
-  });
-
-  it('expands a point contour into degenerate cubics when the other endpoint has segments', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 3, 4);
-    const end = createPath();
-    appendPathMoveTo(end, 0, 0);
-    appendPathLineTo(end, 10, 0);
-
-    const morph = createPathMorph(start, end)!;
-
-    expect(morph.startData).toStrictEqual([3, 4, 3, 4, 3, 4, 3, 4]);
-  });
-
-  it('expands a closed point contour without inventing an orientation', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 3, 4);
-    appendPathClose(start);
-    const end = createPath();
-    appendPathRectangle(end, 0, 0, 10, 10);
-
-    const morph = createPathMorph(start, end)!;
-
-    expect(morph.commands).toStrictEqual([
-      PathCommand.MOVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CLOSE,
-    ]);
-    expect(morph.startData.every((value, index) => value === (index % 2 === 0 ? 3 : 4))).toBe(true);
-  });
-
   it('does not mutate either endpoint', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 10, 0);
-    const end = createPath();
-    appendPathMoveTo(end, 0, 0);
-    appendPathLineTo(end, 5, 5);
-    appendPathLineTo(end, 10, 0);
-    const startCommands = start.commands.slice();
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    appendPathLineTo(start, 10.0, 0.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 0.0, 0.0);
+    appendPathLineTo(end, 5.0, 5.0);
+    appendPathLineTo(end, 10.0, 0.0);
+    const startCmds = start.commands.slice();
     const startData = start.data.slice();
-    const endCommands = end.commands.slice();
+    const endCmds = end.commands.slice();
     const endData = end.data.slice();
-
     createPathMorph(start, end);
-
-    expect(start.commands).toStrictEqual(startCommands);
-    expect(start.data).toStrictEqual(startData);
-    expect(end.commands).toStrictEqual(endCommands);
-    expect(end.data).toStrictEqual(endData);
+    expect(start.commands).toEqual(startCmds);
+    expect(start.data).toEqual(startData);
+    expect(end.commands).toEqual(endCmds);
+    expect(end.data).toEqual(endData);
   });
-
-  it('returns null for paths with incompatible topology', () => {
+  it('returns none for incompatible topology', () => {
     const start = createPath('nonZero');
-    const end = createPath('evenOdd');
-    expect(createPathMorph(start, end)).toBeNull();
+    let end = createPath('nonZero');
+    end.winding = 'evenOdd';
+    expect(createPathMorph(start, end) === null).toBe(true);
   });
-
-  it('normalizes a consistently reversed closed endpoint', () => {
-    const start = createPath();
-    appendPathRectangle(start, 0, 0, 10, 10);
-    const end = createPath();
-    appendPathMoveTo(end, 0, 0);
-    appendPathLineTo(end, 0, 10);
-    appendPathLineTo(end, 10, 10);
-    appendPathLineTo(end, 10, 0);
-    appendPathClose(end);
-
+  it('returns some for compatible rectangles', () => {
+    let start = createPath('nonZero');
+    appendPathRectangle(start, 0.0, 0.0, 100.0, 100.0);
+    let end = createPath('nonZero');
+    appendPathRectangle(end, 50.0, 50.0, 200.0, 200.0);
+    expect(createPathMorph(start, end) !== null).toBe(true);
+  });
+  it('returns none for contour count mismatch', () => {
+    let start = createPath('nonZero');
+    appendPathRectangle(start, 0.0, 0.0, 100.0, 100.0);
+    let end = createPath('nonZero');
+    appendPathRectangle(end, 0.0, 0.0, 100.0, 100.0);
+    appendPathRectangle(end, 200.0, 200.0, 50.0, 50.0);
+    expect(createPathMorph(start, end) === null).toBe(true);
+  });
+  it('expands a closed point contour without inventing an orientation', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 3.0, 4.0);
+    appendPathClose(start);
+    let end = createPath('nonZero');
+    appendPathRectangle(end, 0.0, 0.0, 10.0, 10.0);
     const morph = createPathMorph(start, end)!;
-
-    for (let i = 0; i < morph.startData.length; i++) {
-      expect(morph.startData[i]).toBeCloseTo(morph.endData[i]);
+    expect(morph.commands.length).toEqual(6);
+    expect(morph.commands[0]).toEqual(PathCommand.MOVE_TO);
+    for (let i = 1; i < 5; i += 1) {
+      expect(morph.commands[i]).toEqual(PathCommand.CUBIC_CURVE_TO);
+    }
+    expect(morph.commands[5]).toEqual(PathCommand.CLOSE);
+    for (let i = 0; i < morph.startData.length; i += 1) {
+      if (i % 2 === 0) {
+        expect(morph.startData[i]).toEqual(3.0);
+      } else {
+        expect(morph.startData[i]).toEqual(4.0);
+      }
     }
   });
-
-  it('normalizes opposing contours independently under even-odd winding', () => {
-    const start = createPath('evenOdd');
-    appendPathRectangle(start, 0, 0, 20, 20);
-    appendPathRectangle(start, 5, 5, 10, 10);
-    const end = createPath('evenOdd');
-    appendPathRectangle(end, 0, 0, 20, 20);
-    appendPathMoveTo(end, 5, 5);
-    appendPathLineTo(end, 5, 15);
-    appendPathLineTo(end, 15, 15);
-    appendPathLineTo(end, 15, 5);
-    appendPathClose(end);
-
+  it('expands point contour into degenerate cubics', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 3.0, 4.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 0.0, 0.0);
+    appendPathLineTo(end, 10.0, 0.0);
     const morph = createPathMorph(start, end)!;
-
-    for (let i = 0; i < morph.startData.length; i++) {
-      expect(morph.startData[i]).toBeCloseTo(morph.endData[i]);
+    expect(morph.startData).toEqual([3.0, 4.0, 3.0, 4.0, 3.0, 4.0, 3.0, 4.0]);
+  });
+  it('normalizes consistently reversed closed endpoint', () => {
+    let start = createPath('nonZero');
+    appendPathRectangle(start, 0.0, 0.0, 10.0, 10.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 0.0, 0.0);
+    appendPathLineTo(end, 0.0, 10.0);
+    appendPathLineTo(end, 10.0, 10.0);
+    appendPathLineTo(end, 10.0, 0.0);
+    appendPathClose(end);
+    const morph = createPathMorph(start, end)!;
+    for (let i = 0; i < morph.startData.length; i += 1) {
+      expect(Math.abs(morph.startData[i] - morph.endData[i]) < 0.005).toBe(true);
     }
+  });
+  it('normalizes opposing contours independently under even odd', () => {
+    let start = createPath('nonZero');
+    start.winding = 'evenOdd';
+    appendPathRectangle(start, 0.0, 0.0, 20.0, 20.0);
+    appendPathRectangle(start, 5.0, 5.0, 10.0, 10.0);
+    let end = createPath('nonZero');
+    end.winding = 'evenOdd';
+    appendPathRectangle(end, 0.0, 0.0, 20.0, 20.0);
+    appendPathMoveTo(end, 5.0, 5.0);
+    appendPathLineTo(end, 5.0, 15.0);
+    appendPathLineTo(end, 15.0, 15.0);
+    appendPathLineTo(end, 15.0, 5.0);
+    appendPathClose(end);
+    const morph = createPathMorph(start, end)!;
+    for (let i = 0; i < morph.startData.length; i += 1) {
+      expect(Math.abs(morph.startData[i] - morph.endData[i]) < 0.005).toBe(true);
+    }
+  });
+  it('normalizes wide move and line commands', () => {
+    let start = createPath('nonZero');
+    start.commands.push(PathCommand.WIDE_MOVE_TO);
+    start.data.push(99.0);
+    start.data.push(98.0);
+    start.data.push(1.0);
+    start.data.push(2.0);
+    start.commands.push(PathCommand.WIDE_LINE_TO);
+    start.data.push(97.0);
+    start.data.push(96.0);
+    start.data.push(7.0);
+    start.data.push(8.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 1.0, 2.0);
+    appendPathLineTo(end, 7.0, 8.0);
+    const morph = createPathMorph(start, end)!;
+    expect(morph.startData).toEqual(morph.endData);
+    expect(morph.startData).toEqual([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
+  });
+  it('prepares a closed line rectangle against a closed cubic circle', () => {
+    let start = createPath('nonZero');
+    appendPathRectangle(start, -10.0, -10.0, 20.0, 20.0);
+    let end = createPath('nonZero');
+    appendPathCircle(end, 0.0, 0.0, 10.0);
+    const morph = createPathMorph(start, end)!;
+    expect(morph.commands.length).toEqual(6);
+    expect(morph.commands[0]).toEqual(PathCommand.MOVE_TO);
+    for (let i = 1; i < 5; i += 1) {
+      expect(morph.commands[i]).toEqual(PathCommand.CUBIC_CURVE_TO);
+    }
+    expect(morph.commands[5]).toEqual(PathCommand.CLOSE);
+  });
+  it('subdivides lower segment count without changing endpoint geometry', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    appendPathLineTo(start, 10.0, 0.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 0.0, 0.0);
+    appendPathLineTo(end, 5.0, 0.0);
+    appendPathLineTo(end, 10.0, 0.0);
+    const morph = createPathMorph(start, end)!;
+    expect(morph.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO, PathCommand.CUBIC_CURVE_TO]);
+    for (let i = 0; i < morph.startData.length; i += 1) {
+      expect(Math.abs(morph.startData[i] - morph.endData[i]) < 0.005).toBe(true);
+    }
+    const lastTwo = morph.startData.slice(morph.startData.length - 2);
+    expect(lastTwo).toEqual([10.0, 0.0]);
   });
 });
 
 describe('samplePathMorph', () => {
-  it('samples the prepared endpoints at zero and one', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 2);
-    appendPathLineTo(start, 6, 8);
-    const end = createPath();
-    appendPathMoveTo(end, 10, 12);
-    appendPathQuadraticCurveTo(end, 14, 20, 18, 16);
+  // Rust-only: reuses output command and data storage across samples
+  it('samples at zero and one', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 2.0);
+    appendPathLineTo(start, 6.0, 8.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 10.0, 12.0);
+    appendPathQuadraticCurveTo(end, 14.0, 20.0, 18.0, 16.0);
     const morph = createPathMorph(start, end)!;
-    const out = createPath();
-
-    samplePathMorph(out, morph, 0);
-    expect(out.data).toStrictEqual(morph.startData);
-    samplePathMorph(out, morph, 1);
-    expect(out.data).toStrictEqual(morph.endData);
+    let out = createPath('nonZero');
+    samplePathMorph(out, morph, 0.0);
+    expect(out.data).toEqual(morph.startData);
+    samplePathMorph(out, morph, 1.0);
+    expect(out.data).toEqual(morph.endData);
   });
-
-  it('copies endpoint coordinates exactly instead of reconstructing them arithmetically', () => {
-    const start = createPath();
-    appendPathMoveTo(start, -255_815_156_688.713_68, 12);
-    const end = createPath();
-    appendPathMoveTo(end, 0.000_030_389_885_488_608_44, -24);
+  it('copies endpoint coordinates exactly', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, -255_815_156_688.713_68, 12.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 0.000_030_389_885_488_608_44, -24.0);
     const morph = createPathMorph(start, end)!;
-    const out = createPath();
-
-    samplePathMorph(out, morph, 0);
-    expect(out.data).toStrictEqual(morph.startData);
-    samplePathMorph(out, morph, 1);
-    expect(out.data).toStrictEqual(morph.endData);
+    let out = createPath('nonZero');
+    samplePathMorph(out, morph, 0.0);
+    expect(out.data).toEqual(morph.startData);
+    samplePathMorph(out, morph, 1.0);
+    expect(out.data).toEqual(morph.endData);
   });
-
-  it('writes the midpoint and winding into an existing path', () => {
-    const start = createPath('evenOdd');
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 6, 0);
-    const end = createPath('evenOdd');
-    appendPathMoveTo(end, 2, 2);
-    appendPathQuadraticCurveTo(end, 5, 8, 8, 2);
-    const out = createPath('nonZero');
-
-    samplePathMorph(out, createPathMorph(start, end)!, 0.5);
-
-    expect(out.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO]);
-    expect(out.data).toStrictEqual([1, 1, 3, 3, 5, 3, 7, 1]);
-    expect(out.winding).toBe('evenOdd');
-  });
-
-  it('reuses the output command and data arrays across samples', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 10, 0);
-    const end = createPath();
-    appendPathMoveTo(end, 10, 10);
-    appendPathLineTo(end, 20, 10);
+  it('writes midpoint and winding into existing path', () => {
+    let start = createPath('nonZero');
+    start.winding = 'evenOdd';
+    appendPathMoveTo(start, 0.0, 0.0);
+    appendPathLineTo(start, 6.0, 0.0);
+    let end = createPath('nonZero');
+    end.winding = 'evenOdd';
+    appendPathMoveTo(end, 2.0, 2.0);
+    appendPathQuadraticCurveTo(end, 5.0, 8.0, 8.0, 2.0);
     const morph = createPathMorph(start, end)!;
-    const out = createPath();
-    const commands = out.commands;
-    const data = out.data;
-
-    samplePathMorph(out, morph, 0.25);
-    samplePathMorph(out, morph, 0.75);
-
-    expect(out.commands).toBe(commands);
-    expect(out.data).toBe(data);
+    let out = createPath('nonZero');
+    samplePathMorph(out, morph, 0.5);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO]);
+    expect(out.data).toEqual([1.0, 1.0, 3.0, 3.0, 5.0, 3.0, 7.0, 1.0]);
+    expect(out.winding).toEqual('evenOdd');
   });
-
   it('permits progress outside zero to one for easing overshoot', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    const end = createPath();
-    appendPathMoveTo(end, 10, 20);
-    const out = createPath();
-
-    samplePathMorph(out, createPathMorph(start, end)!, 1.5);
-
-    expect(out.data).toStrictEqual([15, 30]);
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 10.0, 20.0);
+    const morph = createPathMorph(start, end)!;
+    let out = createPath('nonZero');
+    samplePathMorph(out, morph, 1.5);
+    expect(out.data).toEqual([15.0, 30.0]);
   });
-
-  it('samples an empty path pair', () => {
-    const out = createPath();
-    samplePathMorph(out, createPathMorph(createPath(), createPath())!, 0.5);
-    expect(out.commands).toStrictEqual([]);
-    expect(out.data).toStrictEqual([]);
+  it('samples empty path pair', () => {
+    const start = createPath('nonZero');
+    const end = createPath('nonZero');
+    const morph = createPathMorph(start, end)!;
+    let out = createPath('nonZero');
+    samplePathMorph(out, morph, 0.5);
+    expect(out.commands.length === 0).toBe(true);
+    expect(out.data.length === 0).toBe(true);
+  });
+  it('interpolates at half', () => {
+    let start = createPath('nonZero');
+    appendPathRectangle(start, 0.0, 0.0, 100.0, 100.0);
+    let end = createPath('nonZero');
+    appendPathRectangle(end, 100.0, 100.0, 100.0, 100.0);
+    const morph = createPathMorph(start, end)!;
+    let out = createPath('nonZero');
+    samplePathMorph(out, morph, 0.5);
+    for (let i = 0; i < out.data.length; i += 1) {
+      const expected = morph.startData[i] + (morph.endData[i] - morph.startData[i]) * 0.5;
+      expect(Math.abs(out.data[i] - expected) < 0.001).toBe(true);
+    }
   });
 });

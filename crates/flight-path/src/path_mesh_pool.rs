@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract acquirePathMesh acquirePathMeshTyped releasePathMesh releasePathMeshTyped
 use crate::path::{Path, PathMesh, PathMeshTyped};
 use crate::tessellate_path::tessellate_path_into;
 use crate::tessellate_path_typed::tessellate_path_typed_into;
@@ -7,7 +9,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);

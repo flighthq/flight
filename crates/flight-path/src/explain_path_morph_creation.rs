@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -16,7 +16,7 @@ mod sugar_tests {
     }
 
     fn other_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 1.0, 1.0);
         append_path_line_to(&mut out, 12.0, 1.0);
         append_path_quadratic_curve_to(&mut out, 15.0, 5.0, 12.0, 12.0);

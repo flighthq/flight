@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,8 +17,8 @@ mod sugar_tests {
 
     #[test]
     fn path_fit_curves_matches_fit_path_curves() {
-        let mut oa1 = create_path(PathWinding::NonZero);
-        let mut ob1 = create_path(PathWinding::NonZero);
+        let mut oa1 = create_path(Some(PathWinding::NonZero));
+        let mut ob1 = create_path(Some(PathWinding::NonZero));
         let s = test_path();
         s.fit_curves(0.5, &mut oa1, Some(0.5));
         fit_path_curves(&s, 0.5, &mut ob1, Some(0.5));
@@ -27,6 +27,7 @@ mod sugar_tests {
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn chord_length_parameterize(pts: &[f64], first: usize, last: usize) -> Vec<f64> {
     let mut u = vec![0.0f64];
     for i in (first + 1)..=last {
@@ -148,7 +149,7 @@ fn fit_cubic(
         let dy = pts[last * 2 + 1] - pts[first * 2 + 1];
         let dist = (dx * dx + dy * dy).sqrt();
         let d = dist / 3.0;
-        out.commands.push(PathCommand::CubicCurveTo as u8);
+        out.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
         out.data.push(pts[first * 2] + t_hat1.0 * d);
         out.data.push(pts[first * 2 + 1] + t_hat1.1 * d);
         out.data.push(pts[last * 2] + t_hat2.0 * d);
@@ -165,7 +166,7 @@ fn fit_cubic(
         let (max_err, split_point) = compute_max_error(pts, first, last, &bezier, &u);
 
         if max_err < tolerance_sq {
-            out.commands.push(PathCommand::CubicCurveTo as u8);
+            out.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
             out.data.push(bezier[2]);
             out.data.push(bezier[3]);
             out.data.push(bezier[4]);
@@ -211,8 +212,7 @@ pub fn fit_path_curves(
     flatten_tolerance: Option<f64>,
 ) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, source, Some(flatten_tolerance));
+    let contours = flatten_path(source, Some(flatten_tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;
@@ -238,20 +238,20 @@ pub fn fit_path_curves(
             continue;
         }
         if pn == 2 {
-            out.commands.push(PathCommand::MoveTo as u8);
+            out.commands.push(PathCommand::MOVE_TO as u8);
             out.data.push(pts[0]);
             out.data.push(pts[1]);
-            out.commands.push(PathCommand::LineTo as u8);
+            out.commands.push(PathCommand::LINE_TO as u8);
             out.data.push(pts[2]);
             out.data.push(pts[3]);
             if closed {
-                out.commands.push(PathCommand::Close as u8);
+                out.commands.push(PathCommand::CLOSE as u8);
             }
             continue;
         }
 
         let corners = find_corners(&pts, pn);
-        out.commands.push(PathCommand::MoveTo as u8);
+        out.commands.push(PathCommand::MOVE_TO as u8);
         out.data.push(pts[0]);
         out.data.push(pts[1]);
 
@@ -259,7 +259,7 @@ pub fn fit_path_curves(
             let first = corners[ci];
             let last = corners[ci + 1];
             if last - first < 2 {
-                out.commands.push(PathCommand::LineTo as u8);
+                out.commands.push(PathCommand::LINE_TO as u8);
                 out.data.push(pts[last * 2]);
                 out.data.push(pts[last * 2 + 1]);
                 continue;
@@ -270,7 +270,7 @@ pub fn fit_path_curves(
         }
 
         if closed {
-            out.commands.push(PathCommand::Close as u8);
+            out.commands.push(PathCommand::CLOSE as u8);
         }
     }
 }
@@ -338,12 +338,12 @@ fn generate_bezier(
     let seg_length = (dx * dx + dy * dy).sqrt();
     let epsilon = 1e-6 * seg_length;
 
-    let (a1, a2) = if alpha1 < epsilon || alpha2 < epsilon {
-        let a = seg_length / 3.0;
-        (a, a)
-    } else {
-        (alpha1, alpha2)
-    };
+    let mut a1 = alpha1;
+    let mut a2 = alpha2;
+    if alpha1 < epsilon || alpha2 < epsilon {
+        a1 = seg_length / 3.0;
+        a2 = a1;
+    }
 
     return vec![
         pts[first * 2],

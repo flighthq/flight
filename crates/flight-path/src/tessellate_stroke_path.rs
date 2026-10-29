@@ -1,3 +1,5 @@
+//! flight-compiler: nullable-option tessellate_stroke_path
+
 use crate::path::{Path, PathMesh, StrokePathTessellationReason, StrokeStyle};
 use crate::stroke_path_geometry::{StrokePathPieceGeometry, build_stroke_path_geometry};
 
@@ -6,7 +8,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,12 +19,12 @@ mod sugar_tests {
 
     fn test_style() -> StrokeStyle {
         return StrokeStyle {
-            width: 2.0,
-            cap: StrokeCap::Round,
-            join: StrokeJoin::Round,
-            miter_limit: 4.0,
-            dash: Vec::new(),
-            dash_offset: 0.0,
+            width: Some(2.0),
+            cap: Some(StrokeCap::Round),
+            join: Some(StrokeJoin::Round),
+            miter_limit: Some(4.0),
+            dash: Some(Vec::new()),
+            dash_offset: Some(0.0),
         };
     }
 
@@ -39,6 +41,7 @@ mod sugar_tests {
 const TRIANGLE_EPSILON: f64 = 1e-10;
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn append_round_cap(mesh: &mut PathMesh, start: &[f64], interior: &[f64], end: &[f64]) {
     let center = (mesh.vertices.len() / 2) as u32;
     mesh.vertices.push((start[0] + end[0]) / 2.0);
@@ -46,7 +49,9 @@ fn append_round_cap(mesh: &mut PathMesh, start: &[f64], interior: &[f64], end: &
     let arc_base = (mesh.vertices.len() / 2) as u32;
     mesh.vertices.push(start[0]);
     mesh.vertices.push(start[1]);
-    mesh.vertices.extend_from_slice(interior);
+    for i in 0..interior.len() {
+        mesh.vertices.push(interior[i]);
+    }
     mesh.vertices.push(end[0]);
     mesh.vertices.push(end[1]);
     let arc_count = (interior.len() / 2) + 2;

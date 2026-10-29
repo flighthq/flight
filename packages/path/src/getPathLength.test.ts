@@ -1,33 +1,36 @@
-import { getPathLength } from './getPathLength.ts';
-import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
+// Generated from crates/flight-path/tests/get_path_length_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
+
+import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath, getPathLength } from './contract.ts';
 
 describe('getPathLength', () => {
-  it('returns 0 for an empty path', () => {
-    expect(getPathLength(createPath())).toBe(0);
+  it('returns zero for empty path', () => {
+    const path = createPath('nonZero');
+    const length = getPathLength(path, 0.25);
+    expect(length).toEqual(0.0);
   });
-
-  it('returns the correct length of a straight line', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 30, 40);
-    // Euclidean: sqrt(30^2 + 40^2) = 50
-    expect(getPathLength(path)).toBeCloseTo(50);
+  it('returns correct length of diagonal line', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 30.0, 40.0);
+    const length = getPathLength(path, 0.25);
+    expect(Math.abs(length - 50.0) < 0.005).toBe(true);
   });
-
-  it('returns the perimeter of a rectangle (excluding the closing segment)', () => {
-    const path = createPath();
-    appendPathRectangle(path, 0, 0, 100, 50);
-    // Perimeter of 100x50 rectangle: 2*(100+50)=300. The flattenPath closes with a segment back
-    // to the start, so the total is 300.
-    expect(getPathLength(path)).toBeCloseTo(300);
+  it('returns perimeter of rectangle', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 0.0, 0.0, 100.0, 50.0);
+    const length = getPathLength(path, 0.25);
+    expect(Math.abs(length - 300.0) < 0.005).toBe(true);
   });
-
   it('sums lengths across multiple subpaths', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 10, 0); // length 10
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 0, 5); // length 5
-    expect(getPathLength(path)).toBeCloseTo(15);
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 0.0);
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 0.0, 5.0);
+    const length = getPathLength(path, 0.25);
+    expect(Math.abs(length - 15.0) < 0.005).toBe(true);
   });
 });

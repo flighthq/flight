@@ -1,12 +1,26 @@
+//! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_NONE StrokePathTessellationIssueNone
+//! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_INVALID_STYLE StrokePathTessellationIssueInvalidStyle
+//! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_INVALID_PATH StrokePathTessellationIssueInvalidPath
+//! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_SELF_INTERSECTING_CENTERLINE StrokePathTessellationIssueSelfIntersectingCenterline
+//! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_REVERSING_JOIN StrokePathTessellationIssueReversingJoin
+//! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_SELF_INTERSECTING_OUTLINE StrokePathTessellationIssueSelfIntersectingOutline
 use crate::flatten_path::flatten_path;
 use crate::path::{Path, StrokeCap, StrokeJoin, StrokePathTessellationReason, StrokeStyle};
+
+/// Numeric stroke tessellation issue codes, in the order of the matching reason enum (TS `StrokePathTessellationIssueNone`…).
+pub const STROKE_PATH_TESSELLATION_ISSUE_NONE: u8 = 0;
+pub const STROKE_PATH_TESSELLATION_ISSUE_INVALID_STYLE: u8 = 1;
+pub const STROKE_PATH_TESSELLATION_ISSUE_INVALID_PATH: u8 = 2;
+pub const STROKE_PATH_TESSELLATION_ISSUE_SELF_INTERSECTING_CENTERLINE: u8 = 3;
+pub const STROKE_PATH_TESSELLATION_ISSUE_REVERSING_JOIN: u8 = 4;
+pub const STROKE_PATH_TESSELLATION_ISSUE_SELF_INTERSECTING_OUTLINE: u8 = 5;
 
 #[cfg(test)]
 mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,12 +31,12 @@ mod sugar_tests {
 
     fn test_style() -> StrokeStyle {
         return StrokeStyle {
-            width: 2.0,
-            cap: StrokeCap::Round,
-            join: StrokeJoin::Round,
-            miter_limit: 4.0,
-            dash: Vec::new(),
-            dash_offset: 0.0,
+            width: Some(2.0),
+            cap: Some(StrokeCap::Round),
+            join: Some(StrokeJoin::Round),
+            miter_limit: Some(4.0),
+            dash: Some(Vec::new()),
+            dash_offset: Some(0.0),
         };
     }
 
@@ -147,8 +161,7 @@ fn create_arc_points(
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn create_stroke_subpaths(path: &Path, tolerance: f64) -> Vec<StrokeSubpath> {
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     let mut result: Vec<StrokeSubpath> = Vec::new();
     for i in 0..contours.len() {
         let points = remove_consecutive_duplicates(&contours[i]);
@@ -331,13 +344,10 @@ fn append_section(piece: &mut StrokePathPieceGeometry, lx: f64, ly: f64, rx: f64
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn apply_dash(subpath: &StrokeSubpath, dash: &[f64], dash_offset: f64) -> Vec<StrokeSubpath> {
-    let pattern: Vec<f64> = if dash.len() % 2 == 0 {
-        dash.to_vec()
-    } else {
-        let mut p = dash.to_vec();
-        p.extend_from_slice(dash);
-        p
-    };
+    let mut pattern: Vec<f64> = dash.to_vec();
+    if dash.len() % 2 != 0 {
+        pattern.extend_from_slice(dash);
+    }
     let total: f64 = pattern.iter().sum();
     if total <= GEOMETRY_EPSILON {
         return vec![StrokeSubpath {
@@ -380,7 +390,8 @@ fn apply_dash(subpath: &StrokeSubpath, dash: &[f64], dash_offset: f64) -> Vec<St
                 remaining = pattern[pattern_index];
                 on = pattern_index % 2 == 0;
                 if !on {
-                    if let Some(c) = current.take() {
+                    if let Some(c) = current {
+                        current = None;
                         push_dash(&mut result, c, subpath.source_index);
                     }
                 }
@@ -397,7 +408,8 @@ fn apply_dash(subpath: &StrokeSubpath, dash: &[f64], dash_offset: f64) -> Vec<St
                 }
                 current.as_mut().unwrap().push(end_x);
                 current.as_mut().unwrap().push(end_y);
-            } else if let Some(c) = current.take() {
+            } else if let Some(c) = current {
+                current = None;
                 push_dash(&mut result, c, subpath.source_index);
             }
             remaining -= step;
@@ -415,6 +427,7 @@ fn approximately_equal(a: f64, b: f64) -> bool {
 }
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn are_finite_points(points: &[f64]) -> bool {
     for i in 0..points.len() {
         if !points[i].is_finite() {
@@ -426,14 +439,15 @@ fn are_finite_points(points: &[f64]) -> bool {
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Shared stroke kernel used by both strokePath and tessellateStrokePath.
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn build_stroke_path_geometry(
     path: &Path,
     style: &StrokeStyle,
     tolerance: f64,
 ) -> StrokePathGeometry {
-    let width = style.width;
-    let dash_offset = style.dash_offset;
-    let miter_limit = style.miter_limit;
+    let width = style.width.unwrap_or(1.0);
+    let dash_offset = style.dash_offset.unwrap_or(0.0);
+    let miter_limit = style.miter_limit.unwrap_or(4.0);
     if !width.is_finite()
         || width <= 0.0
         || !tolerance.is_finite()
@@ -448,7 +462,11 @@ pub fn build_stroke_path_geometry(
             pieces: Vec::new(),
         };
     }
-    let dash = &style.dash;
+    let dash_pattern: Vec<f64> = match &style.dash {
+        Some(pattern) => pattern.clone(),
+        None => Vec::new(),
+    };
+    let dash = &dash_pattern;
     for i in 0..dash.len() {
         if !dash[i].is_finite() || dash[i] < 0.0 {
             return StrokePathGeometry {
@@ -479,8 +497,8 @@ pub fn build_stroke_path_geometry(
 
     let mut pieces: Vec<StrokePathPieceGeometry> = Vec::new();
     let half_width = width / 2.0;
-    let cap = style.cap;
-    let join = style.join;
+    let cap = style.cap.unwrap_or(StrokeCap::Butt);
+    let join = style.join.unwrap_or(StrokeJoin::Miter);
     for i in 0..source.len() {
         let subpath = &source[i];
         let spans = if !dash.is_empty() {

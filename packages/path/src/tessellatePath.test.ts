@@ -1,11 +1,22 @@
-import type { PathMesh } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/tessellate_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
-import { tessellatePath, tessellatePathInto } from './tessellatePath.ts';
+import { describe, expect, it } from 'vitest';
 
-function meshArea(mesh: PathMesh): number {
-  let area = 0;
-  for (let i = 0; i < mesh.indices.length; i += 3) {
+import {
+  appendPathLineTo,
+  appendPathMoveTo,
+  appendPathRectangle,
+  createPath,
+  tessellatePath,
+  tessellatePathInto,
+} from './contract.ts';
+import type { PathMesh, PathRaw } from './contract.ts';
+
+function meshArea(mesh: Readonly<PathMesh>): number {
+  let area = 0.0;
+  let i = 0;
+  while (i < mesh.indices.length) {
     const i0 = mesh.indices[i];
     const i1 = mesh.indices[i + 1];
     const i2 = mesh.indices[i + 2];
@@ -15,77 +26,85 @@ function meshArea(mesh: PathMesh): number {
     const by = mesh.vertices[i1 * 2 + 1];
     const cx = mesh.vertices[i2 * 2];
     const cy = mesh.vertices[i2 * 2 + 1];
-    area += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2;
+    area += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2.0;
+    i += 3;
   }
   return area;
 }
 
-function polygon(...points: number[]): ReturnType<typeof createPath> {
-  const path = createPath();
+function polygon(points: Readonly<number[]>): PathRaw {
+  let path = createPath('nonZero');
   appendPathMoveTo(path, points[0], points[1]);
-  for (let i = 2; i < points.length; i += 2) {
+  let i = 2;
+  while (i < points.length) {
     appendPathLineTo(path, points[i], points[i + 1]);
+    i += 2;
   }
   return path;
 }
 
 describe('tessellatePath', () => {
-  it('triangulates a triangle into one triangle', () => {
-    const mesh = tessellatePath(polygon(0, 0, 10, 0, 0, 10));
-    expect(mesh.indices).toHaveLength(3);
-    expect(meshArea(mesh)).toBeCloseTo(50);
+  it('triangulates triangle into one triangle', () => {
+    const path = polygon([0.0, 0.0, 10.0, 0.0, 0.0, 10.0]);
+    const mesh = tessellatePath(path, 0.25);
+    expect(mesh.indices.length).toEqual(3);
+    expect(Math.abs(meshArea(mesh) - 50.0) < 0.005).toBe(true);
   });
-
-  it('triangulates a square into two triangles covering its area', () => {
-    const mesh = tessellatePath(polygon(0, 0, 10, 0, 10, 10, 0, 10));
-    expect(mesh.indices).toHaveLength(6);
-    expect(meshArea(mesh)).toBeCloseTo(100);
+  it('triangulates square into two triangles covering its area', () => {
+    const path = polygon([0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
+    const mesh = tessellatePath(path, 0.25);
+    expect(mesh.indices.length).toEqual(6);
+    expect(Math.abs(meshArea(mesh) - 100.0) < 0.005).toBe(true);
   });
-
-  it('triangulates a concave L-shape conserving area (n-2 triangles)', () => {
-    const mesh = tessellatePath(polygon(0, 0, 20, 0, 20, 10, 10, 10, 10, 20, 0, 20));
-    expect(mesh.indices).toHaveLength(12); // 6 vertices → 4 triangles
-    expect(meshArea(mesh)).toBeCloseTo(300);
+  it('triangulates concave l shape conserving area', () => {
+    const path = polygon([0.0, 0.0, 20.0, 0.0, 20.0, 10.0, 10.0, 10.0, 10.0, 20.0, 0.0, 20.0]);
+    const mesh = tessellatePath(path, 0.25);
+    expect(mesh.indices.length).toEqual(12);
+    expect(Math.abs(meshArea(mesh) - 300.0) < 0.005).toBe(true);
   });
-
-  it('drops a trailing point that closes the contour explicitly', () => {
-    const mesh = tessellatePath(polygon(0, 0, 10, 0, 10, 10, 0, 10, 0, 0));
-    expect(mesh.vertices).toHaveLength(8); // 4 unique vertices, not 5
-    expect(meshArea(mesh)).toBeCloseTo(100);
+  it('drops trailing point that closes contour explicitly', () => {
+    const path = polygon([0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0, 0.0, 0.0]);
+    const mesh = tessellatePath(path, 0.25);
+    expect(mesh.vertices.length).toEqual(8);
+    expect(Math.abs(meshArea(mesh) - 100.0) < 0.005).toBe(true);
   });
-
-  it('produces an empty mesh for a degenerate contour', () => {
-    const mesh = tessellatePath(polygon(0, 0, 10, 0));
-    expect(mesh.indices).toHaveLength(0);
-    expect(mesh.vertices).toHaveLength(0);
+  it('produces empty mesh for degenerate contour', () => {
+    const path = polygon([0.0, 0.0, 10.0, 0.0]);
+    const mesh = tessellatePath(path, 0.25);
+    expect(mesh.indices.length === 0).toBe(true);
+    expect(mesh.vertices.length === 0).toBe(true);
+  });
+  it('returns empty for empty path', () => {
+    const path = createPath('nonZero');
+    const mesh = tessellatePath(path, 0.25);
+    expect(mesh.vertices.length === 0).toBe(true);
+    expect(mesh.indices.length === 0).toBe(true);
+  });
+  it('triangulates rectangle', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 0.0, 0.0, 100.0, 100.0);
+    const mesh = tessellatePath(path, 0.25);
+    expect(mesh.vertices.length >= 8).toBe(true);
+    expect(mesh.indices.length >= 6).toBe(true);
+    expect(mesh.indices.length % 3).toEqual(0);
   });
 });
 
 describe('tessellatePathInto', () => {
-  it('writes the same result as tessellatePath into a provided mesh', () => {
-    const path = polygon(0, 0, 10, 0, 10, 10, 0, 10);
-    const expected = tessellatePath(path);
-    const out = { vertices: [] as number[], indices: [] as number[] };
-    tessellatePathInto(path, out);
-    expect(out.vertices).toStrictEqual(expected.vertices);
-    expect(out.indices).toStrictEqual(expected.indices);
+  // Rust-only: reuses output vertex and index storage across calls
+  it('writes same result as tessellate path into provided mesh', () => {
+    const path = polygon([0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
+    const expected = tessellatePath(path, 0.25);
+    let out: PathMesh = { vertices: [], indices: [] };
+    tessellatePathInto(path, out, 0.25);
+    expect(out.vertices).toEqual(expected.vertices);
+    expect(out.indices).toEqual(expected.indices);
   });
-
   it('clears previous contents before writing', () => {
-    const path = polygon(0, 0, 10, 0, 0, 10);
-    const out = { vertices: [99, 99, 99], indices: [0, 1, 2, 3] };
-    tessellatePathInto(path, out);
-    expect(out.indices).toHaveLength(3);
-    expect(out.vertices).toHaveLength(6);
-  });
-
-  it('reuses the same array identity across calls', () => {
-    const path = polygon(0, 0, 10, 0, 10, 10, 0, 10);
-    const out = { vertices: [] as number[], indices: [] as number[] };
-    const vRef = out.vertices;
-    const iRef = out.indices;
-    tessellatePathInto(path, out);
-    expect(out.vertices).toBe(vRef);
-    expect(out.indices).toBe(iRef);
+    const path = polygon([0.0, 0.0, 10.0, 0.0, 0.0, 10.0]);
+    let out: PathMesh = { vertices: [99.0, 99.0, 99.0], indices: [0, 1, 2, 3] };
+    tessellatePathInto(path, out, 0.25);
+    expect(out.indices.length).toEqual(3);
+    expect(out.vertices.length).toEqual(6);
   });
 });

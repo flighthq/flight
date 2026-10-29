@@ -1,3 +1,8 @@
+//! flight-compiler: array-like append_path_polygon.points append_path_polyline.points
+//! flight-compiler: nullable-option get_path_last_point PathMorphCreationExplanation.contour StrokePathTessellationExplanation.subpath
+//! flight-compiler: readonly-fields PathMorph PathMorphCreationExplanation StrokePathTessellationExplanation
+//! flight-compiler: string-union PathWinding StrokeCap StrokeJoin PathMorphCreationReason=kebab-case StrokePathTessellationReason=kebab-case
+
 //! flight-compiler: data-union PathSegment
 
 use flight_entity::{EntityRuntimeSlot, Float32Array, Uint32Array, allocate_entity};
@@ -7,7 +12,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -165,7 +170,7 @@ mod sugar_tests {
     #[test]
     fn path_new_matches_create_path() {
         let ra = Path::new();
-        let rb = create_path(PathWinding::NonZero);
+        let rb = create_path(Some(PathWinding::NonZero));
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
 }
@@ -183,15 +188,17 @@ const CIRCLE_KAPPA: f64 = 0.5522847498307936;
 /// NO_OP (and any unrecognized byte) without consuming data, as in TS.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+// Variants carry the TypeScript `PathCommand` keys (`PathCommand.MOVE_TO`), which every target shares.
+#[allow(non_camel_case_types)]
 pub enum PathCommand {
-    NoOp = 0,
-    MoveTo = 1,
-    LineTo = 2,
-    QuadraticCurveTo = 3,
-    WideMoveTo = 4,
-    WideLineTo = 5,
-    CubicCurveTo = 6,
-    Close = 7,
+    NO_OP = 0,
+    MOVE_TO = 1,
+    LINE_TO = 2,
+    QUADRATIC_CURVE_TO = 3,
+    WIDE_MOVE_TO = 4,
+    WIDE_LINE_TO = 5,
+    CUBIC_CURVE_TO = 6,
+    CLOSE = 7,
 }
 
 /// Path winding rule.
@@ -249,15 +256,16 @@ pub enum StrokeJoin {
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
-/// Stroke style parameters.
-#[derive(Debug, Clone, PartialEq)]
+/// Stroke style parameters. Every field is optional; stroking applies the defaults `width` 1,
+/// `cap` butt, `join` miter, `miter_limit` 4, no `dash`, and `dash_offset` 0.
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct StrokeStyle {
-    pub width: f64,
-    pub cap: StrokeCap,
-    pub join: StrokeJoin,
-    pub miter_limit: f64,
-    pub dash: Vec<f64>,
-    pub dash_offset: f64,
+    pub width: Option<f64>,
+    pub cap: Option<StrokeCap>,
+    pub join: Option<StrokeJoin>,
+    pub miter_limit: Option<f64>,
+    pub dash: Option<Vec<f64>>,
+    pub dash_offset: Option<f64>,
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -337,19 +345,20 @@ pub enum PathSegment {
     Close,
 }
 
-/// Creates an empty path with the given winding rule (TS `createPath(winding = 'nonZero')`).
-pub fn create_path(winding: PathWinding) -> Path {
+/// Creates an empty path with the given winding rule, `NonZero` when omitted (TS
+/// `createPath(winding = 'nonZero')`).
+pub fn create_path(winding: Option<PathWinding>) -> Path {
     let mut out: Path = allocate_entity();
     initialize_path(&mut out, winding);
     return out;
 }
 
-/// Writes the empty command and data streams and the given winding rule into a pre-allocated
-/// `Path` (TS `initializePath(out, winding = 'nonZero')`).
-pub fn initialize_path(out: &mut Path, winding: PathWinding) {
+/// Writes the empty command and data streams and the given winding rule, `NonZero` when omitted,
+/// into a pre-allocated `Path` (TS `initializePath(out, winding = 'nonZero')`).
+pub fn initialize_path(out: &mut Path, winding: Option<PathWinding>) {
     out.commands = Vec::new();
     out.data = Vec::new();
-    out.winding = winding;
+    out.winding = winding.unwrap_or(PathWinding::NonZero);
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -366,7 +375,7 @@ fn append_arc_cubics(
     if dtheta == 0.0 {
         return;
     }
-    let n_segs = 1.max((dtheta.abs() / (std::f64::consts::FRAC_PI_2)).ceil() as usize);
+    let n_segs = 1.max((dtheta.abs() / (std::f64::consts::PI / 2.0)).ceil() as usize);
     let dt = dtheta / n_segs as f64;
     let cos_phi = x_axis_rotation.cos();
     let sin_phi = x_axis_rotation.sin();
@@ -478,7 +487,7 @@ pub fn append_path_circle(path: &mut Path, center_x: f64, center_y: f64, radius:
 
 /// Closes the current contour back to the most recent MOVE_TO origin.
 pub fn append_path_close(path: &mut Path) {
-    path.commands.push(PathCommand::Close as u8);
+    path.commands.push(PathCommand::CLOSE as u8);
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -492,7 +501,7 @@ pub fn append_path_cubic_curve_to(
     x: f64,
     y: f64,
 ) {
-    path.commands.push(PathCommand::CubicCurveTo as u8);
+    path.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
     path.data.push(control_x1);
     path.data.push(control_y1);
     path.data.push(control_x2);
@@ -569,8 +578,12 @@ pub fn append_path_elliptical_arc_to(
         return;
     }
     let last = get_path_last_point(path);
-    let x1 = last.map_or(0.0, |p| p.0);
-    let y1 = last.map_or(0.0, |p| p.1);
+    let mut x1 = 0.0;
+    let mut y1 = 0.0;
+    if let Some(point) = last {
+        x1 = point.0;
+        y1 = point.1;
+    }
     let x2 = end_x;
     let y2 = end_y;
     if x1 == x2 && y1 == y2 {
@@ -626,7 +639,7 @@ pub fn append_path_elliptical_arc_to(
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a LINE_TO command and its point to the path.
 pub fn append_path_line_to(path: &mut Path, x: f64, y: f64) {
-    path.commands.push(PathCommand::LineTo as u8);
+    path.commands.push(PathCommand::LINE_TO as u8);
     path.data.push(x);
     path.data.push(y);
 }
@@ -634,7 +647,7 @@ pub fn append_path_line_to(path: &mut Path, x: f64, y: f64) {
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a MOVE_TO command and its point to the path.
 pub fn append_path_move_to(path: &mut Path, x: f64, y: f64) {
-    path.commands.push(PathCommand::MoveTo as u8);
+    path.commands.push(PathCommand::MOVE_TO as u8);
     path.data.push(x);
     path.data.push(y);
 }
@@ -677,7 +690,7 @@ pub fn append_path_quadratic_curve_to(
     x: f64,
     y: f64,
 ) {
-    path.commands.push(PathCommand::QuadraticCurveTo as u8);
+    path.commands.push(PathCommand::QUADRATIC_CURVE_TO as u8);
     path.data.push(control_x);
     path.data.push(control_y);
     path.data.push(x);
@@ -737,7 +750,7 @@ pub fn append_path_rounded_rectangle_with_corner_radii(
         x + width - rtr,
         y + rtr,
         rtr,
-        -std::f64::consts::FRAC_PI_2,
+        -(std::f64::consts::PI / 2.0),
         0.0,
     );
     append_path_line_to(path, x + width, y + height - rbr);
@@ -747,7 +760,7 @@ pub fn append_path_rounded_rectangle_with_corner_radii(
         y + height - rbr,
         rbr,
         0.0,
-        std::f64::consts::FRAC_PI_2,
+        std::f64::consts::PI / 2.0,
     );
     append_path_line_to(path, x + rbl, y + height);
     append_corner_arc(
@@ -755,7 +768,7 @@ pub fn append_path_rounded_rectangle_with_corner_radii(
         x + rbl,
         y + height - rbl,
         rbl,
-        std::f64::consts::FRAC_PI_2,
+        std::f64::consts::PI / 2.0,
         std::f64::consts::PI,
     );
     append_path_line_to(path, x, y + rtl);
@@ -781,8 +794,12 @@ pub fn append_path_tangent_arc_to(
     radius: f64,
 ) {
     let last = get_path_last_point(path);
-    let pen_x = last.map_or(0.0, |p| p.0);
-    let pen_y = last.map_or(0.0, |p| p.1);
+    let mut pen_x = 0.0;
+    let mut pen_y = 0.0;
+    if let Some(point) = last {
+        pen_x = point.0;
+        pen_y = point.1;
+    }
     let d1x = pen_x - x1;
     let d1y = pen_y - y1;
     let d2x = x2 - x1;
@@ -844,7 +861,7 @@ pub fn get_path_last_point(path: &Path) -> Option<(f64, f64)> {
         return None;
     }
     let last_cmd = path.commands[last - 1];
-    if last_cmd != PathCommand::Close as u8 {
+    if last_cmd != PathCommand::CLOSE as u8 {
         return Some((
             path.data[path.data.len() - 2],
             path.data[path.data.len() - 1],
@@ -855,10 +872,10 @@ pub fn get_path_last_point(path: &Path) -> Option<(f64, f64)> {
     while ci >= 0 {
         let cmd = path.commands[ci as usize];
         di -= path_command_data_count(cmd);
-        if cmd == PathCommand::MoveTo as u8 {
+        if cmd == PathCommand::MOVE_TO as u8 {
             return Some((path.data[di], path.data[di + 1]));
         }
-        if cmd == PathCommand::WideMoveTo as u8 {
+        if cmd == PathCommand::WIDE_MOVE_TO as u8 {
             return Some((path.data[di + 2], path.data[di + 3]));
         }
         ci -= 1;
@@ -977,31 +994,44 @@ pub fn parse_stroke_join(value: &str) -> Option<StrokeJoin> {
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokePathTessellationReason string union; TS exports no get_/parse_ free functions
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn parse_stroke_path_tessellation_reason(value: &str) -> Option<StrokePathTessellationReason> {
-    return match value {
-        "ok" => Some(StrokePathTessellationReason::Ok),
-        "invalid-style" => Some(StrokePathTessellationReason::InvalidStyle),
-        "invalid-path" => Some(StrokePathTessellationReason::InvalidPath),
-        "self-intersecting-centerline" => {
-            Some(StrokePathTessellationReason::SelfIntersectingCenterline)
+    let reasons = [
+        ("ok", StrokePathTessellationReason::Ok),
+        ("invalid-style", StrokePathTessellationReason::InvalidStyle),
+        ("invalid-path", StrokePathTessellationReason::InvalidPath),
+        (
+            "self-intersecting-centerline",
+            StrokePathTessellationReason::SelfIntersectingCenterline,
+        ),
+        (
+            "reversing-join",
+            StrokePathTessellationReason::ReversingJoin,
+        ),
+        (
+            "self-intersecting-outline",
+            StrokePathTessellationReason::SelfIntersectingOutline,
+        ),
+    ];
+    for i in 0..reasons.len() {
+        if reasons[i].0 == value {
+            return Some(reasons[i].1);
         }
-        "reversing-join" => Some(StrokePathTessellationReason::ReversingJoin),
-        "self-intersecting-outline" => Some(StrokePathTessellationReason::SelfIntersectingOutline),
-        _ => None,
-    };
+    }
+    return None;
 }
 
 fn path_command_data_count(cmd: u8) -> usize {
-    if cmd == PathCommand::MoveTo as u8 || cmd == PathCommand::LineTo as u8 {
+    if cmd == PathCommand::MOVE_TO as u8 || cmd == PathCommand::LINE_TO as u8 {
         return 2;
     }
-    if cmd == PathCommand::QuadraticCurveTo as u8
-        || cmd == PathCommand::WideMoveTo as u8
-        || cmd == PathCommand::WideLineTo as u8
+    if cmd == PathCommand::QUADRATIC_CURVE_TO as u8
+        || cmd == PathCommand::WIDE_MOVE_TO as u8
+        || cmd == PathCommand::WIDE_LINE_TO as u8
     {
         return 4;
     }
-    if cmd == PathCommand::CubicCurveTo as u8 {
+    if cmd == PathCommand::CUBIC_CURVE_TO as u8 {
         return 6;
     }
     return 0;
@@ -1024,22 +1054,9 @@ fn vector_angle(ux: f64, uy: f64, vx: f64, vy: f64) -> f64 {
     };
 }
 
-impl Default for StrokeStyle {
-    fn default() -> Self {
-        return StrokeStyle {
-            width: 1.0,
-            cap: StrokeCap::Butt,
-            join: StrokeJoin::Miter,
-            miter_limit: 4.0,
-            dash: Vec::new(),
-            dash_offset: 0.0,
-        };
-    }
-}
-
 impl Path {
     pub fn new() -> Self {
-        return create_path(PathWinding::NonZero);
+        return create_path(Some(PathWinding::NonZero));
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured

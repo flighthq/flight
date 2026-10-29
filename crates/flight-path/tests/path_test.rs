@@ -1,8 +1,44 @@
 use flight_entity::get_entity_id;
 use flight_path::contract::*;
 
+fn axis_values(path: &Path, axis: usize) -> Vec<f64> {
+    let mut values: Vec<f64> = Vec::new();
+    let mut i = axis;
+    while i < path.data.len() {
+        values.push(path.data[i]);
+        i += 2;
+    }
+    return values;
+}
+
+fn count_commands(path: &Path, command: PathCommand) -> usize {
+    let mut count = 0;
+    for &candidate in &path.commands {
+        if candidate == command as u8 {
+            count += 1;
+        }
+    }
+    return count;
+}
+
+fn max_value(values: &[f64]) -> f64 {
+    let mut max = f64::NEG_INFINITY;
+    for &value in values {
+        max = f64::max(max, value);
+    }
+    return max;
+}
+
+fn min_value(values: &[f64]) -> f64 {
+    let mut min = f64::INFINITY;
+    for &value in values {
+        min = f64::min(min, value);
+    }
+    return min;
+}
+
 fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
-    let mut path = create_path(PathWinding::NonZero);
+    let mut path = create_path(Some(PathWinding::NonZero));
     path.commands = commands;
     path.data = data;
     return path;
@@ -13,31 +49,31 @@ mod append_path_arc {
 
     #[test]
     fn produces_move_to_and_cubic_curves_for_non_zero_arc() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_arc(
             &mut path,
             0.0,
             0.0,
             50.0,
             0.0,
-            std::f64::consts::FRAC_PI_2,
+            std::f64::consts::PI / 2.0,
             Some(false),
             Some(false),
         );
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert!(path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert!(path.commands.contains(&(PathCommand::CUBIC_CURVE_TO as u8)));
     }
 
     #[test]
     fn starts_at_correct_point_on_circle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_arc(
             &mut path,
             10.0,
             20.0,
             30.0,
             0.0,
-            std::f64::consts::FRAC_PI_2,
+            std::f64::consts::PI / 2.0,
             Some(false),
             Some(false),
         );
@@ -47,7 +83,7 @@ mod append_path_arc {
 
     #[test]
     fn appends_nothing_for_zero_radius() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_arc(
             &mut path,
             0.0,
@@ -63,14 +99,14 @@ mod append_path_arc {
 
     #[test]
     fn ends_at_correct_point_for_a_quarter_circle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_arc(
             &mut path,
             0.0,
             0.0,
             100.0,
             0.0,
-            std::f64::consts::FRAC_PI_2,
+            std::f64::consts::PI / 2.0,
             Some(false),
             Some(false),
         );
@@ -81,7 +117,7 @@ mod append_path_arc {
 
     #[test]
     fn supports_anticlockwise_arcs() {
-        let mut path_cw = create_path(PathWinding::NonZero);
+        let mut path_cw = create_path(Some(PathWinding::NonZero));
         append_path_arc(
             &mut path_cw,
             0.0,
@@ -92,7 +128,7 @@ mod append_path_arc {
             Some(false),
             Some(false),
         );
-        let mut path_ccw = create_path(PathWinding::NonZero);
+        let mut path_ccw = create_path(Some(PathWinding::NonZero));
         append_path_arc(
             &mut path_ccw,
             0.0,
@@ -106,34 +142,22 @@ mod append_path_arc {
         assert!(
             path_cw
                 .commands
-                .contains(&(PathCommand::CubicCurveTo as u8))
+                .contains(&(PathCommand::CUBIC_CURVE_TO as u8))
         );
         assert!(
             path_ccw
                 .commands
-                .contains(&(PathCommand::CubicCurveTo as u8))
+                .contains(&(PathCommand::CUBIC_CURVE_TO as u8))
         );
-        let cw_max_y: f64 = path_cw
-            .data
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| i % 2 == 1)
-            .map(|(_, v)| *v)
-            .fold(f64::NEG_INFINITY, f64::max);
-        let ccw_min_y: f64 = path_ccw
-            .data
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| i % 2 == 1)
-            .map(|(_, v)| *v)
-            .fold(f64::INFINITY, f64::min);
+        let cw_max_y: f64 = max_value(&axis_values(&path_cw, 1));
+        let ccw_min_y: f64 = min_value(&axis_values(&path_ccw, 1));
         assert!(cw_max_y > 0.0);
         assert!(ccw_min_y < 0.0);
     }
 
     #[test]
     fn connect_to_current_appends_line_to_instead_of_move_to() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_arc(
             &mut path,
@@ -145,8 +169,8 @@ mod append_path_arc {
             Some(false),
             Some(true),
         );
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(path.commands[1], PathCommand::LineTo as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(path.commands[1], PathCommand::LINE_TO as u8);
     }
 }
 
@@ -155,21 +179,20 @@ mod append_path_circle {
 
     #[test]
     fn produces_closed_path_with_four_cubic_curves() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_circle(&mut path, 0.0, 0.0, 50.0);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let cubic_count = path
-            .commands
-            .iter()
-            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
-            .count();
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::CLOSE as u8
+        );
+        let cubic_count = count_commands(&path, PathCommand::CUBIC_CURVE_TO);
         assert_eq!(cubic_count, 4);
     }
 
     #[test]
     fn starts_at_rightmost_point() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_circle(&mut path, 10.0, 20.0, 30.0);
         assert!((path.data[0] - 40.0).abs() < 0.005);
         assert!((path.data[1] - 20.0).abs() < 0.005);
@@ -181,12 +204,12 @@ mod append_path_close {
 
     #[test]
     fn appends_close_command_and_no_data() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_close(&mut path);
         assert_eq!(
             path.commands,
-            vec![PathCommand::MoveTo as u8, PathCommand::Close as u8]
+            vec![PathCommand::MOVE_TO as u8, PathCommand::CLOSE as u8]
         );
         assert_eq!(path.data, vec![0.0, 0.0]);
     }
@@ -197,22 +220,22 @@ mod append_path_cubic_curve_to {
 
     #[test]
     fn appends_command_and_six_data_values() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
         assert_eq!(
-            *path.commands.last().unwrap(),
-            PathCommand::CubicCurveTo as u8
+            path.commands[path.commands.len() - 1],
+            PathCommand::CUBIC_CURVE_TO as u8
         );
         assert_eq!(path.data.len(), 8);
     }
 
     #[test]
     fn pushes_the_cubic_verb_and_its_six_coordinates() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_cubic_curve_to(&mut path, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
         assert_eq!(path.commands.len(), 1);
-        assert_eq!(path.commands[0], PathCommand::CubicCurveTo as u8);
+        assert_eq!(path.commands[0], PathCommand::CUBIC_CURVE_TO as u8);
         assert_eq!(path.data.len(), 6);
         for i in 0..6 {
             assert_eq!(path.data[i], (i + 1) as f64);
@@ -225,21 +248,20 @@ mod append_path_ellipse {
 
     #[test]
     fn produces_a_closed_path_with_four_cubic_segments() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_ellipse(&mut path, 0.0, 0.0, 100.0, 50.0);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let cubic_count = path
-            .commands
-            .iter()
-            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
-            .count();
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::CLOSE as u8
+        );
+        let cubic_count = count_commands(&path, PathCommand::CUBIC_CURVE_TO);
         assert_eq!(cubic_count, 4);
     }
 
     #[test]
     fn starts_at_cx_plus_radius_x_cy() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_ellipse(&mut path, 10.0, 20.0, 100.0, 50.0);
         assert!((path.data[0] - 110.0).abs() < 0.005);
         assert!((path.data[1] - 20.0).abs() < 0.005);
@@ -251,13 +273,13 @@ mod append_path_elliptical_arc_to {
 
     #[test]
     fn starts_after_close_from_the_subpath_origin() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 10.0, 20.0);
         append_path_line_to(&mut path, 30.0, 40.0);
         append_path_close(&mut path);
         append_path_elliptical_arc_to(&mut path, 10.0, 10.0, 0.0, false, true, 30.0, 20.0);
 
-        let mut expected = create_path(PathWinding::NonZero);
+        let mut expected = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut expected, 10.0, 20.0);
         append_path_elliptical_arc_to(&mut expected, 10.0, 10.0, 0.0, false, true, 30.0, 20.0);
 
@@ -266,17 +288,17 @@ mod append_path_elliptical_arc_to {
 
     #[test]
     fn appends_a_line_to_when_radius_x_is_zero() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_elliptical_arc_to(&mut path, 0.0, 10.0, 0.0, false, false, 50.0, 50.0);
-        assert_eq!(path.commands[1], PathCommand::LineTo as u8);
+        assert_eq!(path.commands[1], PathCommand::LINE_TO as u8);
         assert!((path.data[path.data.len() - 2] - 50.0).abs() < 0.005);
         assert!((path.data[path.data.len() - 1] - 50.0).abs() < 0.005);
     }
 
     #[test]
     fn does_nothing_when_start_equals_end() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 10.0, 10.0);
         let before_len = path.commands.len();
         append_path_elliptical_arc_to(&mut path, 50.0, 50.0, 0.0, false, false, 10.0, 10.0);
@@ -285,15 +307,15 @@ mod append_path_elliptical_arc_to {
 
     #[test]
     fn produces_cubic_curves_for_a_non_degenerate_arc() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 100.0, 0.0);
         append_path_elliptical_arc_to(&mut path, 50.0, 50.0, 0.0, true, false, 100.0, 1.0);
-        assert!(path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
+        assert!(path.commands.contains(&(PathCommand::CUBIC_CURVE_TO as u8)));
     }
 
     #[test]
     fn ends_at_the_specified_endpoint() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 1.0, 0.0);
         append_path_elliptical_arc_to(&mut path, 1.0, 1.0, 0.0, false, true, 0.0, 1.0);
         let data = &path.data;
@@ -307,19 +329,22 @@ mod append_path_line_to {
 
     #[test]
     fn appends_command_and_two_data_values() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 20.0);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::LineTo as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::LINE_TO as u8
+        );
         assert_eq!(path.data.len(), 4);
     }
 
     #[test]
     fn pushes_the_line_verb_and_its_point() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_line_to(&mut path, 7.0, 8.0);
         assert_eq!(path.commands.len(), 1);
-        assert_eq!(path.commands[0], PathCommand::LineTo as u8);
+        assert_eq!(path.commands[0], PathCommand::LINE_TO as u8);
         assert_eq!(path.data.len(), 2);
         assert_eq!(path.data[0], 7.0);
         assert_eq!(path.data[1], 8.0);
@@ -331,19 +356,19 @@ mod append_path_move_to {
 
     #[test]
     fn appends_command_and_two_data_values() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 5.0, 10.0);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
         assert_eq!(path.data[0], 5.0);
         assert_eq!(path.data[1], 10.0);
     }
 
     #[test]
     fn pushes_the_move_verb_and_its_point() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 9.0, 10.0);
         assert_eq!(path.commands.len(), 1);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
         assert_eq!(path.data.len(), 2);
         assert_eq!(path.data[0], 9.0);
         assert_eq!(path.data[1], 10.0);
@@ -355,12 +380,12 @@ mod append_path_polygon {
 
     #[test]
     fn appends_a_closed_polygon_from_a_flat_coordinate_array() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polygon(&mut path, &[0.0, 0.0, 100.0, 0.0, 100.0, 100.0]);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
         assert_eq!(
             path.commands[path.commands.len() - 1],
-            PathCommand::Close as u8
+            PathCommand::CLOSE as u8
         );
         assert_eq!(path.data[0], 0.0);
         assert_eq!(path.data[1], 0.0);
@@ -368,15 +393,18 @@ mod append_path_polygon {
 
     #[test]
     fn creates_closed_polygon_from_points() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polygon(&mut path, &[0.0, 0.0, 100.0, 0.0, 50.0, 100.0]);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::CLOSE as u8
+        );
     }
 
     #[test]
     fn ignores_fewer_than_three_points() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polygon(&mut path, &[0.0, 0.0, 10.0, 10.0]);
         assert_eq!(path.commands.len(), 0);
     }
@@ -387,22 +415,22 @@ mod append_path_polyline {
 
     #[test]
     fn appends_an_open_polyline_with_no_close() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polyline(&mut path, &[0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
         assert_eq!(
             path.commands,
             vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
             ]
         );
-        assert!(!path.commands.contains(&(PathCommand::Close as u8)));
+        assert!(!path.commands.contains(&(PathCommand::CLOSE as u8)));
     }
 
     #[test]
     fn does_nothing_when_fewer_than_two_points_are_provided() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polyline(&mut path, &[0.0, 0.0]);
         assert_eq!(path.commands.len(), 0);
     }
@@ -413,9 +441,9 @@ mod append_path_quadratic_curve_to {
 
     #[test]
     fn pushes_the_quadratic_verb_and_its_four_coordinates() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_quadratic_curve_to(&mut path, 1.0, 2.0, 3.0, 4.0);
-        assert_eq!(path.commands, vec![PathCommand::QuadraticCurveTo as u8]);
+        assert_eq!(path.commands, vec![PathCommand::QUADRATIC_CURVE_TO as u8]);
         assert_eq!(path.data, vec![1.0, 2.0, 3.0, 4.0]);
     }
 }
@@ -425,28 +453,27 @@ mod append_path_rectangle {
 
     #[test]
     fn creates_closed_rectangle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let line_count = path
-            .commands
-            .iter()
-            .filter(|&&c| c == PathCommand::LineTo as u8)
-            .count();
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::CLOSE as u8
+        );
+        let line_count = count_commands(&path, PathCommand::LINE_TO);
         assert_eq!(line_count, 3);
     }
 
     #[test]
     fn produces_a_closed_rectangle_with_four_corners() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 10.0, 20.0, 100.0, 50.0);
         assert_eq!(path.commands.len(), 5);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(path.commands[1], PathCommand::LineTo as u8);
-        assert_eq!(path.commands[2], PathCommand::LineTo as u8);
-        assert_eq!(path.commands[3], PathCommand::LineTo as u8);
-        assert_eq!(path.commands[4], PathCommand::Close as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(path.commands[1], PathCommand::LINE_TO as u8);
+        assert_eq!(path.commands[2], PathCommand::LINE_TO as u8);
+        assert_eq!(path.commands[3], PathCommand::LINE_TO as u8);
+        assert_eq!(path.commands[4], PathCommand::CLOSE as u8);
         assert_eq!(path.data.len(), 8);
         assert_eq!(path.data[0], 10.0);
         assert_eq!(path.data[1], 20.0);
@@ -464,62 +491,55 @@ mod append_path_rounded_rectangle {
 
     #[test]
     fn produces_a_closed_path_for_a_uniformly_rounded_rectangle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rounded_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0, 10.0);
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::CLOSE as u8
+        );
     }
 
     #[test]
     fn contains_cubic_curves_for_the_corner_arcs() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rounded_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0, 10.0);
-        assert!(path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
+        assert!(path.commands.contains(&(PathCommand::CUBIC_CURVE_TO as u8)));
     }
 
     #[test]
     fn uses_authored_radius_directly() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rounded_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0, 20.0);
         assert_eq!(&path.data[0..4], &[20.0, 0.0, 80.0, 0.0]);
     }
 
     #[test]
     fn produces_a_rectangle_when_radius_is_zero() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rounded_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0, 0.0);
-        assert!(!path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let xs: Vec<f64> = path
-            .data
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| i % 2 == 0)
-            .map(|(_, v)| *v)
-            .collect();
-        let ys: Vec<f64> = path
-            .data
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| i % 2 == 1)
-            .map(|(_, v)| *v)
-            .collect();
-        assert!((*xs.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 0.0).abs() < 0.005);
-        assert!(
-            (*xs.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 100.0).abs() < 0.005
+        assert!(!path.commands.contains(&(PathCommand::CUBIC_CURVE_TO as u8)));
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::CLOSE as u8
         );
-        assert!((*ys.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 0.0).abs() < 0.005);
-        assert!(
-            (*ys.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 50.0).abs() < 0.005
-        );
+        let xs: Vec<f64> = axis_values(&path, 0);
+        let ys: Vec<f64> = axis_values(&path, 1);
+        assert!((min_value(&xs) - 0.0).abs() < 0.005);
+        assert!((max_value(&xs) - 100.0).abs() < 0.005);
+        assert!((min_value(&ys) - 0.0).abs() < 0.005);
+        assert!((max_value(&ys) - 50.0).abs() < 0.005);
     }
 
     #[test]
     fn clamps_oversized_radii_to_half_the_edge_length() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rounded_rectangle(&mut path, 0.0, 0.0, 40.0, 20.0, 1000.0);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
+        assert_eq!(
+            path.commands[path.commands.len() - 1],
+            PathCommand::CLOSE as u8
+        );
     }
 }
 
@@ -528,23 +548,23 @@ mod append_path_rounded_rectangle_with_corner_radii {
 
     #[test]
     fn uses_per_corner_radii_in_tl_tr_br_bl_order() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rounded_rectangle_with_corner_radii(
             &mut path, 0.0, 0.0, 100.0, 100.0, 10.0, 20.0, 30.0, 40.0,
         );
         assert_eq!(
             path.commands,
             vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::Close as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CLOSE as u8,
             ]
         );
         assert_eq!(&path.data[0..4], &[10.0, 0.0, 80.0, 0.0]);
@@ -563,16 +583,16 @@ mod append_path_tangent_arc_to {
 
     #[test]
     fn emits_line_to_and_cubic_curves_for_a_right_angle_corner() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 100.0, 0.0);
         append_path_tangent_arc_to(&mut path, 100.0, 100.0, 0.0, 100.0, 20.0);
-        assert!(path.commands.contains(&(PathCommand::LineTo as u8)));
-        assert!(path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
+        assert!(path.commands.contains(&(PathCommand::LINE_TO as u8)));
+        assert!(path.commands.contains(&(PathCommand::CUBIC_CURVE_TO as u8)));
     }
 
     #[test]
     fn selects_the_short_sweep_for_a_clockwise_right_angle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 100.0, 0.0, 100.0, 100.0, 20.0);
         let last = get_path_last_point(&path).unwrap();
@@ -582,7 +602,7 @@ mod append_path_tangent_arc_to {
 
     #[test]
     fn selects_the_short_sweep_for_a_counterclockwise_right_angle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 0.0, 100.0, 100.0, 100.0, 20.0);
         let last = get_path_last_point(&path).unwrap();
@@ -592,13 +612,13 @@ mod append_path_tangent_arc_to {
 
     #[test]
     fn falls_back_to_a_line_to_when_tangent_lines_are_collinear() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 50.0, 0.0, 100.0, 0.0, 20.0);
-        assert_eq!(path.commands[1], PathCommand::LineTo as u8);
+        assert_eq!(path.commands[1], PathCommand::LINE_TO as u8);
         let mut cubic_count = 0;
         for i in 0..path.commands.len() {
-            if path.commands[i] == PathCommand::CubicCurveTo as u8 {
+            if path.commands[i] == PathCommand::CUBIC_CURVE_TO as u8 {
                 cubic_count += 1;
             }
         }
@@ -607,43 +627,31 @@ mod append_path_tangent_arc_to {
 
     #[test]
     fn falls_back_to_line_to_when_tangent_has_zero_length() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 100.0, 100.0);
         append_path_tangent_arc_to(&mut path, 100.0, 100.0, 0.0, 100.0, 20.0);
-        assert_eq!(path.commands[1], PathCommand::LineTo as u8);
-        let cubic_count = path
-            .commands
-            .iter()
-            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
-            .count();
+        assert_eq!(path.commands[1], PathCommand::LINE_TO as u8);
+        let cubic_count = count_commands(&path, PathCommand::CUBIC_CURVE_TO);
         assert_eq!(cubic_count, 0);
     }
 
     #[test]
     fn falls_back_to_line_to_when_radius_is_zero() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 100.0, 0.0, 100.0, 100.0, 0.0);
-        assert_eq!(path.commands[1], PathCommand::LineTo as u8);
-        let cubic_count = path
-            .commands
-            .iter()
-            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
-            .count();
+        assert_eq!(path.commands[1], PathCommand::LINE_TO as u8);
+        let cubic_count = count_commands(&path, PathCommand::CUBIC_CURVE_TO);
         assert_eq!(cubic_count, 0);
     }
 
     #[test]
     fn handles_an_obtuse_angle_with_a_short_arc() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 100.0, 0.0, 150.0, 100.0, 20.0);
         assert!(get_path_last_point(&path).is_some());
-        let cubic_count = path
-            .commands
-            .iter()
-            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
-            .count();
+        let cubic_count = count_commands(&path, PathCommand::CUBIC_CURVE_TO);
         assert_eq!(cubic_count, 1);
     }
 }
@@ -653,19 +661,19 @@ mod create_path {
 
     #[test]
     fn path_command_codes_are_the_ts_wire_codes() {
-        assert_eq!(PathCommand::NoOp as u8, 0);
-        assert_eq!(PathCommand::MoveTo as u8, 1);
-        assert_eq!(PathCommand::LineTo as u8, 2);
-        assert_eq!(PathCommand::QuadraticCurveTo as u8, 3);
-        assert_eq!(PathCommand::WideMoveTo as u8, 4);
-        assert_eq!(PathCommand::WideLineTo as u8, 5);
-        assert_eq!(PathCommand::CubicCurveTo as u8, 6);
-        assert_eq!(PathCommand::Close as u8, 7);
+        assert_eq!(PathCommand::NO_OP as u8, 0);
+        assert_eq!(PathCommand::MOVE_TO as u8, 1);
+        assert_eq!(PathCommand::LINE_TO as u8, 2);
+        assert_eq!(PathCommand::QUADRATIC_CURVE_TO as u8, 3);
+        assert_eq!(PathCommand::WIDE_MOVE_TO as u8, 4);
+        assert_eq!(PathCommand::WIDE_LINE_TO as u8, 5);
+        assert_eq!(PathCommand::CUBIC_CURVE_TO as u8, 6);
+        assert_eq!(PathCommand::CLOSE as u8, 7);
     }
 
     #[test]
     fn writers_emit_the_ts_serialized_command_bytes() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 15.0, 5.0, 10.0, 10.0);
@@ -682,7 +690,7 @@ mod create_path {
 
     #[test]
     fn returns_empty_path_with_given_winding() {
-        let path = create_path(PathWinding::EvenOdd);
+        let path = create_path(Some(PathWinding::EvenOdd));
         assert!(path.commands.is_empty());
         assert!(path.data.is_empty());
         assert_eq!(path.winding, PathWinding::EvenOdd);
@@ -690,7 +698,7 @@ mod create_path {
 
     #[test]
     fn defaults_to_non_zero_winding() {
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         assert_eq!(path.winding, PathWinding::NonZero);
         assert!(path.commands.is_empty());
         assert!(path.data.is_empty());
@@ -708,13 +716,13 @@ mod get_path_last_point {
 
     #[test]
     fn returns_none_for_empty_path() {
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         assert!(get_path_last_point(&path).is_none());
     }
 
     #[test]
     fn returns_last_line_to_point() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 20.0);
         let pt = get_path_last_point(&path).unwrap();
@@ -724,7 +732,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_move_to_origin_after_close() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 5.0, 10.0);
         append_path_line_to(&mut path, 20.0, 30.0);
         append_path_close(&mut path);
@@ -735,7 +743,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_point_after_move_to() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 10.0, 20.0);
         let pt = get_path_last_point(&path).unwrap();
         assert_eq!(pt.0, 10.0);
@@ -744,7 +752,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_anchor_after_quadratic_curve_to() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 5.0, 5.0, 50.0, 60.0);
         let pt = get_path_last_point(&path).unwrap();
@@ -754,7 +762,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_anchor_after_cubic_curve_to() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 1.0, 2.0, 3.0, 4.0, 70.0, 80.0);
         let pt = get_path_last_point(&path).unwrap();
@@ -764,7 +772,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_move_to_origin_after_rectangle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 10.0, 20.0, 100.0, 50.0);
         let pt = get_path_last_point(&path).unwrap();
         assert_eq!(pt.0, 10.0);
@@ -773,14 +781,14 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_endpoint_after_arc() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_arc(
             &mut path,
             0.0,
             0.0,
             100.0,
             0.0,
-            std::f64::consts::FRAC_PI_2,
+            std::f64::consts::PI / 2.0,
             Some(false),
             Some(false),
         );
@@ -791,7 +799,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_endpoint_after_circle() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_circle(&mut path, 10.0, 20.0, 30.0);
         let pt = get_path_last_point(&path).unwrap();
         assert!((pt.0 - 40.0).abs() < 0.005);
@@ -800,7 +808,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_move_to_origin_after_polygon() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polygon(&mut path, &[0.0, 0.0, 100.0, 0.0, 100.0, 100.0]);
         let pt = get_path_last_point(&path).unwrap();
         assert_eq!(pt.0, 0.0);
@@ -809,7 +817,7 @@ mod get_path_last_point {
 
     #[test]
     fn returns_the_last_point_after_polyline() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polyline(&mut path, &[0.0, 0.0, 50.0, 60.0, 70.0, 80.0]);
         let pt = get_path_last_point(&path).unwrap();
         assert_eq!(pt.0, 70.0);
@@ -922,14 +930,22 @@ mod initialize_path {
 
     #[test]
     fn clears_existing_data() {
-        let mut path = create_path(PathWinding::NonZero);
-        let id = get_entity_id(&path);
+        let mut path = create_path(Some(PathWinding::NonZero));
         path.winding = PathWinding::EvenOdd;
         append_path_move_to(&mut path, 1.0, 2.0);
-        initialize_path(&mut path, PathWinding::NonZero);
+        initialize_path(&mut path, Some(PathWinding::NonZero));
         assert!(path.commands.is_empty());
         assert!(path.data.is_empty());
         assert_eq!(path.winding, PathWinding::NonZero);
+    }
+
+    /// flight-compiler: rust-only — the numeric entity id is a Rust-only identity; TypeScript keeps the same object.
+    #[test]
+    fn keeps_the_entity_identity() {
+        let mut path = create_path(Some(PathWinding::NonZero));
+        let id = get_entity_id(&path);
+        append_path_move_to(&mut path, 1.0, 2.0);
+        initialize_path(&mut path, Some(PathWinding::NonZero));
         assert_eq!(get_entity_id(&path), id);
     }
 }

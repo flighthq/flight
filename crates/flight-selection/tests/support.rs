@@ -183,15 +183,15 @@ pub fn has_even_odd_winding(path: &Path) -> bool {
 }
 
 pub fn has_only_move_command(path: &Path) -> bool {
-    return path.commands == [PathCommand::MoveTo as u8];
+    return path.commands == [PathCommand::MOVE_TO as u8];
 }
 
 pub fn has_move_line_close_commands(path: &Path) -> bool {
     return path.commands
         == [
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::Close as u8,
+            PathCommand::MOVE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::CLOSE as u8,
         ];
 }
 

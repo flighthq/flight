@@ -40,7 +40,7 @@ pub fn create_swf_text_shape(
     }
 
     let shape = create_shape();
-    let mut glyph_outline = create_path(flight_path::PathWinding::NonZero);
+    let mut glyph_outline = create_path(Some(flight_path::PathWinding::NonZero));
     let mut font: Option<Arc<GlyphOutlineSource>> = None;
     let mut units_per_em = f64::from(DEFAULT_FONT_UNITS_PER_EM);
     let mut color = 0x000000ff;
@@ -276,21 +276,21 @@ fn swf_text_append_glyph_outline(
     append_shape_begin_fill(target, color, Some(1.0));
     let mut data_index = 0;
     for command in &glyph.commands {
-        if *command == PathCommand::MoveTo as u8 {
+        if *command == PathCommand::MOVE_TO as u8 {
             append_shape_move_to(
                 target,
                 glyph.data[data_index] * scale / TWIPS_PER_PIXEL + offset_x,
                 glyph.data[data_index + 1] * scale / TWIPS_PER_PIXEL + offset_y,
             );
             data_index += 2;
-        } else if *command == PathCommand::LineTo as u8 {
+        } else if *command == PathCommand::LINE_TO as u8 {
             append_shape_line_to(
                 target,
                 glyph.data[data_index] * scale / TWIPS_PER_PIXEL + offset_x,
                 glyph.data[data_index + 1] * scale / TWIPS_PER_PIXEL + offset_y,
             );
             data_index += 2;
-        } else if *command == PathCommand::QuadraticCurveTo as u8 {
+        } else if *command == PathCommand::QUADRATIC_CURVE_TO as u8 {
             append_shape_quadratic_curve_to(
                 target,
                 glyph.data[data_index] * scale / TWIPS_PER_PIXEL + offset_x,
@@ -307,12 +307,12 @@ fn swf_text_append_glyph_outline(
 fn swf_text_create_glyph_outline_path(glyph: &Option<Ref<Shape>>) -> Option<Path> {
     let glyph = glyph.as_ref()?;
     let regions = get_shape_fill_regions(&glyph.read().unwrap().data.commands)?;
-    let mut outline = create_path(flight_path::PathWinding::NonZero);
+    let mut outline = create_path(Some(flight_path::PathWinding::NonZero));
     outline.winding = PathWinding::NonZero;
     let matrix = create_matrix(20.0, 0.0, 0.0, 20.0, 0.0, 0.0);
     for region in regions {
         let guard = region.path.read().unwrap();
-        let mut restored = create_path(flight_path::PathWinding::NonZero);
+        let mut restored = create_path(Some(flight_path::PathWinding::NonZero));
         restored.winding = guard.winding;
         transform_path(&guard, &matrix, &mut restored);
         outline.commands.extend_from_slice(&restored.commands);

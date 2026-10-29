@@ -1,107 +1,114 @@
-import type { Path, Vector2Like } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/get_path_point_at_distance.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { Vector2Like } from '@flighthq/geometry/contract';
 
 import { flattenPath } from './flattenPath.ts';
+import type { PathRaw } from './path.ts';
 
-// Evaluates the point on the path at `distance` arc-length units from the start, writing it into
-// `out`. Returns `true` if the distance is within the path's total length; `false` if the path is
-// empty, in which case `out` is left unchanged.
-//
-// When `distance` exceeds the total path length, the result clamps to the final endpoint.
-// When `distance` is negative, it clamps to the first endpoint.
-//
-// Curves are adaptively flattened to `tolerance` before measurement.
+/**
+ * Evaluates the point on the path at `distance` arc-length units from the start.
+ * Returns `true` if the path has geometry; `false` for an empty path.
+ */
 export function getPathPointAtDistance(
-  path: Readonly<Path>,
+  path: Readonly<PathRaw>,
   distance: number,
   out: Vector2Like,
-  tolerance = 0.25,
+  tolerance?: number,
 ): boolean {
+  tolerance = tolerance ?? 0.25;
   const contours = flattenPath(path, tolerance);
   return samplePathPoint(contours, distance, out);
 }
 
-// Evaluates both the point and the unit tangent at `distance`, writing results into `pointOut` and
-// `tangentOut`. More efficient than calling both functions separately (one flatten pass).
+/**
+ * Evaluates both the point and the unit tangent at `distance`.
+ */
 export function getPathPositionAtDistance(
-  path: Readonly<Path>,
+  path: Readonly<PathRaw>,
   distance: number,
   pointOut: Vector2Like,
   tangentOut: Vector2Like,
-  tolerance = 0.25,
+  tolerance?: number,
 ): boolean {
+  tolerance = tolerance ?? 0.25;
   const contours = flattenPath(path, tolerance);
   const hasPoint = samplePathPoint(contours, distance, pointOut);
   samplePathTangent(contours, distance, tangentOut);
   return hasPoint;
 }
 
-// Evaluates the unit tangent direction of the path at `distance` arc-length units from the start,
-// writing the result into `out`. Returns `true` on success, `false` for an empty path.
-// The tangent is the normalized direction of the segment at `distance`. For degenerate zero-length
-// segments the previous non-degenerate direction is reused; if none exists, (1, 0) is used.
+/**
+ * Evaluates the unit tangent direction of the path at `distance` arc-length units.
+ */
 export function getPathTangentAtDistance(
-  path: Readonly<Path>,
+  path: Readonly<PathRaw>,
   distance: number,
   out: Vector2Like,
-  tolerance = 0.25,
+  tolerance?: number,
 ): boolean {
+  tolerance = tolerance ?? 0.25;
   const contours = flattenPath(path, tolerance);
   return samplePathTangent(contours, distance, out);
 }
 
-// Shared arc-length walk: finds the point at `distance` across all contours.
 function samplePathPoint(contours: Readonly<number[][]>, distance: number, out: Vector2Like): boolean {
-  if (contours.length === 0) return false;
+  if (contours.length === 0) {
+    return false;
+  }
   let remaining = distance;
-  for (let ci = 0; ci < contours.length; ci++) {
+  for (let ci = 0; ci < contours.length; ci += 1) {
     const contour = contours[ci];
-    if (contour.length < 2) continue;
-    // Clamp to start of first contour.
-    if (remaining <= 0) {
+    if (contour.length < 2) {
+      continue;
+    }
+    if (remaining <= 0.0) {
       out.x = contour[0];
       out.y = contour[1];
       return true;
     }
-    for (let i = 2; i < contour.length; i += 2) {
+    let i = 2;
+    while (i < contour.length) {
       const dx = contour[i] - contour[i - 2];
       const dy = contour[i + 1] - contour[i - 1];
       const segLen = Math.sqrt(dx * dx + dy * dy);
       if (remaining <= segLen) {
-        // Interpolate along this segment.
-        const t = segLen > 0 ? remaining / segLen : 0;
+        const t = segLen > 0.0 ? remaining / segLen : 0.0;
         out.x = contour[i - 2] + t * dx;
         out.y = contour[i - 1] + t * dy;
         return true;
       }
       remaining -= segLen;
+      i += 2;
     }
   }
-  // Clamped to the last endpoint.
   const last = contours[contours.length - 1];
   out.x = last[last.length - 2];
   out.y = last[last.length - 1];
   return true;
 }
 
-// Shared arc-length walk: finds the unit tangent at `distance` across all contours.
 function samplePathTangent(contours: Readonly<number[][]>, distance: number, out: Vector2Like): boolean {
   if (contours.length === 0) {
-    out.x = 1;
-    out.y = 0;
+    out.x = 1.0;
+    out.y = 0.0;
     return false;
   }
   let remaining = distance;
-  let lastTx = 1;
-  let lastTy = 0;
-  for (let ci = 0; ci < contours.length; ci++) {
+  let lastTx: number = 1.0;
+  let lastTy: number = 0.0;
+  for (let ci = 0; ci < contours.length; ci += 1) {
     const contour = contours[ci];
-    if (contour.length < 4) continue;
-    for (let i = 2; i < contour.length; i += 2) {
+    if (contour.length < 4) {
+      continue;
+    }
+    let i = 2;
+    while (i < contour.length) {
       const dx = contour[i] - contour[i - 2];
       const dy = contour[i + 1] - contour[i - 1];
       const segLen = Math.sqrt(dx * dx + dy * dy);
-      if (segLen > 0) {
-        const invLen = 1 / segLen;
+      if (segLen > 0.0) {
+        const invLen = 1.0 / segLen;
         lastTx = dx * invLen;
         lastTy = dy * invLen;
       }
@@ -111,6 +118,7 @@ function samplePathTangent(contours: Readonly<number[][]>, distance: number, out
         return true;
       }
       remaining -= segLen;
+      i += 2;
     }
   }
   out.x = lastTx;

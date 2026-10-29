@@ -264,7 +264,7 @@ mod create_glyph_outline_source {
             &source.get_glyph_outline_metrics
         ));
         assert!((source.get_glyph_outline)(
-            &mut create_path(flight_path::PathWinding::NonZero),
+            &mut create_path(Some(flight_path::PathWinding::NonZero)),
             3
         ));
         assert_eq!((source.get_glyph_outline_advance)(3), 4.0);

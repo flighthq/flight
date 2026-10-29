@@ -166,17 +166,17 @@ mod register_shape_hit_test {
 
         let state = bounds_state();
 
-        let mut start1 = create_path(flight_path::PathWinding::NonZero);
+        let mut start1 = create_path(Some(flight_path::PathWinding::NonZero));
         append_path_circle(&mut start1, 50.0, 50.0, 40.0);
-        let mut end1 = create_path(flight_path::PathWinding::NonZero);
+        let mut end1 = create_path(Some(flight_path::PathWinding::NonZero));
         append_path_rectangle(&mut end1, 10.0, 10.0, 80.0, 80.0);
         let morph1 = Arc::new(RwLock::new(
             create_path_morph(&start1, &end1).expect("circle-to-rect morph"),
         ));
 
-        let mut start2 = create_path(flight_path::PathWinding::NonZero);
+        let mut start2 = create_path(Some(flight_path::PathWinding::NonZero));
         append_path_circle(&mut start2, 150.0, 150.0, 40.0);
-        let mut end2 = create_path(flight_path::PathWinding::NonZero);
+        let mut end2 = create_path(Some(flight_path::PathWinding::NonZero));
         append_path_rectangle(&mut end2, 110.0, 110.0, 80.0, 80.0);
         let morph2 = Arc::new(RwLock::new(
             create_path_morph(&start2, &end2).expect("circle-to-rect morph"),

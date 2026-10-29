@@ -2,8 +2,7 @@ use flight_path::*;
 use flight_path_boolean::contract::*;
 
 fn flattened_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
-    let mut out = Vec::new();
-    flatten_path(&mut out, path, tolerance);
+    let out = flatten_path(path, tolerance);
     return out;
 }
 
@@ -32,7 +31,7 @@ mod resolve_path_regions {
     #[test]
     fn returns_an_empty_path_for_no_rings() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         resolve_path_regions(&mut out, &kernel, &[], PathBooleanFillRule::NonZero);
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);
@@ -44,7 +43,7 @@ mod resolve_path_regions {
         let kernel = create_martinez_path_boolean_kernel();
         let square_a = vec![0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0];
         let square_b = vec![2.0, 2.0, 6.0, 2.0, 6.0, 6.0, 2.0, 6.0];
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         resolve_path_regions(
             &mut out,
             &kernel,
@@ -60,7 +59,7 @@ mod resolve_path_regions {
         let kernel = create_martinez_path_boolean_kernel();
         let square_a = vec![0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0];
         let square_b = vec![2.0, 2.0, 6.0, 2.0, 6.0, 6.0, 2.0, 6.0];
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         resolve_path_regions(
             &mut out,
             &kernel,

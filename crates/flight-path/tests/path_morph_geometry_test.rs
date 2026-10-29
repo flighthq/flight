@@ -5,9 +5,9 @@ mod build_path_morph {
 
     #[test]
     fn succeeds_for_compatible_closed_paths() {
-        let mut start = create_path(PathWinding::NonZero);
+        let mut start = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
-        let mut end = create_path(PathWinding::NonZero);
+        let mut end = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut end, 50.0, 50.0, 200.0, 200.0);
         let result = build_path_morph(&start, &end);
         assert_eq!(result.issue, PathMorphCreationReason::Ok);
@@ -16,10 +16,10 @@ mod build_path_morph {
 
     #[test]
     fn returns_success_for_compatible_open_paths() {
-        let mut start = create_path(PathWinding::NonZero);
+        let mut start = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut start, 0.0, 0.0);
         append_path_line_to(&mut start, 1.0, 0.0);
-        let mut end = create_path(PathWinding::NonZero);
+        let mut end = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut end, 0.0, 0.0);
         append_path_line_to(&mut end, 2.0, 0.0);
         let result = build_path_morph(&start, &end);
@@ -29,9 +29,9 @@ mod build_path_morph {
 
     #[test]
     fn fails_for_winding_mismatch() {
-        let mut start = create_path(PathWinding::NonZero);
+        let mut start = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
-        let mut end = create_path(PathWinding::NonZero);
+        let mut end = create_path(Some(PathWinding::NonZero));
         end.winding = PathWinding::EvenOdd;
         append_path_rectangle(&mut end, 0.0, 0.0, 100.0, 100.0);
         let result = build_path_morph(&start, &end);
@@ -41,9 +41,9 @@ mod build_path_morph {
 
     #[test]
     fn fails_for_contour_count_mismatch() {
-        let mut start = create_path(PathWinding::NonZero);
+        let mut start = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
-        let mut end = create_path(PathWinding::NonZero);
+        let mut end = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut end, 0.0, 0.0, 100.0, 100.0);
         append_path_rectangle(&mut end, 200.0, 200.0, 50.0, 50.0);
         let result = build_path_morph(&start, &end);
@@ -56,7 +56,11 @@ mod initialize_path_morph {
 
     #[test]
     fn writes_commands_data_and_winding() {
-        let mut out: PathMorph = flight_entity::allocate_entity();
+        let mut start = create_path(Some(PathWinding::NonZero));
+        append_path_rectangle(&mut start, 0.0, 0.0, 10.0, 10.0);
+        let mut end = create_path(Some(PathWinding::NonZero));
+        append_path_rectangle(&mut end, 5.0, 5.0, 20.0, 20.0);
+        let mut out = create_path_morph(&start, &end).unwrap();
         initialize_path_morph(
             &mut out,
             vec![1, 6],

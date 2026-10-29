@@ -18,7 +18,7 @@ fn build_ellipse(
 ) -> Ref<Path> {
     let position = position.read().unwrap();
     let size = size.read().unwrap();
-    let mut path = create_path(flight_path::PathWinding::NonZero);
+    let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     append_path_ellipse(
         &mut path,
         f64::from(position[0]),

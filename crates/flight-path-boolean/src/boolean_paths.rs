@@ -10,7 +10,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn square(x: f64, y: f64, size: f64) -> Path {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         append_path_rectangle(&mut out, x, y, size, size);
         return out;
     }
@@ -18,8 +18,8 @@ mod sugar_tests {
     #[test]
     fn kernel_boolean_paths_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(flight_path::PathWinding::NonZero);
-        let mut ob = create_path(flight_path::PathWinding::NonZero);
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.boolean_paths(
             &mut oa,
             &square(0.0, 0.0, 10.0),
@@ -48,8 +48,8 @@ mod sugar_tests {
     #[test]
     fn kernel_difference_paths_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(flight_path::PathWinding::NonZero);
-        let mut ob = create_path(flight_path::PathWinding::NonZero);
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.difference_paths(
             &mut oa,
             &square(0.0, 0.0, 10.0),
@@ -76,8 +76,8 @@ mod sugar_tests {
     #[test]
     fn kernel_intersect_paths_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(flight_path::PathWinding::NonZero);
-        let mut ob = create_path(flight_path::PathWinding::NonZero);
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.intersect_paths(
             &mut oa,
             &square(0.0, 0.0, 10.0),
@@ -104,8 +104,8 @@ mod sugar_tests {
     #[test]
     fn kernel_union_paths_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(flight_path::PathWinding::NonZero);
-        let mut ob = create_path(flight_path::PathWinding::NonZero);
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.union_paths(
             &mut oa,
             &square(0.0, 0.0, 10.0),
@@ -132,8 +132,8 @@ mod sugar_tests {
     #[test]
     fn kernel_xor_paths_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(flight_path::PathWinding::NonZero);
-        let mut ob = create_path(flight_path::PathWinding::NonZero);
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.xor_paths(
             &mut oa,
             &square(0.0, 0.0, 10.0),
@@ -192,10 +192,8 @@ pub fn boolean_paths(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let mut subject_contours = Vec::new();
-    let mut clip_contours = Vec::new();
-    flatten_path(&mut subject_contours, subject, Some(tolerance));
-    flatten_path(&mut clip_contours, clip, Some(tolerance));
+    let subject_contours = flatten_path(subject, Some(tolerance));
+    let clip_contours = flatten_path(clip, Some(tolerance));
     let result = (path_boolean_kernel.compute_path_boolean)(
         &subject_contours,
         &clip_contours,

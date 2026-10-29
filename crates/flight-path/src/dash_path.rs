@@ -1,3 +1,5 @@
+//! flight-compiler: array-like dash_path.dash dash_total.dash apply_dash_to_contour.dash
+
 use crate::flatten_path::flatten_path;
 use crate::path::{Path, PathCommand};
 
@@ -6,7 +8,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,8 +19,8 @@ mod sugar_tests {
 
     #[test]
     fn path_dash_matches_dash_path() {
-        let mut oa2 = create_path(PathWinding::NonZero);
-        let mut ob2 = create_path(PathWinding::NonZero);
+        let mut oa2 = create_path(Some(PathWinding::NonZero));
+        let mut ob2 = create_path(Some(PathWinding::NonZero));
         let s = test_path();
         s.dash(&[4.0, 2.0], 1.0, &mut oa2, Some(0.5));
         dash_path(&s, &[4.0, 2.0], 1.0, &mut ob2, Some(0.5));
@@ -43,17 +45,15 @@ fn apply_dash_to_contour(
     let mut dash_index: usize = 0;
     let mut remaining: f64 = 0.0;
     let mut is_on = true;
-    {
-        let mut acc: f64 = 0.0;
-        for i in 0..dash.len() {
-            if acc + dash[i] > offset {
-                dash_index = i;
-                remaining = dash[i] - (offset - acc);
-                is_on = i % 2 == 0;
-                break;
-            }
-            acc += dash[i];
+    let mut skipped: f64 = 0.0;
+    for i in 0..dash.len() {
+        if skipped + dash[i] > offset {
+            dash_index = i;
+            remaining = dash[i] - (offset - skipped);
+            is_on = i % 2 == 0;
+            break;
         }
+        skipped += dash[i];
     }
 
     let mut seg_started = false;
@@ -67,7 +67,7 @@ fn apply_dash_to_contour(
         let seg_len = (dx * dx + dy * dy).sqrt();
 
         if is_on && !seg_started {
-            out.commands.push(PathCommand::MoveTo as u8);
+            out.commands.push(PathCommand::MOVE_TO as u8);
             out.data.push(x0);
             out.data.push(y0);
             seg_started = true;
@@ -91,12 +91,12 @@ fn apply_dash_to_contour(
                     } else {
                         0.0
                     };
-                    out.commands.push(PathCommand::MoveTo as u8);
+                    out.commands.push(PathCommand::MOVE_TO as u8);
                     out.data.push(x0 + t_start * dx);
                     out.data.push(y0 + t_start * dy);
                     seg_started = true;
                 }
-                out.commands.push(PathCommand::LineTo as u8);
+                out.commands.push(PathCommand::LINE_TO as u8);
                 out.data.push(ix);
                 out.data.push(iy);
             }
@@ -112,7 +112,7 @@ fn apply_dash_to_contour(
                     seg_started = false;
                 }
                 if !was_on && is_on {
-                    out.commands.push(PathCommand::MoveTo as u8);
+                    out.commands.push(PathCommand::MOVE_TO as u8);
                     out.data.push(ix);
                     out.data.push(iy);
                     seg_started = true;
@@ -148,8 +148,7 @@ pub fn dash_path(
         return;
     }
 
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, source, Some(tolerance));
+    let contours = flatten_path(source, Some(tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;
@@ -160,6 +159,7 @@ pub fn dash_path(
 }
 
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn dash_total(dash: &[f64]) -> f64 {
     let mut total: f64 = 0.0;
     for i in 0..dash.len() {

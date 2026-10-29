@@ -8,7 +8,7 @@ mod append_shape_geometry_command {
 
     #[test]
     fn appends_move_and_line_verbs() {
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         let commands = vec![number(3.0), number(4.0)];
         append_shape_geometry_command(&mut path, "moveTo", &commands, 0);
         assert_eq!(path.commands.len(), 1);
@@ -22,16 +22,16 @@ mod fill_source_parity {
 
     #[test]
     fn append_geometry_appends_polyline_verbs_and_expands_primitives_ignoring_non_geometry_names() {
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         append_shape_geometry_command(&mut path, "moveTo", &[number(5.0), number(6.0)], 0);
         append_shape_geometry_command(&mut path, "lineTo", &[number(7.0), number(8.0)], 0);
         assert_eq!(
             path.commands,
-            vec![PathCommand::MoveTo as u8, PathCommand::LineTo as u8]
+            vec![PathCommand::MOVE_TO as u8, PathCommand::LINE_TO as u8]
         );
         assert_eq!(path.data, vec![5.0, 6.0, 7.0, 8.0]);
 
-        let mut rectangle = create_path(flight_path::PathWinding::NonZero);
+        let mut rectangle = create_path(Some(flight_path::PathWinding::NonZero));
         append_shape_geometry_command(
             &mut rectangle,
             "drawRectangle",
@@ -41,28 +41,28 @@ mod fill_source_parity {
         assert_eq!(
             rectangle.commands,
             vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8
             ]
         );
 
-        let mut noop = create_path(flight_path::PathWinding::NonZero);
+        let mut noop = create_path(Some(flight_path::PathWinding::NonZero));
         append_shape_geometry_command(&mut noop, "beginFill", &[number(0.0), number(1.0)], 0);
         assert!(noop.commands.is_empty());
     }
 
     #[test]
     fn append_geometry_keeps_the_data_cursor_aligned_across_a_raw_close() {
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         let verbs = [
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::Close as u8,
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
+            PathCommand::MOVE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::CLOSE as u8,
+            PathCommand::MOVE_TO as u8,
+            PathCommand::LINE_TO as u8,
         ];
         append_shape_geometry_command(
             &mut path,
@@ -80,26 +80,26 @@ mod fill_source_parity {
 
     #[test]
     fn operand_count_reports_width_per_verb() {
-        assert_eq!(get_path_command_operand_count(PathCommand::MoveTo as u8), 2);
-        assert_eq!(get_path_command_operand_count(PathCommand::LineTo as u8), 2);
+        assert_eq!(get_path_command_operand_count(PathCommand::MOVE_TO as u8), 2);
+        assert_eq!(get_path_command_operand_count(PathCommand::LINE_TO as u8), 2);
         assert_eq!(
-            get_path_command_operand_count(PathCommand::QuadraticCurveTo as u8),
+            get_path_command_operand_count(PathCommand::QUADRATIC_CURVE_TO as u8),
             4
         );
         assert_eq!(
-            get_path_command_operand_count(PathCommand::WideMoveTo as u8),
+            get_path_command_operand_count(PathCommand::WIDE_MOVE_TO as u8),
             4
         );
         assert_eq!(
-            get_path_command_operand_count(PathCommand::WideLineTo as u8),
+            get_path_command_operand_count(PathCommand::WIDE_LINE_TO as u8),
             4
         );
         assert_eq!(
-            get_path_command_operand_count(PathCommand::CubicCurveTo as u8),
+            get_path_command_operand_count(PathCommand::CUBIC_CURVE_TO as u8),
             6
         );
-        assert_eq!(get_path_command_operand_count(PathCommand::Close as u8), 0);
-        assert_eq!(get_path_command_operand_count(PathCommand::NoOp as u8), 0);
+        assert_eq!(get_path_command_operand_count(PathCommand::CLOSE as u8), 0);
+        assert_eq!(get_path_command_operand_count(PathCommand::NO_OP as u8), 0);
     }
 
     #[test]
@@ -116,11 +116,11 @@ mod fill_source_parity {
         assert_eq!(
             path.commands,
             vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8
             ]
         );
         assert_eq!(&path.data[..4], &[10.0, 20.0, 110.0, 20.0]);
@@ -137,11 +137,11 @@ mod fill_source_parity {
         assert_eq!(
             path.commands,
             vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::CubicCurveTo as u8
+                PathCommand::MOVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8
             ]
         );
         assert_eq!(&path.data[..2], &[70.0, 50.0]);
@@ -158,11 +158,11 @@ mod fill_source_parity {
         assert_eq!(
             path.commands,
             vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::CubicCurveTo as u8
+                PathCommand::MOVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8
             ]
         );
         assert_eq!(&path.data[..2], &[90.0, 25.0]);
@@ -181,7 +181,7 @@ mod fill_source_parity {
         assert!(
             path.commands
                 .iter()
-                .filter(|verb| **verb == PathCommand::CubicCurveTo as u8)
+                .filter(|verb| **verb == PathCommand::CUBIC_CURVE_TO as u8)
                 .count()
                 >= 3
         );
@@ -201,7 +201,7 @@ mod fill_source_parity {
         assert_eq!(
             path.commands
                 .iter()
-                .filter(|verb| **verb == PathCommand::CubicCurveTo as u8)
+                .filter(|verb| **verb == PathCommand::CUBIC_CURVE_TO as u8)
                 .count(),
             4
         );
@@ -223,9 +223,9 @@ mod fill_source_parity {
         assert_eq!(
             regions[0].path.read().unwrap().commands,
             vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8
             ]
         );
     }

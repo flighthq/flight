@@ -1,103 +1,110 @@
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/dash_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { dashPath } from './dashPath.ts';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import { describe, expect, it } from 'vitest';
+
+import { PathCommand, appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, dashPath } from './contract.ts';
+import type { PathRaw } from './contract.ts';
+
+function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
+  let count = 0;
+  for (const candidate of path.commands) {
+    if (candidate === command) {
+      count += 1;
+    }
+  }
+  return count;
+}
 
 describe('dashPath', () => {
-  it('produces dashed segments from a simple line', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 100, 0);
-    const out = createPath();
-    dashPath(source, new Float64Array([10, 5]), 0, out);
-
-    // Each dash-on segment starts with MOVE_TO and has LINE_TOs.
-    const moves = out.commands.filter((c) => c === PathCommand.MOVE_TO);
-    expect(moves.length).toBeGreaterThanOrEqual(6);
-    expect(out.commands).not.toContain(PathCommand.CLOSE);
+  it('produces dashed segments from simple line', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    let out = createPath('nonZero');
+    dashPath(source, [10.0, 5.0], 0.0, out, 0.25);
+    const moveCount = countCommands(out, PathCommand.MOVE_TO);
+    expect(moveCount >= 6).toBe(true);
+    expect(!out.commands.includes(PathCommand.CLOSE)).toBe(true);
   });
-
-  it('copies the source unchanged for an empty dash array', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 50, 50);
-    const out = createPath();
-    dashPath(source, [], 0, out);
-
-    expect(out.commands).toStrictEqual(source.commands);
-    expect(out.data).toStrictEqual(source.data);
+  it('copies unchanged for empty dash array', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 50.0, 50.0);
+    let out = createPath('nonZero');
+    dashPath(source, [], 0.0, out, 0.25);
+    expect(out.commands).toEqual(source.commands);
+    expect(out.data).toEqual(source.data);
   });
-
-  it('handles a closed path', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 100, 0);
-    appendPathLineTo(source, 100, 100);
+  it('handles closed path', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    appendPathLineTo(source, 100.0, 100.0);
     appendPathClose(source);
-    const out = createPath();
-    dashPath(source, [20, 10], 0, out);
-
-    const moves = out.commands.filter((c) => c === PathCommand.MOVE_TO);
-    expect(moves.length).toBeGreaterThanOrEqual(2);
+    let out = createPath('nonZero');
+    dashPath(source, [20.0, 10.0], 0.0, out, 0.25);
+    const moveCount = countCommands(out, PathCommand.MOVE_TO);
+    expect(moveCount >= 2).toBe(true);
   });
-
   it('applies dash offset correctly', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 100, 0);
-    const noOffset = createPath();
-    dashPath(source, [10, 10], 0, noOffset);
-    const withOffset = createPath();
-    dashPath(source, [10, 10], 5, withOffset);
-
-    // The first segment with offset=5 starts at x=0 but the on-phase is only 5 units.
-    // So the data should differ.
-    expect(withOffset.data).not.toStrictEqual(noOffset.data);
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    let noOffset = createPath('nonZero');
+    dashPath(source, [10.0, 10.0], 0.0, noOffset, 0.25);
+    let withOffset = createPath('nonZero');
+    dashPath(source, [10.0, 10.0], 5.0, withOffset, 0.25);
+    expect(withOffset.data).not.toEqual(noOffset.data);
   });
-
-  it('handles zero-length segments in the dash array', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 50, 0);
-    const out = createPath();
-    // Zero gap means continuous — effectively all on.
-    dashPath(source, [10, 0], 0, out);
-    expect(out.commands.length).toBeGreaterThan(0);
+  it('handles zero length segments in dash array', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 50.0, 0.0);
+    let out = createPath('nonZero');
+    dashPath(source, [10.0, 0.0], 0.0, out, 0.25);
+    expect(out.commands.length !== 0).toBe(true);
   });
-
-  it('produces the same result for a separate out object as for a fresh path', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 100, 0);
-    appendPathLineTo(source, 100, 100);
-    const out = createPath();
-    dashPath(source, [15, 10], 0, out);
-    // Verify the source is unchanged after dashing into a separate out.
-    expect(source.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
-    expect(source.data).toStrictEqual([0, 0, 100, 0, 100, 100]);
-    // Verify the out path has dashed segments.
-    const moves = out.commands.filter((c) => c === PathCommand.MOVE_TO);
-    expect(moves.length).toBeGreaterThanOrEqual(2);
+  it('is alias safe when source and out are same', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    appendPathLineTo(path, 100.0, 100.0);
+    let expected = createPath('nonZero');
+    dashPath(path, [15.0, 10.0], 0.0, expected, 0.25);
+    dashPath(path, [15.0, 10.0], 0.0, path, 0.25);
+    expect(path.commands).toEqual(expected.commands);
+    expect(path.data).toEqual(expected.data);
   });
-
-  it('is alias-safe when source and out are the same path', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    appendPathLineTo(path, 100, 100);
-    const ref = createPath();
-    dashPath(path, [15, 10], 0, ref);
-    dashPath(path, [15, 10], 0, path);
-    expect(path.commands).toStrictEqual(ref.commands);
-    expect(path.data).toStrictEqual(ref.data);
+  it('does not mutate source', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    appendPathLineTo(source, 100.0, 100.0);
+    const originalCommands = source.commands.slice();
+    const originalData = source.data.slice();
+    let out = createPath('nonZero');
+    dashPath(source, [15.0, 10.0], 0.0, out, 0.25);
+    expect(source.commands).toEqual(originalCommands);
+    expect(source.data).toEqual(originalData);
   });
-
   it('preserves winding rule', () => {
-    const source = createPath('evenOdd');
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 100, 0);
-    const out = createPath();
-    dashPath(source, [10, 5], 0, out);
-    expect(out.winding).toBe('evenOdd');
+    let source = createPath('nonZero');
+    source.winding = 'evenOdd';
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    let out = createPath('nonZero');
+    dashPath(source, [10.0, 5.0], 0.0, out, 0.25);
+    expect(out.winding).toEqual('evenOdd');
+  });
+  it('produces multiple segments for multiline path', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    appendPathLineTo(source, 100.0, 100.0);
+    let out = createPath('nonZero');
+    dashPath(source, [15.0, 10.0], 0.0, out, 0.25);
+    const moveCount = countCommands(out, PathCommand.MOVE_TO);
+    expect(moveCount >= 2).toBe(true);
   });
 });

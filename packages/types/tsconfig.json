@@ -13,6 +13,7 @@
       ".geometry-types",
       ".host-types",
       ".menu-types",
+      ".path-types",
       ".selection-types",
       ".statechart-types",
       ".textlayout-types",
@@ -42,10 +43,10 @@
       "path": "../entity"
     },
     {
-      "path": "../geometry/tsconfig.contract.json"
+      "path": "../flow/tsconfig.contract.json"
     },
     {
-      "path": "../flow/tsconfig.contract.json"
+      "path": "../geometry/tsconfig.contract.json"
     },
     {
       "path": "../haptics"
@@ -58,6 +59,9 @@
     },
     {
       "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
     },
     {
       "path": "../requirement"

@@ -13,7 +13,7 @@ fn append_ellipse_to_path(path: &mut Path, cx: f64, cy: f64, rx: f64, ry: f64) {
     let kappa = CIRCLE_KAPPA as f64;
     let kx = rx * kappa;
     let ky = ry * kappa;
-    push_verb(path, PathCommand::MoveTo, cx + rx, cy);
+    push_verb(path, PathCommand::MOVE_TO, cx + rx, cy);
     push_cubic(path, cx + rx, cy + ky, cx + kx, cy + ry, cx, cy + ry);
     push_cubic(path, cx - kx, cy + ry, cx - rx, cy + ky, cx - rx, cy);
     push_cubic(path, cx - rx, cy - ky, cx - kx, cy - ry, cx, cy - ry);
@@ -35,11 +35,11 @@ fn append_raw_path(path: &mut Path, verbs: &[f64], data: &[f64]) {
 }
 
 fn append_rectangle_to_path(path: &mut Path, x: f64, y: f64, width: f64, height: f64) {
-    push_verb(path, PathCommand::MoveTo, x, y);
-    push_verb(path, PathCommand::LineTo, x + width, y);
-    push_verb(path, PathCommand::LineTo, x + width, y + height);
-    push_verb(path, PathCommand::LineTo, x, y + height);
-    push_verb(path, PathCommand::LineTo, x, y);
+    push_verb(path, PathCommand::MOVE_TO, x, y);
+    push_verb(path, PathCommand::LINE_TO, x + width, y);
+    push_verb(path, PathCommand::LINE_TO, x + width, y + height);
+    push_verb(path, PathCommand::LINE_TO, x, y + height);
+    push_verb(path, PathCommand::LINE_TO, x, y);
 }
 
 fn append_round_rectangle_to_path(
@@ -57,8 +57,8 @@ fn append_round_rectangle_to_path(
     let right = x + width;
     let bottom = y + height;
     let kappa_radius = radius * CIRCLE_KAPPA as f64;
-    push_verb(path, PathCommand::MoveTo, x + radius, y);
-    push_verb(path, PathCommand::LineTo, right - radius, y);
+    push_verb(path, PathCommand::MOVE_TO, x + radius, y);
+    push_verb(path, PathCommand::LINE_TO, right - radius, y);
     push_cubic(
         path,
         right - radius + kappa_radius,
@@ -68,7 +68,7 @@ fn append_round_rectangle_to_path(
         right,
         y + radius,
     );
-    push_verb(path, PathCommand::LineTo, right, bottom - radius);
+    push_verb(path, PathCommand::LINE_TO, right, bottom - radius);
     push_cubic(
         path,
         right,
@@ -78,7 +78,7 @@ fn append_round_rectangle_to_path(
         right - radius,
         bottom,
     );
-    push_verb(path, PathCommand::LineTo, x + radius, bottom);
+    push_verb(path, PathCommand::LINE_TO, x + radius, bottom);
     push_cubic(
         path,
         x + radius - kappa_radius,
@@ -88,7 +88,7 @@ fn append_round_rectangle_to_path(
         x,
         bottom - radius,
     );
-    push_verb(path, PathCommand::LineTo, x, y + radius);
+    push_verb(path, PathCommand::LINE_TO, x, y + radius);
     push_cubic(
         path,
         x,
@@ -111,13 +111,13 @@ pub fn append_shape_geometry_command(
     match name {
         "moveTo" => push_verb(
             path,
-            PathCommand::MoveTo,
+            PathCommand::MOVE_TO,
             arg(commands, a),
             arg(commands, a + 1),
         ),
         "lineTo" => push_verb(
             path,
-            PathCommand::LineTo,
+            PathCommand::LINE_TO,
             arg(commands, a),
             arg(commands, a + 1),
         ),
@@ -229,7 +229,7 @@ pub fn get_shape_fill_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Shap
                 }
                 color = number(commands, a) as u32;
                 alpha = number(commands, a + 1);
-                let mut next = create_path(flight_path::PathWinding::NonZero);
+                let mut next = create_path(Some(flight_path::PathWinding::NonZero));
                 next.winding = winding;
                 path = Some(next);
             }
@@ -286,7 +286,7 @@ pub fn has_shape_fill(commands: &[ShapeCommandToken]) -> bool {
 }
 
 pub(crate) fn new_path_ref(winding: PathWinding) -> Ref<Path> {
-    let mut path = create_path(flight_path::PathWinding::NonZero);
+    let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     path.winding = winding;
     return Arc::new(RwLock::new(path));
 }
@@ -307,12 +307,12 @@ fn numbers<'a>(commands: &'a [ShapeCommandToken], index: usize) -> &'a [f64] {
 }
 
 fn push_cubic(path: &mut Path, c1x: f64, c1y: f64, c2x: f64, c2y: f64, x: f64, y: f64) {
-    path.commands.push(PathCommand::CubicCurveTo as u8);
+    path.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
     path.data.extend_from_slice(&[c1x, c1y, c2x, c2y, x, y]);
 }
 
 fn push_quadratic(path: &mut Path, cx: f64, cy: f64, x: f64, y: f64) {
-    path.commands.push(PathCommand::QuadraticCurveTo as u8);
+    path.commands.push(PathCommand::QUADRATIC_CURVE_TO as u8);
     path.data.extend_from_slice(&[cx, cy, x, y]);
 }
 

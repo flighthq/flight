@@ -25,7 +25,7 @@ mod initialize_motion_path {
 
     #[test]
     fn keeps_the_entity_identity_of_the_marker_it_initializes() {
-        let path = Arc::new(RwLock::new(create_path(PathWinding::NonZero)));
+        let path = Arc::new(RwLock::new(create_path(Some(PathWinding::NonZero))));
         let mut marker = create_motion_path(path.clone(), None, None, None);
         let id = flight_entity::get_entity_id(&marker);
         initialize_motion_path(&mut marker, path, Some(5.0), None, None);

@@ -11,7 +11,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn square(x: f64, y: f64, size: f64) -> Path {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         append_path_rectangle(&mut out, x, y, size, size);
         return out;
     }
@@ -19,8 +19,8 @@ mod sugar_tests {
     #[test]
     fn kernel_union_all_paths_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(flight_path::PathWinding::NonZero);
-        let mut ob = create_path(flight_path::PathWinding::NonZero);
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.union_all_paths(
             &mut oa,
             &[&square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0)],
@@ -66,10 +66,8 @@ pub fn union_all_paths(
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
     let mut contours: Vec<Vec<f64>> = Vec::new();
-    let mut path_contours = Vec::new();
     for path in paths {
-        flatten_path(&mut path_contours, path, Some(tolerance));
-        contours.append(&mut path_contours);
+        contours.extend(flatten_path(path, Some(tolerance)));
     }
     if contours.is_empty() {
         let empty: Vec<Vec<f64>> = Vec::new();

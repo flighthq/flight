@@ -1,55 +1,59 @@
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/reverse_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
-import { reversePath } from './reversePath.ts';
+import { describe, expect, it } from 'vitest';
+
+import {
+  PathCommand,
+  appendPathClose,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+  reversePath,
+} from './contract.ts';
 
 describe('reversePath', () => {
-  it('reverses a simple open polyline', () => {
-    // Source: moveTo(0,0) → lineTo(10,0) → lineTo(10,10)
-    // Reversed: moveTo(10,10) → lineTo(10,0) → lineTo(0,0)
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 10, 0);
-    appendPathLineTo(source, 10, 10);
-    const out = createPath();
+  it('reverses simple open polyline', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 10.0, 0.0);
+    appendPathLineTo(source, 10.0, 10.0);
+    let out = createPath('nonZero');
     reversePath(source, out);
-    expect(out.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
-    expect(out.data).toStrictEqual([10, 10, 10, 0, 0, 0]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
+    expect(out.data).toEqual([10.0, 10.0, 10.0, 0.0, 0.0, 0.0]);
   });
-
-  it('preserves the closed flag', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 10, 0);
-    appendPathLineTo(source, 10, 10);
+  it('preserves closed flag', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 10.0, 0.0);
+    appendPathLineTo(source, 10.0, 10.0);
     appendPathClose(source);
-    const out = createPath();
+    let out = createPath('nonZero');
     reversePath(source, out);
-    expect(out.commands[out.commands.length - 1]).toBe(PathCommand.CLOSE);
+    expect(out.commands[out.commands.length - 1]).toEqual(PathCommand.CLOSE);
   });
-
-  it('copies the winding rule', () => {
-    const source = createPath('evenOdd');
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 1, 0);
-    const out = createPath('nonZero');
+  it('copies winding rule', () => {
+    let source = createPath('nonZero');
+    source.winding = 'evenOdd';
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 1.0, 0.0);
+    let out = createPath('nonZero');
     reversePath(source, out);
-    expect(out.winding).toBe('evenOdd');
+    expect(out.winding).toEqual('evenOdd');
   });
-
-  it('is alias-safe when out is the same as source', () => {
-    const path = createPath('evenOdd');
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 10, 0);
-    appendPathLineTo(path, 20, 10);
+  it('is alias safe when out is same as source', () => {
+    let path = createPath('nonZero');
+    path.winding = 'evenOdd';
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 0.0);
+    appendPathLineTo(path, 20.0, 10.0);
     appendPathClose(path);
-    const expected = createPath();
+    let expected = createPath('nonZero');
     reversePath(path, expected);
-
     reversePath(path, path);
-
-    expect(path.commands).toStrictEqual(expected.commands);
-    expect(path.data).toStrictEqual(expected.data);
-    expect(path.winding).toBe(expected.winding);
+    expect(path.commands).toEqual(expected.commands);
+    expect(path.data).toEqual(expected.data);
+    expect(path.winding).toEqual(expected.winding);
   });
 });

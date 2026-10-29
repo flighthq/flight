@@ -1,61 +1,78 @@
-import type { Path, PathSegment } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/for_each_path_segment.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-// Iterates over all segments in `path`, calling `visitor` once for each decoded segment. Each call
-// receives a `PathSegment` value describing the verb and its coordinates. The visitor receives
-// segments in command-stream order; WIDE_MOVE_TO and WIDE_LINE_TO are normalized to their moveTo
-// and lineTo equivalents (the dummy coordinate pair is dropped). NO_OP verbs are skipped silently.
-//
-// This is the canonical way for consumers to walk path segments without re-implementing the
-// commands/data stride decode that flattenPath does internally.
-export function forEachPathSegment(path: Readonly<Path>, visitor: (segment: PathSegment) => void): void {
+import type { PathRaw, PathSegment } from './path.ts';
+import { PathCommand } from './path.ts';
+
+/**
+ * Decodes every segment in `path` and passes each to `visitor` in order. WIDE_MOVE_TO and WIDE_LINE_TO are
+ * normalized to their moveTo and lineTo equivalents (the dummy coordinate pair is dropped).
+ * NO_OP verbs are skipped silently.
+ */
+export function forEachPathSegment(path: Readonly<PathRaw>, visitor: (arg0: PathSegment) => void): void {
   const commands = path.commands;
   const data = path.data;
-  let di = 0;
-  for (let ci = 0; ci < commands.length; ci++) {
+  let di: number = 0;
+  for (let ci = 0; ci < commands.length; ci += 1) {
     const command = commands[ci];
     if (command === PathCommand.MOVE_TO) {
       const x = data[di];
       const y = data[di + 1];
       di += 2;
-      visitor({ kind: 'moveTo', x, y });
-    } else if (command === PathCommand.WIDE_MOVE_TO) {
-      // Normalize to moveTo; the dummy pair at [di, di+1] is discarded.
-      const x = data[di + 2];
-      const y = data[di + 3];
-      di += 4;
-      visitor({ kind: 'moveTo', x, y });
-    } else if (command === PathCommand.LINE_TO) {
-      const x = data[di];
-      const y = data[di + 1];
-      di += 2;
-      visitor({ kind: 'lineTo', x, y });
-    } else if (command === PathCommand.WIDE_LINE_TO) {
-      // Normalize to lineTo; the dummy pair at [di, di+1] is discarded.
-      const x = data[di + 2];
-      const y = data[di + 3];
-      di += 4;
-      visitor({ kind: 'lineTo', x, y });
-    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
-      const controlX = data[di];
-      const controlY = data[di + 1];
-      const x = data[di + 2];
-      const y = data[di + 3];
-      di += 4;
-      visitor({ kind: 'quadraticCurveTo', controlX, controlY, x, y });
-    } else if (command === PathCommand.CUBIC_CURVE_TO) {
-      const controlX1 = data[di];
-      const controlY1 = data[di + 1];
-      const controlX2 = data[di + 2];
-      const controlY2 = data[di + 3];
-      const x = data[di + 4];
-      const y = data[di + 5];
-      di += 6;
-      visitor({ kind: 'cubicCurveTo', controlX1, controlY1, controlX2, controlY2, x, y });
-    } else if (command === PathCommand.CLOSE) {
-      visitor({ kind: 'close' });
-      // CLOSE consumes 0 data values.
+      visitor({ kind: 'moveTo' as const, x: x, y: y });
+    } else {
+      if (command === PathCommand.WIDE_MOVE_TO) {
+        const x = data[di + 2];
+        const y = data[di + 3];
+        di += 4;
+        visitor({ kind: 'moveTo' as const, x: x, y: y });
+      } else {
+        if (command === PathCommand.LINE_TO) {
+          const x = data[di];
+          const y = data[di + 1];
+          di += 2;
+          visitor({ kind: 'lineTo' as const, x: x, y: y });
+        } else {
+          if (command === PathCommand.WIDE_LINE_TO) {
+            const x = data[di + 2];
+            const y = data[di + 3];
+            di += 4;
+            visitor({ kind: 'lineTo' as const, x: x, y: y });
+          } else {
+            if (command === PathCommand.QUADRATIC_CURVE_TO) {
+              const controlX = data[di];
+              const controlY = data[di + 1];
+              const x = data[di + 2];
+              const y = data[di + 3];
+              di += 4;
+              visitor({ kind: 'quadraticCurveTo' as const, controlX: controlX, controlY: controlY, x: x, y: y });
+            } else {
+              if (command === PathCommand.CUBIC_CURVE_TO) {
+                const controlX1 = data[di];
+                const controlY1 = data[di + 1];
+                const controlX2 = data[di + 2];
+                const controlY2 = data[di + 3];
+                const x = data[di + 4];
+                const y = data[di + 5];
+                di += 6;
+                visitor({
+                  kind: 'cubicCurveTo' as const,
+                  controlX1: controlX1,
+                  controlY1: controlY1,
+                  controlX2: controlX2,
+                  controlY2: controlY2,
+                  x: x,
+                  y: y,
+                });
+              } else {
+                if (command === PathCommand.CLOSE) {
+                  visitor({ kind: 'close' as const });
+                }
+              }
+            }
+          }
+        }
+      }
     }
-    // NO_OP and unrecognized verbs consume no data and are skipped.
   }
 }

@@ -1,5 +1,5 @@
-import type { Path, PathMeshTyped } from '@flighthq/types/contract';
-
+import type { PathMeshTyped } from './path.ts';
+import type { Path } from './pathCompat.ts';
 import { tessellatePath } from './tessellatePath.ts';
 
 // Triangulates a path's fill into a `PathMeshTyped` using `Float32Array` vertices and `Uint32Array`

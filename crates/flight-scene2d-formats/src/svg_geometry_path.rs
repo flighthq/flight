@@ -17,7 +17,7 @@ pub fn create_svg_geometry_path(element: &XmlElement, winding: PathWinding) -> O
         return Some(path);
     }
 
-    let mut path = create_path(flight_path::PathWinding::NonZero);
+    let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     path.winding = winding;
     if name == "rect" {
         let x = svg_number_attribute(element, "x", 0.0);

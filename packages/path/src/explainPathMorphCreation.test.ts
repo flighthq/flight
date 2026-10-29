@@ -1,81 +1,85 @@
-import { explainPathMorphCreation } from './explainPathMorphCreation.ts';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+// Generated from crates/flight-path/tests/explain_path_morph_creation_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
+
+import {
+  appendPathClose,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+  explainPathMorphCreation,
+} from './contract.ts';
 
 describe('explainPathMorphCreation', () => {
-  it('reports a compatible pair', () => {
-    expect(explainPathMorphCreation(createPath(), createPath())).toStrictEqual({
-      contour: null,
-      reason: 'ok',
-      supported: true,
-    });
+  it('reports a contour count mismatch', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    const end = createPath('nonZero');
+    const result = explainPathMorphCreation(start, end);
+    expect(!result.supported).toBe(true);
+    expect(result.reason).toEqual('contour-count-mismatch');
+    expect(result.contour === null).toBe(true);
   });
-
   it('reports a winding mismatch', () => {
-    expect(explainPathMorphCreation(createPath('nonZero'), createPath('evenOdd'))).toStrictEqual({
-      contour: null,
-      reason: 'winding-mismatch',
-      supported: false,
-    });
+    const start = createPath('nonZero');
+    const end = createPath('evenOdd');
+    const result = explainPathMorphCreation(start, end);
+    expect(!result.supported).toBe(true);
+    expect(result.reason).toEqual('winding-mismatch');
+    expect(result.contour === null).toBe(true);
   });
-
-  it('reports a contour-count mismatch', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    expect(explainPathMorphCreation(start, createPath())).toStrictEqual({
-      contour: null,
-      reason: 'contour-count-mismatch',
-      supported: false,
-    });
+  it('reports compatible pair', () => {
+    const start = createPath('nonZero');
+    const end = createPath('nonZero');
+    const result = explainPathMorphCreation(start, end);
+    expect(result.supported).toBe(true);
+    expect(result.reason).toEqual('ok');
+    expect(result.contour === null).toBe(true);
   });
-
-  it('reports the first contour with different closedness', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 1, 0);
-    appendPathMoveTo(start, 10, 10);
-    appendPathLineTo(start, 11, 10);
+  it('reports first contour with different closedness', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    appendPathLineTo(start, 1.0, 0.0);
+    appendPathMoveTo(start, 10.0, 10.0);
+    appendPathLineTo(start, 11.0, 10.0);
     appendPathClose(start);
-    const end = createPath();
-    appendPathMoveTo(end, 0, 0);
-    appendPathLineTo(end, 1, 0);
-    appendPathMoveTo(end, 10, 10);
-    appendPathLineTo(end, 11, 10);
-
-    expect(explainPathMorphCreation(start, end)).toStrictEqual({
-      contour: 1,
-      reason: 'contour-closedness-mismatch',
-      supported: false,
-    });
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 0.0, 0.0);
+    appendPathLineTo(end, 1.0, 0.0);
+    appendPathMoveTo(end, 10.0, 10.0);
+    appendPathLineTo(end, 11.0, 10.0);
+    const result = explainPathMorphCreation(start, end);
+    expect(!result.supported).toBe(true);
+    expect(result.reason).toEqual('contour-closedness-mismatch');
+    expect(result.contour).toEqual(1);
   });
-
-  it('reports a non-zero path that reverses only a subset of its contours', () => {
-    const start = createPath();
-    appendPathMoveTo(start, 0, 0);
-    appendPathLineTo(start, 20, 0);
-    appendPathLineTo(start, 20, 20);
-    appendPathLineTo(start, 0, 20);
+  it('reports contour orientation mismatch for reversed subset', () => {
+    let start = createPath('nonZero');
+    appendPathMoveTo(start, 0.0, 0.0);
+    appendPathLineTo(start, 20.0, 0.0);
+    appendPathLineTo(start, 20.0, 20.0);
+    appendPathLineTo(start, 0.0, 20.0);
     appendPathClose(start);
-    appendPathMoveTo(start, 5, 5);
-    appendPathLineTo(start, 15, 5);
-    appendPathLineTo(start, 15, 15);
-    appendPathLineTo(start, 5, 15);
+    appendPathMoveTo(start, 5.0, 5.0);
+    appendPathLineTo(start, 15.0, 5.0);
+    appendPathLineTo(start, 15.0, 15.0);
+    appendPathLineTo(start, 5.0, 15.0);
     appendPathClose(start);
-    const end = createPath();
-    appendPathMoveTo(end, 0, 0);
-    appendPathLineTo(end, 20, 0);
-    appendPathLineTo(end, 20, 20);
-    appendPathLineTo(end, 0, 20);
+    let end = createPath('nonZero');
+    appendPathMoveTo(end, 0.0, 0.0);
+    appendPathLineTo(end, 20.0, 0.0);
+    appendPathLineTo(end, 20.0, 20.0);
+    appendPathLineTo(end, 0.0, 20.0);
     appendPathClose(end);
-    appendPathMoveTo(end, 5, 5);
-    appendPathLineTo(end, 5, 15);
-    appendPathLineTo(end, 15, 15);
-    appendPathLineTo(end, 15, 5);
+    appendPathMoveTo(end, 5.0, 5.0);
+    appendPathLineTo(end, 5.0, 15.0);
+    appendPathLineTo(end, 15.0, 15.0);
+    appendPathLineTo(end, 15.0, 5.0);
     appendPathClose(end);
-
-    expect(explainPathMorphCreation(start, end)).toStrictEqual({
-      contour: 1,
-      reason: 'contour-orientation-mismatch',
-      supported: false,
-    });
+    const result = explainPathMorphCreation(start, end);
+    expect(!result.supported).toBe(true);
+    expect(result.reason).toEqual('contour-orientation-mismatch');
+    expect(result.contour).toEqual(1);
   });
 });

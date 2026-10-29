@@ -1,82 +1,106 @@
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/fit_path_curves_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { fitPathCurves } from './fitPathCurves.ts';
-import { appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import { describe, expect, it } from 'vitest';
+
+import { PathCommand, appendPathLineTo, appendPathMoveTo, createPath, fitPathCurves } from './contract.ts';
+import type { PathRaw } from './contract.ts';
+
+function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
+  let count = 0;
+  for (const candidate of path.commands) {
+    if (candidate === command) {
+      count += 1;
+    }
+  }
+  return count;
+}
 
 describe('fitPathCurves', () => {
-  it('keeps a straight line as a line', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 50, 0);
-    appendPathLineTo(source, 100, 0);
-    const out = createPath();
-    fitPathCurves(source, 1, out);
-    expect(out.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(out.commands).not.toContain(PathCommand.CLOSE);
+  it('keeps straight line as line', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 50.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    let out = createPath('nonZero');
+    fitPathCurves(source, 1.0, out, 0.25);
+    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(!out.commands.includes(PathCommand.CLOSE)).toBe(true);
     const lastX = out.data[out.data.length - 2];
     const lastY = out.data[out.data.length - 1];
-    expect(lastX).toBeCloseTo(100);
-    expect(lastY).toBeCloseTo(0);
+    expect(Math.abs(lastX - 100.0) < 0.005).toBe(true);
+    expect(Math.abs(lastY) < 0.005).toBe(true);
   });
-
-  it('produces smooth curves from a circle-like polyline', () => {
-    const source = createPath();
+  it('produces smooth curves from circle like polyline', () => {
+    let source = createPath('nonZero');
     const n = 16;
-    const r = 50;
-    for (let i = 0; i < n; i++) {
-      const angle = (i / n) * Math.PI * 2;
+    const r = 50.0;
+    for (let i = 0; i < n; i += 1) {
+      const angle = (i / n) * Math.PI * 2.0;
       const x = Math.cos(angle) * r;
       const y = Math.sin(angle) * r;
-      if (i === 0) appendPathMoveTo(source, x, y);
-      else appendPathLineTo(source, x, y);
+      if (i === 0) {
+        appendPathMoveTo(source, x, y);
+      } else {
+        appendPathLineTo(source, x, y);
+      }
     }
-    const out = createPath();
-    fitPathCurves(source, 1, out);
-    expect(out.commands).toContain(PathCommand.CUBIC_CURVE_TO);
-    const cubicCount = out.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length;
-    expect(cubicCount).toBeLessThan(n);
+    let out = createPath('nonZero');
+    fitPathCurves(source, 1.0, out, 0.25);
+    const cubicCount = countCommands(out, PathCommand.CUBIC_CURVE_TO);
+    expect(cubicCount > 0).toBe(true);
+    expect(cubicCount < n).toBe(true);
   });
-
-  it('handles a single segment', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 100, 100);
-    const out = createPath();
-    fitPathCurves(source, 1, out);
-    expect(out.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(out.data).toContain(100);
+  it('handles single segment', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 100.0);
+    let out = createPath('nonZero');
+    fitPathCurves(source, 1.0, out, 0.25);
+    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(out.data.includes(100.0)).toBe(true);
   });
-
-  it('handles an empty path', () => {
-    const out = createPath();
-    fitPathCurves(createPath(), 1, out);
-    expect(out.commands).toStrictEqual([]);
+  it('handles empty path', () => {
+    const source = createPath('nonZero');
+    let out = createPath('nonZero');
+    fitPathCurves(source, 1.0, out, 0.25);
+    expect(out.commands.length === 0).toBe(true);
   });
-
-  it('is alias-safe when source and out are the same path', () => {
-    const path = createPath('evenOdd');
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 25, 20);
-    appendPathLineTo(path, 50, 30);
-    appendPathLineTo(path, 75, 20);
-    appendPathLineTo(path, 100, 0);
-    const expected = createPath();
-    fitPathCurves(path, 1, expected);
-
-    fitPathCurves(path, 1, path);
-
-    expect(path.commands).toStrictEqual(expected.commands);
-    expect(path.data).toStrictEqual(expected.data);
-    expect(path.winding).toBe(expected.winding);
-  });
-
   it('preserves winding rule', () => {
-    const source = createPath('evenOdd');
-    appendPathMoveTo(source, 0, 0);
-    appendPathLineTo(source, 100, 0);
-    appendPathLineTo(source, 100, 100);
-    const out = createPath();
-    fitPathCurves(source, 1, out);
-    expect(out.winding).toBe('evenOdd');
+    let source = createPath('nonZero');
+    source.winding = 'evenOdd';
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    appendPathLineTo(source, 100.0, 100.0);
+    let out = createPath('nonZero');
+    fitPathCurves(source, 1.0, out, 0.25);
+    expect(out.winding).toEqual('evenOdd');
+  });
+  it('is alias safe when source and out are same', () => {
+    let path = createPath('nonZero');
+    path.winding = 'evenOdd';
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 25.0, 20.0);
+    appendPathLineTo(path, 50.0, 30.0);
+    appendPathLineTo(path, 75.0, 20.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let expected = createPath('nonZero');
+    fitPathCurves(path, 1.0, expected, 0.25);
+    fitPathCurves(path, 1.0, path, 0.25);
+    expect(path.commands).toEqual(expected.commands);
+    expect(path.data).toEqual(expected.data);
+    expect(path.winding).toEqual(expected.winding);
+  });
+  it('produces cubics from polyline', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 20.0, 30.0);
+    appendPathLineTo(source, 50.0, 40.0);
+    appendPathLineTo(source, 80.0, 30.0);
+    appendPathLineTo(source, 100.0, 0.0);
+    let out = createPath('nonZero');
+    fitPathCurves(source, 1.0, out, 0.25);
+    const hasCubic = out.commands.some((c) => c === PathCommand.CUBIC_CURVE_TO);
+    expect(hasCubic).toBe(true);
   });
 });

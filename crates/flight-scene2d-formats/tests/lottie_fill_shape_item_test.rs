@@ -66,7 +66,7 @@ mod lottie_fill_shape_item_handler {
 }
 
 fn square() -> Ref<Path> {
-    let mut path = create_path(flight_path::PathWinding::NonZero);
+    let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     append_path_rectangle(&mut path, 0.0, 0.0, 10.0, 10.0);
     return Arc::new(RwLock::new(path));
 }

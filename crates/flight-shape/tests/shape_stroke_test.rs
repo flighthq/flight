@@ -25,7 +25,7 @@ mod get_shape_stroke_regions {
         ]);
         let regions = get_shape_stroke_regions(&commands).expect("solid");
         assert_eq!(regions.len(), 1);
-        assert_eq!(regions[0].style.width, 2.0);
+        assert_eq!(regions[0].style.width, Some(2.0));
     }
 }
 
@@ -72,12 +72,12 @@ mod stroke_source_parity {
         assert_eq!(regions.len(), 1);
         assert_eq!(regions[0].color, 0x112233ff);
         assert_eq!(regions[0].alpha, 0.5);
-        assert_eq!(regions[0].style.width, 20.0);
-        assert_eq!(regions[0].style.join, StrokeJoin::Miter);
-        assert_eq!(regions[0].style.cap, flight_path::StrokeCap::Butt);
+        assert_eq!(regions[0].style.width, Some(20.0));
+        assert_eq!(regions[0].style.join, Some(StrokeJoin::Miter));
+        assert_eq!(regions[0].style.cap, Some(flight_path::StrokeCap::Butt));
         let path = regions[0].path.read().unwrap();
         assert!(!path.commands.is_empty());
-        assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
+        assert_eq!(path.commands[0], PathCommand::MOVE_TO as u8);
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod stroke_source_parity {
         assert!(
             path.commands
                 .iter()
-                .filter(|verb| **verb == PathCommand::CubicCurveTo as u8)
+                .filter(|verb| **verb == PathCommand::CUBIC_CURVE_TO as u8)
                 .count()
                 >= 3
         );
@@ -140,19 +140,19 @@ mod stroke_source_parity {
             stroked_corner(JointStyle::Miter, 20.0).expect("miter")[0]
                 .style
                 .join,
-            StrokeJoin::Miter
+            Some(StrokeJoin::Miter)
         );
         assert_eq!(
             stroked_corner(JointStyle::Bevel, 20.0).expect("bevel")[0]
                 .style
                 .join,
-            StrokeJoin::Bevel
+            Some(StrokeJoin::Bevel)
         );
         assert_eq!(
             stroked_corner(JointStyle::Round, 20.0).expect("round")[0]
                 .style
                 .join,
-            StrokeJoin::Round
+            Some(StrokeJoin::Round)
         );
     }
 
@@ -261,10 +261,10 @@ mod stroke_source_parity {
         append_shape_path(
             &shape,
             &[
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::Close as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CLOSE as u8,
             ],
             &[0.0, 0.0, 40.0, 0.0, 20.0, 30.0],
             None,
@@ -311,11 +311,11 @@ mod stroke_source_parity {
         append_shape_path(
             &shape,
             &[
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::Close as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CLOSE as u8,
             ],
             &[0.0, 0.0, 40.0, 40.0, 0.0, 40.0, 40.0, 0.0],
             None,

@@ -1,88 +1,145 @@
-import type { Path } from '@flighthq/types/contract';
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/flatten_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { flattenPath } from './flattenPath.ts';
-import { appendPathClose, appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import * as flightPath from '@flighthq/path/contract';
+import { describe, expect, it } from 'vitest';
+
+import {
+  PathCommand,
+  appendPathClose,
+  appendPathCubicCurveTo,
+  appendPathLineTo,
+  appendPathMoveTo,
+  appendPathQuadraticCurveTo,
+  appendPathRectangle,
+  createPath,
+  flattenPath,
+} from './contract.ts';
+import type { PathRaw } from './contract.ts';
+
+function flattenedPath(path: Readonly<PathRaw>, tolerance: number | undefined): number[][] {
+  const out = flattenPath(path, tolerance);
+  return out;
+}
+
+function tsWirePath(commands: number[], data: number[]): PathRaw {
+  let path = createPath('nonZero');
+  path.commands = commands;
+  path.data = data;
+  return path;
+}
 
 describe('flattenPath', () => {
-  it('flattens a straight line to its two endpoints', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    expect(flattenPath(path)).toStrictEqual([[0, 0, 100, 0]]);
+  it('flattens ts serialized bytes like the writer built path', () => {
+    const raw = tsWirePath([1, 2, 0, 2, 2, 7], [0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
+    let built = createPath('nonZero');
+    appendPathMoveTo(built, 0.0, 0.0);
+    appendPathLineTo(built, 10.0, 0.0);
+    appendPathLineTo(built, 10.0, 10.0);
+    appendPathLineTo(built, 0.0, 10.0);
+    appendPathClose(built);
+    expect(flattenedPath(raw, undefined)).toEqual(flattenedPath(built, undefined));
+    expect(flattenedPath(raw, undefined).length).toEqual(1);
   });
-
+  it('returns empty for empty path', () => {
+    const path = createPath('nonZero');
+    const contours = flattenedPath(path, 0.25);
+    expect(contours.length === 0).toBe(true);
+  });
+  it('returns independent contours for each call', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 0.0, 0.0, 10.0, 20.0);
+    const first = flattenPath(path, 0.25);
+    const empty = flattenPath(createPath('nonZero'), 0.25);
+    expect(empty.length === 0).toBe(true);
+    expect(first.length).toEqual(1);
+    expect(first[0]).toEqual([0.0, 0.0, 10.0, 0.0, 10.0, 20.0, 0.0, 20.0, 0.0, 0.0]);
+  });
+  it('flattens straight line to its two endpoints', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    const contours = flattenedPath(path, 0.25);
+    expect(contours).toEqual([[0.0, 0.0, 100.0, 0.0]]);
+  });
   it('produces one contour per subpath', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 10, 0);
-    appendPathMoveTo(path, 0, 10);
-    appendPathLineTo(path, 10, 10);
-    const contours = flattenPath(path);
-    expect(contours).toStrictEqual([
-      [0, 0, 10, 0],
-      [0, 10, 10, 10],
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 0.0);
+    appendPathMoveTo(path, 0.0, 10.0);
+    appendPathLineTo(path, 10.0, 10.0);
+    const contours = flattenedPath(path, 0.25);
+    expect(contours).toEqual([
+      [0.0, 0.0, 10.0, 0.0],
+      [0.0, 10.0, 10.0, 10.0],
     ]);
   });
-
-  it('collapses a quadratic whose control lies on the chord to just the endpoint', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathQuadraticCurveTo(path, 50, 0, 100, 0);
-    expect(flattenPath(path)).toStrictEqual([[0, 0, 100, 0]]);
+  it('collapses quadratic on chord to just the endpoint', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathQuadraticCurveTo(path, 50.0, 0.0, 100.0, 0.0);
+    const contours = flattenedPath(path, 0.25);
+    expect(contours).toEqual([[0.0, 0.0, 100.0, 0.0]]);
   });
-
-  it('subdivides a genuinely curved quadratic, keeping the endpoints', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathQuadraticCurveTo(path, 50, 50, 100, 0);
-    const contour = flattenPath(path)[0];
-    expect(contour.length).toBeGreaterThan(4); // more than just start + end
-    expect(contour[0]).toBe(0);
-    expect(contour[1]).toBe(0);
-    expect(contour[contour.length - 2]).toBe(100);
-    expect(contour[contour.length - 1]).toBe(0);
+  it('reads second coordinate pair for wide verbs', () => {
+    let path = createPath('nonZero');
+    path.commands.push(PathCommand.WIDE_MOVE_TO);
+    path.data.push(0.0);
+    path.data.push(0.0);
+    path.data.push(5.0);
+    path.data.push(6.0);
+    path.commands.push(PathCommand.WIDE_LINE_TO);
+    path.data.push(0.0);
+    path.data.push(0.0);
+    path.data.push(7.0);
+    path.data.push(8.0);
+    const contours = flattenedPath(path, 0.25);
+    expect(contours).toEqual([[5.0, 6.0, 7.0, 8.0]]);
   });
-
-  it('reads the second coordinate pair for WIDE_ verbs', () => {
-    const path: Path = {
-      [EntityRuntimeKey]: undefined,
-      commands: [PathCommand.WIDE_MOVE_TO, PathCommand.WIDE_LINE_TO],
-      data: [0, 0, 5, 6, 0, 0, 7, 8],
-      winding: 'nonZero',
-    };
-    expect(flattenPath(path)).toStrictEqual([[5, 6, 7, 8]]);
+  it('subdivides genuinely curved quadratic keeping endpoints', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathQuadraticCurveTo(path, 50.0, 50.0, 100.0, 0.0);
+    const contour = flattenedPath(path, 0.25)[0];
+    expect(contour.length > 4).toBe(true);
+    expect(contour[0]).toEqual(0.0);
+    expect(contour[1]).toEqual(0.0);
+    expect(contour[contour.length - 2]).toEqual(100.0);
+    expect(contour[contour.length - 1]).toEqual(0.0);
   });
-
-  it('emits fewer points at a coarser tolerance', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathQuadraticCurveTo(path, 50, 50, 100, 0);
-    const fine = flattenPath(path, 0.1)[0].length;
-    const coarse = flattenPath(path, 50)[0].length;
-    expect(coarse).toBeLessThan(fine);
+  it('emits fewer points at coarser tolerance', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathQuadraticCurveTo(path, 50.0, 50.0, 100.0, 0.0);
+    const fine = flattenedPath(path, 0.1)[0].length;
+    const coarse = flattenedPath(path, 50.0)[0].length;
+    expect(coarse < fine).toBe(true);
   });
-
-  it('appends the start point when a CLOSE verb is present and position differs', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    appendPathLineTo(path, 100, 100);
+  it('appends start point when close verb is present', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    appendPathLineTo(path, 100.0, 100.0);
     appendPathClose(path);
-    const contour = flattenPath(path)[0];
-    // Should end at the start point (0,0)
-    expect(contour[contour.length - 2]).toBe(0);
-    expect(contour[contour.length - 1]).toBe(0);
+    const contour = flattenedPath(path, 0.25)[0];
+    expect(contour[contour.length - 2]).toEqual(0.0);
+    expect(contour[contour.length - 1]).toEqual(0.0);
   });
-
-  it('does not duplicate the start point when CLOSE is at the same position', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    appendPathLineTo(path, 0, 0); // already at start
+  it('does not duplicate start when close at same position', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    appendPathLineTo(path, 0.0, 0.0);
     appendPathClose(path);
-    const contour = flattenPath(path)[0];
-    // Length should be 6: (0,0), (100,0), (0,0) — no duplicate close point
-    expect(contour.length).toBe(6);
+    const contour = flattenedPath(path, 0.25)[0];
+    expect(contour.length).toEqual(6);
+  });
+  it('subdivides cubic curves', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathCubicCurveTo(path, 33.0, 100.0, 66.0, 100.0, 100.0, 0.0);
+    const contours = flattenedPath(path, 0.25);
+    expect(contours.length).toEqual(1);
+    expect(contours[0].length > 4).toBe(true);
   });
 });

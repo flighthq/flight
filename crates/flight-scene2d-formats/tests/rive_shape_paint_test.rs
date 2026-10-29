@@ -751,7 +751,7 @@ fn join_of(shape: &Ref<Shape>) -> String {
 
 fn line(length: f32) -> RivePathRecord {
     return RivePathRecord {
-        commands: vec![PathCommand::MoveTo as u8, PathCommand::LineTo as u8],
+        commands: vec![PathCommand::MOVE_TO as u8, PathCommand::LINE_TO as u8],
         data: vec![0.0, 0.0, length, 0.0],
         path_index: 0,
         winding: PathWinding::NonZero,
@@ -805,11 +805,11 @@ fn square() -> RivePathRecord {
 fn square_path() -> RivePathRecord {
     return RivePathRecord {
         commands: vec![
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::Close as u8,
+            PathCommand::MOVE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::CLOSE as u8,
         ],
         data: vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0],
         path_index: 0,
@@ -843,7 +843,7 @@ fn stroked_lengths(shape: &Ref<Shape>) -> Vec<f64> {
         if token.as_str() != Some("drawPath") {
             continue;
         }
-        let mut path: Path = create_path(flight_path::PathWinding::NonZero);
+        let mut path: Path = create_path(Some(flight_path::PathWinding::NonZero));
         path.commands = numbers_at(&commands, index + 2)
             .iter()
             .map(|value| *value as u8)

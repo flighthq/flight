@@ -1,84 +1,96 @@
-import { getPathBounds } from './getPathBounds.ts';
+// Generated from crates/flight-path/tests/get_path_bounds_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { createRectangle } from '@flighthq/geometry/contract';
+import { describe, expect, it } from 'vitest';
+
 import {
   appendPathCubicCurveTo,
-  appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
+  appendPathQuadraticCurveTo,
   appendPathRectangle,
   createPath,
-} from './path.ts';
+  getPathBounds,
+} from './contract.ts';
+import type { PathRaw } from './contract.ts';
+
+function tsWirePath(commands: number[], data: number[]): PathRaw {
+  let path = createPath('nonZero');
+  path.commands = commands;
+  path.data = data;
+  return path;
+}
 
 describe('getPathBounds', () => {
-  it('returns false and a zero rect for an empty path', () => {
-    const path = createPath();
-    const out = { x: 1, y: 2, width: 3, height: 4 };
-    const result = getPathBounds(path, out);
-    expect(result).toBe(false);
-    expect(out).toStrictEqual({ x: 0, y: 0, width: 0, height: 0 });
+  it('bounds a ts serialized stream with no op bytes', () => {
+    const path = tsWirePath([0, 1, 0, 2, 7], [1.0, 2.0, 11.0, 22.0]);
+    let out = createRectangle(0.0, 0.0, 0.0, 0.0);
+    expect(getPathBounds(path, out)).toBe(true);
+    expect([out.x, out.y, out.width, out.height]).toEqual([1.0, 2.0, 10.0, 20.0]);
   });
-
-  it('returns the exact bounds of a rectangle', () => {
-    const path = createPath();
-    appendPathRectangle(path, 10, 20, 100, 50);
-    const out = { x: 0, y: 0, width: 0, height: 0 };
-    const result = getPathBounds(path, out);
+  it('returns false and zero rect for empty path', () => {
+    const path = createPath('nonZero');
+    let r = createRectangle(1.0, 2.0, 3.0, 4.0);
+    const result = getPathBounds(path, r);
+    expect(!result).toBe(true);
+    expect(r.x).toEqual(0.0);
+    expect(r.y).toEqual(0.0);
+    expect(r.width).toEqual(0.0);
+    expect(r.height).toEqual(0.0);
+  });
+  it('returns exact bounds of rectangle', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 10.0, 20.0, 100.0, 50.0);
+    let r = createRectangle(0.0, 0.0, 0.0, 0.0);
+    const result = getPathBounds(path, r);
     expect(result).toBe(true);
-    expect(out.x).toBeCloseTo(10);
-    expect(out.y).toBeCloseTo(20);
-    expect(out.width).toBeCloseTo(100);
-    expect(out.height).toBeCloseTo(50);
+    expect(Math.abs(r.x - 10.0) < 0.005).toBe(true);
+    expect(Math.abs(r.y - 20.0) < 0.005).toBe(true);
+    expect(Math.abs(r.width - 100.0) < 0.005).toBe(true);
+    expect(Math.abs(r.height - 50.0) < 0.005).toBe(true);
   });
-
-  it('includes the start point of a single MOVE_TO', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 5, 7);
-    const out = { x: 0, y: 0, width: 0, height: 0 };
-    getPathBounds(path, out);
-    expect(out.x).toBeCloseTo(5);
-    expect(out.y).toBeCloseTo(7);
-    expect(out.width).toBeCloseTo(0);
-    expect(out.height).toBeCloseTo(0);
+  it('includes start point of single move to', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 5.0, 7.0);
+    let r = createRectangle(0.0, 0.0, 0.0, 0.0);
+    getPathBounds(path, r);
+    expect(Math.abs(r.x - 5.0) < 0.005).toBe(true);
+    expect(Math.abs(r.y - 7.0) < 0.005).toBe(true);
+    expect(Math.abs(r.width) < 0.005).toBe(true);
+    expect(Math.abs(r.height) < 0.005).toBe(true);
   });
-
-  it('expands past control points for a quadratic curve', () => {
-    // A quadratic arc: start=(0,0) control=(50,100) end=(100,0)
-    // The true Y maximum is at t=0.5: B(0.5)=(25+0.5*50, 50+…) = (50, 50) — 50 not 100.
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathQuadraticCurveTo(path, 50, 100, 100, 0);
-    const out = { x: 0, y: 0, width: 0, height: 0 };
-    getPathBounds(path, out);
-    expect(out.x).toBeCloseTo(0);
-    expect(out.y).toBeCloseTo(0);
-    // True Y max for this curve = 50 (at t=0.5), not 100 (the control point)
-    expect(out.height).toBeCloseTo(50);
-    expect(out.width).toBeCloseTo(100);
+  it('expands past control points for quadratic curve', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathQuadraticCurveTo(path, 50.0, 100.0, 100.0, 0.0);
+    let r = createRectangle(0.0, 0.0, 0.0, 0.0);
+    getPathBounds(path, r);
+    expect(Math.abs(r.x) < 0.005).toBe(true);
+    expect(Math.abs(r.y) < 0.005).toBe(true);
+    expect(Math.abs(r.height - 50.0) < 0.005).toBe(true);
+    expect(Math.abs(r.width - 100.0) < 0.005).toBe(true);
   });
-
-  it('expands past control points for a cubic curve', () => {
-    // A symmetric cubic: start=(0,0) c1=(0,100) c2=(100,100) end=(100,0).
-    // The true Y extremum is somewhere between 0 and 100.
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathCubicCurveTo(path, 0, 100, 100, 100, 100, 0);
-    const out = { x: 0, y: 0, width: 0, height: 0 };
-    getPathBounds(path, out);
-    // The maximum y should be ~75 (the bezier peak for this configuration)
-    expect(out.y).toBeCloseTo(0);
-    expect(out.height).toBeGreaterThan(70);
-    expect(out.height).toBeLessThan(100);
-    expect(out.width).toBeCloseTo(100);
+  it('expands past control points for cubic curve', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathCubicCurveTo(path, 0.0, 100.0, 100.0, 100.0, 100.0, 0.0);
+    let r = createRectangle(0.0, 0.0, 0.0, 0.0);
+    getPathBounds(path, r);
+    expect(Math.abs(r.y) < 0.005).toBe(true);
+    expect(r.height > 70.0).toBe(true);
+    expect(r.height < 100.0).toBe(true);
+    expect(Math.abs(r.width - 100.0) < 0.005).toBe(true);
   });
-
-  it('handles a MOVE_TO + LINE_TO spanning multiple quadrants', () => {
-    const path = createPath();
-    appendPathMoveTo(path, -50, -30);
-    appendPathLineTo(path, 80, 60);
-    const out = { x: 0, y: 0, width: 0, height: 0 };
-    getPathBounds(path, out);
-    expect(out.x).toBeCloseTo(-50);
-    expect(out.y).toBeCloseTo(-30);
-    expect(out.width).toBeCloseTo(130);
-    expect(out.height).toBeCloseTo(90);
+  it('handles move and line spanning multiple quadrants', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, -50.0, -30.0);
+    appendPathLineTo(path, 80.0, 60.0);
+    let r = createRectangle(0.0, 0.0, 0.0, 0.0);
+    getPathBounds(path, r);
+    expect(Math.abs(r.x - -50.0) < 0.005).toBe(true);
+    expect(Math.abs(r.y - -30.0) < 0.005).toBe(true);
+    expect(Math.abs(r.width - 130.0) < 0.005).toBe(true);
+    expect(Math.abs(r.height - 90.0) < 0.005).toBe(true);
   });
 });

@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,8 +17,8 @@ mod sugar_tests {
 
     #[test]
     fn path_decimate_matches_decimate_path() {
-        let mut oa1 = create_path(PathWinding::NonZero);
-        let mut ob1 = create_path(PathWinding::NonZero);
+        let mut oa1 = create_path(Some(PathWinding::NonZero));
+        let mut ob1 = create_path(Some(PathWinding::NonZero));
         let s = test_path();
         s.decimate(0.5, &mut oa1, Some(0.5));
         decimate_path(&s, 0.5, &mut ob1, Some(0.5));
@@ -37,8 +37,7 @@ pub fn decimate_path(
     flatten_tolerance: Option<f64>,
 ) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, source, Some(flatten_tolerance));
+    let contours = flatten_path(source, Some(flatten_tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;
@@ -64,16 +63,16 @@ pub fn decimate_path(
                 continue;
             }
             if first {
-                out.commands.push(PathCommand::MoveTo as u8);
+                out.commands.push(PathCommand::MOVE_TO as u8);
                 first = false;
             } else {
-                out.commands.push(PathCommand::LineTo as u8);
+                out.commands.push(PathCommand::LINE_TO as u8);
             }
             out.data.push(contour[i * 2]);
             out.data.push(contour[i * 2 + 1]);
         }
         if closed {
-            out.commands.push(PathCommand::Close as u8);
+            out.commands.push(PathCommand::CLOSE as u8);
         }
     }
 }

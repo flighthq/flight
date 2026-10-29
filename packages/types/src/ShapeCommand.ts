@@ -1,3 +1,5 @@
+import type { PathWinding } from '@flighthq/path/contract';
+
 import type { Matrix } from './Matrix.ts';
 import type { Texture } from './Texture.ts';
 import type { TriangleCulling } from './TriangleCulling.ts';
@@ -6,7 +8,7 @@ export type CapsStyle = 'none' | 'round' | 'square';
 
 export type GradientType = 'linear' | 'radial';
 
-export type PathWinding = 'evenOdd' | 'nonZero';
+export type { PathWinding };
 
 export type InterpolationMethod = 'linearRGB' | 'rgb';
 

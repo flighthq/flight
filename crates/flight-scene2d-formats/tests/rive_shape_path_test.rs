@@ -80,11 +80,11 @@ mod create_rive_path {
         assert_eq!(
             path.commands,
             [
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::Close as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CLOSE as u8,
             ],
         );
     }
@@ -102,9 +102,9 @@ mod create_rive_path {
         assert_eq!(
             path.commands,
             [
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
             ],
         );
         assert_eq!(path.data, [0.0, 0.0, 10.0, 0.0, 10.0, 5.0]);
@@ -120,15 +120,15 @@ mod create_rive_path {
         let closed = points_path(true, vertices);
         assert_eq!(
             open.commands,
-            [PathCommand::MoveTo as u8, PathCommand::LineTo as u8],
+            [PathCommand::MOVE_TO as u8, PathCommand::LINE_TO as u8],
         );
         assert_eq!(
             closed.commands,
             [
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::Close as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CLOSE as u8,
             ],
         );
     }
@@ -152,7 +152,7 @@ mod create_rive_path {
         );
         assert_eq!(
             path.commands,
-            [PathCommand::MoveTo as u8, PathCommand::CubicCurveTo as u8],
+            [PathCommand::MOVE_TO as u8, PathCommand::CUBIC_CURVE_TO as u8],
         );
         assert_points(
             &path.data[2..6],
@@ -240,9 +240,9 @@ mod create_rive_path {
         assert_eq!(
             path.commands,
             [
-                PathCommand::MoveTo as u8,
-                PathCommand::CubicCurveTo as u8,
-                PathCommand::CubicCurveTo as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
             ],
         );
     }
@@ -267,7 +267,7 @@ mod create_rive_path {
             rounded
                 .commands
                 .iter()
-                .filter(|command| **command == PathCommand::CubicCurveTo as u8)
+                .filter(|command| **command == PathCommand::CUBIC_CURVE_TO as u8)
                 .count(),
             4,
         );
@@ -291,7 +291,7 @@ mod create_rive_path {
         assert_eq!(
             path.commands
                 .iter()
-                .filter(|command| **command == PathCommand::CubicCurveTo as u8)
+                .filter(|command| **command == PathCommand::CUBIC_CURVE_TO as u8)
                 .count(),
             2,
         );
@@ -390,7 +390,7 @@ mod create_rive_path {
         assert_eq!(
             path.commands
                 .iter()
-                .filter(|command| **command == PathCommand::CubicCurveTo as u8)
+                .filter(|command| **command == PathCommand::CUBIC_CURVE_TO as u8)
                 .count(),
             1,
         );
@@ -402,11 +402,11 @@ mod create_rive_path {
         assert_eq!(
             path.commands,
             [
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::Close as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CLOSE as u8,
             ],
         );
     }
@@ -550,10 +550,10 @@ fn cubic_after(path: &Path, from: [f64; 2]) -> Option<[f64; 4]> {
     let mut cursor = 0;
     let mut current = [0.0, 0.0];
     for command in &path.commands {
-        if *command == PathCommand::MoveTo as u8 || *command == PathCommand::LineTo as u8 {
+        if *command == PathCommand::MOVE_TO as u8 || *command == PathCommand::LINE_TO as u8 {
             current = [path.data[cursor], path.data[cursor + 1]];
             cursor += 2;
-        } else if *command == PathCommand::CubicCurveTo as u8 {
+        } else if *command == PathCommand::CUBIC_CURVE_TO as u8 {
             if current == from {
                 return Some([
                     path.data[cursor],
@@ -592,10 +592,10 @@ fn point_pairs(path: &Path) -> Vec<[f64; 2]> {
     let mut points = Vec::new();
     let mut cursor = 0;
     for command in &path.commands {
-        if *command == PathCommand::MoveTo as u8 || *command == PathCommand::LineTo as u8 {
+        if *command == PathCommand::MOVE_TO as u8 || *command == PathCommand::LINE_TO as u8 {
             points.push([path.data[cursor], path.data[cursor + 1]]);
             cursor += 2;
-        } else if *command == PathCommand::CubicCurveTo as u8 {
+        } else if *command == PathCommand::CUBIC_CURVE_TO as u8 {
             points.push([path.data[cursor + 4], path.data[cursor + 5]]);
             cursor += 6;
         }

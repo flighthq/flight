@@ -167,10 +167,10 @@ mod bounds_source_parity {
         append_shape_path(
             &shape,
             &[
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::Close as u8,
+                PathCommand::MOVE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::LINE_TO as u8,
+                PathCommand::CLOSE as u8,
             ],
             &[0.0, 0.0, 100.0, 0.0, 50.0, 100.0],
             None,

@@ -8,7 +8,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -19,12 +19,12 @@ mod sugar_tests {
 
     fn test_style() -> StrokeStyle {
         return StrokeStyle {
-            width: 2.0,
-            cap: StrokeCap::Round,
-            join: StrokeJoin::Round,
-            miter_limit: 4.0,
-            dash: Vec::new(),
-            dash_offset: 0.0,
+            width: Some(2.0),
+            cap: Some(StrokeCap::Round),
+            join: Some(StrokeJoin::Round),
+            miter_limit: Some(4.0),
+            dash: Some(Vec::new()),
+            dash_offset: Some(0.0),
         };
     }
 

@@ -1,62 +1,74 @@
-import type { MatrixLike, Path } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/transform_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { createMatrix } from '@flighthq/geometry/contract';
+import type { MatrixLike } from '@flighthq/geometry/contract';
 
 import { copyPath } from './copyPath.ts';
+import type { PathRaw } from './path.ts';
+import { PathCommand } from './path.ts';
 
-// Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`, writing
-// the result into `out`. `out` may be the same object as `source` (alias-safe: inputs are read into
-// locals before writing). Commands and winding are copied unchanged.
-//
-// Matrix layout: [a c tx]   x' = a*x + c*y + tx
-//                [b d ty]   y' = b*x + d*y + ty
-export function transformPath(source: Readonly<Path>, matrix: Readonly<MatrixLike>, out: Path): void {
-  const { a, b, c, d, tx, ty } = matrix;
-  // Copy commands and winding first (handles the alias case for the data array below).
+/**
+ * Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`,
+ * writing the result into `out`. Alias-safe. Commands and winding are copied unchanged.
+ */
+export function transformPath(source: Readonly<PathRaw>, matrix: Readonly<MatrixLike>, out: PathRaw): void {
+  const a = matrix.a;
+  const b = matrix.b;
+  const c = matrix.c;
+  const d = matrix.d;
+  const tx = matrix.tx;
+  const ty = matrix.ty;
   copyPath(out, source);
+  const commands = out.commands.slice();
   const data = out.data;
-  const commands = source.commands;
-  let di = 0;
-  for (let ci = 0; ci < commands.length; ci++) {
+  let di: number = 0;
+  for (let ci = 0; ci < commands.length; ci += 1) {
     const command = commands[ci];
     if (command === PathCommand.MOVE_TO || command === PathCommand.LINE_TO) {
-      // 2 values: x, y
       const x = data[di];
       const y = data[di + 1];
       data[di] = a * x + c * y + tx;
       data[di + 1] = b * x + d * y + ty;
       di += 2;
-    } else if (command === PathCommand.QUADRATIC_CURVE_TO) {
-      // 4 values: controlX, controlY, x, y
-      for (let k = 0; k < 4; k += 2) {
-        const x = data[di + k];
-        const y = data[di + k + 1];
-        data[di + k] = a * x + c * y + tx;
-        data[di + k + 1] = b * x + d * y + ty;
+    } else {
+      if (command === PathCommand.QUADRATIC_CURVE_TO) {
+        for (let pair = 0; pair < 2; pair += 1) {
+          const k = pair * 2;
+          const x = data[di + k];
+          const y = data[di + k + 1];
+          data[di + k] = a * x + c * y + tx;
+          data[di + k + 1] = b * x + d * y + ty;
+        }
+        di += 4;
+      } else {
+        if (command === PathCommand.CUBIC_CURVE_TO) {
+          for (let pair = 0; pair < 3; pair += 1) {
+            const k = pair * 2;
+            const x = data[di + k];
+            const y = data[di + k + 1];
+            data[di + k] = a * x + c * y + tx;
+            data[di + k + 1] = b * x + d * y + ty;
+          }
+          di += 6;
+        } else {
+          if (command === PathCommand.WIDE_MOVE_TO || command === PathCommand.WIDE_LINE_TO) {
+            const x = data[di + 2];
+            const y = data[di + 3];
+            data[di + 2] = a * x + c * y + tx;
+            data[di + 3] = b * x + d * y + ty;
+            di += 4;
+          }
+        }
       }
-      di += 4;
-    } else if (command === PathCommand.CUBIC_CURVE_TO) {
-      // 6 values: controlX1, controlY1, controlX2, controlY2, x, y
-      for (let k = 0; k < 6; k += 2) {
-        const x = data[di + k];
-        const y = data[di + k + 1];
-        data[di + k] = a * x + c * y + tx;
-        data[di + k + 1] = b * x + d * y + ty;
-      }
-      di += 6;
-    } else if (command === PathCommand.WIDE_MOVE_TO || command === PathCommand.WIDE_LINE_TO) {
-      // 4 values: dummy pair + real x, y. Only the real pair at [di+2, di+3] is transformed.
-      const x = data[di + 2];
-      const y = data[di + 3];
-      data[di + 2] = a * x + c * y + tx;
-      data[di + 3] = b * x + d * y + ty;
-      di += 4;
     }
-    // CLOSE, NO_OP, and unrecognized verbs consume no data.
   }
 }
 
-// Translates all points in `source` by (dx, dy), writing the result into `out`. Alias-safe.
-// This is a convenience wrapper around `transformPath` for the common pure-translate case.
-export function translatePath(source: Readonly<Path>, dx: number, dy: number, out: Path): void {
-  transformPath(source, { a: 1, b: 0, c: 0, d: 1, tx: dx, ty: dy }, out);
+/**
+ * Translates all points in `source` by (dx, dy). Alias-safe.
+ */
+export function translatePath(source: Readonly<PathRaw>, dx: number, dy: number, out: PathRaw): void {
+  const matrix = createMatrix(1.0, 0.0, 0.0, 1.0, dx, dy);
+  transformPath(source, matrix, out);
 }

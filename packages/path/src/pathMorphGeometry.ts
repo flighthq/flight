@@ -1,204 +1,106 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Path, PathMorph } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/path_morph_geometry.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { forEachPathSegment } from './forEachPathSegment.ts';
+import type { PathMorphCreationReason, PathMorphRaw, PathRaw, PathSegment, PathWinding } from './path.ts';
+import { PathCommand } from './path.ts';
 
-export const PathMorphIssueNone = 0;
-export const PathMorphIssueWindingMismatch = 1;
-export const PathMorphIssueContourCountMismatch = 2;
-export const PathMorphIssueContourClosednessMismatch = 3;
-export const PathMorphIssueContourOrientationMismatch = 4;
-
-interface PathMorphBuildResult {
-  contour: number | null;
-  issue: number;
-  morph: PathMorph | null;
+export interface PathMorphBuildResult {
+  contour?: number;
+  issue: PathMorphCreationReason;
+  morph?: PathMorphRaw;
 }
 
-// Shared preparation used by the production constructor and its separately importable diagnostic.
-// Lines and quadratics are converted exactly to cubics, then the lower-segment endpoint is subdivided
-// without changing its geometry. This is deliberately a one-time allocating step; sampling stays a
-// flat coordinate loop.
-export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): PathMorphBuildResult {
+interface CubicSegment {
+  controlX1: number;
+  controlY1: number;
+  controlX2: number;
+  controlY2: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+interface CubicContour {
+  closed: boolean;
+  currentX: number;
+  currentY: number;
+  segments: CubicSegment[];
+  x: number;
+  y: number;
+}
+
+/**
+ * Numeric path-morph creation issue codes, in the order of the matching reason enum (TS `PathMorphIssueNone`…).
+ */
+export const PathMorphIssueNone: number = 0;
+
+export const PathMorphIssueWindingMismatch: number = 1;
+
+export const PathMorphIssueContourCountMismatch: number = 2;
+
+export const PathMorphIssueContourClosednessMismatch: number = 3;
+
+export const PathMorphIssueContourOrientationMismatch: number = 4;
+
+function createCubicContour(x: number, y: number): CubicContour {
+  return { closed: false, currentX: x, currentY: y, segments: [], x: x, y: y };
+}
+
+/**
+ * Shared preparation used by the production constructor and its diagnostic.
+ */
+export function buildPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphBuildResult {
   if (start.winding !== end.winding) {
-    return { contour: null, issue: PathMorphIssueWindingMismatch, morph: null };
+    return { contour: undefined, issue: 'winding-mismatch', morph: undefined };
   }
-
   const startContours = decodeCubicContours(start);
-  const endContours = decodeCubicContours(end);
+  let endContours = decodeCubicContours(end);
   if (startContours.length !== endContours.length) {
-    return { contour: null, issue: PathMorphIssueContourCountMismatch, morph: null };
+    return { contour: undefined, issue: 'contour-count-mismatch', morph: undefined };
   }
-
-  for (let i = 0; i < startContours.length; i++) {
+  for (let i = 0; i < startContours.length; i += 1) {
     if (startContours[i].closed !== endContours[i].closed) {
-      return { contour: i, issue: PathMorphIssueContourClosednessMismatch, morph: null };
+      return { contour: i, issue: 'contour-closedness-mismatch', morph: undefined };
     }
   }
-
   const orientationMismatch = normalizeCubicContourOrientations(startContours, endContours, start.winding);
-  if (orientationMismatch !== null) {
-    return { contour: orientationMismatch, issue: PathMorphIssueContourOrientationMismatch, morph: null };
+  if (orientationMismatch !== undefined) {
+    const idx = orientationMismatch;
+    return { contour: idx, issue: 'contour-orientation-mismatch', morph: undefined };
   }
-
-  for (let i = 0; i < startContours.length; i++) {
-    const startContour = startContours[i];
-    const endContour = endContours[i];
-    equalizeCubicContourSegments(startContour, endContour);
-    alignClosedCubicContour(startContour, endContour);
+  for (let i = 0; i < startContours.length; i += 1) {
+    equalizeCubicContourSegments(startContours.slice()[i], endContours[i]);
   }
-
-  const commands: number[] = [];
-  const startData: number[] = [];
-  const endData: number[] = [];
-  for (let i = 0; i < startContours.length; i++) {
-    appendCubicContourPair(commands, startData, endData, startContours[i], endContours[i]);
+  let startContoursMut = startContours;
+  for (let i = 0; i < startContoursMut.length; i += 1) {
+    equalizeCubicContourSegments(startContoursMut[i], endContours[i]);
+    alignClosedCubicContour(startContoursMut[i], endContours[i]);
   }
-  return {
-    contour: null,
-    issue: PathMorphIssueNone,
-    morph: (() => {
-      const out = allocateEntity<PathMorph>();
-      initializePathMorph(out, commands, endData, startData, start.winding);
-      return finishEntity(out);
-    })(),
-  };
-}
-
-export function initializePathMorph(
-  out: EntityConstruction<PathMorph>,
-  commands: number[],
-  endData: number[],
-  startData: number[],
-  winding: Path['winding'],
-): void {
-  out.commands = commands;
-  out.endData = endData;
-  out.startData = startData;
-  out.winding = winding;
-}
-
-// Opposite traversal makes equally-authored closed shapes fold through themselves during coordinate
-// interpolation. Even-odd paths may reverse each contour independently because direction has no fill
-// meaning. Non-zero paths may only reverse the entire endpoint consistently: that negates every
-// winding number without changing what is filled, while reversing a subset could turn a hole into a
-// solid ring. Returns the first contour whose relationship prevents that safe normalization.
-function normalizeCubicContourOrientations(
-  start: readonly CubicContour[],
-  end: CubicContour[],
-  winding: Path['winding'],
-): number | null {
-  if (winding === 'evenOdd') {
-    for (let i = 0; i < start.length; i++) {
-      const startOrientation = getCubicContourOrientation(start[i]);
-      const endOrientation = getCubicContourOrientation(end[i]);
-      if (startOrientation !== 0 && endOrientation !== 0 && startOrientation !== endOrientation) {
-        reverseClosedCubicContour(end[i]);
-      }
-    }
-    return null;
+  let commands: number[] = [] as never[];
+  let startData: number[] = [] as never[];
+  let endData: number[] = [] as never[];
+  for (let i = 0; i < startContoursMut.length; i += 1) {
+    appendCubicContourPair(commands, startData, endData, startContoursMut[i], endContours[i]);
   }
-
-  let reverseEnd: boolean | null = null;
-  for (let i = 0; i < start.length; i++) {
-    const startOrientation = getCubicContourOrientation(start[i]);
-    const endOrientation = getCubicContourOrientation(end[i]);
-    if (startOrientation === 0 || endOrientation === 0) continue;
-    const reversed = startOrientation !== endOrientation;
-    if (reverseEnd === null) reverseEnd = reversed;
-    else if (reverseEnd !== reversed) return i;
-  }
-  if (reverseEnd === true) {
-    for (let i = 0; i < end.length; i++) {
-      if (getCubicContourOrientation(end[i]) !== 0) reverseClosedCubicContour(end[i]);
-    }
-  }
-  return null;
-}
-
-function getCubicContourOrientation(contour: Readonly<CubicContour>): number {
-  if (!contour.closed) return 0;
-  const area = getCubicContourSignedArea(contour);
-  return area < 0 ? -1 : area > 0 ? 1 : 0;
-}
-
-function reverseClosedCubicContour(contour: CubicContour): void {
-  const reversed: CubicSegment[] = [];
-  for (let i = contour.segments.length - 1; i >= 0; i--) {
-    const segment = contour.segments[i];
-    reversed.push({
-      controlX1: segment.controlX2,
-      controlY1: segment.controlY2,
-      controlX2: segment.controlX1,
-      controlY2: segment.controlY1,
-      x0: segment.x1,
-      x1: segment.x0,
-      y0: segment.y1,
-      y1: segment.y0,
-    });
-  }
-  contour.segments = reversed;
-  if (reversed.length > 0) {
-    contour.x = reversed[0].x0;
-    contour.y = reversed[0].y0;
-  }
-  contour.currentX = contour.x;
-  contour.currentY = contour.y;
-}
-
-// Exact Green's-theorem area integral over cubic power-basis coefficients. This avoids introducing a
-// flattening tolerance into morph compatibility and handles curved contours as deterministically as
-// polygonal ones.
-function getCubicContourSignedArea(contour: Readonly<CubicContour>): number {
-  let twiceArea = 0;
-  let extent = 0;
-  for (let i = 0; i < contour.segments.length; i++) {
-    const segment = contour.segments[i];
-    const x0 = segment.x0 - contour.x;
-    const controlX1 = segment.controlX1 - contour.x;
-    const controlX2 = segment.controlX2 - contour.x;
-    const x1 = segment.x1 - contour.x;
-    const y0 = segment.y0 - contour.y;
-    const controlY1 = segment.controlY1 - contour.y;
-    const controlY2 = segment.controlY2 - contour.y;
-    const y1 = segment.y1 - contour.y;
-    extent = Math.max(
-      extent,
-      Math.abs(x0),
-      Math.abs(controlX1),
-      Math.abs(controlX2),
-      Math.abs(x1),
-      Math.abs(y0),
-      Math.abs(controlY1),
-      Math.abs(controlY2),
-      Math.abs(y1),
-    );
-    const x = getCubicPowerCoefficients(x0, controlX1, controlX2, x1);
-    const y = getCubicPowerCoefficients(y0, controlY1, controlY2, y1);
-    for (let xi = 0; xi < 4; xi++) {
-      for (let yi = 1; yi < 4; yi++) {
-        twiceArea += (x[xi] * yi * y[yi] - y[xi] * yi * x[yi]) / (xi + yi);
-      }
-    }
-  }
-  const area = twiceArea / 2;
-  const areaEpsilon = Math.max(1, extent * extent) * Number.EPSILON * 64;
-  return Math.abs(area) <= areaEpsilon ? 0 : area;
-}
-
-function getCubicPowerCoefficients(p0: number, p1: number, p2: number, p3: number): readonly number[] {
-  return [p0, 3 * (p1 - p0), 3 * (p0 - 2 * p1 + p2), -p0 + 3 * p1 - 3 * p2 + p3];
+  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), { commands: [], endData: [], startData: [] });
+  initializePathMorph(morph, commands, endData, startData, start.winding);
+  return { contour: undefined, issue: 'ok', morph: morph };
 }
 
 function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContour): void {
   const count = start.segments.length;
-  if (!start.closed || count < 2) return;
-  let bestOffset = 0;
-  let bestDistance = Infinity;
-  for (let offset = 0; offset < count; offset++) {
-    let distance = 0;
-    for (let i = 0; i < count; i++) {
+  if (!start.closed || count < 2) {
+    return;
+  }
+  let bestOffset: number = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let offset = 0; offset < count; offset += 1) {
+    let distance: number = 0.0;
+    for (let i = 0; i < count; i += 1) {
       const a = start.segments[i];
       const b = end.segments[(i + offset) % count];
       const dx = a.x0 - b.x0;
@@ -210,8 +112,24 @@ function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContou
       bestOffset = offset;
     }
   }
-  if (bestOffset === 0) return;
-  end.segments = end.segments.slice(bestOffset).concat(end.segments.slice(0, bestOffset));
+  if (bestOffset === 0) {
+    return;
+  }
+  let rotated: CubicSegment[] = [] as never[];
+  for (let i = 0; i < count; i += 1) {
+    const src = end.segments[(i + bestOffset) % count];
+    rotated.push({
+      controlX1: src.controlX1,
+      controlY1: src.controlY1,
+      controlX2: src.controlX2,
+      controlY2: src.controlY2,
+      x0: src.x0,
+      y0: src.y0,
+      x1: src.x1,
+      y1: src.y1,
+    });
+  }
+  end.segments = rotated;
   end.x = end.segments[0].x0;
   end.y = end.segments[0].y0;
 }
@@ -224,35 +142,49 @@ function appendCubicContourPair(
   end: Readonly<CubicContour>,
 ): void {
   commands.push(PathCommand.MOVE_TO);
-  startData.push(start.x, start.y);
-  endData.push(end.x, end.y);
-  for (let i = 0; i < start.segments.length; i++) {
+  startData.push(start.x);
+  startData.push(start.y);
+  endData.push(end.x);
+  endData.push(end.y);
+  for (let i = 0; i < start.segments.length; i += 1) {
     const a = start.segments[i];
     const b = end.segments[i];
     commands.push(PathCommand.CUBIC_CURVE_TO);
-    startData.push(a.controlX1, a.controlY1, a.controlX2, a.controlY2, a.x1, a.y1);
-    endData.push(b.controlX1, b.controlY1, b.controlX2, b.controlY2, b.x1, b.y1);
+    startData.push(a.controlX1);
+    startData.push(a.controlY1);
+    startData.push(a.controlX2);
+    startData.push(a.controlY2);
+    startData.push(a.x1);
+    startData.push(a.y1);
+    endData.push(b.controlX1);
+    endData.push(b.controlY1);
+    endData.push(b.controlX2);
+    endData.push(b.controlY2);
+    endData.push(b.x1);
+    endData.push(b.y1);
   }
-  if (start.closed) commands.push(PathCommand.CLOSE);
+  if (start.closed) {
+    commands.push(PathCommand.CLOSE);
+  }
 }
 
 function appendCubicSegment(
   contour: CubicContour,
-  controlX1: number,
-  controlY1: number,
-  controlX2: number,
-  controlY2: number,
+  cx1: number,
+  cy1: number,
+  cx2: number,
+  cy2: number,
   x: number,
   y: number,
 ): void {
   contour.segments.push({
-    controlX1,
-    controlY1,
-    controlX2,
-    controlY2,
+    controlX1: cx1,
+    controlY1: cy1,
+    controlX2: cx2,
+    controlY2: cy2,
     x0: contour.currentX,
-    x1: x,
     y0: contour.currentY,
+    x1: x,
     y1: y,
   });
   contour.currentX = x;
@@ -264,27 +196,40 @@ function appendLineAsCubic(contour: CubicContour, x: number, y: number): void {
   const y0 = contour.currentY;
   appendCubicSegment(
     contour,
-    x0 + (x - x0) / 3,
-    y0 + (y - y0) / 3,
-    x0 + ((x - x0) * 2) / 3,
-    y0 + ((y - y0) * 2) / 3,
+    x0 + (x - x0) / 3.0,
+    y0 + (y - y0) / 3.0,
+    x0 + ((x - x0) * 2.0) / 3.0,
+    y0 + ((y - y0) * 2.0) / 3.0,
     x,
     y,
   );
 }
 
-function appendQuadraticAsCubic(contour: CubicContour, controlX: number, controlY: number, x: number, y: number): void {
+function appendQuadraticAsCubic(contour: CubicContour, cx: number, cy: number, x: number, y: number): void {
   const x0 = contour.currentX;
   const y0 = contour.currentY;
   appendCubicSegment(
     contour,
-    x0 + ((controlX - x0) * 2) / 3,
-    y0 + ((controlY - y0) * 2) / 3,
-    x + ((controlX - x) * 2) / 3,
-    y + ((controlY - y) * 2) / 3,
+    x0 + ((cx - x0) * 2.0) / 3.0,
+    y0 + ((cy - y0) * 2.0) / 3.0,
+    x + ((cx - x) * 2.0) / 3.0,
+    y + ((cy - y) * 2.0) / 3.0,
     x,
     y,
   );
+}
+
+export function initializePathMorph(
+  out: PathMorphRaw,
+  commands: number[],
+  endData: number[],
+  startData: number[],
+  winding: PathWinding,
+): void {
+  out.commands = commands;
+  out.endData = endData;
+  out.startData = startData;
+  out.winding = winding;
 }
 
 function closeCubicContour(contour: CubicContour): void {
@@ -292,10 +237,6 @@ function closeCubicContour(contour: CubicContour): void {
     appendLineAsCubic(contour, contour.x, contour.y);
   }
   contour.closed = true;
-}
-
-function createCubicContour(x: number, y: number): CubicContour {
-  return { closed: false, currentX: x, currentY: y, segments: [], x, y };
 }
 
 function cubicControlPolygonLength(segment: Readonly<CubicSegment>): number {
@@ -306,46 +247,170 @@ function cubicControlPolygonLength(segment: Readonly<CubicSegment>): number {
   );
 }
 
-function decodeCubicContours(path: Readonly<Path>): CubicContour[] {
-  const contours: CubicContour[] = [];
-  let contour: CubicContour | null = null;
-  const ensureContour = (): CubicContour => {
-    if (contour !== null) return contour;
-    contour = createCubicContour(0, 0);
-    contours.push(contour);
-    return contour;
-  };
-  forEachPathSegment(path, (segment) => {
-    if (segment.kind === 'moveTo') {
-      contour = createCubicContour(segment.x, segment.y);
-      contours.push(contour);
-    } else if (segment.kind === 'lineTo') {
-      appendLineAsCubic(ensureContour(), segment.x, segment.y);
-    } else if (segment.kind === 'quadraticCurveTo') {
-      appendQuadraticAsCubic(ensureContour(), segment.controlX, segment.controlY, segment.x, segment.y);
-    } else if (segment.kind === 'cubicCurveTo') {
-      appendCubicSegment(
-        ensureContour(),
-        segment.controlX1,
-        segment.controlY1,
-        segment.controlX2,
-        segment.controlY2,
-        segment.x,
-        segment.y,
-      );
-    } else if (segment.kind === 'close' && contour !== null) {
-      closeCubicContour(contour);
-      contour = null;
+function decodeCubicContours(path: Readonly<PathRaw>): CubicContour[] {
+  let segments: PathSegment[] = [] as never[];
+  forEachPathSegment(path, (segment) => segments.push(segment));
+  let contours: CubicContour[] = [] as never[];
+  let current: number | undefined = undefined;
+  for (const segment of segments) {
+    {
+      const matchValue = segment;
+      if (matchValue.kind === 'moveTo') {
+        const x = matchValue.x;
+        const y = matchValue.y;
+        contours.push(createCubicContour(x, y));
+        current = contours.length - 1;
+      } else if (matchValue.kind === 'lineTo') {
+        const x = matchValue.x;
+        const y = matchValue.y;
+        if (current === undefined) {
+          contours.push(createCubicContour(0.0, 0.0));
+          current = contours.length - 1;
+        }
+        appendLineAsCubic(contours[current!], x, y);
+      } else if (matchValue.kind === 'quadraticCurveTo') {
+        const controlX = matchValue.controlX;
+        const controlY = matchValue.controlY;
+        const x = matchValue.x;
+        const y = matchValue.y;
+        if (current === undefined) {
+          contours.push(createCubicContour(0.0, 0.0));
+          current = contours.length - 1;
+        }
+        appendQuadraticAsCubic(contours[current!], controlX, controlY, x, y);
+      } else if (matchValue.kind === 'cubicCurveTo') {
+        const controlX1 = matchValue.controlX1;
+        const controlX2 = matchValue.controlX2;
+        const controlY1 = matchValue.controlY1;
+        const controlY2 = matchValue.controlY2;
+        const x = matchValue.x;
+        const y = matchValue.y;
+        if (current === undefined) {
+          contours.push(createCubicContour(0.0, 0.0));
+          current = contours.length - 1;
+        }
+        appendCubicSegment(contours[current!], controlX1, controlY1, controlX2, controlY2, x, y);
+      } else {
+        if (current !== undefined) {
+          const idx = current;
+          closeCubicContour(contours[idx]);
+          current = undefined;
+        }
+      }
     }
-  });
+  }
   return contours;
 }
 
 function equalizeCubicContourSegments(start: CubicContour, end: CubicContour): void {
   const targetCount = Math.max(start.segments.length, end.segments.length);
-  if (targetCount === 0) return;
+  if (targetCount === 0) {
+    return;
+  }
   start.segments = subdivideCubicSegments(start.segments, targetCount, start.x, start.y);
   end.segments = subdivideCubicSegments(end.segments, targetCount, end.x, end.y);
+}
+
+function getCubicContourOrientation(contour: Readonly<CubicContour>): number {
+  if (!contour.closed) {
+    return 0;
+  }
+  const area = getCubicContourSignedArea(contour);
+  if (area < 0.0) {
+    return -1;
+  }
+  if (area > 0.0) {
+    return 1;
+  }
+  return 0;
+}
+
+function getCubicContourSignedArea(contour: Readonly<CubicContour>): number {
+  let twiceArea: number = 0.0;
+  let extent: number = 0.0;
+  for (let i = 0; i < contour.segments.length; i += 1) {
+    const segment = contour.segments[i];
+    const x0 = segment.x0 - contour.x;
+    const cx1 = segment.controlX1 - contour.x;
+    const cx2 = segment.controlX2 - contour.x;
+    const x1 = segment.x1 - contour.x;
+    const y0 = segment.y0 - contour.y;
+    const cy1 = segment.controlY1 - contour.y;
+    const cy2 = segment.controlY2 - contour.y;
+    const y1 = segment.y1 - contour.y;
+    extent = Math.max(
+      Math.max(
+        Math.max(
+          Math.max(
+            Math.max(Math.max(Math.max(Math.max(extent, Math.abs(x0)), Math.abs(cx1)), Math.abs(cx2)), Math.abs(x1)),
+            Math.abs(y0),
+          ),
+          Math.abs(cy1),
+        ),
+        Math.abs(cy2),
+      ),
+      Math.abs(y1),
+    );
+    const xc = getCubicPowerCoefficients(x0, cx1, cx2, x1);
+    const yc = getCubicPowerCoefficients(y0, cy1, cy2, y1);
+    for (let xi = 0; xi < 4; xi += 1) {
+      for (let yi = 1; yi < 4; yi += 1) {
+        twiceArea += (xc[xi] * yi * yc[yi] - yc[xi] * yi * xc[yi]) / (xi + yi);
+      }
+    }
+  }
+  const area = twiceArea / 2.0;
+  const areaEpsilon = Math.max(1.0, extent * extent) * Number.EPSILON * 64.0;
+  if (Math.abs(area) <= areaEpsilon) {
+    return 0.0;
+  }
+  return area;
+}
+
+function getCubicPowerCoefficients(p0: number, p1: number, p2: number, p3: number): Float64Array {
+  return [p0, 3.0 * (p1 - p0), 3.0 * (p0 - 2.0 * p1 + p2), -p0 + 3.0 * p1 - 3.0 * p2 + p3];
+}
+
+function normalizeCubicContourOrientations(
+  start: Readonly<CubicContour[]>,
+  end: CubicContour[],
+  winding: PathWinding,
+): number | undefined {
+  if (winding === 'evenOdd') {
+    for (let i = 0; i < start.length; i += 1) {
+      const startOrientation = getCubicContourOrientation(start[i]);
+      const endOrientation = getCubicContourOrientation(end[i]);
+      if (startOrientation !== 0 && endOrientation !== 0 && startOrientation !== endOrientation) {
+        reverseClosedCubicContour(end[i]);
+      }
+    }
+    return undefined;
+  }
+  let reverseEnd: boolean | undefined = undefined;
+  for (let i = 0; i < start.length; i += 1) {
+    const startOrientation = getCubicContourOrientation(start[i]);
+    const endOrientation = getCubicContourOrientation(end[i]);
+    if (startOrientation === 0 || endOrientation === 0) {
+      continue;
+    }
+    const reversed = startOrientation !== endOrientation;
+    if (reverseEnd !== undefined) {
+      const rev = reverseEnd;
+      if (rev !== reversed) {
+        return i;
+      }
+    } else {
+      reverseEnd = reversed;
+    }
+  }
+  if (reverseEnd === true) {
+    for (let i = 0; i < end.length; i += 1) {
+      if (getCubicContourOrientation(end[i]) !== 0) {
+        reverseClosedCubicContour(end[i]);
+      }
+    }
+  }
+  return undefined;
 }
 
 function pointDistance(x0: number, y0: number, x1: number, y1: number): number {
@@ -354,7 +419,33 @@ function pointDistance(x0: number, y0: number, x1: number, y1: number): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function splitCubicSegment(segment: Readonly<CubicSegment>, t: number): [CubicSegment, CubicSegment] {
+function reverseClosedCubicContour(contour: CubicContour): void {
+  let reversed: CubicSegment[] = [] as never[];
+  let i = contour.segments.length;
+  while (i > 0) {
+    i -= 1;
+    const segment = contour.segments[i];
+    reversed.push({
+      controlX1: segment.controlX2,
+      controlY1: segment.controlY2,
+      controlX2: segment.controlX1,
+      controlY2: segment.controlY1,
+      x0: segment.x1,
+      y0: segment.y1,
+      x1: segment.x0,
+      y1: segment.y0,
+    });
+  }
+  contour.segments = reversed;
+  if (contour.segments.length !== 0) {
+    contour.x = contour.segments[0].x0;
+    contour.y = contour.segments[0].y0;
+  }
+  contour.currentX = contour.x;
+  contour.currentY = contour.y;
+}
+
+function splitCubicSegment(segment: Readonly<CubicSegment>, t: number): readonly [CubicSegment, CubicSegment] {
   const x01 = segment.x0 + (segment.controlX1 - segment.x0) * t;
   const y01 = segment.y0 + (segment.controlY1 - segment.y0) * t;
   const x12 = segment.controlX1 + (segment.controlX2 - segment.controlX1) * t;
@@ -368,97 +459,85 @@ function splitCubicSegment(segment: Readonly<CubicSegment>, t: number): [CubicSe
   const x = x012 + (x123 - x012) * t;
   const y = y012 + (y123 - y012) * t;
   return [
-    {
-      controlX1: x01,
-      controlY1: y01,
-      controlX2: x012,
-      controlY2: y012,
-      x0: segment.x0,
-      x1: x,
-      y0: segment.y0,
-      y1: y,
-    },
-    {
-      controlX1: x123,
-      controlY1: y123,
-      controlX2: x23,
-      controlY2: y23,
-      x0: x,
-      x1: segment.x1,
-      y0: y,
-      y1: segment.y1,
-    },
+    { controlX1: x01, controlY1: y01, controlX2: x012, controlY2: y012, x0: segment.x0, y0: segment.y0, x1: x, y1: y },
+    { controlX1: x123, controlY1: y123, controlX2: x23, controlY2: y23, x0: x, y0: y, x1: segment.x1, y1: segment.y1 },
   ];
 }
 
 function subdivideCubicSegments(
-  source: readonly CubicSegment[],
+  source: Readonly<CubicSegment[]>,
   targetCount: number,
   pointX: number,
   pointY: number,
 ): CubicSegment[] {
-  if (source.length === targetCount) return source.slice();
+  if (source.length === targetCount) {
+    let copies: CubicSegment[] = [] as never[];
+    for (const s of source) {
+      copies.push({
+        controlX1: s.controlX1,
+        controlY1: s.controlY1,
+        controlX2: s.controlX2,
+        controlY2: s.controlY2,
+        x0: s.x0,
+        y0: s.y0,
+        x1: s.x1,
+        y1: s.y1,
+      });
+    }
+    return copies;
+  }
   if (source.length === 0) {
-    const segments: CubicSegment[] = [];
-    for (let i = 0; i < targetCount; i++) {
+    let segments: CubicSegment[] = [] as never[];
+    for (let _ = 0; _ < targetCount; _ += 1) {
       segments.push({
         controlX1: pointX,
         controlY1: pointY,
         controlX2: pointX,
         controlY2: pointY,
         x0: pointX,
-        x1: pointX,
         y0: pointY,
+        x1: pointX,
         y1: pointY,
       });
     }
     return segments;
   }
-
-  const partCounts = new Array<number>(source.length).fill(1);
-  const lengths = source.map(cubicControlPolygonLength);
-  for (let total = source.length; total < targetCount; total++) {
-    let best = 0;
-    let bestLength = -1;
-    for (let i = 0; i < source.length; i++) {
+  let partCounts: number[] = new Array(source.length).fill(1);
+  const lengths: number[] = source.map((s) => cubicControlPolygonLength(s));
+  let total = source.length;
+  while (total < targetCount) {
+    let best: number = 0;
+    let bestLength: number = -1.0;
+    for (let i = 0; i < source.length; i += 1) {
       const partLength = lengths[i] / partCounts[i];
       if (partLength > bestLength) {
         best = i;
         bestLength = partLength;
       }
     }
-    partCounts[best]++;
+    partCounts[best] += 1;
+    total += 1;
   }
-
-  const segments: CubicSegment[] = [];
-  for (let i = 0; i < source.length; i++) {
-    let remainder = source[i];
-    for (let parts = partCounts[i]; parts > 1; parts--) {
-      const split = splitCubicSegment(remainder, 1 / parts);
-      segments.push(split[0]);
-      remainder = split[1];
+  let segments: CubicSegment[] = [] as never[];
+  for (let i = 0; i < source.length; i += 1) {
+    let remainder = {
+      controlX1: source[i].controlX1,
+      controlY1: source[i].controlY1,
+      controlX2: source[i].controlX2,
+      controlY2: source[i].controlY2,
+      x0: source[i].x0,
+      y0: source[i].y0,
+      x1: source[i].x1,
+      y1: source[i].y1,
+    };
+    let parts = partCounts[i];
+    while (parts > 1) {
+      const [first, second] = splitCubicSegment(remainder, 1.0 / parts);
+      segments.push(first);
+      remainder = second;
+      parts -= 1;
     }
     segments.push(remainder);
   }
   return segments;
-}
-
-interface CubicContour {
-  closed: boolean;
-  currentX: number;
-  currentY: number;
-  segments: CubicSegment[];
-  x: number;
-  y: number;
-}
-
-interface CubicSegment {
-  controlX1: number;
-  controlY1: number;
-  controlX2: number;
-  controlY2: number;
-  x0: number;
-  x1: number;
-  y0: number;
-  y1: number;
 }

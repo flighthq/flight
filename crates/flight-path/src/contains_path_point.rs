@@ -5,7 +5,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -40,6 +40,7 @@ fn chord_dist_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
 }
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) -> i32 {
     let commands = &path.commands;
     let data = &path.data;
@@ -54,7 +55,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
 
     for ci in 0..commands.len() {
         let command = commands[ci];
-        if command == PathCommand::MoveTo as u8 {
+        if command == PathCommand::MOVE_TO as u8 {
             if has_contour {
                 winding_number += count_segment_crossings(
                     px,
@@ -71,7 +72,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             last_x = contour_start_x;
             last_y = contour_start_y;
             has_contour = true;
-        } else if command == PathCommand::WideMoveTo as u8 {
+        } else if command == PathCommand::WIDE_MOVE_TO as u8 {
             if has_contour {
                 winding_number += count_segment_crossings(
                     px,
@@ -88,7 +89,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             last_x = contour_start_x;
             last_y = contour_start_y;
             has_contour = true;
-        } else if command == PathCommand::LineTo as u8 {
+        } else if command == PathCommand::LINE_TO as u8 {
             let nx = data[di];
             let ny = data[di + 1];
             di += 2;
@@ -97,7 +98,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = nx;
             last_y = ny;
-        } else if command == PathCommand::WideLineTo as u8 {
+        } else if command == PathCommand::WIDE_LINE_TO as u8 {
             let nx = data[di + 2];
             let ny = data[di + 3];
             di += 4;
@@ -106,7 +107,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = nx;
             last_y = ny;
-        } else if command == PathCommand::QuadraticCurveTo as u8 {
+        } else if command == PathCommand::QUADRATIC_CURVE_TO as u8 {
             let cx = data[di];
             let cy = data[di + 1];
             let ax = data[di + 2];
@@ -128,7 +129,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = ax;
             last_y = ay;
-        } else if command == PathCommand::CubicCurveTo as u8 {
+        } else if command == PathCommand::CUBIC_CURVE_TO as u8 {
             let c1x = data[di];
             let c1y = data[di + 1];
             let c2x = data[di + 2];
@@ -154,7 +155,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = ax;
             last_y = ay;
-        } else if command == PathCommand::Close as u8 {
+        } else if command == PathCommand::CLOSE as u8 {
             if has_contour {
                 winding_number += count_segment_crossings(
                     px,

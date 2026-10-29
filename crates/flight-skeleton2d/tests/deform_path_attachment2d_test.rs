@@ -43,7 +43,7 @@ mod deform_skeleton_2d_path_attachment {
 
     #[test]
     fn carries_the_verb_stream_and_winding_through() {
-        let mut out: Path = create_path(flight_path::PathWinding::NonZero);
+        let mut out: Path = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &rigid_path(),
@@ -59,7 +59,7 @@ mod deform_skeleton_2d_path_attachment {
 
     #[test]
     fn blends_a_weighted_point_across_two_bones() {
-        let mut out: Path = create_path(flight_path::PathWinding::NonZero);
+        let mut out: Path = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &weighted_path(),
@@ -73,7 +73,7 @@ mod deform_skeleton_2d_path_attachment {
 
     #[test]
     fn adds_a_weighted_deform_offset_in_bone_local_space() {
-        let mut out: Path = create_path(flight_path::PathWinding::NonZero);
+        let mut out: Path = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &rigid_path(),
@@ -89,7 +89,7 @@ mod deform_skeleton_2d_path_attachment {
     fn writes_nothing_for_a_rigid_path_without_vertices() {
         let mut source = rigid_path();
         source.vertices = None;
-        let mut out: Path = create_path(flight_path::PathWinding::NonZero);
+        let mut out: Path = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(&mut out, &source, &rig(), 0, None, &empty_guards());
         assert_eq!(out.data, vec![0.0, 0.0]);
     }
@@ -125,7 +125,7 @@ mod source_deform_path_parity {
 
     #[test]
     fn carries_verbs_winding_and_skinned_values_through() {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &weighted(vec![1], vec![0.0, 3.0, 4.0, 1.0], 1, vec![1]),
@@ -143,7 +143,7 @@ mod source_deform_path_parity {
 
     #[test]
     fn skins_cubic_handles_exactly_like_their_anchor() {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         let mut rig = single_rig(0.0, 90.0);
         deform_skeleton_2d_path_attachment(
             &mut out,
@@ -166,7 +166,7 @@ mod source_deform_path_parity {
 
     #[test]
     fn blends_a_weighted_point_across_two_bones_on_both_axes() {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &weighted(
@@ -186,7 +186,7 @@ mod source_deform_path_parity {
 
     #[test]
     fn adds_a_weighted_deform_offset_in_bone_local_space() {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         let mut rig = single_rig(5.0, 90.0);
         deform_skeleton_2d_path_attachment(
             &mut out,
@@ -202,7 +202,7 @@ mod source_deform_path_parity {
 
     #[test]
     fn ignores_a_deform_stream_too_short_for_its_influences() {
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &weighted(
@@ -222,7 +222,7 @@ mod source_deform_path_parity {
     #[test]
     fn reports_the_path_attachment_subject_with_exact_lengths() {
         let (guards, reports) = recording_guards();
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &weighted(
@@ -250,7 +250,7 @@ mod source_deform_path_parity {
         attachment.vertices = Some(vec![2.0, 0.0, 0.0, 3.0]);
         attachment.winding = PathWinding::NonZero;
         let mut rig = single_rig(5.0, 90.0);
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &attachment,
@@ -274,7 +274,7 @@ mod source_deform_path_parity {
         attachment.vertices = None;
         attachment.winding = PathWinding::NonZero;
         let mut rig = single_rig(0.0, 0.0);
-        let mut out = create_path(flight_path::PathWinding::NonZero);
+        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         deform_skeleton_2d_path_attachment(
             &mut out,
             &attachment,

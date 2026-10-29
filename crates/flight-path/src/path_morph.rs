@@ -1,3 +1,5 @@
+//! flight-compiler: nullable-option create_path_morph
+
 use crate::path::{Path, PathMorph};
 use crate::path_morph_geometry::build_path_morph;
 
@@ -6,7 +8,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -16,7 +18,7 @@ mod sugar_tests {
     }
 
     fn other_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 1.0, 1.0);
         append_path_line_to(&mut out, 12.0, 1.0);
         append_path_quadratic_curve_to(&mut out, 15.0, 5.0, 12.0, 12.0);
@@ -59,16 +61,20 @@ pub fn create_path_morph(start: &Path, end: &Path) -> Option<PathMorph> {
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Samples a prepared morph into `out`. Progress is not clamped: 0 and 1 are the endpoints,
 /// while values outside that range permit deliberate easing overshoot.
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn sample_path_morph(out: &mut Path, morph: &PathMorph, progress: f64) {
     let commands = &morph.commands;
-    out.commands.resize(commands.len(), 0);
+    out.commands.clear();
     for i in 0..commands.len() {
-        out.commands[i] = commands[i];
+        out.commands.push(commands[i]);
     }
 
     let start_data = &morph.start_data;
     let end_data = &morph.end_data;
-    out.data.resize(start_data.len(), 0.0);
+    out.data.clear();
+    for _ in 0..start_data.len() {
+        out.data.push(0.0);
+    }
     if progress == 0.0 || progress == 1.0 {
         let endpoint = if progress == 0.0 {
             start_data

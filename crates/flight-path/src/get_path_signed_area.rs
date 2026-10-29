@@ -1,3 +1,5 @@
+//! flight-compiler: string-union ContourOrientation
+
 use crate::flatten_path::flatten_path;
 use crate::path::Path;
 
@@ -6,7 +8,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -44,8 +46,7 @@ pub enum ContourOrientation {
 /// Returns the orientation of the path's primary (first) contour.
 pub fn get_path_contour_orientation(path: &Path, tolerance: Option<f64>) -> ContourOrientation {
     let tolerance = tolerance.unwrap_or(0.25);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     if contours.is_empty() {
         return ContourOrientation::Degenerate;
     }
@@ -62,10 +63,10 @@ pub fn get_path_contour_orientation(path: &Path, tolerance: Option<f64>) -> Cont
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Returns the signed area of the path (summed across all contours) by applying the shoelace
 /// formula to the flattened contours.
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn get_path_signed_area(path: &Path, tolerance: Option<f64>) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     let mut total: f64 = 0.0;
     for ci in 0..contours.len() {
         total += shoelace_area(&contours[ci]);

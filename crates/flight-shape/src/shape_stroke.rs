@@ -71,15 +71,15 @@ pub fn get_shape_stroke_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Sh
                     .and_then(|token| token.as_str())
                     .unwrap_or("round");
                 style = Some(StrokeStyle {
-                    cap: stroke_cap(caps),
-                    dash: Vec::new(),
-                    dash_offset: 0.0,
-                    join: stroke_join(joints),
-                    miter_limit: number_at(commands, argument_index + 7),
-                    width: thickness,
+                    cap: Some(stroke_cap(caps)),
+                    dash: Some(Vec::new()),
+                    dash_offset: Some(0.0),
+                    join: Some(stroke_join(joints)),
+                    miter_limit: Some(number_at(commands, argument_index + 7)),
+                    width: Some(thickness),
                 });
                 let mut path =
-                    flight_path::contract::create_path(flight_path::PathWinding::NonZero);
+                    flight_path::contract::create_path(Some(flight_path::PathWinding::NonZero));
                 path.winding = PathWinding::NonZero;
                 centerline = Some(path);
             } else {
@@ -89,7 +89,7 @@ pub fn get_shape_stroke_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Sh
         } else if is_shape_geometry_command(name) {
             if let Some(path) = centerline.as_mut() {
                 if path.commands.is_empty() && name != "moveTo" {
-                    path.commands.push(PathCommand::MoveTo as u8);
+                    path.commands.push(PathCommand::MOVE_TO as u8);
                     path.data.extend_from_slice(&[pen_x, pen_y]);
                 }
                 append_shape_geometry_command(path, name, commands, argument_index);

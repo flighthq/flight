@@ -15,7 +15,7 @@ mod sugar_tests {
     fn kernel_explain_offset_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
         let ra = k.explain_offset_path(
-            &create_path(flight_path::PathWinding::NonZero),
+            &create_path(Some(flight_path::PathWinding::NonZero)),
             2.0,
             Some(&PathOffsetOptions {
                 join: Some(PathOffsetJoin::Round),
@@ -27,7 +27,7 @@ mod sugar_tests {
         );
         let rb = explain_offset_path(
             &k,
-            &create_path(flight_path::PathWinding::NonZero),
+            &create_path(Some(flight_path::PathWinding::NonZero)),
             2.0,
             Some(&PathOffsetOptions {
                 join: Some(PathOffsetJoin::Round),
@@ -48,7 +48,7 @@ mod sugar_tests {
     fn kernel_explain_simplify_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
         let ra = k.explain_simplify_path(
-            &create_path(flight_path::PathWinding::NonZero),
+            &create_path(Some(flight_path::PathWinding::NonZero)),
             Some(&PathBooleanOptions {
                 fill_rule: Some(PathWinding::EvenOdd),
                 tolerance: Some(0.5),
@@ -56,7 +56,7 @@ mod sugar_tests {
         );
         let rb = explain_simplify_path(
             &k,
-            &create_path(flight_path::PathWinding::NonZero),
+            &create_path(Some(flight_path::PathWinding::NonZero)),
             Some(&PathBooleanOptions {
                 fill_rule: Some(PathWinding::EvenOdd),
                 tolerance: Some(0.5),
@@ -115,15 +115,14 @@ pub fn explain_offset_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     if contours.is_empty() {
         return Some(PathBooleanExplanation {
             operation: PathBooleanExplanationOperation::Offset,
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = create_path(flight_path::PathWinding::NonZero);
+    let mut result = create_path(Some(flight_path::PathWinding::NonZero));
     offset_path(&mut result, path_boolean_kernel, path, delta, options);
     if result.commands.is_empty() {
         return Some(PathBooleanExplanation {
@@ -145,15 +144,14 @@ pub fn explain_simplify_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     if contours.is_empty() {
         return Some(PathBooleanExplanation {
             operation: PathBooleanExplanationOperation::Simplify,
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = create_path(flight_path::PathWinding::NonZero);
+    let mut result = create_path(Some(flight_path::PathWinding::NonZero));
     simplify_path(&mut result, path_boolean_kernel, path, options);
     if result.commands.is_empty() {
         return Some(PathBooleanExplanation {

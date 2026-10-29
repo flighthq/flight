@@ -1,16 +1,138 @@
-import type { Path } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/reverse_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
 import { forEachPathSegment } from './forEachPathSegment.ts';
+import type { PathRaw, PathSegment } from './path.ts';
+import { PathCommand } from './path.ts';
 
-// Reverses the winding direction of all contours in `source` and writes the result into `out`.
-// Each subpath (from MOVE_TO to MOVE_TO / end) is independently reversed: its anchor sequence is
-// flipped and control points are re-paired to match the reversed direction. The winding rule is
-// preserved unchanged. Alias-safe: `out` may be the same object as `source`.
-//
-// Reversing a CCW contour produces CW, which is the standard technique for carving holes in a
-// nonZero fill: append a CW copy of the inner boundary as a counter-wound subpath.
-export function reversePath(source: Readonly<Path>, out: Path): void {
+type SubpathPointKind =
+  | { readonly kind: 'move' }
+  | { readonly kind: 'line' }
+  | { readonly kind: 'quad'; readonly cx: number; readonly cy: number }
+  | { readonly kind: 'cubic'; readonly c1x: number; readonly c1y: number; readonly c2x: number; readonly c2y: number };
+
+interface SubpathPoint {
+  x: number;
+  y: number;
+  kind: SubpathPointKind;
+}
+
+interface Subpath {
+  closed: boolean;
+  points: SubpathPoint[];
+}
+
+function decodeSubpaths(path: Readonly<PathRaw>): Subpath[] {
+  let segments: PathSegment[] = [] as never[];
+  forEachPathSegment(path, (segment) => segments.push(segment));
+  let subpaths: Subpath[] = [] as never[];
+  let current: number | undefined = undefined;
+  for (const segment of segments) {
+    {
+      const matchValue = segment;
+      if (matchValue.kind === 'moveTo') {
+        const x = matchValue.x;
+        const y = matchValue.y;
+        subpaths.push({ closed: false, points: [{ x: x, y: y, kind: { kind: 'move' as const } }] });
+        current = subpaths.length - 1;
+      } else if (matchValue.kind === 'lineTo') {
+        const x = matchValue.x;
+        const y = matchValue.y;
+        if (current === undefined) {
+          subpaths.push({ closed: false, points: [{ x: 0.0, y: 0.0, kind: { kind: 'move' as const } }] });
+          current = subpaths.length - 1;
+        }
+        subpaths[current!].points.push({ x: x, y: y, kind: { kind: 'line' as const } });
+      } else if (matchValue.kind === 'quadraticCurveTo') {
+        const controlX = matchValue.controlX;
+        const controlY = matchValue.controlY;
+        const x = matchValue.x;
+        const y = matchValue.y;
+        if (current === undefined) {
+          subpaths.push({ closed: false, points: [{ x: 0.0, y: 0.0, kind: { kind: 'move' as const } }] });
+          current = subpaths.length - 1;
+        }
+        subpaths[current!].points.push({ x: x, y: y, kind: { kind: 'quad' as const, cx: controlX, cy: controlY } });
+      } else if (matchValue.kind === 'cubicCurveTo') {
+        const controlX1 = matchValue.controlX1;
+        const controlX2 = matchValue.controlX2;
+        const controlY1 = matchValue.controlY1;
+        const controlY2 = matchValue.controlY2;
+        const x = matchValue.x;
+        const y = matchValue.y;
+        if (current === undefined) {
+          subpaths.push({ closed: false, points: [{ x: 0.0, y: 0.0, kind: { kind: 'move' as const } }] });
+          current = subpaths.length - 1;
+        }
+        subpaths[current!].points.push({
+          x: x,
+          y: y,
+          kind: { kind: 'cubic' as const, c1x: controlX1, c1y: controlY1, c2x: controlX2, c2y: controlY2 },
+        });
+      } else {
+        if (current !== undefined) {
+          const idx = current;
+          subpaths[idx].closed = true;
+        }
+      }
+    }
+  }
+  return subpaths;
+}
+
+function encodeReversedSubpath(subpath: Readonly<Subpath>, out: PathRaw): void {
+  const pts = subpath.points;
+  if (pts.length === 0) {
+    return;
+  }
+  const last = pts[pts.length - 1];
+  out.commands.push(PathCommand.MOVE_TO);
+  out.data.push(last.x);
+  out.data.push(last.y);
+  let i = pts.length - 1;
+  while (i >= 1) {
+    const from = pts[i];
+    const to = pts[i - 1];
+    {
+      const matchValue = from.kind;
+      if (matchValue.kind === 'line' || matchValue.kind === 'move') {
+        out.commands.push(PathCommand.LINE_TO);
+        out.data.push(to.x);
+        out.data.push(to.y);
+      } else if (matchValue.kind === 'quad') {
+        const cx = matchValue.cx;
+        const cy = matchValue.cy;
+        out.commands.push(PathCommand.QUADRATIC_CURVE_TO);
+        out.data.push(cx);
+        out.data.push(cy);
+        out.data.push(to.x);
+        out.data.push(to.y);
+      } else {
+        const c1x = matchValue.c1x;
+        const c1y = matchValue.c1y;
+        const c2x = matchValue.c2x;
+        const c2y = matchValue.c2y;
+        out.commands.push(PathCommand.CUBIC_CURVE_TO);
+        out.data.push(c2x);
+        out.data.push(c2y);
+        out.data.push(c1x);
+        out.data.push(c1y);
+        out.data.push(to.x);
+        out.data.push(to.y);
+      }
+    }
+    i -= 1;
+  }
+  if (subpath.closed) {
+    out.commands.push(PathCommand.CLOSE);
+  }
+}
+
+/**
+ * Reverses the winding direction of all contours in `source` and writes the result into `out`.
+ * Alias-safe: `out` may be the same object as `source`.
+ */
+export function reversePath(source: Readonly<PathRaw>, out: PathRaw): void {
   const subpaths = decodeSubpaths(source);
   out.commands.length = 0;
   out.data.length = 0;
@@ -19,84 +141,3 @@ export function reversePath(source: Readonly<Path>, out: Path): void {
     encodeReversedSubpath(subpath, out);
   }
 }
-
-function decodeSubpaths(path: Readonly<Path>): Subpath[] {
-  const subpaths: Subpath[] = [];
-  let current: Subpath | null = null;
-  const ensureCurrent = (): Subpath => {
-    if (current === null) {
-      current = { points: [{ x: 0, y: 0, kind: 'move' }], closed: false };
-      subpaths.push(current);
-    }
-    return current;
-  };
-  forEachPathSegment(path, (segment) => {
-    if (segment.kind === 'moveTo') {
-      current = { points: [{ x: segment.x, y: segment.y, kind: 'move' }], closed: false };
-      subpaths.push(current);
-    } else if (segment.kind === 'lineTo') {
-      ensureCurrent().points.push({ x: segment.x, y: segment.y, kind: 'line' });
-    } else if (segment.kind === 'quadraticCurveTo') {
-      ensureCurrent().points.push({
-        x: segment.x,
-        y: segment.y,
-        kind: 'quad',
-        cx: segment.controlX,
-        cy: segment.controlY,
-      });
-    } else if (segment.kind === 'cubicCurveTo') {
-      ensureCurrent().points.push({
-        x: segment.x,
-        y: segment.y,
-        kind: 'cubic',
-        c1x: segment.controlX1,
-        c1y: segment.controlY1,
-        c2x: segment.controlX2,
-        c2y: segment.controlY2,
-      });
-    } else if (segment.kind === 'close') {
-      if (current !== null) current.closed = true;
-    }
-  });
-  return subpaths;
-}
-
-function encodeReversedSubpath(subpath: Readonly<Subpath>, out: Path): void {
-  const pts = subpath.points;
-  if (pts.length === 0) return;
-  // The last point becomes the new start.
-  const last = pts[pts.length - 1];
-  out.commands.push(PathCommand.MOVE_TO);
-  out.data.push(last.x, last.y);
-  // Walk backwards from (n-1) down to 0, emitting the segment type of the point we're leaving.
-  for (let i = pts.length - 1; i >= 1; i--) {
-    const from = pts[i];
-    const to = pts[i - 1];
-    if (from.kind === 'line' || from.kind === 'move') {
-      out.commands.push(PathCommand.LINE_TO);
-      out.data.push(to.x, to.y);
-    } else if (from.kind === 'quad') {
-      // Reversed quadratic: control stays the same, anchor is now `to`.
-      out.commands.push(PathCommand.QUADRATIC_CURVE_TO);
-      out.data.push(from.cx, from.cy, to.x, to.y);
-    } else if (from.kind === 'cubic') {
-      // Reversed cubic: swap control points c1↔c2.
-      out.commands.push(PathCommand.CUBIC_CURVE_TO);
-      out.data.push(from.c2x, from.c2y, from.c1x, from.c1y, to.x, to.y);
-    }
-  }
-  if (subpath.closed) {
-    out.commands.push(PathCommand.CLOSE);
-  }
-}
-
-interface Subpath {
-  closed: boolean;
-  points: SubpathPoint[];
-}
-
-type SubpathPoint =
-  | { kind: 'move'; x: number; y: number }
-  | { kind: 'line'; x: number; y: number }
-  | { kind: 'quad'; x: number; y: number; cx: number; cy: number }
-  | { kind: 'cubic'; x: number; y: number; c1x: number; c1y: number; c2x: number; c2y: number };

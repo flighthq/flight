@@ -32,7 +32,7 @@ mod apply_lottie_shape_direction {
 }
 
 fn triangle() -> Ref<Path> {
-    let mut path = create_path(flight_path::PathWinding::NonZero);
+    let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     append_path_move_to(&mut path, 0.0, 0.0);
     append_path_line_to(&mut path, 10.0, 0.0);
     append_path_line_to(&mut path, 0.0, 10.0);

@@ -11,16 +11,15 @@ import type { Path } from '@flighthq/path/contract';
 import { flattenClipPath } from './clipPath.ts';
 import { createClipRegionFromRectangle } from './clipRegion.ts';
 import type { ClipRegion } from './types.ts';
-import { PathWinding } from './types.ts';
 
 export function createClipRegionFromCircle(x: number, y: number, radius: number, tolerance?: number): ClipRegion {
-  let path = createPath(PathWinding.NonZero);
+  let path = createPath('nonZero');
   appendCircleToPath(path, x, y, radius);
   return createClipRegionFromPath(path, tolerance);
 }
 
 export function createClipRegionFromEllipse(rectangle: Readonly<RectangleLike>, tolerance?: number): ClipRegion {
-  let path = createPath(PathWinding.NonZero);
+  let path = createPath('nonZero');
   appendEllipseToPath(path, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
   return createClipRegionFromPath(path, tolerance);
 }
@@ -39,7 +38,7 @@ export function createClipRegionFromRoundedRectangle(
   if (radius <= 0.0) {
     return createClipRegionFromRectangle(rectangle);
   }
-  let path = createPath(PathWinding.NonZero);
+  let path = createPath('nonZero');
   appendRoundedRectToPath(path, rectangle.x, rectangle.y, rectangle.width, rectangle.height, radius);
   return createClipRegionFromPath(path, tolerance);
 }

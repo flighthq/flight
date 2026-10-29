@@ -1,13 +1,16 @@
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
 
 import {
+  PathCommand,
+  appendPathArc,
   appendPathCircle,
   appendPathClose,
   appendPathCubicCurveTo,
   appendPathEllipse,
-  appendPathArc,
   appendPathEllipticalArcTo,
-  appendPathTangentArcTo,
   appendPathLineTo,
   appendPathMoveTo,
   appendPathPolygon,
@@ -16,291 +19,373 @@ import {
   appendPathRectangle,
   appendPathRoundedRectangle,
   appendPathRoundedRectangleWithCornerRadii,
+  appendPathTangentArcTo,
   createPath,
   getPathLastPoint,
+  getPathMorphCreationReasonString,
+  getPathWindingString,
+  getStrokeCapString,
+  getStrokeJoinString,
+  getStrokePathTessellationReasonString,
   initializePath,
-} from './path.ts';
+  parsePathMorphCreationReason,
+  parsePathWinding,
+  parseStrokeCap,
+  parseStrokeJoin,
+  parseStrokePathTessellationReason,
+} from './contract.ts';
+import type { PathRaw } from './contract.ts';
+
+function axisValues(path: Readonly<PathRaw>, axis: number): number[] {
+  let values: number[] = [] as never[];
+  let i = axis;
+  while (i < path.data.length) {
+    values.push(path.data[i]);
+    i += 2;
+  }
+  return values;
+}
+
+function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
+  let count = 0;
+  for (const candidate of path.commands) {
+    if (candidate === command) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function maxValue(values: Readonly<number[]>): number {
+  let max = Number.NEGATIVE_INFINITY;
+  for (const value of values) {
+    max = Math.max(max, value);
+  }
+  return max;
+}
+
+function minValue(values: Readonly<number[]>): number {
+  let min = Number.POSITIVE_INFINITY;
+  for (const value of values) {
+    min = Math.min(min, value);
+  }
+  return min;
+}
+
+function tsWirePath(commands: number[], data: number[]): PathRaw {
+  let path = createPath('nonZero');
+  path.commands = commands;
+  path.data = data;
+  return path;
+}
 
 describe('appendPathArc', () => {
-  it('produces a MOVE_TO and at least one CUBIC_CURVE_TO for a non-zero arc', () => {
-    const path = createPath();
-    appendPathArc(path, 0, 0, 50, 0, Math.PI / 2);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+  it('produces move to and cubic curves for non zero arc', () => {
+    let path = createPath('nonZero');
+    appendPathArc(path, 0.0, 0.0, 50.0, 0.0, Math.PI / 2.0, false, false);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
   });
-
-  it('starts at the correct point on the circle (angle=0 → rightmost)', () => {
-    const path = createPath();
-    appendPathArc(path, 10, 20, 30, 0, Math.PI / 2);
-    // MOVE_TO at (cx + radius*cos(0), cy + radius*sin(0)) = (40, 20)
-    expect(path.data[0]).toBeCloseTo(40);
-    expect(path.data[1]).toBeCloseTo(20);
+  it('starts at correct point on circle', () => {
+    let path = createPath('nonZero');
+    appendPathArc(path, 10.0, 20.0, 30.0, 0.0, Math.PI / 2.0, false, false);
+    expect(Math.abs(path.data[0] - 40.0) < 0.005).toBe(true);
+    expect(Math.abs(path.data[1] - 20.0) < 0.005).toBe(true);
   });
-
-  it('ends at the correct point for a quarter circle', () => {
-    const path = createPath();
-    appendPathArc(path, 0, 0, 100, 0, Math.PI / 2);
-    // The last CUBIC_CURVE_TO anchor should be near (cos(π/2)*100, sin(π/2)*100) = (0, 100)
-    const data = path.data;
-    expect(data[data.length - 2]).toBeCloseTo(0, 1);
-    expect(data[data.length - 1]).toBeCloseTo(100, 1);
-  });
-
-  it('supports anticlockwise arcs', () => {
-    const pathCW = createPath();
-    appendPathArc(pathCW, 0, 0, 50, 0, Math.PI, false);
-    const pathCCW = createPath();
-    appendPathArc(pathCCW, 0, 0, 50, 0, Math.PI, true);
-    // Both arcs should contain cubic curves but the y-extremes differ.
-    expect(pathCW.commands).toContain(PathCommand.CUBIC_CURVE_TO);
-    expect(pathCCW.commands).toContain(PathCommand.CUBIC_CURVE_TO);
-    // CW goes through negative y; CCW goes through positive y (in screen coords).
-    const cwMaxY = Math.max(...pathCW.data.filter((_, i) => i % 2 === 1));
-    const ccwMinY = Math.min(...pathCCW.data.filter((_, i) => i % 2 === 1));
-    expect(cwMaxY).toBeGreaterThan(0);
-    expect(ccwMinY).toBeLessThan(0);
-  });
-
-  it('connectToCurrent=true appends a LINE_TO instead of MOVE_TO', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathArc(path, 100, 0, 50, Math.PI, 0, false, true);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
-  });
-
   it('appends nothing for zero radius', () => {
-    const path = createPath();
-    appendPathArc(path, 0, 0, 0, 0, Math.PI);
-    expect(path.commands.length).toBe(0);
+    let path = createPath('nonZero');
+    appendPathArc(path, 0.0, 0.0, 0.0, 0.0, Math.PI, false, false);
+    expect(path.commands.length).toEqual(0);
+  });
+  it('ends at correct point for a quarter circle', () => {
+    let path = createPath('nonZero');
+    appendPathArc(path, 0.0, 0.0, 100.0, 0.0, Math.PI / 2.0, false, false);
+    const data = path.data;
+    expect(Math.abs(data[data.length - 2] - 0.0) < 0.05).toBe(true);
+    expect(Math.abs(data[data.length - 1] - 100.0) < 0.05).toBe(true);
+  });
+  it('supports anticlockwise arcs', () => {
+    let pathCw = createPath('nonZero');
+    appendPathArc(pathCw, 0.0, 0.0, 50.0, 0.0, Math.PI, false, false);
+    let pathCcw = createPath('nonZero');
+    appendPathArc(pathCcw, 0.0, 0.0, 50.0, 0.0, Math.PI, true, false);
+    expect(pathCw.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    expect(pathCcw.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    const cwMaxY: number = maxValue(axisValues(pathCw, 1));
+    const ccwMinY: number = minValue(axisValues(pathCcw, 1));
+    expect(cwMaxY > 0.0).toBe(true);
+    expect(ccwMinY < 0.0).toBe(true);
+  });
+  it('connect to current appends line to instead of move to', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathArc(path, 100.0, 0.0, 50.0, Math.PI, 0.0, false, true);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
   });
 });
 
 describe('appendPathCircle', () => {
-  it('produces a closed path with a MOVE_TO, four CUBIC_CURVE_TO, and a CLOSE', () => {
-    const path = createPath();
-    appendPathCircle(path, 0, 0, 50);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toBe(PathCommand.CLOSE);
-    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(4);
+  it('produces closed path with four cubic curves', () => {
+    let path = createPath('nonZero');
+    appendPathCircle(path, 0.0, 0.0, 50.0);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
+    expect(cubicCount).toEqual(4);
   });
-
-  it('starts at the rightmost point of the circle', () => {
-    const path = createPath();
-    appendPathCircle(path, 10, 20, 30);
-    // MOVE_TO at (cx+radius, cy) = (40, 20)
-    expect(path.data[0]).toBeCloseTo(40);
-    expect(path.data[1]).toBeCloseTo(20);
+  it('starts at rightmost point', () => {
+    let path = createPath('nonZero');
+    appendPathCircle(path, 10.0, 20.0, 30.0);
+    expect(Math.abs(path.data[0] - 40.0) < 0.005).toBe(true);
+    expect(Math.abs(path.data[1] - 20.0) < 0.005).toBe(true);
   });
 });
 
 describe('appendPathClose', () => {
-  it('appends a CLOSE command and no data', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
+  it('appends close command and no data', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
     appendPathClose(path);
-    expect(path.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.CLOSE]);
-    expect(path.data).toStrictEqual([0, 0]);
+    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CLOSE]);
+    expect(path.data).toEqual([0.0, 0.0]);
   });
 });
 
 describe('appendPathCubicCurveTo', () => {
+  it('appends command and six data values', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathCubicCurveTo(path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CUBIC_CURVE_TO);
+    expect(path.data.length).toEqual(8);
+  });
   it('pushes the cubic verb and its six coordinates', () => {
-    const path = createPath();
-    appendPathCubicCurveTo(path, 1, 2, 3, 4, 5, 6);
-    expect(path.commands).toStrictEqual([PathCommand.CUBIC_CURVE_TO]);
-    expect(path.data).toStrictEqual([1, 2, 3, 4, 5, 6]);
+    let path = createPath('nonZero');
+    appendPathCubicCurveTo(path, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+    expect(path.commands.length).toEqual(1);
+    expect(path.commands[0]).toEqual(PathCommand.CUBIC_CURVE_TO);
+    expect(path.data.length).toEqual(6);
+    for (let i = 0; i < 6; i += 1) {
+      expect(path.data[i]).toEqual(i + 1);
+    }
   });
 });
 
 describe('appendPathEllipse', () => {
   it('produces a closed path with four cubic segments', () => {
-    const path = createPath();
-    appendPathEllipse(path, 0, 0, 100, 50);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toBe(PathCommand.CLOSE);
-    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(4);
+    let path = createPath('nonZero');
+    appendPathEllipse(path, 0.0, 0.0, 100.0, 50.0);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
+    expect(cubicCount).toEqual(4);
   });
-
-  it('starts at (cx+radiusX, cy)', () => {
-    const path = createPath();
-    appendPathEllipse(path, 10, 20, 100, 50);
-    expect(path.data[0]).toBeCloseTo(110);
-    expect(path.data[1]).toBeCloseTo(20);
+  it('starts at cx plus radius x cy', () => {
+    let path = createPath('nonZero');
+    appendPathEllipse(path, 10.0, 20.0, 100.0, 50.0);
+    expect(Math.abs(path.data[0] - 110.0) < 0.005).toBe(true);
+    expect(Math.abs(path.data[1] - 20.0) < 0.005).toBe(true);
   });
 });
 
 describe('appendPathEllipticalArcTo', () => {
-  it('starts after CLOSE from the subpath origin', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 10, 20);
-    appendPathLineTo(path, 30, 40);
+  it('starts after close from the subpath origin', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 10.0, 20.0);
+    appendPathLineTo(path, 30.0, 40.0);
     appendPathClose(path);
-    appendPathEllipticalArcTo(path, 10, 10, 0, false, true, 30, 20);
-
-    const expected = createPath();
-    appendPathMoveTo(expected, 10, 20);
-    appendPathEllipticalArcTo(expected, 10, 10, 0, false, true, 30, 20);
-
-    expect(path.data.slice(4)).toStrictEqual(expected.data.slice(2));
+    appendPathEllipticalArcTo(path, 10.0, 10.0, 0.0, false, true, 30.0, 20.0);
+    let expected = createPath('nonZero');
+    appendPathMoveTo(expected, 10.0, 20.0);
+    appendPathEllipticalArcTo(expected, 10.0, 10.0, 0.0, false, true, 30.0, 20.0);
+    expect(path.data.slice(4)).toEqual(expected.data.slice(2));
   });
-
-  it('appends a LINE_TO when radiusX is 0', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathEllipticalArcTo(path, 0, 10, 0, false, false, 50, 50);
-    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
-    expect(path.data[path.data.length - 2]).toBeCloseTo(50);
-    expect(path.data[path.data.length - 1]).toBeCloseTo(50);
+  it('appends a line to when radius x is zero', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathEllipticalArcTo(path, 0.0, 10.0, 0.0, false, false, 50.0, 50.0);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(Math.abs(path.data[path.data.length - 2] - 50.0) < 0.005).toBe(true);
+    expect(Math.abs(path.data[path.data.length - 1] - 50.0) < 0.005).toBe(true);
   });
-
   it('does nothing when start equals end', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 10, 10);
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 10.0, 10.0);
     const beforeLen = path.commands.length;
-    appendPathEllipticalArcTo(path, 50, 50, 0, false, false, 10, 10);
-    expect(path.commands.length).toBe(beforeLen);
+    appendPathEllipticalArcTo(path, 50.0, 50.0, 0.0, false, false, 10.0, 10.0);
+    expect(path.commands.length).toEqual(beforeLen);
   });
-
-  it('produces cubic curves for a non-degenerate arc', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 100, 0);
-    // Full circle: from (100,0) back to (100,0) via a large arc
-    appendPathEllipticalArcTo(path, 50, 50, 0, true, false, 100, 1);
-    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+  it('produces cubic curves for a non degenerate arc', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 100.0, 0.0);
+    appendPathEllipticalArcTo(path, 50.0, 50.0, 0.0, true, false, 100.0, 1.0);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
   });
-
-  it('ends at the specified endpoint (non-rotated, unit circle)', () => {
-    // Quarter circle from (1,0) to (0,1) using a radius-1 circle centered at origin.
-    const path = createPath();
-    appendPathMoveTo(path, 1, 0);
-    appendPathEllipticalArcTo(path, 1, 1, 0, false, true, 0, 1);
+  it('ends at the specified endpoint', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 1.0, 0.0);
+    appendPathEllipticalArcTo(path, 1.0, 1.0, 0.0, false, true, 0.0, 1.0);
     const data = path.data;
-    // Last anchor point of the last cubic should be close to (0,1).
-    expect(data[data.length - 2]).toBeCloseTo(0, 1);
-    expect(data[data.length - 1]).toBeCloseTo(1, 1);
+    expect(Math.abs(data[data.length - 2] - 0.0) < 0.05).toBe(true);
+    expect(Math.abs(data[data.length - 1] - 1.0) < 0.05).toBe(true);
   });
 });
 
 describe('appendPathLineTo', () => {
+  it('appends command and two data values', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 20.0);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.LINE_TO);
+    expect(path.data.length).toEqual(4);
+  });
   it('pushes the line verb and its point', () => {
-    const path = createPath();
-    appendPathLineTo(path, 7, 8);
-    expect(path.commands).toStrictEqual([PathCommand.LINE_TO]);
-    expect(path.data).toStrictEqual([7, 8]);
+    let path = createPath('nonZero');
+    appendPathLineTo(path, 7.0, 8.0);
+    expect(path.commands.length).toEqual(1);
+    expect(path.commands[0]).toEqual(PathCommand.LINE_TO);
+    expect(path.data.length).toEqual(2);
+    expect(path.data[0]).toEqual(7.0);
+    expect(path.data[1]).toEqual(8.0);
   });
 });
 
 describe('appendPathMoveTo', () => {
+  it('appends command and two data values', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 5.0, 10.0);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.data[0]).toEqual(5.0);
+    expect(path.data[1]).toEqual(10.0);
+  });
   it('pushes the move verb and its point', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 9, 10);
-    expect(path.commands).toStrictEqual([PathCommand.MOVE_TO]);
-    expect(path.data).toStrictEqual([9, 10]);
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 9.0, 10.0);
+    expect(path.commands.length).toEqual(1);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.data.length).toEqual(2);
+    expect(path.data[0]).toEqual(9.0);
+    expect(path.data[1]).toEqual(10.0);
   });
 });
 
 describe('appendPathPolygon', () => {
   it('appends a closed polygon from a flat coordinate array', () => {
-    const path = createPath();
-    appendPathPolygon(path, new Float64Array([0, 0, 100, 0, 100, 100]));
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toBe(PathCommand.CLOSE);
-    expect(path.data[0]).toBe(0);
-    expect(path.data[1]).toBe(0);
+    let path = createPath('nonZero');
+    appendPathPolygon(path, [0.0, 0.0, 100.0, 0.0, 100.0, 100.0]);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.data[0]).toEqual(0.0);
+    expect(path.data[1]).toEqual(0.0);
   });
-
-  it('does nothing when fewer than 3 points are provided', () => {
-    const path = createPath();
-    appendPathPolygon(path, [0, 0, 10, 10]);
-    expect(path.commands.length).toBe(0);
+  it('creates closed polygon from points', () => {
+    let path = createPath('nonZero');
+    appendPathPolygon(path, [0.0, 0.0, 100.0, 0.0, 50.0, 100.0]);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+  });
+  it('ignores fewer than three points', () => {
+    let path = createPath('nonZero');
+    appendPathPolygon(path, [0.0, 0.0, 10.0, 10.0]);
+    expect(path.commands.length).toEqual(0);
   });
 });
 
 describe('appendPathPolyline', () => {
-  it('appends an open polyline with no CLOSE', () => {
-    const path = createPath();
-    appendPathPolyline(path, new Float64Array([0, 0, 10, 0, 10, 10]));
-    expect(path.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
-    expect(path.commands).not.toContain(PathCommand.CLOSE);
+  it('appends an open polyline with no close', () => {
+    let path = createPath('nonZero');
+    appendPathPolyline(path, [0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
+    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
+    expect(!path.commands.includes(PathCommand.CLOSE)).toBe(true);
   });
-
-  it('does nothing when fewer than 2 points are provided', () => {
-    const path = createPath();
-    appendPathPolyline(path, [0, 0]);
-    expect(path.commands.length).toBe(0);
+  it('does nothing when fewer than two points are provided', () => {
+    let path = createPath('nonZero');
+    appendPathPolyline(path, [0.0, 0.0]);
+    expect(path.commands.length).toEqual(0);
   });
 });
 
 describe('appendPathQuadraticCurveTo', () => {
   it('pushes the quadratic verb and its four coordinates', () => {
-    const path = createPath();
-    appendPathQuadraticCurveTo(path, 1, 2, 3, 4);
-    expect(path.commands).toStrictEqual([PathCommand.QUADRATIC_CURVE_TO]);
-    expect(path.data).toStrictEqual([1, 2, 3, 4]);
+    let path = createPath('nonZero');
+    appendPathQuadraticCurveTo(path, 1.0, 2.0, 3.0, 4.0);
+    expect(path.commands).toEqual([PathCommand.QUADRATIC_CURVE_TO]);
+    expect(path.data).toEqual([1.0, 2.0, 3.0, 4.0]);
   });
 });
 
 describe('appendPathRectangle', () => {
+  it('creates closed rectangle', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 0.0, 0.0, 100.0, 50.0);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    const lineCount = countCommands(path, PathCommand.LINE_TO);
+    expect(lineCount).toEqual(3);
+  });
   it('produces a closed rectangle with four corners', () => {
-    const path = createPath();
-    appendPathRectangle(path, 10, 20, 100, 50);
-    expect(path.commands).toStrictEqual([
-      PathCommand.MOVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CLOSE,
-    ]);
-    expect(path.data).toStrictEqual([10, 20, 110, 20, 110, 70, 10, 70]);
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 10.0, 20.0, 100.0, 50.0);
+    expect(path.commands.length).toEqual(5);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[2]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[3]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[4]).toEqual(PathCommand.CLOSE);
+    expect(path.data.length).toEqual(8);
+    expect(path.data[0]).toEqual(10.0);
+    expect(path.data[1]).toEqual(20.0);
+    expect(path.data[2]).toEqual(110.0);
+    expect(path.data[3]).toEqual(20.0);
+    expect(path.data[4]).toEqual(110.0);
+    expect(path.data[5]).toEqual(70.0);
+    expect(path.data[6]).toEqual(10.0);
+    expect(path.data[7]).toEqual(70.0);
   });
 });
 
 describe('appendPathRoundedRectangle', () => {
   it('produces a closed path for a uniformly rounded rectangle', () => {
-    const path = createPath();
-    appendPathRoundedRectangle(path, 0, 0, 100, 50, 10);
-    expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toBe(PathCommand.CLOSE);
+    let path = createPath('nonZero');
+    appendPathRoundedRectangle(path, 0.0, 0.0, 100.0, 50.0, 10.0);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
   });
-
   it('contains cubic curves for the corner arcs', () => {
-    const path = createPath();
-    appendPathRoundedRectangle(path, 0, 0, 100, 50, 10);
-    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+    let path = createPath('nonZero');
+    appendPathRoundedRectangle(path, 0.0, 0.0, 100.0, 50.0, 10.0);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
   });
-
-  it('uses an authored radius of 20 directly rather than treating it as a diameter of 40', () => {
-    const path = createPath();
-    appendPathRoundedRectangle(path, 0, 0, 100, 50, 20);
-    expect(path.data.slice(0, 4)).toEqual([20, 0, 80, 0]);
+  it('uses authored radius directly', () => {
+    let path = createPath('nonZero');
+    appendPathRoundedRectangle(path, 0.0, 0.0, 100.0, 50.0, 20.0);
+    expect(path.data.slice(0, 4)).toEqual([20.0, 0.0, 80.0, 0.0]);
   });
-
-  it('produces a rectangle (no arcs) when radius is 0', () => {
-    const round = createPath();
-    appendPathRoundedRectangle(round, 0, 0, 100, 50, 0);
-    expect(round.commands).not.toContain(PathCommand.CUBIC_CURVE_TO);
-    expect(round.commands[0]).toBe(PathCommand.MOVE_TO);
-    expect(round.commands[round.commands.length - 1]).toBe(PathCommand.CLOSE);
-    const xs = round.data.filter((_, i) => i % 2 === 0);
-    const ys = round.data.filter((_, i) => i % 2 === 1);
-    expect(Math.min(...xs)).toBeCloseTo(0);
-    expect(Math.max(...xs)).toBeCloseTo(100);
-    expect(Math.min(...ys)).toBeCloseTo(0);
-    expect(Math.max(...ys)).toBeCloseTo(50);
+  it('produces a rectangle when radius is zero', () => {
+    let path = createPath('nonZero');
+    appendPathRoundedRectangle(path, 0.0, 0.0, 100.0, 50.0, 0.0);
+    expect(!path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    const xs: number[] = axisValues(path, 0);
+    const ys: number[] = axisValues(path, 1);
+    expect(Math.abs(minValue(xs) - 0.0) < 0.005).toBe(true);
+    expect(Math.abs(maxValue(xs) - 100.0) < 0.005).toBe(true);
+    expect(Math.abs(minValue(ys) - 0.0) < 0.005).toBe(true);
+    expect(Math.abs(maxValue(ys) - 50.0) < 0.005).toBe(true);
   });
-
   it('clamps oversized radii to half the edge length', () => {
-    const path = createPath();
-    appendPathRoundedRectangle(path, 0, 0, 40, 20, 1000);
-    expect(path.commands[path.commands.length - 1]).toBe(PathCommand.CLOSE);
+    let path = createPath('nonZero');
+    appendPathRoundedRectangle(path, 0.0, 0.0, 40.0, 20.0, 1000.0);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
   });
 });
 
 describe('appendPathRoundedRectangleWithCornerRadii', () => {
-  it('uses per-corner radii clockwise in top-left, top-right, bottom-right, bottom-left order', () => {
-    const path = createPath();
-    appendPathRoundedRectangleWithCornerRadii(path, 0, 0, 100, 100, 10, 20, 30, 40);
+  it('uses per corner radii in tl tr br bl order', () => {
+    let path = createPath('nonZero');
+    appendPathRoundedRectangleWithCornerRadii(path, 0.0, 0.0, 100.0, 100.0, 10.0, 20.0, 30.0, 40.0);
     expect(path.commands).toEqual([
       PathCommand.MOVE_TO,
       PathCommand.LINE_TO,
@@ -313,167 +398,320 @@ describe('appendPathRoundedRectangleWithCornerRadii', () => {
       PathCommand.CUBIC_CURVE_TO,
       PathCommand.CLOSE,
     ]);
-    expect(path.data.slice(0, 4)).toEqual([10, 0, 80, 0]);
-    expect(path.data.slice(8, 12)).toEqual([100, 20, 100, 70]);
-    expect(path.data.slice(16, 20)).toEqual([70, 100, 40, 100]);
-    expect(path.data[24]).toBeCloseTo(0);
-    expect(path.data[25]).toBeCloseTo(60);
-    expect(path.data.slice(26, 28)).toEqual([0, 10]);
-    expect(path.data[32]).toBeCloseTo(10);
-    expect(path.data[33]).toBeCloseTo(0);
+    expect(path.data.slice(0, 4)).toEqual([10.0, 0.0, 80.0, 0.0]);
+    expect(path.data.slice(8, 12)).toEqual([100.0, 20.0, 100.0, 70.0]);
+    expect(path.data.slice(16, 20)).toEqual([70.0, 100.0, 40.0, 100.0]);
+    expect(Math.abs(path.data[24] - 0.0) < 0.005).toBe(true);
+    expect(Math.abs(path.data[25] - 60.0) < 0.005).toBe(true);
+    expect(path.data.slice(26, 28)).toEqual([0.0, 10.0]);
+    expect(Math.abs(path.data[32] - 10.0) < 0.005).toBe(true);
+    expect(Math.abs(path.data[33] - 0.0) < 0.005).toBe(true);
   });
 });
 
 describe('appendPathTangentArcTo', () => {
-  it('emits a LINE_TO followed by CUBIC_CURVE_TO commands for a right-angle corner', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 100, 0);
-    appendPathTangentArcTo(path, 100, 100, 0, 100, 20);
-    expect(path.commands).toContain(PathCommand.LINE_TO);
-    expect(path.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+  it('emits line to and cubic curves for a right angle corner', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 100.0, 0.0);
+    appendPathTangentArcTo(path, 100.0, 100.0, 0.0, 100.0, 20.0);
+    expect(path.commands.includes(PathCommand.LINE_TO)).toBe(true);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
   });
-
-  it('selects the short quarter-turn sweep for a clockwise right-angle corner', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathTangentArcTo(path, 100, 0, 100, 100, 20);
+  it('selects the short sweep for a clockwise right angle', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathTangentArcTo(path, 100.0, 0.0, 100.0, 100.0, 20.0);
     const last = getPathLastPoint(path)!;
-    expect(last[0]).toBeCloseTo(100, 6);
-    expect(last[1]).toBeCloseTo(20, 6);
+    expect(Math.abs(last[0] - 100.0) < 5e-7).toBe(true);
+    expect(Math.abs(last[1] - 20.0) < 5e-7).toBe(true);
   });
-
-  it('selects the short quarter-turn sweep for a counterclockwise right-angle corner', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathTangentArcTo(path, 0, 100, 100, 100, 20);
+  it('selects the short sweep for a counterclockwise right angle', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathTangentArcTo(path, 0.0, 100.0, 100.0, 100.0, 20.0);
     const last = getPathLastPoint(path)!;
-    expect(last[0]).toBeCloseTo(20, 6);
-    expect(last[1]).toBeCloseTo(100, 6);
+    expect(Math.abs(last[0] - 20.0) < 5e-7).toBe(true);
+    expect(Math.abs(last[1] - 100.0) < 5e-7).toBe(true);
   });
-
-  it('falls back to a LINE_TO when the tangent has zero length', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 100, 100);
-    appendPathTangentArcTo(path, 100, 100, 0, 100, 20);
-    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
-    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(0);
+  it('falls back to a line to when tangent lines are collinear', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathTangentArcTo(path, 50.0, 0.0, 100.0, 0.0, 20.0);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    let cubicCount = 0;
+    for (let i = 0; i < path.commands.length; i += 1) {
+      if (path.commands[i] === PathCommand.CUBIC_CURVE_TO) {
+        cubicCount += 1;
+      }
+    }
+    expect(cubicCount).toEqual(0);
   });
-
-  it('falls back to a LINE_TO when tangent lines are collinear', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathTangentArcTo(path, 50, 0, 100, 0, 20);
-    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
-    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(0);
+  it('falls back to line to when tangent has zero length', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 100.0, 100.0);
+    appendPathTangentArcTo(path, 100.0, 100.0, 0.0, 100.0, 20.0);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
+    expect(cubicCount).toEqual(0);
   });
-
-  it('falls back to a LINE_TO when radius is zero or negative', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathTangentArcTo(path, 100, 0, 100, 100, 0);
-    expect(path.commands[1]).toBe(PathCommand.LINE_TO);
-    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(0);
+  it('falls back to line to when radius is zero', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathTangentArcTo(path, 100.0, 0.0, 100.0, 100.0, 0.0);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
+    expect(cubicCount).toEqual(0);
   });
-
   it('handles an obtuse angle with a short arc', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathTangentArcTo(path, 100, 0, 150, 100, 20);
-    const last = getPathLastPoint(path)!;
-    expect(last).not.toBeNull();
-    expect(path.commands.filter((c) => c === PathCommand.CUBIC_CURVE_TO).length).toBe(1);
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathTangentArcTo(path, 100.0, 0.0, 150.0, 100.0, 20.0);
+    expect(getPathLastPoint(path) !== null).toBe(true);
+    const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
+    expect(cubicCount).toEqual(1);
   });
 });
 
 describe('createPath', () => {
-  it('defaults to an empty nonZero path', () => {
-    const path = createPath();
-    expect(path.commands).toStrictEqual([]);
-    expect(path.data).toStrictEqual([]);
-    expect(path.winding).toStrictEqual('nonZero');
+  it('path command codes are the ts wire codes', () => {
+    expect(PathCommand.NO_OP).toEqual(0);
+    expect(PathCommand.MOVE_TO).toEqual(1);
+    expect(PathCommand.LINE_TO).toEqual(2);
+    expect(PathCommand.QUADRATIC_CURVE_TO).toEqual(3);
+    expect(PathCommand.WIDE_MOVE_TO).toEqual(4);
+    expect(PathCommand.WIDE_LINE_TO).toEqual(5);
+    expect(PathCommand.CUBIC_CURVE_TO).toEqual(6);
+    expect(PathCommand.CLOSE).toEqual(7);
   });
-
-  it('accepts an evenOdd winding', () => {
-    expect(createPath('evenOdd').winding).toStrictEqual('evenOdd');
+  it('writers emit the ts serialized command bytes', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 0.0);
+    appendPathQuadraticCurveTo(path, 15.0, 5.0, 10.0, 10.0);
+    appendPathCubicCurveTo(path, 8.0, 12.0, 2.0, 12.0, 0.0, 10.0);
+    appendPathClose(path);
+    expect(path.commands).toEqual([1, 2, 3, 6, 7]);
+    expect(path.data).toEqual([0.0, 0.0, 10.0, 0.0, 15.0, 5.0, 10.0, 10.0, 8.0, 12.0, 2.0, 12.0, 0.0, 10.0]);
+  });
+  it('returns empty path with given winding', () => {
+    const path = createPath('evenOdd');
+    expect(path.commands.length === 0).toBe(true);
+    expect(path.data.length === 0).toBe(true);
+    expect(path.winding).toEqual('evenOdd');
+  });
+  it('defaults to non zero winding', () => {
+    const path = createPath('nonZero');
+    expect(path.winding).toEqual('nonZero');
+    expect(path.commands.length === 0).toBe(true);
+    expect(path.data.length === 0).toBe(true);
   });
 });
 
 describe('getPathLastPoint', () => {
-  it('returns null for an empty path', () => {
-    expect(getPathLastPoint(createPath())).toBeNull();
+  it('walks back over ts no op bytes to the subpath start after close', () => {
+    const path = tsWirePath([1, 0, 2, 0, 7], [3.0, 4.0, 9.0, 9.0]);
+    expect(getPathLastPoint(path)).toEqual([3.0, 4.0]);
   });
-
-  it('returns the point after appendPathMoveTo', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 10, 20);
-    expect(getPathLastPoint(path)).toStrictEqual([10, 20]);
+  it('returns none for empty path', () => {
+    const path = createPath('nonZero');
+    expect(getPathLastPoint(path) === null).toBe(true);
   });
-
-  it('returns the point after appendPathLineTo', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 30, 40);
-    expect(getPathLastPoint(path)).toStrictEqual([30, 40]);
+  it('returns last line to point', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 20.0);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(10.0);
+    expect(pt[1]).toEqual(20.0);
   });
-
-  it('returns the anchor after appendPathQuadraticCurveTo', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathQuadraticCurveTo(path, 5, 5, 50, 60);
-    expect(getPathLastPoint(path)).toStrictEqual([50, 60]);
-  });
-
-  it('returns the anchor after appendPathCubicCurveTo', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathCubicCurveTo(path, 1, 2, 3, 4, 70, 80);
-    expect(getPathLastPoint(path)).toStrictEqual([70, 80]);
-  });
-
-  it('returns the MOVE_TO origin after appendPathClose', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 10, 20);
-    appendPathLineTo(path, 30, 40);
+  it('returns move to origin after close', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 5.0, 10.0);
+    appendPathLineTo(path, 20.0, 30.0);
     appendPathClose(path);
-    expect(getPathLastPoint(path)).toStrictEqual([10, 20]);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(5.0);
+    expect(pt[1]).toEqual(10.0);
   });
-
-  it('returns the MOVE_TO origin after appendPathRectangle (ends with CLOSE)', () => {
-    const path = createPath();
-    appendPathRectangle(path, 10, 20, 100, 50);
-    expect(getPathLastPoint(path)).toStrictEqual([10, 20]);
+  it('returns the point after move to', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 10.0, 20.0);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(10.0);
+    expect(pt[1]).toEqual(20.0);
   });
-
-  it('returns the endpoint after appendPathArc', () => {
-    const path = createPath();
-    appendPathArc(path, 0, 0, 100, 0, Math.PI / 2);
-    const last = getPathLastPoint(path)!;
-    expect(last[0]).toBeCloseTo(0, 1);
-    expect(last[1]).toBeCloseTo(100, 1);
+  it('returns the anchor after quadratic curve to', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathQuadraticCurveTo(path, 5.0, 5.0, 50.0, 60.0);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(50.0);
+    expect(pt[1]).toEqual(60.0);
   });
-
-  it('returns the endpoint after appendPathCircle', () => {
-    const path = createPath();
-    appendPathCircle(path, 10, 20, 30);
-    const last = getPathLastPoint(path)!;
-    expect(last[0]).toBeCloseTo(40);
-    expect(last[1]).toBeCloseTo(20);
+  it('returns the anchor after cubic curve to', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathCubicCurveTo(path, 1.0, 2.0, 3.0, 4.0, 70.0, 80.0);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(70.0);
+    expect(pt[1]).toEqual(80.0);
   });
-
-  it('returns the MOVE_TO origin after appendPathPolygon (ends with CLOSE)', () => {
-    const path = createPath();
-    appendPathPolygon(path, [0, 0, 100, 0, 100, 100]);
-    expect(getPathLastPoint(path)).toStrictEqual([0, 0]);
+  it('returns the move to origin after rectangle', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 10.0, 20.0, 100.0, 50.0);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(10.0);
+    expect(pt[1]).toEqual(20.0);
   });
-
-  it('returns the last point after appendPathPolyline', () => {
-    const path = createPath();
-    appendPathPolyline(path, [0, 0, 50, 60, 70, 80]);
-    expect(getPathLastPoint(path)).toStrictEqual([70, 80]);
+  it('returns the endpoint after arc', () => {
+    let path = createPath('nonZero');
+    appendPathArc(path, 0.0, 0.0, 100.0, 0.0, Math.PI / 2.0, false, false);
+    const pt = getPathLastPoint(path)!;
+    expect(Math.abs(pt[0] - 0.0) < 0.05).toBe(true);
+    expect(Math.abs(pt[1] - 100.0) < 0.05).toBe(true);
+  });
+  it('returns the endpoint after circle', () => {
+    let path = createPath('nonZero');
+    appendPathCircle(path, 10.0, 20.0, 30.0);
+    const pt = getPathLastPoint(path)!;
+    expect(Math.abs(pt[0] - 40.0) < 0.005).toBe(true);
+    expect(Math.abs(pt[1] - 20.0) < 0.005).toBe(true);
+  });
+  it('returns the move to origin after polygon', () => {
+    let path = createPath('nonZero');
+    appendPathPolygon(path, [0.0, 0.0, 100.0, 0.0, 100.0, 100.0]);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(0.0);
+    expect(pt[1]).toEqual(0.0);
+  });
+  it('returns the last point after polyline', () => {
+    let path = createPath('nonZero');
+    appendPathPolyline(path, [0.0, 0.0, 50.0, 60.0, 70.0, 80.0]);
+    const pt = getPathLastPoint(path)!;
+    expect(pt[0]).toEqual(70.0);
+    expect(pt[1]).toEqual(80.0);
   });
 });
+
+describe('getPathMorphCreationReasonString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getPathMorphCreationReasonString('ok')).toEqual('ok');
+    expect(getPathMorphCreationReasonString('winding-mismatch')).toEqual('winding-mismatch');
+    expect(getPathMorphCreationReasonString('contour-count-mismatch')).toEqual('contour-count-mismatch');
+    expect(getPathMorphCreationReasonString('contour-closedness-mismatch')).toEqual('contour-closedness-mismatch');
+    expect(getPathMorphCreationReasonString('contour-orientation-mismatch')).toEqual('contour-orientation-mismatch');
+  });
+});
+
+describe('getPathWindingString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getPathWindingString('nonZero')).toEqual('nonZero');
+    expect(getPathWindingString('evenOdd')).toEqual('evenOdd');
+  });
+});
+
+describe('getStrokeCapString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getStrokeCapString('butt')).toEqual('butt');
+    expect(getStrokeCapString('round')).toEqual('round');
+    expect(getStrokeCapString('square')).toEqual('square');
+  });
+});
+
+describe('getStrokeJoinString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getStrokeJoinString('miter')).toEqual('miter');
+    expect(getStrokeJoinString('bevel')).toEqual('bevel');
+    expect(getStrokeJoinString('round')).toEqual('round');
+  });
+});
+
+describe('getStrokePathTessellationReasonString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getStrokePathTessellationReasonString('ok')).toEqual('ok');
+    expect(getStrokePathTessellationReasonString('invalid-style')).toEqual('invalid-style');
+    expect(getStrokePathTessellationReasonString('invalid-path')).toEqual('invalid-path');
+    expect(getStrokePathTessellationReasonString('self-intersecting-centerline')).toEqual(
+      'self-intersecting-centerline',
+    );
+    expect(getStrokePathTessellationReasonString('reversing-join')).toEqual('reversing-join');
+    expect(getStrokePathTessellationReasonString('self-intersecting-outline')).toEqual('self-intersecting-outline');
+  });
+});
+
 describe('initializePath', () => {
-  it('is the construction initializer of createPath', () => {
-    expect(typeof initializePath).toBe('function');
+  // Rust-only: keeps the entity identity
+  it('clears existing data', () => {
+    let path = createPath('nonZero');
+    path.winding = 'evenOdd';
+    appendPathMoveTo(path, 1.0, 2.0);
+    initializePath(path, 'nonZero');
+    expect(path.commands.length === 0).toBe(true);
+    expect(path.data.length === 0).toBe(true);
+    expect(path.winding).toEqual('nonZero');
+  });
+});
+
+describe('parsePathMorphCreationReason', () => {
+  it('parses the exact ts strings', () => {
+    expect(parsePathMorphCreationReason('ok')).toEqual('ok');
+    expect(parsePathMorphCreationReason('winding-mismatch')).toEqual('winding-mismatch');
+    expect(parsePathMorphCreationReason('contour-count-mismatch')).toEqual('contour-count-mismatch');
+    expect(parsePathMorphCreationReason('contour-closedness-mismatch')).toEqual('contour-closedness-mismatch');
+    expect(parsePathMorphCreationReason('contour-orientation-mismatch')).toEqual('contour-orientation-mismatch');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parsePathMorphCreationReason('OK')).toEqual(undefined);
+    expect(parsePathMorphCreationReason('')).toEqual(undefined);
+  });
+});
+
+describe('parsePathWinding', () => {
+  it('parses the exact ts strings', () => {
+    expect(parsePathWinding('nonZero')).toEqual('nonZero');
+    expect(parsePathWinding('evenOdd')).toEqual('evenOdd');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parsePathWinding('NONZERO')).toEqual(undefined);
+    expect(parsePathWinding('')).toEqual(undefined);
+  });
+});
+
+describe('parseStrokeCap', () => {
+  it('parses the exact ts strings', () => {
+    expect(parseStrokeCap('butt')).toEqual('butt');
+    expect(parseStrokeCap('round')).toEqual('round');
+    expect(parseStrokeCap('square')).toEqual('square');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parseStrokeCap('BUTT')).toEqual(undefined);
+    expect(parseStrokeCap('')).toEqual(undefined);
+  });
+});
+
+describe('parseStrokeJoin', () => {
+  it('parses the exact ts strings', () => {
+    expect(parseStrokeJoin('miter')).toEqual('miter');
+    expect(parseStrokeJoin('bevel')).toEqual('bevel');
+    expect(parseStrokeJoin('round')).toEqual('round');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parseStrokeJoin('MITER')).toEqual(undefined);
+    expect(parseStrokeJoin('')).toEqual(undefined);
+  });
+});
+
+describe('parseStrokePathTessellationReason', () => {
+  it('parses the exact ts strings', () => {
+    expect(parseStrokePathTessellationReason('ok')).toEqual('ok');
+    expect(parseStrokePathTessellationReason('invalid-style')).toEqual('invalid-style');
+    expect(parseStrokePathTessellationReason('invalid-path')).toEqual('invalid-path');
+    expect(parseStrokePathTessellationReason('self-intersecting-centerline')).toEqual('self-intersecting-centerline');
+    expect(parseStrokePathTessellationReason('reversing-join')).toEqual('reversing-join');
+    expect(parseStrokePathTessellationReason('self-intersecting-outline')).toEqual('self-intersecting-outline');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parseStrokePathTessellationReason('OK')).toEqual(undefined);
+    expect(parseStrokePathTessellationReason('')).toEqual(undefined);
   });
 });

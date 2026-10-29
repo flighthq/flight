@@ -1,22 +1,21 @@
-export * from './cleanPath.ts';
-export * from './containsPathPoint.ts';
-export * from './copyPath.ts';
-export * from './dashPath.ts';
-export * from './decimatePath.ts';
-export * from './explainPathMorphCreation.ts';
-export * from './explainStrokePathTessellation.ts';
-export * from './fitPathCurves.ts';
-export * from './flattenPath.ts';
-export * from './forEachPathSegment.ts';
-export * from './getPathBounds.ts';
-export * from './getPathContourLengths.ts';
-export * from './getPathCurvatureAtDistance.ts';
-export * from './getPathLength.ts';
-export * from './getPathNearestPoint.ts';
-export * from './getPathPointAtDistance.ts';
-export * from './getPathSegmentAtParameter.ts';
-export * from './getPathSignedArea.ts';
+// Generated from crates/flight-path/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
+  PathCommand,
+  PathMorphIssueContourClosednessMismatch,
+  PathMorphIssueContourCountMismatch,
+  PathMorphIssueContourOrientationMismatch,
+  PathMorphIssueNone,
+  PathMorphIssueWindingMismatch,
+  StrokePathTessellationIssueInvalidPath,
+  StrokePathTessellationIssueInvalidStyle,
+  StrokePathTessellationIssueNone,
+  StrokePathTessellationIssueReversingJoin,
+  StrokePathTessellationIssueSelfIntersectingCenterline,
+  StrokePathTessellationIssueSelfIntersectingOutline,
+  acquirePathMesh,
+  acquirePathMeshTyped,
   appendPathArc,
   appendPathCircle,
   appendPathClose,
@@ -32,23 +31,68 @@ export {
   appendPathRoundedRectangle,
   appendPathRoundedRectangleWithCornerRadii,
   appendPathTangentArcTo,
-  createPath,
-  getPathLastPoint,
-} from './path.ts';
-export * from './pathMeshPool.ts';
-export { createPathMorph, samplePathMorph } from './pathMorph.ts';
-export {
-  PathMorphIssueNone,
-  PathMorphIssueWindingMismatch,
-  PathMorphIssueContourCountMismatch,
-  PathMorphIssueContourClosednessMismatch,
-  PathMorphIssueContourOrientationMismatch,
   buildPathMorph,
-} from './pathMorphGeometry.ts';
-export * from './reversePath.ts';
-export * from './strokePath.ts';
-export * from './strokePathGeometry.ts';
-export * from './tessellatePath.ts';
-export * from './tessellatePathTyped.ts';
-export * from './tessellateStrokePath.ts';
-export * from './transformPath.ts';
+  buildStrokePathGeometry,
+  cleanPath,
+  clonePath,
+  containsPathPoint,
+  copyPath,
+  createPath,
+  createPathMorph,
+  dashPath,
+  decimatePath,
+  explainPathMorphCreation,
+  explainStrokePathTessellation,
+  fitPathCurves,
+  flattenPath,
+  forEachPathSegment,
+  getCubicBezierCurvature,
+  getCubicBezierPoint,
+  getCubicBezierTangent,
+  getPathBounds,
+  getPathContourLengths,
+  getPathContourOrientation,
+  getPathCurvatureAtDistance,
+  getPathLastPoint,
+  getPathLength,
+  getPathNearestPoint,
+  getPathPointAtDistance,
+  getPathPositionAtDistance,
+  getPathSegmentCurvatureAtParameter,
+  getPathSegmentPointAtParameter,
+  getPathSegmentTangentAtParameter,
+  getPathSignedArea,
+  getPathTangentAtDistance,
+  getQuadraticBezierCurvature,
+  getQuadraticBezierPoint,
+  getQuadraticBezierTangent,
+  releasePathMesh,
+  releasePathMeshTyped,
+  reversePath,
+  samplePathMorph,
+  strokePath,
+  tessellatePath,
+  tessellatePathInto,
+  tessellatePathTyped,
+  tessellatePathTypedInto,
+  tessellateStrokePath,
+  transformPath,
+  translatePath,
+} from './contract.ts';
+
+export type {
+  ContourOrientation,
+  PathMesh,
+  PathMeshTyped,
+  PathMorphCreationExplanation,
+  PathMorphCreationReason,
+  PathSegment,
+  PathWinding,
+  StrokeCap,
+  StrokeJoin,
+  StrokePathTessellationExplanation,
+  StrokePathTessellationReason,
+  StrokeStyle,
+} from './contract.ts';
+
+export type { Path, PathMorph } from './pathCompat.ts';

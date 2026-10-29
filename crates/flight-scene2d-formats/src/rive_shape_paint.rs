@@ -257,16 +257,16 @@ fn append_rive_dash_interval(
                     || data[data.len() - 2] != start_x
                     || data[data.len() - 1] != start_y;
                 if should_move {
-                    commands.push(PathCommand::MoveTo as u8);
+                    commands.push(PathCommand::MOVE_TO as u8);
                 } else if differs {
-                    commands.push(PathCommand::LineTo as u8);
+                    commands.push(PathCommand::LINE_TO as u8);
                 }
                 if should_move || differs {
                     data.extend([start_x, start_y]);
                 }
                 started = true;
             }
-            commands.push(PathCommand::LineTo as u8);
+            commands.push(PathCommand::LINE_TO as u8);
             data.extend([x0 + (x1 - x0) * end_ratio, y0 + (y1 - y0) * end_ratio]);
         }
         travelled = segment_end;
@@ -457,8 +457,7 @@ fn dash_rive_paths(paths: &[RivePathRecord], dash: &RiveDash) -> Vec<RivePathRec
     for record in paths {
         let mut commands = Vec::new();
         let mut data = Vec::new();
-        let mut contours = Vec::new();
-        flatten_path(&mut contours, &to_rive_path(record), None);
+        let contours = flatten_path(&to_rive_path(record), None);
         for contour in contours {
             append_rive_dash_contour(&contour, dash, &mut commands, &mut data);
         }
@@ -642,7 +641,7 @@ fn to_rive_joints(value: f64, diagnostics: Option<&mut Vec<ImportDiagnostic>>) -
 }
 
 fn to_rive_path(record: &RivePathRecord) -> Path {
-    let mut path = create_path(flight_path::PathWinding::NonZero);
+    let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     path.winding = record.winding;
     path.commands.clone_from(&record.commands);
     path.data = record.data.iter().copied().map(f64::from).collect();
@@ -679,7 +678,7 @@ fn trim_rive_path_to_windows(
         if end <= start {
             continue;
         }
-        let mut trimmed = create_path(flight_path::PathWinding::NonZero);
+        let mut trimmed = create_path(Some(flight_path::PathWinding::NonZero));
         trimmed.winding = record.winding;
         dash_path(
             &path,

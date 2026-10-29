@@ -7,7 +7,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -27,8 +27,8 @@ mod sugar_tests {
     #[test]
     fn path_copy_matches_copy_path() {
         let s = test_path();
-        let mut a = create_path(PathWinding::NonZero);
-        let mut b = create_path(PathWinding::NonZero);
+        let mut a = create_path(Some(PathWinding::NonZero));
+        let mut b = create_path(Some(PathWinding::NonZero));
         a.copy(&s);
         copy_path(&mut b, &s);
         assert_eq!(a.commands, s.commands);
@@ -47,14 +47,19 @@ pub fn clone_path(source: &Path) -> Path {
 
 /// Copies commands, data, and winding into the caller's path, retaining its field storage.
 // flight-lint: allow(conform-params) D24: user-approved required out-first writer; pinned TS still has copyPath(source, out?) and allocation moves to clone_path
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn copy_path(out: &mut Path, source: &Path) {
-    let commands = source.commands.clone();
-    let data = source.data.clone();
+    let commands: Vec<u8> = source.commands.clone();
+    let data: Vec<f64> = source.data.clone();
     let winding = source.winding;
     out.commands.clear();
-    out.commands.extend_from_slice(&commands);
+    for i in 0..commands.len() {
+        out.commands.push(commands[i]);
+    }
     out.data.clear();
-    out.data.extend_from_slice(&data);
+    for i in 0..data.len() {
+        out.data.push(data[i]);
+    }
     out.winding = winding;
 }
 

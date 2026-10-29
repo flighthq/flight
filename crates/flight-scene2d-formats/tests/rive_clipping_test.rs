@@ -367,9 +367,9 @@ fn graph(objects: Vec<RiveCoreObject>, parent_indices: Vec<i32>) -> RiveArtboard
 fn square() -> RivePathRecord {
     return RivePathRecord {
         commands: vec![
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
+            PathCommand::MOVE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
         ],
         data: vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0],
         path_index: 0,
@@ -380,11 +380,11 @@ fn square() -> RivePathRecord {
 fn rectangle(x: f32, y: f32, width: f32, height: f32) -> RivePathRecord {
     return RivePathRecord {
         commands: vec![
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::Close as u8,
+            PathCommand::MOVE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::LINE_TO as u8,
+            PathCommand::CLOSE as u8,
         ],
         data: vec![x, y, x + width, y, x + width, y + height, x, y + height],
         path_index: 0,

@@ -5,7 +5,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,10 +17,8 @@ mod sugar_tests {
     #[test]
     fn path_flatten_matches_flatten_path() {
         let s = test_path();
-        let mut ra = Vec::new();
-        let mut rb = Vec::new();
-        s.flatten(&mut ra, Some(0.5));
-        flatten_path(&mut rb, &s, Some(0.5));
+        let ra = s.flatten(Some(0.5));
+        let rb = flatten_path(&s, Some(0.5));
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
 }
@@ -116,9 +114,15 @@ fn flatten_cubic(
 /// [x0, y0, x1, y1, ...] polyline. Quadratic and cubic segments are adaptively subdivided
 /// until their deviation from a chord is within `tolerance` (path units).
 /// A CLOSE verb appends the contour's start point, making the closure explicit.
-// flight-lint: allow(conform-params) D24 caller-owned computed output is first, required, cleared, and refilled
-pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>) {
-    out.clear();
+pub fn flatten_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+    let mut out: Vec<Vec<f64>> = Vec::new();
+    flatten_path_into(&mut out, path, tolerance);
+    return out;
+}
+
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
+fn flatten_path_into(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>) {
     let tolerance = tolerance.unwrap_or(0.25);
     let commands = &path.commands;
     let data = &path.data;
@@ -132,7 +136,7 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
 
     for ci in 0..commands.len() {
         let command = commands[ci];
-        if command == PathCommand::MoveTo as u8 {
+        if command == PathCommand::MOVE_TO as u8 {
             x = data[di];
             y = data[di + 1];
             di += 2;
@@ -140,7 +144,7 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
             contour_start_y = y;
             out.push(vec![x, y]);
             contour = Some(out.len() - 1);
-        } else if command == PathCommand::WideMoveTo as u8 {
+        } else if command == PathCommand::WIDE_MOVE_TO as u8 {
             x = data[di + 2];
             y = data[di + 3];
             di += 4;
@@ -148,21 +152,21 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
             contour_start_y = y;
             out.push(vec![x, y]);
             contour = Some(out.len() - 1);
-        } else if command == PathCommand::LineTo as u8 {
+        } else if command == PathCommand::LINE_TO as u8 {
             contour = ensure_contour(out, contour);
             x = data[di];
             y = data[di + 1];
             di += 2;
             out[contour.unwrap()].push(x);
             out[contour.unwrap()].push(y);
-        } else if command == PathCommand::WideLineTo as u8 {
+        } else if command == PathCommand::WIDE_LINE_TO as u8 {
             contour = ensure_contour(out, contour);
             x = data[di + 2];
             y = data[di + 3];
             di += 4;
             out[contour.unwrap()].push(x);
             out[contour.unwrap()].push(y);
-        } else if command == PathCommand::QuadraticCurveTo as u8 {
+        } else if command == PathCommand::QUADRATIC_CURVE_TO as u8 {
             contour = ensure_contour(out, contour);
             let ci_idx = contour.unwrap();
             flatten_quadratic(
@@ -179,7 +183,7 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
             x = data[di + 2];
             y = data[di + 3];
             di += 4;
-        } else if command == PathCommand::CubicCurveTo as u8 {
+        } else if command == PathCommand::CUBIC_CURVE_TO as u8 {
             contour = ensure_contour(out, contour);
             let ci_idx = contour.unwrap();
             flatten_cubic(
@@ -198,7 +202,7 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
             x = data[di + 4];
             y = data[di + 5];
             di += 6;
-        } else if command == PathCommand::Close as u8 {
+        } else if command == PathCommand::CLOSE as u8 {
             if let Some(ci_idx) = contour {
                 if x != contour_start_x || y != contour_start_y {
                     out[ci_idx].push(contour_start_x);
@@ -243,7 +247,7 @@ fn flatten_quadratic(
 
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn flatten(&self, out: &mut Vec<Vec<f64>>, tolerance: Option<f64>) {
-        flatten_path(out, self, tolerance);
+    pub fn flatten(&self, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+        return flatten_path(self, tolerance);
     }
 }

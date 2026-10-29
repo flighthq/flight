@@ -1,4 +1,6 @@
-use flight_geometry::Vector2;
+//! flight-compiler: nullable-option get_path_segment_curvature_at_parameter
+
+use flight_geometry::Vector2Like;
 
 use crate::path::{Path, PathCommand};
 
@@ -9,7 +11,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -90,7 +92,7 @@ pub fn get_cubic_bezier_point(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
 ) {
     let u = 1.0 - t;
     let u2 = u * u;
@@ -113,7 +115,7 @@ pub fn get_cubic_bezier_tangent(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
 ) {
     let u = 1.0 - t;
     let u2 = u * u;
@@ -140,7 +142,7 @@ pub fn get_path_segment_point_at_parameter(
     path: &Path,
     segment_index: usize,
     t: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
 ) -> bool {
     return walk_path_segment(path, segment_index, t, out, false);
 }
@@ -152,7 +154,7 @@ pub fn get_path_segment_tangent_at_parameter(
     path: &Path,
     segment_index: usize,
     t: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
 ) -> bool {
     return walk_path_segment(path, segment_index, t, out, true);
 }
@@ -192,7 +194,7 @@ pub fn get_quadratic_bezier_point(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
 ) {
     let u = 1.0 - t;
     out.x = (u * u * x0 + 2.0 * u * t * cx + t * t * x1) as f32;
@@ -209,7 +211,7 @@ pub fn get_quadratic_bezier_tangent(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
 ) {
     let u = 1.0 - t;
     out.x = (2.0 * (u * (cx - x0) + t * (x1 - cx))) as f32;
@@ -217,11 +219,12 @@ pub fn get_quadratic_bezier_tangent(
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn walk_path_segment(
     path: &Path,
     segment_index: usize,
     t: f64,
-    out: &mut Vector2,
+    out: &mut Vector2Like,
     want_tangent: bool,
 ) -> bool {
     let commands = &path.commands;
@@ -232,15 +235,15 @@ fn walk_path_segment(
     let mut di: usize = 0;
     for ci in 0..commands.len() {
         let command = commands[ci];
-        if command == PathCommand::MoveTo as u8 {
+        if command == PathCommand::MOVE_TO as u8 {
             x = data[di];
             y = data[di + 1];
             di += 2;
-        } else if command == PathCommand::WideMoveTo as u8 {
+        } else if command == PathCommand::WIDE_MOVE_TO as u8 {
             x = data[di + 2];
             y = data[di + 3];
             di += 4;
-        } else if command == PathCommand::LineTo as u8 {
+        } else if command == PathCommand::LINE_TO as u8 {
             let x1 = data[di];
             let y1 = data[di + 1];
             di += 2;
@@ -257,7 +260,7 @@ fn walk_path_segment(
             x = x1;
             y = y1;
             current_segment += 1;
-        } else if command == PathCommand::WideLineTo as u8 {
+        } else if command == PathCommand::WIDE_LINE_TO as u8 {
             let x1 = data[di + 2];
             let y1 = data[di + 3];
             di += 4;
@@ -274,7 +277,7 @@ fn walk_path_segment(
             x = x1;
             y = y1;
             current_segment += 1;
-        } else if command == PathCommand::QuadraticCurveTo as u8 {
+        } else if command == PathCommand::QUADRATIC_CURVE_TO as u8 {
             let cx = data[di];
             let cy = data[di + 1];
             let x1 = data[di + 2];
@@ -291,7 +294,7 @@ fn walk_path_segment(
             x = x1;
             y = y1;
             current_segment += 1;
-        } else if command == PathCommand::CubicCurveTo as u8 {
+        } else if command == PathCommand::CUBIC_CURVE_TO as u8 {
             let c1x = data[di];
             let c1y = data[di + 1];
             let c2x = data[di + 2];
@@ -316,6 +319,7 @@ fn walk_path_segment(
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Option<f64> {
     let commands = &path.commands;
     let data = &path.data;
@@ -325,15 +329,15 @@ fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Opt
     let mut di: usize = 0;
     for ci in 0..commands.len() {
         let command = commands[ci];
-        if command == PathCommand::MoveTo as u8 {
+        if command == PathCommand::MOVE_TO as u8 {
             x = data[di];
             y = data[di + 1];
             di += 2;
-        } else if command == PathCommand::WideMoveTo as u8 {
+        } else if command == PathCommand::WIDE_MOVE_TO as u8 {
             x = data[di + 2];
             y = data[di + 3];
             di += 4;
-        } else if command == PathCommand::LineTo as u8 {
+        } else if command == PathCommand::LINE_TO as u8 {
             di += 2;
             if current_segment == segment_index {
                 return Some(0.0);
@@ -341,7 +345,7 @@ fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Opt
             x = data[di - 2];
             y = data[di - 1];
             current_segment += 1;
-        } else if command == PathCommand::WideLineTo as u8 {
+        } else if command == PathCommand::WIDE_LINE_TO as u8 {
             di += 4;
             if current_segment == segment_index {
                 return Some(0.0);
@@ -349,7 +353,7 @@ fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Opt
             x = data[di - 2];
             y = data[di - 1];
             current_segment += 1;
-        } else if command == PathCommand::QuadraticCurveTo as u8 {
+        } else if command == PathCommand::QUADRATIC_CURVE_TO as u8 {
             let cx = data[di];
             let cy = data[di + 1];
             let x1 = data[di + 2];
@@ -361,7 +365,7 @@ fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Opt
             x = x1;
             y = y1;
             current_segment += 1;
-        } else if command == PathCommand::CubicCurveTo as u8 {
+        } else if command == PathCommand::CUBIC_CURVE_TO as u8 {
             let c1x = data[di];
             let c1y = data[di + 1];
             let c2x = data[di + 2];
@@ -393,7 +397,7 @@ impl Path {
         &self,
         segment_index: usize,
         t: f64,
-        out: &mut Vector2,
+        out: &mut Vector2Like,
     ) -> bool {
         return get_path_segment_point_at_parameter(self, segment_index, t, out);
     }
@@ -403,7 +407,7 @@ impl Path {
         &self,
         segment_index: usize,
         t: f64,
-        out: &mut Vector2,
+        out: &mut Vector2Like,
     ) -> bool {
         return get_path_segment_tangent_at_parameter(self, segment_index, t, out);
     }

@@ -49,7 +49,7 @@ fn append_glyf_contour(
         start_index = 0;
         step_count = count;
     }
-    out.commands.push(PathCommand::MoveTo as u8);
+    out.commands.push(PathCommand::MOVE_TO as u8);
     out.data.extend_from_slice(&[start_x, start_y]);
     let mut control_x = 0.0;
     let mut control_y = 0.0;
@@ -60,17 +60,17 @@ fn append_glyf_contour(
         let y = point_y(index);
         if on_curve(index) {
             if has_control {
-                out.commands.push(PathCommand::QuadraticCurveTo as u8);
+                out.commands.push(PathCommand::QUADRATIC_CURVE_TO as u8);
                 out.data.extend_from_slice(&[control_x, control_y, x, y]);
                 has_control = false;
             } else {
-                out.commands.push(PathCommand::LineTo as u8);
+                out.commands.push(PathCommand::LINE_TO as u8);
                 out.data.extend_from_slice(&[x, y]);
             }
             continue;
         }
         if has_control {
-            out.commands.push(PathCommand::QuadraticCurveTo as u8);
+            out.commands.push(PathCommand::QUADRATIC_CURVE_TO as u8);
             out.data.extend_from_slice(&[
                 control_x,
                 control_y,
@@ -83,11 +83,11 @@ fn append_glyf_contour(
         has_control = true;
     }
     if has_control {
-        out.commands.push(PathCommand::QuadraticCurveTo as u8);
+        out.commands.push(PathCommand::QUADRATIC_CURVE_TO as u8);
         out.data
             .extend_from_slice(&[control_x, control_y, start_x, start_y]);
     }
-    out.commands.push(PathCommand::Close as u8);
+    out.commands.push(PathCommand::CLOSE as u8);
 }
 
 fn read_glyf_coordinates(

@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -46,8 +46,7 @@ fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
 /// straight segments, or degenerate geometry.
 pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: Option<f64>) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, path, Some(tolerance));
+    let contours = flatten_path(path, Some(tolerance));
     return sample_path_curvature(&contours, distance);
 }
 
@@ -71,6 +70,7 @@ fn menger_curvature(x0: f64, y0: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
     if contours.is_empty() {
         return 0.0;

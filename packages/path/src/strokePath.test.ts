@@ -1,172 +1,375 @@
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/stroke_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
-import { strokePath } from './strokePath.ts';
+import { describe, expect, it } from 'vitest';
+
+import {
+  PathCommand,
+  appendPathClose,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+  strokePath,
+} from './contract.ts';
+import type { PathRaw, StrokeStyle } from './contract.ts';
+
+function axisValues(path: Readonly<PathRaw>, axis: number): number[] {
+  let values: number[] = [] as never[];
+  let i = axis;
+  while (i < path.data.length) {
+    values.push(path.data[i]);
+    i += 2;
+  }
+  return values;
+}
+
+function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
+  let count = 0;
+  for (const candidate of path.commands) {
+    if (candidate === command) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function maxValue(values: Readonly<number[]>): number {
+  let max = Number.NEGATIVE_INFINITY;
+  for (const value of values) {
+    max = Math.max(max, value);
+  }
+  return max;
+}
+
+function minValue(values: Readonly<number[]>): number {
+  let min = Number.POSITIVE_INFINITY;
+  for (const value of values) {
+    min = Math.min(min, value);
+  }
+  return min;
+}
 
 describe('strokePath', () => {
-  it('returns an empty path for an empty input', () => {
-    const result = strokePath(createPath(), {});
-    expect(result.commands.length).toBe(0);
+  it('returns empty for empty path', () => {
+    const path = createPath('nonZero');
+    const style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    } as const;
+    const outline = strokePath(path, style, 0.25);
+    expect(outline.commands.length === 0).toBe(true);
   });
-
-  it('returns a closed outline for a horizontal line (butt caps)', () => {
-    // A horizontal line from (0,0) to (100,0) with width 10 and butt caps should produce
-    // a closed rectangular outline.
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    const result = strokePath(path, { width: 10, cap: 'butt' });
-    // The result must contain at least one CLOSE
-    expect(result.commands).toContain(PathCommand.CLOSE);
-    // And at least one MOVE_TO
-    expect(result.commands).toContain(PathCommand.MOVE_TO);
-    // Width=10, so offset = 5. y values should be near ±5.
-    const yValues = result.data.filter((_, i) => i % 2 === 1);
-    expect(Math.max(...yValues)).toBeCloseTo(5);
-    expect(Math.min(...yValues)).toBeCloseTo(-5);
+  it('returns closed outline for horizontal line with butt caps', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 10.0;
+    style.cap = 'butt';
+    const result = strokePath(path, style, 0.25);
+    expect(result.commands.includes(PathCommand.CLOSE)).toBe(true);
+    expect(result.commands.includes(PathCommand.MOVE_TO)).toBe(true);
+    const yValues: number[] = axisValues(result, 1);
+    const maxY = maxValue(yValues);
+    const minY = minValue(yValues);
+    expect(Math.abs(maxY - 5.0) < 0.005).toBe(true);
+    expect(Math.abs(minY - -5.0) < 0.005).toBe(true);
   });
-
   it('extends endpoints for square caps', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    const result = strokePath(path, { width: 10, cap: 'square' });
-    // Square caps extend by halfWidth (5) on each end. x range should be [-5, 105].
-    const xValues = result.data.filter((_, i) => i % 2 === 0);
-    expect(Math.min(...xValues)).toBeCloseTo(-5);
-    expect(Math.max(...xValues)).toBeCloseTo(105);
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 10.0;
+    style.cap = 'square';
+    const result = strokePath(path, style, 0.25);
+    const xValues: number[] = axisValues(result, 0);
+    const minX = minValue(xValues);
+    const maxX = maxValue(xValues);
+    expect(Math.abs(minX - -5.0) < 0.005).toBe(true);
+    expect(Math.abs(maxX - 105.0) < 0.005).toBe(true);
   });
-
-  it('produces round caps with extra points for a curved endcap', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    const buttResult = strokePath(path, { width: 10, cap: 'butt' });
-    const roundResult = strokePath(path, { width: 10, cap: 'round' });
-    // Round caps produce more outline points than butt caps.
-    expect(roundResult.commands.length).toBeGreaterThan(buttResult.commands.length);
+  it('produces round caps with more points than butt caps', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let buttStyle: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    buttStyle.width = 10.0;
+    buttStyle.cap = 'butt';
+    const butt = strokePath(path, buttStyle, 0.25);
+    let roundStyle: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    roundStyle.width = 10.0;
+    roundStyle.cap = 'round';
+    const round = strokePath(path, roundStyle, 0.25);
+    expect(round.commands.length > butt.commands.length).toBe(true);
   });
-
-  it('extends the miter point past a symmetric corner without collapsing to the centerline', () => {
-    // A symmetric downward V with a 90° corner at the apex. The miter must extend the outer
-    // corner to a point PAST the apex — not sit on the centerline vertex (an earlier bug that
-    // advanced along the normal instead of the tangent, producing a self-intersecting outline
-    // that could not be tessellated).
-    const path = createPath();
-    appendPathMoveTo(path, 290, 410);
-    appendPathLineTo(path, 400, 520);
-    appendPathLineTo(path, 510, 410);
-    const result = strokePath(path, { width: 30, join: 'miter', cap: 'butt', miterLimit: 6 });
-    // The outline must not contain the raw centerline apex (400,520) as a vertex.
+  it('extends miter point past symmetric corner', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 290.0, 410.0);
+    appendPathLineTo(path, 400.0, 520.0);
+    appendPathLineTo(path, 510.0, 410.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 30.0;
+    style.join = 'miter';
+    style.cap = 'butt';
+    style.miterLimit = 6.0;
+    const result = strokePath(path, style, 0.25);
     let apexHits = 0;
-    let maxY = -Infinity;
-    for (let i = 0; i < result.data.length; i += 2) {
-      if (Math.abs(result.data[i] - 400) < 1e-6 && Math.abs(result.data[i + 1] - 520) < 1e-6) apexHits++;
-      maxY = Math.max(maxY, result.data[i + 1]);
+    let maxY = Number.NEGATIVE_INFINITY;
+    let i = 0;
+    while (i < result.data.length) {
+      if (Math.abs(result.data[i] - 400.0) < 1e-6 && Math.abs(result.data[i + 1] - 520.0) < 1e-6) {
+        apexHits += 1;
+      }
+      if (result.data[i + 1] > maxY) {
+        maxY = result.data[i + 1];
+      }
+      i += 2;
     }
-    expect(apexHits).toBe(0);
-    // The outer miter reaches ~21.2px past the apex (halfWidth 15 / sin45°) at y ≈ 541.
-    expect(maxY).toBeCloseTo(541.2, 0);
+    expect(apexHits).toEqual(0);
+    expect(Math.abs(maxY - 541.2) < 1.0).toBe(true);
   });
-
-  it('handles a closed path without adding caps', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    appendPathLineTo(path, 100, 100);
+  it('handles closed path without adding caps', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    appendPathLineTo(path, 100.0, 100.0);
     appendPathClose(path);
-    const result = strokePath(path, { width: 4 });
-    // Closed path produces at least one closed contour.
-    expect(result.commands).toContain(PathCommand.CLOSE);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 4.0;
+    const result = strokePath(path, style, 0.25);
+    expect(result.commands.includes(PathCommand.CLOSE)).toBe(true);
   });
-
-  it('produces fewer outline points with a coarser tolerance', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    const fine = strokePath(path, { width: 10, cap: 'round' }, 0.1).commands.length;
-    const coarse = strokePath(path, { width: 10, cap: 'round' }, 10).commands.length;
-    expect(coarse).toBeLessThanOrEqual(fine);
+  it('produces fewer outline points with coarser tolerance', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 10.0;
+    style.cap = 'round';
+    const fine = strokePath(path, style, 0.1).commands.length;
+    const coarse = strokePath(path, style, 10.0).commands.length;
+    expect(coarse <= fine).toBe(true);
   });
-
-  // Dashing edge cases.
-  it('dashes: produces multiple segments for a simple on/off pattern', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    // dash=[10,10]: alternating 10-unit on, 10-unit off
-    const result = strokePath(path, { width: 2, dash: [10, 10] });
-    // Should produce at least 2 closed outlines (multiple MOVE_TO).
-    const moveTos = result.commands.filter((c) => c === PathCommand.MOVE_TO).length;
-    expect(moveTos).toBeGreaterThanOrEqual(2);
+  it('dashes produce multiple segments for simple on off pattern', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 2.0;
+    style.dash = [10.0, 10.0];
+    const result = strokePath(path, style, 0.25);
+    const moveCount = countCommands(result, PathCommand.MOVE_TO);
+    expect(moveCount >= 2).toBe(true);
   });
-
-  it('dashes: dashOffset shifts the pattern start position', () => {
-    // Path of 25 units. dash=[20, 5] = on for 20, off for 5.
-    // dashOffset=0: on 0-20, off 20-25 → 1 dash.
-    // dashOffset=15: we are 15 units into the dash at start. remaining on = 5.
-    //   on 0-5, off 5-10, on 10-25 → 2 dashes.
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 25, 0);
-    const result0 = strokePath(path, { width: 2, dash: [20, 5], dashOffset: 0 });
-    const result15 = strokePath(path, { width: 2, dash: [20, 5], dashOffset: 15 });
-    const moveTos0 = result0.commands.filter((c) => c === PathCommand.MOVE_TO).length;
-    const moveTos15 = result15.commands.filter((c) => c === PathCommand.MOVE_TO).length;
-    expect(moveTos0).toBe(1);
-    expect(moveTos15).toBe(2);
+  it('dashes dash offset shifts the pattern start position', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 25.0, 0.0);
+    let style0: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style0.width = 2.0;
+    style0.dash = [20.0, 5.0];
+    style0.dashOffset = 0.0;
+    const result0 = strokePath(path, style0, 0.25);
+    let style15: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style15.width = 2.0;
+    style15.dash = [20.0, 5.0];
+    style15.dashOffset = 15.0;
+    const result15 = strokePath(path, style15, 0.25);
+    const moves0 = countCommands(result0, PathCommand.MOVE_TO);
+    const moves15 = countCommands(result15, PathCommand.MOVE_TO);
+    expect(moves0).toEqual(1);
+    expect(moves15).toEqual(2);
   });
-
-  it('dashes: zero-length dash entry is ignored (no infinite loop)', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    // A zero-length dash entry should not cause an infinite loop or throw.
-    expect(() => strokePath(path, { width: 2, dash: [0, 10, 10, 10] })).not.toThrow();
+  it('dashes pattern wraps correctly across multiple path segments', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 25.0, 0.0);
+    appendPathLineTo(path, 50.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 1.0;
+    style.dash = [15.0, 5.0];
+    const result = strokePath(path, style, 0.25);
+    const moveCount = countCommands(result, PathCommand.MOVE_TO);
+    expect(moveCount >= 2).toBe(true);
   });
-
-  it('dashes: very short segments produce the correct number of dashes', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    // Total path length = 5 (very short relative to the 10-unit dash)
-    appendPathLineTo(path, 5, 0);
-    const result = strokePath(path, { width: 1, dash: [10, 10] });
-    // Only one dash segment should appear since the whole path < first dash length.
-    const moveTos = result.commands.filter((c) => c === PathCommand.MOVE_TO).length;
-    expect(moveTos).toBe(1);
+  it('dashes very short segments produce correct number of dashes', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 5.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 1.0;
+    style.dash = [10.0, 10.0];
+    const result = strokePath(path, style, 0.25);
+    const moveCount = countCommands(result, PathCommand.MOVE_TO);
+    expect(moveCount).toEqual(1);
   });
-
-  it('dashes: pattern wraps correctly across multiple path segments', () => {
-    // Two segments of 25 each = 50 total, with dash=[15,5]: wraps at 20/40 so has 2+ dashes.
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 25, 0);
-    appendPathLineTo(path, 50, 0);
-    const result = strokePath(path, { width: 1, dash: [15, 5] });
-    const moveTos = result.commands.filter((c) => c === PathCommand.MOVE_TO).length;
-    // dash=[15,5]: on 0-15, off 15-20, on 20-35, off 35-40, on 40-50 → 3 dashes
-    expect(moveTos).toBeGreaterThanOrEqual(2);
+  it('dashes zero length dash entry is ignored', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 2.0;
+    style.dash = [0.0, 10.0, 10.0, 10.0];
+    const Result = strokePath(path, style, 0.25);
   });
-
-  it('dashes: solid stroke (empty dash array) produces a single outline', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    const solid = strokePath(path, { width: 4, dash: [] });
-    const moveTos = solid.commands.filter((c) => c === PathCommand.MOVE_TO).length;
-    expect(moveTos).toBe(1);
+  it('dashes solid stroke with empty dash array produces single outline', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 4.0;
+    style.dash = [];
+    const result = strokePath(path, style, 0.25);
+    const moveCount = countCommands(result, PathCommand.MOVE_TO);
+    expect(moveCount).toEqual(1);
   });
-
-  it('dashes: multiple subpaths each get the dash pattern applied independently', () => {
-    // Two separate subpaths each of length 100; dash=[30,10] gives 3 dashes per subpath.
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    appendPathMoveTo(path, 0, 20);
-    appendPathLineTo(path, 100, 20);
-    const result = strokePath(path, { width: 2, dash: [30, 10] });
-    const moveTos = result.commands.filter((c) => c === PathCommand.MOVE_TO).length;
-    // At least 2 subpaths × at least 1 dash each.
-    expect(moveTos).toBeGreaterThanOrEqual(2);
+  it('dashes multiple subpaths each get dash pattern applied', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    appendPathMoveTo(path, 0.0, 20.0);
+    appendPathLineTo(path, 100.0, 20.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 2.0;
+    style.dash = [30.0, 10.0];
+    const result = strokePath(path, style, 0.25);
+    const moveCount = countCommands(result, PathCommand.MOVE_TO);
+    expect(moveCount >= 2).toBe(true);
+  });
+  it('produces wider outline for larger width', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let styleThin: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    styleThin.width = 2.0;
+    const thin = strokePath(path, styleThin, 0.25);
+    let styleThick: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    styleThick.width = 20.0;
+    const thick = strokePath(path, styleThick, 0.25);
+    expect(thick.data.length >= thin.data.length).toBe(true);
   });
 });

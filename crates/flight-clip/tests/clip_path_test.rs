@@ -9,7 +9,7 @@ use super::*;
 
 #[test]
 fn flattens_path_coordinates() {
-    let mut path = create_path(PathWinding::NonZero);
+    let mut path = create_path(Some(PathWinding::NonZero));
     append_path_move_to(&mut path, 1.0, 2.0);
     append_path_line_to(&mut path, 3.0, 4.0);
     append_path_line_to(&mut path, 5.0, 2.0);

@@ -32,10 +32,10 @@ fn local_bounds(node: &Node2DRef) -> Rectangle {
 }
 
 fn create_segment_morph_shape() -> Ref<MorphShape> {
-    let mut start = create_path(flight_path::PathWinding::NonZero);
+    let mut start = create_path(Some(flight_path::PathWinding::NonZero));
     append_path_move_to(&mut start, 0.0, 0.0);
     append_path_line_to(&mut start, 10.0, 0.0);
-    let mut end = create_path(flight_path::PathWinding::NonZero);
+    let mut end = create_path(Some(flight_path::PathWinding::NonZero));
     append_path_move_to(&mut end, 0.0, 0.0);
     append_path_line_to(&mut end, 20.0, 0.0);
     let morph = Arc::new(RwLock::new(create_path_morph(&start, &end).unwrap()));

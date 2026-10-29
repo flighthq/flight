@@ -222,7 +222,7 @@ fn rasterize_glyph_outline_source(
 
     let metrics = (source.get_glyph_outline_metrics)();
     let scale = resolve_glyph_outline_scale(metrics.units_per_em, options.font_size)?;
-    let mut path = create_path(flight_path::PathWinding::NonZero);
+    let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     if !(source.get_glyph_outline)(&mut path, glyph_index) {
         return None;
     }
@@ -259,8 +259,7 @@ fn rasterize_glyph_outline_source(
         .checked_mul(usize::try_from(height).ok()?)?;
     let byte_count = pixel_count.checked_mul(4)?;
 
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, &path, Some(f64::from(0.25 / scale)));
+    let contours = flatten_path(&path, Some(f64::from(0.25 / scale)));
     let mut pixels = vec![0_u8; byte_count];
     for pixel_y in 0..height {
         for pixel_x in 0..width {

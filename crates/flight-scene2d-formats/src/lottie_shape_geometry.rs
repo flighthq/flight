@@ -11,7 +11,7 @@ pub fn apply_lottie_shape_direction(path: Ref<Path>, direction: Option<i32>) -> 
     }
     let mut reversed = {
         let source = path.read().unwrap();
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         path.winding = source.winding;
         path
     };

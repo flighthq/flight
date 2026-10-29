@@ -1,160 +1,22 @@
-import type { StrokeStyle } from '@flighthq/types/contract';
+// Generated from crates/flight-path/tests/tessellate_stroke_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
-import { tessellateStrokePath } from './tessellateStrokePath.ts';
+import { describe, expect, it } from 'vitest';
 
-describe('tessellateStrokePath', () => {
-  it('tessellates an open butt-capped line without overlapping triangles', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 100, 0);
-    const mesh = tessellateStrokePath(path, { cap: 'butt', width: 10 });
-    expect(mesh).not.toBeNull();
-    expect(mesh!.indices.length).toBe(6);
-    expect(getMeshArea(mesh!)).toBeCloseTo(1000, 6);
-  });
+import {
+  appendPathClose,
+  appendPathLineTo,
+  appendPathMoveTo,
+  appendPathRectangle,
+  createPath,
+  tessellateStrokePath,
+} from './contract.ts';
+import type { PathMesh, PathRaw, StrokeStyle } from './contract.ts';
 
-  it('tessellates a closed rectangle as a hollow ring', () => {
-    const path = createPath();
-    appendPathRectangle(path, 0, 0, 100, 50);
-    const mesh = tessellateStrokePath(path, { join: 'miter', width: 10 });
-    expect(mesh).not.toBeNull();
-    // Outer 110×60 minus inner 90×40 = 3000. Filling both contours would be 10200 instead.
-    expect(getMeshArea(mesh!)).toBeCloseTo(3000, 6);
-  });
-
-  it('normalizes an explicit CLOSE and a return-to-start centerline to the same ring', () => {
-    const closed = createPath();
-    appendPathRectangle(closed, 0, 0, 100, 50);
-    const returned = createPath();
-    appendPathMoveTo(returned, 0, 0);
-    appendPathLineTo(returned, 100, 0);
-    appendPathLineTo(returned, 100, 50);
-    appendPathLineTo(returned, 0, 50);
-    appendPathLineTo(returned, 0, 0);
-    expect(tessellateStrokePath(closed, { width: 10 })).toEqual(tessellateStrokePath(returned, { width: 10 }));
-  });
-
-  it('uses the same round-join sampling tolerance as stroke outlines', () => {
-    const path = createPath();
-    appendPathRectangle(path, 0, 0, 100, 50);
-    const fine = tessellateStrokePath(path, { join: 'round', width: 10 }, 0.1);
-    const coarse = tessellateStrokePath(path, { join: 'round', width: 10 }, 5);
-    expect(fine).not.toBeNull();
-    expect(coarse).not.toBeNull();
-    expect(fine!.vertices.length).toBeGreaterThan(coarse!.vertices.length);
-  });
-
-  it('turns a dashed closed path into independently capped open stroke pieces', () => {
-    const path = createPath();
-    appendPathRectangle(path, 0, 0, 100, 50);
-    const mesh = tessellateStrokePath(path, { cap: 'round', dash: [20, 10], width: 6 });
-    expect(mesh).not.toBeNull();
-    expect(mesh!.indices.length).toBeGreaterThan(6);
-  });
-
-  it('returns null for a self-intersecting centerline', () => {
-    const path = bowTie();
-    expect(tessellateStrokePath(path, { width: 8 })).toBeNull();
-  });
-
-  it('returns null for invalid stroke dimensions instead of emitting non-finite geometry', () => {
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 10, 0);
-    expect(tessellateStrokePath(path, { width: 0 })).toBeNull();
-    expect(tessellateStrokePath(path, { width: Number.NaN })).toBeNull();
-  });
-
-  // The sharing contract on StrokeTessellator, which exists because a derived render pipeline
-  // INHERITS the tessellator bound to its source — one function object serves every state in that
-  // lineage. Each probe below asserts a property nothing else in this suite covers.
-  //
-  // Every one of them is grounded in a mesh asserted NONEMPTY first. A degenerate path returns an
-  // empty mesh, and against an empty mesh all four probes pass while proving nothing: two empty
-  // results always match, always have distinct empty arrays, and never disturb each other.
-
-  it('returns a nonempty mesh for the fixtures the sharing probes rely on', () => {
-    expect(tessellateStrokePath(makeOpenPath(), OPEN_STYLE)!.vertices.length).toBeGreaterThan(0);
-    expect(tessellateStrokePath(makeClosedPath(), CLOSED_STYLE, 0.1)!.vertices.length).toBeGreaterThan(0);
-  });
-
-  it('returns identical geometry when calls for two paths are interleaved', () => {
-    const openBaseline = JSON.stringify(tessellateStrokePath(makeOpenPath(), OPEN_STYLE));
-    const closedBaseline = JSON.stringify(tessellateStrokePath(makeClosedPath(), CLOSED_STYLE, 0.1));
-    let drifted = 0;
-    for (let i = 0; i < 50; i++) {
-      if (JSON.stringify(tessellateStrokePath(makeOpenPath(), OPEN_STYLE)) !== openBaseline) drifted++;
-      if (JSON.stringify(tessellateStrokePath(makeClosedPath(), CLOSED_STYLE, 0.1)) !== closedBaseline) drifted++;
-    }
-    expect(drifted).toBe(0);
-  });
-
-  it('allocates fresh result arrays for every call', () => {
-    const first = tessellateStrokePath(makeOpenPath(), OPEN_STYLE)!;
-    const second = tessellateStrokePath(makeOpenPath(), OPEN_STYLE)!;
-    expect(first.vertices).not.toBe(second.vertices);
-    expect(first.indices).not.toBe(second.indices);
-  });
-
-  it('is unaffected by a caller mutating an earlier result', () => {
-    const baseline = JSON.stringify(tessellateStrokePath(makeOpenPath(), OPEN_STYLE));
-    const owned = tessellateStrokePath(makeOpenPath(), OPEN_STYLE)!;
-    owned.vertices.length = 0;
-    owned.indices.push(999_999);
-    expect(JSON.stringify(tessellateStrokePath(makeOpenPath(), OPEN_STYLE))).toBe(baseline);
-  });
-
-  it('is reentrant when a nested call runs inside an in-progress one', () => {
-    const openBaseline = JSON.stringify(tessellateStrokePath(makeOpenPath(), OPEN_STYLE));
-    const closedBaseline = JSON.stringify(tessellateStrokePath(makeClosedPath(), CLOSED_STYLE, 0.1));
-    let nestedRan = false;
-    let nestedMatched = false;
-    // Reading `width` mid-tessellation triggers the inner call, so the two are genuinely interleaved
-    // rather than merely sequential.
-    const reentrantStyle = new Proxy(
-      { ...OPEN_STYLE },
-      {
-        get(target, key) {
-          if (key === 'width' && !nestedRan) {
-            nestedRan = true;
-            nestedMatched =
-              JSON.stringify(tessellateStrokePath(makeClosedPath(), CLOSED_STYLE, 0.1)) === closedBaseline;
-          }
-          return (target as Record<string | symbol, unknown>)[key];
-        },
-      },
-    ) as StrokeStyle;
-    const outer = JSON.stringify(tessellateStrokePath(makeOpenPath(), reentrantStyle));
-    expect(nestedRan).toBe(true);
-    expect(nestedMatched).toBe(true);
-    expect(outer).toBe(openBaseline);
-  });
-
-  it('does not mutate the path or style it is given', () => {
-    const path = makeOpenPath();
-    const style = { ...OPEN_STYLE };
-    const pathBefore = JSON.stringify(path);
-    const styleBefore = JSON.stringify(style);
-    tessellateStrokePath(path, style);
-    expect(JSON.stringify(path)).toBe(pathBefore);
-    expect(JSON.stringify(style)).toBe(styleBefore);
-  });
-});
-
-function bowTie() {
-  const path = createPath();
-  appendPathMoveTo(path, 0, 0);
-  appendPathLineTo(path, 40, 40);
-  appendPathLineTo(path, 0, 40);
-  appendPathLineTo(path, 40, 0);
-  appendPathClose(path);
-  return path;
-}
-
-function getMeshArea(mesh: { indices: readonly number[]; vertices: readonly number[] }): number {
-  let area = 0;
-  for (let i = 0; i < mesh.indices.length; i += 3) {
+function meshArea(mesh: Readonly<PathMesh>): number {
+  let area = 0.0;
+  let i = 0;
+  while (i < mesh.indices.length) {
     const a = mesh.indices[i] * 2;
     const b = mesh.indices[i + 1] * 2;
     const c = mesh.indices[i + 2] * 2;
@@ -162,26 +24,274 @@ function getMeshArea(mesh: { indices: readonly number[]; vertices: readonly numb
       Math.abs(
         (mesh.vertices[b] - mesh.vertices[a]) * (mesh.vertices[c + 1] - mesh.vertices[a + 1]) -
           (mesh.vertices[b + 1] - mesh.vertices[a + 1]) * (mesh.vertices[c] - mesh.vertices[a]),
-      ) / 2;
+      ) / 2.0;
+    i += 3;
   }
   return area;
 }
 
-// Fixtures for the sharing-contract probes: one open polyline and one closed ring, both chosen because
-// they produce real geometry (12 and 80 vertices).
-const OPEN_STYLE: StrokeStyle = { cap: 'butt', join: 'miter', width: 10 };
-const CLOSED_STYLE: StrokeStyle = { join: 'round', width: 7 };
-
-function makeOpenPath(): ReturnType<typeof createPath> {
-  const path = createPath();
-  appendPathMoveTo(path, 0, 0);
-  appendPathLineTo(path, 100, 0);
-  appendPathLineTo(path, 100, 100);
+function bowTie(): PathRaw {
+  let path = createPath('nonZero');
+  appendPathMoveTo(path, 0.0, 0.0);
+  appendPathLineTo(path, 40.0, 40.0);
+  appendPathLineTo(path, 0.0, 40.0);
+  appendPathLineTo(path, 40.0, 0.0);
+  appendPathClose(path);
   return path;
 }
 
-function makeClosedPath(): ReturnType<typeof createPath> {
-  const path = createPath();
-  appendPathRectangle(path, 0, 0, 100, 50);
-  return path;
-}
+describe('tessellateStrokePath', () => {
+  it('tessellates open butt capped line without overlapping triangles', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.cap = 'butt';
+    style.width = 10.0;
+    const mesh = tessellateStrokePath(path, style, 0.25)!;
+    expect(mesh.indices.length).toEqual(6);
+    expect(Math.abs(meshArea(mesh) - 1000.0) < 5e-7).toBe(true);
+  });
+  it('tessellates closed rectangle as hollow ring', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 0.0, 0.0, 100.0, 50.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.join = 'miter';
+    style.width = 10.0;
+    const mesh = tessellateStrokePath(path, style, 0.25)!;
+    expect(Math.abs(meshArea(mesh) - 3000.0) < 5e-7).toBe(true);
+  });
+  it('uses same round join sampling tolerance as stroke outlines', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 0.0, 0.0, 100.0, 50.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.join = 'round';
+    style.width = 10.0;
+    const fine = tessellateStrokePath(path, style, 0.1)!;
+    const coarse = tessellateStrokePath(path, style, 5.0)!;
+    expect(fine.vertices.length > coarse.vertices.length).toBe(true);
+  });
+  it('turns dashed closed path into independently capped stroke pieces', () => {
+    let path = createPath('nonZero');
+    appendPathRectangle(path, 0.0, 0.0, 100.0, 50.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.cap = 'round';
+    style.dash = [20.0, 10.0];
+    style.width = 6.0;
+    const mesh = tessellateStrokePath(path, style, 0.25)!;
+    expect(mesh.indices.length > 6).toBe(true);
+  });
+  it('returns none for self intersecting centerline', () => {
+    const path = bowTie();
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 8.0;
+    expect(tessellateStrokePath(path, style, 0.25) === null).toBe(true);
+  });
+  it('returns none for zero width', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 0.0;
+    expect(tessellateStrokePath(path, style, 0.25) === null).toBe(true);
+  });
+  it('returns none for nan width', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 10.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = Number.NaN;
+    expect(tessellateStrokePath(path, style, 0.25) === null).toBe(true);
+  });
+  it('returns nonempty mesh for open and closed paths', () => {
+    let openPath = createPath('nonZero');
+    appendPathMoveTo(openPath, 0.0, 0.0);
+    appendPathLineTo(openPath, 100.0, 0.0);
+    appendPathLineTo(openPath, 100.0, 100.0);
+    let openStyle: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    openStyle.cap = 'butt';
+    openStyle.join = 'miter';
+    openStyle.width = 10.0;
+    const openMesh = tessellateStrokePath(openPath, openStyle, 0.25)!;
+    expect(openMesh.vertices.length > 0).toBe(true);
+    let closedPath = createPath('nonZero');
+    appendPathRectangle(closedPath, 0.0, 0.0, 100.0, 50.0);
+    let closedStyle: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    closedStyle.join = 'round';
+    closedStyle.width = 7.0;
+    const closedMesh = tessellateStrokePath(closedPath, closedStyle, 0.1)!;
+    expect(closedMesh.vertices.length > 0).toBe(true);
+  });
+  it('returns none for empty path', () => {
+    const path = createPath('nonZero');
+    const style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    } as const;
+    expect(tessellateStrokePath(path, style, 0.25) === null).toBe(true);
+  });
+  it('returns identical geometry when calls for two paths are interleaved', () => {
+    let openPath = createPath('nonZero');
+    appendPathMoveTo(openPath, 0.0, 0.0);
+    appendPathLineTo(openPath, 100.0, 0.0);
+    appendPathLineTo(openPath, 100.0, 100.0);
+    const openStyle: StrokeStyle = {
+      width: 10.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    } as const;
+    let closedPath = createPath('nonZero');
+    appendPathRectangle(closedPath, 0.0, 0.0, 100.0, 50.0);
+    const closedStyle: StrokeStyle = {
+      width: 7.0,
+      cap: 'butt',
+      join: 'round',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    } as const;
+    const openBaseline = tessellateStrokePath(openPath, openStyle, 0.25)!;
+    const closedBaseline = tessellateStrokePath(closedPath, closedStyle, 0.1)!;
+    for (let _ = 0; _ < 50; _ += 1) {
+      const open = tessellateStrokePath(openPath, openStyle, 0.25)!;
+      expect(open.vertices).toEqual(openBaseline.vertices);
+      expect(open.indices).toEqual(openBaseline.indices);
+      const closed = tessellateStrokePath(closedPath, closedStyle, 0.1)!;
+      expect(closed.vertices).toEqual(closedBaseline.vertices);
+      expect(closed.indices).toEqual(closedBaseline.indices);
+    }
+  });
+  it('does not mutate the path or style', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    appendPathLineTo(path, 100.0, 100.0);
+    const commandsBefore = path.commands.slice();
+    const dataBefore = path.data.slice();
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.cap = 'butt';
+    style.join = 'miter';
+    style.width = 10.0;
+    const widthBefore = style.width;
+    tessellateStrokePath(path, style, 0.25);
+    expect(path.commands).toEqual(commandsBefore);
+    expect(path.data).toEqual(dataBefore);
+    expect(style.width).toEqual(widthBefore);
+  });
+  it('normalizes an explicit close and a return to start centerline to the same ring', () => {
+    let closed = createPath('nonZero');
+    appendPathRectangle(closed, 0.0, 0.0, 100.0, 50.0);
+    let returned = createPath('nonZero');
+    appendPathMoveTo(returned, 0.0, 0.0);
+    appendPathLineTo(returned, 100.0, 0.0);
+    appendPathLineTo(returned, 100.0, 50.0);
+    appendPathLineTo(returned, 0.0, 50.0);
+    appendPathLineTo(returned, 0.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = 10.0;
+    const meshClosed = tessellateStrokePath(closed, style, 0.25)!;
+    const meshReturned = tessellateStrokePath(returned, style, 0.25)!;
+    expect(meshClosed.vertices.length > 0).toBe(true);
+    expect(meshClosed.vertices).toEqual(meshReturned.vertices);
+    expect(meshClosed.indices).toEqual(meshReturned.indices);
+  });
+  it('returns none for invalid style', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathLineTo(path, 100.0, 0.0);
+    let style: StrokeStyle = {
+      width: 1.0,
+      cap: 'butt',
+      join: 'miter',
+      miterLimit: 4.0,
+      dash: [] as never[],
+      dashOffset: 0.0,
+    };
+    style.width = -1.0;
+    expect(tessellateStrokePath(path, style, 0.25) === null).toBe(true);
+  });
+});

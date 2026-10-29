@@ -48,6 +48,7 @@
     "@flighthq/host": "*",
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
+    "@flighthq/path": "*",
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
     "@flighthq/selection": "*",

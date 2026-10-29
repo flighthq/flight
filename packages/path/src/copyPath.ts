@@ -1,34 +1,33 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Path, PathWinding } from '@flighthq/types/contract';
+// Generated from crates/flight-path/src/copy_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-// Allocates a new `Path` that is a deep copy of `source`.
-// Use `copyPath(out, source)` to write into an existing path without allocating.
-export function clonePath(source: Readonly<Path>): Path {
-  const out = allocateEntity<Path>();
-  assignPathFields(out, source.commands.slice(), source.data.slice(), source.winding);
-  return finishEntity(out);
+import { allocateEntity } from '@flighthq/entity/contract';
+
+import type { PathRaw } from './path.ts';
+
+/**
+ * Allocates a new `Path` that is a deep copy of `source`.
+ */
+export function clonePath(source: Readonly<PathRaw>): PathRaw {
+  let out: PathRaw = Object.assign(allocateEntity<PathRaw>(), { commands: [], data: [] });
+  copyPath(out, source);
+  return out;
 }
 
-// Copies all commands, data, and the winding rule from `source` into `out`. Alias-safe: if `out` is
-// the same object as `source`, the call is a no-op (the path is already in place). Use `clonePath`
-// when you want a new allocation.
-export function copyPath(out: Path, source: Readonly<Path>): void {
-  if (out !== source) {
-    out.commands.length = 0;
-    for (let i = 0; i < source.commands.length; i++) out.commands.push(source.commands[i]);
-    out.data.length = 0;
-    for (let i = 0; i < source.data.length; i++) out.data.push(source.data[i]);
-    out.winding = source.winding;
+/**
+ * Copies commands, data, and winding into the caller's path, retaining its field storage.
+ */
+export function copyPath(out: PathRaw, source: Readonly<PathRaw>): void {
+  const commands: number[] = source.commands.slice();
+  const data: number[] = source.data.slice();
+  const winding = source.winding;
+  out.commands.length = 0;
+  for (let i = 0; i < commands.length; i += 1) {
+    out.commands.push(commands[i]);
   }
-}
-
-function assignPathFields(
-  out: EntityConstruction<Path>,
-  commands: number[],
-  data: number[],
-  winding: PathWinding,
-): void {
-  out.commands = commands;
-  out.data = data;
+  out.data.length = 0;
+  for (let i = 0; i < data.length; i += 1) {
+    out.data.push(data[i]);
+  }
   out.winding = winding;
 }

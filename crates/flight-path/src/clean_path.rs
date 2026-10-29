@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,8 +17,8 @@ mod sugar_tests {
 
     #[test]
     fn path_clean_matches_clean_path() {
-        let mut oa1 = create_path(PathWinding::NonZero);
-        let mut ob1 = create_path(PathWinding::NonZero);
+        let mut oa1 = create_path(Some(PathWinding::NonZero));
+        let mut ob1 = create_path(Some(PathWinding::NonZero));
         let s = test_path();
         s.clean(0.5, &mut oa1, Some(0.5));
         clean_path(&s, 0.5, &mut ob1, Some(0.5));
@@ -32,8 +32,7 @@ mod sugar_tests {
 /// Alias-safe: captures all input before writing to `out`.
 pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
-    let mut contours = Vec::new();
-    flatten_path(&mut contours, source, Some(flatten_tolerance));
+    let contours = flatten_path(source, Some(flatten_tolerance));
     let winding = source.winding;
     let tolerance_sq = tolerance * tolerance;
     out.commands.clear();
@@ -75,16 +74,16 @@ pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_toleran
             }
         }
 
-        out.commands.push(PathCommand::MoveTo as u8);
+        out.commands.push(PathCommand::MOVE_TO as u8);
         out.data.push(kept[0]);
         out.data.push(kept[1]);
         for i in 1..kept_count {
-            out.commands.push(PathCommand::LineTo as u8);
+            out.commands.push(PathCommand::LINE_TO as u8);
             out.data.push(kept[i * 2]);
             out.data.push(kept[i * 2 + 1]);
         }
         if closed {
-            out.commands.push(PathCommand::Close as u8);
+            out.commands.push(PathCommand::CLOSE as u8);
         }
     }
 }
@@ -96,12 +95,16 @@ fn collapse_closed_seam(kept: &mut Vec<f64>, tolerance_sq: f64) {
         changed = false;
         let last = kept.len() / 2;
         if is_middle_removable(kept, last - 2, last - 1, 0, tolerance_sq) {
-            kept.truncate(kept.len() - 2);
+            let prefix: Vec<f64> = kept[0..kept.len() - 2].to_vec();
+            kept.clear();
+            kept.extend_from_slice(&prefix);
             changed = true;
             continue;
         }
         if is_middle_removable(kept, last - 1, 0, 1, tolerance_sq) {
-            kept.drain(0..2);
+            let suffix: Vec<f64> = kept[2..kept.len()].to_vec();
+            kept.clear();
+            kept.extend_from_slice(&suffix);
             changed = true;
         }
     }
@@ -163,7 +166,9 @@ fn push_clean_vertex(kept: &mut Vec<f64>, x: f64, y: f64, tolerance_sq: f64) {
         ) {
             break;
         }
-        kept.truncate(m - 2);
+        let prefix: Vec<f64> = kept[0..m - 2].to_vec();
+        kept.clear();
+        kept.extend_from_slice(&prefix);
     }
     kept.push(x);
     kept.push(y);

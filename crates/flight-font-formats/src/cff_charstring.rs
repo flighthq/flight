@@ -37,7 +37,7 @@ fn emit_relative_curve(out: &mut Path, state: &mut CffExecution, index: usize) {
     let y2 = y1 + stack_operand(state, index + 3);
     state.x = x2 + stack_operand(state, index + 4);
     state.y = y2 + stack_operand(state, index + 5);
-    out.commands.push(PathCommand::CubicCurveTo as u8);
+    out.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
     out.data
         .extend_from_slice(&[x1, -y1, x2, -y2, state.x, -state.y]);
 }
@@ -94,9 +94,9 @@ fn execute_charstring(
                     state.y += state.stack.first().copied().unwrap_or(0.0);
                 }
                 if state.open {
-                    out.commands.push(PathCommand::Close as u8);
+                    out.commands.push(PathCommand::CLOSE as u8);
                 }
-                out.commands.push(PathCommand::MoveTo as u8);
+                out.commands.push(PathCommand::MOVE_TO as u8);
                 out.data.extend_from_slice(&[state.x, -state.y]);
                 state.open = true;
                 state.stack.clear();
@@ -106,7 +106,7 @@ fn execute_charstring(
                 while index + 1 < state.stack.len() {
                     state.x += state.stack[index];
                     state.y += state.stack[index + 1];
-                    out.commands.push(PathCommand::LineTo as u8);
+                    out.commands.push(PathCommand::LINE_TO as u8);
                     out.data.extend_from_slice(&[state.x, -state.y]);
                     index += 2;
                 }
@@ -120,7 +120,7 @@ fn execute_charstring(
                     } else {
                         state.y += delta;
                     }
-                    out.commands.push(PathCommand::LineTo as u8);
+                    out.commands.push(PathCommand::LINE_TO as u8);
                     out.data.extend_from_slice(&[state.x, -state.y]);
                     horizontal = !horizontal;
                 }
@@ -142,7 +142,7 @@ fn execute_charstring(
                 }
                 state.x += state.stack.get(index).copied().unwrap_or(0.0);
                 state.y += state.stack.get(index + 1).copied().unwrap_or(0.0);
-                out.commands.push(PathCommand::LineTo as u8);
+                out.commands.push(PathCommand::LINE_TO as u8);
                 out.data.extend_from_slice(&[state.x, -state.y]);
                 state.stack.clear();
             }
@@ -151,7 +151,7 @@ fn execute_charstring(
                 while index + 1 < state.stack.len().saturating_sub(6) {
                     state.x += state.stack[index];
                     state.y += state.stack[index + 1];
-                    out.commands.push(PathCommand::LineTo as u8);
+                    out.commands.push(PathCommand::LINE_TO as u8);
                     out.data.extend_from_slice(&[state.x, -state.y]);
                     index += 2;
                 }
@@ -183,7 +183,7 @@ fn execute_charstring(
                         } else {
                             0.0
                         };
-                    out.commands.push(PathCommand::CubicCurveTo as u8);
+                    out.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
                     out.data
                         .extend_from_slice(&[x1, -y1, x2, -y2, state.x, -state.y]);
                     lead = 0.0;
@@ -212,7 +212,7 @@ fn execute_charstring(
                         state.x = x2 + state.stack[index + 3];
                         state.y = y2 + extra;
                     }
-                    out.commands.push(PathCommand::CubicCurveTo as u8);
+                    out.commands.push(PathCommand::CUBIC_CURVE_TO as u8);
                     out.data
                         .extend_from_slice(&[x1, -y1, x2, -y2, state.x, -state.y]);
                     horizontal = !horizontal;
@@ -247,7 +247,7 @@ fn execute_charstring(
             14 => {
                 take_width(state, 0);
                 if state.open {
-                    out.commands.push(PathCommand::Close as u8);
+                    out.commands.push(PathCommand::CLOSE as u8);
                 }
                 state.open = false;
                 return true;
@@ -345,7 +345,7 @@ pub fn run_cff_charstring(
         return false;
     }
     if state.open {
-        out.commands.push(PathCommand::Close as u8);
+        out.commands.push(PathCommand::CLOSE as u8);
     }
     return true;
 }
