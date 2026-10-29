@@ -7,11 +7,11 @@ import type { Signal } from './Signal.ts';
 // then. onScreenMetricsChanged carries the full ScreenChangeEvent (including changedMetrics); the
 // add/remove signals carry just the affected ScreenInfo.
 export interface ScreenSignals extends Entity {
-  onScreenAdded: Signal<(screen: Readonly<ScreenInfo>) => void>;
-  onScreenMetricsChanged: Signal<(event: Readonly<ScreenChangeEvent>) => void>;
-  onScreenRemoved: Signal<(screen: Readonly<ScreenInfo>) => void>;
+  onScreenAdded: Signal<Readonly<ScreenInfo>>;
+  onScreenMetricsChanged: Signal<Readonly<ScreenChangeEvent>>;
+  onScreenRemoved: Signal<Readonly<ScreenInfo>>;
 }
 
 export interface ScreenPermissionChange extends Entity {
-  onChange: Signal<(state: ScreenPermissionState) => void>;
+  onChange: Signal<ScreenPermissionState>;
 }
