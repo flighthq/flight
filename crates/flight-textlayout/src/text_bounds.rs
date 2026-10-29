@@ -1,5 +1,4 @@
-//! flight-compiler: root-only TEXT_BOUNDS_GUTTER computeTextBoundsHeight computeTextBoundsOffsetX
-//! flight-compiler: root-only computeTextBoundsRectangle computeTextBoundsWidth
+//! flight-compiler: root-only TEXT_BOUNDS_GUTTER computeTextBoundsHeight computeTextBoundsOffsetX computeTextBoundsRectangle computeTextBoundsWidth
 
 use flight_geometry::Rectangle;
 
