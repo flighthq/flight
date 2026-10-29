@@ -4821,24 +4821,24 @@ pub fn strip_end(text: String) -> String {
     }
 
     #[test]
-    fn rejects_trim_without_string_provenance() {
-        for (source, expected) in [
-            (
-                "pub fn bad(value: i32) { value.trim(); }\n",
-                "portable `.trim()` requires a receiver known to be `String` or `str`",
-            ),
-            (
-                "pub fn bad(value: i32) { value.trim_start(); }\n",
-                "portable `.trim_start()` requires a receiver known to be `String` or `str`",
-            ),
-            (
-                "pub fn bad(value: i32) { value.trim_end(); }\n",
-                "portable `.trim_end()` requires a receiver known to be `String` or `str`",
-            ),
-        ] {
-            let error = compile_typescript(source, None).unwrap_err();
-            assert_eq!(error.to_string(), expected);
-        }
+    fn lowers_trim_family_without_string_provenance() {
+        let source = r#"
+pub fn trimmed(value: String) -> String {
+    return value.trim().to_string();
+}
+pub fn trim_left(value: String) -> String {
+    return value.trim_start().to_string();
+}
+pub fn trim_right(value: String) -> String {
+    return value.trim_end().to_string();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".trim()"), "{output}");
+        assert!(output.contains(".trimStart()"), "{output}");
+        assert!(output.contains(".trimEnd()"), "{output}");
     }
 
     #[test]
@@ -11118,19 +11118,16 @@ pub fn has_suffix(value: &[u8], suffix: &[u8]) -> bool {
     }
 
     #[test]
-    fn rejects_non_string_character_iterators() {
+    fn lowers_chars_without_string_provenance() {
         let source = r#"
-pub fn characters(value: &[u8]) -> Vec<u8> {
+pub fn characters(value: String) -> Vec<String> {
     return value.chars().collect();
 }
 "#;
 
-        let error = compile_typescript(source, None).unwrap_err();
+        let output = compile_typescript(source, None).unwrap();
 
-        assert_eq!(
-            error.to_string(),
-            "portable `.chars()` requires a receiver known to be `String` or `str`"
-        );
+        assert!(output.contains("[...value]"), "{output}");
     }
 
     #[test]
@@ -11185,19 +11182,16 @@ pub fn trim_padding(value: &str) -> String {
     }
 
     #[test]
-    fn rejects_non_string_prefix_trimming_receivers() {
+    fn lowers_trim_start_matches_without_string_provenance() {
         let source = r#"
-pub fn trim_zero(values: &[u8]) -> String {
-    return values.trim_start_matches(|value| *value == 0).to_string();
+pub fn trim_zero(value: String) -> String {
+    return value.trim_start_matches(|ch: char| ch == '0').to_string();
 }
 "#;
 
-        let error = compile_typescript(source, None).unwrap_err();
+        let output = compile_typescript(source, None).unwrap();
 
-        assert_eq!(
-            error.to_string(),
-            "portable `.trim_start_matches()` requires a receiver known to be `String` or `str`"
-        );
+        assert!(output.contains("let offset = 0"), "{output}");
     }
 
     #[test]

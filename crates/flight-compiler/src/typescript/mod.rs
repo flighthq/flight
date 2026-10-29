@@ -11449,22 +11449,14 @@ fn emit_method_call(
         "clear" if arguments.is_empty() => Err(compile_error(format!(
             "portable `.clear()` receiver `{receiver}` must be known to be `String`, `Vec`, slice, `HashMap`, or `HashSet`"
         ))),
-        "chars" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+        "chars" if arguments.is_empty() => {
             Ok(format!("[...{receiver}]"))
         }
-        "chars" if arguments.is_empty() => Err(compile_error(
-            "portable `.chars()` requires a receiver known to be `String` or `str`",
-        )),
-        "char_indices"
-            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "char_indices" if arguments.is_empty() => {
             Ok(format!(
                 "[...{receiver}].map((char, index) => [index, char] as const)"
             ))
         }
-        "char_indices" if arguments.is_empty() => Err(compile_error(
-            "portable `.char_indices()` requires a receiver known to be `String` or `str`",
-        )),
         "chain" if arguments.len() == 1 => Ok(format!("[...{receiver}, ...{}]", arguments[0])),
         "checked_add" if arguments.len() == 1 => Ok(format!(
             "((a: number, b: number): number | undefined => {{ const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum }})({receiver}, {})",
@@ -12009,9 +12001,7 @@ fn emit_method_call(
             ))
         }
         "reduce" if arguments.len() == 1 => Ok(format!("{receiver}.reduce({})", arguments[0])),
-        "rfind"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "rfind" if arguments.len() == 1 => {
             let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
                 "null"
             } else {
@@ -12022,9 +12012,6 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
-        "rfind" if arguments.len() == 1 => Err(compile_error(
-            "portable `.rfind()` requires a receiver known to be `String` or `str`",
-        )),
         "rsplit"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
         {
@@ -12036,18 +12023,13 @@ fn emit_method_call(
         "rsplit" if arguments.len() == 1 => Err(compile_error(
             "portable `.rsplit()` requires a receiver known to be `String` or `str`",
         )),
-        "rsplit_once"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "rsplit_once" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
                 "((value: string, delimiter: string): [string, string] | {absent} => {{ const index = value.lastIndexOf(delimiter); return index === -1 ? {absent} : [value.slice(0, index), value.slice(index + delimiter.length)]; }})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "rsplit_once" if arguments.len() == 1 => Err(compile_error(
-            "portable `.rsplit_once()` requires a receiver known to be `String` or `str`",
-        )),
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
         "saturating_add" if arguments.len() == 1 => {
@@ -12082,39 +12064,24 @@ fn emit_method_call(
         "split" if arguments.len() == 1 => Err(compile_error(
             "portable `.split()` requires a receiver known to be `String` or `str`",
         )),
-        "split_once"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "split_once" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
                 "((value: string, delimiter: string): [string, string] | {absent} => {{ const index = value.indexOf(delimiter); return index === -1 ? {absent} : [value.slice(0, index), value.slice(index + delimiter.length)]; }})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "split_once" if arguments.len() == 1 => Err(compile_error(
-            "portable `.split_once()` requires a receiver known to be `String` or `str`",
-        )),
-        "splitn"
-            if arguments.len() == 2 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "splitn" if arguments.len() == 2 => {
             Ok(format!(
                 "((value: string, n: number, delimiter: string): string[] => {{ const parts: string[] = []; let rest = value; for (let i = 1; i < n && rest.length > 0; i++) {{ const index = rest.indexOf(delimiter); if (index === -1) break; parts.push(rest.slice(0, index)); rest = rest.slice(index + delimiter.length); }} parts.push(rest); return parts; }})({receiver}, {}, {})",
                 arguments[0], arguments[1]
             ))
         }
-        "splitn" if arguments.len() == 2 => Err(compile_error(
-            "portable `.splitn()` requires a receiver known to be `String` or `str`",
-        )),
-        "split_whitespace"
-            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "split_whitespace" if arguments.is_empty() => {
             Ok(format!(
                 "{receiver}.split(/\\s+/).filter((s) => s.length > 0)"
             ))
         }
-        "split_whitespace" if arguments.is_empty() => Err(compile_error(
-            "portable `.split_whitespace()` requires a receiver known to be `String` or `str`",
-        )),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
         "starts_with"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
@@ -12124,30 +12091,20 @@ fn emit_method_call(
         "starts_with" if arguments.len() == 1 => Err(compile_error(
             "portable `.starts_with()` requires a receiver known to be `String` or `str`",
         )),
-        "strip_prefix"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "strip_prefix" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
                 "((value: string, prefix: string): string | {absent} => value.startsWith(prefix) ? value.slice(prefix.length) : {absent})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "strip_prefix" if arguments.len() == 1 => Err(compile_error(
-            "portable `.strip_prefix()` requires a receiver known to be `String` or `str`",
-        )),
-        "strip_suffix"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "strip_suffix" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
                 "((value: string, suffix: string): string | {absent} => value.endsWith(suffix) ? value.slice(0, value.length - suffix.length) : {absent})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "strip_suffix" if arguments.len() == 1 => Err(compile_error(
-            "portable `.strip_suffix()` requires a receiver known to be `String` or `str`",
-        )),
         "ends_with"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
         {
@@ -12156,50 +12113,21 @@ fn emit_method_call(
         "ends_with" if arguments.len() == 1 => Err(compile_error(
             "portable `.ends_with()` requires a receiver known to be `String` or `str`",
         )),
-        "trim" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
-            Ok(format!("{receiver}.trim()"))
-        }
-        "trim" if arguments.is_empty() => Err(compile_error(
-            "portable `.trim()` requires a receiver known to be `String` or `str`",
-        )),
-        "trim_end"
-            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
-        {
-            Ok(format!("{receiver}.trimEnd()"))
-        }
-        "trim_end" if arguments.is_empty() => Err(compile_error(
-            "portable `.trim_end()` requires a receiver known to be `String` or `str`",
-        )),
-        "trim_start"
-            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
-        {
-            Ok(format!("{receiver}.trimStart()"))
-        }
-        "trim_start" if arguments.is_empty() => Err(compile_error(
-            "portable `.trim_start()` requires a receiver known to be `String` or `str`",
-        )),
-        "trim_end_matches"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "trim" if arguments.is_empty() => Ok(format!("{receiver}.trim()")),
+        "trim_end" if arguments.is_empty() => Ok(format!("{receiver}.trimEnd()")),
+        "trim_start" if arguments.is_empty() => Ok(format!("{receiver}.trimStart()")),
+        "trim_end_matches" if arguments.len() == 1 => {
             Ok(format!(
                 "((text: string, matches: (character: string) => boolean): string => {{ const chars = [...text]; let end = chars.length; while (end > 0 && matches(chars[end - 1])) {{ end -= 1; }} return chars.slice(0, end).join(\"\"); }})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "trim_end_matches" if arguments.len() == 1 => Err(compile_error(
-            "portable `.trim_end_matches()` requires a receiver known to be `String` or `str`",
-        )),
-        "trim_start_matches"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "trim_start_matches" if arguments.len() == 1 => {
             Ok(format!(
                 "((text: string, matches: (character: string) => boolean): string => {{ let offset = 0; for (const character of text) {{ if (!matches(character)) break; offset += character.length; }} return text.slice(offset); }})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "trim_start_matches" if arguments.len() == 1 => Err(compile_error(
-            "portable `.trim_start_matches()` requires a receiver known to be `String` or `str`",
-        )),
         "sum" if arguments.is_empty() => {
             Ok(format!("{receiver}.reduce((sum, value) => sum + value, 0)"))
         }
@@ -12373,17 +12301,12 @@ fn emit_method_call(
         "to_degrees" if arguments.is_empty() => {
             Ok(format!("({receiver} * 180 / Math.PI)"))
         }
-        "trim_matches"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "trim_matches" if arguments.len() == 1 => {
             Ok(format!(
                 "((value: string, ch: string): string => {{ while (value.startsWith(ch)) {{ value = value.slice(ch.length); }} while (value.endsWith(ch)) {{ value = value.slice(0, value.length - ch.length); }} return value; }})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "trim_matches" if arguments.len() == 1 => Err(compile_error(
-            "portable `.trim_matches()` requires a receiver known to be `String` or `str`",
-        )),
         "take_while" if arguments.len() == 1 => Ok(format!(
             "(<T>(items: readonly T[], predicate: (item: T) => boolean): T[] => {{ const result: T[] = []; for (const item of items) {{ if (!predicate(item)) break; result.push(item); }} return result; }})({receiver}, {})",
             arguments[0]
