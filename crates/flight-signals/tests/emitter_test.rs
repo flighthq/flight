@@ -577,7 +577,7 @@ mod emit_signal {
         assert_eq!(data.priorities.len(), 1);
         assert_eq!(data.repeat.len(), 1);
         drop(state);
-        calls.lock().unwrap().clear();
+        *calls.lock().unwrap() = Vec::new();
         emit_signal(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["a"]);
     }

@@ -82,7 +82,7 @@ mod emit_signal_safe {
         emit_signal_safe(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["a", "b"]);
 
-        calls.lock().unwrap().clear();
+        *calls.lock().unwrap() = Vec::new();
         emit_signal_safe(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["a", "b", "added"]);
     }
@@ -117,7 +117,7 @@ mod emit_signal_safe {
         emit_signal_safe(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["first", "removed"]);
 
-        calls.lock().unwrap().clear();
+        *calls.lock().unwrap() = Vec::new();
         emit_signal_safe(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["first"]);
     }

@@ -26,10 +26,11 @@ pub fn disconnect_signal_scope(scope: &SignalScope) {
     }
 }
 
-fn take_signal_scope_connections(
-    scope: &SignalScope,
+// Snapshots then empties the shared list in place: the list is shared by every clone of the scope,
+// so it is cleared rather than replaced.
+fn drain_signal_scope_connections(
+    connections: &mut Vec<crate::types::SignalConnection>,
 ) -> Option<Vec<crate::types::SignalConnection>> {
-    let mut connections = scope.connections.write().unwrap();
     if connections.is_empty() {
         return None;
     }
@@ -39,4 +40,11 @@ fn take_signal_scope_connections(
     }
     connections.clear();
     return Some(snapshot);
+}
+
+fn take_signal_scope_connections(
+    scope: &SignalScope,
+) -> Option<Vec<crate::types::SignalConnection>> {
+    let mut connections = scope.connections.write().unwrap();
+    return drain_signal_scope_connections(&mut connections);
 }

@@ -332,7 +332,7 @@ mod disconnect_signal_scope {
             &scope.connections.read().unwrap()[0]
         ));
 
-        calls.lock().unwrap().clear();
+        *calls.lock().unwrap() = Vec::new();
         emit_signal(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["replacement"]);
     }
