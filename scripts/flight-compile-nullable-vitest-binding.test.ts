@@ -42,6 +42,8 @@ fn checks_bound_nullable_returns() {
         let result = find_optional();
         assert!(result.is_none());
     }
+    let cloned = result.clone();
+    assert!(cloned.is_none());
     let answer = find_value(true);
     assert!(answer.is_some());
 }
@@ -130,10 +132,12 @@ describe('flight-compile nullable Vitest binding provenance', () => {
     ).toEqual([]);
     expect(generated.tests).toContain('expect(result === null).toBe(true);');
     expect(generated.tests).toContain('expect(result === undefined).toBe(true);');
+    expect(generated.tests).toContain('const cloned = result;');
+    expect(generated.tests).toContain('expect(cloned === null).toBe(true);');
     expect(generated.tests).toContain('expect(answer !== null).toBe(true);');
   });
 
-  it('executes both nullable local assertions', () => {
+  it('executes nullable local and erased-clone assertions', () => {
     const generated = generateFixture();
     const modules = new Map<string, Record<string, unknown>>();
     const load = (typescript: string, specifier: string): void => {

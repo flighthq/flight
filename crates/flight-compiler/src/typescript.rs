@@ -3265,7 +3265,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     if call.args.is_empty()
                         && matches!(
                             call.method.to_string().as_str(),
-                            "as_mut" | "as_ref" | "cloned" | "copied"
+                            "as_mut" | "as_ref" | "clone" | "cloned" | "copied"
                         ) =>
                 {
                     if let Some(fact) = self.option_fact(expression) {
@@ -3318,6 +3318,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                             .is_some()
                 }
                 Expr::Group(group) => self.initializer_retains_nullable_option(&group.expr),
+                Expr::MethodCall(call) if call.args.is_empty() && call.method == "clone" => {
+                    self.initializer_retains_nullable_option(&call.receiver)
+                }
                 Expr::Paren(paren) => self.initializer_retains_nullable_option(&paren.expr),
                 Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => self
                     .binding_id(&path.path.segments[0].ident.to_string())
@@ -3393,7 +3396,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     if call.args.is_empty()
                         && matches!(
                             call.method.to_string().as_str(),
-                            "as_mut" | "as_ref" | "cloned" | "copied"
+                            "as_mut" | "as_ref" | "clone" | "cloned" | "copied"
                         ) =>
                 {
                     self.option_fact(&call.receiver)

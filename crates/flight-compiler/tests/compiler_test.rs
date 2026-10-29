@@ -9833,6 +9833,8 @@ fn follows_each_returns_source_mode() {
     assert!(find_optional().is_none());
     let returned_value = find_nullable();
     assert!(returned_value.is_none());
+    let cloned_value = returned_value.clone();
+    assert!(cloned_value.is_none());
     if true {
         let returned_value = find_optional();
         assert!(returned_value.is_none());
@@ -9851,6 +9853,7 @@ fn follows_each_returns_source_mode() {
         assert!(output.contains("expect(findNullable() === null).toBe(true);"));
         assert!(output.contains("expect(findOptional() === undefined).toBe(true);"));
         assert!(output.contains("expect(returnedValue === null).toBe(true);"));
+        assert!(output.contains("expect(clonedValue === null).toBe(true);"));
         assert!(output.contains("expect(returnedValue === undefined).toBe(true);"));
         assert!(output.contains("expect(!(returnedValue !== null)).toBe(true);"));
     }
