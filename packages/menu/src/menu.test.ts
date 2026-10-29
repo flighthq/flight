@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { connectSignal } from '@flighthq/signals/contract';
+import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
 
 import {
   attachMenuHighlight,
@@ -139,6 +140,19 @@ describe('attachMenuSelect', () => {
     connectSignal(select.onMenuItemSelect, (id) => seen.push(id));
     attachMenuSelect(host.menu.select, select);
     host.emit('save');
+    expect(seen).toEqual(['save']);
+  });
+
+  it('types the selection by its item id and stops a slot disconnected by its SlotId', () => {
+    const host = selectHost();
+    const select = createMenuSelect();
+    expectTypeOf(select.onMenuItemSelect).toEqualTypeOf<Signal<string>>();
+    const seen: string[] = [];
+    const id: SlotId = connectSignal(select.onMenuItemSelect, (item: string) => seen.push(item));
+    attachMenuSelect(host.menu.select, select);
+    host.emit('save');
+    disconnectSignal(select.onMenuItemSelect, id);
+    host.emit('open');
     expect(seen).toEqual(['save']);
   });
 

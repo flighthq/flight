@@ -170,9 +170,9 @@ export function showContextMenu(
   y: number,
 ): Promise<string | null> {
   const signals = _menuSignals;
-  if (signals !== null) emitSignal(signals.onContextMenuOpen);
+  if (signals !== null) emitSignal(signals.onContextMenuOpen, undefined);
   const promise = hostMenuPopup.popup(items, x, y);
-  if (signals !== null) void promise.then(() => emitSignal(signals.onContextMenuClose));
+  if (signals !== null) void promise.then(() => emitSignal(signals.onContextMenuClose, undefined));
   return promise;
 }
 

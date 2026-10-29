@@ -162,7 +162,7 @@ export type TauriMenuCapabilities = Required<Pick<HostMenuCapabilities, 'app' | 
 // signal that can never fire.
 export interface MenuHighlight extends EntityRaw {
   readonly [EntityRuntimeKey]: EntityRuntime | undefined;
-  onMenuItemHighlight: Signal<(id: string) => void>;
+  onMenuItemHighlight: Signal<string>;
 }
 
 // The select event entity: application menu-bar selections, delivered by a backend (Electron/Tauri).
@@ -171,7 +171,7 @@ export interface MenuHighlight extends EntityRaw {
 // runs that subscription's own unsubscribe, and dispose owns listener teardown.
 export interface MenuSelect extends EntityRaw {
   readonly [EntityRuntimeKey]: EntityRuntime | undefined;
-  onMenuItemSelect: Signal<(id: string) => void>;
+  onMenuItemSelect: Signal<string>;
 }
 
 /**
@@ -186,7 +186,7 @@ export interface MenuSelect extends EntityRaw {
 export interface MenuSignals extends EntityRaw {
   readonly [EntityRuntimeKey]: EntityRuntime | undefined;
   /** Fires when a context menu is dismissed (either by selection or outside-click). */
-  onContextMenuClose: Signal<() => void>;
+  onContextMenuClose: Signal<void>;
   /** Fires when a context menu is opened via showContextMenu. */
-  onContextMenuOpen: Signal<() => void>;
+  onContextMenuOpen: Signal<void>;
 }
