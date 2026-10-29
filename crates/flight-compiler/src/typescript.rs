@@ -163,6 +163,7 @@ const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
 // Functions returning a Rust `Vec`, slice or fixed array (`module SEP function SEP`).
 const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
+const STRING_FIELD_MARKER: &str = "@string-field:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
 const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
@@ -1378,6 +1379,7 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
             _ => false,
         },
         Expr::Group(group) => expression_is_known_string(&group.expr, entities),
+        Expr::Index(index) => expression_is_known_string(&index.expr, entities),
         Expr::Lit(literal) => matches!(&literal.lit, Lit::Str(_)),
         Expr::Macro(expression) => expression
             .mac
@@ -1388,6 +1390,16 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
         Expr::MethodCall(call) => {
             call.method == "to_string"
                 || (call.method == "clone" && expression_is_known_string(&call.receiver, entities))
+        }
+        Expr::Field(field) => {
+            let syn::Member::Named(field_name) = &field.member else {
+                return false;
+            };
+            expression_struct_name(&field.base, entities).is_some_and(|identity| {
+                entities.contains(&format!(
+                    "{STRING_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+                ))
+            })
         }
         Expr::Paren(paren) => expression_is_known_string(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
@@ -3227,6 +3239,28 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 }
                 Expr::Paren(paren) => self.initializer_fact(&paren.expr),
                 Expr::Reference(reference) => self.initializer_fact(&reference.expr),
+                Expr::MethodCall(call)
+                    if (call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "collect" | "iter" | "into_iter"
+                        ))
+                        || (call.args.len() == 1
+                            && matches!(
+                                call.method.to_string().as_str(),
+                                "filter" | "map" | "skip"
+                            )) =>
+                {
+                    match self.initializer_fact(&call.receiver) {
+                        BindingFact::Sequence(element) if call.method != "map" => {
+                            BindingFact::Sequence(element)
+                        }
+                        BindingFact::Sequence(_) => {
+                            BindingFact::Sequence(Box::new(BindingFact::Unknown))
+                        }
+                        _ => BindingFact::Unknown,
+                    }
+                }
                 Expr::MethodCall(call)
                     if call.args.is_empty()
                         && matches!(
@@ -5477,6 +5511,11 @@ fn generation_context_with_types(
                         "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
                 }
+                if rust_type_is_string(&field.ty) {
+                    owned_facts.push(format!(
+                        "{STRING_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+                    ));
+                }
                 if let Some(kind) = hash_collection_type(&field.ty, &type_path_context) {
                     owned_facts.push(format!(
                         "{HASH_COLLECTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
@@ -6449,6 +6488,22 @@ fn emit_closure_with_parameter_types(
     for pattern in &closure.inputs {
         closure_context = lexical_pattern_context(&closure_context, pattern);
     }
+    for (index, pattern) in closure.inputs.iter().enumerate() {
+        let Some(parameter) = closure_parameter_identifier(pattern) else {
+            continue;
+        };
+        closure_context.remove(&format!("{STRING_EXPRESSION_MARKER}{parameter}"));
+        let annotated_string = matches!(
+            pattern,
+            Pat::Type(typed) if rust_type_is_string(&typed.ty)
+        );
+        let inferred_string = parameter_types
+            .get(index)
+            .is_some_and(|typescript_type| typescript_type == "string");
+        if annotated_string || inferred_string {
+            closure_context.insert(format!("{STRING_EXPRESSION_MARKER}{parameter}"));
+        }
+    }
     let mut parameter_names = HashSet::new();
     for pattern in &closure.inputs {
         collect_closure_parameter_names(pattern, &mut parameter_names);
@@ -7297,6 +7352,32 @@ fn emit_expression_value(
                 && call.args.len() == 1
             {
                 return emit_expression(&call.args[0], entities);
+            }
+            if expression_is_associated_path(&call.func, "u32", "from_str_radix")
+                && call.args.len() == 2
+            {
+                let digits = emit_expression(&call.args[0], entities)?;
+                let radix = emit_expression(&call.args[1], entities)?;
+                let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                    "null"
+                } else {
+                    "undefined"
+                };
+                return Ok(format!(
+                    "((digits: string, radix: number): number | {absent} => {{ if (!Number.isInteger(radix) || radix < 2 || radix > 36 || digits.length === 0) return {absent}; let index = digits[0] === '+' ? 1 : 0; if (index === digits.length) return {absent}; let value = 0; for (; index < digits.length; index += 1) {{ const code = digits.charCodeAt(index); const digit = code >= 48 && code <= 57 ? code - 48 : code >= 65 && code <= 90 ? code - 55 : code >= 97 && code <= 122 ? code - 87 : radix; if (digit >= radix) return {absent}; value = value * radix + digit; if (value > 0xffffffff) return {absent}; }} return value; }})({digits}, {radix})"
+                ));
+            }
+            if expression_is_associated_path(&call.func, "char", "from_u32") && call.args.len() == 1
+            {
+                let codepoint = emit_expression(&call.args[0], entities)?;
+                let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                    "null"
+                } else {
+                    "undefined"
+                };
+                return Ok(format!(
+                    "((codepoint: number): string | {absent} => Number.isInteger(codepoint) && codepoint >= 0 && codepoint <= 0x10ffff && (codepoint < 0xd800 || codepoint > 0xdfff) ? String.fromCodePoint(codepoint) : {absent})({codepoint})"
+                ));
             }
             if expression_path_ends_with(&call.func, "throw_range_error") && call.args.len() == 1 {
                 return Ok(format!(
@@ -12727,7 +12808,21 @@ fn emit_method_call(
         "atan2" if arguments.len() == 1 => Ok(format!("Math.atan2({receiver}, {})", arguments[0])),
         "ceil" if arguments.is_empty() => Ok(format!("Math.ceil({receiver})")),
         "cbrt" if arguments.is_empty() => Ok(format!("Math.cbrt({receiver})")),
-        "clear" if arguments.is_empty() => Ok(format!("{receiver}.length = 0")),
+        "clear" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!("{receiver} = ''"))
+        }
+        "clear" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}.length = 0"))
+        }
+        "clear" if arguments.is_empty() => Err(compile_error(format!(
+            "portable `.clear()` receiver `{receiver}` must be known to be `String`, `Vec`, slice, `HashMap`, or `HashSet`"
+        ))),
+        "chars" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!("[...{receiver}]"))
+        }
+        "chars" if arguments.is_empty() => Err(compile_error(
+            "portable `.chars()` requires a receiver known to be `String` or `str`",
+        )),
         "clamp" if arguments.len() == 2 => Ok(format!(
             "Math.min({}, Math.max({}, {receiver}))",
             arguments[1], arguments[0]
@@ -12799,8 +12894,13 @@ fn emit_method_call(
             Ok(receiver)
         }
         "collect" if arguments.is_empty() => Ok(receiver),
+        "count" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}.length"))
+        }
+        "count" if arguments.is_empty() => Err(compile_error(
+            "portable `.count()` requires an iterator with proven sequence provenance",
+        )),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
-        "count" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "encode_utf16" if arguments.is_empty() => Ok(format!(
             "Array.from({{ length: {receiver}.length }}, (_, index) => {receiver}.charCodeAt(index))"
         )),
@@ -12817,7 +12917,18 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
-        "find" if arguments.len() == 1 => Ok(format!("{receiver}.find({})", arguments[0])),
+        "find" if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!(
+                "((value: string, pattern: string): number | undefined => {{ const index = value.indexOf(pattern); return index === -1 ? undefined : index; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "find" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}.find({})", arguments[0]))
+        }
+        "find" if arguments.len() == 1 => Err(compile_error(
+            "portable `.find()` requires a receiver known to be `String`, `str`, or a sequence",
+        )),
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
         "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
         "fetch_add" if arguments.len() == 2 => Ok(format!(
@@ -12876,6 +12987,15 @@ fn emit_method_call(
         }
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
+        "next"
+            if arguments.is_empty()
+                && matches!(call.receiver.as_ref(), Expr::MethodCall(chars)
+                    if chars.method == "chars"
+                        && chars.args.is_empty()
+                        && expression_is_known_string(&chars.receiver, entities)) =>
+        {
+            Ok(format!("{receiver}[0]"))
+        }
         "powf" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "powi" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "cmp" if arguments.len() == 1 => emit_ordered_comparison(
@@ -12922,6 +13042,25 @@ fn emit_method_call(
         "starts_with" if arguments.len() == 1 => Err(compile_error(
             "portable `.starts_with()` requires a receiver known to be `String` or `str`",
         )),
+        "ends_with"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.endsWith({})", arguments[0]))
+        }
+        "ends_with" if arguments.len() == 1 => Err(compile_error(
+            "portable `.ends_with()` requires a receiver known to be `String` or `str`",
+        )),
+        "trim_start_matches"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((text: string, matches: (character: string) => boolean): string => {{ let offset = 0; for (const character of text) {{ if (!matches(character)) break; offset += character.length; }} return text.slice(offset); }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "trim_start_matches" if arguments.len() == 1 => Err(compile_error(
+            "portable `.trim_start_matches()` requires a receiver known to be `String` or `str`",
+        )),
         "sum" if arguments.is_empty() => {
             Ok(format!("{receiver}.reduce((sum, value) => sum + value, 0)"))
         }
@@ -12952,6 +13091,14 @@ fn emit_method_call(
         {
             Ok(receiver)
         }
+        "to_ascii_lowercase"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.toLowerCase()"))
+        }
+        "to_ascii_lowercase" if arguments.is_empty() => Err(compile_error(
+            "portable `.to_ascii_lowercase()` requires a receiver known to be `String` or `str`",
+        )),
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
@@ -13237,6 +13384,31 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         Expr::Group(group) => expression_is_sequence(&group.expr, entities),
         Expr::MethodCall(call)
             if call.args.is_empty() && (call.method == "clone" || call.method == "to_vec") =>
+        {
+            expression_is_sequence(&call.receiver, entities)
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && call.method == "encode_utf16"
+                && expression_is_known_string(&call.receiver, entities) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && call.method == "chars"
+                && expression_is_known_string(&call.receiver, entities) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
+            if (call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "collect" | "iter" | "into_iter"
+                ))
+                || (call.args.len() == 1
+                    && matches!(call.method.to_string().as_str(), "filter" | "map" | "skip")) =>
         {
             expression_is_sequence(&call.receiver, entities)
         }
@@ -14991,7 +15163,7 @@ pub(crate) fn emit_type(
                 "bool" => Ok("boolean".to_string()),
                 "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
                 | "u64" | "usize" => Ok("number".to_string()),
-                "String" | "str" => Ok("string".to_string()),
+                "String" | "str" | "char" => Ok("string".to_string()),
                 "UnknownValue" => Ok("unknown".to_string()),
                 // `std::cmp::Ordering` is a comparator result: its sign is the ordering.
                 "Ordering" => Ok("number".to_string()),
@@ -16205,6 +16377,10 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
             if path.qself.is_some() {
                 return None;
             }
+            if expression_is_associated_path(&call.func, "char", "from_u32") && call.args.len() == 1
+            {
+                return Some("char".to_string());
+            }
             call_fact(entities, OPTION_RETURN_MARKER, &path.path)
         }
         Expr::Field(field) => {
@@ -16219,6 +16395,13 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
         Expr::Group(group) => option_expression_payload(&group.expr, entities),
         Expr::MethodCall(call) if call.method == "and_then" || call.method == "map" => {
             option_expression_payload(&call.receiver, entities).map(|_| String::new())
+        }
+        Expr::MethodCall(call)
+            if call.method == "find"
+                && call.args.len() == 1
+                && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Some(String::new())
         }
         Expr::MethodCall(call)
             if call.method == "get"

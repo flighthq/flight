@@ -1988,10 +1988,6 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         let receiver_error = "portable `.extend()` requires a receiver declared as Rust `Vec`";
         for (source, expected) in [
             (
-                "pub fn f(a: &mut Vec<i32>, b: &Vec<i32>) { a.extend(b.iter().map(|x| x * 2)); }\n",
-                argument_error,
-            ),
-            (
                 "pub fn f(a: &mut Vec<i32>, x: Option<i32>) { a.extend(x); }\n",
                 argument_error,
             ),
@@ -7796,6 +7792,37 @@ pub fn hex(color: u32) -> String {
 pub fn is_rgba(value: &str) -> bool {
     return value.starts_with("rgba(");
 }
+
+pub fn has_closing_parenthesis(value: &str) -> bool {
+    return value.ends_with(")");
+}
+
+pub fn characters(value: &str) -> Vec<char> {
+    return value.chars().collect();
+}
+
+pub fn first_character(value: &str) -> Option<char> {
+    return value.chars().next();
+}
+
+pub fn lowercase_ascii(value: &str) -> String {
+    return value.to_ascii_lowercase();
+}
+
+pub fn count_ampersands(value: &str) -> usize {
+    let mut count = 0;
+    let mut rest = value;
+    while let Some(index) = rest.find('&') {
+        count += 1;
+        rest = &rest[index + 1..rest.len()];
+    }
+    return count;
+}
+
+pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
+    let suffix = &value[1..value.len()];
+    return suffix.find(';');
+}
 "##;
 
         let output = compile_typescript(source, None).unwrap();
@@ -7811,6 +7838,64 @@ pub fn is_rgba(value: &str) -> bool {
             output.contains("return `#${(color & 0xffffff).toString(16).padStart(6, \"0\")}`;")
         );
         assert!(output.contains("return value.startsWith(\"rgba(\");"));
+        assert!(output.contains("return value.endsWith(\")\");"));
+        assert!(output.contains("export function characters(value: string): string[]"));
+        assert!(output.contains("return [...value];"));
+        assert!(output.contains("return [...value][0];"));
+        assert!(output.contains("return value.toLowerCase();"));
+        assert!(output.contains("const index = value.indexOf(pattern);"));
+        assert!(output.contains("return index === -1 ? undefined : index;"));
+        assert!(output.contains("if ($index === undefined)"));
+    }
+
+    #[test]
+    fn lowers_string_clear_and_unicode_scalar_construction() {
+        let source = r#"
+pub struct Content {
+    pub text: String,
+    pub values: Vec<i32>,
+}
+
+pub fn reset(out: &mut Content) {
+    out.text.clear();
+    out.values.clear();
+}
+
+pub fn decode_codepoint(digits: &str, radix: u32) -> Option<String> {
+    let codepoint = u32::from_str_radix(digits, radix).unwrap_or(u32::MAX);
+    return char::from_u32(codepoint).map(|value| value.to_string());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("out.text = '';"), "{output}");
+        assert!(output.contains("out.values.length = 0;"), "{output}");
+        assert!(output.contains("digits.charCodeAt(index)"), "{output}");
+        assert!(output.contains("value > 0xffffffff"), "{output}");
+        assert!(
+            output.contains("String.fromCodePoint(codepoint)"),
+            "{output}"
+        );
+        assert!(!output.contains("u32.fromStrRadix"), "{output}");
+        assert!(!output.contains("char.fromU32"), "{output}");
+        assert!(!output.contains(".map((value)"), "{output}");
+    }
+
+    #[test]
+    fn rejects_clear_without_collection_or_string_provenance() {
+        let source = r#"
+pub fn reset(value: Mystery) {
+    value.clear();
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `.clear()` receiver `value` must be known to be `String`, `Vec`, slice, `HashMap`, or `HashSet`"
+        );
     }
 
     #[test]
@@ -7826,6 +7911,89 @@ pub fn has_prefix(value: &[u8], prefix: &[u8]) -> bool {
         assert_eq!(
             error.to_string(),
             "portable `.starts_with()` requires a receiver known to be `String` or `str`"
+        );
+    }
+
+    #[test]
+    fn rejects_non_string_suffix_receivers() {
+        let source = r#"
+pub fn has_suffix(value: &[u8], suffix: &[u8]) -> bool {
+    return value.ends_with(suffix);
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `.ends_with()` requires a receiver known to be `String` or `str`"
+        );
+    }
+
+    #[test]
+    fn rejects_non_string_character_iterators() {
+        let source = r#"
+pub fn characters(value: &[u8]) -> Vec<u8> {
+    return value.chars().collect();
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `.chars()` requires a receiver known to be `String` or `str`"
+        );
+    }
+
+    #[test]
+    fn rejects_non_string_ascii_lowercase_receivers() {
+        let source = r#"
+pub fn lowercase(value: &[u8]) -> Vec<u8> {
+    return value.to_ascii_lowercase();
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `.to_ascii_lowercase()` requires a receiver known to be `String` or `str`"
+        );
+    }
+
+    #[test]
+    fn lowers_string_prefix_trimming_by_character_predicate() {
+        let source = r#"
+pub fn trim_padding(value: &str) -> String {
+    return value.trim_start_matches(|character| character == ' ' || character == '🙂').to_string();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "for (const character of text) { if (!matches(character)) break; offset += character.length; }"
+        ));
+        assert!(
+            output.contains("(value, (character) => character === \" \" || character === \"🙂\")"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn rejects_non_string_prefix_trimming_receivers() {
+        let source = r#"
+pub fn trim_zero(values: &[u8]) -> String {
+    return values.trim_start_matches(|value| *value == 0).to_string();
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `.trim_start_matches()` requires a receiver known to be `String` or `str`"
         );
     }
 
@@ -7993,6 +8161,14 @@ pub fn utf16_units(value: &str) -> Vec<u16> {
     return value.encode_utf16().collect();
 }
 
+pub fn utf16_length(value: &str) -> usize {
+    return value.encode_utf16().count();
+}
+
+pub fn count_even(values: &[u16]) -> usize {
+    return values.iter().filter(|value| **value % 2 == 0).count();
+}
+
 pub fn slice_units(value: &Vec<u16>, start: usize, end: usize) -> Vec<u16> {
     return value[start..end].to_vec();
 }
@@ -8007,6 +8183,10 @@ pub fn empty_string() -> String {
         assert!(output.contains(
             "return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index));"
         ));
+        assert!(output.contains(
+            "return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index)).length;"
+        ));
+        assert!(output.contains("return values.filter((value) => value % 2 === 0).length;"));
         assert!(output.contains("return [...value.slice(start, end)];"));
         assert!(output.contains("return '';"));
     }
@@ -13449,6 +13629,7 @@ mod path_segments {
         let production = r#"
 pub fn write_easing_samples(out: &mut Float32Array, ease: &dyn Fn(f32) -> f32) {}
 pub fn read_easing_samples(samples: &[f32]) {}
+pub fn measure_text(measure: &dyn Fn(&str) -> f32) {}
 "#;
         let source = r#"
 use flight_easing::*;
@@ -13464,6 +13645,9 @@ mod write_easing_samples {
 
         let samples = [0.0, 0.5, 1.0];
         read_easing_samples(&samples);
+
+        let measure = |text| text.encode_utf16().count() as f32;
+        measure_text(&measure);
         assert_eq!(out[0], 0.0);
     }
 }
@@ -13478,6 +13662,10 @@ mod write_easing_samples {
         assert!(output.contains("writeEasingSamples(out, ease);"));
         assert!(output.contains("const samples = [0.0, 0.5, 1.0];"));
         assert!(output.contains("readEasingSamples(samples);"));
+        assert!(output.contains(
+            "const measure = (text: string) => Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length;"
+        ));
+        assert!(output.contains("measureText(measure);"));
         assert!(!output.contains("const samples = new Float32Array"));
     }
 
