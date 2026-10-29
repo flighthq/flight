@@ -2,21 +2,21 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { logOnce } from '@flighthq/log/contract';
-import type { LogState } from '@flighthq/log/contract';
+import type { LogDataOrProvider, LogState } from '@flighthq/log/contract';
 
 import type { FlowGuardStateRef } from './flow.ts';
 import type { FlowGuardKind } from './types.ts';
 
-type FlowGuardLogData = FlowGuardLogRecord;
-
 type FlowGuardLogLevel = 2;
+
+type FlowGuardLogData = FlowGuardLogRecord;
 
 interface FlowGuardLogRecord {
   kind: string;
 }
 
-function normalizeFlowGuardLogData(value: FlowGuardLogData): FlowGuardLogData {
-  return value;
+function getFlowGuardLogKind(value: Readonly<FlowGuardLogData>): string {
+  return value.kind;
 }
 
 function normalizeFlowGuardLogLevel(value: FlowGuardLogLevel): FlowGuardLogLevel {
@@ -88,8 +88,10 @@ export function reportFlowGuard(state: Readonly<FlowGuardStateRef>, kind: FlowGu
   }
   const activeContext = maybeContext!;
   const kindString = getFlowGuardKindString(kind);
-  const key = `flow:${kindString}`;
-  const data = normalizeFlowGuardLogData({ kind: String(kindString) });
+  const data = { kind: String(kindString) };
+  const dataKind = getFlowGuardLogKind(data);
+  const key = `flow:${dataKind}`;
+  const logData: LogDataOrProvider = data;
   const level = normalizeFlowGuardLogLevel(2);
-  logOnce(activeContext.logState, activeContext.clock(), key, level, data, 'flow');
+  logOnce(activeContext.logState, activeContext.clock(), key, level, logData, 'flow');
 }

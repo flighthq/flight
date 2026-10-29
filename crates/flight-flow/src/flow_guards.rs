@@ -1,4 +1,3 @@
-//! flight-compiler: data-union FlowGuardLogData
 //! flight-compiler: nullable-options
 //! flight-compiler: numeric-union FlowGuardLogLevel
 
@@ -11,15 +10,11 @@ use flight_log::{LogData, LogDataOrProvider, LogLevel, LogState, LogValue, log_o
 use crate::flow::FlowGuardStateRef;
 use crate::types::{FlowGuardContext, FlowGuardKind};
 
-// Portable one-field log payload. The compiler lowers this transparent data union to the same
-// `{ kind }` object used by TypeScript; the conversion impl supplies Rust's canonical log enum.
 struct FlowGuardLogRecord {
     kind: String,
 }
 
-enum FlowGuardLogData {
-    Record(FlowGuardLogRecord),
-}
+type FlowGuardLogData = FlowGuardLogRecord;
 
 #[derive(Clone, Copy)]
 #[repr(u8)]
@@ -27,15 +22,13 @@ enum FlowGuardLogLevel {
     Warn = 2,
 }
 
-impl From<FlowGuardLogData> for LogDataOrProvider {
-    fn from(value: FlowGuardLogData) -> Self {
-        return match value {
-            FlowGuardLogData::Record(record) => LogData::Record(HashMap::from([(
-                "kind".to_string(),
-                LogValue::Str(record.kind),
-            )]))
-            .into(),
-        };
+impl From<FlowGuardLogRecord> for LogDataOrProvider {
+    fn from(record: FlowGuardLogRecord) -> Self {
+        return LogData::Record(HashMap::from([(
+            "kind".to_string(),
+            LogValue::Str(record.kind),
+        )]))
+        .into();
     }
 }
 
@@ -47,10 +40,8 @@ impl From<FlowGuardLogLevel> for LogLevel {
     }
 }
 
-// Keep the portable bridge types explicit on both targets. The compiler lowers the conversion
-// impls at their call sites, while these identity helpers preserve the corresponding TS aliases.
-fn normalize_flow_guard_log_data(value: FlowGuardLogData) -> FlowGuardLogData {
-    return value;
+fn get_flow_guard_log_kind(value: &FlowGuardLogData) -> &str {
+    return &value.kind;
 }
 
 fn normalize_flow_guard_log_level(value: FlowGuardLogLevel) -> FlowGuardLogLevel {
@@ -112,17 +103,19 @@ pub fn report_flow_guard(state: &FlowGuardStateRef, kind: FlowGuardKind) {
     }
     let active_context = maybe_context.unwrap();
     let kind_string = get_flow_guard_kind_string(kind);
-    let key = format!("flow:{}", kind_string);
-    let data = normalize_flow_guard_log_data(FlowGuardLogData::Record(FlowGuardLogRecord {
+    let data = FlowGuardLogRecord {
         kind: kind_string.to_string(),
-    }));
+    };
+    let data_kind = get_flow_guard_log_kind(&data);
+    let key = format!("flow:{}", data_kind);
+    let log_data: LogDataOrProvider = data.into();
     let level = normalize_flow_guard_log_level(FlowGuardLogLevel::Warn);
     let _ = log_once(
         &active_context.log_state,
         (active_context.clock)(),
         &key,
         level.into(),
-        data.into(),
+        log_data,
         Some("flow".to_string()),
     );
 }
