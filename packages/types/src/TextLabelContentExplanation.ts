@@ -1,6 +1,2 @@
-export interface TextLabelContentExplanation {
-  agreement: boolean;
-  liveString: string;
-  rasterizedString: string | null;
-  revision: number;
-}
+/** @deprecated Import text contracts from `@flighthq/text/contract`. */
+export type { TextLabelContentExplanation } from '@flighthq/text/contract';
