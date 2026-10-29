@@ -6,9 +6,10 @@ import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
 
-// Exercises MutexGuard preservation through the real CLI. Guard identity is lexical: a reference
+// Exercises shared-cell binding provenance through the real CLI. Guard identity is lexical: a reference
 // that shadows a guard, a guard that shadows a reference, and same-named bindings in sibling closures
-// must not inherit one another's `{ value }` cell lowering.
+// must not inherit one another's `{ value }` cell lowering. A cloned nested Ref field must write through
+// to its complete source expression instead of becoming a detached TypeScript local.
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const compilerPath = join(
@@ -18,7 +19,25 @@ const compilerPath = join(
   process.platform === 'win32' ? 'flight-compile.exe' : 'flight-compile',
 );
 
-const FIXTURE = `use std::sync::{Arc, Mutex};
+const FIXTURE = `use flight_entity::Ref;
+use std::sync::{Arc, Mutex};
+
+pub struct Signal {
+    pub emit: Ref<i32>,
+}
+
+pub struct SignalState {
+    pub signal: Signal,
+}
+
+pub struct Owner {
+    pub state: SignalState,
+}
+
+pub fn replace_nested_emit(owner: &Owner, value: i32) {
+    let emit = owner.state.signal.emit.clone();
+    *emit.write().unwrap() = value;
+}
 
 pub fn outer_guard_inner_reference(cell: &Arc<Mutex<i32>>, fallback: &i32) -> i32 {
     let guard = cell.lock().unwrap();
@@ -126,5 +145,27 @@ describe('flight-compile MutexGuard binding provenance', () => {
       expect(run(cell, 3)).toBe(8);
       expect(cell.value).toBe(5);
     }
+  });
+});
+
+describe('flight-compile nested Ref alias provenance', () => {
+  it('typechecks the complete nested write-through target under strict TypeScript', () => {
+    const { error, typescript } = compileRust();
+    expect(error).toBe('');
+    expect(strictDiagnostics(typescript)).toEqual([]);
+    expect(typescript).toContain('const emit = owner.state.signal.emit;');
+    expect(typescript).toContain('owner.state.signal.emit = value;');
+    expect(typescript).not.toMatch(/^\s*emit = value;$/mu);
+  });
+
+  it('writes through every declared struct layer at runtime', () => {
+    const module = loadModule(compileRust().typescript);
+    type Owner = { state: { signal: { emit: number } } };
+    const owner: Owner = { state: { signal: { emit: 1 } } };
+    const replaceNestedEmit = module.replaceNestedEmit as unknown as (owner: Owner, value: number) => void;
+
+    replaceNestedEmit(owner, 7);
+
+    expect(owner.state.signal.emit).toBe(7);
   });
 });

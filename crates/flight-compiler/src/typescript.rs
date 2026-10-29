@@ -3074,6 +3074,34 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .map(|(_, fact)| fact.clone());
         }
 
+        fn expression_structure_identity(&self, expression: &Expr) -> Option<String> {
+            return match peel_reference_and_paren(expression) {
+                Expr::Field(field) => {
+                    let syn::Member::Named(field_name) = &field.member else {
+                        return None;
+                    };
+                    let owner = self.expression_structure_identity(&field.base)?;
+                    unique_marker_suffix(
+                        self.context,
+                        &format!(
+                            "{STRUCT_FIELD_TYPE_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                        ),
+                    )
+                }
+                Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+                    let name = path.path.segments.first()?.ident.to_string();
+                    let BindingFact::Structure(identity) = self.fact_of(&name)? else {
+                        return None;
+                    };
+                    Some(identity)
+                }
+                Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+                    self.expression_structure_identity(&unary.expr)
+                }
+                _ => None,
+            };
+        }
+
         fn erased_shared_cell_field(&self, expression: &Expr) -> bool {
             let Expr::Field(field) = peel_reference_and_paren(expression) else {
                 return false;
@@ -3081,10 +3109,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             let syn::Member::Named(field_name) = &field.member else {
                 return false;
             };
-            let Some(base) = referenced_path_identifier(&field.base) else {
-                return false;
-            };
-            let Some(BindingFact::Structure(identity)) = self.fact_of(&base) else {
+            let Some(identity) = self.expression_structure_identity(&field.base) else {
                 return false;
             };
             return self.context.contains(&format!(

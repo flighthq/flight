@@ -9179,12 +9179,25 @@ pub struct Signal {
     pub emit: Arc<RwLock<i32>>,
 }
 
+pub struct SignalState {
+    pub signal: Signal,
+}
+
+pub struct Owner {
+    pub state: SignalState,
+}
+
 pub fn replace_emit(signal: &Signal) {
     let cell = signal.emit.clone();
     *cell.write().unwrap() = 2;
     *cell.write().unwrap() += 1;
     let _captured = signal.emit.clone();
     *_captured.write().unwrap() = 4;
+}
+
+pub fn replace_nested_emit(owner: &Owner) {
+    let cell = owner.state.signal.emit.clone();
+    *cell.write().unwrap() = 5;
 }
 "#;
 
@@ -9194,8 +9207,14 @@ pub fn replace_emit(signal: &Signal) {
         assert!(output.contains("signal.emit = 2;"), "{output}");
         assert!(output.contains("signal.emit += 1;"), "{output}");
         assert!(output.contains("signal.emit = 4;"), "{output}");
+        assert!(
+            output.contains("const cell = owner.state.signal.emit;"),
+            "{output}"
+        );
+        assert!(output.contains("owner.state.signal.emit = 5;"), "{output}");
         assert!(!output.contains("const Captured"), "{output}");
         assert!(!output.contains("cell = 2;"), "{output}");
+        assert!(!output.contains("cell = 5;"), "{output}");
     }
 
     #[test]
