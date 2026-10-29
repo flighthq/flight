@@ -26,9 +26,9 @@ import {
   setQuaternionLookRotation,
   slerpQuaternion,
 } from '@flighthq/geometry/contract';
-import type { Quaternion } from '@flighthq/types/contract';
 
 import { initializeQuaternion } from './quaternion.ts';
+import type { Quaternion } from './types.ts';
 
 function expectQuaternionClose(q: Readonly<Quaternion>, x: number, y: number, z: number, w: number): void {
   expect(q.x).toBeCloseTo(x, 6);

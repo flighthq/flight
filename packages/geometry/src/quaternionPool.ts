@@ -1,8 +1,8 @@
 import { detachEntityBinding } from '@flighthq/entity/contract';
-import type { Quaternion } from '@flighthq/types/contract';
 
 import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 import { createQuaternion } from './quaternion.ts';
+import type { Quaternion } from './types.ts';
 
 export function acquireIdentityQuaternion(): Quaternion {
   const q = acquireQuaternion();

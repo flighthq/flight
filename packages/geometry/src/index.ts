@@ -396,6 +396,8 @@ export type {
   Matrix4,
   Matrix4Like,
   MatrixLike,
+  Quaternion,
+  QuaternionLike,
   Rectangle,
   RectangleLike,
   Vector2,
