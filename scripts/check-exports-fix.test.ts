@@ -69,10 +69,13 @@ it('accepts dependency-owned values derived into generated Rust lanes', () => {
 });
 
 function runCheck(root: string, ...args: string[]): { output: string; status: number | null } {
+  // picocolors enables color whenever FORCE_COLOR is present, whatever its value, so drop it and
+  // set NO_COLOR to keep the asserted output free of ANSI escapes on every terminal and CI.
+  const { FORCE_COLOR: _forceColor, ...env } = process.env;
   const result = spawnSync(process.execPath, [TSX, CHECK_EXPORTS, '--root', root, ...args], {
     cwd: ROOT,
     encoding: 'utf8',
-    env: { ...process.env, FORCE_COLOR: '0' },
+    env: { ...env, NO_COLOR: '1' },
   });
   return { output: `${result.stdout}${result.stderr}`, status: result.status };
 }
