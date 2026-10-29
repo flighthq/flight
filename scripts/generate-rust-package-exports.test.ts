@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   collectCompanionFileNames,
+  collectCrateExportSymbols,
   compilerAliasArguments,
   compilerVisibilityArguments,
   collectContractModuleNames,
@@ -26,6 +27,23 @@ import {
   resolveExternalContractExports,
   resolveRustExportName,
 } from './generate-rust-package-exports.ts';
+
+describe('collectCrateExportSymbols', () => {
+  it('reads export lists as crate-internal symbols that the public scan ignores', () => {
+    const modules = [
+      {
+        fileName: 'owner.ts',
+        typescript:
+          'interface Registry {}\nfunction createRegistry(): Registry {}\nexport function publicValue(): number {}\n\nexport { createRegistry };\nexport type { Registry };\n',
+      },
+    ];
+    expect([...collectCrateExportSymbols(modules)]).toEqual([
+      ['createRegistry', { fileName: 'owner.ts', hasType: false, hasValue: true }],
+      ['Registry', { fileName: 'owner.ts', hasType: true, hasValue: false }],
+    ]);
+    expect([...collectExportSymbols(modules).keys()]).toEqual(['publicValue']);
+  });
+});
 
 describe('dependency contract exports', () => {
   it('classifies direct declarations and named re-exports', () => {
@@ -198,6 +216,21 @@ describe('mergeRustExportNames', () => {
         ]),
       ),
     ).toThrow('export-name decode_utf8 is decodeUtf8Text in text.ts and decodeUTF8 in utf8.ts');
+  });
+});
+
+describe('renderGeneratedImports crate-internal symbols', () => {
+  it('imports a sibling crate-internal symbol once and skips names the module already imports', () => {
+    const symbols = new Map([
+      ['createRegistry', { fileName: 'owner.ts', hasType: false, hasValue: true }],
+      ['Registry', { fileName: 'owner.ts', hasType: true, hasValue: false }],
+      ['registryStore', { fileName: 'owner.ts', hasType: false, hasValue: true }],
+    ]);
+    const typescript =
+      "import { registryStore } from './owner.ts';\n\nexport function count(): number {\n  const registry: Registry = createRegistry();\n  return registryStore.size + registry.size;\n}\n";
+    expect(renderGeneratedImports('', typescript, 'user.ts', symbols)).toBe(
+      "import type { Registry } from './owner.ts';\nimport { createRegistry } from './owner.ts';\n\n",
+    );
   });
 });
 

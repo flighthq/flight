@@ -997,6 +997,79 @@ export function lastOr(counter: Readonly<Counter>, value: number): number {
     }
 
     #[test]
+    fn exports_crate_visible_items_that_sibling_sources_reference() {
+        let owner = r#"
+pub(crate) struct Registry {
+    pub(crate) count: i32,
+}
+
+pub(crate) enum Slot {
+    Empty,
+    Full,
+}
+
+pub(crate) const REGISTRY_LIMIT: i32 = 4;
+
+pub(crate) fn create_registry() -> Registry {
+    return Registry { count: 0 };
+}
+
+pub(crate) fn unused_helper() -> i32 {
+    return 1;
+}
+
+pub fn public_value() -> i32 {
+    return REGISTRY_LIMIT;
+}
+"#;
+        let user = r#"
+use crate::owner::{Registry, Slot, REGISTRY_LIMIT, create_registry};
+
+pub fn count_registry(full: bool) -> i32 {
+    let registry: Registry = create_registry();
+    let slot = if full { Slot::Full } else { Slot::Empty };
+    return match slot {
+        Slot::Empty => 0,
+        Slot::Full => registry.count + REGISTRY_LIMIT,
+    };
+}
+"#;
+
+        assert_eq!(
+            compile_typescript_with_alias_sources(owner, None, &[user]).unwrap(),
+            r#"enum Slot {
+  Empty = "empty",
+  Full = "full",
+}
+
+interface Registry {
+  count: number;
+}
+
+const REGISTRY_LIMIT: number = 4;
+
+export function createRegistry(): Registry {
+  return { count: 0 };
+}
+
+export function unusedHelper(): number {
+  return 1;
+}
+
+export function publicValue(): number {
+  return REGISTRY_LIMIT;
+}
+
+export { REGISTRY_LIMIT, Slot };
+export type { Registry };
+"#
+        );
+        let unreferenced = compile_typescript_with_alias_sources(owner, None, &[]).unwrap();
+        assert!(!unreferenced.contains("export {"), "{unreferenced}");
+        assert!(!unreferenced.contains("export type {"), "{unreferenced}");
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment

@@ -84,6 +84,31 @@ export function collectFlightDependencyCrates(cargoToml: string, includeDevelopm
   return [...crates].sort();
 }
 
+// The crate-internal symbols each generated module exports through `export { … };` / `export type { … };`
+// lists: crate-visible Rust items a sibling module references, and module-owned runtime stores. They
+// resolve intra-package imports only; the public lanes read `export <declaration>` lines alone, so these
+// never reach `contract.ts` or `index.ts`.
+export function collectCrateExportSymbols(modules: readonly ExportModule[]): Map<string, ExportSymbolOwner> {
+  const symbols = new Map<string, ExportSymbolOwner>();
+  for (const module of modules) {
+    if (module.typescript === undefined) continue;
+    for (const match of module.typescript.matchAll(/^export (type )?\{([^}]*)\};?$/gm)) {
+      for (const specifier of match[2].split(',')) {
+        const name = specifier.trim();
+        if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) continue;
+        const owner = symbols.get(name) ?? { fileName: module.fileName, hasType: false, hasValue: false };
+        if (owner.fileName !== module.fileName) {
+          throw new Error(`duplicate crate-internal symbol ${name} in ${owner.fileName} and ${module.fileName}`);
+        }
+        if (match[1] === undefined) owner.hasValue = true;
+        owner.hasType ||= match[1] !== undefined;
+        symbols.set(name, owner);
+      }
+    }
+  }
+  return symbols;
+}
+
 export function collectExportSymbols(modules: readonly ExportModule[]): Map<string, ExportSymbolOwner> {
   const symbols = new Map<string, ExportSymbolOwner>();
   for (const module of modules) {
@@ -261,8 +286,10 @@ export function renderGeneratedImports(
     if (new RegExp(`\\b${name}\\b`).test(code)) importedNames.add(name);
   }
 
+  const alreadyImported = collectImportedNames(typescript);
   const imports = new Map<string, { types: string[]; values: string[] }>();
   for (const name of importedNames) {
+    if (alreadyImported.has(name)) continue;
     const owner = symbols.get(name);
     if (!owner || owner.fileName === ownFileName) continue;
     const entry = imports.get(owner.fileName) ?? { types: [], values: [] };
@@ -353,6 +380,23 @@ function collectValueReferenceNames(typescript: string): Set<string> {
   }
 
   visit(parsed.program, false);
+  return names;
+}
+
+// Names a module already binds through its own import declarations.
+function collectImportedNames(typescript: string): Set<string> {
+  const names = new Set<string>();
+  for (const match of typescript.matchAll(/^import (?:type )?\{([^}]*)\} from /gm)) {
+    for (const specifier of match[1].split(',')) {
+      const local = specifier
+        .trim()
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim();
+      if (local) names.add(local);
+    }
+  }
   return names;
 }
 

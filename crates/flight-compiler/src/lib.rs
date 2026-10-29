@@ -165,7 +165,7 @@ fn compile_typescript_sources(
         )?;
     }
     validate_const_group_bindings(&output, &program.const_groups)?;
-    return Ok(output);
+    return Ok(export_crate_visible_items(output, &program, alias_sources));
 }
 
 /// Compiles one Rust module while reusing canonical callable aliases declared by sibling sources.
@@ -661,6 +661,125 @@ fn emitted_value_bindings(output: &str) -> Vec<String> {
     }
     parameter_bindings(&code, &mut bindings);
     return bindings;
+}
+
+// Appends crate-internal exports for the crate-visible items (`pub(crate)`, `pub(super)`,
+// `pub(in …)`) a sibling source of the same package references, so those modules can import them. They
+// use `export { … }` / `export type { … }` lists, which the public-lane scan of `export <declaration>`
+// lines does not read: a crate-visible item never reaches `contract.ts` or `index.ts`. Items no sibling
+// names stay unexported.
+// flight-lint: allow(hashmap-iteration) program items are Vecs in Rust source order and names sort before output
+fn export_crate_visible_items(
+    mut output: String,
+    program: &model::Program,
+    alias_sources: &[&str],
+) -> String {
+    let referenced = alias_sources
+        .iter()
+        .flat_map(|source| {
+            source
+                .split(|character: char| !(character.is_ascii_alphanumeric() || character == '_'))
+                .filter(|word| !word.is_empty())
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    let crate_visible = |visibility: &syn::Visibility| {
+        return matches!(visibility, syn::Visibility::Restricted(_));
+    };
+    let named = |rust_name: String, default: String| {
+        return program
+            .export_names
+            .get(&rust_name)
+            .cloned()
+            .unwrap_or(default);
+    };
+    let mut candidates = Vec::new();
+    for structure in &program.structs {
+        if crate_visible(&structure.vis) {
+            let name = structure.ident.to_string();
+            candidates.push((name.clone(), name));
+        }
+    }
+    for rust_enum in &program.enums {
+        if crate_visible(&rust_enum.vis) {
+            let name = rust_enum.ident.to_string();
+            candidates.push((name.clone(), name));
+        }
+    }
+    for alias in &program.type_aliases {
+        if crate_visible(&alias.vis) {
+            let name = alias.ident.to_string();
+            candidates.push((name.clone(), name));
+        }
+    }
+    for function in &program.functions {
+        if crate_visible(&function.vis) {
+            let name = function.sig.ident.to_string();
+            candidates.push((
+                name.clone(),
+                named(name.clone(), typescript::snake_to_lower_camel(&name)),
+            ));
+        }
+    }
+    for constant in &program.constants {
+        if crate_visible(&constant.vis) {
+            let name = constant.ident.to_string();
+            candidates.push((name.clone(), named(name.clone(), name)));
+        }
+    }
+    for rust_static in &program.statics {
+        if crate_visible(&rust_static.vis) {
+            let name = rust_static.ident.to_string();
+            candidates.push((name.clone(), named(name.clone(), name)));
+        }
+    }
+    let mut values = Vec::new();
+    let mut types = Vec::new();
+    for (rust_name, name) in candidates {
+        if !referenced.contains(rust_name.as_str()) {
+            continue;
+        }
+        let declares = |keyword: &str| {
+            return output.lines().any(|line| {
+                line.strip_prefix(keyword).is_some_and(|rest| {
+                    rest.strip_prefix(name.as_str()).is_some_and(|tail| {
+                        tail.starts_with(|character: char| {
+                            !(character.is_ascii_alphanumeric()
+                                || character == '_'
+                                || character == '$')
+                        })
+                    })
+                })
+            });
+        };
+        if ["function ", "const ", "enum ", "class ", "let "]
+            .iter()
+            .any(|keyword| declares(keyword))
+        {
+            values.push(name);
+        } else if ["interface ", "type "]
+            .iter()
+            .any(|keyword| declares(keyword))
+        {
+            types.push(name);
+        }
+    }
+    values.sort();
+    values.dedup();
+    types.sort();
+    types.dedup();
+    if values.is_empty() && types.is_empty() {
+        return output;
+    }
+    if !output.ends_with("\n\n") {
+        output.push('\n');
+    }
+    if !values.is_empty() {
+        output.push_str(&format!("export {{ {} }};\n", values.join(", ")));
+    }
+    if !types.is_empty() {
+        output.push_str(&format!("export type {{ {} }};\n", types.join(", ")));
+    }
+    return output;
 }
 
 // Replaces each emitted `Owner.Variant` reference to a numeric union with the variant's declared

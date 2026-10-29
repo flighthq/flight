@@ -9,6 +9,7 @@ import {
   compilerAliasArguments,
   compilerVisibilityArguments,
   collectTypeScriptExportSymbols,
+  collectCrateExportSymbols,
   collectExportSymbols,
   collectFlightDependencyCrates,
   collectRustExportNames,
@@ -98,6 +99,8 @@ try {
   const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
   const externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
   const publicSymbols = new Map([...symbols, ...externalExports.symbols]);
+  // Intra-package imports also resolve crate-internal exports; the public lanes keep using `symbols`.
+  const importSymbols = new Map([...collectCrateExportSymbols(symbolModules), ...symbols]);
   const generatedFiles: string[] = [];
 
   for (const module of modules) {
@@ -106,7 +109,7 @@ try {
       join(crateRoot, 'src', module.rustSource),
       module.fileName,
       module.typescript,
-      symbols,
+      importSymbols,
     );
     writeGenerated(
       join(stagingSourceRoot, module.fileName),
