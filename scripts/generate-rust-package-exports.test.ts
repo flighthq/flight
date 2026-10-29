@@ -348,6 +348,25 @@ export {
 `);
   });
 
+  it('routes target-native type aliases backed by raw types through the contract lane', () => {
+    const modules = [
+      {
+        fileName: 'signalTypesRaw.ts',
+        mode: 'generate' as const,
+        typescript: 'export interface SignalRaw<T> { emit: (value: T) => void; }\n',
+      },
+      {
+        directPublicExports: true,
+        fileName: 'signalTypes.ts',
+        mode: 'target-native' as const,
+        typescript: 'export type Signal<T> = SignalRaw<T>;\nexport type CompanionOnly = string;\n',
+      },
+    ];
+    const symbols = collectExportSymbols(modules);
+
+    expect(renderCompanionContractExports(modules, symbols)).toBe("export type { Signal } from './signalTypes.ts';\n");
+  });
+
   it('imports only emitted Raw consumers when Rust signatures name a companion wrapper', () => {
     const modules = [
       {

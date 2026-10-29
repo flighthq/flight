@@ -50,3 +50,4 @@ export type {
   SlotId,
   TimerId,
 } from './types.ts';
+export type { Signal, SignalScope } from './signalTypes.ts';

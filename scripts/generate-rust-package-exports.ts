@@ -199,13 +199,15 @@ export function renderCompanionContractExports(
     .filter((candidate) => candidate.directPublicExports)
     .sort((a, b) => a.fileName.localeCompare(b.fileName))) {
     const wrappers = [...symbols]
-      .filter(
-        ([name, owner]) => owner.fileName === module.fileName && owner.isClass === true && symbols.has(`${name}Raw`),
-      )
-      .map(([name]) => name)
-      .sort();
-    if (wrappers.length > 0) {
-      output += `export { ${wrappers.join(', ')} } from './${module.fileName}';\n`;
+      .filter(([name, owner]) => owner.fileName === module.fileName && owner.hasType && symbols.has(`${name}Raw`))
+      .sort(([left], [right]) => left.localeCompare(right));
+    const values = wrappers.filter(([, owner]) => owner.hasValue).map(([name]) => name);
+    const types = wrappers.filter(([, owner]) => !owner.hasValue).map(([name]) => name);
+    if (values.length > 0) {
+      output += `export { ${values.join(', ')} } from './${module.fileName}';\n`;
+    }
+    if (types.length > 0) {
+      output += `export type { ${types.join(', ')} } from './${module.fileName}';\n`;
     }
   }
   return output;
