@@ -15,12 +15,12 @@ import {
   getTextInputCaretRectangle,
   hasTextInput,
 } from '@flighthq/textinput/contract';
+import type { TextInputManagerRaw } from '@flighthq/textinput/contract';
 import type {
   InputKeyboardData,
   KeyboardEventData,
   Node2D,
   PointerEventData,
-  TextInputManager,
   TextInputController,
   TextInputControllerOptions,
   TextInputControllerSignals,
@@ -40,7 +40,7 @@ import {
 interface TextInputControllerFields {
   background: Node2D | null;
   caret: Node2D | null;
-  manager: TextInputManager;
+  manager: TextInputManagerRaw;
   ownsInput: boolean;
   signals: TextInputControllerSignals;
   textField: RichText | null;
@@ -73,7 +73,7 @@ export function createTextInputController(options: Readonly<TextInputControllerO
     emitSignal(runtime.signals.onChange, event.text);
   });
   connectGuiInteraction(runtime, options.textField, 'onPointerDown', (data: Readonly<PointerEventData>) => {
-    dispatchTextInputPointerDown(runtime.manager, options.textField, data.localX, data.localY, data.shiftKey);
+    dispatchTextInputPointerDown(runtime.manager, options.textField, data.localX, data.localY, data.shiftKey, 1);
     updateTextInputControllerCaret(runtime);
   });
   connectGuiInteraction(runtime, options.textField, 'onPointerMove', (data: Readonly<PointerEventData>) => {

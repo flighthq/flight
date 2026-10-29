@@ -1,7 +1,12 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import { createRichText } from '@flighthq/text/contract';
+import { createRichText, getRichTextRuntime, getTextLayoutResult, setTextLayoutResult } from '@flighthq/text/contract';
+import {
+  createTextInputManager,
+  getTextInputSelectionBeginIndex,
+  getTextInputSelectionEndIndex,
+} from '@flighthq/textinput/contract';
 
-import { createGuiTestNode } from './guiTestHelper.ts';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   blurTextInputController,
   createTextInputController,
@@ -32,6 +37,26 @@ describe('createTextInputController', () => {
     dispatchTextInputControllerText(controller, 'abc');
     expect(field.data.text).toBe('abc');
     expect(values).toEqual(['abc']);
+  });
+
+  it('routes editing through a caller-supplied manager', () => {
+    const field = createRichText();
+    const manager = createTextInputManager();
+    const controller = createTextInputController({ manager, textField: field });
+    focusTextInputController(controller);
+    expect(manager.focused).toBe(field);
+  });
+
+  it('treats pointer down as a single click that places a collapsed caret', () => {
+    const field = createRichText();
+    const manager = createTextInputManager();
+    createTextInputController({ manager, textField: field });
+    field.data.text = 'hello world';
+    setTextLayoutResult(field, getTextLayoutResult(getRichTextRuntime(field)));
+    emitGuiPointer(field, 'onPointerDown', { localX: 10, localY: 5 });
+    expect(manager.focused).toBe(field);
+    expect(getTextInputSelectionBeginIndex(field)).toBe(0);
+    expect(getTextInputSelectionEndIndex(field)).toBe(0);
   });
 });
 
