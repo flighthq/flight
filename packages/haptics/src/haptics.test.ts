@@ -22,7 +22,7 @@ import type {
   HostHapticsCapability,
 } from './contract.ts';
 
-type Calls = Readonly<{ value: RecordedCalls }>;
+type Calls = { value: RecordedCalls };
 
 interface RecordedCalls {
   impacts: Array<readonly [HapticImpactStyle, number | undefined]>;
