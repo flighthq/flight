@@ -12,7 +12,7 @@ mod get_xml_element_attribute {
     #[test]
     fn returns_none_when_the_attribute_is_absent() {
         let root = parse_xml_document(r#"<node name="hero"/>"#).unwrap();
-        assert_eq!(get_xml_element_attribute(&root, "missing"), None);
+        assert!(get_xml_element_attribute(&root, "missing").is_none());
     }
 
     #[test]
@@ -35,14 +35,14 @@ mod get_xml_element_attribute_number {
     #[test]
     fn returns_none_when_the_attribute_is_absent() {
         let root = parse_xml_document(r#"<node x="10"/>"#).unwrap();
-        assert_eq!(get_xml_element_attribute_number(&root, "missing"), None);
+        assert!(get_xml_element_attribute_number(&root, "missing").is_none());
     }
 
     #[test]
     fn returns_none_when_the_value_is_not_a_finite_number() {
         let root = parse_xml_document(r#"<node x="abc" y=""/>"#).unwrap();
-        assert_eq!(get_xml_element_attribute_number(&root, "x"), None);
-        assert_eq!(get_xml_element_attribute_number(&root, "y"), None);
+        assert!(get_xml_element_attribute_number(&root, "x").is_none());
+        assert!(get_xml_element_attribute_number(&root, "y").is_none());
     }
 }
 

@@ -64,11 +64,6 @@ mod parse_xml_attributes {
         assert_eq!(attrs["decimal"], "&#1114112;");
         assert_eq!(attrs["hex"], "&#x110000;");
     }
-
-    #[test]
-    fn returns_empty_map_for_empty_string() {
-        assert!(parse_xml_attributes("").is_empty());
-    }
 }
 
 mod parse_xml_document {
@@ -328,7 +323,7 @@ mod parse_xml_document_internal_dtd_entities {
 
     #[test]
     fn does_not_expand_a_nested_entity_without_bound() {
-        let mut subset = String::from(r#"<!ENTITY e0 "aaaaaaaaaa">"#);
+        let mut subset = r#"<!ENTITY e0 "aaaaaaaaaa">"#.to_string();
         for level in 1..=6u32 {
             let prev_ref = format!("&e{};", level - 1);
             let references = repeated(&prev_ref, 10);

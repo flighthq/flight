@@ -18,7 +18,7 @@ describe('getXmlElementAttribute', () => {
   });
   it('returns none when the attribute is absent', () => {
     const root = parseXmlDocument('<node name="hero"/>')!;
-    expect(getXmlElementAttribute(root, 'missing')).toEqual(undefined);
+    expect(getXmlElementAttribute(root, 'missing') === null).toBe(true);
   });
   it('returns an empty string attribute rather than none', () => {
     const root = parseXmlDocument('<node label=""/>')!;
@@ -34,12 +34,12 @@ describe('getXmlElementAttributeNumber', () => {
   });
   it('returns none when the attribute is absent', () => {
     const root = parseXmlDocument('<node x="10"/>')!;
-    expect(getXmlElementAttributeNumber(root, 'missing')).toEqual(undefined);
+    expect(getXmlElementAttributeNumber(root, 'missing') === null).toBe(true);
   });
   it('returns none when the value is not a finite number', () => {
     const root = parseXmlDocument('<node x="abc" y=""/>')!;
-    expect(getXmlElementAttributeNumber(root, 'x')).toEqual(undefined);
-    expect(getXmlElementAttributeNumber(root, 'y')).toEqual(undefined);
+    expect(getXmlElementAttributeNumber(root, 'x') === null).toBe(true);
+    expect(getXmlElementAttributeNumber(root, 'y') === null).toBe(true);
   });
 });
 
@@ -51,7 +51,7 @@ describe('getXmlElementChildByName', () => {
   });
   it('returns none when no child matches', () => {
     const root = parseXmlDocument('<root><a/></root>')!;
-    expect(getXmlElementChildByName(root, 'z') === undefined).toBe(true);
+    expect(getXmlElementChildByName(root, 'z') === null).toBe(true);
   });
 });
 

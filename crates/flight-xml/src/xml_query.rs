@@ -17,6 +17,8 @@ pub fn get_xml_element_attribute<'a>(element: &'a XmlElement, name: &str) -> Opt
 /// The attribute value for `name` parsed as a number, or None when the
 /// attribute is absent or does not parse to a finite number.
 // flight-lint: allow(f64) TS returns `number`, exact for integers to 2^53; XML formats carry exact integer ids beyond f32's 2^24 (e.g. 32-bit tile gids with flip flags)
+// Rust's `?` operator is outside the portable compiler subset, so the explicit exits are intentional.
+#[allow(clippy::question_mark)]
 pub fn get_xml_element_attribute_number(element: &XmlElement, name: &str) -> Option<f64> {
     let Some(value) = get_xml_record_value(&element.attributes, name) else {
         return None;

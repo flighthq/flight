@@ -76,6 +76,9 @@ fn find_in_units(units: &[u16], pattern: &str, start: usize) -> Option<usize> {
     return None;
 }
 
+// RangeInclusive::contains lowers to an allocated TS array; direct bounds keep parser scans
+// allocation-free.
+#[allow(clippy::manual_range_contains)]
 fn is_name_char(unit: u16) -> bool {
     return (unit >= 48 && unit <= 57)
         || (unit >= 65 && unit <= 90)
@@ -90,6 +93,7 @@ fn is_tag_name_end(unit: u16) -> bool {
     return xml_is_whitespace(unit) || unit == 62 || unit == 47;
 }
 
+#[allow(clippy::manual_range_contains)]
 fn is_word_char(unit: u16) -> bool {
     return (unit >= 48 && unit <= 57)
         || (unit >= 65 && unit <= 90)
@@ -97,14 +101,17 @@ fn is_word_char(unit: u16) -> bool {
         || unit == 95;
 }
 
+#[allow(clippy::manual_range_contains)]
 fn is_decimal_digit(unit: u16) -> bool {
     return unit >= 48 && unit <= 57;
 }
 
+#[allow(clippy::manual_range_contains)]
 fn is_hex_digit(unit: u16) -> bool {
     return is_decimal_digit(unit) || (unit >= 65 && unit <= 70) || (unit >= 97 && unit <= 102);
 }
 
+#[allow(clippy::manual_range_contains)]
 fn parse_code_point(units: &[u16], start: usize, end: usize, radix: u32) -> Option<u32> {
     let mut value: u32 = 0;
     let mut position = start;
@@ -132,10 +139,11 @@ fn parse_code_point(units: &[u16], start: usize, end: usize, radix: u32) -> Opti
     return Some(value);
 }
 
-fn skip_whitespace(units: &[u16], pos: &mut usize) {
-    while *pos < units.len() && xml_is_whitespace(units[*pos]) {
-        *pos += 1;
+fn skip_whitespace(units: &[u16], mut pos: usize) -> usize {
+    while pos < units.len() && xml_is_whitespace(units[pos]) {
+        pos += 1;
     }
+    return pos;
 }
 
 /// Collects general entity declarations from a DOCTYPE's internal subset.
@@ -244,8 +252,10 @@ fn decode_xml_entities(source: &str) -> String {
 
             if pos > num_start && pos < len && units[pos] == 59 {
                 let radix: u32 = if is_hex { 16 } else { 10 };
-                if let Some(code_point) = parse_code_point(&units, num_start, pos, radix) {
-                    if let Some(replacement) = xml_string_from_code_point(code_point) {
+                let parsed_code_point = parse_code_point(&units, num_start, pos, radix);
+                if let Some(code_point) = parsed_code_point {
+                    let code_point_replacement = xml_string_from_code_point(code_point);
+                    if let Some(replacement) = code_point_replacement {
                         result += &xml_utf16_slice(source, copy_start, amp_pos);
                         result += &replacement;
                         pos += 1;
@@ -265,7 +275,8 @@ fn decode_xml_entities(source: &str) -> String {
         }
         if pos > name_start && pos < len && units[pos] == 59 {
             let name = xml_utf16_slice(source, name_start, pos);
-            if let Some(replacement) = xml_entity_replacement(&name) {
+            let entity_replacement = xml_entity_replacement(&name);
+            if let Some(replacement) = entity_replacement {
                 result += &xml_utf16_slice(source, copy_start, amp_pos);
                 result += replacement;
                 pos += 1;
@@ -292,9 +303,8 @@ fn expand_xml_entities(src: &str, entities: &XmlRecord<String, String>) -> Strin
 
     let mut pass: usize = 0;
     while pass < MAX_XML_ENTITY_PASSES {
-        let mut expanded = false;
-        let next = replace_entity_references(&output, entities, &mut expanded);
-        if !expanded || utf16_units(&next).len() > budget {
+        let next = replace_entity_references(&output, entities);
+        if next == output || utf16_units(&next).len() > budget {
             return output;
         }
         output = next;
@@ -310,14 +320,15 @@ fn parse_element(src: &str, units: &[u16], state: &mut ParseState) -> Option<Xml
     }
 
     let len = units.len();
-    skip_whitespace(units, &mut state.pos);
+    state.pos = skip_whitespace(units, state.pos);
     if state.pos >= len || units[state.pos] != 60 {
         return None;
     }
     state.pos += 1;
 
     if state.pos < len && units[state.pos] == 63 {
-        if let Some(end) = find_in_units(units, "?>", state.pos) {
+        let processing_instruction_end = find_in_units(units, "?>", state.pos);
+        if let Some(end) = processing_instruction_end {
             state.pos = end + 2;
         } else {
             state.pos = len;
@@ -334,7 +345,7 @@ fn parse_element(src: &str, units: &[u16], state: &mut ParseState) -> Option<Xml
         return None;
     }
 
-    skip_whitespace(units, &mut state.pos);
+    state.pos = skip_whitespace(units, state.pos);
     let attrs_start = state.pos;
     let mut quote: u16 = 0;
     while state.pos < len {
@@ -377,7 +388,8 @@ fn parse_element(src: &str, units: &[u16], state: &mut ParseState) -> Option<Xml
 
             if utf16_starts_with(units, state.pos, "<![CDATA[") {
                 let cdata_start = state.pos + 9;
-                if let Some(end) = find_in_units(units, "]]>", cdata_start) {
+                let cdata_end = find_in_units(units, "]]>", cdata_start);
+                if let Some(end) = cdata_end {
                     let cdata = xml_utf16_slice(src, cdata_start, end);
                     text += &xml_trim(&cdata);
                     if !cdata.is_empty() {
@@ -406,12 +418,12 @@ fn parse_element(src: &str, units: &[u16], state: &mut ParseState) -> Option<Xml
             }
 
             state.depth += 1;
-            let child = parse_element(src, units, state);
+            let parsed_child = parse_element(src, units, state);
             state.depth -= 1;
             if state.depth_exceeded {
                 return None;
             }
-            if let Some(child) = child {
+            if let Some(child) = parsed_child {
                 let child_ref: Ref<XmlElement> = Ref::new(RwLock::new(child));
                 children.push(child_ref.clone());
                 push_xml_element_content(&mut content, child_ref);
@@ -506,11 +518,7 @@ pub fn parse_xml_document(xml: &str) -> Option<XmlElement> {
     return parse_element(&expanded, &units, &mut state);
 }
 
-fn replace_entity_references(
-    src: &str,
-    entities: &XmlRecord<String, String>,
-    expanded: &mut bool,
-) -> String {
+fn replace_entity_references(src: &str, entities: &XmlRecord<String, String>) -> String {
     let units = utf16_units(src);
     let len = units.len();
     let mut result = String::new();
@@ -532,10 +540,10 @@ fn replace_entity_references(
 
         if pos > name_start && pos < len && units[pos] == 59 {
             let name = xml_utf16_slice(src, name_start, pos);
-            if let Some(replacement) = get_xml_record_value(entities, &name) {
+            let entity_replacement = get_xml_record_value(entities, &name);
+            if let Some(replacement) = entity_replacement {
                 result += &xml_utf16_slice(src, copy_start, amp_pos);
                 result += replacement;
-                *expanded = true;
                 pos += 1;
                 copy_start = pos;
                 continue;
@@ -580,7 +588,8 @@ fn strip_processing_instructions(xml: &str) -> String {
         if utf16_starts_with(&units, pos, "<?") {
             output += &xml_utf16_slice(xml, copy_start, pos);
             pos += 2;
-            if let Some(end) = find_in_units(&units, "?>", pos) {
+            let instruction_end = find_in_units(&units, "?>", pos);
+            if let Some(end) = instruction_end {
                 pos = end + 2;
             } else {
                 pos = units.len();
@@ -603,7 +612,8 @@ fn strip_xml_comments(xml: &str) -> String {
 
     while pos < units.len() {
         if utf16_starts_with(&units, pos, "<![CDATA[") {
-            if let Some(end) = find_in_units(&units, "]]>", pos + 9) {
+            let cdata_end = find_in_units(&units, "]]>", pos + 9);
+            if let Some(end) = cdata_end {
                 pos = end + 3;
             } else {
                 pos = units.len();
@@ -613,7 +623,8 @@ fn strip_xml_comments(xml: &str) -> String {
 
         if utf16_starts_with(&units, pos, "<!--") {
             output += &xml_utf16_slice(xml, copy_start, pos);
-            if let Some(end) = find_in_units(&units, "-->", pos + 4) {
+            let comment_end = find_in_units(&units, "-->", pos + 4);
+            if let Some(end) = comment_end {
                 pos = end + 3;
             } else {
                 pos = units.len();
@@ -628,6 +639,7 @@ fn strip_xml_comments(xml: &str) -> String {
     return output;
 }
 
+#[allow(clippy::manual_range_contains)]
 fn ascii_case_insensitive_at(units: &[u16], start: usize, expected: &str) -> bool {
     let expected_units = utf16_units(expected);
     if start + expected_units.len() > units.len() {

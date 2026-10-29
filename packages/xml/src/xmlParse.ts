@@ -139,10 +139,11 @@ function parseCodePoint(units: Readonly<number[]>, start: number, end: number, r
   return value;
 }
 
-function skipWhitespace(units: Readonly<number[]>, pos: number): void {
+function skipWhitespace(units: Readonly<number[]>, pos: number): number {
   while (pos < units.length && xmlIsWhitespace(units[pos])) {
     pos += 1;
   }
+  return pos;
 }
 
 /**
@@ -242,10 +243,12 @@ function decodeXmlEntities(source: string): string {
       }
       if (pos > numStart && pos < len && units[pos] === 59) {
         const radix: number = isHex ? 16 : 10;
-        if (parseCodePoint(units, numStart, pos, radix) !== null) {
-          const codePoint = parseCodePoint(units, numStart, pos, radix);
-          if (xmlStringFromCodePoint(codePoint) !== null) {
-            const replacement = xmlStringFromCodePoint(codePoint);
+        const parsedCodePoint = parseCodePoint(units, numStart, pos, radix);
+        if (parsedCodePoint !== null) {
+          const codePoint = parsedCodePoint;
+          const codePointReplacement = xmlStringFromCodePoint(codePoint);
+          if (codePointReplacement !== null) {
+            const replacement = codePointReplacement;
             result += xmlUtf16Slice(source, copyStart, ampPos);
             result += replacement;
             pos += 1;
@@ -264,8 +267,9 @@ function decodeXmlEntities(source: string): string {
     }
     if (pos > nameStart && pos < len && units[pos] === 59) {
       const name = xmlUtf16Slice(source, nameStart, pos);
-      if (xmlEntityReplacement(name) !== null) {
-        const replacement = xmlEntityReplacement(name);
+      const entityReplacement = xmlEntityReplacement(name);
+      if (entityReplacement !== null) {
+        const replacement = entityReplacement;
         result += xmlUtf16Slice(source, copyStart, ampPos);
         result += replacement;
         pos += 1;
@@ -291,9 +295,8 @@ function expandXmlEntities(src: string, entities: Readonly<XmlRecord<string, str
   const budget = sourceUnits.length * MAX_XML_ENTITY_GROWTH + MAX_XML_ENTITY_BUDGET;
   let pass: number = 0;
   while (pass < MAX_XML_ENTITY_PASSES) {
-    let expanded = false;
-    const next = replaceEntityReferences(output, entities, expanded);
-    if (!expanded || utf16Units(next).length > budget) {
+    const next = replaceEntityReferences(output, entities);
+    if (next === output || utf16Units(next).length > budget) {
       return output;
     }
     output = next;
@@ -308,14 +311,15 @@ function parseElement(src: string, units: Readonly<number[]>, state: ParseState)
     return null;
   }
   const len = units.length;
-  skipWhitespace(units, state.pos);
+  state.pos = skipWhitespace(units, state.pos);
   if (state.pos >= len || units[state.pos] !== 60) {
     return null;
   }
   state.pos += 1;
   if (state.pos < len && units[state.pos] === 63) {
-    if (findInUnits(units, '?>', state.pos) !== null) {
-      const end = findInUnits(units, '?>', state.pos);
+    const processingInstructionEnd = findInUnits(units, '?>', state.pos);
+    if (processingInstructionEnd !== null) {
+      const end = processingInstructionEnd;
       state.pos = end + 2;
     } else {
       state.pos = len;
@@ -330,7 +334,7 @@ function parseElement(src: string, units: Readonly<number[]>, state: ParseState)
   if (name.length === 0) {
     return null;
   }
-  skipWhitespace(units, state.pos);
+  state.pos = skipWhitespace(units, state.pos);
   const attrsStart = state.pos;
   let quote: number = 0;
   while (state.pos < len) {
@@ -373,8 +377,9 @@ function parseElement(src: string, units: Readonly<number[]>, state: ParseState)
       }
       if (utf16StartsWith(units, state.pos, '<![CDATA[')) {
         const cdataStart = state.pos + 9;
-        if (findInUnits(units, ']]>', cdataStart) !== null) {
-          const end = findInUnits(units, ']]>', cdataStart);
+        const cdataEnd = findInUnits(units, ']]>', cdataStart);
+        if (cdataEnd !== null) {
+          const end = cdataEnd;
           const cdata = xmlUtf16Slice(src, cdataStart, end);
           text += xmlTrim(cdata);
           if (cdata.length !== 0) {
@@ -401,13 +406,13 @@ function parseElement(src: string, units: Readonly<number[]>, state: ParseState)
         break;
       }
       state.depth += 1;
-      const child = parseElement(src, units, state);
+      const parsedChild = parseElement(src, units, state);
       state.depth -= 1;
       if (state.depthExceeded) {
         return null;
       }
-      if (child !== null) {
-        const child = child;
+      if (parsedChild !== null) {
+        const child = parsedChild;
         const childRef: XmlElement = child;
         children.push(childRef);
         pushXmlElementContent(content, childRef);
@@ -487,11 +492,7 @@ export function parseXmlDocument(xml: string): XmlElement | null {
   return parseElement(expanded, units, state);
 }
 
-function replaceEntityReferences(
-  src: string,
-  entities: Readonly<XmlRecord<string, string>>,
-  expanded: boolean,
-): string {
+function replaceEntityReferences(src: string, entities: Readonly<XmlRecord<string, string>>): string {
   const units = utf16Units(src);
   const len = units.length;
   let result = '';
@@ -510,11 +511,11 @@ function replaceEntityReferences(
     }
     if (pos > nameStart && pos < len && units[pos] === 59) {
       const name = xmlUtf16Slice(src, nameStart, pos);
-      if (getXmlRecordValue(entities, name) !== null) {
-        const replacement = getXmlRecordValue(entities, name);
+      const entityReplacement = getXmlRecordValue(entities, name);
+      if (entityReplacement !== null) {
+        const replacement = entityReplacement;
         result += xmlUtf16Slice(src, copyStart, ampPos);
         result += replacement;
-        expanded.value = true;
         pos += 1;
         copyStart = pos;
         continue;
@@ -557,8 +558,9 @@ function stripProcessingInstructions(xml: string): string {
     if (utf16StartsWith(units, pos, '<?')) {
       output += xmlUtf16Slice(xml, copyStart, pos);
       pos += 2;
-      if (findInUnits(units, '?>', pos) !== null) {
-        const end = findInUnits(units, '?>', pos);
+      const instructionEnd = findInUnits(units, '?>', pos);
+      if (instructionEnd !== null) {
+        const end = instructionEnd;
         pos = end + 2;
       } else {
         pos = units.length;
@@ -579,8 +581,9 @@ function stripXmlComments(xml: string): string {
   let copyStart = 0;
   while (pos < units.length) {
     if (utf16StartsWith(units, pos, '<![CDATA[')) {
-      if (findInUnits(units, ']]>', pos + 9) !== null) {
-        const end = findInUnits(units, ']]>', pos + 9);
+      const cdataEnd = findInUnits(units, ']]>', pos + 9);
+      if (cdataEnd !== null) {
+        const end = cdataEnd;
         pos = end + 3;
       } else {
         pos = units.length;
@@ -589,8 +592,9 @@ function stripXmlComments(xml: string): string {
     }
     if (utf16StartsWith(units, pos, '<!--')) {
       output += xmlUtf16Slice(xml, copyStart, pos);
-      if (findInUnits(units, '-->', pos + 4) !== null) {
-        const end = findInUnits(units, '-->', pos + 4);
+      const commentEnd = findInUnits(units, '-->', pos + 4);
+      if (commentEnd !== null) {
+        const end = commentEnd;
         pos = end + 3;
       } else {
         pos = units.length;

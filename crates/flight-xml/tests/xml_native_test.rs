@@ -7,6 +7,11 @@
 use flight_xml::*;
 
 #[test]
+fn creates_empty_attribute_record_for_empty_input() {
+    assert!(parse_xml_attributes("").is_empty());
+}
+
+#[test]
 fn shares_the_same_child_between_children_and_content() {
     let doc = parse_xml_document("<root><child/></root>").unwrap();
     let content_child = match &doc.content[0] {

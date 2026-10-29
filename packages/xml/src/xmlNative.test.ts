@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { parseXmlAttributes, parseXmlDocument } from './contract.ts';
 
 describe('XML target representations', () => {
+  it('creates an empty attribute record for empty input', () => {
+    expect(Object.keys(parseXmlAttributes(''))).toEqual([]);
+  });
+
   it('shares the same child between children and content', () => {
     const document = parseXmlDocument('<root><child/></root>')!;
     expect(document.content[0]).toBe(document.children[0]);

@@ -52,9 +52,6 @@ describe('parseXmlAttributes', () => {
     expect(attrs['decimal']).toEqual('&#1114112;');
     expect(attrs['hex']).toEqual('&#x110000;');
   });
-  it('returns empty map for empty string', () => {
-    expect(parseXmlAttributes('').length === 0).toBe(true);
-  });
 });
 
 describe('parseXmlDocument', () => {
@@ -105,16 +102,16 @@ describe('parseXmlDocument', () => {
   it('accepts element nesting with broad margin for authored documents', () => {
     const depth = 128;
     const xml = repeated('<node>', depth) + '<leaf/>' + repeated('</node>', depth);
-    expect(parseXmlDocument(xml) !== undefined).toBe(true);
+    expect(parseXmlDocument(xml) !== null).toBe(true);
   });
   it('returns none instead of exhausting the call stack on excessive element nesting', () => {
     const depth = 300;
     const xml = repeated('<node>', depth) + '<leaf/>' + repeated('</node>', depth);
-    expect(parseXmlDocument(xml) === undefined).toBe(true);
+    expect(parseXmlDocument(xml) === null).toBe(true);
   });
   it('returns none when the input contains no recognizable element', () => {
-    expect(parseXmlDocument('') === undefined).toBe(true);
-    expect(parseXmlDocument('   just text, no tags   ') === undefined).toBe(true);
+    expect(parseXmlDocument('') === null).toBe(true);
+    expect(parseXmlDocument('   just text, no tags   ') === null).toBe(true);
   });
   it('tolerates unbalanced close tags without underflowing the stack', () => {
     const root = parseXmlDocument('<a></a></b>')!;
@@ -241,7 +238,7 @@ describe('parseXmlDocumentInternalDtdEntities', () => {
     expect(root.text).toEqual('&x;');
   });
   it('does not expand a nested entity without bound', () => {
-    let subset = String.from('<!ENTITY e0 "aaaaaaaaaa">');
+    let subset = '<!ENTITY e0 "aaaaaaaaaa">';
     for (let level = 1; level <= 6; level += 1) {
       const prevRef = `&e${level - 1};`;
       const references = repeated(prevRef, 10);

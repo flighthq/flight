@@ -9,5 +9,3 @@ export {
   parseXmlAttributes,
   parseXmlDocument,
 } from './contract.ts';
-
-export type { XmlContent, XmlElement } from './contract.ts';

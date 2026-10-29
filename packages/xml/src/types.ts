@@ -1,4 +1,4 @@
-import type { XmlContent as SharedXmlContent, XmlElement as SharedXmlElement } from '@flighthq/types/contract';
+import type { XmlElement as SharedXmlElement } from '@flighthq/types/contract';
 
-export type XmlContent = SharedXmlContent;
+export type XmlContent = SharedXmlElement['content'][number];
 export type XmlElement = SharedXmlElement;
