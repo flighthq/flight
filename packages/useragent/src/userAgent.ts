@@ -1,177 +1,240 @@
-import type {
-  PlatformEndianness,
+// Generated from crates/flight-useragent/src/user_agent.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import {
+  captureAfter,
+  charsOf,
+  contains,
+  containsAny,
+  isAsciiDigit,
+  isDigitOrDot,
+  matchesAt,
+  positions,
+} from './jsPattern.ts';
+import type { PlatformEndianness, PlatformRuntime, Record, Unknown } from './userAgentNative.ts';
+import {
   PlatformEngine,
   PlatformKind,
   PlatformName,
-  PlatformRuntime,
-} from '@flighthq/types/contract';
-
+  detectEndiannessNative,
+  parseUserAgentRuntimeNative,
+} from './userAgentNative.ts';
 import { parseUserAgentOsVersion } from './userAgentParse.ts';
 
-// Probe host CPU byte order via a DataView write-then-read.
-// Overwhelmingly 'little' on all modern hardware (x86/x64/arm/arm64/wasm).
-// Returns 'unknown' if ArrayBuffer is unavailable.
+/**
+ * Probes host CPU byte order with a local two-byte write-then-read (the source's
+ * `Uint16Array`/`Uint8Array` view of one buffer): `Big` when the high byte comes first, `Little`
+ * when the low byte does. The source's `Unknown` arm is for runtimes without ArrayBuffer, which
+ * cannot occur here.
+ */
 export function detectEndianness(): PlatformEndianness {
-  try {
-    const buf = new ArrayBuffer(2);
-    new Uint16Array(buf)[0] = 0x0102;
-    const bytes = new Uint8Array(buf);
-    if (bytes[0] === 0x01) return 'big';
-    if (bytes[0] === 0x02) return 'little';
-  } catch {
-    // ArrayBuffer unavailable — treat as unknown.
-  }
-  return 'unknown';
+  return detectEndiannessNative();
 }
 
-// Parse a browser user-agent string into the canonical CPU architecture token.
-// Canonical tokens: 'x64', 'arm64', 'x86', 'arm', 'riscv64', 'mips64', 'mips'. Returns '' when undetectable.
-// Note: arm64/aarch64 must be tested before arm to avoid false-positive partial matches.
-// The high-entropy navigator.userAgentData.architecture API is async and not used here;
-// this function operates on the synchronous UA string, plus an optional UA-CH platform hint.
-//
-// uadPlatform: pass navigator.userAgentData.platform (Chromium UA-CH) when available — it gives
-// cleaner arch detection than the UA string. 'Windows', 'Linux', 'macOS', 'Chrome OS' map to 'x64'
-// conservatively; Apple Silicon (M-series) is indistinguishable from x64 via this hint alone.
-export function parseUserAgentArch(ua: string, uadPlatform?: string): string {
-  if (uadPlatform) {
-    const p = uadPlatform.toLowerCase();
-    if (p.includes('arm')) return 'arm64';
+/**
+ * `i[3-6]86`
+ */
+function iX86(t: Readonly<number[]>): boolean {
+  for (const at of positions(t, 'i')) {
     if (
-      p.includes('x86') ||
-      p.includes('windows') ||
-      p.includes('linux') ||
-      p.includes('mac') ||
-      p.includes('chrome')
+      at + 3 < t.length &&
+      Array.from({ length: 0x0036 - 0x0033 + 1 }, (_, index) => 0x0033 + index).includes(t[at + 1]) &&
+      matchesAt(t, at + 2, '86')
     ) {
-      return 'x64';
+      return true;
     }
   }
-  if (/arm64|aarch64/i.test(ua)) return 'arm64';
-  if (/arm/i.test(ua)) return 'arm';
-  if (/x86_64|win64|wow64|x64/i.test(ua)) return 'x64';
-  if (/i[3-6]86|x86/i.test(ua)) return 'x86';
-  if (/riscv64/i.test(ua)) return 'riscv64';
-  if (/mips64/i.test(ua)) return 'mips64';
-  if (/mips/i.test(ua)) return 'mips';
+  return false;
+}
+
+/**
+ * Parses the canonical CPU architecture token from a UA string: "x64", "arm64", "x86", "arm",
+ * "riscv64", "mips64", "mips", or "" when undetectable. A truthy `uadPlatform` (the UA-CH
+ * `navigator.userAgentData.platform` hint) is consulted first, case-folded as JS `toLowerCase`
+ * does; `undefined` and `Some("")` both skip it, as an empty string is falsy in TS. arm64/aarch64 is
+ * tested before arm.
+ */
+export function parseUserAgentArch(ua: string, uadPlatform?: string): string {
+  if (uadPlatform !== undefined) {
+    const platform = uadPlatform;
+    if (platform.length !== 0) {
+      const p = charsOf(platform);
+      if (contains(p, 'arm')) {
+        return 'arm64';
+      }
+      if (
+        contains(p, 'x86') ||
+        contains(p, 'windows') ||
+        contains(p, 'linux') ||
+        contains(p, 'mac') ||
+        contains(p, 'chrome')
+      ) {
+        return 'x64';
+      }
+    }
+  }
+  const t = charsOf(ua);
+  const arch = containsAny(t, ['arm64', 'aarch64'])
+    ? 'arm64'
+    : contains(t, 'arm')
+      ? 'arm'
+      : containsAny(t, ['x86_64', 'win64', 'wow64', 'x64'])
+        ? 'x64'
+        : iX86(t) || contains(t, 'x86')
+          ? 'x86'
+          : contains(t, 'riscv64')
+            ? 'riscv64'
+            : contains(t, 'mips64')
+              ? 'mips64'
+              : contains(t, 'mips')
+                ? 'mips'
+                : '';
+  return String(arch);
+}
+
+/**
+ * Parses the browser engine from a UA string. iOS/iPadOS decide first (every browser there runs on
+ * the system WebKit); then Firefox (gecko); legacy EdgeHTML (`Edge/<digit>`) is `Unknown`, not
+ * blink; then Chrome/Chromium/Edg/OPR/Samsung (blink); then Safari/WebKit; else `Unknown`.
+ */
+export function parseUserAgentEngine(ua: string): PlatformEngine {
+  const t = charsOf(ua);
+  if (containsAny(t, ['iphone', 'ipad', 'ipod'])) {
+    return PlatformEngine.Webkit;
+  }
+  if (contains(t, 'firefox')) {
+    return PlatformEngine.Gecko;
+  }
+  if (positions(t, 'edge/').some((at) => at + 5 < t.length && isAsciiDigit(t[at + 5]))) {
+    return PlatformEngine.Unknown;
+  }
+  if (containsAny(t, ['chrome', 'chromium', 'edg', 'opr', 'samsung'])) {
+    return PlatformEngine.Blink;
+  }
+  if (containsAny(t, ['safari', 'webkit'])) {
+    return PlatformEngine.Webkit;
+  }
+  return PlatformEngine.Unknown;
+}
+
+/**
+ * Extracts the raw browser/engine version token for `engine` ("" when absent or `Unknown`): gecko
+ * `Firefox/`; blink `Edg/`, then `OPR/`, then `Chrome/`; webkit `Version/`, then `AppleWebKit/`.
+ * Never parsed for semantics.
+ */
+export function parseUserAgentEngineVersion(ua: string, engine: PlatformEngine): string {
+  const t = charsOf(ua);
+  if (engine === PlatformEngine.Gecko) {
+    const firefox = captureAfter(t, 'firefox/', isDigitOrDot);
+    if (firefox !== undefined) {
+      const value = firefox;
+      return value;
+    }
+    return '';
+  }
+  if (engine === PlatformEngine.Blink) {
+    const edge = captureAfter(t, 'edg/', isDigitOrDot);
+    if (edge !== undefined) {
+      const value = edge;
+      return value;
+    }
+    const opera = captureAfter(t, 'opr/', isDigitOrDot);
+    if (opera !== undefined) {
+      const value = opera;
+      return value;
+    }
+    const chrome = captureAfter(t, 'chrome/', isDigitOrDot);
+    if (chrome !== undefined) {
+      const value = chrome;
+      return value;
+    }
+    return '';
+  }
+  if (engine === PlatformEngine.Webkit) {
+    const version = captureAfter(t, 'version/', isDigitOrDot);
+    if (version !== undefined) {
+      const value = version;
+      return value;
+    }
+    const webkit = captureAfter(t, 'applewebkit/', isDigitOrDot);
+    if (webkit !== undefined) {
+      const value = webkit;
+      return value;
+    }
+  }
   return '';
 }
 
-// Parse a browser user-agent string into the canonical PlatformEngine token.
-// Order matters: Edg/Chrome UAs contain 'Safari'; Firefox UAs do not contain 'Chrome'.
-// Returns 'unknown' for unrecognized or native-host UAs.
-export function parseUserAgentEngine(ua: string): PlatformEngine {
-  // iOS and iPadOS decide the engine before any product token does: every browser there is required
-  // to run on the system WebKit, whatever it calls itself. Testing the platform first is also what
-  // keeps this from playing whack-a-mole with product tokens — `EdgiOS` contains `edg` and was being
-  // reported as blink (with an empty version, since no `Edg/` token follows), and any future
-  // `<Product>iOS` token would have failed the same way.
-  if (/iphone|ipad|ipod/i.test(ua)) return 'webkit';
-  if (/firefox/i.test(ua)) return 'gecko';
-  // Legacy EdgeHTML Edge (`Edge/18`) is not Blink — Edge only became Chromium at `Edg/79`. It has to be
-  // tested before the blink branch, whose `edg` alternative matches it, and it reports 'unknown' rather
-  // than a fourth engine value because PlatformEngine has no EdgeHTML member and adding one is a public
-  // type change every exhaustive consumer would have to handle. 'unknown' is the documented answer for
-  // an engine this SDK does not model, and it is the honest one: saying blink would have a caller apply
-  // Chromium workarounds to a browser that never ran Chromium. Distinguished from modern Edge by the
-  // trailing `e` — `Edg/` and `EdgiOS/` do not match.
-  if (/edge\/\d/i.test(ua)) return 'unknown';
-  if (/chrome|chromium|edg|opr|samsung/i.test(ua)) return 'blink';
-  if (/safari|webkit/i.test(ua)) return 'webkit';
-  return 'unknown';
-}
-
-// Extract the browser/engine version string from a user-agent string.
-// The engine parameter narrows which version pattern to extract.
-// Returns '' when the version is not present or the engine is 'unknown'.
-// The returned string is the raw version token — never parsed for semantics.
-export function parseUserAgentEngineVersion(ua: string, engine: PlatformEngine): string {
-  switch (engine) {
-    case 'gecko': {
-      // 'Firefox/120.0' → '120.0'
-      const m = /firefox\/([\d.]+)/i.exec(ua);
-      return m ? m[1] : '';
-    }
-    case 'blink': {
-      // Prefer Edg/OPR over Chrome for Edge/Opera UAs to surface the product version.
-      const edg = /edg\/([\d.]+)/i.exec(ua);
-      if (edg) return edg[1];
-      const opr = /opr\/([\d.]+)/i.exec(ua);
-      if (opr) return opr[1];
-      const chrome = /chrome\/([\d.]+)/i.exec(ua);
-      return chrome ? chrome[1] : '';
-    }
-    case 'webkit': {
-      // 'Version/16.0' → '16.0' for Safari; fall back to AppleWebKit/<version>.
-      const ver = /version\/([\d.]+)/i.exec(ua);
-      if (ver) return ver[1];
-      const wk = /applewebkit\/([\d.]+)/i.exec(ua);
-      return wk ? wk[1] : '';
-    }
-    default:
-      return '';
-  }
-}
-
-// Parse a browser user-agent string into the canonical PlatformKind token.
-// Derived from the platform name — mobile OSes yield 'mobile'; everything else yields 'web'.
-// Use parseUserAgentName to get the name, then this function to derive the kind.
+/**
+ * The platform kind derived from a name: iOS and Android are `Mobile`; everything else is `Web`.
+ */
 export function parseUserAgentKind(name: PlatformName): PlatformKind {
-  if (name === 'ios' || name === 'android') return 'mobile';
-  return 'web';
+  if (name === PlatformName.Ios || name === PlatformName.Android) {
+    return PlatformKind.Mobile;
+  }
+  return PlatformKind.Web;
 }
 
-// Parse a browser user-agent string into the canonical PlatformName token.
-// Returns 'web' when no known OS is detected (the web fallback).
+/**
+ * The platform name from a UA string, in source precedence (android, iOS devices, `win`, `mac`,
+ * linux); `Web` when no known OS is detected.
+ */
 export function parseUserAgentName(ua: string): PlatformName {
-  if (/android/i.test(ua)) return 'android';
-  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
-  if (/win/i.test(ua)) return 'windows';
-  if (/mac/i.test(ua)) return 'macos';
-  if (/linux/i.test(ua)) return 'linux';
-  return 'web';
+  const t = charsOf(ua);
+  if (contains(t, 'android')) {
+    return PlatformName.Android;
+  }
+  if (containsAny(t, ['iphone', 'ipad', 'ipod'])) {
+    return PlatformName.Ios;
+  }
+  if (contains(t, 'win')) {
+    return PlatformName.Windows;
+  }
+  if (contains(t, 'mac')) {
+    return PlatformName.MacOs;
+  }
+  if (contains(t, 'linux')) {
+    return PlatformName.Linux;
+  }
+  return PlatformName.Web;
 }
 
-// Infer the native pointer width in bits from a canonical arch token.
-// Returns 64 for 'x64'/'arm64', 32 for 'x86'/'arm', -1 when unknown (e.g. 'wasm' or '').
-export function parseUserAgentPointerWidth(arch: string): 32 | 64 | -1 {
-  if (arch === 'x64' || arch === 'arm64') return 64;
-  if (arch === 'x86' || arch === 'arm') return 32;
+/**
+ * Pointer width in bits from a canonical arch token: 64 for "x64"/"arm64", 32 for "x86"/"arm", -1
+ * otherwise (TS `32 | 64 | -1`).
+ */
+export function parseUserAgentPointerWidth(arch: string): number {
+  if (arch === 'x64' || arch === 'arm64') {
+    return 64;
+  }
+  if (arch === 'x86' || arch === 'arm') {
+    return 32;
+  }
   return -1;
 }
 
-// Infer the host shell / runtime environment from browser-global probes.
-// Accepts the window-like object as a parameter for testability; pass `window` in production.
-// Returns 'unknown' when the window-like object is null/undefined (SSR, no-DOM contexts).
-export function parseUserAgentRuntime(win: Record<string, unknown> | null | undefined): PlatformRuntime {
-  if (win == null) return 'unknown';
-  // Electron: window.process?.versions?.electron is set in the renderer process.
-  const proc = win.process as Record<string, unknown> | undefined;
-  if (proc?.versions && (proc.versions as Record<string, unknown>).electron) return 'electron';
-  // Tauri: window.__TAURI__ is injected by the Tauri runtime.
-  if (win.__TAURI__) return 'tauri';
-  // Capacitor: window.Capacitor is set by the Capacitor bridge.
-  if (win.Capacitor) return 'capacitor';
-  return 'web';
+/**
+ * The host shell from browser-global probes on a window-like record (TS `Record<string, unknown>
+ * | null | undefined`; `None` is null/undefined). `Unknown` for no window; `Electron` when
+ * `process.versions.electron` is truthy; `Tauri` when `__TAURI__` is truthy; `Capacitor` when
+ * `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see `isTruthy`):
+ * a nested object is a `Record<Unknown>` stored in the `Unknown`.
+ */
+export function parseUserAgentRuntime(win?: Readonly<Record<Unknown>>): PlatformRuntime {
+  return parseUserAgentRuntimeNative(win);
 }
 
-// Extract the OS version string from a browser user-agent string for the given platform name.
-// Returns the raw dotted version string. Returns '' when the version is not present in the UA, and
-// when `name` is not the platform the UA actually describes — asking a Windows UA for its iOS version
-// has no answer, and a wrong one would be worse than none.
-// Never parsed for semantics — the caller may use comparePlatformVersions for numeric comparison.
-//
-// The extraction itself lives in parseUserAgentOsVersion; this function is the PlatformName-vocabulary
-// view of it. It used to carry its own copy of the same four patterns, and the copies had drifted:
-// these required exactly one space (`/android ([\d.]+)/`) where the originals accept any whitespace
-// (`/android\s+([\d.]+)/`), so this function returned '' for UAs the other parsed correctly. One
-// implementation, two vocabularies — the drift cannot recur.
-//
-// FROZEN UA VALUES: see parseUserAgentOsVersion. Windows 11 is indistinguishable from Windows 10
-// here, and macOS reads 10.15.7 on every version since Big Sur.
+/**
+ * The raw dotted OS version for `name`: "" for `Linux` (no kernel version in a browser UA), for
+ * the `Web` fallback, and when `name` is not the platform the UA describes; otherwise
+ * `parseUserAgentOsVersion`.
+ */
 export function parseUserAgentVersion(ua: string, name: PlatformName): string {
-  // Linux embeds no kernel version in a browser UA, and 'web' is the no-OS-detected fallback.
-  if (name === 'linux' || name === 'web') return '';
-  if (parseUserAgentName(ua) !== name) return '';
+  if (name === PlatformName.Linux || name === PlatformName.Web) {
+    return '';
+  }
+  if (parseUserAgentName(ua) !== name) {
+    return '';
+  }
   return parseUserAgentOsVersion(ua);
 }

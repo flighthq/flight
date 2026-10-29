@@ -48,7 +48,8 @@
     "@flighthq/menu": "*",
     "@flighthq/resource": "*",
     "@flighthq/signals": "*",
-    "@flighthq/textformat": "*"
+    "@flighthq/textformat": "*",
+    "@flighthq/useragent": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

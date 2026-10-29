@@ -6,14 +6,14 @@ use crate::device_form_factor::*;
 use crate::js_pattern::*;
 
 /// `bb\d+`
-fn bb_digits(t: &[char]) -> bool {
+fn bb_digits(t: &[u16]) -> bool {
     return positions(t, "bb")
         .into_iter()
-        .any(|at| run_len(t, at + 2, |c| c.is_ascii_digit()) > 0);
+        .any(|at| run_len(t, at + 2, is_ascii_digit) > 0);
 }
 
 /// `cros\s+\S+\s+([\d.]+)`: the greedy runs are disjoint, so no backtracking alternative exists.
-fn cros_version(t: &[char]) -> Option<String> {
+fn cros_version(t: &[u16]) -> Option<String> {
     for at in positions(t, "cros") {
         let mut k = at + 4;
         let ws = run_len(t, k, is_js_whitespace);
@@ -21,7 +21,7 @@ fn cros_version(t: &[char]) -> Option<String> {
             continue;
         }
         k += ws;
-        let token = run_len(t, k, |c| !is_js_whitespace(c));
+        let token = run_len(t, k, is_not_js_whitespace);
         if token == 0 {
             continue;
         }
@@ -33,7 +33,7 @@ fn cros_version(t: &[char]) -> Option<String> {
         k += ws;
         let len = run_len(t, k, is_digit_or_dot);
         if len > 0 {
-            return Some(t[k..k + len].iter().collect());
+            return capture_after(&t[k..], "", is_digit_or_dot);
         }
     }
     return None;
@@ -41,38 +41,42 @@ fn cros_version(t: &[char]) -> Option<String> {
 
 /// `(?:iphone|ipad|ipod).*?os\s+([\d_]+)`: from each device-token start, the lazy `.*?` extends one
 /// char at a time (never across a line terminator) until `os\s+[\d_]+` matches.
-fn ios_version(t: &[char]) -> Option<String> {
-    let mut starts: Vec<(usize, usize)> = Vec::new();
-    for (token, len) in [("iphone", 6), ("ipad", 4), ("ipod", 4)] {
-        for at in positions(t, token) {
-            starts.push((at, len));
-        }
-    }
-    starts.sort();
-    for (at, len) in starts {
-        let mut k = at + len;
-        loop {
-            if matches_at(t, k, "os") {
-                let ws = run_len(t, k + 2, is_js_whitespace);
-                if ws > 0 {
-                    let start = k + 2 + ws;
-                    let digits = run_len(t, start, is_digit_or_underscore);
-                    if digits > 0 {
-                        return Some(t[start..start + digits].iter().collect());
+fn ios_version(t: &[u16]) -> Option<String> {
+    let mut at = 0;
+    while at < t.len() {
+        let device_len = if matches_at(t, at, "iphone") {
+            6
+        } else if matches_at(t, at, "ipad") || matches_at(t, at, "ipod") {
+            4
+        } else {
+            0
+        };
+        if device_len > 0 {
+            let mut k = at + device_len;
+            loop {
+                if matches_at(t, k, "os") {
+                    let ws = run_len(t, k + 2, is_js_whitespace);
+                    if ws > 0 {
+                        let start = k + 2 + ws;
+                        let digits = run_len(t, start, is_digit_or_underscore);
+                        if digits > 0 {
+                            return capture_after(&t[start..], "", is_digit_or_underscore);
+                        }
                     }
                 }
+                if k >= t.len() || is_js_line_terminator(t[k]) {
+                    break;
+                }
+                k += 1;
             }
-            if k >= t.len() || is_js_line_terminator(t[k]) {
-                break;
-            }
-            k += 1;
         }
+        at += 1;
     }
     return None;
 }
 
 /// `linux(?!.*android)`: a `linux` with no `android` after it on the same line.
-fn linux_without_android(t: &[char]) -> bool {
+fn linux_without_android(t: &[u16]) -> bool {
     return positions(t, "linux").into_iter().any(|at| {
         let mut k = at + 5;
         loop {
@@ -196,37 +200,42 @@ pub fn parse_user_agent_os_name(ua: &str) -> String {
 pub fn parse_user_agent_os_version(ua: &str) -> String {
     let t = chars_of(ua);
     // /android\s+([\d.]+)/i
-    if let Some(version) = capture_after_whitespace(&t, "android", is_digit_or_dot) {
+    let android_version = capture_after_whitespace(&t, "android", is_digit_or_dot);
+    if let Some(version) = android_version {
         return version;
     }
     // /(?:iphone|ipad|ipod).*?os\s+([\d_]+)/i
-    if let Some(version) = ios_version(&t) {
-        return version.replace('_', ".");
+    let parsed_ios_version = ios_version(&t);
+    if let Some(version) = parsed_ios_version {
+        return underscores_to_dots(&version);
     }
     // /windows nt\s+([\d.]+)/i
-    if let Some(version) = capture_after_whitespace(&t, "windows nt", is_digit_or_dot) {
+    let windows_version = capture_after_whitespace(&t, "windows nt", is_digit_or_dot);
+    if let Some(version) = windows_version {
         return version;
     }
     // /mac os x\s+([\d_.]+)/i
-    if let Some(version) = capture_after_whitespace(&t, "mac os x", is_digit_underscore_or_dot) {
-        return version.replace('_', ".");
+    let mac_version = capture_after_whitespace(&t, "mac os x", is_digit_underscore_or_dot);
+    if let Some(version) = mac_version {
+        return underscores_to_dots(&version);
     }
     // /cros\s+\S+\s+([\d.]+)/i
-    if let Some(version) = cros_version(&t) {
+    let chrome_os_version = cros_version(&t);
+    if let Some(version) = chrome_os_version {
         return version;
     }
     return String::new();
 }
 
 /// `tablet\s*pc`
-fn tablet_pc(t: &[char]) -> bool {
+fn tablet_pc(t: &[u16]) -> bool {
     return positions(t, "tablet")
         .into_iter()
         .any(|at| matches_at(t, at + 6 + run_len(t, at + 6, is_js_whitespace), "pc"));
 }
 
 /// `watch\s*os|watch[_ ]?kit`
-fn watch_then(t: &[char]) -> bool {
+fn watch_then(t: &[u16]) -> bool {
     return positions(t, "watch").into_iter().any(|at| {
         let after = at + 5;
         if matches_at(t, after + run_len(t, after, is_js_whitespace), "os") {
@@ -236,7 +245,7 @@ fn watch_then(t: &[char]) -> bool {
             return true;
         }
         return after < t.len()
-            && (t[after] == '_' || t[after] == ' ')
+            && (t[after] == 0x005F || t[after] == 0x0020)
             && matches_at(t, after + 1, "kit");
     });
 }

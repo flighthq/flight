@@ -1,4 +1,6 @@
-import type { PlatformName } from '@flighthq/types/contract';
+// Target-native parity tests for crates/flight-useragent/tests/user_agent_test.rs.
+
+import { describe, expect, it } from 'vitest';
 
 import {
   detectEndianness,
@@ -7,430 +9,297 @@ import {
   parseUserAgentEngineVersion,
   parseUserAgentKind,
   parseUserAgentName,
+  parseUserAgentOsVersion,
   parseUserAgentPointerWidth,
   parseUserAgentRuntime,
   parseUserAgentVersion,
-} from './userAgent.ts';
-import { parseUserAgentOsVersion } from './userAgentParse.ts';
+} from './contract.ts';
+import { PlatformEngine, PlatformKind, PlatformName } from './userAgentNative.ts';
+
+const LEGACY_EDGE: string =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763';
+
+const IOS_PREFIX: string =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ';
+
+function record(entries: Array<readonly [string, unknown]>): Record<string, unknown> {
+  return Object.fromEntries(entries);
+}
+
+function object(entries: Array<readonly [string, unknown]>): unknown {
+  return record(entries);
+}
+
+function text(value: string): unknown {
+  return String(value);
+}
 
 describe('detectEndianness', () => {
+  // Rust-only: matches the target byte order
   it('returns a known canonical value', () => {
-    expect(['little', 'big', 'unknown']).toContain(detectEndianness());
-  });
-
-  it('returns little on Node.js (x64 host)', () => {
-    // Node.js always runs on x64/arm64 hardware which is little-endian.
-    expect(detectEndianness()).toBe('little');
-  });
-});
-
-describe('legacy EdgeHTML', () => {
-  // Edge only became Chromium at Edg/79. The blink branch's `edg` alternative matches `Edge/18` too, so
-  // EdgeHTML was reported as blink — and a caller gating a Chromium workaround on that would apply it to
-  // a browser that never ran Chromium.
-  const LEGACY_EDGE =
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763';
-
-  it('is not reported as blink', () => {
-    expect(parseUserAgentEngine(LEGACY_EDGE)).toBe('unknown');
-  });
-
-  // The realistic UA carries a Chrome token, so before the fix this did not merely come back empty —
-  // it came back with CHROME's version, which is a wrong answer rather than a missing one.
-  it('does not report the embedded Chrome version as its engine version', () => {
-    const engine = parseUserAgentEngine(LEGACY_EDGE);
-    expect(parseUserAgentEngineVersion(LEGACY_EDGE, engine)).toBe('');
-  });
-
-  it('is still not blink without a Chrome token', () => {
-    expect(parseUserAgentEngine('Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 Edge/18.17763')).toBe('unknown');
-  });
-
-  // The discriminator is the trailing `e`, so the fix must not catch modern Edge or Edge on iOS.
-  it('leaves modern Chromium Edge reported as blink', () => {
-    const modern =
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
-    expect(parseUserAgentEngine(modern)).toBe('blink');
-    expect(parseUserAgentEngineVersion(modern, 'blink')).toBe('120.0.0.0');
-  });
-
-  it('leaves Edge on iOS reported as webkit', () => {
-    expect(parseUserAgentEngine('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) EdgiOS/120.0')).toBe('webkit');
+    const value = detectEndianness();
+    expect(value === 'little' || value === 'big' || value === 'unknown').toBe(true);
   });
 });
 
 describe('parseUserAgentArch', () => {
-  it('detects arm64 from aarch64 token', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (Linux; aarch64) AppleWebKit/537.36')).toBe('arm64');
+  it('detects each arch token in source order', () => {
+    expect(parseUserAgentArch('Mozilla/5.0 (Linux; aarch64) AppleWebKit/537.36', undefined)).toEqual('arm64');
+    expect(parseUserAgentArch('Mozilla/5.0 (iPhone; CPU arm64)', undefined)).toEqual('arm64');
+    expect(parseUserAgentArch('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', undefined)).toEqual(
+      'x64',
+    );
+    expect(parseUserAgentArch('Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36', undefined)).toEqual('x64');
+    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36', undefined)).toEqual('x64');
+    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux i686; rv:109.0)', undefined)).toEqual('x86');
+    expect(parseUserAgentArch('Mozilla/5.0 (Linux; armv7l)', undefined)).toEqual('arm');
+    expect(parseUserAgentArch('Mozilla/5.0 (Linux; riscv64)', undefined)).toEqual('riscv64');
+    expect(parseUserAgentArch('Mozilla/5.0 (Linux; mips64)', undefined)).toEqual('mips64');
+    expect(parseUserAgentArch('Mozilla/5.0 (Linux; mips)', undefined)).toEqual('mips');
   });
-
-  it('detects arm64 from arm64 token', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (iPhone; CPU arm64)')).toBe('arm64');
+  it('prefers the ua ch platform hint over the ua string', () => {
+    expect(parseUserAgentArch('', 'arm')).toEqual('arm64');
+    expect(parseUserAgentArch('', 'Windows')).toEqual('x64');
+    expect(parseUserAgentArch('', 'macOS')).toEqual('x64');
+    expect(parseUserAgentArch('', 'Linux')).toEqual('x64');
+    expect(parseUserAgentArch('', 'Chrome OS')).toEqual('x64');
   });
-
-  it('detects x64 from Win64 token', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')).toBe('x64');
+  it('falls back to the ua string when the platform hint is inconclusive', () => {
+    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux x86_64)', 'SomeCustomPlatform')).toEqual('x64');
   });
-
-  it('detects x64 from WOW64 token', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36')).toBe('x64');
+  it('treats an empty hint as absent as ts truthiness does', () => {
+    expect(parseUserAgentArch('Mozilla/5.0 (Linux; mips)', '')).toEqual('mips');
   });
-
-  it('detects x64 from x86_64 token', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36')).toBe('x64');
-  });
-
-  it('detects x86 from i686 token', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux i686; rv:109.0)')).toBe('x86');
-  });
-
-  it('detects arm before arm64 does not fire on plain arm token', () => {
-    // A UA with only 'arm' (not 'arm64'/'aarch64') should yield 'arm'.
-    expect(parseUserAgentArch('Mozilla/5.0 (Linux; armv7l)')).toBe('arm');
-  });
-
-  it('detects riscv64, mips64, and mips tokens', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (Linux; riscv64)')).toBe('riscv64');
-    expect(parseUserAgentArch('Mozilla/5.0 (Linux; mips64)')).toBe('mips64');
-    expect(parseUserAgentArch('Mozilla/5.0 (Linux; mips)')).toBe('mips');
-  });
-
-  it('prefers the UA-CH platform hint over the UA string', () => {
-    expect(parseUserAgentArch('', 'arm')).toBe('arm64');
-    expect(parseUserAgentArch('', 'Windows')).toBe('x64');
-    expect(parseUserAgentArch('', 'macOS')).toBe('x64');
-    expect(parseUserAgentArch('', 'Linux')).toBe('x64');
-    expect(parseUserAgentArch('', 'Chrome OS')).toBe('x64');
-  });
-
-  it('falls back to the UA string when the platform hint is inconclusive', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux x86_64)', 'SomeCustomPlatform')).toBe('x64');
-  });
-
   it('returns empty string when arch is undetectable', () => {
-    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux) AppleWebKit/537.36')).toBe('');
-    expect(parseUserAgentArch('SomeCustomBrowser/1.0')).toBe('');
+    expect(parseUserAgentArch('Mozilla/5.0 (X11; Linux) AppleWebKit/537.36', undefined)).toEqual('');
+    expect(parseUserAgentArch('SomeCustomBrowser/1.0', undefined)).toEqual('');
   });
 });
 
 describe('parseUserAgentEngine', () => {
-  it('returns gecko for Firefox', () => {
+  it('returns each engine', () => {
     expect(
       parseUserAgentEngine('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0'),
-    ).toBe('gecko');
-  });
-
-  it('returns blink for Chrome', () => {
+    ).toEqual(PlatformEngine.Gecko);
     expect(
       parseUserAgentEngine(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       ),
-    ).toBe('blink');
-  });
-
-  it('returns blink for Edge (Edg/)', () => {
+    ).toEqual(PlatformEngine.Blink);
     expect(
       parseUserAgentEngine(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.133',
       ),
-    ).toBe('blink');
-  });
-
-  it('returns webkit for Safari', () => {
+    ).toEqual(PlatformEngine.Blink);
     expect(
       parseUserAgentEngine(
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
       ),
-    ).toBe('webkit');
+    ).toEqual(PlatformEngine.Webkit);
   });
-
-  it('returns unknown for unrecognized UA', () => {
-    expect(parseUserAgentEngine('')).toBe('unknown');
-    expect(parseUserAgentEngine('CustomBot/1.0')).toBe('unknown');
+  it('returns unknown for unrecognized ua', () => {
+    expect(parseUserAgentEngine('')).toEqual(PlatformEngine.Unknown);
+    expect(parseUserAgentEngine('CustomBot/1.0')).toEqual(PlatformEngine.Unknown);
   });
-});
-
-describe('parseUserAgentEngine for Opera on iOS', () => {
-  const IOS_PREFIX = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ';
-
-  it.each([
-    ['OPiOS', `${IOS_PREFIX}(KHTML, like Gecko) OPiOS/9.2.0.11256 Mobile/15E148 Safari/9537.53`],
-    ['OPT', `${IOS_PREFIX}(KHTML, like Gecko) Version/17.0 OPT/3.6.1 Mobile/15E148 Safari/604.1`],
-  ])('keeps the %s product token on WebKit', (_token, ua) => {
-    const engine = parseUserAgentEngine(ua);
-    expect(engine).toBe('webkit');
-    expect(parseUserAgentEngineVersion(ua, engine)).not.toBe('');
+  it('legacy edgehtml is not reported as blink', () => {
+    expect(parseUserAgentEngine(LEGACY_EDGE)).toEqual(PlatformEngine.Unknown);
+    expect(parseUserAgentEngine('Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 Edge/18.17763')).toEqual(
+      PlatformEngine.Unknown,
+    );
+    const modern =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
+    expect(parseUserAgentEngine(modern)).toEqual(PlatformEngine.Blink);
+    expect(parseUserAgentEngine('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) EdgiOS/120.0')).toEqual(
+      PlatformEngine.Webkit,
+    );
   });
-});
-
-describe('parseUserAgentEngine on iOS', () => {
-  // Every browser on iOS/iPadOS runs on the system WebKit, whatever product token it advertises.
-  // Deciding the engine from the product token got EdgiOS wrong — it contains `edg`, so it was
-  // reported as blink, and then no `Edg/` token followed so the version came back empty.
-  const IOS_PREFIX = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ';
-
-  it('reports webkit for Edge on iOS, which contains the blink-family token "edg"', () => {
-    const ua = `${IOS_PREFIX}EdgiOS/120.0.0.0 Mobile/15E148 Safari/605.1.15`;
-    expect(parseUserAgentEngine(ua)).toBe('webkit');
-    expect(parseUserAgentEngineVersion(ua, 'webkit')).not.toBe('');
+  it('keeps opera on ios product tokens on webkit', () => {
+    for (const ua of [
+      `${IOS_PREFIX}OPiOS/9.2.0.11256 Mobile/15E148 Safari/9537.53`,
+      `${IOS_PREFIX}Version/17.0 OPT/3.6.1 Mobile/15E148 Safari/604.1`,
+    ]) {
+      const engine = parseUserAgentEngine(ua);
+      expect(engine).toEqual(PlatformEngine.Webkit);
+      expect(parseUserAgentEngineVersion(ua, engine)).not.toEqual('');
+    }
   });
-
-  it('reports webkit for Chrome and Firefox on iOS', () => {
-    expect(parseUserAgentEngine(`${IOS_PREFIX}CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1`)).toBe('webkit');
-    expect(parseUserAgentEngine(`${IOS_PREFIX}FxiOS/121.0 Mobile/15E148 Safari/605.1.15`)).toBe('webkit');
-  });
-
-  it('reports webkit for an iPad UA', () => {
-    const ua =
+  it('reports webkit for every browser on ios', () => {
+    const edge = `${IOS_PREFIX}EdgiOS/120.0.0.0 Mobile/15E148 Safari/605.1.15`;
+    expect(parseUserAgentEngine(edge)).toEqual(PlatformEngine.Webkit);
+    expect(parseUserAgentEngineVersion(edge, PlatformEngine.Webkit)).not.toEqual('');
+    expect(parseUserAgentEngine(`${IOS_PREFIX}CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1`)).toEqual(
+      PlatformEngine.Webkit,
+    );
+    expect(parseUserAgentEngine(`${IOS_PREFIX}FxiOS/121.0 Mobile/15E148 Safari/605.1.15`)).toEqual(
+      PlatformEngine.Webkit,
+    );
+    const ipad =
       'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1';
-    expect(parseUserAgentEngine(ua)).toBe('webkit');
+    expect(parseUserAgentEngine(ipad)).toEqual(PlatformEngine.Webkit);
   });
-
-  it('still reports blink for desktop Chrome and Edge, which are not on iOS', () => {
+  it('still reports blink and gecko off ios', () => {
     const mac =
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
     const win =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
-    expect(parseUserAgentEngine(mac)).toBe('blink');
-    expect(parseUserAgentEngine(win)).toBe('blink');
-    expect(parseUserAgentEngineVersion(win, 'blink')).toBe('120.0.0.0');
-  });
-
-  it('still reports gecko for desktop Firefox', () => {
-    const ua = 'Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0';
-    expect(parseUserAgentEngine(ua)).toBe('gecko');
+    expect(parseUserAgentEngine(mac)).toEqual(PlatformEngine.Blink);
+    expect(parseUserAgentEngine(win)).toEqual(PlatformEngine.Blink);
+    expect(parseUserAgentEngine('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0')).toEqual(
+      PlatformEngine.Gecko,
+    );
   });
 });
 
 describe('parseUserAgentEngineVersion', () => {
-  it('extracts Firefox version', () => {
+  it('extracts each engine version', () => {
     expect(
       parseUserAgentEngineVersion(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
-        'gecko',
+        PlatformEngine.Gecko,
       ),
-    ).toBe('120.0');
-  });
-
-  it('extracts Chrome version', () => {
+    ).toEqual('120.0');
     expect(
       parseUserAgentEngineVersion(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.109 Safari/537.36',
-        'blink',
+        PlatformEngine.Blink,
       ),
-    ).toBe('120.0.6099.109');
-  });
-
-  it('extracts Edge version (Edg/ token takes priority over Chrome/)', () => {
+    ).toEqual('120.0.6099.109');
     expect(
       parseUserAgentEngineVersion(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.133',
-        'blink',
+        PlatformEngine.Blink,
       ),
-    ).toBe('120.0.2210.133');
-  });
-
-  it('extracts Safari Version/ token', () => {
+    ).toEqual('120.0.2210.133');
     expect(
       parseUserAgentEngineVersion(
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
-        'webkit',
+        PlatformEngine.Webkit,
       ),
-    ).toBe('16.0');
+    ).toEqual('16.0');
   });
-
-  it('returns empty string for unknown engine', () => {
-    expect(parseUserAgentEngineVersion('any UA string', 'unknown')).toBe('');
+  it('returns empty for unknown engine or absent version', () => {
+    expect(parseUserAgentEngineVersion('any UA string', PlatformEngine.Unknown)).toEqual('');
+    expect(parseUserAgentEngineVersion('', PlatformEngine.Gecko)).toEqual('');
   });
-
-  it('returns empty string when version is absent', () => {
-    expect(parseUserAgentEngineVersion('', 'gecko')).toBe('');
+  it('does not report the embedded chrome version for legacy edge', () => {
+    const engine = parseUserAgentEngine(LEGACY_EDGE);
+    expect(parseUserAgentEngineVersion(LEGACY_EDGE, engine)).toEqual('');
+  });
+  it('skips an earlier token without digits as the regex does', () => {
+    expect(parseUserAgentEngineVersion('Chrome/x Chrome/99.1', PlatformEngine.Blink)).toEqual('99.1');
+    expect(parseUserAgentEngineVersion('AppleWebKit/605.1', PlatformEngine.Webkit)).toEqual('605.1');
   });
 });
 
 describe('parseUserAgentKind', () => {
-  it('returns mobile for ios', () => {
-    expect(parseUserAgentKind('ios')).toBe('mobile');
-  });
-
-  it('returns mobile for android', () => {
-    expect(parseUserAgentKind('android')).toBe('mobile');
-  });
-
-  it('returns web for desktop names', () => {
-    expect(parseUserAgentKind('windows')).toBe('web');
-    expect(parseUserAgentKind('macos')).toBe('web');
-    expect(parseUserAgentKind('linux')).toBe('web');
-  });
-
-  it('returns web for unknown', () => {
-    expect(parseUserAgentKind('unknown')).toBe('web');
+  it('returns mobile for ios and android and web otherwise', () => {
+    expect(parseUserAgentKind(PlatformName.Ios)).toEqual(PlatformKind.Mobile);
+    expect(parseUserAgentKind(PlatformName.Android)).toEqual(PlatformKind.Mobile);
+    for (const name of [PlatformName.Windows, PlatformName.MacOs, PlatformName.Linux, PlatformName.Unknown]) {
+      expect(parseUserAgentKind(name)).toEqual(PlatformKind.Web);
+    }
   });
 });
 
 describe('parseUserAgentName', () => {
-  it('detects android', () => {
-    expect(parseUserAgentName('Mozilla/5.0 (Linux; Android 14; Pixel 8)')).toBe('android');
+  it('detects each name', () => {
+    expect(parseUserAgentName('Mozilla/5.0 (Linux; Android 14; Pixel 8)')).toEqual(PlatformName.Android);
+    expect(parseUserAgentName('Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)')).toEqual(PlatformName.Ios);
+    expect(parseUserAgentName('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)')).toEqual(PlatformName.Ios);
+    expect(parseUserAgentName('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toEqual(PlatformName.Windows);
+    expect(parseUserAgentName('Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0)')).toEqual(PlatformName.MacOs);
+    expect(parseUserAgentName('Mozilla/5.0 (X11; Linux x86_64)')).toEqual(PlatformName.Linux);
   });
-
-  it('detects ios from iPhone', () => {
-    expect(parseUserAgentName('Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)')).toBe('ios');
-  });
-
-  it('detects ios from iPad', () => {
-    expect(parseUserAgentName('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)')).toBe('ios');
-  });
-
-  it('detects windows', () => {
-    expect(parseUserAgentName('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toBe('windows');
-  });
-
-  it('detects macos', () => {
-    expect(parseUserAgentName('Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0)')).toBe('macos');
-  });
-
-  it('detects linux', () => {
-    expect(parseUserAgentName('Mozilla/5.0 (X11; Linux x86_64)')).toBe('linux');
-  });
-
-  it('returns web when no OS is detected', () => {
-    expect(parseUserAgentName('')).toBe('web');
-    expect(parseUserAgentName('CustomBot/1.0')).toBe('web');
+  it('returns web when no os is detected', () => {
+    expect(parseUserAgentName('')).toEqual(PlatformName.Web);
+    expect(parseUserAgentName('CustomBot/1.0')).toEqual(PlatformName.Web);
   });
 });
 
 describe('parseUserAgentPointerWidth', () => {
-  it('returns 64 for x64', () => {
-    expect(parseUserAgentPointerWidth('x64')).toBe(64);
-  });
-
-  it('returns 64 for arm64', () => {
-    expect(parseUserAgentPointerWidth('arm64')).toBe(64);
-  });
-
-  it('returns 32 for x86', () => {
-    expect(parseUserAgentPointerWidth('x86')).toBe(32);
-  });
-
-  it('returns 32 for arm', () => {
-    expect(parseUserAgentPointerWidth('arm')).toBe(32);
-  });
-
-  it('returns -1 for wasm', () => {
-    expect(parseUserAgentPointerWidth('wasm')).toBe(-1);
-  });
-
-  it('returns -1 for empty string', () => {
-    expect(parseUserAgentPointerWidth('')).toBe(-1);
+  it('maps arch tokens to widths', () => {
+    expect(parseUserAgentPointerWidth('x64')).toEqual(64);
+    expect(parseUserAgentPointerWidth('arm64')).toEqual(64);
+    expect(parseUserAgentPointerWidth('x86')).toEqual(32);
+    expect(parseUserAgentPointerWidth('arm')).toEqual(32);
+    expect(parseUserAgentPointerWidth('wasm')).toEqual(-1);
+    expect(parseUserAgentPointerWidth('')).toEqual(-1);
   });
 });
 
 describe('parseUserAgentRuntime', () => {
-  it('returns unknown when window is null', () => {
-    expect(parseUserAgentRuntime(null)).toBe('unknown');
+  it('returns unknown when window is absent', () => {
+    expect(parseUserAgentRuntime(undefined)).toEqual('unknown');
   });
-
-  it('returns unknown when window is undefined', () => {
-    expect(parseUserAgentRuntime(undefined)).toBe('unknown');
-  });
-
   it('returns web when no host shell globals are present', () => {
-    expect(parseUserAgentRuntime({})).toBe('web');
+    expect(parseUserAgentRuntime(record([]))).toEqual('web');
   });
-
-  it('returns electron when process.versions.electron is present', () => {
-    expect(parseUserAgentRuntime({ process: { versions: { electron: '28.0.0' } } })).toBe('electron');
+  it('detects each host shell', () => {
+    const electron = record([['process', object([['versions', object([['electron', text('28.0.0')]])]])]]);
+    expect(parseUserAgentRuntime(electron)).toEqual('electron');
+    expect(parseUserAgentRuntime(record([['__TAURI__', object([])]]))).toEqual('tauri');
+    expect(parseUserAgentRuntime(record([['Capacitor', object([])]]))).toEqual('capacitor');
   });
-
-  it('returns tauri when __TAURI__ is present', () => {
-    expect(parseUserAgentRuntime({ __TAURI__: {} })).toBe('tauri');
-  });
-
-  it('returns capacitor when Capacitor is present', () => {
-    expect(parseUserAgentRuntime({ Capacitor: {} })).toBe('capacitor');
-  });
-
   it('prioritizes electron over tauri when both globals are present', () => {
-    expect(parseUserAgentRuntime({ __TAURI__: {}, process: { versions: { electron: '28.0.0' } } })).toBe('electron');
+    const both = record([
+      ['__TAURI__', object([])],
+      ['process', object([['versions', object([['electron', text('28.0.0')]])]])],
+    ]);
+    expect(parseUserAgentRuntime(both)).toEqual('electron');
+  });
+  it('follows js truthiness for probed values', () => {
+    expect(parseUserAgentRuntime(record([['__TAURI__', undefined]]))).toEqual('web');
+    expect(parseUserAgentRuntime(record([['Capacitor', text('')]]))).toEqual('web');
+    expect(parseUserAgentRuntime(record([['Capacitor', false]]))).toEqual('web');
+    expect(parseUserAgentRuntime(record([['Capacitor', 0.0]]))).toEqual('web');
+    expect(parseUserAgentRuntime(record([['Capacitor', 1]]))).toEqual('capacitor');
+    const stringVersions = record([['process', object([['versions', text('x')]])]]);
+    expect(parseUserAgentRuntime(stringVersions)).toEqual('web');
+    const emptyElectron = record([['process', object([['versions', object([['electron', text('')]])]])]]);
+    expect(parseUserAgentRuntime(emptyElectron)).toEqual('web');
   });
 });
 
 describe('parseUserAgentVersion', () => {
-  it('parses Windows NT version', () => {
-    expect(parseUserAgentVersion('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'windows')).toBe('10.0');
+  it('parses each platform version', () => {
+    expect(parseUserAgentVersion('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', PlatformName.Windows)).toEqual('10.0');
+    expect(parseUserAgentVersion('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', PlatformName.MacOs)).toEqual(
+      '10.15.7',
+    );
+    expect(parseUserAgentVersion('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15.7)', PlatformName.MacOs)).toEqual(
+      '10.15.7',
+    );
+    expect(parseUserAgentVersion('Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)', PlatformName.Ios)).toEqual(
+      '17.4.1',
+    );
+    expect(parseUserAgentVersion('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)', PlatformName.Ios)).toEqual('17.0');
+    expect(parseUserAgentVersion('Mozilla/5.0 (Linux; Android 14; Pixel 8)', PlatformName.Android)).toEqual('14');
   });
-
-  it('parses macOS version with underscore separators', () => {
-    expect(parseUserAgentVersion('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 'macos')).toBe('10.15.7');
+  it('returns empty for linux unknown and absent versions', () => {
+    expect(parseUserAgentVersion('Mozilla/5.0 (X11; Linux x86_64)', PlatformName.Linux)).toEqual('');
+    expect(parseUserAgentVersion('any UA', PlatformName.Unknown)).toEqual('');
+    expect(parseUserAgentVersion('', PlatformName.Windows)).toEqual('');
   });
-
-  it('parses macOS version with dot separators', () => {
-    expect(parseUserAgentVersion('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15.7)', 'macos')).toBe('10.15.7');
-  });
-
-  it('parses iOS version', () => {
-    expect(parseUserAgentVersion('Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)', 'ios')).toBe('17.4.1');
-  });
-
-  it('parses iOS version without iPhone token', () => {
-    expect(parseUserAgentVersion('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)', 'ios')).toBe('17.0');
-  });
-
-  it('parses Android version', () => {
-    expect(parseUserAgentVersion('Mozilla/5.0 (Linux; Android 14; Pixel 8)', 'android')).toBe('14');
-  });
-
-  it('returns empty string for linux (no kernel in UA)', () => {
-    expect(parseUserAgentVersion('Mozilla/5.0 (X11; Linux x86_64)', 'linux')).toBe('');
-  });
-
-  it('returns empty string for unknown name', () => {
-    expect(parseUserAgentVersion('any UA', 'unknown')).toBe('');
-  });
-
-  it('returns empty string when version is absent', () => {
-    expect(parseUserAgentVersion('', 'windows')).toBe('');
-  });
-});
-
-describe('parseUserAgentVersion shares one extractor with parseUserAgentOsVersion', () => {
-  // The two families each carried their own copy of the same four patterns, and the copies had
-  // drifted: this one required exactly one space where the other accepts any whitespace, so it
-  // returned '' for UAs the other parsed correctly. These pin the agreement, not just the fix.
-  const CASES: readonly (readonly [string, PlatformName, string])[] = [
-    ['Mozilla/5.0 (Linux; Android  14; SM-X710) AppleWebKit/537.36', 'android', '14'],
-    ['Mozilla/5.0 (Windows NT  10.0; Win64; x64)', 'windows', '10.0'],
-    ['Mozilla/5.0 (Macintosh; Intel Mac OS X  10_15_7)', 'macos', '10.15.7'],
-  ];
-
-  it('parses the whitespace variants that used to return empty', () => {
-    for (const [ua, name, expected] of CASES) {
-      expect(parseUserAgentVersion(ua, name)).toBe(expected);
+  it('shares one extractor with parse user agent os version', () => {
+    const cases: Array<readonly [string, PlatformName, string]> = [
+      ['Mozilla/5.0 (Linux; Android  14; SM-X710) AppleWebKit/537.36', PlatformName.Android, '14'],
+      ['Mozilla/5.0 (Windows NT  10.0; Win64; x64)', PlatformName.Windows, '10.0'],
+      ['Mozilla/5.0 (Macintosh; Intel Mac OS X  10_15_7)', PlatformName.MacOs, '10.15.7'],
+    ];
+    for (const [ua, name, expected] of cases) {
+      expect(parseUserAgentVersion(ua, name)).toEqual(expected);
+      expect(parseUserAgentVersion(ua, name)).toEqual(parseUserAgentOsVersion(ua));
     }
   });
-
-  it('agrees with parseUserAgentOsVersion on every case', () => {
-    for (const [ua, name] of CASES) {
-      expect(parseUserAgentVersion(ua, name)).toBe(parseUserAgentOsVersion(ua));
-    }
-  });
-
-  it('returns empty when the requested platform is not the one the UA describes', () => {
+  it('returns empty when the requested platform is not the one the ua describes', () => {
     const win = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
-    expect(parseUserAgentVersion(win, 'ios')).toBe('');
-    expect(parseUserAgentVersion(win, 'macos')).toBe('');
-    expect(parseUserAgentVersion(win, 'windows')).toBe('10.0');
-  });
-
-  it('does not read a macOS version off an iPad UA that says "like Mac OS X"', () => {
+    expect(parseUserAgentVersion(win, PlatformName.Ios)).toEqual('');
+    expect(parseUserAgentVersion(win, PlatformName.MacOs)).toEqual('');
+    expect(parseUserAgentVersion(win, PlatformName.Windows)).toEqual('10.0');
     const ipad = 'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15';
-    expect(parseUserAgentVersion(ipad, 'macos')).toBe('');
-    expect(parseUserAgentVersion(ipad, 'ios')).toBe('17.4');
-  });
-
-  it('still returns empty for linux and the web fallback', () => {
-    const linux = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36';
-    expect(parseUserAgentVersion(linux, 'linux')).toBe('');
-    expect(parseUserAgentVersion('some-native-host/1.0', 'web')).toBe('');
+    expect(parseUserAgentVersion(ipad, PlatformName.MacOs)).toEqual('');
+    expect(parseUserAgentVersion(ipad, PlatformName.Ios)).toEqual('17.4');
+    expect(parseUserAgentVersion('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36', PlatformName.Linux)).toEqual('');
+    expect(parseUserAgentVersion('some-native-host/1.0', PlatformName.Web)).toEqual('');
   });
 });

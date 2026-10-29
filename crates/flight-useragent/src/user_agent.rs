@@ -1,12 +1,11 @@
 //! Browser user-agent parsing to platform identity tokens (TS `userAgent.ts`). Pure functions over
 //! the UA string and optional hints; no DOM, navigator or OS queries.
 
-use flight_entity::{Record, Unknown, get_record_value};
-use flight_platform::{
-    PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
-};
-
 use crate::js_pattern::*;
+use crate::user_agent_native::{
+    PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime, Record,
+    Unknown, detect_endianness_native, parse_user_agent_runtime_native,
+};
 use crate::user_agent_parse::parse_user_agent_os_version;
 
 /// Probes host CPU byte order with a local two-byte write-then-read (the source's
@@ -14,66 +13,18 @@ use crate::user_agent_parse::parse_user_agent_os_version;
 /// when the low byte does. The source's `Unknown` arm is for runtimes without ArrayBuffer, which
 /// cannot occur here.
 pub fn detect_endianness() -> PlatformEndianness {
-    let bytes = 0x0102_u16.to_ne_bytes();
-    if bytes[0] == 0x01 {
-        return PlatformEndianness::Big;
-    }
-    if bytes[0] == 0x02 {
-        return PlatformEndianness::Little;
-    }
-    return PlatformEndianness::Unknown;
-}
-
-/// JS `value?.[key]` for an `unknown` value: a property only of an object (a `Record<Unknown>`);
-/// `undefined` (None) for absent, null and primitives.
-fn get_property<'a>(value: Option<&'a Unknown>, key: &str) -> Option<&'a Unknown> {
-    let record = value?.as_ref()?.downcast_ref::<Record<Unknown>>()?;
-    return get_record_value(record, key);
+    return detect_endianness_native();
 }
 
 /// `i[3-6]86`
-fn i_x86(t: &[char]) -> bool {
-    return positions(t, "i").into_iter().any(|at| {
-        at + 3 < t.len() && ('3'..='6').contains(&t[at + 1]) && matches_at(t, at + 2, "86")
-    });
-}
-
-// flight-lint: allow(f64) TS `number` values in an `unknown` slot arrive as f64; NaN and 0 are falsy as in JS
-/// JS truthiness of an `unknown` property read: absent (undefined) and `None` (null) are falsy;
-/// `false`, numeric zero or NaN, and the empty string are falsy; every other value (objects
-/// included) is truthy.
-fn is_truthy(value: Option<&Unknown>) -> bool {
-    let Some(Some(value)) = value else {
-        return false;
-    };
-    if let Some(b) = value.downcast_ref::<bool>() {
-        return *b;
+fn i_x86(t: &[u16]) -> bool {
+    for at in positions(t, "i") {
+        if at + 3 < t.len() && (0x0033..=0x0036).contains(&t[at + 1]) && matches_at(t, at + 2, "86")
+        {
+            return true;
+        }
     }
-    if let Some(s) = value.downcast_ref::<String>() {
-        return !s.is_empty();
-    }
-    if let Some(s) = value.downcast_ref::<&'static str>() {
-        return !s.is_empty();
-    }
-    if let Some(n) = value.downcast_ref::<f64>() {
-        return *n != 0.0 && !n.is_nan();
-    }
-    if let Some(n) = value.downcast_ref::<f32>() {
-        return *n != 0.0 && !n.is_nan();
-    }
-    if let Some(n) = value.downcast_ref::<i32>() {
-        return *n != 0;
-    }
-    if let Some(n) = value.downcast_ref::<i64>() {
-        return *n != 0;
-    }
-    if let Some(n) = value.downcast_ref::<u32>() {
-        return *n != 0;
-    }
-    if let Some(n) = value.downcast_ref::<u64>() {
-        return *n != 0;
-    }
-    return true;
+    return false;
 }
 
 /// Parses the canonical CPU architecture token from a UA string: "x64", "arm64", "x86", "arm",
@@ -82,18 +33,20 @@ fn is_truthy(value: Option<&Unknown>) -> bool {
 /// does; `None` and `Some("")` both skip it, as an empty string is falsy in TS. arm64/aarch64 is
 /// tested before arm.
 pub fn parse_user_agent_arch(ua: &str, uad_platform: Option<&str>) -> String {
-    if let Some(platform) = uad_platform.filter(|p| !p.is_empty()) {
-        let p = platform.to_lowercase();
-        if p.contains("arm") {
-            return "arm64".to_string();
-        }
-        if p.contains("x86")
-            || p.contains("windows")
-            || p.contains("linux")
-            || p.contains("mac")
-            || p.contains("chrome")
-        {
-            return "x64".to_string();
+    if let Some(platform) = uad_platform {
+        if !platform.is_empty() {
+            let p = chars_of(platform);
+            if contains(&p, "arm") {
+                return "arm64".to_string();
+            }
+            if contains(&p, "x86")
+                || contains(&p, "windows")
+                || contains(&p, "linux")
+                || contains(&p, "mac")
+                || contains(&p, "chrome")
+            {
+                return "x64".to_string();
+            }
         }
     }
     let t = chars_of(ua);
@@ -130,7 +83,7 @@ pub fn parse_user_agent_engine(ua: &str) -> PlatformEngine {
     }
     if positions(&t, "edge/")
         .into_iter()
-        .any(|at| at + 5 < t.len() && t[at + 5].is_ascii_digit())
+        .any(|at| at + 5 < t.len() && is_ascii_digit(t[at + 5]))
     {
         return PlatformEngine::Unknown;
     }
@@ -148,16 +101,39 @@ pub fn parse_user_agent_engine(ua: &str) -> PlatformEngine {
 /// Never parsed for semantics.
 pub fn parse_user_agent_engine_version(ua: &str, engine: PlatformEngine) -> String {
     let t = chars_of(ua);
-    let version = match engine {
-        PlatformEngine::Gecko => capture_after(&t, "firefox/", is_digit_or_dot),
-        PlatformEngine::Blink => capture_after(&t, "edg/", is_digit_or_dot)
-            .or_else(|| capture_after(&t, "opr/", is_digit_or_dot))
-            .or_else(|| capture_after(&t, "chrome/", is_digit_or_dot)),
-        PlatformEngine::Webkit => capture_after(&t, "version/", is_digit_or_dot)
-            .or_else(|| capture_after(&t, "applewebkit/", is_digit_or_dot)),
-        PlatformEngine::Unknown => None,
-    };
-    return version.unwrap_or_default();
+    if engine == PlatformEngine::Gecko {
+        let firefox = capture_after(&t, "firefox/", is_digit_or_dot);
+        if let Some(value) = firefox {
+            return value;
+        }
+        return String::new();
+    }
+    if engine == PlatformEngine::Blink {
+        let edge = capture_after(&t, "edg/", is_digit_or_dot);
+        if let Some(value) = edge {
+            return value;
+        }
+        let opera = capture_after(&t, "opr/", is_digit_or_dot);
+        if let Some(value) = opera {
+            return value;
+        }
+        let chrome = capture_after(&t, "chrome/", is_digit_or_dot);
+        if let Some(value) = chrome {
+            return value;
+        }
+        return String::new();
+    }
+    if engine == PlatformEngine::Webkit {
+        let version = capture_after(&t, "version/", is_digit_or_dot);
+        if let Some(value) = version {
+            return value;
+        }
+        let webkit = capture_after(&t, "applewebkit/", is_digit_or_dot);
+        if let Some(value) = webkit {
+            return value;
+        }
+    }
+    return String::new();
 }
 
 /// The platform kind derived from a name: iOS and Android are `Mobile`; everything else is `Web`.
@@ -208,20 +184,7 @@ pub fn parse_user_agent_pointer_width(arch: &str) -> i32 {
 /// `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see `is_truthy`):
 /// a nested object is a `Record<Unknown>` stored in the `Unknown`.
 pub fn parse_user_agent_runtime(win: Option<&Record<Unknown>>) -> PlatformRuntime {
-    let Some(win) = win else {
-        return PlatformRuntime::Unknown;
-    };
-    let versions = get_property(get_record_value(win, "process"), "versions");
-    if is_truthy(versions) && is_truthy(get_property(versions, "electron")) {
-        return PlatformRuntime::Electron;
-    }
-    if is_truthy(get_record_value(win, "__TAURI__")) {
-        return PlatformRuntime::Tauri;
-    }
-    if is_truthy(get_record_value(win, "Capacitor")) {
-        return PlatformRuntime::Capacitor;
-    }
-    return PlatformRuntime::Web;
+    return parse_user_agent_runtime_native(win);
 }
 
 /// The raw dotted OS version for `name`: "" for `Linux` (no kernel version in a browser UA), for

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_entity::{Record, Unknown, set_record_value};
@@ -33,12 +35,14 @@ mod detect_endianness {
     #[test]
     fn returns_a_known_canonical_value() {
         let value = detect_endianness();
-        assert!(matches!(
-            value,
-            PlatformEndianness::Little | PlatformEndianness::Big | PlatformEndianness::Unknown
-        ));
+        assert!(
+            value == PlatformEndianness::Little
+                || value == PlatformEndianness::Big
+                || value == PlatformEndianness::Unknown
+        );
     }
 
+    /// flight-compiler: rust-only — JavaScript has no target_endian cfg value.
     #[test]
     fn matches_the_target_byte_order() {
         let expected = if cfg!(target_endian = "little") {

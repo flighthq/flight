@@ -1,103 +1,256 @@
-import type { DeviceFormFactor } from '@flighthq/types/contract';
+// Generated from crates/flight-useragent/src/user_agent_parse.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { DeviceFormFactor } from './deviceFormFactor.ts';
 import {
-  DeviceFormFactorCar,
-  DeviceFormFactorDesktop,
-  DeviceFormFactorPhone,
-  DeviceFormFactorTablet,
-  DeviceFormFactorTV,
-  DeviceFormFactorUnknown,
-  DeviceFormFactorWatch,
-} from '@flighthq/types/contract';
+  DEVICE_FORM_FACTOR_CAR,
+  DEVICE_FORM_FACTOR_DESKTOP,
+  DEVICE_FORM_FACTOR_PHONE,
+  DEVICE_FORM_FACTOR_TABLET,
+  DEVICE_FORM_FACTOR_TV,
+  DEVICE_FORM_FACTOR_UNKNOWN,
+  DEVICE_FORM_FACTOR_WATCH,
+} from './deviceFormFactor.ts';
+import {
+  captureAfter,
+  captureAfterWhitespace,
+  charsOf,
+  contains,
+  containsAny,
+  containsThenOnLine,
+  isAsciiDigit,
+  isDigitOrDot,
+  isDigitOrUnderscore,
+  isDigitUnderscoreOrDot,
+  isJsLineTerminator,
+  isJsWhitespace,
+  isNotJsWhitespace,
+  matchesAt,
+  positions,
+  runLen,
+  underscoresToDots,
+} from './jsPattern.ts';
 
-// UA-string parsers for device identity fields.
-// All functions are pure and side-effect-free — no DOM access, no globals, no state.
-// Used by the @flighthq/device Web provider; importable independently for testing or custom providers.
-//
-// Note: UA string parsing is inherently best-effort. Browsers freeze and spoof UAs regularly.
-// These parsers target the most common real-world patterns; they are not exhaustive.
+/**
+ * `bb\d+`
+ */
+function bbDigits(t: Readonly<number[]>): boolean {
+  return positions(t, 'bb').some((at) => runLen(t, at + 2, isAsciiDigit) > 0);
+}
 
-// Parses a device form factor from a user-agent string and optional touch-point hint.
-// Returns a DeviceFormFactor constant. Never returns '' — falls back to DeviceFormFactorUnknown.
-// maxTouchPoints: pass navigator.maxTouchPoints when available; -1 when unavailable.
+/**
+ * `cros\s+\S+\s+([\d.]+)`: the greedy runs are disjoint, so no backtracking alternative exists.
+ */
+function crosVersion(t: Readonly<number[]>): string | undefined {
+  for (const at of positions(t, 'cros')) {
+    let k = at + 4;
+    let ws = runLen(t, k, isJsWhitespace);
+    if (ws === 0) {
+      continue;
+    }
+    k += ws;
+    const token = runLen(t, k, isNotJsWhitespace);
+    if (token === 0) {
+      continue;
+    }
+    k += token;
+    ws = runLen(t, k, isJsWhitespace);
+    if (ws === 0) {
+      continue;
+    }
+    k += ws;
+    const len = runLen(t, k, isDigitOrDot);
+    if (len > 0) {
+      return captureAfter(t.slice(k), '', isDigitOrDot);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * `(?:iphone|ipad|ipod).*?os\s+([\d]+)`: from each device-token start, the lazy `.*?` extends one
+ * char at a time (never across a line terminator) until `os\s+[\d]+` matches.
+ */
+function iosVersion(t: Readonly<number[]>): string | undefined {
+  let at = 0;
+  while (at < t.length) {
+    const deviceLen = matchesAt(t, at, 'iphone') ? 6 : matchesAt(t, at, 'ipad') || matchesAt(t, at, 'ipod') ? 4 : 0;
+    if (deviceLen > 0) {
+      let k = at + deviceLen;
+      for (;;) {
+        if (matchesAt(t, k, 'os')) {
+          const ws = runLen(t, k + 2, isJsWhitespace);
+          if (ws > 0) {
+            const start = k + 2 + ws;
+            const digits = runLen(t, start, isDigitOrUnderscore);
+            if (digits > 0) {
+              return captureAfter(t.slice(start), '', isDigitOrUnderscore);
+            }
+          }
+        }
+        if (k >= t.length || isJsLineTerminator(t[k])) {
+          break;
+        }
+        k += 1;
+      }
+    }
+    at += 1;
+  }
+  return undefined;
+}
+
+/**
+ * `linux(?!.*android)`: a `linux` with no `android` after it on the same line.
+ */
+function linuxWithoutAndroid(t: Readonly<number[]>): boolean {
+  return positions(t, 'linux').some((at) => {
+    let k = at + 5;
+    for (;;) {
+      if (matchesAt(t, k, 'android')) {
+        return false;
+      }
+      if (k >= t.length || isJsLineTerminator(t[k])) {
+        return true;
+      }
+      k += 1;
+    }
+  });
+}
+
+/**
+ * Parses a device form factor from a UA string and a touch-point hint (`maxTouchPoints`:
+ * `navigator.maxTouchPoints`, or -1 when unavailable). Never returns ""; falls back to
+ * `DEVICE_FORM_FACTOR_UNKNOWN`. Branch order is the source's: car, TV, watch, tablet, phone, a
+ * touch-capable Macintosh UA (desktop-mode iPad), desktop tokens, then the zero-touch desktop hint.
+ */
 export function parseUserAgentFormFactor(ua: string, maxTouchPoints: number): DeviceFormFactor {
-  // Automotive / in-vehicle
-  if (/android auto|car browser|automotive/i.test(ua)) return DeviceFormFactorCar;
-  // Smart TV / set-top box
-  if (/smart[-_]?tv|smarttv|googletv|appletv|hbbtv|netcast|webos.*tv|tizen.*tv|tv safari/i.test(ua)) {
-    return DeviceFormFactorTV;
+  const t = charsOf(ua);
+  if (containsAny(t, ['android auto', 'car browser', 'automotive'])) {
+    return String(DEVICE_FORM_FACTOR_CAR);
   }
-  // Wearable / watch
-  if (/watch\s*os|watch[_ ]?kit|wearable/i.test(ua)) return DeviceFormFactorWatch;
-  // Tablet: iPad explicitly; Android without 'Mobile' in UA; Windows tablet
-  if (/ipad/i.test(ua)) return DeviceFormFactorTablet;
-  if (/android/i.test(ua) && !/mobile/i.test(ua)) return DeviceFormFactorTablet;
-  if (/tablet\s*pc|silk|kindle fire/i.test(ua)) return DeviceFormFactorTablet;
-  // Phone: known mobile UA tokens
-  if (/iphone|ipod|android.*mobile|windows phone|blackberry|bb\d+|mobile safari/i.test(ua)) {
-    return DeviceFormFactorPhone;
+  if (
+    containsAny(t, ['smarttv', 'smart-tv', 'smart_tv', 'googletv', 'appletv', 'hbbtv', 'netcast', 'tv safari']) ||
+    containsThenOnLine(t, 'webos', 'tv') ||
+    containsThenOnLine(t, 'tizen', 'tv')
+  ) {
+    return String(DEVICE_FORM_FACTOR_TV);
   }
-  // iPadOS in desktop mode reports a Macintosh UA with no iPad token, so the UA alone cannot tell it
-  // from a real Mac — touch is the only signal that can. Apple ships no touchscreen Mac (the Touch
-  // Bar reports zero touch points), so more than one touch point on a Macintosh UA means iPad. This
-  // has to run before the desktop branch, which would otherwise claim the UA on `macintosh` alone and
-  // silently call every desktop-mode iPad a desktop. The hint was already threaded into this
-  // signature for exactly this purpose and was simply never consulted.
-  if (maxTouchPoints > 1 && /macintosh|mac os x/i.test(ua)) return DeviceFormFactorTablet;
-  // Desktop: known desktop OS tokens
-  if (/win(?:dows)?nt|macintosh|mac os x|linux(?!.*android)|x11/i.test(ua)) return DeviceFormFactorDesktop;
-  // Weak desktop signal: no touch points when the UA is otherwise inconclusive
-  if (maxTouchPoints === 0) return DeviceFormFactorDesktop;
-  return DeviceFormFactorUnknown;
+  if (watchThen(t) || contains(t, 'wearable')) {
+    return String(DEVICE_FORM_FACTOR_WATCH);
+  }
+  if (contains(t, 'ipad')) {
+    return String(DEVICE_FORM_FACTOR_TABLET);
+  }
+  if (contains(t, 'android') && !contains(t, 'mobile')) {
+    return String(DEVICE_FORM_FACTOR_TABLET);
+  }
+  if (tabletPc(t) || containsAny(t, ['silk', 'kindle fire'])) {
+    return String(DEVICE_FORM_FACTOR_TABLET);
+  }
+  if (
+    containsAny(t, ['iphone', 'ipod', 'windows phone', 'blackberry', 'mobile safari']) ||
+    containsThenOnLine(t, 'android', 'mobile') ||
+    bbDigits(t)
+  ) {
+    return String(DEVICE_FORM_FACTOR_PHONE);
+  }
+  if (maxTouchPoints > 1 && containsAny(t, ['macintosh', 'mac os x'])) {
+    return String(DEVICE_FORM_FACTOR_TABLET);
+  }
+  if (containsAny(t, ['winnt', 'windowsnt', 'macintosh', 'mac os x', 'x11']) || linuxWithoutAndroid(t)) {
+    return String(DEVICE_FORM_FACTOR_DESKTOP);
+  }
+  if (maxTouchPoints === 0) {
+    return String(DEVICE_FORM_FACTOR_DESKTOP);
+  }
+  return String(DEVICE_FORM_FACTOR_UNKNOWN);
 }
 
-// Parses an OS name from a user-agent string.
-// Returns a canonical OS name or '' when unknown.
-// Common return values: 'Android', 'iOS', 'iPadOS', 'Windows', 'macOS', 'Linux', 'ChromeOS',
-// 'FreeBSD', 'OpenBSD', 'NetBSD'.
+/**
+ * Parses an OS name from a UA string, or "" when unknown. Values: "Android", "iPadOS", "iOS",
+ * "ChromeOS", "Windows", "macOS", "FreeBSD", "OpenBSD", "NetBSD", "Linux".
+ */
 export function parseUserAgentOsName(ua: string): string {
-  if (/android/i.test(ua)) return 'Android';
-  if (/ipad/i.test(ua)) return 'iPadOS';
-  if (/iphone|ipod/i.test(ua)) return 'iOS';
-  if (/cros/i.test(ua)) return 'ChromeOS';
-  if (/windows nt|windows phone/i.test(ua)) return 'Windows';
-  if (/macintosh|mac os x/i.test(ua)) return 'macOS';
-  if (/freebsd/i.test(ua)) return 'FreeBSD';
-  if (/openbsd/i.test(ua)) return 'OpenBSD';
-  if (/netbsd/i.test(ua)) return 'NetBSD';
-  if (/linux/i.test(ua)) return 'Linux';
+  const t = charsOf(ua);
+  const name = contains(t, 'android')
+    ? 'Android'
+    : contains(t, 'ipad')
+      ? 'iPadOS'
+      : containsAny(t, ['iphone', 'ipod'])
+        ? 'iOS'
+        : contains(t, 'cros')
+          ? 'ChromeOS'
+          : containsAny(t, ['windows nt', 'windows phone'])
+            ? 'Windows'
+            : containsAny(t, ['macintosh', 'mac os x'])
+              ? 'macOS'
+              : contains(t, 'freebsd')
+                ? 'FreeBSD'
+                : contains(t, 'openbsd')
+                  ? 'OpenBSD'
+                  : contains(t, 'netbsd')
+                    ? 'NetBSD'
+                    : contains(t, 'linux')
+                      ? 'Linux'
+                      : '';
+  return String(name);
+}
+
+/**
+ * Parses the raw dotted OS version from a UA string, or "" when not found: Android, then
+ * iOS/iPadOS (underscores to dots), Windows NT, macOS (underscores to dots), ChromeOS. The single
+ * OS-version extractor in this crate. Values are ceilings, not readings: Windows 11 reads "10.0"
+ * and macOS since Big Sur reads "10.15.7".
+ */
+export function parseUserAgentOsVersion(ua: string): string {
+  const t = charsOf(ua);
+  const androidVersion = captureAfterWhitespace(t, 'android', isDigitOrDot);
+  if (androidVersion !== undefined) {
+    const version = androidVersion;
+    return version;
+  }
+  const parsedIosVersion = iosVersion(t);
+  if (parsedIosVersion !== undefined) {
+    const version = parsedIosVersion;
+    return underscoresToDots(version);
+  }
+  const windowsVersion = captureAfterWhitespace(t, 'windows nt', isDigitOrDot);
+  if (windowsVersion !== undefined) {
+    const version = windowsVersion;
+    return version;
+  }
+  const macVersion = captureAfterWhitespace(t, 'mac os x', isDigitUnderscoreOrDot);
+  if (macVersion !== undefined) {
+    const version = macVersion;
+    return underscoresToDots(version);
+  }
+  const chromeOsVersion = crosVersion(t);
+  if (chromeOsVersion !== undefined) {
+    const version = chromeOsVersion;
+    return version;
+  }
   return '';
 }
 
-// Parses an OS version string from a user-agent string.
-// Returns a dotted version string, e.g. '14.0', '10.0', '13.5.1'. Returns '' when not found.
-//
-// This is the single OS-version extractor in the package: parseUserAgentVersion (the PlatformName
-// vocabulary) delegates here rather than carrying its own copy of these patterns, which had already
-// drifted — its variants required exactly one space where these accept any whitespace, so it returned
-// '' for UAs this handles.
-//
-// FROZEN UA VALUES — these are ceilings, not readings, and no UA-string parser can do better:
-//   - Windows 11 reports `Windows NT 10.0`, identical to Windows 10. Only the UA-CH
-//     `platformVersion` hint (>= 13) distinguishes them, and this function takes no hints.
-//   - macOS has been frozen at `10_15_7` since Big Sur, so every later macOS reads as 10.15.7.
-//   - iPadOS in desktop mode reports the macOS version, not the iPadOS version, because it reports a
-//     Macintosh UA (see parseUserAgentFormFactor for how the device is still identified).
-// Treat a value from this function as "at least this version", never as an exact one.
-export function parseUserAgentOsVersion(ua: string): string {
-  // Android: "Android 14.0" or "Android 9"
-  const android = ua.match(/android\s+([\d.]+)/i);
-  if (android) return android[1];
-  // iOS/iPadOS: "iPhone OS 17_0_1" or "CPU OS 16_0"
-  const ios = ua.match(/(?:iphone|ipad|ipod).*?os\s+([\d_]+)/i);
-  if (ios) return ios[1].replace(/_/g, '.');
-  // Windows: "Windows NT 10.0" → "10.0"
-  const win = ua.match(/windows nt\s+([\d.]+)/i);
-  if (win) return win[1];
-  // macOS: "Mac OS X 10_15_7" → "10.15.7" or "Mac OS X 13.0"
-  const mac = ua.match(/mac os x\s+([\d_.]+)/i);
-  if (mac) return mac[1].replace(/_/g, '.');
-  // ChromeOS: "CrOS x86_64 14541.0.0"
-  const cros = ua.match(/cros\s+\S+\s+([\d.]+)/i);
-  if (cros) return cros[1];
-  return '';
+/**
+ * `tablet\s*pc`
+ */
+function tabletPc(t: Readonly<number[]>): boolean {
+  return positions(t, 'tablet').some((at) => matchesAt(t, at + 6 + runLen(t, at + 6, isJsWhitespace), 'pc'));
+}
+
+/**
+ * `watch\s*os|watch[_ ]?kit`
+ */
+function watchThen(t: Readonly<number[]>): boolean {
+  return positions(t, 'watch').some((at) => {
+    const after = at + 5;
+    if (matchesAt(t, after + runLen(t, after, isJsWhitespace), 'os')) {
+      return true;
+    }
+    if (matchesAt(t, after, 'kit')) {
+      return true;
+    }
+    return after < t.length && (t[after] === 0x005f || t[after] === 0x0020) && matchesAt(t, after + 1, 'kit');
+  });
 }
