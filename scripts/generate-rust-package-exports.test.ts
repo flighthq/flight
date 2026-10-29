@@ -9,7 +9,6 @@ import {
   collectExportSymbols,
   collectFlightDependencyCrates,
   collectReferencedExportNames,
-  collectRootOnlyNames,
   collectPublicRootNames,
   collectRustExportNames,
   collectRustPublicUses,
@@ -64,18 +63,6 @@ describe('collectRustExportNames', () => {
       ['encode_utf8', 'encodeUTF8'],
     ]);
     expect(collectRustExportNames('pub fn decode_utf8() {}\n').size).toBe(0);
-  });
-});
-
-describe('collectRootOnlyNames', () => {
-  it('collects an exact, de-duplicated root surface without matching additive roots', () => {
-    const rust = [
-      '//! flight-compiler: root additiveName',
-      '//! flight-compiler: root-only createSignal Signal',
-      '//! flight-compiler: root-only Signal, connectSignal',
-    ].join('\n');
-    expect(collectRootOnlyNames(rust)).toEqual(['createSignal', 'Signal', 'connectSignal']);
-    expect(collectRootOnlyNames('//! flight-compiler: root createSignal\n')).toEqual([]);
   });
 });
 

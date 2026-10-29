@@ -551,7 +551,7 @@ pub(crate) fn parse_export_name_metadata(
 pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    validate_root_only_directives(&file.attrs)?;
+    parse_root_only_directives(&file.attrs)?;
     let mut rust_only = false;
     let mut target_native = false;
     for attribute in &file.attrs {
@@ -605,7 +605,10 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
 // `root-only` is consumed by package generation rather than TypeScript emission, but every source
 // passes through `source-mode` before the generator derives its package surface. Validate it here so
 // a typo cannot silently bypass the exact-root branch and fall back to inferred Rust exports.
-fn validate_root_only_directives(attributes: &[Attribute]) -> Result<(), CompileError> {
+fn parse_root_only_directives(attributes: &[Attribute]) -> Result<Vec<String>, CompileError> {
+    let mut names = Vec::new();
+    let mut found = false;
+    let mut seen = HashSet::new();
     for attribute in attributes {
         let Some(directive) = doc_directive(attribute) else {
             continue;
@@ -620,6 +623,12 @@ fn validate_root_only_directives(attributes: &[Attribute]) -> Result<(), Compile
         {
             continue;
         }
+        if found {
+            return Err(compile_error(
+                "duplicate `flight-compiler: root-only` directive",
+            ));
+        }
+        found = true;
         let targets = targets.trim();
         if targets.is_empty() {
             return Err(compile_error(
@@ -639,10 +648,22 @@ fn validate_root_only_directives(attributes: &[Attribute]) -> Result<(), Compile
                         "`flight-compiler: root-only` target `{target}` is not a TypeScript identifier"
                     )));
                 }
+                if !seen.insert(target.to_string()) {
+                    return Err(compile_error(format!(
+                        "duplicate `flight-compiler: root-only` target `{target}`"
+                    )));
+                }
+                names.push(target.to_string());
             }
         }
     }
-    return Ok(());
+    return Ok(names);
+}
+
+pub(crate) fn parse_root_only_metadata(source: &str) -> Result<Vec<String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    return parse_root_only_directives(&file.attrs);
 }
 
 fn doc_directive(attribute: &Attribute) -> Option<String> {

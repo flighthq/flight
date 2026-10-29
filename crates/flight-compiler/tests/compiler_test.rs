@@ -4,7 +4,7 @@ use flight_compiler::{
     compile_typescript_with_module_sources, compile_typescript_with_visibility_sources,
     compile_vitest, compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
     compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
-    source_mode,
+    root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -36,6 +36,13 @@ mod source_modes {
             )
             .unwrap(),
             SourceMode::Generate
+        );
+        assert_eq!(
+            root_only_names(
+                "#![doc = \"flight-compiler: root-only Signal, createSignal\"]\npub struct Signal {}\n"
+            )
+            .unwrap(),
+            ["Signal", "createSignal"]
         );
         assert_eq!(
             source_mode(
@@ -105,6 +112,14 @@ mod source_modes {
             (
                 "//! flight-compiler: root-only Signal<T>\npub struct Signal<T> { pub value: T }\n",
                 "`flight-compiler: root-only` target `Signal<T>` is not a TypeScript identifier",
+            ),
+            (
+                "//! flight-compiler: root-only Signal\n//! flight-compiler: root-only createSignal\npub struct Signal {}\n",
+                "duplicate `flight-compiler: root-only` directive",
+            ),
+            (
+                "#![doc = \"flight-compiler: root-only Signal Signal\"]\npub struct Signal {}\n",
+                "duplicate `flight-compiler: root-only` target `Signal`",
             ),
         ] {
             assert_eq!(source_mode(source).unwrap_err().to_string(), expected);

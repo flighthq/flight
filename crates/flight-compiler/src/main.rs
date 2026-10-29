@@ -7,6 +7,7 @@ const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
        flight-compile source-mode --source <rust-file>
+       flight-compile root-only --source <rust-file>
 ";
 
 #[derive(Clone, Copy)]
@@ -166,6 +167,7 @@ fn main() {
         Some("generate-tests") => parse_generate_options(&arguments[1..], GenerateKind::Tests)
             .and_then(|options| generate(&options, GenerateKind::Tests)),
         Some("source-mode") => source_mode(&arguments[1..]),
+        Some("root-only") => root_only(&arguments[1..]),
         Some("help" | "--help" | "-h") => {
             print!("{USAGE}");
             return;
@@ -176,6 +178,23 @@ fn main() {
         eprintln!("error: {error}");
         process::exit(2);
     }
+}
+
+fn root_only(arguments: &[String]) -> Result<(), String> {
+    let [flag, source] = arguments else {
+        return Err(format!(
+            "root-only requires --source <rust-file>\n\n{USAGE}"
+        ));
+    };
+    if flag != "--source" {
+        return Err(format!("unknown root-only option `{flag}`\n\n{USAGE}"));
+    }
+    let source = fs::read_to_string(source).map_err(|error| format!("{source}: {error}"))?;
+    let names = flight_compiler::root_only_names(&source).map_err(|error| error.to_string())?;
+    for name in names {
+        println!("{name}");
+    }
+    return Ok(());
 }
 
 fn source_mode(arguments: &[String]) -> Result<(), String> {

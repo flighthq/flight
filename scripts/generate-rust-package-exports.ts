@@ -329,16 +329,6 @@ export function collectCompanionFileNames(rust: string): string[] {
   return [...new Set(names)];
 }
 
-// An exact package-root surface for representation-boundary packages. Unlike additive `root`
-// hints, `root-only` deliberately suppresses names inferred from Rust `pub use` declarations.
-export function collectRootOnlyNames(rust: string): string[] {
-  const names: string[] = [];
-  for (const match of rust.matchAll(/^\/\/!\s*flight-compiler:\s*root-only\s+(.+)$/gm)) {
-    names.push(...match[1].split(/[\s,]+/).filter(Boolean));
-  }
-  return [...new Set(names)];
-}
-
 export function collectContractModuleNames(rust: string): Set<string> {
   return new Set(
     collectRustPublicUses(rust)

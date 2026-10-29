@@ -10,7 +10,6 @@ import {
   compilerVisibilityArguments,
   collectExportSymbols,
   collectFlightDependencyCrates,
-  collectRootOnlyNames,
   collectRustExportNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
@@ -440,11 +439,7 @@ function publicExports(
   symbols: Map<string, SymbolOwner>,
 ): string {
   const exactRoots = [
-    ...new Set(
-      modules.flatMap((module) =>
-        collectRootOnlyNames(readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8')),
-      ),
-    ),
+    ...new Set(modules.flatMap((module) => rootOnlyNames(join(crateRoot, 'src', module.rustSource)))),
   ];
   if (exactRoots.length > 0) return renderPublicExports(symbolModules, symbols, exactRoots);
 
@@ -527,6 +522,14 @@ function sourceMode(path: string): SourceMode {
     cwd: repositoryRoot,
     encoding: 'utf8',
   }).trim() as SourceMode;
+}
+
+function rootOnlyNames(path: string): string[] {
+  const output = execFileSync(compilerPath, ['root-only', '--source', path], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+  }).trim();
+  return output === '' ? [] : output.split(/\r?\n/);
 }
 
 function testFiles(crateRoot: string): string[] {

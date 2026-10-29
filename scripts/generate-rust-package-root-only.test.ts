@@ -15,10 +15,8 @@ const packageRoot = join(fixtureRoot, 'package');
 const sourcePath = join(crateRoot, 'src', 'signal.rs');
 const generatorPath = join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
 
-function signalSource(target: string): string {
-  return `//! flight-compiler: root-only ${target}
-
-pub struct Signal {
+function signalBody(): string {
+  return `pub struct Signal {
     pub value: i32,
 }
 
@@ -30,6 +28,13 @@ pub fn create_signal(value: i32) -> Signal {
     return Signal { value };
 }
 `;
+}
+
+function signalSource(target: string, docAttribute = false): string {
+  const directive = docAttribute
+    ? `#![doc = "flight-compiler: root-only ${target}"]`
+    : `//! flight-compiler: root-only ${target}`;
+  return `${directive}\n\n${signalBody()}`;
 }
 
 function generate(): void {
@@ -52,6 +57,15 @@ function generate(): void {
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
+}
+
+function generationError(): string {
+  try {
+    generate();
+    throw new Error('generation unexpectedly succeeded');
+  } catch (error) {
+    return error instanceof Error && 'stderr' in error ? String(error.stderr) : String(error);
+  }
 }
 
 describe('root-only package generation', () => {
@@ -94,13 +108,23 @@ pub use contract::*;
     expect(contract).toContain('ContractOnly');
     expect(contract).toContain('Signal');
 
+    writeFileSync(sourcePath, signalSource('Signal', true));
+    generate();
+    const attributeRoot = readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8');
+    expect(attributeRoot).toContain("export type { Signal } from './contract.ts';");
+    expect(attributeRoot).not.toContain('ContractOnly');
+    expect(attributeRoot).not.toContain('createSignal');
+
+    writeFileSync(sourcePath, signalSource('Signal,,createSignal'));
+    expect(generationError()).toContain('`flight-compiler: root-only` contains an empty export target');
+
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: root-only Signal\n#![doc = "flight-compiler: root-only createSignal"]\n\n${signalBody()}`,
+    );
+    expect(generationError()).toContain('duplicate `flight-compiler: root-only` directive');
+
     writeFileSync(sourcePath, signalSource('MissingSignal'));
-    try {
-      generate();
-      throw new Error('generation unexpectedly accepted an unresolved root-only target');
-    } catch (error) {
-      const stderr = error instanceof Error && 'stderr' in error ? String(error.stderr) : String(error);
-      expect(stderr).toContain('root export MissingSignal has no TypeScript contract symbol');
-    }
+    expect(generationError()).toContain('root export MissingSignal has no TypeScript contract symbol');
   }, 120_000);
 });

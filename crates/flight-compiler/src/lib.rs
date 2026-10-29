@@ -17,6 +17,12 @@ pub enum SourceMode {
     TargetNative,
 }
 
+/// Returns the exact TypeScript package-root export names designated by this Rust source.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn root_only_names(source: &str) -> Result<Vec<String>, CompileError> {
+    return model::parse_root_only_metadata(source);
+}
+
 /// A Rust source that owns target-language-only identity aliases in an external module.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExternalAliasSource<'a> {
