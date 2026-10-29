@@ -63,3 +63,4 @@ export * from './revision.ts';
 export * from './stageFit.ts';
 export * from './traversal.ts';
 export { createViewport, getViewportAspect } from './viewport.ts';
+export type { NodeRef } from './types.ts';
