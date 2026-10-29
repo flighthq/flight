@@ -10,6 +10,10 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
+// The TS counterpart of Rust `flight_geometry::Matrix`, owned here while `@flighthq/types` remains the
+// transitional aggregator of the structural identity.
+export type { Matrix } from '@flighthq/types/contract';
+
 export function cloneMatrix(source: Readonly<MatrixLike>): Matrix {
   const m = createMatrix();
   copyMatrix(m, source);

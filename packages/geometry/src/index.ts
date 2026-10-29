@@ -389,3 +389,4 @@ export {
   VECTOR4_Z_AXIS,
 } from './vector4.ts';
 export * from './vector4Pool.ts';
+export type { Matrix } from './matrix.ts';
