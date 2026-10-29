@@ -16,9 +16,9 @@ function appendContour(
 ): void {
   if (reversePrimary) {
     appendPathMoveTo(path, primary[primary.length - 2], primary[primary.length - 1]);
-    let i = primary.length - 4;
+    let i = (primary.length | 0) - 4;
     while (i >= 0) {
-      appendPathLineTo(path, primary[i], primary[i + 1]);
+      appendPathLineTo(path, primary[i >>> 0], primary[(i >>> 0) + 1]);
       i -= 2;
     }
   } else {
@@ -60,9 +60,9 @@ function appendPoints(path: PathRaw, points: Readonly<number[]>, start: number, 
 }
 
 function appendPointsReverse(path: PathRaw, points: Readonly<number[]>): void {
-  let i = points.length - 2;
+  let i = (points.length | 0) - 2;
   while (i >= 0) {
-    appendPathLineTo(path, points[i], points[i + 1]);
+    appendPathLineTo(path, points[i >>> 0], points[(i >>> 0) + 1]);
     i -= 2;
   }
 }

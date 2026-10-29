@@ -61,8 +61,8 @@ describe('copyPath', () => {
     let out = createPath('evenOdd');
     copyPath(out, source);
     expect(out.commands.length).toEqual(2);
-    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(out.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(out.commands[1]).toEqual(PathCommand.LINE_TO & 0xff);
     expect(out.data.length).toEqual(4);
     for (let i = 0; i < 4; i += 1) {
       expect(out.data[i]).toEqual(source.data[i]);

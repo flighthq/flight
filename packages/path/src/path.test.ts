@@ -49,7 +49,7 @@ function axisValues(path: Readonly<PathRaw>, axis: number): number[] {
 function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
   let count = 0;
   for (const candidate of path.commands) {
-    if (candidate === command) {
+    if (candidate === (command & 0xff)) {
       count += 1;
     }
   }
@@ -83,8 +83,8 @@ describe('appendPathArc', () => {
   it('produces move to and cubic curves for non zero arc', () => {
     let path = createPath('nonZero');
     appendPathArc(path, 0.0, 0.0, 50.0, 0.0, Math.PI / 2.0, false, false);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO & 0xff)).toBe(true);
   });
   it('starts at correct point on circle', () => {
     let path = createPath('nonZero');
@@ -109,8 +109,8 @@ describe('appendPathArc', () => {
     appendPathArc(pathCw, 0.0, 0.0, 50.0, 0.0, Math.PI, false, false);
     let pathCcw = createPath('nonZero');
     appendPathArc(pathCcw, 0.0, 0.0, 50.0, 0.0, Math.PI, true, false);
-    expect(pathCw.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
-    expect(pathCcw.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    expect(pathCw.commands.includes(PathCommand.CUBIC_CURVE_TO & 0xff)).toBe(true);
+    expect(pathCcw.commands.includes(PathCommand.CUBIC_CURVE_TO & 0xff)).toBe(true);
     const cwMaxY: number = maxValue(axisValues(pathCw, 1));
     const ccwMinY: number = minValue(axisValues(pathCcw, 1));
     expect(cwMaxY > 0.0).toBe(true);
@@ -120,8 +120,8 @@ describe('appendPathArc', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathArc(path, 100.0, 0.0, 50.0, Math.PI, 0.0, false, true);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO & 0xff);
   });
 });
 
@@ -129,8 +129,8 @@ describe('appendPathCircle', () => {
   it('produces closed path with four cubic curves', () => {
     let path = createPath('nonZero');
     appendPathCircle(path, 0.0, 0.0, 50.0);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
     const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
     expect(cubicCount).toEqual(4);
   });
@@ -147,7 +147,7 @@ describe('appendPathClose', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathClose(path);
-    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CLOSE]);
+    expect(path.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.CLOSE & 0xff]);
     expect(path.data).toEqual([0.0, 0.0]);
   });
 });
@@ -157,14 +157,14 @@ describe('appendPathCubicCurveTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathCubicCurveTo(path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CUBIC_CURVE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CUBIC_CURVE_TO & 0xff);
     expect(path.data.length).toEqual(8);
   });
   it('pushes the cubic verb and its six coordinates', () => {
     let path = createPath('nonZero');
     appendPathCubicCurveTo(path, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
     expect(path.commands.length).toEqual(1);
-    expect(path.commands[0]).toEqual(PathCommand.CUBIC_CURVE_TO);
+    expect(path.commands[0]).toEqual(PathCommand.CUBIC_CURVE_TO & 0xff);
     expect(path.data.length).toEqual(6);
     for (let i = 0; i < 6; i += 1) {
       expect(path.data[i]).toEqual(i + 1);
@@ -176,8 +176,8 @@ describe('appendPathEllipse', () => {
   it('produces a closed path with four cubic segments', () => {
     let path = createPath('nonZero');
     appendPathEllipse(path, 0.0, 0.0, 100.0, 50.0);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
     const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
     expect(cubicCount).toEqual(4);
   });
@@ -205,7 +205,7 @@ describe('appendPathEllipticalArcTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathEllipticalArcTo(path, 0.0, 10.0, 0.0, false, false, 50.0, 50.0);
-    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO & 0xff);
     expect(Math.abs(path.data[path.data.length - 2] - 50.0) < 0.005).toBe(true);
     expect(Math.abs(path.data[path.data.length - 1] - 50.0) < 0.005).toBe(true);
   });
@@ -220,7 +220,7 @@ describe('appendPathEllipticalArcTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 100.0, 0.0);
     appendPathEllipticalArcTo(path, 50.0, 50.0, 0.0, true, false, 100.0, 1.0);
-    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO & 0xff)).toBe(true);
   });
   it('ends at the specified endpoint', () => {
     let path = createPath('nonZero');
@@ -237,14 +237,14 @@ describe('appendPathLineTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathLineTo(path, 10.0, 20.0);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.LINE_TO & 0xff);
     expect(path.data.length).toEqual(4);
   });
   it('pushes the line verb and its point', () => {
     let path = createPath('nonZero');
     appendPathLineTo(path, 7.0, 8.0);
     expect(path.commands.length).toEqual(1);
-    expect(path.commands[0]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[0]).toEqual(PathCommand.LINE_TO & 0xff);
     expect(path.data.length).toEqual(2);
     expect(path.data[0]).toEqual(7.0);
     expect(path.data[1]).toEqual(8.0);
@@ -255,7 +255,7 @@ describe('appendPathMoveTo', () => {
   it('appends command and two data values', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 5.0, 10.0);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
     expect(path.data[0]).toEqual(5.0);
     expect(path.data[1]).toEqual(10.0);
   });
@@ -263,7 +263,7 @@ describe('appendPathMoveTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 9.0, 10.0);
     expect(path.commands.length).toEqual(1);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
     expect(path.data.length).toEqual(2);
     expect(path.data[0]).toEqual(9.0);
     expect(path.data[1]).toEqual(10.0);
@@ -274,16 +274,16 @@ describe('appendPathPolygon', () => {
   it('appends a closed polygon from a flat coordinate array', () => {
     let path = createPath('nonZero');
     appendPathPolygon(path, [0.0, 0.0, 100.0, 0.0, 100.0, 100.0]);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
     expect(path.data[0]).toEqual(0.0);
     expect(path.data[1]).toEqual(0.0);
   });
   it('creates closed polygon from points', () => {
     let path = createPath('nonZero');
     appendPathPolygon(path, [0.0, 0.0, 100.0, 0.0, 50.0, 100.0]);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
   });
   it('ignores fewer than three points', () => {
     let path = createPath('nonZero');
@@ -296,8 +296,8 @@ describe('appendPathPolyline', () => {
   it('appends an open polyline with no close', () => {
     let path = createPath('nonZero');
     appendPathPolyline(path, [0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
-    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
-    expect(!path.commands.includes(PathCommand.CLOSE)).toBe(true);
+    expect(path.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
+    expect(!path.commands.includes(PathCommand.CLOSE & 0xff)).toBe(true);
   });
   it('does nothing when fewer than two points are provided', () => {
     let path = createPath('nonZero');
@@ -310,7 +310,7 @@ describe('appendPathQuadraticCurveTo', () => {
   it('pushes the quadratic verb and its four coordinates', () => {
     let path = createPath('nonZero');
     appendPathQuadraticCurveTo(path, 1.0, 2.0, 3.0, 4.0);
-    expect(path.commands).toEqual([PathCommand.QUADRATIC_CURVE_TO]);
+    expect(path.commands).toEqual([PathCommand.QUADRATIC_CURVE_TO & 0xff]);
     expect(path.data).toEqual([1.0, 2.0, 3.0, 4.0]);
   });
 });
@@ -319,8 +319,8 @@ describe('appendPathRectangle', () => {
   it('creates closed rectangle', () => {
     let path = createPath('nonZero');
     appendPathRectangle(path, 0.0, 0.0, 100.0, 50.0);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
     const lineCount = countCommands(path, PathCommand.LINE_TO);
     expect(lineCount).toEqual(3);
   });
@@ -328,11 +328,11 @@ describe('appendPathRectangle', () => {
     let path = createPath('nonZero');
     appendPathRectangle(path, 10.0, 20.0, 100.0, 50.0);
     expect(path.commands.length).toEqual(5);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
-    expect(path.commands[2]).toEqual(PathCommand.LINE_TO);
-    expect(path.commands[3]).toEqual(PathCommand.LINE_TO);
-    expect(path.commands[4]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO & 0xff);
+    expect(path.commands[2]).toEqual(PathCommand.LINE_TO & 0xff);
+    expect(path.commands[3]).toEqual(PathCommand.LINE_TO & 0xff);
+    expect(path.commands[4]).toEqual(PathCommand.CLOSE & 0xff);
     expect(path.data.length).toEqual(8);
     expect(path.data[0]).toEqual(10.0);
     expect(path.data[1]).toEqual(20.0);
@@ -349,13 +349,13 @@ describe('appendPathRoundedRectangle', () => {
   it('produces a closed path for a uniformly rounded rectangle', () => {
     let path = createPath('nonZero');
     appendPathRoundedRectangle(path, 0.0, 0.0, 100.0, 50.0, 10.0);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
   });
   it('contains cubic curves for the corner arcs', () => {
     let path = createPath('nonZero');
     appendPathRoundedRectangle(path, 0.0, 0.0, 100.0, 50.0, 10.0);
-    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO & 0xff)).toBe(true);
   });
   it('uses authored radius directly', () => {
     let path = createPath('nonZero');
@@ -365,9 +365,9 @@ describe('appendPathRoundedRectangle', () => {
   it('produces a rectangle when radius is zero', () => {
     let path = createPath('nonZero');
     appendPathRoundedRectangle(path, 0.0, 0.0, 100.0, 50.0, 0.0);
-    expect(!path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
-    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(!path.commands.includes(PathCommand.CUBIC_CURVE_TO & 0xff)).toBe(true);
+    expect(path.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
     const xs: number[] = axisValues(path, 0);
     const ys: number[] = axisValues(path, 1);
     expect(Math.abs(minValue(xs) - 0.0) < 0.005).toBe(true);
@@ -378,7 +378,7 @@ describe('appendPathRoundedRectangle', () => {
   it('clamps oversized radii to half the edge length', () => {
     let path = createPath('nonZero');
     appendPathRoundedRectangle(path, 0.0, 0.0, 40.0, 20.0, 1000.0);
-    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(path.commands[path.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
   });
 });
 
@@ -387,16 +387,16 @@ describe('appendPathRoundedRectangleWithCornerRadii', () => {
     let path = createPath('nonZero');
     appendPathRoundedRectangleWithCornerRadii(path, 0.0, 0.0, 100.0, 100.0, 10.0, 20.0, 30.0, 40.0);
     expect(path.commands).toEqual([
-      PathCommand.MOVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CUBIC_CURVE_TO,
-      PathCommand.CLOSE,
+      PathCommand.MOVE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.CUBIC_CURVE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.CUBIC_CURVE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.CUBIC_CURVE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.CUBIC_CURVE_TO & 0xff,
+      PathCommand.CLOSE & 0xff,
     ]);
     expect(path.data.slice(0, 4)).toEqual([10.0, 0.0, 80.0, 0.0]);
     expect(path.data.slice(8, 12)).toEqual([100.0, 20.0, 100.0, 70.0]);
@@ -414,8 +414,8 @@ describe('appendPathTangentArcTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 100.0, 0.0);
     appendPathTangentArcTo(path, 100.0, 100.0, 0.0, 100.0, 20.0);
-    expect(path.commands.includes(PathCommand.LINE_TO)).toBe(true);
-    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO)).toBe(true);
+    expect(path.commands.includes(PathCommand.LINE_TO & 0xff)).toBe(true);
+    expect(path.commands.includes(PathCommand.CUBIC_CURVE_TO & 0xff)).toBe(true);
   });
   it('selects the short sweep for a clockwise right angle', () => {
     let path = createPath('nonZero');
@@ -437,10 +437,10 @@ describe('appendPathTangentArcTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathTangentArcTo(path, 50.0, 0.0, 100.0, 0.0, 20.0);
-    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO & 0xff);
     let cubicCount = 0;
     for (let i = 0; i < path.commands.length; i += 1) {
-      if (path.commands[i] === PathCommand.CUBIC_CURVE_TO) {
+      if (path.commands[i] === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
         cubicCount += 1;
       }
     }
@@ -450,7 +450,7 @@ describe('appendPathTangentArcTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 100.0, 100.0);
     appendPathTangentArcTo(path, 100.0, 100.0, 0.0, 100.0, 20.0);
-    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO & 0xff);
     const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
     expect(cubicCount).toEqual(0);
   });
@@ -458,7 +458,7 @@ describe('appendPathTangentArcTo', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathTangentArcTo(path, 100.0, 0.0, 100.0, 100.0, 0.0);
-    expect(path.commands[1]).toEqual(PathCommand.LINE_TO);
+    expect(path.commands[1]).toEqual(PathCommand.LINE_TO & 0xff);
     const cubicCount = countCommands(path, PathCommand.CUBIC_CURVE_TO);
     expect(cubicCount).toEqual(0);
   });
@@ -474,14 +474,14 @@ describe('appendPathTangentArcTo', () => {
 
 describe('createPath', () => {
   it('path command codes are the ts wire codes', () => {
-    expect(PathCommand.NO_OP).toEqual(0);
-    expect(PathCommand.MOVE_TO).toEqual(1);
-    expect(PathCommand.LINE_TO).toEqual(2);
-    expect(PathCommand.QUADRATIC_CURVE_TO).toEqual(3);
-    expect(PathCommand.WIDE_MOVE_TO).toEqual(4);
-    expect(PathCommand.WIDE_LINE_TO).toEqual(5);
-    expect(PathCommand.CUBIC_CURVE_TO).toEqual(6);
-    expect(PathCommand.CLOSE).toEqual(7);
+    expect(PathCommand.NO_OP & 0xff).toEqual(0);
+    expect(PathCommand.MOVE_TO & 0xff).toEqual(1);
+    expect(PathCommand.LINE_TO & 0xff).toEqual(2);
+    expect(PathCommand.QUADRATIC_CURVE_TO & 0xff).toEqual(3);
+    expect(PathCommand.WIDE_MOVE_TO & 0xff).toEqual(4);
+    expect(PathCommand.WIDE_LINE_TO & 0xff).toEqual(5);
+    expect(PathCommand.CUBIC_CURVE_TO & 0xff).toEqual(6);
+    expect(PathCommand.CLOSE & 0xff).toEqual(7);
   });
   it('writers emit the ts serialized command bytes', () => {
     let path = createPath('nonZero');

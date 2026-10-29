@@ -86,23 +86,23 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: PathRaw): void {
     return;
   }
   const last = pts[pts.length - 1];
-  out.commands.push(PathCommand.MOVE_TO);
+  out.commands.push(PathCommand.MOVE_TO & 0xff);
   out.data.push(last.x);
   out.data.push(last.y);
-  let i = pts.length - 1;
+  let i = (pts.length | 0) - 1;
   while (i >= 1) {
-    const from = pts[i];
-    const to = pts[i - 1];
+    const from = pts[i >>> 0];
+    const to = pts[(i - 1) >>> 0];
     {
       const matchValue = from.kind;
       if (matchValue.kind === 'line' || matchValue.kind === 'move') {
-        out.commands.push(PathCommand.LINE_TO);
+        out.commands.push(PathCommand.LINE_TO & 0xff);
         out.data.push(to.x);
         out.data.push(to.y);
       } else if (matchValue.kind === 'quad') {
         const cx = matchValue.cx;
         const cy = matchValue.cy;
-        out.commands.push(PathCommand.QUADRATIC_CURVE_TO);
+        out.commands.push(PathCommand.QUADRATIC_CURVE_TO & 0xff);
         out.data.push(cx);
         out.data.push(cy);
         out.data.push(to.x);
@@ -112,7 +112,7 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: PathRaw): void {
         const c1y = matchValue.c1y;
         const c2x = matchValue.c2x;
         const c2y = matchValue.c2y;
-        out.commands.push(PathCommand.CUBIC_CURVE_TO);
+        out.commands.push(PathCommand.CUBIC_CURVE_TO & 0xff);
         out.data.push(c2x);
         out.data.push(c2y);
         out.data.push(c1x);
@@ -124,7 +124,7 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: PathRaw): void {
     i -= 1;
   }
   if (subpath.closed) {
-    out.commands.push(PathCommand.CLOSE);
+    out.commands.push(PathCommand.CLOSE & 0xff);
   }
 }
 

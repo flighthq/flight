@@ -14,7 +14,7 @@ describe('cleanPath', () => {
     appendPathLineTo(source, 10.0, 10.0);
     let out = createPath('nonZero');
     cleanPath(source, 0.001, out, 0.25);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
     expect(out.data).toEqual([0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
   });
   it('collapses a near collinear run to its endpoints', () => {
@@ -26,7 +26,7 @@ describe('cleanPath', () => {
     appendPathLineTo(source, 100.0, 0.0);
     let out = createPath('nonZero');
     cleanPath(source, 1.0, out, 0.25);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
     expect(out.data).toEqual([0.0, 0.0, 100.0, 0.0]);
   });
   it('keeps a vertex whose deviation just exceeds tolerance', () => {
@@ -36,7 +36,7 @@ describe('cleanPath', () => {
     appendPathLineTo(source, 20.0, 0.0);
     let out = createPath('nonZero');
     cleanPath(source, 1.0, out, 0.25);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
     expect(out.data).toEqual([0.0, 0.0, 10.0, 1.5, 20.0, 0.0]);
   });
   it('removes a vertex whose deviation is within tolerance', () => {
@@ -46,7 +46,7 @@ describe('cleanPath', () => {
     appendPathLineTo(source, 20.0, 0.0);
     let out = createPath('nonZero');
     cleanPath(source, 1.0, out, 0.25);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
     expect(out.data).toEqual([0.0, 0.0, 20.0, 0.0]);
   });
   it('keeps a closed contour closed', () => {
@@ -59,11 +59,11 @@ describe('cleanPath', () => {
     let out = createPath('nonZero');
     cleanPath(source, 0.001, out, 0.25);
     expect(out.commands).toEqual([
-      PathCommand.MOVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CLOSE,
+      PathCommand.MOVE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.CLOSE & 0xff,
     ]);
     expect(out.data).toEqual([0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
   });
@@ -89,7 +89,7 @@ describe('cleanPath', () => {
     appendPathClose(source);
     let out = createPath('nonZero');
     cleanPath(source, 0.5, out, 0.25);
-    expect(out.commands.includes(PathCommand.CLOSE)).toBe(true);
+    expect(out.commands.includes(PathCommand.CLOSE & 0xff)).toBe(true);
   });
   it('cleans in place when out is the same object as source', () => {
     let path = createPath('nonZero');
@@ -103,11 +103,11 @@ describe('cleanPath', () => {
     const source = path;
     cleanPath(source, 0.001, path, 0.25);
     expect(path.commands).toEqual([
-      PathCommand.MOVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CLOSE,
+      PathCommand.MOVE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.CLOSE & 0xff,
     ]);
     expect(path.data).toEqual([0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
   });
@@ -124,11 +124,11 @@ describe('cleanPath', () => {
     let out = createPath('nonZero');
     cleanPath(source, 0.001, out, 0.25);
     expect(out.commands).toEqual([
-      PathCommand.MOVE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.LINE_TO,
-      PathCommand.CLOSE,
+      PathCommand.MOVE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.LINE_TO & 0xff,
+      PathCommand.CLOSE & 0xff,
     ]);
     expect(out.data).toEqual([0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
   });

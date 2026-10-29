@@ -32,7 +32,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
   let di: number = 0;
   for (let ci = 0; ci < commands.length; ci += 1) {
     const command = commands[ci];
-    if (command === PathCommand.MOVE_TO) {
+    if (command === (PathCommand.MOVE_TO & 0xff)) {
       if (hasContour) {
         windingNumber += countSegmentCrossings(px, py, lastX, lastY, contourStartX, contourStartY);
       }
@@ -43,7 +43,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
       lastY = contourStartY;
       hasContour = true;
     } else {
-      if (command === PathCommand.WIDE_MOVE_TO) {
+      if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
         if (hasContour) {
           windingNumber += countSegmentCrossings(px, py, lastX, lastY, contourStartX, contourStartY);
         }
@@ -54,7 +54,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
         lastY = contourStartY;
         hasContour = true;
       } else {
-        if (command === PathCommand.LINE_TO) {
+        if (command === (PathCommand.LINE_TO & 0xff)) {
           const nx = data[di];
           const ny = data[di + 1];
           di += 2;
@@ -64,7 +64,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
           lastX = nx;
           lastY = ny;
         } else {
-          if (command === PathCommand.WIDE_LINE_TO) {
+          if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
             const nx = data[di + 2];
             const ny = data[di + 3];
             di += 4;
@@ -74,7 +74,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
             lastX = nx;
             lastY = ny;
           } else {
-            if (command === PathCommand.QUADRATIC_CURVE_TO) {
+            if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
               const cx = data[di];
               const cy = data[di + 1];
               const ax = data[di + 2];
@@ -86,7 +86,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
               lastX = ax;
               lastY = ay;
             } else {
-              if (command === PathCommand.CUBIC_CURVE_TO) {
+              if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
                 const c1x = data[di];
                 const c1y = data[di + 1];
                 const c2x = data[di + 2];
@@ -113,7 +113,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
                 lastX = ax;
                 lastY = ay;
               } else {
-                if (command === PathCommand.CLOSE) {
+                if (command === (PathCommand.CLOSE & 0xff)) {
                   if (hasContour) {
                     windingNumber += countSegmentCrossings(px, py, lastX, lastY, contourStartX, contourStartY);
                     lastX = contourStartX;

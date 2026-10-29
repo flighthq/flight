@@ -102,7 +102,7 @@ describe('forEachPathSegment', () => {
   });
   it('normalizes wide move to to move to', () => {
     let path = createPath('nonZero');
-    path.commands.push(PathCommand.WIDE_MOVE_TO);
+    path.commands.push(PathCommand.WIDE_MOVE_TO & 0xff);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(5.0);
@@ -114,12 +114,12 @@ describe('forEachPathSegment', () => {
   });
   it('normalizes wide line to', () => {
     let path = createPath('nonZero');
-    path.commands.push(PathCommand.WIDE_MOVE_TO);
+    path.commands.push(PathCommand.WIDE_MOVE_TO & 0xff);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(0.0);
-    path.commands.push(PathCommand.WIDE_LINE_TO);
+    path.commands.push(PathCommand.WIDE_LINE_TO & 0xff);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(7.0);

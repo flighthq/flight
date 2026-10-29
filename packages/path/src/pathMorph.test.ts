@@ -26,7 +26,7 @@ describe('createPathMorph', () => {
     appendPathMoveTo(end, 2.0, 2.0);
     appendPathQuadraticCurveTo(end, 5.0, 8.0, 8.0, 2.0);
     const morph = createPathMorph(start, end)!;
-    expect(morph.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO]);
+    expect(morph.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.CUBIC_CURVE_TO & 0xff]);
     expect(morph.startData).toEqual([0.0, 0.0, 2.0, 0.0, 4.0, 0.0, 6.0, 0.0]);
     expect(morph.endData).toEqual([2.0, 2.0, 4.0, 6.0, 6.0, 6.0, 8.0, 2.0]);
   });
@@ -51,7 +51,7 @@ describe('createPathMorph', () => {
     appendPathClose(end);
     const morph = createPathMorph(start, end)!;
     expect(morph.startData).toEqual(morph.endData);
-    expect(morph.commands[morph.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(morph.commands[morph.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
   });
   it('does not mutate either endpoint', () => {
     let start = createPath('nonZero');
@@ -100,11 +100,11 @@ describe('createPathMorph', () => {
     appendPathRectangle(end, 0.0, 0.0, 10.0, 10.0);
     const morph = createPathMorph(start, end)!;
     expect(morph.commands.length).toEqual(6);
-    expect(morph.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(morph.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
     for (let i = 1; i < 5; i += 1) {
-      expect(morph.commands[i]).toEqual(PathCommand.CUBIC_CURVE_TO);
+      expect(morph.commands[i]).toEqual(PathCommand.CUBIC_CURVE_TO & 0xff);
     }
-    expect(morph.commands[5]).toEqual(PathCommand.CLOSE);
+    expect(morph.commands[5]).toEqual(PathCommand.CLOSE & 0xff);
     for (let i = 0; i < morph.startData.length; i += 1) {
       if (i % 2 === 0) {
         expect(morph.startData[i]).toEqual(3.0);
@@ -156,12 +156,12 @@ describe('createPathMorph', () => {
   });
   it('normalizes wide move and line commands', () => {
     let start = createPath('nonZero');
-    start.commands.push(PathCommand.WIDE_MOVE_TO);
+    start.commands.push(PathCommand.WIDE_MOVE_TO & 0xff);
     start.data.push(99.0);
     start.data.push(98.0);
     start.data.push(1.0);
     start.data.push(2.0);
-    start.commands.push(PathCommand.WIDE_LINE_TO);
+    start.commands.push(PathCommand.WIDE_LINE_TO & 0xff);
     start.data.push(97.0);
     start.data.push(96.0);
     start.data.push(7.0);
@@ -180,11 +180,11 @@ describe('createPathMorph', () => {
     appendPathCircle(end, 0.0, 0.0, 10.0);
     const morph = createPathMorph(start, end)!;
     expect(morph.commands.length).toEqual(6);
-    expect(morph.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(morph.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
     for (let i = 1; i < 5; i += 1) {
-      expect(morph.commands[i]).toEqual(PathCommand.CUBIC_CURVE_TO);
+      expect(morph.commands[i]).toEqual(PathCommand.CUBIC_CURVE_TO & 0xff);
     }
-    expect(morph.commands[5]).toEqual(PathCommand.CLOSE);
+    expect(morph.commands[5]).toEqual(PathCommand.CLOSE & 0xff);
   });
   it('subdivides lower segment count without changing endpoint geometry', () => {
     let start = createPath('nonZero');
@@ -195,7 +195,11 @@ describe('createPathMorph', () => {
     appendPathLineTo(end, 5.0, 0.0);
     appendPathLineTo(end, 10.0, 0.0);
     const morph = createPathMorph(start, end)!;
-    expect(morph.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO, PathCommand.CUBIC_CURVE_TO]);
+    expect(morph.commands).toEqual([
+      PathCommand.MOVE_TO & 0xff,
+      PathCommand.CUBIC_CURVE_TO & 0xff,
+      PathCommand.CUBIC_CURVE_TO & 0xff,
+    ]);
     for (let i = 0; i < morph.startData.length; i += 1) {
       expect(Math.abs(morph.startData[i] - morph.endData[i]) < 0.005).toBe(true);
     }
@@ -244,7 +248,7 @@ describe('samplePathMorph', () => {
     const morph = createPathMorph(start, end)!;
     let out = createPath('nonZero');
     samplePathMorph(out, morph, 0.5);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.CUBIC_CURVE_TO & 0xff]);
     expect(out.data).toEqual([1.0, 1.0, 3.0, 3.0, 5.0, 3.0, 7.0, 1.0]);
     expect(out.winding).toEqual('evenOdd');
   });

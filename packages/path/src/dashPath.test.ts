@@ -9,7 +9,7 @@ import type { PathRaw } from './contract.ts';
 function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
   let count = 0;
   for (const candidate of path.commands) {
-    if (candidate === command) {
+    if (candidate === (command & 0xff)) {
       count += 1;
     }
   }
@@ -25,7 +25,7 @@ describe('dashPath', () => {
     dashPath(source, [10.0, 5.0], 0.0, out, 0.25);
     const moveCount = countCommands(out, PathCommand.MOVE_TO);
     expect(moveCount >= 6).toBe(true);
-    expect(!out.commands.includes(PathCommand.CLOSE)).toBe(true);
+    expect(!out.commands.includes(PathCommand.CLOSE & 0xff)).toBe(true);
   });
   it('copies unchanged for empty dash array', () => {
     let source = createPath('nonZero');

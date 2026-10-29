@@ -28,7 +28,7 @@ describe('decimatePath', () => {
     appendPathLineTo(source, 100.0, 0.0);
     let out = createPath('nonZero');
     decimatePath(source, 1.0, out, 0.25);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
     expect(out.data).toEqual([0.0, 0.0, 100.0, 0.0]);
   });
   it('simplifies a noisy straight line', () => {
@@ -40,7 +40,7 @@ describe('decimatePath', () => {
     appendPathLineTo(source, 100.0, 0.0);
     let out = createPath('nonZero');
     decimatePath(source, 1.0, out, 0.25);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
     expect(out.data[0]).toEqual(0.0);
     expect(out.data[2]).toEqual(100.0);
   });
@@ -63,7 +63,7 @@ describe('decimatePath', () => {
     appendPathClose(source);
     let out = createPath('nonZero');
     decimatePath(source, 1.0, out, 0.25);
-    expect(out.commands[out.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(out.commands[out.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
   });
   it('preserves winding rule', () => {
     let source = createPath('nonZero');

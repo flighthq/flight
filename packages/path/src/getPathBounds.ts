@@ -139,7 +139,7 @@ export function getPathBounds(path: Readonly<PathRaw>, out: RectangleLike): bool
   let di: number = 0;
   for (let ci = 0; ci < commands.length; ci += 1) {
     const command = commands[ci];
-    if (command === PathCommand.MOVE_TO) {
+    if (command === (PathCommand.MOVE_TO & 0xff)) {
       const nx = data[di];
       const ny = data[di + 1];
       di += 2;
@@ -147,7 +147,7 @@ export function getPathBounds(path: Readonly<PathRaw>, out: RectangleLike): bool
       x = nx;
       y = ny;
     } else {
-      if (command === PathCommand.WIDE_MOVE_TO) {
+      if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
         const nx = data[di + 2];
         const ny = data[di + 3];
         di += 4;
@@ -155,7 +155,7 @@ export function getPathBounds(path: Readonly<PathRaw>, out: RectangleLike): bool
         x = nx;
         y = ny;
       } else {
-        if (command === PathCommand.LINE_TO) {
+        if (command === (PathCommand.LINE_TO & 0xff)) {
           const nx = data[di];
           const ny = data[di + 1];
           di += 2;
@@ -163,7 +163,7 @@ export function getPathBounds(path: Readonly<PathRaw>, out: RectangleLike): bool
           x = nx;
           y = ny;
         } else {
-          if (command === PathCommand.WIDE_LINE_TO) {
+          if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
             const nx = data[di + 2];
             const ny = data[di + 3];
             di += 4;
@@ -171,7 +171,7 @@ export function getPathBounds(path: Readonly<PathRaw>, out: RectangleLike): bool
             x = nx;
             y = ny;
           } else {
-            if (command === PathCommand.QUADRATIC_CURVE_TO) {
+            if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
               const cx = data[di];
               const cy = data[di + 1];
               const ax = data[di + 2];
@@ -181,7 +181,7 @@ export function getPathBounds(path: Readonly<PathRaw>, out: RectangleLike): bool
               x = ax;
               y = ay;
             } else {
-              if (command === PathCommand.CUBIC_CURVE_TO) {
+              if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
                 const c1x = data[di];
                 const c1y = data[di + 1];
                 const c2x = data[di + 2];

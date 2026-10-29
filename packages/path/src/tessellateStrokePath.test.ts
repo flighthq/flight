@@ -17,9 +17,9 @@ function meshArea(mesh: Readonly<PathMesh>): number {
   let area = 0.0;
   let i = 0;
   while (i < mesh.indices.length) {
-    const a = mesh.indices[i] * 2;
-    const b = mesh.indices[i + 1] * 2;
-    const c = mesh.indices[i + 2] * 2;
+    const a = (mesh.indices[i] >>> 0) * 2;
+    const b = (mesh.indices[i + 1] >>> 0) * 2;
+    const c = (mesh.indices[i + 2] >>> 0) * 2;
     area +=
       Math.abs(
         (mesh.vertices[b] - mesh.vertices[a]) * (mesh.vertices[c + 1] - mesh.vertices[a + 1]) -

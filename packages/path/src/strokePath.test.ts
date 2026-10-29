@@ -26,7 +26,7 @@ function axisValues(path: Readonly<PathRaw>, axis: number): number[] {
 function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
   let count = 0;
   for (const candidate of path.commands) {
-    if (candidate === command) {
+    if (candidate === (command & 0xff)) {
       count += 1;
     }
   }
@@ -78,8 +78,8 @@ describe('strokePath', () => {
     style.width = 10.0;
     style.cap = 'butt';
     const result = strokePath(path, style, 0.25);
-    expect(result.commands.includes(PathCommand.CLOSE)).toBe(true);
-    expect(result.commands.includes(PathCommand.MOVE_TO)).toBe(true);
+    expect(result.commands.includes(PathCommand.CLOSE & 0xff)).toBe(true);
+    expect(result.commands.includes(PathCommand.MOVE_TO & 0xff)).toBe(true);
     const yValues: number[] = axisValues(result, 1);
     const maxY = maxValue(yValues);
     const minY = minValue(yValues);
@@ -184,7 +184,7 @@ describe('strokePath', () => {
     };
     style.width = 4.0;
     const result = strokePath(path, style, 0.25);
-    expect(result.commands.includes(PathCommand.CLOSE)).toBe(true);
+    expect(result.commands.includes(PathCommand.CLOSE & 0xff)).toBe(true);
   });
   it('produces fewer outline points with coarser tolerance', () => {
     let path = createPath('nonZero');

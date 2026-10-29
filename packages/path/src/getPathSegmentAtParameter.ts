@@ -197,17 +197,17 @@ function walkPathSegment(
   let di: number = 0;
   for (let ci = 0; ci < commands.length; ci += 1) {
     const command = commands[ci];
-    if (command === PathCommand.MOVE_TO) {
+    if (command === (PathCommand.MOVE_TO & 0xff)) {
       x = data[di];
       y = data[di + 1];
       di += 2;
     } else {
-      if (command === PathCommand.WIDE_MOVE_TO) {
+      if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
         x = data[di + 2];
         y = data[di + 3];
         di += 4;
       } else {
-        if (command === PathCommand.LINE_TO) {
+        if (command === (PathCommand.LINE_TO & 0xff)) {
           const x1 = data[di];
           const y1 = data[di + 1];
           di += 2;
@@ -225,7 +225,7 @@ function walkPathSegment(
           y = y1;
           currentSegment += 1;
         } else {
-          if (command === PathCommand.WIDE_LINE_TO) {
+          if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
             const x1 = data[di + 2];
             const y1 = data[di + 3];
             di += 4;
@@ -243,7 +243,7 @@ function walkPathSegment(
             y = y1;
             currentSegment += 1;
           } else {
-            if (command === PathCommand.QUADRATIC_CURVE_TO) {
+            if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
               const cx = data[di];
               const cy = data[di + 1];
               const x1 = data[di + 2];
@@ -261,7 +261,7 @@ function walkPathSegment(
               y = y1;
               currentSegment += 1;
             } else {
-              if (command === PathCommand.CUBIC_CURVE_TO) {
+              if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
                 const c1x = data[di];
                 const c1y = data[di + 1];
                 const c2x = data[di + 2];
@@ -299,17 +299,17 @@ function walkPathSegmentCurvature(path: Readonly<PathRaw>, segmentIndex: number,
   let di: number = 0;
   for (let ci = 0; ci < commands.length; ci += 1) {
     const command = commands[ci];
-    if (command === PathCommand.MOVE_TO) {
+    if (command === (PathCommand.MOVE_TO & 0xff)) {
       x = data[di];
       y = data[di + 1];
       di += 2;
     } else {
-      if (command === PathCommand.WIDE_MOVE_TO) {
+      if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
         x = data[di + 2];
         y = data[di + 3];
         di += 4;
       } else {
-        if (command === PathCommand.LINE_TO) {
+        if (command === (PathCommand.LINE_TO & 0xff)) {
           di += 2;
           if (currentSegment === segmentIndex) {
             return 0.0;
@@ -318,7 +318,7 @@ function walkPathSegmentCurvature(path: Readonly<PathRaw>, segmentIndex: number,
           y = data[di - 1];
           currentSegment += 1;
         } else {
-          if (command === PathCommand.WIDE_LINE_TO) {
+          if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
             di += 4;
             if (currentSegment === segmentIndex) {
               return 0.0;
@@ -327,7 +327,7 @@ function walkPathSegmentCurvature(path: Readonly<PathRaw>, segmentIndex: number,
             y = data[di - 1];
             currentSegment += 1;
           } else {
-            if (command === PathCommand.QUADRATIC_CURVE_TO) {
+            if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
               const cx = data[di];
               const cy = data[di + 1];
               const x1 = data[di + 2];
@@ -340,7 +340,7 @@ function walkPathSegmentCurvature(path: Readonly<PathRaw>, segmentIndex: number,
               y = y1;
               currentSegment += 1;
             } else {
-              if (command === PathCommand.CUBIC_CURVE_TO) {
+              if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
                 const c1x = data[di];
                 const c1y = data[di + 1];
                 const c2x = data[di + 2];

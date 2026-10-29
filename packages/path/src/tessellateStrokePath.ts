@@ -66,12 +66,12 @@ function appendStrokePieceMesh(mesh: PathMesh, piece: Readonly<StrokePathPieceGe
 }
 
 function appendTriangle(mesh: PathMesh, a: number, b: number, c: number): void {
-  const ax = mesh.vertices[a * 2];
-  const ay = mesh.vertices[a * 2 + 1];
-  const bx = mesh.vertices[b * 2];
-  const by = mesh.vertices[b * 2 + 1];
-  const cx = mesh.vertices[c * 2];
-  const cy = mesh.vertices[c * 2 + 1];
+  const ax = mesh.vertices[(a >>> 0) * 2];
+  const ay = mesh.vertices[(a >>> 0) * 2 + 1];
+  const bx = mesh.vertices[(b >>> 0) * 2];
+  const by = mesh.vertices[(b >>> 0) * 2 + 1];
+  const cx = mesh.vertices[(c >>> 0) * 2];
+  const cy = mesh.vertices[(c >>> 0) * 2 + 1];
   if (Math.abs((bx - ax) * (cy - ay) - (by - ay) * (cx - ax)) <= TRIANGLE_EPSILON) {
     return;
   }

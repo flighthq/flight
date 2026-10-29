@@ -88,7 +88,7 @@ function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: n
   let di: number = 0;
   for (let ci = 0; ci < commands.length; ci += 1) {
     const command = commands[ci];
-    if (command === PathCommand.MOVE_TO) {
+    if (command === (PathCommand.MOVE_TO & 0xff)) {
       x = data[di];
       y = data[di + 1];
       di += 2;
@@ -97,7 +97,7 @@ function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: n
       out.push([x, y]);
       contour = out.length - 1;
     } else {
-      if (command === PathCommand.WIDE_MOVE_TO) {
+      if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
         x = data[di + 2];
         y = data[di + 3];
         di += 4;
@@ -106,7 +106,7 @@ function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: n
         out.push([x, y]);
         contour = out.length - 1;
       } else {
-        if (command === PathCommand.LINE_TO) {
+        if (command === (PathCommand.LINE_TO & 0xff)) {
           contour = ensureContour(out, contour);
           x = data[di];
           y = data[di + 1];
@@ -114,7 +114,7 @@ function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: n
           out[contour!].push(x);
           out[contour!].push(y);
         } else {
-          if (command === PathCommand.WIDE_LINE_TO) {
+          if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
             contour = ensureContour(out, contour);
             x = data[di + 2];
             y = data[di + 3];
@@ -122,7 +122,7 @@ function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: n
             out[contour!].push(x);
             out[contour!].push(y);
           } else {
-            if (command === PathCommand.QUADRATIC_CURVE_TO) {
+            if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
               contour = ensureContour(out, contour);
               const ciIdx = contour!;
               flattenQuadratic(out[ciIdx], x, y, data[di], data[di + 1], data[di + 2], data[di + 3], toleranceSq, 0);
@@ -130,7 +130,7 @@ function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: n
               y = data[di + 3];
               di += 4;
             } else {
-              if (command === PathCommand.CUBIC_CURVE_TO) {
+              if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
                 contour = ensureContour(out, contour);
                 const ciIdx = contour!;
                 flattenCubic(
@@ -150,7 +150,7 @@ function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: n
                 y = data[di + 5];
                 di += 6;
               } else {
-                if (command === PathCommand.CLOSE) {
+                if (command === (PathCommand.CLOSE & 0xff)) {
                   if (contour !== undefined) {
                     const ciIdx = contour;
                     if (x !== contourStartX || y !== contourStartY) {

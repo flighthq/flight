@@ -114,7 +114,7 @@ function fitCubic(
     const dy = pts[last * 2 + 1] - pts[first * 2 + 1];
     const dist = Math.sqrt(dx * dx + dy * dy);
     const d = dist / 3.0;
-    out.commands.push(PathCommand.CUBIC_CURVE_TO);
+    out.commands.push(PathCommand.CUBIC_CURVE_TO & 0xff);
     out.data.push(pts[first * 2] + tHat1[0] * d);
     out.data.push(pts[first * 2 + 1] + tHat1[1] * d);
     out.data.push(pts[last * 2] + tHat2[0] * d);
@@ -129,7 +129,7 @@ function fitCubic(
     const bezier = generateBezier(pts, first, last, u, tHat1, tHat2);
     const [maxErr, splitPoint] = computeMaxError(pts, first, last, bezier, u);
     if (maxErr < toleranceSq) {
-      out.commands.push(PathCommand.CUBIC_CURVE_TO);
+      out.commands.push(PathCommand.CUBIC_CURVE_TO & 0xff);
       out.data.push(bezier[2]);
       out.data.push(bezier[3]);
       out.data.push(bezier[4]);
@@ -170,32 +170,32 @@ export function fitPathCurves(
       continue;
     }
     const closed = n >= 3 && contour[0] === contour[contour.length - 2] && contour[1] === contour[contour.length - 1];
-    const pts: number[] = closed ? [...contour.slice(0, (n - 1) * 2)] : contour;
+    const pts: number[] = closed ? [...contour.slice(0, (n - 1) * 2)] : contour.slice();
     const pn = Math.trunc(pts.length / 2);
     if (pn < 2) {
       continue;
     }
     if (pn === 2) {
-      out.commands.push(PathCommand.MOVE_TO);
+      out.commands.push(PathCommand.MOVE_TO & 0xff);
       out.data.push(pts[0]);
       out.data.push(pts[1]);
-      out.commands.push(PathCommand.LINE_TO);
+      out.commands.push(PathCommand.LINE_TO & 0xff);
       out.data.push(pts[2]);
       out.data.push(pts[3]);
       if (closed) {
-        out.commands.push(PathCommand.CLOSE);
+        out.commands.push(PathCommand.CLOSE & 0xff);
       }
       continue;
     }
     const corners = findCorners(pts, pn);
-    out.commands.push(PathCommand.MOVE_TO);
+    out.commands.push(PathCommand.MOVE_TO & 0xff);
     out.data.push(pts[0]);
     out.data.push(pts[1]);
     for (let ci = 0; ci < corners.length - 1; ci += 1) {
       const first = corners[ci];
       const last = corners[ci + 1];
       if (last - first < 2) {
-        out.commands.push(PathCommand.LINE_TO);
+        out.commands.push(PathCommand.LINE_TO & 0xff);
         out.data.push(pts[last * 2]);
         out.data.push(pts[last * 2 + 1]);
         continue;
@@ -205,7 +205,7 @@ export function fitPathCurves(
       fitCubic(pts, first, last, tHat1, tHat2, toleranceSq, out);
     }
     if (closed) {
-      out.commands.push(PathCommand.CLOSE);
+      out.commands.push(PathCommand.CLOSE & 0xff);
     }
   }
 }

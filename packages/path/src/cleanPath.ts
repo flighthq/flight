@@ -43,16 +43,16 @@ export function cleanPath(source: Readonly<PathRaw>, tolerance: number, out: Pat
         continue;
       }
     }
-    out.commands.push(PathCommand.MOVE_TO);
+    out.commands.push(PathCommand.MOVE_TO & 0xff);
     out.data.push(kept[0]);
     out.data.push(kept[1]);
     for (let i = 1; i < keptCount; i += 1) {
-      out.commands.push(PathCommand.LINE_TO);
+      out.commands.push(PathCommand.LINE_TO & 0xff);
       out.data.push(kept[i * 2]);
       out.data.push(kept[i * 2 + 1]);
     }
     if (closed) {
-      out.commands.push(PathCommand.CLOSE);
+      out.commands.push(PathCommand.CLOSE & 0xff);
     }
   }
 }

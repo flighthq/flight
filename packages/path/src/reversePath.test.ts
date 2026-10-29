@@ -20,7 +20,7 @@ describe('reversePath', () => {
     appendPathLineTo(source, 10.0, 10.0);
     let out = createPath('nonZero');
     reversePath(source, out);
-    expect(out.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
     expect(out.data).toEqual([10.0, 10.0, 10.0, 0.0, 0.0, 0.0]);
   });
   it('preserves closed flag', () => {
@@ -31,7 +31,7 @@ describe('reversePath', () => {
     appendPathClose(source);
     let out = createPath('nonZero');
     reversePath(source, out);
-    expect(out.commands[out.commands.length - 1]).toEqual(PathCommand.CLOSE);
+    expect(out.commands[out.commands.length - 1]).toEqual(PathCommand.CLOSE & 0xff);
   });
   it('copies winding rule', () => {
     let source = createPath('nonZero');

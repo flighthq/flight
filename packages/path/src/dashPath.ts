@@ -40,7 +40,7 @@ function applyDashToContour(
     const dy = y1 - y0;
     const segLen = Math.sqrt(dx * dx + dy * dy);
     if (isOn && !segStarted) {
-      out.commands.push(PathCommand.MOVE_TO);
+      out.commands.push(PathCommand.MOVE_TO & 0xff);
       out.data.push(x0);
       out.data.push(y0);
       segStarted = true;
@@ -54,12 +54,12 @@ function applyDashToContour(
       if (isOn) {
         if (!segStarted) {
           const tStart = segLen > 0.0 ? consumed / segLen : 0.0;
-          out.commands.push(PathCommand.MOVE_TO);
+          out.commands.push(PathCommand.MOVE_TO & 0xff);
           out.data.push(x0 + tStart * dx);
           out.data.push(y0 + tStart * dy);
           segStarted = true;
         }
-        out.commands.push(PathCommand.LINE_TO);
+        out.commands.push(PathCommand.LINE_TO & 0xff);
         out.data.push(ix);
         out.data.push(iy);
       }
@@ -74,7 +74,7 @@ function applyDashToContour(
           segStarted = false;
         }
         if (!wasOn && isOn) {
-          out.commands.push(PathCommand.MOVE_TO);
+          out.commands.push(PathCommand.MOVE_TO & 0xff);
           out.data.push(ix);
           out.data.push(iy);
           segStarted = true;

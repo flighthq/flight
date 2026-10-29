@@ -78,7 +78,7 @@ function createArcPoints(
 ): number[] {
   const ratio = Math.min(Math.max(1.0 - tolerance / radius, -1.0), 1.0);
   const maxStep = Math.max(Math.PI / 32.0, 2.0 * Math.acos(ratio));
-  const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxStep));
+  const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxStep) >>> 0);
   let points: number[] = [] as never[];
   for (let i = 0; i <= steps; i += 1) {
     const angle = startAngle + (sweep * i) / steps;
@@ -637,10 +637,10 @@ function removeConsecutiveDuplicates(source: Readonly<number[]>): number[] {
 
 function reversePoints(points: Readonly<number[]>): number[] {
   let result: number[] = [] as never[];
-  let i = points.length - 2;
+  let i = (points.length | 0) - 2;
   while (i >= 0) {
-    result.push(points[i]);
-    result.push(points[i + 1]);
+    result.push(points[i >>> 0]);
+    result.push(points[(i >>> 0) + 1]);
     i -= 2;
   }
   return result;

@@ -38,16 +38,16 @@ export function decimatePath(
         continue;
       }
       if (first) {
-        out.commands.push(PathCommand.MOVE_TO);
+        out.commands.push(PathCommand.MOVE_TO & 0xff);
         first = false;
       } else {
-        out.commands.push(PathCommand.LINE_TO);
+        out.commands.push(PathCommand.LINE_TO & 0xff);
       }
       out.data.push(contour[i * 2]);
       out.data.push(contour[i * 2 + 1]);
     }
     if (closed) {
-      out.commands.push(PathCommand.CLOSE);
+      out.commands.push(PathCommand.CLOSE & 0xff);
     }
   }
 }

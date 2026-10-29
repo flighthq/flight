@@ -9,7 +9,7 @@ import type { PathRaw } from './contract.ts';
 function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
   let count = 0;
   for (const candidate of path.commands) {
-    if (candidate === command) {
+    if (candidate === (command & 0xff)) {
       count += 1;
     }
   }
@@ -24,8 +24,8 @@ describe('fitPathCurves', () => {
     appendPathLineTo(source, 100.0, 0.0);
     let out = createPath('nonZero');
     fitPathCurves(source, 1.0, out, 0.25);
-    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO);
-    expect(!out.commands.includes(PathCommand.CLOSE)).toBe(true);
+    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
+    expect(!out.commands.includes(PathCommand.CLOSE & 0xff)).toBe(true);
     const lastX = out.data[out.data.length - 2];
     const lastY = out.data[out.data.length - 1];
     expect(Math.abs(lastX - 100.0) < 0.005).toBe(true);
@@ -57,7 +57,7 @@ describe('fitPathCurves', () => {
     appendPathLineTo(source, 100.0, 100.0);
     let out = createPath('nonZero');
     fitPathCurves(source, 1.0, out, 0.25);
-    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO);
+    expect(out.commands[0]).toEqual(PathCommand.MOVE_TO & 0xff);
     expect(out.data.includes(100.0)).toBe(true);
   });
   it('handles empty path', () => {
@@ -100,7 +100,7 @@ describe('fitPathCurves', () => {
     appendPathLineTo(source, 100.0, 0.0);
     let out = createPath('nonZero');
     fitPathCurves(source, 1.0, out, 0.25);
-    const hasCubic = out.commands.some((c) => c === PathCommand.CUBIC_CURVE_TO);
+    const hasCubic = out.commands.some((c) => c === (PathCommand.CUBIC_CURVE_TO & 0xff));
     expect(hasCubic).toBe(true);
   });
 });

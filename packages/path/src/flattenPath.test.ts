@@ -83,12 +83,12 @@ describe('flattenPath', () => {
   });
   it('reads second coordinate pair for wide verbs', () => {
     let path = createPath('nonZero');
-    path.commands.push(PathCommand.WIDE_MOVE_TO);
+    path.commands.push(PathCommand.WIDE_MOVE_TO & 0xff);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(5.0);
     path.data.push(6.0);
-    path.commands.push(PathCommand.WIDE_LINE_TO);
+    path.commands.push(PathCommand.WIDE_LINE_TO & 0xff);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(7.0);

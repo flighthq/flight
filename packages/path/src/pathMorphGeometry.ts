@@ -142,7 +142,7 @@ function appendCubicContourPair(
   start: Readonly<CubicContour>,
   end: Readonly<CubicContour>,
 ): void {
-  commands.push(PathCommand.MOVE_TO);
+  commands.push(PathCommand.MOVE_TO & 0xff);
   startData.push(start.x);
   startData.push(start.y);
   endData.push(end.x);
@@ -150,7 +150,7 @@ function appendCubicContourPair(
   for (let i = 0; i < start.segments.length; i += 1) {
     const a = start.segments[i];
     const b = end.segments[i];
-    commands.push(PathCommand.CUBIC_CURVE_TO);
+    commands.push(PathCommand.CUBIC_CURVE_TO & 0xff);
     startData.push(a.controlX1);
     startData.push(a.controlY1);
     startData.push(a.controlX2);
@@ -165,7 +165,7 @@ function appendCubicContourPair(
     endData.push(b.y1);
   }
   if (start.closed) {
-    commands.push(PathCommand.CLOSE);
+    commands.push(PathCommand.CLOSE & 0xff);
   }
 }
 

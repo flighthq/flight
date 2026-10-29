@@ -143,7 +143,7 @@ describe('containsPathPoint', () => {
   it('handles wide line to command', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
-    path.commands.push(PathCommand.WIDE_LINE_TO);
+    path.commands.push(PathCommand.WIDE_LINE_TO & 0xff);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(100.0);
@@ -155,7 +155,7 @@ describe('containsPathPoint', () => {
   });
   it('handles wide move to command', () => {
     let path = createPath('nonZero');
-    path.commands.push(PathCommand.WIDE_MOVE_TO);
+    path.commands.push(PathCommand.WIDE_MOVE_TO & 0xff);
     path.data.push(0.0);
     path.data.push(0.0);
     path.data.push(0.0);

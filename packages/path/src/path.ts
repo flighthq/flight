@@ -218,7 +218,7 @@ function appendArcCubics(
   if (dtheta === 0.0) {
     return;
   }
-  const nSegs = Math.max(1, Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0)));
+  const nSegs = Math.max(1, Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0)) >>> 0);
   const dt = dtheta / nSegs;
   const cosPhi = Math.cos(xAxisRotation);
   const sinPhi = Math.sin(xAxisRotation);
@@ -277,7 +277,7 @@ function appendCornerArc(
  * Closes the current contour back to the most recent MOVE_TO origin.
  */
 export function appendPathClose(path: PathRaw): void {
-  path.commands.push(PathCommand.CLOSE);
+  path.commands.push(PathCommand.CLOSE & 0xff);
 }
 
 /**
@@ -292,7 +292,7 @@ export function appendPathCubicCurveTo(
   x: number,
   y: number,
 ): void {
-  path.commands.push(PathCommand.CUBIC_CURVE_TO);
+  path.commands.push(PathCommand.CUBIC_CURVE_TO & 0xff);
   path.data.push(controlX1);
   path.data.push(controlY1);
   path.data.push(controlX2);
@@ -430,7 +430,7 @@ export function appendPathEllipticalArcTo(
  * Appends a LINE_TO command and its point to the path.
  */
 export function appendPathLineTo(path: PathRaw, x: number, y: number): void {
-  path.commands.push(PathCommand.LINE_TO);
+  path.commands.push(PathCommand.LINE_TO & 0xff);
   path.data.push(x);
   path.data.push(y);
 }
@@ -439,7 +439,7 @@ export function appendPathLineTo(path: PathRaw, x: number, y: number): void {
  * Appends a MOVE_TO command and its point to the path.
  */
 export function appendPathMoveTo(path: PathRaw, x: number, y: number): void {
-  path.commands.push(PathCommand.MOVE_TO);
+  path.commands.push(PathCommand.MOVE_TO & 0xff);
   path.data.push(x);
   path.data.push(y);
 }
@@ -485,7 +485,7 @@ export function appendPathQuadraticCurveTo(
   x: number,
   y: number,
 ): void {
-  path.commands.push(PathCommand.QUADRATIC_CURVE_TO);
+  path.commands.push(PathCommand.QUADRATIC_CURVE_TO & 0xff);
   path.data.push(controlX);
   path.data.push(controlY);
   path.data.push(x);
@@ -633,18 +633,18 @@ export function getPathLastPoint(path: Readonly<PathRaw>): readonly [number, num
     return null;
   }
   const lastCmd = path.commands[last - 1];
-  if (lastCmd !== PathCommand.CLOSE) {
+  if (lastCmd !== (PathCommand.CLOSE & 0xff)) {
     return [path.data[path.data.length - 2], path.data[path.data.length - 1]];
   }
   let di = path.data.length;
-  let ci = last - 2;
+  let ci = (last | 0) - 2;
   while (ci >= 0) {
-    const cmd = path.commands[ci];
+    const cmd = path.commands[ci >>> 0];
     di -= pathCommandDataCount(cmd);
-    if (cmd === PathCommand.MOVE_TO) {
+    if (cmd === (PathCommand.MOVE_TO & 0xff)) {
       return [path.data[di], path.data[di + 1]];
     }
-    if (cmd === PathCommand.WIDE_MOVE_TO) {
+    if (cmd === (PathCommand.WIDE_MOVE_TO & 0xff)) {
       return [path.data[di + 2], path.data[di + 3]];
     }
     ci -= 1;
@@ -841,13 +841,17 @@ export function parseStrokePathTessellationReason(value: string): StrokePathTess
 }
 
 function pathCommandDataCount(cmd: number): number {
-  if (cmd === PathCommand.MOVE_TO || cmd === PathCommand.LINE_TO) {
+  if (cmd === (PathCommand.MOVE_TO & 0xff) || cmd === (PathCommand.LINE_TO & 0xff)) {
     return 2;
   }
-  if (cmd === PathCommand.QUADRATIC_CURVE_TO || cmd === PathCommand.WIDE_MOVE_TO || cmd === PathCommand.WIDE_LINE_TO) {
+  if (
+    cmd === (PathCommand.QUADRATIC_CURVE_TO & 0xff) ||
+    cmd === (PathCommand.WIDE_MOVE_TO & 0xff) ||
+    cmd === (PathCommand.WIDE_LINE_TO & 0xff)
+  ) {
     return 4;
   }
-  if (cmd === PathCommand.CUBIC_CURVE_TO) {
+  if (cmd === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
     return 6;
   }
   return 0;
