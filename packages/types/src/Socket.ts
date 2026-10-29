@@ -39,10 +39,10 @@ export interface SocketCloseInfo {
 // Opt-in event group, allocated lazily by enableSocketSignals and stored on the runtime. A bare
 // socket keeps these null and pays no signal allocation or dispatch cost.
 export interface SocketSignals extends Entity {
-  onSocketOpen: Signal<() => void>;
-  onSocketMessage: Signal<(message: Readonly<SocketMessage>) => void>;
-  onSocketClose: Signal<(info: Readonly<SocketCloseInfo>) => void>;
-  onSocketError: Signal<() => void>;
+  onSocketOpen: Signal<void>;
+  onSocketMessage: Signal<Readonly<SocketMessage>>;
+  onSocketClose: Signal<Readonly<SocketCloseInfo>>;
+  onSocketError: Signal<void>;
 }
 
 // The backend→entity event sink. The backend calls these as its underlying transport fires; socket

@@ -93,10 +93,10 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
   if (runtime.signals === null) {
     runtime.signals = (() => {
       const out = allocateEntity<SocketSignals>();
-      out.onSocketOpen = createSignal<() => void>();
-      out.onSocketMessage = createSignal<(message: Readonly<SocketMessage>) => void>();
-      out.onSocketClose = createSignal<(info: Readonly<SocketCloseInfo>) => void>();
-      out.onSocketError = createSignal<() => void>();
+      out.onSocketOpen = createSignal<void>();
+      out.onSocketMessage = createSignal<Readonly<SocketMessage>>();
+      out.onSocketClose = createSignal<Readonly<SocketCloseInfo>>();
+      out.onSocketError = createSignal<void>();
       return finishEntity(out);
     })();
   }
@@ -147,7 +147,7 @@ function makeSocketEventSink(runtime: SocketRuntime): SocketEventSink {
     handleSocketOpen(): void {
       if (!runtime.delivering) return;
       runtime.readyState = 'open';
-      if (runtime.signals !== null) emitSignal(runtime.signals.onSocketOpen);
+      if (runtime.signals !== null) emitSignal(runtime.signals.onSocketOpen, undefined);
     },
     handleSocketMessage(message): void {
       if (!runtime.delivering) return;
@@ -160,7 +160,7 @@ function makeSocketEventSink(runtime: SocketRuntime): SocketEventSink {
     },
     handleSocketError(): void {
       if (!runtime.delivering) return;
-      if (runtime.signals !== null) emitSignal(runtime.signals.onSocketError);
+      if (runtime.signals !== null) emitSignal(runtime.signals.onSocketError, undefined);
     },
   };
 }
