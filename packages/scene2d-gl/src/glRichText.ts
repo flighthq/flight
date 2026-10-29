@@ -87,7 +87,7 @@ export function drawGlRichTextWithOverlay(
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(source) ?? undefined);
   if (content.text.length === 0 && !data.background && !data.border) return;
   if (renderProxy.rendererData === null || state.canvasHost === null || state.imageHost === null) return;
   const richTextData = renderProxy.rendererData as GlRichTextData;

@@ -89,7 +89,7 @@ export function drawWgpuRichTextWithOverlay(
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(source) ?? undefined);
   if (content.text.length === 0 && !data.background && !data.border) return;
   const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
   if (richData === null || state.canvasHost === null || state.imageHost === null) return;

@@ -55,7 +55,7 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
 
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(source) ?? undefined);
   const { text } = content;
 
   const measure = (t: string, fmt: TextFormat): number => {

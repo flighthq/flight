@@ -84,7 +84,7 @@ function drawDomRichTextField(state: DomRenderState, renderProxy: RenderProxy2D)
 
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, source.data, getRichTextPasswordCharacter(source));
+  computeRichTextContent(content, source.data, getRichTextPasswordCharacter(source) ?? undefined);
   const { text } = content;
 
   const ctx = getMeasureCtx();
