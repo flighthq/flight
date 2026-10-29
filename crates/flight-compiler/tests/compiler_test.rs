@@ -6082,6 +6082,130 @@ pub enum PathSegment {
     }
 
     #[test]
+    fn lowers_reserved_key_data_unions_from_payload_declarations() {
+        let source = r#"
+//! flight-compiler: data-union MarkupResult=reserved-key
+
+pub struct MarkupEffect {
+    pub break_before: Option<bool>,
+    pub format: Option<TextFormat>,
+    pub text: Option<String>,
+}
+
+pub struct TextFormat {
+    pub bold: Option<bool>,
+    pub color: Option<u32>,
+}
+
+pub enum MarkupResult {
+    Effect(MarkupEffect),
+    Format(TextFormat),
+}
+
+pub fn result_kind(result: MarkupResult) -> &'static str {
+    return match result {
+        MarkupResult::Effect(_) => "effect",
+        MarkupResult::Format(_) => "format",
+    };
+}
+
+pub fn is_effect(result: &MarkupResult) -> bool {
+    return matches!(result, MarkupResult::Effect(_));
+}
+
+pub fn is_format(result: &MarkupResult) -> bool {
+    return matches!(result, MarkupResult::Format(_));
+}
+
+pub fn effect(value: MarkupEffect) -> MarkupResult {
+    return MarkupResult::Effect(value);
+}
+
+pub fn format(value: TextFormat) -> MarkupResult {
+    return MarkupResult::Format(value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export type MarkupResult = MarkupEffect | TextFormat;"));
+        assert!(output.contains(
+            "if (\"breakBefore\" in matchValue || \"format\" in matchValue || \"text\" in matchValue)"
+        ));
+        assert!(output.contains("else {\n    return \"format\";"));
+        assert!(output.contains(
+            "return \"breakBefore\" in result || \"format\" in result || \"text\" in result;"
+        ));
+        assert!(output.contains(
+            "return !(\"breakBefore\" in result || \"format\" in result || \"text\" in result);"
+        ));
+        assert!(output.contains("return value;"));
+        assert!(!output.contains("MarkupResult.Effect"));
+        assert!(!output.contains("MarkupResult.Format"));
+    }
+
+    #[test]
+    fn rejects_unsupported_reserved_key_data_union_shapes() {
+        let cases = [
+            (
+                "//! flight-compiler: data-union Value=unknown\npub enum Value { First(i32), Second(String) }\n",
+                "`flight-compiler: data-union` enum `Value` has unknown style `unknown`",
+            ),
+            (
+                "//! flight-compiler: data-union Value=reserved-key\npub enum Value { Only(Record) }\npub struct Record { pub value: i32 }\n",
+                "reserved-key data union `Value` requires exactly two payload variants",
+            ),
+            (
+                "//! flight-compiler: data-union Value=reserved-key\npub enum Value { First(Record), Second }\npub struct Record { pub value: i32 }\n",
+                "reserved-key data union `Value` requires exactly one unnamed payload field per variant",
+            ),
+            (
+                "//! flight-compiler: data-union Value=reserved-key\npub enum Value { First(Missing), Second(Fallback) }\npub struct Fallback { pub value: i32 }\n",
+                "cannot resolve reserved-key data union payload type `Missing` to a record declaration",
+            ),
+            (
+                "//! flight-compiler: data-union Value=reserved-key\npub enum Value { First(Vec<i32>), Second(Fallback) }\npub struct Fallback { pub value: i32 }\n",
+                "cannot resolve reserved-key data union payload type `Vec` to a record declaration",
+            ),
+            (
+                "//! flight-compiler: data-union Value=reserved-key\npub enum Value { First(Record), Second(Record) }\npub struct Record { pub value: i32 }\n",
+                "reserved-key data union `Value` has no first-variant property absent from its fallback payload",
+            ),
+        ];
+
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_nonexhaustive_reserved_key_data_union_matches() {
+        let source = r#"
+//! flight-compiler: data-union Value=reserved-key
+
+pub struct Effect { pub text: Option<String> }
+pub struct Format { pub bold: Option<bool> }
+pub enum Value { Effect(Effect), Format(Format) }
+
+pub fn kind(value: Value) -> &'static str {
+    return match value {
+        Value::Effect(_) => "effect",
+    };
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "reserved-key data union match is not exhaustive; missing `Value::Format`"
+        );
+    }
+
+    #[test]
     fn lowers_tagged_data_union_constructors_and_matches_exact_kinds() {
         let source = r#"
 //! flight-compiler: data-union PathSegment
@@ -10627,6 +10751,60 @@ mod rectangle_ids {
         assert!(output.contains("typeof matchValue === \"string\""));
         assert!(!output.contains("  RectangleId,"));
         assert!(!output.contains("RectangleId.Number"));
+    }
+
+    #[test]
+    fn inherits_reserved_key_data_union_lowering_from_production_sources() {
+        let production = r#"
+//! flight-compiler: data-union MarkupResult=reserved-key
+
+pub struct MarkupEffect {
+    pub text: Option<String>,
+}
+
+pub struct TextFormat {
+    pub bold: Option<bool>,
+}
+
+pub enum MarkupResult {
+    Effect(MarkupEffect),
+    Format(TextFormat),
+}
+"#;
+        let source = r#"
+use flight_text_markup::*;
+
+mod markup_results {
+    use super::*;
+
+    #[test]
+    fn constructs_and_matches_an_effect() {
+        let result = MarkupResult::Effect(MarkupEffect {
+            text: Some("replacement".to_string()),
+        });
+        let kind = match result {
+            MarkupResult::Effect(_) => "effect",
+            MarkupResult::Format(_) => "format",
+        };
+        assert_eq!(kind, "effect");
+    }
+}
+"#;
+
+        let output = compile_vitest_with_alias_sources(
+            source,
+            "@flighthq/text-markup/contract",
+            &[production],
+        )
+        .unwrap();
+
+        assert!(output.contains("const result = { text: \"replacement\" };"));
+        assert!(output.contains("if (\"text\" in matchValue)"));
+        assert!(
+            output.contains("else {\n    return \"format\";"),
+            "{output}"
+        );
+        assert!(!output.contains("MarkupResult.Effect"));
     }
 
     #[test]

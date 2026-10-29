@@ -41,6 +41,9 @@ pub(crate) struct Program {
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) readonly_structs: HashSet<String>,
+    // Transparent data unions that distinguish their first record payload from the final fallback
+    // payload by declaration-derived property names (`data-union Name=reserved-key`).
+    pub(crate) reserved_key_data_unions: HashSet<String>,
     pub(crate) string_unions: BTreeMap<String, StringUnionStyle>,
     pub(crate) string_union_values: BTreeMap<String, BTreeMap<String, String>>,
     pub(crate) type_aliases: Vec<ItemType>,
@@ -60,6 +63,11 @@ pub(crate) enum StringUnionStyle {
 pub(crate) struct StringUnionMetadata {
     pub(crate) styles: BTreeMap<String, StringUnionStyle>,
     pub(crate) values: BTreeMap<String, BTreeMap<String, String>>,
+}
+
+struct DataUnionMetadata {
+    names: HashSet<String>,
+    reserved_key: HashSet<String>,
 }
 
 pub(crate) struct TestProgram {
@@ -462,7 +470,9 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
     let callable_field_parameters = parse_callable_field_parameters(&file.attrs)?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
-    let data_unions = parse_data_unions(&file.attrs)?;
+    let data_union_metadata = parse_data_unions(&file.attrs)?;
+    let data_unions = data_union_metadata.names;
+    let reserved_key_data_unions = data_union_metadata.reserved_key;
     let entity_runtime_states = parse_entity_runtime_states(&file.attrs)?;
     let export_names = parse_export_names(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
@@ -561,7 +571,12 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
     validate_callable_field_parameters(&callable_field_parameters, &structs)?;
-    validate_data_union_directives(&data_unions, &enums, &string_unions)?;
+    validate_data_union_directives(
+        &data_unions,
+        &reserved_key_data_unions,
+        &enums,
+        &string_unions,
+    )?;
     validate_entity_runtime_states(&entity_runtime_states, &structs)?;
     validate_array_like_parameters(&array_like_parameters, &functions)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
@@ -621,6 +636,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         statics,
         structs,
         readonly_structs,
+        reserved_key_data_unions,
         string_unions,
         string_union_values,
         type_aliases,
@@ -1159,8 +1175,9 @@ fn parse_array_like_parameters(attributes: &[Attribute]) -> Result<BTreeSet<Stri
     return Ok(parameters);
 }
 
-fn parse_data_unions(attributes: &[Attribute]) -> Result<HashSet<String>, CompileError> {
+fn parse_data_unions(attributes: &[Attribute]) -> Result<DataUnionMetadata, CompileError> {
     let mut data_unions = HashSet::new();
+    let mut reserved_key = HashSet::new();
     for attribute in attributes {
         let Some(directive) = doc_directive(attribute) else {
             continue;
@@ -1175,11 +1192,30 @@ fn parse_data_unions(attributes: &[Attribute]) -> Result<HashSet<String>, Compil
                 "`flight-compiler: data-union` requires at least one enum name",
             ));
         }
-        for name in names {
+        for specification in names {
+            let mut parts = specification.split('=');
+            let name = parts.next().unwrap_or_default();
+            let style = parts.next();
+            if parts.next().is_some() {
+                return Err(compile_error(format!(
+                    "`flight-compiler: data-union` enum specification `{specification}` is malformed"
+                )));
+            }
             if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
                 return Err(compile_error(format!(
                     "`flight-compiler: data-union` enum name `{name}` is not a valid identifier"
                 )));
+            }
+            match style {
+                None => {}
+                Some("reserved-key") => {
+                    reserved_key.insert(name.to_string());
+                }
+                Some(style) => {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: data-union` enum `{name}` has unknown style `{style}`"
+                    )));
+                }
             }
             if !data_unions.insert(name.to_string()) {
                 return Err(compile_error(format!(
@@ -1188,7 +1224,10 @@ fn parse_data_unions(attributes: &[Attribute]) -> Result<HashSet<String>, Compil
             }
         }
     }
-    return Ok(data_unions);
+    return Ok(DataUnionMetadata {
+        names: data_unions,
+        reserved_key,
+    });
 }
 
 fn parse_identity_aliases(
@@ -1806,6 +1845,7 @@ fn validate_array_like_parameters(
 
 fn validate_data_union_directives(
     data_unions: &HashSet<String>,
+    reserved_key_data_unions: &HashSet<String>,
     enums: &[ItemEnum],
     string_unions: &BTreeMap<String, StringUnionStyle>,
 ) -> Result<(), CompileError> {
@@ -1817,10 +1857,24 @@ fn validate_data_union_directives(
                 "enum `{name}` cannot use both `flight-compiler: data-union` and `flight-compiler: string-union`"
             )));
         }
-        if !enums.iter().any(|rust_enum| rust_enum.ident == name) {
+        let Some(rust_enum) = enums.iter().find(|rust_enum| rust_enum.ident == name) else {
             return Err(compile_error(format!(
                 "`flight-compiler: data-union` enum `{name}` does not exist"
             )));
+        };
+        if reserved_key_data_unions.contains(name) {
+            if rust_enum.variants.len() != 2 {
+                return Err(compile_error(format!(
+                    "reserved-key data union `{name}` requires exactly two payload variants"
+                )));
+            }
+            if rust_enum.variants.iter().any(|variant| {
+                !matches!(&variant.fields, Fields::Unnamed(fields) if fields.unnamed.len() == 1)
+            }) {
+                return Err(compile_error(format!(
+                    "reserved-key data union `{name}` requires exactly one unnamed payload field per variant"
+                )));
+            }
         }
     }
     return Ok(());

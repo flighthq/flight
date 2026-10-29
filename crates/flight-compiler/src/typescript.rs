@@ -63,6 +63,7 @@ const ENTITY_RUNTIME_STATE_MARKER: &str = "@entity-runtime-state:";
 const ENTITY_RUNTIME_STATE_FIELD_MARKER: &str = "@entity-runtime-state-field:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
+const RESERVED_KEY_DATA_UNION_VARIANT_MARKER: &str = "@reserved-key-data-union-variant:";
 const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
 // A field an `allocate_entity` local may leave out of its default object because the construction
 // initializer called on it in the very next statement definitely assigns it (`type:field`).
@@ -2372,6 +2373,108 @@ fn data_union_variant_marker(
     );
 }
 
+fn reserved_key_data_union_variant_marker(
+    owner: &str,
+    variant: &str,
+    keys: &BTreeSet<String>,
+) -> String {
+    return format!(
+        "{RESERVED_KEY_DATA_UNION_VARIANT_MARKER}{owner}:{variant}:{}",
+        keys.iter().cloned().collect::<Vec<_>>().join(",")
+    );
+}
+
+fn reserved_key_record_fields(
+    rust_type: &Type,
+    programs: &[&Program],
+    resolving: &mut BTreeSet<String>,
+) -> Result<BTreeSet<String>, CompileError> {
+    return match rust_type {
+        Type::Group(group) => reserved_key_record_fields(&group.elem, programs, resolving),
+        Type::Paren(paren) => reserved_key_record_fields(&paren.elem, programs, resolving),
+        Type::Reference(reference) => {
+            reserved_key_record_fields(&reference.elem, programs, resolving)
+        }
+        Type::Path(path) => {
+            let Some(segment) = path.path.segments.last() else {
+                return Err(compile_error("empty Rust type path"));
+            };
+            let name = segment.ident.to_string();
+            if matches!(name.as_str(), "Arc" | "Box" | "Ref") {
+                let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                    return Err(compile_error(format!(
+                        "`{name}` reserved-key data union payload needs one type argument"
+                    )));
+                };
+                let types = arguments
+                    .args
+                    .iter()
+                    .filter_map(|argument| match argument {
+                        GenericArgument::Type(rust_type) => Some(rust_type),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                if types.len() != 1 {
+                    return Err(compile_error(format!(
+                        "`{name}` reserved-key data union payload needs exactly one type argument"
+                    )));
+                }
+                return reserved_key_record_fields(types[0], programs, resolving);
+            }
+            if !resolving.insert(name.clone()) {
+                return Err(compile_error(format!(
+                    "reserved-key data union payload contains a recursive alias through `{name}`"
+                )));
+            }
+            let structures = programs
+                .iter()
+                .flat_map(|program| &program.structs)
+                .filter(|structure| structure.ident == name)
+                .collect::<Vec<_>>();
+            let aliases = programs
+                .iter()
+                .flat_map(|program| &program.type_aliases)
+                .filter(|alias| alias.ident == name)
+                .collect::<Vec<_>>();
+            let result = match (structures.as_slice(), aliases.as_slice()) {
+                ([structure], []) => {
+                    let syn::Fields::Named(fields) = &structure.fields else {
+                        return Err(compile_error(format!(
+                            "reserved-key data union payload type `{name}` must be a named-field struct"
+                        )));
+                    };
+                    let mut keys = BTreeSet::new();
+                    for field in &fields.named {
+                        let Some(identifier) = &field.ident else {
+                            unreachable!("named fields always have identifiers");
+                        };
+                        let key = snake_to_lower_camel(&identifier.to_string());
+                        if !keys.insert(key.clone()) {
+                            return Err(compile_error(format!(
+                                "reserved-key data union payload type `{name}` maps more than one field to `{key}`"
+                            )));
+                        }
+                    }
+                    Ok(keys)
+                }
+                ([], [alias]) => reserved_key_record_fields(&alias.ty, programs, resolving),
+                ([], []) => Err(compile_error(format!(
+                    "cannot resolve reserved-key data union payload type `{name}` to a record declaration"
+                ))),
+                _ => Err(compile_error(format!(
+                    "reserved-key data union payload type `{name}` has ambiguous record declarations"
+                ))),
+            };
+            resolving.remove(&name);
+            result
+        }
+        _ => Err(compile_error(format!(
+            "cannot resolve reserved-key data union payload `{}` to a record declaration",
+            rust_type_description(rust_type)
+        ))),
+    };
+}
+
 fn insert_data_union_context(
     context: &mut HashSet<String>,
     programs: &[&Program],
@@ -2391,6 +2494,48 @@ fn insert_data_union_context(
                     if matches!(variant.fields, syn::Fields::Unit) {
                         context.insert(format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant_name}"));
                     }
+                }
+                continue;
+            }
+            if program.reserved_key_data_unions.contains(&owner) {
+                let variants = rust_enum.variants.iter().collect::<Vec<_>>();
+                let payload_types = variants
+                    .iter()
+                    .map(|variant| {
+                        let syn::Fields::Unnamed(fields) = &variant.fields else {
+                            unreachable!(
+                                "reserved-key data union validation requires payload variants"
+                            )
+                        };
+                        &fields.unnamed[0].ty
+                    })
+                    .collect::<Vec<_>>();
+                let reserved_fields =
+                    reserved_key_record_fields(payload_types[0], programs, &mut BTreeSet::new())?;
+                let fallback_fields =
+                    reserved_key_record_fields(payload_types[1], programs, &mut BTreeSet::new())?;
+                let keys = reserved_fields
+                    .difference(&fallback_fields)
+                    .cloned()
+                    .collect::<BTreeSet<_>>();
+                if keys.is_empty() {
+                    return Err(compile_error(format!(
+                        "reserved-key data union `{owner}` has no first-variant property absent from its fallback payload"
+                    )));
+                }
+                for (index, variant) in variants.into_iter().enumerate() {
+                    let variant_name = variant.ident.to_string();
+                    context.insert(data_union_variant_marker(
+                        &owner,
+                        &variant_name,
+                        &BTreeSet::from([RuntimeCategory::Record]),
+                    ));
+                    let empty = BTreeSet::new();
+                    context.insert(reserved_key_data_union_variant_marker(
+                        &owner,
+                        &variant_name,
+                        if index == 0 { &keys } else { &empty },
+                    ));
                 }
                 continue;
             }
@@ -5998,6 +6143,44 @@ fn data_union_variant_categories(
         .collect::<Option<BTreeSet<_>>>();
 }
 
+fn reserved_key_data_union_variant_keys(
+    entities: &HashSet<String>,
+    owner: &str,
+    variant: &str,
+) -> Option<BTreeSet<String>> {
+    let prefix = format!("{RESERVED_KEY_DATA_UNION_VARIANT_MARKER}{owner}:{variant}:");
+    let keys = entities
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix))?;
+    return Some(
+        keys.split(',')
+            .filter(|key| !key.is_empty())
+            .map(str::to_string)
+            .collect(),
+    );
+}
+
+fn reserved_key_data_union_variants(
+    entities: &HashSet<String>,
+    owner: &str,
+) -> BTreeMap<String, BTreeSet<String>> {
+    let prefix = format!("{RESERVED_KEY_DATA_UNION_VARIANT_MARKER}{owner}:");
+    return entities
+        .iter()
+        .filter_map(|marker| {
+            let remainder = marker.strip_prefix(&prefix)?;
+            let (variant, keys) = remainder.split_once(':')?;
+            Some((
+                variant.to_string(),
+                keys.split(',')
+                    .filter(|key| !key.is_empty())
+                    .map(str::to_string)
+                    .collect(),
+            ))
+        })
+        .collect();
+}
+
 pub(crate) fn is_transparent_data_union_variant(
     entities: &HashSet<String>,
     owner: &str,
@@ -9237,6 +9420,226 @@ fn analyze_tagged_data_union_match(
     return Ok(Some(output));
 }
 
+struct ReservedKeyDataUnionPattern {
+    binding: Option<String>,
+    fallback: bool,
+    keys: BTreeSet<String>,
+    owner: String,
+    variant: String,
+}
+
+enum ReservedKeyDataUnionPatternAnalysis {
+    CatchAll(Option<String>),
+    Ordinary,
+    Variants(Vec<ReservedKeyDataUnionPattern>),
+}
+
+struct DataUnionMatchArm {
+    binding: Option<String>,
+    categories: BTreeSet<RuntimeCategory>,
+    catch_all: bool,
+    reserved_key_variants: Vec<(BTreeSet<String>, bool)>,
+}
+
+fn analyze_reserved_key_data_union_pattern(
+    pattern: &Pat,
+    entities: &HashSet<String>,
+) -> Result<ReservedKeyDataUnionPatternAnalysis, CompileError> {
+    return match pattern {
+        Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            Ok(ReservedKeyDataUnionPatternAnalysis::CatchAll(Some(
+                snake_to_lower_camel(&identifier.ident.to_string()),
+            )))
+        }
+        Pat::Or(or_pattern) => {
+            let mut variants = Vec::new();
+            for pattern in &or_pattern.cases {
+                match analyze_reserved_key_data_union_pattern(pattern, entities)? {
+                    ReservedKeyDataUnionPatternAnalysis::Variants(patterns) => {
+                        variants.extend(patterns);
+                    }
+                    ReservedKeyDataUnionPatternAnalysis::CatchAll(_) => {
+                        return Err(compile_error(
+                            "reserved-key data union `|` pattern cannot contain a catch-all",
+                        ));
+                    }
+                    ReservedKeyDataUnionPatternAnalysis::Ordinary => {
+                        return Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary);
+                    }
+                }
+            }
+            Ok(ReservedKeyDataUnionPatternAnalysis::Variants(variants))
+        }
+        Pat::Paren(paren) => analyze_reserved_key_data_union_pattern(&paren.pat, entities),
+        Pat::Reference(reference) => {
+            analyze_reserved_key_data_union_pattern(&reference.pat, entities)
+        }
+        Pat::TupleStruct(pattern) => {
+            let Some((owner, variant)) = path_owner_and_member(&pattern.path) else {
+                return Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary);
+            };
+            let Some(keys) = reserved_key_data_union_variant_keys(entities, &owner, &variant)
+            else {
+                return Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary);
+            };
+            if pattern.elems.len() != 1 {
+                return Err(compile_error(format!(
+                    "reserved-key data union pattern `{owner}::{variant}` expects exactly one payload"
+                )));
+            }
+            Ok(ReservedKeyDataUnionPatternAnalysis::Variants(vec![
+                ReservedKeyDataUnionPattern {
+                    binding: data_union_payload_binding(&pattern.elems[0])?,
+                    fallback: keys.is_empty(),
+                    keys,
+                    owner,
+                    variant,
+                },
+            ]))
+        }
+        Pat::Wild(_) => Ok(ReservedKeyDataUnionPatternAnalysis::CatchAll(None)),
+        _ => Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary),
+    };
+}
+
+fn reserved_key_data_union_keys_predicate(keys: &BTreeSet<String>, value: &str) -> String {
+    return keys
+        .iter()
+        .map(|key| format!("{key:?} in {value}"))
+        .collect::<Vec<_>>()
+        .join(" || ");
+}
+
+fn reserved_key_data_union_predicate(variants: &[(BTreeSet<String>, bool)], value: &str) -> String {
+    let predicates = variants
+        .iter()
+        .map(|(keys, fallback)| {
+            let predicate = reserved_key_data_union_keys_predicate(keys, value);
+            if *fallback {
+                format!("!({predicate})")
+            } else {
+                predicate
+            }
+        })
+        .collect::<Vec<_>>();
+    return if predicates.len() == 1 {
+        predicates.into_iter().next().unwrap_or_default()
+    } else {
+        format!("({})", predicates.join(" || "))
+    };
+}
+
+fn analyze_reserved_key_data_union_match(
+    arms: &[syn::Arm],
+    entities: &HashSet<String>,
+) -> Result<Option<Vec<DataUnionMatchArm>>, CompileError> {
+    let analyses = arms
+        .iter()
+        .map(|arm| analyze_reserved_key_data_union_pattern(&arm.pat, entities))
+        .collect::<Result<Vec<_>, _>>()?;
+    if !analyses
+        .iter()
+        .any(|analysis| matches!(analysis, ReservedKeyDataUnionPatternAnalysis::Variants(_)))
+    {
+        return Ok(None);
+    }
+    let mut owner = None;
+    let mut handled = BTreeMap::<String, String>::new();
+    let mut output = Vec::new();
+    let mut has_catch_all = false;
+    for (arm_index, analysis) in analyses.into_iter().enumerate() {
+        match analysis {
+            ReservedKeyDataUnionPatternAnalysis::CatchAll(binding) => {
+                if arm_index + 1 != arms.len() {
+                    return Err(compile_error(
+                        "reserved-key data union catch-all match arm must be last",
+                    ));
+                }
+                output.push(DataUnionMatchArm {
+                    binding,
+                    categories: BTreeSet::new(),
+                    catch_all: true,
+                    reserved_key_variants: Vec::new(),
+                });
+                has_catch_all = true;
+            }
+            ReservedKeyDataUnionPatternAnalysis::Ordinary => {
+                return Err(compile_error(
+                    "reserved-key data union match cannot mix data union and ordinary patterns",
+                ));
+            }
+            ReservedKeyDataUnionPatternAnalysis::Variants(patterns) => {
+                let mut binding = None::<Option<String>>;
+                let mut variants = Vec::new();
+                for pattern in patterns {
+                    if let Some(expected) = &owner {
+                        if expected != &pattern.owner {
+                            return Err(compile_error(format!(
+                                "reserved-key data union match cannot mix `{expected}` and `{}` variants",
+                                pattern.owner
+                            )));
+                        }
+                    } else {
+                        owner = Some(pattern.owner.clone());
+                    }
+                    if binding
+                        .as_ref()
+                        .is_some_and(|binding| binding != &pattern.binding)
+                    {
+                        return Err(compile_error(
+                            "reserved-key data union alternatives must bind the same payload name",
+                        ));
+                    }
+                    binding.get_or_insert(pattern.binding);
+                    let label = format!("{}::{}", pattern.owner, pattern.variant);
+                    if let Some(previous) = handled.insert(pattern.variant, label.clone()) {
+                        return Err(compile_error(format!(
+                            "reserved-key data union match arm `{label}` is unreachable after `{previous}`"
+                        )));
+                    }
+                    let discriminator_keys = if pattern.fallback {
+                        reserved_key_data_union_variants(entities, &pattern.owner)
+                            .into_values()
+                            .find(|keys| !keys.is_empty())
+                            .expect("validated reserved-key data union has discriminator keys")
+                    } else {
+                        pattern.keys
+                    };
+                    variants.push((discriminator_keys, pattern.fallback));
+                }
+                output.push(DataUnionMatchArm {
+                    binding: binding.flatten(),
+                    categories: BTreeSet::new(),
+                    catch_all: false,
+                    reserved_key_variants: variants,
+                });
+            }
+        }
+    }
+    if !has_catch_all {
+        let owner = owner.expect("reserved-key data union match has a variant");
+        let missing = reserved_key_data_union_variants(entities, &owner)
+            .into_keys()
+            .filter(|variant| !handled.contains_key(variant))
+            .collect::<Vec<_>>();
+        if !missing.is_empty() {
+            return Err(compile_error(format!(
+                "reserved-key data union match is not exhaustive; missing {}",
+                missing
+                    .iter()
+                    .map(|variant| format!("`{owner}::{variant}`"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
+        }
+        output
+            .last_mut()
+            .expect("reserved-key data union match has an arm")
+            .catch_all = true;
+    }
+    return Ok(Some(output));
+}
+
 // Lowers one data union pattern applied to `value` into a runtime predicate (`None` for a
 // catch-all) and the `(binding, expression)` pairs it introduces; `None` for an ordinary pattern.
 fn data_union_pattern_test(
@@ -9244,6 +9647,43 @@ fn data_union_pattern_test(
     value: &str,
     entities: &HashSet<String>,
 ) -> Result<Option<DataUnionPatternTest>, CompileError> {
+    if let ReservedKeyDataUnionPatternAnalysis::Variants(patterns) =
+        analyze_reserved_key_data_union_pattern(pattern, entities)?
+    {
+        let binding = patterns[0].binding.clone();
+        if patterns.iter().any(|pattern| pattern.binding != binding) {
+            return Err(compile_error(
+                "reserved-key data union alternatives must bind the same payload name",
+            ));
+        }
+        let owner = &patterns[0].owner;
+        if patterns.iter().any(|pattern| &pattern.owner != owner) {
+            return Err(compile_error(
+                "reserved-key data union alternatives cannot mix enum owners",
+            ));
+        }
+        let variants = patterns
+            .into_iter()
+            .map(|pattern| {
+                let keys = if pattern.fallback {
+                    reserved_key_data_union_variants(entities, &pattern.owner)
+                        .into_values()
+                        .find(|keys| !keys.is_empty())
+                        .expect("validated reserved-key data union has discriminator keys")
+                } else {
+                    pattern.keys
+                };
+                (keys, pattern.fallback)
+            })
+            .collect::<Vec<_>>();
+        return Ok(Some(DataUnionPatternTest {
+            bindings: binding
+                .map(|binding| (binding, value.to_string()))
+                .into_iter()
+                .collect(),
+            predicate: Some(reserved_key_data_union_predicate(&variants, value)),
+        }));
+    }
     if let TaggedDataUnionPatternAnalysis::Variants(variants) =
         analyze_tagged_data_union_pattern(pattern, entities)?
     {
@@ -9368,12 +9808,6 @@ enum DataUnionPatternAnalysis {
     Variants(Vec<DataUnionPattern>),
 }
 
-struct DataUnionMatchArm {
-    binding: Option<String>,
-    categories: BTreeSet<RuntimeCategory>,
-    catch_all: bool,
-}
-
 fn data_union_payload_binding(pattern: &Pat) -> Result<Option<String>, CompileError> {
     return match pattern {
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
@@ -9422,6 +9856,9 @@ fn analyze_data_union_pattern(
             let Some(categories) = data_union_variant_categories(entities, &owner, &variant) else {
                 return Ok(DataUnionPatternAnalysis::Ordinary);
             };
+            if reserved_key_data_union_variant_keys(entities, &owner, &variant).is_some() {
+                return Ok(DataUnionPatternAnalysis::Ordinary);
+            }
             if !data_union_unit(entities, &owner, &variant) {
                 return Err(compile_error(format!(
                     "transparent data union payload variant `{owner}::{variant}` needs a payload pattern"
@@ -9442,6 +9879,9 @@ fn analyze_data_union_pattern(
             let Some(categories) = data_union_variant_categories(entities, &owner, &variant) else {
                 return Ok(DataUnionPatternAnalysis::Ordinary);
             };
+            if reserved_key_data_union_variant_keys(entities, &owner, &variant).is_some() {
+                return Ok(DataUnionPatternAnalysis::Ordinary);
+            }
             if data_union_unit(entities, &owner, &variant) || pattern.elems.len() != 1 {
                 return Err(compile_error(format!(
                     "transparent data union pattern `{owner}::{variant}` expects exactly one payload"
@@ -9463,6 +9903,9 @@ fn analyze_data_union_match(
     arms: &[syn::Arm],
     entities: &HashSet<String>,
 ) -> Result<Option<Vec<DataUnionMatchArm>>, CompileError> {
+    if let Some(arms) = analyze_reserved_key_data_union_match(arms, entities)? {
+        return Ok(Some(arms));
+    }
     let analyses = arms
         .iter()
         .map(|arm| analyze_data_union_pattern(&arm.pat, entities))
@@ -9488,6 +9931,7 @@ fn analyze_data_union_match(
                     binding,
                     categories: BTreeSet::new(),
                     catch_all: true,
+                    reserved_key_variants: Vec::new(),
                 });
             }
             DataUnionPatternAnalysis::Ordinary => {
@@ -9541,6 +9985,7 @@ fn analyze_data_union_match(
                     binding: binding.flatten(),
                     categories,
                     catch_all: false,
+                    reserved_key_variants: Vec::new(),
                 });
             }
         }
@@ -9746,7 +10191,11 @@ fn emit_match_expression(
                 writeln!(
                     out,
                     "  {prefix} ({}) {{",
-                    runtime_categories_predicate(&info.categories, "matchValue")
+                    if info.reserved_key_variants.is_empty() {
+                        runtime_categories_predicate(&info.categories, "matchValue")
+                    } else {
+                        reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
+                    }
                 )
                 .expect("writing to a String cannot fail");
             }
@@ -9929,7 +10378,11 @@ pub(crate) fn emit_match_statement(
                 writeln!(
                     out,
                     "{prefix} ({}) {{",
-                    runtime_categories_predicate(&info.categories, "matchValue")
+                    if info.reserved_key_variants.is_empty() {
+                        runtime_categories_predicate(&info.categories, "matchValue")
+                    } else {
+                        reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
+                    }
                 )
                 .expect("writing to a String cannot fail");
             }
