@@ -4,7 +4,8 @@
 import { allocateEntity } from '@flighthq/entity/contract';
 import { KEY_CODE_A, KEY_CODE_C } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
-import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
+import type { NodeRef } from '@flighthq/node/contract';
+import { getRichTextRuntime, getTextLayout, setRichTextScrollV } from '@flighthq/text/contract';
 import type { RichText, RichTextRuntime } from '@flighthq/text/contract';
 import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout/contract';
 
@@ -12,19 +13,19 @@ import { jsRound, utf16Len, utf16Slice } from './textUnits.ts';
 import type { SelectableRichTextManagerRaw, TextInputCopyCallback } from './types.ts';
 
 export function blurSelectableRichText(manager: SelectableRichTextManagerRaw): void {
-  const target = manager!.focused;
+  const target = manager!.focused ?? undefined;
   if (target !== undefined) {
     let runtime = getMutableRuntime(target);
     runtime = runtime!;
     runtime.selectionBeginIndex = 0;
     runtime.selectionEndIndex = 0;
   }
-  manager!.focused = undefined;
+  manager!.focused = null;
 }
 
 export function createSelectableRichTextManager(): SelectableRichTextManagerRaw {
   let out: SelectableRichTextManagerRaw = Object.assign(allocateEntity<SelectableRichTextManagerRaw>(), {
-    focused: undefined,
+    focused: null,
   });
   initializeSelectableRichTextManager(out);
   return out;
@@ -35,7 +36,7 @@ export function dispatchSelectableRichTextKeyDown(
   data: Readonly<InputKeyboardData>,
   onCopy?: TextInputCopyCallback,
 ): boolean {
-  const target = manager!.focused;
+  const target = manager!.focused ?? undefined;
   if (target === undefined) {
     return false;
   }
@@ -78,8 +79,8 @@ export function dispatchSelectableRichTextPointerDown(
 ): void {
   manager!.focused = target;
   let runtime = getMutableRuntime(target);
-  const textLabel = runtime!.textLabel;
-  let layout = textLabel!.textLayout;
+  const node: NodeRef = target;
+  let layout = getTextLayout(node) ?? undefined;
   if (layout === undefined) {
     if (!extend) {
       runtime = runtime!;
@@ -103,13 +104,13 @@ export function dispatchSelectableRichTextPointerMove(
   x: number,
   y: number,
 ): void {
-  const target = manager!.focused;
+  const target = manager!.focused ?? undefined;
   if (target === undefined) {
     return;
   }
   const runtime = getMutableRuntime(target);
-  const textLabel = runtime!.textLabel;
-  let layout = textLabel!.textLayout;
+  const node: NodeRef = target;
+  let layout = getTextLayout(node) ?? undefined;
   if (layout === undefined) {
     return;
   }
@@ -118,7 +119,7 @@ export function dispatchSelectableRichTextPointerMove(
 }
 
 export function dispatchSelectableRichTextWheel(manager: SelectableRichTextManagerRaw, deltaLines: number): void {
-  const target = manager!.focused;
+  const target = manager!.focused ?? undefined;
   if (target === undefined) {
     return;
   }
@@ -131,7 +132,7 @@ export function focusSelectableRichText(manager: SelectableRichTextManagerRaw, t
 }
 
 export function getSelectableRichTextSelectionText(manager: SelectableRichTextManagerRaw): string {
-  const target = manager!.focused;
+  const target = manager!.focused ?? undefined;
   if (target === undefined) {
     return '';
   }
@@ -148,5 +149,5 @@ function getMutableRuntime(source: RichText): RichTextRuntime {
 }
 
 export function initializeSelectableRichTextManager(out: SelectableRichTextManagerRaw): void {
-  out.focused = undefined;
+  out.focused = null;
 }

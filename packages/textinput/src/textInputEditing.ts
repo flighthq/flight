@@ -24,11 +24,10 @@ import type { RichText, TextInputHistoryEntry, TextInputState } from '@flighthq/
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
 import {
   TEXT_BOUNDS_GUTTER,
-  TextSelectionRectangle,
   createTextFormatRange,
   getRichTextSelectionRectangles,
 } from '@flighthq/textlayout/contract';
-import type { TextLayoutGroup, TextLayoutResult } from '@flighthq/textlayout/contract';
+import type { TextLayoutGroup, TextLayoutResult, TextSelectionRectangle } from '@flighthq/textlayout/contract';
 import {
   getNextGraphemeBoundary,
   getPreviousGraphemeBoundary,
@@ -185,7 +184,9 @@ export function applyTextInputRestriction(source: RichText, text: string, replac
     source = source!;
     return [source.data.multiline, source.data.maxChars, utf16Len(source.data.text)];
   })();
-  let value = multiline ? String(text) : [...text].filter((character) => character !== '\n' && character !== '\r');
+  let value = multiline
+    ? String(text)
+    : [...text].filter((character) => character !== '\n' && character !== '\r').join('');
   const restrict = getInputState(source)!.restrict;
   value = restrictTextInput(value, restrict);
   if (maxChars > 0) {
@@ -309,9 +310,13 @@ function findWordStartBefore(text: string, index: number): number {
 }
 
 function getCaretLineIndex(source: RichText, layout: Readonly<TextLayoutResult>): number {
-  let out = TextSelectionRectangle.default();
+  let out = createTextSelectionRectangle();
   getTextInputCaretRectangle(out, source, layout);
   return out.lineIndex;
+}
+
+function createTextSelectionRectangle(): TextSelectionRectangle {
+  return { height: 0.0, lineIndex: 0, width: 0.0, x: 0.0, y: 0.0 };
 }
 
 function getFallbackLineHeight(layout: Readonly<TextLayoutResult>): number {
@@ -321,7 +326,7 @@ function getFallbackLineHeight(layout: Readonly<TextLayoutResult>): number {
 
 function getInputState(source: RichText): TextInputState {
   {
-    const $state = getTextInputState(source);
+    const $state = getTextInputState(source) ?? undefined;
     if ($state !== undefined) {
       const state = $state;
       return state;
@@ -792,7 +797,7 @@ export function moveTextInputCaretDown(
     return;
   }
   let state = getInputState(source);
-  let out = TextSelectionRectangle.default();
+  let out = createTextSelectionRectangle();
   getTextInputCaretRectangle(out, source, layout);
   const desiredX = (() => {
     state = state!;
@@ -857,7 +862,7 @@ export function moveTextInputCaretUp(
     return;
   }
   let state = getInputState(source);
-  let out = TextSelectionRectangle.default();
+  let out = createTextSelectionRectangle();
   getTextInputCaretRectangle(out, source, layout);
   const desiredX = (() => {
     state = state!;
@@ -911,7 +916,7 @@ function recordTextInputEdit(
   state.history.push({
     caretIndexAfter: state.caretIndex,
     caretIndexBefore: caretIndexBefore,
-    mergeKind: ((value) => (value === undefined ? undefined : String(value)))(mergeKind),
+    mergeKind: ((value) => (value === undefined ? undefined : String(value)))(mergeKind) ?? null,
     selectionIndexAfter: state.selectionIndex,
     selectionIndexBefore: selectionIndexBefore,
     textAfter: String(textAfter),
@@ -928,14 +933,13 @@ function recordTextInputEdit(
 
 export function redoTextInput(source: RichText): void {
   const state = getInputState(source);
-  const record = (() => {
-    let stateGuard = state!;
-    if (stateGuard.historyIndex >= (stateGuard.history.length | 0) - 1) {
-      return;
-    }
-    stateGuard.historyIndex += 1;
-    return stateGuard.history[stateGuard.historyIndex];
-  })();
+  let stateGuard = state!;
+  if (stateGuard.historyIndex >= (stateGuard.history.length | 0) - 1) {
+    return;
+  }
+  stateGuard.historyIndex += 1;
+  const record = stateGuard.history[stateGuard.historyIndex];
+  void stateGuard;
   applyHistoryRecord(source, state, record.textAfter, record.caretIndexAfter, record.selectionIndexAfter);
 }
 
@@ -1017,7 +1021,7 @@ function restrictTextInput(text: string, restrict: string): string {
     const acceptedMatch = accepted.length === 0 || matchesRestrictRanges(character, accepted);
     const declinedMatch = declined.length !== 0 && matchesRestrictRanges(character, declined);
     if (acceptedMatch && !declinedMatch) {
-      out.push(character);
+      out += character;
     }
   }
   return out;
@@ -1029,7 +1033,7 @@ export function scrollTextInputCaretIntoView(
   viewportWidth: number,
   viewportHeight: number,
 ): void {
-  let out = TextSelectionRectangle.default();
+  let out = createTextSelectionRectangle();
   getTextInputCaretRectangle(out, source, layout);
   const caretTop = out.y;
   const caretBottom = out.y + out.height;
@@ -1108,7 +1112,7 @@ export function selectWordAtTextInputIndex(source: RichText, index: number): voi
     }
   }
   {
-    const $range = getWordRangeAt(webTextSegmenterBackend, text, usizeToI32(clamped), undefined);
+    const $range = getWordRangeAt(webTextSegmenterBackend, text, usizeToI32(clamped), undefined) ?? undefined;
     if ($range !== undefined) {
       const range = $range;
       setTextInputSelection(source, range.start | 0, range.end | 0);
@@ -1165,9 +1169,13 @@ function splitRestrictRanges(restrict: string): readonly [string, string] {
   while (index < characters.length) {
     const character = characters[index];
     if (character === '\\' && index + 1 < characters.length) {
-      const target = declining ? declined : accepted;
-      target.push(character);
-      target.push(characters[index + 1]);
+      if (declining) {
+        declined += character;
+        declined += characters[index + 1];
+      } else {
+        accepted += character;
+        accepted += characters[index + 1];
+      }
       index += 2;
       continue;
     }
@@ -1175,9 +1183,9 @@ function splitRestrictRanges(restrict: string): readonly [string, string] {
       declining = !declining;
     } else {
       if (declining) {
-        declined.push(character);
+        declined += character;
       } else {
-        accepted.push(character);
+        accepted += character;
       }
     }
     index += 1;
@@ -1187,18 +1195,16 @@ function splitRestrictRanges(restrict: string): readonly [string, string] {
 
 export function undoTextInput(source: RichText): void {
   const state = getInputState(source);
-  record = (() => {
-    let stateGuard = state!;
-    if (stateGuard.historyIndex < 0) {
-      return;
-    }
-    const record = stateGuard.history[stateGuard.historyIndex];
-    stateGuard.historyIndex -= 1;
-    return record;
-  })();
+  let stateGuard = state!;
+  if (stateGuard.historyIndex < 0) {
+    return;
+  }
+  const record = stateGuard.history[stateGuard.historyIndex];
+  stateGuard.historyIndex -= 1;
+  void stateGuard;
   applyHistoryRecord(source, state, record.textBefore, record.caretIndexBefore, record.selectionIndexBefore);
 }
 
 function usizeToI32(value: number): number {
-  return Math.min(value, i32.MAX) | 0;
+  return Math.min(value, 2_147_483_647) | 0;
 }

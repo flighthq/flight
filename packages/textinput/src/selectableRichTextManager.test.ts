@@ -3,7 +3,8 @@
 
 import { KEY_CODE_A, KEY_CODE_C } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
-import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
+import type { NodeRef } from '@flighthq/node/contract';
+import { createRichText, getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
 import type {
   RichText,
   RichTextData,
@@ -18,7 +19,6 @@ import type { TextAutoSize, TextLayoutResult, TextVerticalAlign } from '@flighth
 import { describe, expect, it } from 'vitest';
 
 import {
-  allocateEntity,
   blurSelectableRichText,
   createSelectableRichTextManager,
   dispatchSelectableRichTextKeyDown,
@@ -29,7 +29,6 @@ import {
   getSelectableRichTextSelectionText,
   initializeSelectableRichTextManager,
 } from './contract.ts';
-import type { SelectableRichTextManagerRaw } from './contract.ts';
 
 interface TestRichTextData {
   autoSize: TextAutoSize | undefined;
@@ -252,9 +251,8 @@ function runtime(source: RichText): RichTextRuntime {
 }
 
 function setLayout(source: RichText, layout: TextLayoutResult): void {
-  const richTextRuntime = runtime(source);
-  const textLabel = richTextRuntime!.textLabel;
-  textLabel!.textLayout = layout;
+  const node: NodeRef = source;
+  setTextLayoutResult(node, layout);
 }
 
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
@@ -369,7 +367,7 @@ describe('blurSelectableRichText', () => {
     richTextRuntime!.selectionBeginIndex = 1;
     richTextRuntime!.selectionEndIndex = 4;
     blurSelectableRichText(manager);
-    expect(manager!.focused === undefined).toBe(true);
+    expect(manager!.focused === null).toBe(true);
     expect(richTextRuntime!.selectionBeginIndex).toEqual(0);
     expect(richTextRuntime!.selectionEndIndex).toEqual(0);
   });
@@ -380,7 +378,7 @@ describe('blurSelectableRichText', () => {
 
 describe('createSelectableRichTextManager', () => {
   it('creates a manager with no focused target', () => {
-    expect(createSelectableRichTextManager()!.focused === undefined).toBe(true);
+    expect(createSelectableRichTextManager()!.focused === null).toBe(true);
   });
 });
 
@@ -517,10 +515,9 @@ describe('getSelectableRichTextSelectionText', () => {
 
 describe('initializeSelectableRichTextManager', () => {
   it('is the construction initializer of create selectable rich text manager', () => {
-    let manager: SelectableRichTextManagerRaw = Object.assign(allocateEntity<SelectableRichTextManagerRaw>(), {
-      focused: undefined,
-    });
-    initializeSelectableRichTextManager(manager);
-    expect(manager.focused === undefined).toBe(true);
+    const manager = createSelectableRichTextManager();
+    manager!.focused = richText('focused');
+    initializeSelectableRichTextManager(manager!);
+    expect(manager!.focused === null).toBe(true);
   });
 });

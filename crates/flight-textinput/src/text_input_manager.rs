@@ -4,9 +4,10 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
 use flight_input::InputKeyboardData;
+use flight_node::NodeRef;
 use flight_signals::{SignalSlot, connect_signal, disconnect_signal};
-use flight_text::RichText;
-use flight_text::contract::{get_rich_text_runtime, set_rich_text_scroll_v};
+use flight_text::contract::set_rich_text_scroll_v;
+use flight_text::{RichText, get_text_layout};
 use flight_textlayout::TextLayoutResult;
 
 use crate::text_input::get_text_input_state;
@@ -131,13 +132,12 @@ pub fn dispatch_text_input_wheel(manager: &Ref<TextInputManager>, delta_lines: f
     let Some(target) = target else {
         return;
     };
-    let scroll_v = {
-        let target = target.read().unwrap();
-        if !target.enabled {
-            return;
-        }
-        target.data.scroll_v
-    };
+    let target_guard = target.read().unwrap();
+    if !target_guard.enabled {
+        return;
+    }
+    let scroll_v = target_guard.data.scroll_v;
+    drop(target_guard);
     set_rich_text_scroll_v(&target, scroll_v + js_round(delta_lines), None);
 }
 
@@ -153,13 +153,8 @@ pub fn focus_text_input(manager: &Ref<TextInputManager>, target: &Ref<RichText>)
 }
 
 fn get_target_layout(target: &Ref<RichText>) -> Option<Ref<TextLayoutResult>> {
-    let runtime = {
-        let target = target.read().unwrap();
-        get_rich_text_runtime(&target)
-    };
-    let text_label = runtime.read().unwrap().text_label.clone();
-    let layout = text_label.read().unwrap().text_layout.clone();
-    return layout;
+    let node: NodeRef = target.clone();
+    return get_text_layout(&node);
 }
 
 fn get_text_input_focus_target(manager: &Ref<TextInputManager>) -> Option<Ref<RichText>> {

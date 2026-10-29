@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: nullable-option RichTextRuntime.input TextInputHistoryEntry.merge_kind
 //! flight-compiler: export-name NATIVE_TEXT_KIND NativeTextKind
 //! flight-compiler: export-name RICH_TEXT_KIND RichTextKind
 //! flight-compiler: export-name TEXT_LABEL_KIND TextLabelKind

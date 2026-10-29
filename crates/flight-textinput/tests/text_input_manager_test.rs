@@ -3,7 +3,6 @@ use crate::common::*;
 use std::sync::{Arc, Mutex};
 
 use flight_entity::Ref;
-use flight_entity::allocate_entity;
 use flight_input::{InputTextData, KEY_CODE_BACKSPACE, KEY_CODE_C, KEY_CODE_END, KEY_CODE_HOME};
 use flight_signals::{create_signal, emit_signal};
 use flight_text::RichText;
@@ -301,9 +300,12 @@ mod initialize_text_input_manager {
 
     #[test]
     fn is_the_construction_initializer_of_create_text_input_manager() {
-        let mut manager: TextInputManager = allocate_entity();
-        initialize_text_input_manager(&mut manager);
-        assert!(manager.enabled);
-        assert!(manager.focused.is_none());
+        let manager = create_text_input_manager();
+        manager.write().unwrap().enabled = false;
+        manager.write().unwrap().focused =
+            Some(create_input(text_data("focused"), input_options()));
+        initialize_text_input_manager(&mut manager.write().unwrap());
+        assert!(manager.read().unwrap().enabled);
+        assert!(manager.read().unwrap().focused.is_none());
     }
 }

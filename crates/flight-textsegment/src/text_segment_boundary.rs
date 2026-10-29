@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: nullable-option get_word_range_at
 
 use unicode_segmentation::UnicodeSegmentation;
 

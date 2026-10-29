@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { getRichTextRuntime } from '@flighthq/text/contract';
-import type { RichText, TextInputOptions, TextInputState } from '@flighthq/text/contract';
+import type { RichText, RichTextRuntime, TextInputOptions, TextInputState } from '@flighthq/text/contract';
 
 function createTextInputState(options?: Readonly<TextInputOptions>): TextInputState {
   let state = {
@@ -68,19 +68,19 @@ function applyTextInputOptions(state: TextInputState, options: Readonly<TextInpu
 }
 
 export function disableTextInput(node: RichText): void {
-  const runtime = (() => {
+  const runtime: RichTextRuntime = (() => {
     node = node!;
     return getRichTextRuntime(node);
   })();
-  runtime!.input = undefined;
+  runtime!.input = null;
 }
 
 export function enableTextInput(node: RichText, options?: Readonly<TextInputOptions>): TextInputState {
-  const runtime = (() => {
+  const runtime: RichTextRuntime = (() => {
     node = node!;
     return getRichTextRuntime(node);
   })();
-  const existing = runtime!.input;
+  const existing = runtime!.input ?? undefined;
   if (existing !== undefined) {
     const state = existing;
     if (options !== undefined) {
@@ -93,15 +93,15 @@ export function enableTextInput(node: RichText, options?: Readonly<TextInputOpti
   return state;
 }
 
-export function getTextInputState(node: RichText): TextInputState | undefined {
-  const runtime = (() => {
+export function getTextInputState(node: RichText): TextInputState | null {
+  const runtime: RichTextRuntime = (() => {
     node = node!;
     return getRichTextRuntime(node);
   })();
-  const input = runtime!.input;
-  return input;
+  const input = runtime!.input ?? undefined;
+  return input ?? null;
 }
 
 export function hasTextInput(node: RichText): boolean {
-  return getTextInputState(node) !== undefined;
+  return (getTextInputState(node) ?? undefined) !== undefined;
 }

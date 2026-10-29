@@ -124,6 +124,23 @@ fn compile_typescript_sources(
             ));
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let external_nullable_programs = external_alias_sources
+        .iter()
+        .filter(|external| has_nullable_option_directive(external.source))
+        .filter_map(|external| {
+            external_rust_crate_root(external.module).map(|module| {
+                (
+                    module,
+                    model::parse_external_nullable_options(external.source),
+                )
+            })
+        })
+        .map(|(module, program)| program.map(|program| (module, program)))
+        .collect::<Result<Vec<_>, _>>()?;
+    let external_nullable_program_refs = external_nullable_programs
+        .iter()
+        .map(|(module, program)| (module.as_str(), program))
+        .collect::<Vec<_>>();
     let external_record_structs = external_alias_sources
         .iter()
         .map(|external| model::parse_public_record_structs(external.source))
@@ -186,6 +203,7 @@ fn compile_typescript_sources(
         entity_module,
         &alias_programs,
         &external_alias_programs,
+        &external_nullable_program_refs,
         &external_record_structs,
         &dependency_export_names,
         &external_string_unions,
@@ -226,6 +244,26 @@ fn compile_typescript_sources(
         alias_sources,
         source_paths.first().copied(),
     ));
+}
+
+fn has_nullable_option_directive(source: &str) -> bool {
+    return source.lines().any(|line| {
+        let Some(directive) = line
+            .trim()
+            .strip_prefix("//! flight-compiler: ")
+            .and_then(|line| line.split_whitespace().next())
+        else {
+            return false;
+        };
+        return matches!(directive, "nullable-option" | "nullable-options");
+    });
+}
+
+fn external_rust_crate_root(module: &str) -> Option<String> {
+    let package = module
+        .strip_prefix("@flighthq/")?
+        .strip_suffix("/contract")?;
+    return Some(format!("flight_{}", package.replace('-', "_")));
 }
 
 /// Compiles one Rust module while reusing canonical callable aliases declared by sibling sources.

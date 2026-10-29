@@ -1,3 +1,5 @@
+//! flight-compiler: nullable-option SelectableRichTextManager.focused TextInputEditRecord.merge_kind TextInputManager.focused
+
 use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, Ref};

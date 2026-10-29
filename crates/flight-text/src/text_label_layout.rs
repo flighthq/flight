@@ -1,5 +1,6 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract ensureTextLayout getTextLayout getTextLayoutMetrics setTextLabelGuard
+//! flight-compiler: nullable-option get_text_layout
+//! flight-compiler: contract ensureTextLayout getTextLayout getTextLayoutMetrics setTextLabelGuard setTextLayoutResult
 //! flight-compiler: root-only getTextLayout getTextLayoutMetrics
 
 use flight_entity::Ref;
@@ -70,6 +71,18 @@ pub(crate) fn ensure_text_layout_for_node(source: &dyn Node) {
 pub fn get_text_layout(source: &NodeRef) -> Option<Ref<TextLayoutResult>> {
     let source = source.read().unwrap();
     return get_text_layout_for_node(&*source);
+}
+
+pub fn set_text_layout_result(source: &NodeRef, layout: Ref<TextLayoutResult>) {
+    let source = source.read().unwrap();
+    let content_id = get_node_local_content_revision(&*source);
+    let Some((runtime, text)) = text_runtime_and_string(&*source) else {
+        return;
+    };
+    let mut runtime = runtime.write().unwrap();
+    runtime.text_layout = Some(layout);
+    runtime.text_layout_using_content_id = content_id as i32;
+    runtime.text_layout_using_text = Some(text);
 }
 
 pub(crate) fn get_text_layout_for_node(source: &dyn Node) -> Option<Ref<TextLayoutResult>> {

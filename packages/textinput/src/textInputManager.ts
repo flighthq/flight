@@ -3,9 +3,10 @@
 
 import { allocateEntity } from '@flighthq/entity/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
+import type { NodeRef } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { SignalSlot } from '@flighthq/signals/contract';
-import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
+import { getTextLayout, setRichTextScrollV } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
 import type { TextLayoutResult } from '@flighthq/textlayout/contract';
 
@@ -28,11 +29,11 @@ import type {
 } from './types.ts';
 
 export function blurTextInput(manager: TextInputManagerRaw): void {
-  const target = manager!.focused;
+  const target = manager!.focused ?? undefined;
   if (target !== undefined) {
     setTextInputFocused(target, false);
   }
-  manager!.focused = undefined;
+  manager!.focused = null;
 }
 
 export function connectInputToTextInput(
@@ -60,7 +61,7 @@ export function connectInputToTextInput(
 export function createTextInputManager(): TextInputManagerRaw {
   let out: TextInputManagerRaw = Object.assign(allocateEntity<TextInputManagerRaw>(), {
     enabled: false,
-    focused: undefined,
+    focused: null,
   });
   initializeTextInputManager(out);
   return out;
@@ -122,7 +123,7 @@ export function dispatchTextInputPointerDown(
 }
 
 export function dispatchTextInputPointerMove(manager: TextInputManagerRaw, x: number, y: number): void {
-  let target = manager!.focused;
+  let target = manager!.focused ?? undefined;
   if (target === undefined) {
     return;
   }
@@ -138,22 +139,21 @@ export function dispatchTextInputPointerMove(manager: TextInputManagerRaw, x: nu
 }
 
 export function dispatchTextInputWheel(manager: TextInputManagerRaw, deltaLines: number): void {
-  let target = manager!.focused;
+  let target = manager!.focused ?? undefined;
   if (target === undefined) {
     return;
   }
-  const scrollV = (() => {
-    target = target!;
-    if (!target.enabled) {
-      return;
-    }
-    return target.data.scrollV;
-  })();
+  const targetGuard = target!;
+  if (!targetGuard.enabled) {
+    return;
+  }
+  const scrollV = targetGuard.data.scrollV;
+  void targetGuard;
   setRichTextScrollV(target, scrollV + jsRound(deltaLines), undefined);
 }
 
 export function focusTextInput(manager: TextInputManagerRaw, target: RichText): void {
-  const previous = manager!.focused;
+  const previous = manager!.focused ?? undefined;
   if (previous !== undefined) {
     if (!(previous === target)) {
       setTextInputFocused(previous, false);
@@ -165,17 +165,12 @@ export function focusTextInput(manager: TextInputManagerRaw, target: RichText): 
 
 export function initializeTextInputManager(out: TextInputManagerRaw): void {
   out.enabled = true;
-  out.focused = undefined;
+  out.focused = null;
 }
 
 function getTargetLayout(target: RichText): TextLayoutResult | undefined {
-  const runtime = (() => {
-    target = target!;
-    return getRichTextRuntime(target);
-  })();
-  const textLabel = runtime!.textLabel;
-  const layout = textLabel!.textLayout;
-  return layout;
+  const node: NodeRef = target;
+  return getTextLayout(node) ?? undefined;
 }
 
 function getTextInputFocusTarget(manager: TextInputManagerRaw): RichText | undefined {
@@ -183,7 +178,7 @@ function getTextInputFocusTarget(manager: TextInputManagerRaw): RichText | undef
   if (!manager.enabled) {
     return undefined;
   }
-  const target = manager.focused;
+  const target = manager.focused ?? undefined;
   if (target === undefined) {
     return undefined;
   }
@@ -195,7 +190,7 @@ function getTextInputFocusTarget(manager: TextInputManagerRaw): RichText | undef
 
 function setTextInputFocused(target: RichText, focused: boolean): void {
   {
-    const $state = getTextInputState(target);
+    const $state = getTextInputState(target) ?? undefined;
     if ($state !== undefined) {
       const state = $state;
       state!.focused = focused;

@@ -105,7 +105,13 @@ export {
   setTextLabelVerticalAlign,
   setTextLabelWidth,
 } from './textLabel.ts';
-export { ensureTextLayout, getTextLayout, getTextLayoutMetrics, setTextLabelGuard } from './textLabelLayout.ts';
+export {
+  ensureTextLayout,
+  getTextLayout,
+  getTextLayoutMetrics,
+  setTextLabelGuard,
+  setTextLayoutResult,
+} from './textLabelLayout.ts';
 export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime.ts';
 export { NativeTextKind, RichTextKind, TextLabelKind } from './types.ts';
 export type {

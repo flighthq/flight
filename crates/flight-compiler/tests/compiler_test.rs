@@ -7673,6 +7673,62 @@ pub struct Consumer {
     }
 
     #[test]
+    fn honors_external_target_native_nullable_option_designations() {
+        let dependency = r#"
+//! flight-compiler: target-native
+//! flight-compiler: nullable-option ExternalRuntime.value find_value
+
+pub struct ExternalRuntime {
+    pub value: Option<String>,
+}
+
+pub fn find_value() -> Option<i32> {
+    return None;
+}
+"#;
+        let externals = [ExternalAliasSource {
+            source: dependency,
+            module: "@flighthq/demo/contract",
+        }];
+        let consumer = r#"
+use flight_demo::{ExternalRuntime, find_value};
+use flight_entity::Ref;
+
+pub fn clear_value(runtime: &Ref<ExternalRuntime>) {
+    let runtime: Ref<ExternalRuntime> = runtime.clone();
+    runtime.write().unwrap().value = None;
+}
+
+pub fn is_clear(runtime: &Ref<ExternalRuntime>) -> bool {
+    let runtime: Ref<ExternalRuntime> = runtime.clone();
+    return runtime.read().unwrap().value.is_none();
+}
+
+pub fn read_value() -> i32 {
+    let Some(value) = find_value() else {
+        return -1;
+    };
+    return value;
+}
+"#;
+
+        let output =
+            compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
+                .unwrap();
+
+        assert!(output.contains("runtime!.value = null;"), "{output}");
+        assert!(
+            output.contains("((runtime!.value) ?? undefined) === undefined"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const value = ((findValue()) ?? undefined);"),
+            "{output}"
+        );
+        assert!(output.contains("if (value === undefined)"), "{output}");
+    }
+
+    #[test]
     fn rejects_conflicting_dependency_string_union_owners_independent_of_argument_order() {
         let alpha = r#"
 //! flight-compiler: string-union Status=exact
@@ -8578,6 +8634,14 @@ pub fn characters(value: &str) -> Vec<char> {
     return value.chars().collect();
 }
 
+pub fn filtered_characters(value: &str) -> String {
+    return value.chars().filter(|character| *character != '\n').collect::<String>();
+}
+
+pub fn append_character(value: &mut String, character: char) {
+    value.push(character);
+}
+
 pub fn first_character(value: &str) -> Option<char> {
     return value.chars().next();
 }
@@ -8622,6 +8686,12 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
         assert!(output.contains("return value.endsWith(\")\");"));
         assert!(output.contains("export function characters(value: string): string[]"));
         assert!(output.contains("return [...value];"));
+        assert!(
+            output.contains(
+                "return [...value].filter((character) => character !== \"\\n\").join('');"
+            )
+        );
+        assert!(output.contains("value += character;"));
         assert!(output.contains("return [...value][0];"));
         assert!(output.contains("return value.toLowerCase();"));
         assert!(output.contains("return value.repeat(count);"));
@@ -10564,6 +10634,53 @@ mod option_presence {
         assert!(output.contains("expect(nullable.previous !== null).toBe(true);"));
         assert!(output.contains("expect(optional.previous === undefined).toBe(true);"));
         assert!(output.contains("expect(optional.previous !== undefined).toBe(true);"));
+    }
+
+    #[test]
+    fn lowers_nullable_fields_through_ref_lock_guards_in_portable_tests() {
+        let production = r#"
+//! flight-compiler: nullable-option NullableSample.previous
+
+use flight_entity::Ref;
+
+pub struct NullableSample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_nullable_sample() -> Ref<NullableSample> {
+    unimplemented!()
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn reads_nullable_fields_through_ref_guards() {
+    let sample = create_nullable_sample();
+    assert!(sample.read().unwrap().previous.is_none());
+    assert!(create_nullable_sample().read().unwrap().previous.is_none());
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        assert_eq!(
+            output
+                .matches("expect(sample!.previous === null).toBe(true);")
+                .count(),
+            1,
+            "{output}"
+        );
+        assert_eq!(
+            output
+                .matches("expect(createNullableSample()!.previous === null).toBe(true);")
+                .count(),
+            1,
+            "{output}"
+        );
+        assert!(!output.contains("previous === undefined"), "{output}");
     }
 
     #[test]

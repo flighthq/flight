@@ -2,7 +2,10 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
 use flight_input::InputKeyboardData;
-use flight_text::contract::{RichTextRuntime, TextLayoutContext, get_rich_text_runtime};
+use flight_node::NodeRef;
+use flight_text::contract::{
+    RichTextRuntime, TextLayoutContext, get_rich_text_runtime, set_text_layout_result,
+};
 use flight_text::{RichText, RichTextData, TextInputOptions, create_rich_text};
 use flight_textformat::{TextFormat, TextFormatRange};
 use flight_textinput::contract::enable_text_input;
@@ -206,9 +209,8 @@ pub fn runtime(source: &Ref<RichText>) -> Ref<RichTextRuntime> {
 }
 
 pub fn set_layout(source: &Ref<RichText>, layout: TextLayoutResult) {
-    let rich_text_runtime = runtime(source);
-    let text_label = rich_text_runtime.read().unwrap().text_label.clone();
-    text_label.write().unwrap().text_layout = Some(Arc::new(RwLock::new(layout)));
+    let node: NodeRef = source.clone();
+    set_text_layout_result(&node, Arc::new(RwLock::new(layout)));
 }
 
 // Test scaffolding in the source's `create({ data: {...} })` shape. The canonical constructors take

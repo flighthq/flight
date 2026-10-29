@@ -61,6 +61,13 @@ pub(crate) struct Program {
     pub(crate) uses: Vec<ItemUse>,
 }
 
+pub(crate) struct ExternalNullableOptionProgram {
+    pub(crate) functions: Vec<ItemFn>,
+    pub(crate) nullable_option_items: BTreeSet<String>,
+    pub(crate) nullable_options: bool,
+    pub(crate) structs: Vec<ItemStruct>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum StringUnionStyle {
     Exact,
@@ -1008,6 +1015,38 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         type_aliases,
         type_names,
         uses,
+    });
+}
+
+pub(crate) fn parse_external_nullable_options(
+    source: &str,
+) -> Result<ExternalNullableOptionProgram, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
+    let nullable_option_items = parse_nullable_option_items(&file.attrs)?;
+    let functions = file
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Fn(function) => Some(function.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let structs = file
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Struct(structure) => Some(structure.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    validate_nullable_option_items(&nullable_option_items, &functions, &structs)?;
+    return Ok(ExternalNullableOptionProgram {
+        functions,
+        nullable_option_items,
+        nullable_options,
+        structs,
     });
 }
 

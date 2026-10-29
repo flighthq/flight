@@ -2,7 +2,8 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import type { InputKeyboardData } from '@flighthq/input/contract';
-import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
+import type { NodeRef } from '@flighthq/node/contract';
+import { createRichText, getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
 import type {
   RichText,
   RichTextData,
@@ -239,9 +240,8 @@ function runtime(source: RichText): RichTextRuntime {
 }
 
 function setLayout(source: RichText, layout: TextLayoutResult): void {
-  const richTextRuntime = runtime(source);
-  const textLabel = richTextRuntime!.textLabel;
-  textLabel!.textLayout = layout;
+  const node: NodeRef = source;
+  setTextLayoutResult(node, layout);
 }
 
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
@@ -387,7 +387,7 @@ describe('enableTextInput', () => {
 
 describe('getTextInputState', () => {
   it('returns none on a static rich text', () => {
-    expect(getTextInputState(createRichText(undefined)) === undefined).toBe(true);
+    expect(getTextInputState(createRichText(undefined)) === null).toBe(true);
   });
   it('returns the slot once enabled', () => {
     const text = createRichText(undefined);

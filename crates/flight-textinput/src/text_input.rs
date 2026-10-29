@@ -1,9 +1,10 @@
+//! flight-compiler: nullable-option get_text_input_state
 //! flight-compiler: root-only disableTextInput enableTextInput getTextInputState hasTextInput
 
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
-use flight_text::contract::get_rich_text_runtime;
+use flight_text::contract::{RichTextRuntime, get_rich_text_runtime};
 use flight_text::{RichText, TextInputOptions, TextInputState};
 
 fn create_text_input_state(options: Option<&TextInputOptions>) -> TextInputState {
@@ -61,7 +62,7 @@ fn apply_text_input_options(state: &mut TextInputState, options: &TextInputOptio
 }
 
 pub fn disable_text_input(node: &Ref<RichText>) {
-    let runtime = {
+    let runtime: Ref<RichTextRuntime> = {
         let node = node.read().unwrap();
         get_rich_text_runtime(&node)
     };
@@ -72,7 +73,7 @@ pub fn enable_text_input(
     node: &Ref<RichText>,
     options: Option<&TextInputOptions>,
 ) -> Ref<TextInputState> {
-    let runtime = {
+    let runtime: Ref<RichTextRuntime> = {
         let node = node.read().unwrap();
         get_rich_text_runtime(&node)
     };
@@ -89,7 +90,7 @@ pub fn enable_text_input(
 }
 
 pub fn get_text_input_state(node: &Ref<RichText>) -> Option<Ref<TextInputState>> {
-    let runtime = {
+    let runtime: Ref<RichTextRuntime> = {
         let node = node.read().unwrap();
         get_rich_text_runtime(&node)
     };

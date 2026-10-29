@@ -5,9 +5,10 @@ use std::sync::{Arc, RwLock};
 use flight_entity::{Ref, allocate_entity};
 use flight_input::InputKeyboardData;
 use flight_input::{KEY_CODE_A, KEY_CODE_C};
-use flight_text::RichText;
+use flight_node::NodeRef;
 use flight_text::contract::RichTextRuntime;
 use flight_text::contract::{get_rich_text_runtime, set_rich_text_scroll_v};
+use flight_text::{RichText, get_text_layout};
 use flight_textlayout::compute_rich_text_char_index_at_point;
 
 use crate::text_units::{js_round, utf16_len, utf16_slice};
@@ -85,8 +86,8 @@ pub fn dispatch_selectable_rich_text_pointer_down(
 ) {
     manager.write().unwrap().focused = Some(target.clone());
     let runtime = get_mutable_runtime(target);
-    let text_label = runtime.read().unwrap().text_label.clone();
-    let layout = text_label.read().unwrap().text_layout.clone();
+    let node: NodeRef = target.clone();
+    let layout = get_text_layout(&node);
     let Some(layout) = layout else {
         if !extend {
             let mut runtime = runtime.write().unwrap();
@@ -114,8 +115,8 @@ pub fn dispatch_selectable_rich_text_pointer_move(
         return;
     };
     let runtime = get_mutable_runtime(&target);
-    let text_label = runtime.read().unwrap().text_label.clone();
-    let layout = text_label.read().unwrap().text_layout.clone();
+    let node: NodeRef = target.clone();
+    let layout = get_text_layout(&node);
     let Some(layout) = layout else {
         return;
     };

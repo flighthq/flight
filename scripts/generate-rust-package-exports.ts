@@ -579,12 +579,17 @@ export function hasRustPublicRecordDeclaration(rust: string): boolean {
   return /^\s*pub\s+struct\s+[A-Za-z_][A-Za-z0-9_]*/m.test(rust);
 }
 
-// Target-native sources are not compiled. A data-union declaration can still govern a generated
-// sibling that consumes that union, so it remains a semantic input. Other directives describe the
-// target-native file's own surface or lowering and deliberately stay out: native implementation
-// details must not become sibling compiler inputs merely because the file contributes exports.
-export function hasRustGenerationSemantics(rust: string): boolean {
+// Target-native sources are not compiled. Union declarations can still govern a generated sibling,
+// and they use the ordinary alias lane because their full declarations participate in lowering.
+export function hasRustSiblingGenerationSemantics(rust: string): boolean {
   return /^\/\/!\s*flight-compiler:\s*(?:data-union|string-union(?:-value)?)\b/m.test(rust);
+}
+
+// Dependency sources additionally contribute nullable Option boundary declarations. The compiler
+// reads those through its lightweight external-nullability lane, which deliberately does not parse
+// unrelated target-native private storage as a portable alias source.
+export function hasRustGenerationSemantics(rust: string): boolean {
+  return hasRustSiblingGenerationSemantics(rust) || /^\/\/!\s*flight-compiler:\s*nullable-options?\b/m.test(rust);
 }
 
 export function hasGeneratedProvenanceHeader(contents: string): boolean {

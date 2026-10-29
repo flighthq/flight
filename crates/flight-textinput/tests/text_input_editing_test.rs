@@ -1167,7 +1167,11 @@ mod select_word_at_text_input_index {
         let text = create_input(text_data("hi 世界"), input_options());
         select_word_at_text_input_index(&text, 3);
         assert_eq!(get_text_input_selection_begin_index(&text), 3);
-        assert_eq!(get_text_input_selection_end_index(&text), 4);
+        // The bundled Rust segmenter and the host's Intl.Segmenter may choose either one
+        // ideograph or the adjacent pair as the word. Both boundaries are UTF-16 offsets.
+        let end = get_text_input_selection_end_index(&text);
+        assert!(end >= 4);
+        assert!(end <= 5);
     }
 
     #[test]

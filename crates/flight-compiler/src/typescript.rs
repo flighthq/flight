@@ -10,7 +10,7 @@ use syn::{
     PathArguments, ReturnType, Stmt, Token, Type, UnOp, UseTree, Visibility,
 };
 
-use crate::model::{Program, StringUnionStyle, TestProgram};
+use crate::model::{ExternalNullableOptionProgram, Program, StringUnionStyle, TestProgram};
 use crate::{CompileError, compile_error};
 
 type PreferredAliases = HashMap<String, String>;
@@ -1980,7 +1980,21 @@ fn resolved_type_identity_at_depth(
     .collect::<HashSet<_>>();
     let standard_arc = resolve_type_path(path, &type_context)
         .is_some_and(|resolved| is_standard_arc_path(&resolved));
-    if standard_arc {
+    let entity_ref = resolve_type_path(path, &type_context).is_some_and(|resolved| {
+        matches!(
+            resolved
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            ["flight_entity", "Ref"] | ["flight_entity", "ir", "Ref"]
+        )
+    });
+    let identity_alias = path
+        .segments
+        .last()
+        .is_some_and(|segment| identity_alias_tag(entities, &segment.ident.to_string()).is_some());
+    if standard_arc || entity_ref || identity_alias {
         let PathArguments::AngleBracketed(arguments) = &path.segments.last()?.arguments else {
             return None;
         };
@@ -3427,6 +3441,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             if let Some(kind) = self.hash_collection_field_fact(expression) {
                 return kind;
             }
+            if let Some(receiver) = direct_lock_guard_receiver(expression) {
+                return self.initializer_fact(receiver);
+            }
             return match expression {
                 Expr::Array(array) => BindingFact::Sequence(Box::new(
                     self.merged_facts(
@@ -4193,6 +4210,7 @@ fn identities_in_module(
 
 fn resolved_production_type_identities(
     rust_type: &Type,
+    type_path_context: &HashSet<String>,
     declarations: &ProvenanceDeclarations,
     local_bindings: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
     crate_root: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
@@ -4202,6 +4220,7 @@ fn resolved_production_type_identities(
         Type::Group(group) => {
             return resolved_production_type_identities(
                 &group.elem,
+                type_path_context,
                 declarations,
                 local_bindings,
                 crate_root,
@@ -4211,6 +4230,7 @@ fn resolved_production_type_identities(
         Type::Paren(paren) => {
             return resolved_production_type_identities(
                 &paren.elem,
+                type_path_context,
                 declarations,
                 local_bindings,
                 crate_root,
@@ -4220,6 +4240,7 @@ fn resolved_production_type_identities(
         Type::Reference(reference) => {
             return resolved_production_type_identities(
                 &reference.elem,
+                type_path_context,
                 declarations,
                 local_bindings,
                 crate_root,
@@ -4229,6 +4250,36 @@ fn resolved_production_type_identities(
         Type::Path(path) if path.qself.is_none() => path,
         _ => return BTreeSet::new(),
     };
+    let entity_ref =
+        resolve_type_path(&rust_type.path, type_path_context).is_some_and(|resolved| {
+            matches!(
+                resolved
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+                ["flight_entity", "Ref"] | ["flight_entity", "ir", "Ref"]
+            )
+        });
+    if entity_ref {
+        let Some(segment) = rust_type.path.segments.last() else {
+            return BTreeSet::new();
+        };
+        let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+            return BTreeSet::new();
+        };
+        let [GenericArgument::Type(inner)] = arguments.args.iter().collect::<Vec<_>>()[..] else {
+            return BTreeSet::new();
+        };
+        return resolved_production_type_identities(
+            inner,
+            type_path_context,
+            declarations,
+            local_bindings,
+            crate_root,
+            module_bindings,
+        );
+    }
     let segments = rust_type
         .path
         .segments
@@ -4447,6 +4498,123 @@ pub(crate) fn generation_context(
         contract_source,
         true,
     );
+}
+
+// External target-native contracts can designate the exact `Option` fields and returns whose
+// TypeScript companions store `null`. Carry only those declaration facts into a consumer: the
+// dependency remains target-native, while generated callers compare and assign its public surface
+// with the owner's absence representation.
+pub(crate) fn insert_external_nullable_option_context(
+    context: &mut HashSet<String>,
+    programs: &[(&str, &ExternalNullableOptionProgram)],
+) {
+    for (module, program) in programs {
+        for structure in program
+            .structs
+            .iter()
+            .filter(|structure| is_public(&structure.vis))
+        {
+            context.insert(owner_marker(
+                STRUCT_OWNER_MARKER,
+                module,
+                &structure.ident.to_string(),
+                SourceAccess::Public,
+            ));
+        }
+        for function in program
+            .functions
+            .iter()
+            .filter(|function| is_public(&function.vis))
+        {
+            context.insert(owner_marker(
+                FUNCTION_OWNER_MARKER,
+                module,
+                &function.sig.ident.to_string(),
+                SourceAccess::Public,
+            ));
+        }
+    }
+    for (module, program) in programs {
+        for structure in program
+            .structs
+            .iter()
+            .filter(|structure| is_public(&structure.vis))
+        {
+            let identity = format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident);
+            for field in &structure.fields {
+                if !is_public(&field.vis) {
+                    continue;
+                }
+                let (Some(field_name), Some(inner)) = (&field.ident, option_inner_type(&field.ty))
+                else {
+                    continue;
+                };
+                context.insert(format!(
+                    "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                    named_type(inner).unwrap_or_default()
+                ));
+                if program.nullable_options
+                    || program
+                        .nullable_option_items
+                        .contains(&format!("{}.{field_name}", structure.ident))
+                {
+                    context.insert(format!(
+                        "{NULLABLE_OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+                    ));
+                }
+            }
+        }
+        for function in program
+            .functions
+            .iter()
+            .filter(|function| is_public(&function.vis))
+        {
+            let ReturnType::Type(_, rust_type) = &function.sig.output else {
+                continue;
+            };
+            let Some(inner) = option_inner_type(rust_type) else {
+                continue;
+            };
+            let function_name = function.sig.ident.to_string();
+            context.insert(format!(
+                "{OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
+                named_type(inner).unwrap_or_default()
+            ));
+            if program.nullable_options || program.nullable_option_items.contains(&function_name) {
+                context.insert(format!(
+                    "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+                ));
+            }
+        }
+    }
+}
+
+fn insert_external_nullable_import_context(
+    context: &mut HashSet<String>,
+    current_module: &str,
+    program: &Program,
+    external_programs: &[(&str, &ExternalNullableOptionProgram)],
+) {
+    let owners = external_programs
+        .iter()
+        .map(|(module, _)| *module)
+        .collect::<BTreeSet<_>>();
+    for symbol in cross_crate_symbols(&program.uses).values() {
+        let Some(package) = symbol
+            .module
+            .strip_prefix("@flighthq/")
+            .and_then(|module| module.strip_suffix("/contract"))
+        else {
+            continue;
+        };
+        let owner = format!("flight_{}", package.replace('-', "_"));
+        if owners.contains(owner.as_str()) {
+            context.insert(format!(
+                "{USE_BINDING_MARKER}{current_module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{}",
+                symbol.local, symbol.imported
+            ));
+        }
+    }
 }
 
 pub(crate) fn insert_vitest_local_crate_context<'a>(
@@ -5985,6 +6153,7 @@ fn generation_context_with_types(
             {
                 let return_candidates = resolved_production_type_identities(
                     rust_type,
+                    &type_path_context,
                     &public_struct_owners,
                     &production_struct_bindings,
                     &contract_struct_bindings,
@@ -10764,6 +10933,8 @@ fn inferred_vitest_struct_literal_name(
     entities: &HashSet<String>,
 ) -> Option<String> {
     return match expression {
+        Expr::MethodCall(_) => direct_lock_guard_receiver(expression)
+            .and_then(|receiver| inferred_vitest_struct_literal_name(receiver, entities)),
         Expr::Call(call)
             if call.args.len() == 1
                 && (expression_is_associated_path(&call.func, "Arc", "new")
@@ -13256,6 +13427,18 @@ fn emit_method_call(
         {
             Ok(receiver)
         }
+        "collect"
+            if arguments.is_empty()
+                && call.turbofish.as_ref().is_some_and(|arguments| {
+                    matches!(
+                        arguments.args.iter().collect::<Vec<_>>().as_slice(),
+                        [GenericArgument::Type(rust_type)]
+                            if named_type(rust_type).as_deref() == Some("String")
+                    )
+                }) =>
+        {
+            Ok(format!("{receiver}.join('')"))
+        }
         "collect" if arguments.is_empty() => Ok(receiver),
         "count" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}.length"))
@@ -13402,6 +13585,9 @@ fn emit_method_call(
             "(<T>(items: readonly T[], predicate: (item: T) => boolean): number | undefined => {{ const index = items.findIndex(predicate); return index === -1 ? undefined : index; }})({receiver}, {})",
             arguments[0]
         )),
+        "push" if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!("{receiver} += {}", arguments[0]))
+        }
         "push" if arguments.len() == 1 => Ok(format!("{receiver}.push({})", arguments[0])),
         "remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
@@ -13838,6 +14024,8 @@ fn expression_is_vec_construction(expression: &Expr) -> bool {
 fn expression_struct_name(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
     return match expression {
         Expr::Group(group) => expression_struct_name(&group.expr, entities),
+        Expr::MethodCall(_) => direct_lock_guard_receiver(expression)
+            .and_then(|receiver| expression_struct_name(receiver, entities)),
         Expr::Paren(paren) => expression_struct_name(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             match lexical_fact(entities, &path.path.segments[0].ident.to_string()) {
@@ -14891,6 +15079,7 @@ pub(crate) fn emit_program(
     entity_module: Option<&str>,
     alias_programs: &[Program],
     external_alias_programs: &[(BTreeMap<String, String>, &str)],
+    external_nullable_programs: &[(&str, &ExternalNullableOptionProgram)],
     external_record_structs: &[ItemStruct],
     dependency_export_names: &[(BTreeMap<String, String>, &str)],
     external_string_unions: &BTreeSet<String>,
@@ -14913,6 +15102,7 @@ pub(crate) fn emit_program(
     for (name, alias) in &external_identity_aliases {
         identity_context.insert(identity_alias_marker(name, &alias.tag));
     }
+    insert_external_nullable_option_context(&mut identity_context, external_nullable_programs);
     // Full module identities when the caller supplies them; otherwise synthetic keys, under which each
     // source resolves only its own declarations.
     let program_modules = match module_identities {
@@ -14926,6 +15116,12 @@ pub(crate) fn emit_program(
         .zip(&programs)
         .map(|(module, program)| (module.as_str(), *program))
         .collect::<Vec<_>>();
+    insert_external_nullable_import_context(
+        &mut identity_context,
+        &program_modules[0],
+        program,
+        external_nullable_programs,
+    );
     let mut expression_context = generation_context_with_types(
         &program_sources,
         external_record_structs,

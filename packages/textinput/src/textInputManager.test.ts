@@ -3,8 +3,9 @@
 
 import { KEY_CODE_BACKSPACE, KEY_CODE_C, KEY_CODE_END, KEY_CODE_HOME } from '@flighthq/input/contract';
 import type { InputKeyboardData, InputTextData } from '@flighthq/input/contract';
+import type { NodeRef } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
+import { createRichText, getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
 import type {
   RichText,
   RichTextData,
@@ -19,7 +20,6 @@ import type { TextAutoSize, TextLayoutResult, TextVerticalAlign } from '@flighth
 import { describe, expect, it } from 'vitest';
 
 import {
-  allocateEntity,
   blurTextInput,
   connectInputToTextInput,
   createTextInputManager,
@@ -36,7 +36,7 @@ import {
   initializeTextInputManager,
   setTextInputSelection,
 } from './contract.ts';
-import type { TextInputManagerRaw, TextInputSource } from './contract.ts';
+import type { TextInputSource } from './contract.ts';
 
 interface TestRichTextData {
   autoSize: TextAutoSize | undefined;
@@ -259,9 +259,8 @@ function runtime(source: RichText): RichTextRuntime {
 }
 
 function setLayout(source: RichText, layout: TextLayoutResult): void {
-  const richTextRuntime = runtime(source);
-  const textLabel = richTextRuntime!.textLabel;
-  textLabel!.textLayout = layout;
+  const node: NodeRef = source;
+  setTextLayoutResult(node, layout);
 }
 
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
@@ -364,7 +363,7 @@ function assignTestRichTextData(out: RichTextData, data: Readonly<TestRichTextDa
 }
 
 function isFocused(target: RichText): boolean {
-  return ((state) => (state === undefined ? undefined : state!.focused))(getTextInputState(target)) ?? false;
+  return ((state) => (state === null ? null : state!.focused))(getTextInputState(target)) ?? false;
 }
 
 function textData(text: string): TestRichTextData {
@@ -378,7 +377,7 @@ describe('blurTextInput', () => {
     focusTextInput(manager, target);
     expect(isFocused(target)).toBe(true);
     blurTextInput(manager);
-    expect(manager!.focused === undefined).toBe(true);
+    expect(manager!.focused === null).toBe(true);
     expect(!isFocused(target)).toBe(true);
   });
 });
@@ -402,7 +401,7 @@ describe('createTextInputManager', () => {
   it('creates an enabled manager without focus', () => {
     const manager = createTextInputManager();
     expect(manager!.enabled).toBe(true);
-    expect(manager!.focused === undefined).toBe(true);
+    expect(manager!.focused === null).toBe(true);
   });
 });
 
@@ -566,12 +565,11 @@ describe('focusTextInput', () => {
 
 describe('initializeTextInputManager', () => {
   it('is the construction initializer of create text input manager', () => {
-    let manager: TextInputManagerRaw = Object.assign(allocateEntity<TextInputManagerRaw>(), {
-      enabled: false,
-      focused: undefined,
-    });
-    initializeTextInputManager(manager);
-    expect(manager.enabled).toBe(true);
-    expect(manager.focused === undefined).toBe(true);
+    const manager = createTextInputManager();
+    manager!.enabled = false;
+    manager!.focused = createInput(textData('focused'), inputOptions());
+    initializeTextInputManager(manager!);
+    expect(manager!.enabled).toBe(true);
+    expect(manager!.focused === null).toBe(true);
   });
 });

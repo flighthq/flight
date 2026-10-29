@@ -128,7 +128,7 @@ pub fn apply_text_input_restriction(
     } else {
         text.chars()
             .filter(|character| *character != '\n' && *character != '\r')
-            .collect()
+            .collect::<String>()
     };
     let restrict = get_input_state(source).read().unwrap().restrict.clone();
     value = restrict_text_input(&value, &restrict);
@@ -261,9 +261,19 @@ fn find_word_start_before(text: &str, index: usize) -> usize {
 }
 
 fn get_caret_line_index(source: &Ref<RichText>, layout: &TextLayoutResult) -> usize {
-    let mut out = TextSelectionRectangle::default();
+    let mut out = create_text_selection_rectangle();
     get_text_input_caret_rectangle(&mut out, source, layout);
     return out.line_index;
+}
+
+fn create_text_selection_rectangle() -> TextSelectionRectangle {
+    return TextSelectionRectangle {
+        height: 0.0,
+        line_index: 0,
+        width: 0.0,
+        x: 0.0,
+        y: 0.0,
+    };
 }
 
 fn get_fallback_line_height(layout: &TextLayoutResult) -> f32 {
@@ -770,7 +780,7 @@ pub fn move_text_input_caret_down(
         return;
     };
     let state = get_input_state(source);
-    let mut out = TextSelectionRectangle::default();
+    let mut out = create_text_selection_rectangle();
     get_text_input_caret_rectangle(&mut out, source, layout);
     let desired_x = {
         let mut state = state.write().unwrap();
@@ -844,7 +854,7 @@ pub fn move_text_input_caret_up(
         return;
     };
     let state = get_input_state(source);
-    let mut out = TextSelectionRectangle::default();
+    let mut out = create_text_selection_rectangle();
     get_text_input_caret_rectangle(&mut out, source, layout);
     let desired_x = {
         let mut state = state.write().unwrap();
@@ -914,14 +924,13 @@ fn record_text_input_edit(
 
 pub fn redo_text_input(source: &Ref<RichText>) {
     let state = get_input_state(source);
-    let record = {
-        let mut state_guard = state.write().unwrap();
-        if state_guard.history_index >= state_guard.history.len() as i32 - 1 {
-            return;
-        }
-        state_guard.history_index += 1;
-        state_guard.history[state_guard.history_index as usize].clone()
-    };
+    let mut state_guard = state.write().unwrap();
+    if state_guard.history_index >= state_guard.history.len() as i32 - 1 {
+        return;
+    }
+    state_guard.history_index += 1;
+    let record = state_guard.history[state_guard.history_index as usize].clone();
+    drop(state_guard);
     apply_history_record(
         source,
         &state,
@@ -1040,7 +1049,7 @@ pub fn scroll_text_input_caret_into_view(
     viewport_width: f32,
     viewport_height: f32,
 ) {
-    let mut out = TextSelectionRectangle::default();
+    let mut out = create_text_selection_rectangle();
     get_text_input_caret_rectangle(&mut out, source, layout);
     let caret_top = out.y;
     let caret_bottom = out.y + out.height;
@@ -1180,13 +1189,13 @@ fn split_restrict_ranges(restrict: &str) -> (String, String) {
     while index < characters.len() {
         let character = characters[index];
         if character == '\\' && index + 1 < characters.len() {
-            let target = if declining {
-                &mut declined
+            if declining {
+                declined.push(character);
+                declined.push(characters[index + 1]);
             } else {
-                &mut accepted
-            };
-            target.push(character);
-            target.push(characters[index + 1]);
+                accepted.push(character);
+                accepted.push(characters[index + 1]);
+            }
             index += 2;
             continue;
         }
@@ -1204,15 +1213,13 @@ fn split_restrict_ranges(restrict: &str) -> (String, String) {
 
 pub fn undo_text_input(source: &Ref<RichText>) {
     let state = get_input_state(source);
-    let record = {
-        let mut state_guard = state.write().unwrap();
-        if state_guard.history_index < 0 {
-            return;
-        }
-        let record = state_guard.history[state_guard.history_index as usize].clone();
-        state_guard.history_index -= 1;
-        record
-    };
+    let mut state_guard = state.write().unwrap();
+    if state_guard.history_index < 0 {
+        return;
+    }
+    let record = state_guard.history[state_guard.history_index as usize].clone();
+    state_guard.history_index -= 1;
+    drop(state_guard);
     apply_history_record(
         source,
         &state,
@@ -1223,7 +1230,7 @@ pub fn undo_text_input(source: &Ref<RichText>) {
 }
 
 fn usize_to_i32(value: usize) -> i32 {
-    return value.min(i32::MAX as usize) as i32;
+    return value.min(2_147_483_647) as i32;
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

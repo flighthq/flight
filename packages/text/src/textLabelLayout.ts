@@ -50,4 +50,11 @@ export function setTextLabelGuard(guard: ((liveString: string, rasterizedString:
   _textLabelGuard = guard;
 }
 
+export function setTextLayoutResult(source: Readonly<TextLabel>, layout: TextLayoutResult): void {
+  const runtime = getNode2DRuntime(source) as TextLabelRuntime;
+  runtime.textLayout = layout;
+  runtime.textLayoutUsingContentId = getNodeLocalContentRevision(source);
+  runtime.textLayoutUsingText = source.data.text;
+}
+
 let _textLabelGuard: ((liveString: string, rasterizedString: string) => void) | null = null;

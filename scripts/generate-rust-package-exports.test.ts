@@ -20,6 +20,7 @@ import {
   hasRustConstGroup,
   hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
+  hasRustSiblingGenerationSemantics,
   mergeRustExportNames,
   renderCompanionContractExports,
   renderGeneratedImports,
@@ -188,13 +189,26 @@ describe('hasRustPublicRecordDeclaration', () => {
 });
 
 describe('hasRustGenerationSemantics', () => {
-  it('selects cross-module unions without selecting target-native surface directives', () => {
+  it('selects cross-package nullable boundaries in addition to ordinary alias semantics', () => {
     expect(hasRustGenerationSemantics('//! flight-compiler: data-union MarkupResult=reserved-key\n')).toBe(true);
     expect(hasRustGenerationSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(true);
+    expect(hasRustGenerationSemantics('//! flight-compiler: nullable-option get_value\n')).toBe(true);
+    expect(hasRustGenerationSemantics('//! flight-compiler: nullable-options\n')).toBe(true);
     expect(
       hasRustGenerationSemantics('//! flight-compiler: target-native\n//! flight-compiler: contract Value\n'),
     ).toBe(false);
     expect(hasRustGenerationSemantics('pub static VALUE: usize = 1;\n')).toBe(false);
+  });
+});
+
+describe('hasRustSiblingGenerationSemantics', () => {
+  it('keeps lightweight nullable metadata out of the full intra-package alias lane', () => {
+    expect(hasRustSiblingGenerationSemantics('//! flight-compiler: data-union MarkupResult=reserved-key\n')).toBe(true);
+    expect(hasRustSiblingGenerationSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(
+      true,
+    );
+    expect(hasRustSiblingGenerationSemantics('//! flight-compiler: nullable-option get_value\n')).toBe(false);
+    expect(hasRustSiblingGenerationSemantics('//! flight-compiler: nullable-options\n')).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@ use crate::common::*;
 
 use std::sync::{Arc, Mutex};
 
-use flight_entity::{Ref, allocate_entity};
+use flight_entity::Ref;
 use flight_input::{KEY_CODE_A, KEY_CODE_C};
 use flight_text::RichText;
 
@@ -253,8 +253,9 @@ mod initialize_selectable_rich_text_manager {
 
     #[test]
     fn is_the_construction_initializer_of_create_selectable_rich_text_manager() {
-        let mut manager: SelectableRichTextManager = allocate_entity();
-        initialize_selectable_rich_text_manager(&mut manager);
-        assert!(manager.focused.is_none());
+        let manager = create_selectable_rich_text_manager();
+        manager.write().unwrap().focused = Some(rich_text("focused"));
+        initialize_selectable_rich_text_manager(&mut manager.write().unwrap());
+        assert!(manager.read().unwrap().focused.is_none());
     }
 }

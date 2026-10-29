@@ -24,13 +24,13 @@ export interface ReplaceTextInputOptions {
 }
 
 export interface SelectableRichTextManagerRaw extends EntityRaw {
-  focused?: RichText;
+  focused: RichText | null;
 }
 
 export interface TextInputEditRecord {
   caretIndexAfter: number;
   caretIndexBefore: number;
-  mergeKind?: string;
+  mergeKind: string | null;
   selectionIndexAfter: number;
   selectionIndexBefore: number;
   textAfter: string;
@@ -39,7 +39,7 @@ export interface TextInputEditRecord {
 
 export interface TextInputManagerRaw extends EntityRaw {
   enabled: boolean;
-  focused?: RichText;
+  focused: RichText | null;
 }
 
 export interface TextInputSource {

@@ -19,6 +19,7 @@ import {
   hasRustConstGroup,
   hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
+  hasRustSiblingGenerationSemantics,
   renderCompanionContractExports,
   resolveExternalContractExports,
   renderGeneratedImports,
@@ -88,7 +89,8 @@ try {
     .filter((rustPath) => {
       const mode = sourceMode(rustPath);
       return (
-        mode === 'generate' || (mode === 'target-native' && hasRustGenerationSemantics(readFileSync(rustPath, 'utf8')))
+        mode === 'generate' ||
+        (mode === 'target-native' && hasRustSiblingGenerationSemantics(readFileSync(rustPath, 'utf8')))
       );
     });
   const modules = rustSources
