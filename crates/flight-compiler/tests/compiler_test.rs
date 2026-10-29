@@ -1679,26 +1679,32 @@ pub fn is_lasso_selection_active(selection: &LassoSelection) -> bool {
     return selection.state.active;
 }
 "#;
-        let access = "(selection as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey]";
+        let access = "lassoSelectionStateStore.get(selection)!";
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
-        assert!(output.contains(
-            "import { EntityRuntimeKey, allocateEntity } from \"@flighthq/entity/contract\";"
+        assert!(output.starts_with(
+            "import { allocateEntity } from \"@flighthq/entity/contract\";\nimport type { EntityRaw } from \"@flighthq/entity/contract\";\n"
         ));
         assert!(output.contains(
             "/**\n * Opaque freeform gesture state.\n */\nexport interface LassoSelectionRaw extends EntityRaw {\n}\n"
         ));
-        assert!(output.contains(
-            "  (out as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey] = { active: false, count: 0.0 };\n"
+        assert!(
+            output
+                .contains("  lassoSelectionStateStore.set(out, { active: false, count: 0.0 });\n")
+        );
+        assert!(output.ends_with(
+            "\n// Crate-private `LassoSelection.state`, keyed by entity identity and reachable only from this package's modules.\nconst lassoSelectionStateStore = /* @__PURE__ */ new WeakMap<Readonly<LassoSelectionRaw>, LassoSelectionRuntime>();\n\nexport { lassoSelectionStateStore };\n"
         ));
+        assert!(!output.contains("EntityRuntimeKey"));
+        assert!(!output.contains("export const"));
         assert!(output.contains(&format!("  {access}.active = true;\n")));
         assert!(output.contains(&format!("  {access}.count += 1.0;\n")));
         assert!(output.contains(
             "export function isLassoSelectionActive(selection: Readonly<LassoSelectionRaw>): boolean {\n"
         ));
         assert!(output.contains(&format!("  return {access}.active;\n")));
-        assert!(!output.contains(".state"));
+        assert!(!output.contains("selection.state") && !output.contains("out.state"));
         assert!(!output.contains("state:"));
         assert!(!output.contains("export type"));
     }
@@ -1739,20 +1745,26 @@ pub fn get_selection_count(state: &SelectionState) -> f64 {
     return state.state.read().unwrap().count;
 }
 "#;
-        let access = "(state as SelectionStateRaw & { [EntityRuntimeKey]: SelectionStateRuntime })[EntityRuntimeKey]";
+        let access = "selectionStateStateStore.get(state)!";
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
-        assert!(output.contains("import { EntityRuntimeKey } from \"@flighthq/entity/contract\";"));
+        assert!(
+            output.starts_with("import type { EntityRaw } from \"@flighthq/entity/contract\";\n")
+        );
         assert!(output.contains("export interface SelectionStateRaw extends EntityRaw {\n}\n"));
         assert!(output.contains(
-            "  (out as SelectionStateRaw & { [EntityRuntimeKey]: SelectionStateRuntime })[EntityRuntimeKey] = { count: 0.0, items: [] as never[] };\n"
+            "  selectionStateStateStore.set(out, { count: 0.0, items: [] as never[] });\n"
         ));
+        assert!(output.contains(
+            "const selectionStateStateStore = /* @__PURE__ */ new WeakMap<Readonly<SelectionStateRaw>, SelectionStateRuntime>();\n\nexport { selectionStateStateStore };\n"
+        ));
+        assert!(!output.contains("EntityRuntimeKey"));
         assert!(output.contains(&format!("  let runtime = {access}!;\n")));
         assert!(output.contains("  runtime.items.push(item);\n"));
         assert!(output.contains(&format!("  return {access}!.count;\n")));
         assert!(!output.contains("Ref"));
-        assert!(!output.contains(".state"));
+        assert!(!output.contains("state.state") && !output.contains("out.state"));
     }
 
     #[test]
@@ -1797,14 +1809,27 @@ pub fn end_lasso_selection(selection: &mut LassoSelection) -> bool {
         )
         .unwrap();
 
-        assert!(output.contains("import { EntityRuntimeKey } from \"@flighthq/entity/contract\";"));
-        assert!(output.contains(
-            "  const active = (selection as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey].active;\n"
+        assert!(output.starts_with(
+            "import { lassoSelectionStateStore } from \"./types.ts\";\n\nexport function endLassoSelection("
         ));
-        assert!(output.contains(
-            "  (selection as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey].active = false;\n"
-        ));
+        assert!(
+            output.contains("  const active = lassoSelectionStateStore.get(selection)!.active;\n")
+        );
+        assert!(output.contains("  lassoSelectionStateStore.get(selection)!.active = false;\n"));
+        assert!(!output.contains("const lassoSelectionStateStore"));
+        assert!(!output.contains("EntityRuntimeKey"));
         assert!(!output.contains(".state"));
+
+        let unidentified = compile_typescript_with_alias_sources(
+            functions,
+            Some("@flighthq/entity/contract"),
+            &[types],
+        )
+        .unwrap_err();
+        assert_eq!(
+            unidentified.to_string(),
+            "cannot resolve the receiver of `.state`, which is designated entity runtime state on `LassoSelection`; bind the receiver to a local or parameter of that entity type"
+        );
     }
 
     #[test]
@@ -1850,6 +1875,18 @@ flight_entity::impl_entity!(LassoSelection);
                 expected
             );
         }
+
+        assert_eq!(
+            compile_typescript(
+                &format!(
+                    "{declaration}\npub fn lasso_selection_state_store() -> f64 {{\n    return 0.0;\n}}\n"
+                ),
+                Some("@flighthq/entity/contract")
+            )
+            .unwrap_err()
+            .to_string(),
+            "Rust identifier lowering to `lassoSelectionStateStore` collides with a generated entity runtime state store"
+        );
 
         let ordinary = compile_typescript(
             &format!(

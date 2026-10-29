@@ -41,7 +41,7 @@ const DEPENDENCY_EXPORT_NAME_BINDINGS_MARKER: &str = "@dependency-export-name-bi
 const EXPORT_NAME_TARGET_MARKER: &str = "@export-name-target:";
 // The module of the program being emitted; struct and function facts resolve against it.
 const CURRENT_SOURCE_MARKER: &str = "@current-source:";
-// `{module}␟{Owner}␟{field}␟{typed access}` for each designated crate-private entity state field, and
+// `{module}␟{Owner}␟{field}␟{store}` for each designated crate-private entity state field, and
 // `{field}␟{Owner}` so an access whose receiver type cannot be resolved fails closed.
 const ENTITY_RUNTIME_STATE_MARKER: &str = "@entity-runtime-state:";
 const ENTITY_RUNTIME_STATE_FIELD_MARKER: &str = "@entity-runtime-state-field:";
@@ -3682,27 +3682,9 @@ fn generation_context_with_types(
             }
         }
         for (owner, field_name) in &program.entity_runtime_states {
-            let state_type = program
-                .structs
-                .iter()
-                .find(|structure| structure.ident == owner.as_str())
-                .and_then(|structure| {
-                    structure.fields.iter().find(|field| {
-                        field
-                            .ident
-                            .as_ref()
-                            .is_some_and(|ident| ident == field_name)
-                    })
-                })
-                .map(|field| emit_type(&field.ty, &callable_type_context))
-                .transpose()?
-                .ok_or_else(|| {
-                    compile_error(format!(
-                        "entity runtime state `{owner}.{field_name}` was not validated"
-                    ))
-                })?;
             context.insert(format!(
-                "{ENTITY_RUNTIME_STATE_MARKER}{module}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{owner}Raw & {{ [EntityRuntimeKey]: {state_type} }}"
+                "{ENTITY_RUNTIME_STATE_MARKER}{module}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                entity_runtime_state_store(owner, field_name)
             ));
             context.insert(format!(
                 "{ENTITY_RUNTIME_STATE_FIELD_MARKER}{field_name}{PROVENANCE_SEPARATOR}{owner}"
@@ -4786,6 +4768,42 @@ fn emit_documentation(out: &mut String, attributes: &[Attribute], indent: usize)
     write_indent(out, indent);
     out.push_str(" */\n");
 }
+// Declares the package-internal store of each entity runtime state field `program` designates, at the
+// end of the declaring module. The store is exported only as a list export, never as a declaration
+// export, so a wildcard contract over the module never makes it public; sibling modules import it.
+fn emit_entity_runtime_state_stores(
+    out: &mut String,
+    program: &Program,
+    entities: &HashSet<String>,
+) -> Result<(), CompileError> {
+    for (owner, field_name) in &program.entity_runtime_states {
+        let field = program
+            .structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+            .and_then(|structure| {
+                structure.fields.iter().find(|field| {
+                    field
+                        .ident
+                        .as_ref()
+                        .is_some_and(|ident| ident == field_name)
+                })
+            })
+            .ok_or_else(|| {
+                compile_error(format!(
+                    "entity runtime state `{owner}.{field_name}` was not validated"
+                ))
+            })?;
+        let store = entity_runtime_state_store(owner, field_name);
+        writeln!(
+            out,
+            "\n// Crate-private `{owner}.{field_name}`, keyed by entity identity and reachable only from this package's modules.\nconst {store} = /* @__PURE__ */ new WeakMap<Readonly<{owner}Raw>, {}>();\n\nexport {{ {store} }};",
+            emit_type(&field.ty, entities)?
+        )
+        .expect("writing to a String cannot fail");
+    }
+    return Ok(());
+}
 
 fn emit_enum(
     out: &mut String,
@@ -5037,6 +5055,15 @@ pub(crate) fn emit_expression(
             Ok(format!("[{}]", elements.join(", ")))
         }
         Expr::Assign(assign) => {
+            if let Expr::Field(field) = assign.left.as_ref()
+                && let Some(store) = entity_runtime_state_access(field, entities)?
+            {
+                return Ok(format!(
+                    "{store}.set({}, {})",
+                    emit_expression(&field.base, entities)?,
+                    emit_expression(&assign.right, entities)?
+                ));
+            }
             let left = if let Expr::Unary(unary) = assign.left.as_ref()
                 && matches!(unary.op, UnOp::Deref(_))
             {
@@ -5246,8 +5273,8 @@ pub(crate) fn emit_expression(
         Expr::Field(field) => {
             reject_unresolved_pattern_field(&field.base, entities)?;
             let base = emit_expression(&field.base, entities)?;
-            if let Some(access) = entity_runtime_state_access(field, entities)? {
-                return Ok(format!("({base} as {access})[EntityRuntimeKey]"));
+            if let Some(store) = entity_runtime_state_access(field, entities)? {
+                return Ok(format!("{store}.get({base})!"));
             }
             match &field.member {
                 syn::Member::Named(identifier) => Ok(format!(
@@ -5505,6 +5532,56 @@ pub(crate) fn emit_expression(
             "unsupported Rust expression `{}`",
             expression_kind(expression)
         ))),
+    };
+}
+// Rejects a Rust identifier in `program` that lowers to the name of a visible entity runtime state
+// store, so a store reference in emitted code is always the store itself.
+// flight-lint: allow(hashmap-iteration) every collection visited here is a source-ordered Vec
+fn reject_entity_runtime_state_store_collisions(
+    program: &Program,
+    programs: &[&Program],
+) -> Result<(), CompileError> {
+    struct IdentifierVisitor<'a> {
+        collision: Option<String>,
+        stores: &'a BTreeSet<String>,
+    }
+    impl<'ast> Visit<'ast> for IdentifierVisitor<'_> {
+        fn visit_ident(&mut self, identifier: &'ast syn::Ident) {
+            let lowered = snake_to_lower_camel(&identifier.to_string());
+            if self.collision.is_none() && self.stores.contains(&lowered) {
+                self.collision = Some(lowered);
+            }
+        }
+    }
+    let stores = programs
+        .iter()
+        .flat_map(|program| &program.entity_runtime_states)
+        .map(|(owner, field)| entity_runtime_state_store(owner, field))
+        .collect::<BTreeSet<_>>();
+    if stores.is_empty() {
+        return Ok(());
+    }
+    let mut visitor = IdentifierVisitor {
+        collision: None,
+        stores: &stores,
+    };
+    for function in &program.functions {
+        visitor.visit_item_fn(function);
+    }
+    for constant in &program.constants {
+        visitor.visit_item_const(constant);
+    }
+    for rust_static in &program.statics {
+        visitor.visit_item_static(rust_static);
+    }
+    for structure in &program.structs {
+        visitor.visit_item_struct(structure);
+    }
+    return match visitor.collision {
+        Some(name) => Err(compile_error(format!(
+            "Rust identifier lowering to `{name}` collides with a generated entity runtime state store"
+        ))),
+        None => Ok(()),
     };
 }
 
@@ -9217,27 +9294,15 @@ pub(crate) fn emit_program(
         .collect::<HashSet<_>>();
     let mut out = String::new();
 
-    let uses_entity_runtime_state = uses_entity_runtime_state(program, &programs);
-    let entity_module =
-        if uses_allocate_entity || uses_entity_runtime_state || !program.entities.is_empty() {
-            Some(entity_module.ok_or_else(|| {
+    let entity_module = if uses_allocate_entity || !program.entities.is_empty() {
+        Some(entity_module.ok_or_else(|| {
             compile_error(
                 "this Rust module uses entity runtime types; provide a TypeScript entity module",
             )
         })?)
-        } else {
-            None
-        };
-    if uses_entity_runtime_state {
-        value_imports
-            .entry(
-                entity_module
-                    .expect("entity module was required")
-                    .to_string(),
-            )
-            .or_default()
-            .insert("EntityRuntimeKey".to_string());
-    }
+    } else {
+        None
+    };
     if uses_allocate_entity {
         value_imports
             .entry(
@@ -9253,15 +9318,6 @@ pub(crate) fn emit_program(
         &program_value_bindings(program, &expression_context),
         &value_imports,
     )?;
-    for (module, names) in &value_imports {
-        writeln!(
-            out,
-            "import {{ {} }} from {:?};",
-            names.iter().cloned().collect::<Vec<_>>().join(", "),
-            module
-        )
-        .expect("writing to a String cannot fail");
-    }
     if !program.entities.is_empty() {
         type_imports
             .entry(
@@ -9291,25 +9347,17 @@ pub(crate) fn emit_program(
             .or_default()
             .insert(name);
     }
-    for (module, names) in &type_imports {
-        writeln!(
-            out,
-            "import type {{ {} }} from {:?};",
-            names.iter().cloned().collect::<Vec<_>>().join(", "),
-            module
-        )
-        .expect("writing to a String cannot fail");
-    }
-    if !value_imports.is_empty() || !type_imports.is_empty() {
-        out.push('\n');
-    }
+    reject_entity_runtime_state_store_collisions(program, &programs)?;
+    // The body is emitted before the imports so the package-internal state stores it actually reads
+    // or writes can be imported from their declaring sibling modules.
+    let mut body = String::new();
     if program.standard_constants.contains("PI") {
-        out.push_str("const PI = Math.PI;\n\n");
+        body.push_str("const PI = Math.PI;\n\n");
     }
 
     for rust_enum in &program.enums {
         emit_enum(
-            &mut out,
+            &mut body,
             rust_enum,
             program
                 .string_unions
@@ -9322,11 +9370,11 @@ pub(crate) fn emit_program(
             program.data_unions.contains(&rust_enum.ident.to_string()),
             &source_context,
         )?;
-        out.push('\n');
+        body.push('\n');
     }
     for type_alias in &program.type_aliases {
         emit_type_alias(
-            &mut out,
+            &mut body,
             type_alias,
             &source_context,
             program
@@ -9334,11 +9382,11 @@ pub(crate) fn emit_program(
                 .get(&type_alias.ident.to_string())
                 .map(Vec::as_slice),
         )?;
-        out.push('\n');
+        body.push('\n');
     }
     for structure in &program.structs {
         emit_struct(
-            &mut out,
+            &mut body,
             structure,
             &source_context,
             &aliases,
@@ -9347,11 +9395,11 @@ pub(crate) fn emit_program(
                 .readonly_structs
                 .contains(&structure.ident.to_string()),
         )?;
-        out.push('\n');
+        body.push('\n');
     }
     for constant in &program.constants {
         emit_constant(
-            &mut out,
+            &mut body,
             constant,
             &source_context,
             program
@@ -9359,23 +9407,23 @@ pub(crate) fn emit_program(
                 .get(&constant.ident.to_string())
                 .map(String::as_str),
         )?;
-        out.push('\n');
+        body.push('\n');
     }
     for rust_static in &program.statics {
         emit_static(
-            &mut out,
+            &mut body,
             rust_static,
             &source_context,
             &aliases,
             &nullable_types,
         )?;
-        out.push('\n');
+        body.push('\n');
     }
     for (index, function) in program.functions.iter().enumerate() {
         let entity_construction_parameter =
             initializes_readonly_entity(function, &program.entities, &program.readonly_structs);
         emit_function(
-            &mut out,
+            &mut body,
             function,
             &source_context,
             &aliases,
@@ -9383,9 +9431,35 @@ pub(crate) fn emit_program(
             entity_construction_parameter,
         )?;
         if index + 1 < program.functions.len() {
-            out.push('\n');
+            body.push('\n');
         }
     }
+    emit_entity_runtime_state_stores(&mut body, program, &source_context)?;
+    for (store, module) in entity_runtime_state_store_imports(&body, &programs, &program_modules)? {
+        value_imports.entry(module).or_default().insert(store);
+    }
+    for (module, names) in &value_imports {
+        writeln!(
+            out,
+            "import {{ {} }} from {:?};",
+            names.iter().cloned().collect::<Vec<_>>().join(", "),
+            module
+        )
+        .expect("writing to a String cannot fail");
+    }
+    for (module, names) in &type_imports {
+        writeln!(
+            out,
+            "import type {{ {} }} from {:?};",
+            names.iter().cloned().collect::<Vec<_>>().join(", "),
+            module
+        )
+        .expect("writing to a String cannot fail");
+    }
+    if !value_imports.is_empty() || !type_imports.is_empty() {
+        out.push('\n');
+    }
+    out.push_str(&body);
     return Ok(out);
 }
 
@@ -10152,11 +10226,10 @@ fn emit_vec_extend_statement(
     return Ok(());
 }
 
-// The typed internal access for a field expression that reads or writes designated crate-private
-// entity state: the owner's public record intersected with its runtime-slot state. The state lives under
-// `EntityRuntimeKey`, so the public interface stays opaque and object copies never carry it. A designated
-// field name on a receiver whose struct cannot be resolved fails closed rather than emitting a public
-// property access that does not exist.
+// The store holding the designated crate-private entity state a field expression reads or writes. The
+// state lives in a WeakMap owned by the declaring module, so no public interface, runtime slot, binding
+// or object copy can reach it. A designated field name on a receiver whose struct cannot be resolved
+// fails closed rather than emitting a public property access that does not exist.
 // flight-lint: allow(hashmap-iteration) designated owners are collected into an ordered BTreeSet
 fn entity_runtime_state_access(
     field: &syn::ExprField,
@@ -10203,6 +10276,66 @@ fn entity_runtime_state_is_designated(entities: &HashSet<String>, owner: &str) -
             .and_then(|rest| rest.split_once(PROVENANCE_SEPARATOR))
             .is_some_and(|(_, designated_owner)| designated_owner == owner)
     });
+}
+
+// The package-internal store of `owner.field` designated entity runtime state.
+fn entity_runtime_state_store(owner: &str, field: &str) -> String {
+    let field = snake_to_lower_camel(field);
+    let mut characters = field.chars();
+    let field = characters
+        .next()
+        .map(|first| first.to_ascii_uppercase().to_string() + characters.as_str())
+        .unwrap_or_default();
+    return format!("{}{field}Store", lower_camel_from_upper_camel(owner));
+}
+
+// The `(store, module specifier)` imports `body` needs: each sibling-declared entity runtime state
+// store its code reads or writes. A store name cannot come from portable Rust (collisions are
+// rejected), so a code-only identifier match is exact. A store in a module this source cannot name
+// relatively fails closed.
+fn entity_runtime_state_store_imports(
+    body: &str,
+    programs: &[&Program],
+    modules: &[String],
+) -> Result<BTreeSet<(String, String)>, CompileError> {
+    let code_ranges = crate::typescript_code_ranges(body);
+    let mut imports = BTreeSet::new();
+    for (index, program) in programs.iter().enumerate().skip(1) {
+        for (owner, field_name) in &program.entity_runtime_states {
+            let store = entity_runtime_state_store(owner, field_name);
+            let used = code_ranges.iter().any(|range| {
+                let code = &body[range.clone()];
+                code.match_indices(&store).any(|(offset, _)| {
+                    let before = code[..offset].chars().next_back();
+                    let after = code[offset + store.len()..].chars().next();
+                    !before.is_some_and(|character| {
+                        character.is_ascii_alphanumeric() || matches!(character, '_' | '$' | '.')
+                    }) && !after.is_some_and(|character| {
+                        character.is_ascii_alphanumeric() || matches!(character, '_' | '$')
+                    })
+                })
+            });
+            if !used {
+                continue;
+            }
+            let current = modules[0].split("::").collect::<Vec<_>>();
+            let declaring = modules[index].split("::").collect::<Vec<_>>();
+            let [crate_name, module] = declaring.as_slice() else {
+                return Err(compile_error(format!(
+                    "entity runtime state `{owner}.{field_name}` is declared in `{}`, which this module cannot import; declare it in a top-level module of the crate",
+                    modules[index]
+                )));
+            };
+            if current.len() != 2 || current[0] != *crate_name {
+                return Err(compile_error(format!(
+                    "entity runtime state `{owner}.{field_name}` in `{}` is not reachable from `{}`",
+                    modules[index], modules[0]
+                )));
+            }
+            imports.insert((store, format!("./{}.ts", snake_to_lower_camel(module))));
+        }
+    }
+    return Ok(imports);
 }
 
 fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
@@ -10971,41 +11104,6 @@ fn type_kind(rust_type: &Type) -> &'static str {
         Type::Verbatim(_) => "verbatim type tokens",
         _ => "unknown type",
     };
-}
-
-// Whether any function in `program` names a field designated as entity runtime state by one of
-// `programs`. Exact receivers are resolved during emission, which fails closed on an unresolved one.
-fn uses_entity_runtime_state(program: &Program, programs: &[&Program]) -> bool {
-    struct FieldVisitor<'a> {
-        found: bool,
-        names: &'a BTreeSet<&'a str>,
-    }
-    impl<'ast> syn::visit::Visit<'ast> for FieldVisitor<'_> {
-        fn visit_expr_field(&mut self, field: &'ast syn::ExprField) {
-            if let syn::Member::Named(member) = &field.member
-                && self.names.contains(member.to_string().as_str())
-            {
-                self.found = true;
-            }
-            syn::visit::visit_expr_field(self, field);
-        }
-    }
-    let names = programs
-        .iter()
-        .flat_map(|program| program.entity_runtime_states.values())
-        .map(String::as_str)
-        .collect::<BTreeSet<_>>();
-    if names.is_empty() {
-        return false;
-    }
-    let mut visitor = FieldVisitor {
-        found: false,
-        names: &names,
-    };
-    for function in &program.functions {
-        syn::visit::Visit::visit_item_fn(&mut visitor, function);
-    }
-    return visitor.found;
 }
 
 pub(crate) fn write_indent(out: &mut String, indent: usize) {
