@@ -21,7 +21,7 @@ export interface AudioChannel {
   playbackRate: number;
   source: AudioResource;
   state: AudioChannelState;
-  onComplete: Signal<() => void>;
+  onComplete: Signal<void>;
 }
 
 export interface AudioPlayOptions {

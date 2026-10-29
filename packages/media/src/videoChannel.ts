@@ -185,7 +185,7 @@ function completeVideoChannel(hostVideo: HostVideoCapability, channel: VideoChan
   channel.currentTime = channel.length;
   channel.state = 'complete';
   emitVideoChannelSignal(channel, 'onComplete');
-  emitSignal(channel.onComplete);
+  emitSignal(channel.onComplete, undefined);
 }
 
 function emitVideoChannelSignal(
@@ -193,7 +193,7 @@ function emitVideoChannelSignal(
   name: 'onComplete' | 'onLoop' | 'onPause' | 'onPlay' | 'onStop',
 ): void {
   const signals = getVideoChannelSignals(channel);
-  if (signals !== null) emitSignal(signals[name]);
+  if (signals !== null) emitSignal(signals[name], undefined);
 }
 
 function startVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {

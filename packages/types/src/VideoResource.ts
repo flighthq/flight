@@ -14,7 +14,7 @@ export interface VideoChannel {
   playbackRate: number;
   source: VideoResource | null;
   state: VideoChannelState;
-  onComplete: Signal<() => void>;
+  onComplete: Signal<void>;
 }
 
 export interface VideoPlayOptions {

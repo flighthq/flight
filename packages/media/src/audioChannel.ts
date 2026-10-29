@@ -229,7 +229,7 @@ function emitChannelSignal(
   name: 'onComplete' | 'onLoop' | 'onPause' | 'onPlay' | 'onStop',
 ): void {
   const signals = getAudioChannelSignals(channel);
-  if (signals !== null) emitSignal(signals[name]);
+  if (signals !== null) emitSignal(signals[name], undefined);
 }
 
 function completeAudioChannel(channel: AudioChannel): void {
@@ -248,7 +248,7 @@ function completeAudioChannel(channel: AudioChannel): void {
   channel.currentTime = channel.length;
   channel.state = 'complete';
   emitChannelSignal(channel, 'onComplete');
-  emitSignal(channel.onComplete);
+  emitSignal(channel.onComplete, undefined);
 }
 
 function destroyActiveSource(channel: AudioChannel): void {
