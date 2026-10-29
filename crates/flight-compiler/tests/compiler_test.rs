@@ -6245,6 +6245,67 @@ mod compile_vitest {
     use super::*;
 
     #[test]
+    fn omits_suites_that_contain_only_rust_only_tests() {
+        let source = r#"
+mod native_only {
+    /// flight-compiler: rust-only — target has a separate identity probe.
+    #[test]
+    fn preserves_native_identity() {}
+}
+"#;
+
+        let output = compile_vitest(source, "./contract.ts").unwrap();
+        assert!(!output.contains("describe(\"nativeOnly\""), "{output}");
+        assert!(!output.contains("Rust-only"), "{output}");
+    }
+
+    #[test]
+    fn keeps_unknown_crate_root_functions_in_the_target_native_test_support_lane() {
+        let production = r#"
+pub fn selected_value() -> i32 {
+    return 1;
+}
+
+pub fn unselected_value() -> i32 {
+    return 2;
+}
+"#;
+        let contract = "pub use crate::sample::selected_value;\n";
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn compares_with_rust_only_support() {
+    crate::assert_same(selected_value(), 1);
+}
+"#;
+        let aliases = [VitestAliasSource {
+            source: production,
+            module: "crates/flight-example/src/sample.rs",
+        }];
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &aliases,
+        )
+        .unwrap();
+        assert!(output.contains("crate.assertSame(selectedValue(), 1);"));
+
+        let unselected = source.replace("crate::assert_same", "crate::unselected_value");
+        let error = compile_vitest_with_contract_alias_sources(
+            &unselected,
+            "@flighthq/example/contract",
+            contract,
+            &aliases,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains("contract.rs does not select"), "{error}");
+    }
+
+    #[test]
     fn honors_nullable_options_in_portable_tests() {
         let production = r#"
 pub fn optional_value() -> Option<i32> {

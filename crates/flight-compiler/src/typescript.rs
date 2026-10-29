@@ -3834,6 +3834,30 @@ pub(crate) fn vitest_function_path_binding_name(
     );
 }
 
+// Integration-test crates can expose Rust-only helpers at their crate root while the package
+// generator supplies the matching target-native `rustTestSupport` object. Preserve strict contract
+// provenance for every production candidate; only a crate-root function with no production
+// declaration at all belongs to that test-support lane.
+fn is_vitest_crate_root_test_support_function(path: &syn::Path, context: &HashSet<String>) -> bool {
+    if path.segments.len() != 2
+        || path
+            .segments
+            .first()
+            .is_none_or(|segment| segment.ident != "crate")
+    {
+        return false;
+    }
+    let function = path
+        .segments
+        .last()
+        .expect("two-segment paths have a function")
+        .ident
+        .to_string();
+    return provenance_marker_values(context, VITEST_PUBLIC_FUNCTION_MARKER, &function).is_empty()
+        && provenance_marker_values(context, VITEST_FUNCTION_CANDIDATE_MARKER, &function)
+            .is_empty();
+}
+
 pub(crate) fn vitest_struct_path_binding_name(
     path: &syn::Path,
     context: &HashSet<String>,
@@ -4210,6 +4234,9 @@ pub(crate) fn validate_vitest_function_provenance(
         }
 
         fn record_function_path(&mut self, path: &syn::Path) {
+            if is_vitest_crate_root_test_support_function(path, self.context) {
+                return;
+            }
             match vitest_function_path_binding_name(path, self.context) {
                 Ok(Some(function)) if !self.is_shadowed(&function) => {
                     self.calls.insert(function);
@@ -6229,10 +6256,16 @@ pub(crate) fn emit_expression(
                 && path.path.segments.first().is_some_and(|segment| {
                     vitest_current_path_prefix(entities, &segment.ident.to_string()).is_some()
                 }) {
-                let binding = vitest_function_path_binding_name(&path.path, entities)?
-                    .ok_or_else(|| compile_error("current-package function path has no binding"))?;
-                export_name(entities, &binding)
-                    .map_or_else(|| emit_path_segment(&binding), str::to_string)
+                if is_vitest_crate_root_test_support_function(&path.path, entities) {
+                    emit_expression(&call.func, entities)?
+                } else {
+                    let binding = vitest_function_path_binding_name(&path.path, entities)?
+                        .ok_or_else(|| {
+                            compile_error("current-package function path has no binding")
+                        })?;
+                    export_name(entities, &binding)
+                        .map_or_else(|| emit_path_segment(&binding), str::to_string)
+                }
             } else {
                 emit_expression(&call.func, entities)?
             };

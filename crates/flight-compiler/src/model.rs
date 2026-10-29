@@ -1648,7 +1648,12 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
                     "Rust impl blocks are sugar and cannot be a portable test source",
                 ));
             }
-            Item::Mod(module) => suites.push(parse_test_suite(module)?),
+            Item::Mod(module) => {
+                let suite = parse_test_suite(module)?;
+                if !suite.tests.is_empty() {
+                    suites.push(suite);
+                }
+            }
             Item::Use(item_use) => {
                 collect_standard_constant(&item_use.tree, &mut Vec::new(), &mut standard_constants);
                 uses.push(item_use);
@@ -1673,7 +1678,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
         }
     }
 
-    if !top_level_tests.is_empty() || !top_level_skipped_tests.is_empty() {
+    if !top_level_tests.is_empty() {
         suites.insert(
             0,
             TestSuite {
