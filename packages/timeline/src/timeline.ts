@@ -196,12 +196,12 @@ function advanceFrame(timeline: Timeline, deltaTime: number): number {
         timeline.isPlaying = false;
         const completed = totalFrames;
         const signals = timeline.signals;
-        if (signals !== null) emitSignal(signals.onComplete);
+        if (signals !== null) emitSignal(signals.onComplete, undefined);
         return completed;
       }
       next = ((next - 1) % totalFrames) + 1;
       const signals = timeline.signals;
-      if (signals !== null) emitSignal(signals.onLoop);
+      if (signals !== null) emitSignal(signals.onLoop, undefined);
     }
     return next;
   }
@@ -210,11 +210,11 @@ function advanceFrame(timeline: Timeline, deltaTime: number): number {
     if (timeline.playMode === 'once') {
       timeline.isPlaying = false;
       const signals = timeline.signals;
-      if (signals !== null) emitSignal(signals.onComplete);
+      if (signals !== null) emitSignal(signals.onComplete, undefined);
       return totalFrames;
     }
     const signals = timeline.signals;
-    if (signals !== null) emitSignal(signals.onLoop);
+    if (signals !== null) emitSignal(signals.onLoop, undefined);
     return 1;
   }
   return next;

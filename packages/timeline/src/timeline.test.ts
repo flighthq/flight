@@ -1,4 +1,6 @@
-import type { Node2D, Timeline } from '@flighthq/types/contract';
+import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
+import type { Node2D, Timeline, TimelineFrameEvent } from '@flighthq/types/contract';
 
 import {
   addTimelineFrameScript,
@@ -213,6 +215,20 @@ describe('enableTimelineSignals', () => {
     expect(events[0].frame).toBe(1);
     expect(events[1].frame).toBe(2);
     expect(events[1].previousFrame).toBe(1);
+  });
+
+  it('types the frame signals by payload and stops a slot disconnected by its SlotId', () => {
+    const t = make({ frameRate: null });
+    const signals = enableTimelineSignals(t);
+    expectTypeOf(signals.onEnterFrame).toEqualTypeOf<Signal<TimelineFrameEvent>>();
+    expectTypeOf(signals.onLoop).toEqualTypeOf<Signal<void>>();
+    const frames: number[] = [];
+    const id: SlotId = connectSignal(signals.onEnterFrame, (event: TimelineFrameEvent) => frames.push(event.frame));
+    playTimeline(t);
+    updateTimeline(t, 0);
+    disconnectSignal(signals.onEnterFrame, id);
+    updateTimeline(t, 0);
+    expect(frames).toEqual([1]);
   });
 
   it('emits onExitFrame before frame changes', () => {
