@@ -352,7 +352,8 @@ export function setSignalTimeout(state: SignalTimerState, delayMs: number, callb
   let index = 0;
   while (
     index < timerState.timers.length &&
-    [timerState.timers[index].fireAtMs, timerState.timers[index].id.value] <= [fireAtMs, id.value]
+    (timerState.timers[index].fireAtMs < fireAtMs ||
+      (timerState.timers[index].fireAtMs === fireAtMs && timerState.timers[index].id.value <= id.value))
   ) {
     index += 1;
   }

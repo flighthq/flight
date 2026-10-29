@@ -2,8 +2,10 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 export {
+  advanceSignalTimers,
   cancelSignal,
   clearSignal,
+  clearSignalTimeout,
   connectSignal,
   connectSignalAtFrameRate,
   connectSignalDebounced,
@@ -11,6 +13,7 @@ export {
   connectSignalTracked,
   createSignal,
   createSignalScope,
+  createSignalTimerState,
   disconnectSignal,
   disconnectSignalConnection,
   disconnectSignalScope,
@@ -20,14 +23,18 @@ export {
   isSlotConnected,
   pauseSignalConnection,
   resumeSignalConnection,
+  setSignalTimeout,
 } from './contract.ts';
 
 export type {
+  FrameTick,
   SignalConnectOptions,
   SignalConnection,
   SignalData,
   SignalThrottleOptions,
+  SignalTimerState,
   SignalTrackedConnectOptions,
+  TimerId,
 } from './contract.ts';
 
 export type { Signal, SignalScope } from './signalTypes.ts';

@@ -173,6 +173,7 @@ describe('connectSignal', () => {
 });
 
 describe('disconnectSignal', () => {
+  // Rust-only: a concurrent reconnect is not cleared with the last old slot
   it('does nothing when no slots are connected', () => {
     const signal: SignalRaw<void> = createSignal();
     disconnectSignal(signal, { value: 999 });

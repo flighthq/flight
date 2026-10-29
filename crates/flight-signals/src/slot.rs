@@ -9,8 +9,10 @@ use crate::types::{Signal, SignalConnectOptions, SignalData, SignalSlot, SlotId}
 static NEXT_SIGNAL_SLOT_ID: AtomicU32 = AtomicU32::new(1);
 
 pub fn clear_signal<T>(signal: &Signal<T>) {
+    let mut state = signal.data.write().unwrap();
+    *state = None;
     *signal.emit.write().unwrap() = Arc::new(|_| {});
-    *signal.data.write().unwrap() = None;
+    drop(state);
 }
 
 /// Removes tombstoned entries once the outermost emission exits, and detaches the signal when
@@ -68,24 +70,28 @@ pub fn connect_signal<T: 'static>(
         value: NEXT_SIGNAL_SLOT_ID.fetch_add(1, Ordering::Relaxed),
     };
 
-    init_signal_data(signal);
-    let mut state = signal.data.write().unwrap();
-    let signal_data = state.as_mut().unwrap();
-    let mut index = 0;
-    while index < signal_data.priorities.len() && priority <= signal_data.priorities[index] {
-        index += 1;
+    loop {
+        init_signal_data(signal);
+        let mut state = signal.data.write().unwrap();
+        let Some(signal_data) = state.as_mut() else {
+            continue;
+        };
+        let mut index = 0;
+        while index < signal_data.priorities.len() && priority <= signal_data.priorities[index] {
+            index += 1;
+        }
+        let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
+        slots.insert(index, Some(slot));
+        let ids: &mut Vec<SlotId> = &mut signal_data.ids;
+        ids.insert(index, id);
+        let priorities: &mut Vec<i32> = &mut signal_data.priorities;
+        priorities.insert(index, priority);
+        let repeats: &mut Vec<bool> = &mut signal_data.repeat;
+        repeats.insert(index, repeat);
+        let paused: &mut Vec<bool> = &mut signal_data.paused;
+        paused.insert(index, false);
+        return id;
     }
-    let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
-    slots.insert(index, Some(slot));
-    let ids: &mut Vec<SlotId> = &mut signal_data.ids;
-    ids.insert(index, id);
-    let priorities: &mut Vec<i32> = &mut signal_data.priorities;
-    priorities.insert(index, priority);
-    let repeats: &mut Vec<bool> = &mut signal_data.repeat;
-    repeats.insert(index, repeat);
-    let paused: &mut Vec<bool> = &mut signal_data.paused;
-    paused.insert(index, false);
-    return id;
 }
 
 pub(crate) fn count_live_slots<T>(data: &SignalData<T>) -> usize {
@@ -103,46 +109,35 @@ pub(crate) fn count_live_slots<T>(data: &SignalData<T>) -> usize {
 /// when the outermost dispatch exits (D4 re-entrancy).
 // flight-lint: allow(conform-params) D4: disconnect takes the SlotId returned by connect_signal
 pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
-    let should_detach = {
-        let mut state = signal.data.write().unwrap();
-        let Some(signal_data) = state.as_mut() else {
-            return;
-        };
-        let dispatching = signal_data.depth > 0;
-        let mut index = signal_data.slots.len();
-        while index > 0 {
-            index -= 1;
-            if signal_data.ids[index].value != id.value {
-                continue;
-            }
-            if dispatching {
-                signal_data.slots[index] = None;
-            } else {
-                let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
-                slots.remove(index);
-                let ids: &mut Vec<SlotId> = &mut signal_data.ids;
-                ids.remove(index);
-                let priorities: &mut Vec<i32> = &mut signal_data.priorities;
-                priorities.remove(index);
-                let repeats: &mut Vec<bool> = &mut signal_data.repeat;
-                repeats.remove(index);
-                let paused: &mut Vec<bool> = &mut signal_data.paused;
-                paused.remove(index);
-            }
-        }
-        !dispatching && signal_data.slots.is_empty()
+    let mut state = signal.data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return;
     };
-    if should_detach {
-        let state = signal.data.read().unwrap();
-        let empty = match state.as_ref() {
-            Some(signal_data) => signal_data.slots.is_empty(),
-            None => false,
-        };
-        drop(state);
-        if empty {
-            *signal.data.write().unwrap() = None;
-            *signal.emit.write().unwrap() = Arc::new(|_| {});
+    let dispatching = signal_data.depth > 0;
+    let mut index = signal_data.slots.len();
+    while index > 0 {
+        index -= 1;
+        if signal_data.ids[index].value != id.value {
+            continue;
         }
+        if dispatching {
+            signal_data.slots[index] = None;
+        } else {
+            let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
+            slots.remove(index);
+            let ids: &mut Vec<SlotId> = &mut signal_data.ids;
+            ids.remove(index);
+            let priorities: &mut Vec<i32> = &mut signal_data.priorities;
+            priorities.remove(index);
+            let repeats: &mut Vec<bool> = &mut signal_data.repeat;
+            repeats.remove(index);
+            let paused: &mut Vec<bool> = &mut signal_data.paused;
+            paused.remove(index);
+        }
+    }
+    if !dispatching && signal_data.slots.is_empty() {
+        *state = None;
+        *signal.emit.write().unwrap() = Arc::new(|_| {});
     }
 }
 

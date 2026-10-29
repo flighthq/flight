@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Barrier, Mutex};
+use std::thread;
 
 use flight_signals::*;
 
@@ -245,6 +246,35 @@ mod disconnect_signal {
         emit_signal(&signal, &());
         assert_eq!(*a.lock().unwrap(), 0);
         assert_eq!(*b.lock().unwrap(), 1);
+    }
+
+    /// flight-compiler: rust-only — JavaScript has no parallel reconnect race.
+    #[test]
+    fn a_concurrent_reconnect_is_not_cleared_with_the_last_old_slot() {
+        for _ in 0..2_000 {
+            let signal: Signal<()> = create_signal();
+            let old = connect_signal(&signal, Arc::new(|_: &()| {}), None);
+            let start = Arc::new(Barrier::new(3));
+
+            let disconnect_signal_handle = signal.clone();
+            let disconnect_start = start.clone();
+            let disconnect = thread::spawn(move || {
+                disconnect_start.wait();
+                disconnect_signal(&disconnect_signal_handle, old);
+            });
+
+            let reconnect_signal_handle = signal.clone();
+            let reconnect_start = start.clone();
+            let reconnect = thread::spawn(move || {
+                reconnect_start.wait();
+                return connect_signal(&reconnect_signal_handle, Arc::new(|_: &()| {}), None);
+            });
+
+            start.wait();
+            disconnect.join().unwrap();
+            let connected = reconnect.join().unwrap();
+            assert!(is_slot_connected(&signal, connected));
+        }
     }
 }
 

@@ -409,4 +409,20 @@ mod set_signal_timeout {
         let second = set_signal_timeout(&state, 20.0, Arc::new(|| {}));
         assert_ne!(first, second);
     }
+
+    #[test]
+    fn preserves_insertion_order_for_equal_deadlines_across_multi_digit_ids() {
+        let state = timer_state();
+        let order: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
+        for value in 0..12 {
+            let timer_order = order.clone();
+            set_signal_timeout(
+                &state,
+                10.0,
+                Arc::new(move || timer_order.lock().unwrap().push(value)),
+            );
+        }
+        advance_signal_timers(&state, 10.0);
+        assert_eq!(*order.lock().unwrap(), (0..12).collect::<Vec<_>>());
+    }
 }

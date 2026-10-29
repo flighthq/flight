@@ -280,4 +280,14 @@ describe('setSignalTimeout', () => {
     const second = setSignalTimeout(state, 20.0, () => {});
     expect(first).not.toEqual(second);
   });
+  it('preserves insertion order for equal deadlines across multi digit ids', () => {
+    const state = timerState();
+    const order: { value: number[] } = { value: [] as never[] };
+    for (let value = 0; value < 12; value += 1) {
+      const timerOrder = order;
+      setSignalTimeout(state, 10.0, () => timerOrder.value.push(value));
+    }
+    advanceSignalTimers(state, 10.0);
+    expect(order.value).toEqual(Array.from({ length: 12 - 0 }, (_, index) => 0 + index));
+  });
 });

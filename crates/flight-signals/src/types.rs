@@ -1,6 +1,6 @@
 //! flight-compiler: companion signalTypes.ts
 //! flight-compiler: entity-clone-fields Signal.data
-//! flight-compiler: root-only cancelSignal clearSignal connectSignal connectSignalAtFrameRate connectSignalDebounced connectSignalThrottled connectSignalTracked createSignal createSignalScope disconnectSignal disconnectSignalConnection disconnectSignalScope emitSignal emitSignalSafe hasSignalSlots isSlotConnected pauseSignalConnection resumeSignalConnection Signal SignalConnection SignalConnectOptions SignalData SignalScope SignalThrottleOptions SignalTrackedConnectOptions
+//! flight-compiler: root-only advanceSignalTimers cancelSignal clearSignal clearSignalTimeout connectSignal connectSignalAtFrameRate connectSignalDebounced connectSignalThrottled connectSignalTracked createSignal createSignalScope createSignalTimerState disconnectSignal disconnectSignalConnection disconnectSignalScope emitSignal emitSignalSafe hasSignalSlots isSlotConnected pauseSignalConnection resumeSignalConnection setSignalTimeout FrameTick Signal SignalConnection SignalConnectOptions SignalData SignalScope SignalThrottleOptions SignalTimerState SignalTrackedConnectOptions TimerId
 
 use std::sync::{Arc, RwLock};
 

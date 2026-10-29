@@ -7,8 +7,10 @@ import type { SignalConnectOptions, SignalData, SignalRaw, SignalSlot, SlotId } 
 const NEXT_SIGNAL_SLOT_ID: { value: number } = { value: 1 >>> 0 };
 
 export function clearSignal<T>(signal: SignalRaw<T>): void {
-  signal.emit = (_unused0) => {};
+  let state = signal.data!;
   signal.data = undefined;
+  signal.emit = (_unused0) => {};
+  void state;
 }
 
 /**
@@ -84,49 +86,54 @@ export function connectSignal<T>(
       return previous;
     })(),
   };
-  initSignalData(signal);
-  let state = signal.data!;
-  const signalData = state!;
-  let index = 0;
-  while (index < signalData.priorities.length && priority <= signalData.priorities[index]) {
-    index += 1;
+  for (;;) {
+    initSignalData(signal);
+    let state = signal.data!;
+    const signalData = state;
+    if (signalData === undefined) {
+      continue;
+    }
+    let index = 0;
+    while (index < signalData.priorities.length && priority <= signalData.priorities[index]) {
+      index += 1;
+    }
+    const slots: (SignalSlot<T> | undefined)[] = signalData.slots;
+    (<T>(items: T[], index: number, value: T): void => {
+      if (index > items.length) {
+        throw new RangeError('Vec insertion index out of bounds');
+      }
+      items.splice(index, 0, value);
+    })(slots, index, slot);
+    const ids: SlotId[] = signalData.ids;
+    (<T>(items: T[], index: number, value: T): void => {
+      if (index > items.length) {
+        throw new RangeError('Vec insertion index out of bounds');
+      }
+      items.splice(index, 0, value);
+    })(ids, index, id);
+    const priorities: number[] = signalData.priorities;
+    (<T>(items: T[], index: number, value: T): void => {
+      if (index > items.length) {
+        throw new RangeError('Vec insertion index out of bounds');
+      }
+      items.splice(index, 0, value);
+    })(priorities, index, priority);
+    const repeats: boolean[] = signalData.repeat;
+    (<T>(items: T[], index: number, value: T): void => {
+      if (index > items.length) {
+        throw new RangeError('Vec insertion index out of bounds');
+      }
+      items.splice(index, 0, value);
+    })(repeats, index, repeat);
+    const paused: boolean[] = signalData.paused;
+    (<T>(items: T[], index: number, value: T): void => {
+      if (index > items.length) {
+        throw new RangeError('Vec insertion index out of bounds');
+      }
+      items.splice(index, 0, value);
+    })(paused, index, false);
+    return id;
   }
-  const slots: (SignalSlot<T> | undefined)[] = signalData.slots;
-  (<T>(items: T[], index: number, value: T): void => {
-    if (index > items.length) {
-      throw new RangeError('Vec insertion index out of bounds');
-    }
-    items.splice(index, 0, value);
-  })(slots, index, slot);
-  const ids: SlotId[] = signalData.ids;
-  (<T>(items: T[], index: number, value: T): void => {
-    if (index > items.length) {
-      throw new RangeError('Vec insertion index out of bounds');
-    }
-    items.splice(index, 0, value);
-  })(ids, index, id);
-  const priorities: number[] = signalData.priorities;
-  (<T>(items: T[], index: number, value: T): void => {
-    if (index > items.length) {
-      throw new RangeError('Vec insertion index out of bounds');
-    }
-    items.splice(index, 0, value);
-  })(priorities, index, priority);
-  const repeats: boolean[] = signalData.repeat;
-  (<T>(items: T[], index: number, value: T): void => {
-    if (index > items.length) {
-      throw new RangeError('Vec insertion index out of bounds');
-    }
-    items.splice(index, 0, value);
-  })(repeats, index, repeat);
-  const paused: boolean[] = signalData.paused;
-  (<T>(items: T[], index: number, value: T): void => {
-    if (index > items.length) {
-      throw new RangeError('Vec insertion index out of bounds');
-    }
-    items.splice(index, 0, value);
-  })(paused, index, false);
-  return id;
 }
 
 export function countLiveSlots<T>(data: Readonly<SignalData<T>>): number {
@@ -145,77 +152,61 @@ export function countLiveSlots<T>(data: Readonly<SignalData<T>>): number {
  * when the outermost dispatch exits (D4 re-entrancy).
  */
 export function disconnectSignal<T>(signal: SignalRaw<T>, id: SlotId): void {
-  const shouldDetach = (() => {
-    let state = signal.data!;
-    const signalData = state;
-    if (signalData === undefined) {
-      return;
+  let state = signal.data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return;
+  }
+  const dispatching = signalData.depth > 0;
+  let index = signalData.slots.length;
+  while (index > 0) {
+    index -= 1;
+    if (signalData.ids[index].value !== id.value) {
+      continue;
     }
-    const dispatching = signalData.depth > 0;
-    let index = signalData.slots.length;
-    while (index > 0) {
-      index -= 1;
-      if (signalData.ids[index].value !== id.value) {
-        continue;
-      }
-      if (dispatching) {
-        signalData.slots[index] = undefined;
-      } else {
-        const slots: (SignalSlot<T> | undefined)[] = signalData.slots;
-        (<T>(items: T[], index: number): T => {
-          if (index >= items.length) {
-            throw new RangeError('Vec removal index out of bounds');
-          }
-          return items.splice(index, 1)[0];
-        })(slots, index);
-        const ids: SlotId[] = signalData.ids;
-        (<T>(items: T[], index: number): T => {
-          if (index >= items.length) {
-            throw new RangeError('Vec removal index out of bounds');
-          }
-          return items.splice(index, 1)[0];
-        })(ids, index);
-        const priorities: number[] = signalData.priorities;
-        (<T>(items: T[], index: number): T => {
-          if (index >= items.length) {
-            throw new RangeError('Vec removal index out of bounds');
-          }
-          return items.splice(index, 1)[0];
-        })(priorities, index);
-        const repeats: boolean[] = signalData.repeat;
-        (<T>(items: T[], index: number): T => {
-          if (index >= items.length) {
-            throw new RangeError('Vec removal index out of bounds');
-          }
-          return items.splice(index, 1)[0];
-        })(repeats, index);
-        const paused: boolean[] = signalData.paused;
-        (<T>(items: T[], index: number): T => {
-          if (index >= items.length) {
-            throw new RangeError('Vec removal index out of bounds');
-          }
-          return items.splice(index, 1)[0];
-        })(paused, index);
-      }
+    if (dispatching) {
+      signalData.slots[index] = undefined;
+    } else {
+      const slots: (SignalSlot<T> | undefined)[] = signalData.slots;
+      (<T>(items: T[], index: number): T => {
+        if (index >= items.length) {
+          throw new RangeError('Vec removal index out of bounds');
+        }
+        return items.splice(index, 1)[0];
+      })(slots, index);
+      const ids: SlotId[] = signalData.ids;
+      (<T>(items: T[], index: number): T => {
+        if (index >= items.length) {
+          throw new RangeError('Vec removal index out of bounds');
+        }
+        return items.splice(index, 1)[0];
+      })(ids, index);
+      const priorities: number[] = signalData.priorities;
+      (<T>(items: T[], index: number): T => {
+        if (index >= items.length) {
+          throw new RangeError('Vec removal index out of bounds');
+        }
+        return items.splice(index, 1)[0];
+      })(priorities, index);
+      const repeats: boolean[] = signalData.repeat;
+      (<T>(items: T[], index: number): T => {
+        if (index >= items.length) {
+          throw new RangeError('Vec removal index out of bounds');
+        }
+        return items.splice(index, 1)[0];
+      })(repeats, index);
+      const paused: boolean[] = signalData.paused;
+      (<T>(items: T[], index: number): T => {
+        if (index >= items.length) {
+          throw new RangeError('Vec removal index out of bounds');
+        }
+        return items.splice(index, 1)[0];
+      })(paused, index);
     }
-    return !dispatching && signalData.slots.length === 0;
-  })();
-  if (shouldDetach) {
-    const state = signal.data!;
-    const empty = (() => {
-      const matchValue = state;
-      if (matchValue !== undefined) {
-        const signalData = matchValue;
-        return signalData.slots.length === 0;
-      } else if (matchValue === undefined) {
-        return false;
-      }
-    })();
-    void state;
-    if (empty) {
-      signal.data = undefined;
-      signal.emit = (_unused0) => {};
-    }
+  }
+  if (!dispatching && signalData.slots.length === 0) {
+    signal.data = undefined;
+    signal.emit = (_unused0) => {};
   }
 }
 

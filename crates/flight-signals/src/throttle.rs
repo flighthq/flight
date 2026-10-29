@@ -328,10 +328,9 @@ pub fn set_signal_timeout(
     let fire_at_ms = timer_state.now_ms + delay_ms;
     let mut index = 0;
     while index < timer_state.timers.len()
-        && (
-            timer_state.timers[index].fire_at_ms,
-            timer_state.timers[index].id.value,
-        ) <= (fire_at_ms, id.value)
+        && (timer_state.timers[index].fire_at_ms < fire_at_ms
+            || (timer_state.timers[index].fire_at_ms == fire_at_ms
+                && timer_state.timers[index].id.value <= id.value))
     {
         index += 1;
     }
