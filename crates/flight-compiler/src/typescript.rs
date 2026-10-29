@@ -1005,6 +1005,55 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
+// The `T` of exactly `Pin<Box<dyn Future<Output = T> [+ Send | + Sync | + 'a]...>>`.
+fn pinned_boxed_future_output(segment: &syn::PathSegment) -> Option<&Type> {
+    let PathArguments::AngleBracketed(pin) = &segment.arguments else {
+        return None;
+    };
+    let [GenericArgument::Type(Type::Path(boxed))] = pin.args.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    let boxed = boxed.path.segments.last()?;
+    if boxed.ident != "Box" {
+        return None;
+    }
+    let PathArguments::AngleBracketed(boxed_arguments) = &boxed.arguments else {
+        return None;
+    };
+    let [GenericArgument::Type(Type::TraitObject(object))] =
+        boxed_arguments.args.iter().collect::<Vec<_>>()[..]
+    else {
+        return None;
+    };
+    let mut output = None;
+    for bound in &object.bounds {
+        match bound {
+            syn::TypeParamBound::Trait(trait_bound) => {
+                let last = trait_bound.path.segments.last()?;
+                if last.ident == "Future" {
+                    let PathArguments::AngleBracketed(future) = &last.arguments else {
+                        return None;
+                    };
+                    let [GenericArgument::AssocType(associated)] =
+                        future.args.iter().collect::<Vec<_>>()[..]
+                    else {
+                        return None;
+                    };
+                    if associated.ident != "Output" || output.is_some() {
+                        return None;
+                    }
+                    output = Some(&associated.ty);
+                } else if last.ident != "Send" && last.ident != "Sync" {
+                    return None;
+                }
+            }
+            syn::TypeParamBound::Lifetime(_) => {}
+            _ => return None,
+        }
+    }
+    return output;
+}
+
 // Every function, constant, static, and export-name directive of `program` as text, which identifies
 // the source.
 // flight-lint: allow(hashmap-iteration) items retain Rust source order in Vecs and directives are a BTreeMap
@@ -1067,6 +1116,18 @@ fn program_value_bindings(program: &Program, context: &HashSet<String>) -> BTree
         bindings.insert("PI".to_string());
     }
     return bindings;
+}
+
+// `async fn` bodies have no portable lowering; a synchronous emission would silently drop the
+// asynchrony, so they fail closed.
+fn reject_async_function(function: &ItemFn) -> Result<(), CompileError> {
+    if function.sig.asyncness.is_some() {
+        return Err(compile_error(format!(
+            "portable `async fn {}` has no portable lowering",
+            function.sig.ident
+        )));
+    }
+    return Ok(());
 }
 
 // The declaration `name` refers to in the source `from`, as `(module, declared name)`: the source's own
@@ -6276,6 +6337,7 @@ fn emit_function(
     nullable_static_names: &HashSet<String>,
     entity_construction_parameter: bool,
 ) -> Result<(), CompileError> {
+    reject_async_function(function)?;
     emit_documentation(out, &function.attrs, 0);
     let export = if is_public(&function.vis) {
         "export "
@@ -10140,6 +10202,18 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Ref" => emit_single_generic_type(segment, entities),
+                // A pinned boxed future is the value of an asynchronous host operation: `Promise<T>` in a
+                // type position. Async bodies and `.await` stay unsupported.
+                "Pin" if pinned_boxed_future_output(segment).is_some() => Ok(format!(
+                    "Promise<{}>",
+                    emit_type(
+                        pinned_boxed_future_output(segment).expect("checked above"),
+                        entities
+                    )?
+                )),
+                "Pin" => Err(compile_error(
+                    "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+                )),
                 _ if entities.contains(&name) => Ok(format!("{name}Raw")),
                 _ => {
                     if matches!(segment.arguments, PathArguments::None) {

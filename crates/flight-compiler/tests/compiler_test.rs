@@ -704,6 +704,57 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
     // terminates. A non-reusable receiver, then argument, are each bound once. Construction and range
     // forms whose emission is not yet valid typed TypeScript fail closed.
     #[test]
+    fn lowers_pinned_boxed_futures_to_promises_in_type_positions() {
+        let source = r#"
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+
+pub struct Outcome {
+    pub ok: bool,
+}
+
+pub type Exit = Pin<Box<dyn Future<Output = Outcome> + Send>>;
+
+pub type Lookup = Pin<Box<dyn Future<Output = Option<String>> + Send + Sync + 'static>>;
+
+pub struct Capability {
+    pub exit: Arc<dyn Fn() -> Exit + Send + Sync>,
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            "export type Exit = Promise<Outcome>;\n\nexport type Lookup = Promise<string | undefined>;\n\nexport interface Outcome {\n  ok: boolean;\n}\n\nexport interface Capability {\n  exit: () => Exit;\n}\n\n"
+        );
+
+        for (source, expected) in [
+            (
+                "pub async fn f() -> u32 { return 1; }\n",
+                "portable `async fn f` has no portable lowering",
+            ),
+            (
+                "pub fn f(x: u32) -> u32 { let y = x.await; return y; }\n",
+                "unsupported Rust expression `await expression`",
+            ),
+            (
+                "use std::pin::Pin;\npub type P = Pin<Box<u32>>;\n",
+                "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+            ),
+            (
+                "use std::future::Future;\nuse std::pin::Pin;\npub type P = Pin<Box<dyn Future<Output = u32> + Unpin>>;\n",
+                "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+            ),
+            (
+                "use std::future::Future;\npub type P = Box<dyn Future<Output = u32> + Send>;\n",
+                "unsupported Rust trait object; only callable traits are portable",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+    }
+
+    #[test]
     fn lowers_vec_retain_in_place_and_rejects_std_mem_moves() {
         let retain = "(<T>(items: T[], keep: (item: T) => boolean): void => { let kept = 0; let index = 0; try { for (; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } } finally { const length = items.length; for (let rest = index; rest < length; rest += 1) { items[kept + rest - index] = items[rest]; } items.length = kept + length - index; } })";
         let source = r#"
