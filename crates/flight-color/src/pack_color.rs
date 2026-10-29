@@ -82,6 +82,7 @@ pub fn get_color_rgb(color: u32) -> u32 {
 /// Packs four sRGB-space components (each in [0, 1]) to a `0xRRGGBBAA` integer.
 /// Does NOT gamma-encode -- use `pack_linear_to_color` when starting from linear floats.
 /// Components are clamped to [0, 1] and rounded to 8-bit precision.
+#[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation
 pub fn pack_color(r: f32, g: f32, b: f32, a: f32) -> u32 {
     let ri = (r.max(0.0).min(1.0) * 255.0).round() as u32;
     let gi = (g.max(0.0).min(1.0) * 255.0).round() as u32;
@@ -99,6 +100,7 @@ pub fn pack_linear_to_color(color: &LinearColor) -> u32 {
 
 /// Packs scalar linear-space RGBA channels to a `0xRRGGBBAA` integer without allocating a
 /// `LinearColor` entity. RGB channels are gamma-encoded to sRGB; alpha passes through unchanged.
+#[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation
 pub fn pack_linear_channels_to_color(r: f32, g: f32, b: f32, a: f32) -> u32 {
     let ri = (linear_channel_to_srgb(r).max(0.0).min(1.0) * 255.0).round() as u32;
     let gi = (linear_channel_to_srgb(g).max(0.0).min(1.0) * 255.0).round() as u32;
@@ -118,6 +120,7 @@ pub fn pack_opaque_color(rgb: u32) -> u32 {
 /// Replaces the alpha channel of a packed `0xRRGGBBAA` color with `alpha` (a float in [0, 1], clamped
 /// and rounded to 8 bits), leaving RGB untouched -- the inverse of `get_color_alpha`. Use to fade or set
 /// the opacity of a fixed color without unpacking it.
+#[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation
 pub fn set_color_alpha(color: u32, alpha: f32) -> u32 {
     let a = (alpha.max(0.0).min(1.0) * 255.0).round() as u32;
     return (color & 0xffffff00) | a;

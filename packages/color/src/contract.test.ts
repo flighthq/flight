@@ -73,7 +73,7 @@ describe('contractReExports', () => {
     linearRgbToOklab(lab, 1.0, 0.0, 0.0);
     let rgb = new Float32Array(3).fill(0.0);
     oklabToLinearRgb(rgb, lab[0], lab[1], lab[2]);
-    const [r, g, b] = [rgb[0], rgb[1], rgb[2]];
+    const [r, g, b] = [rgb[0], rgb[1], rgb[2]] as const;
     clampLinearRgb(rgb, r, g, b);
   });
   it('exposes all pack functions and types', () => {

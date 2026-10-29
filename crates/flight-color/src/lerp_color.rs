@@ -1,6 +1,7 @@
 use crate::{LinearColor, pack_linear_channels_to_color, srgb_channel_to_linear};
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)] // keep Rust-only sugar coverage beside its implementation
 mod sugar_tests {
     use super::*;
     use crate::allocate_linear_color;
@@ -30,6 +31,7 @@ mod sugar_tests {
 /// Interpolation is performed in linear space for perceptual correctness (gamma-correct mix),
 /// then repacked to sRGB. Alpha is interpolated linearly (alpha is already linear coverage).
 /// `t` is clamped to [0, 1].
+#[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation
 pub fn lerp_color(start: u32, end: u32, t: f32) -> u32 {
     let tc = t.max(0.0).min(1.0);
     let sr = srgb_channel_to_linear(((start >> 24) & 0xff) as f32 / 255.0);
@@ -49,6 +51,7 @@ pub fn lerp_color(start: u32, end: u32, t: f32) -> u32 {
 
 /// Linearly interpolates between two LinearColors in linear space and writes the result to
 /// `out`. `t` is clamped to [0, 1]. Alias-safe: reads all input values before writing `out`.
+#[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation
 pub fn lerp_linear_color(out: &mut LinearColor, start: &LinearColor, end: &LinearColor, t: f32) {
     let tc = t.max(0.0).min(1.0);
     let r0 = start.r;

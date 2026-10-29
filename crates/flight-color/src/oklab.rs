@@ -1,5 +1,6 @@
 /// Clamps linear sRGB channels to the displayable [0, 1] gamut, writing [r, g, b] into `out`.
 /// This is a channel clamp, not a perceptual gamut-mapping operation. Alias-safe.
+#[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation
 pub fn clamp_linear_rgb(out: &mut [f32; 3], r: f32, g: f32, b: f32) {
     out[0] = r.max(0.0).min(1.0);
     out[1] = g.max(0.0).min(1.0);
@@ -9,6 +10,7 @@ pub fn clamp_linear_rgb(out: &mut [f32; 3], r: f32, g: f32, b: f32) {
 /// Converts linear sRGB [0..1] to Oklab, writing [L, a, b] into `out` (L in [0..1],
 /// a/b in ~[-0.5..0.5]). Oklab is a perceptually uniform space; equal steps in L, a, b are
 /// visually equal. Reference: Ottosson 2020. Alias-safe.
+#[allow(clippy::excessive_precision)] // preserve canonical Oklab matrix constants in generated TypeScript
 pub fn linear_rgb_to_oklab(out: &mut [f32; 3], r: f32, g: f32, b: f32) {
     let l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
     let m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
@@ -24,6 +26,7 @@ pub fn linear_rgb_to_oklab(out: &mut [f32; 3], r: f32, g: f32, b: f32) {
 /// Converts Oklab [L, a, b] back to unclamped linear sRGB, writing [r, g, b] into `out`.
 /// Negative and greater-than-one channels are preserved so this remains a true inverse; callers that
 /// require the displayable sRGB gamut can compose the result with `clamp_linear_rgb`. Alias-safe.
+#[allow(clippy::excessive_precision)] // preserve canonical Oklab matrix constants in generated TypeScript
 pub fn oklab_to_linear_rgb(out: &mut [f32; 3], l: f32, a: f32, b: f32) {
     let lc = l + 0.3963377774 * a + 0.2158037573 * b;
     let mc = l - 0.1055613458 * a - 0.0638541728 * b;

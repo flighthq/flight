@@ -5,6 +5,11 @@
 ///
 /// Common temperatures: 1800 K = candlelight, 3000 K = warm bulb, 5500 K = noon sunlight,
 /// 6500 K = D65 white, 10000 K = overcast sky.
+#[allow(
+    clippy::excessive_precision,
+    clippy::manual_clamp,
+    clippy::needless_late_init
+)] // preserve the canonical approximation constants and portable TypeScript source shape
 pub fn color_from_kelvin(kelvin: f32) -> u32 {
     let temp = kelvin.max(1000.0).min(40000.0) / 100.0;
 
