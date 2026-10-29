@@ -233,9 +233,9 @@ async function detachMidiSubscription(subscription: Entity): Promise<MidiSubscri
   return { reason: 'ok' };
 }
 
-async function disposeMidiSubscription<Arguments extends unknown[]>(
+async function disposeMidiSubscription<Payload>(
   subscription: Entity,
-  signal: Signal<(...args: Arguments) => void>,
+  signal: Signal<Payload>,
 ): Promise<MidiSubscriptionDisposeOutcome> {
   const runtime = subscriptionStates.get(subscription);
   if (runtime === undefined || runtime.disposeCompleted) return { reason: 'already-disposed' };

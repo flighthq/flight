@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
+import { connectSignal, disconnectSignal, hasSignalSlots } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
+import type { MidiInputMessage, MidiInputPort, MidiPort } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -93,6 +95,32 @@ describe('createMidiAccessStateSubscription', () => {
     const subscription = requiredFunction('createMidiAccessStateSubscription')() as SignalEntity;
     expect(EntityRuntimeKey in subscription).toBe(true);
     expect(hasSignalSlots(subscription.onMidiAccessStateChange)).toBe(false);
+  });
+});
+
+describe('createMidiInputMessageSubscription', () => {
+  it('types the MIDI signals by their payload and stops a slot disconnected by its SlotId', async () => {
+    const listener: { current: ((data: Uint8Array, timestamp: number) => void) | null } = { current: null };
+    const input = createInputPort({
+      attachMessage: async (next) => {
+        listener.current = next;
+        return { attachment: successfulAttachment(), reason: 'ok' };
+      },
+    }) as unknown as MidiInputPort; // createInputPort returns the loosely typed resource the reflective helpers build
+    const subscription = midi.createMidiInputMessageSubscription();
+    expectTypeOf(subscription.onMidiInputMessage).toEqualTypeOf<Signal<Readonly<MidiInputMessage>>>();
+    expectTypeOf(midi.createMidiPortStateSubscription().onMidiPortStateChange).toEqualTypeOf<
+      Signal<Readonly<MidiPort>>
+    >();
+    const seen: number[] = [];
+    const id: SlotId = connectSignal(subscription.onMidiInputMessage, (message: Readonly<MidiInputMessage>) => {
+      seen.push(message.timestamp);
+    });
+    await midi.attachMidiInputMessageSubscription(input, subscription);
+    listener.current?.(new Uint8Array([0x90, 60, 127]), 1);
+    disconnectSignal(subscription.onMidiInputMessage, id);
+    listener.current?.(new Uint8Array([0x80, 60, 0]), 2);
+    expect(seen).toEqual([1]);
   });
 });
 

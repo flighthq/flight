@@ -126,15 +126,15 @@ export type MidiSubscriptionDisposeOutcome =
     };
 
 export interface MidiAccessStateSubscription extends Entity {
-  readonly onMidiAccessStateChange: Signal<(port: Readonly<MidiPort>) => void>;
+  readonly onMidiAccessStateChange: Signal<Readonly<MidiPort>>;
 }
 
 export interface MidiInputMessageSubscription extends Entity {
-  readonly onMidiInputMessage: Signal<(message: Readonly<MidiInputMessage>) => void>;
+  readonly onMidiInputMessage: Signal<Readonly<MidiInputMessage>>;
 }
 
 export interface MidiPortStateSubscription extends Entity {
-  readonly onMidiPortStateChange: Signal<(port: Readonly<MidiPort>) => void>;
+  readonly onMidiPortStateChange: Signal<Readonly<MidiPort>>;
 }
 
 export interface HostMidiAccessCapability {
