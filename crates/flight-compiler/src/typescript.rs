@@ -5661,8 +5661,8 @@ fn binding_site_key(identifier: &syn::Ident) -> String {
     return format!("{identifier:p}");
 }
 
-// The typed array a `Box<Float32Array>`-style type owns: `Box` only transfers ownership, so a boxed
-// typed-array alias is that typed array in TypeScript. `None` for any other `Box` argument.
+// The typed array a `Box<Float32Array>`-style type's single argument names, or `None`; the caller
+// proves the outer type is the standard `Box`.
 fn boxed_typed_array(segment: &syn::PathSegment) -> Option<&'static str> {
     let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
         return None;
@@ -14046,6 +14046,15 @@ pub(crate) fn emit_type(
                     emit_type(types[0], entities)?
                 ));
             }
+            // A standard `Box` only transfers ownership, so a boxed typed-array alias is that typed
+            // array; the owner is proven through the path's provenance (an aliased standard `Box`
+            // qualifies, a crate, imported, globbed or unresolved `Box` never does).
+            if let Some(typed_array) = boxed_typed_array(segment)
+                && resolve_type_path(&path.path, entities)
+                    .is_some_and(|owner| is_standard_type_path(&owner, "Box"))
+            {
+                return Ok(typed_array.to_string());
+            }
             match name.as_str() {
                 "bool" => Ok("boolean".to_string()),
                 "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
@@ -14092,9 +14101,6 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Ref" => emit_single_generic_type(segment, entities),
-                "Box" if boxed_typed_array(segment).is_some() => Ok(boxed_typed_array(segment)
-                    .expect("guarded by the match arm")
-                    .to_string()),
                 _ if entities.contains(&name) => Ok(format!("{name}Raw")),
                 _ => {
                     if matches!(segment.arguments, PathArguments::None) {

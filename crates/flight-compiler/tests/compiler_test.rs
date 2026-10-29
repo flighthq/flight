@@ -4205,6 +4205,54 @@ pub fn scale_values(values: &[f64]) -> Vec<f64> {
     }
 
     #[test]
+    fn erases_box_only_when_its_owner_is_the_standard_box() {
+        let mesh = |prelude: &str, boxed: &str| {
+            format!(
+                "{prelude}use flight_entity::Float32Array;\n\npub struct Mesh {{\n    pub vertices: {boxed}<Float32Array>,\n}}\n\npub fn sample_count(mesh: &Mesh, extra: {boxed}<Float32Array>) -> usize {{\n    return mesh.vertices.len() + extra.len();\n}}\n"
+            )
+        };
+        let erased = "export interface Mesh {\n  vertices: Float32Array;\n}\n";
+
+        for (prelude, boxed) in [
+            ("", "std::boxed::Box"),
+            ("", "::std::boxed::Box"),
+            ("use std::boxed::Box as Owned;\n", "Owned"),
+            ("use std::boxed;\n", "boxed::Box"),
+            ("extern crate alloc;\n\n", "alloc::boxed::Box"),
+            (
+                "#![no_std]\n\nextern crate alloc;\n\nuse alloc::boxed::Box;\n",
+                "Box",
+            ),
+        ] {
+            let output = compile_typescript(&mesh(prelude, boxed), None).unwrap();
+            assert!(output.contains(erased), "{prelude}{boxed}:\n{output}");
+            assert!(
+                output.contains("export function sampleCount(mesh: Readonly<Mesh>, extra: Float32Array): number {"),
+                "{prelude}{boxed}:\n{output}"
+            );
+        }
+
+        for (prelude, boxed) in [
+            ("pub struct Box<T> {\n    pub value: T,\n}\n\n", "Box"),
+            ("use flight_storage::Box;\n", "Box"),
+            ("use flight_storage::Owned as Box;\n", "Box"),
+            ("use flight_storage::*;\n", "Box"),
+            ("use crate::storage::Box;\n", "Box"),
+            ("#![no_std]\n\n", "Box"),
+            ("use flight_storage::Box as Owned;\n", "Owned"),
+        ] {
+            let source = mesh(prelude, boxed);
+            let output = compile_typescript(&source, None);
+            let output = output.as_deref().unwrap_or("");
+            assert!(!output.contains(erased), "{source}\n{output}");
+            assert!(
+                !output.contains("extra: Float32Array)"),
+                "{source}\n{output}"
+            );
+        }
+    }
+
+    #[test]
     fn erases_boxed_typed_array_aliases_to_typed_arrays() {
         let source = r#"
 use flight_entity::{Float32Array, Float64Array, Int16Array, Uint32Array};
