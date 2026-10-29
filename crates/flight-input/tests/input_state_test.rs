@@ -231,18 +231,20 @@ mod create_input_state {
 mod end_input_state_frame {
     use super::*;
 
+    fn mark_edges(state: &Ref<InputState>) {
+        let borrowed: &mut InputState = &mut state.write().unwrap();
+        borrowed.just_pressed_keys.insert(1);
+        borrowed.just_released_keys.insert(2);
+        borrowed.just_pressed_gamepad_buttons.insert(3);
+        borrowed.just_released_gamepad_buttons.insert(4);
+    }
+
     #[test]
     fn clears_all_four_edge_sets() {
         let state = create_input_state();
-        {
-            let mut borrowed = state.write().unwrap();
-            borrowed.just_pressed_keys.insert(1);
-            borrowed.just_released_keys.insert(2);
-            borrowed.just_pressed_gamepad_buttons.insert(3);
-            borrowed.just_released_gamepad_buttons.insert(4);
-        }
+        mark_edges(&state);
         end_input_state_frame(&state);
-        let borrowed = state.read().unwrap();
+        let borrowed: &InputState = &state.read().unwrap();
         assert!(borrowed.just_pressed_keys.is_empty());
         assert!(borrowed.just_released_keys.is_empty());
         assert!(borrowed.just_pressed_gamepad_buttons.is_empty());
@@ -263,14 +265,21 @@ mod get_input_gamepad_axis {
 mod initialize_input_state {
     use super::*;
 
+    fn press_key(state: &Ref<InputState>, key_code: i32) {
+        let borrowed: &mut InputState = &mut state.write().unwrap();
+        borrowed.keys_down.insert(key_code);
+    }
+
     #[test]
     fn replaces_the_state_with_empty_structures() {
         let state = create_input_state();
-        state.write().unwrap().keys_down.insert(65);
+        press_key(&state, 65);
         let raw = create_input_state();
         initialize_input_state(&mut raw.write().unwrap());
-        assert!(state.read().unwrap().keys_down.contains(&65));
-        assert!(raw.read().unwrap().keys_down.is_empty());
+        let held: &InputState = &state.read().unwrap();
+        let cleared: &InputState = &raw.read().unwrap();
+        assert!(held.keys_down.contains(&65));
+        assert!(cleared.keys_down.is_empty());
     }
 }
 

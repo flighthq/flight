@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use flight_entity::Ref;
 use flight_input::contract::*;
 
 fn options(delay: f64, interval: f64) -> InputKeyRepeatOptions {
@@ -86,15 +87,17 @@ mod create_input_key_repeat_timer {
 mod initialize_input_key_repeat_timer {
     use super::*;
 
+    fn reinitialize(timer: &Ref<InputKeyRepeatTimer>, options: &InputKeyRepeatOptions) {
+        let mut locked = timer.write().unwrap();
+        initialize_input_key_repeat_timer(&mut locked, options);
+    }
+
     #[test]
     fn resets_the_cycle_and_replaces_the_timings() {
         let timer = create_input_key_repeat_timer(&options(500.0, 33.0));
         let (count, callback) = counter();
         start_input_key_repeat_timer(&timer, callback, 0.0);
-        {
-            let mut locked = timer.write().unwrap();
-            initialize_input_key_repeat_timer(&mut locked, &options(10.0, 5.0));
-        }
+        reinitialize(&timer, &options(10.0, 5.0));
         advance_input_key_repeat_timer(&timer, 100.0);
         assert_eq!(*count.lock().unwrap(), 1);
         let (new_count, new_callback) = counter();

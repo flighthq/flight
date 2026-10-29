@@ -285,12 +285,13 @@ mod explicit_input_ingress_parameter {
         attach_relative_pointer_input(&host, &manager, &sources[3], None);
         attach_text_input(&host, &manager, &sources[4], None);
         attach_wheel_input(&host, &manager, &sources[5], None);
-        {
-            let attachments = recorder.attachments.lock().unwrap();
-            assert_eq!(attachments.len(), 6);
-            for (index, attachment) in attachments.iter().enumerate() {
-                assert!(Arc::ptr_eq(&attachment.1.handle, &sources[index].handle));
-            }
+        let attachments = recorder.attachments.lock().unwrap().clone();
+        assert_eq!(attachments.len(), 6);
+        for index in 0..attachments.len() {
+            assert!(Arc::ptr_eq(
+                &attachments[index].1.handle,
+                &sources[index].handle
+            ));
         }
         detach_gamepad_input(&manager, &sources[0]);
         detach_keyboard_input(&manager, &sources[1]);
