@@ -1323,6 +1323,16 @@ pub fn keep_even(values: &mut Vec<u32>) {
                 "export interface Range {{\n  start: number;\n  end: number;\n}}\n\nexport function dropEmpty(ranges: Range[]): void {{\n  {retain}(ranges, (range) => range.start < range.end);\n}}\n\nexport function keepEven(values: number[]): void {{\n  {retain}(values, (value) => value % 2 === 0);\n}}\n"
             )
         );
+        assert_eq!(
+            compile_typescript(
+                "pub fn keep_even_in_value_block(values: &mut Vec<u32>) -> u32 {\n    return {\n        let items: &mut Vec<u32> = values;\n        items.retain(|value| *value % 2 == 0);\n        0\n    };\n}\n",
+                None,
+            )
+            .unwrap(),
+            format!(
+                "export function keepEvenInValueBlock(values: number[]): number {{\n  return ((() => {{\n  const items: number[] = values;\n  {retain}(items, (value) => value % 2 === 0);\n  return 0;\n}})()) >>> 0;\n}}\n"
+            )
+        );
 
         let tests = r#"
 fn kept(values: &[u32]) -> Vec<u32> {

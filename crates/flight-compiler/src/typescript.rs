@@ -5450,6 +5450,19 @@ fn emit_block(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    emit_block_with_context(out, statements, entities, indent)?;
+    return Ok(());
+}
+
+// Emits a lexical block and returns the context after its statements. Most callers discard the
+// result because Rust block bindings do not escape, but a value block still needs the advanced
+// context while emitting its final expression.
+fn emit_block_with_context(
+    out: &mut String,
+    statements: &[Stmt],
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<HashSet<String>, CompileError> {
     let mut block_context = entities.clone();
     insert_vitest_rebound_struct_context(statements, &mut block_context);
     let mut declaration_counts = HashMap::new();
@@ -5485,7 +5498,7 @@ fn emit_block(
             emit_statement(out, statement, &block_context, indent)?;
         }
     }
-    return Ok(());
+    return Ok(block_context);
 }
 
 fn emit_closure(
@@ -7684,11 +7697,9 @@ fn emit_block_expression(
         ));
     };
     let mut out = "(() => {\n".to_string();
-    for statement in preceding {
-        emit_statement(&mut out, statement, entities, 1)?;
-    }
+    let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
     write_indent(&mut out, 1);
-    writeln!(out, "return {};", emit_expression(value, entities)?)
+    writeln!(out, "return {};", emit_expression(value, &block_context)?)
         .expect("writing to a String cannot fail");
     out.push_str("})()");
     return Ok(out);
