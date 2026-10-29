@@ -478,6 +478,13 @@ fn compile_vitest_with_contract_alias_sources_internal(
         &external_shared_identity_fields(external_alias_sources)?,
         contract_source,
     )?;
+    typescript::insert_vitest_own_public_context(
+        &mut context,
+        &alias_program_refs
+            .iter()
+            .map(|(_, program)| *program)
+            .collect::<Vec<_>>(),
+    );
     let external_string_unions = external_string_union_metadata
         .iter()
         .flat_map(|external| external.metadata.styles.keys().cloned())
@@ -1042,6 +1049,15 @@ fn lower_string_union_variants(
             while let Some(relative_start) = code[cursor..].find(&prefix) {
                 let start = cursor + relative_start;
                 let variant_start = start + prefix.len();
+                // Only the owner itself, as for numeric unions: `OtherOwner.` or a namespace property
+                // `module.Owner.` is not this owner's variant.
+                let preceding = code[..start].chars().next_back();
+                if preceding.is_some_and(|character| {
+                    character.is_ascii_alphanumeric() || character == '_' || character == '.'
+                }) {
+                    cursor = variant_start;
+                    continue;
+                }
                 let variant_length = code[variant_start..]
                     .chars()
                     .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')

@@ -14,11 +14,11 @@ use crate::typescript::{
     export_name, frozen_object_name, function_expression_context, insert_type_parameter_context,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
-    is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_struct,
-    lexical_pattern_context, numeric_literal_spelling, option_scrutinee_is_rereadable,
-    snake_to_lower_camel, update_vitest_local_function_context, update_vitest_struct_local_context,
-    validate_vitest_function_provenance, vitest_function_path_binding_name,
-    vitest_struct_path_binding_name, write_indent,
+    is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
+    is_vitest_struct, lexical_pattern_context, numeric_literal_spelling,
+    option_scrutinee_is_rereadable, snake_to_lower_camel, update_vitest_local_function_context,
+    update_vitest_struct_local_context, validate_vitest_function_provenance,
+    vitest_function_path_binding_name, vitest_struct_path_binding_name, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -238,7 +238,14 @@ fn collect_contract_symbols(
                 {
                     self.record_identifier_name(name);
                 }
+                // A qualified string-union variant lowers to its literal, so it names no module.
+                let string_union_variant = segments.len() > 2
+                    && is_string_union(
+                        self.context,
+                        &segments[segments.len() - 2].ident.to_string(),
+                    );
                 if segments.len() > 1
+                    && !string_union_variant
                     && let Some(segment) = segments.first()
                 {
                     self.record_external_module(&segment.ident);
@@ -885,6 +892,7 @@ pub(crate) fn emit_test_program(
                 && !is_vitest_function(context, symbol)
                 && frozen_object_name(context, symbol).is_none()
                 && !is_string_union(context, symbol)
+                && !is_vitest_own_public(context, symbol)
         })
         .cloned()
         .collect::<Vec<_>>();
@@ -929,6 +937,7 @@ pub(crate) fn emit_test_program(
             !cross_crate_local_names.contains(&local_name)
                 && !is_vitest_struct(context, symbol)
                 && !is_string_union(context, symbol)
+                && !is_vitest_own_public(context, symbol)
         })
         .cloned()
         .collect::<Vec<_>>();

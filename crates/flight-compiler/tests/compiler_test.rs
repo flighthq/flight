@@ -5903,6 +5903,38 @@ pub fn absent_first(value: Option<f64>) -> f64 {
     }
 
     #[test]
+    fn lowers_module_qualified_string_union_variants() {
+        let module = |path, source| ModuleSource { path, source };
+        let kinds = r#"//! flight-compiler: string-union Kind
+
+pub enum Kind {
+    First,
+    SecondKind,
+}
+"#;
+        let user = r#"use crate::kinds::Kind;
+
+pub fn second() -> Kind {
+    return crate::kinds::Kind::SecondKind;
+}
+
+pub fn first() -> Kind {
+    return Kind::First;
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            module("crates/flight-kinds/src/user.rs", user),
+            None,
+            &[module("crates/flight-kinds/src/kinds.rs", kinds)],
+            &[],
+        )
+        .unwrap();
+        assert!(output.contains("  return \"secondKind\";\n"), "{output}");
+        assert!(output.contains("  return \"first\";\n"), "{output}");
+        assert!(!output.contains("crate."), "{output}");
+    }
+
+    #[test]
     fn keeps_the_string_union_type_of_mutable_variant_bindings() {
         let module = |path, source| ModuleSource { path, source };
         let reasons = r#"//! flight-compiler: string-union Reason
@@ -15118,6 +15150,98 @@ mod sum_pairs {
             output.contains("    expect(sumPairs([1.0, 2.0, 3.0, 4.0], 0.5)).toEqual(17.5);\n")
         );
         assert!(output.contains("    expect(sumPairs(typed, 0.5)).toEqual(17.5);\n"));
+    }
+
+    #[test]
+    fn lowers_crate_qualified_string_union_variants_in_tests() {
+        let production = r#"
+//! flight-compiler: string-union Winding
+
+pub enum Winding {
+    NonZero,
+    EvenOdd,
+}
+
+pub fn is_even_odd(winding: Winding) -> bool {
+    return matches!(winding, Winding::EvenOdd);
+}
+"#;
+        let source = r#"
+use flight_pairs::*;
+
+mod is_even_odd {
+    use super::*;
+
+    #[test]
+    fn reads_qualified_variants() {
+        assert!(is_even_odd(flight_pairs::Winding::EvenOdd));
+        assert!(!is_even_odd(Winding::NonZero));
+    }
+}
+"#;
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/pairs/contract", &[production])
+                .unwrap();
+
+        assert!(
+            output.contains("expect(isEvenOdd(\"evenOdd\")).toBe(true);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(!isEvenOdd(\"nonZero\")).toBe(true);"),
+            "{output}"
+        );
+        assert!(!output.contains("flightPairs"), "{output}");
+    }
+
+    #[test]
+    fn keeps_own_crate_items_off_a_foreign_wildcard_import() {
+        let production = r#"
+pub type PairContour = Vec<f64>;
+
+pub const PAIR_LIMIT: f64 = 2.0;
+
+pub fn pair_total(values: &PairContour) -> f64 {
+    return values[0] + values[1];
+}
+"#;
+        let source = r#"
+use flight_shapes::*;
+use flight_pairs::contract::*;
+
+mod pair_total {
+    use super::*;
+
+    #[test]
+    fn totals_a_contour_from_a_foreign_shape() {
+        let contour: PairContour = shape_contour(PAIR_LIMIT);
+        assert_eq!(pair_total(&contour), 4.0);
+    }
+}
+"#;
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/pairs/contract", &[production])
+                .unwrap();
+
+        assert!(
+            output.contains("import { shapeContour } from \"@flighthq/shapes/contract\";\n"),
+            "{output}"
+        );
+        assert!(
+            !output.contains("PairContour } from \"@flighthq/shapes"),
+            "{output}"
+        );
+        assert!(!output.contains("PAIR_LIMIT, shapeContour"), "{output}");
+        assert!(output.contains("PAIR_LIMIT"), "{output}");
+        assert!(
+            output
+                .contains("import type {\n  PairContour,\n} from \"@flighthq/pairs/contract\";\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  PAIR_LIMIT,\n  pairTotal,\n} from \"@flighthq/pairs/contract\";\n"),
+            "{output}"
+        );
     }
 
     #[test]

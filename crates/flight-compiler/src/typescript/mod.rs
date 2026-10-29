@@ -8181,6 +8181,16 @@ fn emit_expression_value(
             if let Some(value) = ordering_variant_value(&path.path) {
                 return Ok(value.to_string());
             }
+            // A qualified string-union variant (`flight_path::PathWinding::NonZero`) is its owner's
+            // variant: emit the canonical `Owner.Variant` form that string-union lowering rewrites from
+            // the owner's metadata, never a namespace property of the qualifying module.
+            if path.qself.is_none()
+                && path.path.segments.len() > 2
+                && let Some((owner, variant)) = path_owner_and_member(&path.path)
+                && is_string_union(entities, &owner)
+            {
+                return Ok(format!("{owner}.{variant}"));
+            }
             if path.path.is_ident("None") {
                 return Ok(if entities.contains(NULLABLE_OPTIONS_MARKER) {
                     "null".to_string()
@@ -14694,7 +14704,7 @@ pub(super) fn is_primitive_typescript_type(typescript_type: &str) -> bool {
     ) || typescript_type.contains("=>");
 }
 
-fn is_public(visibility: &Visibility) -> bool {
+pub(super) fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
 }
 

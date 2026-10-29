@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use syn::visit::Visit;
 use syn::{Expr, FnArg, ItemFn, ItemStruct, ItemUse, Pat, ReturnType, Stmt, Type};
 
-use crate::model::TestProgram;
+use crate::model::{Program, TestProgram};
 use crate::{CompileError, compile_error};
 
 use super::{
@@ -15,7 +15,7 @@ use super::{
     clear_provenance_binding, collect_cross_crate_use_tree, direct_lock_guard_receiver,
     export_name, expression_is_associated_path, expression_is_path, foreign_wildcard_modules,
     insert_dependency_export_name_context, insert_provenance_binding, is_primitive_typescript_type,
-    lexical_fact, local_pattern_name, marker_suffixes, provenance_binding_table,
+    is_public, lexical_fact, local_pattern_name, marker_suffixes, provenance_binding_table,
     provenance_import_rules, provenance_marker_values, provenance_pattern_bindings,
     replace_provenance_binding_table, resolve_owner_inner, resolved_provenance_binding,
     rust_type_is_shared_identity, snake_to_lower_camel, source_module_name,
@@ -33,6 +33,9 @@ pub(super) const VITEST_LOCAL_CRATE_MARKER: &str = "@vitest-local-crate:";
 pub(super) const VITEST_LOCAL_MODULE_ALIAS_MARKER: &str = "@vitest-local-module-alias:";
 pub(super) const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
 pub(super) const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
+// `{name}` for each public item the crate's own sources declare: a test name that a crate source owns
+// stays on the crate's contract import even when a foreign wildcard is also in scope.
+const VITEST_OWN_PUBLIC_MARKER: &str = "@vitest-own-public:";
 pub(super) const VITEST_STRUCT_CANDIDATE_MARKER: &str = "@vitest-struct-candidate:";
 pub(super) const VITEST_PUBLIC_FUNCTION_MARKER: &str = "@vitest-public-function:";
 pub(super) const VITEST_REBOUND_TYPE_MARKER: &str = "@vitest-rebound-type:";
@@ -565,6 +568,62 @@ pub(crate) fn insert_vitest_nullable_call_context<'a>(
     }
 }
 
+// Records the public items of the crate's own sources (see `VITEST_OWN_PUBLIC_MARKER`).
+// flight-lint: allow(hashmap-iteration) program items are source-order Vecs inserted into an unordered set
+pub(crate) fn insert_vitest_own_public_context(
+    context: &mut HashSet<String>,
+    programs: &[&Program],
+) {
+    for program in programs {
+        let names = program
+            .constants
+            .iter()
+            .filter(|item| is_public(&item.vis))
+            .map(|item| item.ident.to_string())
+            .chain(
+                program
+                    .enums
+                    .iter()
+                    .filter(|item| is_public(&item.vis))
+                    .map(|item| item.ident.to_string()),
+            )
+            .chain(
+                program
+                    .functions
+                    .iter()
+                    .filter(|item| is_public(&item.vis))
+                    .map(|item| item.sig.ident.to_string()),
+            )
+            .chain(
+                program
+                    .statics
+                    .iter()
+                    .filter(|item| is_public(&item.vis))
+                    .map(|item| item.ident.to_string()),
+            )
+            .chain(
+                program
+                    .structs
+                    .iter()
+                    .filter(|item| is_public(&item.vis))
+                    .map(|item| item.ident.to_string()),
+            )
+            .chain(
+                program
+                    .type_aliases
+                    .iter()
+                    .filter(|item| is_public(&item.vis))
+                    .map(|item| item.ident.to_string()),
+            )
+            .collect::<Vec<_>>();
+        context.extend(
+            names
+                .into_iter()
+                .map(|name| format!("{VITEST_OWN_PUBLIC_MARKER}{name}")),
+        );
+    }
+}
+
 pub(crate) fn insert_vitest_rebound_struct_context(
     statements: &[Stmt],
     context: &mut HashSet<String>,
@@ -656,6 +715,10 @@ pub(super) fn is_vitest_crate_root_test_support_function(
 pub(crate) fn is_vitest_function(context: &HashSet<String>, name: &str) -> bool {
     return !provenance_marker_values(context, VITEST_PUBLIC_FUNCTION_MARKER, name).is_empty()
         || !provenance_marker_values(context, VITEST_FUNCTION_CANDIDATE_MARKER, name).is_empty();
+}
+
+pub(crate) fn is_vitest_own_public(context: &HashSet<String>, name: &str) -> bool {
+    return context.contains(&format!("{VITEST_OWN_PUBLIC_MARKER}{name}"));
 }
 
 pub(crate) fn is_vitest_struct(context: &HashSet<String>, name: &str) -> bool {
