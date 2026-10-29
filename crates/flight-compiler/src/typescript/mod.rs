@@ -11841,25 +11841,33 @@ fn emit_method_call(
         "log2" if arguments.is_empty() => Ok(format!("Math.log2({receiver})")),
         "log10" if arguments.is_empty() => Ok(format!("Math.log10({receiver})")),
         "map" if arguments.len() == 1 => Ok(format!("{receiver}.map({})", arguments[0])),
-        "map_or"
-            if arguments.len() == 2
-                && option_expression_payload(&call.receiver, entities).is_some() =>
-        {
+        "map_or" if arguments.len() == 2 => {
             let absent = option_absent_value(&call.receiver, entities);
-            Ok(format!(
-                "(<T, U>(value: T | {absent}, fallback: U, map: (value: T) => U): U => value === {absent} ? fallback : map(value))({receiver}, {}, {})",
-                arguments[0], arguments[1]
-            ))
+            if option_expression_payload(&call.receiver, entities).is_some() {
+                Ok(format!(
+                    "(<T, U>(value: T | {absent}, fallback: U, map: (value: T) => U): U => value === {absent} ? fallback : map(value))({receiver}, {}, {})",
+                    arguments[0], arguments[1]
+                ))
+            } else {
+                Ok(format!(
+                    "({receiver} !== {absent} ? ({})({receiver}) : {})",
+                    arguments[1], arguments[0]
+                ))
+            }
         }
-        "map_or_else"
-            if arguments.len() == 2
-                && option_expression_payload(&call.receiver, entities).is_some() =>
-        {
+        "map_or_else" if arguments.len() == 2 => {
             let absent = option_absent_value(&call.receiver, entities);
-            Ok(format!(
-                "(<T, U>(value: T | {absent}, fallback: () => U, map: (value: T) => U): U => value === {absent} ? fallback() : map(value))({receiver}, {}, {})",
-                arguments[0], arguments[1]
-            ))
+            if option_expression_payload(&call.receiver, entities).is_some() {
+                Ok(format!(
+                    "(<T, U>(value: T | {absent}, fallback: () => U, map: (value: T) => U): U => value === {absent} ? fallback() : map(value))({receiver}, {}, {})",
+                    arguments[0], arguments[1]
+                ))
+            } else {
+                Ok(format!(
+                    "({receiver} !== {absent} ? ({})({receiver}) : ({})())",
+                    arguments[1], arguments[0]
+                ))
+            }
         }
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
@@ -12333,6 +12341,12 @@ fn emit_method_call(
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "to_owned" if arguments.is_empty() => Ok(receiver),
         "to_string_lossy" if arguments.is_empty() => Ok(receiver),
+        "to_radians" if arguments.is_empty() => {
+            Ok(format!("({receiver} * Math.PI / 180)"))
+        }
+        "to_degrees" if arguments.is_empty() => {
+            Ok(format!("({receiver} * 180 / Math.PI)"))
+        }
         "trim_matches"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
         {
