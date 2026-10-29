@@ -3376,6 +3376,22 @@ pub(crate) fn insert_nullable_options_context(context: &mut HashSet<String>) {
     context.insert(NULLABLE_OPTIONS_MARKER.to_string());
 }
 
+pub(crate) fn insert_vitest_nullable_call_context<'a>(
+    context: &mut HashSet<String>,
+    functions: impl Iterator<Item = &'a ItemFn>,
+) {
+    for function in functions {
+        let function_name = function.sig.ident.to_string();
+        for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
+            if argument_is_option(argument) {
+                context.insert(format!(
+                    "{NULLABLE_CALL_MARKER}{function_name}:{argument_index}"
+                ));
+            }
+        }
+    }
+}
+
 pub(crate) fn insert_vitest_struct_context<'a>(
     context: &mut HashSet<String>,
     structures: impl Iterator<Item = &'a ItemStruct>,
@@ -6079,11 +6095,18 @@ pub(crate) fn emit_expression(
                 .iter()
                 .enumerate()
                 .map(|(index, argument)| {
-                    if function_name.as_ref().is_some_and(|function_name| {
-                        entities.contains(&format!("{NULLABLE_CALL_MARKER}{function_name}:{index}"))
-                    }) && expression_is_none(argument)
-                    {
-                        return Ok("null".to_string());
+                    if expression_is_none(argument) {
+                        return Ok(
+                            if function_name.as_ref().is_some_and(|function_name| {
+                                entities.contains(&format!(
+                                    "{NULLABLE_CALL_MARKER}{function_name}:{index}"
+                                ))
+                            }) {
+                                "null".to_string()
+                            } else {
+                                "undefined".to_string()
+                            },
+                        );
                     }
                     emit_expression(argument, entities)
                 })

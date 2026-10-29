@@ -5670,10 +5670,23 @@ mod compile_vitest {
 
     #[test]
     fn honors_nullable_options_in_portable_tests() {
+        let production = r#"
+pub fn optional_value() -> Option<i32> {
+    return None;
+}
+
+pub fn pass_optional(value: Option<i32>) -> Option<i32> {
+    return value;
+}
+"#;
         let source = r#"
 //! flight-compiler: nullable-options
 
 use flight_example::*;
+
+fn nullable_helper(value: Option<i32>) -> Option<i32> {
+    return value;
+}
 
 mod optional_value {
     use super::*;
@@ -5681,14 +5694,19 @@ mod optional_value {
     #[test]
     fn preserves_the_packages_null_representation() {
         assert_eq!(optional_value(), None);
+        assert_eq!(pass_optional(None), None);
+        assert_eq!(nullable_helper(None), None);
     }
 }
 "#;
 
-        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
 
         assert!(output.contains("expect(optionalValue()).toEqual(null);"));
-        assert!(!output.contains("toEqual(undefined)"));
+        assert!(output.contains("expect(passOptional(undefined)).toEqual(null);"));
+        assert!(output.contains("expect(nullableHelper(null)).toEqual(null);"));
     }
 
     #[test]

@@ -33,11 +33,20 @@ import {
   isClipRegionRectangular,
   normalizeClipRegion,
   releaseClipRegion,
+  setClipRegionContoursGuard,
+  setClipRegionReleaseGuard,
   setClipRegionToContours,
   setClipRegionToRectangle,
+  setClipRegionUseGuard,
   transformClipRegion,
   unionClipRegions,
 } from './contract.ts';
+
+type SharedGuardCalls = Readonly<{ value: GuardCalls }>;
+
+interface GuardCalls {
+  values: number[];
+}
 
 function contours(): number[][] {
   return [[0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]];
@@ -45,6 +54,10 @@ function contours(): number[][] {
 
 function triangle(): number[][] {
   return [[0.0, 0.0, 10.0, 0.0, 5.0, 10.0]];
+}
+
+function guardCalls(): SharedGuardCalls {
+  return { value: { values: [] as never[] } };
 }
 
 describe('acquireClipRegion', () => {
@@ -135,7 +148,7 @@ describe('copyClipRegion', () => {
 
 describe('createClipRegionFromCircle', () => {
   it('creates a contour with the circle bounds', () => {
-    let clip = createClipRegionFromCircle(50.0, 50.0, 20.0, null);
+    let clip = createClipRegionFromCircle(50.0, 50.0, 20.0, undefined);
     clip = clip!;
     expect(clip.contours !== null).toBe(true);
     expect(Math.abs(clip.rect.x - 30.0) < 0.5).toBe(true);
@@ -162,7 +175,7 @@ describe('createClipRegionFromContours', () => {
 
 describe('createClipRegionFromEllipse', () => {
   it('creates a contour with the source rectangle bounds', () => {
-    let clip = createClipRegionFromEllipse(createRectangle(10.0, 20.0, 40.0, 30.0), null);
+    let clip = createClipRegionFromEllipse(createRectangle(10.0, 20.0, 40.0, 30.0), undefined);
     clip = clip!;
     expect(clip.contours !== null).toBe(true);
     expect(Math.abs(clip.rect.x - 10.0) < 0.5).toBe(true);
@@ -177,7 +190,7 @@ describe('createClipRegionFromPath', () => {
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathLineTo(path, 10.0, 0.0);
     appendPathLineTo(path, 10.0, 10.0);
-    let clip = createClipRegionFromPath(path, null);
+    let clip = createClipRegionFromPath(path, undefined);
     clip = clip!;
     expect(clip.rect.width).toEqual(10.0);
     expect(clip.rect.height).toEqual(10.0);
@@ -200,8 +213,8 @@ describe('createClipRegionFromRectangle', () => {
 describe('createClipRegionFromRoundedRectangle', () => {
   it('uses contours for positive radius and rect form for zero radius', () => {
     const rectangle = createRectangle(0.0, 0.0, 100.0, 60.0);
-    const rounded = createClipRegionFromRoundedRectangle(rectangle, 10.0, null);
-    const plain = createClipRegionFromRoundedRectangle(rectangle, 0.0, null);
+    const rounded = createClipRegionFromRoundedRectangle(rectangle, 10.0, undefined);
+    const plain = createClipRegionFromRoundedRectangle(rectangle, 0.0, undefined);
     expect(rounded!.contours !== null).toBe(true);
     expect(plain!.contours === null).toBe(true);
   });
@@ -266,7 +279,7 @@ describe('initializeClipRegionFromPath', () => {
     appendPathLineTo(path, 3.0, 4.0);
     appendPathLineTo(path, 6.0, 0.0);
     const out = createClipRegionFromRectangle(createRectangle(0.0, 0.0, 0.0, 0.0));
-    initializeClipRegionFromPath(out!, path, null);
+    initializeClipRegionFromPath(out!, path, undefined);
     expect(out!.rect.width).toEqual(6.0);
     expect(out!.rect.height).toEqual(4.0);
   });
@@ -359,6 +372,36 @@ describe('releaseClipRegion', () => {
   });
 });
 
+describe('setClipRegionContoursGuard', () => {
+  it('replaces the module callback slot', () => {
+    const calls = guardCalls();
+    const recorded = calls;
+    setClipRegionContoursGuard((_unused0, _unused1) => {
+      recorded.value.values.push(1);
+    });
+    createClipRegionFromContours([[0.0, 0.0, 1.0]], 'nonZero');
+    expect(calls.value.values.length).toEqual(1);
+    setClipRegionContoursGuard(null);
+  });
+});
+
+describe('setClipRegionReleaseGuard', () => {
+  it('replaces the module callback slot', () => {
+    const calls = guardCalls();
+    const recorded = calls;
+    setClipRegionReleaseGuard((_unused0) => {
+      recorded.value.values.push(1);
+    });
+    const clip = acquireClipRegion();
+    releaseClipRegion(clip);
+    releaseClipRegion(clip);
+    expect(calls.value.values.length).toEqual(1);
+    acquireClipRegion();
+    acquireClipRegion();
+    setClipRegionReleaseGuard(null);
+  });
+});
+
 describe('setClipRegionToContours', () => {
   it('deep copies recomputes bounds and bumps version', () => {
     let out = createClipRegionFromRectangle(createRectangle(0.0, 0.0, 0.0, 0.0));
@@ -381,6 +424,22 @@ describe('setClipRegionToRectangle', () => {
     expect(out.rect).toEqual(createRectangle(5.0, 6.0, 7.0, 8.0));
     expect(out.winding).toEqual('nonZero');
     expect(out.version).toEqual(1);
+  });
+});
+
+describe('setClipRegionUseGuard', () => {
+  it('replaces the module callback slot', () => {
+    const calls = guardCalls();
+    const recorded = calls;
+    setClipRegionUseGuard((_unused0) => {
+      recorded.value.values.push(1);
+    });
+    const clip = acquireClipRegion();
+    releaseClipRegion(clip);
+    clipRegionContainsPoint(clip, 0.0, 0.0);
+    expect(calls.value.values.length).toEqual(1);
+    acquireClipRegion();
+    setClipRegionUseGuard(null);
   });
 });
 

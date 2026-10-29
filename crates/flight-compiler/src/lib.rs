@@ -288,6 +288,13 @@ fn compile_vitest_with_contract_alias_sources_internal(
     let mut context = typescript::generation_context(&alias_program_refs, contract_source)?;
     if program.nullable_options {
         typescript::insert_nullable_options_context(&mut context);
+        typescript::insert_vitest_nullable_call_context(
+            &mut context,
+            program
+                .helpers
+                .iter()
+                .chain(program.suites.iter().flat_map(|suite| &suite.helpers)),
+        );
     }
     typescript::insert_vitest_local_crate_context(
         &mut context,

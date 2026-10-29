@@ -1,4 +1,4 @@
-//! flight-compiler: rust-only
+//! flight-compiler: target-native
 
 use super::*;
 
