@@ -1093,19 +1093,23 @@ pub(crate) fn emit_test_program(
         contract_type_symbols.retain(|symbol| !unresolved_wildcard_types.contains(symbol));
     }
     // The complete emitted value namespace, before contract symbols that are really the dependency's
-    // own items are folded into its import: the compiler's Vitest import, the generator's
-    // `rustTestSupport as crate` import, contract imports, cross-crate imports, and local helpers and
-    // constants.
+    // own items are folded into its import: the compiler's Vitest import, contract imports, cross-crate
+    // and qualified namespace imports, local helpers and constants, and the injected `PI`. The
+    // generator's `rustTestSupport as crate` import is added once the output shows it is needed.
     let dependency_items = crate::typescript::dependency_export_name_local_items(context);
     let mut emitted_imports = cross_crate_values.clone();
     emitted_imports
         .entry("vitest".to_string())
         .or_default()
         .extend(["describe", "expect", "it"].into_iter().map(str::to_string));
-    emitted_imports
-        .entry("./rustTestSupport.ts".to_string())
-        .or_default()
-        .insert("rustTestSupport as crate".to_string());
+    for module in &external_modules {
+        if let Some(package) = module.strip_prefix("flight_") {
+            emitted_imports
+                .entry(format!("@flighthq/{}/contract", package.replace('_', "-")))
+                .or_default()
+                .insert(format!("* as {}", snake_to_lower_camel(module)));
+        }
+    }
     emitted_imports
         .entry(contract_module.to_string())
         .or_default()
@@ -1118,7 +1122,7 @@ pub(crate) fn emit_test_program(
                         .map_or_else(|| emit_path_name(symbol, context), str::to_string)
                 }),
         );
-    let local_values = program
+    let mut local_values = program
         .helpers
         .iter()
         .map(|helper| snake_to_lower_camel(&helper.sig.ident.to_string()))
@@ -1129,11 +1133,9 @@ pub(crate) fn emit_test_program(
                 .map(|constant| emit_path_name(&constant.ident.to_string(), context)),
         )
         .collect::<std::collections::BTreeSet<_>>();
-    crate::typescript::validate_dependency_export_name_bindings(
-        context,
-        &local_values,
-        &emitted_imports,
-    )?;
+    if program.standard_constants.contains("PI") {
+        local_values.insert("PI".to_string());
+    }
     contract_symbols
         .retain(|symbol| !cross_crate_local_names.contains(&emit_path_name(symbol, context)));
     contract_type_symbols
@@ -1212,6 +1214,18 @@ pub(crate) fn emit_test_program(
         out.push('\n');
         emit_suite(&mut out, suite, &contract_symbols, context)?;
     }
+    // The package generator injects `rustTestSupport as crate` exactly when the output reads `crate.`.
+    if out.contains("crate.") {
+        emitted_imports
+            .entry("./rustTestSupport.ts".to_string())
+            .or_default()
+            .insert("rustTestSupport as crate".to_string());
+    }
+    crate::typescript::validate_dependency_export_name_bindings(
+        context,
+        &local_values,
+        &emitted_imports,
+    )?;
     return Ok(out);
 }
 

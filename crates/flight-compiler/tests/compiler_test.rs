@@ -3089,6 +3089,149 @@ pub fn customized_spring_preset() -> SpringConfig {
     }
 
     #[test]
+    fn accepts_dependency_export_names_named_like_unemitted_test_support() {
+        let owner = |target: &str| {
+            format!(
+                "//! flight-compiler: export-name decode_utf8 {target}\npub fn decode_utf8(value: usize) -> usize {{\n    return value;\n}}\n"
+            )
+        };
+        let production_sources = [VitestAliasSource {
+            source: "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n",
+            module: "src/caller.rs",
+        }];
+        let test = |uses: &str, body: &str| {
+            format!(
+                "use flight_codec::decode_utf8;\n{uses}\nmod call_decoder {{\n    use super::*;\n\n    #[test]\n    fn decodes() {{\n        let decoded = decode_utf8(1);\n{body}    }}\n}}\n"
+            )
+        };
+        let compile = |target: &str, source: &str| {
+            let owner = owner(target);
+            return compile_vitest_with_external_alias_sources(
+                source,
+                "./contract.ts",
+                None,
+                &production_sources,
+                &[ExternalAliasSource {
+                    source: &owner,
+                    module: "@flighthq/codec/contract",
+                }],
+            );
+        };
+
+        let without_pi = test("", "        assert_eq!(decoded, call_decoder(1));\n");
+        let output = compile("crate", &without_pi).unwrap();
+        assert!(
+            output.contains("import { crate } from \"@flighthq/codec/contract\";"),
+            "{output}"
+        );
+        assert!(
+            output.contains("    const decoded = crate(1);\n"),
+            "{output}"
+        );
+        assert!(!output.contains("crate."), "{output}");
+        let support = test(
+            "",
+            "        crate::assert_decoded(decoded, call_decoder(1));\n",
+        );
+        assert_eq!(
+            compile("crate", &support).unwrap_err().to_string(),
+            "`flight-compiler: export-name` TypeScript name `crate` imported from `@flighthq/codec/contract` collides with another import from `./rustTestSupport.ts`"
+        );
+        let output = compile("decodeUTF8", &support).unwrap();
+        assert!(
+            output.contains("    crate.assertDecoded(decoded, callDecoder(1));\n"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn rejects_dependency_export_names_colliding_with_emitted_pi() {
+        let owner = |target: &str| {
+            format!(
+                "//! flight-compiler: export-name decode_utf8 {target}\npub fn decode_utf8(value: usize) -> usize {{\n    return value;\n}}\n"
+            )
+        };
+        let production_sources = [VitestAliasSource {
+            source: "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n",
+            module: "src/caller.rs",
+        }];
+        let test = |uses: &str, body: &str| {
+            format!(
+                "use flight_codec::decode_utf8;\n{uses}\nmod call_decoder {{\n    use super::*;\n\n    #[test]\n    fn decodes() {{\n        let decoded = decode_utf8(1);\n{body}    }}\n}}\n"
+            )
+        };
+        let compile = |target: &str, source: &str| {
+            let owner = owner(target);
+            return compile_vitest_with_external_alias_sources(
+                source,
+                "./contract.ts",
+                None,
+                &production_sources,
+                &[ExternalAliasSource {
+                    source: &owner,
+                    module: "@flighthq/codec/contract",
+                }],
+            );
+        };
+
+        let pi = test(
+            "use std::f32::consts::PI;\n",
+            "        assert_eq!(decoded as f32 * PI, call_decoder(1) as f32 * PI);\n",
+        );
+        assert_eq!(
+            compile("PI", &pi).unwrap_err().to_string(),
+            "`flight-compiler: export-name` TypeScript name `PI` imported from `@flighthq/codec/contract` collides with a local item"
+        );
+        let without_pi = test("", "        assert_eq!(decoded, call_decoder(1));\n");
+        let output = compile("PI", &without_pi).unwrap();
+        assert!(
+            output.contains("import { PI } from \"@flighthq/codec/contract\";"),
+            "{output}"
+        );
+        assert!(!output.contains("Math.PI"), "{output}");
+    }
+
+    #[test]
+    fn rejects_dependency_export_names_colliding_with_qualified_namespace_imports() {
+        let owner = |target: &str| {
+            format!(
+                "//! flight-compiler: export-name decode_utf8 {target}\npub fn decode_utf8(value: usize) -> usize {{\n    return value;\n}}\n"
+            )
+        };
+        let production_sources = [VitestAliasSource {
+            source: "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n",
+            module: "src/caller.rs",
+        }];
+        let test = |uses: &str, body: &str| {
+            format!(
+                "use flight_codec::decode_utf8;\n{uses}\nmod call_decoder {{\n    use super::*;\n\n    #[test]\n    fn decodes() {{\n        let decoded = decode_utf8(1);\n{body}    }}\n}}\n"
+            )
+        };
+        let compile = |target: &str, source: &str| {
+            let owner = owner(target);
+            return compile_vitest_with_external_alias_sources(
+                source,
+                "./contract.ts",
+                None,
+                &production_sources,
+                &[ExternalAliasSource {
+                    source: &owner,
+                    module: "@flighthq/codec/contract",
+                }],
+            );
+        };
+
+        let namespace = test(
+            "",
+            "        assert_eq!(decoded, flight_other::identity(call_decoder(1)));\n",
+        );
+        assert_eq!(
+            compile("flightOther", &namespace).unwrap_err().to_string(),
+            "`flight-compiler: export-name` TypeScript name `flightOther` imported from `@flighthq/codec/contract` collides with another import from `@flighthq/other/contract`"
+        );
+    }
+
+    #[test]
     fn rejects_invalid_export_name_directives() {
         let item = "pub fn decode_utf8() {}\n";
         for (source, expected) in [
