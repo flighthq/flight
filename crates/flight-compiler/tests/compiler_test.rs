@@ -1724,6 +1724,45 @@ mod retain {
     }
 
     #[test]
+    fn lowers_sequence_optional_access_and_search() {
+        let source = r#"
+pub fn get_or(values: &[i32], index: usize) -> i32 {
+    return values.get(index).copied().unwrap_or(7);
+}
+
+pub fn last_or(values: &[i32]) -> i32 {
+    return values.last().copied().unwrap_or(8);
+}
+
+pub fn find_value(values: &[i32], expected: i32) -> usize {
+    return values.iter().position(|value| *value == expected).unwrap_or(values.len());
+}
+
+pub fn take_last(values: &mut Vec<i32>) -> i32 {
+    return values.pop().map_or(9, |value| value + 1);
+}
+
+pub fn remove_spaces(value: &str) -> String {
+    return value.replace(' ', "");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return (values[index] ?? 7);"), "{output}");
+        assert!(output.contains("return (values.at(-1) ?? 8);"), "{output}");
+        assert!(output.contains("items.findIndex(predicate)"), "{output}");
+        assert!(
+            output.contains("values.pop(), 9, (value) => value + 1"),
+            "{output}"
+        );
+        assert!(
+            output.contains("return value.replaceAll(\" \", \"\");"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn lowers_vec_extend_over_declared_sequences() {
         let source = r#"
 //! flight-compiler: data-union Id

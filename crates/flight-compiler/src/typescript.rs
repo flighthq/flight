@@ -12009,11 +12009,19 @@ fn emit_method_call(
             Ok(format!("{{ ...{receiver}{fields} }}"))
         }
         "clone" if arguments.is_empty() => Ok(receiver),
+        "cloned" | "copied"
+            if arguments.is_empty()
+                && option_expression_payload(&call.receiver, entities).is_some() =>
+        {
+            Ok(receiver)
+        }
         "collect" if arguments.is_empty() => Ok(receiver),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
+        "count" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "encode_utf16" if arguments.is_empty() => Ok(format!(
             "Array.from({{ length: {receiver}.length }}, (_, index) => {receiver}.charCodeAt(index))"
         )),
+        "enumerate" if arguments.is_empty() => Ok(format!("{receiver}.entries()")),
         "exp" if arguments.is_empty() => Ok(format!("Math.exp({receiver})")),
         "expect" if arguments.len() == 1 => {
             let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
@@ -12040,6 +12048,9 @@ fn emit_method_call(
                 Ok(format!("{receiver}[0]"))
             }
         }
+        "get" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}[{}]", arguments[0]))
+        }
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
         "is_none" if arguments.is_empty() => Ok(format!(
@@ -12059,14 +12070,27 @@ fn emit_method_call(
         }
         "into" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
-        "iter" if arguments.is_empty() => Ok(receiver),
+        "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "as_ref" if arguments.is_empty() => Ok(receiver),
         "as_mut" if arguments.is_empty() => Ok(receiver),
         "as_deref" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
+        "last" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}.at(-1)"))
+        }
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),
         "ln" if arguments.is_empty() => Ok(format!("Math.log({receiver})")),
         "map" if arguments.len() == 1 => Ok(format!("{receiver}.map({})", arguments[0])),
+        "map_or"
+            if arguments.len() == 2
+                && option_expression_payload(&call.receiver, entities).is_some() =>
+        {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "(<T, U>(value: T | {absent}, fallback: U, map: (value: T) => U): U => value === {absent} ? fallback : map(value))({receiver}, {}, {})",
+                arguments[0], arguments[1]
+            ))
+        }
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
         "powf" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
@@ -12079,6 +12103,13 @@ fn emit_method_call(
             entities,
         ),
         "partial_cmp" if arguments.len() == 1 => Ok(format!("{receiver} - {}", arguments[0])),
+        "pop" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}.pop()"))
+        }
+        "position" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: readonly T[], predicate: (item: T) => boolean): number | undefined => {{ const index = items.findIndex(predicate); return index === -1 ? undefined : index; }})({receiver}, {})",
+            arguments[0]
+        )),
         "push" if arguments.len() == 1 => Ok(format!("{receiver}.push({})", arguments[0])),
         "remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
@@ -12086,7 +12117,15 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
+        "replace" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.replaceAll({}, {})",
+            arguments[0], arguments[1]
+        )),
+        "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
+        "saturating_sub" if arguments.len() == 1 => {
+            Ok(format!("Math.max(0, {receiver} - {})", arguments[0]))
+        }
         "set" if arguments.len() == 1 => Ok(format!("{receiver}.value = {}", arguments[0])),
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
@@ -15229,6 +15268,20 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
         Expr::Group(group) => option_expression_payload(&group.expr, entities),
         Expr::MethodCall(call) if call.method == "and_then" || call.method == "map" => {
             option_expression_payload(&call.receiver, entities).map(|_| String::new())
+        }
+        Expr::MethodCall(call)
+            if call.method == "get"
+                && call.args.len() == 1
+                && expression_is_sequence(&call.receiver, entities) =>
+        {
+            Some(String::new())
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(call.method.to_string().as_str(), "first" | "last" | "pop")
+                && expression_is_sequence(&call.receiver, entities) =>
+        {
+            Some(String::new())
         }
         Expr::MethodCall(call)
             if call.args.is_empty()
