@@ -3779,6 +3779,113 @@ pub fn wrap_sub(a: u32, b: u32) -> u32 {
     }
 
     #[test]
+    fn lowers_borrow_and_identity_conversions() {
+        let source = r#"
+pub fn identity_methods(value: &Vec<i32>) -> &[i32] {
+    let b = value.borrow();
+    let d = value.as_deref_mut();
+    let t = value.try_into();
+    return value.as_slice();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains("borrow(") && !output.contains("as_deref_mut("),
+            "borrow/as_deref_mut should be identity (no method call): {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_is_null_to_null_check() {
+        let source = r#"
+pub fn check(ptr: Option<i32>) -> bool {
+    return ptr.is_null();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("=== undefined") || output.contains("=== null"),
+            "is_null should check against absent value: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_ok_and_result_conversions() {
+        let source = r#"
+pub fn convert(result: Option<i32>) -> Option<i32> {
+    let a = result.ok();
+    let b = result.ok_or("error");
+    let c = result.ok_or_else(|| "error");
+    let d = result.map_err(|_| "other");
+    return a;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains(".ok(") && !output.contains(".ok_or("),
+            "ok/ok_or should be identity: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_reduce_to_array_reduce() {
+        let source = r#"
+pub fn sum_opt(values: &Vec<i32>) -> Option<i32> {
+    return values.reduce(|a, b| a + b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".reduce("),
+            "reduce should emit .reduce(): {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_replacen_with_string_provenance() {
+        let source = r#"
+pub fn replace_first_two(s: &str) -> String {
+    return s.replacen("old", "new", 2);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("indexOf(pattern)"),
+            "replacen should use indexOf: {output}"
+        );
+        assert!(
+            output.contains("i < count"),
+            "replacen should loop up to count: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_take_while_to_loop() {
+        let source = r#"
+pub fn positive(values: &Vec<i32>) -> Vec<i32> {
+    return values.take_while(|v| *v > 0).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("if (!predicate(item)) break"),
+            "take_while should break on false predicate: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {

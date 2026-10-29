@@ -11249,6 +11249,10 @@ fn emit_method_call(
         }
         "hypot" if arguments.len() == 1 => Ok(format!("Math.hypot({receiver}, {})", arguments[0])),
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
+        "is_null" if arguments.is_empty() => Ok(format!(
+            "{receiver} === {}",
+            option_absent_value(&call.receiver, entities)
+        )),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
         "is_infinite" if arguments.is_empty() => {
             Ok(format!("(!Number.isFinite({receiver}) && !Number.isNaN({receiver}))"))
@@ -11325,9 +11329,10 @@ fn emit_method_call(
         "as_bytes" if arguments.is_empty() => Err(compile_error(
             "portable `.as_bytes()` requires a receiver known to be `String` or `str`",
         )),
-        "as_deref" if arguments.is_empty() => Ok(receiver),
+        "as_deref" | "as_deref_mut" if arguments.is_empty() => Ok(receiver),
         "as_slice" if arguments.is_empty() => Ok(receiver),
-        "as_str" if arguments.is_empty() => Ok(receiver),
+        "as_str" | "to_str" if arguments.is_empty() => Ok(receiver),
+        "borrow" | "borrow_mut" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "last" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}.at(-1)"))
@@ -11371,6 +11376,10 @@ fn emit_method_call(
         }
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
+        "map_err" if arguments.len() == 1 => Ok(receiver),
+        "ok" if arguments.is_empty() => Ok(receiver),
+        "ok_or" if arguments.len() == 1 => Ok(receiver),
+        "ok_or_else" if arguments.len() == 1 => Ok(receiver),
         "or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
         "or_else" if arguments.len() == 1 => Ok(format!("({receiver} ?? ({})())", arguments[0])),
         "next"
@@ -11433,6 +11442,17 @@ fn emit_method_call(
             "{receiver}.replaceAll({}, {})",
             arguments[0], arguments[1]
         )),
+        "replacen"
+            if arguments.len() == 3 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((value: string, pattern: string, replacement: string, count: number): string => {{ let result = value; for (let i = 0; i < count; i++) {{ const index = result.indexOf(pattern); if (index === -1) break; result = result.slice(0, index) + replacement + result.slice(index + pattern.length); }} return result; }})({receiver}, {}, {}, {})",
+                arguments[0], arguments[1], arguments[2]
+            ))
+        }
+        "replacen" if arguments.len() == 3 => Err(compile_error(
+            "portable `.replacen()` requires a receiver known to be `String` or `str`",
+        )),
         "repeat"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
         {
@@ -11453,6 +11473,7 @@ fn emit_method_call(
                 arguments[0], arguments[1]
             ))
         }
+        "reduce" if arguments.len() == 1 => Ok(format!("{receiver}.reduce({})", arguments[0])),
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
         "saturating_add" if arguments.len() == 1 => {
@@ -11661,6 +11682,11 @@ fn emit_method_call(
         "trim_matches" if arguments.len() == 1 => Err(compile_error(
             "portable `.trim_matches()` requires a receiver known to be `String` or `str`",
         )),
+        "take_while" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: readonly T[], predicate: (item: T) => boolean): T[] => {{ const result: T[] = []; for (const item of items) {{ if (!predicate(item)) break; result.push(item); }} return result; }})({receiver}, {})",
+            arguments[0]
+        )),
+        "try_into" if arguments.is_empty() => Ok(receiver),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
         "truncate" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
