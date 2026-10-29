@@ -1,4 +1,5 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
@@ -44,13 +45,6 @@ import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
 import type { HostImageOpenDialogCapability } from './HostImageOpenDialog.ts';
-import type {
-  HostInputDropFileCapability,
-  HostInputFocusCapability,
-  HostInputPointerLockCapability,
-} from './HostInput.ts';
-import type { HostInputIngressCapability } from './HostInputIngress.ts';
-import type { HostInputTargetCapability } from './HostInputTarget.ts';
 import type { HostMessageDialogCapability } from './HostMessageDialog.ts';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog.ts';
 import type { HostPromptDialogCapability } from './HostPromptDialog.ts';
@@ -165,6 +159,9 @@ import type {
 } from './Tray.ts';
 import type { HostUpdaterCommandCapability } from './Updater.ts';
 import type { HostWgpuCapability } from './WgpuHost.ts';
+
+/** @deprecated Import `HostInputCapabilities` from `@flighthq/input/contract`. */
+export type { HostInputCapabilities } from '@flighthq/input/contract';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
@@ -295,14 +292,6 @@ export interface HostGlyphCapabilities {
 
 export interface HostImageCapabilities {
   readonly loader?: HostImageCapability;
-}
-
-export interface HostInputCapabilities {
-  readonly dropFile?: HostInputDropFileCapability;
-  readonly focus?: HostInputFocusCapability;
-  readonly ingress?: HostInputIngressCapability;
-  readonly pointerLock?: HostInputPointerLockCapability;
-  readonly target?: HostInputTargetCapability;
 }
 
 export interface HostIpcCapabilities {
