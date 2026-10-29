@@ -10,7 +10,7 @@ use syn::{
     ReturnType, Stmt, Token, Type, UnOp, Visibility,
 };
 
-use crate::model::{Program, StringUnionStyle};
+use crate::model::{Program, StringUnionStyle, TestProgram};
 use crate::{CompileError, compile_error};
 
 type PreferredAliases = HashMap<String, String>;
@@ -634,6 +634,10 @@ pub(crate) fn insert_vitest_struct_context<'a>(
             }
         }
     }
+}
+
+pub(crate) fn is_vitest_struct(context: &HashSet<String>, name: &str) -> bool {
+    return context.contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{name}"));
 }
 
 pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
@@ -4360,76 +4364,122 @@ fn is_lowered_cross_crate_value(name: &str) -> bool {
     );
 }
 
+struct CrossCrateUsageCollector<'a> {
+    symbols: &'a BTreeMap<String, CrossCrateSymbol>,
+    struct_literals_are_types: bool,
+    type_names: BTreeSet<String>,
+    value_names: BTreeSet<String>,
+}
+
+impl CrossCrateUsageCollector<'_> {
+    fn record_type_path(&mut self, path: &syn::Path) {
+        let Some(segment) = path.segments.first() else {
+            return;
+        };
+        let name = segment.ident.to_string();
+        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_type(&name) {
+            self.type_names.insert(name);
+        }
+    }
+
+    fn record_value_path(&mut self, path: &syn::Path) {
+        let Some(segment) = path.segments.first() else {
+            return;
+        };
+        let name = segment.ident.to_string();
+        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_value(&name) {
+            self.value_names.insert(name);
+        }
+    }
+}
+
+impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
+    fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
+        if expression.qself.is_none() {
+            self.record_value_path(&expression.path);
+        }
+        syn::visit::visit_expr_path(self, expression);
+    }
+
+    fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
+        if self.struct_literals_are_types && expression.qself.is_none() {
+            self.record_type_path(&expression.path);
+        }
+        syn::visit::visit_expr_struct(self, expression);
+    }
+
+    fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
+        if pattern.qself.is_none() {
+            self.record_value_path(&pattern.path);
+        }
+        syn::visit::visit_pat_struct(self, pattern);
+    }
+
+    fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
+        if pattern.qself.is_none() {
+            self.record_value_path(&pattern.path);
+        }
+        syn::visit::visit_pat_tuple_struct(self, pattern);
+    }
+
+    fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
+        if rust_type.qself.is_none() {
+            self.record_type_path(&rust_type.path);
+        }
+        syn::visit::visit_type_path(self, rust_type);
+    }
+}
+
+fn cross_crate_symbols(uses: &[syn::ItemUse]) -> BTreeMap<String, CrossCrateSymbol> {
+    let mut symbols = BTreeMap::new();
+    for item_use in uses {
+        collect_cross_crate_use_tree(&item_use.tree, &mut Vec::new(), &mut symbols);
+    }
+    return symbols;
+}
+
+fn finish_cross_crate_imports(
+    collector: CrossCrateUsageCollector<'_>,
+) -> (
+    BTreeMap<String, BTreeSet<String>>,
+    BTreeMap<String, BTreeSet<String>>,
+) {
+    let CrossCrateUsageCollector {
+        symbols,
+        mut type_names,
+        value_names,
+        ..
+    } = collector;
+    type_names.retain(|name| !value_names.contains(name));
+    let mut value_imports = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut type_imports = BTreeMap::<String, BTreeSet<String>>::new();
+    for (names, imports) in [
+        (value_names, &mut value_imports),
+        (type_names, &mut type_imports),
+    ] {
+        for name in names {
+            let symbol = symbols
+                .get(&name)
+                .expect("collected cross-crate use came from the import map");
+            imports
+                .entry(symbol.module.clone())
+                .or_default()
+                .insert(import_specifier(symbol));
+        }
+    }
+    return (value_imports, type_imports);
+}
+
 fn cross_crate_imports(
     program: &Program,
 ) -> (
     BTreeMap<String, BTreeSet<String>>,
     BTreeMap<String, BTreeSet<String>>,
 ) {
-    struct UsageCollector<'a> {
-        symbols: &'a BTreeMap<String, CrossCrateSymbol>,
-        type_names: BTreeSet<String>,
-        value_names: BTreeSet<String>,
-    }
-
-    impl UsageCollector<'_> {
-        fn record_type_path(&mut self, path: &syn::Path) {
-            let Some(segment) = path.segments.first() else {
-                return;
-            };
-            let name = segment.ident.to_string();
-            if self.symbols.contains_key(&name) && !is_lowered_cross_crate_type(&name) {
-                self.type_names.insert(name);
-            }
-        }
-
-        fn record_value_path(&mut self, path: &syn::Path) {
-            let Some(segment) = path.segments.first() else {
-                return;
-            };
-            let name = segment.ident.to_string();
-            if self.symbols.contains_key(&name) && !is_lowered_cross_crate_value(&name) {
-                self.value_names.insert(name);
-            }
-        }
-    }
-
-    impl<'ast> Visit<'ast> for UsageCollector<'_> {
-        fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
-            if expression.qself.is_none() {
-                self.record_value_path(&expression.path);
-            }
-            syn::visit::visit_expr_path(self, expression);
-        }
-
-        fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
-            if pattern.qself.is_none() {
-                self.record_value_path(&pattern.path);
-            }
-            syn::visit::visit_pat_struct(self, pattern);
-        }
-
-        fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
-            if pattern.qself.is_none() {
-                self.record_value_path(&pattern.path);
-            }
-            syn::visit::visit_pat_tuple_struct(self, pattern);
-        }
-
-        fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
-            if rust_type.qself.is_none() {
-                self.record_type_path(&rust_type.path);
-            }
-            syn::visit::visit_type_path(self, rust_type);
-        }
-    }
-
-    let mut symbols = BTreeMap::new();
-    for item_use in &program.uses {
-        collect_cross_crate_use_tree(&item_use.tree, &mut Vec::new(), &mut symbols);
-    }
-    let mut collector = UsageCollector {
+    let symbols = cross_crate_symbols(&program.uses);
+    let mut collector = CrossCrateUsageCollector {
         symbols: &symbols,
+        struct_literals_are_types: false,
         type_names: BTreeSet::new(),
         value_names: BTreeSet::new(),
     };
@@ -4458,26 +4508,44 @@ fn cross_crate_imports(
         collector.visit_item_type(type_alias);
     }
 
-    collector
-        .type_names
-        .retain(|name| !collector.value_names.contains(name));
-    let mut value_imports = BTreeMap::<String, BTreeSet<String>>::new();
-    let mut type_imports = BTreeMap::<String, BTreeSet<String>>::new();
-    for (names, imports) in [
-        (collector.value_names, &mut value_imports),
-        (collector.type_names, &mut type_imports),
-    ] {
-        for name in names {
-            let symbol = symbols
-                .get(&name)
-                .expect("collected cross-crate use came from the import map");
-            imports
-                .entry(symbol.module.clone())
-                .or_default()
-                .insert(import_specifier(symbol));
-        }
+    return finish_cross_crate_imports(collector);
+}
+
+pub(crate) fn test_cross_crate_imports(
+    program: &TestProgram,
+) -> (
+    BTreeMap<String, BTreeSet<String>>,
+    BTreeMap<String, BTreeSet<String>>,
+) {
+    let symbols = cross_crate_symbols(&program.uses);
+    let mut collector = CrossCrateUsageCollector {
+        symbols: &symbols,
+        struct_literals_are_types: true,
+        type_names: BTreeSet::new(),
+        value_names: BTreeSet::new(),
+    };
+    for constant in &program.constants {
+        collector.visit_item_const(constant);
     }
-    return (value_imports, type_imports);
+    for function in program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| {
+            suite
+                .helpers
+                .iter()
+                .chain(suite.tests.iter().map(|test| &test.function))
+        }))
+    {
+        collector.visit_item_fn(function);
+    }
+    for structure in &program.structs {
+        collector.visit_item_struct(structure);
+    }
+    for type_alias in &program.type_aliases {
+        collector.visit_item_type(type_alias);
+    }
+    return finish_cross_crate_imports(collector);
 }
 
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules

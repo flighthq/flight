@@ -97,18 +97,27 @@ pub fn compile_typescript_with_external_alias_sources(
             ));
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let output = typescript::emit_program(
+    let mut output = typescript::emit_program(
         &program,
         entity_module,
         &alias_programs,
         &external_alias_programs,
     )?;
-    return lower_string_union_variants(
+    output = lower_string_union_variants(
         output,
         &program.string_unions,
         &program.string_union_values,
         false,
-    );
+    )?;
+    for alias_program in &alias_programs {
+        output = lower_string_union_variants(
+            output,
+            &alias_program.string_unions,
+            &alias_program.string_union_values,
+            false,
+        )?;
+    }
+    return Ok(output);
 }
 
 /// Compiles one canonical Rust contract-test module into a Vitest suite.

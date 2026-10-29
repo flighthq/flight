@@ -918,6 +918,48 @@ pub fn default_facet() -> Facet {
     }
 
     #[test]
+    fn inherits_string_union_literals_in_sibling_production_sources() {
+        let union = r#"
+//! flight-compiler: string-union Status=kebab-case
+
+pub enum Status {
+    NotReady,
+    Ready,
+}
+"#;
+        let source = r#"
+use crate::Status;
+
+pub struct Result {
+    pub status: Status,
+}
+
+pub fn ready() -> Result {
+    return Result { status: Status::Ready };
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(source, None, &[union]).unwrap();
+
+        assert!(output.contains("status: Status;"));
+        assert!(output.contains("return { status: \"ready\" };"));
+        assert!(!output.contains("Status.Ready"));
+
+        let velocity_reason = include_str!("../../flight-velocity/src/velocity_explanation.rs");
+        let velocity2d = include_str!("../../flight-velocity/src/velocity2d.rs");
+        let velocity_sample = include_str!("../../flight-velocity/src/velocity_sample.rs");
+        let velocity_output = compile_typescript_with_alias_sources(
+            velocity_sample,
+            None,
+            &[velocity_reason, velocity2d],
+        )
+        .unwrap();
+        assert!(velocity_output.contains("? \"explicit-zero\" : \"derived-zero\""));
+        assert!(velocity_output.contains("reason: \"no-sample\""));
+        assert!(!velocity_output.contains("VelocityReason."));
+    }
+
+    #[test]
     fn preserves_default_callable_parameter_names_without_a_directive() {
         let source = r#"
 use std::sync::Arc;
@@ -2454,6 +2496,91 @@ mod fixture {
         );
         assert!(output.contains("pairs.push([\"left\", String(values.slice().length)]);"));
         assert!(!output.contains("[] as never[]"));
+    }
+
+    #[test]
+    fn imports_contract_types_used_only_by_struct_literals() {
+        let production = r#"
+pub struct Sample {
+    pub x: f32,
+}
+
+pub fn read_sample(sample: &Sample) -> f32 {
+    return sample.x;
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod read_sample {
+    use super::*;
+
+    #[test]
+    fn reads_a_struct_literal() {
+        let sample = Sample { x: 2.0 };
+        assert_eq!(read_sample(&sample), 2.0);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        assert!(
+            output.contains("import type {\n  Sample,\n} from \"@flighthq/example/contract\";")
+        );
+        assert!(output.contains("const sample: Sample = { x: 2.0 };"));
+
+        let velocity2d = include_str!("../../flight-velocity/src/velocity2d.rs");
+        let velocity2d_tests = include_str!("../../flight-velocity/tests/velocity2d_test.rs");
+        let velocity_output = compile_vitest_with_alias_sources(
+            velocity2d_tests,
+            "@flighthq/velocity/contract",
+            &[velocity2d],
+        )
+        .unwrap();
+        assert!(
+            velocity_output
+                .contains("import type {\n  Velocity2D,\n} from \"@flighthq/velocity/contract\";")
+        );
+        assert!(velocity_output.contains("const a: Velocity2D = { x: 1.0, y: 2.0 };"));
+    }
+
+    #[test]
+    fn routes_explicit_cross_crate_test_imports_to_their_own_contracts() {
+        let source = r#"
+use flight_geometry::{Matrix, create_matrix as make_matrix, unused_value};
+use flight_velocity::contract::*;
+
+fn read_a(matrix: &Matrix) -> f32 {
+    return matrix.a;
+}
+
+mod sample_velocity {
+    use super::*;
+
+    #[test]
+    fn reads_a_cross_crate_matrix() {
+        let matrix = make_matrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+        assert_eq!(read_a(&matrix), 1.0);
+        assert_eq!(sample_velocity(), 1.0);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/velocity/contract").unwrap();
+
+        assert!(output.contains(
+            "import { createMatrix as makeMatrix } from \"@flighthq/geometry/contract\";"
+        ));
+        assert!(output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";"));
+        assert!(
+            output.contains("import {\n  sampleVelocity,\n} from \"@flighthq/velocity/contract\";")
+        );
+        assert!(!output.contains("  makeMatrix,\n} from \"@flighthq/velocity/contract\";"));
+        assert!(!output.contains("  Matrix,\n} from \"@flighthq/velocity/contract\";"));
+        assert!(!output.contains("unusedValue"));
     }
 
     #[test]

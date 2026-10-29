@@ -45,6 +45,7 @@ pub(crate) struct TestProgram {
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) suites: Vec<TestSuite>,
     pub(crate) type_aliases: Vec<ItemType>,
+    pub(crate) uses: Vec<ItemUse>,
 }
 
 pub(crate) struct TestSuite {
@@ -828,6 +829,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
     let mut type_aliases = Vec::new();
     let mut top_level_skipped_tests = Vec::new();
     let mut top_level_tests = Vec::new();
+    let mut uses = Vec::new();
 
     for item in file.items {
         match item {
@@ -853,6 +855,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
             Item::Mod(module) => suites.push(parse_test_suite(module)?),
             Item::Use(item_use) => {
                 collect_standard_constant(&item_use.tree, &mut Vec::new(), &mut standard_constants);
+                uses.push(item_use);
             }
             Item::Const(constant) => constants.push(constant),
             Item::Struct(structure) => structs.push(structure),
@@ -893,6 +896,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
         structs,
         suites,
         type_aliases,
+        uses,
     });
 }
 

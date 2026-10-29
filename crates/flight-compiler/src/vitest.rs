@@ -10,8 +10,8 @@ use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local,
     emit_local_with_shadow_and_else, emit_parameter, emit_type, frozen_object_name,
-    function_expression_context, is_data_union_variant, is_string_union, numeric_literal_spelling,
-    snake_to_lower_camel, write_indent,
+    function_expression_context, is_data_union_variant, is_string_union, is_vitest_struct,
+    numeric_literal_spelling, snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -180,6 +180,17 @@ fn collect_contract_symbols(
                 }
             }
             syn::visit::visit_expr_path(self, expression);
+        }
+
+        fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
+            if expression.qself.is_none()
+                && expression.path.segments.len() == 1
+                && let Some(segment) = expression.path.segments.first()
+                && is_vitest_struct(self.context, &segment.ident.to_string())
+            {
+                self.record_type_identifier(&segment.ident);
+            }
+            syn::visit::visit_expr_struct(self, expression);
         }
 
         fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
@@ -794,10 +805,44 @@ pub(crate) fn emit_test_program(
     contract_module: &str,
     context: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    let (contract_symbols, contract_type_symbols, external_modules) =
+    let (mut contract_symbols, mut contract_type_symbols, external_modules) =
         collect_contract_symbols(program, context);
+    let (cross_crate_values, cross_crate_types) =
+        crate::typescript::test_cross_crate_imports(program);
+    let cross_crate_local_names = cross_crate_values
+        .values()
+        .chain(cross_crate_types.values())
+        .flat_map(|names| names.iter())
+        .map(|specifier| {
+            specifier
+                .rsplit_once(" as ")
+                .map_or(specifier.as_str(), |(_, local)| local)
+        })
+        .collect::<HashSet<_>>();
+    contract_symbols
+        .retain(|symbol| !cross_crate_local_names.contains(emit_path_name(symbol).as_str()));
+    contract_type_symbols
+        .retain(|symbol| !cross_crate_local_names.contains(emit_path_name(symbol).as_str()));
     let mut out = String::new();
     out.push_str("import { describe, expect, it } from 'vitest';\n");
+    for (module, names) in &cross_crate_values {
+        writeln!(
+            out,
+            "\nimport {{ {} }} from {:?};",
+            names.iter().cloned().collect::<Vec<_>>().join(", "),
+            module
+        )
+        .expect("writing to a String cannot fail");
+    }
+    for (module, names) in &cross_crate_types {
+        writeln!(
+            out,
+            "\nimport type {{ {} }} from {:?};",
+            names.iter().cloned().collect::<Vec<_>>().join(", "),
+            module
+        )
+        .expect("writing to a String cannot fail");
+    }
     if !contract_symbols.is_empty() {
         out.push_str("\nimport {\n");
         for symbol in &contract_symbols {
