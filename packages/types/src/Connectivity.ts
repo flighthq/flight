@@ -74,9 +74,9 @@ export interface HostConnectivityReachabilityCapability {
 // Core connectivity event entity. The five signals are emitted by @flighthq/connectivity after it
 // reads and diffs a status snapshot; they are not Host capability slots.
 export interface Connectivity extends Entity {
-  onChange: Signal<(status: Readonly<ConnectivityStatus>) => void>;
-  onConnectionTypeChange: Signal<(type: ConnectivityConnectionType) => void>;
-  onMeteredChange: Signal<(metered: boolean) => void>;
-  onOnline: Signal<() => void>;
-  onOffline: Signal<() => void>;
+  onChange: Signal<Readonly<ConnectivityStatus>>;
+  onConnectionTypeChange: Signal<ConnectivityConnectionType>;
+  onMeteredChange: Signal<boolean>;
+  onOnline: Signal<void>;
+  onOffline: Signal<void>;
 }

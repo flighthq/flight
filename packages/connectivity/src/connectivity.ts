@@ -33,8 +33,8 @@ export function attachConnectivity(
     emitSignal(connectivity.onChange, status);
     if (status.online !== wasOnline) {
       wasOnline = status.online;
-      if (status.online === true) emitSignal(connectivity.onOnline);
-      else if (status.online === false) emitSignal(connectivity.onOffline);
+      if (status.online === true) emitSignal(connectivity.onOnline, undefined);
+      else if (status.online === false) emitSignal(connectivity.onOffline, undefined);
     }
     if (status.type !== wasType) {
       wasType = status.type;
