@@ -5457,6 +5457,41 @@ mod option_presence {
     }
 
     #[test]
+    fn lowers_option_return_presence_checks_by_the_owning_source_mode() {
+        let nullable_production = r#"
+//! flight-compiler: nullable-options
+
+pub fn find_nullable() -> Option<i32> {
+    return None;
+}
+"#;
+        let optional_production = r#"
+pub fn find_optional() -> Option<i32> {
+    return None;
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn follows_each_returns_source_mode() {
+    assert!(find_nullable().is_none());
+    assert!(find_optional().is_none());
+}
+"#;
+
+        let output = compile_vitest_with_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[nullable_production, optional_production],
+        )
+        .unwrap();
+
+        assert!(output.contains("expect(findNullable() === null).toBe(true);"));
+        assert!(output.contains("expect(findOptional() === undefined).toBe(true);"));
+    }
+
+    #[test]
     fn ignores_private_same_named_function_provenance_deterministically() {
         let nullable_production = r#"
 //! flight-compiler: nullable-options

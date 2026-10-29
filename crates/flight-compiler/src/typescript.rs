@@ -84,6 +84,7 @@ const PUBLIC_USE_GLOB_MARKER: &str = "@public-use-glob:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
+const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
 // Struct fields (`struct identity SEP field SEP payload`), locals and parameters (`name:payload`), and
@@ -3978,6 +3979,11 @@ fn generation_context_with_types(
                     "{OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
                     resolved_type_identity(&context, module, inner).unwrap_or_default()
                 ));
+                if program.nullable_options {
+                    owned_facts.push(format!(
+                        "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+                    ));
+                }
             } else if let Some(identity) = resolved_type_identity(&context, module, rust_type) {
                 owned_facts.push(format!(
                     "{STRUCT_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{identity}"
@@ -8645,12 +8651,23 @@ fn expression_struct_name(expression: &Expr, entities: &HashSet<String>) -> Opti
 fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
     if entities.contains(NULLABLE_OPTIONS_MARKER)
         || expression_is_nullable_option_field(expression, entities)
+        || expression_is_nullable_option_return(expression, entities)
         || referenced_path_identifier(expression)
             .is_some_and(|name| entities.contains(&format!("@nullable:{name}")))
     {
         return "null";
     }
     return "undefined";
+}
+
+fn expression_is_nullable_option_return(expression: &Expr, entities: &HashSet<String>) -> bool {
+    let Expr::Call(call) = expression else {
+        return false;
+    };
+    let Expr::Path(path) = call.func.as_ref() else {
+        return false;
+    };
+    return call_fact(entities, NULLABLE_OPTION_RETURN_MARKER, &path.path).is_some();
 }
 
 fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<String>) -> bool {
