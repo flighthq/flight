@@ -549,6 +549,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
         "vitest/top-level",
         program.helpers.iter(),
     );
+    typescript::insert_typed_array_constant_context(&mut context, &program.constants);
     let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
     output = lower_string_union_variants(output, &string_unions.styles, &string_unions.values)?;
     for alias_program in &alias_programs {

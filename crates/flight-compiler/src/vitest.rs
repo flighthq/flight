@@ -8,10 +8,10 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
-    begin_option_if, begin_option_while, emit_expression, emit_for_header, emit_format_template,
-    emit_local, emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding,
-    emit_parameter, emit_type, emit_type_parameters, export_name, frozen_object_name,
-    function_expression_context, insert_type_parameter_context,
+    begin_option_if, begin_option_while, emit_expression, emit_expression_for_type,
+    emit_for_header, emit_format_template, emit_local, emit_local_with_shadow_and_else,
+    emit_match_statement, emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
+    export_name, frozen_object_name, function_expression_context, insert_type_parameter_context,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_struct,
@@ -849,7 +849,7 @@ fn emit_test_constant(
         "const {}: {} = {};",
         constant.ident,
         emit_type(&constant.ty, context)?,
-        emit_expression(&constant.expr, context)?
+        emit_expression_for_type(&constant.expr, &constant.ty, context)?
     )
     .expect("writing to a String cannot fail");
     return Ok(());

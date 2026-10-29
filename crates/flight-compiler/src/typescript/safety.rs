@@ -3,18 +3,21 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use quote::ToTokens;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
-use syn::{BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, Lit, Pat, PathArguments, ReturnType, Stmt, Token, Type, UnOp};
+use syn::{
+    BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, Lit, Pat, PathArguments, ReturnType,
+    Stmt, Token, Type, UnOp,
+};
 
 use crate::model::Program;
 use crate::{CompileError, compile_error};
 
 use super::{
-    canonical_type_path_root, current_source, entity_runtime_state_store,
-    insert_program_type_path_context, lexical_fact, marker_suffixes, named_type,
-    option_inner_type, peel_reference_and_paren, resolve_path_owner, rust_default_expression,
-    rust_type_description, snake_to_lower_camel, BindingFact, ARRAY_LIKE_ARGUMENT_MARKER,
-    FUNCTION_OWNER_MARKER, PROVENANCE_SEPARATOR, TYPE_EXTERN_CRATE_MARKER, TYPE_LOCAL_MARKER,
-    TYPE_NO_STD_MARKER, TYPE_USE_GLOB_MARKER, TYPE_USE_MARKER, TYPE_USE_TARGET_MARKER,
+    ARRAY_LIKE_ARGUMENT_MARKER, BindingFact, FUNCTION_OWNER_MARKER, PROVENANCE_SEPARATOR,
+    TYPE_EXTERN_CRATE_MARKER, TYPE_LOCAL_MARKER, TYPE_NO_STD_MARKER, TYPE_USE_GLOB_MARKER,
+    TYPE_USE_MARKER, TYPE_USE_TARGET_MARKER, canonical_type_path_root, current_source,
+    entity_runtime_state_store, insert_program_type_path_context, lexical_fact, marker_suffixes,
+    named_type, option_inner_type, peel_reference_and_paren, resolve_path_owner,
+    rust_default_expression, rust_type_description, snake_to_lower_camel,
 };
 
 // Whether `op` is binary arithmetic (`+ - * / %`), which Rust dispatches through `Add` and its kin.

@@ -3423,7 +3423,10 @@ pub fn byte_length(text: String) -> usize {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("new TextEncoder().encode(text)"), "{output}");
+        assert!(
+            output.contains("new TextEncoder().encode(text)"),
+            "{output}"
+        );
     }
 
     #[test]
@@ -15115,6 +15118,70 @@ mod sum_pairs {
             output.contains("    expect(sumPairs([1.0, 2.0, 3.0, 4.0], 0.5)).toEqual(17.5);\n")
         );
         assert!(output.contains("    expect(sumPairs(typed, 0.5)).toEqual(17.5);\n"));
+    }
+
+    #[test]
+    fn converts_fixed_typed_array_test_constants_and_pushes() {
+        let production = r#"
+pub fn sum_values(values: &[f64]) -> f64 {
+    let mut total = 0.0;
+    for value in values {
+        total += value;
+    }
+    return total;
+}
+"#;
+        let source = r#"
+use flight_pairs::*;
+
+const UNIT_SQUARE: [f64; 4] = [0.0, 1.0, 1.0, 0.0];
+
+fn helper_total(points: &[f64]) -> f64 {
+    return sum_values(points);
+}
+
+fn helper_pairs(count: usize) -> Vec<[f64; 2]> {
+    let mut pairs: Vec<[f64; 2]> = Vec::new();
+    for index in 0..count {
+        pairs.push([index as f64, 1.0]);
+    }
+    return pairs;
+}
+
+mod sum_values {
+    use super::*;
+
+    #[test]
+    fn sums_fixed_typed_arrays_through_slices() {
+        let typed: [f64; 2] = [1.0, 2.0];
+        assert_eq!(sum_values(&typed), 3.0);
+        assert_eq!(helper_total(&UNIT_SQUARE), 2.0);
+        assert_eq!(helper_pairs(2).len(), 2);
+    }
+}
+"#;
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/pairs/contract", &[production])
+                .unwrap();
+
+        assert!(
+            output.contains(
+                "const UNIT_SQUARE: Float64Array = new Float64Array([0.0, 1.0, 1.0, 0.0]);\n"
+            ),
+            "{output}"
+        );
+        assert!(
+            output.contains("pairs.push(new Float64Array([index, 1.0]));"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(sumValues(Array.from(typed))).toEqual(3.0);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(helperTotal(Array.from(UNIT_SQUARE))).toEqual(2.0);"),
+            "{output}"
+        );
     }
 
     #[test]

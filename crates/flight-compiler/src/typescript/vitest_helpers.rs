@@ -9,16 +9,18 @@ use crate::{CompileError, compile_error};
 use super::{
     BindingFact, FUNCTION_OWNER_MARKER, NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER,
     PROVENANCE_SEPARATOR, ProvenanceIdentity, ProvenanceImportRule, RETURN_BINDING_FACT_MARKER,
-    SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER, STRUCT_OWNER_MARKER, SourceAccess,
-    argument_is_option, bind_lexical_pattern, binding_fact_for_type, binding_fact_marker,
-    callable_parameter_rust_types, clear_provenance_binding, collect_cross_crate_use_tree,
-    direct_lock_guard_receiver, export_name, expression_is_associated_path, expression_is_path,
-    foreign_wildcard_modules, insert_dependency_export_name_context, insert_provenance_binding,
-    is_primitive_typescript_type, lexical_fact, local_pattern_name, marker_suffixes,
-    provenance_binding_table, provenance_import_rules, provenance_marker_values,
-    provenance_pattern_bindings, replace_provenance_binding_table, resolve_owner_inner,
-    resolved_provenance_binding, rust_type_is_shared_identity, snake_to_lower_camel,
-    source_module_name, unique_marker_suffix, vec_clone_optional, vitest_type_is_shared_identity,
+    SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER,
+    STRUCT_OWNER_MARKER, SourceAccess, argument_is_option, bind_lexical_pattern,
+    binding_fact_for_type, binding_fact_marker, callable_parameter_rust_types,
+    clear_provenance_binding, collect_cross_crate_use_tree, direct_lock_guard_receiver,
+    export_name, expression_is_associated_path, expression_is_path, foreign_wildcard_modules,
+    insert_dependency_export_name_context, insert_provenance_binding, is_primitive_typescript_type,
+    lexical_fact, local_pattern_name, marker_suffixes, provenance_binding_table,
+    provenance_import_rules, provenance_marker_values, provenance_pattern_bindings,
+    replace_provenance_binding_table, resolve_owner_inner, resolved_provenance_binding,
+    rust_type_is_shared_identity, snake_to_lower_camel, source_module_name,
+    typed_slice_parameter_kind, unique_marker_suffix, vec_clone_optional,
+    vitest_type_is_shared_identity,
 };
 
 pub(super) const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
@@ -232,6 +234,14 @@ pub(crate) fn insert_vitest_helper_return_context<'a>(
             &function,
             &function_identity,
         );
+        for (argument_index, argument) in helper.sig.inputs.iter().enumerate() {
+            if let FnArg::Typed(argument) = argument {
+                context.insert(format!(
+                    "{SLICE_ARGUMENT_MARKER}{function}:{argument_index}:{}",
+                    typed_slice_parameter_kind(&argument.ty)
+                ));
+            }
+        }
         let ReturnType::Type(_, rust_type) = &helper.sig.output else {
             continue;
         };

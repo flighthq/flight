@@ -326,6 +326,17 @@ const RETURNS_U32_MARKER: &str = "@returns-u32";
 const HASH_COLLECTION_FIELD_MARKER: &str = "@hash-collection-field:";
 
 const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
+// `{function}:{index}:{kind}` for each typed parameter: `slice` (`&[f64]`) or `mut-slice` (`&mut [f64]`)
+// over a typed-array primitive, otherwise `other`. A fixed typed array (`Float64Array`) coerces to such a
+// slice in Rust but not to its `number[]` in TypeScript, so a call converts or rejects it.
+pub(super) const SLICE_ARGUMENT_MARKER: &str = "@slice-argument:";
+// `{name}:{typed array}` for a constant typed as a fixed typed-primitive array.
+const TYPED_ARRAY_CONSTANT_MARKER: &str = "@typed-array-constant:";
+// `{struct identity}␟{field}␟{typed array}` for a field typed as a fixed typed-primitive array.
+const TYPED_ARRAY_FIELD_MARKER: &str = "@typed-array-field:";
+// `{struct identity}␟{field}␟{typed array}` for a `Vec`/slice field of fixed typed-primitive arrays
+// (`Vec<[f64; 2]>`), whose elements are typed arrays in TypeScript.
+const TYPED_ARRAY_SEQUENCE_FIELD_MARKER: &str = "@typed-array-sequence-field:";
 
 // Functions returning a Rust `Vec`, slice or fixed array (`module SEP function SEP`).
 pub(super) const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
@@ -426,6 +437,8 @@ pub(super) enum BindingFact {
     Sequence(Box<BindingFact>),
     Structure(String),
     Tuple(Vec<BindingFact>),
+    // A fixed array of a typed-array primitive (`[f64; 4]`), named by its TypeScript typed array.
+    TypedArray(String),
     Unknown,
     UnresolvedPattern,
 }
@@ -1081,6 +1094,41 @@ fn expression_struct_identity(expression: &Expr, entities: &HashSet<String>) -> 
             )
         }
         expression => expression_struct_name(expression, entities),
+    };
+}
+
+// The typed array an expression's value is: a local, parameter, constant or struct field typed as a
+// fixed typed-primitive array (`[f64; 4]` is `Float64Array`), seen through references.
+fn expression_typed_array(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    return match expression {
+        Expr::Field(field) => {
+            let syn::Member::Named(field_name) = &field.member else {
+                return None;
+            };
+            let identity = expression_struct_name(&field.base, entities)?;
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{TYPED_ARRAY_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+        }
+        Expr::Group(group) => expression_typed_array(&group.expr, entities),
+        Expr::Paren(paren) => expression_typed_array(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let name = path.path.segments[0].ident.to_string();
+            match lexical_fact(entities, &name) {
+                Some(BindingFact::TypedArray(array_type)) => Some(array_type),
+                Some(_) => None,
+                None if lexical_binding(entities, &name).is_none() => {
+                    unique_marker_suffix(entities, &format!("{TYPED_ARRAY_CONSTANT_MARKER}{name}:"))
+                        .filter(|array_type| array_type != "other")
+                }
+                None => None,
+            }
+        }
+        Expr::Reference(reference) => expression_typed_array(&reference.expr, entities),
+        _ => None,
     };
 }
 
@@ -1760,6 +1808,22 @@ pub(crate) fn insert_type_path_context<'a>(
     }
 }
 
+// Records each constant's typed array (`[f64; 4]` is `Float64Array`), or `other`, by name. A name whose
+// constants disagree resolves to no typed array.
+// flight-lint: allow(hashmap-iteration) `constants` is a source-order slice inserted into an unordered set
+pub(crate) fn insert_typed_array_constant_context(
+    context: &mut HashSet<String>,
+    constants: &[syn::ItemConst],
+) {
+    for constant in constants {
+        context.insert(format!(
+            "{TYPED_ARRAY_CONSTANT_MARKER}{}:{}",
+            constant.ident,
+            fixed_typed_array_type(&constant.ty).unwrap_or("other")
+        ));
+    }
+}
+
 // Whether a resolved type path names the standard `Arc` (`std` or `alloc` `sync::Arc`).
 fn is_standard_arc_path(path: &[String]) -> bool {
     return matches!(
@@ -1964,6 +2028,18 @@ fn fixed_buffer_value_type(rust_type: &Type) -> Option<&'static str> {
             _ => None,
         },
         Type::Slice(slice) => typed_array_for_type(&slice.elem),
+        _ => None,
+    };
+}
+
+// The typed array a fixed array of a typed-array primitive lowers to (`[f64; 4]` is `Float64Array`),
+// seen through references.
+fn fixed_typed_array_type(rust_type: &Type) -> Option<&'static str> {
+    return match rust_type {
+        Type::Array(array) => typed_array_for_type(&array.elem),
+        Type::Group(group) => fixed_typed_array_type(&group.elem),
+        Type::Paren(paren) => fixed_typed_array_type(&paren.elem),
+        Type::Reference(reference) => fixed_typed_array_type(&reference.elem),
         _ => None,
     };
 }
@@ -2642,6 +2718,41 @@ fn rust_type_is_shared_identity(entities: &HashSet<String>, rust_type: &Type) ->
         );
 }
 
+// The typed array each element of a sequence expression is: a local or parameter typed as a sequence
+// of fixed typed-primitive arrays (`Vec<[f64; 2]>`), or a struct field so declared.
+fn sequence_element_typed_array(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    return match expression {
+        Expr::Field(field) => {
+            let syn::Member::Named(field_name) = &field.member else {
+                return None;
+            };
+            let identity = expression_struct_name(&field.base, entities)?;
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{TYPED_ARRAY_SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+        }
+        Expr::Group(group) => sequence_element_typed_array(&group.expr, entities),
+        Expr::Paren(paren) => sequence_element_typed_array(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            match lexical_fact(entities, &path.path.segments[0].ident.to_string()) {
+                Some(BindingFact::Sequence(element)) => match *element {
+                    BindingFact::TypedArray(array_type) => Some(array_type),
+                    _ => None,
+                },
+                _ => None,
+            }
+        }
+        Expr::Reference(reference) => sequence_element_typed_array(&reference.expr, entities),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            sequence_element_typed_array(&unary.expr, entities)
+        }
+        _ => None,
+    };
+}
+
 fn sequence_inner_type(rust_type: &Type) -> Option<&Type> {
     return match rust_type {
         Type::Array(array) => Some(&array.elem),
@@ -3048,6 +3159,25 @@ fn typed_binding_name(pattern: &Pat) -> Option<String> {
         Pat::Ident(identifier) => Some(identifier.ident.to_string()),
         Pat::Type(typed) => typed_binding_name(&typed.pat),
         _ => None,
+    };
+}
+
+// `slice` or `mut-slice` for a reference to a slice of a typed-array primitive, otherwise `other`.
+pub(super) fn typed_slice_parameter_kind(rust_type: &Type) -> &'static str {
+    return match rust_type {
+        Type::Group(group) => typed_slice_parameter_kind(&group.elem),
+        Type::Paren(paren) => typed_slice_parameter_kind(&paren.elem),
+        Type::Reference(reference) => match reference.elem.as_ref() {
+            Type::Slice(slice) if typed_array_for_type(&slice.elem).is_some() => {
+                if reference.mutability.is_some() {
+                    "mut-slice"
+                } else {
+                    "slice"
+                }
+            }
+            _ => "other",
+        },
+        _ => "other",
     };
 }
 
@@ -4432,7 +4562,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         BindingFact::Sequence(element) if call.method != "map" => {
                             BindingFact::Sequence(element)
                         }
-                        BindingFact::Sequence(_) => {
+                        BindingFact::Sequence(_) | BindingFact::TypedArray(_) => {
                             BindingFact::Sequence(Box::new(BindingFact::Unknown))
                         }
                         _ => BindingFact::Unknown,
@@ -4609,13 +4739,20 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             if let Some(inner) = option_inner_type(rust_type) {
                 return BindingFact::Option(Box::new(self.typed_fact(inner)));
             }
+            if let Some(array_type) = fixed_typed_array_type(rust_type) {
+                return BindingFact::TypedArray(array_type.to_string());
+            }
             if let Some(inner) = sequence_inner_type(rust_type) {
                 let element = self.typed_fact(inner);
-                return BindingFact::Sequence(Box::new(if element.has_source_structure() {
-                    element
-                } else {
-                    BindingFact::Unknown
-                }));
+                return BindingFact::Sequence(Box::new(
+                    if element.has_source_structure()
+                        || matches!(element, BindingFact::TypedArray(_))
+                    {
+                        element
+                    } else {
+                        BindingFact::Unknown
+                    },
+                ));
             }
             if let Type::Tuple(tuple) = rust_type {
                 return BindingFact::Tuple(
@@ -5698,6 +5835,9 @@ fn generation_context_with_types(
             .iter()
             .map(|entity| format!("{SHARED_IDENTITY_ENTITY_MARKER}{entity}")),
     );
+    for (_, program) in programs {
+        insert_typed_array_constant_context(&mut context, &program.constants);
+    }
     for (module, program) in programs {
         for structure in &program.structs {
             let name = structure.ident.to_string();
@@ -6038,6 +6178,18 @@ fn generation_context_with_types(
                         "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
                 }
+                if let Some(array_type) = fixed_typed_array_type(&field.ty) {
+                    owned_facts.push(format!(
+                        "{TYPED_ARRAY_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{array_type}"
+                    ));
+                }
+                if let Some(array_type) =
+                    sequence_inner_type(&field.ty).and_then(fixed_typed_array_type)
+                {
+                    owned_facts.push(format!(
+                        "{TYPED_ARRAY_SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{array_type}"
+                    ));
+                }
                 if rust_type_is_string(&field.ty) {
                     owned_facts.push(format!(
                         "{STRING_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
@@ -6334,6 +6486,17 @@ fn generation_context_with_types(
                         "{FIXED_BUFFER_ARGUMENT_MARKER}{function_name}:{argument_index}:{typescript_type}"
                     ));
                 }
+                // An `array-like` parameter is `ArrayLike<number>`, which a typed array already is.
+                let array_like = matches!(argument.pat.as_ref(), Pat::Ident(pattern)
+                    if program.array_like_parameters.contains(&format!("{function_name}.{}", pattern.ident)));
+                context.insert(format!(
+                    "{SLICE_ARGUMENT_MARKER}{function_name}:{argument_index}:{}",
+                    if array_like {
+                        "array-like"
+                    } else {
+                        typed_slice_parameter_kind(&argument.ty)
+                    }
+                ));
                 let Some(parameters) =
                     callable_parameter_types(&argument.ty, &callable_type_context)?
                 else {
@@ -6604,6 +6767,12 @@ fn binding_fact_from_marker(encoded: &str) -> BindingFact {
                 .collect(),
         );
     }
+    if let Some(array_type) = encoded
+        .strip_prefix("typed-array")
+        .and_then(|rest| rest.strip_prefix(PROVENANCE_SEPARATOR))
+    {
+        return BindingFact::TypedArray(array_type.to_string());
+    }
     if encoded == "unresolved-pattern" {
         return BindingFact::UnresolvedPattern;
     }
@@ -6630,6 +6799,9 @@ pub(super) fn binding_fact_marker(fact: &BindingFact) -> String {
                 .join(&BINDING_FACT_SEPARATOR.to_string())
         ),
         BindingFact::HashMap => "hash-map".to_string(),
+        BindingFact::TypedArray(array_type) => {
+            format!("typed-array{PROVENANCE_SEPARATOR}{array_type}")
+        }
         BindingFact::HashSet => "hash-set".to_string(),
         BindingFact::Unknown => "unknown".to_string(),
         BindingFact::UnresolvedPattern => "unresolved-pattern".to_string(),
@@ -6717,13 +6889,18 @@ pub(super) fn binding_fact_for_type(
     if let Some(inner) = option_inner_type(rust_type) {
         return BindingFact::Option(Box::new(binding_fact_for_type(entities, from, inner)));
     }
+    if let Some(array_type) = fixed_typed_array_type(rust_type) {
+        return BindingFact::TypedArray(array_type.to_string());
+    }
     if let Some(inner) = sequence_inner_type(rust_type) {
         let element = binding_fact_for_type(entities, from, inner);
-        return BindingFact::Sequence(Box::new(if element.has_source_structure() {
-            element
-        } else {
-            BindingFact::Unknown
-        }));
+        return BindingFact::Sequence(Box::new(
+            if element.has_source_structure() || matches!(element, BindingFact::TypedArray(_)) {
+                element
+            } else {
+                BindingFact::Unknown
+            },
+        ));
     }
     if let Type::Tuple(tuple) = rust_type {
         return BindingFact::Tuple(
@@ -7882,7 +8059,26 @@ fn emit_expression_value(
                             },
                         );
                     }
-                    emit_expression(argument, entities)
+                    let value = emit_expression(argument, entities)?;
+                    let Some(function_name) = &function_name else {
+                        return Ok(value);
+                    };
+                    if expression_typed_array(argument, entities).is_none() {
+                        return Ok(value);
+                    }
+                    let kinds = marker_suffixes(
+                        entities,
+                        &format!("{SLICE_ARGUMENT_MARKER}{function_name}:{index}:"),
+                    );
+                    if kinds.len() == 1 && kinds.contains("slice") {
+                        return Ok(format!("Array.from({value})"));
+                    }
+                    if kinds.contains("mut-slice") {
+                        return Err(compile_error(format!(
+                            "a fixed typed array cannot be passed to the mutable slice argument {index} of `{function_name}`: TypeScript has no shared view of it as `number[]`; pass a `Vec`"
+                        )));
+                    }
+                    Ok(value)
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("{function}({})", arguments.join(", ")))
@@ -8229,7 +8425,7 @@ fn emit_block_expression(
     return Ok(out);
 }
 
-fn emit_expression_for_type(
+pub(crate) fn emit_expression_for_type(
     expression: &Expr,
     rust_type: &Type,
     entities: &HashSet<String>,
@@ -11041,6 +11237,25 @@ fn emit_method_call(
         "push" if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) => {
             Ok(format!("{receiver} += {}", arguments[0]))
         }
+        "push"
+            if arguments.len() == 1
+                && matches!(
+                    peel_reference_and_paren(&call.args[0]),
+                    Expr::Array(_) | Expr::Repeat(_)
+                )
+                && sequence_element_typed_array(&call.receiver, entities).is_some() =>
+        {
+            let array_type = sequence_element_typed_array(&call.receiver, entities)
+                .expect("the guard proved the element typed array");
+            Ok(format!(
+                "{receiver}.push({})",
+                typed_array_literal(
+                    peel_reference_and_paren(&call.args[0]),
+                    &array_type,
+                    entities
+                )?
+            ))
+        }
         "push" if arguments.len() == 1 => Ok(format!("{receiver}.push({})", arguments[0])),
         "push_str" if arguments.len() == 1 => Ok(format!("{receiver} += {}", arguments[0])),
         "remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
@@ -11529,7 +11744,7 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             matches!(
                 lexical_fact(entities, &path.path.segments[0].ident.to_string()),
-                Some(BindingFact::Sequence(_))
+                Some(BindingFact::Sequence(_) | BindingFact::TypedArray(_))
             )
         }
         Expr::Reference(reference) => expression_is_sequence(&reference.expr, entities),
@@ -14985,7 +15200,11 @@ impl BindingFact {
             Self::Option(payload) | Self::Sequence(payload) => payload.has_source_structure(),
             Self::Structure(_) => true,
             Self::Tuple(facts) => facts.iter().any(Self::has_source_structure),
-            Self::HashMap | Self::HashSet | Self::Unknown | Self::UnresolvedPattern => false,
+            Self::HashMap
+            | Self::HashSet
+            | Self::TypedArray(_)
+            | Self::Unknown
+            | Self::UnresolvedPattern => false,
         };
     }
 }
