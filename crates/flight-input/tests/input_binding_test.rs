@@ -60,22 +60,19 @@ fn recording_host(recorder: Recorder) -> HostInputIngressCapability {
 
 fn keyboard_data(key_code: i32) -> InputKeyboardData {
     return InputKeyboardData {
+        alt_key: false,
+        caps_lock: false,
+        code: String::new(),
+        ctrl_key: false,
+        key: String::new(),
         key_code,
-        ..InputKeyboardData {
-            alt_key: false,
-            caps_lock: false,
-            code: String::new(),
-            ctrl_key: false,
-            key: String::new(),
-            key_code: 0,
-            location: 0,
-            meta_key: false,
-            modifier: 0,
-            num_lock: false,
-            repeat: false,
-            shift_key: false,
-            time_stamp: 0.0,
-        }
+        location: 0,
+        meta_key: false,
+        modifier: 0,
+        num_lock: false,
+        repeat: false,
+        shift_key: false,
+        time_stamp: 0.0,
     };
 }
 
