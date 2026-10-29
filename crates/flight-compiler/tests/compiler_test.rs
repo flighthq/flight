@@ -2715,7 +2715,7 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
             ),
             (
                 "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::with_capacity(extra.len()); values.extend(extra); return values; }\n",
-                "portable `Vec::with_capacity` is not supported; declare the `Vec` with `Vec::new()`",
+                receiver_error,
             ),
             (
                 "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = vec![]; values.extend(extra); return values; }\n",
@@ -11221,6 +11221,92 @@ pub fn impossible_statement() {
         assert!(output.contains(
             "export function impossibleStatement(): void {\n  throw new Error(\"internal error: entered unreachable code\");\n}"
         ));
+    }
+
+    #[test]
+    fn lowers_panic_to_throw_error() {
+        let source = r#"
+pub fn validate(code: i32) {
+    if code < 0 {
+        panic!("invalid code: {}", code);
+    }
+}
+
+pub fn not_reached() {
+    panic!();
+}
+
+pub fn constant_panic() {
+    panic!("something went wrong");
+}
+
+pub fn panic_in_match(code: i32) -> i32 {
+    return match code {
+        0 => 0,
+        _ => panic!("unexpected code"),
+    };
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("throw new Error(`invalid code: ${code}`);"));
+        assert!(output.contains(
+            "export function notReached(): void {\n  throw new Error(\"explicit panic\");\n}"
+        ));
+        assert!(output.contains("throw new Error(`something went wrong`);"));
+        assert!(output
+            .contains("(() => { throw new Error(`unexpected code`); })()"));
+    }
+
+    #[test]
+    fn lowers_concat_macro_to_string_join() {
+        let source = r#"
+pub fn multipart() -> &'static str {
+    return concat!("hello", " ", "world");
+}
+
+pub fn single() -> &'static str {
+    return concat!("only");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("\"hello\" + \" \" + \"world\""));
+        assert!(output.contains("\"only\""));
+    }
+
+    #[test]
+    fn lowers_string_with_capacity_to_empty_string() {
+        let source = r#"
+pub fn build(name: &str) -> String {
+    let mut result = String::with_capacity(name.len());
+    result.push_str(name);
+    return result;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("let result = ''"));
+        assert!(output.contains("result += name"));
+    }
+
+    #[test]
+    fn lowers_vec_with_capacity_to_empty_array() {
+        let source = r#"
+pub fn collect(count: usize) -> Vec<i32> {
+    let mut items: Vec<i32> = Vec::with_capacity(count);
+    items.push(42);
+    return items;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("[] as never[]"));
+        assert!(output.contains("items.push(42)"));
     }
 
     #[test]

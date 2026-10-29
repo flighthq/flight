@@ -8040,6 +8040,11 @@ fn emit_expression_value(
             if expression_is_associated_path(&call.func, "String", "new") && call.args.is_empty() {
                 return Ok("''".to_string());
             }
+            if expression_is_associated_path(&call.func, "String", "with_capacity")
+                && call.args.len() == 1
+            {
+                return Ok("''".to_string());
+            }
             if expression_is_associated_path(&call.func, "String", "from_utf16_lossy")
                 && call.args.len() == 1
             {
@@ -8067,12 +8072,10 @@ fn emit_expression_value(
             if expression_is_associated_path(&call.func, "Vec", "new") && call.args.is_empty() {
                 return Ok("[] as never[]".to_string());
             }
-            // There is no runtime `Vec`; until the element type of a capacity construction can be
-            // proven, it is rejected rather than emitted as a call to a missing global.
-            if expression_is_associated_path(&call.func, "Vec", "with_capacity") {
-                return Err(compile_error(
-                    "portable `Vec::with_capacity` is not supported; declare the `Vec` with `Vec::new()`",
-                ));
+            if expression_is_associated_path(&call.func, "Vec", "with_capacity")
+                && call.args.len() == 1
+            {
+                return Ok("[] as never[]".to_string());
             }
             if expression_is_associated_path(&call.func, "Mutex", "new") && call.args.len() == 1 {
                 return Ok(format!(
@@ -9766,6 +9769,15 @@ fn emit_macro_expression(
             emit_unreachable_message(rust_macro, entities)?
         ));
     }
+    if name.ident == "panic" {
+        return Ok(format!(
+            "(() => {{ throw new Error({}); }})()",
+            emit_panic_message(rust_macro, entities)?
+        ));
+    }
+    if name.ident == "concat" {
+        return emit_concat_macro(rust_macro, entities);
+    }
     if name.ident != "format" {
         return Err(compile_error(format!(
             "unsupported Rust macro expression `{}!`",
@@ -9845,6 +9857,57 @@ fn emit_unreachable_message(
         entities,
         "portable `unreachable!` message",
     );
+}
+
+fn emit_panic_message(
+    rust_macro: &syn::Macro,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
+        .parse2(rust_macro.tokens.clone())
+        .map_err(|error| {
+            compile_error(format!("failed to parse `panic!` arguments: {error}"))
+        })?;
+    let Some(Expr::Lit(template)) = arguments.first() else {
+        if arguments.is_empty() {
+            return Ok("\"explicit panic\"".to_string());
+        }
+        return Err(compile_error(
+            "portable `panic!` needs a string literal template",
+        ));
+    };
+    let Lit::Str(template) = &template.lit else {
+        return Err(compile_error(
+            "portable `panic!` needs a string literal template",
+        ));
+    };
+    let values = arguments.iter().skip(1).collect::<Vec<_>>();
+    return emit_format_template(
+        &template.value(),
+        &values,
+        entities,
+        "portable `panic!` message",
+    );
+}
+
+fn emit_concat_macro(
+    rust_macro: &syn::Macro,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
+        .parse2(rust_macro.tokens.clone())
+        .map_err(|error| compile_error(format!("failed to parse `concat!` arguments: {error}")))?;
+    let parts = arguments
+        .iter()
+        .map(|arg| emit_expression(arg, entities))
+        .collect::<Result<Vec<_>, _>>()?;
+    if parts.is_empty() {
+        return Ok("\"\"".to_string());
+    }
+    if parts.len() == 1 {
+        return Ok(parts.into_iter().next().unwrap());
+    }
+    return Ok(parts.join(" + "));
 }
 
 fn tagged_data_union_field_binding(pattern: &Pat) -> Result<Option<String>, CompileError> {
@@ -14089,6 +14152,22 @@ fn emit_statement(
                 out,
                 "throw new Error({});",
                 emit_unreachable_message(&statement.mac, entities)?
+            )
+            .expect("writing to a String cannot fail");
+        }
+        Stmt::Macro(statement)
+            if statement
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|name| name.ident == "panic") =>
+        {
+            write_indent(out, indent);
+            writeln!(
+                out,
+                "throw new Error({});",
+                emit_panic_message(&statement.mac, entities)?
             )
             .expect("writing to a String cannot fail");
         }
