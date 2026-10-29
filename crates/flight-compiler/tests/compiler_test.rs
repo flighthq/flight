@@ -4176,6 +4176,58 @@ pub fn shift(value: u32, n: u32) -> u32 {
     }
 
     #[test]
+    fn lowers_from_le_bytes_and_from_be_bytes_with_dataview() {
+        let source = r#"
+pub fn read_u16_le(bytes: &[u8]) -> u16 {
+    return u16::from_le_bytes([bytes[0], bytes[1]]);
+}
+
+pub fn read_u32_be(bytes: &[u8]) -> u32 {
+    return u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+}
+
+pub fn read_f32_le(bytes: &[u8]) -> f32 {
+    return f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("getUint16(0, true)"),
+            "u16 from_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("getUint32(0, false)"),
+            "u32 from_be_bytes: {output}"
+        );
+        assert!(
+            output.contains("getFloat32(0, true)"),
+            "f32 from_le_bytes: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_from_bits_with_dataview() {
+        let source = r#"
+pub fn from_u32(bits: u32) -> f32 {
+    return f32::from_bits(bits);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("setUint32(0, bits, true)"),
+            "{output}"
+        );
+        assert!(
+            output.contains("getFloat32(0, true)"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {

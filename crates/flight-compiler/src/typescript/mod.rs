@@ -8071,6 +8071,41 @@ fn emit_expression_value(
                     "((codepoint: number): string | {absent} => Number.isInteger(codepoint) && codepoint >= 0 && codepoint <= 0x10ffff && (codepoint < 0xd800 || codepoint > 0xdfff) ? String.fromCodePoint(codepoint) : {absent})({codepoint})"
                 ));
             }
+            if let Some((numeric_type, method)) = associated_numeric_method(&call.func) {
+                match (method.as_str(), call.args.len()) {
+                    ("from_le_bytes" | "from_be_bytes" | "from_ne_bytes", 1) => {
+                        let Some((dv_type, byte_count)) = numeric_dataview_info(&numeric_type)
+                        else {
+                            return Err(compile_error(format!(
+                                "portable `{numeric_type}::{method}()` has no portable lowering",
+                            )));
+                        };
+                        let bytes = emit_expression(&call.args[0], entities)?;
+                        let little_endian = method != "from_be_bytes";
+                        if byte_count == 1 {
+                            return Ok(format!("({bytes})[0]"));
+                        }
+                        return Ok(format!(
+                            "new DataView(new Uint8Array({bytes}).buffer).get{dv_type}(0, {little_endian})"
+                        ));
+                    }
+                    ("from_bits", 1) => {
+                        let bits = emit_expression(&call.args[0], entities)?;
+                        return match numeric_type.as_str() {
+                            "f32" => Ok(format!(
+                                "(() => {{ const __b = new DataView(new ArrayBuffer(4)); __b.setUint32(0, {bits}, true); return __b.getFloat32(0, true); }})()"
+                            )),
+                            "f64" => Ok(format!(
+                                "(() => {{ const __b = new DataView(new ArrayBuffer(8)); __b.setBigUint64(0, {bits}, true); return __b.getFloat64(0, true); }})()"
+                            )),
+                            _ => Err(compile_error(format!(
+                                "portable `{numeric_type}::from_bits()` is only supported for `f32` and `f64`",
+                            ))),
+                        };
+                    }
+                    _ => {}
+                }
+            }
             if expression_path_ends_with(&call.func, "throw_range_error") && call.args.len() == 1 {
                 return Ok(format!(
                     "(() => {{ throw new RangeError({}); }})()",
@@ -15521,6 +15556,23 @@ fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {
         BindingFact::Tuple(_) => None,
         BindingFact::UnresolvedPattern => None,
     };
+}
+
+fn associated_numeric_method(expression: &Expr) -> Option<(String, String)> {
+    let Expr::Path(path) = expression else {
+        return None;
+    };
+    if path.path.segments.len() < 2 {
+        return None;
+    }
+    let mut segments = path.path.segments.iter().rev();
+    let method = segments.next()?.ident.to_string();
+    let owner = segments.next()?.ident.to_string();
+    match owner.as_str() {
+        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
+        | "u64" | "usize" => Some((owner, method)),
+        _ => None,
+    }
 }
 
 fn numeric_dataview_info(rust_type: &str) -> Option<(&'static str, u8)> {
