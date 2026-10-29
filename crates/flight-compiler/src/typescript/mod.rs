@@ -11722,6 +11722,12 @@ fn emit_method_call(
         "is_infinite" if arguments.is_empty() => {
             Ok(format!("(!Number.isFinite({receiver}) && !Number.isNaN({receiver}))"))
         }
+        "is_sign_negative" if arguments.is_empty() => {
+            Ok(format!("({receiver} < 0 || Object.is({receiver}, -0))"))
+        }
+        "is_sign_positive" if arguments.is_empty() => {
+            Ok(format!("({receiver} > 0 || Object.is({receiver}, 0))"))
+        }
         "is_err" if arguments.is_empty() => Ok(format!(
             "{receiver} === {}",
             option_absent_value(&call.receiver, entities)
