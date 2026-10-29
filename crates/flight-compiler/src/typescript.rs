@@ -28,6 +28,9 @@ const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
+// Locals and parameters known to hold a Rust integer or string, the operand types `.cmp()` lowers
+// to a JavaScript relational comparison.
+const ORDERED_PRIMITIVE_MARKER: &str = "@ordered-primitive:";
 // The precedence `expression_precedence` assigns to Rust primary expressions.
 const PRIMARY_PRECEDENCE: u8 = 15;
 const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
@@ -56,6 +59,11 @@ enum RuntimeCategory {
     Record,
     Function,
     Object,
+}
+
+struct DataUnionPatternTest {
+    bindings: Vec<(String, String)>,
+    predicate: Option<String>,
 }
 
 impl RuntimeCategory {
@@ -271,6 +279,25 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
         Expr::Reference(reference) => expression_is_known_string(&reference.expr, entities),
         _ => false,
     };
+}
+
+fn rust_type_is_ordered_primitive(rust_type: &Type) -> bool {
+    return matches!(
+        named_type(rust_type).as_deref(),
+        Some(
+            "i8" | "i16"
+                | "i32"
+                | "i64"
+                | "isize"
+                | "u8"
+                | "u16"
+                | "u32"
+                | "u64"
+                | "usize"
+                | "String"
+                | "str"
+        )
+    );
 }
 
 fn rust_type_is_string(rust_type: &Type) -> bool {
@@ -864,6 +891,10 @@ pub(crate) fn function_expression_context(
                     self.context
                         .insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
                 }
+                if rust_type_is_ordered_primitive(&typed.ty) {
+                    self.context
+                        .insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
+                }
                 if let Some(record) = named_type(&typed.ty)
                     && self
                         .context
@@ -890,6 +921,31 @@ pub(crate) fn function_expression_context(
             }
             syn::visit::visit_local(self, local);
         }
+
+        fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
+            if let Some((owner, variant)) = path_owner_and_member(&pattern.path)
+                && let Some(categories) =
+                    data_union_variant_categories(self.context, &owner, &variant)
+                && (categories == BTreeSet::from([RuntimeCategory::Number])
+                    || categories == BTreeSet::from([RuntimeCategory::String]))
+                && pattern.elems.len() == 1
+                && let Some(binding) = payload_pattern_identifier(&pattern.elems[0])
+            {
+                self.context
+                    .insert(format!("{ORDERED_PRIMITIVE_MARKER}{binding}"));
+            }
+            syn::visit::visit_pat_tuple_struct(self, pattern);
+        }
+    }
+
+    fn payload_pattern_identifier(pattern: &Pat) -> Option<String> {
+        return match pattern {
+            Pat::Ident(identifier) if identifier.subpat.is_none() => {
+                Some(identifier.ident.to_string())
+            }
+            Pat::Reference(reference) => payload_pattern_identifier(&reference.pat),
+            _ => None,
+        };
     }
 
     fn referenced_identifier(expression: &Expr) -> Option<String> {
@@ -941,6 +997,9 @@ pub(crate) fn function_expression_context(
         }
         if rust_type_is_string(&argument.ty) {
             context.insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
+        }
+        if rust_type_is_ordered_primitive(&argument.ty) {
+            context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
         }
     }
     syn::visit::Visit::visit_block(
@@ -1549,6 +1608,11 @@ pub(crate) fn emit_expression(
                     Ok(comparison)
                 };
             }
+            if matches!(binary.op, BinOp::Eq(_) | BinOp::Ne(_))
+                && let Some(comparison) = emit_ordering_variant_comparison(binary, entities)?
+            {
+                return Ok(comparison);
+            }
             if matches!(binary.op, BinOp::Div(_)) && expression_is_method(&binary.left, "len") {
                 return Ok(format!(
                     "Math.trunc({} / {})",
@@ -1764,6 +1828,9 @@ pub(crate) fn emit_expression(
                 } else {
                     Ok("(value) => value".to_string())
                 };
+            }
+            if let Some(value) = ordering_variant_value(&path.path) {
+                return Ok(value.to_string());
             }
             if path.path.is_ident("None") {
                 return Ok(if entities.contains(NULLABLE_OPTIONS_MARKER) {
@@ -2504,6 +2571,33 @@ fn emit_literal(literal: &Lit) -> Result<String, CompileError> {
     };
 }
 
+// An `Ordering` is lowered to a number whose sign is the ordering (`.partial_cmp()` yields a
+// difference), so equality against a variant compares signs rather than exact values.
+fn emit_ordering_variant_comparison(
+    binary: &syn::ExprBinary,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    let (ordering, variant) = match (binary.left.as_ref(), binary.right.as_ref()) {
+        (ordering, Expr::Path(path)) if ordering_variant_value(&path.path).is_some() => {
+            (ordering, ordering_variant_value(&path.path))
+        }
+        (Expr::Path(path), ordering) if ordering_variant_value(&path.path).is_some() => {
+            (ordering, ordering_variant_value(&path.path))
+        }
+        _ => return Ok(None),
+    };
+    let variant = variant.expect("guarded by the match arm");
+    let operator = if matches!(binary.op, BinOp::Ne(_)) {
+        "!=="
+    } else {
+        "==="
+    };
+    return Ok(Some(format!(
+        "Math.sign({}) {operator} {variant}",
+        emit_expression(ordering, entities)?
+    )));
+}
+
 pub(crate) fn numeric_literal_spelling(spelling: &str, suffix: &str) -> String {
     if suffix.is_empty() {
         return spelling.to_string();
@@ -2839,6 +2933,9 @@ fn emit_macro_expression(
             .collect::<Result<Vec<_>, _>>()?;
         return Ok(format!("[{}]", values.join(", ")));
     }
+    if name.ident == "matches" {
+        return emit_matches_macro(rust_macro, entities);
+    }
     if name.ident == "unreachable" {
         return Ok(format!(
             "(() => {{ throw new Error({}); }})()",
@@ -2866,6 +2963,45 @@ fn emit_macro_expression(
     };
     let values = arguments.iter().skip(1).collect::<Vec<_>>();
     return emit_format_template(&template.value(), &values, entities, "portable `format!`");
+}
+
+fn emit_matches_macro(
+    rust_macro: &syn::Macro,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let parser = |input: syn::parse::ParseStream<'_>| {
+        let value = input.parse::<Expr>()?;
+        input.parse::<Token![,]>()?;
+        let pattern = Pat::parse_multi_with_leading_vert(input)?;
+        let guarded = input.peek(Token![if]);
+        if guarded {
+            input.parse::<Token![if]>()?;
+            input.parse::<Expr>()?;
+        }
+        if input.peek(Token![,]) {
+            input.parse::<Token![,]>()?;
+        }
+        return Ok((value, pattern, guarded));
+    };
+    let (value, pattern, guarded) = parser
+        .parse2(rust_macro.tokens.clone())
+        .map_err(|error| compile_error(format!("failed to parse `matches!` arguments: {error}")))?;
+    if guarded {
+        return Err(compile_error("portable `matches!` cannot use a guard"));
+    }
+    let text = emit_expression(&value, entities)?;
+    let reusable = expression_is_reusable(&value);
+    let subject = if reusable { text.as_str() } else { "value" };
+    let Some(test) = data_union_pattern_test(&pattern, subject, entities)? else {
+        return Err(compile_error(
+            "portable `matches!` supports only data union variant patterns",
+        ));
+    };
+    let predicate = test.predicate.unwrap_or_else(|| "true".to_string());
+    if reusable {
+        return Ok(predicate);
+    }
+    return Ok(format!("((value) => {predicate})({text})"));
 }
 
 fn emit_unreachable_message(
@@ -3118,6 +3254,70 @@ fn analyze_tagged_data_union_match(
     return Ok(Some(output));
 }
 
+// Lowers one data union pattern applied to `value` into a runtime predicate (`None` for a
+// catch-all) and the `(binding, expression)` pairs it introduces; `None` for an ordinary pattern.
+fn data_union_pattern_test(
+    pattern: &Pat,
+    value: &str,
+    entities: &HashSet<String>,
+) -> Result<Option<DataUnionPatternTest>, CompileError> {
+    if let TaggedDataUnionPatternAnalysis::Variants(variants) =
+        analyze_tagged_data_union_pattern(pattern, entities)?
+    {
+        let expected = variants[0].bindings.keys().collect::<BTreeSet<_>>();
+        if variants
+            .iter()
+            .any(|variant| variant.bindings.keys().collect::<BTreeSet<_>>() != expected)
+        {
+            return Err(compile_error(
+                "tagged data union alternatives must bind the same field names",
+            ));
+        }
+        let predicate = tagged_data_union_predicate(&variants, value);
+        return Ok(Some(DataUnionPatternTest {
+            bindings: tagged_data_union_bindings(&variants, value),
+            predicate: Some(if variants.len() > 1 {
+                format!("({predicate})")
+            } else {
+                predicate
+            }),
+        }));
+    }
+    return match analyze_data_union_pattern(pattern, entities)? {
+        DataUnionPatternAnalysis::CatchAll(binding) => Ok(Some(DataUnionPatternTest {
+            bindings: binding
+                .map(|binding| (binding, value.to_string()))
+                .into_iter()
+                .collect(),
+            predicate: None,
+        })),
+        DataUnionPatternAnalysis::Ordinary => Ok(None),
+        DataUnionPatternAnalysis::Variants(patterns) => {
+            let binding = patterns[0].binding.clone();
+            if patterns.iter().any(|pattern| pattern.binding != binding) {
+                return Err(compile_error(
+                    "transparent data union alternatives must bind the same payload name",
+                ));
+            }
+            let categories = patterns
+                .into_iter()
+                .flat_map(|pattern| pattern.categories)
+                .collect::<BTreeSet<_>>();
+            let predicate = match categories.iter().collect::<Vec<_>>().as_slice() {
+                [category] => runtime_category_predicate(**category, value),
+                _ => format!("({})", runtime_categories_predicate(&categories, value)),
+            };
+            Ok(Some(DataUnionPatternTest {
+                bindings: binding
+                    .map(|binding| (binding, value.to_string()))
+                    .into_iter()
+                    .collect(),
+                predicate: Some(predicate),
+            }))
+        }
+    };
+}
+
 fn tagged_data_union_predicate(patterns: &[TaggedDataUnionPattern], value: &str) -> String {
     return patterns
         .iter()
@@ -3365,6 +3565,33 @@ fn analyze_data_union_match(
     return Ok(Some(output));
 }
 
+// `Ordering` lowers to a signed number, which a `switch` cannot match exhaustively; callers compare
+// against a variant with `==`, which lowers to a sign comparison.
+fn emit_switch_scrutinee(
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    fn is_ordering_pattern(pattern: &Pat) -> bool {
+        return match pattern {
+            Pat::Or(or_pattern) => or_pattern.cases.iter().any(is_ordering_pattern),
+            Pat::Paren(paren) => is_ordering_pattern(&paren.pat),
+            Pat::Path(path) => ordering_variant_value(&path.path).is_some(),
+            _ => false,
+        };
+    }
+
+    if expression
+        .arms
+        .iter()
+        .any(|arm| is_ordering_pattern(&arm.pat))
+    {
+        return Err(compile_error(
+            "portable `match` cannot match `Ordering` variants; compare with `==` instead",
+        ));
+    }
+    return emit_expression(&expression.expr, entities);
+}
+
 fn runtime_category_predicate(category: RuntimeCategory, value: &str) -> String {
     return match category {
         RuntimeCategory::Null => format!("{value} === null"),
@@ -3471,7 +3698,7 @@ fn emit_match_expression(
     }
     let mut out = String::new();
     out.push_str("(() => {\n  const matchValue = ");
-    out.push_str(&emit_expression(&expression.expr, entities)?);
+    out.push_str(&emit_switch_scrutinee(expression, entities)?);
     out.push_str(";\n  switch (matchValue) {\n");
     for arm in &expression.arms {
         if arm.guard.is_some() {
@@ -3613,7 +3840,7 @@ fn emit_match_statement(
     writeln!(
         out,
         "switch ({}) {{",
-        emit_expression(&expression.expr, entities)?
+        emit_switch_scrutinee(expression, entities)?
     )
     .expect("writing to a String cannot fail");
     for arm in &expression.arms {
@@ -3840,6 +4067,13 @@ fn emit_method_call(
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
         "powf" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "powi" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
+        "cmp" if arguments.len() == 1 => emit_ordered_comparison(
+            &call.receiver,
+            &call.args[0],
+            &receiver,
+            &arguments[0],
+            entities,
+        ),
         "partial_cmp" if arguments.len() == 1 => Ok(format!("{receiver} - {}", arguments[0])),
         "push" if arguments.len() == 1 => Ok(format!("{receiver}.push({})", arguments[0])),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
@@ -3940,6 +4174,74 @@ fn emit_option_binding(
         emit_expression(&binding.expr, entities)?,
         option_absent_value(&binding.expr, entities),
     )));
+}
+
+fn emit_ordered_comparison(
+    left: &Expr,
+    right: &Expr,
+    left_text: &str,
+    right_text: &str,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    if !expression_is_ordered_primitive(left, entities)
+        || !expression_is_ordered_primitive(right, entities)
+    {
+        return Err(compile_error(
+            "portable `.cmp()` requires operands declared as Rust integers or strings",
+        ));
+    }
+    if expression_is_reusable(left) && expression_is_reusable(right) {
+        return Ok(format!(
+            "{left_text} < {right_text} ? -1 : {left_text} > {right_text} ? 1 : 0"
+        ));
+    }
+    return Ok(format!(
+        "((left, right) => (left < right ? -1 : left > right ? 1 : 0))({left_text}, {right_text})"
+    ));
+}
+
+fn expression_is_ordered_primitive(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::Binary(binary)
+            if matches!(
+                binary.op,
+                BinOp::Add(_) | BinOp::Sub(_) | BinOp::Mul(_) | BinOp::Div(_) | BinOp::Rem(_)
+            ) =>
+        {
+            expression_is_ordered_primitive(&binary.left, entities)
+                && expression_is_ordered_primitive(&binary.right, entities)
+        }
+        Expr::Group(group) => expression_is_ordered_primitive(&group.expr, entities),
+        Expr::Lit(literal) => matches!(&literal.lit, Lit::Int(_) | Lit::Str(_)),
+        Expr::Paren(paren) => expression_is_ordered_primitive(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            path.path.segments.first().is_some_and(|segment| {
+                entities.contains(&format!("{ORDERED_PRIMITIVE_MARKER}{}", segment.ident))
+            }) || expression_is_known_string(expression, entities)
+        }
+        Expr::Reference(reference) => expression_is_ordered_primitive(&reference.expr, entities),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            expression_is_ordered_primitive(&unary.expr, entities)
+        }
+        _ => expression_is_known_string(expression, entities),
+    };
+}
+
+// Whether evaluating the expression more than once is side-effect free, so a lowering may repeat
+// its text instead of binding it first.
+fn expression_is_reusable(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Field(field) => expression_is_reusable(&field.base),
+        Expr::Group(group) => expression_is_reusable(&group.expr),
+        Expr::Lit(_) => true,
+        Expr::Paren(paren) => expression_is_reusable(&paren.expr),
+        Expr::Path(path) => path.qself.is_none(),
+        Expr::Reference(reference) => expression_is_reusable(&reference.expr),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            expression_is_reusable(&unary.expr)
+        }
+        _ => false,
+    };
 }
 
 fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
@@ -4328,6 +4630,54 @@ fn collect_cross_crate_use_tree(
         }
         syn::UseTree::Glob(_) => {}
     }
+}
+
+// Lowers `if let (P0, P1, ..) = (e0, e1, ..)` over data union patterns into one conjunction of
+// runtime predicates plus the bindings the patterns introduce; `None` when the condition is not a
+// tuple `let`.
+fn emit_data_union_tuple_binding(
+    condition: &Expr,
+    entities: &HashSet<String>,
+) -> Result<Option<(String, Vec<(String, String)>)>, CompileError> {
+    let Expr::Let(binding) = condition else {
+        return Ok(None);
+    };
+    let Pat::Tuple(patterns) = binding.pat.as_ref() else {
+        return Ok(None);
+    };
+    let Expr::Tuple(values) = binding.expr.as_ref() else {
+        return Err(compile_error(
+            "portable tuple `if let` needs a tuple expression of the same length",
+        ));
+    };
+    if patterns.elems.len() != values.elems.len() {
+        return Err(compile_error(
+            "portable tuple `if let` needs a tuple expression of the same length",
+        ));
+    }
+    let mut predicates = Vec::new();
+    let mut bindings = Vec::new();
+    for (pattern, value) in patterns.elems.iter().zip(&values.elems) {
+        if !expression_is_reusable(value) {
+            return Err(compile_error(
+                "portable tuple `if let` elements must be locals, fields, or literals",
+            ));
+        }
+        let text = emit_expression(value, entities)?;
+        let Some(test) = data_union_pattern_test(pattern, &text, entities)? else {
+            return Err(compile_error(
+                "portable tuple `if let` supports only data union variant patterns, bindings, and `_`",
+            ));
+        };
+        predicates.extend(test.predicate);
+        bindings.extend(test.bindings);
+    }
+    if predicates.is_empty() {
+        return Err(compile_error(
+            "portable tuple `if let` needs at least one data union variant pattern",
+        ));
+    }
+    return Ok(Some((predicates.join(" && "), bindings)));
 }
 
 fn import_specifier(symbol: &CrossCrateSymbol) -> String {
@@ -4843,7 +5193,12 @@ fn emit_statement(
             .expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
-            let option_binding = emit_option_binding(&if_expression.cond, entities)?;
+            let tuple_binding = emit_data_union_tuple_binding(&if_expression.cond, entities)?;
+            let option_binding = if tuple_binding.is_some() {
+                None
+            } else {
+                emit_option_binding(&if_expression.cond, entities)?
+            };
             if let Some(binding) = &option_binding
                 && emit_receiver_preserving_optional_call(
                     out,
@@ -4856,7 +5211,9 @@ fn emit_statement(
                 return Ok(());
             }
             write_indent(out, indent);
-            if let Some((_, value, absent)) = &option_binding {
+            if let Some((condition, _)) = &tuple_binding {
+                writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
+            } else if let Some((_, value, absent)) = &option_binding {
                 writeln!(out, "if ({value} !== {absent}) {{")
                     .expect("writing to a String cannot fail");
             } else {
@@ -4868,6 +5225,13 @@ fn emit_statement(
                 .expect("writing to a String cannot fail");
             }
             if let Some((name, value, _)) = option_binding {
+                write_indent(out, indent + 1);
+                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
+            }
+            for (name, value) in tuple_binding
+                .map(|(_, bindings)| bindings)
+                .unwrap_or_default()
+            {
                 write_indent(out, indent + 1);
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
@@ -5128,6 +5492,8 @@ pub(crate) fn emit_type(
                 | "u64" | "usize" => Ok("number".to_string()),
                 "String" | "str" => Ok("string".to_string()),
                 "UnknownValue" => Ok("unknown".to_string()),
+                // `std::cmp::Ordering` is a comparator result: its sign is the ordering.
+                "Ordering" => Ok("number".to_string()),
                 "Option" => {
                     let inner = emit_single_generic_type(segment, entities)?;
                     if entities.contains(NULLABLE_OPTIONS_MARKER) {
@@ -5841,6 +6207,20 @@ fn named_type(rust_type: &Type) -> Option<String> {
             .segments
             .last()
             .map(|segment| segment.ident.to_string()),
+        _ => None,
+    };
+}
+
+fn ordering_variant_value(path: &syn::Path) -> Option<&'static str> {
+    let mut segments = path.segments.iter().rev();
+    let variant = segments.next()?;
+    if segments.next()?.ident != "Ordering" {
+        return None;
+    }
+    return match variant.ident.to_string().as_str() {
+        "Less" => Some("-1"),
+        "Equal" => Some("0"),
+        "Greater" => Some("1"),
         _ => None,
     };
 }

@@ -325,6 +325,231 @@ pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
         assert!(!output.contains("a === b === expected"));
     }
 
+    // `matches!` over data union variants lowers to the same runtime predicate a `match` uses; a
+    // scrutinee that is not a reusable place is bound once.
+    #[test]
+    fn lowers_matches_over_data_union_variants() {
+        let source = r#"
+//! flight-compiler: data-union Id Segment
+
+pub enum Id {
+    Number(i32),
+    Text(String),
+}
+
+pub enum Segment {
+    Move { x: f64 },
+    Line { x: f64 },
+    Close,
+}
+
+pub fn pick(id: &Id) -> Id {
+    return id.clone();
+}
+
+pub fn is_number(id: &Id) -> bool {
+    return matches!(id, Id::Number(_));
+}
+
+pub fn is_not_text(id: &Id) -> bool {
+    return !matches!(id, Id::Text(_));
+}
+
+pub fn is_any(id: &Id, flag: bool) -> bool {
+    return flag && matches!(id, Id::Number(_) | Id::Text(_));
+}
+
+pub fn picks_number(id: &Id) -> bool {
+    return matches!(pick(id), Id::Number(_));
+}
+
+pub fn is_drawn(segment: &Segment) -> bool {
+    return matches!(segment, Segment::Move { .. } | Segment::Line { .. });
+}
+
+pub fn is_closed(segment: &Segment) -> bool {
+    return matches!(segment, Segment::Close);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return typeof id === \"number\";"));
+        assert!(output.contains("return !(typeof id === \"string\");"));
+        assert!(output.contains(
+            "return flag && ((typeof id === \"number\") || (typeof id === \"string\"));"
+        ));
+        assert!(output.contains("return ((value) => typeof value === \"number\")(pick(id));"));
+        assert!(
+            output.contains("return (segment.kind === \"move\" || segment.kind === \"line\");")
+        );
+        assert!(output.contains("return segment.kind === \"close\";"));
+
+        for (body, expected) in [
+            (
+                "matches!(id, Id::Number(n) if n > 0)",
+                "portable `matches!` cannot use a guard",
+            ),
+            (
+                "matches!(value, Some(_))",
+                "portable `matches!` supports only data union variant patterns",
+            ),
+        ] {
+            let source = format!(
+                "//! flight-compiler: data-union Id\npub enum Id {{ Number(i32), Text(String) }}\npub fn check(id: &Id, value: Option<i32>) -> bool {{ return {body}; }}\n"
+            );
+            let error = compile_typescript(&source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    // `.cmp()` on integers and strings is a normalized three-way comparison, `Ordering` lowers to a
+    // signed number, and `==` against its variants compares signs, which keeps `.partial_cmp()`
+    // differences correct; a `match` on its variants is rejected rather than lowered unsoundly.
+    #[test]
+    fn lowers_ord_cmp_and_ordering_variants_as_signed_numbers() {
+        let source = r#"
+//! flight-compiler: data-union Id
+use std::cmp::Ordering;
+
+pub enum Id {
+    Number(i32),
+    Text(String),
+}
+
+pub fn compare_counts(a: i32, b: i32) -> Ordering {
+    return a.cmp(&b);
+}
+
+pub fn compare_names(a: &str, b: &String) -> Ordering {
+    return a.cmp(b);
+}
+
+pub fn compare_numbers(a: &Id, b: &Id) -> Ordering {
+    if let (Id::Number(an), Id::Number(bn)) = (a, b) {
+        return an.cmp(bn);
+    }
+    return Ordering::Equal;
+}
+
+pub fn order_first(first: bool) -> Ordering {
+    return if first { Ordering::Less } else { Ordering::Greater };
+}
+
+pub fn is_before(a: f32, b: f32) -> bool {
+    return a.partial_cmp(&b).unwrap_or(Ordering::Equal) == Ordering::Less;
+}
+
+pub fn is_not_after(a: f32, b: f32) -> bool {
+    return a.partial_cmp(&b).unwrap_or(Ordering::Equal) != Ordering::Greater;
+}
+
+pub fn compare_offset(a: i32, b: i32) -> Ordering {
+    return (a + 1).cmp(&b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export function compareCounts(a: number, b: number): number {"));
+        assert!(output.contains("return a < b ? -1 : a > b ? 1 : 0;"));
+        assert!(output.contains("return an < bn ? -1 : an > bn ? 1 : 0;"));
+        assert!(output.contains("return 0;"));
+        assert!(output.contains("return first ? -1 : 1;"));
+        assert!(output.contains("return Math.sign(a - b) === -1;"));
+        assert!(output.contains("return Math.sign(a - b) !== 1;"));
+        assert!(output.contains(
+            "return ((left, right) => (left < right ? -1 : left > right ? 1 : 0))((a + 1), b);"
+        ));
+        assert!(!output.contains("Ordering"));
+
+        for (source, expected) in [
+            (
+                "pub struct Point { pub x: i32 }\npub fn compare_points(a: &Point, b: &Point) -> std::cmp::Ordering { return a.cmp(b); }\n",
+                "portable `.cmp()` requires operands declared as Rust integers or strings",
+            ),
+            (
+                "use std::cmp::Ordering;\npub fn rank(a: i32, b: i32) -> i32 { return match a.cmp(&b) { Ordering::Less => 1, Ordering::Equal => 2, Ordering::Greater => 3 }; }\n",
+                "portable `match` cannot match `Ordering` variants; compare with `==` instead",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    // A tuple `if let` over data union variants tests every element's runtime category together
+    // and binds each payload inside the branch.
+    #[test]
+    fn lowers_tuple_if_let_over_data_union_variants() {
+        let source = r#"
+//! flight-compiler: data-union Id Segment
+
+pub enum Id {
+    Number(i32),
+    Text(String),
+}
+
+pub enum Segment {
+    Move { x: f64 },
+    Close,
+}
+
+pub fn sum_numbers(a: &Id, b: &Id) -> i32 {
+    if let (Id::Number(an), Id::Number(bn)) = (a, b) {
+        return an + bn;
+    } else {
+        return 0;
+    }
+}
+
+pub fn first_text(a: &Id, b: &Id) -> bool {
+    if let (Id::Text(_), _) = (a, b) {
+        return true;
+    }
+    return false;
+}
+
+pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
+    if let (Segment::Move { x: ax }, Segment::Move { x: bx }) = (a, b) {
+        return bx - ax;
+    }
+    return 0.0;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "  if (typeof a === \"number\" && typeof b === \"number\") {\n    const an = a;\n    const bn = b;\n    return an + bn;\n  } else {\n    return 0;\n  }\n"
+        ));
+        assert!(output.contains("  if (typeof a === \"string\") {\n    return true;\n  }\n"));
+        assert!(output.contains(
+            "  if (a.kind === \"move\" && b.kind === \"move\") {\n    const ax = a.x;\n    const bx = b.x;\n"
+        ));
+
+        for (condition, expected) in [
+            (
+                "let (Id::Number(n), _) = (pick(a), b)",
+                "portable tuple `if let` elements must be locals, fields, or literals",
+            ),
+            (
+                "let (Some(n), _) = (value, b)",
+                "portable tuple `if let` supports only data union variant patterns, bindings, and `_`",
+            ),
+            (
+                "let (x, _) = (a, b)",
+                "portable tuple `if let` needs at least one data union variant pattern",
+            ),
+        ] {
+            let source = format!(
+                "//! flight-compiler: data-union Id\npub enum Id {{ Number(i32), Text(String) }}\npub fn pick(id: &Id) -> Id {{ return id.clone(); }}\npub fn check(a: &Id, b: &Id, value: Option<i32>) -> bool {{ if {condition} {{ return true; }} return false; }}\n"
+            );
+            let error = compile_typescript(&source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
     #[test]
     fn maps_trailing_options_to_optional_undefined_contracts() {
         let source = r#"
