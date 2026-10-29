@@ -97,6 +97,8 @@ const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
+// `{function}␟{parameter}` for each `array-like` slice parameter, typed `ArrayLike<T>`.
+const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
 // Struct fields (`struct identity SEP field SEP payload`), locals and parameters (`name:payload`), and
 // function returns (`module SEP function SEP payload`) declared as Rust `Option<T>`. The payload is the
@@ -329,6 +331,37 @@ fn argument_is_nullable_guard(function: &ItemFn, argument: &FnArg) -> bool {
         && name.ends_with("_guard")
         && pattern.ident == "guard"
         && option_inner_type(&argument.ty).is_some();
+}
+
+// The `name: ArrayLike<T>` parameter an `array-like` designation gives a `&[T]` argument, or `None`.
+fn array_like_parameter(
+    function: &ItemFn,
+    argument: &FnArg,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    let FnArg::Typed(typed) = argument else {
+        return Ok(None);
+    };
+    let Pat::Ident(pattern) = typed.pat.as_ref() else {
+        return Ok(None);
+    };
+    if !entities.contains(&format!(
+        "{ARRAY_LIKE_PARAMETER_MARKER}{}{PROVENANCE_SEPARATOR}{}",
+        function.sig.ident, pattern.ident
+    )) {
+        return Ok(None);
+    }
+    let Type::Reference(reference) = typed.ty.as_ref() else {
+        return Ok(None);
+    };
+    let Type::Slice(slice) = reference.elem.as_ref() else {
+        return Ok(None);
+    };
+    return Ok(Some(format!(
+        "{}: ArrayLike<{}>",
+        snake_to_lower_camel(&pattern.ident.to_string()),
+        emit_type(&slice.elem, entities)?
+    )));
 }
 
 fn array_type(inner: String) -> String {
@@ -4691,6 +4724,13 @@ fn generation_context_with_types(
             }
         }
         context.extend(owned_facts);
+        for designation in &program.array_like_parameters {
+            if let Some((function_name, parameter_name)) = designation.split_once('.') {
+                context.insert(format!(
+                    "{ARRAY_LIKE_PARAMETER_MARKER}{function_name}{PROVENANCE_SEPARATOR}{parameter_name}"
+                ));
+            }
+        }
         if program.nullable_options {
             for structure in program
                 .structs
@@ -7499,6 +7539,138 @@ fn reject_unsafe_lazy_lock_initializers(
     return Ok(());
 }
 
+// An `array-like` parameter is only an `ArrayLike<T>` in TypeScript, so its function may read its
+// length (`.len()`, `.is_empty()`), index it, or pass it (optionally as `&p`) to a crate function
+// whose parameter at that position is also `array-like`. Any other use (iteration, slicing, methods,
+// moving it into a binding) would need array methods `ArrayLike` lacks, so it fails closed.
+fn reject_unsupported_array_like_uses(
+    program: &Program,
+    programs: &[&Program],
+    entities: &HashSet<String>,
+) -> Result<(), CompileError> {
+    struct ArrayLikeUses<'a> {
+        entities: &'a HashSet<String>,
+        programs: &'a [&'a Program],
+        error: Option<String>,
+        function: String,
+        parameter: String,
+    }
+    impl ArrayLikeUses<'_> {
+        fn is_parameter(&self, expression: &Expr) -> bool {
+            let expression = match expression {
+                Expr::Reference(reference) => reference.expr.as_ref(),
+                Expr::Paren(paren) => paren.expr.as_ref(),
+                expression => expression,
+            };
+            let expression = match expression {
+                Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => unary.expr.as_ref(),
+                expression => expression,
+            };
+            return matches!(expression, Expr::Path(path) if path.qself.is_none() && path.path.is_ident(&self.parameter));
+        }
+    }
+    impl<'ast> Visit<'ast> for ArrayLikeUses<'_> {
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            let callee = match call.func.as_ref() {
+                Expr::Path(path) if path.qself.is_none() => path
+                    .path
+                    .segments
+                    .last()
+                    .map(|segment| segment.ident.to_string()),
+                _ => None,
+            };
+            self.visit_expr(&call.func);
+            for (index, argument) in call.args.iter().enumerate() {
+                if self.is_parameter(argument) {
+                    let accepted = callee.as_ref().is_some_and(|callee| {
+                        self.programs
+                            .iter()
+                            .flat_map(|program| &program.functions)
+                            .filter(|function| function.sig.ident == callee.as_str())
+                            .filter_map(|function| match function.sig.inputs.iter().nth(index) {
+                                Some(FnArg::Typed(typed)) => match typed.pat.as_ref() {
+                                    Pat::Ident(pattern) => Some(pattern.ident.to_string()),
+                                    _ => None,
+                                },
+                                _ => None,
+                            })
+                            .any(|name| {
+                                self.entities.contains(&format!(
+                                    "{ARRAY_LIKE_PARAMETER_MARKER}{callee}{PROVENANCE_SEPARATOR}{name}"
+                                ))
+                            })
+                    });
+                    if !accepted && self.error.is_none() {
+                        self.error = Some(format!(
+                            "`array-like` parameter `{}` of `{}` is passed to `{}` argument {index}, which is not an `array-like` parameter",
+                            self.parameter,
+                            self.function,
+                            callee.clone().unwrap_or_default()
+                        ));
+                    }
+                } else {
+                    self.visit_expr(argument);
+                }
+            }
+        }
+
+        fn visit_expr_index(&mut self, index: &'ast syn::ExprIndex) {
+            if self.is_parameter(&index.expr) && !matches!(index.index.as_ref(), Expr::Range(_)) {
+                self.visit_expr(&index.index);
+                return;
+            }
+            syn::visit::visit_expr_index(self, index);
+        }
+
+        fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+            if self.is_parameter(&call.receiver)
+                && call.args.is_empty()
+                && matches!(call.method.to_string().as_str(), "is_empty" | "len")
+            {
+                return;
+            }
+            syn::visit::visit_expr_method_call(self, call);
+        }
+
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if path.qself.is_none() && path.path.is_ident(&self.parameter) && self.error.is_none() {
+                self.error = Some(format!(
+                    "`array-like` parameter `{}` of `{}` is used in a way `ArrayLike` does not support; only `.len()`, `.is_empty()`, indexing, and passing it to another `array-like` parameter are",
+                    self.parameter, self.function
+                ));
+            }
+        }
+    }
+    for function in &program.functions {
+        for argument in &function.sig.inputs {
+            let FnArg::Typed(typed) = argument else {
+                continue;
+            };
+            let Pat::Ident(pattern) = typed.pat.as_ref() else {
+                continue;
+            };
+            if !program
+                .array_like_parameters
+                .contains(&format!("{}.{}", function.sig.ident, pattern.ident))
+            {
+                continue;
+            }
+            let mut uses = ArrayLikeUses {
+                entities,
+                programs,
+                error: None,
+                function: function.sig.ident.to_string(),
+                parameter: pattern.ident.to_string(),
+            };
+            uses.visit_block(&function.block);
+            if let Some(error) = uses.error {
+                return Err(compile_error(error));
+            }
+        }
+    }
+    return Ok(());
+}
+
 fn emit_block_expression(
     block: &syn::Block,
     entities: &HashSet<String>,
@@ -7996,6 +8168,9 @@ fn emit_function(
         .iter()
         .enumerate()
         .map(|(index, argument)| {
+            if let Some(parameter) = array_like_parameter(function, argument, entities)? {
+                return Ok(parameter);
+            }
             emit_parameter_with_aliases(
                 argument,
                 entities,
@@ -11279,6 +11454,7 @@ pub(crate) fn emit_program(
     }
     reject_entity_runtime_state_store_collisions(program, &programs)?;
     reject_unsafe_lazy_lock_initializers(program, &programs)?;
+    reject_unsupported_array_like_uses(program, &programs, &expression_context)?;
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
     let mut body = String::new();

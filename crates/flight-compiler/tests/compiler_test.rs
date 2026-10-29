@@ -4042,6 +4042,111 @@ pub fn get_constructions() -> u32 {
     }
 
     #[test]
+    fn types_designated_slice_parameters_as_array_like() {
+        let source = r#"
+//! flight-compiler: array-like sum_pairs.points pair_total.values
+
+pub fn sum_pairs(points: &[f64], offset: f64) -> f64 {
+    if points.is_empty() {
+        return offset;
+    }
+    let mut total = offset;
+    let mut i = 0;
+    while i + 1 < points.len() {
+        total += points[i] * points[i + 1];
+        i += 2;
+    }
+    return total + pair_total(&points);
+}
+
+pub fn pair_total(values: &[f64]) -> f64 {
+    if values.len() < 2 {
+        return 0.0;
+    }
+    return values[0] + values[1];
+}
+
+pub fn sum_values(values: &[f64]) -> f64 {
+    let mut total = 0.0;
+    for value in values {
+        total += value;
+    }
+    return total;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "export function sumPairs(points: ArrayLike<number>, offset: number): number {"
+        ));
+        assert!(output.contains("export function pairTotal(values: ArrayLike<number>): number {"));
+        assert!(output.contains("export function sumValues(values: Readonly<number[]>): number {"));
+        assert!(output.contains("  if (points.length === 0) {\n"));
+        assert!(output.contains("    total += points[i] * points[i + 1];\n"));
+        assert!(output.contains("  return total + pairTotal(points);\n"));
+    }
+
+    #[test]
+    fn rejects_array_like_parameters_used_beyond_length_and_elements() {
+        let function = |designation: &str, parameter: &str, body: &str| {
+            format!(
+                "//! flight-compiler: array-like {designation}\n\npub fn sum_values(values: &[f64]) -> f64 {{\n    return values[0];\n}}\n\npub fn f(points: {parameter}) -> f64 {{\n    let mut total = 0.0;\n    {body}\n    return total;\n}}\n"
+            )
+        };
+        let unsupported = "`array-like` parameter `points` of `f` is used in a way `ArrayLike` does not support; only `.len()`, `.is_empty()`, indexing, and passing it to another `array-like` parameter are".to_string();
+        let cases = [
+            (
+                function("f.points", "&[f64]", "for value in points {\n        total += value;\n    }"),
+                unsupported.clone(),
+            ),
+            (
+                function("f.points", "&[f64]", "let copy = points;\n    total += copy[0];"),
+                unsupported.clone(),
+            ),
+            (
+                function("f.points", "&[f64]", "total += points[0..2][0];"),
+                unsupported.clone(),
+            ),
+            (
+                function("f.points", "&[f64]", "total += sum_values(points);"),
+                "`array-like` parameter `points` of `f` is passed to `sum_values` argument 0, which is not an `array-like` parameter".to_string(),
+            ),
+            (
+                function("", "&[f64]", "total += points[0];").replace("array-like \n", "array-like\n"),
+                "`flight-compiler: array-like` requires at least one `function.parameter`".to_string(),
+            ),
+            (
+                function("f", "&[f64]", "total += points[0];"),
+                "`flight-compiler: array-like` designation `f` is not `function.parameter`".to_string(),
+            ),
+            (
+                function("f.points f.points", "&[f64]", "total += points[0];"),
+                "duplicate `flight-compiler: array-like` designation `f.points`".to_string(),
+            ),
+            (
+                function("f.points", "&Vec<f64>", "total += points[0];"),
+                "`flight-compiler: array-like f.points` must name a `&[T]` parameter of a function in this source".to_string(),
+            ),
+            (
+                function("f.points", "&mut [f64]", "total += points[0];"),
+                "`flight-compiler: array-like f.points` must name a `&[T]` parameter of a function in this source".to_string(),
+            ),
+            (
+                function("g.points", "&[f64]", "total += points[0];"),
+                "`flight-compiler: array-like g.points` must name a `&[T]` parameter of a function in this source".to_string(),
+            ),
+        ];
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(&source, None).unwrap_err().to_string(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn emits_numeric_unions_as_type_only_integer_aliases() {
         let source = r#"
 //! flight-compiler: numeric-union Direction
@@ -10001,6 +10106,65 @@ mod shared_kernel {
         assert!(output.contains("    expect(getKernel(undefined).scale).toEqual(1.0);\n"));
         assert!(!output.contains("SHARED_KERNEL"));
         assert!(!output.contains("LazyLock"));
+    }
+
+    #[test]
+    fn calls_array_like_parameters_with_arrays_and_typed_arrays() {
+        let production = r#"
+//! flight-compiler: array-like sum_pairs.points pair_total.values
+
+pub fn sum_pairs(points: &[f64], offset: f64) -> f64 {
+    if points.is_empty() {
+        return offset;
+    }
+    let mut total = offset;
+    let mut i = 0;
+    while i + 1 < points.len() {
+        total += points[i] * points[i + 1];
+        i += 2;
+    }
+    return total + pair_total(&points);
+}
+
+pub fn pair_total(values: &[f64]) -> f64 {
+    if values.len() < 2 {
+        return 0.0;
+    }
+    return values[0] + values[1];
+}
+
+pub fn sum_values(values: &[f64]) -> f64 {
+    let mut total = 0.0;
+    for value in values {
+        total += value;
+    }
+    return total;
+}
+"#;
+        let source = r#"
+use flight_pairs::*;
+
+mod sum_pairs {
+    use super::*;
+
+    #[test]
+    fn accepts_plain_and_typed_coordinate_arrays() {
+        let typed: [f64; 4] = [1.0, 2.0, 3.0, 4.0];
+        assert_eq!(sum_pairs(&[1.0, 2.0, 3.0, 4.0], 0.5), 17.5);
+        assert_eq!(sum_pairs(&typed, 0.5), 17.5);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/pairs/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("new Float64Array([1.0, 2.0, 3.0, 4.0])"));
+        assert!(
+            output.contains("    expect(sumPairs([1.0, 2.0, 3.0, 4.0], 0.5)).toEqual(17.5);\n")
+        );
+        assert!(output.contains("    expect(sumPairs(typed, 0.5)).toEqual(17.5);\n"));
     }
 
     #[test]

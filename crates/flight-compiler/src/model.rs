@@ -30,6 +30,9 @@ pub(crate) struct Program {
     pub(crate) functions: Vec<ItemFn>,
     // `#![no_std]`: the `std` root and the `std` prelude's `Box` are absent unless bound explicitly.
     pub(crate) no_std: bool,
+    // `function.parameter` slice parameters TypeScript types as `ArrayLike<T>`, so typed arrays are
+    // accepted; the function body may only read their length and elements or pass them on.
+    pub(crate) array_like_parameters: BTreeSet<String>,
     pub(crate) nullable_options: bool,
     // Unit enums lowered to a type-only TS union of their declared integer discriminants, in
     // declaration order (`numeric-union`).
@@ -340,6 +343,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "export-name"
             | "frozen-object"
             | "identity-alias"
+            | "array-like"
             | "nullable-options"
             | "numeric-union"
             | "readonly-fields"
@@ -465,6 +469,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let const_groups = parse_const_groups(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
+    let array_like_parameters = parse_array_like_parameters(&file.attrs)?;
     let numeric_union_names = parse_numeric_unions(&file.attrs)?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
@@ -558,6 +563,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     validate_callable_field_parameters(&callable_field_parameters, &structs)?;
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
     validate_entity_runtime_states(&entity_runtime_states, &structs)?;
+    validate_array_like_parameters(&array_like_parameters, &functions)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
     let numeric_unions = validate_numeric_union_directives(
         &numeric_union_names,
@@ -609,6 +615,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         functions,
         no_std,
         nullable_options,
+        array_like_parameters,
         numeric_unions,
         standard_constants,
         statics,
@@ -1110,6 +1117,46 @@ fn validate_frozen_objects(
         }
     }
     return Ok(());
+}
+
+// flight-lint: allow(hashmap-iteration) directive designations are a Vec in source order
+fn parse_array_like_parameters(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
+    let mut parameters = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("array-like") {
+            continue;
+        }
+        let designations = fields.collect::<Vec<_>>();
+        if designations.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: array-like` requires at least one `function.parameter`",
+            ));
+        }
+        for designation in designations {
+            let valid = designation
+                .split_once('.')
+                .is_some_and(|(function, parameter)| {
+                    [function, parameter].iter().all(|name| {
+                        syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
+                    })
+                });
+            if !valid {
+                return Err(compile_error(format!(
+                    "`flight-compiler: array-like` designation `{designation}` is not `function.parameter`"
+                )));
+            }
+            if !parameters.insert(designation.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: array-like` designation `{designation}`"
+                )));
+            }
+        }
+    }
+    return Ok(parameters);
 }
 
 fn parse_data_unions(attributes: &[Attribute]) -> Result<HashSet<String>, CompileError> {
@@ -1717,6 +1764,39 @@ fn unsupported_public(kind: &str, name: &str) -> CompileError {
     return compile_error(format!(
         "unsupported public {kind} `{name}`; refusing to emit an incomplete TypeScript contract"
     ));
+}
+
+fn validate_array_like_parameters(
+    parameters: &BTreeSet<String>,
+    functions: &[ItemFn],
+) -> Result<(), CompileError> {
+    for designation in parameters {
+        let (function_name, parameter_name) = designation
+            .split_once('.')
+            .expect("array-like designations were parsed as `function.parameter`");
+        let slice = functions
+            .iter()
+            .find(|function| function.sig.ident == function_name)
+            .and_then(|function| {
+                function.sig.inputs.iter().find_map(|input| match input {
+                    syn::FnArg::Typed(typed)
+                        if matches!(typed.pat.as_ref(), syn::Pat::Ident(pattern) if pattern.ident == parameter_name) =>
+                    {
+                        Some(typed.ty.as_ref())
+                    }
+                    _ => None,
+                })
+            })
+            .is_some_and(|rust_type| {
+                matches!(rust_type, Type::Reference(reference) if reference.mutability.is_none() && matches!(reference.elem.as_ref(), Type::Slice(_)))
+            });
+        if !slice {
+            return Err(compile_error(format!(
+                "`flight-compiler: array-like {designation}` must name a `&[T]` parameter of a function in this source"
+            )));
+        }
+    }
+    return Ok(());
 }
 
 fn validate_data_union_directives(
