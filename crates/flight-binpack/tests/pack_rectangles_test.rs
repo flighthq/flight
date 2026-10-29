@@ -1,5 +1,4 @@
 use flight_binpack::contract::*;
-use std::collections::HashMap;
 
 fn is_power_of_two(value: f32) -> bool {
     let v = value as i32;
@@ -13,13 +12,28 @@ fn rectangles_overlap(a: &PackedRectangle, b: &PackedRectangle) -> bool {
         || b.y + b.height <= a.y);
 }
 
-fn count_ids(ids: &[RectangleId]) -> HashMap<String, i32> {
-    let mut counts: HashMap<String, i32> = HashMap::new();
+fn count_id(ids: &[RectangleId], target: &RectangleId) -> i32 {
+    let mut count = 0;
     for id in ids {
-        let key = id.to_string();
-        *counts.entry(key).or_insert(0) += 1;
+        if id == target {
+            count += 1;
+        }
     }
-    return counts;
+    return count;
+}
+
+fn same_id_counts(a: &[RectangleId], b: &[RectangleId]) -> bool {
+    for id in a {
+        if count_id(a, id) != count_id(b, id) {
+            return false;
+        }
+    }
+    for id in b {
+        if count_id(a, id) != count_id(b, id) {
+            return false;
+        }
+    }
+    return true;
 }
 
 struct Random {
@@ -163,12 +177,16 @@ mod pack_rectangles {
         assert!(result.unpacked.is_empty());
         assert_eq!(result.placements.len(), 20);
 
-        let mut size_by_id: HashMap<RectangleId, (f32, f32)> = HashMap::new();
-        for rect in &rects {
-            size_by_id.insert(rect.id.clone(), (rect.width, rect.height));
-        }
-        for placement in &result.placements {
-            let (input_w, input_h) = size_by_id[&placement.id];
+        let placements: &[PackedRectangle] = &result.placements;
+        for placement in placements {
+            let mut input_w = 0.0;
+            let mut input_h = 0.0;
+            for rect in &rects {
+                if rect.id == placement.id {
+                    input_w = rect.width;
+                    input_h = rect.height;
+                }
+            }
             let expected_width = if placement.rotated { input_h } else { input_w };
             let expected_height = if placement.rotated { input_w } else { input_h };
             assert_eq!(placement.width, expected_width);
@@ -304,13 +322,12 @@ mod pack_rectangles {
         let result = pack_rectangles(&rects, Some(&options));
         assert!(result.unpacked.is_empty());
 
-        let a = result
-            .placements
+        let placements: &[PackedRectangle] = &result.placements;
+        let a = placements
             .iter()
             .find(|p| p.id == RectangleId::Text("a".to_string()))
             .unwrap();
-        let b = result
-            .placements
+        let b = placements
             .iter()
             .find(|p| p.id == RectangleId::Text("b".to_string()))
             .unwrap();
@@ -339,7 +356,8 @@ mod pack_rectangles {
 
         assert_eq!(b.x - (a.x + a.width), 2.0);
 
-        for placement in &result.placements {
+        let placements: &[PackedRectangle] = &result.placements;
+        for placement in placements {
             assert!(placement.x >= 4.0);
             assert!(placement.y >= 4.0);
             assert!(placement.x + placement.width <= result.width - 4.0);
@@ -385,7 +403,8 @@ mod pack_rectangles {
         assert!(is_power_of_two(result.height));
         assert_eq!(result.width, result.height);
 
-        for placement in &result.placements {
+        let placements: &[PackedRectangle] = &result.placements;
+        for placement in placements {
             assert!(placement.x + placement.width <= result.width);
             assert!(placement.y + placement.height <= result.height);
         }
@@ -631,10 +650,14 @@ mod pack_rectangles {
         let result = pack_rectangles(&rects, None);
         assert_eq!(result.placements.len(), 1);
         assert_eq!(result.placements[0].id, RectangleId::Text("ok".to_string()));
-        let mut unpacked_strings: Vec<String> =
-            result.unpacked.iter().map(|id| id.to_string()).collect();
-        unpacked_strings.sort();
-        assert_eq!(unpacked_strings, vec!["negative", "zeroH", "zeroW"]);
+        assert!(same_id_counts(
+            &result.unpacked,
+            &[
+                RectangleId::Text("negative".to_string()),
+                RectangleId::Text("zeroH".to_string()),
+                RectangleId::Text("zeroW".to_string()),
+            ]
+        ));
     }
 
     #[test]
@@ -653,9 +676,11 @@ mod pack_rectangles {
         ];
         let result = pack_rectangles(&rects, None);
         let mut ids: Vec<i32> = Vec::new();
-        for placement in &result.placements {
-            if let RectangleId::Number(id) = &placement.id {
-                ids.push(*id);
+        let placements: &[PackedRectangle] = &result.placements;
+        for placement in placements {
+            match &placement.id {
+                RectangleId::Number(id) => ids.push(*id),
+                RectangleId::Text(_) => {}
             }
         }
         ids.sort();
@@ -824,7 +849,11 @@ mod pack_rectangles {
             options.allow_rotation = Some(seed % 3 == 0);
 
             let result = pack_rectangles(&rects, Some(&options));
-            let label = format!("seed {} ({:?})", seed, heuristic);
+            let label = format!(
+                "seed {} ({})",
+                seed,
+                get_bin_pack_heuristic_string(heuristic)
+            );
 
             assert_eq!(
                 result.placements.len() + result.unpacked.len(),
@@ -833,36 +862,45 @@ mod pack_rectangles {
                 label
             );
 
+            let placements: &[PackedRectangle] = &result.placements;
             let mut result_ids: Vec<RectangleId> = Vec::new();
-            for p in &result.placements {
+            for p in placements {
                 result_ids.push(p.id.clone());
             }
             for u in &result.unpacked {
                 result_ids.push(u.clone());
             }
             let input_ids: Vec<RectangleId> = rects.iter().map(|r| r.id.clone()).collect();
-            assert_eq!(count_ids(&result_ids), count_ids(&input_ids), "{}", label);
+            assert!(same_id_counts(&result_ids, &input_ids), "{}", label);
 
-            let mut sizes: HashMap<i32, (f32, f32)> = HashMap::new();
-            for rect in &rects {
-                if let RectangleId::Number(n) = &rect.id {
-                    sizes.insert(*n, (rect.width, rect.height));
+            for placement in placements {
+                let mut numeric_id = 0;
+                match &placement.id {
+                    RectangleId::Number(n) => numeric_id = *n,
+                    RectangleId::Text(_) => {}
                 }
-            }
-            for placement in &result.placements {
-                if let RectangleId::Number(n) = &placement.id {
-                    let (source_width, source_height) = sizes[n];
-                    let (expected_width, expected_height) = if placement.rotated {
-                        (source_height, source_width)
-                    } else {
-                        (source_width, source_height)
-                    };
-                    assert_eq!(placement.width, expected_width, "{}: {}", label, n);
-                    assert_eq!(placement.height, expected_height, "{}: {}", label, n);
+                let mut source_width = 0.0;
+                let mut source_height = 0.0;
+                for rect in &rects {
+                    if rect.id == placement.id {
+                        source_width = rect.width;
+                        source_height = rect.height;
+                    }
                 }
+                let (expected_width, expected_height) = if placement.rotated {
+                    (source_height, source_width)
+                } else {
+                    (source_width, source_height)
+                };
+                assert_eq!(placement.width, expected_width, "{}: {}", label, numeric_id);
+                assert_eq!(
+                    placement.height, expected_height,
+                    "{}: {}",
+                    label, numeric_id
+                );
             }
 
-            let placed_area: f32 = result.placements.iter().map(|p| p.width * p.height).sum();
+            let placed_area: f32 = placements.iter().map(|p| p.width * p.height).sum();
             let reported_area = result.width * result.height;
             let expected_occupancy = if reported_area > 0.0 {
                 placed_area / reported_area
@@ -881,7 +919,8 @@ mod pack_rectangles {
                 diff
             );
 
-            for placement in &result.placements {
+            let placements: &[PackedRectangle] = &result.placements;
+            for placement in placements {
                 assert!(
                     placement.x >= border,
                     "{}: x {} < border {}",

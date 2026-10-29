@@ -1,127 +1,304 @@
-import type { RectangleId } from '@flighthq/types/contract';
+// Generated from crates/flight-binpack/tests/explain_unpacked_rectangles_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
-import { explainUnpackedRectangles } from './explainUnpackedRectangles.ts';
-import { packRectangles } from './packRectangles.ts';
+import {
+  BIN_PACK_DEFAULT_MAX_EXTENT,
+  explainUnpackedRectangles,
+  getUnpackedRectangleReasonString,
+  packRectangles,
+  parseUnpackedRectangleReason,
+} from './contract.ts';
+import type {
+  BinPackOptions,
+  PackableRectangle,
+  RectangleId,
+  UnpackedRectangleExplanation,
+  UnpackedRectangleReason,
+} from './contract.ts';
+
+interface Random {
+  state: number;
+}
+
+function explain(
+  rectangles: Readonly<PackableRectangle[]>,
+  options: Readonly<BinPackOptions> | undefined,
+): UnpackedRectangleExplanation[] {
+  let out = [] as never[];
+  explainUnpackedRectangles(out, rectangles, options);
+  return out;
+}
+
+function countId(ids: Readonly<RectangleId[]>, target: Readonly<RectangleId>): number {
+  let count = 0;
+  for (const id of ids) {
+    if (id === target) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function sameIdCounts(a: Readonly<RectangleId[]>, b: Readonly<RectangleId[]>): boolean {
+  for (const id of a) {
+    if (countId(a, id) !== countId(b, id)) {
+      return false;
+    }
+  }
+  for (const id of b) {
+    if (countId(a, id) !== countId(b, id)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function reasonForId(
+  explanations: Readonly<UnpackedRectangleExplanation[]>,
+  target: Readonly<RectangleId>,
+): UnpackedRectangleReason | undefined {
+  for (const explanation of explanations) {
+    if (explanation.id === target) {
+      return explanation.reason;
+    }
+  }
+  return undefined;
+}
+
+function makeRandom(seed: number): Random {
+  const state = (seed * 1103515245 + 12345) % 2147483648;
+  return { state: state };
+}
+
+function nextRandom(rng: Random): number {
+  rng.state = (rng.state * 1103515245 + 12345) % 2147483648;
+  return rng.state / 2147483648.0;
+}
 
 describe('explainUnpackedRectangles', () => {
+  it('clears a reused out and keeps its capacity', () => {
+    const rectangle: PackableRectangle = { id: 'a', width: 8.0, height: 8.0 };
+    let out: UnpackedRectangleExplanation[] = [] as never[];
+    out.push({ id: 'stale', reason: 'oversized', usableWidth: 0.0, usableHeight: 0.0 });
+    explainUnpackedRectangles(out, [rectangle], undefined);
+    expect(out.length === 0).toBe(true);
+  });
   it('returns nothing when everything was placed', () => {
-    expect(explainUnpackedRectangles([{ id: 'a', width: 8, height: 8 }])).toEqual([]);
+    const result = explain([{ id: 'a', width: 8.0, height: 8.0 }], undefined);
+    expect(result.length === 0).toBe(true);
   });
-
-  it('separates oversized from binExhausted, which have different remedies', () => {
-    // 'huge' can never fit any bin within the caps; 'filler' fits in principle and loses the race.
-    const explanations = explainUnpackedRectangles(
-      [
-        { id: 'huge', width: 500, height: 10 },
-        { id: 'filler', width: 90, height: 90 },
-        { id: 'filler2', width: 90, height: 90 },
-      ],
-      { maxWidth: 100, maxHeight: 100, growable: false },
-    );
-    const byId = new Map(explanations.map((e) => [e.id, e.reason]));
-    expect(byId.get('huge')).toBe('oversized');
-    expect(byId.get('filler2')).toBe('binExhausted');
+  it('separates oversized from bin exhausted which have different remedies', () => {
+    const rects = [
+      { id: 'huge', width: 500.0, height: 10.0 },
+      { id: 'filler', width: 90.0, height: 90.0 },
+      { id: 'filler2', width: 90.0, height: 90.0 },
+    ];
+    let options: BinPackOptions = {
+      padding: 0.0,
+      border: 0.0,
+      allowRotation: false,
+      heuristic: 'bestShortSideFit',
+      growable: true,
+      powerOfTwo: false,
+      square: false,
+      maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+      maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+    };
+    options.maxWidth = 100.0;
+    options.maxHeight = 100.0;
+    options.growable = false;
+    const explanations = explain(rects, options);
+    expect(reasonForId(explanations, 'huge')).toEqual('oversized');
+    expect(reasonForId(explanations, 'filler2')).toEqual('binExhausted');
   });
-
   it('blames the collapsed region rather than the pieces when border eats the caps', () => {
-    // Every piece fails for ONE reason here; calling each 'oversized' would send the caller after the
-    // rectangles instead of after the border.
-    const explanations = explainUnpackedRectangles(
-      [
-        { id: 'a', width: 2, height: 2 },
-        { id: 'b', width: 2, height: 2 },
-      ],
-      { maxWidth: 10, maxHeight: 10, border: 6, growable: false },
-    );
-    expect(explanations.map((e) => e.reason)).toEqual(['regionCollapsed', 'regionCollapsed']);
-    expect(explanations[0].usableWidth).toBeLessThanOrEqual(0);
+    const rects = [
+      { id: 'a', width: 2.0, height: 2.0 },
+      { id: 'b', width: 2.0, height: 2.0 },
+    ];
+    let options: BinPackOptions = {
+      padding: 0.0,
+      border: 0.0,
+      allowRotation: false,
+      heuristic: 'bestShortSideFit',
+      growable: true,
+      powerOfTwo: false,
+      square: false,
+      maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+      maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+    };
+    options.maxWidth = 10.0;
+    options.maxHeight = 10.0;
+    options.border = 6.0;
+    options.growable = false;
+    const explanations = explain(rects, options);
+    const reasons: UnpackedRectangleReason[] = explanations.map((e) => e.reason);
+    expect(reasons).toEqual(['regionCollapsed', 'regionCollapsed']);
+    expect(explanations[0].usableWidth <= 0.0).toBe(true);
   });
-
   it('counts rotation as a real second chance before calling a piece oversized', () => {
-    const rects = [{ id: 'tall', width: 10, height: 200 }];
-    const options = { maxWidth: 300, maxHeight: 100, growable: false } as const;
-    expect(explainUnpackedRectangles(rects, options)[0].reason).toBe('oversized');
-    // Rotated it is 200x10, which fits inside 300x100 — so it is not oversized, it merely lost.
-    expect(explainUnpackedRectangles(rects, { ...options, allowRotation: true })).toEqual([]);
+    const rects = [{ id: 'tall', width: 10.0, height: 200.0 }];
+    let options: BinPackOptions = {
+      padding: 0.0,
+      border: 0.0,
+      allowRotation: false,
+      heuristic: 'bestShortSideFit',
+      growable: true,
+      powerOfTwo: false,
+      square: false,
+      maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+      maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+    };
+    options.maxWidth = 300.0;
+    options.maxHeight = 100.0;
+    options.growable = false;
+    const withoutRotation = explain(rects, options);
+    expect(withoutRotation[0].reason).toEqual('oversized');
+    let optionsRotated: BinPackOptions = {
+      padding: 0.0,
+      border: 0.0,
+      allowRotation: false,
+      heuristic: 'bestShortSideFit',
+      growable: true,
+      powerOfTwo: false,
+      square: false,
+      maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+      maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+    };
+    optionsRotated.maxWidth = 300.0;
+    optionsRotated.maxHeight = 100.0;
+    optionsRotated.growable = false;
+    optionsRotated.allowRotation = true;
+    const withRotation = explain(rects, optionsRotated);
+    expect(withRotation.length === 0).toBe(true);
   });
-
-  it('reports the usable extent it measured against, net of border', () => {
-    const [explanation] = explainUnpackedRectangles([{ id: 'a', width: 999, height: 4 }], {
-      maxWidth: 100,
-      maxHeight: 100,
-      border: 5,
-      growable: false,
-    });
-    expect(explanation).toMatchObject({ id: 'a', usableWidth: 90, usableHeight: 90 });
+  it('reports the usable extent it measured against net of border', () => {
+    const rects = [{ id: 'a', width: 999.0, height: 4.0 }];
+    let options: BinPackOptions = {
+      padding: 0.0,
+      border: 0.0,
+      allowRotation: false,
+      heuristic: 'bestShortSideFit',
+      growable: true,
+      powerOfTwo: false,
+      square: false,
+      maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+      maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+    };
+    options.maxWidth = 100.0;
+    options.maxHeight = 100.0;
+    options.border = 5.0;
+    options.growable = false;
+    const explanations = explain(rects, options);
+    expect(explanations[0].id).toEqual('a');
+    expect(explanations[0].usableWidth).toEqual(90.0);
+    expect(explanations[0].usableHeight).toEqual(90.0);
   });
-});
-
-describe('explainUnpackedRectangles cross-checked against packRectangles', () => {
-  // The two functions must agree about the same input: an explanation per failure, no more and no less.
-  // They can disagree because they identify pieces differently — the packer treats two rectangles sharing
-  // an id as DISTINCT and reports bare ids, so a membership test cannot tell one failure from two.
   it('returns exactly one entry per unpacked piece when two rectangles share an id', () => {
-    const rectangles = [
-      { id: 'a', width: 60, height: 60 },
-      { id: 'a', width: 60, height: 60 },
+    const rects = [
+      { id: 'a', width: 60.0, height: 60.0 },
+      { id: 'a', width: 60.0, height: 60.0 },
     ];
-    const options = { growable: false, maxHeight: 64, maxWidth: 64 } as const;
-
-    const result = packRectangles(rectangles, options);
-    // One of the pair fits and the other does not, which is the case a set-based match gets wrong.
-    expect(result.placements).toHaveLength(1);
+    let options: BinPackOptions = {
+      padding: 0.0,
+      border: 0.0,
+      allowRotation: false,
+      heuristic: 'bestShortSideFit',
+      growable: true,
+      powerOfTwo: false,
+      square: false,
+      maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+      maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+    };
+    options.growable = false;
+    options.maxHeight = 64.0;
+    options.maxWidth = 64.0;
+    const result = packRectangles(rects, options);
+    expect(result.placements.length).toEqual(1);
     expect(result.unpacked).toEqual(['a']);
-
-    expect(explainUnpackedRectangles(rectangles, options)).toHaveLength(1);
+    const explanations = explain(rects, options);
+    expect(explanations.length).toEqual(1);
   });
-
-  it('returns one entry per failure when BOTH duplicates fail', () => {
-    const rectangles = [
-      { id: 'a', width: 500, height: 500 },
-      { id: 'a', width: 500, height: 500 },
+  it('returns one entry per failure when both duplicates fail', () => {
+    const rects = [
+      { id: 'a', width: 500.0, height: 500.0 },
+      { id: 'a', width: 500.0, height: 500.0 },
     ];
-    const options = { growable: false, maxHeight: 64, maxWidth: 64 } as const;
-
-    expect(packRectangles(rectangles, options).unpacked).toEqual(['a', 'a']);
-    expect(explainUnpackedRectangles(rectangles, options)).toHaveLength(2);
+    let options: BinPackOptions = {
+      padding: 0.0,
+      border: 0.0,
+      allowRotation: false,
+      heuristic: 'bestShortSideFit',
+      growable: true,
+      powerOfTwo: false,
+      square: false,
+      maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+      maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+    };
+    options.growable = false;
+    options.maxHeight = 64.0;
+    options.maxWidth = 64.0;
+    const result = packRectangles(rects, options);
+    expect(result.unpacked).toEqual(['a', 'a']);
+    const explanations = explain(rects, options);
+    expect(explanations.length).toEqual(2);
   });
-
-  it('agrees with packRectangles across seeded inputs, counting ids rather than assuming uniqueness', () => {
+  it('agrees with pack rectangles across seeded inputs counting ids rather than assuming uniqueness', () => {
     for (let seed = 1; seed <= 30; seed += 1) {
-      const random = makeRandom(seed);
-      const count = 1 + Math.floor(random() * 12);
-      const rectangles = Array.from({ length: count }, (_, index) => ({
-        // Ids collide on purpose: half the seeds draw from a pool smaller than the rectangle count, so
-        // duplicate ids are the common case here rather than the exotic one.
-        id: seed % 2 === 0 ? `id-${index % 3}` : `id-${index}`,
-        width: 1 + Math.floor(random() * 80),
-        height: 1 + Math.floor(random() * 80),
-      }));
-      const options = { growable: false, maxHeight: 96, maxWidth: 96 } as const;
+      let rng = makeRandom(seed);
+      const count = 1 + (Math.floor(nextRandom(rng) * 12.0) | 0);
+      let rects: PackableRectangle[] = [] as never[];
+      for (let index = 0; index < count; index += 1) {
+        const idStr = seed % 2 === 0 ? `id-${index % 3}` : `id-${index}`;
+        rects.push({
+          id: idStr,
+          width: 1.0 + Math.floor(nextRandom(rng) * 80.0),
+          height: 1.0 + Math.floor(nextRandom(rng) * 80.0),
+        });
+      }
+      let options: BinPackOptions = {
+        padding: 0.0,
+        border: 0.0,
+        allowRotation: false,
+        heuristic: 'bestShortSideFit',
+        growable: true,
+        powerOfTwo: false,
+        square: false,
+        maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
+        maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
+      };
+      options.growable = false;
+      options.maxHeight = 96.0;
+      options.maxWidth = 96.0;
       const label = `seed ${seed}`;
-
-      const unpacked = packRectangles(rectangles, options).unpacked;
-      const explained = explainUnpackedRectangles(rectangles, options);
-
-      expect(explained.length, label).toBe(unpacked.length);
-      expect(countById(explained.map((entry) => entry.id)), label).toEqual(countById(unpacked));
+      const unpacked = packRectangles(rects, options).unpacked;
+      const explained = explain(rects, options);
+      expect(explained.length, `${label}`).toEqual(unpacked.length);
+      const explainedIds: RectangleId[] = explained.map((e) => e.id);
+      expect(sameIdCounts(explainedIds, unpacked), `${label}`).toBe(true);
     }
   });
 });
 
-function countById(ids: readonly RectangleId[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const id of ids) counts[String(id)] = (counts[String(id)] ?? 0) + 1;
-  return counts;
-}
+describe('getUnpackedRectangleReasonString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getUnpackedRectangleReasonString('oversized')).toEqual('oversized');
+    expect(getUnpackedRectangleReasonString('regionCollapsed')).toEqual('regionCollapsed');
+    expect(getUnpackedRectangleReasonString('binExhausted')).toEqual('binExhausted');
+  });
+});
 
-// A small deterministic PRNG, so a failure names a seed a reader can re-run rather than a shape that
-// vanishes on the next run.
-function makeRandom(seed: number): () => number {
-  let state = seed * 1103515245 + 12345;
-  return () => {
-    state = (state * 1103515245 + 12345) % 2147483648;
-    return state / 2147483648;
-  };
-}
+describe('parseUnpackedRectangleReason', () => {
+  it('parses the exact ts strings', () => {
+    expect(parseUnpackedRectangleReason('oversized')).toEqual('oversized');
+    expect(parseUnpackedRectangleReason('regionCollapsed')).toEqual('regionCollapsed');
+    expect(parseUnpackedRectangleReason('binExhausted')).toEqual('binExhausted');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parseUnpackedRectangleReason('Oversized')).toEqual(undefined);
+    expect(parseUnpackedRectangleReason('binexhausted')).toEqual(undefined);
+    expect(parseUnpackedRectangleReason('')).toEqual(undefined);
+  });
+});

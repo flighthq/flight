@@ -222,12 +222,12 @@ fn find_best_placement(
             let leftover_vertical = node.height - height;
             let short_side = leftover_horizontal.min(leftover_vertical);
             let long_side = leftover_horizontal.max(leftover_vertical);
-            let primary = if heuristic == BinPackHeuristic::BestAreaFit {
+            let primary: f32 = if heuristic == BinPackHeuristic::BestAreaFit {
                 node.width * node.height - width * height
             } else {
                 short_side
             };
-            let secondary = if heuristic == BinPackHeuristic::BestAreaFit {
+            let secondary: f32 = if heuristic == BinPackHeuristic::BestAreaFit {
                 short_side
             } else {
                 long_side
@@ -363,8 +363,8 @@ fn pack_into_bin(
             rotated: placement.rotated,
         });
 
-        split_free_rectangles(&mut free, &placement);
-        prune_free_rectangles(&mut free);
+        free = split_free_rectangles(&free, &placement);
+        free = prune_free_rectangles(&free);
     }
 
     return BinPackAttempt {
@@ -395,7 +395,7 @@ pub fn pack_rectangles(
     let padding = options.and_then(|o| o.padding).unwrap_or(0.0);
     let border = options.and_then(|o| o.border).unwrap_or(0.0);
     let allow_rotation = options.and_then(|o| o.allow_rotation).unwrap_or(false);
-    let heuristic = options
+    let heuristic: BinPackHeuristic = options
         .and_then(|o| o.heuristic)
         .unwrap_or(BinPackHeuristic::BestShortSideFit);
     let growable = options.and_then(|o| o.growable).unwrap_or(true);
@@ -525,29 +525,44 @@ pub fn parse_bin_pack_heuristic(value: &str) -> Option<BinPackHeuristic> {
 /// Removes any free rectangle fully contained within another. MaxRects splitting can leave
 /// redundant free rectangles nested inside larger ones; pruning them keeps the search cheap and the
 /// free list non-redundant.
-fn prune_free_rectangles(free: &mut Vec<FreeRectangle>) {
+fn prune_free_rectangles(free: &[FreeRectangle]) -> Vec<FreeRectangle> {
+    let mut active = vec![true; free.len()];
     let mut i: usize = 0;
     while i < free.len() {
+        if !active[i] {
+            i += 1;
+            continue;
+        }
         let mut j = i + 1;
         let mut i_removed = false;
         while j < free.len() {
+            if !active[j] {
+                j += 1;
+                continue;
+            }
             let fi = free[i];
             let fj = free[j];
             if is_free_rectangle_contained(&fi, &fj) {
-                free.remove(i);
+                active[i] = false;
                 i_removed = true;
                 break;
             }
             if is_free_rectangle_contained(&fj, &fi) {
-                free.remove(j);
-            } else {
-                j += 1;
+                active[j] = false;
             }
+            j += 1;
         }
         if !i_removed {
             i += 1;
         }
     }
+    let mut pruned: Vec<FreeRectangle> = Vec::new();
+    for index in 0..free.len() {
+        if active[index] {
+            pruned.push(free[index]);
+        }
+    }
+    return pruned;
 }
 
 /// Deterministic total order over the input rectangles: descending area, then descending height,
@@ -576,7 +591,7 @@ fn sort_rectangles_for_packing(rects: &[PackableRectangle]) -> Vec<PackableRecta
 /// with the (up to four) sub-rectangles covering the parts of it the footprint does not cover. The
 /// footprint is the effective size (rectangle plus padding gutter), so the reserved padding is
 /// carved out of the free space here.
-fn split_free_rectangles(free: &mut Vec<FreeRectangle>, placement: &Placement) {
+fn split_free_rectangles(free: &[FreeRectangle], placement: &Placement) -> Vec<FreeRectangle> {
     let used_x = placement.x;
     let used_y = placement.y;
     let used_right = placement.x + placement.footprint_width;
@@ -587,6 +602,13 @@ fn split_free_rectangles(free: &mut Vec<FreeRectangle>, placement: &Placement) {
         width: placement.footprint_width,
         height: placement.footprint_height,
     };
+
+    let mut split: Vec<FreeRectangle> = Vec::new();
+    for node in free {
+        if !intersects_rectangle(node, &used) {
+            split.push(*node);
+        }
+    }
 
     let mut i = free.len() as i32 - 1;
     while i >= 0 {
@@ -599,10 +621,9 @@ fn split_free_rectangles(free: &mut Vec<FreeRectangle>, placement: &Placement) {
 
         let node_right = node.x + node.width;
         let node_bottom = node.y + node.height;
-        free.remove(idx);
 
         if used_x > node.x {
-            free.push(FreeRectangle {
+            split.push(FreeRectangle {
                 x: node.x,
                 y: node.y,
                 width: used_x - node.x,
@@ -610,7 +631,7 @@ fn split_free_rectangles(free: &mut Vec<FreeRectangle>, placement: &Placement) {
             });
         }
         if used_right < node_right {
-            free.push(FreeRectangle {
+            split.push(FreeRectangle {
                 x: used_right,
                 y: node.y,
                 width: node_right - used_right,
@@ -618,7 +639,7 @@ fn split_free_rectangles(free: &mut Vec<FreeRectangle>, placement: &Placement) {
             });
         }
         if used_y > node.y {
-            free.push(FreeRectangle {
+            split.push(FreeRectangle {
                 x: node.x,
                 y: node.y,
                 width: node.width,
@@ -626,7 +647,7 @@ fn split_free_rectangles(free: &mut Vec<FreeRectangle>, placement: &Placement) {
             });
         }
         if used_bottom < node_bottom {
-            free.push(FreeRectangle {
+            split.push(FreeRectangle {
                 x: node.x,
                 y: used_bottom,
                 width: node.width,
@@ -636,6 +657,7 @@ fn split_free_rectangles(free: &mut Vec<FreeRectangle>, placement: &Placement) {
 
         i -= 1;
     }
+    return split;
 }
 
 impl std::fmt::Display for RectangleId {

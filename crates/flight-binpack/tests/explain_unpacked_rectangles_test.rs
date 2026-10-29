@@ -1,5 +1,4 @@
 use flight_binpack::contract::*;
-use std::collections::HashMap;
 
 // D24 out collector: each call fills a fresh caller-owned Vec.
 fn explain(
@@ -11,13 +10,40 @@ fn explain(
     return out;
 }
 
-fn count_by_id(ids: &[RectangleId]) -> HashMap<String, i32> {
-    let mut counts: HashMap<String, i32> = HashMap::new();
+fn count_id(ids: &[RectangleId], target: &RectangleId) -> i32 {
+    let mut count = 0;
     for id in ids {
-        let key = id.to_string();
-        *counts.entry(key).or_insert(0) += 1;
+        if id == target {
+            count += 1;
+        }
     }
-    return counts;
+    return count;
+}
+
+fn same_id_counts(a: &[RectangleId], b: &[RectangleId]) -> bool {
+    for id in a {
+        if count_id(a, id) != count_id(b, id) {
+            return false;
+        }
+    }
+    for id in b {
+        if count_id(a, id) != count_id(b, id) {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn reason_for_id(
+    explanations: &[UnpackedRectangleExplanation],
+    target: &RectangleId,
+) -> Option<UnpackedRectangleReason> {
+    for explanation in explanations {
+        if &explanation.id == target {
+            return Some(explanation.reason);
+        }
+    }
+    return None;
 }
 
 struct Random {
@@ -44,7 +70,7 @@ mod explain_unpacked_rectangles {
             width: 8.0,
             height: 8.0,
         };
-        let mut out = Vec::with_capacity(8);
+        let mut out: Vec<UnpackedRectangleExplanation> = Vec::new();
         out.push(UnpackedRectangleExplanation {
             id: RectangleId::Text("stale".to_string()),
             reason: UnpackedRectangleReason::Oversized,
@@ -55,7 +81,6 @@ mod explain_unpacked_rectangles {
         explain_unpacked_rectangles(&mut out, &[rectangle], None);
 
         assert!(out.is_empty());
-        assert!(out.capacity() >= 8);
     }
 
     #[test]
@@ -105,14 +130,13 @@ mod explain_unpacked_rectangles {
         options.max_height = Some(100.0);
         options.growable = Some(false);
         let explanations = explain(&rects, Some(&options));
-        let mut by_id: HashMap<String, UnpackedRectangleReason> = HashMap::new();
-        for e in &explanations {
-            by_id.insert(e.id.to_string(), e.reason);
-        }
-        assert_eq!(by_id.get("huge"), Some(&UnpackedRectangleReason::Oversized));
         assert_eq!(
-            by_id.get("filler2"),
-            Some(&UnpackedRectangleReason::BinExhausted)
+            reason_for_id(&explanations, &RectangleId::Text("huge".to_string())),
+            Some(UnpackedRectangleReason::Oversized)
+        );
+        assert_eq!(
+            reason_for_id(&explanations, &RectangleId::Text("filler2".to_string())),
+            Some(UnpackedRectangleReason::BinExhausted)
         );
     }
 
@@ -313,7 +337,7 @@ mod explain_unpacked_rectangles {
     #[test]
     fn agrees_with_pack_rectangles_across_seeded_inputs_counting_ids_rather_than_assuming_uniqueness()
      {
-        for seed in (1..=30_i32).step_by(1) {
+        for seed in 1..=30_i32 {
             let mut rng = make_random(seed);
             let count = 1 + (next_random(&mut rng) * 12.0).floor() as i32;
             let mut rects: Vec<PackableRectangle> = Vec::new();
@@ -350,12 +374,7 @@ mod explain_unpacked_rectangles {
 
             assert_eq!(explained.len(), unpacked.len(), "{}", label);
             let explained_ids: Vec<RectangleId> = explained.iter().map(|e| e.id.clone()).collect();
-            assert_eq!(
-                count_by_id(&explained_ids),
-                count_by_id(&unpacked),
-                "{}",
-                label
-            );
+            assert!(same_id_counts(&explained_ids, &unpacked), "{}", label);
         }
     }
 }

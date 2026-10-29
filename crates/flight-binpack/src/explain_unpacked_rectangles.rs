@@ -1,8 +1,6 @@
 //! flight-compiler: string-union UnpackedRectangleReason
 //! flight-compiler: readonly-fields UnpackedRectangleExplanation
 
-use std::collections::HashMap;
-
 use crate::pack_rectangles::{
     BIN_PACK_DEFAULT_MAX_EXTENT, BinPackOptions, PackableRectangle, RectangleId, pack_rectangles,
 };
@@ -61,17 +59,25 @@ pub fn explain_unpacked_rectangles(
         return;
     }
 
-    let mut outstanding: HashMap<RectangleId, i32> = HashMap::new();
-    for id in &result.unpacked {
-        *outstanding.entry(id.clone()).or_insert(0) += 1;
-    }
+    let mut explained: Vec<RectangleId> = Vec::new();
 
     for rectangle in rectangles {
-        let remaining = outstanding.get(&rectangle.id).copied().unwrap_or(0);
-        if remaining == 0 {
+        let mut outstanding_count = 0;
+        for id in &result.unpacked {
+            if id == &rectangle.id {
+                outstanding_count += 1;
+            }
+        }
+        let mut explained_count = 0;
+        for id in &explained {
+            if id == &rectangle.id {
+                explained_count += 1;
+            }
+        }
+        if explained_count >= outstanding_count {
             continue;
         }
-        outstanding.insert(rectangle.id.clone(), remaining - 1);
+        explained.push(rectangle.id.clone());
         out.push(UnpackedRectangleExplanation {
             id: rectangle.id.clone(),
             reason: get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation),
