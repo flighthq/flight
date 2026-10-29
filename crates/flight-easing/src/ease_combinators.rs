@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::EasingFunction;
 
 /// Returns a new easing function that clamps `t` to [0,1] before delegating to `ease`.
+#[allow(clippy::manual_clamp)] // explicit branches are portable to the generated TypeScript
 pub fn ease_clamp(ease: EasingFunction) -> EasingFunction {
     return Arc::new(move |t: f32| -> f32 {
         let clamped = if t < 0.0 {

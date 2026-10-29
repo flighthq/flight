@@ -6,6 +6,7 @@ use flight_entity::{Float32Array, throw_error};
 /// The single-entry case samples the midpoint; larger buffers include both endpoints.
 /// Throws the source count error before invoking `ease` when `out` is empty.
 // flight-lint: allow(conform-extra) D24 Principal4dc5429b: user-approved writeEasingSamples(out, ease) replaces pinned createEasingSamples(ease, count, out?); no allocation or explicit count
+#[allow(clippy::manual_clamp, clippy::needless_range_loop)] // index/branch form is portable to the generated TypeScript
 pub fn write_easing_samples(out: &mut Float32Array, ease: &dyn Fn(f32) -> f32) {
     let count = out.len();
     if count == 0 {

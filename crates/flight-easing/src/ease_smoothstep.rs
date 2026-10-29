@@ -16,6 +16,7 @@ pub fn ease_smoothstep(t: f32) -> f32 {
 /// Returns a smoothstep remap over an arbitrary domain [edge0, edge1].
 /// The returned function clamps its input to [edge0, edge1], maps to [0, 1],
 /// and applies the Hermite smoothstep.
+#[allow(clippy::manual_clamp)] // explicit branches are portable to the generated TypeScript
 pub fn ease_smoothstep_range(edge0: f32, edge1: f32) -> ScalarRemap {
     return Arc::new(move |x: f32| -> f32 {
         let raw = (x - edge0) / (edge1 - edge0);

@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { easeInCubic, easeLinear, easePiecewise } from './contract.ts';
+import type { EasingSegment } from './contract.ts';
 
 function assertApprox(actual: number, expected: number): void {
   const diff = Math.abs(actual - expected);

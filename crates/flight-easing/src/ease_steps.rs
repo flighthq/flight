@@ -23,7 +23,7 @@ pub type EasingStepsGuard = Arc<dyn Fn(i32, StepPosition) + Send + Sync>;
 /// Sharp edge: a count of 1 with no jumps at either edge has zero jumps, so the
 /// returned function divides by zero and yields NaN for every input.
 pub fn ease_steps(count: i32, position: Option<StepPosition>) -> EasingFunction {
-    let position = position.unwrap_or(StepPosition::JumpEnd);
+    let position: StepPosition = position.unwrap_or(StepPosition::JumpEnd);
     if position == StepPosition::JumpNone && count < 2 {
         let guard = STEPS_GUARD
             .lock()
@@ -33,12 +33,12 @@ pub fn ease_steps(count: i32, position: Option<StepPosition>) -> EasingFunction 
             g(count, position);
         }
     }
-    let jumps = match position {
+    let jumps: i32 = match position {
         StepPosition::JumpNone => count - 1,
         StepPosition::JumpBoth => count + 1,
         _ => count,
     };
-    let start_offset = match position {
+    let start_offset: i32 = match position {
         StepPosition::JumpStart | StepPosition::JumpBoth => 1,
         _ => 0,
     };

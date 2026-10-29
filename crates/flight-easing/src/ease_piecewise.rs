@@ -15,6 +15,7 @@ pub struct EasingSegment {
 /// Returns an easing function that splices multiple easing functions across the
 /// [0,1] input range. Each segment is allocated a proportional slice of the
 /// input domain based on its `weight` (default 1). Weights are relative.
+#[allow(clippy::manual_clamp)] // explicit branches are portable to the generated TypeScript
 pub fn ease_piecewise(segments: &[EasingSegment]) -> EasingFunction {
     if segments.is_empty() {
         throw_error("easePiecewise: segments array must not be empty");

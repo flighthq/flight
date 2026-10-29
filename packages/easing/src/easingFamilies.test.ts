@@ -164,29 +164,36 @@ function assertPairwiseDistinct(curves: Readonly<Array<readonly [string, Ease]>>
 
 describe('easingFamilyDistinctness', () => {
   it('ease in curves are pairwise distinct', () => {
-    const curves: Array<readonly [string, Ease]> = families().map((family) => [family.name, family.easeIn]);
+    const familyValues: Family[] = families();
+    const curves: Array<readonly [string, Ease]> = familyValues.map((family) => [family.name, family.easeIn]);
     assertPairwiseDistinct(curves);
   });
   it('ease in out curves are pairwise distinct', () => {
-    const curves: Array<readonly [string, Ease]> = families().map((family) => [family.name, family.easeInOut]);
+    const familyValues: Family[] = families();
+    const curves: Array<readonly [string, Ease]> = familyValues.map((family) => [family.name, family.easeInOut]);
     assertPairwiseDistinct(curves);
   });
   it('ease out curves are pairwise distinct', () => {
-    const curves: Array<readonly [string, Ease]> = families().map((family) => [family.name, family.easeOut]);
+    const familyValues: Family[] = families();
+    const curves: Array<readonly [string, Ease]> = familyValues.map((family) => [family.name, family.easeOut]);
     assertPairwiseDistinct(curves);
   });
 });
 
 describe('easingFamilyEndpoints', () => {
   it('starts at exactly 0', () => {
-    for (const family of families()) {
+    const familyValues: Family[] = families();
+    for (let familyIndex = 0; familyIndex < familyValues.length; familyIndex += 1) {
+      const family = familyValues[familyIndex];
       expect(normalizeZero(family.easeIn(0.0)), `${family.name} easeIn`).toEqual(0.0);
       expect(normalizeZero(family.easeInOut(0.0)), `${family.name} easeInOut`).toEqual(0.0);
       expect(Math.abs(family.easeOut(0.0)) < RELATION_EPSILON, `${family.name} easeOut does not start at 0`).toBe(true);
     }
   });
   it('ends at 1 where the arithmetic allows', () => {
-    for (const family of families()) {
+    const familyValues: Family[] = families();
+    for (let familyIndex = 0; familyIndex < familyValues.length; familyIndex += 1) {
+      const family = familyValues[familyIndex];
       expect(Math.abs(family.easeOut(1.0) - 1.0) < RELATION_EPSILON, `${family.name} easeOut does not end at 1`).toBe(
         true,
       );
@@ -204,32 +211,42 @@ describe('easingFamilyEndpoints', () => {
 describe('easingFamilyHalves', () => {
   it('ease in out matches the scaled halves where the constant matches', () => {
     const points = samples();
-    for (const family of families().filter((family) => family.halvesMatch)) {
-      for (const t of points) {
-        const expected = t <= 0.5 ? family.easeIn(t * 2.0) / 2.0 : 0.5 + family.easeOut(t * 2.0 - 1.0) / 2.0;
-        const actual = family.easeInOut(t);
-        expect(
-          Math.abs(actual - expected) < RELATION_EPSILON,
-          `${family.name} halves differ at ${t}: ${actual} vs ${expected}`,
-        ).toBe(true);
+    const familyValues: Family[] = families();
+    for (let familyIndex = 0; familyIndex < familyValues.length; familyIndex += 1) {
+      const family = familyValues[familyIndex];
+      if (family.halvesMatch) {
+        for (const t of points) {
+          const expected = t <= 0.5 ? family.easeIn(t * 2.0) / 2.0 : 0.5 + family.easeOut(t * 2.0 - 1.0) / 2.0;
+          const actual = family.easeInOut(t);
+          expect(
+            Math.abs(actual - expected) < RELATION_EPSILON,
+            `${family.name} halves differ at ${t}: ${actual} vs ${expected}`,
+          ).toBe(true);
+        }
       }
     }
   });
   it('ease in out deliberately differs where the canonical constant differs', () => {
     const points = samples();
-    for (const family of families().filter((family) => !family.halvesMatch)) {
-      let worst = 0.0;
-      for (const t of points.filter((t) => t <= 0.5)) {
-        const difference = Math.abs(family.easeInOut(t) - family.easeIn(t * 2.0) / 2.0);
-        if (difference > worst) {
-          worst = difference;
+    const familyValues: Family[] = families();
+    for (let familyIndex = 0; familyIndex < familyValues.length; familyIndex += 1) {
+      const family = familyValues[familyIndex];
+      if (!family.halvesMatch) {
+        let worst = 0.0;
+        for (const t of points.filter((t) => t <= 0.5)) {
+          const difference = Math.abs(family.easeInOut(t) - family.easeIn(t * 2.0) / 2.0);
+          if (difference > worst) {
+            worst = difference;
+          }
         }
+        expect(worst > 0.01, `${family.name} unexpectedly matches its scaled halves`).toBe(true);
       }
-      expect(worst > 0.01, `${family.name} unexpectedly matches its scaled halves`).toBe(true);
     }
   });
   it('ease in out passes through the midpoint without a step', () => {
-    for (const family of families()) {
+    const familyValues: Family[] = families();
+    for (let familyIndex = 0; familyIndex < familyValues.length; familyIndex += 1) {
+      const family = familyValues[familyIndex];
       const midpoint = family.easeInOut(0.5);
       expect(Math.abs(midpoint - 0.5) < RELATION_EPSILON, `${family.name} does not pass through 0.5`).toBe(true);
       const wide = Math.abs(family.easeInOut(0.5 + 1e-4) - family.easeInOut(0.5 - 1e-4));
@@ -242,7 +259,9 @@ describe('easingFamilyHalves', () => {
 describe('easingFamilyReflection', () => {
   it('ease out is the reflection of ease in across the interval', () => {
     const points = samples();
-    for (const family of families()) {
+    const familyValues: Family[] = families();
+    for (let familyIndex = 0; familyIndex < familyValues.length; familyIndex += 1) {
+      const family = familyValues[familyIndex];
       for (const t of points) {
         const reflected = 1.0 - family.easeIn(1.0 - t);
         const actual = family.easeOut(t);
@@ -258,20 +277,25 @@ describe('easingFamilyReflection', () => {
 describe('easingFamilyShape', () => {
   it('ease in never steps back for monotonic families', () => {
     const points = samples();
-    for (const family of families().filter((family) => family.monotonic)) {
-      let previous = family.easeIn(points[0]);
-      for (const t of points.slice(1)) {
-        const value = family.easeIn(t);
-        expect(value >= previous - RELATION_EPSILON, `${family.name} steps back at ${t}`).toBe(true);
-        previous = value;
+    const familyValues: Family[] = families();
+    for (let familyIndex = 0; familyIndex < familyValues.length; familyIndex += 1) {
+      const family = familyValues[familyIndex];
+      if (family.monotonic) {
+        let previous = family.easeIn(points[0]);
+        for (const t of points.slice(1)) {
+          const value = family.easeIn(t);
+          expect(value >= previous - RELATION_EPSILON, `${family.name} steps back at ${t}`).toBe(true);
+          previous = value;
+        }
       }
     }
   });
   it('back and elastic overshoot the unit interval', () => {
     const points = samples();
     for (const name of ['Back', 'Elastic']) {
+      const familyValues: Family[] = families();
       const family = (() => {
-        const value = families().find((family) => family.name === name);
+        const value = familyValues.find((family) => family.name === name);
         if (value === undefined) throw new Error('family exists');
         return value;
       })();

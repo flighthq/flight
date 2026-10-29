@@ -16,7 +16,7 @@ mod ease_steps {
 
     #[test]
     fn jump_end_holds_at_0_first_and_reaches_1_only_at_t_1() {
-        let ease = ease_steps(4, Some(StepPosition::JumpEnd));
+        let ease: EasingFunction = ease_steps(4, Some(StepPosition::JumpEnd));
         assert_eq!(ease(0.0), 0.0);
         assert_eq!(ease(0.1), 0.0);
         assert_approx(ease(0.25), 0.25);
@@ -27,8 +27,8 @@ mod ease_steps {
 
     #[test]
     fn jump_end_is_the_default_position() {
-        let explicit = ease_steps(4, Some(StepPosition::JumpEnd));
-        let implicit = ease_steps(4, None);
+        let explicit: EasingFunction = ease_steps(4, Some(StepPosition::JumpEnd));
+        let implicit: EasingFunction = ease_steps(4, None);
         for i in 0..=10 {
             assert_eq!(implicit(i as f32 / 10.0), explicit(i as f32 / 10.0));
         }
@@ -36,7 +36,7 @@ mod ease_steps {
 
     #[test]
     fn jump_start_jumps_immediately_and_reaches_1_before_t_1() {
-        let ease = ease_steps(4, Some(StepPosition::JumpStart));
+        let ease: EasingFunction = ease_steps(4, Some(StepPosition::JumpStart));
         assert_approx(ease(0.0), 0.25);
         assert_approx(ease(0.1), 0.25);
         assert_approx(ease(0.5), 0.75);
@@ -46,7 +46,7 @@ mod ease_steps {
 
     #[test]
     fn jump_none_spans_the_closed_range_0_to_1_with_count_minus_1_jumps() {
-        let ease = ease_steps(4, Some(StepPosition::JumpNone));
+        let ease: EasingFunction = ease_steps(4, Some(StepPosition::JumpNone));
         assert_eq!(ease(0.0), 0.0);
         assert_approx(ease(0.25), 1.0 / 3.0);
         assert_approx(ease(0.5), 2.0 / 3.0);
@@ -56,7 +56,7 @@ mod ease_steps {
 
     #[test]
     fn jump_none_with_count_1_yields_nan() {
-        let ease = ease_steps(1, Some(StepPosition::JumpNone));
+        let ease: EasingFunction = ease_steps(1, Some(StepPosition::JumpNone));
         assert!(ease(0.0).is_nan());
         assert!(ease(0.5).is_nan());
         assert!(ease(1.0).is_nan());
@@ -64,7 +64,7 @@ mod ease_steps {
 
     #[test]
     fn jump_both_never_outputs_0_at_the_start() {
-        let ease = ease_steps(4, Some(StepPosition::JumpBoth));
+        let ease: EasingFunction = ease_steps(4, Some(StepPosition::JumpBoth));
         assert_approx(ease(0.0), 0.2);
         assert_approx(ease(0.1), 0.2);
         assert_approx(ease(0.25), 0.4);
@@ -74,7 +74,7 @@ mod ease_steps {
 
     #[test]
     fn is_monotonically_non_decreasing_for_jump_end() {
-        let ease = ease_steps(5, Some(StepPosition::JumpEnd));
+        let ease: EasingFunction = ease_steps(5, Some(StepPosition::JumpEnd));
         let mut prev = ease(0.0);
         for i in 1..=50 {
             let value = ease(i as f32 / 50.0);

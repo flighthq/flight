@@ -142,7 +142,8 @@ mod easing_family_distinctness {
 
     #[test]
     fn ease_in_curves_are_pairwise_distinct() {
-        let curves: Vec<(&str, Ease)> = families()
+        let family_values: Vec<Family> = families();
+        let curves: Vec<(&str, Ease)> = family_values
             .iter()
             .map(|family| (family.name, family.ease_in.clone()))
             .collect();
@@ -151,7 +152,8 @@ mod easing_family_distinctness {
 
     #[test]
     fn ease_in_out_curves_are_pairwise_distinct() {
-        let curves: Vec<(&str, Ease)> = families()
+        let family_values: Vec<Family> = families();
+        let curves: Vec<(&str, Ease)> = family_values
             .iter()
             .map(|family| (family.name, family.ease_in_out.clone()))
             .collect();
@@ -160,7 +162,8 @@ mod easing_family_distinctness {
 
     #[test]
     fn ease_out_curves_are_pairwise_distinct() {
-        let curves: Vec<(&str, Ease)> = families()
+        let family_values: Vec<Family> = families();
+        let curves: Vec<(&str, Ease)> = family_values
             .iter()
             .map(|family| (family.name, family.ease_out.clone()))
             .collect();
@@ -168,12 +171,15 @@ mod easing_family_distinctness {
     }
 }
 
+#[allow(clippy::needless_range_loop)] // indexed loops preserve element provenance for TypeScript generation
 mod easing_family_endpoints {
     use super::*;
 
     #[test]
     fn starts_at_exactly_0() {
-        for family in families() {
+        let family_values: Vec<Family> = families();
+        for family_index in 0..family_values.len() {
+            let family = &family_values[family_index];
             assert_eq!(
                 normalize_zero((family.ease_in)(0.0)),
                 0.0,
@@ -196,7 +202,9 @@ mod easing_family_endpoints {
 
     #[test]
     fn ends_at_1_where_the_arithmetic_allows() {
-        for family in families() {
+        let family_values: Vec<Family> = families();
+        for family_index in 0..family_values.len() {
+            let family = &family_values[family_index];
             assert!(
                 ((family.ease_out)(1.0) - 1.0).abs() < RELATION_EPSILON,
                 "{} easeOut does not end at 1",
@@ -216,25 +224,30 @@ mod easing_family_endpoints {
     }
 }
 
+#[allow(clippy::needless_range_loop)] // indexed loops preserve element provenance for TypeScript generation
 mod easing_family_halves {
     use super::*;
 
     #[test]
     fn ease_in_out_matches_the_scaled_halves_where_the_constant_matches() {
         let points = samples();
-        for family in families().into_iter().filter(|family| family.halves_match) {
-            for &t in &points {
-                let expected = if t <= 0.5 {
-                    (family.ease_in)(t * 2.0) / 2.0
-                } else {
-                    0.5 + (family.ease_out)(t * 2.0 - 1.0) / 2.0
-                };
-                let actual = (family.ease_in_out)(t);
-                assert!(
-                    (actual - expected).abs() < RELATION_EPSILON,
-                    "{} halves differ at {t}: {actual} vs {expected}",
-                    family.name
-                );
+        let family_values: Vec<Family> = families();
+        for family_index in 0..family_values.len() {
+            let family = &family_values[family_index];
+            if family.halves_match {
+                for &t in &points {
+                    let expected = if t <= 0.5 {
+                        (family.ease_in)(t * 2.0) / 2.0
+                    } else {
+                        0.5 + (family.ease_out)(t * 2.0 - 1.0) / 2.0
+                    };
+                    let actual = (family.ease_in_out)(t);
+                    assert!(
+                        (actual - expected).abs() < RELATION_EPSILON,
+                        "{} halves differ at {t}: {actual} vs {expected}",
+                        family.name
+                    );
+                }
             }
         }
     }
@@ -242,25 +255,32 @@ mod easing_family_halves {
     #[test]
     fn ease_in_out_deliberately_differs_where_the_canonical_constant_differs() {
         let points = samples();
-        for family in families().into_iter().filter(|family| !family.halves_match) {
-            let mut worst = 0.0_f32;
-            for &t in points.iter().filter(|t| **t <= 0.5) {
-                let difference = ((family.ease_in_out)(t) - (family.ease_in)(t * 2.0) / 2.0).abs();
-                if difference > worst {
-                    worst = difference;
+        let family_values: Vec<Family> = families();
+        for family_index in 0..family_values.len() {
+            let family = &family_values[family_index];
+            if !family.halves_match {
+                let mut worst = 0.0_f32;
+                for &t in points.iter().filter(|t| **t <= 0.5) {
+                    let difference =
+                        ((family.ease_in_out)(t) - (family.ease_in)(t * 2.0) / 2.0).abs();
+                    if difference > worst {
+                        worst = difference;
+                    }
                 }
+                assert!(
+                    worst > 0.01,
+                    "{} unexpectedly matches its scaled halves",
+                    family.name
+                );
             }
-            assert!(
-                worst > 0.01,
-                "{} unexpectedly matches its scaled halves",
-                family.name
-            );
         }
     }
 
     #[test]
     fn ease_in_out_passes_through_the_midpoint_without_a_step() {
-        for family in families() {
+        let family_values: Vec<Family> = families();
+        for family_index in 0..family_values.len() {
+            let family = &family_values[family_index];
             let midpoint = (family.ease_in_out)(0.5);
             assert!(
                 (midpoint - 0.5).abs() < RELATION_EPSILON,
@@ -279,13 +299,16 @@ mod easing_family_halves {
     }
 }
 
+#[allow(clippy::needless_range_loop)] // indexed loops preserve element provenance for TypeScript generation
 mod easing_family_reflection {
     use super::*;
 
     #[test]
     fn ease_out_is_the_reflection_of_ease_in_across_the_interval() {
         let points = samples();
-        for family in families() {
+        let family_values: Vec<Family> = families();
+        for family_index in 0..family_values.len() {
+            let family = &family_values[family_index];
             for &t in &points {
                 let reflected = 1.0 - (family.ease_in)(1.0 - t);
                 let actual = (family.ease_out)(t);
@@ -299,22 +322,27 @@ mod easing_family_reflection {
     }
 }
 
+#[allow(clippy::needless_range_loop)] // indexed loops preserve element provenance for TypeScript generation
 mod easing_family_shape {
     use super::*;
 
     #[test]
     fn ease_in_never_steps_back_for_monotonic_families() {
         let points = samples();
-        for family in families().into_iter().filter(|family| family.monotonic) {
-            let mut previous = (family.ease_in)(points[0]);
-            for &t in points.iter().skip(1) {
-                let value = (family.ease_in)(t);
-                assert!(
-                    value >= previous - RELATION_EPSILON,
-                    "{} steps back at {t}",
-                    family.name
-                );
-                previous = value;
+        let family_values: Vec<Family> = families();
+        for family_index in 0..family_values.len() {
+            let family = &family_values[family_index];
+            if family.monotonic {
+                let mut previous = (family.ease_in)(points[0]);
+                for &t in points.iter().skip(1) {
+                    let value = (family.ease_in)(t);
+                    assert!(
+                        value >= previous - RELATION_EPSILON,
+                        "{} steps back at {t}",
+                        family.name
+                    );
+                    previous = value;
+                }
             }
         }
     }
@@ -323,7 +351,8 @@ mod easing_family_shape {
     fn back_and_elastic_overshoot_the_unit_interval() {
         let points = samples();
         for name in ["Back", "Elastic"] {
-            let family = families()
+            let family_values: Vec<Family> = families();
+            let family = family_values
                 .into_iter()
                 .find(|family| family.name == name)
                 .expect("family exists");

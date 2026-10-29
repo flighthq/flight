@@ -29,7 +29,7 @@ export function easeSteps(count: number, position?: StepPosition): EasingFunctio
       g(count, position);
     }
   }
-  const jumps = (() => {
+  const jumps: number = (() => {
     const matchValue = position;
     switch (matchValue) {
       case 'jumpNone':
@@ -40,7 +40,7 @@ export function easeSteps(count: number, position?: StepPosition): EasingFunctio
         return count;
     }
   })();
-  const startOffset = (() => {
+  const startOffset: number = (() => {
     const matchValue = position;
     switch (matchValue) {
       case 'jumpStart':
