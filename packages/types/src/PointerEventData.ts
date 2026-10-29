@@ -1,3 +1,5 @@
+import type { PointerType } from '@flighthq/input/contract';
+
 import type { NodeAny } from './Node.ts';
 
 export interface PointerEventData {
@@ -21,4 +23,4 @@ export interface PointerEventData {
   y: number;
 }
 
-export type PointerType = 'mouse' | 'pen' | 'touch' | 'unknown';
+export type { PointerType } from '@flighthq/input/contract';

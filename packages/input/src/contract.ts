@@ -1,1 +1,106 @@
-export * from './inputManager.ts';
+// Generated from crates/flight-input/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+export {
+  attachGamepadInput,
+  attachKeyboardInput,
+  attachPointerInput,
+  attachRelativePointerInput,
+  attachTextInput,
+  attachWheelInput,
+  detachGamepadInput,
+  detachKeyboardInput,
+  detachPointerInput,
+  detachRelativePointerInput,
+  detachTextInput,
+  detachWheelInput,
+} from './inputBinding.ts';
+export {
+  applyGamepadAxisDeadZone,
+  applyGamepadStickDeadZone,
+  getGamepadAxisName,
+  getGamepadButtonName,
+} from './inputGamepad.ts';
+export {
+  createInputManager,
+  createInputSignals,
+  initializeInputManager,
+  initializeInputSignals,
+} from './inputSignals.ts';
+export {
+  connectInputStateToInputManager,
+  createInputState,
+  endInputStateFrame,
+  getInputGamepadAxis,
+  initializeInputState,
+  isInputGamepadButtonDown,
+  isInputKeyDown,
+  isInputPointerButtonDown,
+  wasInputGamepadButtonPressed,
+  wasInputGamepadButtonReleased,
+  wasInputKeyPressed,
+  wasInputKeyReleased,
+} from './inputState.ts';
+export { createInputTargetHandle, initializeInputTargetHandle } from './inputTarget.ts';
+export {
+  advanceInputKeyRepeatTimer,
+  createInputKeyRepeatTimer,
+  initializeInputKeyRepeatTimer,
+  startInputKeyRepeatTimer,
+  stopInputKeyRepeatTimer,
+} from './inputTimer.ts';
+export { KeyCode } from './keyCode.ts';
+export {
+  GamepadAxisKind,
+  GamepadButtonKind,
+  GamepadMapping,
+  getGamepadAxisKindString,
+  getGamepadButtonKindString,
+  getGamepadMappingString,
+  getInputPointerLockExitReasonString,
+  getInputPointerLockRequestReasonString,
+  getMouseWheelModeString,
+  getPointerTypeString,
+  parseGamepadAxisKind,
+  parseGamepadButtonKind,
+  parseGamepadMapping,
+  parseInputPointerLockExitReason,
+  parseInputPointerLockRequestReason,
+  parseMouseWheelMode,
+  parsePointerType,
+} from './types.ts';
+export type {
+  AttachInputOptions,
+  GamepadStickOutput,
+  HostInputCapabilities,
+  HostInputDropFileCapability,
+  HostInputFocusCapability,
+  HostInputIngressCapability,
+  HostInputPointerLockCapability,
+  HostInputTargetCapability,
+  InputDisposer,
+  InputGamepadAxisData,
+  InputGamepadButtonData,
+  InputGamepadConnectData,
+  InputIngressAttach,
+  InputIngressRelease,
+  InputIngressSink,
+  InputKeyRepeatOptions,
+  InputKeyRepeatTimerRaw,
+  InputKeyboardData,
+  InputManagerRaw,
+  InputPointerData,
+  InputPointerLockExitFuture,
+  InputPointerLockExitOutcome,
+  InputPointerLockExitReason,
+  InputPointerLockRequestFuture,
+  InputPointerLockRequestOutcome,
+  InputPointerLockRequestReason,
+  InputRepeatCallback,
+  InputSignalsRaw,
+  InputStateRaw,
+  InputTargetHandleRaw,
+  InputTextData,
+  MouseWheelMode,
+  PointerType,
+} from './types.ts';

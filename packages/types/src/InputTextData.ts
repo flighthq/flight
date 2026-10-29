@@ -1,4 +1,1 @@
-export interface InputTextData {
-  isComposing: boolean;
-  text: string;
-}
+export type { InputTextData } from '@flighthq/input/contract';

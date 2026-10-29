@@ -6,8 +6,9 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "moduleSuffixes": [".host-types", ""]
   },
-  "references": [{ "path": "../entity" }, { "path": "../signals" }, { "path": "../types" }],
+  "references": [{ "path": "../entity" }, { "path": "../host/tsconfig.contract.json" }, { "path": "../signals" }],
   "include": ["src"]
 }

@@ -1,1 +1,1 @@
-export type MouseWheelMode = 'lines' | 'pages' | 'pixels' | 'unknown';
+export type { MouseWheelMode } from '@flighthq/input/contract';

@@ -13,6 +13,7 @@
   "references": [
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../input" },
     { "path": "../path/tsconfig.contract.json" },
     { "path": "../signals" }
   ],
