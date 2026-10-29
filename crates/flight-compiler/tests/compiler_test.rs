@@ -1655,6 +1655,38 @@ pub fn apply(out: &mut Vec<f32>, values: &[f32]) {
     }
 
     #[test]
+    fn lowers_multi_statement_if_expression_branches_to_iife_ternary() {
+        let source = r#"
+pub fn pick(flag: bool, x: f32, y: f32) -> f32 {
+    let result = if flag {
+        let sum = x + y;
+        let half = sum / 2.0;
+        half
+    } else {
+        let diff = x - y;
+        diff.abs()
+    };
+    return result;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("flag ? (() =>"),
+            "multi-statement if-expression should emit IIFE ternary: {output}"
+        );
+        assert!(
+            output.contains("return half;"),
+            "then branch should return last expression: {output}"
+        );
+        assert!(
+            output.contains("return Math.abs(diff);"),
+            "else branch should return last expression: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_standard_any_trait_objects_to_object() {
         let source = r#"
 use std::any::Any;

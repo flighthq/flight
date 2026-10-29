@@ -9223,14 +9223,14 @@ fn emit_if_expression(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     let condition = emit_expression(&expression.cond, entities)?;
-    let then_value = emit_single_expression_block(&expression.then_branch, entities)?;
+    let then_value = emit_value_block(&expression.then_branch, entities)?;
     let Some((_, otherwise)) = &expression.else_branch else {
         return Err(compile_error(
             "Rust if expression used as a value needs an else branch",
         ));
     };
     let otherwise = match otherwise.as_ref() {
-        Expr::Block(block) => emit_single_expression_block(&block.block, entities)?,
+        Expr::Block(block) => emit_value_block(&block.block, entities)?,
         Expr::If(nested) => emit_if_expression(nested, entities)?,
         _ => {
             return Err(compile_error(
@@ -14037,16 +14037,14 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     return Ok(out);
 }
 
-fn emit_single_expression_block(
+fn emit_value_block(
     block: &syn::Block,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    let [Stmt::Expr(expression, _)] = block.stmts.as_slice() else {
-        return Err(compile_error(
-            "Rust value block must contain exactly one expression",
-        ));
-    };
-    return emit_expression(expression, entities);
+    if let [Stmt::Expr(expression, _)] = block.stmts.as_slice() {
+        return emit_expression(expression, entities);
+    }
+    return emit_block_expression(block, entities);
 }
 
 fn emit_single_generic_type(
