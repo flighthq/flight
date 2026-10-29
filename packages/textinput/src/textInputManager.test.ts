@@ -5,18 +5,12 @@ import { KEY_CODE_BACKSPACE, KEY_CODE_C, KEY_CODE_END, KEY_CODE_HOME } from '@fl
 import type { InputKeyboardData, InputTextData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import { createRichText, getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
-import type {
-  RichText,
-  RichTextData,
-  RichTextRuntime,
-  TextInputOptions,
-  TextLayoutContext,
-} from '@flighthq/text/contract';
+import { getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
+import type { RichText, RichTextData, RichTextRuntime, TextInputOptions } from '@flighthq/text/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import { createTextLayoutGroup, createTextLayoutResult } from '@flighthq/textlayout/contract';
-import type { TextAutoSize, TextLayoutResult, TextVerticalAlign } from '@flighthq/textlayout/contract';
+import type { TextAutoSize, TextLayoutGroup, TextLayoutResult, TextVerticalAlign } from '@flighthq/textlayout/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -37,6 +31,7 @@ import {
   setTextInputSelection,
 } from './contract.ts';
 import type { TextInputSource } from './contract.ts';
+import { rustTestSupport as crate } from './rustTestSupport.ts';
 
 interface TestRichTextData {
   autoSize: TextAutoSize | undefined;
@@ -64,11 +59,10 @@ interface TestRichTextData {
 
 interface TestRichText {
   data: TestRichTextData | undefined;
-  layoutContext: TextLayoutContext | undefined;
 }
 
 function createInput(data: TestRichTextData, options: TextInputOptions): RichText {
-  const text = createTestRichText({ data: data, layoutContext: undefined });
+  const text = createTestRichText({ data: data });
   enableTextInput(text, options);
   return text;
 }
@@ -137,7 +131,7 @@ function createSingleLineLayout(): TextLayoutResult {
 
 function createTallLayout(): TextLayoutResult {
   const format = formatRef(emptyTextFormat());
-  let groups = [] as never[];
+  let groups: TextLayoutGroup[] = [] as never[];
   for (let line = 0; line < 4; line += 1) {
     let group = createTextLayoutGroup(format);
     group.startIndex = line;
@@ -264,7 +258,7 @@ function setLayout(source: RichText, layout: TextLayoutResult): void {
 }
 
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
-  const text = createRichText(((obj) => (obj === undefined ? undefined : obj.layoutContext))(obj));
+  const text = crate.createDefaultRichText();
   {
     const $data = ((obj) => (obj === undefined ? undefined : obj.data))(obj);
     if ($data !== undefined) {
@@ -424,7 +418,7 @@ describe('dispatchTextInputKeyDown', () => {
     const target = createInput(textData('hello'), inputOptions());
     setTextInputSelection(target, 0, 5);
     focusTextInput(manager, target);
-    const copied = { value: [] as never[] };
+    const copied: { value: string[] } = { value: [] as never[] };
     const callbackValues = copied;
     let data = keyboardData();
     data.ctrlKey = true;

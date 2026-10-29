@@ -1,4 +1,5 @@
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
+import type { NodeRef } from '@flighthq/node/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { computeTextLayout, getTextLayoutMeasureProvider, getTextMetrics } from '@flighthq/textlayout/contract';
 import type { TextLayoutResult, TextMetrics } from '@flighthq/textlayout/contract';
@@ -6,16 +7,17 @@ import type { TextLayoutResult, TextMetrics } from '@flighthq/textlayout/contrac
 import { getTextLayoutResult } from './textLayoutRuntime.ts';
 import type { TextLabel, TextLabelRuntime } from './types.ts';
 
-export function ensureTextLayout(source: Readonly<TextLabel>): void {
-  const runtime = getNode2DRuntime(source) as TextLabelRuntime;
-  const contentId = getNodeLocalContentRevision(source);
+export function ensureTextLayout(source: Readonly<NodeRef>): void {
+  const textLabel = source as TextLabel;
+  const runtime = getNode2DRuntime(textLabel) as TextLabelRuntime;
+  const contentId = getNodeLocalContentRevision(textLabel);
   if (runtime.textLayout !== null && runtime.textLayoutUsingContentId === contentId) {
     if (
       _textLabelGuard !== null &&
       runtime.textLayoutUsingText !== null &&
-      source.data.text !== runtime.textLayoutUsingText
+      textLabel.data.text !== runtime.textLayoutUsingText
     ) {
-      _textLabelGuard(source.data.text, runtime.textLayoutUsingText);
+      _textLabelGuard(textLabel.data.text, runtime.textLayoutUsingText);
     }
     return;
   }
@@ -23,19 +25,19 @@ export function ensureTextLayout(source: Readonly<TextLabel>): void {
   const measure = getTextLayoutMeasureProvider();
   if (measure === null) return;
 
-  const params = runtime.buildTextLayoutParams(source, measure);
+  const params = runtime.buildTextLayoutParams(textLabel, measure);
   const result = getTextLayoutResult(runtime);
   computeTextLayout(result, params);
   runtime.textLayoutUsingContentId = contentId;
-  runtime.textLayoutUsingText = source.data.text;
+  runtime.textLayoutUsingText = textLabel.data.text;
 }
 
-export function getTextLayout(source: Readonly<TextLabel>): TextLayoutResult | null {
+export function getTextLayout(source: Readonly<NodeRef>): TextLayoutResult | null {
   ensureTextLayout(source);
-  return (getNode2DRuntime(source) as TextLabelRuntime).textLayout;
+  return (getNode2DRuntime(source as TextLabel) as TextLabelRuntime).textLayout;
 }
 
-export function getTextLayoutMetrics(out: TextMetrics, source: Readonly<TextLabel>): void {
+export function getTextLayoutMetrics(out: TextMetrics, source: Readonly<NodeRef>): void {
   const layout = getTextLayout(source);
   if (layout === null) {
     out.height = 0;
@@ -50,11 +52,12 @@ export function setTextLabelGuard(guard: ((liveString: string, rasterizedString:
   _textLabelGuard = guard;
 }
 
-export function setTextLayoutResult(source: Readonly<TextLabel>, layout: TextLayoutResult): void {
-  const runtime = getNode2DRuntime(source) as TextLabelRuntime;
+export function setTextLayoutResult(source: Readonly<NodeRef>, layout: TextLayoutResult): void {
+  const textLabel = source as TextLabel;
+  const runtime = getNode2DRuntime(textLabel) as TextLabelRuntime;
   runtime.textLayout = layout;
-  runtime.textLayoutUsingContentId = getNodeLocalContentRevision(source);
-  runtime.textLayoutUsingText = source.data.text;
+  runtime.textLayoutUsingContentId = getNodeLocalContentRevision(textLabel);
+  runtime.textLayoutUsingText = textLabel.data.text;
 }
 
 let _textLabelGuard: ((liveString: string, rasterizedString: string) => void) | null = null;

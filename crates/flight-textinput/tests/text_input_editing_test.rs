@@ -372,7 +372,7 @@ mod get_text_input_selection_rectangles {
     #[test]
     fn writes_one_rectangle_per_selected_layout_group() {
         let text = create_input(text_data("abcdefg"), input_options());
-        let mut out = Vec::new();
+        let mut out: Vec<TextSelectionRectangle> = Vec::new();
         set_text_input_selection(&text, 1, 5);
         get_text_input_selection_rectangles(&mut out, &text, &create_layout());
         assert_eq!(
@@ -656,7 +656,7 @@ mod handle_text_input_keyboard {
     fn invokes_on_copy_callback_for_copy_command() {
         let text = create_input(text_data("hello"), input_options());
         set_text_input_selection(&text, 0, 5);
-        let copied = Arc::new(Mutex::new(Vec::<String>::new()));
+        let copied: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let callback_values = copied.clone();
         let options = HandleTextInputKeyboardOptions {
             clipboard_text: None,

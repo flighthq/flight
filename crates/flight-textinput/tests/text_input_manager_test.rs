@@ -108,7 +108,7 @@ mod dispatch_text_input_key_down {
         let target = create_input(text_data("hello"), input_options());
         set_text_input_selection(&target, 0, 5);
         focus_text_input(&manager, &target);
-        let copied = Arc::new(Mutex::new(Vec::<String>::new()));
+        let copied: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let callback_values = copied.clone();
         let mut data = keyboard_data();
         data.ctrl_key = true;

@@ -3,7 +3,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
-use flight_input::InputKeyboardData;
+use flight_input::{InputKeyboardData, InputTextData};
 use flight_node::NodeRef;
 use flight_signals::{SignalSlot, connect_signal, disconnect_signal};
 use flight_text::contract::set_rich_text_scroll_v;
@@ -49,7 +49,7 @@ pub fn connect_input_to_text_input(
         dispatch_text_input_key_down(&key_manager, data, None, None);
     });
     let text_manager = manager.clone();
-    let on_text_input = Arc::new(move |data: &flight_input::InputTextData| {
+    let on_text_input = Arc::new(move |data: &InputTextData| {
         dispatch_text_input(&text_manager, &data.text);
     });
     let key_id = connect_signal(&input.on_key_down, on_key_down, None);

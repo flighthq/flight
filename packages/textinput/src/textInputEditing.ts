@@ -603,9 +603,6 @@ export function handleTextInputKeyboard(
   options?: Readonly<HandleTextInputKeyboardOptions>,
 ): boolean {
   const command = getKeyboardCommand(data);
-  if (command === KeyboardCommand.None) {
-    return false;
-  }
   switch (command) {
     case KeyboardCommand.None:
       break;
@@ -719,7 +716,7 @@ export function handleTextInputKeyboard(
       moveTextInputCaretByWord(source, 1, data.shiftKey);
       break;
   }
-  return true;
+  return command !== KeyboardCommand.None;
 }
 
 export function insertTextInput(source: RichText, text: string): void {
@@ -738,19 +735,19 @@ function invalidateLocalContent(source: RichText): void {
 }
 
 function matchesRestrictRanges(character: string, ranges: string): boolean {
-  ranges = [...ranges];
+  const rangeCharacters: string[] = [...ranges];
   let index = 0;
-  while (index < ranges.length) {
-    const current = ranges[index];
-    if (current === '\\' && index + 1 < ranges.length) {
-      if (character === ranges[index + 1]) {
+  while (index < rangeCharacters.length) {
+    const current = rangeCharacters[index];
+    if (current === '\\' && index + 1 < rangeCharacters.length) {
+      if (character === rangeCharacters[index + 1]) {
         return true;
       }
       index += 2;
       continue;
     }
-    if (index + 2 < ranges.length && ranges[index + 1] === '-') {
-      const end = ranges[index + 2];
+    if (index + 2 < rangeCharacters.length && rangeCharacters[index + 1] === '-') {
+      const end = rangeCharacters[index + 2];
       if (character >= current && character <= end) {
         return true;
       }

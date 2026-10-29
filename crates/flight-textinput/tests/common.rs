@@ -3,22 +3,17 @@ use std::sync::{Arc, RwLock};
 use flight_entity::Ref;
 use flight_input::InputKeyboardData;
 use flight_node::NodeRef;
-use flight_text::contract::{
-    RichTextRuntime, TextLayoutContext, get_rich_text_runtime, set_text_layout_result,
-};
-use flight_text::{RichText, RichTextData, TextInputOptions, create_rich_text};
+use flight_text::contract::{RichTextRuntime, get_rich_text_runtime, set_text_layout_result};
+use flight_text::{RichText, RichTextData, TextInputOptions};
 use flight_textformat::{TextFormat, TextFormatRange};
 use flight_textinput::contract::enable_text_input;
 use flight_textlayout::{
-    TextAutoSize, TextLayoutResult, TextVerticalAlign, create_text_layout_group,
+    TextAutoSize, TextLayoutGroup, TextLayoutResult, TextVerticalAlign, create_text_layout_group,
     create_text_layout_result,
 };
 
 pub fn create_input(data: TestRichTextData, options: TextInputOptions) -> Ref<RichText> {
-    let text = create_test_rich_text(Some(&TestRichText {
-        data: Some(data),
-        layout_context: None,
-    }));
+    let text = create_test_rich_text(Some(&TestRichText { data: Some(data) }));
     enable_text_input(&text, Some(&options));
     return text;
 }
@@ -87,7 +82,7 @@ pub fn create_single_line_layout() -> TextLayoutResult {
 
 pub fn create_tall_layout() -> TextLayoutResult {
     let format = format_ref(empty_text_format());
-    let mut groups = Vec::new();
+    let mut groups: Vec<TextLayoutGroup> = Vec::new();
     for line in 0..4 {
         let mut group = create_text_layout_group(format.clone());
         group.start_index = line;
@@ -244,11 +239,10 @@ pub struct TestRichTextData {
 #[derive(Clone, Default)]
 pub struct TestRichText {
     pub data: Option<TestRichTextData>,
-    pub layout_context: Option<Ref<TextLayoutContext>>,
 }
 
 pub fn create_test_rich_text(obj: Option<&TestRichText>) -> Ref<RichText> {
-    let text = create_rich_text(obj.and_then(|obj| obj.layout_context.clone()));
+    let text = crate::create_default_rich_text();
     if let Some(data) = obj.and_then(|obj| obj.data.as_ref()) {
         assign_test_rich_text_data(&mut text.write().unwrap().data, data);
     }

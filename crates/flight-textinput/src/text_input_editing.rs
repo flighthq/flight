@@ -577,9 +577,6 @@ pub fn handle_text_input_keyboard(
     options: Option<&HandleTextInputKeyboardOptions>,
 ) -> bool {
     let command = get_keyboard_command(data);
-    if command == KeyboardCommand::None {
-        return false;
-    }
     match command {
         KeyboardCommand::None => {}
         KeyboardCommand::Backspace => delete_text_input_backward(source),
@@ -690,7 +687,7 @@ pub fn handle_text_input_keyboard(
         KeyboardCommand::WordLeft => move_text_input_caret_by_word(source, -1, data.shift_key),
         KeyboardCommand::WordRight => move_text_input_caret_by_word(source, 1, data.shift_key),
     }
-    return true;
+    return command != KeyboardCommand::None;
 }
 
 pub fn insert_text_input(source: &Ref<RichText>, text: &str) {
@@ -713,19 +710,19 @@ fn invalidate_local_content(source: &Ref<RichText>) {
 }
 
 fn matches_restrict_ranges(character: char, ranges: &str) -> bool {
-    let ranges: Vec<char> = ranges.chars().collect();
+    let range_characters: Vec<char> = ranges.chars().collect();
     let mut index = 0;
-    while index < ranges.len() {
-        let current = ranges[index];
-        if current == '\\' && index + 1 < ranges.len() {
-            if character == ranges[index + 1] {
+    while index < range_characters.len() {
+        let current = range_characters[index];
+        if current == '\\' && index + 1 < range_characters.len() {
+            if character == range_characters[index + 1] {
                 return true;
             }
             index += 2;
             continue;
         }
-        if index + 2 < ranges.len() && ranges[index + 1] == '-' {
-            let end = ranges[index + 2];
+        if index + 2 < range_characters.len() && range_characters[index + 1] == '-' {
+            let end = range_characters[index + 2];
             if character >= current && character <= end {
                 return true;
             }

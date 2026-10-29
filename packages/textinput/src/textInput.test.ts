@@ -3,21 +3,16 @@
 
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
-import { createRichText, getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
-import type {
-  RichText,
-  RichTextData,
-  RichTextRuntime,
-  TextInputOptions,
-  TextLayoutContext,
-} from '@flighthq/text/contract';
+import { getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
+import type { RichText, RichTextData, RichTextRuntime, TextInputOptions } from '@flighthq/text/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import { createTextLayoutGroup, createTextLayoutResult } from '@flighthq/textlayout/contract';
-import type { TextAutoSize, TextLayoutResult, TextVerticalAlign } from '@flighthq/textlayout/contract';
+import type { TextAutoSize, TextLayoutGroup, TextLayoutResult, TextVerticalAlign } from '@flighthq/textlayout/contract';
 import { describe, expect, it } from 'vitest';
 
 import { disableTextInput, getTextInputState, hasTextInput } from './contract.ts';
+import { rustTestSupport as crate } from './rustTestSupport.ts';
 
 interface TestRichTextData {
   autoSize: TextAutoSize | undefined;
@@ -45,11 +40,10 @@ interface TestRichTextData {
 
 interface TestRichText {
   data: TestRichTextData | undefined;
-  layoutContext: TextLayoutContext | undefined;
 }
 
 function createInput(data: TestRichTextData, options: TextInputOptions): RichText {
-  const text = createTestRichText({ data: data, layoutContext: undefined });
+  const text = createTestRichText({ data: data });
   enableTextInput(text, options);
   return text;
 }
@@ -118,7 +112,7 @@ function createSingleLineLayout(): TextLayoutResult {
 
 function createTallLayout(): TextLayoutResult {
   const format = formatRef(emptyTextFormat());
-  let groups = [] as never[];
+  let groups: TextLayoutGroup[] = [] as never[];
   for (let line = 0; line < 4; line += 1) {
     let group = createTextLayoutGroup(format);
     group.startIndex = line;
@@ -245,7 +239,7 @@ function setLayout(source: RichText, layout: TextLayoutResult): void {
 }
 
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
-  const text = createRichText(((obj) => (obj === undefined ? undefined : obj.layoutContext))(obj));
+  const text = crate.createDefaultRichText();
   {
     const $data = ((obj) => (obj === undefined ? undefined : obj.data))(obj);
     if ($data !== undefined) {
@@ -345,7 +339,7 @@ function assignTestRichTextData(out: RichTextData, data: Readonly<TestRichTextDa
 
 describe('disableTextInput', () => {
   it('detaches the input slot', () => {
-    const text = createRichText(undefined);
+    const text = crate.createDefaultRichText();
     enableTextInput(text, undefined);
     disableTextInput(text);
     expect(!hasTextInput(text)).toBe(true);
@@ -355,7 +349,7 @@ describe('disableTextInput', () => {
 
 describe('enableTextInput', () => {
   it('allocates the input slot with default state', () => {
-    const text = createRichText(undefined);
+    const text = crate.createDefaultRichText();
     let state = enableTextInput(text, undefined);
     state = state!;
     expect(state.caretIndex).toEqual(0);
@@ -364,7 +358,7 @@ describe('enableTextInput', () => {
     expect(state.historyLimit).toEqual(100);
   });
   it('applies authoring options', () => {
-    const text = createRichText(undefined);
+    const text = crate.createDefaultRichText();
     let state = enableTextInput(text, {
       ...inputOptions(),
       caretColor: 0xff00_00ff,
@@ -377,7 +371,7 @@ describe('enableTextInput', () => {
     expect(state.restrict).toEqual('0-9');
   });
   it('is idempotent and returns the existing state applying new options', () => {
-    const text = createTestRichText({ data: undefined, layoutContext: undefined });
+    const text = createTestRichText({ data: undefined });
     const first = enableTextInput(text, undefined);
     const second = enableTextInput(text, { ...inputOptions(), caretWidth: 3.0 });
     expect(first === second).toBe(true);
@@ -387,10 +381,10 @@ describe('enableTextInput', () => {
 
 describe('getTextInputState', () => {
   it('returns none on a static rich text', () => {
-    expect(getTextInputState(createRichText(undefined)) === null).toBe(true);
+    expect(getTextInputState(crate.createDefaultRichText()) === null).toBe(true);
   });
   it('returns the slot once enabled', () => {
-    const text = createRichText(undefined);
+    const text = crate.createDefaultRichText();
     const enabled = enableTextInput(text, undefined);
     expect(enabled === getTextInputState(text)!).toBe(true);
   });
@@ -398,7 +392,7 @@ describe('getTextInputState', () => {
 
 describe('hasTextInput', () => {
   it('is false until enabled and true after', () => {
-    const text = createRichText(undefined);
+    const text = crate.createDefaultRichText();
     expect(!hasTextInput(text)).toBe(true);
     enableTextInput(text, undefined);
     expect(hasTextInput(text)).toBe(true);

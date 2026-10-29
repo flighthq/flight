@@ -2,7 +2,7 @@ use crate::common::*;
 
 use std::sync::Arc;
 
-use flight_text::{TextInputOptions, create_rich_text};
+use flight_text::TextInputOptions;
 
 use super::*;
 
@@ -11,7 +11,7 @@ mod disable_text_input {
 
     #[test]
     fn detaches_the_input_slot() {
-        let text = create_rich_text(None);
+        let text = crate::create_default_rich_text();
         enable_text_input(&text, None);
         disable_text_input(&text);
         assert!(!has_text_input(&text));
@@ -24,7 +24,7 @@ mod enable_text_input {
 
     #[test]
     fn allocates_the_input_slot_with_default_state() {
-        let text = create_rich_text(None);
+        let text = crate::create_default_rich_text();
         let state = enable_text_input(&text, None);
         let state = state.read().unwrap();
         assert_eq!(state.caret_index, 0);
@@ -35,7 +35,7 @@ mod enable_text_input {
 
     #[test]
     fn applies_authoring_options() {
-        let text = create_rich_text(None);
+        let text = crate::create_default_rich_text();
         let state = enable_text_input(
             &text,
             Some(&TextInputOptions {
@@ -53,10 +53,7 @@ mod enable_text_input {
 
     #[test]
     fn is_idempotent_and_returns_the_existing_state_applying_new_options() {
-        let text = create_test_rich_text(Some(&TestRichText {
-            data: None,
-            layout_context: None,
-        }));
+        let text = create_test_rich_text(Some(&TestRichText { data: None }));
         let first = enable_text_input(&text, None);
         let second = enable_text_input(
             &text,
@@ -75,12 +72,12 @@ mod get_text_input_state {
 
     #[test]
     fn returns_none_on_a_static_rich_text() {
-        assert!(get_text_input_state(&create_rich_text(None)).is_none());
+        assert!(get_text_input_state(&crate::create_default_rich_text()).is_none());
     }
 
     #[test]
     fn returns_the_slot_once_enabled() {
-        let text = create_rich_text(None);
+        let text = crate::create_default_rich_text();
         let enabled = enable_text_input(&text, None);
         assert!(Arc::ptr_eq(&enabled, &get_text_input_state(&text).unwrap()));
     }
@@ -91,7 +88,7 @@ mod has_text_input {
 
     #[test]
     fn is_false_until_enabled_and_true_after() {
-        let text = create_rich_text(None);
+        let text = crate::create_default_rich_text();
         assert!(!has_text_input(&text));
         enable_text_input(&text, None);
         assert!(has_text_input(&text));

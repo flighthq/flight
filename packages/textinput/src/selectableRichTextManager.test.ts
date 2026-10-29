@@ -4,18 +4,12 @@
 import { KEY_CODE_A, KEY_CODE_C } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
-import { createRichText, getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
-import type {
-  RichText,
-  RichTextData,
-  RichTextRuntime,
-  TextInputOptions,
-  TextLayoutContext,
-} from '@flighthq/text/contract';
+import { getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
+import type { RichText, RichTextData, RichTextRuntime, TextInputOptions } from '@flighthq/text/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import { createTextLayoutGroup, createTextLayoutResult } from '@flighthq/textlayout/contract';
-import type { TextAutoSize, TextLayoutResult, TextVerticalAlign } from '@flighthq/textlayout/contract';
+import type { TextAutoSize, TextLayoutGroup, TextLayoutResult, TextVerticalAlign } from '@flighthq/textlayout/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -29,6 +23,7 @@ import {
   getSelectableRichTextSelectionText,
   initializeSelectableRichTextManager,
 } from './contract.ts';
+import { rustTestSupport as crate } from './rustTestSupport.ts';
 
 interface TestRichTextData {
   autoSize: TextAutoSize | undefined;
@@ -56,11 +51,10 @@ interface TestRichTextData {
 
 interface TestRichText {
   data: TestRichTextData | undefined;
-  layoutContext: TextLayoutContext | undefined;
 }
 
 function createInput(data: TestRichTextData, options: TextInputOptions): RichText {
-  const text = createTestRichText({ data: data, layoutContext: undefined });
+  const text = createTestRichText({ data: data });
   enableTextInput(text, options);
   return text;
 }
@@ -129,7 +123,7 @@ function createSingleLineLayout(): TextLayoutResult {
 
 function createTallLayout(): TextLayoutResult {
   const format = formatRef(emptyTextFormat());
-  let groups = [] as never[];
+  let groups: TextLayoutGroup[] = [] as never[];
   for (let line = 0; line < 4; line += 1) {
     let group = createTextLayoutGroup(format);
     group.startIndex = line;
@@ -256,7 +250,7 @@ function setLayout(source: RichText, layout: TextLayoutResult): void {
 }
 
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
-  const text = createRichText(((obj) => (obj === undefined ? undefined : obj.layoutContext))(obj));
+  const text = crate.createDefaultRichText();
   {
     const $data = ((obj) => (obj === undefined ? undefined : obj.data))(obj);
     if ($data !== undefined) {
@@ -355,7 +349,7 @@ function assignTestRichTextData(out: RichTextData, data: Readonly<TestRichTextDa
 }
 
 function richText(text: string): RichText {
-  return createTestRichText({ data: { ...richTextOptions(), text: String(text) }, layoutContext: undefined });
+  return createTestRichText({ data: { ...richTextOptions(), text: String(text) } });
 }
 
 describe('blurSelectableRichText', () => {
@@ -386,7 +380,7 @@ describe('dispatchSelectableRichTextKeyDown', () => {
   it('does not invoke on copy when selection is empty', () => {
     const manager = createSelectableRichTextManager();
     focusSelectableRichText(manager, richText('hello'));
-    const copied = { value: [] as never[] };
+    const copied: { value: string[] } = { value: [] as never[] };
     const callbackValues = copied;
     let data = keyboardData();
     data.ctrlKey = true;
@@ -404,7 +398,7 @@ describe('dispatchSelectableRichTextKeyDown', () => {
     const richTextRuntime = runtime(text);
     richTextRuntime!.selectionBeginIndex = 6;
     richTextRuntime!.selectionEndIndex = 11;
-    const copied = { value: [] as never[] };
+    const copied: { value: string[] } = { value: [] as never[] };
     const callbackValues = copied;
     let data = keyboardData();
     data.ctrlKey = true;

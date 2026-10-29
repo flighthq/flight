@@ -13,7 +13,7 @@
     { "path": "../input" },
     { "path": "../node" },
     { "path": "../signals" },
-    { "path": "../text" },
+    { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textformat" },
     { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../textsegment" }

@@ -14,7 +14,6 @@ fn rich_text(text: &str) -> Ref<RichText> {
             text: Some(text.to_string()),
             ..rich_text_options()
         }),
-        layout_context: None,
     }));
 }
 
@@ -63,7 +62,7 @@ mod dispatch_selectable_rich_text_key_down {
     fn does_not_invoke_on_copy_when_selection_is_empty() {
         let manager = create_selectable_rich_text_manager();
         focus_selectable_rich_text(&manager, &rich_text("hello"));
-        let copied = Arc::new(Mutex::new(Vec::<String>::new()));
+        let copied: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let callback_values = copied.clone();
         let mut data = keyboard_data();
         data.ctrl_key = true;
@@ -87,7 +86,7 @@ mod dispatch_selectable_rich_text_key_down {
         let rich_text_runtime = runtime(&text);
         rich_text_runtime.write().unwrap().selection_begin_index = 6;
         rich_text_runtime.write().unwrap().selection_end_index = 11;
-        let copied = Arc::new(Mutex::new(Vec::<String>::new()));
+        let copied: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let callback_values = copied.clone();
         let mut data = keyboard_data();
         data.ctrl_key = true;

@@ -18,24 +18,14 @@ import {
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import { getNodeAppearanceRevision } from '@flighthq/node/contract';
 import type { NodeRef } from '@flighthq/node/contract';
-import {
-  createRichText,
-  getRichTextRuntime,
-  setRichTextFormatRange,
-  setTextLayoutResult,
-} from '@flighthq/text/contract';
-import type {
-  RichText,
-  RichTextData,
-  RichTextRuntime,
-  TextInputOptions,
-  TextLayoutContext,
-} from '@flighthq/text/contract';
+import { getRichTextRuntime, setRichTextFormatRange, setTextLayoutResult } from '@flighthq/text/contract';
+import type { RichText, RichTextData, RichTextRuntime, TextInputOptions } from '@flighthq/text/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import { createTextLayoutGroup, createTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   TextAutoSize,
+  TextLayoutGroup,
   TextLayoutResult,
   TextSelectionRectangle,
   TextVerticalAlign,
@@ -80,6 +70,7 @@ import {
   undoTextInput,
 } from './contract.ts';
 import type { HandleTextInputKeyboardOptions, ReplaceTextInputOptions } from './contract.ts';
+import { rustTestSupport as crate } from './rustTestSupport.ts';
 
 interface TestRichTextData {
   autoSize: TextAutoSize | undefined;
@@ -107,11 +98,10 @@ interface TestRichTextData {
 
 interface TestRichText {
   data: TestRichTextData | undefined;
-  layoutContext: TextLayoutContext | undefined;
 }
 
 function createInput(data: TestRichTextData, options: TextInputOptions): RichText {
-  const text = createTestRichText({ data: data, layoutContext: undefined });
+  const text = createTestRichText({ data: data });
   enableTextInput(text, options);
   return text;
 }
@@ -180,7 +170,7 @@ function createSingleLineLayout(): TextLayoutResult {
 
 function createTallLayout(): TextLayoutResult {
   const format = formatRef(emptyTextFormat());
-  let groups = [] as never[];
+  let groups: TextLayoutGroup[] = [] as never[];
   for (let line = 0; line < 4; line += 1) {
     let group = createTextLayoutGroup(format);
     group.startIndex = line;
@@ -307,7 +297,7 @@ function setLayout(source: RichText, layout: TextLayoutResult): void {
 }
 
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
-  const text = createRichText(((obj) => (obj === undefined ? undefined : obj.layoutContext))(obj));
+  const text = crate.createDefaultRichText();
   {
     const $data = ((obj) => (obj === undefined ? undefined : obj.data))(obj);
     if ($data !== undefined) {
@@ -632,7 +622,7 @@ describe('getTextInputSelectionEndIndex', () => {
 describe('getTextInputSelectionRectangles', () => {
   it('writes one rectangle per selected layout group', () => {
     const text = createInput(textData('abcdefg'), inputOptions());
-    let out = [] as never[];
+    let out: TextSelectionRectangle[] = [] as never[];
     setTextInputSelection(text, 1, 5);
     getTextInputSelectionRectangles(out, text, createLayout());
     expect(out).toEqual([
@@ -839,7 +829,7 @@ describe('handleTextInputKeyboard', () => {
   it('invokes on copy callback for copy command', () => {
     const text = createInput(textData('hello'), inputOptions());
     setTextInputSelection(text, 0, 5);
-    const copied = { value: [] as never[] };
+    const copied: { value: string[] } = { value: [] as never[] };
     const callbackValues = copied;
     const options: HandleTextInputKeyboardOptions = {
       clipboardText: undefined,

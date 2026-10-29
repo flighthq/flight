@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { allocateEntity } from '@flighthq/entity/contract';
-import type { InputKeyboardData } from '@flighthq/input/contract';
+import type { InputKeyboardData, InputTextData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { SignalSlot } from '@flighthq/signals/contract';
@@ -45,7 +45,7 @@ export function connectInputToTextInput(
     dispatchTextInputKeyDown(keyManager, data, undefined, undefined);
   };
   const textManager = manager;
-  const onTextInput = (data: Readonly<flightInput.InputTextData>) => {
+  const onTextInput = (data: Readonly<InputTextData>) => {
     dispatchTextInput(textManager, data.text);
   };
   const keyId = connectSignal(input.onKeyDown, onKeyDown, undefined);
