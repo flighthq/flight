@@ -36,6 +36,7 @@ describe('collectCrateExportSymbols', () => {
     const modules = [
       {
         fileName: 'owner.ts',
+        mode: 'generate' as const,
         typescript:
           'interface Registry {}\nfunction createRegistry(): Registry {}\nexport function publicValue(): number {}\n\nexport { createRegistry };\nexport type { Registry };\n',
       },
@@ -248,13 +249,15 @@ describe('resolveCrateExportSymbols', () => {
     const owners = collectCrateExportSymbols([
       {
         fileName: 'alpha.ts',
+        mode: 'generate',
         typescript: 'const LIMIT = 1;\ninterface State {}\n\nexport { LIMIT };\nexport type { State };\n',
       },
       {
         fileName: 'beta.ts',
+        mode: 'generate',
         typescript: 'const LIMIT = 2;\ninterface State {}\n\nexport { LIMIT };\nexport type { State };\n',
       },
-      { fileName: 'gamma.ts', typescript: 'const ONLY = 3;\n\nexport { ONLY };\n' },
+      { fileName: 'gamma.ts', mode: 'generate', typescript: 'const ONLY = 3;\n\nexport { ONLY };\n' },
     ]);
     const viaUse = resolveCrateExportSymbols('use crate::beta::{LIMIT, State as BetaState};\n', 'user.ts', owners);
     expect(viaUse.get('LIMIT')?.fileName).toBe('beta.ts');

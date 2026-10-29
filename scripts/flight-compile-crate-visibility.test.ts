@@ -119,8 +119,8 @@ function generatedPair(): { owner: string; user: string } {
   const ownerTypescript = compileRust('owner', OWNER_FIXTURE, USER_FIXTURE);
   const userTypescript = compileRust('user', USER_FIXTURE, OWNER_FIXTURE);
   const modules = [
-    { fileName: 'owner.ts', typescript: ownerTypescript },
-    { fileName: 'user.ts', typescript: userTypescript },
+    { fileName: 'owner.ts', mode: 'generate' as const, typescript: ownerTypescript },
+    { fileName: 'user.ts', mode: 'generate' as const, typescript: userTypescript },
   ];
   const owners = collectCrateExportSymbols(modules);
   const publicSymbols = collectExportSymbols(modules);
@@ -165,7 +165,11 @@ describe('flight-compile crate-visible items', () => {
     expect(generated.get('alpha')).toContain('export type { State };');
     expect(generated.get('beta')).not.toContain('export {');
     expect(generated.get('beta')).not.toContain('export type {');
-    const exportModules = [...generated].map(([name, typescript]) => ({ fileName: `${name}.ts`, typescript }));
+    const exportModules = [...generated].map(([name, typescript]) => ({
+      fileName: `${name}.ts`,
+      mode: 'generate' as const,
+      typescript,
+    }));
     const owners = collectCrateExportSymbols(exportModules);
     const publicSymbols = collectExportSymbols(exportModules);
     for (const [name, typescript] of generated) {
@@ -217,7 +221,9 @@ describe('flight-compile crate-visible items', () => {
     expect(owner).toContain('export type { Registry };');
     expect(owner).not.toContain('unusedHelper }');
     expect(owner).toContain('\nfunction createRegistry(');
-    const publicNames = [...collectExportSymbols([{ fileName: 'owner.ts', typescript: owner }]).keys()];
+    const publicNames = [
+      ...collectExportSymbols([{ fileName: 'owner.ts', mode: 'generate', typescript: owner }]).keys(),
+    ];
     expect(publicNames).not.toContain('Registry');
     expect(publicNames).not.toContain('REGISTRY_LIMIT');
     expect(publicNames).not.toContain('Slot');
