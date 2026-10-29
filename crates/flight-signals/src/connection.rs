@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
 
 use crate::slot::{connect_signal, disconnect_signal, is_slot_connected, set_slot_paused};
 use crate::types::{
@@ -30,7 +30,7 @@ pub fn connect_signal_tracked<T: 'static>(
             set_slot_paused(&pause_signal_handle, id, paused);
         }),
         is_connected: Arc::new(move || is_slot_connected(&connected_signal_handle, id)),
-        paused: Arc::new(AtomicBool::new(false)),
+        paused: Arc::new(RwLock::new(false)),
     };
 
     if let Some(scope) = options.and_then(|o| o.scope.as_ref()) {
@@ -52,7 +52,7 @@ pub fn is_signal_connection_connected(connection: &SignalConnection) -> bool {
 /// TS, so resuming it cannot appear to bring it back.
 // flight-lint: allow(conform-extra) D4: Rust exposes handle state through free functions; TS reads handle fields
 pub fn is_signal_connection_paused(connection: &SignalConnection) -> bool {
-    return connection.paused.load(Ordering::Relaxed);
+    return *connection.paused.read().unwrap();
 }
 
 pub fn pause_signal_connection(connection: &SignalConnection) {
@@ -60,12 +60,12 @@ pub fn pause_signal_connection(connection: &SignalConnection) {
         return;
     }
     (connection.set_paused)(true);
-    connection.paused.store(true, Ordering::Relaxed);
+    *connection.paused.write().unwrap() = true;
 }
 
 pub fn resume_signal_connection(connection: &SignalConnection) {
     (connection.set_paused)(false);
     if (connection.is_connected)() {
-        connection.paused.store(false, Ordering::Relaxed);
+        *connection.paused.write().unwrap() = false;
     }
 }

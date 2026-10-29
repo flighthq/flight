@@ -1,3 +1,4 @@
+use flight_signals::contract::initialize_signal;
 use flight_signals::*;
 
 mod create_signal {
@@ -23,10 +24,14 @@ mod initialize_signal {
     fn reinstalls_the_default_emitter_after_a_custom_callback_and_keeps_the_data_handle() {
         let mut signal: Signal<()> = create_signal();
         let data = signal.data.clone();
-        *signal.emit.write().unwrap() =
-            std::sync::Arc::new(|_| panic!("initializer must replace this custom emitter"));
-        flight_signals::contract::initialize_signal(&mut signal);
+        let custom_calls = std::sync::Arc::new(std::sync::Mutex::new(0));
+        let custom_count = custom_calls.clone();
+        *signal.emit.write().unwrap() = std::sync::Arc::new(move |_| {
+            *custom_count.lock().unwrap() += 1;
+        });
+        initialize_signal(&mut signal);
         emit_signal(&signal, &());
+        assert_eq!(*custom_calls.lock().unwrap(), 0);
         assert!(std::sync::Arc::ptr_eq(&data, &signal.data));
         let calls = std::sync::Arc::new(std::sync::Mutex::new(0));
         let count = calls.clone();
@@ -46,7 +51,7 @@ mod initialize_signal {
         assert!(has_signal_slots(&signal));
         let mut reset: Signal<()> = create_signal();
         connect_signal(&reset, std::sync::Arc::new(|_| {}), None);
-        flight_signals::contract::initialize_signal(&mut reset);
+        initialize_signal(&mut reset);
         assert!(!has_signal_slots(&reset));
     }
 }

@@ -21,7 +21,9 @@ pub fn disconnect_signal_scope(scope: &SignalScope) {
         if connections.is_empty() {
             return;
         }
-        std::mem::take(&mut *connections)
+        let pending = connections.clone();
+        connections.clear();
+        pending
     };
     for connection in &pending {
         disconnect_signal_connection(connection);

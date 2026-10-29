@@ -2,6 +2,12 @@ use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
 
+#[derive(Clone, Debug, PartialEq)]
+struct PairEvent {
+    x: i32,
+    y: i32,
+}
+
 mod clear_signal {
     use super::*;
 
@@ -58,12 +64,6 @@ mod connect_signal {
 
     #[test]
     fn passes_typed_payload_to_slot() {
-        #[derive(Clone, Debug, PartialEq)]
-        struct PairEvent {
-            x: i32,
-            y: i32,
-        }
-
         let signal: Signal<PairEvent> = create_signal();
         let received = Arc::new(Mutex::new(None));
         let out = received.clone();
@@ -205,7 +205,7 @@ mod disconnect_signal {
     #[test]
     fn does_nothing_when_no_slots_are_connected() {
         let signal: Signal<()> = create_signal();
-        disconnect_signal(&signal, SlotId(999));
+        disconnect_signal(&signal, SlotId { value: 999 });
         assert!(!has_signal_slots(&signal));
     }
 
@@ -286,7 +286,7 @@ mod is_slot_connected {
     #[test]
     fn returns_false_when_slot_is_not_connected() {
         let signal: Signal<()> = create_signal();
-        assert!(!is_slot_connected(&signal, SlotId(999)));
+        assert!(!is_slot_connected(&signal, SlotId { value: 999 }));
     }
 
     #[test]

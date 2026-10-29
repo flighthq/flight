@@ -1,5 +1,5 @@
 use crate::slot::compact_signal_data;
-use crate::types::{Signal, SignalData};
+use crate::types::{Signal, SignalData, SignalSlot};
 use flight_entity::Ref;
 
 pub fn cancel_signal<T>(signal: &Signal<T>) {
@@ -13,31 +13,13 @@ pub fn cancel_signal<T>(signal: &Signal<T>) {
 /// a time, never across a callback, so a slot may re-entrantly connect, disconnect, emit or
 /// cancel (D4). Slots added ahead of the cursor during the walk are reached, as in TS.
 pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &T) -> bool {
-    {
-        let mut state = data.write().unwrap();
-        let Some(signal_data) = state.as_mut() else {
-            return false;
-        };
-        signal_data.cancelled = false;
-        signal_data.depth += 1;
+    if !begin_signal_dispatch(data) {
+        return false;
     }
 
     let mut index = 0;
-    loop {
-        let slot = {
-            let state = data.read().unwrap();
-            let Some(signal_data) = state.as_ref() else {
-                break;
-            };
-            if index >= signal_data.slots.len() {
-                break;
-            }
-            if signal_data.paused[index] {
-                None
-            } else {
-                signal_data.slots[index].clone()
-            }
-        };
+    while signal_dispatch_has_index(data, index) {
+        let slot = get_signal_dispatch_slot(data, index);
 
         if let Some(callback) = slot {
             callback(args);
@@ -53,35 +35,69 @@ pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &
             }
 
             let mut state = data.write().unwrap();
-            if let Some(signal_data) = state.as_mut()
-                && index < signal_data.slots.len()
-                && !signal_data.repeat[index]
-            {
-                signal_data.slots[index] = None;
+            if let Some(signal_data) = state.as_mut() {
+                if index < signal_data.slots.len() && !signal_data.repeat[index] {
+                    signal_data.slots[index] = None;
+                }
             }
         }
 
         index += 1;
     }
 
-    let should_compact = {
-        let mut state = data.write().unwrap();
-        match state.as_mut() {
-            Some(signal_data) => {
-                signal_data.depth -= 1;
-                signal_data.depth == 0
-            }
-            None => false,
-        }
-    };
-    if should_compact {
+    if end_signal_dispatch(data) {
         return compact_signal_data(data);
     }
     return false;
 }
 
+fn begin_signal_dispatch<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return false;
+    };
+    signal_data.cancelled = false;
+    signal_data.depth += 1;
+    return true;
+}
+
+fn end_signal_dispatch<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return false;
+    };
+    signal_data.depth -= 1;
+    return signal_data.depth == 0;
+}
+
+fn signal_dispatch_has_index<T>(data: &Ref<Option<SignalData<T>>>, index: usize) -> bool {
+    let state = data.read().unwrap();
+    let Some(signal_data) = state.as_ref() else {
+        return false;
+    };
+    return index < signal_data.slots.len();
+}
+
+fn get_signal_dispatch_slot<T>(
+    data: &Ref<Option<SignalData<T>>>,
+    index: usize,
+) -> Option<SignalSlot<T>> {
+    let state = data.read().unwrap();
+    let Some(signal_data) = state.as_ref() else {
+        return None;
+    };
+    if index >= signal_data.slots.len() || signal_data.paused[index] {
+        return None;
+    }
+    return signal_data.slots[index].clone();
+}
+
 /// Calls the source-required emitter, including custom callbacks and spread wrappers.
 pub fn emit_signal<T>(signal: &Signal<T>, args: &T) {
+    *signal.state.last_dispatch_detached.write().unwrap() = false;
     let emit = signal.emit.read().unwrap().clone();
     emit(args);
+    if *signal.state.last_dispatch_detached.read().unwrap() {
+        *signal.emit.write().unwrap() = std::sync::Arc::new(|_| {});
+    }
 }

@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::sync::atomic::Ordering;
 
 use flight_entity::Ref;
 
@@ -24,7 +23,8 @@ pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) -> bool 
             continue;
         }
         if write != read {
-            signal_data.slots[write] = signal_data.slots[read].take();
+            signal_data.slots[write] = signal_data.slots[read].clone();
+            signal_data.slots[read] = None;
             signal_data.ids[write] = signal_data.ids[read];
             signal_data.priorities[write] = signal_data.priorities[read];
             signal_data.repeat[write] = signal_data.repeat[read];
@@ -35,11 +35,16 @@ pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) -> bool 
     if write == original_len {
         return false;
     }
-    signal_data.slots.truncate(write);
-    signal_data.ids.truncate(write);
-    signal_data.priorities.truncate(write);
-    signal_data.repeat.truncate(write);
-    signal_data.paused.truncate(write);
+    let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
+    slots.truncate(write);
+    let ids: &mut Vec<SlotId> = &mut signal_data.ids;
+    ids.truncate(write);
+    let priorities: &mut Vec<i32> = &mut signal_data.priorities;
+    priorities.truncate(write);
+    let repeat: &mut Vec<bool> = &mut signal_data.repeat;
+    repeat.truncate(write);
+    let paused: &mut Vec<bool> = &mut signal_data.paused;
+    paused.truncate(write);
     if write == 0 {
         *state = None;
         return true;
@@ -56,26 +61,43 @@ pub fn connect_signal<T: 'static>(
 ) -> SlotId {
     let priority = options.and_then(|o| o.priority).unwrap_or(0);
     let repeat = !options.and_then(|o| o.once).unwrap_or(false);
-    let id = SlotId(signal.next_slot_id.fetch_add(1, Ordering::Relaxed));
+    let id = {
+        let mut next_slot_id = signal.state.next_slot_id.write().unwrap();
+        let id = SlotId {
+            value: *next_slot_id,
+        };
+        *next_slot_id += 1;
+        id
+    };
 
     init_signal_data(signal);
     let mut state = signal.data.write().unwrap();
     let signal_data = state.as_mut().unwrap();
-    let index = signal_data
-        .priorities
-        .iter()
-        .position(|existing| priority > *existing)
-        .unwrap_or(signal_data.slots.len());
-    signal_data.slots.insert(index, Some(slot));
-    signal_data.ids.insert(index, id);
-    signal_data.priorities.insert(index, priority);
-    signal_data.repeat.insert(index, repeat);
-    signal_data.paused.insert(index, false);
+    let mut index = 0;
+    while index < signal_data.priorities.len() && priority <= signal_data.priorities[index] {
+        index += 1;
+    }
+    let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
+    slots.insert(index, Some(slot));
+    let ids: &mut Vec<SlotId> = &mut signal_data.ids;
+    ids.insert(index, id);
+    let priorities: &mut Vec<i32> = &mut signal_data.priorities;
+    priorities.insert(index, priority);
+    let repeats: &mut Vec<bool> = &mut signal_data.repeat;
+    repeats.insert(index, repeat);
+    let paused: &mut Vec<bool> = &mut signal_data.paused;
+    paused.insert(index, false);
     return id;
 }
 
 pub(crate) fn count_live_slots<T>(data: &SignalData<T>) -> usize {
-    return data.slots.iter().filter(|slot| slot.is_some()).count();
+    let mut live = 0;
+    for slot in &data.slots {
+        if slot.is_some() {
+            live += 1;
+        }
+    }
+    return live;
 }
 
 /// Disconnects a registration by id. During a dispatch the entry is tombstoned instead of
@@ -99,11 +121,16 @@ pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
             if dispatching {
                 signal_data.slots[index] = None;
             } else {
-                signal_data.slots.remove(index);
-                signal_data.ids.remove(index);
-                signal_data.priorities.remove(index);
-                signal_data.repeat.remove(index);
-                signal_data.paused.remove(index);
+                let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
+                slots.remove(index);
+                let ids: &mut Vec<SlotId> = &mut signal_data.ids;
+                ids.remove(index);
+                let priorities: &mut Vec<i32> = &mut signal_data.priorities;
+                priorities.remove(index);
+                let repeats: &mut Vec<bool> = &mut signal_data.repeat;
+                repeats.remove(index);
+                let paused: &mut Vec<bool> = &mut signal_data.paused;
+                paused.remove(index);
             }
         }
         !dispatching && signal_data.slots.is_empty()
@@ -157,11 +184,12 @@ pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool {
     let Some(signal_data) = state.as_ref() else {
         return false;
     };
-    return signal_data
-        .slots
-        .iter()
-        .zip(signal_data.ids.iter())
-        .any(|(slot, slot_id)| slot.is_some() && *slot_id == id);
+    for index in 0..signal_data.slots.len() {
+        if signal_data.slots[index].is_some() && signal_data.ids[index] == id {
+            return true;
+        }
+    }
+    return false;
 }
 
 /// Pauses or resumes one registration in place (priority order is preserved). Returns false when

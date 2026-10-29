@@ -2,15 +2,15 @@ use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
 
+struct ValueEvent {
+    value: i32,
+}
+
 mod connect_signal_tracked {
     use super::*;
 
     #[test]
     fn returns_a_connected_handle_whose_slot_receives_typed_payload() {
-        struct ValueEvent {
-            value: i32,
-        }
-
         let signal: Signal<ValueEvent> = create_signal();
         let received = Arc::new(Mutex::new(Vec::new()));
         let out = received.clone();

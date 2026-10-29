@@ -2,12 +2,17 @@ use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
 
+struct ValueEvent {
+    value: i32,
+}
+
+#[derive(Clone)]
+struct TextEvent {
+    value: &'static str,
+}
+
 mod emit_signal_safe {
     use super::*;
-
-    struct ValueEvent {
-        value: i32,
-    }
 
     #[test]
     fn passes_typed_payload_in_priority_order() {
@@ -119,11 +124,6 @@ mod emit_signal_safe {
 
     #[test]
     fn gives_a_nested_safe_emission_its_own_snapshot_and_arguments() {
-        #[derive(Clone)]
-        struct TextEvent {
-            value: &'static str,
-        }
-
         let signal: Signal<TextEvent> = create_signal();
         let calls = Arc::new(Mutex::new(Vec::new()));
         let nested = Arc::new(Mutex::new(false));

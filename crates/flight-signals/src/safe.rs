@@ -26,43 +26,39 @@ pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T) {
     };
 
     for index in 0..slots.len() {
-        let slot = match &slots[index] {
-            Some(slot) => slot.clone(),
-            None => continue,
-        };
-        if paused[index] {
-            continue;
-        }
-        if !repeat[index] {
-            tombstone_once_slot(&data, ids[index]);
-        }
-        slot(args);
-        let cancelled = data
-            .read()
-            .unwrap()
-            .as_ref()
-            .map(|signal_data| signal_data.cancelled)
-            .unwrap_or(false);
-        if cancelled {
-            break;
+        if let Some(slot) = &slots[index] {
+            if !paused[index] {
+                if !repeat[index] {
+                    tombstone_once_slot(&data, ids[index]);
+                }
+                slot(args);
+                let cancelled = data
+                    .read()
+                    .unwrap()
+                    .as_ref()
+                    .map(|signal_data| signal_data.cancelled)
+                    .unwrap_or(false);
+                if cancelled {
+                    break;
+                }
+            }
         }
     }
 
-    let should_compact = {
-        let mut state = data.write().unwrap();
-        match state.as_mut() {
-            Some(signal_data) => {
-                signal_data.depth -= 1;
-                signal_data.depth == 0
-            }
-            None => false,
-        }
-    };
-    if should_compact {
+    if end_safe_signal_dispatch(&data) {
         if compact_signal_data(&data) {
             *signal.emit.write().unwrap() = std::sync::Arc::new(|_| {});
         }
     }
+}
+
+fn end_safe_signal_dispatch<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return false;
+    };
+    signal_data.depth -= 1;
+    return signal_data.depth == 0;
 }
 
 fn tombstone_once_slot<T>(data: &Ref<Option<SignalData<T>>>, id: SlotId) {

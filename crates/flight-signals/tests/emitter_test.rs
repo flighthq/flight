@@ -2,6 +2,10 @@ use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
 
+struct ValueEvent {
+    value: i32,
+}
+
 mod cancel_signal {
     use super::*;
 
@@ -81,8 +85,9 @@ mod emit_signal {
     #[test]
     fn first_connect_replaces_a_custom_callback_with_native_data_dispatch() {
         let signal: Signal<()> = create_signal();
-        let custom: SignalSlot<()> =
-            Arc::new(|_| panic!("first connect must install native dispatch"));
+        let custom_calls = Arc::new(Mutex::new(0));
+        let custom_count = custom_calls.clone();
+        let custom: SignalSlot<()> = Arc::new(move |_| *custom_count.lock().unwrap() += 1);
         *signal.emit.write().unwrap() = custom.clone();
         let calls = Arc::new(Mutex::new(0));
         let count = calls.clone();
@@ -93,9 +98,11 @@ mod emit_signal {
         );
         assert!(!Arc::ptr_eq(&signal.emit.read().unwrap(), &custom));
         emit_signal(&signal, &());
+        assert_eq!(*custom_calls.lock().unwrap(), 0);
         assert_eq!(*calls.lock().unwrap(), 1);
     }
 
+    /// flight-compiler: rust-only — JavaScript has no RwLock contention state to probe.
     #[test]
     fn emitter_cell_is_unlocked_while_a_callback_replaces_it() {
         let signal: Signal<()> = create_signal();
@@ -273,10 +280,6 @@ mod emit_signal {
 
     #[test]
     fn passes_typed_payload_to_each_slot() {
-        struct ValueEvent {
-            value: i32,
-        }
-
         let signal: Signal<ValueEvent> = create_signal();
         let received = Arc::new(Mutex::new(Vec::new()));
         let out = received.clone();

@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use flight_signals::contract::initialize_signal_scope;
 use flight_signals::*;
 
 mod create_signal_scope {
@@ -419,7 +420,7 @@ mod initialize_signal_scope {
         };
         connect_signal_tracked(&signal, Arc::new(|_: &()| {}), Some(&options));
         assert_eq!(scope.connections.read().unwrap().len(), 1);
-        flight_signals::contract::initialize_signal_scope(&mut scope);
+        initialize_signal_scope(&mut scope);
         assert!(scope.connections.read().unwrap().is_empty());
     }
 }

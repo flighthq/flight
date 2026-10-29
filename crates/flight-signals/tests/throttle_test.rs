@@ -1,8 +1,15 @@
 use std::sync::{Arc, Mutex, RwLock};
 
+use flight_signals::contract::initialize_signal_timer_state;
 use flight_signals::*;
 
 type TimerRef = Arc<RwLock<SignalTimerState>>;
+
+#[derive(Clone)]
+struct PairEvent {
+    x: i32,
+    y: i32,
+}
 
 fn timer_state() -> TimerRef {
     return Arc::new(RwLock::new(create_signal_timer_state()));
@@ -240,12 +247,6 @@ mod connect_signal_throttled {
 
     #[test]
     fn preserves_the_original_payload() {
-        #[derive(Clone)]
-        struct PairEvent {
-            x: i32,
-            y: i32,
-        }
-
         let source: Signal<PairEvent> = create_signal();
         let state = timer_state();
         let fired = Arc::new(Mutex::new(Vec::new()));
@@ -374,7 +375,7 @@ mod initialize_signal_timer_state {
         set_signal_timeout(&state, 10.0, Arc::new(|| {}));
         advance_signal_timers(&state, 5.0);
         let mut state = state.write().unwrap();
-        flight_signals::contract::initialize_signal_timer_state(&mut state);
+        initialize_signal_timer_state(&mut state);
         assert_eq!(state.now_ms, 0.0);
         assert!(state.timers.is_empty());
     }

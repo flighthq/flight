@@ -1,4 +1,5 @@
-use std::sync::atomic::{AtomicBool, AtomicU64};
+//! flight-compiler: entity-runtime-state Signal.state
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{EntityRuntimeSlot, Ref};
@@ -9,12 +10,16 @@ use flight_entity::{EntityRuntimeSlot, Ref};
 /// Rust-side handle; it is never transpiled as a TS number.
 // flight-lint: allow(contract-vocabulary) D4 SlotId is an opaque registration handle, not payload data
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct SlotId(pub u64);
+pub struct SlotId {
+    pub value: u64,
+}
 
 /// Identity of one pending signal timer, returned by `set_signal_timeout`.
 // flight-lint: allow(contract-vocabulary) D5 timer handles are opaque, never transpiled as numbers
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct TimerId(pub u64);
+pub struct TimerId {
+    pub value: u64,
+}
 
 /// The payload of `connect_signal_at_frame_rate`: the accumulated delta time in milliseconds.
 // flight-lint: allow(f64) D1: frame deltas are millisecond durations; f32 loses precision in accumulation
@@ -49,8 +54,14 @@ pub struct Signal<T> {
     /// Source-required emission callback. A spread clone may replace it while sharing data.
     pub emit: Ref<Arc<dyn Fn(&T) + Send + Sync>>,
     pub data: Ref<Option<SignalData<T>>>,
-    pub(crate) next_slot_id: Arc<AtomicU64>,
+    pub(crate) state: SignalRuntime,
     runtime: EntityRuntimeSlot,
+}
+
+/// Private mutable state shared only where the native semantics require it.
+pub struct SignalRuntime {
+    pub next_slot_id: Ref<u64>,
+    pub last_dispatch_detached: Ref<bool>,
 }
 
 /// Options for `connect_signal`.
@@ -83,10 +94,10 @@ pub struct SignalThrottleOptions {
 /// holds connections for signals of every payload type.
 #[derive(Clone)]
 pub struct SignalConnection {
-    pub(crate) disconnect: Arc<dyn Fn() + Send + Sync>,
-    pub(crate) set_paused: Arc<dyn Fn(bool) + Send + Sync>,
-    pub(crate) is_connected: Arc<dyn Fn() -> bool + Send + Sync>,
-    pub(crate) paused: Arc<AtomicBool>,
+    pub disconnect: Arc<dyn Fn() + Send + Sync>,
+    pub set_paused: Arc<dyn Fn(bool) + Send + Sync>,
+    pub is_connected: Arc<dyn Fn() -> bool + Send + Sync>,
+    pub paused: Ref<bool>,
 }
 
 /// A collection of tracked connections torn down together.
@@ -113,7 +124,7 @@ pub struct SignalTimer {
 pub struct SignalTimerState {
     pub now_ms: f64,
     pub timers: Vec<SignalTimer>,
-    pub(crate) next_id: u64,
+    pub next_id: u64,
 }
 
 pub(crate) fn signal_entity_runtime<T>(signal: &Signal<T>) -> &EntityRuntimeSlot {
@@ -163,7 +174,10 @@ impl<T> Clone for Signal<T> {
         return Signal {
             emit: Arc::new(RwLock::new(self.emit.read().unwrap().clone())),
             data: self.data.clone(),
-            next_slot_id: self.next_slot_id.clone(),
+            state: SignalRuntime {
+                next_slot_id: self.state.next_slot_id.clone(),
+                last_dispatch_detached: Arc::new(RwLock::new(false)),
+            },
             runtime: EntityRuntimeSlot::default(),
         };
     }
@@ -176,7 +190,10 @@ impl<T: 'static> Default for Signal<T> {
                 Arc::new(|_: &T| {}) as Arc<dyn Fn(&T) + Send + Sync>
             )),
             data: Ref::new(RwLock::new(None)),
-            next_slot_id: Arc::new(AtomicU64::new(1)),
+            state: SignalRuntime {
+                next_slot_id: Arc::new(RwLock::new(1)),
+                last_dispatch_detached: Arc::new(RwLock::new(false)),
+            },
             runtime: EntityRuntimeSlot::default(),
         };
         crate::signal::install_default_signal_emitter(&out);
