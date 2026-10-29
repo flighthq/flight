@@ -19,6 +19,6 @@ export interface ComboBoxControllerOptions extends GuiControllerOptions {
 }
 
 export interface ComboBoxControllerSignals {
-  onChange: Signal<(index: number) => void>;
-  onOpenChange: Signal<(open: boolean) => void>;
+  onChange: Signal<number>;
+  onOpenChange: Signal<boolean>;
 }

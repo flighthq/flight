@@ -19,5 +19,5 @@ export interface ScrollViewControllerOptions extends GuiControllerOptions {
 }
 
 export interface ScrollViewControllerSignals {
-  onScroll: Signal<(x: number, y: number) => void>;
+  onScroll: Signal<readonly [x: number, y: number]>;
 }

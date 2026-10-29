@@ -43,7 +43,7 @@ export function closeGuiDialog(dialog: GuiDialog, result: Readonly<GuiDialogClos
     activateGuiDialogEntry(runtime, next);
   }
   emitSignal(runtime.signals.onActiveChange, next);
-  emitSignal(runtime.signals.onQueueChange);
+  emitSignal(runtime.signals.onQueueChange, undefined);
   emitSignal(runtime.signals.onClose, result);
   return true;
 }
@@ -103,7 +103,7 @@ export function enqueueGuiDialog(dialog: GuiDialog, entry: Readonly<GuiDialogEnt
   } else {
     setGuiVisible(runtime, entry.root, false);
   }
-  emitSignal(runtime.signals.onQueueChange);
+  emitSignal(runtime.signals.onQueueChange, undefined);
   return true;
 }
 
@@ -132,7 +132,7 @@ export function removeGuiDialogEntry(dialog: GuiDialog, id: string): boolean {
   if (index < 0) return false;
   const [removed] = runtime.entries.splice(index, 1);
   setGuiVisible(runtime, removed.root, false);
-  emitSignal(runtime.signals.onQueueChange);
+  emitSignal(runtime.signals.onQueueChange, undefined);
   return true;
 }
 

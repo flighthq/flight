@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import {
   enableInteractionSignals,
   getNodeHitArea,
@@ -14,7 +12,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
-import type { Signal } from '@flighthq/signals/contract';
+import type { Signal, SignalSlot } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityRuntime,
@@ -46,28 +44,24 @@ export function configureGuiHitArea(runtime: GuiControllerRuntime, target: Node2
   runtime.cleanups.push(() => setNodeHitArea(target, previous));
 }
 
-export function connectGuiInteraction(
+export function connectGuiInteraction<Name extends keyof InteractionSignals>(
   runtime: GuiControllerRuntime,
   target: Node2D,
-  name: keyof InteractionSignals,
-  slot: (...args: any[]) => void,
+  name: Name,
+  slot: SignalSlot<GuiInteractionPayload<Name>>,
 ): void {
   if (!runtime.hitStates.has(target)) {
     runtime.hitStates.set(target, isNodeHitTestEnabled(target));
     setNodeHitTestEnabled(target, true);
   }
-  const signal = enableInteractionSignals(target)[name] as Signal<(...args: any[]) => void>;
-  connectSignal(signal, slot);
-  runtime.cleanups.push(() => disconnectSignal(signal, slot));
+  const signal = enableInteractionSignals(target)[name] as Signal<GuiInteractionPayload<Name>>;
+  const id = connectSignal(signal, slot);
+  runtime.cleanups.push(() => disconnectSignal(signal, id));
 }
 
-export function connectGuiSignal<T extends (...args: any[]) => void>(
-  runtime: GuiControllerRuntime,
-  signal: Signal<T>,
-  slot: T,
-): void {
-  connectSignal(signal, slot);
-  runtime.cleanups.push(() => disconnectSignal(signal, slot));
+export function connectGuiSignal<T>(runtime: GuiControllerRuntime, signal: Signal<T>, slot: SignalSlot<T>): void {
+  const id = connectSignal(signal, slot);
+  runtime.cleanups.push(() => disconnectSignal(signal, id));
 }
 
 export function createGuiController<Controller extends Entity, Runtime extends GuiControllerRuntime>(
@@ -161,3 +155,6 @@ export function snapGuiValue(value: number, minimum: number, step: number | null
   if (step === null || !(step > 0) || !Number.isFinite(step)) return value;
   return minimum + Math.round((value - minimum) / step) * step;
 }
+
+type GuiInteractionPayload<Name extends keyof InteractionSignals> =
+  InteractionSignals[Name] extends Signal<infer T> ? T : never;

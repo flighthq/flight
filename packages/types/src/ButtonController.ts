@@ -22,7 +22,7 @@ export interface ButtonControllerOptions extends GuiControllerOptions {
 }
 
 export interface ButtonControllerSignals {
-  onClick: Signal<() => void>;
-  onPress: Signal<() => void>;
-  onRelease: Signal<() => void>;
+  onClick: Signal<void>;
+  onPress: Signal<void>;
+  onRelease: Signal<void>;
 }

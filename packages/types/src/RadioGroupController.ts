@@ -14,5 +14,5 @@ export interface RadioGroupControllerOptions {
 }
 
 export interface RadioGroupControllerSignals {
-  onChange: Signal<(index: number) => void>;
+  onChange: Signal<number>;
 }

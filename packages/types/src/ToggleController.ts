@@ -18,5 +18,5 @@ export interface ToggleControllerOptions extends GuiControllerOptions {
 }
 
 export interface ToggleControllerSignals {
-  onChange: Signal<(checked: boolean) => void>;
+  onChange: Signal<boolean>;
 }

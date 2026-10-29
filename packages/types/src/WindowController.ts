@@ -23,7 +23,7 @@ export interface WindowControllerOptions extends GuiControllerOptions {
 }
 
 export interface WindowControllerSignals {
-  onClose: Signal<() => void>;
-  onMove: Signal<(x: number, y: number) => void>;
-  onResize: Signal<(width: number, height: number) => void>;
+  onClose: Signal<void>;
+  onMove: Signal<readonly [x: number, y: number]>;
+  onResize: Signal<readonly [width: number, height: number]>;
 }

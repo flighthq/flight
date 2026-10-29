@@ -20,6 +20,6 @@ export interface ListControllerOptions extends GuiControllerOptions {
 }
 
 export interface ListControllerSignals {
-  onActivate: Signal<(index: number) => void>;
-  onSelect: Signal<(index: number) => void>;
+  onActivate: Signal<number>;
+  onSelect: Signal<number>;
 }

@@ -31,7 +31,7 @@ export interface GuiDialogOptions extends GuiControllerOptions {
 }
 
 export interface GuiDialogSignals {
-  readonly onActiveChange: Signal<(entry: Readonly<GuiDialogEntry> | null) => void>;
-  readonly onClose: Signal<(result: Readonly<GuiDialogCloseResult>) => void>;
-  readonly onQueueChange: Signal<() => void>;
+  readonly onActiveChange: Signal<Readonly<GuiDialogEntry> | null>;
+  readonly onClose: Signal<Readonly<GuiDialogCloseResult>>;
+  readonly onQueueChange: Signal<void>;
 }

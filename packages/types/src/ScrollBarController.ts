@@ -24,5 +24,5 @@ export interface ScrollBarControllerOptions extends GuiControllerOptions {
 }
 
 export interface ScrollBarControllerSignals {
-  onChange: Signal<(value: number) => void>;
+  onChange: Signal<number>;
 }

@@ -22,5 +22,5 @@ export interface SplitPaneControllerOptions extends GuiControllerOptions {
 }
 
 export interface SplitPaneControllerSignals {
-  onChange: Signal<(position: number) => void>;
+  onChange: Signal<number>;
 }

@@ -21,7 +21,7 @@ export interface TreeViewControllerOptions extends GuiControllerOptions {
 }
 
 export interface TreeViewControllerSignals {
-  onActivate: Signal<(item: Readonly<TreeViewControllerItem>) => void>;
-  onExpandChange: Signal<(item: Readonly<TreeViewControllerItem>, expanded: boolean) => void>;
-  onSelect: Signal<(item: Readonly<TreeViewControllerItem> | null) => void>;
+  onActivate: Signal<Readonly<TreeViewControllerItem>>;
+  onExpandChange: Signal<readonly [item: Readonly<TreeViewControllerItem>, expanded: boolean]>;
+  onSelect: Signal<Readonly<TreeViewControllerItem> | null>;
 }

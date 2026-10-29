@@ -20,5 +20,5 @@ export interface SliderControllerOptions extends GuiControllerOptions {
 }
 
 export interface SliderControllerSignals {
-  onChange: Signal<(value: number) => void>;
+  onChange: Signal<number>;
 }

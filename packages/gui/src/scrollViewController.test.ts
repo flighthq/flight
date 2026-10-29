@@ -40,7 +40,7 @@ describe('getScrollViewControllerSignals', () => {
       viewport: createGuiTestNode(),
     });
     const values: number[][] = [];
-    connectSignal(getScrollViewControllerSignals(controller).onScroll, (x, y) => values.push([x, y]));
+    connectSignal(getScrollViewControllerSignals(controller).onScroll, ([x, y]) => values.push([x, y]));
     setScrollViewControllerPosition(controller, 10, 20);
     expect(values).toEqual([[10, 20]]);
   });

@@ -1,5 +1,5 @@
 import { getNodeHitArea, isNodeHitTestEnabled } from '@flighthq/interaction/contract';
-import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Entity } from '@flighthq/types/contract';
 
 import {
@@ -58,14 +58,28 @@ describe('connectGuiInteraction', () => {
 
 describe('connectGuiSignal', () => {
   it('disconnects a generic signal on disposal', () => {
-    const signal = createSignal<() => void>();
+    const signal = createSignal<void>();
     const runtime = createGuiControllerRuntime({});
     const controller = createGuiController<Entity, typeof runtime>(runtime);
     let calls = 0;
     connectGuiSignal(runtime, signal, () => calls++);
     disposeGuiController(controller, () => {});
-    emitSignal(signal);
+    emitSignal(signal, undefined);
     expect(calls).toBe(0);
+  });
+
+  it('leaves a direct connection of the same slot connected on disposal', () => {
+    const signal = createSignal<number>();
+    const runtime = createGuiControllerRuntime({});
+    const controller = createGuiController<Entity, typeof runtime>(runtime);
+    const values: number[] = [];
+    const slot = (value: number) => values.push(value);
+    connectSignal(signal, slot);
+    connectGuiSignal(runtime, signal, slot);
+    emitSignal(signal, 1);
+    disposeGuiController(controller, () => {});
+    emitSignal(signal, 2);
+    expect(values).toEqual([1, 1, 2]);
   });
 });
 

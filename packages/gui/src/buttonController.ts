@@ -62,19 +62,19 @@ export function createButtonController(options: Readonly<ButtonControllerOptions
     if (runtime.disabled) return;
     runtime.pressed = true;
     updateButtonControllerVisuals(runtime);
-    emitSignal(runtime.signals.onPress);
+    emitSignal(runtime.signals.onPress, undefined);
   });
   const release = () => {
     if (!runtime.pressed) return;
     runtime.pressed = false;
     updateButtonControllerVisuals(runtime);
-    emitSignal(runtime.signals.onRelease);
+    emitSignal(runtime.signals.onRelease, undefined);
   };
   connectGuiInteraction(runtime, target, 'onPointerUp', release);
   connectGuiInteraction(runtime, target, 'onPointerCancel', release);
   connectGuiInteraction(runtime, target, 'onReleaseOutside', release);
   connectGuiInteraction(runtime, target, 'onClick', () => {
-    if (!runtime.disabled) emitSignal(runtime.signals.onClick);
+    if (!runtime.disabled) emitSignal(runtime.signals.onClick, undefined);
   });
   updateButtonControllerVisuals(runtime);
   return controller;

@@ -20,5 +20,5 @@ export interface TabBarControllerOptions extends GuiControllerOptions {
 }
 
 export interface TabBarControllerSignals {
-  onChange: Signal<(index: number) => void>;
+  onChange: Signal<number>;
 }

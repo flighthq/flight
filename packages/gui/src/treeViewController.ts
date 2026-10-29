@@ -100,7 +100,7 @@ export function setTreeViewControllerItemExpanded(
   if (expanded) runtime.expanded.add(item);
   else runtime.expanded.delete(item);
   updateTreeViewControllerVisibility(runtime);
-  emitSignal(runtime.signals.onExpandChange, item, expanded);
+  emitSignal(runtime.signals.onExpandChange, [item, expanded]);
 }
 
 export function setTreeViewControllerSelectedItem(

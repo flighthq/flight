@@ -21,8 +21,8 @@ export interface TextInputControllerOptions extends GuiControllerOptions {
 }
 
 export interface TextInputControllerSignals {
-  onChange: Signal<(text: string) => void>;
-  onSubmit: Signal<(text: string) => void>;
+  onChange: Signal<string>;
+  onSubmit: Signal<string>;
 }
 
 export type TextInputControllerKeyboardData = Readonly<InputKeyboardData>;

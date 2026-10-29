@@ -133,7 +133,7 @@ export function setScrollViewControllerPosition(controller: ScrollViewController
   runtime.x = nextX;
   runtime.y = nextY;
   updateScrollViewControllerVisual(runtime);
-  emitSignal(runtime.signals.onScroll, nextX, nextY);
+  emitSignal(runtime.signals.onScroll, [nextX, nextY]);
 }
 
 function updateScrollViewControllerVisual(

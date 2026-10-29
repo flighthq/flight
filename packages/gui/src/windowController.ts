@@ -82,7 +82,7 @@ export function createWindowController(options: Readonly<WindowControllerOptions
   const controller = createGuiController<WindowController, typeof runtime>(runtime);
   if (runtime.closeButton !== null) {
     connectGuiSignal(runtime, getButtonControllerSignals(runtime.closeButton).onClick, () =>
-      emitSignal(runtime.signals.onClose),
+      emitSignal(runtime.signals.onClose, undefined),
     );
   }
   if (runtime.titleBar !== null) {
@@ -156,7 +156,7 @@ export function setWindowControllerPosition(controller: WindowController, x: num
   if (runtime.frame === null || runtime.disposed || (runtime.frame.x === x && runtime.frame.y === y)) return;
   setGuiVisualProperty(runtime, runtime.frame, 'x', x);
   setGuiVisualProperty(runtime, runtime.frame, 'y', y);
-  emitSignal(runtime.signals.onMove, x, y);
+  emitSignal(runtime.signals.onMove, [x, y]);
 }
 
 export function setWindowControllerSize(controller: WindowController, width: number, height: number): void {
@@ -178,5 +178,5 @@ export function setWindowControllerSize(controller: WindowController, width: num
       'scaleY',
       (runtime.frameBaseScaleY * nextHeight) / runtime.frameBaseHeight,
     );
-  emitSignal(runtime.signals.onResize, nextWidth, nextHeight);
+  emitSignal(runtime.signals.onResize, [nextWidth, nextHeight]);
 }
