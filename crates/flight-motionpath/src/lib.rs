@@ -3,7 +3,7 @@
 //! animation loop, timer or device operation lives here.
 
 mod motion_path;
-mod motion_path_sugar;
+mod sugar;
 mod types;
 
 pub mod contract;

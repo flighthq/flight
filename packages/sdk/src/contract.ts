@@ -87,6 +87,7 @@ export * from '@flighthq/menu';
 export * from '@flighthq/midi';
 export * from '@flighthq/meshgeometry/contract';
 export * from '@flighthq/motionpath';
+export type { MotionPathLoopMode } from '@flighthq/motionpath';
 export * from '@flighthq/movieclip';
 export * from '@flighthq/net';
 export * from '@flighthq/node';

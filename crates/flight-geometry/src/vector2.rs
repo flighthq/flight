@@ -9,6 +9,10 @@ pub struct Vector2 {
     pub y: f32,
 }
 
+/// A structural `{ x, y }` value accepted where no entity identity is required (TS `Vector2Like`,
+/// `EntityWithoutRuntime<Vector2>`). In Rust it is the same type: the alias names the role.
+pub type Vector2Like = Vector2;
+
 pub fn create_vector2(x: f32, y: f32) -> Vector2 {
     let mut out: Vector2 = allocate_entity();
     initialize_vector2(&mut out, x, y);

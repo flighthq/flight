@@ -1,7 +1,7 @@
 //! Arc-length motion-path markers over a `Path` (TS `motionPath.ts`).
 
 use flight_entity::{Ref, allocate_entity};
-use flight_geometry::{Vector2, create_vector2};
+use flight_geometry::{Vector2, Vector2Like, create_vector2};
 use flight_path::{
     Path, get_path_length, get_path_position_at_distance, get_path_tangent_at_distance,
 };
@@ -17,8 +17,8 @@ use crate::types::*;
 // flight-lint: allow(f64) D1: speed and tolerance flow through flight-path's f64 arc-length API
 pub fn create_motion_path(
     path: Ref<Path>,
-    speed: f64,
-    loop_mode: MotionPathLoopMode,
+    speed: Option<f64>,
+    loop_mode: Option<MotionPathLoopMode>,
     tolerance: Option<f64>,
 ) -> MotionPath {
     let mut out: MotionPath = allocate_entity();
@@ -33,16 +33,16 @@ pub fn create_motion_path(
 pub fn initialize_motion_path(
     out: &mut MotionPath,
     path: Ref<Path>,
-    speed: f64,
-    loop_mode: MotionPathLoopMode,
+    speed: Option<f64>,
+    loop_mode: Option<MotionPathLoopMode>,
     tolerance: Option<f64>,
 ) {
     out.direction = MotionPathDirection::Forward;
     out.distance = 0.0;
     out.length = get_path_length(&path.read().unwrap(), tolerance);
-    out.loop_mode = loop_mode;
+    out.loop_mode = loop_mode.unwrap_or(MotionPathLoopMode::Clamp);
     out.path = path;
-    out.speed = speed;
+    out.speed = speed.unwrap_or(0.0);
 }
 
 /// Resolves the end behavior after advancing `mp` by `move` units along its direction (TS
@@ -62,7 +62,7 @@ fn apply_motion_path_loop_mode(mp: &mut MotionPath, movement: f64, length: f64) 
         mp.distance = wrapped;
         return;
     }
-    if loop_mode == MotionPathLoopMode::PingPong {
+    if loop_mode == MotionPathLoopMode::Pingpong {
         let period = 2.0 * length;
         let phase = if direction < 0.0 {
             period - distance
@@ -107,8 +107,8 @@ pub fn get_motion_path_heading(mp: &MotionPath) -> f64 {
 // flight-lint: allow(f64) D1: the distance is a f64 arc length sampled by flight-path
 pub fn get_motion_path_position(
     mp: &MotionPath,
-    point_out: &mut Vector2,
-    tangent_out: &mut Vector2,
+    point_out: &mut Vector2Like,
+    tangent_out: &mut Vector2Like,
 ) -> bool {
     return get_path_position_at_distance(
         &mp.path.read().unwrap(),

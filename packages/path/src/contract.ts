@@ -27,3 +27,6 @@ export * from './tessellatePath.ts';
 export * from './tessellatePathTyped.ts';
 export * from './tessellateStrokePath.ts';
 export * from './transformPath.ts';
+// Type-only compatibility seam for generated dependents: the path package is not generated yet, so
+// its Path and PathWinding declarations still live in @flighthq/types.
+export type { Path, PathWinding } from '@flighthq/types/contract';

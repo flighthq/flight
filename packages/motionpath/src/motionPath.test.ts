@@ -1,273 +1,263 @@
+// Generated from crates/flight-motionpath/tests/motion_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { createVector2 } from '@flighthq/geometry/contract';
-import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
-import type { Path } from '@flighthq/types/contract';
+import { PathWinding, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
+import { describe, expect, it } from 'vitest';
 
 import {
   createMotionPath,
   getMotionPathHeading,
   getMotionPathPosition,
   getMotionPathProgress,
-  isMotionPathAtEnd,
   initializeMotionPath,
+  isMotionPathAtEnd,
+  setMotionPathDirection,
   setMotionPathDistance,
   setMotionPathProgress,
-  setMotionPathDirection,
   updateMotionPath,
-} from './motionPath.ts';
+} from './contract.ts';
+import type { MotionPathLoopMode } from './contract.ts';
+
+function line(): Path {
+  let path = createPath('nonZero');
+  appendPathMoveTo(path, 0.0, 0.0);
+  appendPathLineTo(path, 100.0, 0.0);
+  return path;
+}
+
+function corner(): Path {
+  let path = createPath('nonZero');
+  appendPathMoveTo(path, 0.0, 0.0);
+  appendPathLineTo(path, 100.0, 0.0);
+  appendPathLineTo(path, 100.0, 100.0);
+  return path;
+}
+
+function empty(): Path {
+  return createPath('nonZero');
+}
 
 describe('createMotionPath', () => {
   it('caches the path arc length measured from the path', () => {
-    const mp = createMotionPath(line());
-    expect(mp.length).toBeCloseTo(100, 6);
+    const marker = createMotionPath(line(), 0.0, undefined, undefined);
+    expect(Math.abs(marker.length - 100.0) < 1e-6).toBe(true);
   });
-
-  it('starts at the path start, forward, with clamp defaults', () => {
-    const mp = createMotionPath(line());
-    expect(mp.distance).toBe(0);
-    expect(mp.direction).toBe(1);
-    expect(mp.speed).toBe(0);
-    expect(mp.loopMode).toBe('clamp');
+  it('starts at the path start forward with clamp defaults', () => {
+    const marker = createMotionPath(empty(), undefined, undefined, undefined);
+    expect(marker.distance).toEqual(0.0);
+    expect(marker.direction).toEqual(1);
+    expect(marker.speed).toEqual(0.0);
+    expect(marker.loopMode).toEqual('clamp');
+    expect(marker.length).toEqual(0.0);
+    expect(marker.path!.commands.length === 0).toBe(true);
   });
-
   it('carries the provided speed and loop mode', () => {
-    const mp = createMotionPath(line(), 50, 'pingpong');
-    expect(mp.speed).toBe(50);
-    expect(mp.loopMode).toBe('pingpong');
+    const mode: MotionPathLoopMode = 'pingpong';
+    const marker = createMotionPath(line(), 50.0, mode, undefined);
+    expect(marker.speed).toEqual(50.0);
+    expect(marker.loopMode).toEqual('pingpong');
   });
 });
 
-// A straight horizontal line from (0,0) to (100,0): arc length 100, tangent (1,0) everywhere.
 describe('getMotionPathHeading', () => {
-  it('reads 0 radians along a rightward line', () => {
-    const mp = createMotionPath(line());
-    setMotionPathDistance(mp, 50);
-    expect(getMotionPathHeading(mp)).toBeCloseTo(0, 6);
+  it('reads zero radians along a rightward line', () => {
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, 50.0);
+    expect(Math.abs(getMotionPathHeading(marker)) < 1e-6).toBe(true);
   });
-
   it('differs before and after a corner', () => {
-    const mp = createMotionPath(corner());
-    setMotionPathDistance(mp, 50); // on the horizontal leg, heading 0
-    const before = getMotionPathHeading(mp);
-    setMotionPathDistance(mp, 150); // on the vertical leg, heading +pi/2
-    const after = getMotionPathHeading(mp);
-    expect(before).toBeCloseTo(0, 6);
-    expect(after).toBeCloseTo(Math.PI / 2, 6);
-    expect(after).not.toBeCloseTo(before, 3);
+    let marker = createMotionPath(corner(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, 50.0);
+    const before = getMotionPathHeading(marker);
+    setMotionPathDistance(marker, 150.0);
+    const after = getMotionPathHeading(marker);
+    expect(Math.abs(before) < 1e-6).toBe(true);
+    expect(Math.abs(after - Math.atan2(1.0, 0.0)) < 1e-6).toBe(true);
+    expect(Math.abs(after - before) > 1e-3).toBe(true);
   });
 });
 
-// A straight horizontal line from (0,0) to (100,0): arc length 100.
 describe('getMotionPathPosition', () => {
   it('samples the point and tangent at the current distance', () => {
-    const mp = createMotionPath(line());
-    setMotionPathDistance(mp, 50);
-    const point = createVector2();
-    const tangent = createVector2();
-    const ok = getMotionPathPosition(mp, point, tangent);
-    expect(ok).toBe(true);
-    expect(point.x).toBeCloseTo(50, 6);
-    expect(point.y).toBeCloseTo(0, 6);
-    expect(tangent.x).toBeCloseTo(1, 6);
-    expect(tangent.y).toBeCloseTo(0, 6);
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, 50.0);
+    let point = createVector2(0.0, 0.0);
+    let tangent = createVector2(0.0, 0.0);
+    expect(getMotionPathPosition(marker, point, tangent)).toBe(true);
+    expect(Math.abs(point.x - 50.0) < 1e-4).toBe(true);
+    expect(Math.abs(point.y) < 1e-4).toBe(true);
+    expect(Math.abs(tangent.x - 1.0) < 1e-4).toBe(true);
+    expect(Math.abs(tangent.y) < 1e-4).toBe(true);
   });
-
-  it('returns false and leaves outputs unchanged for an empty path', () => {
-    const mp = createMotionPath(createPath());
-    const point = createVector2(7, 8);
-    const tangent = createVector2(9, 9);
-    const ok = getMotionPathPosition(mp, point, tangent);
-    expect(ok).toBe(false);
-    expect(point.x).toBe(7);
-    expect(point.y).toBe(8);
+  it('returns false and leaves the point unchanged for an empty path', () => {
+    const marker = createMotionPath(empty(), 0.0, undefined, undefined);
+    let point = createVector2(7.0, 8.0);
+    let tangent = createVector2(9.0, 9.0);
+    expect(!getMotionPathPosition(marker, point, tangent)).toBe(true);
+    expect(point.x).toEqual(7.0);
+    expect(point.y).toEqual(8.0);
   });
 });
 
-// A straight horizontal line from (0,0) to (100,0): arc length 100.
 describe('getMotionPathProgress', () => {
-  it('reports distance / length', () => {
-    const mp = createMotionPath(line());
-    setMotionPathDistance(mp, 25);
-    expect(getMotionPathProgress(mp)).toBeCloseTo(0.25, 6);
+  it('reports distance over length', () => {
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, 25.0);
+    expect(Math.abs(getMotionPathProgress(marker) - 0.25) < 1e-6).toBe(true);
   });
-
-  it('reports 0 for a zero-length path', () => {
-    const mp = createMotionPath(createPath());
-    expect(getMotionPathProgress(mp)).toBe(0);
+  it('reports zero for a zero length path', () => {
+    const marker = createMotionPath(empty(), 0.0, undefined, undefined);
+    expect(getMotionPathProgress(marker)).toEqual(0.0);
   });
 });
 
 describe('initializeMotionPath', () => {
-  it('is the construction initializer of createMotionPath', () => {
-    expect(typeof initializeMotionPath).toBe('function');
+  it('is the construction initializer of create motion path', () => {
+    let marker = createMotionPath(line(), 5.0, 'loop', undefined);
+    marker.direction = -1;
+    marker.distance = 4.0;
+    initializeMotionPath(marker, empty(), 0.0, 'clamp', undefined);
+    expect(marker.direction).toEqual(1);
+    expect(marker.distance).toEqual(0.0);
+    expect(marker.length).toEqual(0.0);
+    expect(marker.speed).toEqual(0.0);
+    expect(marker.loopMode).toEqual('clamp');
+    expect(marker.path!.commands.length === 0).toBe(true);
   });
 });
 
 describe('isMotionPathAtEnd', () => {
   it('reports the terminal edge in the current direction', () => {
-    const mp = createMotionPath(line());
-    expect(isMotionPathAtEnd(mp)).toBe(false);
-    setMotionPathDistance(mp, 100);
-    expect(isMotionPathAtEnd(mp)).toBe(true);
-    setMotionPathDirection(mp, -1);
-    expect(isMotionPathAtEnd(mp)).toBe(false);
-    setMotionPathDistance(mp, 0);
-    expect(isMotionPathAtEnd(mp)).toBe(true);
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    expect(!isMotionPathAtEnd(marker)).toBe(true);
+    setMotionPathDistance(marker, 100.0);
+    expect(isMotionPathAtEnd(marker)).toBe(true);
+    setMotionPathDirection(marker, -1);
+    expect(!isMotionPathAtEnd(marker)).toBe(true);
+    setMotionPathDistance(marker, 0.0);
+    expect(isMotionPathAtEnd(marker)).toBe(true);
   });
 });
 
 describe('setMotionPathDirection', () => {
   it('changes traversal direction without changing distance', () => {
-    const mp = createMotionPath(line());
-    setMotionPathDistance(mp, 25);
-    setMotionPathDirection(mp, -1);
-    expect(mp.direction).toBe(-1);
-    expect(mp.distance).toBe(25);
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, 25.0);
+    setMotionPathDirection(marker, -1);
+    expect(marker.direction).toEqual(-1);
+    expect(marker.distance).toEqual(25.0);
   });
 });
 
-// A straight horizontal line from (0,0) to (100,0): arc length 100.
 describe('setMotionPathDistance', () => {
-  it('seeks to an absolute arc-length distance', () => {
-    const mp = createMotionPath(line());
-    setMotionPathDistance(mp, 25);
-    expect(mp.distance).toBe(25);
+  it('seeks to an absolute arc length distance', () => {
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, 25.0);
+    expect(marker.distance).toEqual(25.0);
   });
-
   it('clamps distances above the length', () => {
-    const mp = createMotionPath(line());
-    setMotionPathDistance(mp, 150);
-    expect(mp.distance).toBe(100);
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, 150.0);
+    expect(marker.distance).toEqual(100.0);
   });
-
-  it('clamps negative distances to 0', () => {
-    const mp = createMotionPath(line());
-    setMotionPathDistance(mp, -10);
-    expect(mp.distance).toBe(0);
+  it('clamps negative distances to zero', () => {
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathDistance(marker, -10.0);
+    expect(marker.distance).toEqual(0.0);
   });
 });
 
-// A straight horizontal line from (0,0) to (100,0): arc length 100.
 describe('setMotionPathProgress', () => {
   it('seeks to a normalized progress along the path', () => {
-    const mp = createMotionPath(line());
-    setMotionPathProgress(mp, 0.25);
-    expect(mp.distance).toBeCloseTo(25, 6);
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathProgress(marker, 0.25);
+    expect(Math.abs(marker.distance - 25.0) < 1e-6).toBe(true);
   });
-
-  it('clamps progress above 1 to the end', () => {
-    const mp = createMotionPath(line());
-    setMotionPathProgress(mp, 1.5);
-    expect(mp.distance).toBeCloseTo(100, 6);
+  it('clamps progress above one to the end', () => {
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathProgress(marker, 1.5);
+    expect(Math.abs(marker.distance - 100.0) < 1e-6).toBe(true);
   });
-
   it('clamps negative progress to the start', () => {
-    const mp = createMotionPath(line());
-    setMotionPathProgress(mp, -0.5);
-    expect(mp.distance).toBe(0);
+    let marker = createMotionPath(line(), 0.0, 'clamp', undefined);
+    setMotionPathProgress(marker, -0.5);
+    expect(marker.distance).toEqual(0.0);
   });
 });
 
-// A straight horizontal line from (0,0) to (100,0): arc length 100.
-function line(): Path {
-  const path = createPath();
-  appendPathMoveTo(path, 0, 0);
-  appendPathLineTo(path, 100, 0);
-  return path;
-}
-
-function corner(): Path {
-  const path = createPath();
-  appendPathMoveTo(path, 0, 0);
-  appendPathLineTo(path, 100, 0);
-  appendPathLineTo(path, 100, 100);
-  return path;
-}
-
-function empty(): Path {
-  return createPath();
-}
-// A straight horizontal line from (0,0) to (100,0): arc length 100.
 describe('updateMotionPath', () => {
-  it('advances distance by speed * deltaTime', () => {
-    const mp = createMotionPath(line(), 50);
-    updateMotionPath(mp, 1);
-    expect(mp.distance).toBeCloseTo(50, 6);
-    expect(getMotionPathProgress(mp)).toBeCloseTo(0.5, 6);
+  it('advances distance by speed times delta time', () => {
+    let marker = createMotionPath(line(), 50.0, 'clamp', undefined);
+    updateMotionPath(marker, 1.0);
+    expect(Math.abs(marker.distance - 50.0) < 1e-6).toBe(true);
+    expect(Math.abs(getMotionPathProgress(marker) - 0.5) < 1e-6).toBe(true);
   });
-
   it('clamp stops at the end and stays there', () => {
-    const mp = createMotionPath(line(), 50, 'clamp');
-    updateMotionPath(mp, 10); // 500 units of travel, past the 100-length end
-    expect(mp.distance).toBeCloseTo(100, 6);
-    expect(getMotionPathProgress(mp)).toBeCloseTo(1, 6);
-    updateMotionPath(mp, 5);
-    expect(mp.distance).toBeCloseTo(100, 6);
+    let marker = createMotionPath(line(), 50.0, 'clamp', undefined);
+    updateMotionPath(marker, 10.0);
+    expect(Math.abs(marker.distance - 100.0) < 1e-6).toBe(true);
+    expect(Math.abs(getMotionPathProgress(marker) - 1.0) < 1e-6).toBe(true);
+    updateMotionPath(marker, 5.0);
+    expect(Math.abs(marker.distance - 100.0) < 1e-6).toBe(true);
   });
-
   it('loop wraps past the end modulo length', () => {
-    const mp = createMotionPath(line(), 30, 'loop');
-    updateMotionPath(mp, 4); // 120 -> 20
-    expect(mp.distance).toBeCloseTo(20, 6);
+    let marker = createMotionPath(line(), 30.0, 'loop', undefined);
+    updateMotionPath(marker, 4.0);
+    expect(Math.abs(marker.distance - 20.0) < 1e-6).toBe(true);
   });
-
-  it('loop wraps backward into [0, length)', () => {
-    const mp = createMotionPath(line(), 30, 'loop');
-    mp.direction = -1;
-    updateMotionPath(mp, 4); // 0 - 120 -> -120 mod 100 -> 80
-    expect(mp.distance).toBeCloseTo(80, 6);
+  it('loop wraps backward into the valid range', () => {
+    let marker = createMotionPath(line(), 30.0, 'loop', undefined);
+    setMotionPathDirection(marker, -1);
+    updateMotionPath(marker, 4.0);
+    expect(Math.abs(marker.distance - 80.0) < 1e-6).toBe(true);
   });
-
-  it('pingpong reflects at the end and flips direction to -1', () => {
-    const mp = createMotionPath(line(), 30, 'pingpong');
-    mp.distance = 90;
-    updateMotionPath(mp, 1); // 90 + 30 = 120 -> reflect to 80
-    expect(mp.distance).toBeCloseTo(80, 6);
-    expect(mp.direction).toBe(-1);
+  it('pingpong reflects at the end and flips direction to backward', () => {
+    let marker = createMotionPath(line(), 30.0, 'pingpong', undefined);
+    setMotionPathDistance(marker, 90.0);
+    updateMotionPath(marker, 1.0);
+    expect(Math.abs(marker.distance - 80.0) < 1e-6).toBe(true);
+    expect(marker.direction).toEqual(-1);
   });
-
   it('pingpong then travels back toward the start', () => {
-    const mp = createMotionPath(line(), 30, 'pingpong');
-    mp.distance = 90;
-    updateMotionPath(mp, 1); // -> 80, direction -1
-    updateMotionPath(mp, 1); // 80 - 30 = 50
-    expect(mp.distance).toBeCloseTo(50, 6);
-    expect(mp.direction).toBe(-1);
+    let marker = createMotionPath(line(), 30.0, 'pingpong', undefined);
+    setMotionPathDistance(marker, 90.0);
+    updateMotionPath(marker, 1.0);
+    updateMotionPath(marker, 1.0);
+    expect(Math.abs(marker.distance - 50.0) < 1e-6).toBe(true);
+    expect(marker.direction).toEqual(-1);
   });
-
   it('loop wraps a single large step across the path multiple times', () => {
-    const mp = createMotionPath(line(), 250, 'loop');
-    updateMotionPath(mp, 1); // 250 mod 100 -> 50
-    expect(mp.distance).toBeCloseTo(50, 6);
+    let marker = createMotionPath(line(), 250.0, 'loop', undefined);
+    updateMotionPath(marker, 1.0);
+    expect(Math.abs(marker.distance - 50.0) < 1e-6).toBe(true);
   });
-
   it('pingpong resolves a single large step that crosses the path several times', () => {
-    const mp = createMotionPath(line(), 250, 'pingpong');
-    updateMotionPath(mp, 1); // 0->100 (flip), 100->0 (flip), 0->50 => 50, direction +1
-    expect(mp.distance).toBeCloseTo(50, 6);
-    expect(mp.direction).toBe(1);
+    let marker = createMotionPath(line(), 250.0, 'pingpong', undefined);
+    updateMotionPath(marker, 1.0);
+    expect(Math.abs(marker.distance - 50.0) < 1e-6).toBe(true);
+    expect(marker.direction).toEqual(1);
   });
-
-  it('pingpong reflects again at the start and flips direction back to +1', () => {
-    const mp = createMotionPath(line(), 80, 'pingpong');
-    mp.distance = 50;
-    mp.direction = -1;
-    updateMotionPath(mp, 1); // 50 - 80 = -30 -> reflect to 30, direction +1
-    expect(mp.distance).toBeCloseTo(30, 6);
-    expect(mp.direction).toBe(1);
+  it('pingpong reflects again at the start and flips direction back', () => {
+    let marker = createMotionPath(line(), 80.0, 'pingpong', undefined);
+    setMotionPathDistance(marker, 50.0);
+    setMotionPathDirection(marker, -1);
+    updateMotionPath(marker, 1.0);
+    expect(Math.abs(marker.distance - 30.0) < 1e-6).toBe(true);
+    expect(marker.direction).toEqual(1);
   });
-
-  it('deltaTime <= 0 is a no-op', () => {
-    const mp = createMotionPath(line(), 50);
-    updateMotionPath(mp, 0);
-    expect(mp.distance).toBe(0);
-    updateMotionPath(mp, -1);
-    expect(mp.distance).toBe(0);
+  it('a non positive delta time is a no op', () => {
+    let marker = createMotionPath(line(), 50.0, 'clamp', undefined);
+    updateMotionPath(marker, 0.0);
+    expect(marker.distance).toEqual(0.0);
+    updateMotionPath(marker, -1.0);
+    expect(marker.distance).toEqual(0.0);
   });
-
-  it('a zero-length path is a no-op', () => {
-    const mp = createMotionPath(empty(), 50);
-    expect(mp.length).toBe(0);
-    updateMotionPath(mp, 1);
-    expect(mp.distance).toBe(0);
+  it('a zero length path is a no op', () => {
+    let marker = createMotionPath(empty(), 50.0, 'clamp', undefined);
+    expect(marker.length).toEqual(0.0);
+    updateMotionPath(marker, 1.0);
+    expect(marker.distance).toEqual(0.0);
   });
 });

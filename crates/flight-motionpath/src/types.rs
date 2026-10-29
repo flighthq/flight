@@ -1,3 +1,5 @@
+//! flight-compiler: string-union MotionPathLoopMode
+//! flight-compiler: numeric-union MotionPathDirection
 //! The motion-path contract types: the arc-length marker entity, its closed loop-mode and direction
 //! representations (TS `types/src/MotionPath.ts`).
 
@@ -7,19 +9,19 @@ use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_path::{Path, create_path};
 
 /// How the marker behaves when it reaches an end of the path (TS `MotionPathLoopMode`), a closed
-/// string union. `Clamp` stops at the ends; `Loop` wraps modulo the path length; `PingPong`
+/// string union. `Clamp` stops at the ends; `Loop` wraps modulo the path length; `Pingpong`
 /// reflects at each end and reverses `direction`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum MotionPathLoopMode {
     #[default]
     Clamp,
     Loop,
-    PingPong,
+    Pingpong,
 }
 
 /// The marker's travel direction (TS `1 | -1`), a closed representation. `Forward` traverses from
 /// the path start; `Backward` travels toward it. Direction is stored rather than folded into a
-/// signed speed because `PingPong` must remember which way the marker is heading across frames.
+/// signed speed because `Pingpong` must remember which way the marker is heading across frames.
 /// The discriminants are the source's numeric values, so `direction as i8 as f64` is the signed
 /// travel factor.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -50,7 +52,7 @@ pub fn get_motion_path_loop_mode_string(value: MotionPathLoopMode) -> &'static s
     return match value {
         MotionPathLoopMode::Clamp => "clamp",
         MotionPathLoopMode::Loop => "loop",
-        MotionPathLoopMode::PingPong => "pingpong",
+        MotionPathLoopMode::Pingpong => "pingpong",
     };
 }
 
@@ -59,7 +61,7 @@ pub fn parse_motion_path_loop_mode(value: &str) -> Option<MotionPathLoopMode> {
     return match value {
         "clamp" => Some(MotionPathLoopMode::Clamp),
         "loop" => Some(MotionPathLoopMode::Loop),
-        "pingpong" => Some(MotionPathLoopMode::PingPong),
+        "pingpong" => Some(MotionPathLoopMode::Pingpong),
         _ => None,
     };
 }

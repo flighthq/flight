@@ -441,5 +441,6 @@ pub use contract::Rectangle;
 pub use contract::Transform2D;
 pub use contract::Transform3D;
 pub use contract::Vector2;
+pub use contract::Vector2Like;
 pub use contract::Vector3;
 pub use contract::Vector4;
