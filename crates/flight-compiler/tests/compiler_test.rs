@@ -5194,6 +5194,10 @@ pub fn get_defaults() -> u32 {
             source_root.join("native"),
             source_root.join("nested"),
             source_root.join("outer"),
+            source_root.join("elsewhere"),
+            source_root.join("path_loaded").join("parent"),
+            source_root.join("conditional"),
+            source_root.join("alternative").join("conditional"),
             source_root.join("hidden_dir"),
             outside.clone(),
         ] {
@@ -5224,6 +5228,50 @@ pub fn get_defaults() -> u32 {
         let deep = write(
             source_root.join("outer").join("deep.rs"),
             "pub fn deep() {}\n",
+        );
+        let relocated_deep = write(
+            source_root.join("elsewhere").join("deep.rs"),
+            "pub fn deep() {}\n",
+        );
+        let path_loaded_parent = write(
+            source_root.join("path_loaded").join("parent.rs"),
+            "mod child;\n",
+        );
+        let path_loaded_child = write(
+            source_root.join("path_loaded").join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let misplaced_path_loaded_child = write(
+            source_root
+                .join("path_loaded")
+                .join("parent")
+                .join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let conditional_parent = write(source_root.join("conditional.rs"), "mod child;\n");
+        let conditional_child = write(
+            source_root.join("conditional").join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let alternative_parent = write(
+            source_root.join("alternative").join("conditional.rs"),
+            "mod child;\n",
+        );
+        let alternative_child = write(
+            source_root.join("alternative").join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let misplaced_alternative_child = write(
+            source_root
+                .join("alternative")
+                .join("conditional")
+                .join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let raw_type = write(source_root.join("type.rs"), "pub fn raw() {}\n");
+        let raw_match = write(
+            source_root.join("outer").join("match.rs"),
+            "pub fn raw() {}\n",
         );
         let run = |root: &str, visibility: &[&std::path::PathBuf]| {
             let lib = write(source_root.join("lib.rs"), root);
@@ -5285,6 +5333,26 @@ pub fn get_defaults() -> u32 {
                 vec![&deep],
                 unseen("mod deep"),
             ),
+            (
+                "pub mod kernel;\n#[path = \"path_loaded/parent.rs\"]\nmod parent;\n",
+                vec![&path_loaded_parent, &misplaced_path_loaded_child],
+                unseen("mod child"),
+            ),
+            (
+                "pub mod kernel;\n#[cfg_attr(feature = \"alternative\", path = \"alternative/conditional.rs\")]\nmod conditional;\n",
+                vec![
+                    &conditional_parent,
+                    &conditional_child,
+                    &alternative_parent,
+                    &misplaced_alternative_child,
+                ],
+                unseen("mod child"),
+            ),
+            (
+                "pub mod kernel;\nmod r#type;\n",
+                vec![],
+                unseen("mod r#type"),
+            ),
         ];
         for (root, visibility, reason) in &negatives {
             let (code, stderr, emitted) = run(root, visibility);
@@ -5307,6 +5375,27 @@ pub fn get_defaults() -> u32 {
                 vec![&deep],
             ),
             (
+                "pub mod kernel;\n#[cfg_attr(feature = \"relocated\", path = \"elsewhere\")]\nmod outer {\n    mod deep;\n}\n",
+                vec![&deep, &relocated_deep],
+            ),
+            (
+                "pub mod kernel;\n#[path = \"path_loaded/parent.rs\"]\nmod parent;\n",
+                vec![&path_loaded_parent, &path_loaded_child],
+            ),
+            (
+                "pub mod kernel;\n#[cfg_attr(feature = \"alternative\", path = \"alternative/conditional.rs\")]\nmod conditional;\n",
+                vec![
+                    &conditional_parent,
+                    &conditional_child,
+                    &alternative_parent,
+                    &alternative_child,
+                ],
+            ),
+            (
+                "pub mod kernel;\nmod r#type;\nmod r#outer {\n    mod r#match;\n}\n",
+                vec![&raw_type, &raw_match],
+            ),
+            (
                 "pub mod kernel;\n#[cfg_attr(feature = \"trace\", path = \"nested/mod.rs\")]\nmod helper;\n",
                 vec![&helper, &nested],
             ),
@@ -5316,7 +5405,8 @@ pub fn get_defaults() -> u32 {
             ),
             ("pub mod kernel;\nmod hidden_dir;\n", vec![&hidden_dir]),
         ];
-        let (code, stderr, _) = run(positives[5].0, &positives[5].1);
+        let (drop_case, successful) = positives.split_last().unwrap();
+        let (code, stderr, _) = run(drop_case.0, &drop_case.1);
         assert_eq!(
             code,
             Some(2),
@@ -5326,7 +5416,7 @@ pub fn get_defaults() -> u32 {
             stderr.contains("the crate implements `Drop` for `crate::kernel::Kernel`"),
             "{stderr}"
         );
-        for (root, visibility) in &positives[..5] {
+        for (root, visibility) in successful {
             let (code, stderr, emitted) = run(root, visibility);
             assert_eq!(code, Some(0), "{root}: {stderr}");
             assert!(emitted, "{root}");

@@ -7649,6 +7649,89 @@ fn reject_unsafe_lazy_lock_initializers(
         Initialized(&'a Expr),
         Unknown,
     }
+    // How Rust reached a source file. Ordinary `name.rs` files own a `name/` directory for their
+    // children; every file selected by `#[path]` is treated like `mod.rs`, so its children live
+    // beside it. A source can have both reaches under different `cfg_attr` configurations.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    enum ModuleReach {
+        Ordinary,
+        PathLoaded,
+    }
+    // Every alternative group Rust may load for an external module. The paths within one group are
+    // the `name.rs` / `name/mod.rs` alternatives; separate groups (including every `cfg_attr` path)
+    // must each be represented in the proof inventory.
+    fn external_module_candidates(
+        source: &str,
+        reach: ModuleReach,
+        module: &crate::model::ExternalModule,
+    ) -> Option<BTreeSet<(ModuleReach, Vec<String>)>> {
+        let file = std::path::Path::new(source);
+        let directory = file.parent().unwrap_or_else(|| std::path::Path::new(""));
+        let stem = file
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or_default();
+        let ordinary = if reach == ModuleReach::PathLoaded || matches!(stem, "lib" | "main" | "mod")
+        {
+            directory.to_path_buf()
+        } else {
+            directory.join(stem)
+        };
+        // A top-level `#[path]` is relative to the source file's directory even when the source is
+        // an ordinary non-mod-rs file. Once inside an inline module, both kinds of child path start
+        // from the inline module's selected directory.
+        let mut bases = BTreeSet::from([(ordinary, directory.to_path_buf())]);
+        for parent in &module.inline_parents {
+            let mut next = BTreeSet::new();
+            for (ordinary, explicit) in &bases {
+                if parent.path.is_none() {
+                    let base = ordinary.join(&parent.component);
+                    next.insert((base.clone(), base));
+                }
+                for path in parent.path.iter().chain(&parent.conditional_paths) {
+                    if path.is_empty() {
+                        return None;
+                    }
+                    let base = explicit.join(path);
+                    next.insert((base.clone(), base));
+                }
+            }
+            bases = next;
+        }
+        let mut candidates = BTreeSet::new();
+        for (ordinary, explicit) in bases {
+            if module.path.is_none() {
+                candidates.insert((
+                    ModuleReach::Ordinary,
+                    vec![
+                        normalize_source_path(
+                            &ordinary
+                                .join(format!("{}.rs", module.component))
+                                .to_string_lossy(),
+                        ),
+                        normalize_source_path(
+                            &ordinary
+                                .join(&module.component)
+                                .join("mod.rs")
+                                .to_string_lossy(),
+                        ),
+                    ],
+                ));
+            }
+            for path in module.path.iter().chain(&module.conditional_paths) {
+                if path.is_empty() {
+                    return None;
+                }
+                candidates.insert((
+                    ModuleReach::PathLoaded,
+                    vec![normalize_source_path(
+                        &explicit.join(path).to_string_lossy(),
+                    )],
+                ));
+            }
+        }
+        return Some(candidates);
+    }
     // Every name a function or closure body binds, and how each binding is typed: an annotated or
     // initialized `let` of a plain identifier, or anything else (patterns, closure parameters, loop
     // and match bindings), whose type is left unproven.
@@ -7699,6 +7782,8 @@ fn reject_unsafe_lazy_lock_initializers(
     struct EagerScope<'a> {
         context: HashSet<String>,
         module: Vec<String>,
+        // Every way this source can be reached under the crate's module declarations.
+        reaches: BTreeSet<ModuleReach>,
         // The source's file path, normalized, when known.
         path: Option<String>,
         program: &'a Program,
@@ -8312,7 +8397,7 @@ fn reject_unsafe_lazy_lock_initializers(
                     self.check_meta(index, &attribute.meta)?;
                 }
                 for module in &facts.external_modules {
-                    self.check_external_module(scope.path.as_deref(), module)?;
+                    self.check_external_module(scope.path.as_deref(), &scope.reaches, module)?;
                 }
                 for path in &facts.macros {
                     if !self.is_standard_macro(index, path, &macro_definitions, macro_use) {
@@ -8375,6 +8460,7 @@ fn reject_unsafe_lazy_lock_initializers(
         fn check_external_module(
             &self,
             source: Option<&str>,
+            reaches: &BTreeSet<ModuleReach>,
             module: &crate::model::ExternalModule,
         ) -> Result<(), String> {
             let unseen = |shown: String| {
@@ -8389,54 +8475,21 @@ fn reject_unsafe_lazy_lock_initializers(
             let Some(source) = source else {
                 return unseen(declared);
             };
-            let file = std::path::Path::new(source);
-            let directory = file.parent().unwrap_or_else(|| std::path::Path::new(""));
-            let relative = |path: &str| {
-                return normalize_source_path(&directory.join(path).to_string_lossy());
-            };
-            let seen = |candidate: &String| self.inventory.contains(candidate);
-            let Some(parents) = module
-                .inline_parents
-                .iter()
-                .cloned()
-                .collect::<Option<Vec<_>>>()
-            else {
-                return unseen(declared);
-            };
-            let explicit = module
-                .path
-                .iter()
-                .chain(&module.conditional_paths)
-                .cloned()
-                .collect::<Vec<_>>();
-            for path in &explicit {
-                if path.is_empty() || !parents.is_empty() || !seen(&relative(path)) {
+            let mut candidates = BTreeSet::new();
+            for reach in reaches {
+                let Some(reached) = external_module_candidates(source, *reach, module) else {
                     return unseen(declared);
-                }
-            }
-            if module.path.is_none() {
-                let stem = file
-                    .file_stem()
-                    .and_then(|stem| stem.to_str())
-                    .unwrap_or_default();
-                let mut base = if matches!(stem, "lib" | "main" | "mod") {
-                    directory.to_path_buf()
-                } else {
-                    directory.join(stem)
                 };
-                for parent in &parents {
-                    base = base.join(parent);
-                }
-                let candidates = [
-                    base.join(format!("{}.rs", module.name)),
-                    base.join(&module.name).join("mod.rs"),
-                ];
-                if !candidates
-                    .iter()
-                    .any(|candidate| seen(&normalize_source_path(&candidate.to_string_lossy())))
-                {
-                    return unseen(declared);
-                }
+                candidates.extend(reached);
+            }
+            if candidates.is_empty()
+                || candidates.iter().any(|(_, alternatives)| {
+                    return !alternatives
+                        .iter()
+                        .any(|candidate| self.inventory.contains(candidate));
+                })
+            {
+                return unseen(declared);
             }
             return Ok(());
         }
@@ -9327,7 +9380,7 @@ fn reject_unsafe_lazy_lock_initializers(
         .and_then(|identity| identity.as_deref())
         .and_then(|identity| identity.split("::").next())
         .map(str::to_string);
-    let scopes = programs
+    let mut scopes = programs
         .iter()
         .copied()
         .chain(visibility_programs)
@@ -9364,6 +9417,7 @@ fn reject_unsafe_lazy_lock_initializers(
             return EagerScope {
                 context,
                 module,
+                reaches: BTreeSet::new(),
                 path: paths
                     .get(index)
                     .and_then(|path| path.as_deref())
@@ -9373,6 +9427,77 @@ fn reject_unsafe_lazy_lock_initializers(
             };
         })
         .collect::<Vec<_>>();
+    let inventory = scopes
+        .iter()
+        .filter_map(|scope| scope.path.clone())
+        .collect::<BTreeSet<_>>();
+    let mut inventory_indices = BTreeMap::<String, Vec<usize>>::new();
+    for (index, scope) in scopes.iter().enumerate() {
+        if let Some(path) = &scope.path {
+            inventory_indices
+                .entry(path.clone())
+                .or_default()
+                .push(index);
+        }
+    }
+    // Carry each declaration's load kind to its target source. Crate roots are known ordinary
+    // reaches; a source not connected to an inventoried root is conservatively treated as the root
+    // of the supplied fragment, preserving the API's ability to prove a partial source inventory.
+    let propagate_reaches = |scopes: &mut Vec<EagerScope<'_>>| loop {
+        let known = scopes
+            .iter()
+            .map(|scope| scope.reaches.clone())
+            .collect::<Vec<_>>();
+        let mut additions = BTreeSet::new();
+        for (index, reaches) in known.iter().enumerate() {
+            let Some(source) = scopes[index].path.as_deref() else {
+                continue;
+            };
+            for reach in reaches {
+                for module in &scopes[index].program.facts.external_modules {
+                    let Some(groups) = external_module_candidates(source, *reach, module) else {
+                        continue;
+                    };
+                    for (child_reach, alternatives) in groups {
+                        for candidate in alternatives {
+                            if let Some(indices) = inventory_indices.get(&candidate) {
+                                additions
+                                    .extend(indices.iter().map(|target| (*target, child_reach)));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let mut changed = false;
+        for (index, reach) in additions {
+            changed |= scopes[index].reaches.insert(reach);
+        }
+        if !changed {
+            break;
+        }
+    };
+    for scope in &mut scopes {
+        if scope.module.is_empty()
+            || scope.path.as_deref().is_some_and(|path| {
+                return matches!(
+                    std::path::Path::new(path)
+                        .file_name()
+                        .and_then(|name| name.to_str()),
+                    Some("lib.rs" | "main.rs")
+                );
+            })
+        {
+            scope.reaches.insert(ModuleReach::Ordinary);
+        }
+    }
+    propagate_reaches(&mut scopes);
+    for index in 0..scopes.len() {
+        if scopes[index].reaches.is_empty() {
+            scopes[index].reaches.insert(ModuleReach::Ordinary);
+            propagate_reaches(&mut scopes);
+        }
+    }
     let functions = programs
         .iter()
         .enumerate()
@@ -9414,10 +9539,6 @@ fn reject_unsafe_lazy_lock_initializers(
         .iter()
         .position(|source| std::ptr::eq(*source, program))
         .unwrap_or(0);
-    let inventory = scopes
-        .iter()
-        .filter_map(|scope| scope.path.clone())
-        .collect::<BTreeSet<_>>();
     let no_defaults = ManualDefaults::new();
     let mut manual_defaults = None;
     let mut readable_statics = BTreeSet::new();

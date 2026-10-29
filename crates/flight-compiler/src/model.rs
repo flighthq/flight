@@ -123,13 +123,27 @@ pub(crate) struct TestCase {
     pub(crate) should_panic: bool,
 }
 
+// An inline module enclosing an external `mod name;` declaration, with every filesystem location
+// its contents may use. Its identifier is unraw because Rust never includes the `r#` escape in a
+// default module filename.
+#[derive(Clone, Debug)]
+pub(crate) struct InlineModule {
+    pub(crate) component: String,
+    // Its `#[path = "…"]` (empty when the value is not a string literal).
+    pub(crate) path: Option<String>,
+    // The paths a `#[cfg_attr(…, path = "…")]` may apply instead (empty for a non-string value).
+    pub(crate) conditional_paths: Vec<String>,
+}
+
 // A `mod name;` declaration, with what decides the file Rust loads for it.
 #[derive(Clone, Debug)]
 pub(crate) struct ExternalModule {
+    // The source spelling, retained for diagnostics.
     pub(crate) name: String,
-    // The inline modules enclosing it, outermost first; `None` for one with its own `#[path]`, which
-    // moves its children's directory where the proof does not model it.
-    pub(crate) inline_parents: Vec<Option<String>>,
+    // Its default filesystem component, without a raw-identifier escape.
+    pub(crate) component: String,
+    // The inline modules enclosing it, outermost first.
+    pub(crate) inline_parents: Vec<InlineModule>,
     // Its `#[path = "…"]` (empty when the value is not a string literal).
     pub(crate) path: Option<String>,
     // The paths a `#[cfg_attr(…, path = "…")]` may apply instead (empty for a non-string value).
@@ -140,7 +154,7 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
     struct Collector {
         depth: usize,
         facts: SourceFacts,
-        inline_parents: Vec<Option<String>>,
+        inline_parents: Vec<InlineModule>,
     }
     // The `path = "…"` values a `cfg_attr` may apply, through nested `cfg_attr`s.
     fn conditional_paths(meta: &syn::Meta, out: &mut Vec<String>) {
@@ -296,6 +310,7 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
             if module.content.is_none() {
                 self.facts.external_modules.push(ExternalModule {
                     name: module.ident.to_string(),
+                    component: module.ident.unraw().to_string(),
                     inline_parents: self.inline_parents.clone(),
                     path,
                     conditional_paths,
@@ -305,9 +320,11 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
                 }
                 return;
             }
-            let parent =
-                (path.is_none() && conditional_paths.is_empty()).then(|| module.ident.to_string());
-            self.inline_parents.push(parent);
+            self.inline_parents.push(InlineModule {
+                component: module.ident.unraw().to_string(),
+                path,
+                conditional_paths,
+            });
             self.depth += 1;
             syn::visit::visit_item_mod(self, module);
             self.depth -= 1;
