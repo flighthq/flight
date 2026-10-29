@@ -221,6 +221,81 @@ import type { NodeRef, NodeRevisionState } from "@flighthq/node/contract";
         assert!(output.contains("if (mode === HostMode.Web)"));
     }
 
+    // `v.is_empty()` lowers to `v.length === 0`; prefixing `!` without precedence produced
+    // `!v.length === 0`, which JavaScript parses as `(!v.length) === 0` and is always false.
+    #[test]
+    fn negates_lowered_is_empty_as_a_length_comparison() {
+        let source = r#"
+pub fn has_items(values: &Vec<i32>) -> bool {
+    return !values.is_empty();
+}
+
+pub fn is_blank(values: &Vec<i32>) -> bool {
+    return values.is_empty();
+}
+
+pub fn first_or_zero(values: &Vec<i32>) -> i32 {
+    let value = if !values.is_empty() { values[0] } else { 0 };
+    return value;
+}
+
+pub fn both(a: &Vec<i32>, b: &Vec<i32>) -> bool {
+    return !a.is_empty() && !b.is_empty();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return values.length !== 0;"));
+        assert!(output.contains("return values.length === 0;"));
+        assert!(output.contains("const value = values.length !== 0 ? values[0] : 0;"));
+        assert!(output.contains("return a.length !== 0 && b.length !== 0;"));
+        assert!(!output.contains("!values.length"));
+        assert!(!output.contains("!a.length"));
+    }
+
+    // Any method call whose lowering is an operator expression is parenthesized as an operand, so the
+    // Rust precedence of the call (a primary) cannot leak into the emitted JavaScript.
+    #[test]
+    fn parenthesizes_operator_lowerings_used_as_operands() {
+        let source = r#"
+pub fn lacks(value: Option<i32>) -> bool {
+    return !value.is_some();
+}
+
+pub fn has(value: Option<i32>) -> bool {
+    return !value.is_none();
+}
+
+pub fn present(value: Option<i32>) -> bool {
+    return value.is_some();
+}
+
+pub fn absent(value: Option<i32>) -> bool {
+    return value.is_none();
+}
+
+pub fn same_emptiness(a: &Vec<i32>, b: &Vec<i32>) -> bool {
+    return a.is_empty() == b.is_empty();
+}
+
+pub fn negated_flag(flag: bool) -> bool {
+    return !flag;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return !(value !== undefined);"));
+        assert!(output.contains("return !(value === undefined);"));
+        assert!(output.contains("return value !== undefined;"));
+        assert!(output.contains("return value === undefined;"));
+        assert!(!output.contains("!value !=="));
+        assert!(!output.contains("!value ==="));
+        assert!(output.contains("return (a.length === 0) === (b.length === 0);"));
+        assert!(output.contains("return !flag;"));
+    }
+
     #[test]
     fn maps_trailing_options_to_optional_undefined_contracts() {
         let source = r#"

@@ -1054,6 +1054,7 @@ fn emit_binary_operand(
     let precedence = expression_precedence(expression);
     if precedence < parent_precedence
         || (right && precedence == parent_precedence && matches!(expression, Expr::Binary(_)))
+        || !is_lowered_primary(expression, &value)
     {
         return Ok(format!("({value})"));
     }
@@ -1917,11 +1918,7 @@ pub(crate) fn emit_expression(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
-        Expr::Unary(unary) => Ok(format!(
-            "{}{}",
-            emit_unary_operator(&unary.op)?,
-            emit_expression(&unary.expr, entities)?
-        )),
+        Expr::Unary(unary) => emit_unary_expression(unary, entities),
         _ => Err(compile_error(format!(
             "unsupported Rust expression `{}`",
             expression_kind(expression)
@@ -5316,6 +5313,31 @@ fn emit_type_parameters(generics: &syn::Generics) -> String {
     return format!("<{}>", parameters.join(", "));
 }
 
+// A Rust method call is a primary expression, but its lowering can be an operator expression
+// (`v.is_empty()` emits `v.length === 0`, `o.is_some()` emits `o !== undefined`). The precedence
+// model above is Rust-shaped, so wherever such a lowering becomes an operand it is parenthesized here
+// rather than trusted: an unparenthesized `!v.length === 0` parses as `(!v.length) === 0`.
+fn emit_unary_expression(
+    unary: &syn::ExprUnary,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let operator = emit_unary_operator(&unary.op)?;
+    let operand = emit_expression(&unary.expr, entities)?;
+    if matches!(unary.op, UnOp::Not(_))
+        && let Expr::MethodCall(method) = unary.expr.as_ref()
+        && method.method == "is_empty"
+        && method.args.is_empty()
+        && let Some(receiver) = operand.strip_suffix(".length === 0")
+        && is_primary_expression_text(receiver)
+    {
+        return Ok(format!("{receiver}.length !== 0"));
+    }
+    if !is_lowered_primary(&unary.expr, &operand) {
+        return Ok(format!("{operator}({operand})"));
+    }
+    return Ok(format!("{operator}{operand}"));
+}
+
 fn emit_unary_operator(operator: &UnOp) -> Result<&'static str, CompileError> {
     return match operator {
         UnOp::Deref(_) => Ok(""),
@@ -5362,6 +5384,49 @@ fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
     };
     syn::visit::Visit::visit_expr(&mut finder, expression);
     return finder.found;
+}
+
+// Whether the emitted text of `expression` can stand as an operand without parentheses. Only method
+// calls lower to text whose shape differs from their Rust precedence; everything else is governed by
+// `expression_precedence`.
+fn is_lowered_primary(expression: &Expr, text: &str) -> bool {
+    let mut inner = expression;
+    while let Expr::Reference(reference) = inner {
+        inner = &reference.expr;
+    }
+    if !matches!(inner, Expr::MethodCall(_)) {
+        return true;
+    }
+    return is_primary_expression_text(text);
+}
+
+// True when `text` has no top-level whitespace, which every binary, ternary, arrow or `new`/`typeof`
+// expression the emitter produces does. Whitespace inside brackets, braces, parentheses and string or
+// template literals does not count. A false negative only adds parentheses, which is always safe.
+fn is_primary_expression_text(text: &str) -> bool {
+    let mut depth: i32 = 0;
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    for character in text.chars() {
+        if let Some(open) = quote {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == open {
+                quote = None;
+            }
+            continue;
+        }
+        match character {
+            '"' | '\'' | '`' => quote = Some(character),
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth -= 1,
+            _ if character.is_whitespace() && depth == 0 => return false,
+            _ => {}
+        }
+    }
+    return true;
 }
 
 fn pattern_binds_identifier(pattern: &Pat, expected: &str) -> bool {
