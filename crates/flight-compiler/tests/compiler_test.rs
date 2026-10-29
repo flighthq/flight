@@ -851,6 +851,127 @@ export function isA(code: KeyCode): boolean {
     }
 
     #[test]
+    fn lowers_option_if_let_and_while_let_with_single_scrutinee_evaluation() {
+        let source = r#"
+pub struct Counter {
+    pub calls: i32,
+    pub remaining: i32,
+    pub last: Option<i32>,
+}
+
+pub fn create_counter() -> Counter {
+    return Counter {
+        calls: 0,
+        remaining: 0,
+        last: None,
+    };
+}
+
+fn take_next(counter: &mut Counter) -> Option<i32> {
+    counter.calls += 1;
+    if counter.remaining == 0 {
+        return None;
+    }
+    counter.remaining -= 1;
+    return Some(counter.remaining);
+}
+
+pub fn take_once(counter: &mut Counter) -> i32 {
+    if let Some(value) = take_next(counter) {
+        return value;
+    }
+    return -1;
+}
+
+pub fn drain(counter: &mut Counter) -> i32 {
+    let mut total = 0;
+    while let Some(value) = take_next(counter) {
+        total += value;
+    }
+    return total;
+}
+
+pub fn call_if_present(callback: Option<fn(i32) -> i32>, value: i32) -> i32 {
+    if let Some(callback) = callback {
+        return callback(value);
+    }
+    return value;
+}
+
+pub fn last_or(counter: &Counter, value: i32) -> i32 {
+    if let Some(value) = counter.last {
+        return value;
+    } else {
+        return value;
+    }
+}
+"#;
+
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export interface Counter {
+  calls: number;
+  remaining: number;
+  last?: number;
+}
+
+export function createCounter(): Counter {
+  return { calls: 0, remaining: 0, last: undefined };
+}
+
+function takeNext(counter: Counter): number | undefined {
+  counter.calls += 1;
+  if (counter.remaining === 0) {
+    return undefined;
+  }
+  counter.remaining -= 1;
+  return counter.remaining;
+}
+
+export function takeOnce(counter: Counter): number {
+  {
+    const $value = takeNext(counter);
+    if ($value !== undefined) {
+      const value = $value;
+      return value;
+    }
+  }
+  return -1;
+}
+
+export function drain(counter: Counter): number {
+  let total = 0;
+  for (;;) {
+    const $value = takeNext(counter);
+    if ($value === undefined) {
+      break;
+    }
+    const value = $value;
+    total += value;
+  }
+  return total;
+}
+
+export function callIfPresent(callback: ((arg0: number) => number) | undefined, value: number): number {
+  if (callback !== undefined) {
+    return callback(value);
+  }
+  return value;
+}
+
+export function lastOr(counter: Readonly<Counter>, value: number): number {
+  if (counter.last !== undefined) {
+    const value = counter.last;
+    return value;
+  } else {
+    return value;
+  }
+}
+"#
+        );
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment
@@ -2280,7 +2401,9 @@ import type { NodeRef } from "@flighthq/node/contract";
         ));
         assert!(transform_output.contains("sample.previousWorldTransform !== null"));
         assert!(transform_output.contains("sample.previousWorldTransform === null"));
-        assert!(transform_output.contains("getNodeChildAt(node, (i) | 0) !== null"));
+        assert!(transform_output.contains("const $child = getNodeChildAt(node, (i) | 0);"));
+        assert!(transform_output.contains("if ($child !== null) {"));
+        assert_eq!(transform_output.matches("getNodeChildAt(").count(), 1);
     }
 
     #[test]

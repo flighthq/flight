@@ -390,6 +390,68 @@ fn array_type(inner: String) -> String {
     return format!("{inner}[]");
 }
 
+// Opens `if let Some(name) = value` on the absent value. A scrutinee that only reads a binding or a
+// field chain is re-read in the test and the binding (and a `name` that is that same binding needs no
+// redeclaration: the test narrows it); any other scrutinee is evaluated exactly once into a block
+// scoped `$name` temporary, a spelling no Rust identifier can take. Returns the indent of the `if` and
+// whether a wrapping block must be closed after its `else`.
+pub(crate) fn begin_option_if(
+    out: &mut String,
+    indent: usize,
+    binding: &(String, String, &'static str),
+    rereadable: bool,
+) -> (usize, bool) {
+    let (name, value, absent) = binding;
+    let (if_indent, test) = if rereadable {
+        (indent, value.clone())
+    } else {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(out, "const ${name} = {value};").expect("writing to a String cannot fail");
+        (indent + 1, format!("${name}"))
+    };
+    write_indent(out, if_indent);
+    writeln!(out, "if ({test} !== {absent}) {{").expect("writing to a String cannot fail");
+    if &test != name {
+        write_indent(out, if_indent + 1);
+        writeln!(out, "const {name} = {test};").expect("writing to a String cannot fail");
+    }
+    return (if_indent, !rereadable);
+}
+
+// Opens `while let Some(name) = value`. A re-readable scrutinee keeps `while (value !== absent)`; any
+// other is evaluated exactly once per iteration in a `for (;;)` that breaks on the absent value, so a
+// side-effecting scrutinee such as a pop runs once per pass.
+pub(crate) fn begin_option_while(
+    out: &mut String,
+    indent: usize,
+    binding: &(String, String, &'static str),
+    rereadable: bool,
+) {
+    let (name, value, absent) = binding;
+    write_indent(out, indent);
+    if rereadable {
+        writeln!(out, "while ({value} !== {absent}) {{").expect("writing to a String cannot fail");
+        if value != name {
+            write_indent(out, indent + 1);
+            writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
+        }
+        return;
+    }
+    out.push_str("for (;;) {\n");
+    write_indent(out, indent + 1);
+    writeln!(out, "const ${name} = {value};").expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    writeln!(out, "if (${name} === {absent}) {{").expect("writing to a String cannot fail");
+    write_indent(out, indent + 2);
+    out.push_str("break;\n");
+    write_indent(out, indent + 1);
+    out.push_str("}\n");
+    write_indent(out, indent + 1);
+    writeln!(out, "const {name} = ${name};").expect("writing to a String cannot fail");
+}
+
 // The `Owner.Member` a `const-group` member constant is referenced as.
 // flight-lint: allow(hashmap-iteration) const-group validation gives each constant at most one group
 fn const_group_member_reference<'a>(
@@ -507,6 +569,25 @@ pub(crate) fn export_name<'a>(context: &'a HashSet<String>, rust_name: &str) -> 
     return context
         .iter()
         .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
+fn expression_is_rereadable(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Group(group) => expression_is_rereadable(&group.expr),
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "as_deref" | "as_mut" | "as_ref"
+                ) =>
+        {
+            expression_is_rereadable(&call.receiver)
+        }
+        Expr::Paren(paren) => expression_is_rereadable(&paren.expr),
+        Expr::Path(path) => path.qself.is_none() && path.path.segments.len() == 1,
+        Expr::Reference(reference) => expression_is_rereadable(&reference.expr),
+        expression => expression_is_field_reference(expression),
+    };
 }
 
 fn foreign_wildcard_modules(uses: &[&syn::ItemUse]) -> Vec<String> {
@@ -1214,6 +1295,15 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
         Expr::Reference(reference) => expression_is_known_string(&reference.expr, entities),
         _ => false,
     };
+}
+
+// Whether an `if let` / `while let` scrutinee can be read twice with one result: a binding or a
+// field chain over one, through the identity adapters `.as_ref()`, `.as_mut()` and `.as_deref()`.
+pub(crate) fn option_scrutinee_is_rereadable(condition: &Expr) -> bool {
+    let Expr::Let(binding) = condition else {
+        return true;
+    };
+    return expression_is_rereadable(&binding.expr);
 }
 
 // `Pin<Box<dyn Future<Output = T> [+ Send | + Sync | + 'a]>>`, accepted only when `Pin`, `Box`, `Future`
@@ -13375,24 +13465,28 @@ fn emit_statement(
             {
                 return Ok(());
             }
-            write_indent(out, indent);
-            if let Some((condition, _)) = &tuple_binding {
-                writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
-            } else if let Some((_, value, absent)) = &option_binding {
-                writeln!(out, "if ({value} !== {absent}) {{")
-                    .expect("writing to a String cannot fail");
-            } else {
-                writeln!(
+            let outer_indent = indent;
+            let (indent, wrapped) = if let Some(binding) = &option_binding {
+                begin_option_if(
                     out,
-                    "if ({}) {{",
-                    emit_expression(&if_expression.cond, entities)?
+                    indent,
+                    binding,
+                    option_scrutinee_is_rereadable(&if_expression.cond),
                 )
-                .expect("writing to a String cannot fail");
-            }
-            if let Some((name, value, _)) = option_binding {
-                write_indent(out, indent + 1);
-                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
-            }
+            } else {
+                write_indent(out, indent);
+                if let Some((condition, _)) = &tuple_binding {
+                    writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
+                } else {
+                    writeln!(
+                        out,
+                        "if ({}) {{",
+                        emit_expression(&if_expression.cond, entities)?
+                    )
+                    .expect("writing to a String cannot fail");
+                }
+                (indent, false)
+            };
             for (name, value) in tuple_binding
                 .map(|(_, bindings)| bindings)
                 .unwrap_or_default()
@@ -13431,6 +13525,10 @@ fn emit_statement(
             } else {
                 out.push_str("}\n");
             }
+            if wrapped {
+                write_indent(out, outer_indent);
+                out.push_str("}\n");
+            }
         }
         Stmt::Expr(Expr::MethodCall(call), _)
             if call.method == "extend" || call.method == "extend_from_slice" =>
@@ -13457,21 +13555,21 @@ fn emit_statement(
                 entities.clone()
             };
             let option_binding = emit_option_binding(&loop_expression.cond, entities)?;
-            write_indent(out, indent);
-            if let Some((_, value, absent)) = &option_binding {
-                writeln!(out, "while ({value} !== {absent}) {{")
-                    .expect("writing to a String cannot fail");
+            if let Some(binding) = &option_binding {
+                begin_option_while(
+                    out,
+                    indent,
+                    binding,
+                    option_scrutinee_is_rereadable(&loop_expression.cond),
+                );
             } else {
+                write_indent(out, indent);
                 writeln!(
                     out,
                     "while ({}) {{",
                     emit_expression(&loop_expression.cond, entities)?
                 )
                 .expect("writing to a String cannot fail");
-            }
-            if let Some((name, value, _)) = option_binding {
-                write_indent(out, indent + 1);
-                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
             emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);

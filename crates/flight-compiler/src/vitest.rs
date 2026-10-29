@@ -8,15 +8,15 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
-    emit_expression, emit_for_header, emit_format_template, emit_local,
-    emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
-    emit_type, export_name, frozen_object_name, function_expression_context,
+    begin_option_if, begin_option_while, emit_expression, emit_for_header, emit_format_template,
+    emit_local, emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding,
+    emit_parameter, emit_type, export_name, frozen_object_name, function_expression_context,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_string_union,
     is_vitest_function, is_vitest_struct, lexical_pattern_context, numeric_literal_spelling,
-    snake_to_lower_camel, update_vitest_local_function_context, update_vitest_struct_local_context,
-    validate_vitest_function_provenance, vitest_function_path_binding_name,
-    vitest_struct_path_binding_name, write_indent,
+    option_scrutinee_is_rereadable, snake_to_lower_camel, update_vitest_local_function_context,
+    update_vitest_struct_local_context, validate_vitest_function_provenance,
+    vitest_function_path_binding_name, vitest_struct_path_binding_name, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -760,22 +760,24 @@ fn emit_statement(
                 context.clone()
             };
             let option_binding = emit_option_binding(&expression.cond, context)?;
-            write_indent(out, indent);
-            if let Some((_, value, absent)) = &option_binding {
-                writeln!(out, "if ({value} !== {absent}) {{")
-                    .expect("writing to a String cannot fail");
+            let outer_indent = indent;
+            let (indent, wrapped) = if let Some(binding) = &option_binding {
+                begin_option_if(
+                    out,
+                    indent,
+                    binding,
+                    option_scrutinee_is_rereadable(&expression.cond),
+                )
             } else {
+                write_indent(out, indent);
                 writeln!(
                     out,
                     "if ({}) {{",
                     emit_expression(&expression.cond, context)?
                 )
                 .expect("writing to a String cannot fail");
-            }
-            if let Some((name, value, _)) = option_binding {
-                write_indent(out, indent + 1);
-                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
-            }
+                (indent, false)
+            };
             emit_block(
                 out,
                 &expression.then_branch.stmts,
@@ -794,6 +796,10 @@ fn emit_statement(
                 write_indent(out, indent);
             }
             out.push_str("}\n");
+            if wrapped {
+                write_indent(out, outer_indent);
+                out.push_str("}\n");
+            }
         }
         Stmt::Expr(Expr::ForLoop(expression), _) => {
             let loop_context = lexical_pattern_context(context, &expression.pat);
@@ -815,21 +821,21 @@ fn emit_statement(
                 context.clone()
             };
             let option_binding = emit_option_binding(&expression.cond, context)?;
-            write_indent(out, indent);
-            if let Some((_, value, absent)) = &option_binding {
-                writeln!(out, "while ({value} !== {absent}) {{")
-                    .expect("writing to a String cannot fail");
+            if let Some(binding) = &option_binding {
+                begin_option_while(
+                    out,
+                    indent,
+                    binding,
+                    option_scrutinee_is_rereadable(&expression.cond),
+                );
             } else {
+                write_indent(out, indent);
                 writeln!(
                     out,
                     "while ({}) {{",
                     emit_expression(&expression.cond, context)?
                 )
                 .expect("writing to a String cannot fail");
-            }
-            if let Some((name, value, _)) = option_binding {
-                write_indent(out, indent + 1);
-                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
             emit_block(out, &expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);

@@ -49,9 +49,12 @@ function visitTransformVelocity(field: VelocityField, node: Readonly<NodeRef>): 
   }
   const count = getNodeChildCount(node);
   for (let i = 0; i < count; i += 1) {
-    if (getNodeChildAt(node, i | 0) !== null) {
-      const child = getNodeChildAt(node, i | 0);
-      visitTransformVelocity(field, child);
+    {
+      const $child = getNodeChildAt(node, i | 0);
+      if ($child !== null) {
+        const child = $child;
+        visitTransformVelocity(field, child);
+      }
     }
   }
 }
