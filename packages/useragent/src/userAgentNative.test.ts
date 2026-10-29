@@ -1,24 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { detectEndianness, parseUserAgentRuntime } from './contract.ts';
 import { detectEndiannessNative, parseUserAgentRuntimeNative } from './userAgentNative.ts';
-
-describe('detectEndianness', () => {
-  it('exposes the native byte-order probe through the public contract', () => {
-    expect(['big', 'little', 'unknown']).toContain(detectEndianness());
-  });
-});
 
 describe('detectEndiannessNative', () => {
   it('returns the byte order observed through typed-array views', () => {
     expect(['big', 'little', 'unknown']).toContain(detectEndiannessNative());
-  });
-});
-
-describe('parseUserAgentRuntime', () => {
-  it('accepts both absent values through the public contract', () => {
-    expect(parseUserAgentRuntime(undefined)).toBe('unknown');
-    expect(parseUserAgentRuntime(null)).toBe('unknown');
   });
 });
 

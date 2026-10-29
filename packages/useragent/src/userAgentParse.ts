@@ -3,13 +3,13 @@
 
 import type { DeviceFormFactor } from './deviceFormFactor.ts';
 import {
-  DeviceFormFactorCar,
-  DeviceFormFactorDesktop,
-  DeviceFormFactorPhone,
-  DeviceFormFactorTV,
-  DeviceFormFactorTablet,
-  DeviceFormFactorUnknown,
-  DeviceFormFactorWatch,
+  DEVICE_FORM_FACTOR_CAR,
+  DEVICE_FORM_FACTOR_DESKTOP,
+  DEVICE_FORM_FACTOR_PHONE,
+  DEVICE_FORM_FACTOR_TABLET,
+  DEVICE_FORM_FACTOR_TV,
+  DEVICE_FORM_FACTOR_UNKNOWN,
+  DEVICE_FORM_FACTOR_WATCH,
 } from './deviceFormFactor.ts';
 import {
   captureAfter,
@@ -126,44 +126,44 @@ function linuxWithoutAndroid(t: Readonly<number[]>): boolean {
 export function parseUserAgentFormFactor(ua: string, maxTouchPoints: number): DeviceFormFactor {
   const t = charsOf(ua);
   if (containsAny(t, ['android auto', 'car browser', 'automotive'])) {
-    return String(DeviceFormFactorCar);
+    return String(DEVICE_FORM_FACTOR_CAR);
   }
   if (
     containsAny(t, ['smarttv', 'smart-tv', 'smart_tv', 'googletv', 'appletv', 'hbbtv', 'netcast', 'tv safari']) ||
     containsThenOnLine(t, 'webos', 'tv') ||
     containsThenOnLine(t, 'tizen', 'tv')
   ) {
-    return String(DeviceFormFactorTV);
+    return String(DEVICE_FORM_FACTOR_TV);
   }
   if (watchThen(t) || contains(t, 'wearable')) {
-    return String(DeviceFormFactorWatch);
+    return String(DEVICE_FORM_FACTOR_WATCH);
   }
   if (contains(t, 'ipad')) {
-    return String(DeviceFormFactorTablet);
+    return String(DEVICE_FORM_FACTOR_TABLET);
   }
   if (contains(t, 'android') && !contains(t, 'mobile')) {
-    return String(DeviceFormFactorTablet);
+    return String(DEVICE_FORM_FACTOR_TABLET);
   }
   if (tabletPc(t) || containsAny(t, ['silk', 'kindle fire'])) {
-    return String(DeviceFormFactorTablet);
+    return String(DEVICE_FORM_FACTOR_TABLET);
   }
   if (
     containsAny(t, ['iphone', 'ipod', 'windows phone', 'blackberry', 'mobile safari']) ||
     containsThenOnLine(t, 'android', 'mobile') ||
     bbDigits(t)
   ) {
-    return String(DeviceFormFactorPhone);
+    return String(DEVICE_FORM_FACTOR_PHONE);
   }
   if (maxTouchPoints > 1 && containsAny(t, ['macintosh', 'mac os x'])) {
-    return String(DeviceFormFactorTablet);
+    return String(DEVICE_FORM_FACTOR_TABLET);
   }
   if (containsAny(t, ['winnt', 'windowsnt', 'macintosh', 'mac os x', 'x11']) || linuxWithoutAndroid(t)) {
-    return String(DeviceFormFactorDesktop);
+    return String(DEVICE_FORM_FACTOR_DESKTOP);
   }
   if (maxTouchPoints === 0) {
-    return String(DeviceFormFactorDesktop);
+    return String(DEVICE_FORM_FACTOR_DESKTOP);
   }
-  return String(DeviceFormFactorUnknown);
+  return String(DEVICE_FORM_FACTOR_UNKNOWN);
 }
 
 /**

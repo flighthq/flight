@@ -1,19 +1,56 @@
+//! flight-compiler: target-native
+
+use std::sync::Arc;
+
+use flight_entity::{Record, Unknown, set_record_value};
+use flight_platform::{
+    PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
+};
 use flight_useragent::contract::*;
 
-fn ios_prefix() -> &'static str {
-    return "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ";
+/// A window-like record built from (key, value) pairs (TS object literal).
+fn record(entries: Vec<(&str, Unknown)>) -> Record<Unknown> {
+    let make: fn() -> Record<Unknown> = Record::default;
+    let mut out = make();
+    for (key, value) in entries {
+        set_record_value(&mut out, key.to_string(), value);
+    }
+    return out;
 }
 
-fn legacy_edge() -> &'static str {
-    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763";
+fn object(entries: Vec<(&str, Unknown)>) -> Unknown {
+    return Some(Arc::new(record(entries)));
 }
+
+fn text(value: &str) -> Unknown {
+    return Some(Arc::new(value.to_string()));
+}
+
+const LEGACY_EDGE: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763";
+const IOS_PREFIX: &str = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ";
 
 mod detect_endianness {
     use super::*;
 
     #[test]
-    fn returns_a_stable_value() {
-        assert_eq!(detect_endianness(), detect_endianness());
+    fn returns_a_known_canonical_value() {
+        let value = detect_endianness();
+        assert!(
+            value == PlatformEndianness::Little
+                || value == PlatformEndianness::Big
+                || value == PlatformEndianness::Unknown
+        );
+    }
+
+    /// flight-compiler: rust-only — JavaScript has no target_endian cfg value.
+    #[test]
+    fn matches_the_target_byte_order() {
+        let expected = if cfg!(target_endian = "little") {
+            PlatformEndianness::Little
+        } else {
+            PlatformEndianness::Big
+        };
+        assert_eq!(detect_endianness(), expected);
     }
 }
 
@@ -113,116 +150,110 @@ mod parse_user_agent_engine {
 
     #[test]
     fn returns_each_engine() {
-        let gecko = parse_user_agent_engine(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
+        assert_eq!(
+            parse_user_agent_engine(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0"
+            ),
+            PlatformEngine::Gecko
         );
-        let blink = parse_user_agent_engine(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        assert_eq!(
+            parse_user_agent_engine(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+            PlatformEngine::Blink
         );
         assert_eq!(
             parse_user_agent_engine(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.133"
             ),
-            blink
+            PlatformEngine::Blink
         );
-        let webkit = parse_user_agent_engine(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15",
+        assert_eq!(
+            parse_user_agent_engine(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15"
+            ),
+            PlatformEngine::Webkit
         );
-        assert_ne!(gecko, blink);
-        assert_ne!(gecko, webkit);
-        assert_ne!(blink, webkit);
     }
 
     #[test]
     fn returns_unknown_for_unrecognized_ua() {
-        let unknown = parse_user_agent_engine("");
-        assert_eq!(parse_user_agent_engine("CustomBot/1.0"), unknown);
-        assert_ne!(parse_user_agent_engine("Chrome/120.0"), unknown);
+        assert_eq!(parse_user_agent_engine(""), PlatformEngine::Unknown);
+        assert_eq!(
+            parse_user_agent_engine("CustomBot/1.0"),
+            PlatformEngine::Unknown
+        );
     }
 
     #[test]
     fn legacy_edgehtml_is_not_reported_as_blink() {
-        let unknown = parse_user_agent_engine("");
-        assert_eq!(parse_user_agent_engine(legacy_edge()), unknown);
+        assert_eq!(
+            parse_user_agent_engine(LEGACY_EDGE),
+            PlatformEngine::Unknown
+        );
         assert_eq!(
             parse_user_agent_engine(
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 Edge/18.17763"
             ),
-            unknown
+            PlatformEngine::Unknown
         );
         let modern = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0";
-        let blink = parse_user_agent_engine("Chrome/120.0");
-        assert_eq!(parse_user_agent_engine(modern), blink);
-        let ios_edge = parse_user_agent_engine(
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) EdgiOS/120.0",
+        assert_eq!(parse_user_agent_engine(modern), PlatformEngine::Blink);
+        assert_eq!(
+            parse_user_agent_engine(
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) EdgiOS/120.0"
+            ),
+            PlatformEngine::Webkit
         );
-        assert_ne!(ios_edge, blink);
-        assert_ne!(ios_edge, unknown);
     }
 
     #[test]
     fn keeps_opera_on_ios_product_tokens_on_webkit() {
-        let webkit = parse_user_agent_engine(
-            "Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15",
-        );
         for ua in [
-            format!(
-                "{}OPiOS/9.2.0.11256 Mobile/15E148 Safari/9537.53",
-                ios_prefix()
-            ),
-            format!(
-                "{}Version/17.0 OPT/3.6.1 Mobile/15E148 Safari/604.1",
-                ios_prefix()
-            ),
+            format!("{IOS_PREFIX}OPiOS/9.2.0.11256 Mobile/15E148 Safari/9537.53"),
+            format!("{IOS_PREFIX}Version/17.0 OPT/3.6.1 Mobile/15E148 Safari/604.1"),
         ] {
             let engine = parse_user_agent_engine(&ua);
-            assert_eq!(engine, webkit);
+            assert_eq!(engine, PlatformEngine::Webkit);
             assert_ne!(parse_user_agent_engine_version(&ua, engine), "");
         }
     }
 
     #[test]
     fn reports_webkit_for_every_browser_on_ios() {
-        let webkit = parse_user_agent_engine(
-            "Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15",
-        );
-        let edge = format!(
-            "{}EdgiOS/120.0.0.0 Mobile/15E148 Safari/605.1.15",
-            ios_prefix()
-        );
-        assert_eq!(parse_user_agent_engine(&edge), webkit);
-        assert_ne!(parse_user_agent_engine_version(&edge, webkit), "");
-        assert_eq!(
-            parse_user_agent_engine(&format!(
-                "{}CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1",
-                ios_prefix()
-            )),
-            webkit
+        let edge = format!("{IOS_PREFIX}EdgiOS/120.0.0.0 Mobile/15E148 Safari/605.1.15");
+        assert_eq!(parse_user_agent_engine(&edge), PlatformEngine::Webkit);
+        assert_ne!(
+            parse_user_agent_engine_version(&edge, PlatformEngine::Webkit),
+            ""
         );
         assert_eq!(
             parse_user_agent_engine(&format!(
-                "{}FxiOS/121.0 Mobile/15E148 Safari/605.1.15",
-                ios_prefix()
+                "{IOS_PREFIX}CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1"
             )),
-            webkit
+            PlatformEngine::Webkit
+        );
+        assert_eq!(
+            parse_user_agent_engine(&format!(
+                "{IOS_PREFIX}FxiOS/121.0 Mobile/15E148 Safari/605.1.15"
+            )),
+            PlatformEngine::Webkit
         );
         let ipad = "Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1";
-        assert_eq!(parse_user_agent_engine(ipad), webkit);
+        assert_eq!(parse_user_agent_engine(ipad), PlatformEngine::Webkit);
     }
 
     #[test]
     fn still_reports_blink_and_gecko_off_ios() {
         let mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
         let win = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0";
-        let blink = parse_user_agent_engine("Chrome/120.0");
-        let gecko = parse_user_agent_engine("Firefox/120.0");
-        assert_eq!(parse_user_agent_engine(mac), blink);
-        assert_eq!(parse_user_agent_engine(win), blink);
+        assert_eq!(parse_user_agent_engine(mac), PlatformEngine::Blink);
+        assert_eq!(parse_user_agent_engine(win), PlatformEngine::Blink);
         assert_eq!(
             parse_user_agent_engine(
                 "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"
             ),
-            gecko
+            PlatformEngine::Gecko
         );
     }
 }
@@ -232,56 +263,62 @@ mod parse_user_agent_engine_version {
 
     #[test]
     fn extracts_each_engine_version() {
-        let gecko_ua =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0";
         assert_eq!(
-            parse_user_agent_engine_version(gecko_ua, parse_user_agent_engine(gecko_ua)),
+            parse_user_agent_engine_version(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
+                PlatformEngine::Gecko
+            ),
             "120.0"
         );
-        let chrome_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.109 Safari/537.36";
         assert_eq!(
-            parse_user_agent_engine_version(chrome_ua, parse_user_agent_engine(chrome_ua)),
+            parse_user_agent_engine_version(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.109 Safari/537.36",
+                PlatformEngine::Blink
+            ),
             "120.0.6099.109"
         );
-        let edge_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.133";
         assert_eq!(
-            parse_user_agent_engine_version(edge_ua, parse_user_agent_engine(edge_ua)),
+            parse_user_agent_engine_version(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.133",
+                PlatformEngine::Blink
+            ),
             "120.0.2210.133"
         );
-        let safari_ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15";
         assert_eq!(
-            parse_user_agent_engine_version(safari_ua, parse_user_agent_engine(safari_ua)),
+            parse_user_agent_engine_version(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15",
+                PlatformEngine::Webkit
+            ),
             "16.0"
         );
     }
 
     #[test]
     fn returns_empty_for_unknown_engine_or_absent_version() {
-        let unknown = parse_user_agent_engine("");
         assert_eq!(
-            parse_user_agent_engine_version("any UA string", unknown),
+            parse_user_agent_engine_version("any UA string", PlatformEngine::Unknown),
             ""
         );
-        let gecko = parse_user_agent_engine("Firefox/120.0");
-        assert_eq!(parse_user_agent_engine_version("", gecko), "");
+        assert_eq!(
+            parse_user_agent_engine_version("", PlatformEngine::Gecko),
+            ""
+        );
     }
 
     #[test]
     fn does_not_report_the_embedded_chrome_version_for_legacy_edge() {
-        let engine = parse_user_agent_engine(legacy_edge());
-        assert_eq!(parse_user_agent_engine_version(legacy_edge(), engine), "");
+        let engine = parse_user_agent_engine(LEGACY_EDGE);
+        assert_eq!(parse_user_agent_engine_version(LEGACY_EDGE, engine), "");
     }
 
     #[test]
     fn skips_an_earlier_token_without_digits_as_the_regex_does() {
-        let blink = parse_user_agent_engine("Chrome/120.0");
         assert_eq!(
-            parse_user_agent_engine_version("Chrome/x Chrome/99.1", blink),
+            parse_user_agent_engine_version("Chrome/x Chrome/99.1", PlatformEngine::Blink),
             "99.1"
         );
-        let webkit = parse_user_agent_engine("AppleWebKit/605.1");
         assert_eq!(
-            parse_user_agent_engine_version("AppleWebKit/605.1", webkit),
+            parse_user_agent_engine_version("AppleWebKit/605.1", PlatformEngine::Webkit),
             "605.1"
         );
     }
@@ -292,18 +329,21 @@ mod parse_user_agent_kind {
 
     #[test]
     fn returns_mobile_for_ios_and_android_and_web_otherwise() {
-        let ios = parse_user_agent_name("Mozilla/5.0 (iPhone)");
-        let android = parse_user_agent_name("Mozilla/5.0 (Linux; Android 14)");
-        let mobile = parse_user_agent_kind(ios);
-        assert_eq!(parse_user_agent_kind(android), mobile);
-
-        for ua in [
-            "Mozilla/5.0 (Windows NT 10.0)",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0)",
-            "Mozilla/5.0 (X11; Linux x86_64)",
-            "CustomBot/1.0",
+        assert_eq!(
+            parse_user_agent_kind(PlatformName::Ios),
+            PlatformKind::Mobile
+        );
+        assert_eq!(
+            parse_user_agent_kind(PlatformName::Android),
+            PlatformKind::Mobile
+        );
+        for name in [
+            PlatformName::Windows,
+            PlatformName::MacOs,
+            PlatformName::Linux,
+            PlatformName::Unknown,
         ] {
-            assert_ne!(parse_user_agent_kind(parse_user_agent_name(ua)), mobile);
+            assert_eq!(parse_user_agent_kind(name), PlatformKind::Web);
         }
     }
 }
@@ -313,33 +353,36 @@ mod parse_user_agent_name {
 
     #[test]
     fn detects_each_name() {
-        let android = parse_user_agent_name("Mozilla/5.0 (Linux; Android 14; Pixel 8)");
-        let ios = parse_user_agent_name("Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)");
+        assert_eq!(
+            parse_user_agent_name("Mozilla/5.0 (Linux; Android 14; Pixel 8)"),
+            PlatformName::Android
+        );
+        assert_eq!(
+            parse_user_agent_name("Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)"),
+            PlatformName::Ios
+        );
         assert_eq!(
             parse_user_agent_name("Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)"),
-            ios
+            PlatformName::Ios
         );
-        let windows = parse_user_agent_name("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-        let mac = parse_user_agent_name("Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0)");
-        let linux = parse_user_agent_name("Mozilla/5.0 (X11; Linux x86_64)");
-        let web = parse_user_agent_name("");
-        assert_ne!(android, ios);
-        assert_ne!(android, linux);
-        assert_ne!(ios, mac);
-        assert_ne!(windows, mac);
-        assert_ne!(windows, linux);
-        assert_ne!(mac, linux);
-        assert_ne!(web, android);
-        assert_ne!(web, ios);
-        assert_ne!(web, windows);
-        assert_ne!(web, mac);
-        assert_ne!(web, linux);
+        assert_eq!(
+            parse_user_agent_name("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"),
+            PlatformName::Windows
+        );
+        assert_eq!(
+            parse_user_agent_name("Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0)"),
+            PlatformName::MacOs
+        );
+        assert_eq!(
+            parse_user_agent_name("Mozilla/5.0 (X11; Linux x86_64)"),
+            PlatformName::Linux
+        );
     }
 
     #[test]
     fn returns_web_when_no_os_is_detected() {
-        let web = parse_user_agent_name("");
-        assert_eq!(parse_user_agent_name("CustomBot/1.0"), web);
+        assert_eq!(parse_user_agent_name(""), PlatformName::Web);
+        assert_eq!(parse_user_agent_name("CustomBot/1.0"), PlatformName::Web);
     }
 }
 
@@ -348,30 +391,12 @@ mod parse_user_agent_pointer_width {
 
     #[test]
     fn maps_arch_tokens_to_widths() {
-        assert_eq!(
-            parse_user_agent_pointer_width("x64"),
-            UserAgentPointerWidth::Bits64
-        );
-        assert_eq!(
-            parse_user_agent_pointer_width("arm64"),
-            UserAgentPointerWidth::Bits64
-        );
-        assert_eq!(
-            parse_user_agent_pointer_width("x86"),
-            UserAgentPointerWidth::Bits32
-        );
-        assert_eq!(
-            parse_user_agent_pointer_width("arm"),
-            UserAgentPointerWidth::Bits32
-        );
-        assert_eq!(
-            parse_user_agent_pointer_width("wasm"),
-            UserAgentPointerWidth::Unknown
-        );
-        assert_eq!(
-            parse_user_agent_pointer_width(""),
-            UserAgentPointerWidth::Unknown
-        );
+        assert_eq!(parse_user_agent_pointer_width("x64"), 64);
+        assert_eq!(parse_user_agent_pointer_width("arm64"), 64);
+        assert_eq!(parse_user_agent_pointer_width("x86"), 32);
+        assert_eq!(parse_user_agent_pointer_width("arm"), 32);
+        assert_eq!(parse_user_agent_pointer_width("wasm"), -1);
+        assert_eq!(parse_user_agent_pointer_width(""), -1);
     }
 }
 
@@ -379,10 +404,94 @@ mod parse_user_agent_runtime {
     use super::*;
 
     #[test]
-    fn returns_a_stable_value_when_window_is_absent() {
+    fn returns_unknown_when_window_is_absent() {
+        assert_eq!(parse_user_agent_runtime(None), PlatformRuntime::Unknown);
+    }
+
+    #[test]
+    fn returns_web_when_no_host_shell_globals_are_present() {
         assert_eq!(
-            parse_user_agent_runtime(None),
-            parse_user_agent_runtime(None)
+            parse_user_agent_runtime(Some(&record(vec![]))),
+            PlatformRuntime::Web
+        );
+    }
+
+    #[test]
+    fn detects_each_host_shell() {
+        let electron = record(vec![(
+            "process",
+            object(vec![(
+                "versions",
+                object(vec![("electron", text("28.0.0"))]),
+            )]),
+        )]);
+        assert_eq!(
+            parse_user_agent_runtime(Some(&electron)),
+            PlatformRuntime::Electron
+        );
+        assert_eq!(
+            parse_user_agent_runtime(Some(&record(vec![("__TAURI__", object(vec![]))]))),
+            PlatformRuntime::Tauri
+        );
+        assert_eq!(
+            parse_user_agent_runtime(Some(&record(vec![("Capacitor", object(vec![]))]))),
+            PlatformRuntime::Capacitor
+        );
+    }
+
+    #[test]
+    fn prioritizes_electron_over_tauri_when_both_globals_are_present() {
+        let both = record(vec![
+            ("__TAURI__", object(vec![])),
+            (
+                "process",
+                object(vec![(
+                    "versions",
+                    object(vec![("electron", text("28.0.0"))]),
+                )]),
+            ),
+        ]);
+        assert_eq!(
+            parse_user_agent_runtime(Some(&both)),
+            PlatformRuntime::Electron
+        );
+    }
+
+    #[test]
+    fn follows_js_truthiness_for_probed_values() {
+        // null, "", false and 0 are falsy; a non-object `versions` has no `electron` property.
+        assert_eq!(
+            parse_user_agent_runtime(Some(&record(vec![("__TAURI__", None)]))),
+            PlatformRuntime::Web
+        );
+        assert_eq!(
+            parse_user_agent_runtime(Some(&record(vec![("Capacitor", text(""))]))),
+            PlatformRuntime::Web
+        );
+        assert_eq!(
+            parse_user_agent_runtime(Some(&record(vec![("Capacitor", Some(Arc::new(false)))]))),
+            PlatformRuntime::Web
+        );
+        assert_eq!(
+            parse_user_agent_runtime(Some(&record(vec![("Capacitor", Some(Arc::new(0.0_f64)))]))),
+            PlatformRuntime::Web
+        );
+        assert_eq!(
+            parse_user_agent_runtime(Some(&record(vec![("Capacitor", Some(Arc::new(1_i32)))]))),
+            PlatformRuntime::Capacitor
+        );
+        let string_versions = record(vec![("process", object(vec![("versions", text("x"))]))]);
+        assert_eq!(
+            parse_user_agent_runtime(Some(&string_versions)),
+            PlatformRuntime::Web
+        );
+        let empty_electron = record(vec![(
+            "process",
+            object(vec![("versions", object(vec![("electron", text(""))]))]),
+        )]);
+        assert_eq!(
+            parse_user_agent_runtime(Some(&empty_electron)),
+            PlatformRuntime::Web
         );
     }
 }
@@ -392,47 +501,61 @@ mod parse_user_agent_version {
 
     #[test]
     fn parses_each_platform_version() {
-        let windows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
         assert_eq!(
-            parse_user_agent_version(windows, parse_user_agent_name(windows)),
+            parse_user_agent_version(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                PlatformName::Windows
+            ),
             "10.0"
         );
-        let mac_underscores = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)";
         assert_eq!(
-            parse_user_agent_version(mac_underscores, parse_user_agent_name(mac_underscores)),
+            parse_user_agent_version(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+                PlatformName::MacOs
+            ),
             "10.15.7"
         );
-        let mac_dots = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15.7)";
         assert_eq!(
-            parse_user_agent_version(mac_dots, parse_user_agent_name(mac_dots)),
+            parse_user_agent_version(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15.7)",
+                PlatformName::MacOs
+            ),
             "10.15.7"
         );
-        let iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)";
         assert_eq!(
-            parse_user_agent_version(iphone, parse_user_agent_name(iphone)),
+            parse_user_agent_version(
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)",
+                PlatformName::Ios
+            ),
             "17.4.1"
         );
-        let ipad = "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)";
         assert_eq!(
-            parse_user_agent_version(ipad, parse_user_agent_name(ipad)),
+            parse_user_agent_version(
+                "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)",
+                PlatformName::Ios
+            ),
             "17.0"
         );
-        let android = "Mozilla/5.0 (Linux; Android 14; Pixel 8)";
         assert_eq!(
-            parse_user_agent_version(android, parse_user_agent_name(android)),
+            parse_user_agent_version(
+                "Mozilla/5.0 (Linux; Android 14; Pixel 8)",
+                PlatformName::Android
+            ),
             "14"
         );
     }
 
     #[test]
     fn returns_empty_for_linux_unknown_and_absent_versions() {
-        let linux = "Mozilla/5.0 (X11; Linux x86_64)";
         assert_eq!(
-            parse_user_agent_version(linux, parse_user_agent_name(linux)),
+            parse_user_agent_version("Mozilla/5.0 (X11; Linux x86_64)", PlatformName::Linux),
             ""
         );
-        let windows = parse_user_agent_name("Mozilla/5.0 (Windows NT 10.0)");
-        assert_eq!(parse_user_agent_version("", windows), "");
+        assert_eq!(
+            parse_user_agent_version("any UA", PlatformName::Unknown),
+            ""
+        );
+        assert_eq!(parse_user_agent_version("", PlatformName::Windows), "");
     }
 
     #[test]
@@ -440,16 +563,21 @@ mod parse_user_agent_version {
         let cases = [
             (
                 "Mozilla/5.0 (Linux; Android  14; SM-X710) AppleWebKit/537.36",
+                PlatformName::Android,
                 "14",
             ),
-            ("Mozilla/5.0 (Windows NT  10.0; Win64; x64)", "10.0"),
+            (
+                "Mozilla/5.0 (Windows NT  10.0; Win64; x64)",
+                PlatformName::Windows,
+                "10.0",
+            ),
             (
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X  10_15_7)",
+                PlatformName::MacOs,
                 "10.15.7",
             ),
         ];
-        for (ua, expected) in cases {
-            let name = parse_user_agent_name(ua);
+        for (ua, name, expected) in cases {
             assert_eq!(parse_user_agent_version(ua, name), expected);
             assert_eq!(
                 parse_user_agent_version(ua, name),
@@ -461,23 +589,21 @@ mod parse_user_agent_version {
     #[test]
     fn returns_empty_when_the_requested_platform_is_not_the_one_the_ua_describes() {
         let win = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
-        let ios_name = parse_user_agent_name("Mozilla/5.0 (iPhone)");
-        let mac_name = parse_user_agent_name("Mozilla/5.0 (Macintosh)");
-        let windows_name = parse_user_agent_name(win);
-        assert_eq!(parse_user_agent_version(win, ios_name), "");
-        assert_eq!(parse_user_agent_version(win, mac_name), "");
-        assert_eq!(parse_user_agent_version(win, windows_name), "10.0");
+        assert_eq!(parse_user_agent_version(win, PlatformName::Ios), "");
+        assert_eq!(parse_user_agent_version(win, PlatformName::MacOs), "");
+        assert_eq!(parse_user_agent_version(win, PlatformName::Windows), "10.0");
         let ipad = "Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15";
-        assert_eq!(parse_user_agent_version(ipad, mac_name), "");
-        assert_eq!(parse_user_agent_version(ipad, ios_name), "17.4");
-        let linux = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36";
+        assert_eq!(parse_user_agent_version(ipad, PlatformName::MacOs), "");
+        assert_eq!(parse_user_agent_version(ipad, PlatformName::Ios), "17.4");
         assert_eq!(
-            parse_user_agent_version(linux, parse_user_agent_name(linux)),
+            parse_user_agent_version(
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+                PlatformName::Linux
+            ),
             ""
         );
-        let web_name = parse_user_agent_name("");
         assert_eq!(
-            parse_user_agent_version("some-native-host/1.0", web_name),
+            parse_user_agent_version("some-native-host/1.0", PlatformName::Web),
             ""
         );
     }

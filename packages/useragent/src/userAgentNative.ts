@@ -3,7 +3,6 @@ export type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
 export type PlatformKind = 'desktop' | 'mobile' | 'web' | 'unknown';
 export type PlatformName = 'web' | 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'unknown';
 export type PlatformRuntime = 'web' | 'electron' | 'tauri' | 'capacitor' | 'native' | 'unknown';
-export type UserAgentRuntimeWindow = Record<unknown> | null | undefined;
 export type Unknown = unknown;
 
 export interface Record<T> {
@@ -47,7 +46,7 @@ export function detectEndiannessNative(): PlatformEndianness {
   return 'unknown';
 }
 
-export function parseUserAgentRuntimeNative(win: UserAgentRuntimeWindow): PlatformRuntime {
+export function parseUserAgentRuntimeNative(win: Record<unknown> | null | undefined): PlatformRuntime {
   if (win == null) return 'unknown';
   const process = win.process as Record<unknown> | undefined;
   if (process?.versions && (process.versions as Record<unknown>).electron) return 'electron';

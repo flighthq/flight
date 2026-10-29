@@ -4,13 +4,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  DeviceFormFactorCar,
-  DeviceFormFactorDesktop,
-  DeviceFormFactorPhone,
-  DeviceFormFactorTV,
-  DeviceFormFactorTablet,
-  DeviceFormFactorUnknown,
-  DeviceFormFactorWatch,
+  DEVICE_FORM_FACTOR_CAR,
+  DEVICE_FORM_FACTOR_DESKTOP,
+  DEVICE_FORM_FACTOR_PHONE,
+  DEVICE_FORM_FACTOR_TABLET,
+  DEVICE_FORM_FACTOR_TV,
+  DEVICE_FORM_FACTOR_UNKNOWN,
+  DEVICE_FORM_FACTOR_WATCH,
   parseUserAgentFormFactor,
   parseUserAgentOsName,
   parseUserAgentOsVersion,
@@ -24,81 +24,81 @@ const REAL_MAC: string =
 
 describe('parseUserAgentFormFactor', () => {
   it('returns car for android auto ua', () => {
-    expect(parseUserAgentFormFactor('Android Auto', -1)).toEqual(DeviceFormFactorCar);
+    expect(parseUserAgentFormFactor('Android Auto', -1)).toEqual(DEVICE_FORM_FACTOR_CAR);
   });
   it('returns tv for smart tv uas', () => {
-    expect(parseUserAgentFormFactor('Mozilla/5.0 (SmartTV; Linux)', -1)).toEqual(DeviceFormFactorTV);
-    expect(parseUserAgentFormFactor('Mozilla/5.0 (SMART-TV; LINUX)', -1)).toEqual(DeviceFormFactorTV);
-    expect(parseUserAgentFormFactor('Dalvik/2.1.0 (Linux; Android; GoogleTV)', -1)).toEqual(DeviceFormFactorTV);
+    expect(parseUserAgentFormFactor('Mozilla/5.0 (SmartTV; Linux)', -1)).toEqual(DEVICE_FORM_FACTOR_TV);
+    expect(parseUserAgentFormFactor('Mozilla/5.0 (SMART-TV; LINUX)', -1)).toEqual(DEVICE_FORM_FACTOR_TV);
+    expect(parseUserAgentFormFactor('Dalvik/2.1.0 (Linux; Android; GoogleTV)', -1)).toEqual(DEVICE_FORM_FACTOR_TV);
   });
   it('returns watch for watch os ua', () => {
-    expect(parseUserAgentFormFactor('Mozilla/5.0 (Watch OS 10.0)', -1)).toEqual(DeviceFormFactorWatch);
-    expect(parseUserAgentFormFactor('wearable/1.0', -1)).toEqual(DeviceFormFactorWatch);
+    expect(parseUserAgentFormFactor('Mozilla/5.0 (Watch OS 10.0)', -1)).toEqual(DEVICE_FORM_FACTOR_WATCH);
+    expect(parseUserAgentFormFactor('wearable/1.0', -1)).toEqual(DEVICE_FORM_FACTOR_WATCH);
   });
   it('returns tablet for ipad ua', () => {
     expect(parseUserAgentFormFactor('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)', 5)).toEqual(
-      DeviceFormFactorTablet,
+      DEVICE_FORM_FACTOR_TABLET,
     );
   });
   it('returns tablet for android tablet ua without mobile token', () => {
     const androidTablet = 'Mozilla/5.0 (Linux; Android 13; SM-T870) AppleWebKit/537.36';
-    expect(parseUserAgentFormFactor(androidTablet, 5)).toEqual(DeviceFormFactorTablet);
+    expect(parseUserAgentFormFactor(androidTablet, 5)).toEqual(DEVICE_FORM_FACTOR_TABLET);
   });
   it('returns phone for iphone ua', () => {
     const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)';
-    expect(parseUserAgentFormFactor(iphone, 5)).toEqual(DeviceFormFactorPhone);
+    expect(parseUserAgentFormFactor(iphone, 5)).toEqual(DEVICE_FORM_FACTOR_PHONE);
   });
   it('returns phone for android mobile ua', () => {
     const android = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile Safari/537.36';
-    expect(parseUserAgentFormFactor(android, 5)).toEqual(DeviceFormFactorPhone);
+    expect(parseUserAgentFormFactor(android, 5)).toEqual(DEVICE_FORM_FACTOR_PHONE);
   });
   it('returns desktop for windows ua', () => {
     const win = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
-    expect(parseUserAgentFormFactor(win, 0)).toEqual(DeviceFormFactorDesktop);
+    expect(parseUserAgentFormFactor(win, 0)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
   });
   it('returns desktop for macos ua', () => {
     const mac = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/537.36';
-    expect(parseUserAgentFormFactor(mac, 0)).toEqual(DeviceFormFactorDesktop);
+    expect(parseUserAgentFormFactor(mac, 0)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
   });
   it('returns desktop when max touch points is 0 and ua is inconclusive', () => {
-    expect(parseUserAgentFormFactor('SomeBrowser/1.0', 0)).toEqual(DeviceFormFactorDesktop);
+    expect(parseUserAgentFormFactor('SomeBrowser/1.0', 0)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
   });
   it('returns unknown for empty ua with touch points unavailable', () => {
-    expect(parseUserAgentFormFactor('', -1)).toEqual(DeviceFormFactorUnknown);
+    expect(parseUserAgentFormFactor('', -1)).toEqual(DEVICE_FORM_FACTOR_UNKNOWN);
   });
   it('desktop mode ipad classifies a touch capable macintosh ua as a tablet', () => {
-    expect(parseUserAgentFormFactor(IPAD_DESKTOP_MODE, 5)).toEqual(DeviceFormFactorTablet);
+    expect(parseUserAgentFormFactor(IPAD_DESKTOP_MODE, 5)).toEqual(DEVICE_FORM_FACTOR_TABLET);
   });
   it('desktop mode ipad still classifies a real mac as a desktop', () => {
-    expect(parseUserAgentFormFactor(REAL_MAC, 0)).toEqual(DeviceFormFactorDesktop);
+    expect(parseUserAgentFormFactor(REAL_MAC, 0)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
   });
   it('desktop mode ipad does not guess from an unavailable touch hint', () => {
-    expect(parseUserAgentFormFactor(IPAD_DESKTOP_MODE, -1)).toEqual(DeviceFormFactorDesktop);
+    expect(parseUserAgentFormFactor(IPAD_DESKTOP_MODE, -1)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
   });
   it('desktop mode ipad needs more than one touch point', () => {
-    expect(parseUserAgentFormFactor(REAL_MAC, 1)).toEqual(DeviceFormFactorDesktop);
+    expect(parseUserAgentFormFactor(REAL_MAC, 1)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
   });
   it('desktop mode ipad leaves an iphone a phone even though it says like mac os x', () => {
     const iphone =
       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-    expect(parseUserAgentFormFactor(iphone, 5)).toEqual(DeviceFormFactorPhone);
+    expect(parseUserAgentFormFactor(iphone, 5)).toEqual(DEVICE_FORM_FACTOR_PHONE);
   });
   it('desktop mode ipad leaves a classic ipad ua a tablet', () => {
     const ipad =
       'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
-    expect(parseUserAgentFormFactor(ipad, 5)).toEqual(DeviceFormFactorTablet);
+    expect(parseUserAgentFormFactor(ipad, 5)).toEqual(DEVICE_FORM_FACTOR_TABLET);
   });
   it('keeps the source desktop token set exactly', () => {
     const win = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)';
-    expect(parseUserAgentFormFactor(win, -1)).toEqual(DeviceFormFactorUnknown);
-    expect(parseUserAgentFormFactor('Mozilla/5.0 (WinNT)', -1)).toEqual(DeviceFormFactorDesktop);
+    expect(parseUserAgentFormFactor(win, -1)).toEqual(DEVICE_FORM_FACTOR_UNKNOWN);
+    expect(parseUserAgentFormFactor('Mozilla/5.0 (WinNT)', -1)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
   });
   it('follows js regex line and lookahead semantics', () => {
-    expect(parseUserAgentFormFactor('webOS\ntv', -1)).toEqual(DeviceFormFactorUnknown);
-    expect(parseUserAgentFormFactor('webOS SmartPanel tv', -1)).toEqual(DeviceFormFactorTV);
-    expect(parseUserAgentFormFactor('Linux; Android\nMobile', -1)).toEqual(DeviceFormFactorUnknown);
-    expect(parseUserAgentFormFactor('Linux\nAndroid\nMobile', -1)).toEqual(DeviceFormFactorDesktop);
-    expect(parseUserAgentFormFactor('iKad', -1)).toEqual(DeviceFormFactorUnknown);
+    expect(parseUserAgentFormFactor('webOS\ntv', -1)).toEqual(DEVICE_FORM_FACTOR_UNKNOWN);
+    expect(parseUserAgentFormFactor('webOS SmartPanel tv', -1)).toEqual(DEVICE_FORM_FACTOR_TV);
+    expect(parseUserAgentFormFactor('Linux; Android\nMobile', -1)).toEqual(DEVICE_FORM_FACTOR_UNKNOWN);
+    expect(parseUserAgentFormFactor('Linux\nAndroid\nMobile', -1)).toEqual(DEVICE_FORM_FACTOR_DESKTOP);
+    expect(parseUserAgentFormFactor('iKad', -1)).toEqual(DEVICE_FORM_FACTOR_UNKNOWN);
   });
 });
 

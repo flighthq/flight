@@ -11,34 +11,34 @@ export type DeviceFormFactor = string;
 /**
  * TS `DeviceFormFactorCar`.
  */
-export const DeviceFormFactorCar = 'Car' as const;
+export const DEVICE_FORM_FACTOR_CAR = 'Car' as const;
 
 /**
  * TS `DeviceFormFactorDesktop`.
  */
-export const DeviceFormFactorDesktop = 'Desktop' as const;
+export const DEVICE_FORM_FACTOR_DESKTOP = 'Desktop' as const;
 
 /**
  * TS `DeviceFormFactorPhone`.
  */
-export const DeviceFormFactorPhone = 'Phone' as const;
+export const DEVICE_FORM_FACTOR_PHONE = 'Phone' as const;
 
 /**
  * TS `DeviceFormFactorTablet`.
  */
-export const DeviceFormFactorTablet = 'Tablet' as const;
+export const DEVICE_FORM_FACTOR_TABLET = 'Tablet' as const;
 
 /**
  * TS `DeviceFormFactorTV`.
  */
-export const DeviceFormFactorTV = 'TV' as const;
+export const DEVICE_FORM_FACTOR_TV = 'TV' as const;
 
 /**
  * TS `DeviceFormFactorUnknown`.
  */
-export const DeviceFormFactorUnknown = 'Unknown' as const;
+export const DEVICE_FORM_FACTOR_UNKNOWN = 'Unknown' as const;
 
 /**
  * TS `DeviceFormFactorWatch`.
  */
-export const DeviceFormFactorWatch = 'Watch' as const;
+export const DEVICE_FORM_FACTOR_WATCH = 'Watch' as const;

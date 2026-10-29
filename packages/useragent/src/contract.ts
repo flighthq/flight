@@ -2,13 +2,13 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 export {
-  DeviceFormFactorCar,
-  DeviceFormFactorDesktop,
-  DeviceFormFactorPhone,
-  DeviceFormFactorTV,
-  DeviceFormFactorTablet,
-  DeviceFormFactorUnknown,
-  DeviceFormFactorWatch,
+  DEVICE_FORM_FACTOR_CAR,
+  DEVICE_FORM_FACTOR_DESKTOP,
+  DEVICE_FORM_FACTOR_PHONE,
+  DEVICE_FORM_FACTOR_TABLET,
+  DEVICE_FORM_FACTOR_TV,
+  DEVICE_FORM_FACTOR_UNKNOWN,
+  DEVICE_FORM_FACTOR_WATCH,
 } from './deviceFormFactor.ts';
 export type { DeviceFormFactor } from './deviceFormFactor.ts';
 export {
