@@ -91,8 +91,8 @@ describe('getSelectionSignals', () => {
     const first = crate.createTestNode('first');
     const second = crate.createTestNode('second');
     const selection = createSelectionState();
-    const changes: Readonly<{ value: string[][] }> = { value: [] as never[] };
-    const active: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const changes: { value: string[][] } = { value: [] as never[] };
+    const active: { value: string[] } = { value: [] as never[] };
     const signals = getSelectionSignals(selection);
     const changeLog = changes;
     connectSignal(
@@ -122,17 +122,17 @@ describe('getSelectionSignals', () => {
   it('keeps signals opt in until a slot is connected', () => {
     const selection = createSelectionState();
     const signals = getSelectionSignals(selection);
-    expect(signals.onChange.data! === null).toBe(true);
-    expect(signals.onActiveChange.data! === null).toBe(true);
+    expect(crate.signalIsInert(signals.onChange)).toBe(true);
+    expect(crate.signalIsInert(signals.onActiveChange)).toBe(true);
     selectNode(selection, crate.createTestNode('node'));
-    expect(signals.onChange.data! === null).toBe(true);
-    expect(signals.onActiveChange.data! === null).toBe(true);
+    expect(crate.signalIsInert(signals.onChange)).toBe(true);
+    expect(crate.signalIsInert(signals.onActiveChange)).toBe(true);
   });
   it('preserves reentrant snapshot and active emission semantics', () => {
     const selection = createSelectionState();
     const first = crate.createTestNode('first');
     const second = crate.createTestNode('second');
-    const calls: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const calls: { value: string[] } = { value: [] as never[] };
     const reentered = { value: false };
     const signals = getSelectionSignals(selection);
     const changeCalls = calls;

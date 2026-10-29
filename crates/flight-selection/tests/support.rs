@@ -10,6 +10,7 @@ use flight_node::{
     init_bounds_rectangle_runtime_trait,
 };
 use flight_path::{Path, PathCommand, PathWinding};
+use flight_signals::Signal;
 
 #[derive(Default)]
 struct TestNode {
@@ -164,6 +165,10 @@ pub fn joined_node_names(nodes: &[NodeRef]) -> String {
 
 pub fn optional_node_name(node: &Option<NodeRef>) -> String {
     return node.as_ref().map(node_name).unwrap_or_default();
+}
+
+pub fn signal_is_inert<T>(signal: &Signal<T>) -> bool {
+    return signal.data.read().unwrap().is_none();
 }
 
 pub fn same_node(a: &NodeRef, b: &NodeRef) -> bool {

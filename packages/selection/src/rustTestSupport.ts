@@ -2,6 +2,7 @@ import type { Rectangle } from '@flighthq/geometry/contract';
 import { createNode, createNodeRuntime, initBoundsRectangleRuntimeTrait } from '@flighthq/node/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import type { Path } from '@flighthq/path/contract';
+import type { SignalRaw } from '@flighthq/signals/contract';
 
 import {
   applyPointerSelectionPolicy,
@@ -55,6 +56,10 @@ function joinedNodeNames(nodes: readonly Readonly<NodeRef>[]): string {
 
 function optionalNodeName(node: Readonly<NodeRef> | null): string {
   return node === null ? '' : nodeName(node);
+}
+
+function signalIsInert<T>(signal: Readonly<SignalRaw<T>>): boolean {
+  return signal.data === undefined;
 }
 
 function sameNode(a: Readonly<NodeRef>, b: Readonly<NodeRef>): boolean {
@@ -137,5 +142,6 @@ export const rustTestSupport = {
   samePath,
   sameRectangle,
   selectedNodesOf,
+  signalIsInert,
   takeReentrantFlag,
 };

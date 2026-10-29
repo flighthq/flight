@@ -205,13 +205,13 @@ mod get_selection_signals {
     fn keeps_signals_opt_in_until_a_slot_is_connected() {
         let selection = create_selection_state();
         let signals = get_selection_signals(&selection);
-        assert!(signals.on_change.data.read().unwrap().is_none());
-        assert!(signals.on_active_change.data.read().unwrap().is_none());
+        assert!(crate::signal_is_inert(&signals.on_change));
+        assert!(crate::signal_is_inert(&signals.on_active_change));
 
         select_node(&selection, &crate::create_test_node("node"));
 
-        assert!(signals.on_change.data.read().unwrap().is_none());
-        assert!(signals.on_active_change.data.read().unwrap().is_none());
+        assert!(crate::signal_is_inert(&signals.on_change));
+        assert!(crate::signal_is_inert(&signals.on_active_change));
     }
 
     #[test]
