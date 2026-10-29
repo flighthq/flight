@@ -24,6 +24,49 @@ use safety::{
 #[allow(unused_imports)]
 pub(crate) use vitest_helpers::*;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use syn::parse::Parser;
+
+    #[test]
+    fn pattern_scopes_clear_and_rebind_value_provenance_without_mutating_the_outer_scope() {
+        let outer_identity = "production|Sample";
+        let mut context = HashSet::from([
+            format!("{VITEST_STRUCT_LOCAL_MARKER}sample{PROVENANCE_SEPARATOR}{outer_identity}"),
+            format!("{VITEST_STRUCT_OWNER_MARKER}Sample{PROVENANCE_SEPARATOR}{outer_identity}"),
+        ]);
+        for (scope, source) in [
+            ("if let", "Some(sample)"),
+            ("while let", "Some(sample)"),
+            ("match", "Some(sample)"),
+            ("nested", "((sample,), _)"),
+        ] {
+            let pattern = Pat::parse_single.parse_str(source).unwrap();
+            let scoped = vitest_pattern_context(&context, &pattern);
+            assert_eq!(vitest_struct_local(&scoped, "sample"), None, "{scope}");
+            assert_eq!(
+                vitest_struct_local(&context, "sample"),
+                Some(outer_identity.to_string()),
+                "{scope} mutated its outer scope"
+            );
+        }
+
+        let statement: Stmt = syn::parse_str("let sample: Sample = value;").unwrap();
+        let Stmt::Local(local) = statement else {
+            unreachable!("the fixture is a let statement");
+        };
+        context.insert(format!(
+            "{VITEST_STRUCT_LOCAL_MARKER}sample{PROVENANCE_SEPARATOR}stale|Sample"
+        ));
+        let scoped = vitest_pattern_context(&context, &local.pat);
+        assert_eq!(
+            vitest_struct_local(&scoped, "sample"),
+            Some(outer_identity.to_string())
+        );
+    }
+}
+
 pub(crate) struct EmitProgramInput<'a> {
     pub program: &'a Program,
     pub entity_module: Option<&'a str>,
@@ -42,184 +85,282 @@ pub(crate) struct EmitProgramInput<'a> {
 type PreferredAliases = HashMap<String, String>;
 
 const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
+
 // Lexical value bindings. Every binding site of an emitted function gets a canonical BindingId
 // (`function#b<ordinal>`, ordinals in source order); `@binding-site:` maps a binding identifier node to
 // it, `@binding-fact:` records what the binding is proven to hold, and `@binding:` names the binding
 // currently in scope for an identifier. Emission installs `@binding:` in scope-local contexts, so a
 // shadow is distinct and scope exit restores the outer binding.
 const BINDING_MARKER: &str = "@binding:";
+
 const BINDING_FACT_MARKER: &str = "@binding-fact:";
+
 const BINDING_SITE_MARKER: &str = "@binding-site:";
+
 const BINDING_FACT_SEPARATOR: char = '\u{1e}';
+
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
+
 // `export-name` mappings: `@export-name:rust` marks a mapped item and `@export-name-target:rust:Name`
 // carries its TypeScript name.
 pub(super) const EXPORT_NAME_MARKER: &str = "@export-name:";
+
 // A dependency package's `export-name` mapping: `@dependency-export-name:module|rust` marks a mapped
 // item of that package's contract module and `@dependency-export-name-target:module|rust:Name`
 // carries its TypeScript name.
 pub(super) const DEPENDENCY_EXPORT_NAME_MARKER: &str = "@dependency-export-name:";
+
 // `std::mem` provenance recorded from `use` items (see `insert_std_mem_import_context`).
 const STD_MEM_FUNCTION_MARKER: &str = "@std-mem-function:";
+
 const STD_MEM_FUNCTION_TARGET_MARKER: &str = "@std-mem-function-target:";
+
 const STD_MEM_FUNCTIONS: &[&str] = &["replace", "swap", "take"];
+
 const STD_MEM_GLOB_MARKER: &str = "@std-mem-glob";
+
 const STD_MEM_MODULE_MARKER: &str = "@std-mem-module:";
+
 const STD_MEM_SHADOWED_MARKER: &str = "@std-mem-shadowed:";
+
 // Type-namespace provenance recorded from `use` items and local declarations (see
 // `insert_type_path_context`): a local name, the full path it imports, a glob's module path, and a
 // locally declared type-namespace name.
 pub(super) const TYPE_USE_MARKER: &str = "@type-use:";
+
 pub(super) const TYPE_USE_TARGET_MARKER: &str = "@type-use-target:";
+
 pub(super) const TYPE_EXTERN_CRATE_MARKER: &str = "@type-extern-crate:";
+
 pub(super) const TYPE_NO_STD_MARKER: &str = "@type-no-std";
+
 pub(super) const TYPE_USE_GLOB_MARKER: &str = "@type-use-glob:";
+
 pub(super) const TYPE_LOCAL_MARKER: &str = "@type-local:";
+
 // Type parameters of the declaration currently being emitted. A borrowed generic payload is `T`
 // in TypeScript, not `Readonly<T>`: the latter turns primitive substitutions such as `number` into
 // their boxed object surface.
 const TYPE_PARAMETER_MARKER: &str = "@type-parameter:";
+
 pub(super) const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
+
 // A dependency item the current source binds by its mapped name: `@dependency-export-name-binding:
 // Name|module|rust`. `@dependency-export-name-bindings` marks that at least one exists.
 pub(super) const DEPENDENCY_EXPORT_NAME_BINDING_MARKER: &str = "@dependency-export-name-binding:";
+
 pub(super) const DEPENDENCY_EXPORT_NAME_BINDINGS_MARKER: &str = "@dependency-export-name-bindings";
+
 pub(super) const EXPORT_NAME_TARGET_MARKER: &str = "@export-name-target:";
+
 // The module of the program being emitted; struct and function facts resolve against it.
 const CURRENT_SOURCE_MARKER: &str = "@current-source:";
+
 // `{module}␟{Owner}␟{field}␟{store}` for each designated crate-private entity state field, and
 // `{field}␟{Owner}` so an access whose receiver type cannot be resolved fails closed.
 const ENTITY_RUNTIME_STATE_MARKER: &str = "@entity-runtime-state:";
+
 const ENTITY_RUNTIME_STATE_FIELD_MARKER: &str = "@entity-runtime-state-field:";
+
 // An entity declared by a target-native sibling keeps the type name that sibling owns. Generated
 // entity declarations still reserve the unsuffixed name for their wrapper and emit `NameRaw`.
 const TARGET_NATIVE_ENTITY_MARKER: &str = "@target-native-entity:";
+
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
+
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
+
 const RESERVED_KEY_DATA_UNION_VARIANT_MARKER: &str = "@reserved-key-data-union-variant:";
+
 const RESERVED_KEY_DATA_UNION_VARIANT_TYPE_MARKER: &str = "@reserved-key-data-union-variant-type:";
+
 const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
+
 // A field an `allocate_entity` local may leave out of its default object because the construction
 // initializer called on it in the very next statement definitely assigns it (`type:field`).
 const ENTITY_ALLOCATION_INITIALIZED_FIELD_MARKER: &str = "@entity-allocation-initialized-field:";
+
 const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
+
 // A field an initializer definitely assigns through its leading `&mut Entity` parameter on every
 // completing path (`function:type:field`).
 const ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER: &str = "@entity-definitely-initialized-field:";
+
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
+
 const ENTITY_CLONE_FIELD_MARKER: &str = "@entity-clone-field:";
+
 // A struct field whose declared type provably erases an identity-bearing shared cell in TypeScript:
 // `flight_entity::Ref<T>` or the equivalent standard `Arc<RwLock<T>>`. Only clones of these fields
 // may be rewritten as forwarding aliases to the original field.
 const ERASED_SHARED_CELL_FIELD_MARKER: &str = "@erased-shared-cell-field:";
+
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
+
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
+
 // The BindingId of a local bound to a dereferenced `MutexGuard`. `Mutex<T>` is a `{ value: T }` cell
 // in TypeScript, so that exact binding must retain the cell while dereferences read or replace its
 // `value`; another binding with the same identifier remains independent.
 const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
+
 // A local initialized from `RwLock::read`/`write`. `Ref<T>` and `Arc<RwLock<T>>` lower to `T`, so
 // dereferencing this guard is a target no-op rather than a `.value` wrapper access.
 const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
+
 const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
+
 const INTERIOR_MUTABLE_STRUCT_MARKER: &str = "@interior-mutable-struct:";
+
 // `{module}␟{Struct}` for each entity a source declares `readonly-fields`, so an `initialize_*`
 // function in another source that resolves its leading `&mut` parameter to it gets the writable
 // construction view.
 const READONLY_ENTITY_MARKER: &str = "@readonly-entity:";
+
 const REF_ALIAS_TARGET_MARKER: &str = "@ref-alias-target:";
+
 const REF_ALIAS_RECEIVER_CAPTURE_MARKER: &str = "@ref-alias-receiver-capture:";
+
 const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:";
+
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
+
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
+
 // Free functions, structs and type aliases by declaring module
 // (`module SEP name SEP public|crate|private`). A name used in a source resolves through Rust's
 // module visibility: private in its owner, crate-visible inside that crate, and public everywhere.
 pub(super) const FUNCTION_OWNER_MARKER: &str = "@function-owner:";
+
 // A source's `use` bindings resolved to full module identities: explicit or renamed items
 // (`module SEP bound name SEP target module SEP item`) and globs (`module SEP target module`). Only
 // sources with a full module identity (`crate::path`) record them; others resolve their own
 // declarations alone.
 const USE_BINDING_MARKER: &str = "@use-binding:";
+
 const USE_GLOB_MARKER: &str = "@use-glob:";
+
 // The `pub` plus `pub(crate)` subset of those bindings, followed while resolving inside one crate.
 const CRATE_USE_BINDING_MARKER: &str = "@crate-use-binding:";
+
 const CRATE_USE_GLOB_MARKER: &str = "@crate-use-glob:";
+
 // The public subset of the same bindings. Resolution starts with all bindings in the source being
 // compiled, then follows only these markers through intermediate modules so a private import never
 // becomes an accidental re-export.
 const PUBLIC_USE_BINDING_MARKER: &str = "@public-use-binding:";
+
 const PUBLIC_USE_GLOB_MARKER: &str = "@public-use-glob:";
+
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
+
 const NULLABLE_BINDING_MARKER: &str = "@nullable:";
+
 pub(super) const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
+
 // The BindingId of a Vitest local whose initializer is proven to retain a nullable Option return's
 // `null` representation. Binding identity, rather than the Rust identifier, keeps shadows separate.
 pub(super) const NULLABLE_OPTION_BINDING_MARKER: &str = "@nullable-option-binding:";
+
 pub(super) const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
+
 pub(super) const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:";
+
 pub(super) const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
+
 // `{source}␟{function}␟{position}` for each `array-like` slice parameter, by its argument position, so
 // an onward call can check the parameter of the callee it resolves to.
 pub(super) const ARRAY_LIKE_ARGUMENT_MARKER: &str = "@array-like-argument:";
+
 // `{source}␟{function}␟{parameter}` for each `array-like` slice parameter, typed `ArrayLike<T>`; the
 // source identity keeps a sibling's designation from applying to a same-named local function.
 const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
+
 // `{source}␟{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is declared or
 // built by literal.
 pub(super) const NULLABLE_OPTION_LITERAL_FIELD_MARKER: &str = "@nullable-option-literal-field:";
+
 // A function whose `Option` return is designated `nullable-option`: its returns use `null`.
 pub(super) const RETURNS_NULLABLE_MARKER: &str = "@returns-nullable";
+
 // A function returning a fixed array of a typed-array primitive (`[f64; 4]` is `Float64Array`): its
 // returned array literals construct that typed array.
 const RETURNS_TYPED_ARRAY_MARKER: &str = "@returns-typed-array:";
+
 pub(super) const PROVENANCE_SEPARATOR: char = '\u{1f}';
+
 // Struct fields (`struct identity SEP field SEP payload`), locals and parameters (`name:payload`), and
 // function returns (`module SEP function SEP payload`) declared as Rust `Option<T>`. The payload is the
 // resolved struct identity of `T`, or empty. They make Option `.and_then()` / `.map()` type-directed.
 pub(super) const OPTION_FIELD_MARKER: &str = "@option-field:";
+
 pub(super) const OPTION_RETURN_MARKER: &str = "@option-return:";
+
 // Locals and parameters known to hold a Rust integer or string, the operand types `.cmp()` lowers
 // to a JavaScript relational comparison.
 const ORDERED_PRIMITIVE_MARKER: &str = "@ordered-primitive:";
+
 // The precedence `expression_precedence` assigns to Rust primary expressions.
 const PRIMARY_PRECEDENCE: u8 = 15;
+
 const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
+
 const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
+
 const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
+
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
+
 const RETURN_TYPE_MARKER: &str = "@return-type:";
+
 pub(super) const RETURN_BINDING_FACT_MARKER: &str = "@return-binding-fact:";
+
 const RETURNS_U32_MARKER: &str = "@returns-u32";
+
 // Struct fields (`struct identity SEP field`) and locals or parameters whose every binding is declared
 // as a Rust `Vec`, slice or fixed array, the operand types `.extend()` and `.extend_from_slice()` lower
 // over.
 // A struct field typed `HashSet` / `HashMap`: `identity SEP field SEP hash-set|hash-map`.
 const HASH_COLLECTION_FIELD_MARKER: &str = "@hash-collection-field:";
+
 const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
+
 // Functions returning a Rust `Vec`, slice or fixed array (`module SEP function SEP`).
 pub(super) const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
+
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
+
 const STRING_FIELD_MARKER: &str = "@string-field:";
+
 pub(super) const STRING_RETURN_MARKER: &str = "@string-return:";
+
 pub(super) const STRING_UNION_MARKER: &str = "@string-union:";
+
 pub(super) const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
+
 // `{module}␟{type-path fact}` retains the source-local canonical type-path context in the aggregate
 // provenance context. This lets later alias expansion resolve every spelling of a proven standard
 // `Arc`, including absolute paths and renamed root or module imports.
 const SOURCE_TYPE_PATH_CONTEXT_MARKER: &str = "@source-type-path-context:";
+
 // Owner facts for each non-generic source type alias, and `{module}␟{alias}␟{type tokens}` for its
 // definition, so a struct identity is seen through alias chains across sources.
 const TYPE_ALIAS_DEFINITION_MARKER: &str = "@type-alias-definition:";
+
 const TYPE_ALIAS_OWNER_MARKER: &str = "@type-alias-owner:";
+
 // Functions returning a resolved struct (`module SEP function SEP struct identity`).
 pub(super) const STRUCT_RETURN_MARKER: &str = "@struct-return:";
+
 // `{struct identity}␟{field}␟{field struct identity}` for each field whose declared type is a struct of
 // a source, so a nested field read resolves its owner through the declarations.
 pub(super) const STRUCT_FIELD_TYPE_MARKER: &str = "@struct-field-type:";
+
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
+
 const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
+
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -261,83 +402,89 @@ pub(super) enum BindingFact {
     UnresolvedPattern,
 }
 
-impl BindingFact {
-    fn has_source_structure(&self) -> bool {
-        return match self {
-            Self::Option(payload) | Self::Sequence(payload) => payload.has_source_structure(),
-            Self::Structure(_) => true,
-            Self::Tuple(facts) => facts.iter().any(Self::has_source_structure),
-            Self::HashMap | Self::HashSet | Self::Unknown | Self::UnresolvedPattern => false,
-        };
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct ProvenanceIdentity {
     declaration: String,
     module: String,
 }
 
-impl ProvenanceIdentity {
-    fn encoded(&self) -> String {
-        return format!("{}{PROVENANCE_SEPARATOR}{}", self.module, self.declaration);
-    }
-
-    fn description(&self) -> String {
-        return format!("`{}` in `{}`", self.declaration, self.module);
-    }
-
-    fn encoded_description(encoded: &str) -> String {
-        let Some((module, declaration)) = encoded.split_once(PROVENANCE_SEPARATOR) else {
-            return format!("`{encoded}`");
-        };
-        return format!("`{declaration}` in `{module}`");
-    }
+struct TaggedDataUnionPattern {
+    bindings: BTreeMap<String, String>,
+    owner: String,
+    variant: String,
 }
 
-pub(super) type ProvenanceDeclarations = BTreeMap<String, BTreeSet<ProvenanceIdentity>>;
-pub(super) type ProvenanceBindings = BTreeMap<String, BTreeSet<ProvenanceIdentity>>;
-pub(super) type ProvenanceModuleBindings = BTreeMap<String, ProvenanceBindings>;
-
-#[derive(Clone, Debug)]
-pub(super) enum ProvenanceImportRule {
-    Explicit {
-        exported: String,
-        imported: String,
-        module: Option<String>,
-    },
-    Wildcard {
-        module: String,
-    },
+enum TaggedDataUnionPatternAnalysis {
+    CatchAll(Option<String>),
+    Ordinary,
+    Variants(Vec<TaggedDataUnionPattern>),
 }
 
-impl RuntimeCategory {
-    fn name(self) -> &'static str {
-        return match self {
-            Self::Null => "null",
-            Self::Boolean => "boolean",
-            Self::Number => "number",
-            Self::String => "string",
-            Self::Array => "array",
-            Self::Record => "record",
-            Self::Function => "function",
-            Self::Object => "object",
-        };
-    }
+struct TaggedDataUnionMatchArm {
+    catch_all_binding: Option<String>,
+    otherwise: bool,
+    variants: Vec<TaggedDataUnionPattern>,
+}
 
-    fn parse(name: &str) -> Option<Self> {
-        return match name {
-            "null" => Some(Self::Null),
-            "boolean" => Some(Self::Boolean),
-            "number" => Some(Self::Number),
-            "string" => Some(Self::String),
-            "array" => Some(Self::Array),
-            "record" => Some(Self::Record),
-            "function" => Some(Self::Function),
-            "object" => Some(Self::Object),
-            _ => None,
-        };
-    }
+struct ReservedKeyDataUnionPattern {
+    binding: Option<String>,
+    fallback: bool,
+    keys: BTreeSet<String>,
+    owner: String,
+    payload_type: String,
+    variant: String,
+}
+
+enum ReservedKeyDataUnionPatternAnalysis {
+    CatchAll(Option<String>),
+    Ordinary,
+    Variants(Vec<ReservedKeyDataUnionPattern>),
+}
+
+struct DataUnionMatchArm {
+    binding: Option<String>,
+    binding_type: Option<String>,
+    categories: BTreeSet<RuntimeCategory>,
+    catch_all: bool,
+    reserved_key_variants: Vec<(BTreeSet<String>, bool)>,
+}
+
+struct DataUnionPattern {
+    binding: Option<String>,
+    categories: BTreeSet<RuntimeCategory>,
+    owner: String,
+    variant: String,
+}
+
+enum DataUnionPatternAnalysis {
+    CatchAll(Option<String>),
+    Ordinary,
+    Variants(Vec<DataUnionPattern>),
+}
+
+struct OptionMatchArm {
+    binding: Option<String>,
+    present: bool,
+}
+
+struct ExternalIdentityAlias {
+    module: String,
+    tag: String,
+}
+
+#[derive(Clone)]
+pub(super) struct CrossCrateSymbol {
+    imported: String,
+    local: String,
+    module: String,
+}
+
+struct CrossCrateUsageCollector<'a> {
+    context: &'a HashSet<String>,
+    symbols: &'a BTreeMap<String, CrossCrateSymbol>,
+    struct_literals_are_types: bool,
+    type_names: BTreeSet<String>,
+    value_names: BTreeSet<String>,
 }
 
 // The context for one `allocate_entity` local: when the next statement calls a construction
@@ -1193,7 +1340,6 @@ pub(crate) fn insert_type_path_context<'a>(
         context.insert(format!("{TYPE_LOCAL_MARKER}{name}"));
     }
 }
-
 
 // Whether a resolved type path names the standard `Arc` (`std` or `alloc` `sync::Arc`).
 fn is_standard_arc_path(path: &[String]) -> bool {
@@ -4602,8 +4748,6 @@ pub(crate) fn insert_nullable_options_context(context: &mut HashSet<String>) {
     context.insert(NULLABLE_OPTIONS_MARKER.to_string());
 }
 
-
-
 pub(super) fn provenance_marker_values(
     context: &HashSet<String>,
     marker: &str,
@@ -4696,17 +4840,6 @@ pub(super) fn resolved_provenance_binding(
     )));
 }
 
-
-
-
-
-
-
-
-
-
-
-
 // The scope-local context of a pattern's bindings: Vitest provenance cleared for each bound name, and
 // each name bound to the BindingId its site resolved to (or to no fact at all, when the site was not
 // resolved), replacing any outer binding of that name within the scope.
@@ -4734,14 +4867,6 @@ pub(super) fn provenance_pattern_bindings(pattern: &Pat) -> BTreeSet<String> {
     collector.visit_pat(pattern);
     return collector.bindings;
 }
-
-
-
-
-
-
-
-
 
 pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
     return context.contains(&format!("{STRING_UNION_MARKER}{name}"));
@@ -5593,9 +5718,6 @@ pub(crate) fn function_expression_context(
     return context;
 }
 
-
-
-
 // Binds each identifier a pattern introduces to the BindingId its site resolved to (or to no fact at
 // all, when the site was not resolved), replacing any binding of that name in `context`.
 pub(super) fn bind_lexical_pattern(context: &mut HashSet<String>, pattern: &Pat) {
@@ -6218,6 +6340,7 @@ fn emit_documentation(out: &mut String, attributes: &[Attribute], indent: usize)
     write_indent(out, indent);
     out.push_str(" */\n");
 }
+
 // Declares the package-internal store of each entity runtime state field `program` designates, at the
 // end of the declaring module. The store is exported only as a list export, never as a declaration
 // export, so a wildcard contract over the module never makes it public; sibling modules import it.
@@ -7571,9 +7694,6 @@ fn emit_entity_clone(receiver: &str, owner: &str, entities: &HashSet<String>) ->
     return format!("Object.defineProperties({{ ...{receiver} }}, {{ {descriptors} }})");
 }
 
-
-
-
 pub(crate) fn emit_for_header(
     pattern: &Pat,
     expression: &Expr,
@@ -8437,24 +8557,6 @@ fn emit_unreachable_message(
     );
 }
 
-struct TaggedDataUnionPattern {
-    bindings: BTreeMap<String, String>,
-    owner: String,
-    variant: String,
-}
-
-enum TaggedDataUnionPatternAnalysis {
-    CatchAll(Option<String>),
-    Ordinary,
-    Variants(Vec<TaggedDataUnionPattern>),
-}
-
-struct TaggedDataUnionMatchArm {
-    catch_all_binding: Option<String>,
-    otherwise: bool,
-    variants: Vec<TaggedDataUnionPattern>,
-}
-
 fn tagged_data_union_field_binding(pattern: &Pat) -> Result<Option<String>, CompileError> {
     return match pattern {
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
@@ -8651,29 +8753,6 @@ fn analyze_tagged_data_union_match(
             .otherwise = true;
     }
     return Ok(Some(output));
-}
-
-struct ReservedKeyDataUnionPattern {
-    binding: Option<String>,
-    fallback: bool,
-    keys: BTreeSet<String>,
-    owner: String,
-    payload_type: String,
-    variant: String,
-}
-
-enum ReservedKeyDataUnionPatternAnalysis {
-    CatchAll(Option<String>),
-    Ordinary,
-    Variants(Vec<ReservedKeyDataUnionPattern>),
-}
-
-struct DataUnionMatchArm {
-    binding: Option<String>,
-    binding_type: Option<String>,
-    categories: BTreeSet<RuntimeCategory>,
-    catch_all: bool,
-    reserved_key_variants: Vec<(BTreeSet<String>, bool)>,
 }
 
 fn analyze_reserved_key_data_union_pattern(
@@ -9047,19 +9126,6 @@ fn tagged_data_union_bindings(
         .collect();
 }
 
-struct DataUnionPattern {
-    binding: Option<String>,
-    categories: BTreeSet<RuntimeCategory>,
-    owner: String,
-    variant: String,
-}
-
-enum DataUnionPatternAnalysis {
-    CatchAll(Option<String>),
-    Ordinary,
-    Variants(Vec<DataUnionPattern>),
-}
-
 fn data_union_payload_binding(pattern: &Pat) -> Result<Option<String>, CompileError> {
     return match pattern {
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
@@ -9298,11 +9364,6 @@ fn runtime_categories_predicate(categories: &BTreeSet<RuntimeCategory>, value: &
         .map(|predicate| format!("({predicate})"))
         .collect::<Vec<_>>()
         .join(" || ");
-}
-
-struct OptionMatchArm {
-    binding: Option<String>,
-    present: bool,
 }
 
 fn analyze_option_match(arms: &[syn::Arm]) -> Option<Vec<OptionMatchArm>> {
@@ -10896,11 +10957,6 @@ fn type_contains_nullable(
     );
 }
 
-struct ExternalIdentityAlias {
-    module: String,
-    tag: String,
-}
-
 fn external_identity_aliases(
     external_alias_programs: &[(BTreeMap<String, String>, &str)],
 ) -> Result<BTreeMap<String, ExternalIdentityAlias>, CompileError> {
@@ -10981,13 +11037,6 @@ fn used_identity_aliases(
         collector.visit_item_type(type_alias);
     }
     return collector.names;
-}
-
-#[derive(Clone)]
-pub(super) struct CrossCrateSymbol {
-    imported: String,
-    local: String,
-    module: String,
 }
 
 pub(super) fn collect_cross_crate_use_tree(
@@ -11127,83 +11176,6 @@ pub(crate) fn is_lowered_cross_crate_value(name: &str) -> bool {
         name,
         "allocate_entity" | "AtomicU32" | "Ordering" | "Ref" | "throw_error" | "throw_range_error"
     );
-}
-
-struct CrossCrateUsageCollector<'a> {
-    context: &'a HashSet<String>,
-    symbols: &'a BTreeMap<String, CrossCrateSymbol>,
-    struct_literals_are_types: bool,
-    type_names: BTreeSet<String>,
-    value_names: BTreeSet<String>,
-}
-
-impl CrossCrateUsageCollector<'_> {
-    fn record_type_path(&mut self, path: &syn::Path) {
-        let Some(segment) = path.segments.first() else {
-            return;
-        };
-        let name = segment.ident.to_string();
-        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_type(&name) {
-            self.type_names.insert(name);
-        }
-    }
-
-    fn record_value_path(&mut self, path: &syn::Path) {
-        let Some(segment) = path.segments.first() else {
-            return;
-        };
-        let name = segment.ident.to_string();
-        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_value(&name) {
-            self.value_names.insert(name);
-        }
-    }
-}
-
-impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
-    fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
-        if expression.qself.is_none() {
-            if let Some((owner, _)) = path_owner_and_member(&expression.path)
-                && is_string_union(self.context, &owner)
-            {
-                return;
-            }
-            self.record_value_path(&expression.path);
-        }
-        syn::visit::visit_expr_path(self, expression);
-    }
-
-    fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
-        if self.struct_literals_are_types && expression.qself.is_none() {
-            self.record_type_path(&expression.path);
-        }
-        syn::visit::visit_expr_struct(self, expression);
-    }
-
-    fn visit_macro(&mut self, mac: &'ast syn::Macro) {
-        visit_cross_crate_macro_arguments(self, mac);
-        syn::visit::visit_macro(self, mac);
-    }
-
-    fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
-        if pattern.qself.is_none() {
-            self.record_value_path(&pattern.path);
-        }
-        syn::visit::visit_pat_struct(self, pattern);
-    }
-
-    fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
-        if pattern.qself.is_none() {
-            self.record_value_path(&pattern.path);
-        }
-        syn::visit::visit_pat_tuple_struct(self, pattern);
-    }
-
-    fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
-        if rust_type.qself.is_none() {
-            self.record_type_path(&rust_type.path);
-        }
-        syn::visit::visit_type_path(self, rust_type);
-    }
 }
 
 // `matches!(value, pattern [if guard] [,])`: the value, the pattern (`|` alternatives and `ref`
@@ -12747,7 +12719,7 @@ fn mutex_guard_receiver(expression: &Expr) -> Option<&Expr> {
 
 // The cell whose guard is produced by an exact `cell.read().unwrap()` or
 // `cell.write().unwrap()` expression.
-fn direct_lock_guard_receiver(expression: &Expr) -> Option<&Expr> {
+pub(super) fn direct_lock_guard_receiver(expression: &Expr) -> Option<&Expr> {
     let Expr::MethodCall(unwrap) = expression else {
         return None;
     };
@@ -13955,45 +13927,146 @@ pub(crate) fn write_indent(out: &mut String, indent: usize) {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use syn::parse::Parser;
-
-    #[test]
-    fn pattern_scopes_clear_and_rebind_value_provenance_without_mutating_the_outer_scope() {
-        let outer_identity = "production|Sample";
-        let mut context = HashSet::from([
-            format!("{VITEST_STRUCT_LOCAL_MARKER}sample{PROVENANCE_SEPARATOR}{outer_identity}"),
-            format!("{VITEST_STRUCT_OWNER_MARKER}Sample{PROVENANCE_SEPARATOR}{outer_identity}"),
-        ]);
-        for (scope, source) in [
-            ("if let", "Some(sample)"),
-            ("while let", "Some(sample)"),
-            ("match", "Some(sample)"),
-            ("nested", "((sample,), _)"),
-        ] {
-            let pattern = Pat::parse_single.parse_str(source).unwrap();
-            let scoped = vitest_pattern_context(&context, &pattern);
-            assert_eq!(vitest_struct_local(&scoped, "sample"), None, "{scope}");
-            assert_eq!(
-                vitest_struct_local(&context, "sample"),
-                Some(outer_identity.to_string()),
-                "{scope} mutated its outer scope"
-            );
-        }
-
-        let statement: Stmt = syn::parse_str("let sample: Sample = value;").unwrap();
-        let Stmt::Local(local) = statement else {
-            unreachable!("the fixture is a let statement");
+impl BindingFact {
+    fn has_source_structure(&self) -> bool {
+        return match self {
+            Self::Option(payload) | Self::Sequence(payload) => payload.has_source_structure(),
+            Self::Structure(_) => true,
+            Self::Tuple(facts) => facts.iter().any(Self::has_source_structure),
+            Self::HashMap | Self::HashSet | Self::Unknown | Self::UnresolvedPattern => false,
         };
-        context.insert(format!(
-            "{VITEST_STRUCT_LOCAL_MARKER}sample{PROVENANCE_SEPARATOR}stale|Sample"
-        ));
-        let scoped = vitest_pattern_context(&context, &local.pat);
-        assert_eq!(
-            vitest_struct_local(&scoped, "sample"),
-            Some(outer_identity.to_string())
-        );
+    }
+}
+
+impl ProvenanceIdentity {
+    fn description(&self) -> String {
+        return format!("`{}` in `{}`", self.declaration, self.module);
+    }
+
+    fn encoded(&self) -> String {
+        return format!("{}{PROVENANCE_SEPARATOR}{}", self.module, self.declaration);
+    }
+
+    fn encoded_description(encoded: &str) -> String {
+        let Some((module, declaration)) = encoded.split_once(PROVENANCE_SEPARATOR) else {
+            return format!("`{encoded}`");
+        };
+        return format!("`{declaration}` in `{module}`");
+    }
+}
+
+pub(super) type ProvenanceDeclarations = BTreeMap<String, BTreeSet<ProvenanceIdentity>>;
+
+pub(super) type ProvenanceBindings = BTreeMap<String, BTreeSet<ProvenanceIdentity>>;
+
+pub(super) type ProvenanceModuleBindings = BTreeMap<String, ProvenanceBindings>;
+
+#[derive(Clone, Debug)]
+pub(super) enum ProvenanceImportRule {
+    Explicit {
+        exported: String,
+        imported: String,
+        module: Option<String>,
+    },
+    Wildcard {
+        module: String,
+    },
+}
+
+impl RuntimeCategory {
+    fn name(self) -> &'static str {
+        return match self {
+            Self::Null => "null",
+            Self::Boolean => "boolean",
+            Self::Number => "number",
+            Self::String => "string",
+            Self::Array => "array",
+            Self::Record => "record",
+            Self::Function => "function",
+            Self::Object => "object",
+        };
+    }
+
+    fn parse(name: &str) -> Option<Self> {
+        return match name {
+            "null" => Some(Self::Null),
+            "boolean" => Some(Self::Boolean),
+            "number" => Some(Self::Number),
+            "string" => Some(Self::String),
+            "array" => Some(Self::Array),
+            "record" => Some(Self::Record),
+            "function" => Some(Self::Function),
+            "object" => Some(Self::Object),
+            _ => None,
+        };
+    }
+}
+
+impl CrossCrateUsageCollector<'_> {
+    fn record_type_path(&mut self, path: &syn::Path) {
+        let Some(segment) = path.segments.first() else {
+            return;
+        };
+        let name = segment.ident.to_string();
+        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_type(&name) {
+            self.type_names.insert(name);
+        }
+    }
+
+    fn record_value_path(&mut self, path: &syn::Path) {
+        let Some(segment) = path.segments.first() else {
+            return;
+        };
+        let name = segment.ident.to_string();
+        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_value(&name) {
+            self.value_names.insert(name);
+        }
+    }
+}
+
+impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
+    fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
+        if expression.qself.is_none() {
+            if let Some((owner, _)) = path_owner_and_member(&expression.path)
+                && is_string_union(self.context, &owner)
+            {
+                return;
+            }
+            self.record_value_path(&expression.path);
+        }
+        syn::visit::visit_expr_path(self, expression);
+    }
+
+    fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
+        if self.struct_literals_are_types && expression.qself.is_none() {
+            self.record_type_path(&expression.path);
+        }
+        syn::visit::visit_expr_struct(self, expression);
+    }
+
+    fn visit_macro(&mut self, mac: &'ast syn::Macro) {
+        visit_cross_crate_macro_arguments(self, mac);
+        syn::visit::visit_macro(self, mac);
+    }
+
+    fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
+        if pattern.qself.is_none() {
+            self.record_value_path(&pattern.path);
+        }
+        syn::visit::visit_pat_struct(self, pattern);
+    }
+
+    fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
+        if pattern.qself.is_none() {
+            self.record_value_path(&pattern.path);
+        }
+        syn::visit::visit_pat_tuple_struct(self, pattern);
+    }
+
+    fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
+        if rust_type.qself.is_none() {
+            self.record_type_path(&rust_type.path);
+        }
+        syn::visit::visit_type_path(self, rust_type);
     }
 }
