@@ -4997,7 +4997,14 @@ fn generation_context_with_types(
                 }
             }
         }
-        for structure in &program.structs {
+        // A target-native companion owns its target storage defaults. Its declaration-level
+        // directives can still govern generated siblings, but Rust-only storage fields must not
+        // impose synthesized defaults on those siblings.
+        for structure in program
+            .structs
+            .iter()
+            .filter(|_| program.source_mode != crate::SourceMode::TargetNative)
+        {
             let entity = structure.ident.to_string();
             if !entity_types.contains(&entity) {
                 continue;

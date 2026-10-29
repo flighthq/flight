@@ -99,9 +99,9 @@ describe('hasRustPublicRecordDeclaration', () => {
 });
 
 describe('hasRustGenerationSemantics', () => {
-  it('selects semantic metadata without selecting native export-surface directives', () => {
+  it('selects cross-module data unions without selecting target-native lowering directives', () => {
     expect(hasRustGenerationSemantics('//! flight-compiler: data-union MarkupResult=reserved-key\n')).toBe(true);
-    expect(hasRustGenerationSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(true);
+    expect(hasRustGenerationSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(false);
     expect(
       hasRustGenerationSemantics('//! flight-compiler: target-native\n//! flight-compiler: contract Value\n'),
     ).toBe(false);

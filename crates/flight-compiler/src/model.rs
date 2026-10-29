@@ -41,6 +41,7 @@ pub(crate) struct Program {
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) readonly_structs: HashSet<String>,
+    pub(crate) source_mode: SourceMode,
     // Transparent data unions that distinguish their first record payload from the final fallback
     // payload by declaration-derived property names (`data-union Name=reserved-key`).
     pub(crate) reserved_key_data_unions: HashSet<String>,
@@ -466,6 +467,7 @@ fn is_public(visibility: &Visibility) -> bool {
 }
 
 pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
+    let source_mode = source_mode(source)?;
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
     let callable_field_parameters = parse_callable_field_parameters(&file.attrs)?;
@@ -636,6 +638,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         statics,
         structs,
         readonly_structs,
+        source_mode,
         reserved_key_data_unions,
         string_unions,
         string_union_values,

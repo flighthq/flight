@@ -2868,6 +2868,41 @@ pub fn allocate_linear_color() -> LinearColor {
     }
 
     #[test]
+    fn leaves_target_native_entity_storage_defaults_to_its_companion() {
+        let native_entity = r#"
+//! flight-compiler: target-native
+
+use flight_entity::EntityRuntimeSlot;
+
+pub struct NativeRecord {
+    pub value: f32,
+}
+
+pub struct NativeEntity {
+    runtime: EntityRuntimeSlot,
+    pub record: NativeRecord,
+}
+
+flight_entity::impl_entity!(NativeEntity);
+"#;
+        let factory = r#"
+pub fn allocate_native_entity() -> NativeEntity {
+    return flight_entity::allocate_entity();
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(
+            factory,
+            Some("@flighthq/entity/contract"),
+            &[native_entity],
+        )
+        .unwrap();
+
+        assert!(output.contains("return allocateEntity<NativeEntityRaw>();"));
+        assert!(!output.contains("Object.assign"));
+    }
+
+    #[test]
     fn initializes_entity_allocations_with_portable_rust_defaults() {
         let source = r#"
 pub struct Defaults {
