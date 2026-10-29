@@ -637,6 +637,43 @@ fn expression_is_rereadable(expression: &Expr) -> bool {
     };
 }
 
+// The string union every value of `expression` is a variant of: a variant path, or a conditional,
+// match or block whose every result is a variant of that one union.
+fn expression_string_union_owner(expression: &Expr, context: &HashSet<String>) -> Option<String> {
+    return match expression {
+        Expr::Block(block) => match block.block.stmts.as_slice() {
+            [Stmt::Expr(result, None)] => expression_string_union_owner(result, context),
+            _ => None,
+        },
+        Expr::Group(group) => expression_string_union_owner(&group.expr, context),
+        Expr::If(if_expression) => {
+            let (_, else_branch) = if_expression.else_branch.as_ref()?;
+            let [Stmt::Expr(then_result, None)] = if_expression.then_branch.stmts.as_slice() else {
+                return None;
+            };
+            let then_owner = expression_string_union_owner(then_result, context)?;
+            let else_owner = expression_string_union_owner(else_branch, context)?;
+            (then_owner == else_owner).then_some(then_owner)
+        }
+        Expr::Match(match_expression) => {
+            let mut owners = match_expression
+                .arms
+                .iter()
+                .map(|arm| expression_string_union_owner(&arm.body, context))
+                .collect::<Option<BTreeSet<_>>>()?;
+            match (owners.pop_first(), owners.is_empty()) {
+                (Some(owner), true) => Some(owner),
+                _ => None,
+            }
+        }
+        Expr::Paren(paren) => expression_string_union_owner(&paren.expr, context),
+        Expr::Path(path) if path.qself.is_none() => path_owner_and_member(&path.path)
+            .map(|(owner, _)| owner)
+            .filter(|owner| is_string_union(context, owner)),
+        _ => None,
+    };
+}
+
 // The canonical identity of the struct `expression` evaluates to in emitted code, derived from
 // declarations: a typed binding, a struct-returning call, a struct literal's resolved path, or a field
 // whose declared type is a struct (recursively, so `a.b.c` resolves `b`'s owner through `a`).
@@ -11385,6 +11422,16 @@ pub(crate) fn emit_local_with_shadow_and_else(
         .or_else(|| inferred_struct_type.clone())
         .or_else(|| inferred_option_type.clone())
         .or_else(|| rebound_struct_type.clone());
+    // A mutable binding keeps its string-union type: TypeScript widens a `let` initialized from a
+    // string literal to `string`, which a later write or a typed read would then reject.
+    let string_union_type = match typescript_type {
+        None if mutable => expression_string_union_owner(&initializer.expr, entities)
+            .and_then(|owner| syn::parse_str::<Type>(&owner).ok())
+            .map(|owner| emit_type(&owner, entities))
+            .transpose()?,
+        _ => None,
+    };
+    let typescript_type = typescript_type.or_else(|| string_union_type.clone());
     let closure_parameter_types = local_name
         .as_deref()
         .map(|name| closure_parameter_types(entities, name))
@@ -11484,7 +11531,8 @@ pub(crate) fn emit_local_with_shadow_and_else(
         && (rust_type.is_some()
             || inferred_struct_type.is_some()
             || inferred_option_type.is_some()
-            || rebound_struct_type.is_some())
+            || rebound_struct_type.is_some()
+            || string_union_type.is_some())
         && let Some(typescript_type) = typescript_type
     {
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");

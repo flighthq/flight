@@ -5060,6 +5060,76 @@ pub fn absent_first(value: Option<f64>) -> f64 {
     }
 
     #[test]
+    fn keeps_the_string_union_type_of_mutable_variant_bindings() {
+        let module = |path, source| ModuleSource { path, source };
+        let reasons = r#"//! flight-compiler: string-union Reason
+
+pub enum Reason {
+    Ok,
+    Failed,
+}
+
+pub enum Plain {
+    First,
+    Second,
+}
+"#;
+        let checker = r#"use crate::reasons::{Plain, Reason};
+
+pub fn check(failed: bool, later: bool) -> Reason {
+    let mut issue = if failed { Reason::Failed } else { Reason::Ok };
+    if later {
+        issue = Reason::Failed;
+    }
+    return issue;
+}
+
+pub fn pick(index: i32) -> Reason {
+    let mut chosen = match index {
+        0 => Reason::Ok,
+        _ => Reason::Failed,
+    };
+    chosen = Reason::Ok;
+    return chosen;
+}
+
+pub fn constant() -> Reason {
+    let fixed = Reason::Ok;
+    return fixed;
+}
+
+pub fn plain() -> Plain {
+    let mut value = Plain::First;
+    value = Plain::Second;
+    return value;
+}
+
+pub fn mixed(flag: bool) -> f64 {
+    let mut count = if flag { 1.0 } else { 0.0 };
+    count += 1.0;
+    return count;
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            module("crates/flight-reasons/src/checker.rs", checker),
+            None,
+            &[module("crates/flight-reasons/src/reasons.rs", reasons)],
+            &[],
+        )
+        .unwrap();
+        assert!(
+            output.contains("  let issue: Reason = failed ? \"failed\" : \"ok\";\n"),
+            "{output}"
+        );
+        assert!(output.contains("  let chosen: Reason = "), "{output}");
+        assert!(output.contains("  const fixed = \"ok\";\n"), "{output}");
+        assert!(output.contains("  let value = "), "{output}");
+        assert!(!output.contains("let value: "), "{output}");
+        assert!(output.contains("  let count = "), "{output}");
+        assert!(!output.contains("let count: "), "{output}");
+    }
+
+    #[test]
     fn resolves_nullable_fields_through_proven_standard_arc() {
         let compile = |source: &str| {
             return compile_typescript_with_module_sources(
