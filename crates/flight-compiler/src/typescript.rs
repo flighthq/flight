@@ -71,6 +71,7 @@ const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
 const VITEST_FUNCTION_RETURN_CANDIDATE_MARKER: &str = "@vitest-function-return-candidate:";
 const VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER: &str = "@vitest-function-return-unresolved:";
+const VITEST_LOCAL_CRATE_MARKER: &str = "@vitest-local-crate:";
 const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
 const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
 const VITEST_STRUCT_CANDIDATE_MARKER: &str = "@vitest-struct-candidate:";
@@ -948,11 +949,17 @@ fn frozen_object_expression_name<'a>(
 }
 
 fn source_module_name(source: &str) -> String {
-    let file_name = source.rsplit(['/', '\\']).next().unwrap_or(source);
-    return file_name
-        .strip_suffix(".rs")
-        .unwrap_or(file_name)
-        .to_string();
+    let normalized = source.replace('\\', "/");
+    let relative = normalized
+        .split_once("/src/")
+        .map(|(_, relative)| relative)
+        .or_else(|| normalized.strip_prefix("src/"))
+        .unwrap_or(&normalized);
+    let without_extension = relative.strip_suffix(".rs").unwrap_or(relative);
+    let without_mod = without_extension
+        .strip_suffix("/mod")
+        .unwrap_or(without_extension);
+    return without_mod.replace('/', "::");
 }
 
 fn provenance_import_rules<'a>(
@@ -964,10 +971,13 @@ fn provenance_import_rules<'a>(
             .filter(|segment| !matches!(segment.as_str(), "crate" | "self" | "super"))
             .cloned()
             .collect::<Vec<_>>();
-        if prefix.iter().all(|segment| segment == "self") || meaningful.is_empty() {
-            return None;
+        if meaningful.is_empty() {
+            return prefix
+                .iter()
+                .any(|segment| segment == "crate")
+                .then(|| "crate".to_string());
         }
-        return meaningful.last().cloned();
+        return Some(meaningful.join("::"));
     }
 
     fn collect(rules: &mut Vec<ProvenanceImportRule>, tree: &UseTree, prefix: &mut Vec<String>) {
@@ -1040,16 +1050,88 @@ fn identities_in_module(
         .collect();
 }
 
+fn resolved_production_type_identities(
+    rust_type: &Type,
+    declarations: &ProvenanceDeclarations,
+    local_bindings: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
+    crate_root: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
+) -> BTreeSet<ProvenanceIdentity> {
+    let rust_type = match rust_type {
+        Type::Group(group) => {
+            return resolved_production_type_identities(
+                &group.elem,
+                declarations,
+                local_bindings,
+                crate_root,
+            );
+        }
+        Type::Paren(paren) => {
+            return resolved_production_type_identities(
+                &paren.elem,
+                declarations,
+                local_bindings,
+                crate_root,
+            );
+        }
+        Type::Reference(reference) => {
+            return resolved_production_type_identities(
+                &reference.elem,
+                declarations,
+                local_bindings,
+                crate_root,
+            );
+        }
+        Type::Path(path) if path.qself.is_none() => path,
+        _ => return BTreeSet::new(),
+    };
+    let segments = rust_type
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    let Some((declaration, prefix)) = segments.split_last() else {
+        return BTreeSet::new();
+    };
+    if prefix.is_empty() || prefix == ["self"] {
+        return local_bindings.get(declaration).cloned().unwrap_or_default();
+    }
+    if prefix == ["crate"] {
+        return crate_root.get(declaration).cloned().unwrap_or_default();
+    }
+    if let Some(first) = prefix.first()
+        && first.starts_with("flight_")
+    {
+        return BTreeSet::new();
+    }
+    let module = prefix
+        .iter()
+        .filter(|segment| !matches!(segment.as_str(), "crate" | "self" | "super"))
+        .cloned()
+        .collect::<Vec<_>>()
+        .join("::");
+    if module.is_empty() {
+        return BTreeSet::new();
+    }
+    return identities_in_module(declarations, &module, Some(declaration));
+}
+
 fn resolve_import_rules(
     declarations: &ProvenanceDeclarations,
     rules: &[ProvenanceImportRule],
     seed: BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
+    crate_root: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
 ) -> BTreeMap<String, BTreeSet<ProvenanceIdentity>> {
     let mut bindings = seed;
     for rule in rules {
         match rule {
             ProvenanceImportRule::Wildcard { module } => {
-                for identity in identities_in_module(declarations, module, None) {
+                let identities = if module == "crate" {
+                    crate_root.values().flatten().cloned().collect()
+                } else {
+                    identities_in_module(declarations, module, None)
+                };
+                for identity in identities {
                     bindings
                         .entry(identity.declaration.clone())
                         .or_default()
@@ -1061,10 +1143,15 @@ fn resolve_import_rules(
                 imported,
                 module: Some(module),
             } => {
+                let identities = if module == "crate" {
+                    crate_root.get(imported).cloned().unwrap_or_default()
+                } else {
+                    identities_in_module(declarations, module, Some(imported))
+                };
                 bindings
                     .entry(exported.clone())
                     .or_default()
-                    .extend(identities_in_module(declarations, module, Some(imported)));
+                    .extend(identities);
             }
             ProvenanceImportRule::Explicit { module: None, .. } => {}
         }
@@ -1100,7 +1187,7 @@ fn provenance_bindings(
 ) -> Result<BTreeMap<String, ProvenanceIdentity>, CompileError> {
     let candidates = contract_rules.map_or_else(
         || declarations.clone(),
-        |rules| resolve_import_rules(declarations, rules, BTreeMap::new()),
+        |rules| resolve_import_rules(declarations, rules, BTreeMap::new(), &BTreeMap::new()),
     );
     let mut bindings = BTreeMap::new();
     for (exported, matches) in candidates {
@@ -1134,6 +1221,35 @@ pub(crate) fn generation_context(
     contract_source: Option<&str>,
 ) -> Result<HashSet<String>, CompileError> {
     return generation_context_with_types(programs, &HashSet::new(), contract_source, true);
+}
+
+pub(crate) fn insert_vitest_local_crate_context<'a>(
+    context: &mut HashSet<String>,
+    contract_module: &str,
+    source_modules: impl Iterator<Item = &'a str>,
+) {
+    if let Some(package) = contract_module
+        .strip_prefix("@flighthq/")
+        .and_then(|module| module.strip_suffix("/contract"))
+    {
+        context.insert(format!(
+            "{VITEST_LOCAL_CRATE_MARKER}flight_{}",
+            package.replace('-', "_")
+        ));
+    }
+    for source in source_modules {
+        let normalized = source.replace('\\', "/");
+        let Some((_, after_crates)) = normalized.split_once("crates/") else {
+            continue;
+        };
+        let Some((package, _)) = after_crates.split_once("/src/") else {
+            continue;
+        };
+        context.insert(format!(
+            "{VITEST_LOCAL_CRATE_MARKER}{}",
+            package.replace('-', "_")
+        ));
+    }
 }
 
 pub(crate) fn insert_string_union_context<'a>(
@@ -1286,6 +1402,30 @@ fn resolved_vitest_struct_binding(
     );
 }
 
+fn vitest_path_binding_name(path: &syn::Path, context: &HashSet<String>) -> Option<String> {
+    let last = path.segments.last()?.ident.to_string();
+    if path.segments.len() == 1 {
+        return Some(last);
+    }
+    let first = path.segments.first()?.ident.to_string();
+    if matches!(first.as_str(), "crate" | "self" | "super")
+        || marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER).contains(&first)
+    {
+        return Some(last);
+    }
+    return None;
+}
+
+fn vitest_named_type(rust_type: &Type, context: &HashSet<String>) -> Option<String> {
+    return match rust_type {
+        Type::Group(group) => vitest_named_type(&group.elem, context),
+        Type::Paren(paren) => vitest_named_type(&paren.elem, context),
+        Type::Reference(reference) => vitest_named_type(&reference.elem, context),
+        Type::Path(path) if path.qself.is_none() => vitest_path_binding_name(&path.path, context),
+        _ => None,
+    };
+}
+
 fn provenance_pattern_bindings(pattern: &Pat) -> BTreeSet<String> {
     struct PatternBindingCollector {
         bindings: BTreeSet<String>,
@@ -1303,6 +1443,15 @@ fn provenance_pattern_bindings(pattern: &Pat) -> BTreeSet<String> {
     };
     collector.visit_pat(pattern);
     return collector.bindings;
+}
+
+pub(crate) fn vitest_pattern_context(context: &HashSet<String>, pattern: &Pat) -> HashSet<String> {
+    let mut scoped = context.clone();
+    for binding in provenance_pattern_bindings(pattern) {
+        clear_provenance_binding(&mut scoped, VITEST_PUBLIC_FUNCTION_MARKER, &binding);
+        clear_provenance_binding(&mut scoped, VITEST_FUNCTION_CANDIDATE_MARKER, &binding);
+    }
+    return scoped;
 }
 
 pub(crate) fn insert_vitest_local_struct_context<'a>(
@@ -1328,22 +1477,59 @@ pub(crate) fn insert_vitest_local_struct_context<'a>(
     insert_vitest_struct_context(context, structures.into_iter());
 }
 
+pub(crate) fn insert_vitest_local_type_alias_context<'a>(
+    context: &mut HashSet<String>,
+    aliases: impl Iterator<Item = &'a syn::ItemType>,
+) {
+    for alias in aliases {
+        let name = alias.ident.to_string();
+        clear_provenance_binding(context, VITEST_STRUCT_OWNER_MARKER, &name);
+        clear_provenance_binding(context, VITEST_STRUCT_CANDIDATE_MARKER, &name);
+        insert_provenance_binding(
+            context,
+            VITEST_STRUCT_OWNER_MARKER,
+            &name,
+            &ProvenanceIdentity {
+                declaration: name.clone(),
+                module: "vitest/local".to_string(),
+            }
+            .encoded(),
+        );
+    }
+}
+
 pub(crate) fn insert_vitest_import_alias_context<'a>(
     context: &mut HashSet<String>,
     uses: impl Iterator<Item = &'a ItemUse>,
 ) {
-    let rules = provenance_import_rules(uses)
-        .into_iter()
+    let local_crates = marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER);
+    let all_rules = provenance_import_rules(uses);
+    let rules = all_rules
+        .iter()
         .filter_map(|rule| match rule {
             ProvenanceImportRule::Explicit {
-                exported, imported, ..
-            } => Some((exported, imported)),
+                exported,
+                imported,
+                module,
+            } if module.as_deref().is_none_or(|module| {
+                module == "crate"
+                    || local_crates
+                        .iter()
+                        .any(|local| module == local || module.starts_with(&format!("{local}::")))
+            }) =>
+            {
+                Some((exported.clone(), imported.clone()))
+            }
+            ProvenanceImportRule::Explicit { .. } => None,
             ProvenanceImportRule::Wildcard { .. } => None,
         })
         .collect::<Vec<_>>();
-    let targets = rules
+    let targets = all_rules
         .iter()
-        .map(|(exported, _)| exported.clone())
+        .filter_map(|rule| match rule {
+            ProvenanceImportRule::Explicit { exported, .. } => Some(exported.clone()),
+            ProvenanceImportRule::Wildcard { .. } => None,
+        })
         .collect::<BTreeSet<_>>();
     for marker in [
         VITEST_PUBLIC_FUNCTION_MARKER,
@@ -1397,7 +1583,7 @@ pub(crate) fn insert_vitest_helper_return_context<'a>(
         let ReturnType::Type(_, rust_type) = &helper.sig.output else {
             continue;
         };
-        let Some(structure) = named_type(rust_type) else {
+        let Some(structure) = vitest_named_type(rust_type, context) else {
             continue;
         };
         let Some(identity) = vitest_struct_owner(context, &structure) else {
@@ -1466,10 +1652,11 @@ pub(crate) fn validate_vitest_function_provenance(
 
         fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
             if let Expr::Path(path) = call.func.as_ref()
-                && let Some(function) = path.path.segments.last()
-                && !self.is_shadowed(&function.ident.to_string())
+                && path.qself.is_none()
+                && let Some(function) = vitest_path_binding_name(&path.path, self.context)
+                && !self.is_shadowed(&function)
             {
-                self.calls.insert(function.ident.to_string());
+                self.calls.insert(function);
             }
             syn::visit::visit_expr_call(self, call);
         }
@@ -1483,6 +1670,57 @@ pub(crate) fn validate_vitest_function_provenance(
             self.scopes.pop();
         }
 
+        fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
+            self.visit_expr(&expression.expr);
+            self.visit_pat(&expression.pat);
+            self.scopes
+                .push(provenance_pattern_bindings(&expression.pat));
+            self.visit_block(&expression.body);
+            self.scopes.pop();
+        }
+
+        fn visit_expr_if(&mut self, expression: &'ast syn::ExprIf) {
+            if let Expr::Let(binding) = expression.cond.as_ref() {
+                self.visit_expr(&binding.expr);
+                self.visit_pat(&binding.pat);
+                self.scopes.push(provenance_pattern_bindings(&binding.pat));
+                self.visit_block(&expression.then_branch);
+                self.scopes.pop();
+            } else {
+                self.visit_expr(&expression.cond);
+                self.visit_block(&expression.then_branch);
+            }
+            if let Some((_, otherwise)) = &expression.else_branch {
+                self.visit_expr(otherwise);
+            }
+        }
+
+        fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
+            self.visit_expr(&expression.expr);
+            for arm in &expression.arms {
+                self.visit_pat(&arm.pat);
+                self.scopes.push(provenance_pattern_bindings(&arm.pat));
+                if let Some((_, guard)) = &arm.guard {
+                    self.visit_expr(guard);
+                }
+                self.visit_expr(&arm.body);
+                self.scopes.pop();
+            }
+        }
+
+        fn visit_expr_while(&mut self, expression: &'ast syn::ExprWhile) {
+            if let Expr::Let(binding) = expression.cond.as_ref() {
+                self.visit_expr(&binding.expr);
+                self.visit_pat(&binding.pat);
+                self.scopes.push(provenance_pattern_bindings(&binding.pat));
+                self.visit_block(&expression.body);
+                self.scopes.pop();
+            } else {
+                self.visit_expr(&expression.cond);
+                self.visit_block(&expression.body);
+            }
+        }
+
         fn visit_expr_struct(&mut self, structure: &'ast syn::ExprStruct) {
             if structure.path.segments.len() == 1
                 && let Some(owner) = structure.path.segments.first()
@@ -1494,9 +1732,9 @@ pub(crate) fn validate_vitest_function_provenance(
 
         fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
             if rust_type.qself.is_none()
-                && let Some(segment) = rust_type.path.segments.last()
+                && let Some(name) = vitest_path_binding_name(&rust_type.path, self.context)
             {
-                self.record_struct_binding(segment.ident.to_string());
+                self.record_struct_binding(name);
             }
             syn::visit::visit_type_path(self, rust_type);
         }
@@ -1737,10 +1975,29 @@ fn generation_context_with_types(
                 (structure.ident.to_string(), BTreeSet::from([identity]))
             })
             .collect::<BTreeMap<_, _>>();
+        let contract_struct_bindings =
+            provenance_binding_table(&context, VITEST_STRUCT_OWNER_MARKER)
+                .into_iter()
+                .map(|(name, identities)| {
+                    let identities = identities
+                        .into_iter()
+                        .filter_map(|identity| {
+                            let (module, declaration) =
+                                identity.split_once(PROVENANCE_SEPARATOR)?;
+                            Some(ProvenanceIdentity {
+                                declaration: declaration.to_string(),
+                                module: module.to_string(),
+                            })
+                        })
+                        .collect();
+                    (name, identities)
+                })
+                .collect::<BTreeMap<_, _>>();
         let production_struct_bindings = resolve_import_rules(
             &public_struct_owners,
             &provenance_import_rules(program.uses.iter()),
             local_struct_bindings,
+            &contract_struct_bindings,
         );
         context.extend(program.entities.iter().cloned());
         context.extend(
@@ -1855,10 +2112,12 @@ fn generation_context_with_types(
                 && let ReturnType::Type(_, rust_type) = &function.sig.output
                 && let Some(structure) = named_type(rust_type)
             {
-                let return_candidates = production_struct_bindings
-                    .get(&structure)
-                    .cloned()
-                    .unwrap_or_default();
+                let return_candidates = resolved_production_type_identities(
+                    rust_type,
+                    &public_struct_owners,
+                    &production_struct_bindings,
+                    &contract_struct_bindings,
+                );
                 let function_identity = ProvenanceIdentity {
                     declaration: function_name.clone(),
                     module: (*module).to_string(),
@@ -1961,9 +2220,9 @@ pub(crate) fn function_expression_context(
     impl<'ast> syn::visit::Visit<'ast> for CallbackUseCollector<'_> {
         fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
             if let Expr::Path(path) = call.func.as_ref()
-                && let Some(function) = path.path.segments.last()
+                && path.qself.is_none()
+                && let Some(function) = vitest_path_binding_name(&path.path, self.context)
             {
-                let function = function.ident.to_string();
                 for (argument_index, argument) in call.args.iter().enumerate() {
                     let Some(local) = referenced_identifier(argument) else {
                         continue;
@@ -2103,7 +2362,7 @@ pub(crate) fn function_expression_context(
         let Pat::Ident(pattern) = argument.pat.as_ref() else {
             continue;
         };
-        if let Some(structure) = named_type(&argument.ty)
+        if let Some(structure) = vitest_named_type(&argument.ty, &context)
             && let Some(identity) = vitest_struct_owner(&context, &structure)
         {
             context.insert(format!(
@@ -2192,7 +2451,7 @@ pub(crate) fn update_vitest_struct_local_context(
             let Pat::Type(typed) = &local.pat else {
                 return None;
             };
-            let structure = named_type(&typed.ty)?;
+            let structure = vitest_named_type(&typed.ty, context)?;
             vitest_struct_owner(context, &structure)
         });
     if let Some(identity) = identity {
@@ -2206,10 +2465,7 @@ pub(crate) fn update_vitest_local_function_context(
     local: &syn::Local,
     context: &mut HashSet<String>,
 ) {
-    for binding in provenance_pattern_bindings(&local.pat) {
-        clear_provenance_binding(context, VITEST_PUBLIC_FUNCTION_MARKER, &binding);
-        clear_provenance_binding(context, VITEST_FUNCTION_CANDIDATE_MARKER, &binding);
-    }
+    *context = vitest_pattern_context(context, &local.pat);
 }
 
 // The module of the program being emitted, when exactly one is recorded.
@@ -2435,7 +2691,7 @@ fn emit_closure_with_parameter_types(
         }
         if let Pat::Type(typed) = pattern
             && let Pat::Ident(identifier) = typed.pat.as_ref()
-            && let Some(structure) = named_type(&typed.ty)
+            && let Some(structure) = vitest_named_type(&typed.ty, &closure_context)
             && let Some(identity) = vitest_struct_owner(&closure_context, &structure)
         {
             insert_provenance_binding(
@@ -3569,7 +3825,10 @@ fn inferred_vitest_struct_literal_name(
             let Expr::Path(path) = call.func.as_ref() else {
                 return None;
             };
-            let local_function = path.path.segments.last()?.ident.to_string();
+            if path.qself.is_some() {
+                return None;
+            }
+            let local_function = vitest_path_binding_name(&path.path, entities)?;
             let function_identity = unique_marker_suffix(
                 entities,
                 &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{local_function}{PROVENANCE_SEPARATOR}"),
@@ -3606,7 +3865,10 @@ fn inferred_vitest_struct_return_type(
     let Expr::Path(path) = call.func.as_ref() else {
         return None;
     };
-    let function = path.path.segments.last()?.ident.to_string();
+    if path.qself.is_some() {
+        return None;
+    }
+    let function = vitest_path_binding_name(&path.path, entities)?;
     let identity = inferred_vitest_struct_literal_name(expression, entities)?;
     let typescript_function = snake_to_lower_camel(&function);
     return Some((
@@ -5028,8 +5290,13 @@ fn emit_match_expression(
                 writeln!(out, "    const {binding} = {value};")
                     .expect("writing to a String cannot fail");
             }
-            writeln!(out, "    return {};", emit_expression(&arm.body, entities)?)
-                .expect("writing to a String cannot fail");
+            let arm_context = vitest_pattern_context(entities, &arm.pat);
+            writeln!(
+                out,
+                "    return {};",
+                emit_expression(&arm.body, &arm_context)?
+            )
+            .expect("writing to a String cannot fail");
             out.push_str("  }\n");
         }
         out.push_str("})()");
@@ -5063,8 +5330,13 @@ fn emit_match_expression(
                 writeln!(out, "    const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
-            writeln!(out, "    return {};", emit_expression(&arm.body, entities)?)
-                .expect("writing to a String cannot fail");
+            let arm_context = vitest_pattern_context(entities, &arm.pat);
+            writeln!(
+                out,
+                "    return {};",
+                emit_expression(&arm.body, &arm_context)?
+            )
+            .expect("writing to a String cannot fail");
             out.push_str("  }\n");
         }
         out.push_str("})()");
@@ -5086,10 +5358,11 @@ fn emit_match_expression(
                 writeln!(out, "    case {pattern}:").expect("writing to a String cannot fail");
             }
         }
+        let arm_context = vitest_pattern_context(entities, &arm.pat);
         writeln!(
             out,
             "      return {};",
-            emit_expression(&arm.body, entities)?
+            emit_expression(&arm.body, &arm_context)?
         )
         .expect("writing to a String cannot fail");
     }
@@ -5143,12 +5416,15 @@ fn emit_match_statement(
                 writeln!(out, "const {binding} = {value};")
                     .expect("writing to a String cannot fail");
             }
+            let arm_context = vitest_pattern_context(entities, &arm.pat);
             match arm.body.as_ref() {
-                Expr::Block(block) => emit_block(out, &block.block.stmts, entities, indent + 2)?,
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
+                }
                 expression => emit_statement(
                     out,
                     &Stmt::Expr(expression.clone(), None),
-                    entities,
+                    &arm_context,
                     indent + 2,
                 )?,
             }
@@ -5194,12 +5470,15 @@ fn emit_match_statement(
                 writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
+            let arm_context = vitest_pattern_context(entities, &arm.pat);
             match arm.body.as_ref() {
-                Expr::Block(block) => emit_block(out, &block.block.stmts, entities, indent + 2)?,
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
+                }
                 expression => emit_statement(
                     out,
                     &Stmt::Expr(expression.clone(), None),
-                    entities,
+                    &arm_context,
                     indent + 2,
                 )?,
             }
@@ -5229,12 +5508,13 @@ fn emit_match_statement(
                 writeln!(out, "case {pattern}:").expect("writing to a String cannot fail");
             }
         }
+        let arm_context = vitest_pattern_context(entities, &arm.pat);
         match arm.body.as_ref() {
-            Expr::Block(block) => emit_block(out, &block.block.stmts, entities, indent + 2)?,
+            Expr::Block(block) => emit_block(out, &block.block.stmts, &arm_context, indent + 2)?,
             expression => emit_statement(
                 out,
                 &Stmt::Expr(expression.clone(), None),
-                entities,
+                &arm_context,
                 indent + 2,
             )?,
         }
@@ -6784,6 +7064,11 @@ fn emit_statement(
             .expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
+            let then_context = if let Expr::Let(binding) = if_expression.cond.as_ref() {
+                vitest_pattern_context(entities, &binding.pat)
+            } else {
+                entities.clone()
+            };
             let tuple_binding = emit_data_union_tuple_binding(&if_expression.cond, entities)?;
             let option_binding = if tuple_binding.is_some() {
                 None
@@ -6826,7 +7111,12 @@ fn emit_statement(
                 write_indent(out, indent + 1);
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
-            emit_block(out, &if_expression.then_branch.stmts, entities, indent + 1)?;
+            emit_block(
+                out,
+                &if_expression.then_branch.stmts,
+                &then_context,
+                indent + 1,
+            )?;
             write_indent(out, indent);
             if let Some((_, otherwise)) = &if_expression.else_branch {
                 out.push_str("} else {");
@@ -6857,6 +7147,7 @@ fn emit_statement(
             emit_vec_extend_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
+            let loop_context = vitest_pattern_context(entities, &loop_expression.pat);
             write_indent(out, indent);
             writeln!(
                 out,
@@ -6864,11 +7155,16 @@ fn emit_statement(
                 emit_for_header(&loop_expression.pat, &loop_expression.expr, entities)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &loop_expression.body.stmts, entities, indent + 1)?;
+            emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
         }
         Stmt::Expr(Expr::While(loop_expression), _) => {
+            let loop_context = if let Expr::Let(binding) = loop_expression.cond.as_ref() {
+                vitest_pattern_context(entities, &binding.pat)
+            } else {
+                entities.clone()
+            };
             write_indent(out, indent);
             writeln!(
                 out,
@@ -6876,7 +7172,7 @@ fn emit_statement(
                 emit_expression(&loop_expression.cond, entities)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &loop_expression.body.stmts, entities, indent + 1)?;
+            emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
         }
@@ -7061,6 +7357,23 @@ pub(crate) fn emit_type(
                 return Err(compile_error("empty Rust type path"));
             };
             let name = segment.ident.to_string();
+            if path.path.segments.len() > 1
+                && let Some(first) = path.path.segments.first()
+                && first.ident.to_string().starts_with("flight_")
+                && !marker_suffixes(entities, VITEST_LOCAL_CRATE_MARKER)
+                    .contains(&first.ident.to_string())
+            {
+                if !matches!(segment.arguments, PathArguments::None) {
+                    return Err(compile_error(format!(
+                        "foreign Rust type `{name}` cannot use generic arguments in a portable test"
+                    )));
+                }
+                return Ok(format!(
+                    "{}.{}",
+                    snake_to_lower_camel(&first.ident.to_string()),
+                    name
+                ));
+            }
             if let Some(tag) = identity_alias_tag(entities, &name) {
                 let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
                     return Err(compile_error(format!(

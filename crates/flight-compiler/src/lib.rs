@@ -204,18 +204,24 @@ fn compile_vitest_with_contract_alias_sources_internal(
         .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
     let mut context = typescript::generation_context(&alias_program_refs, contract_source)?;
+    typescript::insert_vitest_local_crate_context(
+        &mut context,
+        contract_module,
+        alias_sources.iter().map(|source| source.module),
+    );
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
-    typescript::insert_vitest_helper_return_context(
-        &mut context,
-        "vitest/top-level",
-        program.helpers.iter(),
-    );
     typescript::insert_vitest_struct_context(
         &mut context,
         alias_programs.iter().flat_map(|program| &program.structs),
     );
     typescript::insert_vitest_local_struct_context(&mut context, program.structs.iter());
+    typescript::insert_vitest_local_type_alias_context(&mut context, program.type_aliases.iter());
+    typescript::insert_vitest_helper_return_context(
+        &mut context,
+        "vitest/top-level",
+        program.helpers.iter(),
+    );
     let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
     output =
         lower_string_union_variants(output, &string_unions.styles, &string_unions.values, false)?;

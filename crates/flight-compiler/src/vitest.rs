@@ -14,7 +14,7 @@ use crate::typescript::{
     insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
     is_data_union_variant, is_string_union, is_vitest_struct, numeric_literal_spelling,
     snake_to_lower_camel, update_vitest_local_function_context, update_vitest_struct_local_context,
-    validate_vitest_function_provenance, write_indent,
+    validate_vitest_function_provenance, vitest_pattern_context, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -122,6 +122,89 @@ fn collect_contract_symbols(
     }
 
     impl<'ast> Visit<'ast> for ContractSymbolCollector<'_> {
+        fn visit_block(&mut self, block: &'ast syn::Block) {
+            let outer = self.declared.clone();
+            for statement in &block.stmts {
+                if let Stmt::Local(local) = statement {
+                    if let Some(initializer) = &local.init {
+                        self.visit_expr(&initializer.expr);
+                        if let Some((_, diverge)) = &initializer.diverge {
+                            self.visit_expr(diverge);
+                        }
+                    }
+                    self.visit_pat(&local.pat);
+                    self.declared.extend(pattern_names(&local.pat));
+                } else {
+                    self.visit_stmt(statement);
+                }
+            }
+            self.declared = outer;
+        }
+
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            let outer = self.declared.clone();
+            for input in &closure.inputs {
+                self.visit_pat(input);
+                self.declared.extend(pattern_names(input));
+            }
+            self.visit_expr(&closure.body);
+            self.declared = outer;
+        }
+
+        fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
+            self.visit_expr(&expression.expr);
+            self.visit_pat(&expression.pat);
+            let outer = self.declared.clone();
+            self.declared.extend(pattern_names(&expression.pat));
+            self.visit_block(&expression.body);
+            self.declared = outer;
+        }
+
+        fn visit_expr_if(&mut self, expression: &'ast syn::ExprIf) {
+            if let Expr::Let(binding) = expression.cond.as_ref() {
+                self.visit_expr(&binding.expr);
+                self.visit_pat(&binding.pat);
+                let outer = self.declared.clone();
+                self.declared.extend(pattern_names(&binding.pat));
+                self.visit_block(&expression.then_branch);
+                self.declared = outer;
+            } else {
+                self.visit_expr(&expression.cond);
+                self.visit_block(&expression.then_branch);
+            }
+            if let Some((_, otherwise)) = &expression.else_branch {
+                self.visit_expr(otherwise);
+            }
+        }
+
+        fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
+            self.visit_expr(&expression.expr);
+            for arm in &expression.arms {
+                self.visit_pat(&arm.pat);
+                let outer = self.declared.clone();
+                self.declared.extend(pattern_names(&arm.pat));
+                if let Some((_, guard)) = &arm.guard {
+                    self.visit_expr(guard);
+                }
+                self.visit_expr(&arm.body);
+                self.declared = outer;
+            }
+        }
+
+        fn visit_expr_while(&mut self, expression: &'ast syn::ExprWhile) {
+            if let Expr::Let(binding) = expression.cond.as_ref() {
+                self.visit_expr(&binding.expr);
+                self.visit_pat(&binding.pat);
+                let outer = self.declared.clone();
+                self.declared.extend(pattern_names(&binding.pat));
+                self.visit_block(&expression.body);
+                self.declared = outer;
+            } else {
+                self.visit_expr(&expression.cond);
+                self.visit_block(&expression.body);
+            }
+        }
+
         fn visit_expr_macro(&mut self, expression: &'ast syn::ExprMacro) {
             if let Ok(arguments) = parse_macro_arguments(&expression.mac) {
                 for argument in &arguments {
@@ -198,27 +281,32 @@ fn collect_contract_symbols(
 
         fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
             if rust_type.qself.is_none()
-                && let Some(segment) = rust_type.path.segments.first()
-                && segment
+                && let Some(first) = rust_type.path.segments.first()
+            {
+                if rust_type.path.segments.len() > 1 {
+                    self.record_external_module(&first.ident);
+                }
+                if first
                     .ident
                     .to_string()
                     .chars()
                     .next()
                     .is_some_and(|character| character.is_ascii_uppercase())
-                && !matches!(
-                    segment.ident.to_string().as_str(),
-                    "Arc"
-                        | "Box"
-                        | "Mutex"
-                        | "Option"
-                        | "Ref"
-                        | "Result"
-                        | "RwLock"
-                        | "String"
-                        | "Vec"
-                )
-            {
-                self.record_type_identifier(&segment.ident);
+                    && !matches!(
+                        first.ident.to_string().as_str(),
+                        "Arc"
+                            | "Box"
+                            | "Mutex"
+                            | "Option"
+                            | "Ref"
+                            | "Result"
+                            | "RwLock"
+                            | "String"
+                            | "Vec"
+                    )
+                {
+                    self.record_type_identifier(&first.ident);
+                }
             }
             syn::visit::visit_type_path(self, rust_type);
         }
@@ -315,7 +403,7 @@ fn collect_contract_symbols(
     return (symbols, type_symbols, external_modules);
 }
 
-fn collect_declared_names(function: &ItemFn) -> HashSet<String> {
+fn pattern_names(pattern: &Pat) -> HashSet<String> {
     struct DeclaredNameCollector {
         names: HashSet<String>,
     }
@@ -330,15 +418,18 @@ fn collect_declared_names(function: &ItemFn) -> HashSet<String> {
     let mut collector = DeclaredNameCollector {
         names: HashSet::new(),
     };
+    collector.visit_pat(pattern);
+    return collector.names;
+}
+
+fn collect_declared_names(function: &ItemFn) -> HashSet<String> {
+    let mut names = HashSet::new();
     for argument in &function.sig.inputs {
-        if let FnArg::Typed(argument) = argument
-            && let Pat::Ident(pattern) = argument.pat.as_ref()
-        {
-            collector.names.insert(pattern.ident.to_string());
+        if let FnArg::Typed(argument) = argument {
+            names.extend(pattern_names(&argument.pat));
         }
     }
-    collector.visit_block(&function.block);
-    return collector.names;
+    return names;
 }
 
 fn emit_assertion(
@@ -625,6 +716,11 @@ fn emit_statement(
     match statement {
         Stmt::Local(local) => emit_local(out, local, context, indent)?,
         Stmt::Expr(Expr::If(expression), _) => {
+            let then_context = if let Expr::Let(binding) = expression.cond.as_ref() {
+                vitest_pattern_context(context, &binding.pat)
+            } else {
+                context.clone()
+            };
             write_indent(out, indent);
             writeln!(
                 out,
@@ -632,7 +728,12 @@ fn emit_statement(
                 emit_expression(&expression.cond, context)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &expression.then_branch.stmts, context, indent + 1)?;
+            emit_block(
+                out,
+                &expression.then_branch.stmts,
+                &then_context,
+                indent + 1,
+            )?;
             write_indent(out, indent);
             if let Some((_, otherwise)) = &expression.else_branch {
                 out.push_str("} else {\n");
@@ -647,6 +748,7 @@ fn emit_statement(
             out.push_str("}\n");
         }
         Stmt::Expr(Expr::ForLoop(expression), _) => {
+            let loop_context = vitest_pattern_context(context, &expression.pat);
             write_indent(out, indent);
             writeln!(
                 out,
@@ -654,11 +756,16 @@ fn emit_statement(
                 emit_for_header(&expression.pat, &expression.expr, context)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &expression.body.stmts, context, indent + 1)?;
+            emit_block(out, &expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
         }
         Stmt::Expr(Expr::While(expression), _) => {
+            let loop_context = if let Expr::Let(binding) = expression.cond.as_ref() {
+                vitest_pattern_context(context, &binding.pat)
+            } else {
+                context.clone()
+            };
             write_indent(out, indent);
             writeln!(
                 out,
@@ -666,7 +773,7 @@ fn emit_statement(
                 emit_expression(&expression.cond, context)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &expression.body.stmts, context, indent + 1)?;
+            emit_block(out, &expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
         }
