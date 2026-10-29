@@ -41,6 +41,10 @@ const DEPENDENCY_EXPORT_NAME_BINDINGS_MARKER: &str = "@dependency-export-name-bi
 const EXPORT_NAME_TARGET_MARKER: &str = "@export-name-target:";
 // The module of the program being emitted; struct and function facts resolve against it.
 const CURRENT_SOURCE_MARKER: &str = "@current-source:";
+// `{module}␟{Owner}␟{field}␟{typed access}` for each designated crate-private entity state field, and
+// `{field}␟{Owner}` so an access whose receiver type cannot be resolved fails closed.
+const ENTITY_RUNTIME_STATE_MARKER: &str = "@entity-runtime-state:";
+const ENTITY_RUNTIME_STATE_FIELD_MARKER: &str = "@entity-runtime-state-field:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
 const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
@@ -3677,6 +3681,33 @@ fn generation_context_with_types(
                 }
             }
         }
+        for (owner, field_name) in &program.entity_runtime_states {
+            let state_type = program
+                .structs
+                .iter()
+                .find(|structure| structure.ident == owner.as_str())
+                .and_then(|structure| {
+                    structure.fields.iter().find(|field| {
+                        field
+                            .ident
+                            .as_ref()
+                            .is_some_and(|ident| ident == field_name)
+                    })
+                })
+                .map(|field| emit_type(&field.ty, &callable_type_context))
+                .transpose()?
+                .ok_or_else(|| {
+                    compile_error(format!(
+                        "entity runtime state `{owner}.{field_name}` was not validated"
+                    ))
+                })?;
+            context.insert(format!(
+                "{ENTITY_RUNTIME_STATE_MARKER}{module}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{owner}Raw & {{ [EntityRuntimeKey]: {state_type} }}"
+            ));
+            context.insert(format!(
+                "{ENTITY_RUNTIME_STATE_FIELD_MARKER}{field_name}{PROVENANCE_SEPARATOR}{owner}"
+            ));
+        }
         for structure in &program.structs {
             context.insert(owner_marker(
                 STRUCT_OWNER_MARKER,
@@ -5096,7 +5127,11 @@ pub(crate) fn emit_expression(
             if expression_is_path(&call.func, "Some") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
             }
-            if expression_is_associated_path(&call.func, "Arc", "new") && call.args.len() == 1 {
+            // `Ref<T>` is `Arc<RwLock<T>>` and lowers to `T`, so its constructor lowers to its argument.
+            if (expression_is_associated_path(&call.func, "Arc", "new")
+                || expression_is_associated_path(&call.func, "Ref", "new"))
+                && call.args.len() == 1
+            {
                 return emit_expression(&call.args[0], entities);
             }
             if expression_is_associated_path(&call.func, "Arc", "clone") && call.args.len() == 1 {
@@ -5211,6 +5246,9 @@ pub(crate) fn emit_expression(
         Expr::Field(field) => {
             reject_unresolved_pattern_field(&field.base, entities)?;
             let base = emit_expression(&field.base, entities)?;
+            if let Some(access) = entity_runtime_state_access(field, entities)? {
+                return Ok(format!("({base} as {access})[EntityRuntimeKey]"));
+            }
             match &field.member {
                 syn::Member::Named(identifier) => Ok(format!(
                     "{base}.{}",
@@ -5393,6 +5431,17 @@ pub(crate) fn emit_expression(
             Ok(format!("new Array({length}).fill({value})"))
         }
         Expr::Struct(structure) => {
+            if let Some(owner) = structure
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string())
+                && entity_runtime_state_is_designated(entities, &owner)
+            {
+                return Err(compile_error(format!(
+                    "a `{owner}` struct literal would expose its designated entity runtime state as a public property; allocate it with `allocate_entity` and assign the state field"
+                )));
+            }
             if let Some((owner, variant)) = path_owner_and_member(&structure.path)
                 && is_tagged_data_union_variant(entities, &owner, &variant)
             {
@@ -8749,7 +8798,7 @@ fn is_lowered_cross_crate_type(name: &str) -> bool {
 fn is_lowered_cross_crate_value(name: &str) -> bool {
     return matches!(
         name,
-        "allocate_entity" | "throw_error" | "throw_range_error"
+        "allocate_entity" | "Ref" | "throw_error" | "throw_range_error"
     );
 }
 
@@ -9168,15 +9217,27 @@ pub(crate) fn emit_program(
         .collect::<HashSet<_>>();
     let mut out = String::new();
 
-    let entity_module = if uses_allocate_entity || !program.entities.is_empty() {
-        Some(entity_module.ok_or_else(|| {
+    let uses_entity_runtime_state = uses_entity_runtime_state(program, &programs);
+    let entity_module =
+        if uses_allocate_entity || uses_entity_runtime_state || !program.entities.is_empty() {
+            Some(entity_module.ok_or_else(|| {
             compile_error(
                 "this Rust module uses entity runtime types; provide a TypeScript entity module",
             )
         })?)
-    } else {
-        None
-    };
+        } else {
+            None
+        };
+    if uses_entity_runtime_state {
+        value_imports
+            .entry(
+                entity_module
+                    .expect("entity module was required")
+                    .to_string(),
+            )
+            .or_default()
+            .insert("EntityRuntimeKey".to_string());
+    }
     if uses_allocate_entity {
         value_imports
             .entry(
@@ -10091,6 +10152,59 @@ fn emit_vec_extend_statement(
     return Ok(());
 }
 
+// The typed internal access for a field expression that reads or writes designated crate-private
+// entity state: the owner's public record intersected with its runtime-slot state. The state lives under
+// `EntityRuntimeKey`, so the public interface stays opaque and object copies never carry it. A designated
+// field name on a receiver whose struct cannot be resolved fails closed rather than emitting a public
+// property access that does not exist.
+// flight-lint: allow(hashmap-iteration) designated owners are collected into an ordered BTreeSet
+fn entity_runtime_state_access(
+    field: &syn::ExprField,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    let syn::Member::Named(member) = &field.member else {
+        return Ok(None);
+    };
+    let owners = entities
+        .iter()
+        .filter_map(|marker| {
+            marker
+                .strip_prefix(ENTITY_RUNTIME_STATE_FIELD_MARKER)?
+                .strip_prefix(&format!("{member}{PROVENANCE_SEPARATOR}"))
+        })
+        .collect::<BTreeSet<_>>();
+    if owners.is_empty() {
+        return Ok(None);
+    }
+    let Some(identity) = expression_struct_name(&field.base, entities) else {
+        return Err(compile_error(format!(
+            "cannot resolve the receiver of `.{member}`, which is designated entity runtime state on {}; bind the receiver to a local or parameter of that entity type",
+            owners
+                .iter()
+                .map(|owner| format!("`{owner}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )));
+    };
+    return Ok(unique_marker_suffix(
+        entities,
+        &format!(
+            "{ENTITY_RUNTIME_STATE_MARKER}{identity}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
+        ),
+    ));
+}
+
+// Whether `owner` is an entity with designated crate-private runtime state in this context.
+// flight-lint: allow(hashmap-iteration) `any` over the markers is order-independent
+fn entity_runtime_state_is_designated(entities: &HashSet<String>, owner: &str) -> bool {
+    return entities.iter().any(|marker| {
+        marker
+            .strip_prefix(ENTITY_RUNTIME_STATE_FIELD_MARKER)
+            .and_then(|rest| rest.split_once(PROVENANCE_SEPARATOR))
+            .is_some_and(|(_, designated_owner)| designated_owner == owner)
+    });
+}
+
 fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
     struct IdentifierFinder<'a> {
         expected: &'a str,
@@ -10857,6 +10971,41 @@ fn type_kind(rust_type: &Type) -> &'static str {
         Type::Verbatim(_) => "verbatim type tokens",
         _ => "unknown type",
     };
+}
+
+// Whether any function in `program` names a field designated as entity runtime state by one of
+// `programs`. Exact receivers are resolved during emission, which fails closed on an unresolved one.
+fn uses_entity_runtime_state(program: &Program, programs: &[&Program]) -> bool {
+    struct FieldVisitor<'a> {
+        found: bool,
+        names: &'a BTreeSet<&'a str>,
+    }
+    impl<'ast> syn::visit::Visit<'ast> for FieldVisitor<'_> {
+        fn visit_expr_field(&mut self, field: &'ast syn::ExprField) {
+            if let syn::Member::Named(member) = &field.member
+                && self.names.contains(member.to_string().as_str())
+            {
+                self.found = true;
+            }
+            syn::visit::visit_expr_field(self, field);
+        }
+    }
+    let names = programs
+        .iter()
+        .flat_map(|program| program.entity_runtime_states.values())
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    if names.is_empty() {
+        return false;
+    }
+    let mut visitor = FieldVisitor {
+        found: false,
+        names: &names,
+    };
+    for function in &program.functions {
+        syn::visit::Visit::visit_item_fn(&mut visitor, function);
+    }
+    return visitor.found;
 }
 
 pub(crate) fn write_indent(out: &mut String, indent: usize) {

@@ -1632,6 +1632,315 @@ pub fn advance_decoder(bytes: Vec<u8>) -> usize {
     }
 
     #[test]
+    fn lowers_designated_entity_runtime_state_into_the_runtime_slot() {
+        let source = r#"
+//! flight-compiler: entity-runtime-state LassoSelection.state
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+/// Opaque freeform gesture state.
+pub struct LassoSelection {
+    runtime: EntityRuntimeSlot,
+    pub(crate) state: LassoSelectionRuntime,
+}
+
+pub struct LassoSelectionRuntime {
+    pub active: bool,
+    pub count: f64,
+}
+
+impl Default for LassoSelection {
+    fn default() -> Self {
+        return LassoSelection {
+            runtime: EntityRuntimeSlot::default(),
+            state: LassoSelectionRuntime { active: false, count: 0.0 },
+        };
+    }
+}
+
+flight_entity::impl_entity!(LassoSelection);
+
+pub fn create_lasso_selection() -> LassoSelection {
+    let mut out: LassoSelection = allocate_entity();
+    initialize_lasso_selection(&mut out);
+    return out;
+}
+
+pub fn initialize_lasso_selection(out: &mut LassoSelection) {
+    out.state = LassoSelectionRuntime { active: false, count: 0.0 };
+}
+
+pub fn begin_lasso_selection(selection: &mut LassoSelection) {
+    selection.state.active = true;
+    selection.state.count += 1.0;
+}
+
+pub fn is_lasso_selection_active(selection: &LassoSelection) -> bool {
+    return selection.state.active;
+}
+"#;
+        let access = "(selection as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey]";
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains(
+            "import { EntityRuntimeKey, allocateEntity } from \"@flighthq/entity/contract\";"
+        ));
+        assert!(output.contains(
+            "/**\n * Opaque freeform gesture state.\n */\nexport interface LassoSelectionRaw extends EntityRaw {\n}\n"
+        ));
+        assert!(output.contains(
+            "  (out as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey] = { active: false, count: 0.0 };\n"
+        ));
+        assert!(output.contains(&format!("  {access}.active = true;\n")));
+        assert!(output.contains(&format!("  {access}.count += 1.0;\n")));
+        assert!(output.contains(
+            "export function isLassoSelectionActive(selection: Readonly<LassoSelectionRaw>): boolean {\n"
+        ));
+        assert!(output.contains(&format!("  return {access}.active;\n")));
+        assert!(!output.contains(".state"));
+        assert!(!output.contains("state:"));
+        assert!(!output.contains("export type"));
+    }
+
+    #[test]
+    fn lowers_ref_wrapped_entity_runtime_state_into_the_runtime_slot() {
+        let source = r#"
+//! flight-compiler: entity-runtime-state SelectionState.state
+
+use flight_entity::{EntityRuntimeSlot, Ref, allocate_entity};
+
+pub struct SelectionState {
+    runtime: EntityRuntimeSlot,
+    pub(crate) state: Ref<SelectionStateRuntime>,
+}
+
+pub struct SelectionStateRuntime {
+    pub count: f64,
+    pub items: Vec<f64>,
+}
+
+flight_entity::impl_entity!(SelectionState);
+
+pub fn initialize_selection_state(out: &mut SelectionState) {
+    out.state = flight_entity::Ref::new(std::sync::RwLock::new(SelectionStateRuntime {
+        count: 0.0,
+        items: Vec::new(),
+    }));
+}
+
+pub fn add_selection_item(state: &SelectionState, item: f64) {
+    let mut runtime = state.state.write().unwrap();
+    runtime.count += 1.0;
+    runtime.items.push(item);
+}
+
+pub fn get_selection_count(state: &SelectionState) -> f64 {
+    return state.state.read().unwrap().count;
+}
+"#;
+        let access = "(state as SelectionStateRaw & { [EntityRuntimeKey]: SelectionStateRuntime })[EntityRuntimeKey]";
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains("import { EntityRuntimeKey } from \"@flighthq/entity/contract\";"));
+        assert!(output.contains("export interface SelectionStateRaw extends EntityRaw {\n}\n"));
+        assert!(output.contains(
+            "  (out as SelectionStateRaw & { [EntityRuntimeKey]: SelectionStateRuntime })[EntityRuntimeKey] = { count: 0.0, items: [] as never[] };\n"
+        ));
+        assert!(output.contains(&format!("  let runtime = {access}!;\n")));
+        assert!(output.contains("  runtime.items.push(item);\n"));
+        assert!(output.contains(&format!("  return {access}!.count;\n")));
+        assert!(!output.contains("Ref"));
+        assert!(!output.contains(".state"));
+    }
+
+    #[test]
+    fn lowers_entity_runtime_state_designated_in_a_sibling_module() {
+        let types = r#"
+//! flight-compiler: entity-runtime-state LassoSelection.state
+
+use flight_entity::EntityRuntimeSlot;
+
+pub struct LassoSelection {
+    runtime: EntityRuntimeSlot,
+    pub(crate) state: LassoSelectionRuntime,
+}
+
+pub struct LassoSelectionRuntime {
+    pub active: bool,
+}
+
+flight_entity::impl_entity!(LassoSelection);
+"#;
+        let functions = r#"
+use crate::types::*;
+
+pub fn end_lasso_selection(selection: &mut LassoSelection) -> bool {
+    let active = selection.state.active;
+    selection.state.active = false;
+    return active;
+}
+"#;
+
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-selection/src/lasso_selection.rs",
+                source: functions,
+            },
+            Some("@flighthq/entity/contract"),
+            &[ModuleSource {
+                path: "crates/flight-selection/src/types.rs",
+                source: types,
+            }],
+            &[],
+        )
+        .unwrap();
+
+        assert!(output.contains("import { EntityRuntimeKey } from \"@flighthq/entity/contract\";"));
+        assert!(output.contains(
+            "  const active = (selection as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey].active;\n"
+        ));
+        assert!(output.contains(
+            "  (selection as LassoSelectionRaw & { [EntityRuntimeKey]: LassoSelectionRuntime })[EntityRuntimeKey].active = false;\n"
+        ));
+        assert!(!output.contains(".state"));
+    }
+
+    #[test]
+    fn rejects_entity_runtime_state_access_that_would_expose_or_miss_the_slot() {
+        let declaration = r#"
+//! flight-compiler: entity-runtime-state LassoSelection.state
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+pub struct LassoSelection {
+    runtime: EntityRuntimeSlot,
+    pub(crate) state: LassoSelectionRuntime,
+}
+
+pub struct LassoSelectionRuntime {
+    pub active: bool,
+}
+
+pub struct Tool {
+    pub state: f64,
+}
+
+flight_entity::impl_entity!(LassoSelection);
+"#;
+        let cases = [
+            (
+                "pub fn first_active(selections: Vec<LassoSelection>) -> bool {\n    return selections[0].state.active;\n}\n",
+                "cannot resolve the receiver of `.state`, which is designated entity runtime state on `LassoSelection`; bind the receiver to a local or parameter of that entity type",
+            ),
+            (
+                "pub fn make_lasso_selection() -> LassoSelection {\n    return LassoSelection {\n        runtime: EntityRuntimeSlot::default(),\n        state: LassoSelectionRuntime { active: true },\n    };\n}\n",
+                "a `LassoSelection` struct literal would expose its designated entity runtime state as a public property; allocate it with `allocate_entity` and assign the state field",
+            ),
+        ];
+        for (function, expected) in cases {
+            assert_eq!(
+                compile_typescript(
+                    &format!("{declaration}\n{function}"),
+                    Some("@flighthq/entity/contract")
+                )
+                .unwrap_err()
+                .to_string(),
+                expected
+            );
+        }
+
+        let ordinary = compile_typescript(
+            &format!(
+                "{declaration}\npub fn read_tool(tool: &Tool) -> f64 {{\n    return tool.state;\n}}\n"
+            ),
+            Some("@flighthq/entity/contract"),
+        )
+        .unwrap();
+        assert!(ordinary.contains("  return tool.state;\n"));
+    }
+
+    #[test]
+    fn rejects_malformed_entity_runtime_state_designations() {
+        let entity = |directive: &str, fields: &str| {
+            format!(
+                "{directive}\nuse flight_entity::EntityRuntimeSlot;\n\npub struct Lasso {{\n    runtime: EntityRuntimeSlot,\n{fields}}}\n\nstruct Plain {{\n    state: f64,\n}}\n\nflight_entity::impl_entity!(Lasso);\n"
+            )
+        };
+        let private_state = "    pub(crate) state: f64,\n";
+        let cases = [
+            (
+                entity("//! flight-compiler: entity-runtime-state", private_state),
+                "`flight-compiler: entity-runtime-state` requires at least one `Owner.field` designation".to_string(),
+            ),
+            (
+                entity("//! flight-compiler: entity-runtime-state Lasso", private_state),
+                "`flight-compiler: entity-runtime-state` designation `Lasso` is not `Owner.field`".to_string(),
+            ),
+            (
+                entity("//! flight-compiler: entity-runtime-state Lasso.state.active", private_state),
+                "`flight-compiler: entity-runtime-state` designation `Lasso.state.active` is not `Owner.field`".to_string(),
+            ),
+            (
+                entity(
+                    "//! flight-compiler: entity-runtime-state Lasso.state Lasso.extra",
+                    "    pub(crate) state: f64,\n    pub(crate) extra: f64,\n",
+                ),
+                "ambiguous `flight-compiler: entity-runtime-state` for `Lasso`: `state` and `extra` are both designated; an entity has one runtime state field".to_string(),
+            ),
+            (
+                entity(
+                    "//! flight-compiler: entity-runtime-state Lasso.state\n//! flight-compiler: entity-runtime-state Lasso.state",
+                    private_state,
+                ),
+                "ambiguous `flight-compiler: entity-runtime-state` for `Lasso`: `state` and `state` are both designated; an entity has one runtime state field".to_string(),
+            ),
+            (
+                entity("//! flight-compiler: entity-runtime-state Missing.state", ""),
+                "`flight-compiler: entity-runtime-state Missing.state` names no struct declared in this source".to_string(),
+            ),
+            (
+                entity("//! flight-compiler: entity-runtime-state Plain.state", ""),
+                "`flight-compiler: entity-runtime-state Plain.state` requires `Plain` to be an entity with a private `runtime: EntityRuntimeSlot`".to_string(),
+            ),
+            (
+                entity("//! flight-compiler: entity-runtime-state Lasso.missing", ""),
+                "`flight-compiler: entity-runtime-state Lasso.missing` names no field of `Lasso`".to_string(),
+            ),
+            (
+                entity("//! flight-compiler: entity-runtime-state Lasso.state", "    pub state: f64,\n"),
+                "`flight-compiler: entity-runtime-state Lasso.state` must designate a crate-private state field, not a public field or the runtime slot".to_string(),
+            ),
+            (
+                entity("//! flight-compiler: entity-runtime-state Lasso.runtime", ""),
+                "`flight-compiler: entity-runtime-state Lasso.runtime` must designate a crate-private state field, not a public field or the runtime slot".to_string(),
+            ),
+            (
+                entity("", "    pub(crate) state: f64,\n    pub(crate) extra: f64,\n")
+                    .replace("//! flight-compiler: entity-runtime-state Lasso.state", ""),
+                "unsupported private field `state` on `Lasso`; only the EntityRuntimeSlot is target-private unless the field is designated with `flight-compiler: entity-runtime-state Lasso.state`".to_string(),
+            ),
+            (
+                entity(
+                    "//! flight-compiler: entity-runtime-state Lasso.state",
+                    "    pub(crate) state: f64,\n    pub(crate) extra: f64,\n",
+                ),
+                "unsupported private field `extra` on `Lasso`; only the EntityRuntimeSlot is target-private unless the field is designated with `flight-compiler: entity-runtime-state Lasso.extra`".to_string(),
+            ),
+        ];
+
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(&source, Some("@flighthq/entity/contract"))
+                    .unwrap_err()
+                    .to_string(),
+                expected
+            );
+        }
+    }
+
+    #[test]
     fn keeps_private_fields_invalid_on_exported_structs_and_entities() {
         let cases = [
             (
@@ -1651,7 +1960,7 @@ struct InternalEntity {
 
 flight_entity::impl_entity!(InternalEntity);
 "#,
-                "unsupported private field `hidden` on `InternalEntity`; only the EntityRuntimeSlot is target-private",
+                "unsupported private field `hidden` on `InternalEntity`; only the EntityRuntimeSlot is target-private unless the field is designated with `flight-compiler: entity-runtime-state InternalEntity.hidden`",
             ),
         ];
 
@@ -8088,6 +8397,70 @@ mod reverse {
         ));
         assert!(output.contains("expect(\"Direction.Backward\").toEqual(\"Direction.Backward\");"));
         assert!(!output.contains("  Direction,"));
+    }
+
+    #[test]
+    fn inherits_entity_runtime_state_designations_from_production_sources() {
+        let production = r#"
+//! flight-compiler: entity-runtime-state LassoSelection.state
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+pub struct LassoSelection {
+    runtime: EntityRuntimeSlot,
+    pub(crate) state: LassoSelectionRuntime,
+}
+
+pub struct LassoSelectionRuntime {
+    pub active: bool,
+}
+
+flight_entity::impl_entity!(LassoSelection);
+
+pub fn create_lasso_selection() -> LassoSelection {
+    let mut out: LassoSelection = allocate_entity();
+    out.state = LassoSelectionRuntime { active: false };
+    return out;
+}
+
+pub fn begin_lasso_selection(selection: &mut LassoSelection) {
+    selection.state.active = true;
+}
+
+pub fn is_lasso_selection_active(selection: &LassoSelection) -> bool {
+    return selection.state.active;
+}
+"#;
+        let source = r#"
+use flight_selection::*;
+
+mod begin_lasso_selection {
+    use super::*;
+
+    #[test]
+    fn activates_only_the_begun_selection() {
+        let mut selection = create_lasso_selection();
+        let other = create_lasso_selection();
+        begin_lasso_selection(&mut selection);
+        assert!(is_lasso_selection_active(&selection));
+        assert!(!is_lasso_selection_active(&other));
+    }
+}
+"#;
+
+        let output = compile_vitest_with_alias_sources(
+            source,
+            "@flighthq/selection/contract",
+            &[production],
+        )
+        .unwrap();
+
+        assert!(output.contains("    let selection = createLassoSelection();\n"));
+        assert!(output.contains("    beginLassoSelection(selection);\n"));
+        assert!(output.contains("    expect(isLassoSelectionActive(selection)).toBe(true);\n"));
+        assert!(output.contains("    expect(!isLassoSelectionActive(other)).toBe(true);\n"));
+        assert!(!output.contains("EntityRuntimeKey"));
+        assert!(!output.contains(".state"));
     }
 
     #[test]

@@ -15,6 +15,9 @@ pub(crate) struct Program {
     pub(crate) constants: Vec<ItemConst>,
     pub(crate) data_unions: HashSet<String>,
     pub(crate) entities: HashSet<String>,
+    // Entity struct name to its one designated crate-private state field, which TypeScript stores in
+    // the entity's runtime slot instead of the public record.
+    pub(crate) entity_runtime_states: BTreeMap<String, String>,
     pub(crate) enums: Vec<ItemEnum>,
     // `export-name` directives: Rust item name to its explicit TypeScript name.
     pub(crate) export_names: BTreeMap<String, String>,
@@ -187,6 +190,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "companion"
             | "contract"
             | "data-union"
+            | "entity-runtime-state"
             | "export-name"
             | "frozen-object"
             | "identity-alias"
@@ -272,6 +276,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let callable_field_parameters = parse_callable_field_parameters(&file.attrs)?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let data_unions = parse_data_unions(&file.attrs)?;
+    let entity_runtime_states = parse_entity_runtime_states(&file.attrs)?;
     let export_names = parse_export_names(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
@@ -324,7 +329,12 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             Item::Fn(function) => functions.push(function),
             Item::Static(item) => statics.push(item),
             Item::Struct(structure) => {
-                validate_fields(&structure)?;
+                validate_fields(
+                    &structure,
+                    entity_runtime_states
+                        .get(&structure.ident.to_string())
+                        .map(String::as_str),
+                )?;
                 structs.push(structure);
             }
             Item::Type(item) => type_aliases.push(item),
@@ -347,6 +357,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
     validate_callable_field_parameters(&callable_field_parameters, &structs)?;
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
+    validate_entity_runtime_states(&entity_runtime_states, &structs)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
     let numeric_unions = validate_numeric_union_directives(
         &numeric_union_names,
@@ -370,6 +381,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         constants,
         data_unions,
         entities,
+        entity_runtime_states,
         enums,
         export_names,
         frozen_objects,
@@ -566,6 +578,44 @@ pub(crate) fn parse_string_union_metadata(
 // `//! flight-compiler: export-name <rust_item> <TypeScriptName>` names one public function or constant
 // explicitly in TypeScript, for acronyms that lower-camel conversion cannot spell (`decode_utf8` ->
 // `decodeUTF8`). Cross-module uniqueness and shadowing are validated when sources are combined.
+fn parse_entity_runtime_states(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut states = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("entity-runtime-state") {
+            continue;
+        }
+        let designations = fields.collect::<Vec<_>>();
+        if designations.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: entity-runtime-state` requires at least one `Owner.field` designation",
+            ));
+        }
+        for designation in designations {
+            let Some((owner, field)) = designation.split_once('.').filter(|(owner, field)| {
+                [owner, field].iter().all(|name| {
+                    syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
+                })
+            }) else {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-runtime-state` designation `{designation}` is not `Owner.field`"
+                )));
+            };
+            if let Some(existing) = states.insert(owner.to_string(), field.to_string()) {
+                return Err(compile_error(format!(
+                    "ambiguous `flight-compiler: entity-runtime-state` for `{owner}`: `{existing}` and `{field}` are both designated; an entity has one runtime state field"
+                )));
+            }
+        }
+    }
+    return Ok(states);
+}
+
 fn parse_export_names(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
     let mut directives = BTreeMap::new();
     let mut target_names = HashSet::new();
@@ -1632,7 +1682,47 @@ fn is_integer_discriminant(expression: &syn::Expr) -> bool {
     };
 }
 
-fn validate_fields(structure: &ItemStruct) -> Result<(), CompileError> {
+fn validate_entity_runtime_states(
+    states: &BTreeMap<String, String>,
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for (owner, field_name) in states {
+        let Some(structure) = structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` names no struct declared in this source"
+            )));
+        };
+        if !has_entity_runtime(structure) {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` requires `{owner}` to be an entity with a private `runtime: EntityRuntimeSlot`"
+            )));
+        }
+        let Some(field) = structure.fields.iter().find(|field| {
+            field
+                .ident
+                .as_ref()
+                .is_some_and(|ident| ident == field_name)
+        }) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` names no field of `{owner}`"
+            )));
+        };
+        if field_name == "runtime" || is_public(&field.vis) {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` must designate a crate-private state field, not a public field or the runtime slot"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_fields(
+    structure: &ItemStruct,
+    designated_state: Option<&str>,
+) -> Result<(), CompileError> {
     let Fields::Named(fields) = &structure.fields else {
         return Err(compile_error(format!(
             "unsupported struct `{}`: only named fields can be transpiled",
@@ -1644,15 +1734,29 @@ fn validate_fields(structure: &ItemStruct) -> Result<(), CompileError> {
         if !(module_private_plain_data
             || is_public(&field.vis)
             || field.ident.as_ref().is_some_and(|ident| ident == "runtime")
-                && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot"))
-        {
-            return Err(compile_error(format!(
-                "unsupported private field `{}` on `{}`; only the EntityRuntimeSlot is target-private",
+                && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
+            || designated_state.is_some_and(|designated| {
                 field
                     .ident
                     .as_ref()
-                    .map(ToString::to_string)
-                    .unwrap_or_else(|| "<unnamed>".to_string()),
+                    .is_some_and(|ident| ident == designated)
+            }))
+        {
+            let field_name = field
+                .ident
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "<unnamed>".to_string());
+            let designation = if has_entity_runtime(structure) {
+                format!(
+                    " unless the field is designated with `flight-compiler: entity-runtime-state {}.{field_name}`",
+                    structure.ident
+                )
+            } else {
+                String::new()
+            };
+            return Err(compile_error(format!(
+                "unsupported private field `{field_name}` on `{}`; only the EntityRuntimeSlot is target-private{designation}",
                 structure.ident
             )));
         }
