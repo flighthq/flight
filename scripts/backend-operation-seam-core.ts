@@ -281,24 +281,11 @@ function collectDirectHostCapabilityUses(
 }
 
 function collectHostCapabilitySlots(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
-  let hostSource = '';
-  for (const sourceFile of typeSourceFiles) {
-    if (!sourceFile.endsWith('/Host.ts') && !sourceFile.endsWith('\\Host.ts')) continue;
-    hostSource = readFileSync(sourceFile, 'utf-8');
-    break;
-  }
-  const hostBody = /export interface Host extends Entity \{([\s\S]*?)\n\}/u.exec(hostSource)?.[1] ?? '';
-  const groupByType = new Map<string, string>();
-  for (const match of hostBody.matchAll(/^\s*readonly ([A-Za-z0-9]+): (Host[A-Za-z0-9]+Capabilities);$/gmu)) {
-    groupByType.set(match[2], match[1]);
-  }
+  const { groupByType, hostGroupBody } = collectHostGroups(typeSourceFiles);
 
   const slots = new Map<string, string>();
   for (const [groupType, group] of groupByType) {
-    const escapedGroupType = groupType.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-    const groupBody = new RegExp(`export interface ${escapedGroupType} \\{([\\s\\S]*?)\\n\\}`, 'u').exec(
-      hostSource,
-    )?.[1];
+    const groupBody = hostGroupBody(groupType);
     if (groupBody === undefined) continue;
     for (const match of groupBody.matchAll(
       /^\s*readonly ([A-Za-z0-9]+)\??: (Host[A-Z][A-Za-z0-9]+Capability)(?:<[^;]+>)?;$/gmu,
@@ -309,7 +296,7 @@ function collectHostCapabilitySlots(typeSourceFiles: readonly string[]): Readonl
   return slots;
 }
 
-function canonicalBackendInterfaceName(
+export function canonicalBackendInterfaceName(
   declarationName: string,
   backendByCapability: ReadonlyMap<string, string>,
 ): string | null {
@@ -317,18 +304,24 @@ function canonicalBackendInterfaceName(
   return backendByCapability.get(declarationName) ?? null;
 }
 
-function collectHostCapabilityBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+export function collectHostCapabilityBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
   const backendByCapability = new Map<string, string>();
   const aliasPattern =
     /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Capability)(?:<[^>]+>)?;/gm;
   let hostSource = '';
   for (const sourceFile of typeSourceFiles) {
     const source = readFileSync(sourceFile, 'utf-8');
-    if (sourceFile.endsWith('/Host.ts') || sourceFile.endsWith('\\Host.ts')) hostSource = source;
+    if (source.includes(HOST_DECLARATION)) hostSource = source;
     for (const match of source.matchAll(aliasPattern)) backendByCapability.set(match[2], match[1]);
   }
   const hostStart = hostSource.indexOf('export interface Host extends Entity');
-  const hostShape = hostSource.slice(hostStart);
+  // The Host shape plus every Host group body, wherever the group is declared: owner packages declare
+  // their own groups (`HostMenuCapabilities` in @flighthq/menu) after the type-home migration.
+  const { groupByType, hostGroupBody } = collectHostGroups(typeSourceFiles);
+  const hostShape = [
+    hostSource.slice(hostStart),
+    ...[...groupByType.keys()].map((groupType) => hostGroupBody(groupType) ?? ''),
+  ].join('\n');
   for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Capability)\b/g)) {
     const capability = match[1];
     backendByCapability.set(capability, backendByCapability.get(capability) ?? capabilityBackendName(capability));
@@ -336,10 +329,39 @@ function collectHostCapabilityBackendAliases(typeSourceFiles: readonly string[])
   return backendByCapability;
 }
 
-function capabilityBackendName(capability: string): string {
+// The canonical `Host` groups (`readonly menu: HostMenuCapabilities`) read from the source declaring `Host`, and a lookup for
+// each group's body in whichever subject source declares it.
+function collectHostGroups(typeSourceFiles: readonly string[]): {
+  groupByType: ReadonlyMap<string, string>;
+  hostGroupBody: (groupType: string) => string | undefined;
+} {
+  const sources = typeSourceFiles.map((sourceFile) => ({ source: readFileSync(sourceFile, 'utf-8'), sourceFile }));
+  const hostSource = sources.find(({ source }) => source.includes(HOST_DECLARATION))?.source ?? '';
+  const hostBody = /export interface Host extends Entity \{([\s\S]*?)\n\}/u.exec(hostSource)?.[1] ?? '';
+  const groupByType = new Map<string, string>();
+  for (const match of hostBody.matchAll(/^\s*readonly ([A-Za-z0-9]+): (Host[A-Za-z0-9]+Capabilities);$/gmu)) {
+    groupByType.set(match[2], match[1]);
+  }
+  const hostGroupBody = (groupType: string): string | undefined => {
+    const escapedGroupType = groupType.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    const pattern = new RegExp(`export interface ${escapedGroupType} \\{([\\s\\S]*?)\\n\\}`, 'u');
+    for (const { source } of sources) {
+      const body = pattern.exec(source)?.[1];
+      if (body !== undefined) return body;
+    }
+    return undefined;
+  };
+  return { groupByType, hostGroupBody };
+}
+
+export function capabilityBackendName(capability: string): string {
   const stem = capability.slice('Host'.length, -'Capability'.length);
   if (stem === 'FileSystem') return 'FileSystemHostBackend';
   if (stem === 'Video') return 'VideoCapabilityBackend';
   if (stem === 'Wgpu') return 'WgpuHostBackend';
   return `${stem}Backend`;
 }
+
+// The canonical Host shape is found by its declaration, not a file name: owner packages also have a
+// `Host.ts` (`app/src/types/Host.ts`) that declares only their own groups.
+export const HOST_DECLARATION = 'export interface Host extends Entity';

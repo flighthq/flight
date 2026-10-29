@@ -1,4 +1,5 @@
 import {
+  capabilityDeclarationFiles,
   collectFunctionBodies,
   collectSetterBodies,
   packageNames,
@@ -23,10 +24,10 @@ import { collectBackendInterfaceNames, collectExplicitHostLifecycleSlots } from 
 // It fails on the same condition the test asserts: any backend that DECLARES a whole-backend teardown
 // without a wiring that runs it. It proves nothing about whether that teardown is COMPLETE — see the
 // scope caveat the report prints.
-const typeFiles = packageSourceFiles('types');
+const typeFiles = capabilityDeclarationFiles();
 if (typeFiles.length === 0) {
   // A census that cannot see its subject must fail loudly rather than pass vacuously.
-  console.error('backend-lifecycle: no packages/types sources found; refusing to report on nothing');
+  console.error('backend-lifecycle: no capability declaration sources found; refusing to report on nothing');
   process.exit(1);
 }
 

@@ -1,5 +1,10 @@
 import type { Node } from 'oxc-parser';
 
+import {
+  canonicalBackendInterfaceName,
+  capabilityBackendName,
+  collectHostCapabilityBackendAliases,
+} from './backend-operation-seam-core.ts';
 import { formatGateProvenance, GATE_STRUCTURAL_LIMIT, readGateTreeState } from './gate-provenance.ts';
 import { getParsedOxcSource } from './oxc-source.ts';
 
@@ -260,7 +265,7 @@ export function formatBackendLifecycleReport(
         counting:
           'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND an ambient set*Backend, structurally matched explicit Host destroy owner, or explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
-          'every exported *Backend or primary Host*Capability interface in packages/types/src/*.ts, plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
+          'every exported *Backend or primary Host*Capability interface declared in packages/types/src or in owner-package sources (nested src directories included), plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/**/*.ts; *.test.ts excluded',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -380,41 +385,6 @@ export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[])
     }
   }
   return teardowns;
-}
-
-function canonicalBackendInterfaceName(
-  declarationName: string,
-  backendByCapability: ReadonlyMap<string, string>,
-): string | null {
-  if (declarationName.endsWith('Backend')) return declarationName;
-  return backendByCapability.get(declarationName) ?? null;
-}
-
-function collectHostCapabilityBackendAliases(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
-  const backendByCapability = new Map<string, string>();
-  const aliasPattern =
-    /^export type ([A-Z][A-Za-z0-9]+Backend)(?:<[^>]+>)? = (Host[A-Z][A-Za-z0-9]+Capability)(?:<[^>]+>)?;/gm;
-  let hostSource = '';
-  for (const sourceFile of typeSourceFiles) {
-    const source = getParsedOxcSource(sourceFile).text;
-    if (sourceFile.endsWith('/Host.ts') || sourceFile.endsWith('\\Host.ts')) hostSource = source;
-    for (const match of source.matchAll(aliasPattern)) backendByCapability.set(match[2], match[1]);
-  }
-  const hostStart = hostSource.indexOf('export interface Host extends Entity');
-  const hostShape = hostSource.slice(hostStart);
-  for (const match of hostShape.matchAll(/\b(Host[A-Z][A-Za-z0-9]+Capability)\b/g)) {
-    const capability = match[1];
-    backendByCapability.set(capability, backendByCapability.get(capability) ?? capabilityBackendName(capability));
-  }
-  return backendByCapability;
-}
-
-function capabilityBackendName(capability: string): string {
-  const stem = capability.slice('Host'.length, -'Capability'.length);
-  if (stem === 'FileSystem') return 'FileSystemHostBackend';
-  if (stem === 'Video') return 'VideoCapabilityBackend';
-  if (stem === 'Wgpu') return 'WgpuHostBackend';
-  return `${stem}Backend`;
 }
 
 export function compareFloorToReport(

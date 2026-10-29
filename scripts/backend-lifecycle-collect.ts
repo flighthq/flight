@@ -52,16 +52,33 @@ export function collectFunctionBodies(): ReadonlyMap<string, string> {
   }
   return bodies;
 }
+// The census subject: every source that DECLARES a capability contract. `@flighthq/types` stays in full
+// (it holds the canonical `Host` shape), joined by each owner-package source that declares an exported
+// `Host*Capability`, `Host*Capabilities` group or `*Backend` interface — where those contracts live after
+// the type-home migration. A re-export (`export type { … } from`) is not a declaration, so an owner
+// contract and its Types alias are counted once.
+export function capabilityDeclarationFiles(): string[] {
+  const declaration = /^export interface (?:Host[A-Z]\w*Capabilit(?:y|ies)|[A-Z]\w*Backend)\b/m;
+  const owners = packageNames()
+    .filter((packageName) => packageName !== 'types')
+    .flatMap(packageSourceFiles)
+    .filter((file) => declaration.test(readFileSync(file, 'utf-8')));
+  return [...packageSourceFiles('types'), ...owners];
+}
+
 export function packageNames(): string[] {
   return readdirSync(join(ROOT, 'packages'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(ROOT, 'packages', entry.name, 'package.json')))
     .map((entry) => entry.name)
     .sort();
 }
+// Every non-test TypeScript source of a package, nested `src/` directories included: owner packages keep
+// contract types in subdirectories (`app/src/types/`) after the type-home migration.
 export function packageSourceFiles(packageName: string): string[] {
   const sourceDir = join(ROOT, 'packages', packageName, 'src');
   if (!existsSync(sourceDir)) return [];
-  return readdirSync(sourceDir, { withFileTypes: true })
+  return readdirSync(sourceDir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts'))
-    .map((entry) => join(sourceDir, entry.name));
+    .map((entry) => join(entry.parentPath, entry.name))
+    .sort();
 }

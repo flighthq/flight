@@ -1,10 +1,15 @@
-import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { collectFunctionBodies, collectSetterBodies, packageSourceFiles } from './backend-lifecycle-collect.ts';
+import {
+  capabilityDeclarationFiles,
+  collectFunctionBodies,
+  collectSetterBodies,
+  packageSourceFiles,
+} from './backend-lifecycle-collect.ts';
 import {
   BACKEND_LIFECYCLE_SCOPE_CAVEAT,
   collectExplicitHostDestroyOwners,
@@ -31,13 +36,21 @@ describe('backend provider lifetime census', () => {
   let formattedOutput: string;
 
   // ★ THE HISTORICAL BASELINE is IMMUTABLE — it records the population and enforced set at the moment the
-  // gate was established. A baseline that moves with the thing it measures measures nothing. The total stays
-  // at 43, the three original names stay as they were, and growth since then is visible as signed deltas:
-  // baseline 43 / current 50 → "+7 new seams", baseline 3 enforced / current 5 → "+2 newly enforced".
-  // NEVER update this to absorb subsequent slices — that erases history.
+  // gate was established. A baseline that moves with the thing it measures measures nothing. The original
+  // three names stay as they were, and growth since then is visible as signed deltas: baseline 188 /
+  // current 195 → "+7 new seams". NEVER update this to absorb subsequent slices — that erases history.
+  //
+  // ★ 2026-10-29 RE-PIN (subject redefinition, not slice growth). The census used to read only
+  // `packages/types/src/*.ts`; the type-home migration moved Host contracts into their owner packages
+  // (`@flighthq/app`, `@flighthq/menu`, `@flighthq/input`, …) where it could no longer see them — which
+  // silently dropped AppMenuBackend from the enforced set. The subject is now every capability
+  // declaration source (`capabilityDeclarationFiles`). Measured on that subject at re-pin: 188, which is
+  // the old 132 plus 53 owner-package contracts and 3 Types capabilities whose group interfaces live
+  // outside `Host.ts`; nothing was removed. The test below derives the same population, so this number is
+  // evidence, not a chosen result.
   const HISTORICAL_BASELINE: BackendLifecycleFloor = {
     enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'],
-    total: 43,
+    total: 188,
   };
 
   // The current ratchet: every backend that has landed a teardown hook. This list grows as slices land and
@@ -69,7 +82,7 @@ describe('backend provider lifetime census', () => {
   ];
 
   beforeAll(() => {
-    const typeFiles = packageSourceFiles('types');
+    const typeFiles = capabilityDeclarationFiles();
     expect(typeFiles.length).toBeGreaterThan(0);
     const names = collectBackendInterfaceNames(typeFiles).map((name) => `${name}Backend`);
     teardowns = collectWholeBackendTeardowns(typeFiles);
@@ -200,7 +213,7 @@ describe('backend provider lifetime census', () => {
   // that day these two readers disagree and this test fails, which is exactly when the recorded count
   // should be updated rather than quietly discovered to be stale.
   it('is unchanged by accepting property syntax, because no callable property is named destroy or dispose', () => {
-    const methodOnly = collectMethodSyntaxTeardowns(packageSourceFiles('types'));
+    const methodOnly = collectMethodSyntaxTeardowns(capabilityDeclarationFiles());
     expect([...teardowns.keys()].sort()).toEqual([...methodOnly.keys()].sort());
     expect(report.enforced).toBe(methodOnly.size);
   });
@@ -242,8 +255,45 @@ describe('backend provider lifetime census', () => {
   // ★ A baseline that moves with the thing it measures measures nothing. The baseline total is pinned at 43
   // (the population when the enforced set was established). It must not change for routine growth or
   // shrinkage — growth shows as "+N new seams", shrinkage as "-N removed", and both stay visible history.
-  it('pins the historical baseline total at 43', () => {
-    expect(HISTORICAL_BASELINE.total).toBe(43);
+  it('pins the historical baseline total at the re-pinned subject population of 188', () => {
+    expect(HISTORICAL_BASELINE.total).toBe(188);
+  });
+
+  it('never reports a smaller population than the historical baseline', () => {
+    expect(report.total).toBeGreaterThanOrEqual(HISTORICAL_BASELINE.total);
+  });
+
+  // The subject is derived from source, never listed: the population is exactly the capability interfaces
+  // declared across `capabilityDeclarationFiles`, which reaches owner packages and their nested `src/`.
+  it('derives its subject from owner-package capability declarations, nested sources included', () => {
+    const subject = capabilityDeclarationFiles();
+    expect(subject).toContain(resolve(ROOT, 'packages/menu/src/types.ts'));
+    expect(subject).toContain(resolve(ROOT, 'packages/app/src/types/AppWindow.ts'));
+    expect(report.total).toBe(collectBackendInterfaceNames(subject).length);
+    const names = report.entries.map((entry) => entry.interfaceName);
+    expect(names).toContain('AppMenuBackend');
+    expect(names).toContain('WindowGeometryBackend');
+    expect(names).toContain('InputPointerLockBackend');
+  });
+
+  // Mutation coverage for the redefinition: the old Types-only subject cannot see the menu contract, so the
+  // same report built on it loses AppMenuBackend — the exact regression the widening repairs.
+  it('loses AppMenuBackend when the subject is narrowed back to packages/types', () => {
+    const typesOnly = packageSourceFiles('types');
+    const narrowed = createBackendLifecycleReport(
+      collectBackendInterfaceNames(typesOnly).map((name) => `${name}Backend`),
+      collectWholeBackendTeardowns(typesOnly),
+      collectSetterBodies(),
+      collectFunctionBodies(),
+      collectExplicitHostDestroyOwners(allPackageSourceFiles()),
+      new Map([
+        ['ScreenQueryBackend', 'Host.screen.query'],
+        ...collectExplicitHostLifecycleSlots(typesOnly, allPackageSourceFiles()),
+      ]),
+    );
+    expect(narrowed.enforcedNames).not.toContain('AppMenuBackend');
+    expect(narrowed.total).toBeLessThan(report.total);
+    expect(report.enforcedNames).toContain('AppMenuBackend');
   });
 
   it('pins the historical baseline names to the three original enforced backends', () => {
@@ -294,6 +344,46 @@ describe('backend provider lifetime census', () => {
     const delta = compareFloorToReport(absorbedBaseline, report, RETIRED_HISTORICAL_NAMES);
     expect(delta.enforcedGained).not.toContain('AppMenuBackend');
     expect(delta.enforcedGained).not.toContain('PowerKeepAwakeBackend');
+  });
+});
+
+// ★ HOST IS FOUND BY ITS DECLARATION, groups wherever they are declared. Owner packages carry their own
+// `Host.ts` (`app/src/types/Host.ts`) declaring only their groups, so a file-name lookup picks whichever
+// `Host.ts` is listed last. Both orders must find the canonical shape, and a group declared in another
+// source must still contribute its capabilities.
+describe('canonical Host lookup across capability declaration sources', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'flight-backend-host-'));
+  const ownerHost = join(directory, 'owner/Host.ts');
+  const canonicalHost = join(directory, 'canonical/Host.ts');
+  const groupSource = join(directory, 'group.ts');
+
+  beforeAll(() => {
+    for (const file of [ownerHost, canonicalHost]) {
+      mkdirSync(join(file, '..'), { recursive: true });
+    }
+    writeFileSync(
+      ownerHost,
+      'export interface HostOwnerOnlyCapabilities {\n  readonly other?: HostOtherCapability;\n}\n',
+    );
+    writeFileSync(
+      canonicalHost,
+      'export interface Host extends Entity {\n  readonly widgets: HostWidgetCapabilities;\n}\n',
+    );
+    writeFileSync(
+      groupSource,
+      'export interface HostWidgetCapabilities {\n  readonly widget?: HostWidgetCapability;\n}\n' +
+        'export interface HostWidgetCapability {\n  destroy(): void;\n}\n',
+    );
+  });
+
+  it('finds the declaring Host whichever Host.ts is listed last', () => {
+    for (const order of [
+      [canonicalHost, ownerHost, groupSource],
+      [ownerHost, canonicalHost, groupSource],
+    ]) {
+      expect(collectBackendInterfaceNames(order)).toContain('Widget');
+      expect(collectWholeBackendTeardowns(order).get('WidgetBackend')).toBe('destroy');
+    }
   });
 });
 
