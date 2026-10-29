@@ -1,6 +1,7 @@
 //! UA-string parsers for device identity fields (TS `userAgentParse.ts`). All functions are pure:
 //! no DOM, globals or state. UA parsing is best-effort; these follow the pinned source patterns
 //! exactly, including its known ceilings (frozen Windows 11 / macOS UA values).
+//! flight-compiler: root parseUserAgentFormFactor parseUserAgentOsName parseUserAgentOsVersion
 
 use crate::device_form_factor::*;
 use crate::js_pattern::*;

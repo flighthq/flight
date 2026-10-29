@@ -1,5 +1,8 @@
 //! Browser user-agent parsing to platform identity tokens (TS `userAgent.ts`). Pure functions over
 //! the UA string and optional hints; no DOM, navigator or OS queries.
+//! flight-compiler: root detectEndianness parseUserAgentArch parseUserAgentEngine
+//! flight-compiler: root parseUserAgentEngineVersion parseUserAgentKind parseUserAgentName
+//! flight-compiler: root parseUserAgentPointerWidth parseUserAgentRuntime parseUserAgentVersion
 
 use crate::js_pattern::*;
 use crate::user_agent_native::{
