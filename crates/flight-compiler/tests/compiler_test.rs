@@ -3342,6 +3342,417 @@ pub fn get_or_create(map: &mut HashMap<String, i32>, key: String) -> i32 {
     }
 
     #[test]
+    fn lowers_as_slice_to_identity() {
+        let source = r#"
+pub fn items(values: &Vec<i32>) -> &[i32] {
+    return values.as_slice();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("return values"),
+            "as_slice should be identity: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_bytes_and_lines_with_string_provenance() {
+        let source = r#"
+pub fn get_bytes(s: &str) -> Vec<u8> {
+    return s.bytes().collect();
+}
+pub fn get_lines(s: &str) -> Vec<&str> {
+    return s.lines().collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("TextEncoder().encode(s)"),
+            "bytes should use TextEncoder: {output}"
+        );
+        assert!(
+            output.contains("s.split('\\n')"),
+            "lines should split on newline: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_char_indices_with_string_provenance() {
+        let source = r#"
+pub fn indices(s: &str) -> Vec<(usize, char)> {
+    return s.char_indices().collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("[...s].map"),
+            "char_indices should spread and map: {output}"
+        );
+        assert!(
+            output.contains("[index, char]"),
+            "char_indices should produce [index, char] tuples: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_checked_mul_with_overflow_guard() {
+        let source = r#"
+pub fn safe_mul(a: i32, b: i32) -> Option<i32> {
+    return a.checked_mul(b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("product"),
+            "checked_mul should compute product: {output}"
+        );
+        assert!(
+            output.contains("0x7FFFFFFF"),
+            "checked_mul should check overflow: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_chunks_and_chunks_exact_on_sequences() {
+        let source = r#"
+pub fn chunk_it(values: &Vec<i32>) -> Vec<Vec<i32>> {
+    return values.chunks(3).map(|c| c.to_vec()).collect();
+}
+pub fn chunk_exact(values: &Vec<i32>) -> Vec<Vec<i32>> {
+    return values.chunks_exact(4).map(|c| c.to_vec()).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("i += size"),
+            "chunks should iterate by size: {output}"
+        );
+        assert!(
+            output.contains("i + size <= items.length"),
+            "chunks_exact should stop when remaining < size: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_fill_on_proven_sequences() {
+        let source = r#"
+pub fn zero_out(values: &mut Vec<i32>) {
+    values.fill(0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".fill(0)"),
+            "fill should emit .fill(): {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_find_map_with_option_absent() {
+        let source = r#"
+pub fn first_even(values: &Vec<i32>) -> Option<i32> {
+    return values.find_map(|v| if *v % 2 == 0 { Some(*v) } else { None });
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("for (const item of items)"),
+            "find_map should iterate: {output}"
+        );
+        assert!(
+            output.contains("!== undefined"),
+            "find_map should check absent: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_get_or_insert_with_on_option() {
+        let source = r#"
+pub fn ensure(value: &mut Option<i32>) -> i32 {
+    return *value.get_or_insert_with(|| 42);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("value = value ??"),
+            "get_or_insert_with should use ??= pattern: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_hashmap_get_mut() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn modify(map: &mut HashMap<String, i32>, key: &str) -> Option<&mut i32> {
+    return map.get_mut(key);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("map.get(key)"),
+            "get_mut should lower to map.get: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_is_ascii_checks() {
+        let source = r#"
+pub fn check_digit(ch: char) -> bool {
+    return ch.is_ascii_digit();
+}
+pub fn check_lower(ch: char) -> bool {
+    return ch.is_ascii_lowercase();
+}
+pub fn check_upper(ch: char) -> bool {
+    return ch.is_ascii_uppercase();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("ch >= '0' && ch <= '9'"),
+            "is_ascii_digit should check char range: {output}"
+        );
+        assert!(
+            output.contains("ch >= 'a' && ch <= 'z'"),
+            "is_ascii_lowercase should check char range: {output}"
+        );
+        assert!(
+            output.contains("ch >= 'A' && ch <= 'Z'"),
+            "is_ascii_uppercase should check char range: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_is_err_and_is_ok() {
+        let source = r#"
+pub fn check_result(value: Option<i32>) -> bool {
+    let ok = value.is_ok();
+    let err = value.is_err();
+    return ok && !err;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("!== undefined"),
+            "is_ok should check !== absent: {output}"
+        );
+        assert!(
+            output.contains("=== undefined"),
+            "is_err should check === absent: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_is_infinite() {
+        let source = r#"
+pub fn check(value: f64) -> bool {
+    return value.is_infinite();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("!Number.isFinite"),
+            "is_infinite should negate isFinite: {output}"
+        );
+        assert!(
+            output.contains("!Number.isNaN"),
+            "is_infinite should exclude NaN: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_option_or() {
+        let source = r#"
+pub fn fallback(a: Option<i32>, b: Option<i32>) -> Option<i32> {
+    return a.or(b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("(a ?? b)"),
+            "or should use nullish coalescing: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_rem_euclid() {
+        let source = r#"
+pub fn euclidean(n: i32, m: i32) -> i32 {
+    return n.rem_euclid(m);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("((n % m) + m) % m"),
+            "rem_euclid should use double-mod pattern: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_saturating_add() {
+        let source = r#"
+pub fn safe_add(a: u32, b: u32) -> u32 {
+    return a.saturating_add(b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("Math.min(0x7FFFFFFF"),
+            "saturating_add should clamp to max: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_sort_by_key() {
+        let source = r#"
+pub fn sort_len(values: &mut Vec<String>) {
+    values.sort_by_key(|s| s.len());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("key(a) - key(b)"),
+            "sort_by_key should compare by key: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_split_once_with_string_provenance() {
+        let source = r#"
+pub fn first_part(s: &str) -> Option<(&str, &str)> {
+    return s.split_once(':');
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("indexOf(delimiter)"),
+            "split_once should use indexOf: {output}"
+        );
+        assert!(
+            output.contains("value.slice(0, index)"),
+            "split_once should slice for first part: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_split_whitespace_with_string_provenance() {
+        let source = r#"
+pub fn words(s: &str) -> Vec<&str> {
+    return s.split_whitespace().collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("split(/\\s+/)"),
+            "split_whitespace should split on regex: {output}"
+        );
+        assert!(
+            output.contains(".filter("),
+            "split_whitespace should filter empty: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_strip_prefix_and_strip_suffix() {
+        let source = r#"
+pub fn strip(s: &str) -> Option<&str> {
+    return s.strip_prefix("hello");
+}
+pub fn strip_end(s: &str) -> Option<&str> {
+    return s.strip_suffix("world");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("startsWith(prefix)"),
+            "strip_prefix should use startsWith: {output}"
+        );
+        assert!(
+            output.contains("slice(prefix.length)"),
+            "strip_prefix should slice after prefix: {output}"
+        );
+        assert!(
+            output.contains("endsWith(suffix)"),
+            "strip_suffix should use endsWith: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_trim_matches_with_string_provenance() {
+        let source = r#"
+pub fn clean(s: &str) -> &str {
+    return s.trim_matches('.');
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("startsWith(ch)"),
+            "trim_matches should check startsWith: {output}"
+        );
+        assert!(
+            output.contains("endsWith(ch)"),
+            "trim_matches should check endsWith: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_wrapping_sub() {
+        let source = r#"
+pub fn wrap_sub(a: u32, b: u32) -> u32 {
+    return a.wrapping_sub(b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(">>> 0"),
+            "wrapping_sub should use unsigned shift: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {

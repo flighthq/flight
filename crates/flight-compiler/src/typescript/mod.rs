@@ -3353,6 +3353,7 @@ fn emit_hash_collection_method(
         ("HashSet", "remove", [value]) => Ok(format!("{receiver}.delete({value})")),
         ("HashMap", "contains_key", [key]) => Ok(format!("{receiver}.has({key})")),
         ("HashMap", "get", [key]) => Ok(option(format!("{receiver}.get({key})"))),
+        ("HashMap", "get_mut", [key]) => Ok(option(format!("{receiver}.get({key})"))),
         ("HashMap", "insert", [key, value]) => Ok(option(format!(
             "(<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => {{ const previous = entries.get(key); entries.set(key, value); return previous; }})({receiver}, {key}, {value})"
         ))),
@@ -10988,6 +10989,14 @@ fn emit_method_call(
         "asin" if arguments.is_empty() => Ok(format!("Math.asin({receiver})")),
         "atan" if arguments.is_empty() => Ok(format!("Math.atan({receiver})")),
         "atan2" if arguments.len() == 1 => Ok(format!("Math.atan2({receiver}, {})", arguments[0])),
+        "bytes"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("[...new TextEncoder().encode({receiver})]"))
+        }
+        "bytes" if arguments.is_empty() => Err(compile_error(
+            "portable `.bytes()` requires a receiver known to be `String` or `str`",
+        )),
         "ceil" if arguments.is_empty() => Ok(format!("Math.ceil({receiver})")),
         "cbrt" if arguments.is_empty() => Ok(format!("Math.cbrt({receiver})")),
         "clear" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
@@ -11005,14 +11014,50 @@ fn emit_method_call(
         "chars" if arguments.is_empty() => Err(compile_error(
             "portable `.chars()` requires a receiver known to be `String` or `str`",
         )),
+        "char_indices"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "[...{receiver}].map((char, index) => [index, char] as const)"
+            ))
+        }
+        "char_indices" if arguments.is_empty() => Err(compile_error(
+            "portable `.char_indices()` requires a receiver known to be `String` or `str`",
+        )),
         "chain" if arguments.len() == 1 => Ok(format!("[...{receiver}, ...{}]", arguments[0])),
         "checked_add" if arguments.len() == 1 => Ok(format!(
             "((a: number, b: number): number | undefined => {{ const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum }})({receiver}, {})",
             arguments[0]
         )),
+        "checked_mul" if arguments.len() == 1 => Ok(format!(
+            "((a: number, b: number): number | undefined => {{ const product = a * b; return product > 0x7FFFFFFF || product < -0x80000000 ? undefined : product }})({receiver}, {})",
+            arguments[0]
+        )),
         "checked_sub" if arguments.len() == 1 => Ok(format!(
             "((a: number, b: number): number | undefined => {{ const diff = a - b; return diff > 0x7FFFFFFF || diff < -0x80000000 ? undefined : diff }})({receiver}, {})",
             arguments[0]
+        )),
+        "chunks"
+            if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i < items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "chunks" if arguments.len() == 1 => Err(compile_error(
+            "portable `.chunks()` requires a receiver with proven sequence provenance",
+        )),
+        "chunks_exact"
+            if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i + size <= items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "chunks_exact" if arguments.len() == 1 => Err(compile_error(
+            "portable `.chunks_exact()` requires a receiver with proven sequence provenance",
         )),
         "clamp" if arguments.len() == 2 => Ok(format!(
             "Math.min({}, Math.max({}, {receiver}))",
@@ -11163,8 +11208,21 @@ fn emit_method_call(
         "find" if arguments.len() == 1 => Err(compile_error(
             "portable `.find()` requires a receiver known to be `String`, `str`, or a sequence",
         )),
+        "find_map" if arguments.len() == 1 => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "(<T, U>(items: readonly T[], fn: (item: T) => U | {absent}): U | {absent} => {{ for (const item of items) {{ const result = fn(item); if (result !== {absent}) return result; }} return {absent}; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
         "fract" if arguments.is_empty() => Ok(format!("({receiver} % 1)")),
+        "fill" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}.fill({})", arguments[0]))
+        }
+        "fill" if arguments.len() == 1 => Err(compile_error(
+            "portable `.fill()` requires a receiver with proven sequence provenance",
+        )),
         "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
         "filter_map" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
@@ -11192,6 +11250,17 @@ fn emit_method_call(
         "hypot" if arguments.len() == 1 => Ok(format!("Math.hypot({receiver}, {})", arguments[0])),
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
+        "is_infinite" if arguments.is_empty() => {
+            Ok(format!("(!Number.isFinite({receiver}) && !Number.isNaN({receiver}))"))
+        }
+        "is_err" if arguments.is_empty() => Ok(format!(
+            "{receiver} === {}",
+            option_absent_value(&call.receiver, entities)
+        )),
+        "is_ok" if arguments.is_empty() => Ok(format!(
+            "{receiver} !== {}",
+            option_absent_value(&call.receiver, entities)
+        )),
         "is_none" if arguments.is_empty() => Ok(format!(
             "{receiver} === {}",
             option_absent_value(&call.receiver, entities)
@@ -11224,6 +11293,26 @@ fn emit_method_call(
         "into" if arguments.is_empty() => Ok(receiver),
         "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
+        "is_ascii_digit" if arguments.is_empty() => {
+            Ok(format!(
+                "((ch: string): boolean => ch >= '0' && ch <= '9')({receiver})"
+            ))
+        }
+        "is_ascii_lowercase" if arguments.is_empty() => {
+            Ok(format!(
+                "((ch: string): boolean => ch >= 'a' && ch <= 'z')({receiver})"
+            ))
+        }
+        "is_ascii_uppercase" if arguments.is_empty() => {
+            Ok(format!(
+                "((ch: string): boolean => ch >= 'A' && ch <= 'Z')({receiver})"
+            ))
+        }
+        "is_alphabetic" if arguments.is_empty() => {
+            Ok(format!(
+                "(/^[a-zA-Z]$/).test({receiver})"
+            ))
+        }
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_ref" if arguments.is_empty() => Ok(receiver),
@@ -11237,12 +11326,27 @@ fn emit_method_call(
             "portable `.as_bytes()` requires a receiver known to be `String` or `str`",
         )),
         "as_deref" if arguments.is_empty() => Ok(receiver),
+        "as_slice" if arguments.is_empty() => Ok(receiver),
         "as_str" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "last" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}.at(-1)"))
         }
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),
+        "get_or_insert" if arguments.len() == 1 => {
+            Ok(format!("({receiver} = {receiver} ?? {})", arguments[0]))
+        }
+        "get_or_insert_with" if arguments.len() == 1 => {
+            Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
+        }
+        "lines"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.split('\\n')"))
+        }
+        "lines" if arguments.is_empty() => Err(compile_error(
+            "portable `.lines()` requires a receiver known to be `String` or `str`",
+        )),
         "ln" if arguments.is_empty() => Ok(format!("Math.log({receiver})")),
         "map" if arguments.len() == 1 => Ok(format!("{receiver}.map({})", arguments[0])),
         "map_or"
@@ -11267,6 +11371,7 @@ fn emit_method_call(
         }
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
+        "or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
         "or_else" if arguments.len() == 1 => Ok(format!("({receiver} ?? ({})())", arguments[0])),
         "next"
             if arguments.is_empty()
@@ -11336,6 +11441,12 @@ fn emit_method_call(
         "repeat" if arguments.len() == 1 => Err(compile_error(
             "portable `.repeat()` requires a receiver known to be `String` or `str`",
         )),
+        "rem_euclid" if arguments.len() == 1 => {
+            Ok(format!(
+                "((n: number, m: number): number => ((n % m) + m) % m)({receiver}, {})",
+                arguments[0]
+            ))
+        }
         "resize" if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
                 "(<T>(items: T[], length: number, value: T): void => {{ while (items.length < length) {{ items.push(value); }} items.length = length; }})({receiver}, {}, {})",
@@ -11344,6 +11455,12 @@ fn emit_method_call(
         }
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
+        "saturating_add" if arguments.len() == 1 => {
+            Ok(format!(
+                "Math.min(0x7FFFFFFF, {receiver} + {})",
+                arguments[0]
+            ))
+        }
         "saturating_sub" if arguments.len() == 1 => {
             Ok(format!("Math.max(0, {receiver} - {})", arguments[0]))
         }
@@ -11351,6 +11468,10 @@ fn emit_method_call(
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
         "skip" if arguments.len() == 1 => Ok(format!("{receiver}.slice({})", arguments[0])),
+        "sort_by_key" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: T[], key: (item: T) => number): void => {{ items.sort((a, b) => key(a) - key(b)); }})({receiver}, {})",
+            arguments[0]
+        )),
         "sort_unstable_by" if arguments.len() == 1 => {
             Ok(format!("{receiver}.sort({})", arguments[0]))
         }
@@ -11360,6 +11481,28 @@ fn emit_method_call(
         "split" if arguments.len() == 1 => Err(compile_error(
             "portable `.split()` requires a receiver known to be `String` or `str`",
         )),
+        "split_once"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "((value: string, delimiter: string): [string, string] | {absent} => {{ const index = value.indexOf(delimiter); return index === -1 ? {absent} : [value.slice(0, index), value.slice(index + delimiter.length)]; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "split_once" if arguments.len() == 1 => Err(compile_error(
+            "portable `.split_once()` requires a receiver known to be `String` or `str`",
+        )),
+        "split_whitespace"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "{receiver}.split(/\\s+/).filter((s) => s.length > 0)"
+            ))
+        }
+        "split_whitespace" if arguments.is_empty() => Err(compile_error(
+            "portable `.split_whitespace()` requires a receiver known to be `String` or `str`",
+        )),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
         "starts_with"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
@@ -11368,6 +11511,30 @@ fn emit_method_call(
         }
         "starts_with" if arguments.len() == 1 => Err(compile_error(
             "portable `.starts_with()` requires a receiver known to be `String` or `str`",
+        )),
+        "strip_prefix"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "((value: string, prefix: string): string | {absent} => value.startsWith(prefix) ? value.slice(prefix.length) : {absent})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "strip_prefix" if arguments.len() == 1 => Err(compile_error(
+            "portable `.strip_prefix()` requires a receiver known to be `String` or `str`",
+        )),
+        "strip_suffix"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "((value: string, suffix: string): string | {absent} => value.endsWith(suffix) ? value.slice(0, value.length - suffix.length) : {absent})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "strip_suffix" if arguments.len() == 1 => Err(compile_error(
+            "portable `.strip_suffix()` requires a receiver known to be `String` or `str`",
         )),
         "ends_with"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
@@ -11483,6 +11650,17 @@ fn emit_method_call(
             "portable `.to_uppercase()` requires a receiver known to be `String` or `str`",
         )),
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
+        "trim_matches"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((value: string, ch: string): string => {{ while (value.startsWith(ch)) {{ value = value.slice(ch.length); }} while (value.endsWith(ch)) {{ value = value.slice(0, value.length - ch.length); }} return value; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "trim_matches" if arguments.len() == 1 => Err(compile_error(
+            "portable `.trim_matches()` requires a receiver known to be `String` or `str`",
+        )),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
         "truncate" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
@@ -11504,6 +11682,9 @@ fn emit_method_call(
             Ok(format!("Math.imul(({receiver}), {}) >>> 0", arguments[0]))
         }
         "wrapping_shr" if arguments.len() == 1 => Ok(format!("({receiver}) >>> {}", arguments[0])),
+        "wrapping_sub" if arguments.len() == 1 => {
+            Ok(format!("(({receiver}) - {}) >>> 0", arguments[0]))
+        }
         "windows" if arguments.len() == 1 => Ok(format!(
             "Array.from({{ length: Math.max(0, {receiver}.length - {} + 1) }}, (_, index) => {receiver}.slice(index, index + {}))",
             arguments[0], arguments[0]
