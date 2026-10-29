@@ -1,6 +1,10 @@
-use std::collections::HashMap;
+//! flight-compiler: target-native
+//!
+//! Public TypeScript XML types are aliases to their established owner in `@flighthq/types`.
 
 use flight_entity::Ref;
+
+use crate::xml_native::XmlRecord;
 
 /// Union type for mixed XML content: either literal text or a child element.
 ///
@@ -25,7 +29,7 @@ pub enum XmlContent {
 /// to the same node), exactly like copying an object reference in TypeScript.
 #[derive(Clone, Debug, Default)]
 pub struct XmlElement {
-    pub attributes: HashMap<String, String>,
+    pub attributes: XmlRecord<String, String>,
     /// Direct child elements. Text content and comments are discarded as elements.
     pub children: Vec<Ref<XmlElement>>,
     /// Raw direct text nodes and child elements in source order.

@@ -202,9 +202,7 @@ fn build_tiled_layer_data_from_xml(
                 ]),
             );
         }
-        let mut found = Vec::new();
-        get_xml_element_children_by_name(&mut found, &data, "tile");
-        let tiles = found;
+        let tiles = get_xml_element_children_by_name(&data, "tile");
         let v: Vec<u32> = tiles
             .iter()
             .map(|tile| attr_number(&tile.read().unwrap(), "gid", 0.0) as u32)
@@ -267,9 +265,7 @@ fn build_tiled_layer_from_xml(
         }));
     }
     if element.name == "objectgroup" {
-        let mut found = Vec::new();
-        get_xml_element_children_by_name(&mut found, element, "object");
-        let objects = found
+        let objects = get_xml_element_children_by_name(element, "object")
             .iter()
             .map(|el| build_tiled_object_from_xml(&el.read().unwrap()))
             .collect();
@@ -346,9 +342,7 @@ fn build_tiled_properties_from_xml(element: &XmlElement) -> Vec<TiledProperty> {
         return Vec::new();
     };
     let container_guard = container.read().unwrap();
-    let mut found = Vec::new();
-    get_xml_element_children_by_name(&mut found, &container_guard, "property");
-    return found
+    return get_xml_element_children_by_name(&container_guard, "property")
         .iter()
         .map(|prop_ref| {
             let property = prop_ref.read().unwrap();
@@ -428,14 +422,10 @@ fn build_tiled_tileset_from_xml(
         tile_count: attr_number(element, "tilecount", 0.0) as i32,
         tile_height: attr_number(element, "tileheight", 0.0) as i32,
         tile_width: attr_number(element, "tilewidth", 0.0) as i32,
-        tiles: {
-            let mut collected = Vec::new();
-            get_xml_element_children_by_name(&mut collected, element, "tile");
-            collected
-        }
-        .iter()
-        .map(|el| build_tiled_tileset_tile_from_xml(&el.read().unwrap()))
-        .collect(),
+        tiles: get_xml_element_children_by_name(element, "tile")
+            .iter()
+            .map(|el| build_tiled_tileset_tile_from_xml(&el.read().unwrap()))
+            .collect(),
     };
 }
 
@@ -468,20 +458,16 @@ fn build_tiled_tileset_tile_from_xml(element: &XmlElement) -> TiledTilesetTile {
     let image = get_xml_element_child_by_name(element, "image");
     let frames: Option<Vec<TiledTilesetTileFrame>> = animation.map(|anim| {
         let anim_guard = anim.read().unwrap();
-        {
-            let mut collected = Vec::new();
-            get_xml_element_children_by_name(&mut collected, &anim_guard, "frame");
-            collected
-        }
-        .iter()
-        .map(|frame| {
-            let f = frame.read().unwrap();
-            TiledTilesetTileFrame {
-                duration: attr_number(&f, "duration", 0.0) as i32,
-                tile_id: attr_number(&f, "tileid", 0.0) as i32,
-            }
-        })
-        .collect()
+        get_xml_element_children_by_name(&anim_guard, "frame")
+            .iter()
+            .map(|frame| {
+                let f = frame.read().unwrap();
+                TiledTilesetTileFrame {
+                    duration: attr_number(&f, "duration", 0.0) as i32,
+                    tile_id: attr_number(&f, "tileid", 0.0) as i32,
+                }
+            })
+            .collect()
     });
     return TiledTilesetTile {
         animation: frames,
@@ -489,14 +475,10 @@ fn build_tiled_tileset_tile_from_xml(element: &XmlElement) -> TiledTilesetTile {
         image: image.map(|i| attr_string(&i.read().unwrap(), "source", "")),
         objects: object_group.map(|og| {
             let og_guard = og.read().unwrap();
-            {
-                let mut collected = Vec::new();
-                get_xml_element_children_by_name(&mut collected, &og_guard, "object");
-                collected
-            }
-            .iter()
-            .map(|el| build_tiled_object_from_xml(&el.read().unwrap()))
-            .collect()
+            get_xml_element_children_by_name(&og_guard, "object")
+                .iter()
+                .map(|el| build_tiled_object_from_xml(&el.read().unwrap()))
+                .collect()
         }),
         properties: build_tiled_properties_from_xml(element),
         tile_type: attr_string(element, "type", &attr_string(element, "class", "")),
@@ -626,9 +608,7 @@ pub fn parse_tiled_tmx(
         report_missing_xml_attribute(&root, "width", &mut diag_vec, "parseTiledTmx", "map");
     }
 
-    let mut found = Vec::new();
-    get_xml_element_children_by_name(&mut found, &root, "tileset");
-    let tileset_elements = found;
+    let tileset_elements = get_xml_element_children_by_name(&root, "tileset");
     let tilesets: Vec<TiledTilesetRef> = tileset_elements
         .iter()
         .enumerate()

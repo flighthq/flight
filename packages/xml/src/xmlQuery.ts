@@ -1,33 +1,61 @@
-// Read-only query helpers over a parsed XmlElement tree, so consumers stop
-// hand-filtering `children` and `attributes` at every call site. All lookups
-// return a sentinel (null) rather than throwing when the name is absent.
+// Generated from crates/flight-xml/src/xml_query.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import type { XmlElement } from '@flighthq/types/contract';
+import type { XmlElement } from './types.ts';
+import { getXmlRecordValue, parseXmlNumberNative, xmlTrim } from './xmlNative.ts';
 
-/** The attribute value for `name`, or null when the element has no such attribute. */
+/**
+ * The attribute value for `name`, or None when the element has no such attribute.
+ */
 export function getXmlElementAttribute(element: Readonly<XmlElement>, name: string): string | null {
-  const value = element.attributes[name];
-  return value !== undefined ? value : null;
+  return getXmlRecordValue(element.attributes, name);
 }
 
-/** The attribute value for `name` parsed as a number, or null when the
- *  attribute is absent or does not parse to a finite number. */
+/**
+ * The attribute value for `name` parsed as a number, or None when the
+ * attribute is absent or does not parse to a finite number.
+ */
 export function getXmlElementAttributeNumber(element: Readonly<XmlElement>, name: string): number | null {
-  const value = element.attributes[name];
-  if (value === undefined || value.trim() === '') return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-/** The first direct child element with tag name `name`, or null when none matches. */
-export function getXmlElementChildByName(element: Readonly<XmlElement>, name: string): XmlElement | null {
-  for (const child of element.children) {
-    if (child.name === name) return child;
+  const value = getXmlRecordValue(element.attributes, name);
+  if (value === null) {
+    return null;
+  }
+  if (xmlTrim(value).length === 0) {
+    return null;
+  }
+  const parsed = parseXmlNumberNative(value);
+  if (parsed === null) {
+    return null;
+  }
+  if (Number.isFinite(parsed)) {
+    return parsed;
   }
   return null;
 }
 
-/** All direct child elements with tag name `name`, in document order (empty when none match). */
+/**
+ * The first direct child element with tag name `name`, or None when none matches.
+ * Returns a cloned shared handle, so the caller keeps the node alive independently.
+ */
+export function getXmlElementChildByName(element: Readonly<XmlElement>, name: string): XmlElement | null {
+  for (const child of element.children) {
+    if (child!.name === name) {
+      return child;
+    }
+  }
+  return null;
+}
+
+/**
+ * All direct child elements with tag name `name`, in document order (empty when none match).
+ * Returns cloned shared handles, so the caller keeps the nodes alive independently.
+ */
 export function getXmlElementChildrenByName(element: Readonly<XmlElement>, name: string): XmlElement[] {
-  return element.children.filter((child) => child.name === name);
+  let out: XmlElement[] = [] as never[];
+  for (const child of element.children) {
+    if (child!.name === name) {
+      out.push(child);
+    }
+  }
+  return out;
 }

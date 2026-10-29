@@ -1,3 +1,6 @@
+// Generated from crates/flight-xml/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
   getXmlElementAttribute,
   getXmlElementAttributeNumber,
@@ -6,3 +9,5 @@ export {
   parseXmlAttributes,
   parseXmlDocument,
 } from './contract.ts';
+
+export type { XmlContent, XmlElement } from './contract.ts';

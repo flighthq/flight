@@ -1,43 +1,20 @@
-// Tree-building (DOM-style) XML parser sufficient for atlas and plist file formats.
-// Not a general-purpose XML parser, but handles namespaced/extra attributes and elements,
-// both double-quoted and single-quoted attribute values, XML entity escapes
-// (&amp; &lt; &gt; &quot; &apos; plus numeric references), general entities declared in a DOCTYPE's
-// internal subset, XML comments (<!-- -->), CDATA sections (<![CDATA[...]]>), the XML declaration,
-// and DOCTYPE.
+// Generated from crates/flight-xml/src/xml_parse.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import type { XmlElement } from '@flighthq/types/contract';
-
-/** Parse all attributes from an element's attribute string.
- *  Supports double-quoted and single-quoted values and XML entity escapes. */
-export function parseXmlAttributes(attrs: string): Record<string, string> {
-  const result: Record<string, string> = {};
-  // Match name="value" or name='value', capturing both quote styles
-  const re = /([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(attrs)) !== null) {
-    const attrName = m[1];
-    const value = m[2] !== undefined ? m[2] : (m[3] ?? '');
-    result[attrName] = decodeXmlEntities(value);
-  }
-  return result;
-}
-
-/** Parse a simple XML document into a tree of XmlElement objects.
- *  Returns the root element, or null when the input contains no recognizable element.
- *  Does not validate DTD, namespaces, or processing instructions. */
-export function parseXmlDocument(xml: string): XmlElement | null {
-  // Normalize: strip comments and normalize line endings.
-  let src = stripXmlComments(xml).replace(/\r\n?/g, '\n');
-
-  // Strip XML declaration and DOCTYPE before parsing the root element. The DOCTYPE is discarded but
-  // its internal subset is read on the way out, because a general entity's replacement text is markup
-  // and so has to be substituted into the source before the tree is built, not decoded out of a text
-  // node afterwards.
-  const entities: Record<string, string> = {};
-  src = stripXmlDoctypes(src.replace(/<\?[\s\S]*?\?>/g, ''), entities).trim();
-
-  return parseElement(expandXmlEntities(src, entities), { depth: 0, depthExceeded: false, pos: 0 });
-}
+import type { XmlContent, XmlElement } from './types.ts';
+import type { XmlRecord } from './xmlNative.ts';
+import {
+  createXmlRecord,
+  getXmlRecordValue,
+  pushXmlElementContent,
+  pushXmlTextContent,
+  setXmlRecordValue,
+  xmlIsWhitespace,
+  xmlRecordIsEmpty,
+  xmlStringFromCodePoint,
+  xmlTrim,
+  xmlUtf16Slice,
+} from './xmlNative.ts';
 
 interface ParseState {
   depth: number;
@@ -45,248 +22,671 @@ interface ParseState {
   pos: number;
 }
 
-// An entity may nest a few levels legitimately; past that a document is recursing, not composing.
-const MAX_XML_ENTITY_PASSES = 8;
-const MAX_XML_ENTITY_GROWTH = 16;
-const MAX_XML_ENTITY_BUDGET = 65536;
+/**
+ * An entity may nest a few levels legitimately; past that a document is recursing, not composing.
+ */
+const MAX_XML_ENTITY_PASSES: number = 8;
 
-// Authored XML rarely nests beyond a few dozen elements. This leaves an order of magnitude of margin
-// while stopping recursion well below the engine-dependent call-stack limit.
-const MAX_XML_ELEMENT_DEPTH = 256;
+const MAX_XML_ENTITY_GROWTH: number = 16;
 
-const XML_ENTITIES: Record<string, string> = {
-  amp: '&',
-  apos: "'",
-  gt: '>',
-  lt: '<',
-  quot: '"',
-};
+const MAX_XML_ENTITY_BUDGET: number = 65536;
+
+/**
+ * Authored XML rarely nests beyond a few dozen elements. This leaves an order of magnitude of
+ * margin while stopping recursion well below the engine-dependent call-stack limit.
+ */
+const MAX_XML_ELEMENT_DEPTH: number = 256;
+
+function utf16Units(value: string): number[] {
+  return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index));
+}
+
+function utf16StartsWith(units: Readonly<number[]>, start: number, pattern: string): boolean {
+  const patternUnits: number[] = Array.from({ length: pattern.length }, (_, index) => pattern.charCodeAt(index));
+  if (start + patternUnits.length > units.length) {
+    return false;
+  }
+  let index: number = 0;
+  while (index < patternUnits.length) {
+    if (units[start + index] !== patternUnits[index]) {
+      return false;
+    }
+    index += 1;
+  }
+  return true;
+}
+
+function findInUnits(units: Readonly<number[]>, pattern: string, start: number): number | null {
+  const patternUnits: number[] = Array.from({ length: pattern.length }, (_, index) => pattern.charCodeAt(index));
+  if (patternUnits.length === 0) {
+    return start;
+  }
+  let position = start;
+  while (position + patternUnits.length <= units.length) {
+    let matches = true;
+    let index: number = 0;
+    while (index < patternUnits.length) {
+      if (units[position + index] !== patternUnits[index]) {
+        matches = false;
+        break;
+      }
+      index += 1;
+    }
+    if (matches) {
+      return position;
+    }
+    position += 1;
+  }
+  return null;
+}
+
+function isNameChar(unit: number): boolean {
+  return (
+    (unit >= 48 && unit <= 57) ||
+    (unit >= 65 && unit <= 90) ||
+    (unit >= 97 && unit <= 122) ||
+    unit === 95 ||
+    unit === 58 ||
+    unit === 46 ||
+    unit === 45
+  );
+}
+
+function isTagNameEnd(unit: number): boolean {
+  return xmlIsWhitespace(unit) || unit === 62 || unit === 47;
+}
+
+function isWordChar(unit: number): boolean {
+  return (unit >= 48 && unit <= 57) || (unit >= 65 && unit <= 90) || (unit >= 97 && unit <= 122) || unit === 95;
+}
+
+function isDecimalDigit(unit: number): boolean {
+  return unit >= 48 && unit <= 57;
+}
+
+function isHexDigit(unit: number): boolean {
+  return isDecimalDigit(unit) || (unit >= 65 && unit <= 70) || (unit >= 97 && unit <= 102);
+}
+
+function parseCodePoint(units: Readonly<number[]>, start: number, end: number, radix: number): number | null {
+  let value: number = 0;
+  let position = start;
+  while (position < end) {
+    const unit = units[position];
+    let digit: number;
+    if (unit >= 48 && unit <= 57) {
+      digit = (unit - 48) >>> 0;
+    } else {
+      if (unit >= 65 && unit <= 70) {
+        digit = (unit - 65 + 10) >>> 0;
+      } else {
+        if (unit >= 97 && unit <= 102) {
+          digit = (unit - 97 + 10) >>> 0;
+        } else {
+          return null;
+        }
+      }
+    }
+    if (digit >= radix || value > 0x10ffff / radix) {
+      return null;
+    }
+    value = value * radix + digit;
+    if (value > 0x10ffff) {
+      return null;
+    }
+    position += 1;
+  }
+  return value;
+}
+
+function skipWhitespace(units: Readonly<number[]>, pos: number): void {
+  while (pos < units.length && xmlIsWhitespace(units[pos])) {
+    pos += 1;
+  }
+}
+
+/**
+ * Collects general entity declarations from a DOCTYPE's internal subset.
+ *
+ * Parameter entities (`<!ENTITY % name ...>`) and external ones (`SYSTEM` / `PUBLIC`) are
+ * deliberately not collected: an external entity resolves a URL or a file path at parse time,
+ * which is a document reading whatever the process can reach, so the parser has no business
+ * honoring one.
+ */
+function collectXmlEntityDeclarations(doctype: string, out: XmlRecord<string, string>): void {
+  const units = utf16Units(doctype);
+  const len = units.length;
+  let pos = 0;
+  while (pos + 8 <= len) {
+    if (!utf16StartsWith(units, pos, '<!ENTITY')) {
+      pos += 1;
+      continue;
+    }
+    pos += 8;
+    const wsStart = pos;
+    while (pos < len && xmlIsWhitespace(units[pos])) {
+      pos += 1;
+    }
+    if (pos === wsStart) {
+      continue;
+    }
+    const nameStart = pos;
+    while (pos < len && isNameChar(units[pos])) {
+      pos += 1;
+    }
+    if (pos === nameStart) {
+      continue;
+    }
+    const name = xmlUtf16Slice(doctype, nameStart, pos);
+    while (pos < len && xmlIsWhitespace(units[pos])) {
+      pos += 1;
+    }
+    if (pos >= len) {
+      break;
+    }
+    const quote = units[pos];
+    if (quote !== 34 && quote !== 39) {
+      continue;
+    }
+    pos += 1;
+    const valueStart = pos;
+    while (pos < len && units[pos] !== quote) {
+      pos += 1;
+    }
+    if (pos >= len) {
+      break;
+    }
+    const value = xmlUtf16Slice(doctype, valueStart, pos);
+    pos += 1;
+    while (pos < len && xmlIsWhitespace(units[pos])) {
+      pos += 1;
+    }
+    if (pos < len && units[pos] === 62) {
+      setXmlRecordValue(out, name, value);
+      pos += 1;
+    }
+  }
+}
+
+function decodeXmlEntities(source: string): string {
+  const units = utf16Units(source);
+  const len = units.length;
+  let result = '';
+  let pos = 0;
+  let copyStart = 0;
+  while (pos < len) {
+    if (units[pos] !== 38) {
+      pos += 1;
+      continue;
+    }
+    const ampPos = pos;
+    pos += 1;
+    if (pos >= len) {
+      break;
+    }
+    if (units[pos] === 35) {
+      pos += 1;
+      const isHex = pos < len && units[pos] === 120;
+      if (isHex) {
+        pos += 1;
+      }
+      const numStart = pos;
+      if (isHex) {
+        while (pos < len && isHexDigit(units[pos])) {
+          pos += 1;
+        }
+      } else {
+        while (pos < len && isDecimalDigit(units[pos])) {
+          pos += 1;
+        }
+      }
+      if (pos > numStart && pos < len && units[pos] === 59) {
+        const radix: number = isHex ? 16 : 10;
+        if (parseCodePoint(units, numStart, pos, radix) !== null) {
+          const codePoint = parseCodePoint(units, numStart, pos, radix);
+          if (xmlStringFromCodePoint(codePoint) !== null) {
+            const replacement = xmlStringFromCodePoint(codePoint);
+            result += xmlUtf16Slice(source, copyStart, ampPos);
+            result += replacement;
+            pos += 1;
+            copyStart = pos;
+            continue;
+          }
+        }
+        pos += 1;
+        continue;
+      }
+      continue;
+    }
+    const nameStart = pos;
+    while (pos < len && isWordChar(units[pos])) {
+      pos += 1;
+    }
+    if (pos > nameStart && pos < len && units[pos] === 59) {
+      const name = xmlUtf16Slice(source, nameStart, pos);
+      if (xmlEntityReplacement(name) !== null) {
+        const replacement = xmlEntityReplacement(name);
+        result += xmlUtf16Slice(source, copyStart, ampPos);
+        result += replacement;
+        pos += 1;
+        copyStart = pos;
+        continue;
+      }
+      pos += 1;
+    }
+  }
+  result += xmlUtf16Slice(source, copyStart, len);
+  return result;
+}
 
 /**
  * Substitutes declared general entities into the source ahead of parsing.
- *
- * A replacement may itself reference an entity, so expansion repeats until it settles. Both the pass
- * count and the resulting size are capped: entities that reference each other are otherwise an
- * exponential bomb ("billion laughs"), and the budget is what keeps a hostile document costing
- * bounded work. Exhausting the budget stops expansion and keeps what resolved, since a partially
- * expanded document still parses.
- *
- * Only the predefined five and declared general entities substitute. An undeclared reference is left
- * alone for `decodeXmlEntities` to see as text.
  */
-function expandXmlEntities(src: string, entities: Readonly<Record<string, string>>): string {
-  let output = src;
-  const budget = src.length * MAX_XML_ENTITY_GROWTH + MAX_XML_ENTITY_BUDGET;
-  for (let pass = 0; pass < MAX_XML_ENTITY_PASSES; pass++) {
+function expandXmlEntities(src: string, entities: Readonly<XmlRecord<string, string>>): string {
+  if (xmlRecordIsEmpty(entities)) {
+    return String(src);
+  }
+  const sourceUnits = utf16Units(src);
+  let output = String(src);
+  const budget = sourceUnits.length * MAX_XML_ENTITY_GROWTH + MAX_XML_ENTITY_BUDGET;
+  let pass: number = 0;
+  while (pass < MAX_XML_ENTITY_PASSES) {
     let expanded = false;
-    const next = output.replace(/&([\w:.-]+);/g, (reference: string, name: string) => {
-      const replacement = entities[name];
-      if (replacement === undefined) return reference;
-      expanded = true;
-      return replacement;
-    });
-    if (!expanded || next.length > budget) return output;
+    const next = replaceEntityReferences(output, entities, expanded);
+    if (!expanded || utf16Units(next).length > budget) {
+      return output;
+    }
     output = next;
+    pass += 1;
   }
   return output;
 }
 
-function decodeXmlEntities(s: string): string {
-  return s.replace(/&(?:#(\d+)|#x([\da-fA-F]+)|(\w+));/g, (reference, dec, hex, name) => {
-    const numeric = dec ?? hex;
-    if (numeric !== undefined) {
-      const codepoint = parseInt(numeric, dec !== undefined ? 10 : 16);
-      if (codepoint > 0x10ffff || (codepoint >= 0xd800 && codepoint <= 0xdfff)) return reference;
-      return String.fromCodePoint(codepoint);
-    }
-    return XML_ENTITIES[name] ?? reference;
-  });
-}
-
-function parseElement(src: string, state: ParseState): XmlElement | null {
+function parseElement(src: string, units: Readonly<number[]>, state: ParseState): XmlElement | null {
   if (state.depth >= MAX_XML_ELEMENT_DEPTH) {
     state.depthExceeded = true;
     return null;
   }
-  skipWhitespace(src, state);
-  if (state.pos >= src.length || src[state.pos] !== '<') return null;
-
-  // Find the end of the opening tag
-  state.pos++; // consume '<'
-
-  // Skip processing instructions
-  if (src[state.pos] === '?') {
-    const end = src.indexOf('?>', state.pos);
-    state.pos = end >= 0 ? end + 2 : src.length;
-    return parseElement(src, state);
+  const len = units.length;
+  skipWhitespace(units, state.pos);
+  if (state.pos >= len || units[state.pos] !== 60) {
+    return null;
   }
-
-  // Read element name
-  const nameStart = state.pos;
-  while (state.pos < src.length && !/[\s>/]/.test(src[state.pos])) state.pos++;
-  const name = src.slice(nameStart, state.pos);
-  if (!name) return null;
-
-  skipWhitespace(src, state);
-
-  // Read attributes up to the tag end. Track the active quote so a '>' inside a
-  // quoted attribute value (e.g. a TexturePacker/Starling value like "a>b") is
-  // treated as data rather than ending the tag.
-  let attrsStr = '';
-  let quote = '';
-  while (state.pos < src.length) {
-    const ch = src[state.pos];
-    if (quote) {
-      if (ch === quote) quote = '';
-    } else if (ch === '"' || ch === "'") {
-      quote = ch;
-    } else if (ch === '>' || (ch === '/' && src[state.pos + 1] === '>')) {
-      break;
+  state.pos += 1;
+  if (state.pos < len && units[state.pos] === 63) {
+    if (findInUnits(units, '?>', state.pos) !== null) {
+      const end = findInUnits(units, '?>', state.pos);
+      state.pos = end + 2;
+    } else {
+      state.pos = len;
     }
-    attrsStr += ch;
-    state.pos++;
+    return parseElement(src, units, state);
   }
-
-  const selfClosing = src[state.pos] === '/';
-  state.pos += selfClosing ? 2 : 1; // consume '/>' or '>'
-
+  const nameStart = state.pos;
+  while (state.pos < len && !isTagNameEnd(units[state.pos])) {
+    state.pos += 1;
+  }
+  const name = xmlUtf16Slice(src, nameStart, state.pos);
+  if (name.length === 0) {
+    return null;
+  }
+  skipWhitespace(units, state.pos);
+  const attrsStart = state.pos;
+  let quote: number = 0;
+  while (state.pos < len) {
+    const unit = units[state.pos];
+    if (quote !== 0) {
+      if (unit === quote) {
+        quote = 0;
+      }
+    } else {
+      if (unit === 34 || unit === 39) {
+        quote = unit;
+      } else {
+        if (unit === 62 || (unit === 47 && state.pos + 1 < len && units[state.pos + 1] === 62)) {
+          break;
+        }
+      }
+    }
+    state.pos += 1;
+  }
+  const attrsStr = xmlUtf16Slice(src, attrsStart, state.pos);
+  const selfClosing = state.pos < len && units[state.pos] === 47;
+  state.pos += selfClosing ? 2 : 1;
   const attributes = parseXmlAttributes(attrsStr);
-  const children: XmlElement[] = [];
-  const content: Array<string | XmlElement> = [];
+  let children: XmlElement[] = [] as never[];
+  let content: XmlContent[] = [] as never[];
   let text = '';
-
   if (!selfClosing) {
-    // Parse children until closing tag
-    while (state.pos < src.length) {
-      if (state.pos >= src.length) break;
-
-      if (src[state.pos] !== '<') {
-        // Text node
+    while (state.pos < len) {
+      if (units[state.pos] !== 60) {
         const textStart = state.pos;
-        while (state.pos < src.length && src[state.pos] !== '<') state.pos++;
-        const decoded = decodeXmlEntities(src.slice(textStart, state.pos));
-        text += decoded.trim();
-        if (decoded !== '') content.push(decoded);
+        while (state.pos < len && units[state.pos] !== 60) {
+          state.pos += 1;
+        }
+        const decoded = decodeXmlEntities(xmlUtf16Slice(src, textStart, state.pos));
+        text += xmlTrim(decoded);
+        if (decoded.length !== 0) {
+          pushXmlTextContent(content, decoded);
+        }
         continue;
       }
-
-      if (src.slice(state.pos, state.pos + 9) === '<![CDATA[') {
+      if (utf16StartsWith(units, state.pos, '<![CDATA[')) {
         const cdataStart = state.pos + 9;
-        const cdataEnd = src.indexOf(']]>', cdataStart);
-        const contentEnd = cdataEnd >= 0 ? cdataEnd : src.length;
-        const cdata = src.slice(cdataStart, contentEnd);
-        text += cdata.trim();
-        if (cdata !== '') content.push(cdata);
-        state.pos = cdataEnd >= 0 ? cdataEnd + 3 : src.length;
+        if (findInUnits(units, ']]>', cdataStart) !== null) {
+          const end = findInUnits(units, ']]>', cdataStart);
+          const cdata = xmlUtf16Slice(src, cdataStart, end);
+          text += xmlTrim(cdata);
+          if (cdata.length !== 0) {
+            pushXmlTextContent(content, cdata);
+          }
+          state.pos = end + 3;
+        } else {
+          const cdata = xmlUtf16Slice(src, cdataStart, len);
+          text += xmlTrim(cdata);
+          if (cdata.length !== 0) {
+            pushXmlTextContent(content, cdata);
+          }
+          state.pos = len;
+        }
         continue;
       }
-
-      // Check for closing tag
-      if (src[state.pos + 1] === '/') {
-        // Skip to '>'
-        while (state.pos < src.length && src[state.pos] !== '>') state.pos++;
-        state.pos++; // consume '>'
+      if (state.pos + 1 < len && units[state.pos + 1] === 47) {
+        while (state.pos < len && units[state.pos] !== 62) {
+          state.pos += 1;
+        }
+        if (state.pos < len) {
+          state.pos += 1;
+        }
         break;
       }
-
-      state.depth++;
-      const child = parseElement(src, state);
-      state.depth--;
-      if (state.depthExceeded) return null;
-      if (child) {
-        children.push(child);
-        content.push(child);
+      state.depth += 1;
+      const child = parseElement(src, units, state);
+      state.depth -= 1;
+      if (state.depthExceeded) {
+        return null;
+      }
+      if (child !== null) {
+        const child = child;
+        const childRef: XmlElement = child;
+        children.push(childRef);
+        pushXmlElementContent(content, childRef);
       }
     }
   }
-
-  return { attributes, children, content, name, text };
-}
-
-function skipWhitespace(src: string, state: ParseState): void {
-  while (state.pos < src.length && /\s/.test(src[state.pos])) state.pos++;
-}
-
-function stripXmlComments(xml: string): string {
-  let copyStart = 0;
-  let output = '';
-  let pos = 0;
-
-  while (pos < xml.length) {
-    if (xml.slice(pos, pos + 9) === '<![CDATA[') {
-      const cdataEnd = xml.indexOf(']]>', pos + 9);
-      pos = cdataEnd >= 0 ? cdataEnd + 3 : xml.length;
-      continue;
-    }
-    if (xml.slice(pos, pos + 4) !== '<!--') {
-      pos++;
-      continue;
-    }
-
-    output += xml.slice(copyStart, pos);
-    const commentEnd = xml.indexOf('-->', pos + 4);
-    pos = commentEnd >= 0 ? commentEnd + 3 : xml.length;
-    copyStart = pos;
-  }
-
-  return output + xml.slice(copyStart);
+  return { attributes: attributes, children: children, content: content, name: name, text: text };
 }
 
 /**
- * Removes every DOCTYPE, collecting the general entities its internal subset declares into `out`.
- *
- * Parameter entities (`<!ENTITY % name …>`) and external ones (`SYSTEM` / `PUBLIC`) are deliberately
- * not collected: an external entity resolves a URL or a file path at parse time, which is a document
- * reading whatever the process can reach, so the parser has no business honoring one.
+ * Parse all attributes from an element's attribute string.
+ * Supports double-quoted and single-quoted values and XML entity escapes.
  */
-function stripXmlDoctypes(xml: string, out: Record<string, string>): string {
-  let copyStart = 0;
-  let output = '';
+export function parseXmlAttributes(attrs: string): XmlRecord<string, string> {
+  const units = utf16Units(attrs);
+  const len = units.length;
+  let result = createXmlRecord();
   let pos = 0;
-
-  while (pos < xml.length) {
-    if (xml[pos] !== '<' || xml.slice(pos, pos + 9).toLowerCase() !== '<!doctype') {
-      pos++;
+  while (pos < len) {
+    while (pos < len && !isNameChar(units[pos])) {
+      pos += 1;
+    }
+    if (pos >= len) {
+      break;
+    }
+    const nameStart = pos;
+    while (pos < len && isNameChar(units[pos])) {
+      pos += 1;
+    }
+    const name = xmlUtf16Slice(attrs, nameStart, pos);
+    while (pos < len && xmlIsWhitespace(units[pos])) {
+      pos += 1;
+    }
+    if (pos >= len || units[pos] !== 61) {
       continue;
     }
-
-    output += xml.slice(copyStart, pos);
-    const doctypeStart = pos;
-    pos += 9;
-
-    let internalSubsetDepth = 0;
-    let quote = '';
-    while (pos < xml.length) {
-      const ch = xml[pos];
-      if (quote) {
-        if (ch === quote) quote = '';
-      } else if (ch === '"' || ch === "'") {
-        quote = ch;
-      } else if (ch === '[') {
-        internalSubsetDepth++;
-      } else if (ch === ']' && internalSubsetDepth > 0) {
-        internalSubsetDepth--;
-      } else if (ch === '>' && internalSubsetDepth === 0) {
-        pos++;
-        break;
-      }
-      pos++;
+    pos += 1;
+    while (pos < len && xmlIsWhitespace(units[pos])) {
+      pos += 1;
     }
-
-    collectXmlEntityDeclarations(xml.slice(doctypeStart, pos), out);
-    copyStart = pos;
+    if (pos >= len) {
+      break;
+    }
+    const quote = units[pos];
+    if (quote !== 34 && quote !== 39) {
+      continue;
+    }
+    pos += 1;
+    const valueStart = pos;
+    while (pos < len && units[pos] !== quote) {
+      pos += 1;
+    }
+    const value = xmlUtf16Slice(attrs, valueStart, pos);
+    if (pos < len) {
+      pos += 1;
+    }
+    setXmlRecordValue(result, name, decodeXmlEntities(value));
   }
-
-  return output + xml.slice(copyStart);
+  return result;
 }
 
-// The name must be followed directly by a quoted replacement, which is what excludes both the
-// parameter form (a `%` where the name belongs) and the external form (a SYSTEM/PUBLIC keyword where
-// the quote belongs) without testing for either.
-function collectXmlEntityDeclarations(doctype: string, out: Record<string, string>): void {
-  const declaration = /<!ENTITY\s+([\w:.-]+)\s*(?:"([^"]*)"|'([^']*)')\s*>/g;
-  let match: RegExpExecArray | null;
-  while ((match = declaration.exec(doctype)) !== null) {
-    out[match[1]] = match[2] ?? match[3] ?? '';
+/**
+ * Parse a simple XML document into a tree of XmlElement objects.
+ * Returns the root element, or None when the input contains no recognizable element.
+ * Does not validate DTD, namespaces, or processing instructions.
+ */
+export function parseXmlDocument(xml: string): XmlElement | null {
+  let src = stripXmlComments(xml);
+  src = normalizeXmlLineEndings(src);
+  let entities = createXmlRecord();
+  src = stripProcessingInstructions(src);
+  src = stripXmlDoctypes(src, entities);
+  src = xmlTrim(src);
+  const expanded = expandXmlEntities(src, entities);
+  const units = utf16Units(expanded);
+  let state = { depth: 0, depthExceeded: false, pos: 0 };
+  return parseElement(expanded, units, state);
+}
+
+function replaceEntityReferences(
+  src: string,
+  entities: Readonly<XmlRecord<string, string>>,
+  expanded: boolean,
+): string {
+  const units = utf16Units(src);
+  const len = units.length;
+  let result = '';
+  let pos = 0;
+  let copyStart = 0;
+  while (pos < len) {
+    if (units[pos] !== 38) {
+      pos += 1;
+      continue;
+    }
+    const ampPos = pos;
+    pos += 1;
+    const nameStart = pos;
+    while (pos < len && isNameChar(units[pos])) {
+      pos += 1;
+    }
+    if (pos > nameStart && pos < len && units[pos] === 59) {
+      const name = xmlUtf16Slice(src, nameStart, pos);
+      if (getXmlRecordValue(entities, name) !== null) {
+        const replacement = getXmlRecordValue(entities, name);
+        result += xmlUtf16Slice(src, copyStart, ampPos);
+        result += replacement;
+        expanded.value = true;
+        pos += 1;
+        copyStart = pos;
+        continue;
+      }
+      pos += 1;
+    }
   }
+  result += xmlUtf16Slice(src, copyStart, len);
+  return result;
+}
+
+function normalizeXmlLineEndings(xml: string): string {
+  const units = utf16Units(xml);
+  let output = '';
+  let position: number = 0;
+  let copyStart: number = 0;
+  while (position < units.length) {
+    if (units[position] !== 13) {
+      position += 1;
+      continue;
+    }
+    output += xmlUtf16Slice(xml, copyStart, position);
+    output += '\n';
+    position += 1;
+    if (position < units.length && units[position] === 10) {
+      position += 1;
+    }
+    copyStart = position;
+  }
+  output += xmlUtf16Slice(xml, copyStart, units.length);
+  return output;
+}
+
+function stripProcessingInstructions(xml: string): string {
+  const units = utf16Units(xml);
+  let output = '';
+  let pos = 0;
+  let copyStart = 0;
+  while (pos < units.length) {
+    if (utf16StartsWith(units, pos, '<?')) {
+      output += xmlUtf16Slice(xml, copyStart, pos);
+      pos += 2;
+      if (findInUnits(units, '?>', pos) !== null) {
+        const end = findInUnits(units, '?>', pos);
+        pos = end + 2;
+      } else {
+        pos = units.length;
+      }
+      copyStart = pos;
+    } else {
+      pos += 1;
+    }
+  }
+  output += xmlUtf16Slice(xml, copyStart, units.length);
+  return output;
+}
+
+function stripXmlComments(xml: string): string {
+  const units = utf16Units(xml);
+  let output = '';
+  let pos = 0;
+  let copyStart = 0;
+  while (pos < units.length) {
+    if (utf16StartsWith(units, pos, '<![CDATA[')) {
+      if (findInUnits(units, ']]>', pos + 9) !== null) {
+        const end = findInUnits(units, ']]>', pos + 9);
+        pos = end + 3;
+      } else {
+        pos = units.length;
+      }
+      continue;
+    }
+    if (utf16StartsWith(units, pos, '<!--')) {
+      output += xmlUtf16Slice(xml, copyStart, pos);
+      if (findInUnits(units, '-->', pos + 4) !== null) {
+        const end = findInUnits(units, '-->', pos + 4);
+        pos = end + 3;
+      } else {
+        pos = units.length;
+      }
+      copyStart = pos;
+      continue;
+    }
+    pos += 1;
+  }
+  output += xmlUtf16Slice(xml, copyStart, units.length);
+  return output;
+}
+
+function asciiCaseInsensitiveAt(units: Readonly<number[]>, start: number, expected: string): boolean {
+  const expectedUnits = utf16Units(expected);
+  if (start + expectedUnits.length > units.length) {
+    return false;
+  }
+  let index: number = 0;
+  while (index < expectedUnits.length) {
+    let actual = units[start + index];
+    if (actual >= 65 && actual <= 90) {
+      actual += 32;
+    }
+    if (actual !== expectedUnits[index]) {
+      return false;
+    }
+    index += 1;
+  }
+  return true;
+}
+
+function stripXmlDoctypes(xml: string, out: XmlRecord<string, string>): string {
+  const units = utf16Units(xml);
+  const len = units.length;
+  let output = '';
+  let pos = 0;
+  let copyStart = 0;
+  while (pos < len) {
+    if (units[pos] !== 60 || !asciiCaseInsensitiveAt(units, pos, '<!doctype')) {
+      pos += 1;
+      continue;
+    }
+    output += xmlUtf16Slice(xml, copyStart, pos);
+    const doctypeStart = pos;
+    pos += 9;
+    let internalSubsetDepth: number = 0;
+    let quote: number = 0;
+    while (pos < len) {
+      const unit = units[pos];
+      if (quote !== 0) {
+        if (unit === quote) {
+          quote = 0;
+        }
+      } else {
+        if (unit === 34 || unit === 39) {
+          quote = unit;
+        } else {
+          if (unit === 91) {
+            internalSubsetDepth += 1;
+          } else {
+            if (unit === 93 && internalSubsetDepth > 0) {
+              internalSubsetDepth -= 1;
+            } else {
+              if (unit === 62 && internalSubsetDepth === 0) {
+                pos += 1;
+                break;
+              }
+            }
+          }
+        }
+      }
+      pos += 1;
+    }
+    collectXmlEntityDeclarations(xmlUtf16Slice(xml, doctypeStart, pos), out);
+    copyStart = pos;
+  }
+  output += xmlUtf16Slice(xml, copyStart, len);
+  return output;
+}
+
+function xmlEntityReplacement(name: string): string | null {
+  if (name === 'amp') {
+    return '&';
+  }
+  if (name === 'apos') {
+    return "'";
+  }
+  if (name === 'gt') {
+    return '>';
+  }
+  if (name === 'lt') {
+    return '<';
+  }
+  if (name === 'quot') {
+    return '"';
+  }
+  return null;
 }

@@ -40,8 +40,7 @@ fn parse_bitmap_font_xml_record(
     let mut dropped_kernings = 0;
     let mut pages = Vec::new();
     if let Some(parent) = get_xml_element_child_by_name(&root, "pages") {
-        let mut found = Vec::new();
-        get_xml_element_children_by_name(&mut found, &parent.read().unwrap(), "page");
+        let found = get_xml_element_children_by_name(&parent.read().unwrap(), "page");
         for page in found {
             let page = page.read().unwrap();
             if let Some(id) = get_xml_element_attribute_number(&page, "id") {
@@ -58,8 +57,7 @@ fn parse_bitmap_font_xml_record(
     }
     let mut chars = Vec::new();
     if let Some(parent) = get_xml_element_child_by_name(&root, "chars") {
-        let mut found = Vec::new();
-        get_xml_element_children_by_name(&mut found, &parent.read().unwrap(), "char");
+        let found = get_xml_element_children_by_name(&parent.read().unwrap(), "char");
         for character in found {
             match read_xml_char(&character.read().unwrap()) {
                 Some(character) => chars.push(character),
@@ -72,8 +70,7 @@ fn parse_bitmap_font_xml_record(
     }
     let mut kernings = Vec::new();
     if let Some(parent) = get_xml_element_child_by_name(&root, "kernings") {
-        let mut found = Vec::new();
-        get_xml_element_children_by_name(&mut found, &parent.read().unwrap(), "kerning");
+        let found = get_xml_element_children_by_name(&parent.read().unwrap(), "kerning");
         for pair in found {
             match read_xml_kerning(&pair.read().unwrap()) {
                 Some(pair) => kernings.push(pair),

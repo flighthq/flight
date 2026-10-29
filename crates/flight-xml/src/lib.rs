@@ -1,4 +1,5 @@
 mod types;
+pub mod xml_native;
 mod xml_parse;
 mod xml_query;
 

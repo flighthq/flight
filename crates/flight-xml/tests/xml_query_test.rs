@@ -67,27 +67,9 @@ mod get_xml_element_children_by_name {
     use super::*;
 
     #[test]
-    fn clears_a_reused_out_and_keeps_its_capacity() {
-        let root = parse_xml_document("<root><a/><b/></root>").unwrap();
-        let mut out = Vec::with_capacity(8);
-        get_xml_element_children_by_name(&mut out, &root, "a");
-        assert_eq!(out.len(), 1);
-
-        get_xml_element_children_by_name(&mut out, &root, "b");
-
-        assert_eq!(out.len(), 1);
-        assert_eq!(out[0].read().unwrap().name, "b");
-        assert!(out.capacity() >= 8);
-    }
-
-    #[test]
     fn returns_all_matching_children_in_document_order() {
         let root = parse_xml_document(r#"<root><a id="1"/><b/><a id="2"/></root>"#).unwrap();
-        let matches = {
-            let mut collected = Vec::new();
-            get_xml_element_children_by_name(&mut collected, &root, "a");
-            collected
-        };
+        let matches = get_xml_element_children_by_name(&root, "a");
         let ids: Vec<String> = matches
             .iter()
             .map(|c| c.read().unwrap().attributes["id"].clone())
@@ -98,13 +80,6 @@ mod get_xml_element_children_by_name {
     #[test]
     fn returns_an_empty_vec_when_no_child_matches() {
         let root = parse_xml_document("<root><a/></root>").unwrap();
-        assert!(
-            {
-                let mut collected = Vec::new();
-                get_xml_element_children_by_name(&mut collected, &root, "z");
-                collected
-            }
-            .is_empty()
-        );
+        assert!(get_xml_element_children_by_name(&root, "z").is_empty());
     }
 }
