@@ -2037,20 +2037,12 @@ mod retain {
                 "portable `std::mem::replace` has no portable lowering",
             ),
             (
-                "pub fn f(a: &mut u32, b: &mut u32) { core::mem::swap(a, b); }\n",
-                "portable `std::mem::swap` has no portable lowering",
-            ),
-            (
                 "use std::mem::take;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
                 "portable `std::mem::take` has no portable lowering",
             ),
             (
                 "use std::mem::take as grab;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return grab(values); }\n",
                 "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use std::mem::{replace, swap};\npub fn f(a: &mut u32, b: &mut u32) { swap(a, b); }\n",
-                "portable `std::mem::swap` has no portable lowering",
             ),
             (
                 "use std::{mem::{self as m}, vec::Vec};\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return m::take(values); }\n",
@@ -2072,6 +2064,42 @@ mod retain {
             let error = compile_typescript(source, None).unwrap_err();
             assert_eq!(error.to_string(), expected, "{source}");
         }
+    }
+
+    #[test]
+    fn lowers_std_mem_swap_to_destructuring_assignment() {
+        assert_eq!(
+            compile_typescript(
+                "pub fn f(a: &mut u32, b: &mut u32) { core::mem::swap(a, b); }\n",
+                None,
+            )
+            .unwrap(),
+            "export function f(a: number, b: number): void {\n  [a, b] = [b, a];\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "use std::mem::{replace, swap};\npub fn f(a: &mut u32, b: &mut u32) { swap(a, b); }\n",
+                None,
+            )
+            .unwrap(),
+            "export function f(a: number, b: number): void {\n  [a, b] = [b, a];\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub struct Joint { pub ax: f64, pub bx: f64, pub ay: f64, pub by: f64 }\npub fn flip(j: &mut Joint) { std::mem::swap(&mut j.ax, &mut j.bx); std::mem::swap(&mut j.ay, &mut j.by); }\n",
+                None,
+            )
+            .unwrap(),
+            "export interface Joint {\n  ax: number;\n  bx: number;\n  ay: number;\n  by: number;\n}\n\nexport function flip(j: Joint): void {\n  [j.ax, j.bx] = [j.bx, j.ax];\n  [j.ay, j.by] = [j.by, j.ay];\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "use std::mem::swap as exchange;\npub fn f(a: &mut u32, b: &mut u32) { exchange(a, b); }\n",
+                None,
+            )
+            .unwrap(),
+            "export function f(a: number, b: number): void {\n  [a, b] = [b, a];\n}\n"
+        );
     }
 
     #[test]

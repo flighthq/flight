@@ -12096,6 +12096,22 @@ fn emit_statement(
                 out.push_str("return;\n");
             }
         }
+        Stmt::Expr(Expr::Call(call), _)
+            if std_mem_function(&call.func, entities)
+                .as_deref()
+                == Some("swap") =>
+        {
+            if call.args.len() != 2 {
+                return Err(compile_error(
+                    "std::mem::swap requires exactly two arguments",
+                ));
+            }
+            let a = emit_expression(&call.args[0], entities)?;
+            let b = emit_expression(&call.args[1], entities)?;
+            write_indent(out, indent);
+            writeln!(out, "[{a}, {b}] = [{b}, {a}];")
+                .expect("writing to a String cannot fail");
+        }
         Stmt::Expr(expression, _) => {
             write_indent(out, indent);
             writeln!(out, "{};", emit_expression(expression, entities)?)
