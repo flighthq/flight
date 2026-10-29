@@ -1000,6 +1000,20 @@ pub struct Capability {
     }
 
     #[test]
+    fn lowers_hash_collections_through_extern_crate_and_no_std_bindings() {
+        for source in [
+            "extern crate std as standard;\npub fn a(s: &mut standard::collections::HashSet<i32>) -> bool {\n    return s.insert(1);\n}\n",
+            "#![no_std]\nextern crate std;\nuse std::collections::HashSet;\npub fn a(s: &mut HashSet<i32>) -> bool {\n    return s.insert(1);\n}\n",
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap(),
+                "export function a(s: Set<number>): boolean {\n  return (<T>(items: Set<T>, value: T): boolean => { if (items.has(value)) { return false; } items.add(value); return true; })(s, 1);\n}\n",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn rejects_hash_collections_without_standard_provenance() {
         for (source, expected) in [
             (
@@ -1020,6 +1034,10 @@ pub struct Capability {
             ),
             (
                 "extern crate other as std;\nuse std::collections::HashSet;\npub fn a(s: &mut HashSet<i32>) -> bool { return s.insert(1); }\n",
+                "unsupported Rust method call `.insert()`; impl sugar is not a transpilation source",
+            ),
+            (
+                "mod std {\n    pub mod collections {\n        pub struct HashSet<T> {\n            pub value: T,\n        }\n    }\n}\nuse std::collections::HashSet;\npub fn a(s: &mut HashSet<i32>) -> bool { return s.insert(1); }\n",
                 "unsupported Rust method call `.insert()`; impl sugar is not a transpilation source",
             ),
             (
@@ -1093,6 +1111,14 @@ pub struct Capability {
             ),
             (
                 "#![no_std]\npub type P = std::pin::Pin<std::boxed::Box<dyn Future<Output = u32>>>;\n",
+                unresolved,
+            ),
+            (
+                "mod std {\n    pub mod pin {\n        pub struct Pin<T> {\n            pub value: T,\n        }\n    }\n}\nuse std::pin::Pin;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                "portable `Pin` here resolves to `crate::std::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`",
+            ),
+            (
+                "mod std {}\nuse std::pin::*;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
                 unresolved,
             ),
             (

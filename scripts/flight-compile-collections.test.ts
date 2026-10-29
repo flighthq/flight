@@ -124,6 +124,20 @@ pub fn fill_store(store: &mut Store) -> bool {
 }
 `;
 
+// Valid Rust whose private \`mod std\` supplies unrelated \`collections::{HashMap, HashSet}\`.
+const LOCAL_STD_COLLECTIONS_FIXTURE = `mod std {
+    pub mod collections {
+        pub struct HashSet<T>(pub T);
+        pub struct HashMap<K, V>(pub K, pub V);
+    }
+}
+
+use std::collections::{HashMap, HashSet};
+
+pub type LocalSet = HashSet<String>;
+pub type LocalMap = HashMap<String, u32>;
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -145,6 +159,29 @@ function compileRust(name: string, rust: string): { error: string; typescript: s
   const result = spawnSync(compilerPath, ['generate', '--source', source, '--out', out], { encoding: 'utf8' });
   if (result.status !== 0) return { error: result.stderr.trim(), typescript: '' };
   return { error: '', typescript: readFileSync(out, 'utf8') };
+}
+
+// Builds one crate with rustc, throwing if it is not valid Rust.
+function buildRustSource(name: string, rust: string): void {
+  const source = join(workDirectory, `${name}.rs`);
+  writeFileSync(source, rust);
+  execFileSync(
+    'rustc',
+    [
+      '--edition',
+      '2024',
+      '--crate-type',
+      'lib',
+      '--crate-name',
+      name,
+      '--out-dir',
+      workDirectory,
+      '-A',
+      'warnings',
+      source,
+    ],
+    { stdio: 'pipe' },
+  );
 }
 
 function strictDiagnostics(typescript: string): string[] {
@@ -272,6 +309,14 @@ describe('flight-compile HashSet and HashMap lowering', () => {
     expect(store.full.size).toBe(0);
     store.set.add('a');
     expect(fill(store)).toBe(false);
+  });
+
+  it('keeps collections from a local std module as ordinary types', () => {
+    buildRustSource('local_std_collections', LOCAL_STD_COLLECTIONS_FIXTURE);
+    expect(compileRust('local-std-collections', LOCAL_STD_COLLECTIONS_FIXTURE)).toEqual({
+      error: '',
+      typescript: 'export type LocalSet = HashSet<string>;\n\nexport type LocalMap = HashMap<string, number>;\n\n',
+    });
   });
 
   it('fails closed on standard collection names without standard provenance', () => {

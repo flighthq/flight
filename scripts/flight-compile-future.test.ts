@@ -78,6 +78,30 @@ pub type LocalPending = std::pin::Pin<
 >;
 `;
 
+// Valid Rust whose private \`mod std\` supplies unrelated items that ordinary \`use std::...\` imports.
+const LOCAL_STD_FIXTURE = `mod std {
+    pub mod pin {
+        pub struct Pin<T: ?Sized>(pub *const T);
+    }
+
+    pub mod boxed {
+        pub struct Box<T: ?Sized>(pub *const T);
+    }
+
+    pub mod future {
+        pub trait Future {
+            type Output;
+        }
+    }
+}
+
+use std::boxed::Box;
+use std::future::Future;
+use std::pin::Pin;
+
+pub type LocalPending = Pin<Box<dyn Future<Output = u32>>>;
+`;
+
 const QUALIFIED_FIXTURE = `extern crate alloc;
 
 pub type Qualified = std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = u32> + std::marker::Send>>;
@@ -136,6 +160,29 @@ function buildRustCrates(dependencyRust: string, consumerRust: string): void {
       '--extern',
       `future_shapes=${join(workDirectory, 'libfuture_shapes.rlib')}`,
       consumer,
+    ],
+    { stdio: 'pipe' },
+  );
+}
+
+// Builds one crate with rustc, throwing if it is not valid Rust.
+function buildRustSource(name: string, rust: string): void {
+  const source = join(workDirectory, `${name}.rs`);
+  writeFileSync(source, rust);
+  execFileSync(
+    'rustc',
+    [
+      '--edition',
+      '2024',
+      '--crate-type',
+      'lib',
+      '--crate-name',
+      name,
+      '--out-dir',
+      workDirectory,
+      '-A',
+      'warnings',
+      source,
     ],
     { stdio: 'pipe' },
   );
@@ -228,6 +275,10 @@ describe('flight-compile pinned future lowering', () => {
     }
     expect(compileRust('consumer', SHADOW_CONSUMER_FIXTURE).error).toBe(
       'error: portable `Pin` here resolves to `future_shapes::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',
+    );
+    buildRustSource('local_std', LOCAL_STD_FIXTURE);
+    expect(compileRust('local-std', LOCAL_STD_FIXTURE).error).toBe(
+      'error: portable `Pin` here resolves to `crate::std::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',
     );
     expect(compileRust('extern-consumer', EXTERN_SHADOW_CONSUMER_FIXTURE).error).toBe(
       'error: portable `Pin` here resolves to `future_shapes::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',

@@ -1684,14 +1684,18 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     return (named_type(rust_type).as_deref() == Some("Vec")).then_some(false);
 }
 
-// `path` with its root crate made canonical: an `extern crate` binding is replaced by the crate it names;
-// `std` without one is absent under `#![no_std]`, and `alloc` is never in scope without one.
+// `path` with its root crate made canonical: a root this source declares itself (a local `mod std`) is
+// this crate's item; an `extern crate` binding is replaced by the crate it names; `std` without one is
+// absent under `#![no_std]`, and `alloc` is never in scope without one.
 // flight-lint: allow(hashmap-iteration) each local name has at most one recorded extern crate
 fn canonical_type_path_root(
     mut path: Vec<String>,
     context: &HashSet<String>,
 ) -> Option<Vec<String>> {
     let first = path.first()?.clone();
+    if context.contains(&format!("{TYPE_LOCAL_MARKER}{first}")) {
+        return Some(std::iter::once("crate".to_string()).chain(path).collect());
+    }
     let prefix = format!("{TYPE_EXTERN_CRATE_MARKER}{first}{PROVENANCE_SEPARATOR}");
     if let Some(target) = context
         .iter()
