@@ -5921,7 +5921,7 @@ fn generation_context_with_types(
             if structure
                 .fields
                 .iter()
-                .any(|field| rust_type_has_interior_mutability(&field.ty))
+                .any(|field| rust_type_has_interior_mutability(&field.ty, &HashSet::new()))
             {
                 context.insert(format!(
                     "{INTERIOR_MUTABLE_STRUCT_MARKER}{}",
@@ -10933,9 +10933,7 @@ fn emit_method_call(
         "get" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}[{}]", arguments[0]))
         }
-        "hypot" if arguments.len() == 1 => {
-            Ok(format!("Math.hypot({receiver}, {})", arguments[0]))
-        }
+        "hypot" if arguments.len() == 1 => Ok(format!("Math.hypot({receiver}, {})", arguments[0])),
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
         "is_none" if arguments.is_empty() => Ok(format!(
@@ -10974,8 +10972,8 @@ fn emit_method_call(
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_ref" if arguments.is_empty() => Ok(receiver),
         "as_mut" if arguments.is_empty() => Ok(receiver),
-        "as_bytes" if arguments.is_empty()
-            && expression_is_known_string(&call.receiver, entities) =>
+        "as_bytes"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
         {
             Ok(format!("new TextEncoder().encode({receiver})"))
         }
@@ -11013,9 +11011,7 @@ fn emit_method_call(
         }
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
-        "or_else" if arguments.len() == 1 => {
-            Ok(format!("({receiver} ?? ({})())", arguments[0]))
-        }
+        "or_else" if arguments.len() == 1 => Ok(format!("({receiver} ?? ({})())", arguments[0])),
         "next"
             if arguments.is_empty()
                 && matches!(call.receiver.as_ref(), Expr::MethodCall(chars)
@@ -13335,6 +13331,20 @@ pub(crate) fn emit_type(
             {
                 return Ok(typed_array.to_string());
             }
+            // A standard `RwLock<T>`, under any imported name, is the shared cell `Ref<T>` erases to
+            // `T`; only its proven provenance qualifies.
+            if resolve_type_path(&path.path, entities).is_some_and(|owner| {
+                matches!(
+                    owner
+                        .iter()
+                        .map(String::as_str)
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                    ["std", "sync", "RwLock"]
+                )
+            }) {
+                return emit_single_generic_type(segment, entities);
+            }
             match name.as_str() {
                 "bool" => Ok("boolean".to_string()),
                 "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
@@ -13368,7 +13378,7 @@ pub(crate) fn emit_type(
                     let interior_mutable = match &segment.arguments {
                         PathArguments::AngleBracketed(arguments) => arguments.args.iter().any(
                             |argument| {
-                                matches!(argument, GenericArgument::Type(inner) if rust_type_has_interior_mutability(inner))
+                                matches!(argument, GenericArgument::Type(inner) if rust_type_has_interior_mutability(inner, entities))
                             },
                         ),
                         _ => false,
@@ -13381,6 +13391,13 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Ref" => emit_single_generic_type(segment, entities),
+                // An unresolved `RwLock` could be the standard cell or another type, so it fails
+                // closed; a locally declared one keeps its own name below.
+                "RwLock" if resolve_type_path(&path.path, entities).is_none() => {
+                    Err(compile_error(
+                        "cannot resolve the provenance of `RwLock`; import it from `std::sync` to lower it to its shared payload",
+                    ))
+                }
                 _ if entities.contains(&name) => {
                     let arguments = emit_path_type_arguments(segment, entities)?;
                     if entities.contains(&format!("{TARGET_NATIVE_ENTITY_MARKER}{name}")) {
@@ -13422,7 +13439,7 @@ pub(crate) fn emit_type(
             let inner = emit_type(&reference.elem, entities)?;
             if reference.mutability.is_some()
                 || is_primitive_typescript_type(&inner)
-                || rust_type_has_interior_mutability(&reference.elem)
+                || rust_type_has_interior_mutability(&reference.elem, entities)
                 || named_type(&reference.elem).is_some_and(|name| {
                     entities.contains(&format!("{INTERIOR_MUTABLE_STRUCT_MARKER}{name}"))
                 })
@@ -13825,11 +13842,15 @@ fn ref_alias_receiver_capture(
 
 // Shared locks retain interior mutability through immutable Rust references. Wrapping those cells in
 // TypeScript `Readonly` would reject the writes that the lock specifically authorizes.
-fn rust_type_has_interior_mutability(rust_type: &Type) -> bool {
+// `entities` adds provenance: a standard `Mutex` or `RwLock` imported under another name is still a
+// shared cell. Without type-path context only the canonical names are recognized.
+fn rust_type_has_interior_mutability(rust_type: &Type, entities: &HashSet<String>) -> bool {
     let path = match rust_type {
-        Type::Group(group) => return rust_type_has_interior_mutability(&group.elem),
-        Type::Paren(paren) => return rust_type_has_interior_mutability(&paren.elem),
-        Type::Reference(reference) => return rust_type_has_interior_mutability(&reference.elem),
+        Type::Group(group) => return rust_type_has_interior_mutability(&group.elem, entities),
+        Type::Paren(paren) => return rust_type_has_interior_mutability(&paren.elem, entities),
+        Type::Reference(reference) => {
+            return rust_type_has_interior_mutability(&reference.elem, entities);
+        }
         Type::Path(path) => path,
         _ => return false,
     };
@@ -13839,7 +13860,16 @@ fn rust_type_has_interior_mutability(rust_type: &Type) -> bool {
     if matches!(
         segment.ident.to_string().as_str(),
         "Mutex" | "RwLock" | "Ref"
-    ) {
+    ) || resolve_type_path(&path.path, entities).is_some_and(|owner| {
+        matches!(
+            owner
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            ["std", "sync", "Mutex" | "RwLock"]
+        )
+    }) {
         return true;
     }
     if segment.ident != "Arc" {
@@ -13849,7 +13879,7 @@ fn rust_type_has_interior_mutability(rust_type: &Type) -> bool {
         return false;
     };
     return arguments.args.iter().any(|argument| {
-        matches!(argument, GenericArgument::Type(inner) if rust_type_has_interior_mutability(inner))
+        matches!(argument, GenericArgument::Type(inner) if rust_type_has_interior_mutability(inner, entities))
     });
 }
 

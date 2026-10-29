@@ -358,6 +358,71 @@ pub fn negated_flag(flag: bool) -> bool {
         assert!(output.contains("return !flag;"));
     }
 
+    // A proven standard `RwLock<T>`, under its own or a renamed import, is the shared cell `Ref<T>`
+    // erases to `T` in parameters and locals; a locally declared `RwLock` keeps its name, and an
+    // unresolved one fails closed.
+    #[test]
+    fn lowers_standard_rwlock_cells_to_their_shared_payload() {
+        let source = r#"
+use std::sync::Arc;
+use std::sync::RwLock as Lock;
+use std::sync::RwLock;
+
+pub struct Counter {
+    pub count: i32,
+}
+
+pub fn bump(state: Arc<RwLock<Counter>>) -> i32 {
+    let alias: Arc<RwLock<Counter>> = state.clone();
+    alias.write().unwrap().count += 1;
+    return state.read().unwrap().count;
+}
+
+pub fn read_renamed(state: &Arc<Lock<Counter>>) -> i32 {
+    return state.read().unwrap().count;
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export interface Counter {
+  count: number;
+}
+
+export function bump(state: Counter): number {
+  const alias: Counter = state;
+  alias!.count += 1;
+  return state!.count;
+}
+
+export function readRenamed(state: Counter): number {
+  return state!.count;
+}
+"#
+        );
+        let local = compile_typescript(r#"use std::sync::Arc;
+
+pub struct RwLock<T> {
+    pub inner: T,
+}
+
+pub fn read(value: Arc<RwLock<i32>>) -> i32 {
+    return value.inner;
+}
+"#, None).unwrap();
+        assert!(local.contains("export function read(value: RwLock<number>): number {"), "{local}");
+        assert_eq!(
+            compile_typescript(r#"use std::sync::Arc;
+
+pub fn read(value: Arc<RwLock<i32>>) -> i32 {
+    return 0;
+}
+"#, None)
+                .unwrap_err()
+                .to_string(),
+            "cannot resolve the provenance of `RwLock`; import it from `std::sync` to lower it to its shared payload"
+        );
+    }
+
     // `Arc::ptr_eq` lowers to `===`, which compares allocations only when the payload lowers to an
     // object: struct, collection, callable, `Mutex` cell or opaque `dyn Any`, through aliases and
     // shared clones. A primitive, string or unit payload lowers to its value and fails closed.
