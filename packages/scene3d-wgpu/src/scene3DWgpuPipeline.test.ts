@@ -1,6 +1,7 @@
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
+import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   AnimatedNormalModifierKind,
   BitmapTextKind,
@@ -25,7 +26,6 @@ import {
   QuadBatchKind,
   RenderCacheKind,
   RenderTargetTextureSourceKind,
-  RichTextKind,
   RimModifierKind,
   Scale9ShapeKind,
   Scale9SpriteKind,
@@ -35,7 +35,6 @@ import {
   SpriteKind,
   StandardMaterialKind,
   StandardPbrMaterialKind,
-  TextLabelKind,
   TilemapKind,
   ToonMaterialKind,
   ToonModifierKind,
