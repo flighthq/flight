@@ -122,6 +122,49 @@ fn compile_typescript_sources(
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
     let external_string_union_metadata =
         parse_external_string_union_metadata(external_alias_sources)?;
+    validate_string_union_metadata(
+        std::iter::once(StringUnionMetadataSource {
+            identity: module_identities
+                .as_deref()
+                .and_then(|identities| identities.first())
+                .map_or_else(
+                    || {
+                        source_paths.first().map_or_else(
+                            || "current source".to_string(),
+                            |path| format!("current source `{path}`"),
+                        )
+                    },
+                    |module| format!("current module `{module}`"),
+                ),
+            styles: &program.string_unions,
+            values: &program.string_union_values,
+        })
+        .chain(alias_programs.iter().enumerate().map(|(index, program)| {
+            return StringUnionMetadataSource {
+                identity: module_identities
+                    .as_deref()
+                    .and_then(|identities| identities.get(index + 1))
+                    .map_or_else(
+                        || {
+                            source_paths.get(index + 1).map_or_else(
+                                || format!("same-package alias source #{}", index + 1),
+                                |path| format!("same-package source `{path}`"),
+                            )
+                        },
+                        |module| format!("same-package module `{module}`"),
+                    ),
+                styles: &program.string_unions,
+                values: &program.string_union_values,
+            };
+        }))
+        .chain(external_string_union_metadata.iter().map(|external| {
+            return StringUnionMetadataSource {
+                identity: format!("external module `{}`", external.module),
+                styles: &external.metadata.styles,
+                values: &external.metadata.values,
+            };
+        })),
+    )?;
     let external_string_unions = external_string_union_metadata
         .iter()
         .flat_map(|external| external.metadata.styles.keys().cloned())
@@ -368,13 +411,39 @@ fn compile_vitest_with_contract_alias_sources_internal(
         .map(|(source, program)| (source.module, program))
         .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
+    let external_string_union_metadata =
+        parse_external_string_union_metadata(external_alias_sources)?;
+    validate_string_union_metadata(
+        std::iter::once(StringUnionMetadataSource {
+            identity: format!("current test source for module `{contract_module}`"),
+            styles: &string_unions.styles,
+            values: &string_unions.values,
+        })
+        .chain(
+            alias_sources
+                .iter()
+                .zip(&alias_programs)
+                .map(|(source, program)| {
+                    return StringUnionMetadataSource {
+                        identity: format!("same-package module `{}`", source.module),
+                        styles: &program.string_unions,
+                        values: &program.string_union_values,
+                    };
+                }),
+        )
+        .chain(external_string_union_metadata.iter().map(|external| {
+            return StringUnionMetadataSource {
+                identity: format!("external module `{}`", external.module),
+                styles: &external.metadata.styles,
+                values: &external.metadata.values,
+            };
+        })),
+    )?;
     let mut context = typescript::generation_context(
         &alias_program_refs,
         &external_record_structs,
         contract_source,
     )?;
-    let external_string_union_metadata =
-        parse_external_string_union_metadata(external_alias_sources)?;
     let external_string_unions = external_string_union_metadata
         .iter()
         .flat_map(|external| external.metadata.styles.keys().cloned())
@@ -461,10 +530,10 @@ fn compile_vitest_with_contract_alias_sources_internal(
     return Ok(output);
 }
 
-// Emitted `Owner.Variant` expressions currently retain the owner name but not the dependency module.
-// Equal declarations therefore lower identically, while conflicting declarations would let external
-// source argument order choose the literal. Reject that ambiguous input before either emitter builds
-// its owner-only context.
+// Emitted `Owner.Variant` expressions retain the owner name but not the source or dependency module.
+// Equal declarations therefore lower identically, while conflicting declarations would let the
+// current-program, same-package-alias and external lowering order choose the literal. Reject that
+// ambiguous input before either emitter builds its owner-only context.
 struct ExternalStringUnionMetadata<'a> {
     metadata: model::StringUnionMetadata,
     module: &'a str,
@@ -473,7 +542,7 @@ struct ExternalStringUnionMetadata<'a> {
 fn parse_external_string_union_metadata<'a>(
     external_alias_sources: &[ExternalAliasSource<'a>],
 ) -> Result<Vec<ExternalStringUnionMetadata<'a>>, CompileError> {
-    let metadata = external_alias_sources
+    return external_alias_sources
         .iter()
         .map(|external| {
             return Ok(ExternalStringUnionMetadata {
@@ -481,26 +550,32 @@ fn parse_external_string_union_metadata<'a>(
                 module: external.module,
             });
         })
-        .collect::<Result<Vec<_>, CompileError>>()?;
+        .collect();
+}
+
+struct StringUnionMetadataSource<'a> {
+    identity: String,
+    styles: &'a std::collections::BTreeMap<String, model::StringUnionStyle>,
+    values: &'a std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
+}
+
+fn validate_string_union_metadata<'a>(
+    sources: impl IntoIterator<Item = StringUnionMetadataSource<'a>>,
+) -> Result<(), CompileError> {
     let mut owners = std::collections::BTreeMap::<
         String,
         Vec<(
-            &str,
+            String,
             model::StringUnionStyle,
             std::collections::BTreeMap<String, String>,
         )>,
     >::new();
-    for external in &metadata {
-        for (owner, style) in &external.metadata.styles {
+    for source in sources {
+        for (owner, style) in source.styles {
             owners.entry(owner.clone()).or_default().push((
-                external.module,
+                source.identity.clone(),
                 *style,
-                external
-                    .metadata
-                    .values
-                    .get(owner)
-                    .cloned()
-                    .unwrap_or_default(),
+                source.values.get(owner).cloned().unwrap_or_default(),
             ));
         }
     }
@@ -513,20 +588,20 @@ fn parse_external_string_union_metadata<'a>(
             .skip(1)
             .any(|(_, style, values)| style != first_style || values != first_values)
         {
-            let modules = declarations
+            let identities = declarations
                 .iter()
-                .map(|(module, _, _)| *module)
+                .map(|(identity, _, _)| identity)
                 .collect::<std::collections::BTreeSet<_>>()
                 .into_iter()
-                .map(|module| format!("`{module}`"))
+                .cloned()
                 .collect::<Vec<_>>()
                 .join(", ");
             return Err(compile_error(format!(
-                "external string union `{owner}` has conflicting metadata across modules {modules}"
+                "string union `{owner}` has conflicting metadata across {identities}"
             )));
         }
     }
-    return Ok(metadata);
+    return Ok(());
 }
 
 fn dependency_export_names<'a>(

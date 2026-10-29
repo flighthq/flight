@@ -6891,7 +6891,7 @@ fn accepts_ready() {
     assert_eq!(Status::Ready, Status::Ready);
 }
 "#;
-        let expected = "external string union `Status` has conflicting metadata across modules `@flighthq/alpha/contract`, `@flighthq/beta/contract`";
+        let expected = "string union `Status` has conflicting metadata across external module `@flighthq/alpha/contract`, external module `@flighthq/beta/contract`";
 
         for externals in [[alpha, beta], [beta, alpha]] {
             let error =
@@ -6909,6 +6909,97 @@ fn accepts_ready() {
             .unwrap_err();
             assert_eq!(error.to_string(), expected);
         }
+    }
+
+    #[test]
+    fn rejects_local_string_union_metadata_conflicting_with_an_external_owner() {
+        let local = r#"
+//! flight-compiler: string-union Status=exact
+//! flight-compiler: string-union-value Status Ready "local.ready"
+
+pub enum Status {
+    Ready,
+}
+"#;
+        let external_source = r#"
+//! flight-compiler: string-union Status=exact
+//! flight-compiler: string-union-value Status Ready "external.ready"
+
+pub enum Status {
+        Ready,
+}
+"#;
+        let external = [ExternalAliasSource {
+            source: external_source,
+            module: "@flighthq/status/contract",
+        }];
+        let consumer = "pub fn ready() -> bool {\n    return true;\n}\n";
+        let alias = ModuleSource {
+            path: "crates/flight-consumer/src/status.rs",
+            source: local,
+        };
+
+        let error = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-consumer/src/consumer.rs",
+                source: consumer,
+            },
+            None,
+            &[alias],
+            &external,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "string union `Status` has conflicting metadata across external module `@flighthq/status/contract`, same-package module `flight_consumer::status`"
+        );
+
+        let error =
+            compile_typescript_with_external_alias_sources(consumer, None, &[local], &external)
+                .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "string union `Status` has conflicting metadata across external module `@flighthq/status/contract`, same-package alias source #1"
+        );
+
+        let error =
+            compile_typescript_with_module_sources(alias, None, &[], &external).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "string union `Status` has conflicting metadata across current module `flight_consumer::status`, external module `@flighthq/status/contract`"
+        );
+
+        let error = compile_typescript_with_module_sources(
+            alias,
+            None,
+            &[ModuleSource {
+                path: "crates/flight-consumer/src/other_status.rs",
+                source: external_source,
+            }],
+            &[],
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "string union `Status` has conflicting metadata across current module `flight_consumer::status`, same-package module `flight_consumer::other_status`"
+        );
+
+        let test = "#[test]\nfn accepts_ready() {\n    assert!(true);\n}\n";
+        let error = compile_vitest_with_external_alias_sources(
+            test,
+            "@flighthq/consumer/contract",
+            None,
+            &[VitestAliasSource {
+                source: local,
+                module: "crates/flight-consumer/src/status.rs",
+            }],
+            &external,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "string union `Status` has conflicting metadata across external module `@flighthq/status/contract`, same-package module `crates/flight-consumer/src/status.rs`"
+        );
     }
 
     #[test]
