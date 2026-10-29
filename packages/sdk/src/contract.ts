@@ -162,6 +162,14 @@ export type {
 export * from '@flighthq/textinput';
 export * from '@flighthq/textlayout';
 export * from '@flighthq/textsegment';
+export { TextSegmentGranularity, TextSegmenterKind } from '@flighthq/textsegment';
+export type {
+  HostTextSegmentCapabilities,
+  HostTextSegmenterCapability,
+  TextSegment,
+  TextSegmentRange,
+  TextSegmenterExplanation,
+} from '@flighthq/textsegment';
 export * from '@flighthq/textshaper';
 export * from '@flighthq/texture';
 export * from '@flighthq/texture-formats';
