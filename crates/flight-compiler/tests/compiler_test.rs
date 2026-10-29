@@ -3981,6 +3981,42 @@ pub fn get_clones() -> u32 {
     }
 
     #[test]
+    fn parenthesizes_struct_literals_returned_by_expression_closures() {
+        let source = r#"
+pub struct Segment {
+    pub x: f64,
+    pub y: f64,
+}
+
+pub fn copy_segments(source: &[Segment]) -> Vec<Segment> {
+    return source.iter().map(|s| Segment { x: s.x, y: s.y }).collect();
+}
+
+pub fn make_origins(count: usize) -> Vec<Segment> {
+    let make = |_index: usize| -> Segment {
+        return Segment { x: 0.0, y: 0.0 };
+    };
+    let mut out: Vec<Segment> = Vec::new();
+    for index in 0..count {
+        out.push(make(index));
+    }
+    return out;
+}
+
+pub fn scale_values(values: &[f64]) -> Vec<f64> {
+    return values.iter().map(|value| value * 2.0).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("source.map((s) => ({ x: s.x, y: s.y }))"));
+        assert!(output.contains("return { x: 0.0, y: 0.0 };\n"));
+        assert!(!output.contains("(({ x: 0.0"));
+        assert!(output.contains("values.map((value) => value * 2.0)"));
+    }
+
+    #[test]
     fn lowers_lazy_lock_statics_with_proven_operators_and_constructors() {
         let source = r#"
 use std::sync::*;

@@ -5528,6 +5528,15 @@ fn call_fact(entities: &HashSet<String>, marker: &str, path: &syn::Path) -> Opti
     return function_path_fact(entities, marker, path);
 }
 
+// A concise arrow body that begins with `{` is parsed as a block, so an object literal (a lowered
+// struct or record) is parenthesized to stay an expression.
+fn concise_arrow_body(body: String) -> String {
+    if body.starts_with('{') {
+        return format!("({body})");
+    }
+    return body;
+}
+
 // The canonical identity of the struct `rust_type` names in the code being emitted: resolved from the
 // current source when emitting a program, or through the contract-selected struct binding when
 // emitting a Vitest suite (whose test module is not itself a program source).
@@ -5852,9 +5861,9 @@ fn emit_closure_with_parameter_types(
                     "portable expression closure cannot return without a value",
                 ));
             };
-            emit_expression(value, &closure_context)?
+            concise_arrow_body(emit_expression(value, &closure_context)?)
         }
-        expression => emit_expression(expression, &closure_context)?,
+        expression => concise_arrow_body(emit_expression(expression, &closure_context)?),
     };
     return Ok(format!(
         "({}){return_type} => {body}",
