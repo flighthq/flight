@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction, StatechartInstance, StatechartSignals } from '@flighthq/types/contract';
+
+import type { StatechartInstance, StatechartSignals } from './types.ts';
 
 // Allocate the optional observer group on first use. The nullable slot lives on the mutable instance,
 // never on the immutable chart, so authored/imported state remains closure-free and serializable. This

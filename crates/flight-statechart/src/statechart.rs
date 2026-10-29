@@ -1,10 +1,22 @@
-use flight_entity::{Ref, allocate_entity, throw_range_error, throw_type_error};
-use flight_signals::emit_signal;
+//! flight-compiler: nullable-options
+
+use flight_entity::{Ref, allocate_entity, throw_range_error};
 use std::sync::RwLock;
 
+use crate::statechart_instance_fields::initialize_statechart_instance_fields;
+use crate::statechart_runtime::{
+    is_statechart_comparison, is_statechart_integer, is_statechart_string,
+    throw_statechart_input_kind_type_error, throw_statechart_type_error,
+    throw_statechart_unknown_input_kind_type_error,
+};
+use crate::statechart_signal_emit::emit_statechart_state_change;
+use crate::statechart_typed_arrays::{
+    create_statechart_float32_array, create_statechart_float64_array, create_statechart_int32_array,
+};
 use crate::types::*;
 
 #[cfg(test)]
+/// flight-compiler: rust-only — Rust-only extension-method parity tests.
 mod sugar_tests {
     use super::*;
     use std::sync::{Arc, RwLock};
@@ -34,7 +46,7 @@ mod sugar_tests {
                 name: None,
                 states: vec![
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: vec![StatechartTransition {
                             conditions: Vec::new(),
@@ -44,7 +56,7 @@ mod sugar_tests {
                         }],
                     },
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: Vec::new(),
                     },
@@ -303,35 +315,21 @@ pub fn advance_statechart_instance(instance: &Ref<StatechartInstance>, delta_tim
         }
     }
 
-    {
-        let trigger_indices: Vec<usize> = {
-            let chart = chart.read().unwrap();
-            chart
-                .inputs
-                .iter()
-                .enumerate()
-                .filter(|(_, input)| input.kind == StatechartInputKind::Trigger)
-                .map(|(index, _)| index)
-                .collect()
-        };
-        let mut current = instance.write().unwrap();
-        for index in trigger_indices {
-            current.input_values[index] = 0.0;
-        }
-    }
+    clear_statechart_triggers(instance, &chart);
 
     let signals = instance.read().unwrap().signals.clone();
-    if let Some(signals) = signals {
-        for (region_index, previous_state_index) in changed {
+    if let Some(active_signals) = signals {
+        let mut changed_index = 0;
+        while changed_index < changed.len() {
+            let (region_index, previous_state_index) = changed[changed_index];
             let new_state_index = instance.read().unwrap().region_states[region_index as usize];
-            emit_signal(
-                &signals.on_state_change,
-                &StatechartStateChangeEvent {
-                    region_index,
-                    previous_state_index,
-                    state_index: new_state_index,
-                },
+            emit_statechart_state_change(
+                &active_signals,
+                region_index,
+                previous_state_index,
+                new_state_index,
             );
+            changed_index += 1;
         }
     }
     return changed_count;
@@ -339,7 +337,7 @@ pub fn advance_statechart_instance(instance: &Ref<StatechartInstance>, delta_tim
 
 pub fn create_statechart_instance(chart: &Ref<Statechart>) -> Ref<StatechartInstance> {
     let mut out: StatechartInstance = allocate_entity();
-    initialize_statechart_instance(&mut out, chart);
+    initialize_statechart_instance_portable(&mut out, chart);
     return Ref::new(RwLock::new(out));
 }
 
@@ -347,7 +345,7 @@ pub fn explain_statechart_transition(
     instance: &Ref<StatechartInstance>,
     region_index: i32,
 ) -> StatechartTransitionExplanation {
-    if region_index < 0 {
+    if !is_statechart_integer(region_index) || region_index < 0 {
         return invalid_region_explanation(region_index);
     }
     let ri = region_index as usize;
@@ -364,9 +362,10 @@ pub fn explain_statechart_transition(
     let state = &region.states[source_state_index as usize];
     let active_transition_index = instance.read().unwrap().region_transitions[ri];
     if active_transition_index >= 0 {
-        let Some(active) = state.transitions.get(active_transition_index as usize) else {
+        if active_transition_index as usize >= state.transitions.len() {
             return invalid_region_explanation(region_index);
-        };
+        }
+        let active = &state.transitions[active_transition_index as usize];
         return StatechartTransitionExplanation {
             blend: instance.read().unwrap().region_blend[ri],
             condition_index: -1,
@@ -476,14 +475,14 @@ pub fn get_statechart_region_state(instance: &Ref<StatechartInstance>, region_in
     return -1;
 }
 
-pub fn initialize_statechart_instance(out: &mut StatechartInstance, chart: &Ref<Statechart>) {
-    {
-        let chart = chart.read().unwrap();
-        validate_statechart(&chart);
-    }
+pub fn initialize_statechart_instance_portable(
+    out: &mut StatechartInstance,
+    chart: &Ref<Statechart>,
+) {
+    validate_statechart(&chart.read().unwrap());
     let chart_input_count = chart.read().unwrap().inputs.len();
     let chart_region_count = chart.read().unwrap().regions.len();
-    let mut input_values: Vec<f64> = vec![0.0; chart_input_count];
+    let mut input_values = create_statechart_float64_array(chart_input_count);
     for input_index in 0..chart_input_count {
         let chart_guard = chart.read().unwrap();
         let input = &chart_guard.inputs[input_index];
@@ -494,22 +493,22 @@ pub fn initialize_statechart_instance(out: &mut StatechartInstance, chart: &Ref<
         };
     }
     let region_count = chart_region_count;
-    let mut region_states: Vec<i32> = vec![0; region_count];
+    let mut region_states = create_statechart_int32_array(region_count, 0);
     for region_index in 0..region_count {
         region_states[region_index] =
             chart.read().unwrap().regions[region_index].initial_state_index;
     }
 
-    out.chart = chart.clone();
-    out.duration_guard = None;
-    out.builtin_guard = None;
-    out.input_values = input_values.into_boxed_slice();
-    out.region_blend = vec![0.0f32; region_count].into_boxed_slice();
-    out.region_duration = vec![0.0f64; region_count].into_boxed_slice();
-    out.region_elapsed = vec![0.0f64; region_count].into_boxed_slice();
-    out.region_states = region_states.into_boxed_slice();
-    out.region_transitions = vec![-1i32; region_count].into_boxed_slice();
-    out.signals = None;
+    initialize_statechart_instance_fields(
+        out,
+        chart,
+        input_values,
+        create_statechart_float32_array(region_count),
+        create_statechart_float64_array(region_count),
+        create_statechart_float64_array(region_count),
+        region_states,
+        create_statechart_int32_array(region_count, -1),
+    );
 }
 
 pub fn set_statechart_boolean_input(
@@ -538,7 +537,7 @@ pub fn set_statechart_region_duration(
     duration: f64,
 ) {
     let len = instance.read().unwrap().region_duration.len();
-    if region_index < 0 || region_index as usize >= len {
+    if !is_statechart_integer(region_index) || region_index < 0 || region_index as usize >= len {
         throw_range_error(&format!(
             "Statechart region index {} is out of range",
             region_index
@@ -561,21 +560,10 @@ fn advance_statechart_region(
     delta_time_ms: f64,
 ) -> bool {
     let ri = region_index as usize;
-    let (source_state_index, mut transition_index) = {
-        let current = instance.read().unwrap();
-        (current.region_states[ri], current.region_transitions[ri])
-    };
-    let source_transition_count = {
-        let chart = chart.read().unwrap();
-        let region = &chart.regions[ri];
-        match region.states.get(source_state_index as usize) {
-            Some(state) if !state.kind.is_empty() => state.transitions.len(),
-            _ => throw_range_error(&format!(
-                "Statechart region {} has an invalid active state",
-                region_index
-            )),
-        }
-    };
+    let source_state_index = instance.read().unwrap().region_states[ri];
+    let mut transition_index = instance.read().unwrap().region_transitions[ri];
+    let source_transition_count =
+        get_statechart_transition_count(chart, region_index, source_state_index);
     instance.write().unwrap().region_elapsed[ri] += delta_time_ms;
     if transition_index >= 0 {
         if transition_index as usize >= source_transition_count {
@@ -594,27 +582,23 @@ fn advance_statechart_region(
         current.region_blend[ri] = 0.0;
     }
 
-    let (duration_ms, target) = {
-        let chart = chart.read().unwrap();
-        let transition = &chart.regions[ri].states[source_state_index as usize].transitions
-            [transition_index as usize];
-        (transition.duration_ms, transition.target_state_index)
-    };
+    let duration_ms = chart.read().unwrap().regions[ri].states[source_state_index as usize]
+        .transitions[transition_index as usize]
+        .duration_ms;
+    let target = chart.read().unwrap().regions[ri].states[source_state_index as usize].transitions
+        [transition_index as usize]
+        .target_state_index;
     let duration_ms = if duration_ms.is_finite() && duration_ms > 0.0 {
         duration_ms
     } else {
         0.0
     };
-    let blend = {
-        let mut current = instance.write().unwrap();
-        let blend = if duration_ms == 0.0 {
-            1.0
-        } else {
-            (current.region_blend[ri] + (delta_time_ms / duration_ms) as f32).min(1.0)
-        };
-        current.region_blend[ri] = blend;
-        blend
+    let blend = if duration_ms == 0.0 {
+        1.0
+    } else {
+        (instance.read().unwrap().region_blend[ri] + (delta_time_ms / duration_ms) as f32).min(1.0)
     };
+    instance.write().unwrap().region_blend[ri] = blend;
     if blend < 1.0 {
         return false;
     }
@@ -632,29 +616,18 @@ fn assert_statechart_input_kind(
     input_index: i32,
     expected_kind: StatechartInputKind,
 ) {
-    let kind = {
-        let chart = instance.read().unwrap().chart.clone();
-        let chart = chart.read().unwrap();
-        let input = if input_index >= 0 {
-            chart.inputs.get(input_index as usize)
-        } else {
-            None
-        };
-        match input {
-            Some(input) => input.kind,
-            None => throw_range_error(&format!(
-                "Statechart input index {} is out of range",
-                input_index
-            )),
-        }
-    };
-    if kind != expected_kind {
-        throw_type_error(&format!(
-            "Statechart input {} is {}, not {}",
-            input_index,
-            get_statechart_input_kind_string(kind),
-            get_statechart_input_kind_string(expected_kind)
+    let chart = instance.read().unwrap().chart.clone();
+    let input_count = chart.read().unwrap().inputs.len();
+    if !is_statechart_integer(input_index) || input_index < 0 || input_index as usize >= input_count
+    {
+        throw_range_error(&format!(
+            "Statechart input index {} is out of range",
+            input_index
         ));
+    }
+    let kind = chart.read().unwrap().inputs[input_index as usize].kind;
+    if kind != expected_kind {
+        throw_statechart_input_kind_type_error(input_index, kind, expected_kind);
     }
 }
 
@@ -669,6 +642,34 @@ fn compare_statechart_condition(value: f64, condition: &StatechartCondition) -> 
     };
 }
 
+fn clear_statechart_triggers(instance: &Ref<StatechartInstance>, chart: &Ref<Statechart>) {
+    let chart = chart.read().unwrap();
+    let mut current = instance.write().unwrap();
+    let mut input_index = 0;
+    while input_index < chart.inputs.len() {
+        if chart.inputs[input_index].kind == StatechartInputKind::Trigger {
+            current.input_values[input_index] = 0.0;
+        }
+        input_index += 1;
+    }
+}
+
+fn get_statechart_transition_count(
+    chart: &Ref<Statechart>,
+    region_index: i32,
+    source_state_index: i32,
+) -> usize {
+    let chart = chart.read().unwrap();
+    let region = &chart.regions[region_index as usize];
+    if source_state_index < 0 || source_state_index as usize >= region.states.len() {
+        throw_range_error(&format!(
+            "Statechart region {} has an invalid active state",
+            region_index
+        ));
+    }
+    return region.states[source_state_index as usize].transitions.len();
+}
+
 fn get_first_unmet_condition(
     instance: &Ref<StatechartInstance>,
     chart: &Statechart,
@@ -676,21 +677,11 @@ fn get_first_unmet_condition(
 ) -> i32 {
     for condition_index in 0..transition.conditions.len() {
         let condition = &transition.conditions[condition_index];
-        let input = if condition.input_index >= 0 {
-            chart.inputs.get(condition.input_index as usize)
-        } else {
-            None
-        };
-        let Some(input) = input else {
+        if condition.input_index < 0 || condition.input_index as usize >= chart.inputs.len() {
             return condition_index as i32;
-        };
-        let input_value = instance
-            .read()
-            .unwrap()
-            .input_values
-            .get(condition.input_index as usize)
-            .copied()
-            .unwrap_or(0.0);
+        }
+        let input = &chart.inputs[condition.input_index as usize];
+        let input_value = instance.read().unwrap().input_values[condition.input_index as usize];
         let met = if input.kind == StatechartInputKind::Trigger {
             input_value != 0.0
         } else {
@@ -709,26 +700,17 @@ fn get_ready_transition_index(
     region_index: i32,
 ) -> i32 {
     let ri = region_index as usize;
-    let (source_state_index, transition_count) = {
-        let chart = chart.read().unwrap();
-        let state_index = instance.read().unwrap().region_states[ri];
-        let count = chart.regions[ri].states[state_index as usize]
-            .transitions
-            .len();
-        (state_index, count)
-    };
+    let source_state_index = instance.read().unwrap().region_states[ri];
+    let transition_count = chart.read().unwrap().regions[ri].states[source_state_index as usize]
+        .transitions
+        .len();
     for transition_index in 0..transition_count {
-        let (unmet, exit_status, target, exit_ratio) = {
-            let chart = chart.read().unwrap();
-            let transition = &chart.regions[ri].states[source_state_index as usize].transitions
-                [transition_index];
-            (
-                get_first_unmet_condition(instance, &chart, transition),
-                get_statechart_exit_status(instance, ri, transition),
-                transition.target_state_index,
-                transition.exit_time_ratio,
-            )
-        };
+        let transition = chart.read().unwrap().regions[ri].states[source_state_index as usize]
+            .transitions[transition_index]
+            .clone();
+        let unmet = get_first_unmet_condition(instance, &chart.read().unwrap(), &transition);
+        let exit_status = get_statechart_exit_status(instance, ri, &transition);
+        let target = transition.target_state_index;
         if unmet >= 0 || exit_status == StatechartTransitionStatus::ExitTimePending {
             continue;
         }
@@ -743,10 +725,9 @@ fn get_ready_transition_index(
                 transition_index: transition_index as i32,
             };
             let guard = instance.read().unwrap().duration_guard.clone();
-            if let Some(guard) = guard {
-                guard(instance, &explanation);
+            if let Some(duration_guard) = guard {
+                duration_guard(instance, &explanation);
             }
-            let _ = exit_ratio;
         }
         return transition_index as i32;
     }
@@ -792,11 +773,7 @@ fn validate_statechart(chart: &Statechart) {
             && kind != StatechartInputKind::Number
             && kind != StatechartInputKind::Trigger
         {
-            throw_type_error(&format!(
-                "Statechart input {} has unknown kind {}",
-                input_index,
-                get_statechart_input_kind_string(kind)
-            ));
+            throw_statechart_unknown_input_kind_type_error(input_index, kind);
         }
     }
     for region_index in 0..chart.regions.len() {
@@ -811,8 +788,8 @@ fn validate_statechart(chart: &Statechart) {
         }
         for state_index in 0..region.states.len() {
             let state = &region.states[state_index];
-            if state.kind.is_empty() {
-                throw_type_error(&format!(
+            if !is_statechart_string(&state.kind) || state.kind.is_empty() {
+                throw_statechart_type_error(&format!(
                     "Statechart region {} state {} has an invalid kind",
                     region_index, state_index
                 ));
@@ -841,7 +818,8 @@ fn validate_statechart(chart: &Statechart) {
                 }
                 for condition_index in 0..transition.conditions.len() {
                     let condition = &transition.conditions[condition_index];
-                    if condition.input_index < 0
+                    if !is_statechart_integer(condition.input_index)
+                        || condition.input_index < 0
                         || condition.input_index as usize >= chart.inputs.len()
                     {
                         throw_range_error(&format!(
@@ -849,7 +827,12 @@ fn validate_statechart(chart: &Statechart) {
                             region_index, state_index, transition_index
                         ));
                     }
-                    let _ = condition_index;
+                    if !is_statechart_comparison(condition.comparison) {
+                        throw_statechart_type_error(&format!(
+                            "Statechart region {} state {} transition {} has an invalid comparison",
+                            region_index, state_index, transition_index
+                        ));
+                    }
                 }
             }
         }
@@ -862,7 +845,8 @@ fn validate_statechart(chart: &Statechart) {
 
 /// Sugar for the shared StatechartInstance handle (TS object). One method per public-lane source
 /// function whose first argument is the instance.
-pub trait StatechartInstanceMethods {
+#[allow(dead_code)]
+pub(crate) trait StatechartInstanceMethods {
     fn advance(&self, delta_time: f64) -> i32;
     fn disable_guards(&self);
     // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time

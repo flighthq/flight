@@ -1,7 +1,7 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/types/contract';
-import type { StatechartInstance, StatechartTransitionExplanation } from '@flighthq/types/contract';
+
+import type { StatechartInstance, StatechartTransitionExplanation } from './types.ts';
 
 // Report whether caller-misuse diagnostics are installed for this actor.
 export function areStatechartGuardsEnabled(instance: Readonly<StatechartInstance>): boolean {
@@ -33,7 +33,7 @@ function warnMissingStatechartRegionDuration(
     log.logState,
     log.clock(),
     `statechart:missing-region-duration:${chartId}:${explanation.regionIndex}:${explanation.sourceStateIndex}:${explanation.transitionIndex}`,
-    LogLevel.Warn,
+    2,
     {
       exitTimeRatio:
         instance.chart.regions[explanation.regionIndex]?.states[explanation.sourceStateIndex]?.transitions[

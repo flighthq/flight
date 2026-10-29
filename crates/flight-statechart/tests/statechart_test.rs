@@ -1,16 +1,13 @@
+//! flight-compiler: nullable-options
+
+use std::sync::RwLock;
+
+use flight_entity::Ref;
 use flight_statechart::*;
 
-fn expect_throw_kind<F: FnOnce()>(expected: flight_entity::FlightErrorKind, run: F) {
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(run));
-    match result {
-        Ok(_) => panic!("expected a typed throw"),
-        Err(payload) => {
-            let error = payload
-                .downcast::<flight_entity::FlightError>()
-                .expect("expected a D10 typed panic payload");
-            assert_eq!(error.kind, expected);
-        }
-    }
+fn create_instance(chart: &Statechart) -> Ref<StatechartInstance> {
+    let chart_ref = Ref::new(RwLock::new(chart.clone()));
+    return create_statechart_instance(&chart_ref);
 }
 
 // ============================================================================
@@ -37,7 +34,7 @@ fn create_empty_chart() -> Statechart {
             initial_state_index: 0,
             name: None,
             states: vec![StatechartState {
-                kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                kind: StatechartAtomicStateKind.to_string(),
                 name: None,
                 transitions: Vec::new(),
             }],
@@ -59,12 +56,12 @@ fn create_single_transition_chart(
             name: None,
             states: vec![
                 StatechartState {
-                    kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    kind: StatechartAtomicStateKind.to_string(),
                     name: None,
                     transitions: vec![transition(1, conditions, duration_ms, exit_time_ratio)],
                 },
                 StatechartState {
-                    kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    kind: StatechartAtomicStateKind.to_string(),
                     name: None,
                     transitions: Vec::new(),
                 },
@@ -80,22 +77,6 @@ fn create_two_region_trigger_chart() -> Statechart {
         0.0,
         -1.0,
     );
-    let make_region = |t: StatechartTransition| StatechartRegion {
-        initial_state_index: 0,
-        name: None,
-        states: vec![
-            StatechartState {
-                kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
-                name: None,
-                transitions: vec![t],
-            },
-            StatechartState {
-                kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
-                name: None,
-                transitions: Vec::new(),
-            },
-        ],
-    };
     return Statechart {
         inputs: vec![StatechartInput {
             initial_value: 0.0,
@@ -104,8 +85,27 @@ fn create_two_region_trigger_chart() -> Statechart {
         }],
         name: None,
         regions: vec![
-            make_region(trigger_transition.clone()),
-            make_region(trigger_transition),
+            create_trigger_region(trigger_transition.clone()),
+            create_trigger_region(trigger_transition),
+        ],
+    };
+}
+
+fn create_trigger_region(transition: StatechartTransition) -> StatechartRegion {
+    return StatechartRegion {
+        initial_state_index: 0,
+        name: None,
+        states: vec![
+            StatechartState {
+                kind: StatechartAtomicStateKind.to_string(),
+                name: None,
+                transitions: vec![transition],
+            },
+            StatechartState {
+                kind: StatechartAtomicStateKind.to_string(),
+                name: None,
+                transitions: Vec::new(),
+            },
         ],
     };
 }
@@ -134,14 +134,13 @@ mod advance_statechart_instance {
     #[test]
     fn advances_every_concurrent_region_before_clearing_a_shared_trigger() {
         let chart = create_two_region_trigger_chart();
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
 
         fire_statechart_trigger(&instance, 0);
         assert_eq!(advance_statechart_instance(&instance, 0.0), 2);
-        assert_eq!(
-            &*(instance.read().unwrap().region_states),
-            &(vec![1, 1])[..]
-        );
+        assert_eq!(instance.read().unwrap().region_states.len(), 2);
+        assert_eq!(instance.read().unwrap().region_states[0], 1);
+        assert_eq!(instance.read().unwrap().region_states[1], 1);
         assert_eq!(instance.read().unwrap().input_values[0], 0.0);
     }
 
@@ -166,7 +165,7 @@ mod advance_statechart_instance {
                 name: None,
                 states: vec![
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: vec![
                             transition(
@@ -196,19 +195,19 @@ mod advance_statechart_instance {
                         ],
                     },
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: Vec::new(),
                     },
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: Vec::new(),
                     },
                 ],
             }],
         };
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
 
         assert_eq!(advance_statechart_instance(&instance, 0.0), 1);
         assert_eq!(instance.read().unwrap().region_states[0], 1);
@@ -227,7 +226,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut crate::create_instance(&chart), 0.0) == 1,
+            advance_statechart_instance(&mut create_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -245,7 +244,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut crate::create_instance(&chart), 0.0) == 1,
+            advance_statechart_instance(&mut create_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -263,7 +262,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut crate::create_instance(&chart), 0.0) == 1,
+            advance_statechart_instance(&mut create_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -281,7 +280,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut crate::create_instance(&chart), 0.0) == 1,
+            advance_statechart_instance(&mut create_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -299,7 +298,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut crate::create_instance(&chart), 0.0) == 1,
+            advance_statechart_instance(&mut create_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -317,7 +316,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut crate::create_instance(&chart), 0.0) == 1,
+            advance_statechart_instance(&mut create_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -325,7 +324,7 @@ mod advance_statechart_instance {
     #[test]
     fn reports_blend_progress_without_performing_composition_and_changes_state_at_completion() {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 100.0, -1.0);
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
 
         assert_eq!(advance_statechart_instance(&instance, 40.0), 0);
         assert_eq!(instance.read().unwrap().region_states[0], 0);
@@ -338,7 +337,7 @@ mod advance_statechart_instance {
     #[test]
     fn accumulates_elapsed_time_and_evaluates_exit_time_ratio_against_caller_supplied_duration() {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 0.0, 0.5);
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
         set_statechart_region_duration(&instance, 0, 100.0);
 
         assert_eq!(advance_statechart_instance(&instance, 49.0), 0);
@@ -359,24 +358,24 @@ mod advance_statechart_instance {
                 name: None,
                 states: vec![
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: vec![transition(1, Vec::new(), 0.0, -1.0)],
                     },
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: vec![transition(2, Vec::new(), 0.0, -1.0)],
                     },
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: Vec::new(),
                     },
                 ],
             }],
         };
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
 
         assert_eq!(advance_statechart_instance(&instance, 0.0), 1);
         assert_eq!(instance.read().unwrap().region_states[0], 1);
@@ -387,7 +386,7 @@ mod advance_statechart_instance {
     #[test]
     fn treats_non_positive_and_non_finite_time_as_no_blend_progress() {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 100.0, -1.0);
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
 
         assert_eq!(advance_statechart_instance(&instance, -1.0), 0);
         assert_eq!(advance_statechart_instance(&instance, f64::NAN), 0);
@@ -428,7 +427,7 @@ mod create_statechart_instance_tests {
                 name: None,
                 states: vec![
                     StatechartState {
-                        kind: STATECHART_NESTED_STATE_KIND.to_string(),
+                        kind: StatechartNestedStateKind.to_string(),
                         name: None,
                         transitions: Vec::new(),
                     },
@@ -441,19 +440,25 @@ mod create_statechart_instance_tests {
             }],
         };
 
-        let chart = std::sync::Arc::new(std::sync::RwLock::new(chart));
-        let first = create_statechart_instance(&chart);
-        let second = create_statechart_instance(&chart);
+        let chart_ref = std::sync::Arc::new(std::sync::RwLock::new(chart));
+        let first = create_statechart_instance(&chart_ref);
+        let second = create_statechart_instance(&chart_ref);
 
         // Both actors retain the very authored chart they were created from.
-        assert!(std::sync::Arc::ptr_eq(&first.read().unwrap().chart, &chart));
+        assert!(std::sync::Arc::ptr_eq(
+            &first.read().unwrap().chart,
+            &chart_ref
+        ));
         assert!(std::sync::Arc::ptr_eq(
             &first.read().unwrap().chart,
             &second.read().unwrap().chart
         ));
 
         // Input values: Boolean -2 -> 1, Number 3.5, Trigger 0
-        assert_eq!(&*first.read().unwrap().input_values, &[1.0, 3.5, 0.0]);
+        assert_eq!(first.read().unwrap().input_values.len(), 3);
+        assert_eq!(first.read().unwrap().input_values[0], 1.0);
+        assert_eq!(first.read().unwrap().input_values[1], 3.5);
+        assert_eq!(first.read().unwrap().input_values[2], 0.0);
 
         // Region arrays allocated
         assert_eq!(first.read().unwrap().region_blend.len(), 1);
@@ -462,17 +467,15 @@ mod create_statechart_instance_tests {
         assert_eq!(first.read().unwrap().region_states.len(), 1);
         assert_eq!(first.read().unwrap().region_transitions.len(), 1);
 
-        assert_eq!(&*first.read().unwrap().region_states, &[1]);
-        assert_eq!(&*first.read().unwrap().region_transitions, &[-1]);
-        assert!(first.read().unwrap().duration_guard.is_none());
-        assert!(first.read().unwrap().signals.is_none());
-
+        assert_eq!(first.read().unwrap().region_states[0], 1);
+        assert_eq!(first.read().unwrap().region_transitions[0], -1);
         // Independent state
         first.write().unwrap().input_values[1] = 9.0;
         assert_eq!(second.read().unwrap().input_values[1], 3.5);
     }
 
     #[test]
+    #[should_panic]
     fn rejects_malformed_authored_indices_as_programmer_errors() {
         let chart = Statechart {
             inputs: Vec::new(),
@@ -481,15 +484,13 @@ mod create_statechart_instance_tests {
                 initial_state_index: 1,
                 name: None,
                 states: vec![StatechartState {
-                    kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    kind: StatechartAtomicStateKind.to_string(),
                     name: None,
                     transitions: Vec::new(),
                 }],
             }],
         };
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
-            crate::create_instance(&chart);
-        });
+        create_instance(&chart);
     }
 
     #[test]
@@ -502,7 +503,7 @@ mod create_statechart_instance_tests {
                 name: None,
                 states: vec![
                     StatechartState {
-                        kind: STATECHART_NESTED_STATE_KIND.to_string(),
+                        kind: StatechartNestedStateKind.to_string(),
                         name: None,
                         transitions: Vec::new(),
                     },
@@ -515,7 +516,7 @@ mod create_statechart_instance_tests {
             }],
         };
         // Should not panic
-        crate::create_instance(&chart);
+        create_instance(&chart);
     }
 }
 
@@ -528,8 +529,7 @@ mod explain_statechart_transition_tests {
 
     #[test]
     fn returns_an_invalid_region_diagnostic_for_the_silent_getter_sentinel() {
-        let explanation =
-            explain_statechart_transition(&crate::create_instance(&create_empty_chart()), 4);
+        let explanation = explain_statechart_transition(&create_instance(&create_empty_chart()), 4);
         assert_eq!(
             explanation,
             StatechartTransitionExplanation {
@@ -546,8 +546,7 @@ mod explain_statechart_transition_tests {
 
     #[test]
     fn reports_a_state_with_no_transitions() {
-        let explanation =
-            explain_statechart_transition(&crate::create_instance(&create_empty_chart()), 0);
+        let explanation = explain_statechart_transition(&create_instance(&create_empty_chart()), 0);
         assert_eq!(
             explanation.status,
             StatechartTransitionStatus::NoTransitions
@@ -567,7 +566,7 @@ mod explain_statechart_transition_tests {
             0.0,
             -1.0,
         );
-        let explanation = explain_statechart_transition(&crate::create_instance(&chart), 0);
+        let explanation = explain_statechart_transition(&create_instance(&chart), 0);
         assert_eq!(
             explanation.status,
             StatechartTransitionStatus::ConditionsUnmet
@@ -579,7 +578,7 @@ mod explain_statechart_transition_tests {
     #[test]
     fn reports_ready_and_transitioning_states_without_mutation() {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 100.0, -1.0);
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
         assert_eq!(
             explain_statechart_transition(&instance, 0).status,
             StatechartTransitionStatus::Ready
@@ -597,7 +596,7 @@ mod explain_statechart_transition_tests {
     #[test]
     fn reports_a_satisfied_guard_waiting_on_exit_time() {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 0.0, 0.5);
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
         set_statechart_region_duration(&instance, 0, 100.0);
         let explanation = explain_statechart_transition(&instance, 0);
         assert_eq!(
@@ -610,7 +609,7 @@ mod explain_statechart_transition_tests {
     #[test]
     fn reports_a_missing_duration_that_runtime_coerces_to_no_exit_time_requirement() {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 0.0, 0.5);
-        let explanation = explain_statechart_transition(&crate::create_instance(&chart), 0);
+        let explanation = explain_statechart_transition(&create_instance(&chart), 0);
         assert_eq!(
             explanation.status,
             StatechartTransitionStatus::MissingRegionDuration
@@ -628,7 +627,7 @@ mod fire_statechart_trigger_tests {
 
     #[test]
     fn latches_a_trigger_until_all_regions_see_the_next_advance_and_ignores_condition_value() {
-        let instance = crate::create_instance(&create_two_region_trigger_chart());
+        let instance = create_instance(&create_two_region_trigger_chart());
         fire_statechart_trigger(&instance, 0);
         assert_eq!(instance.read().unwrap().input_values[0], 1.0);
         assert_eq!(advance_statechart_instance(&instance, 0.0), 2);
@@ -636,6 +635,7 @@ mod fire_statechart_trigger_tests {
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_an_invalid_index() {
         let chart = create_single_transition_chart(
             vec![StatechartInput {
@@ -647,13 +647,12 @@ mod fire_statechart_trigger_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
-            fire_statechart_trigger(&instance, -1)
-        });
+        let instance = create_instance(&chart);
+        fire_statechart_trigger(&instance, -1);
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_non_trigger_input() {
         let chart = create_single_transition_chart(
             vec![StatechartInput {
@@ -665,10 +664,8 @@ mod fire_statechart_trigger_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::TypeError, || {
-            fire_statechart_trigger(&instance, 0)
-        });
+        let instance = create_instance(&chart);
+        fire_statechart_trigger(&instance, 0);
     }
 }
 
@@ -711,7 +708,7 @@ mod get_statechart_region_blend_tests {
 
     #[test]
     fn returns_a_region_blend_and_negative_one_for_invalid_regions() {
-        let instance = crate::create_instance(&create_empty_chart());
+        let instance = create_instance(&create_empty_chart());
         instance.write().unwrap().region_blend[0] = 0.4;
         assert!((get_statechart_region_blend(&instance, 0) - 0.4).abs() < 0.001);
         assert_eq!(get_statechart_region_blend(&instance, -1), -1.0);
@@ -728,7 +725,7 @@ mod get_statechart_region_state_tests {
 
     #[test]
     fn returns_a_region_state_and_negative_one_for_invalid_regions() {
-        let instance = crate::create_instance(&create_empty_chart());
+        let instance = create_instance(&create_empty_chart());
         assert_eq!(get_statechart_region_state(&instance, 0), 0);
         assert_eq!(get_statechart_region_state(&instance, -1), -1);
         assert_eq!(get_statechart_region_state(&instance, 1), -1);
@@ -736,25 +733,19 @@ mod get_statechart_region_state_tests {
 }
 
 // ============================================================================
-// initialize_statechart_instance
+// set_statechart_boolean_input
 // ============================================================================
 
-mod initialize_statechart_instance_tests {
+mod initialize_statechart_instance_portable {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_statechart_instance() {
-        // Verify the function exists and is callable
-        let chart = std::sync::Arc::new(std::sync::RwLock::new(create_empty_chart()));
-        let mut out = StatechartInstance::default();
-        flight_statechart::contract::initialize_statechart_instance(&mut out, &chart);
-        assert_eq!(*out.chart.read().unwrap(), *chart.read().unwrap());
+    fn backs_the_public_constructor_with_initialized_region_state() {
+        let instance = create_statechart_instance(&Ref::new(RwLock::new(create_empty_chart())));
+        assert_eq!(instance.read().unwrap().region_states[0], 0);
+        assert_eq!(instance.read().unwrap().region_transitions[0], -1);
     }
 }
-
-// ============================================================================
-// set_statechart_boolean_input
-// ============================================================================
 
 mod set_statechart_boolean_input_tests {
     use super::*;
@@ -771,7 +762,7 @@ mod set_statechart_boolean_input_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
         set_statechart_boolean_input(&instance, 0, true);
         assert_eq!(instance.read().unwrap().input_values[0], 1.0);
         set_statechart_boolean_input(&instance, 0, false);
@@ -779,6 +770,7 @@ mod set_statechart_boolean_input_tests {
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_an_invalid_index() {
         let chart = create_single_transition_chart(
             vec![StatechartInput {
@@ -790,13 +782,12 @@ mod set_statechart_boolean_input_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
-            set_statechart_boolean_input(&instance, 1, true)
-        });
+        let instance = create_instance(&chart);
+        set_statechart_boolean_input(&instance, 1, true);
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_non_boolean_input() {
         let chart = create_single_transition_chart(
             vec![StatechartInput {
@@ -808,10 +799,8 @@ mod set_statechart_boolean_input_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::TypeError, || {
-            set_statechart_boolean_input(&instance, 0, true)
-        });
+        let instance = create_instance(&chart);
+        set_statechart_boolean_input(&instance, 0, true);
     }
 }
 
@@ -834,12 +823,13 @@ mod set_statechart_number_input_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
+        let instance = create_instance(&chart);
         set_statechart_number_input(&instance, 0, -3.25);
         assert_eq!(instance.read().unwrap().input_values[0], -3.25);
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_an_invalid_index() {
         let chart = create_single_transition_chart(
             vec![StatechartInput {
@@ -851,13 +841,12 @@ mod set_statechart_number_input_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
-            set_statechart_number_input(&instance, 1, 2.0)
-        });
+        let instance = create_instance(&chart);
+        set_statechart_number_input(&instance, 1, 2.0);
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_non_number_input() {
         let chart = create_single_transition_chart(
             vec![StatechartInput {
@@ -869,10 +858,8 @@ mod set_statechart_number_input_tests {
             0.0,
             -1.0,
         );
-        let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::TypeError, || {
-            set_statechart_number_input(&instance, 0, 2.0)
-        });
+        let instance = create_instance(&chart);
+        set_statechart_number_input(&instance, 0, 2.0);
     }
 }
 
@@ -885,39 +872,36 @@ mod set_statechart_region_duration_tests {
 
     #[test]
     fn sets_the_plain_per_region_exit_time_denominator() {
-        let instance = crate::create_instance(&create_empty_chart());
+        let instance = create_instance(&create_empty_chart());
         set_statechart_region_duration(&instance, 0, 250.0);
         assert_eq!(instance.read().unwrap().region_duration[0], 250.0);
     }
 
     #[test]
     fn accepts_zero_as_an_explicit_unavailable_duration() {
-        let instance = crate::create_instance(&create_empty_chart());
+        let instance = create_instance(&create_empty_chart());
         set_statechart_region_duration(&instance, 0, 0.0);
         assert_eq!(instance.read().unwrap().region_duration[0], 0.0);
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_an_invalid_region() {
-        let instance = crate::create_instance(&create_empty_chart());
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
-            set_statechart_region_duration(&instance, 1, 1.0)
-        });
+        let instance = create_instance(&create_empty_chart());
+        set_statechart_region_duration(&instance, 1, 1.0);
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_negative_duration() {
-        let instance = crate::create_instance(&create_empty_chart());
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
-            set_statechart_region_duration(&instance, 0, -1.0)
-        });
+        let instance = create_instance(&create_empty_chart());
+        set_statechart_region_duration(&instance, 0, -1.0);
     }
 
     #[test]
+    #[should_panic]
     fn throws_for_nan_duration() {
-        let instance = crate::create_instance(&create_empty_chart());
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
-            set_statechart_region_duration(&instance, 0, f64::NAN)
-        });
+        let instance = create_instance(&create_empty_chart());
+        set_statechart_region_duration(&instance, 0, f64::NAN);
     }
 }

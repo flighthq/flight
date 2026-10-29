@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex};
 
 use flight_signals::connect_signal;
@@ -16,7 +18,7 @@ fn create_immediate_chart() -> Statechart {
             name: None,
             states: vec![
                 StatechartState {
-                    kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    kind: StatechartAtomicStateKind.to_string(),
                     name: None,
                     transitions: vec![StatechartTransition {
                         conditions: Vec::new(),
@@ -26,7 +28,7 @@ fn create_immediate_chart() -> Statechart {
                     }],
                 },
                 StatechartState {
-                    kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    kind: StatechartAtomicStateKind.to_string(),
                     name: None,
                     transitions: Vec::new(),
                 },
@@ -64,12 +66,11 @@ mod enable_statechart_signals_tests {
         let instance = crate::create_instance(&chart);
         let calls: Arc<Mutex<Vec<Vec<i32>>>> = Arc::new(Mutex::new(Vec::new()));
         let calls_clone = calls.clone();
-        let slot = Arc::new(move |event: &StatechartStateChangeEvent| {
-            calls_clone.lock().unwrap().push(vec![
-                event.region_index,
-                event.previous_state_index,
-                event.state_index,
-            ]);
+        let slot = Arc::new(move |event: &(i32, i32, i32)| {
+            calls_clone
+                .lock()
+                .unwrap()
+                .push(vec![event.0, event.1, event.2]);
         });
         connect_signal(
             &enable_statechart_signals(&instance).on_state_change,
@@ -99,7 +100,7 @@ mod enable_statechart_signals_tests {
                 name: None,
                 states: vec![
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: vec![StatechartTransition {
                             conditions: Vec::new(),
@@ -109,7 +110,7 @@ mod enable_statechart_signals_tests {
                         }],
                     },
                     StatechartState {
-                        kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        kind: StatechartAtomicStateKind.to_string(),
                         name: None,
                         transitions: Vec::new(),
                     },
@@ -119,7 +120,7 @@ mod enable_statechart_signals_tests {
         let instance = crate::create_instance(&chart);
 
         let trigger_instance = instance.clone();
-        let slot = Arc::new(move |_: &StatechartStateChangeEvent| {
+        let slot = Arc::new(move |_: &(i32, i32, i32)| {
             fire_statechart_trigger(&trigger_instance, 0);
         });
         connect_signal(
@@ -143,7 +144,7 @@ mod enable_statechart_signals_tests {
         // We use a flag to track that the listener was called
         let listener_called = Arc::new(Mutex::new(false));
         let listener_called_clone = listener_called.clone();
-        let slot = Arc::new(move |_: &StatechartStateChangeEvent| {
+        let slot = Arc::new(move |_: &(i32, i32, i32)| {
             *listener_called_clone.lock().unwrap() = true;
         });
         connect_signal(

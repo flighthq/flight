@@ -51,6 +51,7 @@
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
     "@flighthq/signals": "*",
+    "@flighthq/statechart": "*",
     "@flighthq/textformat": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*"

@@ -9,9 +9,9 @@ pub(crate) fn create_instance(
     return flight_statechart::create_statechart_instance(&chart_ref);
 }
 
-pub(crate) fn guard_state() -> flight_statechart::StatechartGuardStateRef {
+pub(crate) fn guard_state() -> flight_statechart::contract::StatechartGuardStateRef {
     return std::sync::Arc::new(std::sync::RwLock::new(
-        flight_statechart::StatechartGuardState {
+        flight_statechart::contract::StatechartGuardState {
             chart_ids: Vec::new(),
             next_chart_id: 1,
         },
@@ -20,6 +20,8 @@ pub(crate) fn guard_state() -> flight_statechart::StatechartGuardStateRef {
 
 #[path = "enable_statechart_guards_test.rs"]
 mod flight_statechart_enable_statechart_guards_test;
+#[path = "statechart_instance_init_test.rs"]
+mod flight_statechart_statechart_instance_init_test;
 #[path = "statechart_signals_test.rs"]
 mod flight_statechart_statechart_signals_test;
 #[path = "statechart_test.rs"]

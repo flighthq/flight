@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, RwLock};
 
 use flight_log::{
@@ -26,7 +28,7 @@ fn create_exit_time_chart() -> Statechart {
             name: None,
             states: vec![
                 StatechartState {
-                    kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    kind: StatechartAtomicStateKind.to_string(),
                     name: None,
                     transitions: vec![StatechartTransition {
                         conditions: Vec::new(),
@@ -36,7 +38,7 @@ fn create_exit_time_chart() -> Statechart {
                     }],
                 },
                 StatechartState {
-                    kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    kind: StatechartAtomicStateKind.to_string(),
                     name: None,
                     transitions: Vec::new(),
                 },

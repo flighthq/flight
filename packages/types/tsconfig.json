@@ -13,6 +13,7 @@
       ".geometry-types",
       ".host-types",
       ".menu-types",
+      ".statechart-types",
       ".velocity-types",
       ""
     ],
@@ -63,6 +64,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../statechart/tsconfig.contract.json"
     },
     {
       "path": "../textformat"

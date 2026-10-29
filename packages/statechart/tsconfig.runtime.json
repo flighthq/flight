@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../log" },
+    { "path": "../signals" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.statechart-types.ts", "src/types.ts"]
+}

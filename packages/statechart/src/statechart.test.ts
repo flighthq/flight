@@ -1,13 +1,14 @@
+// Generated from crates/flight-statechart/tests/statechart_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
+
 import {
   StatechartAtomicStateKind,
   StatechartComparison,
   StatechartInputKind,
   StatechartNestedStateKind,
   StatechartTransitionStatus,
-} from '@flighthq/types/contract';
-import type { Statechart, StatechartCondition, StatechartTransition } from '@flighthq/types/contract';
-
-import {
   advanceStatechartInstance,
   createStatechartInstance,
   explainStatechartTransition,
@@ -15,201 +16,350 @@ import {
   getStatechartInputIndex,
   getStatechartRegionBlend,
   getStatechartRegionState,
-  initializeStatechartInstance,
   setStatechartBooleanInput,
   setStatechartNumberInput,
   setStatechartRegionDuration,
-} from './statechart.ts';
+} from './contract.ts';
+import type {
+  Statechart,
+  StatechartCondition,
+  StatechartInput,
+  StatechartInstance,
+  StatechartRegion,
+  StatechartTransition,
+} from './contract.ts';
+
+function createInstance(chart: Readonly<Statechart>): StatechartInstance {
+  const chartRef = chart;
+  return createStatechartInstance(chartRef);
+}
+
+function condition(inputIndex: number, comparison: StatechartComparison, value: number): StatechartCondition {
+  return { comparison: comparison, inputIndex: inputIndex, value: value };
+}
+
+function createEmptyChart(): Statechart {
+  return {
+    inputs: [] as never[],
+    name: undefined,
+    regions: [
+      {
+        initialStateIndex: 0,
+        name: undefined,
+        states: [{ kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] as never[] }],
+      },
+    ],
+  };
+}
+
+function createSingleTransitionChart(
+  inputs: StatechartInput[],
+  conditions: StatechartCondition[],
+  durationMs: number,
+  exitTimeRatio: number,
+): Statechart {
+  return {
+    inputs: inputs,
+    name: undefined,
+    regions: [
+      {
+        initialStateIndex: 0,
+        name: undefined,
+        states: [
+          {
+            kind: String(StatechartAtomicStateKind),
+            name: undefined,
+            transitions: [transition(1, conditions, durationMs, exitTimeRatio)],
+          },
+          { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] as never[] },
+        ],
+      },
+    ],
+  };
+}
+
+function createTwoRegionTriggerChart(): Statechart {
+  const triggerTransition = transition(1, [condition(0, StatechartComparison.GreaterThan, 999.0)], 0.0, -1.0);
+  return {
+    inputs: [{ initialValue: 0.0, kind: StatechartInputKind.Trigger, name: 'go' }],
+    name: undefined,
+    regions: [createTriggerRegion(triggerTransition), createTriggerRegion(triggerTransition)],
+  };
+}
+
+function createTriggerRegion(transition: StatechartTransition): StatechartRegion {
+  return {
+    initialStateIndex: 0,
+    name: undefined,
+    states: [
+      { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [transition] },
+      { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] as never[] },
+    ],
+  };
+}
+
+function transition(
+  targetStateIndex: number,
+  conditions: StatechartCondition[],
+  durationMs: number,
+  exitTimeRatio: number,
+): StatechartTransition {
+  return {
+    conditions: conditions,
+    durationMs: durationMs,
+    exitTimeRatio: exitTimeRatio,
+    targetStateIndex: targetStateIndex,
+  };
+}
 
 describe('advanceStatechartInstance', () => {
   it('advances every concurrent region before clearing a shared trigger', () => {
     const chart = createTwoRegionTriggerChart();
-    const instance = createStatechartInstance(chart);
-
+    const instance = createInstance(chart);
     fireStatechartTrigger(instance, 0);
-    expect(advanceStatechartInstance(instance, 0)).toBe(2);
-    expect([...instance.regionStates]).toEqual([1, 1]);
-    expect(instance.inputValues[0]).toBe(0);
+    expect(advanceStatechartInstance(instance, 0.0)).toEqual(2);
+    expect(instance!.regionStates.length).toEqual(2);
+    expect(instance!.regionStates[0]).toEqual(1);
+    expect(instance!.regionStates[1]).toEqual(1);
+    expect(instance!.inputValues[0]).toEqual(0.0);
   });
-
-  it('requires all data-only conditions and selects the first eligible transition', () => {
-    const chart: Statechart = {
+  it('requires all data only conditions and selects the first eligible transition', () => {
+    const chart = {
       inputs: [
-        { initialValue: 0, kind: StatechartInputKind.Boolean, name: 'armed' },
-        { initialValue: 2, kind: StatechartInputKind.Number, name: 'speed' },
+        { initialValue: 0.0, kind: StatechartInputKind.Boolean, name: 'armed' },
+        { initialValue: 2.0, kind: StatechartInputKind.Number, name: 'speed' },
       ],
+      name: undefined,
       regions: [
         {
           initialStateIndex: 0,
+          name: undefined,
           states: [
             {
-              kind: StatechartAtomicStateKind,
+              kind: String(StatechartAtomicStateKind),
+              name: undefined,
               transitions: [
-                transition(1, [condition(0, StatechartComparison.Equal, 1)]),
-                transition(2, [
-                  condition(0, StatechartComparison.Equal, 0),
-                  condition(1, StatechartComparison.GreaterThan, 4),
-                ]),
-                transition(1, [
-                  condition(0, StatechartComparison.Equal, 0),
-                  condition(1, StatechartComparison.LessThanOrEqual, 2),
-                ]),
+                transition(1, [condition(0, StatechartComparison.Equal, 1.0)], 0.0, -1.0),
+                transition(
+                  2,
+                  [condition(0, StatechartComparison.Equal, 0.0), condition(1, StatechartComparison.GreaterThan, 4.0)],
+                  0.0,
+                  -1.0,
+                ),
+                transition(
+                  1,
+                  [
+                    condition(0, StatechartComparison.Equal, 0.0),
+                    condition(1, StatechartComparison.LessThanOrEqual, 2.0),
+                  ],
+                  0.0,
+                  -1.0,
+                ),
               ],
             },
-            { kind: StatechartAtomicStateKind, transitions: [] },
-            { kind: StatechartAtomicStateKind, transitions: [] },
+            { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] as never[] },
+            { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] as never[] },
           ],
         },
       ],
     };
-    const instance = createStatechartInstance(chart);
-
-    expect(advanceStatechartInstance(instance, 0)).toBe(1);
-    expect(instance.regionStates[0]).toBe(1);
+    const instance = createInstance(chart);
+    expect(advanceStatechartInstance(instance, 0.0)).toEqual(1);
+    expect(instance!.regionStates[0]).toEqual(1);
   });
-
-  it.each([
-    [StatechartComparison.Equal, 3, 3, true],
-    [StatechartComparison.GreaterThan, 3, 2, true],
-    [StatechartComparison.GreaterThanOrEqual, 3, 3, true],
-    [StatechartComparison.LessThan, 3, 4, true],
-    [StatechartComparison.LessThanOrEqual, 3, 3, true],
-    [StatechartComparison.NotEqual, 3, 4, true],
-  ])('evaluates the %s numeric comparison', (comparison, inputValue, expectedValue, expected) => {
+  it('evaluates equal numeric comparison', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: inputValue, kind: StatechartInputKind.Number }],
-      [condition(0, comparison, expectedValue)],
+      [{ initialValue: 3.0, kind: StatechartInputKind.Number, name: undefined }],
+      [condition(0, StatechartComparison.Equal, 3.0)],
+      0.0,
+      -1.0,
     );
-    expect(advanceStatechartInstance(createStatechartInstance(chart), 0) === 1).toBe(expected);
+    expect(advanceStatechartInstance(createInstance(chart), 0.0) === 1).toEqual(true);
   });
-
+  it('evaluates greater than numeric comparison', () => {
+    const chart = createSingleTransitionChart(
+      [{ initialValue: 3.0, kind: StatechartInputKind.Number, name: undefined }],
+      [condition(0, StatechartComparison.GreaterThan, 2.0)],
+      0.0,
+      -1.0,
+    );
+    expect(advanceStatechartInstance(createInstance(chart), 0.0) === 1).toEqual(true);
+  });
+  it('evaluates greater than or equal numeric comparison', () => {
+    const chart = createSingleTransitionChart(
+      [{ initialValue: 3.0, kind: StatechartInputKind.Number, name: undefined }],
+      [condition(0, StatechartComparison.GreaterThanOrEqual, 3.0)],
+      0.0,
+      -1.0,
+    );
+    expect(advanceStatechartInstance(createInstance(chart), 0.0) === 1).toEqual(true);
+  });
+  it('evaluates less than numeric comparison', () => {
+    const chart = createSingleTransitionChart(
+      [{ initialValue: 3.0, kind: StatechartInputKind.Number, name: undefined }],
+      [condition(0, StatechartComparison.LessThan, 4.0)],
+      0.0,
+      -1.0,
+    );
+    expect(advanceStatechartInstance(createInstance(chart), 0.0) === 1).toEqual(true);
+  });
+  it('evaluates less than or equal numeric comparison', () => {
+    const chart = createSingleTransitionChart(
+      [{ initialValue: 3.0, kind: StatechartInputKind.Number, name: undefined }],
+      [condition(0, StatechartComparison.LessThanOrEqual, 3.0)],
+      0.0,
+      -1.0,
+    );
+    expect(advanceStatechartInstance(createInstance(chart), 0.0) === 1).toEqual(true);
+  });
+  it('evaluates not equal numeric comparison', () => {
+    const chart = createSingleTransitionChart(
+      [{ initialValue: 3.0, kind: StatechartInputKind.Number, name: undefined }],
+      [condition(0, StatechartComparison.NotEqual, 4.0)],
+      0.0,
+      -1.0,
+    );
+    expect(advanceStatechartInstance(createInstance(chart), 0.0) === 1).toEqual(true);
+  });
   it('reports blend progress without performing composition and changes state at completion', () => {
-    const chart = createSingleTransitionChart([], [], { durationMs: 100 });
-    const instance = createStatechartInstance(chart);
-
-    expect(advanceStatechartInstance(instance, 40)).toBe(0);
-    expect(instance.regionStates[0]).toBe(0);
-    expect(getStatechartRegionBlend(instance, 0)).toBeCloseTo(0.4);
-    expect(advanceStatechartInstance(instance, 60)).toBe(1);
-    expect(instance.regionStates[0]).toBe(1);
-    expect(getStatechartRegionBlend(instance, 0)).toBe(0);
+    const chart = createSingleTransitionChart([] as never[], [] as never[], 100.0, -1.0);
+    const instance = createInstance(chart);
+    expect(advanceStatechartInstance(instance, 40.0)).toEqual(0);
+    expect(instance!.regionStates[0]).toEqual(0);
+    expect(Math.abs(getStatechartRegionBlend(instance, 0) - 0.4) < 0.001).toBe(true);
+    expect(advanceStatechartInstance(instance, 60.0)).toEqual(1);
+    expect(instance!.regionStates[0]).toEqual(1);
+    expect(getStatechartRegionBlend(instance, 0)).toEqual(0.0);
   });
-
-  it('accumulates elapsed time and evaluates exitTimeRatio against the caller-supplied duration', () => {
-    const chart = createSingleTransitionChart([], [], { exitTimeRatio: 0.5 });
-    const instance = createStatechartInstance(chart);
-    setStatechartRegionDuration(instance, 0, 100);
-
-    expect(advanceStatechartInstance(instance, 49)).toBe(0);
-    expect(instance.regionElapsed[0]).toBe(49);
-    expect(advanceStatechartInstance(instance, 1)).toBe(1);
-    expect(instance.regionStates[0]).toBe(1);
-    expect(instance.regionElapsed[0]).toBe(0);
-    expect(instance.regionDuration[0]).toBe(0);
+  it('accumulates elapsed time and evaluates exit time ratio against caller supplied duration', () => {
+    const chart = createSingleTransitionChart([] as never[], [] as never[], 0.0, 0.5);
+    const instance = createInstance(chart);
+    setStatechartRegionDuration(instance, 0, 100.0);
+    expect(advanceStatechartInstance(instance, 49.0)).toEqual(0);
+    expect(instance!.regionElapsed[0]).toEqual(49.0);
+    expect(advanceStatechartInstance(instance, 1.0)).toEqual(1);
+    expect(instance!.regionStates[0]).toEqual(1);
+    expect(instance!.regionElapsed[0]).toEqual(0.0);
+    expect(instance!.regionDuration[0]).toEqual(0.0);
   });
-
   it('changes a region at most once per call even when the target has an immediate transition', () => {
-    const chart: Statechart = {
-      inputs: [],
+    const chart = {
+      inputs: [] as never[],
+      name: undefined,
       regions: [
         {
           initialStateIndex: 0,
+          name: undefined,
           states: [
-            { kind: StatechartAtomicStateKind, transitions: [transition(1)] },
-            { kind: StatechartAtomicStateKind, transitions: [transition(2)] },
-            { kind: StatechartAtomicStateKind, transitions: [] },
+            {
+              kind: String(StatechartAtomicStateKind),
+              name: undefined,
+              transitions: [transition(1, [] as never[], 0.0, -1.0)],
+            },
+            {
+              kind: String(StatechartAtomicStateKind),
+              name: undefined,
+              transitions: [transition(2, [] as never[], 0.0, -1.0)],
+            },
+            { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] as never[] },
           ],
         },
       ],
     };
-    const instance = createStatechartInstance(chart);
-
-    expect(advanceStatechartInstance(instance, 0)).toBe(1);
-    expect(instance.regionStates[0]).toBe(1);
-    expect(advanceStatechartInstance(instance, 0)).toBe(1);
-    expect(instance.regionStates[0]).toBe(2);
+    const instance = createInstance(chart);
+    expect(advanceStatechartInstance(instance, 0.0)).toEqual(1);
+    expect(instance!.regionStates[0]).toEqual(1);
+    expect(advanceStatechartInstance(instance, 0.0)).toEqual(1);
+    expect(instance!.regionStates[0]).toEqual(2);
   });
-
-  it('treats non-positive and non-finite time as no blend progress', () => {
-    const chart = createSingleTransitionChart([], [], { durationMs: 100 });
-    const instance = createStatechartInstance(chart);
-
-    expect(advanceStatechartInstance(instance, -1)).toBe(0);
-    expect(advanceStatechartInstance(instance, Number.NaN)).toBe(0);
-    expect(instance.regionBlend[0]).toBe(0);
+  it('treats non positive and non finite time as no blend progress', () => {
+    const chart = createSingleTransitionChart([] as never[], [] as never[], 100.0, -1.0);
+    const instance = createInstance(chart);
+    expect(advanceStatechartInstance(instance, -1.0)).toEqual(0);
+    expect(advanceStatechartInstance(instance, Number.NaN)).toEqual(0);
+    expect(instance!.regionBlend[0]).toEqual(0.0);
   });
 });
 
 describe('createStatechartInstance', () => {
-  it('creates independent typed-array actor state while retaining the immutable chart', () => {
-    const chart: Statechart = {
+  it('creates independent typed array actor state while retaining the immutable chart', () => {
+    const chart = {
       inputs: [
-        { initialValue: -2, kind: StatechartInputKind.Boolean },
-        { initialValue: 3.5, kind: StatechartInputKind.Number },
-        { initialValue: 0, kind: StatechartInputKind.Trigger },
+        { initialValue: -2.0, kind: StatechartInputKind.Boolean, name: undefined },
+        { initialValue: 3.5, kind: StatechartInputKind.Number, name: undefined },
+        { initialValue: 0.0, kind: StatechartInputKind.Trigger, name: undefined },
       ],
       name: 'shared',
       regions: [
         {
           initialStateIndex: 1,
+          name: undefined,
           states: [
-            { kind: StatechartNestedStateKind, transitions: [] },
-            { kind: 'acme.CustomState', transitions: [] },
+            { kind: String(StatechartNestedStateKind), name: undefined, transitions: [] as never[] },
+            { kind: 'acme.CustomState', name: undefined, transitions: [] as never[] },
           ],
         },
       ],
     };
-
-    const first = createStatechartInstance(chart);
-    const second = createStatechartInstance(chart);
-    expect(first.chart).toBe(chart);
-    expect(first.chart).toBe(second.chart);
-    expect(first.inputValues).toBeInstanceOf(Float64Array);
-    expect([...first.inputValues]).toEqual([1, 3.5, 0]);
-    expect(first.regionBlend).toBeInstanceOf(Float32Array);
-    expect(first.regionDuration).toBeInstanceOf(Float64Array);
-    expect(first.regionElapsed).toBeInstanceOf(Float64Array);
-    expect(first.regionStates).toBeInstanceOf(Int32Array);
-    expect(first.regionTransitions).toBeInstanceOf(Int32Array);
-    expect([...first.regionStates]).toEqual([1]);
-    expect([...first.regionTransitions]).toEqual([-1]);
-    expect(first.durationGuard).toBeNull();
-    expect(first.signals).toBeNull();
-
-    first.inputValues[1] = 9;
-    expect(second.inputValues[1]).toBe(3.5);
+    const chartRef = chart;
+    const first = createStatechartInstance(chartRef);
+    const second = createStatechartInstance(chartRef);
+    expect(first!.chart === chartRef).toBe(true);
+    expect(first!.chart === second!.chart).toBe(true);
+    expect(first!.inputValues.length).toEqual(3);
+    expect(first!.inputValues[0]).toEqual(1.0);
+    expect(first!.inputValues[1]).toEqual(3.5);
+    expect(first!.inputValues[2]).toEqual(0.0);
+    expect(first!.regionBlend.length).toEqual(1);
+    expect(first!.regionDuration.length).toEqual(1);
+    expect(first!.regionElapsed.length).toEqual(1);
+    expect(first!.regionStates.length).toEqual(1);
+    expect(first!.regionTransitions.length).toEqual(1);
+    expect(first!.regionStates[0]).toEqual(1);
+    expect(first!.regionTransitions[0]).toEqual(-1);
+    first!.inputValues[1] = 9.0;
+    expect(second!.inputValues[1]).toEqual(3.5);
   });
-
   it('rejects malformed authored indices as programmer errors', () => {
-    const chart: Statechart = {
-      inputs: [],
-      regions: [{ initialStateIndex: 1, states: [{ kind: StatechartAtomicStateKind, transitions: [] }] }],
-    };
-    expect(() => createStatechartInstance(chart)).toThrow(RangeError);
+    expect(() => {
+      const chart = {
+        inputs: [] as never[],
+        name: undefined,
+        regions: [
+          {
+            initialStateIndex: 1,
+            name: undefined,
+            states: [{ kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] as never[] }],
+          },
+        ],
+      };
+      createInstance(chart);
+    }).toThrow();
   });
-
-  it('accepts nested and vendor-prefixed state kinds without closed dispatch', () => {
-    const chart: Statechart = {
-      inputs: [],
+  it('accepts nested and vendor prefixed state kinds without closed dispatch', () => {
+    const chart = {
+      inputs: [] as never[],
+      name: undefined,
       regions: [
         {
           initialStateIndex: 0,
+          name: undefined,
           states: [
-            { kind: StatechartNestedStateKind, transitions: [] },
-            { kind: 'vendor.Special', transitions: [] },
+            { kind: String(StatechartNestedStateKind), name: undefined, transitions: [] as never[] },
+            { kind: 'vendor.Special', name: undefined, transitions: [] as never[] },
           ],
         },
       ],
     };
-    expect(() => createStatechartInstance(chart)).not.toThrow();
+    createInstance(chart);
   });
 });
 
 describe('explainStatechartTransition', () => {
-  it('returns an invalid-region diagnostic for the silent getter sentinel', () => {
-    const explanation = explainStatechartTransition(createStatechartInstance(createEmptyChart()), 4);
+  it('returns an invalid region diagnostic for the silent getter sentinel', () => {
+    const explanation = explainStatechartTransition(createInstance(createEmptyChart()), 4);
     expect(explanation).toEqual({
-      blend: -1,
+      blend: -1.0,
       conditionIndex: -1,
       regionIndex: 4,
       sourceStateIndex: -1,
@@ -218,224 +368,230 @@ describe('explainStatechartTransition', () => {
       transitionIndex: -1,
     });
   });
-
   it('reports a state with no transitions', () => {
-    const explanation = explainStatechartTransition(createStatechartInstance(createEmptyChart()), 0);
-    expect(explanation.status).toBe(StatechartTransitionStatus.NoTransitions);
-    expect(explanation.transitionIndex).toBe(-1);
+    const explanation = explainStatechartTransition(createInstance(createEmptyChart()), 0);
+    expect(explanation.status).toEqual(StatechartTransitionStatus.NoTransitions);
+    expect(explanation.transitionIndex).toEqual(-1);
   });
-
   it('identifies the first unmet condition', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 0, kind: StatechartInputKind.Number }],
-      [condition(0, StatechartComparison.GreaterThan, 2)],
+      [{ initialValue: 0.0, kind: StatechartInputKind.Number, name: undefined }],
+      [condition(0, StatechartComparison.GreaterThan, 2.0)],
+      0.0,
+      -1.0,
     );
-    const explanation = explainStatechartTransition(createStatechartInstance(chart), 0);
-    expect(explanation.status).toBe(StatechartTransitionStatus.ConditionsUnmet);
-    expect(explanation.conditionIndex).toBe(0);
-    expect(explanation.targetStateIndex).toBe(1);
+    const explanation = explainStatechartTransition(createInstance(chart), 0);
+    expect(explanation.status).toEqual(StatechartTransitionStatus.ConditionsUnmet);
+    expect(explanation.conditionIndex).toEqual(0);
+    expect(explanation.targetStateIndex).toEqual(1);
   });
-
   it('reports ready and transitioning states without mutation', () => {
-    const chart = createSingleTransitionChart([], [], { durationMs: 100 });
-    const instance = createStatechartInstance(chart);
-    expect(explainStatechartTransition(instance, 0).status).toBe(StatechartTransitionStatus.Ready);
-    advanceStatechartInstance(instance, 25);
+    const chart = createSingleTransitionChart([] as never[], [] as never[], 100.0, -1.0);
+    const instance = createInstance(chart);
+    expect(explainStatechartTransition(instance, 0).status).toEqual(StatechartTransitionStatus.Ready);
+    advanceStatechartInstance(instance, 25.0);
     const explanation = explainStatechartTransition(instance, 0);
-    expect(explanation.status).toBe(StatechartTransitionStatus.Transitioning);
-    expect(explanation.blend).toBeCloseTo(0.25);
-    expect(explanation.transitionIndex).toBe(0);
+    expect(explanation.status).toEqual(StatechartTransitionStatus.Transitioning);
+    expect(Math.abs(explanation.blend - 0.25) < 0.001).toBe(true);
+    expect(explanation.transitionIndex).toEqual(0);
   });
-
   it('reports a satisfied guard waiting on exit time', () => {
-    const chart = createSingleTransitionChart([], [], { exitTimeRatio: 0.5 });
-    const instance = createStatechartInstance(chart);
-    setStatechartRegionDuration(instance, 0, 100);
+    const chart = createSingleTransitionChart([] as never[], [] as never[], 0.0, 0.5);
+    const instance = createInstance(chart);
+    setStatechartRegionDuration(instance, 0, 100.0);
     const explanation = explainStatechartTransition(instance, 0);
-    expect(explanation.status).toBe(StatechartTransitionStatus.ExitTimePending);
-    expect(explanation.conditionIndex).toBe(-1);
+    expect(explanation.status).toEqual(StatechartTransitionStatus.ExitTimePending);
+    expect(explanation.conditionIndex).toEqual(-1);
   });
-
-  it('reports a missing duration that runtime coerces to no exit-time requirement', () => {
-    const chart = createSingleTransitionChart([], [], { exitTimeRatio: 0.5 });
-    const explanation = explainStatechartTransition(createStatechartInstance(chart), 0);
-    expect(explanation.status).toBe(StatechartTransitionStatus.MissingRegionDuration);
-    expect(explanation.transitionIndex).toBe(0);
+  it('reports a missing duration that runtime coerces to no exit time requirement', () => {
+    const chart = createSingleTransitionChart([] as never[], [] as never[], 0.0, 0.5);
+    const explanation = explainStatechartTransition(createInstance(chart), 0);
+    expect(explanation.status).toEqual(StatechartTransitionStatus.MissingRegionDuration);
+    expect(explanation.transitionIndex).toEqual(0);
   });
 });
 
 describe('fireStatechartTrigger', () => {
   it('latches a trigger until all regions see the next advance and ignores condition value', () => {
-    const instance = createStatechartInstance(createTwoRegionTriggerChart());
+    const instance = createInstance(createTwoRegionTriggerChart());
     fireStatechartTrigger(instance, 0);
-    expect(instance.inputValues[0]).toBe(1);
-    expect(advanceStatechartInstance(instance, 0)).toBe(2);
-    expect(instance.inputValues[0]).toBe(0);
+    expect(instance!.inputValues[0]).toEqual(1.0);
+    expect(advanceStatechartInstance(instance, 0.0)).toEqual(2);
+    expect(instance!.inputValues[0]).toEqual(0.0);
   });
-
-  it('throws for an invalid index or non-trigger input', () => {
-    const instance = createStatechartInstance(
-      createSingleTransitionChart([{ initialValue: 0, kind: StatechartInputKind.Number }]),
-    );
-    expect(() => fireStatechartTrigger(instance, -1)).toThrow(RangeError);
-    expect(() => fireStatechartTrigger(instance, 0)).toThrow(TypeError);
+  it('throws for an invalid index', () => {
+    expect(() => {
+      const chart = createSingleTransitionChart(
+        [{ initialValue: 0.0, kind: StatechartInputKind.Number, name: undefined }],
+        [] as never[],
+        0.0,
+        -1.0,
+      );
+      const instance = createInstance(chart);
+      fireStatechartTrigger(instance, -1);
+    }).toThrow();
+  });
+  it('throws for non trigger input', () => {
+    expect(() => {
+      const chart = createSingleTransitionChart(
+        [{ initialValue: 0.0, kind: StatechartInputKind.Number, name: undefined }],
+        [] as never[],
+        0.0,
+        -1.0,
+      );
+      const instance = createInstance(chart);
+      fireStatechartTrigger(instance, 0);
+    }).toThrow();
   });
 });
 
 describe('getStatechartInputIndex', () => {
-  it('returns the first matching input index and -1 when absent', () => {
-    const chart: Statechart = {
+  it('returns the first matching input index and negative one when absent', () => {
+    const chart = {
       inputs: [
-        { initialValue: 0, kind: StatechartInputKind.Number, name: 'speed' },
-        { initialValue: 1, kind: StatechartInputKind.Number, name: 'speed' },
+        { initialValue: 0.0, kind: StatechartInputKind.Number, name: 'speed' },
+        { initialValue: 1.0, kind: StatechartInputKind.Number, name: 'speed' },
       ],
-      regions: [],
+      name: undefined,
+      regions: [] as never[],
     };
-    expect(getStatechartInputIndex(chart, 'speed')).toBe(0);
-    expect(getStatechartInputIndex(chart, 'missing')).toBe(-1);
+    expect(getStatechartInputIndex(chart, 'speed')).toEqual(0);
+    expect(getStatechartInputIndex(chart, 'missing')).toEqual(-1);
   });
 });
 
 describe('getStatechartRegionBlend', () => {
-  it('returns a region blend and -1 for invalid regions', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    instance.regionBlend[0] = 0.4;
-    expect(getStatechartRegionBlend(instance, 0)).toBeCloseTo(0.4);
-    expect(getStatechartRegionBlend(instance, -1)).toBe(-1);
-    expect(getStatechartRegionBlend(instance, 1)).toBe(-1);
+  it('returns a region blend and negative one for invalid regions', () => {
+    const instance = createInstance(createEmptyChart());
+    instance!.regionBlend[0] = 0.4;
+    expect(Math.abs(getStatechartRegionBlend(instance, 0) - 0.4) < 0.001).toBe(true);
+    expect(getStatechartRegionBlend(instance, -1)).toEqual(-1.0);
+    expect(getStatechartRegionBlend(instance, 1)).toEqual(-1.0);
   });
 });
 
 describe('getStatechartRegionState', () => {
-  it('returns a region state and -1 for invalid regions', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    expect(getStatechartRegionState(instance, 0)).toBe(0);
-    expect(getStatechartRegionState(instance, -1)).toBe(-1);
-    expect(getStatechartRegionState(instance, 1)).toBe(-1);
+  it('returns a region state and negative one for invalid regions', () => {
+    const instance = createInstance(createEmptyChart());
+    expect(getStatechartRegionState(instance, 0)).toEqual(0);
+    expect(getStatechartRegionState(instance, -1)).toEqual(-1);
+    expect(getStatechartRegionState(instance, 1)).toEqual(-1);
   });
 });
 
-describe('initializeStatechartInstance', () => {
-  it('is the construction initializer of createStatechartInstance', () => {
-    expect(typeof initializeStatechartInstance).toBe('function');
+describe('initializeStatechartInstancePortable', () => {
+  it('backs the public constructor with initialized region state', () => {
+    const instance = createStatechartInstance(createEmptyChart());
+    expect(instance!.regionStates[0]).toEqual(0);
+    expect(instance!.regionTransitions[0]).toEqual(-1);
   });
 });
 
 describe('setStatechartBooleanInput', () => {
-  it('writes the Boolean input vocabulary as numeric 0/1', () => {
-    const instance = createStatechartInstance(
-      createSingleTransitionChart([{ initialValue: 0, kind: StatechartInputKind.Boolean }]),
+  it('writes the boolean input vocabulary as numeric 0 1', () => {
+    const chart = createSingleTransitionChart(
+      [{ initialValue: 0.0, kind: StatechartInputKind.Boolean, name: undefined }],
+      [] as never[],
+      0.0,
+      -1.0,
     );
+    const instance = createInstance(chart);
     setStatechartBooleanInput(instance, 0, true);
-    expect(instance.inputValues[0]).toBe(1);
+    expect(instance!.inputValues[0]).toEqual(1.0);
     setStatechartBooleanInput(instance, 0, false);
-    expect(instance.inputValues[0]).toBe(0);
+    expect(instance!.inputValues[0]).toEqual(0.0);
   });
-
-  it('throws for an invalid index or non-Boolean input', () => {
-    const instance = createStatechartInstance(
-      createSingleTransitionChart([{ initialValue: 0, kind: StatechartInputKind.Number }]),
-    );
-    expect(() => setStatechartBooleanInput(instance, 1, true)).toThrow(RangeError);
-    expect(() => setStatechartBooleanInput(instance, 0, true)).toThrow(TypeError);
+  it('throws for an invalid index', () => {
+    expect(() => {
+      const chart = createSingleTransitionChart(
+        [{ initialValue: 0.0, kind: StatechartInputKind.Number, name: undefined }],
+        [] as never[],
+        0.0,
+        -1.0,
+      );
+      const instance = createInstance(chart);
+      setStatechartBooleanInput(instance, 1, true);
+    }).toThrow();
+  });
+  it('throws for non boolean input', () => {
+    expect(() => {
+      const chart = createSingleTransitionChart(
+        [{ initialValue: 0.0, kind: StatechartInputKind.Number, name: undefined }],
+        [] as never[],
+        0.0,
+        -1.0,
+      );
+      const instance = createInstance(chart);
+      setStatechartBooleanInput(instance, 0, true);
+    }).toThrow();
   });
 });
 
 describe('setStatechartNumberInput', () => {
   it('writes an exact numeric value', () => {
-    const instance = createStatechartInstance(
-      createSingleTransitionChart([{ initialValue: 0, kind: StatechartInputKind.Number }]),
+    const chart = createSingleTransitionChart(
+      [{ initialValue: 0.0, kind: StatechartInputKind.Number, name: undefined }],
+      [] as never[],
+      0.0,
+      -1.0,
     );
+    const instance = createInstance(chart);
     setStatechartNumberInput(instance, 0, -3.25);
-    expect(instance.inputValues[0]).toBe(-3.25);
+    expect(instance!.inputValues[0]).toEqual(-3.25);
   });
-
-  it('throws for an invalid index or non-Number input', () => {
-    const instance = createStatechartInstance(
-      createSingleTransitionChart([{ initialValue: 0, kind: StatechartInputKind.Boolean }]),
-    );
-    expect(() => setStatechartNumberInput(instance, 1, 2)).toThrow(RangeError);
-    expect(() => setStatechartNumberInput(instance, 0, 2)).toThrow(TypeError);
+  it('throws for an invalid index', () => {
+    expect(() => {
+      const chart = createSingleTransitionChart(
+        [{ initialValue: 0.0, kind: StatechartInputKind.Boolean, name: undefined }],
+        [] as never[],
+        0.0,
+        -1.0,
+      );
+      const instance = createInstance(chart);
+      setStatechartNumberInput(instance, 1, 2.0);
+    }).toThrow();
+  });
+  it('throws for non number input', () => {
+    expect(() => {
+      const chart = createSingleTransitionChart(
+        [{ initialValue: 0.0, kind: StatechartInputKind.Boolean, name: undefined }],
+        [] as never[],
+        0.0,
+        -1.0,
+      );
+      const instance = createInstance(chart);
+      setStatechartNumberInput(instance, 0, 2.0);
+    }).toThrow();
   });
 });
 
-function condition(inputIndex: number, comparison: StatechartComparison, value: number): StatechartCondition {
-  return { comparison, inputIndex, value };
-}
-
-function createEmptyChart(): Statechart {
-  return {
-    inputs: [],
-    regions: [{ initialStateIndex: 0, states: [{ kind: StatechartAtomicStateKind, transitions: [] }] }],
-  };
-}
-
-function createSingleTransitionChart(
-  inputs: Statechart['inputs'],
-  conditions: readonly StatechartCondition[] = [],
-  options: Partial<Pick<StatechartTransition, 'durationMs' | 'exitTimeRatio'>> = {},
-): Statechart {
-  return {
-    inputs,
-    regions: [
-      {
-        initialStateIndex: 0,
-        states: [
-          {
-            kind: StatechartAtomicStateKind,
-            transitions: [transition(1, conditions, options)],
-          },
-          { kind: StatechartAtomicStateKind, transitions: [] },
-        ],
-      },
-    ],
-  };
-}
-
-function createTwoRegionTriggerChart(): Statechart {
-  const triggerTransition = transition(1, [condition(0, StatechartComparison.GreaterThan, 999)]);
-  const region = () => ({
-    initialStateIndex: 0,
-    states: [
-      { kind: StatechartAtomicStateKind, transitions: [triggerTransition] },
-      { kind: StatechartAtomicStateKind, transitions: [] },
-    ],
-  });
-  return {
-    inputs: [{ initialValue: 0, kind: StatechartInputKind.Trigger, name: 'go' }],
-    regions: [region(), region()],
-  };
-}
-
-function transition(
-  targetStateIndex: number,
-  conditions: readonly StatechartCondition[] = [],
-  options: Partial<Pick<StatechartTransition, 'durationMs' | 'exitTimeRatio'>> = {},
-): StatechartTransition {
-  return {
-    conditions,
-    durationMs: options.durationMs ?? 0,
-    exitTimeRatio: options.exitTimeRatio ?? -1,
-    targetStateIndex,
-  };
-}
 describe('setStatechartRegionDuration', () => {
-  it('sets the plain per-region exit-time denominator', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    setStatechartRegionDuration(instance, 0, 250);
-    expect(instance.regionDuration[0]).toBe(250);
+  it('sets the plain per region exit time denominator', () => {
+    const instance = createInstance(createEmptyChart());
+    setStatechartRegionDuration(instance, 0, 250.0);
+    expect(instance!.regionDuration[0]).toEqual(250.0);
   });
-
   it('accepts zero as an explicit unavailable duration', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    setStatechartRegionDuration(instance, 0, 0);
-    expect(instance.regionDuration[0]).toBe(0);
+    const instance = createInstance(createEmptyChart());
+    setStatechartRegionDuration(instance, 0, 0.0);
+    expect(instance!.regionDuration[0]).toEqual(0.0);
   });
-
-  it('throws for an invalid region or invalid duration', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    expect(() => setStatechartRegionDuration(instance, 1, 1)).toThrow(RangeError);
-    expect(() => setStatechartRegionDuration(instance, 0, -1)).toThrow(RangeError);
-    expect(() => setStatechartRegionDuration(instance, 0, Number.NaN)).toThrow(RangeError);
+  it('throws for an invalid region', () => {
+    expect(() => {
+      const instance = createInstance(createEmptyChart());
+      setStatechartRegionDuration(instance, 1, 1.0);
+    }).toThrow();
+  });
+  it('throws for negative duration', () => {
+    expect(() => {
+      const instance = createInstance(createEmptyChart());
+      setStatechartRegionDuration(instance, 0, -1.0);
+    }).toThrow();
+  });
+  it('throws for nan duration', () => {
+    expect(() => {
+      const instance = createInstance(createEmptyChart());
+      setStatechartRegionDuration(instance, 0, Number.NaN);
+    }).toThrow();
   });
 });

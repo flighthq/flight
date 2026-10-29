@@ -1,7 +1,35 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract Statechart StatechartAtomicStateKind StatechartComparison StatechartCondition
+//! flight-compiler: contract StatechartDurationGuard StatechartInput StatechartInputKind StatechartInstance
+//! flight-compiler: contract StatechartNestedStateKind StatechartRegion StatechartSignals StatechartState
+//! flight-compiler: contract StatechartTransition StatechartTransitionExplanation StatechartTransitionStatus
+//! flight-compiler: string-union StatechartComparison=exact
+//! flight-compiler: string-union-value StatechartComparison Equal "Equal"
+//! flight-compiler: string-union-value StatechartComparison GreaterThan "GreaterThan"
+//! flight-compiler: string-union-value StatechartComparison GreaterThanOrEqual "GreaterThanOrEqual"
+//! flight-compiler: string-union-value StatechartComparison LessThan "LessThan"
+//! flight-compiler: string-union-value StatechartComparison LessThanOrEqual "LessThanOrEqual"
+//! flight-compiler: string-union-value StatechartComparison NotEqual "NotEqual"
+//! flight-compiler: string-union StatechartInputKind=exact
+//! flight-compiler: string-union-value StatechartInputKind Boolean "Boolean"
+//! flight-compiler: string-union-value StatechartInputKind Number "Number"
+//! flight-compiler: string-union-value StatechartInputKind Trigger "Trigger"
+//! flight-compiler: string-union StatechartTransitionStatus=exact
+//! flight-compiler: string-union-value StatechartTransitionStatus ConditionsUnmet "ConditionsUnmet"
+//! flight-compiler: string-union-value StatechartTransitionStatus ExitTimePending "ExitTimePending"
+//! flight-compiler: string-union-value StatechartTransitionStatus InvalidRegion "InvalidRegion"
+//! flight-compiler: string-union-value StatechartTransitionStatus MissingRegionDuration "MissingRegionDuration"
+//! flight-compiler: string-union-value StatechartTransitionStatus NoTransitions "NoTransitions"
+//! flight-compiler: string-union-value StatechartTransitionStatus Ready "Ready"
+//! flight-compiler: string-union-value StatechartTransitionStatus Transitioning "Transitioning"
+//! flight-compiler: readonly-fields Statechart StatechartCondition StatechartInput StatechartInstance StatechartRegion StatechartState
+//! flight-compiler: readonly-fields StatechartTransition StatechartTransitionExplanation
+//! flight-compiler: callable-parameters StatechartDurationGuard instance explanation
+//! flight-compiler: entity-runtime-state StatechartInstance.builtin_guard
 // flight-lint: allow-file(f64) D1: authored input/condition numbers, transition durations and region timing carry millisecond/f64 values from TS `number`
 use std::sync::{Arc, RwLock, Weak};
 
-use flight_entity::EntityRuntimeSlot;
+use flight_entity::{EntityRuntimeSlot, Ref};
 
 pub use flight_signals::Signal;
 
@@ -39,8 +67,10 @@ pub enum StatechartTransitionStatus {
 
 // Built-in state kinds. `StatechartState.kind` is an open string; custom states use
 // vendor-prefixed kinds and composition layers interpret those kinds.
-pub const STATECHART_ATOMIC_STATE_KIND: &str = "Statechart.Atomic";
-pub const STATECHART_NESTED_STATE_KIND: &str = "Statechart.Nested";
+#[allow(non_upper_case_globals)]
+pub const StatechartAtomicStateKind: &str = "Statechart.Atomic";
+#[allow(non_upper_case_globals)]
+pub const StatechartNestedStateKind: &str = "Statechart.Nested";
 
 // ============================================================================
 // Statechart data types (plain literals; none of these extends Entity in TS)
@@ -93,18 +123,10 @@ pub struct Statechart {
 // StatechartSignals (entity)
 // ============================================================================
 
-/// Payload of `StatechartSignals.on_state_change`
-/// (TS `(regionIndex, previousStateIndex, stateIndex)`).
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct StatechartStateChangeEvent {
-    pub region_index: i32,
-    pub previous_state_index: i32,
-    pub state_index: i32,
-}
-
 #[derive(Clone)]
 pub struct StatechartSignals {
-    pub on_state_change: Signal<StatechartStateChangeEvent>,
+    /// TS `(regionIndex, previousStateIndex, stateIndex)` positional callback.
+    pub on_state_change: Signal<(i32, i32, i32)>,
     runtime: EntityRuntimeSlot,
 }
 
@@ -128,9 +150,8 @@ pub struct StatechartTransitionExplanation {
 // ============================================================================
 
 /// Stored, capturing callback (D9), source-shaped: `(instance, explanation) => void`.
-pub type StatechartDurationGuard = Arc<
-    dyn Fn(&flight_entity::Ref<StatechartInstance>, &StatechartTransitionExplanation) + Send + Sync,
->;
+pub type StatechartDurationGuard =
+    Arc<dyn Fn(&Ref<StatechartInstance>, &StatechartTransitionExplanation) + Send + Sync>;
 
 /// Non-owning chart handle used by the diagnostic id map (D5 non-owning cache; D15 WeakMap analogue).
 // flight-lint: allow(contract-vocabulary) D5: non-owning diagnostics cache key (WeakRef vocabulary row)
@@ -149,14 +170,14 @@ pub struct StatechartGuardState {
 }
 
 /// Shared caller-owned guard/diagnostic state.
-pub type StatechartGuardStateRef = flight_entity::Ref<StatechartGuardState>;
+pub type StatechartGuardStateRef = Ref<StatechartGuardState>;
 
 // ============================================================================
 // StatechartInstance (TS extends Entity)
 // ============================================================================
 
 pub struct StatechartInstance {
-    pub chart: flight_entity::Ref<Statechart>,
+    pub chart: Ref<Statechart>,
     pub duration_guard: Option<StatechartDurationGuard>,
     pub input_values: Box<[f64]>,
     pub region_blend: Box<[f32]>,
@@ -342,7 +363,7 @@ impl Default for StatechartTransitionExplanation {
 impl Default for StatechartInstance {
     fn default() -> Self {
         return StatechartInstance {
-            chart: flight_entity::Ref::new(RwLock::new(Statechart::default())),
+            chart: Ref::new(RwLock::new(Statechart::default())),
             duration_guard: None,
             input_values: Box::new([]),
             region_blend: Box::new([]),
