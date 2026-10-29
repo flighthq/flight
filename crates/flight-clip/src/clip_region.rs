@@ -35,6 +35,20 @@ pub fn create_clip_region_from_rectangle(rectangle: &Rectangle) -> Ref<ClipRegio
     return Arc::new(RwLock::new(out));
 }
 
+fn call_clip_region_contours_guard(
+    explanation: Option<ClipRegionContoursExplanation>,
+    guard: Option<ClipRegionContoursGuard>,
+    contours: &[Vec<f64>],
+) {
+    let Some(issue) = explanation else {
+        return;
+    };
+    let Some(installed_guard) = guard else {
+        return;
+    };
+    installed_guard(&issue, contours);
+}
+
 // flight-lint: allow(f64) clip contours preserve the source Path.data coordinate precision
 pub fn initialize_clip_region_from_contours(
     out: &mut ClipRegion,
@@ -43,11 +57,7 @@ pub fn initialize_clip_region_from_contours(
 ) {
     let explanation = explain_clip_region_contours(contours);
     let guard = get_clip_region_contours_guard();
-    if let Some(issue) = explanation.as_ref() {
-        if let Some(installed_guard) = guard.as_ref() {
-            installed_guard(issue, contours);
-        }
-    }
+    call_clip_region_contours_guard(explanation, guard, contours);
     out.rect = create_rectangle(0.0, 0.0, 0.0, 0.0);
     set_rectangle_to_contours_bounds(&mut out.rect, contours);
     out.contours = Some(copy_clip_region_contours(contours));
@@ -231,13 +241,14 @@ pub fn explain_clip_region(clip: &Ref<ClipRegion>) -> ClipRegionExplanation {
 }
 
 // flight-lint: allow(f64) contour validation accepts the exact f64 Path.data coordinate arrays
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn explain_clip_region_contours(
     contours: &[Vec<f64>],
 ) -> Option<ClipRegionContoursExplanation> {
     for contour_index in 0..contours.len() {
         let contour = &contours[contour_index];
         let coordinate_count = contour.len();
-        if coordinate_count % 2 != 0 {
+        if coordinate_count & 1 != 0 {
             return Some(ClipRegionContoursExplanation {
                 contour_index,
                 coordinate_count,
@@ -327,45 +338,51 @@ pub fn is_clip_region_rectangular(clip: &Ref<ClipRegion>) -> bool {
 }
 
 // flight-lint: allow(f64) normalization compares the original f64 Path.data contour coordinates
+#[allow(clippy::question_mark)] // explicit Option control flow remains portable to generated TypeScript
+fn normalized_clip_region_bounds(contours: &Option<Vec<Vec<f64>>>) -> Option<Vec<f64>> {
+    let Some(source_contours) = contours.as_ref() else {
+        return None;
+    };
+    if source_contours.len() != 1 || source_contours[0].len() != 8 {
+        return None;
+    }
+    let contour = &source_contours[0];
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut index = 0;
+    while index < contour.len() {
+        min_x = min_x.min(contour[index]);
+        min_y = min_y.min(contour[index + 1]);
+        max_x = max_x.max(contour[index]);
+        max_y = max_y.max(contour[index + 1]);
+        index += 2;
+    }
+    let mut axis_aligned = true;
+    index = 0;
+    while index < contour.len() {
+        let x = contour[index];
+        let y = contour[index + 1];
+        if !(((x - min_x).abs() <= NORMALIZE_EPSILON || (x - max_x).abs() <= NORMALIZE_EPSILON)
+            && ((y - min_y).abs() <= NORMALIZE_EPSILON || (y - max_y).abs() <= NORMALIZE_EPSILON))
+        {
+            axis_aligned = false;
+        }
+        index += 2;
+    }
+    if axis_aligned {
+        return Some(vec![min_x, min_y, max_x, max_y]);
+    }
+    return None;
+}
+
+// flight-lint: allow(f64) normalization compares the original f64 Path.data contour coordinates
 pub fn normalize_clip_region(out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>) {
     guard_clip_region_use(out);
     guard_clip_region_use(clip);
     let (rect, contours, winding) = snapshot_clip_region(clip);
-    let mut normalized: Option<Vec<f64>> = None;
-    if let Some(source_contours) = contours.as_ref() {
-        if source_contours.len() == 1 && source_contours[0].len() == 8 {
-            let contour = &source_contours[0];
-            let mut min_x = f64::INFINITY;
-            let mut min_y = f64::INFINITY;
-            let mut max_x = f64::NEG_INFINITY;
-            let mut max_y = f64::NEG_INFINITY;
-            let mut index = 0;
-            while index < contour.len() {
-                min_x = min_x.min(contour[index]);
-                min_y = min_y.min(contour[index + 1]);
-                max_x = max_x.max(contour[index]);
-                max_y = max_y.max(contour[index + 1]);
-                index += 2;
-            }
-            let mut axis_aligned = true;
-            index = 0;
-            while index < contour.len() {
-                let x = contour[index];
-                let y = contour[index + 1];
-                if !(((x - min_x).abs() <= NORMALIZE_EPSILON
-                    || (x - max_x).abs() <= NORMALIZE_EPSILON)
-                    && ((y - min_y).abs() <= NORMALIZE_EPSILON
-                        || (y - max_y).abs() <= NORMALIZE_EPSILON))
-                {
-                    axis_aligned = false;
-                }
-                index += 2;
-            }
-            if axis_aligned {
-                normalized = Some(vec![min_x, min_y, max_x, max_y]);
-            }
-        }
-    }
+    let normalized = normalized_clip_region_bounds(&contours);
     let mut out = out.write().unwrap();
     let mutable_out: &mut EntityConstruction<ClipRegion> = &mut out;
     if let Some(bounds) = normalized {
@@ -414,10 +431,12 @@ fn point_in_contours(contours: &[Vec<f64>], winding: PathWinding, px: f64, py: f
 
 pub fn release_clip_region(clip: &Ref<ClipRegion>) {
     let (guard, released) = snapshot_clip_region_release_guard(clip);
-    if released {
-        if let Some(installed_guard) = guard {
-            installed_guard(clip);
-        }
+    if !released {
+        release_clip_region_to_pool(clip);
+        return;
+    }
+    if let Some(installed_guard) = guard {
+        installed_guard(clip);
     }
     release_clip_region_to_pool(clip);
 }
@@ -461,11 +480,7 @@ pub fn set_clip_region_to_contours(
     guard_clip_region_use(out);
     let explanation = explain_clip_region_contours(contours);
     let guard = get_clip_region_contours_guard();
-    if let Some(issue) = explanation.as_ref() {
-        if let Some(installed_guard) = guard.as_ref() {
-            installed_guard(issue, contours);
-        }
-    }
+    call_clip_region_contours_guard(explanation, guard, contours);
     let mut out = out.write().unwrap();
     let mutable_out: &mut EntityConstruction<ClipRegion> = &mut out;
     set_rectangle_to_contours_bounds(&mut mutable_out.rect, contours);
@@ -585,8 +600,9 @@ pub fn transform_clip_region(out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>, matr
             a * x + c * (y + height) + tx,
             b * x + d * (y + height) + ty,
         ];
-        set_rectangle_to_contours_bounds(&mut mutable_out.rect, &[quad.clone()]);
-        mutable_out.contours = Some(vec![quad]);
+        let contours = vec![quad];
+        set_rectangle_to_contours_bounds(&mut mutable_out.rect, &contours);
+        mutable_out.contours = Some(contours);
         mutable_out.winding = PathWinding::NonZero;
     }
     mutable_out.version = mutable_out.version.wrapping_add(1);

@@ -57,6 +57,22 @@ export function clipRegionContainsClipRegion(a: Readonly<ClipRegion>, b: Readonl
   return enclosesRectangle(aRect, bRect);
 }
 
+function callClipRegionContoursGuard(
+  explanation: ClipRegionContoursExplanation | null,
+  guard: ClipRegionContoursGuard | null,
+  contours: Readonly<number[][]>,
+): void {
+  const issue = explanation;
+  if (issue === null) {
+    return;
+  }
+  const installedGuard = guard;
+  if (installedGuard === null) {
+    return;
+  }
+  installedGuard(issue, contours);
+}
+
 export function clipRegionContainsPoint(clip: Readonly<ClipRegion>, x: number, y: number): boolean {
   guardClipRegionUse(clip);
   clip = clip!;
@@ -172,7 +188,7 @@ export function explainClipRegionContours(contours: Readonly<number[][]>): ClipR
   for (let contourIndex = 0; contourIndex < contours.length; contourIndex += 1) {
     const contour = contours[contourIndex];
     const coordinateCount = contour.length;
-    if (coordinateCount % 2 !== 0) {
+    if ((coordinateCount & 1) !== 0) {
       return {
         contourIndex: contourIndex,
         coordinateCount: coordinateCount,
@@ -249,13 +265,7 @@ export function initializeClipRegionFromContours(
 ): void {
   const explanation = explainClipRegionContours(contours);
   const guard = getClipRegionContoursGuard();
-  if (explanation !== null) {
-    const issue = explanation;
-    if (guard !== null) {
-      const installedGuard = guard;
-      installedGuard(issue, contours);
-    }
-  }
+  callClipRegionContoursGuard(explanation, guard, contours);
   out.rect = createRectangle(0.0, 0.0, 0.0, 0.0);
   setRectangleToContoursBounds(out.rect, contours);
   out.contours = copyClipRegionContours(contours);
@@ -342,47 +352,53 @@ export function isClipRegionRectangular(clip: Readonly<ClipRegion>): boolean {
   return clip!.contours === null;
 }
 
+function normalizedClipRegionBounds(contours: Readonly<number[][] | null>): number[] | null {
+  const sourceContours = contours;
+  if (sourceContours === null) {
+    return null;
+  }
+  if (sourceContours.length !== 1 || sourceContours[0].length !== 8) {
+    return null;
+  }
+  const contour = sourceContours[0];
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  let index = 0;
+  while (index < contour.length) {
+    minX = Math.min(minX, contour[index]);
+    minY = Math.min(minY, contour[index + 1]);
+    maxX = Math.max(maxX, contour[index]);
+    maxY = Math.max(maxY, contour[index + 1]);
+    index += 2;
+  }
+  let axisAligned = true;
+  index = 0;
+  while (index < contour.length) {
+    const x = contour[index];
+    const y = contour[index + 1];
+    if (
+      !(
+        (Math.abs(x - minX) <= NORMALIZE_EPSILON || Math.abs(x - maxX) <= NORMALIZE_EPSILON) &&
+        (Math.abs(y - minY) <= NORMALIZE_EPSILON || Math.abs(y - maxY) <= NORMALIZE_EPSILON)
+      )
+    ) {
+      axisAligned = false;
+    }
+    index += 2;
+  }
+  if (axisAligned) {
+    return [minX, minY, maxX, maxY];
+  }
+  return null;
+}
+
 export function normalizeClipRegion(out: Readonly<ClipRegion>, clip: Readonly<ClipRegion>): void {
   guardClipRegionUse(out);
   guardClipRegionUse(clip);
   const [rect, contours, winding] = snapshotClipRegion(clip);
-  let normalized: number[] | null = null;
-  if (contours !== null) {
-    const sourceContours = contours;
-    if (sourceContours.length === 1 && sourceContours[0].length === 8) {
-      const contour = sourceContours[0];
-      let minX = Number.POSITIVE_INFINITY;
-      let minY = Number.POSITIVE_INFINITY;
-      let maxX = Number.NEGATIVE_INFINITY;
-      let maxY = Number.NEGATIVE_INFINITY;
-      let index = 0;
-      while (index < contour.length) {
-        minX = Math.min(minX, contour[index]);
-        minY = Math.min(minY, contour[index + 1]);
-        maxX = Math.max(maxX, contour[index]);
-        maxY = Math.max(maxY, contour[index + 1]);
-        index += 2;
-      }
-      let axisAligned = true;
-      index = 0;
-      while (index < contour.length) {
-        const x = contour[index];
-        const y = contour[index + 1];
-        if (
-          !(
-            (Math.abs(x - minX) <= NORMALIZE_EPSILON || Math.abs(x - maxX) <= NORMALIZE_EPSILON) &&
-            (Math.abs(y - minY) <= NORMALIZE_EPSILON || Math.abs(y - maxY) <= NORMALIZE_EPSILON)
-          )
-        ) {
-          axisAligned = false;
-        }
-        index += 2;
-      }
-      if (axisAligned) {
-        normalized = [minX, minY, maxX, maxY];
-      }
-    }
-  }
+  const normalized = normalizedClipRegionBounds(contours);
   out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   if (normalized !== null) {
@@ -433,11 +449,13 @@ function pointInContours(contours: Readonly<number[][]>, winding: PathWinding, p
 
 export function releaseClipRegion(clip: Readonly<ClipRegion>): void {
   const [guard, released] = snapshotClipRegionReleaseGuard(clip);
-  if (released) {
-    if (guard !== null) {
-      const installedGuard = guard;
-      installedGuard(clip);
-    }
+  if (!released) {
+    releaseClipRegionToPool(clip);
+    return;
+  }
+  if (guard !== null) {
+    const installedGuard = guard;
+    installedGuard(clip);
   }
   releaseClipRegionToPool(clip);
 }
@@ -482,13 +500,7 @@ export function setClipRegionToContours(
   guardClipRegionUse(out);
   const explanation = explainClipRegionContours(contours);
   const guard = getClipRegionContoursGuard();
-  if (explanation !== null) {
-    const issue = explanation;
-    if (guard !== null) {
-      const installedGuard = guard;
-      installedGuard(issue, contours);
-    }
-  }
+  callClipRegionContoursGuard(explanation, guard, contours);
   out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   setRectangleToContoursBounds(mutableOut.rect, contours);
@@ -607,8 +619,9 @@ export function transformClipRegion(
         a * x + c * (y + height) + tx,
         b * x + d * (y + height) + ty,
       ];
-      setRectangleToContoursBounds(mutableOut.rect, [quad]);
-      mutableOut.contours = [quad];
+      const contours = [quad];
+      setRectangleToContoursBounds(mutableOut.rect, contours);
+      mutableOut.contours = contours;
       mutableOut.winding = PathWinding.NonZero;
     }
   }
