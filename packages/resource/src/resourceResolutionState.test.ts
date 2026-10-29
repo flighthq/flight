@@ -1,14 +1,31 @@
-import { ResourceResolutionState } from './resourceResolutionState.ts';
+// Generated from crates/flight-resource/tests/resource_resolution_state_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-describe('ResourceResolutionState', () => {
-  it('names the four lifecycle states as canonical PascalCase values', () => {
-    expect(ResourceResolutionState.Unresolved).toBe('Unresolved');
-    expect(ResourceResolutionState.Loading).toBe('Loading');
-    expect(ResourceResolutionState.Resolved).toBe('Resolved');
-    expect(ResourceResolutionState.Failed).toBe('Failed');
-  });
+import { describe, expect, it } from 'vitest';
 
-  it('is a closed four-member vocabulary', () => {
-    expect(Object.values(ResourceResolutionState).sort()).toEqual(['Failed', 'Loading', 'Resolved', 'Unresolved']);
+import type { ResourceResolutionState } from './contract.ts';
+
+function getStateOrdinal(state: ResourceResolutionState): number {
+  return (() => {
+    const matchValue = state;
+    switch (matchValue) {
+      case 'Failed':
+        return 0;
+      case 'Loading':
+        return 1;
+      case 'Resolved':
+        return 2;
+      case 'Unresolved':
+        return 3;
+    }
+  })();
+}
+
+describe('resourceResolutionState', () => {
+  it('is a closed four member vocabulary', () => {
+    expect(getStateOrdinal('Failed')).toEqual(0);
+    expect(getStateOrdinal('Loading')).toEqual(1);
+    expect(getStateOrdinal('Resolved')).toEqual(2);
+    expect(getStateOrdinal('Unresolved')).toEqual(3);
   });
 });

@@ -2,4 +2,8 @@
 
 mod resource_resolution_state;
 
-pub use resource_resolution_state::*;
+pub mod contract;
+
+// Public lane equals the contract lane, mirroring TS `index.ts` and `contract.ts`, which both export
+// all of resource_resolution_state.
+pub use contract::*;
