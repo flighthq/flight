@@ -1,6 +1,7 @@
 // Generated from crates/flight-textlayout/tests/text_layout_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
 import type { TextMeasureFunction } from '@flighthq/textshaper/contract';
 import { describe, expect, it } from 'vitest';
@@ -8,7 +9,6 @@ import { describe, expect, it } from 'vitest';
 import {
   TEXT_LAYOUT_GUTTER,
   computeTextLayout,
-  createTextFormatRange,
   createTextLayoutResult,
   initializeTextLayoutResult,
   isTextLayoutTruncated,

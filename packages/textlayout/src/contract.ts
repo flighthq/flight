@@ -53,12 +53,10 @@ export type {
   TextMetrics,
   TextSelectionRectangle,
 } from './types.ts';
-export { createTextFormatRange, initializeTextFormatRange } from '@flighthq/textformat/contract';
 export type {
   TextFormat,
   TextFormatAlign,
   TextFormatListMarker,
   TextFormatRangeRaw,
 } from '@flighthq/textformat/contract';
-export { measureText } from '@flighthq/textshaper/contract';
 export type { HostTextShaperCapability, TextDirection, TextMeasureFunction } from '@flighthq/textshaper/contract';

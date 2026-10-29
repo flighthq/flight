@@ -1,9 +1,9 @@
 // Generated from crates/flight-text/src/rich_text_content.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { mergeTextFormat } from '@flighthq/textformat/contract';
+import { createTextFormatRange, mergeTextFormat } from '@flighthq/textformat/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
-import { createRichTextContent, createTextFormatRange } from '@flighthq/textlayout/contract';
+import { createRichTextContent } from '@flighthq/textlayout/contract';
 import type { RichTextContent } from '@flighthq/textlayout/contract';
 
 import type { RichTextData, RichTextRuntime } from './types.ts';
@@ -45,7 +45,7 @@ function appendText(
     return;
   }
   const valueLength = utf16Len(value);
-  const remaining = maxChars < 0 ? valueLength : saturatingSub(maxChars, utf16Len(out.text));
+  const remaining = maxChars < 0 ? valueLength : saturatingSub(maxChars >>> 0, utf16Len(out.text));
   if (remaining === 0) {
     return;
   }

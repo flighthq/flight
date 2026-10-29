@@ -7,12 +7,9 @@ import { invalidateNodeAppearance, invalidateNodeLocalContent } from '@flighthq/
 import type { NodeRef } from '@flighthq/node/contract';
 import { setRichTextScrollH, setRichTextScrollV } from '@flighthq/text/contract';
 import type { RichText, TextInputHistoryEntry, TextInputState } from '@flighthq/text/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
-import {
-  TEXT_BOUNDS_GUTTER,
-  createTextFormatRange,
-  getRichTextSelectionRectangles,
-} from '@flighthq/textlayout/contract';
+import { TEXT_BOUNDS_GUTTER, getRichTextSelectionRectangles } from '@flighthq/textlayout/contract';
 import type { TextLayoutGroup, TextLayoutResult, TextSelectionRectangle } from '@flighthq/textlayout/contract';
 import {
   getNextGraphemeBoundary,
@@ -53,7 +50,7 @@ enum KeyboardCommand {
 const DESIRED_CARET_X_UNSET: number = -1.0;
 
 function addSigned(value: number, offset: number): number {
-  return offset < 0 ? Math.max(0, value - -offset) : value + offset;
+  return offset < 0 ? Math.max(0, (value - -offset) >>> 0) : value + (offset >>> 0);
 }
 
 function adjustTextFormatRanges(
@@ -64,7 +61,7 @@ function adjustTextFormatRanges(
   insertLength: number,
 ): void {
   const removeLength = endIndex - beginIndex;
-  const offset = insertLength - removeLength;
+  const offset = (insertLength | 0) - (removeLength | 0);
   let index = 0;
   while (index < ranges.length) {
     const range = ranges[index];
@@ -176,12 +173,12 @@ export function applyTextInputRestriction(source: RichText, text: string, replac
   const restrict = getInputState(source)!.restrict;
   value = restrictTextInput(value, restrict);
   if (maxChars > 0) {
-    const maxLength = maxChars - currentLength + replaceLength;
+    const maxLength = (maxChars | 0) - (currentLength | 0) + (replaceLength | 0);
     if (maxLength <= 0) {
       return '';
     }
-    if (utf16Len(value) > maxLength) {
-      value = utf16Slice(value, 0, maxLength);
+    if (utf16Len(value) > maxLength >>> 0) {
+      value = utf16Slice(value, 0, maxLength >>> 0);
     }
   }
   return value;
@@ -201,7 +198,7 @@ function clampIndex(value: number, length: number): number {
   if (value <= 0) {
     return 0;
   }
-  return Math.min(value, length);
+  return Math.min(value >>> 0, length);
 }
 
 export function clearTextInputHistory(source: RichText): void {
@@ -881,14 +878,14 @@ function recordTextInputEdit(
   mergeKind?: string,
 ): void {
   if (state.historyIndex < (state.history.length | 0) - 1) {
-    const historyIndex = Math.max(state.historyIndex + 1, 0);
+    const historyIndex = Math.max(state.historyIndex + 1, 0) >>> 0;
     const history: TextInputHistoryEntry[] = state.history;
     (<T>(items: T[], length: number): void => {
       items.length = Math.min(items.length, length);
     })(history, historyIndex);
   }
   if (state.historyIndex >= 0) {
-    const previous = state.history[state.historyIndex];
+    const previous = state.history[state.historyIndex >>> 0];
     if (mergeKind !== undefined && previous.mergeKind === mergeKind) {
       previous.textAfter = String(textAfter);
       previous.caretIndexAfter = state.caretIndex;
@@ -921,7 +918,7 @@ export function redoTextInput(source: RichText): void {
     return;
   }
   stateGuard.historyIndex += 1;
-  const record = stateGuard.history[stateGuard.historyIndex];
+  const record = stateGuard.history[stateGuard.historyIndex >>> 0];
   void stateGuard;
   applyHistoryRecord(source, state, record.textAfter, record.caretIndexAfter, record.selectionIndexAfter);
 }
@@ -1024,7 +1021,7 @@ export function scrollTextInputCaretIntoView(
     source = source!;
     return [source.data.scrollV, source.data.scrollH];
   })();
-  const scrollVLine = Math.max((scrollV | 0) - 1, 0);
+  const scrollVLine = Math.max((scrollV | 0) - 1, 0) >>> 0;
   let viewTop = 0.0;
   const lineHeights: Readonly<number[]> = layout.lineHeights;
   for (let index = 0; index < scrollVLine; index += 1) {
@@ -1069,10 +1066,10 @@ export function selectLineAtTextInputIndex(source: RichText, index: number): voi
   const clamped = clampIndex(index, units.length);
   let start = clamped;
   let end = clamped;
-  while (start > 0 && units[start - 1] !== 10) {
+  while (start > 0 && units[start - 1] !== (10 & 0xffff)) {
     start -= 1;
   }
-  while (end < units.length && units[end] !== 10) {
+  while (end < units.length && units[end] !== (10 & 0xffff)) {
     end += 1;
   }
   setTextInputSelection(source, start | 0, end | 0);
@@ -1182,7 +1179,7 @@ export function undoTextInput(source: RichText): void {
   if (stateGuard.historyIndex < 0) {
     return;
   }
-  const record = stateGuard.history[stateGuard.historyIndex];
+  const record = stateGuard.history[stateGuard.historyIndex >>> 0];
   stateGuard.historyIndex -= 1;
   void stateGuard;
   applyHistoryRecord(source, state, record.textBefore, record.caretIndexBefore, record.selectionIndexBefore);

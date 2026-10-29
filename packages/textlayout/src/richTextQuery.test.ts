@@ -2,6 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { createRectangle } from '@flighthq/geometry/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
 import type { TextMeasureFunction } from '@flighthq/textshaper/contract';
 import { describe, expect, it } from 'vitest';
@@ -9,7 +10,6 @@ import { describe, expect, it } from 'vitest';
 import {
   computeRichTextCharIndexAtPoint,
   computeRichTextLineMetrics,
-  createTextFormatRange,
   createTextLayoutGroup,
   createTextLayoutResult,
   getRichTextCharBoundaries,
