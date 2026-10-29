@@ -7,7 +7,8 @@ import pc from 'picocolors';
 
 import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy.ts';
 import { collectFastEntryPointInventory } from './fast-export-inventory.ts';
-import { getParsedOxcSource } from './oxc-source.ts';
+import { getOxcUnsupportedSourcePaths, getParsedOxcSourceUnlessUnsupported } from './oxc-source.ts';
+import type { ParsedOxcSource } from './oxc-source.ts';
 import {
   getCoreGuardImportViolations,
   getCoreGuardRuntimeImportViolations,
@@ -26,6 +27,8 @@ import { isSdkBarrelExcludedPackage } from './sdk-policy.ts';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
+const oxcUnsupportedSourcePaths = getOxcUnsupportedSourcePaths(readFileSync(join(root, '.oxfmtrc.json'), 'utf-8'));
+const skippedOxcUnsupportedSources = new Set<string>();
 
 interface ExamplePackageJson {
   name?: string;
@@ -222,8 +225,18 @@ function getAllTsFiles(dir: string): { source: string[]; test: string[] } {
   return { source, test };
 }
 
+// The parsed source, or `null` for a file `.oxfmtrc.json` lists by exact path that Oxc cannot parse; such
+// a file is reported as skipped rather than failing the whole run.
+function getCheckedOxcSource(filePath: string): ParsedOxcSource | null {
+  const parsed = getParsedOxcSourceUnlessUnsupported(filePath, root, oxcUnsupportedSourcePaths);
+  if (parsed === null) skippedOxcUnsupportedSources.add(relative(root, filePath).replaceAll('\\', '/'));
+  return parsed;
+}
+
 function getStaticModuleSpecifiers(filePath: string): string[] {
-  const { module } = getParsedOxcSource(filePath);
+  const parsed = getCheckedOxcSource(filePath);
+  if (parsed === null) return [];
+  const { module } = parsed;
   return [
     ...module.staticImports.map((statement) => statement.moduleRequest.value),
     ...module.staticExports.flatMap((statement) =>
@@ -233,7 +246,8 @@ function getStaticModuleSpecifiers(filePath: string): string[] {
 }
 
 function getModuleSpecifiers(filePath: string): string[] {
-  const parsed = getParsedOxcSource(filePath);
+  const parsed = getCheckedOxcSource(filePath);
+  if (parsed === null) return [];
   const specifiers = getStaticModuleSpecifiers(filePath);
   for (const statement of parsed.program.body) {
     if (
@@ -336,7 +350,8 @@ function scanTypeOnlyOwnerContractViolations(files: string[]): Map<string, strin
   };
 
   for (const filePath of files) {
-    const parsed = getParsedOxcSource(filePath);
+    const parsed = getCheckedOxcSource(filePath);
+    if (parsed === null) continue;
     for (const statement of parsed.program.body) {
       if (statement.type === 'ImportDeclaration') {
         const typeOnly =
@@ -426,7 +441,9 @@ function checkNoTopLevelSideEffects(errors: CheckError[], pkgDir: string, bin: P
 
   for (const sourcePath of getSourceFiles(join(pkgDir, 'src'))) {
     if (binSources.has(sourcePath)) continue;
-    const { program, text } = getParsedOxcSource(sourcePath);
+    const parsed = getCheckedOxcSource(sourcePath);
+    if (parsed === null) continue;
+    const { program, text } = parsed;
     for (const statement of program.body) {
       if (statement.type !== 'ExpressionStatement' || !isTopLevelSideEffectExpression(statement.expression)) continue;
 
@@ -489,7 +506,12 @@ const workspaceManifests = packageDirs.flatMap((pkgDir): WorkspaceManifest[] => 
 const packageLock = readJson<PackageLockJson>(join(root, 'package-lock.json'));
 const packageLockErrors: CheckError[] =
   packageLock === null
-    ? [{ label: 'package-lock.json parses', detail: 'repair package-lock.json without changing unrelated entries' }]
+    ? [
+        {
+          label: 'package-lock.json parses',
+          detail: 'repair package-lock.json without changing unrelated entries',
+        },
+      ]
     : getPackageLockWorkspaceViolations(workspaceManifests, packageLock, (path) => existsSync(join(root, path)));
 
 for (const pkgDir of packageDirs) {
@@ -992,17 +1014,25 @@ if (jsonMode) {
           warnings: r.warnings,
           unpromotedExports: r.unpromotedExports,
         })),
-        examples: exampleResults.map((r) => ({ name: r.name, errors: r.errors })),
+        examples: exampleResults.map((r) => ({
+          name: r.name,
+          errors: r.errors,
+        })),
         licenseMetadata: { errors: packageLicenseErrors },
         packageLock: { errors: packageLockErrors },
         layerPolicy: { errors: layerPolicyErrors },
         barrelSync: { errors: barrelSyncErrors },
+        skippedOxcUnsupportedSources: [...skippedOxcUnsupportedSources].sort(),
       },
       null,
       2,
     ),
   );
   process.exit(totalErrors === 0 ? 0 : 1);
+}
+
+for (const path of [...skippedOxcUnsupportedSources].sort()) {
+  console.log(pc.dim(`skipped ${path} (listed in .oxfmtrc.json; Oxc cannot parse it)`));
 }
 
 for (const { name, errors } of failedPackages) {
