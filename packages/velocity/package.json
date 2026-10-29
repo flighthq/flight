@@ -32,6 +32,8 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-velocity --package velocity",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-velocity --package velocity --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",
@@ -40,8 +42,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/node": "*",
-    "@flighthq/types": "*"
+    "@flighthq/node": "*"
   },
   "devDependencies": {
     "@flighthq/scene2d": "*",

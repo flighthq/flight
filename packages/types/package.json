@@ -50,6 +50,7 @@
     "@flighthq/resource": "*",
     "@flighthq/signals": "*",
     "@flighthq/textformat": "*",
+    "@flighthq/velocity": "*",
     "@flighthq/useragent": "*"
   },
   "peerDependencies": {

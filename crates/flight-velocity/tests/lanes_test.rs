@@ -43,7 +43,14 @@ fn ts_module_values(path: &Path) -> BTreeSet<String> {
 /// `export * from` statements. Type-only exports are excluded.
 fn ts_index_values() -> BTreeSet<String> {
     let src = package_src_dir();
-    let index = fs::read_to_string(src.join("index.ts")).unwrap();
+    // Line comments (such as a generated provenance header) would otherwise prefix the first
+    // statement and hide its `export` keyword.
+    let index: String = fs::read_to_string(src.join("index.ts"))
+        .unwrap()
+        .lines()
+        .filter(|line| !line.trim_start().starts_with("//"))
+        .collect::<Vec<_>>()
+        .join("\n");
     let mut names = BTreeSet::new();
     for statement in index.split(';') {
         let statement = statement.trim();

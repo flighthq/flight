@@ -2,7 +2,7 @@ import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contr
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { contributeTransformVelocity } from './transformVelocity.ts';
-import { beginVelocityFrame, contributeVelocity, createVelocityField, getVelocity } from './velocityField.ts';
+import { beginVelocityFrame, contributeVelocity, createVelocityField, getVelocity } from './velocityStore.ts';
 
 function readVelocity(field: Parameters<typeof getVelocity>[0], source: Parameters<typeof getVelocity>[1]) {
   const out = { x: 0, y: 0 };

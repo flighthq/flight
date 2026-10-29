@@ -184,6 +184,7 @@ export * from '@flighthq/types';
 export * from '@flighthq/updater';
 export * from '@flighthq/useragent';
 export * from '@flighthq/velocity';
+export type { Velocity2D, VelocityExplanation, VelocityField, VelocitySample } from '@flighthq/velocity';
 export * from '@flighthq/video';
 export * from '@flighthq/webcam';
 export * from '@flighthq/xml';

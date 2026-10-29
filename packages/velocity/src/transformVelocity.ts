@@ -1,53 +1,57 @@
+// Generated from crates/flight-velocity/src/transform_velocity.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from '@flighthq/node/contract';
-import type { Transform2DNode, VelocityField } from '@flighthq/types/contract';
+import type { NodeRef } from '@flighthq/node/contract';
 
-import { ensureVelocitySample } from './velocityField.ts';
+import type { VelocityField } from './velocityStore.ts';
+import { ensureNodeVelocitySample } from './velocityStore.ts';
 
-// The default velocity contributor. Walks `root`'s subtree top-down, deriving each node's screen-space
-// velocity from the delta of its world transform since the previous frame, then commits the current world
-// transform as the new previous. This is the "any transform is velocity" baseline — a tween, physics
-// step, camera move, or manual edit all change world transforms and so produce velocity here for free.
-//
-// Nodes an explicit contributor already set this frame keep that velocity (their explicitFrameId matches),
-// but still have their previous transform updated, so order relative to explicit contributors does not
-// matter. Run once per frame after beginVelocityFrame. Velocity is in node units; a producer scales by
-// the render pixel ratio.
-export function contributeTransformVelocity<Fields extends object>(
-  field: VelocityField,
-  root: Readonly<Transform2DNode<Fields>>,
-): void {
+/**
+ * The default velocity contributor. Walks `root`'s subtree top-down, deriving each node's
+ * screen-space velocity from the delta of its world transform since the previous frame, then
+ * commits the current world transform as the new previous. This is the "any transform is
+ * velocity" baseline: a tween, physics step, camera move, or manual edit all change world
+ * transforms and so produce velocity here for free.
+ *
+ * Nodes an explicit contributor already set this frame keep that velocity (their
+ * `explicitFrameId` matches), but still have their previous transform updated, so order
+ * relative to explicit contributors does not matter. Run once per frame after
+ * `beginVelocityFrame`. Velocity is in node units; a producer scales by the render pixel ratio.
+ */
+export function contributeTransformVelocity(field: VelocityField, root: Readonly<NodeRef>): void {
   visitTransformVelocity(field, root);
 }
 
-function visitTransformVelocity<Fields extends object>(
-  field: VelocityField,
-  node: Readonly<Transform2DNode<Fields>>,
-): void {
-  const mutableNode = node as Transform2DNode<Fields>;
-  ensureNodeWorldMatrix(mutableNode);
-  const world = getNodeWorldMatrix(mutableNode);
-  const sample = ensureVelocitySample(field, node);
-
-  if (sample.explicitFrameId !== field.frameId) {
+function visitTransformVelocity(field: VelocityField, node: Readonly<NodeRef>): void {
+  ensureNodeWorldMatrix(node);
+  const world = getNodeWorldMatrix(node);
+  const frameId = field.frameId;
+  const sample = ensureNodeVelocitySample(field, node);
+  if (sample.explicitFrameId !== frameId) {
     if (sample.previousWorldTransform !== null) {
-      sample.velocity.x = world.tx - sample.previousWorldTransform.tx;
-      sample.velocity.y = world.ty - sample.previousWorldTransform.ty;
+      const previous = sample.previousWorldTransform;
+      sample.velocity.x = world.tx - previous.tx;
+      sample.velocity.y = world.ty - previous.ty;
     } else {
-      sample.velocity.x = 0;
-      sample.velocity.y = 0;
+      sample.velocity.x = 0.0;
+      sample.velocity.y = 0.0;
     }
-    sample.lastFrameId = field.frameId;
+    sample.lastFrameId = frameId;
   }
-
-  if (sample.previousWorldTransform === null) sample.previousWorldTransform = createMatrix();
-  copyMatrix(sample.previousWorldTransform, world);
-
-  // Children of a transform node in a homogeneous display/sprite graph are themselves transform nodes;
-  // the hierarchy type does not carry that, so the trait is asserted.
-  const count = getNodeChildCount(mutableNode);
-  for (let i = 0; i < count; i++) {
-    const child = getNodeChildAt(mutableNode, i);
-    if (child !== null) visitTransformVelocity(field, child as unknown as Readonly<Transform2DNode<Fields>>);
+  if (sample.previousWorldTransform === null) {
+    sample.previousWorldTransform = createMatrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+  }
+  if (sample.previousWorldTransform !== null) {
+    const previous = sample.previousWorldTransform;
+    copyMatrix(previous, world);
+  }
+  const count = getNodeChildCount(node);
+  for (let i = 0; i < count; i += 1) {
+    if (getNodeChildAt(node, i | 0) !== null) {
+      const child = getNodeChildAt(node, i | 0);
+      visitTransformVelocity(field, child);
+    }
   }
 }

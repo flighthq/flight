@@ -1,4 +1,4 @@
-use flight_geometry::*;
+use flight_geometry::create_matrix;
 use flight_velocity::contract::*;
 
 mod create_velocity_sample {

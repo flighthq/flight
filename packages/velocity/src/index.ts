@@ -1,14 +1,18 @@
-export * from './transformVelocity.ts';
+// Generated from crates/flight-velocity/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
   addVelocity,
   beginVelocityFrame,
   clampVelocity,
+  contributeTransformVelocity,
   contributeVelocity,
   copyVelocity,
   createVelocityField,
   dampVelocity,
   explainVelocity,
   getVelocity,
+  getVelocitySampleAt,
   hasVelocity,
   isVelocityZero,
   lengthOfVelocity,
@@ -18,5 +22,13 @@ export {
   subtractVelocity,
   suppressVelocity,
   zeroVelocity,
-} from './velocityField.ts';
-export * from './velocitySample.ts';
+} from './contract.ts';
+
+export type {
+  SourceId,
+  Velocity2D,
+  VelocityExplanation,
+  VelocityField,
+  VelocityReason,
+  VelocitySample,
+} from './contract.ts';
