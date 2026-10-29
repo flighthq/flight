@@ -7966,6 +7966,7 @@ fn emit_expression_value(
             ))
         }
         Expr::Block(block) => emit_block_expression(&block.block, entities),
+        Expr::Unsafe(unsafe_block) => emit_block_expression(&unsafe_block.block, entities),
         Expr::Call(call) => {
             if expression_is_path(&call.func, "drop") && call.args.len() == 1 {
                 return Ok(format!(
@@ -14272,6 +14273,9 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::Match(match_expression), _) => {
             emit_match_statement(out, match_expression, entities, indent)?;
+        }
+        Stmt::Expr(Expr::Unsafe(unsafe_block), _) => {
+            emit_block(out, &unsafe_block.block.stmts, entities, indent)?;
         }
         Stmt::Expr(Expr::Break(_), _) => {
             write_indent(out, indent);
