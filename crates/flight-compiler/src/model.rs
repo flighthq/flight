@@ -53,6 +53,7 @@ pub(crate) struct TestSuite {
     pub(crate) name: String,
     pub(crate) skipped_tests: Vec<String>,
     pub(crate) tests: Vec<TestCase>,
+    pub(crate) uses: Vec<ItemUse>,
 }
 
 pub(crate) struct TestCase {
@@ -885,6 +886,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
                 name: "portable_tests".to_string(),
                 skipped_tests: top_level_skipped_tests,
                 tests: top_level_tests,
+                uses: Vec::new(),
             },
         );
     }
@@ -910,6 +912,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
     let mut skipped_tests = Vec::new();
     let mut helpers = Vec::new();
     let mut tests = Vec::new();
+    let mut uses = Vec::new();
     for item in items {
         match item {
             Item::Fn(function)
@@ -925,7 +928,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
                     should_panic,
                 });
             }
-            Item::Use(_) => {}
+            Item::Use(item_use) => uses.push(item_use),
             Item::Fn(function) => helpers.push(function),
             _ => {
                 return Err(compile_error(format!(
@@ -946,6 +949,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
         name: module.ident.to_string(),
         skipped_tests,
         tests,
+        uses,
     });
 }
 

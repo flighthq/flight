@@ -2659,6 +2659,33 @@ mod sample_velocity {
     }
 
     #[test]
+    fn routes_module_local_cross_crate_test_imports_to_their_own_contracts() {
+        let source = r#"
+use flight_velocity::contract::*;
+
+mod sample_velocity {
+    use flight_geometry::Matrix;
+    use super::*;
+
+    fn read_a(matrix: &Matrix) -> f32 {
+        return matrix.a;
+    }
+
+    #[test]
+    fn reads_a_cross_crate_matrix() {
+        let matrix = Matrix { a: 1.0 };
+        assert_eq!(read_a(&matrix), 1.0);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/velocity/contract").unwrap();
+
+        assert!(output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";"));
+        assert!(!output.contains("  Matrix,\n} from \"@flighthq/velocity/contract\";"));
+    }
+
+    #[test]
     fn lowers_shared_test_state_and_string_union_case_tables() {
         let production = r#"
 //! flight-compiler: string-union Status

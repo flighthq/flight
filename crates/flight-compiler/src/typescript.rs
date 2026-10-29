@@ -4514,9 +4514,18 @@ pub(crate) fn test_cross_crate_imports(
     BTreeMap<String, BTreeSet<String>>,
     BTreeMap<String, BTreeSet<String>>,
 ) {
-    let symbols = cross_crate_symbols(&program.uses);
+    fn merge_imports(
+        target: &mut BTreeMap<String, BTreeSet<String>>,
+        source: BTreeMap<String, BTreeSet<String>>,
+    ) {
+        for (module, names) in source {
+            target.entry(module).or_default().extend(names);
+        }
+    }
+
+    let top_level_symbols = cross_crate_symbols(&program.uses);
     let mut collector = CrossCrateUsageCollector {
-        symbols: &symbols,
+        symbols: &top_level_symbols,
         struct_literals_are_types: true,
         type_names: BTreeSet::new(),
         value_names: BTreeSet::new(),
@@ -4524,16 +4533,7 @@ pub(crate) fn test_cross_crate_imports(
     for constant in &program.constants {
         collector.visit_item_const(constant);
     }
-    for function in program
-        .helpers
-        .iter()
-        .chain(program.suites.iter().flat_map(|suite| {
-            suite
-                .helpers
-                .iter()
-                .chain(suite.tests.iter().map(|test| &test.function))
-        }))
-    {
+    for function in &program.helpers {
         collector.visit_item_fn(function);
     }
     for structure in &program.structs {
@@ -4542,7 +4542,34 @@ pub(crate) fn test_cross_crate_imports(
     for type_alias in &program.type_aliases {
         collector.visit_item_type(type_alias);
     }
-    return finish_cross_crate_imports(collector);
+    let (mut value_imports, mut type_imports) = finish_cross_crate_imports(collector);
+    for suite in &program.suites {
+        let mut symbols = top_level_symbols.clone();
+        symbols.extend(cross_crate_symbols(&suite.uses));
+        let mut collector = CrossCrateUsageCollector {
+            symbols: &symbols,
+            struct_literals_are_types: true,
+            type_names: BTreeSet::new(),
+            value_names: BTreeSet::new(),
+        };
+        for function in suite
+            .helpers
+            .iter()
+            .chain(suite.tests.iter().map(|test| &test.function))
+        {
+            collector.visit_item_fn(function);
+        }
+        let (suite_value_imports, suite_type_imports) = finish_cross_crate_imports(collector);
+        merge_imports(&mut value_imports, suite_value_imports);
+        merge_imports(&mut type_imports, suite_type_imports);
+    }
+    for (module, values) in &value_imports {
+        if let Some(types) = type_imports.get_mut(module) {
+            types.retain(|name| !values.contains(name));
+        }
+    }
+    type_imports.retain(|_, names| !names.is_empty());
+    return (value_imports, type_imports);
 }
 
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules
