@@ -176,5 +176,5 @@ export interface StorageNamespace {
 // Caller-owned core event entity. attachStorage optionally adds raw cross-origin/provider delivery;
 // same-tab mutations emit only when this entity is passed explicitly to the mutation operation.
 export interface StorageSignals extends Entity {
-  onChange: Signal<(change: Readonly<StorageChange>) => void>;
+  onChange: Signal<Readonly<StorageChange>>;
 }
