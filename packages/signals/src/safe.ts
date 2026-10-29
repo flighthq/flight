@@ -1,65 +1,100 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Generated from crates/flight-signals/src/safe.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { nullSignalEmit } from './internal.ts';
-import type { Signal, SignalData } from './signalTypes.ts';
+import { signalDataCancelled } from './emitter.ts';
+import { compactSignalData } from './slot.ts';
+import type { SignalData, SignalRaw, SignalSlot, SlotId } from './types.ts';
 
 /**
- * Emits to the priority-ordered listener set captured at emission start.
+ * Emits to the priority-ordered set captured at emission start (TS `emitSignalSafe`).
  *
- * Connections added while this snapshot is running wait for a later emission. A connection removed
- * after the snapshot was captured still receives this emission. Nested safe emissions capture their
- * own listener set. This deterministic mutation behavior costs one copy of each dispatch lane.
+ * Connections added while the snapshot runs wait for a later emission; a connection removed
+ * after the snapshot was captured still receives this emission. Nested safe emissions take
+ * their own snapshot. Once registrations are consumed before they are invoked, so a nested
+ * safe emission cannot repeat one.
  */
-export function emitSignalSafe<T extends (...args: any[]) => void>(signal: Signal<T>, ...args: Parameters<T>): void {
-  const data = signal.data;
-  if (data === null) return;
-
-  const slots = data.slots.slice();
-  const priorities = data.priorities.slice();
-  const repeat = data.repeat.slice();
-  data.cancelled = false;
-  data.depth++;
-  try {
-    for (let i = 0; i < slots.length; i++) {
-      const slot = slots[i];
-      if (slot === null) continue;
-      // Consume once registrations before invoking them so a once callback cannot repeat itself by
-      // nesting another safe emission. A copied slot remains callable if another listener removed it.
-      if (!repeat[i]) tombstoneOnceSlot(data, slot, priorities[i]);
-      slot(...args);
-      if (data.cancelled) break;
-    }
-  } finally {
-    data.depth--;
-    if (data.depth === 0) compactSignalData(signal, data);
-  }
-}
-
-function tombstoneOnceSlot<T extends (...args: any[]) => void>(data: SignalData<T>, slot: T, priority: number): void {
-  for (let i = 0; i < data.slots.length; i++) {
-    if (data.slots[i] !== slot || data.repeat[i] || data.priorities[i] !== priority) continue;
-    data.slots[i] = null;
+export function emitSignalSafe<T>(signal: SignalRaw<T>, args: T): void {
+  const snapshot = takeSafeSignalSnapshot(signal.data);
+  if (snapshot === undefined) {
     return;
   }
+  const [slots, ids, repeat, paused] = snapshot;
+  for (let index = 0; index < slots.length; index += 1) {
+    {
+      const $slot = slots[index];
+      if ($slot !== undefined) {
+        const slot = $slot;
+        if (!paused[index]) {
+          if (!repeat[index]) {
+            tombstoneOnceSlot(signal.data, ids[index]);
+          }
+          slot(args);
+          if (signalDataCancelled(signal.data)) {
+            break;
+          }
+        }
+      }
+    }
+  }
+  if (endSafeSignalDispatch(signal.data) && compactSignalData(signal.data)) {
+    signal.data = undefined;
+    signal.emit = (_unused0) => {};
+  }
 }
 
-function compactSignalData<T extends (...args: any[]) => void>(signal: Signal<T>, data: SignalData<T>): void {
-  let write = 0;
-  for (let read = 0; read < data.slots.length; read++) {
-    if (data.slots[read] === null) continue;
-    if (write !== read) {
-      data.slots[write] = data.slots[read];
-      data.priorities[write] = data.priorities[read];
-      data.repeat[write] = data.repeat[read];
-    }
-    write++;
+function takeSafeSignalSnapshot<T>(
+  data: SignalData<T> | undefined,
+): readonly [(SignalSlot<T> | undefined)[], SlotId[], boolean[], boolean[]] | undefined {
+  let state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return undefined;
   }
-  if (write === data.slots.length) return;
-  data.slots.length = write;
-  data.priorities.length = write;
-  data.repeat.length = write;
-  if (write === 0 && signal.data === data) {
-    signal.emit = nullSignalEmit as unknown as T;
-    signal.data = null;
+  let slots: (SignalSlot<T> | undefined)[] = [] as never[];
+  for (const slot of signalData.slots) {
+    slots.push(slot);
+  }
+  let ids: SlotId[] = [] as never[];
+  for (const id of signalData.ids) {
+    ids.push(id);
+  }
+  let repeat: boolean[] = [] as never[];
+  for (const value of signalData.repeat) {
+    repeat.push(value);
+  }
+  let paused: boolean[] = [] as never[];
+  for (const value of signalData.paused) {
+    paused.push(value);
+  }
+  signalData.cancelled = false;
+  signalData.depth += 1;
+  return [slots, ids, repeat, paused];
+}
+
+function endSafeSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
+  let state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  signalData.depth -= 1;
+  return signalData.depth === 0;
+}
+
+function tombstoneOnceSlot<T>(data: SignalData<T> | undefined, id: SlotId): void {
+  let state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return;
+  }
+  for (let index = 0; index < signalData.slots.length; index += 1) {
+    if (
+      signalData.slots[index] !== undefined &&
+      signalData.ids[index].value === id.value &&
+      !signalData.repeat[index]
+    ) {
+      signalData.slots[index] = undefined;
+      return;
+    }
   }
 }

@@ -9,14 +9,20 @@ use crate::types::{
 
 // flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
 pub fn create_signal_timer_state() -> SignalTimerState {
-    let mut out = SignalTimerState::default();
+    let mut out = SignalTimerState {
+        now_ms: 0.0,
+        timers: Vec::new(),
+        next_id: 1,
+    };
     initialize_signal_timer_state(&mut out);
     return out;
 }
 
 // flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
 pub fn initialize_signal_timer_state(out: &mut SignalTimerState) {
-    *out = SignalTimerState::default();
+    out.now_ms = 0.0;
+    out.timers.clear();
+    out.next_id = 1;
 }
 
 /// Advances explicit timer state to `now_ms`, running every due callback in fire-time order (D5:
@@ -52,7 +58,9 @@ fn take_due_signal_timer(
                         timer_state.timers[current].fire_at_ms,
                         timer_state.timers[current].id.value,
                     );
-                    if candidate < existing {
+                    if candidate.0 < existing.0
+                        || (candidate.0 == existing.0 && candidate.1 < existing.1)
+                    {
                         earliest = Some(index);
                     }
                 }
@@ -73,7 +81,7 @@ fn take_due_signal_timer(
 pub fn clear_signal_timeout(state: &Ref<SignalTimerState>, id: TimerId) {
     let mut timer_state = state.write().unwrap();
     let timers: &mut Vec<SignalTimer> = &mut timer_state.timers;
-    timers.retain(|timer| timer.id != id);
+    timers.retain(|timer| timer.id.value != id.value);
 }
 
 /// Connects a frame-tick signal to a slot at a reduced frame rate (TS
@@ -103,11 +111,11 @@ pub fn connect_signal_at_frame_rate(
 
 // flight-lint: allow(f64) D1: frame rate and accumulated milliseconds use f64 precision
 fn advance_frame_elapsed(elapsed: &Arc<Mutex<f64>>, delta_time: f64, period: f64) -> Option<f64> {
-    let mut elapsed = elapsed.lock().unwrap();
-    *elapsed += delta_time;
-    if *elapsed >= period {
-        let total = *elapsed;
-        *elapsed %= period;
+    let mut guard = elapsed.lock().unwrap();
+    *guard += delta_time;
+    if *guard >= period {
+        let total = *guard;
+        *guard %= period;
         return Some(total);
     }
     return None;
@@ -121,6 +129,11 @@ fn take_pending_signal_args<T: Clone>(pending: &Arc<Mutex<Option<T>>>) -> Option
     let args = (*guard).clone();
     *guard = None;
     return args;
+}
+
+#[derive(Clone)]
+struct PendingSignalArgs<T> {
+    value: T,
 }
 
 /// Connects a slot with debounce semantics (TS `connectSignalDebounced`). Timer state and the
@@ -139,7 +152,7 @@ pub fn connect_signal_debounced<T: Clone + Send + 'static>(
     let trailing = options.and_then(|o| o.trailing).unwrap_or(true);
 
     let timer_id: Arc<Mutex<Option<TimerId>>> = Arc::new(Mutex::new(None));
-    let last_args: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
+    let last_args: Arc<Mutex<Option<PendingSignalArgs<T>>>> = Arc::new(Mutex::new(None));
     let leading_fired = Arc::new(Mutex::new(false));
 
     let handler_slot = slot.clone();
@@ -148,7 +161,9 @@ pub fn connect_signal_debounced<T: Clone + Send + 'static>(
     let handler_last_args = last_args.clone();
     let handler_leading_fired = leading_fired.clone();
     let handler: SignalSlot<T> = Arc::new(move |args: &T| {
-        *handler_last_args.lock().unwrap() = Some(args.clone());
+        *handler_last_args.lock().unwrap() = Some(PendingSignalArgs {
+            value: args.clone(),
+        });
 
         if leading
             && handler_timer_id.lock().unwrap().is_none()
@@ -175,7 +190,7 @@ pub fn connect_signal_debounced<T: Clone + Send + 'static>(
                 if trailing {
                     let args = take_pending_signal_args(&timer_last_args);
                     if let Some(args) = args {
-                        timer_slot(&args);
+                        timer_slot(&args.value);
                     }
                 }
             }),
@@ -213,7 +228,7 @@ pub fn connect_signal_throttled<T: Clone + Send + 'static>(
 
     let last_fired_at: Arc<Mutex<f64>> = Arc::new(Mutex::new(f64::NEG_INFINITY));
     let trailing_timer: Arc<Mutex<Option<TimerId>>> = Arc::new(Mutex::new(None));
-    let last_args: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
+    let last_args: Arc<Mutex<Option<PendingSignalArgs<T>>>> = Arc::new(Mutex::new(None));
 
     let handler_slot = slot.clone();
     let handler_state = state.clone();
@@ -234,7 +249,9 @@ pub fn connect_signal_throttled<T: Clone + Send + 'static>(
             if leading {
                 handler_slot(args);
             } else if trailing {
-                *handler_last_args.lock().unwrap() = Some(args.clone());
+                *handler_last_args.lock().unwrap() = Some(PendingSignalArgs {
+                    value: args.clone(),
+                });
                 let timer_slot = handler_slot.clone();
                 let timer_state = handler_state.clone();
                 let timer_last_fired_at = handler_last_fired_at.clone();
@@ -248,7 +265,7 @@ pub fn connect_signal_throttled<T: Clone + Send + 'static>(
                         *timer_trailing_timer.lock().unwrap() = None;
                         let args = take_pending_signal_args(&timer_last_args);
                         if let Some(args) = args {
-                            timer_slot(&args);
+                            timer_slot(&args.value);
                         }
                     }),
                 );
@@ -258,7 +275,9 @@ pub fn connect_signal_throttled<T: Clone + Send + 'static>(
             if let Some(pending) = *handler_trailing_timer.lock().unwrap() {
                 clear_signal_timeout(&handler_state, pending);
             }
-            *handler_last_args.lock().unwrap() = Some(args.clone());
+            *handler_last_args.lock().unwrap() = Some(PendingSignalArgs {
+                value: args.clone(),
+            });
 
             let timer_slot = handler_slot.clone();
             let timer_state = handler_state.clone();
@@ -273,7 +292,7 @@ pub fn connect_signal_throttled<T: Clone + Send + 'static>(
                     *timer_trailing_timer.lock().unwrap() = None;
                     let args = take_pending_signal_args(&timer_last_args);
                     if let Some(args) = args {
-                        timer_slot(&args);
+                        timer_slot(&args.value);
                     }
                 }),
             );

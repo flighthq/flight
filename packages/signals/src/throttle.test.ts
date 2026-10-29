@@ -1,173 +1,283 @@
-import { createSignal } from './signal.ts';
-import { connectSignalAtFrameRate, connectSignalDebounced, connectSignalThrottled } from './throttle.ts';
+// Generated from crates/flight-signals/tests/throttle_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { initializeSignalTimerState } from '@flighthq/signals/contract';
+import { describe, expect, it } from 'vitest';
+
+import {
+  advanceSignalTimers,
+  clearSignalTimeout,
+  connectSignalAtFrameRate,
+  connectSignalDebounced,
+  connectSignalThrottled,
+  createSignal,
+  createSignalTimerState,
+  emitSignal,
+  setSignalTimeout,
+} from './contract.ts';
+import type { FrameTick, SignalRaw, SignalThrottleOptions, SignalTimerState } from './contract.ts';
+
+type TimerRef = SignalTimerState;
+
+interface PairEvent {
+  x: number;
+  y: number;
+}
+
+function timerState(): TimerRef {
+  return createSignalTimerState();
+}
+
+function now(state: Readonly<TimerRef>): number {
+  return state!.nowMs;
+}
+
+describe('advanceSignalTimers', () => {
+  it('runs due callbacks in fire time order and sets the current time', () => {
+    const state = timerState();
+    const order: { value: string[] } = { value: [] as never[] };
+    for (const [label, delay] of [
+      ['second', 20.0],
+      ['first', 10.0],
+    ] as const) {
+      const timerOrder = order;
+      setSignalTimeout(state, delay, () => timerOrder.value.push(label));
+    }
+    advanceSignalTimers(state, 15.0);
+    expect(order.value).toEqual(['first']);
+    expect(now(state)).toEqual(15.0);
+    advanceSignalTimers(state, 25.0);
+    expect(order.value).toEqual(['first', 'second']);
+    expect(now(state)).toEqual(25.0);
+  });
+});
+
+describe('clearSignalTimeout', () => {
+  it('prevents a pending callback from running', () => {
+    const state = timerState();
+    const fired = { value: 0 };
+    const counter = fired;
+    const id = setSignalTimeout(state, 10.0, () => (counter.value += 1));
+    clearSignalTimeout(state, id);
+    advanceSignalTimers(state, 100.0);
+    expect(fired.value).toEqual(0);
+  });
+});
 
 describe('connectSignalAtFrameRate', () => {
   it('fires the slot only when accumulated delta reaches the period', () => {
-    const source = createSignal<(deltaTime: number) => void>();
-    const fired: number[] = [];
-    connectSignalAtFrameRate(source, 10, (delta) => fired.push(delta)); // 10fps = 100ms period
-    source.emit(40);
-    source.emit(40);
-    expect(fired).toHaveLength(0);
-    source.emit(40); // total 120ms — crosses 100ms threshold
-    expect(fired).toHaveLength(1);
-    expect(fired[0]).toBeCloseTo(120);
+    const source: SignalRaw<FrameTick> = createSignal();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    connectSignalAtFrameRate(source, 10.0, (delta: number) => out.value.push(delta));
+    emitSignal(source, { deltaTime: 40.0 });
+    emitSignal(source, { deltaTime: 40.0 });
+    expect(fired.value.length === 0).toBe(true);
+    emitSignal(source, { deltaTime: 40.0 });
+    expect(fired.value.length).toEqual(1);
+    expect(fired.value[0]).toEqual(120.0);
   });
-
   it('accumulates remainder across firings', () => {
-    const source = createSignal<(deltaTime: number) => void>();
-    const fired: number[] = [];
-    connectSignalAtFrameRate(source, 10, (delta) => fired.push(delta)); // 100ms period
-    source.emit(110); // fires once, 10ms remainder
-    source.emit(110); // 120ms total — fires again
-    expect(fired).toHaveLength(2);
+    const source: SignalRaw<FrameTick> = createSignal();
+    const fired = { value: 0 };
+    const count = fired;
+    connectSignalAtFrameRate(source, 10.0, (Delta: number) => (count.value += 1));
+    emitSignal(source, { deltaTime: 110.0 });
+    emitSignal(source, { deltaTime: 110.0 });
+    expect(fired.value).toEqual(2);
   });
-
   it('returns a cleanup that stops the slot', () => {
-    const source = createSignal<(deltaTime: number) => void>();
-    let fired = 0;
-    const detach = connectSignalAtFrameRate(source, 10, () => fired++);
+    const source: SignalRaw<FrameTick> = createSignal();
+    const fired = { value: 0 };
+    const count = fired;
+    const detach = connectSignalAtFrameRate(source, 10.0, (Delta: number) => (count.value += 1));
     detach();
-    source.emit(200);
-    expect(fired).toBe(0);
+    emitSignal(source, { deltaTime: 200.0 });
+    expect(fired.value).toEqual(0);
   });
 });
 
 describe('connectSignalDebounced', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
+  it('fires after the delay when the signal goes quiet', () => {
+    const source: SignalRaw<number> = createSignal();
+    const state = timerState();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    connectSignalDebounced(source, 100.0, (value: number) => out.value.push(value), undefined, state);
+    emitSignal(source, 1);
+    emitSignal(source, 2);
+    expect(fired.value.length === 0).toBe(true);
+    advanceSignalTimers(state, 100.0);
+    expect(fired.value).toEqual([2]);
   });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('fires after the delay when signal goes quiet', () => {
-    const source = createSignal<(v: number) => void>();
-    const fired: number[] = [];
-    connectSignalDebounced(source, 100, (v) => fired.push(v));
-    source.emit(1);
-    source.emit(2);
-    expect(fired).toHaveLength(0);
-    vi.advanceTimersByTime(100);
-    expect(fired).toHaveLength(1);
-    expect(fired[0]).toBe(2); // trailing — most recent arg
-  });
-
   it('resets the timer on each emission', () => {
-    const source = createSignal<() => void>();
-    let count = 0;
-    connectSignalDebounced(source, 100, () => count++);
-    source.emit();
-    vi.advanceTimersByTime(50);
-    source.emit(); // resets
-    vi.advanceTimersByTime(50);
-    expect(count).toBe(0); // not fired yet
-    vi.advanceTimersByTime(50);
-    expect(count).toBe(1);
+    const source: SignalRaw<void> = createSignal();
+    const state = timerState();
+    const count = { value: 0 };
+    const counter = count;
+    connectSignalDebounced(source, 100.0, (_unused0: void) => (counter.value += 1), undefined, state);
+    emitSignal(source, undefined);
+    advanceSignalTimers(state, 50.0);
+    emitSignal(source, undefined);
+    advanceSignalTimers(state, 100.0);
+    expect(count.value).toEqual(0);
+    advanceSignalTimers(state, 150.0);
+    expect(count.value).toEqual(1);
   });
-
-  it('fires on the leading edge when leading=true', () => {
-    const source = createSignal<() => void>();
-    let count = 0;
-    connectSignalDebounced(source, 100, () => count++, { leading: true, trailing: false });
-    source.emit();
-    expect(count).toBe(1); // leading fire
-    source.emit();
-    source.emit();
-    vi.advanceTimersByTime(100);
-    expect(count).toBe(1); // no trailing
+  it('fires on the leading edge when leading is true', () => {
+    const source: SignalRaw<void> = createSignal();
+    const state = timerState();
+    const count = { value: 0 };
+    const counter = count;
+    const options: SignalThrottleOptions = { leading: true, trailing: false };
+    connectSignalDebounced(source, 100.0, (_unused0: void) => (counter.value += 1), options, state);
+    emitSignal(source, undefined);
+    expect(count.value).toEqual(1);
+    emitSignal(source, undefined);
+    emitSignal(source, undefined);
+    advanceSignalTimers(state, 100.0);
+    expect(count.value).toEqual(1);
   });
-
-  it('cleanup stops the slot', () => {
-    const source = createSignal<() => void>();
-    let count = 0;
-    const detach = connectSignalDebounced(source, 100, () => count++);
-    source.emit();
+  it('cleanup stops the slot and cancels the timer', () => {
+    const source: SignalRaw<void> = createSignal();
+    const state = timerState();
+    const count = { value: 0 };
+    const counter = count;
+    const detach = connectSignalDebounced(source, 100.0, (_unused0: void) => (counter.value += 1), undefined, state);
+    emitSignal(source, undefined);
     detach();
-    vi.advanceTimersByTime(200);
-    expect(count).toBe(0);
+    advanceSignalTimers(state, 200.0);
+    expect(count.value).toEqual(0);
   });
 });
 
 describe('connectSignalThrottled', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
+  it('fires immediately on the first emission', () => {
+    const source: SignalRaw<number> = createSignal();
+    const state = timerState();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    connectSignalThrottled(source, 100.0, (value: number) => out.value.push(value), undefined, state);
+    emitSignal(source, 1);
+    expect(fired.value).toEqual([1]);
   });
-  afterEach(() => {
-    vi.useRealTimers();
+  it('suppresses emissions within the interval then fires the trailing value', () => {
+    const source: SignalRaw<number> = createSignal();
+    const state = timerState();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    connectSignalThrottled(source, 100.0, (value: number) => out.value.push(value), undefined, state);
+    emitSignal(source, 1);
+    advanceSignalTimers(state, 50.0);
+    emitSignal(source, 2);
+    advanceSignalTimers(state, 100.0);
+    expect(fired.value.includes(1)).toBe(true);
+    expect(fired.value.includes(2)).toBe(true);
   });
-
-  it('fires immediately on the first emission (leading=true)', () => {
-    const source = createSignal<(v: number) => void>();
-    const fired: number[] = [];
-    connectSignalThrottled(source, 100, (v) => fired.push(v));
-    source.emit(1);
-    expect(fired).toHaveLength(1);
-    expect(fired[0]).toBe(1);
+  it('preserves the original payload', () => {
+    const source: SignalRaw<PairEvent> = createSignal();
+    const state = timerState();
+    const fired: { value: Array<readonly [number, number]> } = { value: [] as never[] };
+    const out = fired;
+    connectSignalThrottled(
+      source,
+      100.0,
+      (event: Readonly<PairEvent>) => out.value.push([event.x, event.y]),
+      undefined,
+      state,
+    );
+    emitSignal(source, { x: 3, y: 7 });
+    expect(fired.value).toEqual([[3, 7]]);
   });
-
-  it('suppresses emissions within the interval', () => {
-    const source = createSignal<(v: number) => void>();
-    const fired: number[] = [];
-    connectSignalThrottled(source, 100, (v) => fired.push(v));
-    source.emit(1);
-    vi.advanceTimersByTime(50);
-    source.emit(2);
-    vi.advanceTimersByTime(50);
-    // trailing fires with value=2
-    expect(fired).toContain(1);
-    expect(fired).toContain(2);
-  });
-
-  it('preserves the original args (payload-preserving)', () => {
-    const source = createSignal<(x: number, y: number) => void>();
-    const fired: number[][] = [];
-    connectSignalThrottled(source, 100, (x, y) => fired.push([x, y]));
-    source.emit(3, 7);
-    expect(fired).toEqual([[3, 7]]);
-  });
-
-  it('cleanup stops the slot and cancels trailing', () => {
-    const source = createSignal<() => void>();
-    let count = 0;
-    const detach = connectSignalThrottled(source, 100, () => count++);
-    source.emit();
-    expect(count).toBe(1);
-    source.emit(); // schedules trailing
+  it('cleanup stops the slot and cancels the trailing call', () => {
+    const source: SignalRaw<void> = createSignal();
+    const state = timerState();
+    const count = { value: 0 };
+    const counter = count;
+    const detach = connectSignalThrottled(source, 100.0, (_unused0: void) => (counter.value += 1), undefined, state);
+    emitSignal(source, undefined);
+    expect(count.value).toEqual(1);
+    emitSignal(source, undefined);
     detach();
-    vi.advanceTimersByTime(200);
-    expect(count).toBe(1); // trailing was cancelled
+    advanceSignalTimers(state, 200.0);
+    expect(count.value).toEqual(1);
   });
-
   it('fires the first emission on the trailing edge when leading is disabled', () => {
-    const source = createSignal<(v: number) => void>();
-    const fired: number[] = [];
-    connectSignalThrottled(source, 100, (v) => fired.push(v), { leading: false, trailing: true });
-    source.emit(3);
-    expect(fired).toEqual([]);
-    vi.advanceTimersByTime(99);
-    expect(fired).toEqual([]);
-    vi.advanceTimersByTime(1);
-    expect(fired).toEqual([3]);
+    const source: SignalRaw<number> = createSignal();
+    const state = timerState();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    const options: SignalThrottleOptions = { leading: false, trailing: true };
+    connectSignalThrottled(source, 100.0, (value: number) => out.value.push(value), options, state);
+    emitSignal(source, 3);
+    expect(fired.value.length === 0).toBe(true);
+    advanceSignalTimers(state, 99.0);
+    expect(fired.value.length === 0).toBe(true);
+    advanceSignalTimers(state, 100.0);
+    expect(fired.value).toEqual([3]);
   });
-
   it('ignores cooldown emissions when trailing is disabled', () => {
-    const source = createSignal<(v: number) => void>();
-    const fired: number[] = [];
-    connectSignalThrottled(source, 100, (v) => fired.push(v), { trailing: false });
-    source.emit(3);
-    vi.advanceTimersByTime(50);
-    source.emit(7);
-    vi.advanceTimersByTime(100);
-    expect(fired).toEqual([3]);
+    const source: SignalRaw<number> = createSignal();
+    const state = timerState();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    const options: SignalThrottleOptions = { leading: undefined, trailing: false };
+    connectSignalThrottled(source, 100.0, (value: number) => out.value.push(value), options, state);
+    emitSignal(source, 3);
+    advanceSignalTimers(state, 50.0);
+    emitSignal(source, 7);
+    advanceSignalTimers(state, 150.0);
+    expect(fired.value).toEqual([3]);
   });
-
   it('does not fire when both leading and trailing are disabled', () => {
-    const source = createSignal<(v: number) => void>();
-    const fired: number[] = [];
-    connectSignalThrottled(source, 100, (v) => fired.push(v), { leading: false, trailing: false });
-    source.emit(3);
-    vi.advanceTimersByTime(100);
-    expect(fired).toEqual([]);
+    const source: SignalRaw<number> = createSignal();
+    const state = timerState();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    const options: SignalThrottleOptions = { leading: false, trailing: false };
+    connectSignalThrottled(source, 100.0, (value: number) => out.value.push(value), options, state);
+    emitSignal(source, 3);
+    advanceSignalTimers(state, 100.0);
+    expect(fired.value.length === 0).toBe(true);
+  });
+});
+
+describe('createSignalTimerState', () => {
+  it('starts at time zero with no timers', () => {
+    const state = createSignalTimerState();
+    expect(state.nowMs).toEqual(0.0);
+    expect(state.timers.length === 0).toBe(true);
+  });
+});
+
+describe('initializeSignalTimerState', () => {
+  it('is the construction initializer of create signal timer state', () => {
+    let state = createSignalTimerState();
+    setSignalTimeout(state, 10.0, () => {});
+    advanceSignalTimers(state, 5.0);
+    state = state!;
+    initializeSignalTimerState(state);
+    expect(state.nowMs).toEqual(0.0);
+    expect(state.timers.length === 0).toBe(true);
+  });
+});
+
+describe('setSignalTimeout', () => {
+  it('schedules a callback relative to the current time', () => {
+    const state = timerState();
+    const fired = { value: 0 };
+    const counter = fired;
+    advanceSignalTimers(state, 50.0);
+    setSignalTimeout(state, 25.0, () => (counter.value += 1));
+    advanceSignalTimers(state, 74.0);
+    expect(fired.value).toEqual(0);
+    advanceSignalTimers(state, 75.0);
+    expect(fired.value).toEqual(1);
+  });
+  it('allocates a new id for each timer', () => {
+    const state = timerState();
+    const first = setSignalTimeout(state, 10.0, () => {});
+    const second = setSignalTimeout(state, 20.0, () => {});
+    expect(first).not.toEqual(second);
   });
 });

@@ -1,7 +1,11 @@
-import { nullSignalEmit } from './internal.ts';
+// Generated from crates/flight-signals/tests/internal_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { nullSignalEmit } from '@flighthq/signals/contract';
+import { describe, expect, it } from 'vitest';
 
 describe('nullSignalEmit', () => {
-  it('returns undefined and does nothing', () => {
-    expect(nullSignalEmit()).toBeUndefined();
+  it('does nothing', () => {
+    nullSignalEmit();
   });
 });

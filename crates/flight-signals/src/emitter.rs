@@ -12,29 +12,24 @@ pub fn cancel_signal<T>(signal: &Signal<T>) {
 /// Emits the signal in priority order. The data lock is held only to read or update one entry at
 /// a time, never across a callback, so a slot may re-entrantly connect, disconnect, emit or
 /// cancel (D4). Slots added ahead of the cursor during the walk are reached, as in TS.
-pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &T) -> bool {
-    if !begin_signal_dispatch(data) {
+pub(crate) fn dispatch_signal_data<T>(signal: &Signal<T>, args: &T) -> bool {
+    if !begin_signal_dispatch(&signal.data) {
         return false;
     }
 
     let mut index = 0;
-    while signal_dispatch_has_index(data, index) {
-        let slot = get_signal_dispatch_slot(data, index);
+    while signal_dispatch_has_index(&signal.data, index) {
+        let slot = get_signal_dispatch_slot(&signal.data, index);
 
         if let Some(callback) = slot {
             callback(args);
 
-            let cancelled = data
-                .read()
-                .unwrap()
-                .as_ref()
-                .map(|signal_data| signal_data.cancelled)
-                .unwrap_or(false);
+            let cancelled = signal_data_cancelled(&signal.data);
             if cancelled {
                 break;
             }
 
-            let mut state = data.write().unwrap();
+            let mut state = signal.data.write().unwrap();
             if let Some(signal_data) = state.as_mut() {
                 if index < signal_data.slots.len() && !signal_data.repeat[index] {
                     signal_data.slots[index] = None;
@@ -45,10 +40,18 @@ pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &
         index += 1;
     }
 
-    if end_signal_dispatch(data) {
-        return compact_signal_data(data);
+    if end_signal_dispatch(&signal.data) {
+        return compact_signal_data(&signal.data);
     }
     return false;
+}
+
+pub(crate) fn signal_data_cancelled<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
+    let state = data.read().unwrap();
+    let Some(signal_data) = state.as_ref() else {
+        return false;
+    };
+    return signal_data.cancelled;
 }
 
 fn begin_signal_dispatch<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
@@ -94,10 +97,6 @@ fn get_signal_dispatch_slot<T>(
 
 /// Calls the source-required emitter, including custom callbacks and spread wrappers.
 pub fn emit_signal<T>(signal: &Signal<T>, args: &T) {
-    *signal.state.last_dispatch_detached.write().unwrap() = false;
     let emit = signal.emit.read().unwrap().clone();
     emit(args);
-    if *signal.state.last_dispatch_detached.read().unwrap() {
-        *signal.emit.write().unwrap() = std::sync::Arc::new(|_| {});
-    }
 }

@@ -1,8 +1,14 @@
+use std::sync::{Arc, RwLock};
+
+use flight_entity::{Ref, allocate_entity};
+
+use crate::emitter::dispatch_signal_data;
 use crate::types::Signal;
-use std::sync::Arc;
 
 pub fn create_signal<T: 'static>() -> Signal<T> {
-    let mut out = Signal::default();
+    let mut out: Signal<T> = allocate_entity();
+    out.emit = Ref::new(RwLock::new(Arc::new(|_: &T| {})));
+    out.data = Ref::new(RwLock::new(None));
     initialize_signal(&mut out);
     return out;
 }
@@ -14,10 +20,12 @@ pub fn initialize_signal<T: 'static>(out: &mut Signal<T>) {
 
 /// Restores native D4 dispatch without holding an emitter-cell lock during callbacks.
 pub(crate) fn install_default_signal_emitter<T: 'static>(signal: &Signal<T>) {
-    let data = signal.data.clone();
-    let last_dispatch_detached = signal.state.last_dispatch_detached.clone();
+    let dispatch_signal = signal.clone();
+    let _emit = signal.emit.clone();
     *signal.emit.write().unwrap() = Arc::new(move |args| {
-        let detached = crate::emitter::dispatch_signal_data(&data, args);
-        *last_dispatch_detached.write().unwrap() = detached;
+        if dispatch_signal_data(&dispatch_signal, args) {
+            *dispatch_signal.data.write().unwrap() = None;
+            *_emit.write().unwrap() = Arc::new(|_| {});
+        }
     });
 }

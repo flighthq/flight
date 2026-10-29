@@ -1,149 +1,367 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Generated from crates/flight-signals/src/throttle.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import type { Signal, SignalThrottleOptions } from './signalTypes.ts';
 import { connectSignal, disconnectSignal } from './slot.ts';
+import type {
+  FrameTick,
+  SignalRaw,
+  SignalSlot,
+  SignalThrottleOptions,
+  SignalTimer,
+  SignalTimerState,
+  TimerId,
+} from './types.ts';
 
-/**
- * Options for `connectSignalThrottled` and `connectSignalDebounced`.
- */
-/**
- * Connects a frame-tick signal to a slot at a reduced frame rate. The slot
- * receives the total accumulated `deltaTime` (in ms) since the last fire, not
- * the individual source deltas. Returns a cleanup function that disconnects
- * the internal handler.
- *
- * This is specialized to `(deltaTime: number) => void` frame-tick signals and
- * accumulates time rather than forwarding source args. For a payload-preserving
- * throttle over any signal shape, use `connectSignalThrottled`.
- */
-export function connectSignalAtFrameRate(
-  source: Signal<(deltaTime: number) => void>,
-  fps: number,
-  slot: (deltaTime: number) => void,
-): () => void {
-  const period = 1000 / fps;
-  let elapsed = 0;
-  const handler = (delta: number) => {
-    elapsed += delta;
-    if (elapsed >= period) {
-      slot(elapsed);
-      elapsed %= period;
-    }
-  };
-  connectSignal(source, handler);
-  return () => disconnectSignal(source, handler);
+interface PendingSignalArgs<T> {
+  value: T;
 }
 
 /**
- * Connects a slot to a signal with debounce semantics: the slot fires only
- * after the signal has been quiet for `delayMs` milliseconds. Each emission
- * resets the timer. Returns a cleanup function.
- *
- * `leading: true` fires immediately on the first invocation and suppresses
- * subsequent calls until the delay window expires. `trailing: true` (default)
- * fires at the end of the quiet period with the most recent args.
- *
- * Uses `Date.now()` as the clock — suitable for UI/interaction signals (e.g.
- * resize, search input).
+ * Advances explicit timer state to `nowMs`, running every due callback in fire-time order (D5:
+ * the caller injects time; the contract never reads a clock). Callbacks run without the state
+ * lock held, so they may schedule or clear timers re-entrantly.
  */
-export function connectSignalDebounced<T extends (...args: any[]) => void>(
-  source: Signal<T>,
+export function advanceSignalTimers(state: SignalTimerState, nowMs: number): void {
+  for (;;) {
+    const callback = takeDueSignalTimer(state, nowMs);
+    {
+      const matchValue = callback;
+      if (matchValue !== undefined) {
+        const callback = matchValue;
+        callback();
+      } else if (matchValue === undefined) {
+        break;
+      }
+    }
+  }
+}
+
+export function clearSignalTimeout(state: SignalTimerState, id: TimerId): void {
+  let timerState = state!;
+  const timers: SignalTimer[] = timerState.timers;
+  (<T>(items: T[], keep: (item: T) => boolean): void => {
+    let kept = 0;
+    let index = 0;
+    try {
+      for (; index < items.length; index += 1) {
+        const item = items[index];
+        if (keep(item)) {
+          items[kept] = item;
+          kept += 1;
+        }
+      }
+    } finally {
+      const length = items.length;
+      for (let rest = index; rest < length; rest += 1) {
+        items[kept + rest - index] = items[rest];
+      }
+      items.length = kept + length - index;
+    }
+  })(timers, (timer) => timer.id.value !== id.value);
+}
+
+/**
+ * Connects a frame-tick signal to a slot at a reduced frame rate (TS
+ * `connectSignalAtFrameRate`). The slot receives the accumulated delta time since the last
+ * fire, not the individual source deltas.
+ */
+export function connectSignalAtFrameRate(
+  source: SignalRaw<FrameTick>,
+  fps: number,
+  slot: (arg0: number) => void,
+): () => void {
+  const period = 1000.0 / fps;
+  const elapsed = { value: 0.0 };
+  const handlerElapsed = elapsed;
+  const handler: SignalSlot<FrameTick> = (tick: Readonly<FrameTick>) => {
+    const fire = advanceFrameElapsed(handlerElapsed, tick.deltaTime, period);
+    if (fire !== undefined) {
+      const total = fire;
+      slot(total);
+    }
+  };
+  const slotId = connectSignal(source, handler, undefined);
+  const cleanupSource = Object.defineProperties(
+    { ...source },
+    {
+      data: {
+        get: () => source.data,
+        set: (value) => {
+          source.data = value;
+        },
+        enumerable: true,
+        configurable: true,
+      },
+    },
+  );
+  return () => disconnectSignal(cleanupSource, slotId);
+}
+
+function takeDueSignalTimer(state: SignalTimerState, nowMs: number): (() => void) | undefined {
+  let timerState = state!;
+  let earliest: number | undefined = undefined;
+  for (let index = 0; index < timerState.timers.length; index += 1) {
+    if (timerState.timers[index].fireAtMs <= nowMs) {
+      {
+        const matchValue = earliest;
+        if (matchValue !== undefined) {
+          const current = matchValue;
+          const candidate = [timerState.timers[index].fireAtMs, timerState.timers[index].id.value] as const;
+          const existing = [timerState.timers[current].fireAtMs, timerState.timers[current].id.value] as const;
+          if (candidate[0] < existing[0] || (candidate[0] === existing[0] && candidate[1] < existing[1])) {
+            earliest = index;
+          }
+        } else if (matchValue === undefined) {
+          earliest = index;
+        }
+      }
+    }
+  }
+  if (earliest !== undefined) {
+    const index = earliest;
+    timerState.nowMs = timerState.timers[index].fireAtMs;
+    const timers: SignalTimer[] = timerState.timers;
+    return (<T>(items: T[], index: number): T => {
+      if (index >= items.length) {
+        throw new RangeError('Vec removal index out of bounds');
+      }
+      return items.splice(index, 1)[0];
+    })(timers, index).callback;
+  }
+  timerState.nowMs = nowMs;
+  return undefined;
+}
+
+/**
+ * Connects a slot with debounce semantics (TS `connectSignalDebounced`). Timer state and the
+ * current time are explicit (D5); the caller advances both with `advanceSignalTimers`.
+ */
+export function connectSignalDebounced<T>(
+  source: SignalRaw<T>,
   delayMs: number,
-  slot: T,
-  options?: Readonly<SignalThrottleOptions>,
+  slot: SignalSlot<T>,
+  options: Readonly<SignalThrottleOptions> | undefined,
+  state: SignalTimerState,
 ): () => void {
   const leading = options?.leading ?? false;
   const trailing = options?.trailing ?? true;
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  let lastArgs: any[] | null = null;
-  let leadingFired = false;
-  const clearTimer = () => {
-    if (timer !== null) {
-      clearTimeout(timer);
-      timer = null;
+  const timerId: { value: TimerId | undefined } = { value: undefined };
+  const lastArgs: { value: PendingSignalArgs<T> | undefined } = { value: undefined };
+  const leadingFired = { value: false };
+  const handlerSlot = slot;
+  const handlerState = state;
+  const handlerTimerId = timerId;
+  const handlerLastArgs = lastArgs;
+  const handlerLeadingFired = leadingFired;
+  const handler: SignalSlot<T> = (args: T) => {
+    handlerLastArgs.value = { value: args };
+    if (leading && handlerTimerId.value === undefined && !handlerLeadingFired.value) {
+      handlerLeadingFired.value = true;
+      handlerSlot(args);
     }
-  };
-  const handler = ((...args: any[]) => {
-    lastArgs = args;
-    if (leading && timer === null && !leadingFired) {
-      leadingFired = true;
-      slot(...args);
-    }
-    clearTimer();
-    timer = setTimeout(() => {
-      timer = null;
-      leadingFired = false;
-      if (trailing && lastArgs !== null) {
-        slot(...lastArgs);
-        lastArgs = null;
+    {
+      const $pending = handlerTimerId.value;
+      if ($pending !== undefined) {
+        const pending = $pending;
+        clearSignalTimeout(handlerState, pending);
       }
-    }, delayMs);
-  }) as T;
-  connectSignal(source, handler);
+    }
+    const timerSlot = handlerSlot;
+    const timerLastArgs = handlerLastArgs;
+    const timerLeadingFired = handlerLeadingFired;
+    const timerTimerId = handlerTimerId;
+    const id = setSignalTimeout(handlerState, delayMs, () => {
+      timerTimerId.value = undefined;
+      timerLeadingFired.value = false;
+      if (trailing) {
+        const args = takePendingSignalArgs(timerLastArgs);
+        if (args !== undefined) {
+          timerSlot(args.value);
+        }
+      }
+    });
+    handlerTimerId.value = id;
+  };
+  const slotId = connectSignal(source, handler, undefined);
+  const cleanupSource = Object.defineProperties(
+    { ...source },
+    {
+      data: {
+        get: () => source.data,
+        set: (value) => {
+          source.data = value;
+        },
+        enumerable: true,
+        configurable: true,
+      },
+    },
+  );
+  const cleanupState = state;
+  const cleanupTimer = timerId;
   return () => {
-    disconnectSignal(source, handler);
-    clearTimer();
+    disconnectSignal(cleanupSource, slotId);
+    const pending = cleanupTimer.value;
+    if (pending !== undefined) {
+      clearSignalTimeout(cleanupState, pending);
+    }
   };
 }
 
 /**
- * Connects a slot to a signal with throttle semantics: the slot fires at most
- * once per `intervalMs` milliseconds. Unlike `connectSignalAtFrameRate`, this
- * preserves the original signal args (payload-preserving throttle). Returns a
- * cleanup function.
- *
- * `leading: true` (default) fires immediately on the first invocation; the
- * trailing call fires after the interval if additional invocations occurred
- * during the cooldown.
- *
- * Uses `Date.now()` as the clock — suitable for UI/interaction signals.
+ * Connects a slot with throttle semantics (TS `connectSignalThrottled`), preserving the original
+ * payload for the trailing call. Timer state and the current time are explicit (D5).
  */
-export function connectSignalThrottled<T extends (...args: any[]) => void>(
-  source: Signal<T>,
+export function connectSignalThrottled<T>(
+  source: SignalRaw<T>,
   intervalMs: number,
-  slot: T,
-  options?: Readonly<SignalThrottleOptions>,
+  slot: SignalSlot<T>,
+  options: Readonly<SignalThrottleOptions> | undefined,
+  state: SignalTimerState,
 ): () => void {
   const leading = options?.leading ?? true;
   const trailing = options?.trailing ?? true;
-  let lastFiredAt = -Infinity;
-  let trailingTimer: ReturnType<typeof setTimeout> | null = null;
-  let lastArgs: any[] | null = null;
-  const clearTrailing = () => {
-    if (trailingTimer !== null) {
-      clearTimeout(trailingTimer);
-      trailingTimer = null;
-    }
-  };
-  const scheduleTrailing = (delay: number) => {
-    trailingTimer = setTimeout(() => {
-      lastFiredAt = Date.now();
-      trailingTimer = null;
-      slot(...lastArgs!);
-      lastArgs = null;
-    }, delay);
-  };
-  const handler = ((...args: any[]) => {
-    const now = Date.now();
-    const remaining = intervalMs - (now - lastFiredAt);
-    if (remaining <= 0 || remaining > intervalMs) {
-      clearTrailing();
-      lastFiredAt = now;
-      if (leading) {
-        slot(...args);
-      } else if (trailing) {
-        lastArgs = args;
-        scheduleTrailing(intervalMs);
+  const lastFiredAt: { value: number } = { value: Number.NEGATIVE_INFINITY };
+  const trailingTimer: { value: TimerId | undefined } = { value: undefined };
+  const lastArgs: { value: PendingSignalArgs<T> | undefined } = { value: undefined };
+  const handlerSlot = slot;
+  const handlerState = state;
+  const handlerLastFiredAt = lastFiredAt;
+  const handlerTrailingTimer = trailingTimer;
+  const handlerLastArgs = lastArgs;
+  const handler: SignalSlot<T> = (args: T) => {
+    const now = handlerState!.nowMs;
+    const remaining = intervalMs - (now - handlerLastFiredAt.value);
+    if (remaining <= 0.0 || remaining > intervalMs) {
+      {
+        const $pending = handlerTrailingTimer.value;
+        if ($pending !== undefined) {
+          const pending = $pending;
+          clearSignalTimeout(handlerState, pending);
+          handlerTrailingTimer.value = undefined;
+        }
       }
-    } else if (trailing) {
-      clearTrailing();
-      lastArgs = args;
-      scheduleTrailing(remaining);
+      handlerLastFiredAt.value = now;
+      if (leading) {
+        handlerSlot(args);
+      } else {
+        if (trailing) {
+          handlerLastArgs.value = { value: args };
+          const timerSlot = handlerSlot;
+          const timerState = handlerState;
+          const timerLastFiredAt = handlerLastFiredAt;
+          const timerTrailingTimer = handlerTrailingTimer;
+          const timerLastArgs = handlerLastArgs;
+          const id = setSignalTimeout(handlerState, intervalMs, () => {
+            timerLastFiredAt.value = timerState!.nowMs;
+            timerTrailingTimer.value = undefined;
+            const args = takePendingSignalArgs(timerLastArgs);
+            if (args !== undefined) {
+              timerSlot(args.value);
+            }
+          });
+          handlerTrailingTimer.value = id;
+        }
+      }
+    } else {
+      if (trailing) {
+        {
+          const $pending = handlerTrailingTimer.value;
+          if ($pending !== undefined) {
+            const pending = $pending;
+            clearSignalTimeout(handlerState, pending);
+          }
+        }
+        handlerLastArgs.value = { value: args };
+        const timerSlot = handlerSlot;
+        const timerState = handlerState;
+        const timerLastFiredAt = handlerLastFiredAt;
+        const timerTrailingTimer = handlerTrailingTimer;
+        const timerLastArgs = handlerLastArgs;
+        const id = setSignalTimeout(handlerState, remaining, () => {
+          timerLastFiredAt.value = timerState!.nowMs;
+          timerTrailingTimer.value = undefined;
+          const args = takePendingSignalArgs(timerLastArgs);
+          if (args !== undefined) {
+            timerSlot(args.value);
+          }
+        });
+        handlerTrailingTimer.value = id;
+      }
     }
-  }) as T;
-  connectSignal(source, handler);
-  return () => {
-    disconnectSignal(source, handler);
-    clearTrailing();
   };
+  const slotId = connectSignal(source, handler, undefined);
+  const cleanupSource = Object.defineProperties(
+    { ...source },
+    {
+      data: {
+        get: () => source.data,
+        set: (value) => {
+          source.data = value;
+        },
+        enumerable: true,
+        configurable: true,
+      },
+    },
+  );
+  const cleanupState = state;
+  const cleanupTimer = trailingTimer;
+  return () => {
+    disconnectSignal(cleanupSource, slotId);
+    const pending = cleanupTimer.value;
+    if (pending !== undefined) {
+      clearSignalTimeout(cleanupState, pending);
+    }
+  };
+}
+
+function advanceFrameElapsed(elapsed: { value: number }, deltaTime: number, period: number): number | undefined {
+  let guard = elapsed;
+  guard.value += deltaTime;
+  if (guard.value >= period) {
+    const total = guard.value;
+    guard.value %= period;
+    return total;
+  }
+  return undefined;
+}
+
+function takePendingSignalArgs<T>(pending: { value: T | undefined }): T | undefined {
+  let guard = pending;
+  const args = guard.value;
+  guard.value = undefined;
+  return args;
+}
+
+export function createSignalTimerState(): SignalTimerState {
+  let out: SignalTimerState = { nowMs: 0.0, timers: [], nextId: 1 };
+  initializeSignalTimerState(out);
+  return out;
+}
+
+export function initializeSignalTimerState(out: SignalTimerState): void {
+  out.nowMs = 0.0;
+  out.timers.length = 0;
+  out.nextId = 1;
+}
+
+export function setSignalTimeout(state: SignalTimerState, delayMs: number, callback: () => void): TimerId {
+  let timerState = state!;
+  const id: TimerId = { value: timerState.nextId };
+  timerState.nextId += 1;
+  const fireAtMs = timerState.nowMs + delayMs;
+  let index = 0;
+  while (
+    index < timerState.timers.length &&
+    [timerState.timers[index].fireAtMs, timerState.timers[index].id.value] <= [fireAtMs, id.value]
+  ) {
+    index += 1;
+  }
+  const timers: SignalTimer[] = timerState.timers;
+  (<T>(items: T[], index: number, value: T): void => {
+    if (index > items.length) {
+      throw new RangeError('Vec insertion index out of bounds');
+    }
+    items.splice(index, 0, value);
+  })(timers, index, { id: id, fireAtMs: fireAtMs, callback: callback });
+  return id;
 }

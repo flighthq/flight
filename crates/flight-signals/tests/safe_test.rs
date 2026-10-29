@@ -17,9 +17,9 @@ mod emit_signal_safe {
     #[test]
     fn passes_typed_payload_in_priority_order() {
         let signal: Signal<ValueEvent> = create_signal();
-        let received = Arc::new(Mutex::new(Vec::new()));
+        let received: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         for (label, priority) in [("low", -1), ("high", 10), ("normal", 0)] {
-            let received = received.clone();
+            let received_for_slot = received.clone();
             let options = SignalConnectOptions {
                 priority: Some(priority),
                 once: None,
@@ -27,7 +27,7 @@ mod emit_signal_safe {
             connect_signal(
                 &signal,
                 Arc::new(move |event: &ValueEvent| {
-                    received
+                    received_for_slot
                         .lock()
                         .unwrap()
                         .push(format!("{}:{}", label, event.value));
@@ -49,7 +49,7 @@ mod emit_signal_safe {
     #[test]
     fn does_not_call_a_slot_added_during_the_current_dispatch() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let added = Arc::new(Mutex::new(false));
         let slot_signal = signal.clone();
         let a_calls = calls.clone();
@@ -90,8 +90,8 @@ mod emit_signal_safe {
     #[test]
     fn still_calls_a_copied_slot_removed_during_the_current_dispatch() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
-        let id_holder = Arc::new(Mutex::new(None));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
+        let id_holder: Arc<Mutex<Option<SlotId>>> = Arc::new(Mutex::new(None));
         let holder = id_holder.clone();
         let first_calls = calls.clone();
         let first_signal = signal.clone();
@@ -99,9 +99,9 @@ mod emit_signal_safe {
             &signal,
             Arc::new(move |_: &()| {
                 first_calls.lock().unwrap().push("first");
-                let id = *holder.lock().unwrap();
-                if let Some(id) = id {
-                    disconnect_signal(&first_signal, id);
+                let current_id = *holder.lock().unwrap();
+                if let Some(current_id) = current_id {
+                    disconnect_signal(&first_signal, current_id);
                 }
             }),
             None,
@@ -125,7 +125,7 @@ mod emit_signal_safe {
     #[test]
     fn gives_a_nested_safe_emission_its_own_snapshot_and_arguments() {
         let signal: Signal<TextEvent> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let nested = Arc::new(Mutex::new(false));
         let nested_signal = signal.clone();
         let a_calls = calls.clone();
@@ -162,7 +162,7 @@ mod emit_signal_safe {
     #[test]
     fn removes_a_once_slot_before_invoking_it_so_a_nested_emission_cannot_repeat_it() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let once_calls = calls.clone();
         let nested = Arc::new(Mutex::new(false));
         let nested_signal = signal.clone();
@@ -174,10 +174,10 @@ mod emit_signal_safe {
             &signal,
             Arc::new(move |_: &()| {
                 once_calls.lock().unwrap().push("once");
-                let mut nested = nested.lock().unwrap();
-                if !*nested {
-                    *nested = true;
-                    drop(nested);
+                let mut nested_flag = nested.lock().unwrap();
+                if !*nested_flag {
+                    *nested_flag = true;
+                    drop(nested_flag);
                     emit_signal_safe(&nested_signal, &());
                 }
             }),
@@ -198,7 +198,7 @@ mod emit_signal_safe {
     #[test]
     fn stops_after_cancellation_and_resets_cancellation_before_the_next_emission() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let cancel = Arc::new(Mutex::new(true));
         let first_calls = calls.clone();
         let first_cancel = cancel.clone();

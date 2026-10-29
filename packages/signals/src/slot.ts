@@ -1,139 +1,275 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Generated from crates/flight-signals/src/slot.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { nullSignalEmit } from './internal.ts';
-import type { Signal, SignalConnectOptions, SignalData } from './signalTypes.ts';
+import { installDefaultSignalEmitter } from './signal.ts';
+import type { SignalConnectOptions, SignalData, SignalRaw, SignalSlot, SlotId } from './types.ts';
 
-export function clearSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
-  signal.emit = nullSignalEmit as unknown as T;
-  signal.data = null;
+const NEXT_SIGNAL_SLOT_ID: { value: number } = { value: 1 >>> 0 };
+
+export function clearSignal<T>(signal: SignalRaw<T>): void {
+  signal.emit = (_unused0) => {};
+  signal.data = undefined;
 }
 
-export function connectSignal<T extends (...args: any[]) => void>(
-  signal: Signal<T>,
-  slot: T,
-  options?: Readonly<SignalConnectOptions>,
-): void {
-  const priority = options?.priority ?? 0;
-  const repeat = !(options?.once ?? false);
-
-  initSignal(signal);
-  const data = signal.data!;
-
-  for (let i = 0; i < data.priorities.length; i++) {
-    if (priority > data.priorities[i]) {
-      data.slots.splice(i, 0, slot);
-      data.priorities.splice(i, 0, priority);
-      data.repeat.splice(i, 0, repeat);
-      return;
-    }
+/**
+ * Removes tombstoned entries once the outermost emission exits, and detaches the signal when
+ * the array becomes empty (the teardown a disconnect during dispatch defers).
+ */
+export function compactSignalData<T>(data: SignalData<T> | undefined): boolean {
+  let state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
   }
-
-  data.slots.push(slot);
-  data.priorities.push(priority);
-  data.repeat.push(repeat);
-}
-
-export function disconnectSignal<T extends (...args: any[]) => void>(signal: Signal<T>, slot: T): void {
-  const data = signal.data;
-  if (data === null) return;
-
-  // Inside a dispatch the entry is tombstoned, not spliced: a dispatch already walking these arrays
-  // holds an index into them, and removing a cell would shift every later entry down past its cursor.
-  const dispatching = data.depth > 0;
-  let i = data.slots.length;
-  while (--i >= 0) {
-    if (data.slots[i] !== slot) continue;
-    if (dispatching) {
-      data.slots[i] = null;
+  const originalLen = signalData.slots.length;
+  let write = 0;
+  for (let read = 0; read < originalLen; read += 1) {
+    if (signalData.slots[read] === undefined) {
       continue;
     }
-    data.slots.splice(i, 1);
-    data.priorities.splice(i, 1);
-    data.repeat.splice(i, 1);
-  }
-
-  // Teardown waits for the outermost dispatch to finish; compaction performs it instead. Detaching
-  // here would leave the running loop walking arrays the signal no longer refers to.
-  if (!dispatching && data.slots.length === 0) {
-    signal.emit = nullSignalEmit as unknown as T;
-    signal.data = null;
-  }
-}
-
-export function hasSignalSlots<T extends (...args: any[]) => void>(signal: Readonly<Signal<T>>): boolean {
-  const data = signal.data;
-  if (data === null) return false;
-  // Outside a dispatch there are no tombstones, so length answers it at the original cost. Inside one
-  // the array may hold dead entries, and a caller asking from within a slot must not be told that a
-  // signal it just emptied still has listeners.
-  if (data.depth === 0) return data.slots.length > 0;
-  return countLiveSlots(data) > 0;
-}
-
-function initSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
-  if (signal.data !== null) return;
-  const data: SignalData<T> = { slots: [], priorities: [], repeat: [], cancelled: false, depth: 0 };
-  signal.data = data;
-  signal.emit = makeDispatch(signal, data);
-}
-
-export function isSlotConnected<T extends (...args: any[]) => void>(signal: Readonly<Signal<T>>, slot: T): boolean {
-  return signal.data !== null && signal.data.slots.indexOf(slot) !== -1;
-}
-
-// The dispatch closes over the signal as well as its data so the outermost exit can restore the
-// no-slot emit. Compaction is the only place teardown happens once a dispatch is in flight.
-function makeDispatch<T extends (...args: any[]) => void>(signal: Signal<T>, data: SignalData<T>): T {
-  return ((...args: any[]) => {
-    data.cancelled = false;
-    data.depth++;
-    let i = 0;
-    while (i < data.slots.length) {
-      const slot = data.slots[i];
-      if (slot === null) {
-        i++;
-        continue;
-      }
-      slot(...args);
-      if (data.cancelled) break;
-      // A once slot leaves its cell in place for the same reason a disconnect does; the cursor moves
-      // on rather than staying put for an entry that shifted into this index.
-      if (!data.repeat[i]) data.slots[i] = null;
-      i++;
-    }
-    data.depth--;
-    if (data.depth === 0) compactSignalData(signal, data);
-  }) as unknown as T;
-}
-
-function compactSignalData<T extends (...args: any[]) => void>(signal: Signal<T>, data: SignalData<T>): void {
-  let write = 0;
-  for (let read = 0; read < data.slots.length; read++) {
-    if (data.slots[read] === null) continue;
     if (write !== read) {
-      data.slots[write] = data.slots[read];
-      data.priorities[write] = data.priorities[read];
-      data.repeat[write] = data.repeat[read];
+      signalData.slots[write] = signalData.slots[read];
+      signalData.slots[read] = undefined;
+      signalData.ids[write] = signalData.ids[read];
+      signalData.priorities[write] = signalData.priorities[read];
+      signalData.repeat[write] = signalData.repeat[read];
+      signalData.paused[write] = signalData.paused[read];
     }
-    write++;
+    write += 1;
   }
-  if (write === data.slots.length) return;
-  data.slots.length = write;
-  data.priorities.length = write;
-  data.repeat.length = write;
-  // A signal emptied during dispatch detaches here, which is the teardown disconnectSignal deferred.
-  // Only the signal still pointing at this data is detached: a clearSignal mid-dispatch already
-  // replaced it, and stealing that newer state back would undo an explicit caller action.
-  if (write === 0 && signal.data === data) {
-    signal.emit = nullSignalEmit as unknown as T;
-    signal.data = null;
+  if (write === originalLen) {
+    return false;
   }
+  const slots: (SignalSlot<T> | undefined)[] = signalData.slots;
+  (<T>(items: T[], length: number): void => {
+    items.length = Math.min(items.length, length);
+  })(slots, write);
+  const ids: SlotId[] = signalData.ids;
+  (<T>(items: T[], length: number): void => {
+    items.length = Math.min(items.length, length);
+  })(ids, write);
+  const priorities: number[] = signalData.priorities;
+  (<T>(items: T[], length: number): void => {
+    items.length = Math.min(items.length, length);
+  })(priorities, write);
+  const repeat: boolean[] = signalData.repeat;
+  (<T>(items: T[], length: number): void => {
+    items.length = Math.min(items.length, length);
+  })(repeat, write);
+  const paused: boolean[] = signalData.paused;
+  (<T>(items: T[], length: number): void => {
+    items.length = Math.min(items.length, length);
+  })(paused, write);
+  if (write === 0) {
+    return true;
+  }
+  return false;
 }
 
-function countLiveSlots<T extends (...args: any[]) => void>(data: Readonly<SignalData<T>>): number {
+/**
+ * Connects a slot and returns its registration id. Higher priority runs first; equal priorities
+ * keep insertion order (D4).
+ */
+export function connectSignal<T>(
+  signal: SignalRaw<T>,
+  slot: SignalSlot<T>,
+  options?: Readonly<SignalConnectOptions>,
+): SlotId {
+  const priority = options?.priority ?? 0;
+  const repeat = !(options?.once ?? false);
+  const id: SlotId = {
+    value: (() => {
+      const previous = NEXT_SIGNAL_SLOT_ID.value;
+      NEXT_SIGNAL_SLOT_ID.value = (NEXT_SIGNAL_SLOT_ID.value + 1) >>> 0;
+      return previous;
+    })(),
+  };
+  initSignalData(signal);
+  let state = signal.data!;
+  const signalData = state!;
+  let index = 0;
+  while (index < signalData.priorities.length && priority <= signalData.priorities[index]) {
+    index += 1;
+  }
+  const slots: (SignalSlot<T> | undefined)[] = signalData.slots;
+  (<T>(items: T[], index: number, value: T): void => {
+    if (index > items.length) {
+      throw new RangeError('Vec insertion index out of bounds');
+    }
+    items.splice(index, 0, value);
+  })(slots, index, slot);
+  const ids: SlotId[] = signalData.ids;
+  (<T>(items: T[], index: number, value: T): void => {
+    if (index > items.length) {
+      throw new RangeError('Vec insertion index out of bounds');
+    }
+    items.splice(index, 0, value);
+  })(ids, index, id);
+  const priorities: number[] = signalData.priorities;
+  (<T>(items: T[], index: number, value: T): void => {
+    if (index > items.length) {
+      throw new RangeError('Vec insertion index out of bounds');
+    }
+    items.splice(index, 0, value);
+  })(priorities, index, priority);
+  const repeats: boolean[] = signalData.repeat;
+  (<T>(items: T[], index: number, value: T): void => {
+    if (index > items.length) {
+      throw new RangeError('Vec insertion index out of bounds');
+    }
+    items.splice(index, 0, value);
+  })(repeats, index, repeat);
+  const paused: boolean[] = signalData.paused;
+  (<T>(items: T[], index: number, value: T): void => {
+    if (index > items.length) {
+      throw new RangeError('Vec insertion index out of bounds');
+    }
+    items.splice(index, 0, value);
+  })(paused, index, false);
+  return id;
+}
+
+export function countLiveSlots<T>(data: Readonly<SignalData<T>>): number {
   let live = 0;
-  for (let i = 0; i < data.slots.length; i++) {
-    if (data.slots[i] !== null) live++;
+  for (const slot of data.slots) {
+    if (slot !== undefined) {
+      live += 1;
+    }
   }
   return live;
+}
+
+/**
+ * Disconnects a registration by id. During a dispatch the entry is tombstoned instead of
+ * removed, so an emission already walking the arrays keeps its indices; compaction removes it
+ * when the outermost dispatch exits (D4 re-entrancy).
+ */
+export function disconnectSignal<T>(signal: SignalRaw<T>, id: SlotId): void {
+  const shouldDetach = (() => {
+    let state = signal.data!;
+    const signalData = state;
+    if (signalData === undefined) {
+      return;
+    }
+    const dispatching = signalData.depth > 0;
+    let index = signalData.slots.length;
+    while (index > 0) {
+      index -= 1;
+      if (signalData.ids[index].value !== id.value) {
+        continue;
+      }
+      if (dispatching) {
+        signalData.slots[index] = undefined;
+      } else {
+        const slots: (SignalSlot<T> | undefined)[] = signalData.slots;
+        (<T>(items: T[], index: number): T => {
+          if (index >= items.length) {
+            throw new RangeError('Vec removal index out of bounds');
+          }
+          return items.splice(index, 1)[0];
+        })(slots, index);
+        const ids: SlotId[] = signalData.ids;
+        (<T>(items: T[], index: number): T => {
+          if (index >= items.length) {
+            throw new RangeError('Vec removal index out of bounds');
+          }
+          return items.splice(index, 1)[0];
+        })(ids, index);
+        const priorities: number[] = signalData.priorities;
+        (<T>(items: T[], index: number): T => {
+          if (index >= items.length) {
+            throw new RangeError('Vec removal index out of bounds');
+          }
+          return items.splice(index, 1)[0];
+        })(priorities, index);
+        const repeats: boolean[] = signalData.repeat;
+        (<T>(items: T[], index: number): T => {
+          if (index >= items.length) {
+            throw new RangeError('Vec removal index out of bounds');
+          }
+          return items.splice(index, 1)[0];
+        })(repeats, index);
+        const paused: boolean[] = signalData.paused;
+        (<T>(items: T[], index: number): T => {
+          if (index >= items.length) {
+            throw new RangeError('Vec removal index out of bounds');
+          }
+          return items.splice(index, 1)[0];
+        })(paused, index);
+      }
+    }
+    return !dispatching && signalData.slots.length === 0;
+  })();
+  if (shouldDetach) {
+    const state = signal.data!;
+    const empty = (() => {
+      const matchValue = state;
+      if (matchValue !== undefined) {
+        const signalData = matchValue;
+        return signalData.slots.length === 0;
+      } else if (matchValue === undefined) {
+        return false;
+      }
+    })();
+    void state;
+    if (empty) {
+      signal.data = undefined;
+      signal.emit = (_unused0) => {};
+    }
+  }
+}
+
+export function hasSignalSlots<T>(signal: SignalRaw<T>): boolean {
+  const state = signal.data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  if (signalData.depth === 0) {
+    return signalData.slots.length !== 0;
+  }
+  return countLiveSlots(signalData) > 0;
+}
+
+export function initSignalData<T>(signal: SignalRaw<T>): void {
+  let state = signal.data!;
+  if (state !== undefined) {
+    return;
+  }
+  signal.data = { slots: [], ids: [], priorities: [], repeat: [], paused: [], cancelled: false, depth: 0 };
+  void state;
+  installDefaultSignalEmitter(signal);
+}
+
+export function isSlotConnected<T>(signal: SignalRaw<T>, id: SlotId): boolean {
+  const state = signal.data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  for (let index = 0; index < signalData.slots.length; index += 1) {
+    if (signalData.slots[index] !== undefined && signalData.ids[index].value === id.value) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Pauses or resumes one registration in place (priority order is preserved). Returns false when
+ * the registration no longer exists, so resuming a torn-down connection cannot resurrect it.
+ */
+export function setSlotPaused<T>(signal: SignalRaw<T>, id: SlotId, paused: boolean): boolean {
+  let state = signal.data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  for (let index = 0; index < signalData.slots.length; index += 1) {
+    if (signalData.slots[index] !== undefined && signalData.ids[index].value === id.value) {
+      signalData.paused[index] = paused;
+      return true;
+    }
+  }
+  return false;
 }

@@ -1,7 +1,9 @@
+// Generated from crates/flight-signals/src/internal.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
- * The `emit` implementation for a signal with no connected slots. Assigned by
- * `createSignal` and restored when the last slot disconnects, so emitting on an
- * empty signal is a no-op without a null check. Package-internal: not exported
- * from the barrel.
+ * The TS package's no-op emit used by a signal with no connected slots. In the D4 payload model
+ * the slot list is empty instead of pointing at this function; it stays in the contract so the
+ * translated surface matches TS `internal.ts`.
  */
-export const nullSignalEmit = (): void => {};
+export function nullSignalEmit(): void {}

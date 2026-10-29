@@ -1,9 +1,10 @@
 use std::sync::{Arc, Mutex, RwLock};
 
+use flight_entity::Ref;
 use flight_signals::contract::initialize_signal_timer_state;
 use flight_signals::*;
 
-type TimerRef = Arc<RwLock<SignalTimerState>>;
+type TimerRef = Ref<SignalTimerState>;
 
 #[derive(Clone)]
 struct PairEvent {
@@ -25,13 +26,13 @@ mod advance_signal_timers {
     #[test]
     fn runs_due_callbacks_in_fire_time_order_and_sets_the_current_time() {
         let state = timer_state();
-        let order = Arc::new(Mutex::new(Vec::new()));
+        let order: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         for (label, delay) in [("second", 20.0), ("first", 10.0)] {
-            let order = order.clone();
+            let timer_order = order.clone();
             set_signal_timeout(
                 &state,
                 delay,
-                Arc::new(move || order.lock().unwrap().push(label)),
+                Arc::new(move || timer_order.lock().unwrap().push(label)),
             );
         }
         advance_signal_timers(&state, 15.0);
@@ -68,7 +69,7 @@ mod connect_signal_at_frame_rate {
     #[test]
     fn fires_the_slot_only_when_accumulated_delta_reaches_the_period() {
         let source: Signal<FrameTick> = create_signal();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         connect_signal_at_frame_rate(
             &source,
@@ -121,7 +122,7 @@ mod connect_signal_debounced {
     fn fires_after_the_delay_when_the_signal_goes_quiet() {
         let source: Signal<i32> = create_signal();
         let state = timer_state();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         connect_signal_debounced(
             &source,
@@ -211,7 +212,7 @@ mod connect_signal_throttled {
     fn fires_immediately_on_the_first_emission() {
         let source: Signal<i32> = create_signal();
         let state = timer_state();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         connect_signal_throttled(
             &source,
@@ -228,7 +229,7 @@ mod connect_signal_throttled {
     fn suppresses_emissions_within_the_interval_then_fires_the_trailing_value() {
         let source: Signal<i32> = create_signal();
         let state = timer_state();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         connect_signal_throttled(
             &source,
@@ -249,7 +250,7 @@ mod connect_signal_throttled {
     fn preserves_the_original_payload() {
         let source: Signal<PairEvent> = create_signal();
         let state = timer_state();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<(i32, i32)>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         connect_signal_throttled(
             &source,
@@ -287,7 +288,7 @@ mod connect_signal_throttled {
     fn fires_the_first_emission_on_the_trailing_edge_when_leading_is_disabled() {
         let source: Signal<i32> = create_signal();
         let state = timer_state();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         let options = SignalThrottleOptions {
             leading: Some(false),
@@ -312,7 +313,7 @@ mod connect_signal_throttled {
     fn ignores_cooldown_emissions_when_trailing_is_disabled() {
         let source: Signal<i32> = create_signal();
         let state = timer_state();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         let options = SignalThrottleOptions {
             leading: None,
@@ -336,7 +337,7 @@ mod connect_signal_throttled {
     fn does_not_fire_when_both_leading_and_trailing_are_disabled() {
         let source: Signal<i32> = create_signal();
         let state = timer_state();
-        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = fired.clone();
         let options = SignalThrottleOptions {
             leading: Some(false),

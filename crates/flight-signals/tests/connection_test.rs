@@ -12,7 +12,7 @@ mod connect_signal_tracked {
     #[test]
     fn returns_a_connected_handle_whose_slot_receives_typed_payload() {
         let signal: Signal<ValueEvent> = create_signal();
-        let received = Arc::new(Mutex::new(Vec::new()));
+        let received: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = received.clone();
         let connection = connect_signal_tracked(
             &signal,
@@ -30,7 +30,7 @@ mod connect_signal_tracked {
     #[test]
     fn preserves_priority_ordering_among_tracked_and_ordinary_slots() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
 
         let low_calls = calls.clone();
         let low_options = SignalConnectOptions {
@@ -113,7 +113,7 @@ mod connect_signal_tracked {
     #[test]
     fn skips_a_connection_disconnected_before_its_turn_in_ordinary_dispatch() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let later_calls = calls.clone();
         let later = connect_signal_tracked(
             &signal,
@@ -144,7 +144,7 @@ mod connect_signal_tracked {
     #[test]
     fn still_invokes_a_snapshotted_connection_disconnected_during_safe_dispatch() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let later_calls = calls.clone();
         let later = connect_signal_tracked(
             &signal,
@@ -309,7 +309,7 @@ mod resume_signal_connection {
     #[test]
     fn restores_a_paused_connection_at_its_original_priority_position() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let high_calls = calls.clone();
         let options = SignalTrackedConnectOptions {
             priority: Some(10),

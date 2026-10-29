@@ -19,7 +19,7 @@ mod cancel_signal {
     #[test]
     fn stops_emit_after_the_canceling_slot() {
         let signal: Signal<()> = create_signal();
-        let order = Arc::new(Mutex::new(Vec::new()));
+        let order: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let cancel_signal_handle = signal.clone();
         let first_order = order.clone();
         connect_signal(
@@ -134,8 +134,9 @@ mod emit_signal {
             connect_signal(
                 &signal,
                 Arc::new(move |_| {
-                    let count = count.clone();
-                    *cell.write().unwrap() = Arc::new(move |_| *count.lock().unwrap() += 1);
+                    let callback_count = count.clone();
+                    *cell.write().unwrap() =
+                        Arc::new(move |_: &()| *callback_count.lock().unwrap() += 1);
                 }),
                 Some(&options),
             );
@@ -162,8 +163,9 @@ mod emit_signal {
             &signal,
             Arc::new(move |_| {
                 clear_signal(&callback_signal);
-                let count = count.clone();
-                *original_cell.write().unwrap() = Arc::new(move |_| *count.lock().unwrap() += 1);
+                let callback_count = count.clone();
+                *original_cell.write().unwrap() =
+                    Arc::new(move |_: &()| *callback_count.lock().unwrap() += 1);
             }),
             Some(&SignalConnectOptions {
                 priority: None,
@@ -178,7 +180,7 @@ mod emit_signal {
     #[test]
     fn invokes_a_required_custom_emitter_instead_of_bypassing_it_for_slots() {
         let signal: Signal<i32> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<(&'static str, i32)>>> = Arc::new(Mutex::new(Vec::new()));
         let slots = calls.clone();
         connect_signal(
             &signal,
@@ -197,7 +199,7 @@ mod emit_signal {
     #[test]
     fn spread_wrapper_shares_slots_but_only_its_own_emission_marks_the_wrapper() {
         let original: Signal<i32> = create_signal();
-        let seen = Arc::new(Mutex::new(Vec::new()));
+        let seen: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let output = seen.clone();
         connect_signal(
             &original,
@@ -228,7 +230,7 @@ mod emit_signal {
     #[test]
     fn spread_wrapper_calls_an_original_custom_emitter_even_without_signal_data() {
         let original: Signal<i32> = create_signal();
-        let seen = Arc::new(Mutex::new(Vec::new()));
+        let seen: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let output = seen.clone();
         *original.emit.write().unwrap() =
             Arc::new(move |value| output.lock().unwrap().push(*value));
@@ -248,12 +250,11 @@ mod emit_signal {
     }
 
     #[test]
-    fn clone_copies_emitter_identity_and_data_but_has_a_fresh_entity_runtime() {
+    fn clone_copies_emitter_value_and_data_but_has_a_fresh_entity_runtime() {
         let mut original: Signal<()> = create_signal();
         flight_entity::set_entity_uid(&mut original, "original".to_string());
         let mut clone = original.clone();
         assert!(Arc::ptr_eq(&clone.data, &original.data));
-        assert!(!Arc::ptr_eq(&clone.emit, &original.emit));
         assert!(Arc::ptr_eq(
             &clone.emit.read().unwrap(),
             &original.emit.read().unwrap()
@@ -262,15 +263,23 @@ mod emit_signal {
         assert_ne!(flight_entity::get_entity_uid(&mut clone), "original");
     }
 
+    /// flight-compiler: rust-only — TypeScript exposes the callback value, not its Rust lock cell.
+    #[test]
+    fn clone_owns_an_independent_emitter_cell() {
+        let original: Signal<()> = create_signal();
+        let clone = original.clone();
+        assert!(!Arc::ptr_eq(&clone.emit, &original.emit));
+    }
+
     #[test]
     fn calls_all_connected_slots() {
         let signal: Signal<()> = create_signal();
         let count = Arc::new(Mutex::new(0));
         for _ in 0..2 {
-            let count = count.clone();
+            let slot_count = count.clone();
             connect_signal(
                 &signal,
-                Arc::new(move |_: &()| *count.lock().unwrap() += 1),
+                Arc::new(move |_: &()| *slot_count.lock().unwrap() += 1),
                 None,
             );
         }
@@ -281,7 +290,7 @@ mod emit_signal {
     #[test]
     fn passes_typed_payload_to_each_slot() {
         let signal: Signal<ValueEvent> = create_signal();
-        let received = Arc::new(Mutex::new(Vec::new()));
+        let received: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = received.clone();
         connect_signal(
             &signal,
@@ -346,7 +355,7 @@ mod emit_signal {
     #[test]
     fn runs_the_slot_that_shifts_into_a_disconnected_earlier_position() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let a_calls = calls.clone();
         let a_id = connect_signal(
             &signal,
@@ -376,18 +385,18 @@ mod emit_signal {
     #[test]
     fn keeps_dispatching_to_later_slots_after_a_slot_disconnects_itself() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let a_calls = calls.clone();
         let a_signal = signal.clone();
-        let id_holder = Arc::new(Mutex::new(None));
+        let id_holder: Arc<Mutex<Option<SlotId>>> = Arc::new(Mutex::new(None));
         let holder = id_holder.clone();
         let id = connect_signal(
             &signal,
             Arc::new(move |_: &()| {
                 a_calls.lock().unwrap().push("a");
-                let id = *holder.lock().unwrap();
-                if let Some(id) = id {
-                    disconnect_signal(&a_signal, id);
+                let current_id = *holder.lock().unwrap();
+                if let Some(current_id) = current_id {
+                    disconnect_signal(&a_signal, current_id);
                 }
             }),
             None,
@@ -406,8 +415,8 @@ mod emit_signal {
     #[test]
     fn does_not_deliver_to_a_slot_disconnected_earlier_in_the_same_dispatch() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
-        let id_holder = Arc::new(Mutex::new(None));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
+        let id_holder: Arc<Mutex<Option<SlotId>>> = Arc::new(Mutex::new(None));
         let holder = id_holder.clone();
         let a_calls = calls.clone();
         let a_signal = signal.clone();
@@ -415,9 +424,9 @@ mod emit_signal {
             &signal,
             Arc::new(move |_: &()| {
                 a_calls.lock().unwrap().push("a");
-                let id = *holder.lock().unwrap();
-                if let Some(id) = id {
-                    disconnect_signal(&a_signal, id);
+                let current_id = *holder.lock().unwrap();
+                if let Some(current_id) = current_id {
+                    disconnect_signal(&a_signal, current_id);
                 }
             }),
             None,
@@ -442,7 +451,7 @@ mod emit_signal {
     #[test]
     fn gives_a_nested_emit_its_own_cursor_unskewed_by_a_disconnect_inside_it() {
         let signal: Signal<()> = create_signal();
-        let nested = Arc::new(Mutex::new(Vec::new()));
+        let nested: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let depth = Arc::new(Mutex::new(0));
         let reentered = Arc::new(Mutex::new(false));
         let nested_signal = signal.clone();
@@ -497,7 +506,7 @@ mod emit_signal {
     #[test]
     fn fires_a_once_slot_exactly_once_when_a_nested_emit_walks_past_it() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let once_calls = calls.clone();
         let options = SignalConnectOptions {
             priority: None,
@@ -532,17 +541,17 @@ mod emit_signal {
             None,
         );
         emit_signal(&signal, &());
-        let calls = calls.lock().unwrap();
-        let once: Vec<&&str> = calls.iter().filter(|name| **name == "once").collect();
+        let snapshot = calls.lock().unwrap();
+        let once: Vec<&&str> = snapshot.iter().filter(|name| **name == "once").collect();
         assert_eq!(once.len(), 1);
-        let tail: Vec<&&str> = calls.iter().filter(|name| **name == "tail").collect();
+        let tail: Vec<&&str> = snapshot.iter().filter(|name| **name == "tail").collect();
         assert_eq!(tail.len(), 2);
     }
 
     #[test]
     fn purges_disconnected_entries_once_the_outermost_emit_exits() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let a_calls = calls.clone();
         let b_calls = calls.clone();
         let b_signal = signal.clone();
@@ -577,14 +586,14 @@ mod emit_signal {
     fn returns_the_signal_to_its_empty_state_when_every_slot_disconnects_during_dispatch() {
         let signal: Signal<()> = create_signal();
         let a_signal = signal.clone();
-        let id_holder = Arc::new(Mutex::new(None));
+        let id_holder: Arc<Mutex<Option<SlotId>>> = Arc::new(Mutex::new(None));
         let holder = id_holder.clone();
         let id = connect_signal(
             &signal,
             Arc::new(move |_: &()| {
-                let id = *holder.lock().unwrap();
-                if let Some(id) = id {
-                    disconnect_signal(&a_signal, id);
+                let current_id = *holder.lock().unwrap();
+                if let Some(current_id) = current_id {
+                    disconnect_signal(&a_signal, current_id);
                 }
             }),
             None,
@@ -599,17 +608,17 @@ mod emit_signal {
     #[test]
     fn reports_no_slots_from_inside_the_dispatch_that_disconnected_the_last_one() {
         let signal: Signal<()> = create_signal();
-        let observed = Arc::new(Mutex::new(Vec::new()));
-        let id_holder = Arc::new(Mutex::new(None));
+        let observed: Arc<Mutex<Vec<bool>>> = Arc::new(Mutex::new(Vec::new()));
+        let id_holder: Arc<Mutex<Option<SlotId>>> = Arc::new(Mutex::new(None));
         let holder = id_holder.clone();
         let slot_signal = signal.clone();
         let seen = observed.clone();
         let id = connect_signal(
             &signal,
             Arc::new(move |_: &()| {
-                let id = *holder.lock().unwrap();
-                if let Some(id) = id {
-                    disconnect_signal(&slot_signal, id);
+                let current_id = *holder.lock().unwrap();
+                if let Some(current_id) = current_id {
+                    disconnect_signal(&slot_signal, current_id);
                 }
                 seen.lock().unwrap().push(has_signal_slots(&slot_signal));
             }),
@@ -623,7 +632,7 @@ mod emit_signal {
     #[test]
     fn reports_a_slot_disconnected_mid_dispatch_as_disconnected_from_inside_the_same_dispatch() {
         let signal: Signal<()> = create_signal();
-        let observed = Arc::new(Mutex::new(Vec::new()));
+        let observed: Arc<Mutex<Vec<bool>>> = Arc::new(Mutex::new(Vec::new()));
         let b_id = connect_signal(&signal, Arc::new(|_: &()| {}), None);
         let slot_signal = signal.clone();
         let seen = observed.clone();

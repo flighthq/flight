@@ -1,8 +1,12 @@
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use flight_entity::Ref;
 
+use crate::signal::install_default_signal_emitter;
 use crate::types::{Signal, SignalConnectOptions, SignalData, SignalSlot, SlotId};
+
+static NEXT_SIGNAL_SLOT_ID: AtomicU32 = AtomicU32::new(1);
 
 pub fn clear_signal<T>(signal: &Signal<T>) {
     *signal.emit.write().unwrap() = Arc::new(|_| {});
@@ -46,7 +50,6 @@ pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) -> bool 
     let paused: &mut Vec<bool> = &mut signal_data.paused;
     paused.truncate(write);
     if write == 0 {
-        *state = None;
         return true;
     }
     return false;
@@ -61,13 +64,8 @@ pub fn connect_signal<T: 'static>(
 ) -> SlotId {
     let priority = options.and_then(|o| o.priority).unwrap_or(0);
     let repeat = !options.and_then(|o| o.once).unwrap_or(false);
-    let id = {
-        let mut next_slot_id = signal.state.next_slot_id.write().unwrap();
-        let id = SlotId {
-            value: *next_slot_id,
-        };
-        *next_slot_id += 1;
-        id
+    let id = SlotId {
+        value: NEXT_SIGNAL_SLOT_ID.fetch_add(1, Ordering::Relaxed),
     };
 
     init_signal_data(signal);
@@ -105,9 +103,8 @@ pub(crate) fn count_live_slots<T>(data: &SignalData<T>) -> usize {
 /// when the outermost dispatch exits (D4 re-entrancy).
 // flight-lint: allow(conform-params) D4: disconnect takes the SlotId returned by connect_signal
 pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
-    let data = signal.data.clone();
     let should_detach = {
-        let mut state = data.write().unwrap();
+        let mut state = signal.data.write().unwrap();
         let Some(signal_data) = state.as_mut() else {
             return;
         };
@@ -115,7 +112,7 @@ pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
         let mut index = signal_data.slots.len();
         while index > 0 {
             index -= 1;
-            if signal_data.ids[index] != id {
+            if signal_data.ids[index].value != id.value {
                 continue;
             }
             if dispatching {
@@ -136,14 +133,14 @@ pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
         !dispatching && signal_data.slots.is_empty()
     };
     if should_detach {
-        let mut state = data.write().unwrap();
-        if state
-            .as_ref()
-            .map(|signal_data| signal_data.slots.is_empty())
-            .unwrap_or(false)
-        {
-            *state = None;
-            drop(state);
+        let state = signal.data.read().unwrap();
+        let empty = match state.as_ref() {
+            Some(signal_data) => signal_data.slots.is_empty(),
+            None => false,
+        };
+        drop(state);
+        if empty {
+            *signal.data.write().unwrap() = None;
             *signal.emit.write().unwrap() = Arc::new(|_| {});
         }
     }
@@ -175,7 +172,7 @@ pub(crate) fn init_signal_data<T: 'static>(signal: &Signal<T>) {
         depth: 0,
     });
     drop(state);
-    crate::signal::install_default_signal_emitter(signal);
+    install_default_signal_emitter(signal);
 }
 
 // flight-lint: allow(conform-params) D4: connectivity is queried by SlotId, not by function identity
@@ -185,7 +182,7 @@ pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool {
         return false;
     };
     for index in 0..signal_data.slots.len() {
-        if signal_data.slots[index].is_some() && signal_data.ids[index] == id {
+        if signal_data.slots[index].is_some() && signal_data.ids[index].value == id.value {
             return true;
         }
     }
@@ -200,7 +197,7 @@ pub(crate) fn set_slot_paused<T>(signal: &Signal<T>, id: SlotId, paused: bool) -
         return false;
     };
     for index in 0..signal_data.slots.len() {
-        if signal_data.slots[index].is_some() && signal_data.ids[index] == id {
+        if signal_data.slots[index].is_some() && signal_data.ids[index].value == id.value {
             signal_data.paused[index] = paused;
             return true;
         }

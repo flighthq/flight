@@ -16,10 +16,10 @@ mod clear_signal {
         let signal: Signal<()> = create_signal();
         let count = Arc::new(Mutex::new(0));
         for _ in 0..2 {
-            let count = count.clone();
+            let slot_count = count.clone();
             connect_signal(
                 &signal,
-                Arc::new(move |_: &()| *count.lock().unwrap() += 1),
+                Arc::new(move |_: &()| *slot_count.lock().unwrap() += 1),
                 None,
             );
         }
@@ -49,12 +49,12 @@ mod connect_signal {
     #[test]
     fn connects_multiple_slots_emitted_in_insertion_order() {
         let signal: Signal<()> = create_signal();
-        let order = Arc::new(Mutex::new(Vec::new()));
+        let order: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         for value in [1, 2, 3] {
-            let order = order.clone();
+            let slot_order = order.clone();
             connect_signal(
                 &signal,
-                Arc::new(move |_: &()| order.lock().unwrap().push(value)),
+                Arc::new(move |_: &()| slot_order.lock().unwrap().push(value)),
                 None,
             );
         }
@@ -65,7 +65,7 @@ mod connect_signal {
     #[test]
     fn passes_typed_payload_to_slot() {
         let signal: Signal<PairEvent> = create_signal();
-        let received = Arc::new(Mutex::new(None));
+        let received: Arc<Mutex<Option<PairEvent>>> = Arc::new(Mutex::new(None));
         let out = received.clone();
         connect_signal(
             &signal,
@@ -113,16 +113,16 @@ mod connect_signal {
     #[test]
     fn emits_higher_priority_slots_first() {
         let signal: Signal<()> = create_signal();
-        let order = Arc::new(Mutex::new(Vec::new()));
+        let order: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         for (value, priority) in [(1, 0), (2, 10), (3, 5)] {
-            let order = order.clone();
+            let slot_order = order.clone();
             let options = SignalConnectOptions {
                 priority: Some(priority),
                 once: None,
             };
             connect_signal(
                 &signal,
-                Arc::new(move |_: &()| order.lock().unwrap().push(value)),
+                Arc::new(move |_: &()| slot_order.lock().unwrap().push(value)),
                 Some(&options),
             );
         }
@@ -133,7 +133,7 @@ mod connect_signal {
     #[test]
     fn delivers_to_every_slot_when_a_slot_re_emits_the_same_signal() {
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let reentered = Arc::new(Mutex::new(false));
         let nested_signal = signal.clone();
         let first_calls = calls.clone();
@@ -158,9 +158,9 @@ mod connect_signal {
             None,
         );
         emit_signal(&signal, &());
-        let calls = calls.lock().unwrap();
-        assert!(calls.contains(&"a"));
-        assert!(calls.contains(&"b"));
+        let snapshot = calls.lock().unwrap();
+        assert!(snapshot.contains(&"a"));
+        assert!(snapshot.contains(&"b"));
     }
 
     #[test]

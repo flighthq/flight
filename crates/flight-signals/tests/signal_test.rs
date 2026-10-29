@@ -21,9 +21,8 @@ mod initialize_signal {
     use super::*;
 
     #[test]
-    fn reinstalls_the_default_emitter_after_a_custom_callback_and_keeps_the_data_handle() {
+    fn reinstalls_the_default_emitter_after_a_custom_callback() {
         let mut signal: Signal<()> = create_signal();
-        let data = signal.data.clone();
         let custom_calls = std::sync::Arc::new(std::sync::Mutex::new(0));
         let custom_count = custom_calls.clone();
         *signal.emit.write().unwrap() = std::sync::Arc::new(move |_| {
@@ -32,7 +31,6 @@ mod initialize_signal {
         initialize_signal(&mut signal);
         emit_signal(&signal, &());
         assert_eq!(*custom_calls.lock().unwrap(), 0);
-        assert!(std::sync::Arc::ptr_eq(&data, &signal.data));
         let calls = std::sync::Arc::new(std::sync::Mutex::new(0));
         let count = calls.clone();
         connect_signal(
@@ -42,6 +40,17 @@ mod initialize_signal {
         );
         emit_signal(&signal, &());
         assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    /// flight-compiler: rust-only — TypeScript exposes field values, not their Rust lock cells.
+    #[test]
+    fn preserves_emit_and_data_cell_handles() {
+        let mut signal: Signal<()> = create_signal();
+        let emit = signal.emit.clone();
+        let data = signal.data.clone();
+        initialize_signal(&mut signal);
+        assert!(std::sync::Arc::ptr_eq(&emit, &signal.emit));
+        assert!(std::sync::Arc::ptr_eq(&data, &signal.data));
     }
 
     #[test]

@@ -1,43 +1,112 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Generated from crates/flight-signals/src/connection.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import type { Signal, SignalConnection, SignalTrackedConnectOptions } from './signalTypes.ts';
-import { connectSignal, disconnectSignal } from './slot.ts';
+import { connectSignal, disconnectSignal, isSlotConnected, setSlotPaused } from './slot.ts';
+import type {
+  SignalConnectOptions,
+  SignalConnection,
+  SignalRaw,
+  SignalSlot,
+  SignalTrackedConnectOptions,
+} from './types.ts';
 
-// Connects through a wrapper so pause state costs only consumers that request a tracked handle. Tracked
-// once connections remove themselves immediately before their real invocation: a paused wrapper can then
-// be skipped without the base dispatch consuming its once registration, and a nested emit cannot repeat it.
-export function connectSignalTracked<T extends (...args: any[]) => void>(
-  signal: Signal<T>,
-  slot: T,
+/**
+ * Connects a tracked registration and returns a handle for it (TS `connectSignalTracked`).
+ * The optional scope is part of the options, matching TS.
+ */
+export function connectSignalTracked<T>(
+  signal: SignalRaw<T>,
+  slot: SignalSlot<T>,
   options?: Readonly<SignalTrackedConnectOptions>,
-): SignalConnection<T> {
-  const connection: SignalConnection<T> = { connected: true, paused: false, signal, slot };
-  const once = options?.once ?? false;
-  const trackedSlot = ((...args: Parameters<T>): void => {
-    if (connection.paused) return;
-    if (once) disconnectSignalConnection(connection);
-    slot(...args);
-  }) as unknown as T;
-  connection.slot = trackedSlot;
-
+): SignalConnection {
   const priority = options?.priority;
-  connectSignal(signal, trackedSlot, priority === undefined ? undefined : { priority });
-  // The scope stores handles for signals of every shape, so its element type is the widest slot
-  // signature. The cast is the variance of that container, not a claim about this connection.
-  options?.scope?.connections.push(connection as unknown as SignalConnection<(...args: any[]) => void>);
+  const once = options?.once ?? false;
+  const connectOptions: SignalConnectOptions = { priority: priority, once: once };
+  const id = connectSignal(signal, slot, connectOptions);
+  const disconnectSignalHandle = Object.defineProperties(
+    { ...signal },
+    {
+      data: {
+        get: () => signal.data,
+        set: (value) => {
+          signal.data = value;
+        },
+        enumerable: true,
+        configurable: true,
+      },
+    },
+  );
+  const pauseSignalHandle = Object.defineProperties(
+    { ...signal },
+    {
+      data: {
+        get: () => signal.data,
+        set: (value) => {
+          signal.data = value;
+        },
+        enumerable: true,
+        configurable: true,
+      },
+    },
+  );
+  const connectedSignalHandle = Object.defineProperties(
+    { ...signal },
+    {
+      data: {
+        get: () => signal.data,
+        set: (value) => {
+          signal.data = value;
+        },
+        enumerable: true,
+        configurable: true,
+      },
+    },
+  );
+  const connection: SignalConnection = {
+    disconnect: () => disconnectSignal(disconnectSignalHandle, id),
+    setPaused: (paused) => {
+      setSlotPaused(pauseSignalHandle, id, paused);
+    },
+    isConnected: () => isSlotConnected(connectedSignalHandle, id),
+    paused: false,
+  };
+  {
+    const $scope = ((o) => (o === undefined ? undefined : o.scope))(options);
+    if ($scope !== undefined) {
+      const scope = $scope;
+      scope.connections!.push(connection);
+    }
+  }
   return connection;
 }
 
-export function disconnectSignalConnection<T extends (...args: any[]) => void>(connection: SignalConnection<T>): void {
-  if (!connection.connected) return;
-  connection.connected = false;
-  disconnectSignal(connection.signal, connection.slot);
+export function disconnectSignalConnection(connection: SignalConnection): void {
+  connection.disconnect();
 }
 
-export function pauseSignalConnection<T extends (...args: any[]) => void>(connection: SignalConnection<T>): void {
-  if (connection.connected) connection.paused = true;
+export function isSignalConnectionConnected(connection: SignalConnection): boolean {
+  return connection.isConnected();
 }
 
-export function resumeSignalConnection<T extends (...args: any[]) => void>(connection: SignalConnection<T>): void {
-  if (connection.connected) connection.paused = false;
+/**
+ * True while the connection is paused. A torn-down connection keeps its last paused flag, as in
+ * TS, so resuming it cannot appear to bring it back.
+ */
+export function isSignalConnectionPaused(connection: SignalConnection): boolean {
+  return connection.paused!;
+}
+
+export function pauseSignalConnection(connection: SignalConnection): void {
+  if (!connection.isConnected()) {
+    return;
+  }
+  connection.setPaused(true);
+  connection.paused = true;
+}
+
+export function resumeSignalConnection(connection: SignalConnection): void {
+  connection.setPaused(false);
+  if (connection.isConnected()) {
+    connection.paused = false;
+  }
 }

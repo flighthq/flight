@@ -40,7 +40,7 @@ mod create_signal_scope {
     fn registers_a_connection_without_disturbing_its_handle_semantics() {
         let scope = create_signal_scope();
         let signal: Signal<()> = create_signal();
-        let seen = Arc::new(Mutex::new(Vec::new()));
+        let seen: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let out = seen.clone();
         let options = SignalTrackedConnectOptions {
             priority: Some(5),
@@ -67,7 +67,7 @@ mod disconnect_signal_scope {
     fn tears_down_every_member_in_one_call_and_empties_the_scope() {
         let scope = create_signal_scope();
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let first_calls = calls.clone();
         let first_options = SignalTrackedConnectOptions {
             priority: None,
@@ -138,7 +138,7 @@ mod disconnect_signal_scope {
     fn leaves_untracked_and_unscoped_tracked_connections_on_the_signal() {
         let scope = create_signal_scope();
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let plain_calls = calls.clone();
         connect_signal(
             &signal,
@@ -201,7 +201,7 @@ mod disconnect_signal_scope {
     fn passes_over_a_member_already_disconnected_through_its_own_handle() {
         let scope = create_signal_scope();
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let first_calls = calls.clone();
         let first_options = SignalTrackedConnectOptions {
             priority: None,
@@ -289,7 +289,7 @@ mod disconnect_signal_scope {
     fn holds_only_the_replacement_after_a_member_tears_the_scope_down_and_reconnects() {
         let scope = create_signal_scope();
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let readded = Arc::new(Mutex::new(false));
         let member_signal = signal.clone();
         let member_scope = scope.clone();
@@ -341,7 +341,7 @@ mod disconnect_signal_scope {
     fn tears_the_scope_down_from_inside_a_dispatch_without_skipping_surviving_slots() {
         let scope = create_signal_scope();
         let signal: Signal<()> = create_signal();
-        let calls = Arc::new(Mutex::new(Vec::new()));
+        let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
         let member_scope = scope.clone();
         let first_calls = calls.clone();
         let options = SignalTrackedConnectOptions {

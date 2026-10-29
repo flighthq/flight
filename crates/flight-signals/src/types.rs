@@ -1,4 +1,6 @@
-//! flight-compiler: entity-runtime-state Signal.state
+//! flight-compiler: companion signalTypes.ts
+//! flight-compiler: entity-clone-fields Signal.data
+//! flight-compiler: root-only cancelSignal clearSignal connectSignal connectSignalAtFrameRate connectSignalDebounced connectSignalThrottled connectSignalTracked createSignal createSignalScope disconnectSignal disconnectSignalConnection disconnectSignalScope emitSignal emitSignalSafe hasSignalSlots isSlotConnected pauseSignalConnection resumeSignalConnection Signal SignalConnection SignalConnectOptions SignalData SignalScope SignalThrottleOptions SignalTrackedConnectOptions
 
 use std::sync::{Arc, RwLock};
 
@@ -11,7 +13,7 @@ use flight_entity::{EntityRuntimeSlot, Ref};
 // flight-lint: allow(contract-vocabulary) D4 SlotId is an opaque registration handle, not payload data
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct SlotId {
-    pub value: u64,
+    pub value: u32,
 }
 
 /// Identity of one pending signal timer, returned by `set_signal_timeout`.
@@ -44,24 +46,17 @@ pub struct SignalData<T> {
     pub depth: u32,
 }
 
-/// A signal with a typed payload (D4). TS models `Signal<T extends (...args) => void>`; the IR
-/// carries the payload instead, and slots receive `&T`.
+/// A signal with a typed payload (D4). Both targets parameterize the signal by that payload, and
+/// slots receive `&T` in Rust or `T` in TypeScript.
 ///
 /// Cloning shares signal data and the current callback value, matching a TS spread copy.
-/// Each clone owns a fresh callback cell and Entity runtime. `next_slot_id` is shared
-/// too, so ids stay unique for the lifetime of the signal even across `clear_signal`.
+/// Each clone owns a fresh callback cell and Entity runtime. Registration ids come from one atomic
+/// sequence, so a stale handle cannot collide with a later registration after `clear_signal`.
 pub struct Signal<T> {
     /// Source-required emission callback. A spread clone may replace it while sharing data.
     pub emit: Ref<Arc<dyn Fn(&T) + Send + Sync>>,
     pub data: Ref<Option<SignalData<T>>>,
-    pub(crate) state: SignalRuntime,
     runtime: EntityRuntimeSlot,
-}
-
-/// Private mutable state shared only where the native semantics require it.
-pub struct SignalRuntime {
-    pub next_slot_id: Ref<u64>,
-    pub last_dispatch_detached: Ref<bool>,
 }
 
 /// Options for `connect_signal`.
@@ -127,14 +122,6 @@ pub struct SignalTimerState {
     pub next_id: u64,
 }
 
-pub(crate) fn signal_entity_runtime<T>(signal: &Signal<T>) -> &EntityRuntimeSlot {
-    return &signal.runtime;
-}
-
-pub(crate) fn signal_entity_runtime_mut<T>(signal: &mut Signal<T>) -> &mut EntityRuntimeSlot {
-    return &mut signal.runtime;
-}
-
 impl Default for SignalTimerState {
     fn default() -> Self {
         return SignalTimerState {
@@ -147,11 +134,11 @@ impl Default for SignalTimerState {
 
 impl<T> flight_entity::Entity for Signal<T> {
     fn entity_runtime(&self) -> &EntityRuntimeSlot {
-        return signal_entity_runtime(self);
+        return &self.runtime;
     }
 
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
-        return signal_entity_runtime_mut(self);
+        return &mut self.runtime;
     }
 }
 
@@ -174,10 +161,6 @@ impl<T> Clone for Signal<T> {
         return Signal {
             emit: Arc::new(RwLock::new(self.emit.read().unwrap().clone())),
             data: self.data.clone(),
-            state: SignalRuntime {
-                next_slot_id: self.state.next_slot_id.clone(),
-                last_dispatch_detached: Arc::new(RwLock::new(false)),
-            },
             runtime: EntityRuntimeSlot::default(),
         };
     }
@@ -190,10 +173,6 @@ impl<T: 'static> Default for Signal<T> {
                 Arc::new(|_: &T| {}) as Arc<dyn Fn(&T) + Send + Sync>
             )),
             data: Ref::new(RwLock::new(None)),
-            state: SignalRuntime {
-                next_slot_id: Arc::new(RwLock::new(1)),
-                last_dispatch_detached: Arc::new(RwLock::new(false)),
-            },
             runtime: EntityRuntimeSlot::default(),
         };
         crate::signal::install_default_signal_emitter(&out);
