@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use flight_entity::Ref;
 use flight_importdiagnostics::{
@@ -374,10 +375,10 @@ mod create_rive_rich_text {
         );
         assert_eq!(
             text_format(&label).read().unwrap().variations,
-            Some(vec![FontVariation {
+            Some(Arc::new(vec![FontVariation {
                 axis: "wght".to_string(),
                 value: 700.0,
-            }]),
+            }])),
         );
     }
 
@@ -397,7 +398,7 @@ mod create_rive_rich_text {
         );
         assert_eq!(
             text_format(&label).read().unwrap().variations,
-            Some(vec![
+            Some(Arc::new(vec![
                 FontVariation {
                     axis: "wght".to_string(),
                     value: 300.0,
@@ -406,7 +407,7 @@ mod create_rive_rich_text {
                     axis: "wdth".to_string(),
                     value: 87.5,
                 },
-            ]),
+            ])),
         );
     }
 

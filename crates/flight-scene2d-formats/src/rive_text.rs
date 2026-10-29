@@ -154,7 +154,7 @@ fn create_rive_text_format(
     }
     let variations = read_rive_style_axes(artboard, style_index);
     if !variations.is_empty() {
-        format.variations = Some(variations);
+        format.variations = Some(Arc::new(variations));
     }
     return Arc::new(RwLock::new(format));
 }
