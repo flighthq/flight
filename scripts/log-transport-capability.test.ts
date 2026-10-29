@@ -43,13 +43,16 @@ describe('LogTransport zero-provider capability shape', () => {
 
   it('takes one configured transport directly and pins it to an Entity sink', () => {
     const fileLogSinkTypes = source('packages/types/src/FileLogSink.ts');
-    const log = source('packages/log/src/log.ts');
+    const fileLogSink = source('packages/log/src/fileLogSink.ts');
     const logTypes = source('packages/types/src/Log.ts');
 
     expect(logTypes).toContain('export interface LogTransport extends Entity');
     expect(fileLogSinkTypes).toContain('export interface FileLogSink extends Entity');
-    expect(log).toMatch(/export function createFileLogSink\(\s*transport: LogTransport,/);
-    expect(log).toContain('[EntityRuntimeKey]: undefined');
+    // The caller-owned LogState comes first (explicit state); the one transport is still taken directly.
+    expect(fileLogSink).toMatch(
+      /export function createFileLogSink\(\s*state: Readonly<LogState>,\s*transport: LogTransport,/,
+    );
+    expect(fileLogSink).toContain('[EntityRuntimeKey]: undefined');
   });
 
   it('requires admission, delivery, and terminal outcomes instead of optional operations', () => {
