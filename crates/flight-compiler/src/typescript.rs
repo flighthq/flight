@@ -1361,6 +1361,31 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     return (named_type(rust_type).as_deref() == Some("Vec")).then_some(false);
 }
 
+// The function a `std::mem::f` / `core::mem::f` path, or a `mem::take` / `mem::replace` / `mem::swap`
+// path through `use std::mem`, names. These move values in place, which has no TypeScript lowering.
+fn std_mem_function(expression: &Expr) -> Option<String> {
+    let Expr::Path(path) = expression else {
+        return None;
+    };
+    let segments = path
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    return match segments.as_slice() {
+        [root, module, name] if (root == "std" || root == "core") && module == "mem" => {
+            Some(name.clone())
+        }
+        [module, name]
+            if module == "mem" && matches!(name.as_str(), "replace" | "swap" | "take") =>
+        {
+            Some(name.clone())
+        }
+        _ => None,
+    };
+}
+
 fn transparent_data_union(rust_enum: &syn::ItemEnum) -> bool {
     return !rust_enum
         .variants
@@ -5143,6 +5168,11 @@ pub(crate) fn emit_expression(
         }
         Expr::Block(block) => emit_block_expression(&block.block, entities),
         Expr::Call(call) => {
+            if let Some(name) = std_mem_function(&call.func) {
+                return Err(compile_error(format!(
+                    "portable `std::mem::{name}` has no portable lowering"
+                )));
+            }
             if let Some((owner, variant, _)) = data_union_expression_variant(&call.func, entities) {
                 if data_union_unit(entities, &owner, &variant) || call.args.len() != 1 {
                     return Err(compile_error(format!(
@@ -8035,6 +8065,17 @@ fn emit_method_call(
         "sum" if arguments.is_empty() => {
             Ok(format!("{receiver}.reduce((sum, value) => sum + value, 0)"))
         }
+        // In place, like Rust: the predicate runs once per element in forward order, kept elements move
+        // forward in the same array (keeping their identity and order), and the array is then truncated.
+        "retain" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!(
+                "((items, keep) => {{ let kept = 0; for (let index = 0; index < items.length; index += 1) {{ const item = items[index]; if (keep(item)) {{ items[kept] = item; kept += 1; }} }} items.length = kept; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "retain" => Err(compile_error(
+            "portable `.retain()` requires a receiver declared as Rust `Vec` and one predicate",
+        )),
         "sort_by" if arguments.len() == 1 => Ok(format!("{receiver}.sort({})", arguments[0])),
         "sort" if arguments.is_empty() => Ok(format!("{receiver}.sort((a, b) => a - b)")),
         "swap" if arguments.len() == 2 => Ok(format!(

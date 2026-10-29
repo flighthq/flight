@@ -704,6 +704,92 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
     // terminates. A non-reusable receiver, then argument, are each bound once. Construction and range
     // forms whose emission is not yet valid typed TypeScript fail closed.
     #[test]
+    fn lowers_vec_retain_in_place_and_rejects_std_mem_moves() {
+        let retain = "((items, keep) => { let kept = 0; for (let index = 0; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } items.length = kept; })";
+        let source = r#"
+pub struct Range {
+    pub start: u32,
+    pub end: u32,
+}
+
+pub fn drop_empty(ranges: &mut Vec<Range>) {
+    ranges.retain(|range| range.start < range.end);
+}
+
+pub fn keep_even(values: &mut Vec<u32>) {
+    values.retain(|value| *value % 2 == 0);
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            format!(
+                "export interface Range {{\n  start: number;\n  end: number;\n}}\n\nexport function dropEmpty(ranges: Range[]): void {{\n  {retain}(ranges, (range) => range.start < range.end);\n}}\n\nexport function keepEven(values: number[]): void {{\n  {retain}(values, (value) => value % 2 === 0);\n}}\n"
+            )
+        );
+
+        let tests = r#"
+fn kept(values: &[u32]) -> Vec<u32> {
+    let mut out: Vec<u32> = values.to_vec();
+    out.retain(|value| *value % 2 == 0);
+    return out;
+}
+
+mod retain {
+    use super::*;
+
+    #[test]
+    fn keeps_order_for_all_kept_all_removed_and_alternating_inputs() {
+        let all_kept: Vec<u32> = vec![2, 4, 6];
+        let all_removed: Vec<u32> = vec![1, 3, 5];
+        let alternating: Vec<u32> = vec![1, 2, 3, 4, 5, 6];
+        let expected_kept: Vec<u32> = vec![2, 4, 6];
+        let expected_removed: Vec<u32> = vec![];
+        assert_eq!(kept(&all_kept), expected_kept);
+        assert_eq!(kept(&all_removed), expected_removed);
+        assert_eq!(kept(&alternating), expected_kept);
+    }
+}
+"#;
+        let output = compile_vitest(tests, "@flighthq/example/contract").unwrap();
+        assert!(
+            output.contains(&format!(
+                "  let out: number[] = [...values];\n  {retain}(out, (value) => value % 2 === 0);\n  return out;\n"
+            )),
+            "{output}"
+        );
+        assert!(
+            output.contains("    expect(kept(alternating)).toEqual(expectedKept);\n"),
+            "{output}"
+        );
+
+        for (source, expected) in [
+            (
+                "pub fn f(text: &mut String) { text.retain(|c| c != 'a'); }\n",
+                "portable `.retain()` requires a receiver declared as Rust `Vec` and one predicate",
+            ),
+            (
+                "pub struct R { pub start: u32, pub end: u32 }\npub fn f(values: &mut Vec<R>) {\n    let previous: Vec<R> = std::mem::take(values);\n    for value in previous {\n        if value.start < value.end {\n            values.push(value);\n        }\n    }\n}\n",
+                "portable `std::mem::take` has no portable lowering",
+            ),
+            (
+                "use std::mem;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return mem::take(values); }\n",
+                "portable `std::mem::take` has no portable lowering",
+            ),
+            (
+                "pub fn f(values: &mut Vec<u32>, other: Vec<u32>) -> Vec<u32> { return std::mem::replace(values, other); }\n",
+                "portable `std::mem::replace` has no portable lowering",
+            ),
+            (
+                "pub fn f(a: &mut u32, b: &mut u32) { core::mem::swap(a, b); }\n",
+                "portable `std::mem::swap` has no portable lowering",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+    }
+
+    #[test]
     fn lowers_vec_extend_over_declared_sequences() {
         let source = r#"
 //! flight-compiler: data-union Id
