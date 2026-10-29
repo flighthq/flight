@@ -101,6 +101,108 @@ pub fn create_record() -> Record {
 }
 `;
 
+// Valid Rust whose function or closure parameter shadows the group owner in a scope that reads a member.
+const PARAMETER_SHADOW_FIXTURE = `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+
+#[allow(non_snake_case)]
+pub fn offset(Code: i32) -> i32 {
+    return Code + CODE_A;
+}
+`;
+
+const PARAMETER_SHADOW_VARIANTS = [
+  [
+    'typed_closure',
+    'Code',
+    `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+
+#[allow(non_snake_case)]
+pub fn offset(value: i32) -> i32 {
+    let add = |Code: i32| -> i32 {
+        return Code + CODE_A;
+    };
+    return add(value);
+}
+`,
+  ],
+  [
+    'untyped_closure',
+    'Code',
+    `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+
+#[allow(non_snake_case)]
+pub fn offset(values: Vec<i32>) -> Vec<i32> {
+    return values.iter().map(|Code| Code + CODE_A).collect();
+}
+`,
+  ],
+  [
+    'destructured_closure',
+    'Code',
+    `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+
+#[allow(non_snake_case)]
+pub fn offset(pair: (i32, i32)) -> i32 {
+    let add = |(Code, b): (i32, i32)| -> i32 {
+        return Code + b + CODE_A;
+    };
+    return add(pair);
+}
+`,
+  ],
+  [
+    'nested_closure',
+    'Code',
+    `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+
+#[allow(non_snake_case)]
+pub fn offset(value: i32) -> i32 {
+    let outer = |a: i32| -> i32 {
+        let inner = |Code: i32| -> i32 {
+            return Code + CODE_A;
+        };
+        return inner(a);
+    };
+    return outer(value);
+}
+`,
+  ],
+  [
+    'renamed_parameter',
+    'keyCode',
+    `//! flight-compiler: const-group keyCode KEY_CODE_
+
+pub const KEY_CODE_A: i32 = 1;
+
+pub fn offset(key_code: i32) -> i32 {
+    return key_code + KEY_CODE_A;
+}
+`,
+  ],
+] as const;
+
+const UNSHADOWED_PARAMETER_FIXTURE = `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+
+pub fn offset(value: i32) -> i32 {
+    let add = |code: i32| -> i32 {
+        return code + CODE_A;
+    };
+    return add(value);
+}
+`;
+
 const LITERAL_FORMS_FIXTURE = `//! flight-compiler: const-group Code CODE_
 
 pub const CODE_A: i32 = -1;
@@ -270,6 +372,28 @@ describe('flight-compile const-group lowering', () => {
         '@flighthq/entity/contract',
       ]).error,
     ).toBe('error: `const-group allocateEntity` collides with another emitted value binding named `allocateEntity`');
+  });
+
+  it('fails closed when a function or closure parameter shadows the owner', () => {
+    buildRustSource('parameter_shadow', PARAMETER_SHADOW_FIXTURE);
+    expect(compileRust('parameter-shadow', PARAMETER_SHADOW_FIXTURE).error).toBe(
+      'error: `const-group Code` collides with another emitted value binding named `Code`',
+    );
+    for (const [name, owner, rust] of PARAMETER_SHADOW_VARIANTS) {
+      buildRustSource(name, rust);
+      expect(compileRust(name, rust).error).toBe(
+        `error: \`const-group ${owner}\` collides with another emitted value binding named \`${owner}\``,
+      );
+    }
+  });
+
+  it('keeps an unshadowed group reference beside parameters', () => {
+    buildRustSource('unshadowed_parameter', UNSHADOWED_PARAMETER_FIXTURE);
+    const { error, typescript } = compileRust('unshadowed-parameter', UNSHADOWED_PARAMETER_FIXTURE);
+    expect(error).toBe('');
+    expect(strictDiagnostics(typescript)).toEqual([]);
+    const exports = loadModule(typescript) as unknown as { offset: (value: number) => number };
+    expect(exports.offset(41)).toBe(42);
   });
 
   it('fails closed when a package imports a member by its Rust name', () => {

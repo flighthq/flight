@@ -738,6 +738,46 @@ export function isA(code: KeyCode): boolean {
                 "{source}"
             );
         }
+        // Function and closure parameters: plain, typed and untyped closures, destructured, nested,
+        // and a snake_case parameter whose emitted name is the owner.
+        for (source, owner) in [
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_snake_case)]\npub fn offset(Code: i32) -> i32 {\n    return Code + CODE_A;\n}\n",
+                "Code",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_snake_case)]\npub fn offset(value: i32) -> i32 {\n    let add = |Code: i32| -> i32 {\n        return Code + CODE_A;\n    };\n    return add(value);\n}\n",
+                "Code",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_snake_case)]\npub fn offset(values: Vec<i32>) -> Vec<i32> {\n    return values.iter().map(|Code| Code + CODE_A).collect();\n}\n",
+                "Code",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_snake_case)]\npub fn offset(pair: (i32, i32)) -> i32 {\n    let add = |(Code, b): (i32, i32)| -> i32 {\n        return Code + b + CODE_A;\n    };\n    return add(pair);\n}\n",
+                "Code",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_snake_case)]\npub fn offset(value: i32) -> i32 {\n    let outer = |a: i32| -> i32 {\n        let inner = |Code: i32| -> i32 {\n            return Code + CODE_A;\n        };\n        return inner(a);\n    };\n    return outer(value);\n}\n",
+                "Code",
+            ),
+            (
+                "//! flight-compiler: const-group keyCode KEY_CODE_\npub const KEY_CODE_A: i32 = 1;\npub fn offset(key_code: i32) -> i32 {\n    return key_code + KEY_CODE_A;\n}\n",
+                "keyCode",
+            ),
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                collision(owner),
+                "{source}"
+            );
+        }
+        let unshadowed = compile_typescript(
+            "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\npub fn offset(value: i32) -> i32 {\n    let add = |code: i32| -> i32 {\n        return code + CODE_A;\n    };\n    return add(value);\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(unshadowed.contains("return code + Code.A;"), "{unshadowed}");
         // The owner's name in literal text, comments, type positions and member access binds nothing.
         let unbound = "//! flight-compiler: const-group Code CODE_\n\n/// Mentions `const Code` in documentation.\npub const CODE_A: i32 = 1;\n\npub type Code = i32;\n\npub fn label(value: Code) -> String {\n    if value == CODE_A {\n        return \"let Code = 1\".to_string();\n    }\n    return String::new();\n}\n";
         let output = compile_typescript(unbound, None).unwrap();

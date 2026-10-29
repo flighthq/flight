@@ -428,9 +428,11 @@ fn dependency_export_names<'a>(
 
 // The value bindings the final emitted TypeScript introduces, in code only: every value import
 // specifier (named, renamed, default or namespace; `import type` and `type` specifiers bind no
-// value) and every `const` / `let` / `var` / `function` / `class` / `enum` declaration, including
-// destructured names. Compiler-injected locals and compiler-provided imports pass through here like
-// any other binding, so one inventory covers every emitter feature.
+// value), every `const` / `let` / `var` / `function` / `class` / `enum` declaration, and every
+// function and arrow parameter, including every destructured, renamed, nested, rest or defaulted
+// name. Compiler-injected locals and compiler-provided imports pass through here like any other
+// binding, so one inventory covers every emitter feature. A parenthesized list that only looks like
+// parameters (a function type's) is still counted, which can only fail closed.
 fn emitted_value_bindings(output: &str) -> Vec<String> {
     let mut code = vec![b' '; output.len()];
     for range in typescript_code_ranges(output) {
@@ -517,10 +519,11 @@ fn emitted_value_bindings(output: &str) -> Vec<String> {
                             return depth == 0;
                         })
                         .map_or(pattern.len(), |(index, _)| index);
-                    for element in pattern[..end].split(',') {
-                        let local = element.rsplit(':').next().unwrap_or(element);
-                        bindings.extend(identifier(local.split('=').next().unwrap_or(local)));
-                    }
+                    let opener = &after[..1];
+                    pattern_bindings(
+                        &format!("{opener}{}", &pattern[..=end.min(pattern.len() - 1)]),
+                        &mut bindings,
+                    );
                 } else {
                     bindings.extend(identifier(after));
                 }
@@ -528,6 +531,7 @@ fn emitted_value_bindings(output: &str) -> Vec<String> {
             _ => {}
         }
     }
+    parameter_bindings(&code, &mut bindings);
     return bindings;
 }
 
@@ -640,6 +644,24 @@ fn lower_string_union_variants(
     return Ok(output);
 }
 
+// The index of the bracket closing the one opened at `open`, counting `(`/`[`/`{` nesting.
+fn matching_bracket_end(code: &str, open: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    for (index, character) in code[open..].char_indices() {
+        match character {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(open + index);
+                }
+            }
+            _ => {}
+        }
+    }
+    return None;
+}
+
 // The full module identity (`crate::module::path`) of a Rust source file at `path`: the crate directory
 // before the last `src` component (hyphens become underscores), then the module path below it, with
 // `lib.rs` / `main.rs` as the crate root and `mod.rs` as its directory. `None` when the path has no
@@ -672,6 +694,130 @@ fn module_identity_from_path(path: &str) -> Option<String> {
                 .all(|character| character.is_ascii_alphanumeric() || character == '_')
     });
     return valid.then(|| identity.join("::"));
+}
+
+// Every function and arrow parameter name: the list after `function [name][<…>]`, a parenthesized
+// list followed by `=>` (optionally after a `: ReturnType` annotation), and a bare `name =>`.
+fn parameter_bindings(code: &str, out: &mut Vec<String>) {
+    let bytes = code.as_bytes();
+    for (open, _) in code.match_indices('(') {
+        let Some(close) = matching_bracket_end(code, open) else {
+            continue;
+        };
+        let before = code[..open].trim_end();
+        let before = match before.strip_suffix('>') {
+            Some(_) => {
+                let mut depth = 0usize;
+                let mut start = before.len();
+                for (index, character) in before.char_indices().rev() {
+                    match character {
+                        '>' => depth += 1,
+                        '<' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                start = index;
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                before[..start].trim_end()
+            }
+            None => before,
+        };
+        let name_start = before
+            .rfind(|character: char| {
+                !(character.is_ascii_alphanumeric() || character == '_' || character == '$')
+            })
+            .map_or(0, |index| index + 1);
+        let declared = before[..name_start].trim_end().ends_with("function")
+            || &before[name_start..] == "function";
+        let after = code[close + 1..].trim_start();
+        let arrow = after.starts_with("=>")
+            || (after.starts_with(':') && {
+                let mut depth = 0usize;
+                let mut found = false;
+                let tail = &after[1..];
+                for (index, character) in tail.char_indices() {
+                    match character {
+                        '(' | '[' | '<' => depth += 1,
+                        ')' | ']' => {
+                            if depth == 0 {
+                                break;
+                            }
+                            depth -= 1;
+                        }
+                        '>' if index > 0 && tail.as_bytes()[index - 1] == b'=' => {
+                            if depth == 0 {
+                                found = true;
+                                break;
+                            }
+                        }
+                        '>' => depth = depth.saturating_sub(1),
+                        '{' | ';' | ',' if depth == 0 => break,
+                        _ => {}
+                    }
+                }
+                found
+            });
+        if declared || arrow {
+            for parameter in split_top_level(&code[open + 1..close], ',') {
+                let pattern = split_top_level(parameter, ':')[0];
+                pattern_bindings(pattern.trim_end_matches('?'), out);
+            }
+        }
+    }
+    for (arrow, _) in code.match_indices("=>") {
+        let before = code[..arrow].trim_end();
+        if before.ends_with(')') || before.is_empty() {
+            continue;
+        }
+        let start = before
+            .rfind(|character: char| {
+                !(character.is_ascii_alphanumeric() || character == '_' || character == '$')
+            })
+            .map_or(0, |index| index + 1);
+        if start < before.len() && bytes[start] != b'>' {
+            pattern_bindings(&before[start..], out);
+        }
+    }
+}
+
+// The names a binding pattern introduces: an identifier, or every name an array or object
+// destructuring pattern binds, through renames (`key: name`), nesting, rest (`...name`) and
+// defaults (`name = value`).
+fn pattern_bindings(pattern: &str, out: &mut Vec<String>) {
+    let pattern = pattern.trim().trim_start_matches("...").trim();
+    let pattern = split_top_level(pattern, '=')[0].trim();
+    if let Some(inner) = pattern
+        .strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+    {
+        for element in split_top_level(inner, ',') {
+            pattern_bindings(element, out);
+        }
+        return;
+    }
+    if let Some(inner) = pattern
+        .strip_prefix('{')
+        .and_then(|rest| rest.strip_suffix('}'))
+    {
+        for element in split_top_level(inner, ',') {
+            let parts = split_top_level(element, ':');
+            pattern_bindings(parts.get(1).copied().unwrap_or(parts[0]), out);
+        }
+        return;
+    }
+    let name = pattern
+        .chars()
+        .take_while(|character| {
+            character.is_ascii_alphanumeric() || *character == '_' || *character == '$'
+        })
+        .collect::<String>();
+    if !name.is_empty() && !name.starts_with(|character: char| character.is_ascii_digit()) {
+        out.push(name);
+    }
 }
 
 // Removes `owner` from every value import list (the type-only alias has no runtime binding), and
@@ -764,6 +910,32 @@ fn rewrite_typescript_code(
 /// Reads the source-local generation mode for a Rust module or test file.
 pub fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
     return model::source_mode(source);
+}
+
+// `text` split at each `separator` outside `()`, `[]`, `{}` and `<>` nesting.
+fn split_top_level(text: &str, separator: char) -> Vec<&str> {
+    let mut parts = Vec::new();
+    let mut depth = 0usize;
+    let mut start = 0;
+    let mut previous = ' ';
+    for (index, character) in text.char_indices() {
+        match character {
+            '(' | '[' | '{' | '<' => depth += 1,
+            ')' | ']' | '}' => depth = depth.saturating_sub(1),
+            '>' if previous != '=' => depth = depth.saturating_sub(1),
+            _ if character == separator
+                && depth == 0
+                && !(separator == '=' && text[index + 1..].starts_with('>')) =>
+            {
+                parts.push(&text[start..index]);
+                start = index + character.len_utf8();
+            }
+            _ => {}
+        }
+        previous = character;
+    }
+    parts.push(&text[start..]);
+    return parts;
 }
 
 // The byte ranges of emitted TypeScript `source` that are code rather than literal text: everything
