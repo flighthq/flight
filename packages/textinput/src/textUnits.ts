@@ -1,18 +1,18 @@
 // Generated from crates/flight-textinput/src/text_units.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-export function jsRound(value: number): number {
+function jsRound(value: number): number {
   if (!Number.isFinite(value) || value % 1 === 0.0) {
     return value;
   }
   return Math.floor(value + 0.5);
 }
 
-export function utf16Len(value: string): number {
+function utf16Len(value: string): number {
   return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index)).length;
 }
 
-export function utf16Replace(value: string, start: number, end: number, replacement: string): string {
+function utf16Replace(value: string, start: number, end: number, replacement: string): string {
   const units: number[] = Array.from({ length: value.length }, (_, index) => value.charCodeAt(index));
   start = Math.min(start, units.length);
   end = Math.max(Math.min(end, units.length), start);
@@ -37,7 +37,7 @@ export function utf16Replace(value: string, start: number, end: number, replacem
   })(out);
 }
 
-export function utf16Slice(value: string, start: number, end: number): string {
+function utf16Slice(value: string, start: number, end: number): string {
   const units: number[] = Array.from({ length: value.length }, (_, index) => value.charCodeAt(index));
   start = Math.min(start, units.length);
   end = Math.max(Math.min(end, units.length), start);
@@ -48,3 +48,5 @@ export function utf16Slice(value: string, start: number, end: number): string {
     return value;
   })(units.slice(start, end));
 }
+
+export { jsRound, utf16Len, utf16Replace, utf16Slice };

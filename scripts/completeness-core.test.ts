@@ -32,6 +32,22 @@ describe('getFunctionExports', () => {
     ).toEqual(['alias']);
   });
 
+  it('ignores the crate-internal export lists of Rust-generated modules', () => {
+    expect(
+      getFunctionExports(
+        'source.ts',
+        `// Generated from crates/flight-sample/src/sample.rs by flight-compiler.
+          function crateVisible() {}
+          export function published() {}
+          export { crateVisible };
+        `,
+      ),
+    ).toEqual(['published']);
+    expect(
+      getFunctionExports('source.ts', 'function local() {}\nexport function published() {}\nexport { local };'),
+    ).toEqual(['local', 'published']);
+  });
+
   it('collects callable default exports', () => {
     expect(getFunctionExports('source.ts', 'export default function named() {}')).toEqual(['default']);
     expect(getFunctionExports('source.ts', 'const local = () => true; export default local;')).toEqual(['default']);

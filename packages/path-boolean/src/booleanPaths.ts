@@ -58,7 +58,7 @@ export function differencePaths(
  * The kernel fill rule for a public `PathWinding` option (TS passes the winding string straight
  * through, since `PathBooleanFillRule` includes `PathWinding`).
  */
-export function getPathBooleanFillRuleForWinding(winding: PathWinding): PathBooleanFillRule {
+function getPathBooleanFillRuleForWinding(winding: PathWinding): PathBooleanFillRule {
   return (() => {
     const matchValue = winding;
     switch (matchValue) {
@@ -109,3 +109,5 @@ export function xorPaths(
 ): void {
   booleanPaths(out, pathBooleanKernel, a, b, 'xor', options);
 }
+
+export { getPathBooleanFillRuleForWinding };

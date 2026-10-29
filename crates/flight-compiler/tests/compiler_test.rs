@@ -1301,11 +1301,11 @@ interface Registry {
 
 const REGISTRY_LIMIT: number = 4;
 
-export function createRegistry(): Registry {
+function createRegistry(): Registry {
   return { count: 0 };
 }
 
-export function unusedHelper(): number {
+function unusedHelper(): number {
   return 1;
 }
 
@@ -1313,7 +1313,7 @@ export function publicValue(): number {
   return REGISTRY_LIMIT;
 }
 
-export { REGISTRY_LIMIT, Slot };
+export { REGISTRY_LIMIT, Slot, createRegistry };
 export type { Registry };
 "#
         );

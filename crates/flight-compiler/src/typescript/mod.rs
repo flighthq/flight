@@ -8586,7 +8586,9 @@ fn emit_function(
 ) -> Result<(), CompileError> {
     reject_async_function(function)?;
     emit_documentation(out, &function.attrs, 0);
-    let export = if is_visible_outside_module(&function.vis) {
+    // A crate-visible function is exported only through the crate-internal `export { … }` list, which
+    // keeps it off the public lanes, as for crate-visible structs, enums and constants.
+    let export = if is_public(&function.vis) {
         "export "
     } else {
         ""
@@ -14469,10 +14471,6 @@ fn source_access_for_visibility(visibility: &Visibility) -> SourceAccess {
 // Rust `pub(crate)`/`pub(super)` items can cross source modules. Generated TypeScript preserves
 // that package-internal reachability with a named module export; contract/index generation still
 // decides the actual package surface from Rust's public re-exports.
-fn is_visible_outside_module(visibility: &Visibility) -> bool {
-    return !matches!(visibility, Visibility::Inherited);
-}
-
 // The BindingId of the lexical value binding of `name` in scope, `Some("")` for an in-scope binding
 // whose site was not resolved, or `None` when no value binding of `name` is in scope.
 fn lexical_binding(entities: &HashSet<String>, name: &str) -> Option<String> {

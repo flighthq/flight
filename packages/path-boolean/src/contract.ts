@@ -1,14 +1,7 @@
 // Generated from crates/flight-path-boolean/src/lib.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-export {
-  booleanPaths,
-  differencePaths,
-  getPathBooleanFillRuleForWinding,
-  intersectPaths,
-  unionPaths,
-  xorPaths,
-} from './booleanPaths.ts';
+export { booleanPaths, differencePaths, intersectPaths, unionPaths, xorPaths } from './booleanPaths.ts';
 export type { PathBooleanOptions } from './booleanPaths.ts';
 export {
   explainOffsetPath,

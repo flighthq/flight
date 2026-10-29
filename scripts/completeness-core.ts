@@ -6,10 +6,16 @@ import type { Expression, ModuleExportName, Statement, VariableDeclaration } fro
 // and resolving the monorepo once for every source file in the coverage sweep.
 export function getFunctionExports(filePath: string, sourceText: string): string[] {
   if (!sourceText.includes('export') || (!sourceText.includes('function') && !sourceText.includes('=>'))) return [];
-  const { errors, program } = parseSync(filePath, sourceText, { lang: 'ts', sourceType: 'module' });
+  const { errors, program } = parseSync(filePath, sourceText, {
+    lang: 'ts',
+    sourceType: 'module',
+  });
   if (errors.length > 0) throw new Error(`Could not parse ${filePath}: ${errors[0]?.message ?? 'unknown parse error'}`);
 
   const localFunctions = collectLocalFunctions(program.body);
+  // A Rust-generated module lists its crate-visible items (`pub(crate)`) in a local `export { … }`
+  // list so sibling modules can import them; they never reach a public lane, so they are not exports.
+  const crateInternalLists = sourceText.startsWith('// Generated from crates/');
   const names = new Set<string>();
 
   for (const statement of program.body) {
@@ -19,7 +25,7 @@ export function getFunctionExports(filePath: string, sourceText: string): string
         if (declaration.id !== null) names.add(declaration.id.name);
       } else if (declaration?.type === 'VariableDeclaration') {
         collectVariableFunctions(declaration, names);
-      } else if (statement.source === null && statement.exportKind !== 'type') {
+      } else if (statement.source === null && statement.exportKind !== 'type' && !crateInternalLists) {
         for (const specifier of statement.specifiers) {
           if (specifier.exportKind === 'type') continue;
           const localName = moduleExportName(specifier.local);

@@ -213,13 +213,16 @@ describe('flight-compile crate-visible items', () => {
 
   it('exports only referenced crate-visible items through lists the public scan ignores', () => {
     const { owner } = generatedPair();
-    expect(owner).toContain('export { REGISTRY_LIMIT, Slot };');
+    expect(owner).toContain('export { REGISTRY_LIMIT, Slot, createRegistry };');
     expect(owner).toContain('export type { Registry };');
     expect(owner).not.toContain('unusedHelper }');
+    expect(owner).toContain('\nfunction createRegistry(');
     const publicNames = [...collectExportSymbols([{ fileName: 'owner.ts', typescript: owner }]).keys()];
     expect(publicNames).not.toContain('Registry');
     expect(publicNames).not.toContain('REGISTRY_LIMIT');
     expect(publicNames).not.toContain('Slot');
+    expect(publicNames).not.toContain('createRegistry');
+    expect(publicNames).not.toContain('unusedHelper');
   });
 
   it('imports them into the sibling so the pair typechecks under strict TypeScript', () => {
