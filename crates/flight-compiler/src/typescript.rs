@@ -97,7 +97,11 @@ const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
-// `{function}␟{parameter}` for each `array-like` slice parameter, typed `ArrayLike<T>`.
+// `{source}␟{function}␟{position}` for each `array-like` slice parameter, by its argument position, so
+// an onward call can check the parameter of the callee it resolves to.
+const ARRAY_LIKE_ARGUMENT_MARKER: &str = "@array-like-argument:";
+// `{source}␟{function}␟{parameter}` for each `array-like` slice parameter, typed `ArrayLike<T>`; the
+// source identity keeps a sibling's designation from applying to a same-named local function.
 const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
 // Struct fields (`struct identity SEP field SEP payload`), locals and parameters (`name:payload`), and
@@ -345,8 +349,11 @@ fn array_like_parameter(
     let Pat::Ident(pattern) = typed.pat.as_ref() else {
         return Ok(None);
     };
+    let Some(current) = current_source(entities) else {
+        return Ok(None);
+    };
     if !entities.contains(&format!(
-        "{ARRAY_LIKE_PARAMETER_MARKER}{}{PROVENANCE_SEPARATOR}{}",
+        "{ARRAY_LIKE_PARAMETER_MARKER}{current}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
         function.sig.ident, pattern.ident
     )) {
         return Ok(None);
@@ -4752,9 +4759,24 @@ fn generation_context_with_types(
         }
         context.extend(owned_facts);
         for designation in &program.array_like_parameters {
-            if let Some((function_name, parameter_name)) = designation.split_once('.') {
+            let Some((function_name, parameter_name)) = designation.split_once('.') else {
+                continue;
+            };
+            context.insert(format!(
+                "{ARRAY_LIKE_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{parameter_name}"
+            ));
+            let position = program
+                .functions
+                .iter()
+                .find(|function| function.sig.ident == function_name)
+                .and_then(|function| {
+                    return function.sig.inputs.iter().position(|input| {
+                        return matches!(input, FnArg::Typed(typed) if matches!(typed.pat.as_ref(), Pat::Ident(pattern) if pattern.ident == parameter_name));
+                    });
+                });
+            if let Some(position) = position {
                 context.insert(format!(
-                    "{ARRAY_LIKE_PARAMETER_MARKER}{function_name}{PROVENANCE_SEPARATOR}{parameter_name}"
+                    "{ARRAY_LIKE_ARGUMENT_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{position}"
                 ));
             }
         }
@@ -7588,17 +7610,57 @@ fn reject_unsafe_lazy_lock_initializers(
 // An `array-like` parameter is only an `ArrayLike<T>` in TypeScript, so its function may read its
 // length (`.len()`, `.is_empty()`), index it, or pass it (optionally as `&p`) to a crate function
 // whose parameter at that position is also `array-like`. Any other use (iteration, slicing, methods,
-// moving it into a binding) would need array methods `ArrayLike` lacks, so it fails closed.
+// moving it into a binding) would need array methods `ArrayLike` lacks, so it fails closed. An onward
+// call is checked against the callee its path resolves to from this source, through its `use`
+// bindings and source identity; a name the function itself binds (a closure, parameter, pattern,
+// nested item or `use`) shadows every item, and an unresolved or foreign callee is never designated.
 fn reject_unsupported_array_like_uses(
     program: &Program,
-    programs: &[&Program],
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    // Every name a function binds in its own scope: parameters, pattern bindings (closure parameters
+    // included), and nested `fn`, `const`, `static` and `use` items.
+    struct LocalNames {
+        names: BTreeSet<String>,
+    }
+    impl<'ast> Visit<'ast> for LocalNames {
+        fn visit_item_const(&mut self, item: &'ast syn::ItemConst) {
+            self.names.insert(item.ident.to_string());
+            syn::visit::visit_item_const(self, item);
+        }
+
+        fn visit_item_fn(&mut self, item: &'ast ItemFn) {
+            self.names.insert(item.sig.ident.to_string());
+            syn::visit::visit_item_fn(self, item);
+        }
+
+        fn visit_item_static(&mut self, item: &'ast syn::ItemStatic) {
+            self.names.insert(item.ident.to_string());
+            syn::visit::visit_item_static(self, item);
+        }
+
+        fn visit_pat_ident(&mut self, ident: &'ast syn::PatIdent) {
+            self.names.insert(ident.ident.to_string());
+            syn::visit::visit_pat_ident(self, ident);
+        }
+
+        fn visit_use_name(&mut self, name: &'ast syn::UseName) {
+            self.names.insert(name.ident.to_string());
+        }
+
+        fn visit_use_rename(&mut self, rename: &'ast syn::UseRename) {
+            self.names.insert(rename.rename.to_string());
+        }
+
+        fn visit_use_glob(&mut self, _glob: &'ast syn::UseGlob) {
+            self.names.insert("*".to_string());
+        }
+    }
     struct ArrayLikeUses<'a> {
         entities: &'a HashSet<String>,
-        programs: &'a [&'a Program],
         error: Option<String>,
         function: String,
+        locals: BTreeSet<String>,
         parameter: String,
     }
     impl ArrayLikeUses<'_> {
@@ -7615,43 +7677,55 @@ fn reject_unsupported_array_like_uses(
             return matches!(expression, Expr::Path(path) if path.qself.is_none() && path.path.is_ident(&self.parameter));
         }
     }
+    impl ArrayLikeUses<'_> {
+        // Whether the call's callee resolves, from this source, to a function whose parameter at
+        // `position` is `array-like`.
+        fn designated(&self, callee: &Expr, position: usize) -> bool {
+            let Expr::Path(path) = callee else {
+                return false;
+            };
+            if path.qself.is_some()
+                || self.locals.contains("*")
+                || path
+                    .path
+                    .segments
+                    .first()
+                    .is_some_and(|segment| self.locals.contains(&segment.ident.to_string()))
+            {
+                return false;
+            }
+            let Some(current) = current_source(self.entities) else {
+                return false;
+            };
+            let Some((owner, declaration)) =
+                resolve_path_owner(self.entities, FUNCTION_OWNER_MARKER, &current, &path.path)
+            else {
+                return false;
+            };
+            return self.entities.contains(&format!(
+                "{ARRAY_LIKE_ARGUMENT_MARKER}{owner}{PROVENANCE_SEPARATOR}{declaration}{PROVENANCE_SEPARATOR}{position}"
+            ));
+        }
+    }
     impl<'ast> Visit<'ast> for ArrayLikeUses<'_> {
         fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
             let callee = match call.func.as_ref() {
                 Expr::Path(path) if path.qself.is_none() => path
                     .path
                     .segments
-                    .last()
-                    .map(|segment| segment.ident.to_string()),
-                _ => None,
+                    .iter()
+                    .map(|segment| segment.ident.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::"),
+                callee => callee.to_token_stream().to_string(),
             };
             self.visit_expr(&call.func);
             for (index, argument) in call.args.iter().enumerate() {
                 if self.is_parameter(argument) {
-                    let accepted = callee.as_ref().is_some_and(|callee| {
-                        self.programs
-                            .iter()
-                            .flat_map(|program| &program.functions)
-                            .filter(|function| function.sig.ident == callee.as_str())
-                            .filter_map(|function| match function.sig.inputs.iter().nth(index) {
-                                Some(FnArg::Typed(typed)) => match typed.pat.as_ref() {
-                                    Pat::Ident(pattern) => Some(pattern.ident.to_string()),
-                                    _ => None,
-                                },
-                                _ => None,
-                            })
-                            .any(|name| {
-                                self.entities.contains(&format!(
-                                    "{ARRAY_LIKE_PARAMETER_MARKER}{callee}{PROVENANCE_SEPARATOR}{name}"
-                                ))
-                            })
-                    });
-                    if !accepted && self.error.is_none() {
+                    if !self.designated(&call.func, index) && self.error.is_none() {
                         self.error = Some(format!(
-                            "`array-like` parameter `{}` of `{}` is passed to `{}` argument {index}, which is not an `array-like` parameter",
-                            self.parameter,
-                            self.function,
-                            callee.clone().unwrap_or_default()
+                            "`array-like` parameter `{}` of `{}` is passed to `{callee}` argument {index}, which does not resolve to an `array-like` parameter",
+                            self.parameter, self.function
                         ));
                     }
                 } else {
@@ -7701,11 +7775,18 @@ fn reject_unsupported_array_like_uses(
             {
                 continue;
             }
+            let mut locals = LocalNames {
+                names: BTreeSet::new(),
+            };
+            for input in &function.sig.inputs {
+                locals.visit_fn_arg(input);
+            }
+            locals.visit_block(&function.block);
             let mut uses = ArrayLikeUses {
                 entities,
-                programs,
                 error: None,
                 function: function.sig.ident.to_string(),
+                locals: locals.names,
                 parameter: pattern.ident.to_string(),
             };
             uses.visit_block(&function.block);
@@ -11505,7 +11586,7 @@ pub(crate) fn emit_program(
     }
     reject_entity_runtime_state_store_collisions(program, &programs)?;
     reject_unsafe_lazy_lock_initializers(program, &programs)?;
-    reject_unsupported_array_like_uses(program, &programs, &expression_context)?;
+    reject_unsupported_array_like_uses(program, &expression_context)?;
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
     let mut body = String::new();

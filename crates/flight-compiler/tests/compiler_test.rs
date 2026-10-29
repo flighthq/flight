@@ -4167,6 +4167,157 @@ pub fn sum_values(values: &[f64]) -> f64 {
     }
 
     #[test]
+    fn resolves_array_like_onward_calls_by_source_identity() {
+        let module = |path, source| ModuleSource { path, source };
+        let compile = |source: ModuleSource<'_>, aliases: &[ModuleSource<'_>]| {
+            compile_typescript_with_module_sources(source, None, aliases, &[])
+        };
+        let forward = "//! flight-compiler: array-like forward.points\n\nuse crate::helpers::sum_values;\n\npub fn forward(points: &[f64]) -> f64 {\n    return sum_values(points);\n}\n";
+        let designated = "//! flight-compiler: array-like sum_values.values\n\npub fn sum_values(values: &[f64]) -> f64 {\n    return values[0];\n}\n";
+        let undesignated = "pub fn sum_values(values: &[f64]) -> f64 {\n    return values[0];\n}\n";
+        let rejected = "`array-like` parameter `points` of `forward` is passed to `sum_values` argument 0, which does not resolve to an `array-like` parameter";
+
+        let output = compile(
+            module("crates/flight-region/src/region.rs", forward),
+            &[module("crates/flight-region/src/helpers.rs", designated)],
+        )
+        .unwrap();
+        assert!(output.contains("export function forward(points: ArrayLike<number>): number {"));
+        assert!(output.contains("  return sumValues(points);\n"));
+
+        let output = compile(
+            module("crates/flight-region/src/helpers.rs", designated),
+            &[module("crates/flight-region/src/region.rs", forward)],
+        )
+        .unwrap();
+        assert!(output.contains("export function sumValues(values: ArrayLike<number>): number {"));
+
+        assert_eq!(
+            compile(
+                module("crates/flight-region/src/region.rs", forward),
+                &[module("crates/flight-region/src/helpers.rs", undesignated)],
+            )
+            .unwrap_err()
+            .to_string(),
+            rejected
+        );
+        assert_eq!(
+            compile(
+                module("crates/flight-region/src/region.rs", forward),
+                &[
+                    module("crates/flight-region/src/helpers.rs", undesignated),
+                    module("crates/flight-region/src/other.rs", designated),
+                ],
+            )
+            .unwrap_err()
+            .to_string(),
+            rejected
+        );
+
+        let local = "pub fn consume(values: &[f64]) -> f64 {\n    let mut total = 0.0;\n    for value in values {\n        total += value;\n    }\n    return total;\n}\n";
+        let sibling = "//! flight-compiler: array-like consume.values\n\npub fn consume(values: &[f64]) -> f64 {\n    return values[0];\n}\n";
+        let output = compile(
+            module("crates/flight-region/src/local.rs", local),
+            &[module("crates/flight-region/src/sibling.rs", sibling)],
+        )
+        .unwrap();
+        assert!(output.contains("export function consume(values: Readonly<number[]>): number {"));
+        assert!(!output.contains("ArrayLike"));
+    }
+
+    #[test]
+    fn rejects_array_like_designations_borrowed_by_shadowed_or_sibling_callees_through_the_cli() {
+        let directory = std::env::temp_dir().join(format!(
+            "flight-compiler-array-like-cli-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&directory).unwrap();
+        let write = |file: &str, source: &str| {
+            let path = directory.join(file);
+            std::fs::write(&path, source).unwrap();
+            return path;
+        };
+        let shadowed = write(
+            "array-like-shadowed-callee-repro.rs",
+            r#"//! flight-compiler: array-like forward.points accept.values
+
+pub fn accept(values: &[f64]) -> f64 {
+    return values[0];
+}
+
+pub fn forward(points: &[f64]) -> f64 {
+    let accept = |values: &[f64]| -> f64 {
+        return values[0];
+    };
+    return accept(points);
+}
+"#,
+        );
+        let sibling_callee = write(
+            "array-like-sibling-callee-repro.rs",
+            r#"//! flight-compiler: array-like forward.points
+
+pub fn forward(points: &[f64]) -> f64 {
+    return consume(points);
+}
+
+pub fn consume(values: &[f64]) -> f64 {
+    let mut total = 0.0;
+    for value in values {
+        total += value;
+    }
+    return total;
+}
+"#,
+        );
+        let sibling_alias = write(
+            "array-like-sibling-alias.rs",
+            r#"//! flight-compiler: array-like consume.values
+
+pub fn consume(values: &[f64]) -> f64 {
+    return values[0];
+}
+"#,
+        );
+        let cases = [
+            (
+                &shadowed,
+                None,
+                "`array-like` parameter `points` of `forward` is passed to `accept` argument 0, which does not resolve to an `array-like` parameter",
+            ),
+            (
+                &sibling_callee,
+                Some(&sibling_alias),
+                "`array-like` parameter `points` of `forward` is passed to `consume` argument 0, which does not resolve to an `array-like` parameter",
+            ),
+        ];
+        for (input, alias, reason) in cases {
+            let output = input.with_extension("ts");
+            let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_flight-compile"));
+            command
+                .arg("generate")
+                .arg("--source")
+                .arg(input)
+                .arg("--out")
+                .arg(&output);
+            if let Some(alias) = alias {
+                command.arg("--alias-source").arg(alias);
+            }
+            let result = command.output().unwrap();
+            let stderr = String::from_utf8(result.stderr).unwrap();
+            assert_eq!(
+                result.status.code(),
+                Some(2),
+                "{}: {stderr}",
+                input.display()
+            );
+            assert!(stderr.contains(reason), "{}: {stderr}", input.display());
+            assert!(!output.exists(), "{} emitted TypeScript", input.display());
+        }
+        std::fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[test]
     fn rejects_array_like_parameters_used_beyond_length_and_elements() {
         let function = |designation: &str, parameter: &str, body: &str| {
             format!(
@@ -4189,7 +4340,7 @@ pub fn sum_values(values: &[f64]) -> f64 {
             ),
             (
                 function("f.points", "&[f64]", "total += sum_values(points);"),
-                "`array-like` parameter `points` of `f` is passed to `sum_values` argument 0, which is not an `array-like` parameter".to_string(),
+                "`array-like` parameter `points` of `f` is passed to `sum_values` argument 0, which does not resolve to an `array-like` parameter".to_string(),
             ),
             (
                 function("", "&[f64]", "total += points[0];").replace("array-like \n", "array-like\n"),
