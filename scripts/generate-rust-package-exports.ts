@@ -38,6 +38,23 @@ export function compilerAliasArguments(command: string, aliasSources: readonly s
     .flatMap((aliasSource) => ['--alias-source', aliasSource]);
 }
 
+// The crate's other Rust sources (target-native modules, the crate root, nested modules), which the
+// compiler reads only for whole-crate facts: an `impl`, derive, attribute or macro in any of them can
+// change what an eagerly initialized `LazyLock` runs. Only `generate` emits a module, so only it takes
+// them; the emitted source and its alias sources are already read in full.
+export function compilerVisibilityArguments(
+  command: string,
+  crateSources: readonly string[],
+  aliasSources: readonly string[],
+  source?: string,
+): string[] {
+  if (command !== 'generate') return [];
+  const emitted = new Set(aliasSources);
+  return crateSources
+    .filter((crateSource) => crateSource !== source && !emitted.has(crateSource))
+    .flatMap((crateSource) => ['--visibility-source', crateSource]);
+}
+
 // `flight-*` crates a Cargo manifest depends on: `[dependencies]`, plus `[dev-dependencies]` when the
 // caller generates tests. Sorted and unique.
 export function collectFlightDependencyCrates(cargoToml: string, includeDevelopment: boolean): string[] {

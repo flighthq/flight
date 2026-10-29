@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   collectCompanionFileNames,
   compilerAliasArguments,
+  compilerVisibilityArguments,
   collectContractModuleNames,
   collectExportSymbols,
   collectFlightDependencyCrates,
@@ -75,6 +76,22 @@ describe('collectRootOnlyNames', () => {
     ].join('\n');
     expect(collectRootOnlyNames(rust)).toEqual(['createSignal', 'Signal', 'connectSignal']);
     expect(collectRootOnlyNames('//! flight-compiler: root createSignal\n')).toEqual([]);
+  });
+});
+
+describe('compilerVisibilityArguments', () => {
+  it('passes every other crate source to module generation as visibility-only input', () => {
+    const crate = ['lib.rs', 'pool.rs', 'ease.rs', 'ease_steps.rs', 'nested/mod.rs'];
+    expect(compilerVisibilityArguments('generate', crate, ['ease.rs', 'ease_steps.rs'], 'ease.rs')).toEqual([
+      '--visibility-source',
+      'lib.rs',
+      '--visibility-source',
+      'pool.rs',
+      '--visibility-source',
+      'nested/mod.rs',
+    ]);
+    expect(compilerVisibilityArguments('generate-tests', crate, ['ease.rs'], 'ease.rs')).toEqual([]);
+    expect(compilerVisibilityArguments('source-mode', crate, [], 'ease.rs')).toEqual([]);
   });
 });
 

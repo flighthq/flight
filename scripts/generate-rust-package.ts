@@ -7,6 +7,7 @@ import type { DependencySource } from './generate-rust-package-exports.ts';
 import {
   collectCompanionFileNames,
   compilerAliasArguments,
+  compilerVisibilityArguments,
   collectExportSymbols,
   collectFlightDependencyCrates,
   collectRootOnlyNames,
@@ -190,6 +191,7 @@ function compile(
       out,
       ...entityArguments(command),
       ...compilerAliasArguments(command, aliasSources, source),
+      ...compilerVisibilityArguments(command, crateSourcePaths(join(crateRoot, 'src')), aliasSources, source),
       ...dependencyAliasArguments(dependencySources(command)),
       ...contractArguments(command, trailing),
     ],
@@ -487,6 +489,17 @@ function requireTargetNative(fileName: string, rustPath: string): string {
     );
   }
   return contents;
+}
+
+// Every Rust source under `root`, nested modules included, as sorted paths.
+function crateSourcePaths(root: string): string[] {
+  return readdirSync(root, { withFileTypes: true })
+    .flatMap((entry) => {
+      const path = join(root, entry.name);
+      if (entry.isDirectory()) return crateSourcePaths(path);
+      return entry.name.endsWith('.rs') ? [path] : [];
+    })
+    .sort();
 }
 
 function sourceFiles(crateRoot: string): string[] {
