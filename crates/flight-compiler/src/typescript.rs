@@ -5904,29 +5904,40 @@ pub(crate) fn is_transparent_data_union_variant(
     return data_union_variant_categories(entities, owner, variant).is_some();
 }
 
-// Whether Rust types `expression` as floating point by its form alone: a float literal (`2.0`,
-// `2f64`), or parentheses, negation or `+ - * / %` around an operand that is. Rust requires both
-// operands of an arithmetic operator to share a type, so one proven-float operand types the whole.
-fn is_proven_float(expression: &Expr) -> bool {
-    return match expression {
-        Expr::Group(group) => is_proven_float(&group.expr),
-        Expr::Paren(paren) => is_proven_float(&paren.expr),
-        Expr::Unary(unary) if matches!(unary.op, UnOp::Neg(_)) => is_proven_float(&unary.expr),
-        Expr::Binary(binary)
-            if matches!(
-                binary.op,
-                BinOp::Add(_) | BinOp::Div(_) | BinOp::Mul(_) | BinOp::Rem(_) | BinOp::Sub(_)
-            ) =>
-        {
-            is_proven_float(&binary.left) || is_proven_float(&binary.right)
-        }
-        Expr::Lit(literal) => match &literal.lit {
-            Lit::Float(_) => true,
-            Lit::Int(integer) => matches!(integer.suffix(), "f32" | "f64"),
-            _ => false,
-        },
-        _ => false,
-    };
+// Whether `op` is binary arithmetic (`+ - * / %`), which Rust dispatches through `Add` and its kin.
+fn is_eager_arithmetic(op: &BinOp) -> bool {
+    return matches!(
+        op,
+        BinOp::Add(_) | BinOp::Div(_) | BinOp::Mul(_) | BinOp::Rem(_) | BinOp::Sub(_)
+    );
+}
+
+// Whether `op` is a comparison, which Rust dispatches through `PartialEq` / `PartialOrd`.
+fn is_eager_comparison(op: &BinOp) -> bool {
+    return matches!(
+        op,
+        BinOp::Eq(_) | BinOp::Ge(_) | BinOp::Gt(_) | BinOp::Le(_) | BinOp::Lt(_) | BinOp::Ne(_)
+    );
+}
+
+// Whether a resolved call owner is a construction intrinsic the compiler lowers to a plain
+// TypeScript value: a standard `Vec`/`String`/`Box`/`Arc`/`RwLock` constructor or `Some`, or
+// `flight_entity`'s `Ref::new` (an `Arc<RwLock<T>>`) and `allocate_entity`.
+fn is_eager_construction_intrinsic(owner: &[String]) -> bool {
+    let owner = owner.iter().map(String::as_str).collect::<Vec<_>>();
+    return matches!(
+        owner.as_slice(),
+        ["std" | "alloc", "vec", "Vec", "new"]
+            | ["std" | "alloc", "string", "String", "new"]
+            | ["std" | "alloc", "boxed", "Box", "new"]
+            | ["std" | "alloc", "sync", "Arc", "new"]
+            | ["std", "sync", "RwLock", "new"]
+            | ["std" | "core", "option", "Option", "Some"]
+            | ["flight_entity", "Ref", "new"]
+            | ["flight_entity", "ir", "Ref", "new"]
+            | ["flight_entity", "allocate_entity"]
+            | ["flight_entity", "entity", "allocate_entity"]
+    );
 }
 
 fn is_tagged_data_union_variant(entities: &HashSet<String>, owner: &str, variant: &str) -> bool {
@@ -6563,30 +6574,491 @@ fn reject_unresolved_pattern_field(
 
 // A `LazyLock` static lowers to an eagerly initialized constant, so its initializer must be provably
 // unobservable to run at module load instead of at first access. Through the same-crate functions it
-// calls, it may only build values (entity allocation, records, literals, `Some`, and `new` of the
-// standard `Vec`/`Ref`/`RwLock`/`Arc`/`Box`/`String` when no crate item shadows that name), read and
-// assign fields, compare, do arithmetic with a floating-point literal operand (Rust then types the
-// whole operation as a float, whose IEEE semantics TypeScript shares and which cannot panic), and
-// read statics this module declares before it that are `LazyLock`s or immutable primitives. Method
-// calls (whose receiver type is not proven here, so a name says nothing about the operation), macros,
-// casts, other arithmetic or bitwise operators (integer division, remainder and overflow panic in
-// Rust but not in TypeScript), negation or `!` of non-literals, reads of other statics, dependency or
-// host calls, indexing, `?` and `unsafe` all fail closed. The initializer must also name an emitted
-// free function: an associated path such as `Kernel::default` has no TypeScript value.
+// calls, it may only build values, read and assign fields, and read statics this module declares
+// before it that are `LazyLock`s or immutable primitives. Each call path is resolved, through the
+// calling module's imports (named, renamed, grouped, glob), local items and modules, `extern crate`
+// bindings and absolute roots, to its owner: it must be a free function of this crate, which is walked
+// in turn, or one of the construction intrinsics the compiler lowers (`Vec`/`String`/`Box`/`Arc`/
+// `RwLock::new` and `Some` of the standard library, and `flight_entity`'s `Ref::new` and
+// `allocate_entity`); an owner that cannot be decided fails closed. Rust operators dispatch through
+// traits, so an operator is accepted only where the operand types are proven, from literals and from
+// declared parameter, binding, field, static and return types, to select the built-in primitive
+// operation whose result TypeScript shares: arithmetic and negation on `f64` (IEEE, never panics),
+// comparisons between two values of one exactly representable scalar type (`bool`, `f64`, or an
+// integer of at most 32 bits), `!` on `bool`, and `*` on a reference or a standard `LazyLock`, `Box`
+// or `Arc`. Method calls (whose receiver type is not proven here, so a name says nothing about the
+// operation), macros, casts, bitwise operators, reads of other statics, indexing, `?` and `unsafe`
+// all fail closed. The initializer must also name an emitted free function: an associated path such
+// as `Kernel::default` has no TypeScript value.
+// flight-lint: allow(hashmap-iteration) it iterates `names`, a BTreeSet, and `constants`, a Vec, both in a defined order
 fn reject_unsafe_lazy_lock_initializers(
     program: &Program,
     programs: &[&Program],
 ) -> Result<(), CompileError> {
+    #[derive(Clone, Debug, PartialEq)]
+    enum EagerType {
+        Bool,
+        F32,
+        F64,
+        // An unsuffixed float literal, whose width the surrounding operation decides.
+        FloatLiteral,
+        Integer(String),
+        // An unsuffixed integer literal, `i32` unless the surrounding operation decides.
+        IntegerLiteral,
+        // `&T`, `&mut T`, or a standard `LazyLock<T>` / `Box<T>` / `Arc<T>`: dereferences to `T`.
+        Pointer(Box<EagerType>),
+        // A struct this crate declares, by the index of its source in `programs` and its name.
+        Struct(usize, String),
+    }
+    // Whether a comparison's proven operand types select a built-in primitive comparison whose result
+    // TypeScript shares: `bool` equality, `f64` (an unsuffixed literal takes the other operand's type), or
+    // an integer type of at most 32 bits, which a TypeScript number represents exactly. Two unsuffixed
+    // literals take Rust's defaults (`f64`, `i32`).
+    fn is_eager_comparable(op: &BinOp, left: &EagerType, right: &EagerType) -> bool {
+        let exact_integer = |name: &str| {
+            return matches!(name, "i8" | "i16" | "i32" | "u8" | "u16" | "u32");
+        };
+        return match (left, right) {
+            (EagerType::Bool, EagerType::Bool) => matches!(op, BinOp::Eq(_) | BinOp::Ne(_)),
+            (
+                EagerType::F64 | EagerType::FloatLiteral,
+                EagerType::F64 | EagerType::FloatLiteral,
+            )
+            | (EagerType::IntegerLiteral, EagerType::IntegerLiteral) => true,
+            (EagerType::Integer(left), EagerType::Integer(right)) => {
+                left == right && exact_integer(left)
+            }
+            (EagerType::Integer(name), EagerType::IntegerLiteral)
+            | (EagerType::IntegerLiteral, EagerType::Integer(name)) => exact_integer(name),
+            _ => false,
+        };
+    }
+    // The scalar type a primitive type name denotes.
+    fn primitive_eager_type(name: &str) -> Option<EagerType> {
+        return match name {
+            "bool" => Some(EagerType::Bool),
+            "f32" => Some(EagerType::F32),
+            "f64" => Some(EagerType::F64),
+            "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32" | "u64"
+            | "u128" | "usize" => Some(EagerType::Integer(name.to_string())),
+            _ => None,
+        };
+    }
+    enum BindingSite<'a> {
+        Annotated(&'a Type),
+        Initialized(&'a Expr),
+        Unknown,
+    }
+    // Every name a function or closure body binds, and how each binding is typed: an annotated or
+    // initialized `let` of a plain identifier, or anything else (patterns, closure parameters, loop
+    // and match bindings), whose type is left unproven.
+    struct BindingSites<'a> {
+        sites: Vec<(String, BindingSite<'a>)>,
+    }
+    impl<'ast> Visit<'ast> for BindingSites<'ast> {
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            let plain = |pattern: &'ast Pat| match pattern {
+                Pat::Ident(ident) if ident.by_ref.is_none() && ident.subpat.is_none() => {
+                    Some(ident.ident.to_string())
+                }
+                _ => None,
+            };
+            let site = match &local.pat {
+                Pat::Type(typed) => {
+                    plain(&typed.pat).map(|name| (name, BindingSite::Annotated(typed.ty.as_ref())))
+                }
+                pattern => plain(pattern).map(|name| {
+                    let site = local.init.as_ref().map_or(BindingSite::Unknown, |init| {
+                        return BindingSite::Initialized(init.expr.as_ref());
+                    });
+                    return (name, site);
+                }),
+            };
+            match site {
+                Some(site) => self.sites.push(site),
+                None => self.visit_pat(&local.pat),
+            }
+            if let Some(init) = &local.init {
+                self.visit_expr(&init.expr);
+                if let Some((_, diverge)) = &init.diverge {
+                    self.visit_expr(diverge);
+                }
+            }
+        }
+
+        fn visit_pat_ident(&mut self, ident: &'ast syn::PatIdent) {
+            self.sites
+                .push((ident.ident.to_string(), BindingSite::Unknown));
+            syn::visit::visit_pat_ident(self, ident);
+        }
+    }
+    // A source's resolution context: its type-namespace provenance and the value items it declares.
+    struct EagerScope<'a> {
+        context: HashSet<String>,
+        program: &'a Program,
+        values: BTreeSet<String>,
+    }
     struct EagerSafety<'a> {
+        env: BTreeMap<String, EagerType>,
         error: Option<String>,
-        functions: &'a [&'a ItemFn],
-        readable_statics: &'a BTreeSet<String>,
+        functions: &'a [(usize, &'a ItemFn)],
         other_statics: &'a BTreeSet<String>,
         pending: Vec<String>,
-        shadowed: &'a BTreeSet<String>,
+        readable_statics: &'a BTreeSet<String>,
+        scope: usize,
+        scopes: &'a [EagerScope<'a>],
         static_name: &'a str,
+        type_items: &'a BTreeSet<String>,
     }
     impl EagerSafety<'_> {
+        // Types every local the body binds whose bindings all prove one type, to a least fixed point.
+        // A name that a value item or import of the source also binds is left unproven, since a use
+        // before its `let` names that item instead.
+        fn bind(&mut self, scope: usize, sites: Vec<(String, BindingSite<'_>)>) {
+            self.scope = scope;
+            self.env = BTreeMap::new();
+            if self.has_foreign_glob(scope) {
+                return;
+            }
+            let names = sites
+                .iter()
+                .map(|(name, _)| name.clone())
+                .filter(|name| {
+                    return !self.scopes[scope].values.contains(name)
+                        && !self.scopes[scope]
+                            .context
+                            .contains(&format!("{TYPE_USE_MARKER}{name}"));
+                })
+                .collect::<BTreeSet<_>>();
+            loop {
+                let mut proven = Vec::new();
+                for name in names.iter().filter(|name| !self.env.contains_key(*name)) {
+                    let mut found = None;
+                    let mut consistent = true;
+                    for (_, site) in sites.iter().filter(|(site_name, _)| site_name == name) {
+                        let binding = match site {
+                            BindingSite::Annotated(ty) => self.convert(scope, ty, 0),
+                            BindingSite::Initialized(expression) => self.infer(expression),
+                            BindingSite::Unknown => None,
+                        };
+                        match (binding, &found) {
+                            (Some(binding), None) => found = Some(binding),
+                            (Some(binding), Some(existing)) if &binding == existing => {}
+                            _ => {
+                                consistent = false;
+                                break;
+                            }
+                        }
+                    }
+                    if let (true, Some(binding)) = (consistent, found) {
+                        proven.push((name.clone(), binding));
+                    }
+                }
+                if proven.is_empty() {
+                    break;
+                }
+                self.env.extend(proven);
+            }
+        }
+
+        fn bind_function(&mut self, scope: usize, function: &ItemFn) {
+            let mut sites = BindingSites { sites: Vec::new() };
+            for input in &function.sig.inputs {
+                let FnArg::Typed(typed) = input else {
+                    continue;
+                };
+                match typed.pat.as_ref() {
+                    Pat::Ident(ident) if ident.by_ref.is_none() && ident.subpat.is_none() => {
+                        sites.sites.push((
+                            ident.ident.to_string(),
+                            BindingSite::Annotated(typed.ty.as_ref()),
+                        ));
+                    }
+                    pattern => sites.visit_pat(pattern),
+                }
+            }
+            sites.visit_block(&function.block);
+            self.bind(scope, sites.sites);
+        }
+
+        fn convert(&self, scope: usize, ty: &Type, depth: usize) -> Option<EagerType> {
+            if depth > 16 {
+                return None;
+            }
+            return match ty {
+                Type::Group(group) => self.convert(scope, &group.elem, depth + 1),
+                Type::Paren(paren) => self.convert(scope, &paren.elem, depth + 1),
+                Type::Reference(reference) => Some(EagerType::Pointer(Box::new(self.convert(
+                    scope,
+                    &reference.elem,
+                    depth + 1,
+                )?))),
+                Type::Path(path) if path.qself.is_none() => {
+                    let segment = path.path.segments.last()?;
+                    if path.path.leading_colon.is_none()
+                        && path.path.segments.len() == 1
+                        && segment.arguments.is_none()
+                    {
+                        let name = segment.ident.to_string();
+                        if let Some(primitive) = primitive_eager_type(&name) {
+                            let context = &self.scopes[scope].context;
+                            let shadowed = context.contains(&format!("{TYPE_USE_MARKER}{name}"))
+                                || context.contains(&format!("{TYPE_LOCAL_MARKER}{name}"))
+                                || self.has_foreign_glob(scope);
+                            return (!shadowed).then_some(primitive);
+                        }
+                    }
+                    let resolved = self.resolve(scope, &path.path)?;
+                    let resolved = resolved.iter().map(String::as_str).collect::<Vec<_>>();
+                    match resolved.as_slice() {
+                        ["std", "sync", "LazyLock"]
+                        | ["std" | "alloc", "boxed", "Box"]
+                        | ["std" | "alloc", "sync", "Arc"] => {
+                            let PathArguments::AngleBracketed(arguments) = &segment.arguments
+                            else {
+                                return None;
+                            };
+                            let Some(GenericArgument::Type(inner)) = arguments.args.first() else {
+                                return None;
+                            };
+                            Some(EagerType::Pointer(Box::new(self.convert(
+                                scope,
+                                inner,
+                                depth + 1,
+                            )?)))
+                        }
+                        ["crate", .., name] if segment.arguments.is_none() => {
+                            self.crate_type(name, depth)
+                        }
+                        _ => None,
+                    }
+                }
+                _ => None,
+            };
+        }
+
+        // The free function of this crate a call path resolves to, through the calling source's
+        // imports and local items.
+        fn crate_function(&self, path: &syn::ExprPath) -> Option<String> {
+            if path.qself.is_some() {
+                return None;
+            }
+            let resolved = self.resolve(self.scope, &path.path)?;
+            let (name, modules) = resolved.split_last()?;
+            if modules.first().map(String::as_str) != Some("crate")
+                || modules[1..]
+                    .iter()
+                    .any(|module| self.type_items.contains(module))
+            {
+                return None;
+            }
+            return self
+                .functions
+                .iter()
+                .any(|(_, function)| function.sig.ident == name.as_str())
+                .then(|| name.clone());
+        }
+
+        // The struct, or the alias's target, this crate declares as `name`, if its declaration is
+        // unambiguous (a source passed twice declares the same item twice).
+        fn crate_type(&self, name: &str, depth: usize) -> Option<EagerType> {
+            let structs = self
+                .scopes
+                .iter()
+                .enumerate()
+                .flat_map(|(index, scope)| {
+                    return scope
+                        .program
+                        .structs
+                        .iter()
+                        .filter(|structure| structure.ident == name)
+                        .map(move |structure| (index, structure.to_token_stream().to_string()));
+                })
+                .collect::<Vec<_>>();
+            let aliases = self
+                .scopes
+                .iter()
+                .enumerate()
+                .flat_map(|(index, scope)| {
+                    return scope
+                        .program
+                        .type_aliases
+                        .iter()
+                        .filter(|alias| alias.ident == name)
+                        .map(move |alias| (index, alias));
+                })
+                .collect::<Vec<_>>();
+            if let Some((index, declaration)) = structs.first() {
+                return (aliases.is_empty()
+                    && structs.iter().all(|(_, other)| other == declaration))
+                .then(|| EagerType::Struct(*index, name.to_string()));
+            }
+            let (index, alias) = aliases.first()?;
+            let declaration = alias.to_token_stream().to_string();
+            if !alias.generics.params.is_empty()
+                || aliases
+                    .iter()
+                    .any(|(_, other)| other.to_token_stream().to_string() != declaration)
+            {
+                return None;
+            }
+            return self.convert(*index, &alias.ty, depth + 1);
+        }
+
+        // Whether the source has a glob import from outside the standard library, which could
+        // supply any name and so leaves every unqualified name's owner undecided.
+        fn has_foreign_glob(&self, scope: usize) -> bool {
+            let context = &self.scopes[scope].context;
+            return marker_suffixes(context, TYPE_USE_GLOB_MARKER)
+                .iter()
+                .any(|glob| {
+                    let root = canonical_type_path_root(
+                        glob.split("::").map(str::to_string).collect(),
+                        context,
+                    );
+                    return !root.is_some_and(|root| {
+                        return matches!(
+                            root.first().map(String::as_str),
+                            Some("std" | "core" | "alloc")
+                        );
+                    });
+                });
+        }
+
+        fn infer(&self, expression: &Expr) -> Option<EagerType> {
+            return match expression {
+                Expr::Group(group) => self.infer(&group.expr),
+                Expr::Paren(paren) => self.infer(&paren.expr),
+                Expr::Lit(literal) => match &literal.lit {
+                    Lit::Bool(_) => Some(EagerType::Bool),
+                    Lit::Float(float) => match float.suffix() {
+                        "" => Some(EagerType::FloatLiteral),
+                        "f32" => Some(EagerType::F32),
+                        "f64" => Some(EagerType::F64),
+                        _ => None,
+                    },
+                    Lit::Int(integer) => match integer.suffix() {
+                        "" => Some(EagerType::IntegerLiteral),
+                        "f32" => Some(EagerType::F32),
+                        "f64" => Some(EagerType::F64),
+                        suffix => primitive_eager_type(suffix),
+                    },
+                    _ => None,
+                },
+                Expr::Unary(unary) => match (unary.op, self.infer(&unary.expr)?) {
+                    (UnOp::Deref(_), EagerType::Pointer(inner)) => Some(*inner),
+                    (UnOp::Neg(_), EagerType::F64) => Some(EagerType::F64),
+                    (UnOp::Neg(_), EagerType::FloatLiteral) => Some(EagerType::FloatLiteral),
+                    (UnOp::Not(_), EagerType::Bool) => Some(EagerType::Bool),
+                    _ => None,
+                },
+                Expr::Binary(binary) => self.infer_binary(binary),
+                Expr::Reference(reference) => {
+                    Some(EagerType::Pointer(Box::new(self.infer(&reference.expr)?)))
+                }
+                Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+                    let name = path.path.segments[0].ident.to_string();
+                    if let Some(binding) = self.env.get(&name) {
+                        return Some(binding.clone());
+                    }
+                    let program = self.scopes[self.scope].program;
+                    if self.readable_statics.contains(&name)
+                        && let Some(rust_static) = program
+                            .statics
+                            .iter()
+                            .find(|rust_static| rust_static.ident == name)
+                    {
+                        return self.convert(self.scope, &rust_static.ty, 0);
+                    }
+                    let constant = program
+                        .constants
+                        .iter()
+                        .find(|constant| constant.ident == name)?;
+                    self.convert(self.scope, &constant.ty, 0)
+                }
+                Expr::Field(field) => {
+                    let syn::Member::Named(member) = &field.member else {
+                        return None;
+                    };
+                    let mut base = self.infer(&field.base)?;
+                    while let EagerType::Pointer(inner) = base {
+                        base = *inner;
+                    }
+                    let EagerType::Struct(index, name) = base else {
+                        return None;
+                    };
+                    let structure = self.scopes[index]
+                        .program
+                        .structs
+                        .iter()
+                        .find(|structure| structure.ident == name)?;
+                    let field = structure
+                        .fields
+                        .iter()
+                        .find(|field| field.ident.as_ref() == Some(member))?;
+                    self.convert(index, &field.ty, 0)
+                }
+                Expr::Call(call) => {
+                    let Expr::Path(path) = call.func.as_ref() else {
+                        return None;
+                    };
+                    let name = self.crate_function(path)?;
+                    let signatures = self
+                        .functions
+                        .iter()
+                        .filter(|(_, function)| function.sig.ident == name.as_str())
+                        .collect::<Vec<_>>();
+                    let (index, function) = signatures.first()?;
+                    let signature = function.sig.to_token_stream().to_string();
+                    if signatures.iter().any(|(_, other)| {
+                        return other.sig.to_token_stream().to_string() != signature;
+                    }) {
+                        return None;
+                    }
+                    let ReturnType::Type(_, ty) = &function.sig.output else {
+                        return None;
+                    };
+                    self.convert(*index, ty, 0)
+                }
+                Expr::Struct(literal) if literal.qself.is_none() => {
+                    match self.resolve(self.scope, &literal.path)?.as_slice() {
+                        [root, .., name] if root == "crate" => self.crate_type(name, 0),
+                        _ => None,
+                    }
+                }
+                _ => None,
+            };
+        }
+
+        // The type a binary operator's built-in primitive operation produces, if its operands are
+        // proven to select one: `f64` arithmetic, or a comparison or logical operator over proven
+        // scalars. Two unsuffixed float literals keep the literal type, which the enclosing operation
+        // must still fix to `f64`.
+        fn infer_binary(&self, binary: &syn::ExprBinary) -> Option<EagerType> {
+            let left = self.infer(&binary.left)?;
+            let right = self.infer(&binary.right)?;
+            if is_eager_arithmetic(&binary.op) {
+                return match (left, right) {
+                    (EagerType::F64, EagerType::F64 | EagerType::FloatLiteral)
+                    | (EagerType::FloatLiteral, EagerType::F64) => Some(EagerType::F64),
+                    (EagerType::FloatLiteral, EagerType::FloatLiteral) => {
+                        Some(EagerType::FloatLiteral)
+                    }
+                    _ => None,
+                };
+            }
+            if is_eager_comparison(&binary.op) {
+                return is_eager_comparable(&binary.op, &left, &right).then_some(EagerType::Bool);
+            }
+            if matches!(binary.op, BinOp::And(_) | BinOp::Or(_))
+                && left == EagerType::Bool
+                && right == EagerType::Bool
+            {
+                return Some(EagerType::Bool);
+            }
+            return None;
+        }
+
         fn reject(&mut self, reason: String) {
             if self.error.is_none() {
                 self.error = Some(format!(
@@ -6595,100 +7067,199 @@ fn reject_unsafe_lazy_lock_initializers(
                 ));
             }
         }
+
+        // The owner a value or type path names from `scope`, following Rust's precedence: an
+        // explicit import, a local item or module, an absolute or `extern crate` root, a glob import,
+        // an extern-prelude crate, then the standard prelude. `None` when it cannot be decided: a
+        // glob import from outside the standard library, or an unqualified name no rule binds.
+        fn resolve(&self, scope: usize, path: &syn::Path) -> Option<Vec<String>> {
+            let EagerScope {
+                context, values, ..
+            } = &self.scopes[scope];
+            let segments = path
+                .segments
+                .iter()
+                .map(|segment| segment.ident.to_string())
+                .collect::<Vec<_>>();
+            let (first, rest) = segments.split_first()?;
+            let mut resolved = if path.leading_colon.is_some() {
+                canonical_type_path_root(segments.clone(), context)?
+            } else if context.contains(&format!("{TYPE_USE_MARKER}{first}")) {
+                let mut imported = marker_suffixes(context, TYPE_USE_TARGET_MARKER)
+                    .iter()
+                    .find_map(|binding| {
+                        let (local, target) = binding.split_once(PROVENANCE_SEPARATOR)?;
+                        return (local == first).then(|| target.to_string());
+                    })?
+                    .split("::")
+                    .map(str::to_string)
+                    .collect::<Vec<_>>();
+                imported.extend(rest.iter().cloned());
+                canonical_type_path_root(imported, context)?
+            } else if matches!(first.as_str(), "crate" | "self" | "super" | "Self") {
+                segments.clone()
+            } else if context.contains(&format!("{TYPE_LOCAL_MARKER}{first}"))
+                || values.contains(first)
+            {
+                std::iter::once("crate".to_string())
+                    .chain(segments.iter().cloned())
+                    .collect()
+            } else if matches!(first.as_str(), "std" | "core" | "alloc")
+                || marker_suffixes(context, TYPE_EXTERN_CRATE_MARKER)
+                    .iter()
+                    .any(|binding| {
+                        return binding.split(PROVENANCE_SEPARATOR).next() == Some(first.as_str());
+                    })
+            {
+                canonical_type_path_root(segments.clone(), context)?
+            } else {
+                if self.has_foreign_glob(scope) {
+                    return None;
+                }
+                for glob in marker_suffixes(context, TYPE_USE_GLOB_MARKER) {
+                    let candidate = canonical_type_path_root(
+                        glob.split("::")
+                            .map(str::to_string)
+                            .chain(segments.iter().cloned())
+                            .collect(),
+                        context,
+                    )?;
+                    if is_eager_construction_intrinsic(&candidate) {
+                        return Some(candidate);
+                    }
+                }
+                let no_std = context.contains(TYPE_NO_STD_MARKER);
+                let prelude = match first.as_str() {
+                    "Box" | "String" | "Vec" if no_std => return None,
+                    "Box" => "std::boxed::Box",
+                    "String" => "std::string::String",
+                    "Vec" => "std::vec::Vec",
+                    "Option" if no_std => "core::option::Option",
+                    "Option" => "std::option::Option",
+                    "Some" if no_std => "core::option::Option::Some",
+                    "Some" => "std::option::Option::Some",
+                    // Any other qualified path's first segment is an extern-prelude crate.
+                    _ if !rest.is_empty() => return Some(segments),
+                    _ => return None,
+                };
+                prelude
+                    .split("::")
+                    .map(str::to_string)
+                    .chain(rest.iter().cloned())
+                    .collect()
+            };
+            if matches!(
+                resolved.first().map(String::as_str),
+                Some("self" | "super" | "Self")
+            ) {
+                resolved[0] = "crate".to_string();
+            }
+            return Some(resolved);
+        }
+
+        // Visits an operand whose type the enclosing proven operation fixed, so nested arithmetic
+        // of unsuffixed literals in it is already `f64` and needs no proof of its own.
+        fn visit_unified_operand(&mut self, expression: &Expr) {
+            match expression {
+                Expr::Group(group) => self.visit_unified_operand(&group.expr),
+                Expr::Paren(paren) => self.visit_unified_operand(&paren.expr),
+                Expr::Binary(binary) if is_eager_arithmetic(&binary.op) => {
+                    self.visit_unified_operand(&binary.left);
+                    self.visit_unified_operand(&binary.right);
+                }
+                Expr::Unary(unary) if matches!(unary.op, UnOp::Neg(_)) => {
+                    self.visit_unified_operand(&unary.expr);
+                }
+                expression => self.visit_expr(expression),
+            }
+        }
     }
     impl<'ast> Visit<'ast> for EagerSafety<'_> {
+        fn visit_expr_binary(&mut self, binary: &'ast syn::ExprBinary) {
+            let op = binary.op.to_token_stream();
+            if is_eager_arithmetic(&binary.op) {
+                if self.infer_binary(binary) != Some(EagerType::F64) {
+                    self.reject(format!(
+                        "it applies `{op}` to operands not proven to be `f64` values, so it could run an overloaded operator or integer arithmetic that panics or wraps differently in Rust"
+                    ));
+                    return;
+                }
+                self.visit_unified_operand(&binary.left);
+                self.visit_unified_operand(&binary.right);
+            } else if matches!(
+                binary.op,
+                BinOp::AddAssign(_)
+                    | BinOp::DivAssign(_)
+                    | BinOp::MulAssign(_)
+                    | BinOp::RemAssign(_)
+                    | BinOp::SubAssign(_)
+            ) {
+                if self.infer(&binary.left) != Some(EagerType::F64)
+                    || !matches!(
+                        self.infer(&binary.right),
+                        Some(EagerType::F64 | EagerType::FloatLiteral)
+                    )
+                {
+                    self.reject(format!(
+                        "it applies `{op}` to operands not proven to be `f64` values, so it could run an overloaded operator or integer arithmetic that panics or wraps differently in Rust"
+                    ));
+                    return;
+                }
+                self.visit_expr(&binary.left);
+                self.visit_unified_operand(&binary.right);
+            } else if is_eager_comparison(&binary.op) {
+                if self.infer_binary(binary) != Some(EagerType::Bool) {
+                    self.reject(format!(
+                        "it compares with `{op}` operands not proven to be one exactly representable primitive scalar type, so it could run a user `PartialEq` or `PartialOrd`"
+                    ));
+                    return;
+                }
+                self.visit_unified_operand(&binary.left);
+                self.visit_unified_operand(&binary.right);
+            } else if matches!(binary.op, BinOp::And(_) | BinOp::Or(_)) {
+                syn::visit::visit_expr_binary(self, binary);
+            } else {
+                self.reject(format!(
+                    "it applies `{op}` to operands not proven to be `f64` values, so it could run an overloaded operator or integer arithmetic that panics or wraps differently in Rust"
+                ));
+            }
+        }
+
         fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
             let Expr::Path(path) = call.func.as_ref() else {
                 self.reject("it calls a function value".to_string());
                 return;
             };
-            let segments = path
-                .path
-                .segments
-                .iter()
-                .map(|segment| segment.ident.to_string())
-                .collect::<Vec<_>>();
-            let name = segments.last().cloned().unwrap_or_default();
-            let constructor = match segments.as_slice() {
-                [only] => {
-                    matches!(only.as_str(), "allocate_entity" | "Some")
-                        && !self.shadowed.contains(only)
-                }
-                [.., owner, member] => {
-                    matches!(
-                        owner.as_str(),
-                        "Arc" | "Box" | "Ref" | "RwLock" | "String" | "Vec"
-                    ) && member == "new"
-                        && !self.shadowed.contains(owner)
-                        || owner == "flight_entity" && member == "allocate_entity"
-                }
-                [] => false,
-            };
-            if constructor {
-            } else if crate_free_function_path(&path.path)
+            let constructor = path.qself.is_none()
                 && self
-                    .functions
-                    .iter()
-                    .any(|function| function.sig.ident == name.as_str())
-            {
+                    .resolve(self.scope, &path.path)
+                    .is_some_and(|owner| is_eager_construction_intrinsic(&owner));
+            if !constructor {
+                let Some(name) = self.crate_function(path) else {
+                    self.reject(format!(
+                        "it calls `{}`, which is not a side-effect-free function of this crate",
+                        path.path
+                            .segments
+                            .iter()
+                            .map(|segment| segment.ident.to_string())
+                            .collect::<Vec<_>>()
+                            .join("::")
+                    ));
+                    return;
+                };
                 self.pending.push(name);
-            } else {
-                self.reject(format!(
-                    "it calls `{}`, which is not a side-effect-free function of this crate",
-                    segments.join("::")
-                ));
-                return;
             }
             for argument in &call.args {
                 self.visit_expr(argument);
             }
         }
 
-        fn visit_expr_index(&mut self, _index: &'ast syn::ExprIndex) {
-            self.reject("it indexes, which can panic".to_string());
-        }
-
-        fn visit_expr_binary(&mut self, binary: &'ast syn::ExprBinary) {
-            let arithmetic = matches!(
-                binary.op,
-                BinOp::Add(_)
-                    | BinOp::AddAssign(_)
-                    | BinOp::Div(_)
-                    | BinOp::DivAssign(_)
-                    | BinOp::Mul(_)
-                    | BinOp::MulAssign(_)
-                    | BinOp::Rem(_)
-                    | BinOp::RemAssign(_)
-                    | BinOp::Sub(_)
-                    | BinOp::SubAssign(_)
-            );
-            let bitwise = matches!(
-                binary.op,
-                BinOp::BitAnd(_)
-                    | BinOp::BitAndAssign(_)
-                    | BinOp::BitOr(_)
-                    | BinOp::BitOrAssign(_)
-                    | BinOp::BitXor(_)
-                    | BinOp::BitXorAssign(_)
-                    | BinOp::Shl(_)
-                    | BinOp::ShlAssign(_)
-                    | BinOp::Shr(_)
-                    | BinOp::ShrAssign(_)
-            );
-            if bitwise
-                || arithmetic && !is_proven_float(&binary.left) && !is_proven_float(&binary.right)
-            {
-                self.reject(format!(
-                    "it applies `{}` to operands not proven to be floating point, and integer arithmetic can panic or wrap differently in Rust",
-                    binary.op.to_token_stream()
-                ));
-                return;
-            }
-            syn::visit::visit_expr_binary(self, binary);
-        }
-
         fn visit_expr_cast(&mut self, _cast: &'ast syn::ExprCast) {
             self.reject("it casts with `as`, which converts differently in Rust".to_string());
+        }
+
+        fn visit_expr_index(&mut self, _index: &'ast syn::ExprIndex) {
+            self.reject("it indexes, which can panic".to_string());
         }
 
         fn visit_expr_macro(&mut self, expression: &'ast syn::ExprMacro) {
@@ -6709,32 +7280,6 @@ fn reject_unsafe_lazy_lock_initializers(
                 "it calls `.{}()`, and a method name does not prove which operation its receiver performs",
                 call.method
             ));
-        }
-
-        fn visit_stmt_macro(&mut self, statement: &'ast syn::StmtMacro) {
-            self.reject(format!(
-                "it invokes `{}!`",
-                statement
-                    .mac
-                    .path
-                    .segments
-                    .last()
-                    .map(|segment| segment.ident.to_string())
-                    .unwrap_or_default()
-            ));
-        }
-
-        fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
-            match unary.op {
-                UnOp::Deref(_) => syn::visit::visit_expr_unary(self, unary),
-                UnOp::Neg(_) if is_proven_float(&unary.expr) => {
-                    syn::visit::visit_expr_unary(self, unary);
-                }
-                _ => self.reject(format!(
-                    "it applies `{}` to an operand not proven to be floating point",
-                    unary.op.to_token_stream()
-                )),
-            }
         }
 
         fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
@@ -6759,96 +7304,147 @@ fn reject_unsafe_lazy_lock_initializers(
             self.reject("it uses `?`".to_string());
         }
 
+        fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
+            let operand = self.infer(&unary.expr);
+            match unary.op {
+                UnOp::Deref(_) if matches!(operand, Some(EagerType::Pointer(_))) => {}
+                UnOp::Deref(_) => {
+                    self.reject("it dereferences an operand not proven to be a reference or a standard `LazyLock`, `Box` or `Arc`, so it could run a user `Deref`".to_string());
+                    return;
+                }
+                UnOp::Neg(_)
+                    if matches!(operand, Some(EagerType::F64 | EagerType::FloatLiteral)) => {}
+                UnOp::Not(_) if operand == Some(EagerType::Bool) => {}
+                _ => {
+                    self.reject(format!(
+                        "it applies `{}` to an operand not proven to be {}",
+                        unary.op.to_token_stream(),
+                        if matches!(unary.op, UnOp::Not(_)) {
+                            "a `bool`"
+                        } else {
+                            "an `f64` value"
+                        }
+                    ));
+                    return;
+                }
+            }
+            syn::visit::visit_expr_unary(self, unary);
+        }
+
         fn visit_expr_unsafe(&mut self, _expression: &'ast syn::ExprUnsafe) {
             self.reject("it uses `unsafe`".to_string());
         }
+
+        fn visit_stmt_macro(&mut self, statement: &'ast syn::StmtMacro) {
+            self.reject(format!(
+                "it invokes `{}!`",
+                statement
+                    .mac
+                    .path
+                    .segments
+                    .last()
+                    .map(|segment| segment.ident.to_string())
+                    .unwrap_or_default()
+            ));
+        }
     }
+    let scopes = programs
+        .iter()
+        .map(|source| {
+            let mut context = HashSet::new();
+            insert_program_type_path_context(&mut context, source);
+            let values = source
+                .functions
+                .iter()
+                .map(|function| function.sig.ident.to_string())
+                .chain(
+                    source
+                        .constants
+                        .iter()
+                        .map(|constant| constant.ident.to_string()),
+                )
+                .chain(
+                    source
+                        .statics
+                        .iter()
+                        .map(|rust_static| rust_static.ident.to_string()),
+                )
+                .collect();
+            return EagerScope {
+                context,
+                program: source,
+                values,
+            };
+        })
+        .collect::<Vec<_>>();
     let functions = programs
         .iter()
-        .flat_map(|program| &program.functions)
+        .enumerate()
+        .flat_map(|(index, source)| {
+            source
+                .functions
+                .iter()
+                .map(move |function| (index, function))
+        })
         .collect::<Vec<_>>();
     let all_statics = programs
         .iter()
-        .flat_map(|program| &program.statics)
+        .flat_map(|source| &source.statics)
         .map(|rust_static| rust_static.ident.to_string())
         .collect::<BTreeSet<_>>();
-    let shadowed = programs
+    let type_items = programs
         .iter()
-        .flat_map(|program| {
-            program
+        .flat_map(|source| {
+            return source
                 .structs
                 .iter()
                 .map(|structure| structure.ident.to_string())
                 .chain(
-                    program
+                    source
                         .enums
                         .iter()
                         .map(|rust_enum| rust_enum.ident.to_string()),
                 )
                 .chain(
-                    program
+                    source
                         .type_aliases
                         .iter()
                         .map(|type_alias| type_alias.ident.to_string()),
-                )
-                .chain(
-                    program
-                        .functions
-                        .iter()
-                        .map(|function| function.sig.ident.to_string()),
-                )
+                );
         })
         .collect::<BTreeSet<_>>();
+    // `programs[0]` is the source being generated, whose statics these are.
+    let generated = programs
+        .iter()
+        .position(|source| std::ptr::eq(*source, program))
+        .unwrap_or(0);
     let mut readable_statics = BTreeSet::new();
     for rust_static in &program.statics {
         let name = rust_static.ident.to_string();
         let Some((_, initializer)) = crate::model::lazy_lock_static(rust_static) else {
             if matches!(rust_static.mutability, syn::StaticMutability::None)
-                && named_type(&rust_static.ty).is_some_and(|type_name| {
-                    matches!(
-                        type_name.as_str(),
-                        "bool"
-                            | "f32"
-                            | "f64"
-                            | "i8"
-                            | "i16"
-                            | "i32"
-                            | "i64"
-                            | "isize"
-                            | "u8"
-                            | "u16"
-                            | "u32"
-                            | "u64"
-                            | "usize"
-                    )
-                })
+                && named_type(&rust_static.ty)
+                    .is_some_and(|type_name| primitive_eager_type(&type_name).is_some())
             {
                 readable_statics.insert(name);
             }
             continue;
         };
         let mut safety = EagerSafety {
+            env: BTreeMap::new(),
             error: None,
-            shadowed: &shadowed,
             functions: &functions,
-            readable_statics: &readable_statics,
             other_statics: &all_statics,
             pending: Vec::new(),
+            readable_statics: &readable_statics,
+            scope: generated,
+            scopes: &scopes,
             static_name: &name,
+            type_items: &type_items,
         };
         match initializer {
             Expr::Path(path) => {
-                let factory = path
-                    .path
-                    .segments
-                    .last()
-                    .map(|segment| segment.ident.to_string())
-                    .unwrap_or_default();
-                if !crate_free_function_path(&path.path)
-                    || !functions
-                        .iter()
-                        .any(|function| function.sig.ident == factory.as_str())
-                {
+                let Some(factory) = safety.crate_function(path) else {
                     return Err(compile_error(format!(
                         "`LazyLock` initializer for `{name}` must name a free function of this crate; `{}` has no TypeScript value",
                         path.path
@@ -6858,10 +7454,15 @@ fn reject_unsafe_lazy_lock_initializers(
                             .collect::<Vec<_>>()
                             .join("::")
                     )));
-                }
+                };
                 safety.pending.push(factory);
             }
-            initializer => safety.visit_expr(initializer),
+            initializer => {
+                let mut sites = BindingSites { sites: Vec::new() };
+                sites.visit_expr(initializer);
+                safety.bind(generated, sites.sites);
+                safety.visit_expr(initializer);
+            }
         }
         let mut visited = BTreeSet::new();
         while let Some(function_name) = safety.pending.pop() {
@@ -6871,10 +7472,11 @@ fn reject_unsafe_lazy_lock_initializers(
             if !visited.insert(function_name.clone()) {
                 continue;
             }
-            for function in functions
+            for (index, function) in functions
                 .iter()
-                .filter(|function| function.sig.ident == function_name.as_str())
+                .filter(|(_, function)| function.sig.ident == function_name.as_str())
             {
+                safety.bind_function(*index, function);
                 safety.visit_block(&function.block);
             }
         }
@@ -10384,18 +10986,6 @@ fn finish_cross_crate_imports(
         }
     }
     return (value_imports, type_imports);
-}
-
-// Whether `path` names a free function of the current crate: a bare name or a `crate::`/`self::`/
-// `super::` path. A `Type::function` path names an associated function, which is never emitted.
-fn crate_free_function_path(path: &syn::Path) -> bool {
-    return path.segments.len() == 1
-        || path.segments.first().is_some_and(|segment| {
-            matches!(
-                segment.ident.to_string().as_str(),
-                "crate" | "self" | "super"
-            )
-        });
 }
 
 fn cross_crate_imports(
