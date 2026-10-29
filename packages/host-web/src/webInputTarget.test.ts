@@ -1,4 +1,4 @@
-import { exitAppInputPointerLock, lockAppInputPointer } from '@flighthq/app/contract';
+import { exitAppInputPointerLock, lockAppInputPointer } from '@flighthq/app';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
 

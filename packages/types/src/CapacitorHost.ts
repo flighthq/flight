@@ -1,4 +1,5 @@
-import type { MobileOsProfile } from './App.ts';
+import type { MobileOsProfile } from '@flighthq/app/contract';
+
 import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.ts';
 import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
 import type { HostHapticsCapabilities } from './Haptics.ts';

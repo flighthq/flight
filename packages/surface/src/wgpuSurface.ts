@@ -1,6 +1,6 @@
+import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
 import type {
-  AppWindow,
   EntityConstruction,
   HostWgpuCapability,
   NativeSurfaceHandle,

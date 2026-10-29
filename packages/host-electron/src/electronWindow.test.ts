@@ -1,4 +1,4 @@
-import { createAppWindow } from '@flighthq/app/contract';
+import { createAppWindow } from '@flighthq/app';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from '@flighthq/types/contract';
 

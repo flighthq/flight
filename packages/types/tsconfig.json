@@ -7,9 +7,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".app-types", ".menu-types", ""],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
     {
       "path": "../buffer"
     },
@@ -27,6 +31,9 @@
     },
     {
       "path": "../math"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
     },
     {
       "path": "../resource"

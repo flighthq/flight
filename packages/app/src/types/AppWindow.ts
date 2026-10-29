@@ -1,7 +1,9 @@
-import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { Signal } from '@flighthq/signals/contract';
 
-export interface AppWindow extends Entity {
+export interface AppWindow extends EntityRaw {
+  readonly [EntityRuntimeKey]: EntityRuntime | undefined;
   // Window title text. Reflected to the host chrome by setWindowTitle.
   title: string;
   // Top-left position in screen coordinates (logical pixels).
@@ -92,7 +94,10 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 
 // Provider-bound identity for the element whose content box drives attachWindowResize. The web host
 // maps this opaque value to an Element; neutral application and native-host contracts never name DOM.
-export type WindowResizeTargetHandle = Entity & { readonly __brand: 'WindowResizeTargetHandle' };
+export type WindowResizeTargetHandle = EntityRaw & {
+  readonly [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly __brand: 'WindowResizeTargetHandle';
+};
 
 export interface HostWindowAppearanceCapability {
   setIcon?(win: AppWindow, icon: string): void;

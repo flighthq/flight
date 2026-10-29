@@ -1,5 +1,3 @@
-import type { MenuItemTemplate } from '@flighthq/types/contract';
-
 import {
   createDefaultAppMenuTemplate,
   createDefaultEditMenuTemplate,
@@ -8,6 +6,7 @@ import {
   createDefaultViewMenuTemplate,
   createDefaultWindowMenuTemplate,
 } from './menu-templates.ts';
+import type { MenuItemTemplate } from './types.ts';
 
 function collectIds(items: readonly MenuItemTemplate[]): string[] {
   const ids: string[] = [];

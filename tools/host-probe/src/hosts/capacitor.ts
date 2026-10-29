@@ -11,9 +11,10 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Network } from '@capacitor/network';
 import { Share } from '@capacitor/share';
 import { StatusBar } from '@capacitor/status-bar';
-import { getAppName, getAppVersion } from '@flighthq/app/contract';
+import { getAppName, getAppVersion } from '@flighthq/app';
+import type { MobileOsProfile } from '@flighthq/app/contract';
 import { capacitorHost } from '@flighthq/host-capacitor';
-import type { CapacitorApi, MobileOsProfile } from '@flighthq/types/contract';
+import type { CapacitorApi } from '@flighthq/types/contract';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';
@@ -33,7 +34,7 @@ export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot
     // dependency-free and represents those wire values as strings.
     haptics: Haptics as CapacitorApi['haptics'],
     keyboard: Keyboard,
-    localNotifications: LocalNotifications,
+    localNotifications: LocalNotifications as CapacitorApi['localNotifications'],
     network: Network,
     share: Share,
     statusBar: StatusBar,

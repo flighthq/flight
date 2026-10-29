@@ -1,4 +1,5 @@
-import type { AppWindow } from './AppWindow.ts';
+import type { AppWindow } from '@flighthq/app/contract';
+
 import type { Entity, EntityRuntime } from './Entity.ts';
 
 // One picker filter. Each MIME key owns exactly the extensions it describes; native providers flatten

@@ -1,5 +1,5 @@
-import type { MobileOsProfile } from './App.ts';
-import type { HostAppCapabilities } from './Host.ts';
+import type { MobileOsProfile } from '@flighthq/app/contract';
+import type { HostAppCapabilities } from '@flighthq/app/contract';
 
 export type CapacitorCommonAppCapabilities = Required<Pick<HostAppCapabilities, 'activate' | 'name' | 'version'>>;
 export type CapacitorAndroidAppCapabilities = CapacitorCommonAppCapabilities &

@@ -1,15 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { EntityConstruction, HostLifecycleCapability } from '@flighthq/types/contract';
+
 import type {
   AppLoop,
   AppLoopOptions,
   AppStepOptions,
   AppWindow,
-  EntityConstruction,
   HostAppExitCapability,
-  HostLifecycleCapability,
   HostAppLoopCapability,
-} from '@flighthq/types/contract';
+} from './types/contract.ts';
 
 const DEFAULT_BACKGROUND_FRAME_RATE = 0; // 0 = disabled; use same rate when in background
 const DEFAULT_FIXED_TIMESTEP = 0; // 0 = disabled; pure variable mode

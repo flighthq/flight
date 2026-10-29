@@ -1,5 +1,6 @@
+import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
-import type { AppWindow, Entity, GlContext, GlSurface, HostGlCapability } from '@flighthq/types/contract';
+import type { Entity, GlContext, GlSurface, HostGlCapability } from '@flighthq/types/contract';
 
 import { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './glSurface.ts';
 import { allocateSurface, getSurfaceHandle } from './surface.ts';

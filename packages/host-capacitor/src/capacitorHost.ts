@@ -1,5 +1,6 @@
+import type { MobileOsProfile } from '@flighthq/app/contract';
 import { createHost } from '@flighthq/host/contract';
-import type { CapacitorApi, CapacitorHost, EntityRuntimeKey, MobileOsProfile } from '@flighthq/types/contract';
+import type { CapacitorApi, CapacitorHost, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { capacitorHostApp } from './capacitorApp.ts';
 import { capacitorHostClipboard } from './capacitorClipboard.ts';

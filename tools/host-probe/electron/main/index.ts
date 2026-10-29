@@ -1,8 +1,7 @@
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 
-import { getAppName, getAppVersion } from '@flighthq/app/contract';
-import { closeWindow, createAppWindow, openWindow } from '@flighthq/app/contract';
+import { closeWindow, createAppWindow, getAppName, getAppVersion, openWindow } from '@flighthq/app';
 import { electronHost, getElectronBrowserWindow } from '@flighthq/host-electron';
 import { getScreens } from '@flighthq/screen/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
@@ -71,7 +70,7 @@ function installElectronProbe(): HostProbeInstallResult {
     status: appName.length > 0 ? 'pass' : 'fail',
   });
 
-  const screens: ReturnType<typeof getScreens> = [];
+  const screens: Parameters<typeof getScreens>[1] = [];
   getScreens(host.screen.query, screens);
   results.push({
     detail: `${screens.length} Electron screen(s)`,

@@ -39,7 +39,6 @@
   },
   "dependencies": {
     "@flighthq/app": "*",
-    "@flighthq/app": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/dialog": "*",
     "@flighthq/entity": "*",

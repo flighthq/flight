@@ -1,4 +1,4 @@
-import { createAppWindow, openWindow } from '@flighthq/app/contract';
+import { createAppWindow, openWindow } from '@flighthq/app';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 

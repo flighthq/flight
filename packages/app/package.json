@@ -39,12 +39,13 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/menu": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Application identity, lifecycle control, the frame loop, windows, and render views over a swappable web/native backend",
+  "description": "Application identity, lifecycle control, the frame loop, and windows over a swappable web/native backend",
   "sideEffects": false
 }

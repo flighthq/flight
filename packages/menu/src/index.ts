@@ -21,4 +21,5 @@ export {
   setAppMenu,
   showContextMenu,
   validateMenuItemTemplate,
-} from './contract.ts';
+} from './runtime.ts';
+export * from './contract.menu-types.ts';

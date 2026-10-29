@@ -1,4 +1,4 @@
-import type { HostMenuHighlightCapability, MenuItemTemplate, HostMenuPopupCapability } from '@flighthq/types/contract';
+import type { HostMenuHighlightCapability, HostMenuPopupCapability, MenuItemTemplate } from '@flighthq/menu/contract';
 
 // The web menu providers. Web renders context menus itself in the DOM, so it exposes POPUP and — because
 // it owns that rendering — HIGHLIGHT. It exposes neither `application` nor `select`: a browser has no

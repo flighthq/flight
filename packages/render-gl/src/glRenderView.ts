@@ -1,11 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createViewport } from '@flighthq/node/contract';
-import type {
-  AppRenderViewTargetOptions,
-  GlContext,
-  GlRenderStateOptions,
-  GlRenderViewResources,
-} from '@flighthq/types/contract';
+import type { RenderViewTargetOptions } from '@flighthq/render/contract';
+import type { GlContext, GlRenderStateOptions, GlRenderViewResources } from '@flighthq/types/contract';
 
 import { createGlRenderState, destroyGlRenderState, invalidateGlRenderStateCache } from './glRenderState.ts';
 import {
@@ -27,7 +23,7 @@ export function createGlRenderViewResources(
   height: number,
   devicePixelRatio: number,
   options: Readonly<GlRenderStateOptions> = {},
-  target: Readonly<AppRenderViewTargetOptions> = {},
+  target: Readonly<RenderViewTargetOptions> = {},
 ): GlRenderViewResources {
   const out = allocateEntity<GlRenderViewResources>();
   out.renderState = createGlRenderState(context, { ...options, pixelRatio: devicePixelRatio });

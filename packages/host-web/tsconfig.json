@@ -7,10 +7,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".menu-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
-    { "path": "../app" },
+    { "path": "../app/tsconfig.runtime.json" },
     { "path": "../audio" },
     { "path": "../bitmap" },
     { "path": "../device" },
@@ -27,7 +28,7 @@
     { "path": "../input" },
     { "path": "../lifecycle" },
     { "path": "../media" },
-    { "path": "../menu" },
+    { "path": "../menu/tsconfig.contract.json" },
     { "path": "../midi" },
     { "path": "../notification" },
     { "path": "../platform" },

@@ -13,6 +13,7 @@ import {
   getCoreGuardRuntimeImportViolations,
   getPackageLayerCoverageViolations,
   getPackageLayerDependencyViolation,
+  isTransitionalTypeAggregatorPackage,
 } from './package-layers.ts';
 import { getPackageLicenseViolations } from './package-license-policy.ts';
 import {
@@ -293,6 +294,7 @@ function scanFlightImports(files: string[]): Set<string> {
 }
 
 const convertedContractLanePackages = new Set<string>();
+const splitRuntimePackages = new Set<string>();
 
 function scanContractLaneImports(files: string[], importingPackage: string): Map<string, string[]> {
   const violations = new Map<string, string[]>();
@@ -303,13 +305,69 @@ function scanContractLaneImports(files: string[], importingPackage: string): Map
       if (
         packageName === importingPackage ||
         !convertedContractLanePackages.has(packageName) ||
-        specifier === `${packageName}/contract`
+        specifier === `${packageName}/contract` ||
+        (specifier === packageName && splitRuntimePackages.has(packageName))
       )
         continue;
       const filesForPackage = violations.get(packageName);
       const path = relative(root, filePath).replaceAll('\\', '/');
       if (filesForPackage === undefined) violations.set(packageName, [path]);
       else filesForPackage.push(path);
+    }
+  }
+
+  return violations;
+}
+
+// A transitional type aggregator may point up to feature owners only through statement-level type
+// imports/exports on their public contract lane. A value import, dynamic import, side-effect import,
+// package root, or arbitrary subpath remains a normal runtime edge and therefore a layer violation.
+function scanTypeOnlyOwnerContractViolations(files: string[]): Map<string, string[]> {
+  const violations = new Map<string, string[]>();
+
+  const record = (filePath: string, specifier: string, typeOnly: boolean): void => {
+    if (!specifier.startsWith('@flighthq/')) return;
+    const packageName = specifier.split('/').slice(0, 2).join('/');
+    if (typeOnly && specifier === `${packageName}/contract`) return;
+    const path = relative(root, filePath).replaceAll('\\', '/');
+    const filesForPackage = violations.get(packageName);
+    if (filesForPackage === undefined) violations.set(packageName, [path]);
+    else if (!filesForPackage.includes(path)) filesForPackage.push(path);
+  };
+
+  for (const filePath of files) {
+    const parsed = getParsedOxcSource(filePath);
+    for (const statement of parsed.program.body) {
+      if (statement.type === 'ImportDeclaration') {
+        const typeOnly =
+          statement.importKind === 'type' ||
+          (statement.specifiers.length > 0 &&
+            statement.specifiers.every(
+              (specifier) => specifier.type === 'ImportSpecifier' && specifier.importKind === 'type',
+            ));
+        record(filePath, statement.source.value, typeOnly);
+      } else if (statement.type === 'ExportNamedDeclaration' && statement.source !== null) {
+        const typeOnly =
+          statement.exportKind === 'type' ||
+          (statement.specifiers.length > 0 &&
+            statement.specifiers.every((specifier) => specifier.exportKind === 'type'));
+        record(filePath, statement.source.value, typeOnly);
+      } else if (statement.type === 'ExportAllDeclaration') {
+        record(filePath, statement.source.value, statement.exportKind === 'type');
+      } else if (
+        statement.type === 'TSImportEqualsDeclaration' &&
+        statement.moduleReference.type === 'TSExternalModuleReference' &&
+        statement.moduleReference.expression !== null
+      ) {
+        record(filePath, statement.moduleReference.expression.value, false);
+      }
+    }
+    for (const dynamicImport of parsed.module.dynamicImports) {
+      const source = parsed.text.slice(dynamicImport.moduleRequest.start, dynamicImport.moduleRequest.end);
+      const quote = source[0];
+      if ((quote === "'" || quote === '"') && source.at(-1) === quote) {
+        record(filePath, source.slice(1, -1), false);
+      }
     }
   }
 
@@ -438,6 +496,7 @@ for (const pkgDir of packageDirs) {
   const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'));
   if (pkg?.name !== undefined && existsSync(join(pkgDir, 'src', 'contract.ts'))) {
     convertedContractLanePackages.add(pkg.name);
+    if (existsSync(join(pkgDir, 'tsconfig.runtime.json'))) splitRuntimePackages.add(pkg.name);
   }
 }
 
@@ -604,10 +663,23 @@ for (const pkgDir of packageDirs) {
     ),
   );
   const allFlightDeps = new Set<string>(Object.keys(allDeps).filter((d) => d.startsWith('@flighthq/')));
+  const aggregatorContractViolations = isTransitionalTypeAggregatorPackage(name)
+    ? scanTypeOnlyOwnerContractViolations(srcFiles)
+    : new Map<string, string[]>();
 
   for (const dep of [...prodDeps].sort()) {
     const violation = getPackageLayerDependencyViolation(name, dep);
-    if (violation !== null) errors.push(violation);
+    if (violation === null) continue;
+    if (isTransitionalTypeAggregatorPackage(name) && !aggregatorContractViolations.has(dep)) continue;
+    if (isTransitionalTypeAggregatorPackage(name)) {
+      const files = aggregatorContractViolations.get(dep) ?? [];
+      errors.push({
+        label: `${dep} uses a type-only owner contract edge`,
+        detail: `${name} may cross its core layer only with import type/export type through ${dep}/contract; invalid use in ${files.join(', ') || 'the manifest'}`,
+      });
+      continue;
+    }
+    errors.push(violation);
   }
 
   // The core guard exception is file-scoped: a core package may import @flighthq/log, but only from an
@@ -634,7 +706,14 @@ for (const pkgDir of packageDirs) {
   // --- dependency ↔ tsconfig reference sync ---
 
   const pkgTsConfig = readJson<PackageTsConfig>(join(pkgDir, 'tsconfig.json'));
-  const tsconfigRefs = new Set((pkgTsConfig?.references ?? []).map((r) => r.path.replace(/^\.\.\//, '')));
+  const tsconfigRefs = new Set(
+    (pkgTsConfig?.references ?? []).flatMap((reference) => {
+      const path = reference.path.replaceAll('\\', '/');
+      if (!path.startsWith('../')) return [];
+      const packageDirectory = path.slice(3).split('/')[0];
+      return packageDirectory === undefined || packageDirectory === '' ? [] : [packageDirectory];
+    }),
+  );
 
   for (const dep of [...allFlightDeps].sort()) {
     const depName = dep.replace('@flighthq/', '');

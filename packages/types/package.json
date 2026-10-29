@@ -36,12 +36,14 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/app": "*",
     "@flighthq/buffer": "*",
     "@flighthq/clock": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/haptics": "*",
     "@flighthq/math": "*",
+    "@flighthq/menu": "*",
     "@flighthq/resource": "*",
     "@flighthq/signals": "*",
     "@flighthq/textformat": "*"

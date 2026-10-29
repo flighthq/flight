@@ -1,47 +1,7 @@
+import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+
 import type { HostAccessibilityCapability } from './Accessibility.ts';
-import type {
-  HostAppActivateCapability,
-  HostAppActivationPolicyCapability,
-  HostAppAllWindowsClosedCapability,
-  HostAppBadgeCapability,
-  HostAppDockCapability,
-  HostAppFocusCapability,
-  HostAppHideCapability,
-  HostAppLocaleCapability,
-  HostAppLoginItemCapability,
-  HostAppNameCapability,
-  HostAppNameWriteCapability,
-  HostAppOpenFileCapability,
-  HostAppPathCapability,
-  HostAppQuitCapability,
-  HostAppQuitRequestCapability,
-  HostAppReadyCapability,
-  HostAppRecentDocumentsCapability,
-  HostAppRelaunchCapability,
-  HostAppSecondInstanceCapability,
-  HostAppSingleInstanceCapability,
-  HostAppUserModelIdCapability,
-  HostAppVersionCapability,
-  HostAppShowCapability,
-} from './App.ts';
-import type {
-  HostWindowAppearanceCapability,
-  HostWindowAttachCapability,
-  HostWindowAttentionCapability,
-  HostWindowContentProtectionCapability,
-  HostWindowFocusCapability,
-  HostWindowFullscreenCapability,
-  HostWindowGeometryCapability,
-  HostWindowHierarchyCapability,
-  HostWindowLifecycleCapability,
-  HostWindowProgressCapability,
-  HostWindowShadowCapability,
-  HostWindowShellCapability,
-  HostWindowSizeConstraintsCapability,
-  HostWindowStateCapability,
-  HostWindowVisibilityCapability,
-  HostWindowZOrderCapability,
-} from './AppWindow.ts';
 import type {
   HostClipboardBookmarkCapability,
   HostClipboardChangeCapability,
@@ -67,8 +27,6 @@ import type { HostFileSystemCapability } from './FileSystem.ts';
 import type { HostGeolocationCapability } from './Geolocation.ts';
 import type { HostGlyphRasterizerCapability } from './GlyphSource.ts';
 import type { HostHapticsCapabilities } from './Haptics.ts';
-import type { HostAppExitCapability } from './HostAppExit.ts';
-import type { HostAppLoopCapability } from './HostAppLoop.ts';
 import type { HostAudioCodecCapability } from './HostAudioCodec.ts';
 import type { HostAudioDecodeCapabilities } from './HostAudioDecode.ts';
 import type { HostAudioDeviceCapability } from './HostAudioDevice.ts';
@@ -82,7 +40,6 @@ import type {
   HostFileSaveDialogCapability,
 } from './HostFileDialog.ts';
 import type { HostFontLoadingCapability } from './HostFontLoading.ts';
-import type { HostElementFullscreenCapability } from './HostFullscreen.ts';
 import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
@@ -119,12 +76,6 @@ import type {
 } from './Keyboard.ts';
 import type { HostLifecycleCapability } from './Lifecycle.ts';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
-import type {
-  HostAppMenuCapability,
-  HostMenuHighlightCapability,
-  HostMenuPopupCapability,
-  HostMenuSelectCapability,
-} from './Menu.ts';
 import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi.ts';
 import type { HostNetCapability } from './Net.ts';
 import type {
@@ -273,34 +224,6 @@ export interface HostAccessibilityCapabilities {
   readonly tree?: HostAccessibilityCapability;
 }
 
-export interface HostAppCapabilities {
-  readonly activate?: HostAppActivateCapability;
-  readonly activationPolicy?: HostAppActivationPolicyCapability;
-  readonly allWindowsClosed?: HostAppAllWindowsClosedCapability;
-  readonly badge?: HostAppBadgeCapability;
-  readonly dock?: HostAppDockCapability;
-  readonly exit?: HostAppExitCapability;
-  readonly focus?: HostAppFocusCapability;
-  readonly hide?: HostAppHideCapability;
-  readonly locale?: HostAppLocaleCapability;
-  readonly loginItem?: HostAppLoginItemCapability;
-  readonly loop?: HostAppLoopCapability;
-  readonly name?: HostAppNameCapability;
-  readonly nameWrite?: HostAppNameWriteCapability;
-  readonly openFile?: HostAppOpenFileCapability;
-  readonly path?: HostAppPathCapability;
-  readonly quit?: HostAppQuitCapability;
-  readonly quitRequest?: HostAppQuitRequestCapability;
-  readonly ready?: HostAppReadyCapability;
-  readonly recentDocuments?: HostAppRecentDocumentsCapability;
-  readonly relaunch?: HostAppRelaunchCapability;
-  readonly secondInstance?: HostAppSecondInstanceCapability;
-  readonly show?: HostAppShowCapability;
-  readonly singleInstance?: HostAppSingleInstanceCapability;
-  readonly userModelId?: HostAppUserModelIdCapability;
-  readonly version?: HostAppVersionCapability;
-}
-
 export interface HostAudioCapabilities {
   readonly codec?: HostAudioCodecCapability;
   readonly device?: HostAudioDeviceCapability;
@@ -354,10 +277,6 @@ export interface HostFontCapabilities {
   readonly loader?: HostFontLoadingCapability;
 }
 
-export interface HostFullscreenCapabilities {
-  readonly element?: HostElementFullscreenCapability;
-}
-
 export interface HostGeolocationCapabilities {
   readonly position?: HostGeolocationCapability;
 }
@@ -401,13 +320,6 @@ export interface HostLifecycleCapabilities {
 export interface HostMediaSessionCapabilities {
   readonly action?: HostMediaSessionActionCapability;
   readonly control?: HostMediaSessionCapability;
-}
-
-export interface HostMenuCapabilities {
-  readonly app?: HostAppMenuCapability;
-  readonly highlight?: HostMenuHighlightCapability;
-  readonly popup?: HostMenuPopupCapability;
-  readonly select?: HostMenuSelectCapability;
 }
 
 export interface HostMidiCapabilities {
@@ -575,23 +487,4 @@ export interface HostVideoCapabilities {
 
 export interface HostWgpuCapabilities {
   readonly context?: HostWgpuCapability;
-}
-
-export interface HostWindowCapabilities {
-  readonly appearance?: HostWindowAppearanceCapability;
-  readonly attach?: HostWindowAttachCapability;
-  readonly attention?: HostWindowAttentionCapability;
-  readonly contentProtection?: HostWindowContentProtectionCapability;
-  readonly focus?: HostWindowFocusCapability;
-  readonly fullscreen?: HostWindowFullscreenCapability;
-  readonly geometry?: HostWindowGeometryCapability;
-  readonly hierarchy?: HostWindowHierarchyCapability;
-  readonly lifecycle?: HostWindowLifecycleCapability;
-  readonly progress?: HostWindowProgressCapability;
-  readonly shadow?: HostWindowShadowCapability;
-  readonly shell?: HostWindowShellCapability;
-  readonly sizeConstraints?: HostWindowSizeConstraintsCapability;
-  readonly state?: HostWindowStateCapability;
-  readonly visibility?: HostWindowVisibilityCapability;
-  readonly zOrder?: HostWindowZOrderCapability;
 }

@@ -1,4 +1,5 @@
-import type { ElectronMenuItemOptions, ElectronMenuItemRole, MenuItemTemplate } from '@flighthq/types/contract';
+import type { MenuItemTemplate } from '@flighthq/menu/contract';
+import type { ElectronMenuItemOptions, ElectronMenuItemRole } from '@flighthq/types/contract';
 
 // Recursively maps Flight's open menu descriptor onto Electron's closed role enum. Unknown vendor
 // roles are intentionally omitted; the two differently-spelled built-ins map to Electron's spelling.

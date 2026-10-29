@@ -1,3 +1,2 @@
-export * from './menu.ts';
-export * from './menu-templates.ts';
-export { initializeMenuHighlight, initializeMenuSelect } from './menu.ts';
+export * from './contract.menu-types.ts';
+export * from './runtime.ts';

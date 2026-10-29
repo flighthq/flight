@@ -1,4 +1,4 @@
-import type { HostMenuCapabilities } from '@flighthq/types/contract';
+import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 
 import { webHostMenuHighlight, webHostMenuPopup } from './webMenu.ts';
 

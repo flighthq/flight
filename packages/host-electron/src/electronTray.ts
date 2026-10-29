@@ -1,3 +1,4 @@
+import type { MenuItemTemplate } from '@flighthq/menu/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type {
@@ -9,7 +10,6 @@ import type {
   ElectronTray,
   ElectronTrayCapabilitiesFor,
   HostTrayCapabilities,
-  MenuItemTemplate,
   HostTrayBalloonCapability,
   TrayBalloonEvent,
   HostTrayBalloonEventsCapability,

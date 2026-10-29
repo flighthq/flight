@@ -1,4 +1,5 @@
 export type PackageLayer = 'core' | 'feature' | 'backend' | 'application' | 'host-tool';
+export type PackageRole = 'transitional-type-aggregator';
 
 // This is deliberately a central policy rather than package-owned metadata. A package must not
 // get to weaken the architectural rule that checks its own dependencies.
@@ -24,7 +25,6 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/resource',
     '@flighthq/signals',
     '@flighthq/spatial',
-    '@flighthq/surface',
     '@flighthq/types',
     '@flighthq/xml',
   ],
@@ -32,6 +32,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/accessibility',
     '@flighthq/adjustments',
     '@flighthq/animation',
+    '@flighthq/app',
     '@flighthq/assets',
     '@flighthq/audio',
     '@flighthq/binpack',
@@ -125,6 +126,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/spritesheet',
     '@flighthq/spritesheet-formats',
     '@flighthq/statusbar',
+    '@flighthq/surface',
     '@flighthq/preferences',
     '@flighthq/swf',
     '@flighthq/text',
@@ -164,7 +166,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/scene3d-gl',
     '@flighthq/scene3d-wgpu',
   ],
-  application: ['@flighthq/app'],
+  application: [],
   'host-tool': [
     '@flighthq/host-capacitor',
     '@flighthq/host-electron',
@@ -202,6 +204,16 @@ const layerRuleDescriptions: Readonly<Record<PackageLayer, string>> = {
 
 export const packageLayerByName: ReadonlyMap<string, PackageLayer> = buildPackageLayerMap();
 
+// Transitional compatibility aggregators are structurally different from ordinary core packages:
+// their still-deferred composite contracts may reference fields that have moved into Rust-mirroring
+// owners. Their outbound edges are allowed only when the package gate proves every use is a type-only
+// import/export through the owner's public contract lane. This role does not weaken runtime layering.
+const packageNamesByRole: Readonly<Record<PackageRole, readonly string[]>> = {
+  'transitional-type-aggregator': ['@flighthq/types'],
+};
+
+export const packageRoleByName: ReadonlyMap<string, PackageRole> = buildPackageRoleMap();
+
 function buildPackageLayerMap(): ReadonlyMap<string, PackageLayer> {
   const layers = new Map<string, PackageLayer>();
   for (const [layer, names] of Object.entries(packageNamesByLayer) as [PackageLayer, readonly string[]][]) {
@@ -211,6 +223,21 @@ function buildPackageLayerMap(): ReadonlyMap<string, PackageLayer> {
     }
   }
   return layers;
+}
+
+function buildPackageRoleMap(): ReadonlyMap<string, PackageRole> {
+  const roles = new Map<string, PackageRole>();
+  for (const [role, names] of Object.entries(packageNamesByRole) as [PackageRole, readonly string[]][]) {
+    for (const name of names) {
+      if (roles.has(name)) throw new Error(`${name} has more than one package role`);
+      roles.set(name, role);
+    }
+  }
+  return roles;
+}
+
+export function isTransitionalTypeAggregatorPackage(packageName: string): boolean {
+  return packageRoleByName.get(packageName) === 'transitional-type-aggregator';
 }
 
 export function getPackageLayerCoverageViolations(

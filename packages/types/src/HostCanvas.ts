@@ -1,4 +1,5 @@
-import type { AppWindow } from './AppWindow.ts';
+import type { AppWindow } from '@flighthq/app/contract';
+
 import type { CanvasSurface } from './CanvasSurface.ts';
 import type { NativeSurfaceHandle, Surface } from './Surface.ts';
 

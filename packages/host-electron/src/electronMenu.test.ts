@@ -1,8 +1,4 @@
-import type {
-  HostAppMenuCapability,
-  HostMenuPopupCapability,
-  HostMenuSelectCapability,
-} from '@flighthq/types/contract';
+import type { HostAppMenuCapability, HostMenuPopupCapability, HostMenuSelectCapability } from '@flighthq/menu/contract';
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 
 import {

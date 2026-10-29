@@ -6,9 +6,13 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "moduleSuffixes": [".app-types", ""]
   },
   "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
     {
       "path": "../bitmap"
     },
@@ -17,9 +21,6 @@
     },
     {
       "path": "../color"
-    },
-    {
-      "path": "../scene2d"
     },
     {
       "path": "../entity"
@@ -37,28 +38,28 @@
       "path": "../node"
     },
     {
-      "path": "../render"
-    },
-    {
-      "path": "../registry"
-    },
-    {
       "path": "../path"
-    },
-    {
-      "path": "../signals"
-    },
-    {
-      "path": "../shape"
-    },
-    {
-      "path": "../surface"
     },
     {
       "path": "../quadbatch"
     },
     {
-      "path": "../tilemap"
+      "path": "../registry"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../surface"
     },
     {
       "path": "../text"
@@ -77,6 +78,9 @@
     },
     {
       "path": "../textureatlas"
+    },
+    {
+      "path": "../tilemap"
     },
     {
       "path": "../types"

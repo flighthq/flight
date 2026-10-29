@@ -1,4 +1,4 @@
-import type { AppWindow, WindowBounds } from '@flighthq/types';
+import type { AppWindow, WindowBounds } from '@flighthq/app';
 
 export function renderHostWebFullCard(
   applicationWindow: Readonly<AppWindow>,

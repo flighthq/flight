@@ -1,4 +1,4 @@
-import type { HostWindowFocusCapability } from '@flighthq/types/contract';
+import type { HostWindowFocusCapability } from '@flighthq/app/contract';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from './capabilityBackends.ts';
 

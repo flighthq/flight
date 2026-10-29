@@ -6,9 +6,8 @@ import type {
   HostAppRelaunchCapability,
   HostAppShowCapability,
   HostAppVersionCapability,
-  TauriApi,
-  TauriAppCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/app/contract';
+import type { TauriApi, TauriAppCapabilities } from '@flighthq/types/contract';
 
 export function tauriHostApp(tauri: TauriApi): TauriAppCapabilities {
   return Object.freeze({

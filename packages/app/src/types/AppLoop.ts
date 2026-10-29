@@ -1,8 +1,11 @@
-import type { AppWindow } from './AppWindow.ts';
-import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { Signal } from '@flighthq/signals/contract';
 
-export interface AppLoop extends Entity {
+import type { AppWindow } from './AppWindow.ts';
+
+export interface AppLoop extends EntityRaw {
+  readonly [EntityRuntimeKey]: EntityRuntime | undefined;
   // Milliseconds elapsed since the previous frame, clamped to the loop's maxDeltaTime.
   deltaTime: number;
   // Total elapsed time in seconds since the loop started.

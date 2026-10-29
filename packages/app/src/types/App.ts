@@ -1,6 +1,7 @@
-import type { Entity } from './Entity.ts';
-import type { MenuItemTemplate } from './Menu.ts';
-import type { Signal } from './Signal.ts';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { MenuItemTemplate } from '@flighthq/menu/contract';
+import type { Signal } from '@flighthq/signals/contract';
 
 // macOS activation policy controlling dock presence and Command-Tab visibility. 'regular' shows in
 // the dock and switcher; 'accessory' hides from both (menu-bar/agent apps); 'prohibited' is fully
@@ -32,7 +33,8 @@ export interface AppLoginItemLike {
 export type AppPathKind = 'userData' | 'logs' | 'crashDumps';
 
 // App event entity. Enable delivery with attachAppEvents; the signals stay inert until then.
-export interface AppEvents extends Entity {
+export interface AppEvents extends EntityRaw {
+  readonly [EntityRuntimeKey]: EntityRuntime | undefined;
   onActivate: Signal<() => void>;
   onAllWindowsClosed: Signal<() => void>;
   onOpenFile: Signal<(path: string) => void>;

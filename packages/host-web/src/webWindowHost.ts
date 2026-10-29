@@ -1,4 +1,4 @@
-import type { HostWindowCapabilities } from '@flighthq/types/contract';
+import type { HostWindowCapabilities } from '@flighthq/app/contract';
 
 import {
   webHostWindowAppearance,

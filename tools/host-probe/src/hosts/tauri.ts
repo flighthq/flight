@@ -1,4 +1,4 @@
-import { getAppName, getAppVersion } from '@flighthq/app/contract';
+import { getAppName, getAppVersion } from '@flighthq/app';
 import { tauriHost } from '@flighthq/host-tauri';
 import { getPlatformName } from '@flighthq/platform/contract';
 import type { DesktopOsProfile, TauriApi } from '@flighthq/types/contract';

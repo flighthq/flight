@@ -1,16 +1,17 @@
+import type { HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
 import {
   webHostAudioDecode,
   webHostImageDecode,
   webHostImageEncode,
   webHostTextShaperGroup,
 } from '@flighthq/host-web/contract';
+import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
   HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
   HostFontCapabilities,
-  HostFullscreenCapabilities,
   HostGlCapabilities,
   HostGlyphCapabilities,
   HostImageCapabilities,
@@ -20,7 +21,6 @@ import type {
   HostIpcCapabilities,
   HostLifecycleCapabilities,
   HostMediaSessionCapabilities,
-  HostMenuCapabilities,
   HostMidiCapabilities,
   HostNetCapabilities,
   HostPermissionsCapabilities,
@@ -42,7 +42,6 @@ import type {
   HostUpdaterCapabilities,
   HostVideoCapabilities,
   HostWgpuCapabilities,
-  HostWindowCapabilities,
 } from '@flighthq/types/contract';
 
 // Groups Capacitor does not cover. Returning an explicit empty group keeps capability absence

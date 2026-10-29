@@ -2,8 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  FullscreenTargetHandle,
-  HostElementFullscreenCapability,
   HostGlCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
@@ -11,22 +9,6 @@ import type {
   HostInputTargetCapability,
   HostScreenChangeCapability,
   HostSurfaceResizeCapability,
-  HostWindowAppearanceCapability,
-  HostWindowAttachCapability,
-  HostWindowAttentionCapability,
-  HostWindowContentProtectionCapability,
-  HostWindowFocusCapability,
-  HostWindowFullscreenCapability,
-  HostWindowGeometryCapability,
-  HostWindowHierarchyCapability,
-  HostWindowLifecycleCapability,
-  HostWindowProgressCapability,
-  HostWindowShadowCapability,
-  HostWindowShellCapability,
-  HostWindowSizeConstraintsCapability,
-  HostWindowStateCapability,
-  HostWindowVisibilityCapability,
-  HostWindowZOrderCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
   InputTargetHandle,
@@ -35,7 +17,6 @@ import type {
   Surface,
   ScreenChangeEvent,
   ScreenInfo,
-  WindowResizeTargetHandle,
 } from '@flighthq/types/contract';
 
 import {
@@ -100,6 +81,27 @@ import {
   setWindowTitle,
   showWindow,
 } from './appWindow.ts';
+import type {
+  FullscreenTargetHandle,
+  HostElementFullscreenCapability,
+  HostWindowAppearanceCapability,
+  HostWindowAttachCapability,
+  HostWindowAttentionCapability,
+  HostWindowContentProtectionCapability,
+  HostWindowFocusCapability,
+  HostWindowFullscreenCapability,
+  HostWindowGeometryCapability,
+  HostWindowHierarchyCapability,
+  HostWindowLifecycleCapability,
+  HostWindowProgressCapability,
+  HostWindowShadowCapability,
+  HostWindowShellCapability,
+  HostWindowSizeConstraintsCapability,
+  HostWindowStateCapability,
+  HostWindowVisibilityCapability,
+  HostWindowZOrderCapability,
+  WindowResizeTargetHandle,
+} from './types/contract.ts';
 
 // The double implements every window capability, so one object stands in for the whole window
 // group at each call site: the command functions each select the single capability they need, and

@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  EntityConstruction,
   HostAppMenuCapability,
   HostMenuHighlightCapability,
   HostMenuPopupCapability,
@@ -10,8 +11,7 @@ import type {
   MenuItemTemplate,
   MenuSelect,
   MenuSignals,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Starts delivering highlight notifications from the host's provider into `highlight`. Re-attaching
 // detaches first, so one entity never holds two live subscriptions.

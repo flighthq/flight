@@ -1,3 +1,4 @@
+import type { HostFullscreenCapabilities } from '@flighthq/app/contract';
 import {
   webHostAudioDecode,
   webHostImageDecode,
@@ -13,7 +14,6 @@ import type {
   HostDeviceCapabilities,
   HostFileSystemCapabilities,
   HostFontCapabilities,
-  HostFullscreenCapabilities,
   HostGeolocationCapabilities,
   HostGlCapabilities,
   HostGlyphCapabilities,

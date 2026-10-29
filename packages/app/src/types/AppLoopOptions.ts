@@ -1,4 +1,4 @@
-// Options for startAppLoop. Omitted fields fall back to the loop's built-in defaults.
+// App-owned options for startAppLoop. Omitted fields fall back to the loop's built-in defaults.
 export interface AppLoopOptions {
   // Maximum per-frame delta in milliseconds; clamps huge gaps after a tab restore or pause.
   maxDeltaTime?: number;

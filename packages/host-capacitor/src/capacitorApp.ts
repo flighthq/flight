@@ -4,12 +4,14 @@ import type {
   HostAppNameCapability,
   HostAppQuitCapability,
   HostAppVersionCapability,
+  MobileOsProfile,
+} from '@flighthq/app/contract';
+import type {
   CapacitorApi,
   CapacitorAndroidAppCapabilities,
   CapacitorAppCapabilitiesFor,
   CapacitorCommonAppCapabilities,
   CapacitorPluginListenerHandle,
-  MobileOsProfile,
 } from '@flighthq/types/contract';
 
 export function capacitorHostApp<Profile extends MobileOsProfile>(

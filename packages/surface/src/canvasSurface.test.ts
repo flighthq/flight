@@ -1,5 +1,6 @@
+import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
-import type { AppWindow, CanvasSurface, Entity, HostCanvasCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, Entity, HostCanvasCapability } from '@flighthq/types/contract';
 
 import { createCanvasSurface, createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from './canvasSurface.ts';
 import { allocateSurface, getSurfaceHandle } from './surface.ts';

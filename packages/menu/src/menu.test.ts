@@ -1,12 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type {
-  HostAppMenuCapability,
-  HostMenuHighlightCapability,
-  HostMenuPopupCapability,
-  HostMenuSelectCapability,
-  MenuItemTemplate,
-} from '@flighthq/types/contract';
 
 import {
   attachMenuHighlight,
@@ -28,6 +21,13 @@ import {
   showContextMenu,
   validateMenuItemTemplate,
 } from './menu.ts';
+import type {
+  HostAppMenuCapability,
+  HostMenuHighlightCapability,
+  HostMenuPopupCapability,
+  HostMenuSelectCapability,
+  MenuItemTemplate,
+} from './types.ts';
 
 // A host exposing exactly the slots a test needs. Nothing is installed anywhere: two of these can be
 // live at once, which is the property the ambient model could not express.

@@ -1,11 +1,6 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  AppLifecycleState,
-  HostAppExitCapability,
-  HostLifecycleCapability,
-  HostAppLoopCapability,
-} from '@flighthq/types/contract';
+import type { AppLifecycleState, HostLifecycleCapability } from '@flighthq/types/contract';
 
 import {
   attachAppLoopExit,
@@ -30,6 +25,7 @@ import {
   unregisterAppLoopWindow,
 } from './appLoop.ts';
 import { createAppWindow } from './appWindow.ts';
+import type { HostAppExitCapability, HostAppLoopCapability } from './types/contract.ts';
 
 function makeManualLoopBackend(): HostAppLoopCapability & { tick: (time: number) => void; cancelCount: number } {
   let callback: ((time: number) => void) | null = null;

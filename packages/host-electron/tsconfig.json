@@ -7,11 +7,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".menu-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
     {
-      "path": "../app"
+      "path": "../app/tsconfig.runtime.json"
     },
     {
       "path": "../clipboard"
@@ -32,7 +33,7 @@
       "path": "../ipc"
     },
     {
-      "path": "../menu"
+      "path": "../menu/tsconfig.contract.json"
     },
     {
       "path": "../notification"

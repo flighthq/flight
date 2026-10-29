@@ -1,3 +1,5 @@
+export * from './contract.app-types.ts';
+
 export {
   addAppRecentDocument,
   attachAppEvents,
@@ -8,7 +10,6 @@ export {
   attachAppOpenFile,
   attachAppQuitRequest,
   attachAppReady,
-  attachAppRenderView,
   attachAppSecondInstance,
   attachWindow,
   attachWindowClose,
@@ -30,11 +31,9 @@ export {
   computeWindowDeviceTransform,
   createAppEvents,
   createAppLoop,
-  createAppRenderView,
   createAppWindow,
   detachAppEvents,
   detachAppLoopExit,
-  detachAppRenderView,
   detachWindowClose,
   detachWindowDropFile,
   detachWindowFocus,
@@ -119,6 +118,5 @@ export {
   startAppLoop,
   stepAppLoop,
   stopAppLoop,
-  synchronizeAppRenderView,
   unregisterAppLoopWindow,
-} from './contract.ts';
+} from './runtime.ts';

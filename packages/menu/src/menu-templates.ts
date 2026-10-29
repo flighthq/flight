@@ -1,5 +1,7 @@
-import type { MenuItemTemplate, NonEntityCreateResult } from '@flighthq/types/contract';
-import { WellKnownMenuItemRole } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+
+import { WellKnownMenuItemRole } from './types.ts';
+import type { MenuItemTemplate } from './types.ts';
 
 // Returns a standard macOS-style application menu (the first menu, labeled with the app name).
 // On Windows/Linux this menu is typically omitted; native backends handle that automatically when

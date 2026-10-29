@@ -1,10 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  AppWindow,
   EntityConstruction,
-  FullscreenTargetHandle,
-  HostElementFullscreenCapability,
   HostGlCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
@@ -12,6 +9,18 @@ import type {
   HostInputTargetCapability,
   HostScreenChangeCapability,
   HostSurfaceResizeCapability,
+  InputPointerLockExitOutcome,
+  InputPointerLockRequestOutcome,
+  InputTargetHandle,
+  Matrix,
+  RenderState,
+  Surface,
+} from '@flighthq/types/contract';
+
+import type {
+  AppWindow,
+  FullscreenTargetHandle,
+  HostElementFullscreenCapability,
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowAttentionCapability,
@@ -28,18 +37,12 @@ import type {
   HostWindowStateCapability,
   HostWindowVisibilityCapability,
   HostWindowZOrderCapability,
-  InputPointerLockExitOutcome,
-  InputPointerLockRequestOutcome,
-  InputTargetHandle,
-  Matrix,
   NativeWindowHandle,
-  RenderState,
-  Surface,
   WindowAttachmentOwnership,
   WindowBounds,
   WindowOptions,
   WindowResizeTargetHandle,
-} from '@flighthq/types/contract';
+} from './types/contract.ts';
 
 const kClose = Symbol();
 const kDropFile = Symbol();

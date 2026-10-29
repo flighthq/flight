@@ -1,5 +1,6 @@
+import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
-import type { AppWindow, Entity, HostWgpuCapability, WgpuHostAcquisition, WgpuSurface } from '@flighthq/types/contract';
+import type { Entity, HostWgpuCapability, WgpuHostAcquisition, WgpuSurface } from '@flighthq/types/contract';
 
 import { allocateSurface, getSurfaceHandle } from './surface.ts';
 import { createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface } from './wgpuSurface.ts';

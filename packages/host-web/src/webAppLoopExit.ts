@@ -1,4 +1,4 @@
-import type { HostAppExitCapability } from '@flighthq/types/contract';
+import type { HostAppExitCapability } from '@flighthq/app/contract';
 
 export const webHostAppLoopExit: HostAppExitCapability = {
   subscribe(listener) {

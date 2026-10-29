@@ -1,13 +1,6 @@
 import type {
   AppLoginItem,
   AppPathKind,
-  DesktopOsProfile,
-  ElectronApi,
-  ElectronAppCapabilitiesFor,
-  ElectronCommonAppCapabilities,
-  ElectronLinuxAppCapabilities,
-  ElectronMacosAppCapabilities,
-  ElectronWindowsAppCapabilities,
   HostAppActivateCapability,
   HostAppActivationPolicyCapability,
   HostAppAllWindowsClosedCapability,
@@ -32,7 +25,16 @@ import type {
   HostAppSingleInstanceCapability,
   HostAppUserModelIdCapability,
   HostAppVersionCapability,
-  MenuItemTemplate,
+} from '@flighthq/app/contract';
+import type { MenuItemTemplate } from '@flighthq/menu/contract';
+import type {
+  DesktopOsProfile,
+  ElectronApi,
+  ElectronAppCapabilitiesFor,
+  ElectronCommonAppCapabilities,
+  ElectronLinuxAppCapabilities,
+  ElectronMacosAppCapabilities,
+  ElectronWindowsAppCapabilities,
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate.ts';

@@ -22,7 +22,7 @@
       "path": "../animation"
     },
     {
-      "path": "../app"
+      "path": "../app/tsconfig.runtime.json"
     },
     {
       "path": "../assets"
@@ -220,7 +220,7 @@
       "path": "../mediasession"
     },
     {
-      "path": "../menu"
+      "path": "../menu/tsconfig.runtime.json"
     },
     {
       "path": "../midi"

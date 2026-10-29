@@ -1,3 +1,6 @@
+import type { HostWindowCapabilities } from '@flighthq/app/contract';
+import type { ElectronMenuCapabilities } from '@flighthq/menu/contract';
+
 import type { ElectronIpcTarget } from './ElectronApi.ts';
 import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor.ts';
 import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities.ts';
@@ -13,10 +16,8 @@ import type {
   HostShellCapabilities,
   HostShortcutCapabilities,
   HostUpdaterCapabilities,
-  HostWindowCapabilities,
 } from './Host.ts';
 import type { HostIpcTargetedSendCapability } from './Ipc.ts';
-import type { ElectronMenuCapabilities } from './Menu.ts';
 import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification.ts';
 import type { ElectronPowerCapabilities } from './Power.ts';
 import type { DesktopOsProfile } from './Tray.ts';

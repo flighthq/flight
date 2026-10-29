@@ -1,4 +1,5 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import type { MenuItemTemplate } from '@flighthq/menu/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type {
@@ -19,7 +20,6 @@ import type {
   HostTrayTemplateImageCapability,
   HostTrayTitleCapability,
   HostTrayTooltipCapability,
-  MenuItemTemplate,
   TrayAnimationStartResult,
   TrayAnimationStopResult,
   TrayBalloonDisplayResult,

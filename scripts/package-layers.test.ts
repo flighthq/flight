@@ -3,24 +3,25 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers.ts';
+import {
+  getPackageLayerCoverageViolations,
+  getPackageLayerDependencyViolation,
+  isTransitionalTypeAggregatorPackage,
+} from './package-layers.ts';
 import { isSdkBarrelExcludedPackage } from './sdk-policy.ts';
 
 describe('package dependency layers', () => {
-  it('rejects application packages depending on renderer backends', () => {
+  it('rejects feature packages depending on renderer backends', () => {
     expect(getPackageLayerDependencyViolation('@flighthq/app', '@flighthq/render-gl')).toEqual({
-      label: '@flighthq/render-gl obeys the application dependency-layer rule',
+      label: '@flighthq/render-gl obeys the feature dependency-layer rule',
       detail:
-        '@flighthq/app (application) -> @flighthq/render-gl (backend) is forbidden: application packages may depend only on types/core primitives, features, or other application packages',
+        '@flighthq/app (feature) -> @flighthq/render-gl (backend) is forbidden: feature packages may depend only on types/core primitives or feature packages',
     });
   });
 
-  it('rejects renderer backends depending on application packages', () => {
-    expect(getPackageLayerDependencyViolation('@flighthq/render-gl', '@flighthq/app')).toEqual({
-      label: '@flighthq/app obeys the backend dependency-layer rule',
-      detail:
-        '@flighthq/render-gl (backend) -> @flighthq/app (application) is forbidden: backend/renderer packages may depend only on types/core primitives, features, or other backends',
-    });
+  it('allows Surface and renderer backends to depend on App as a Rust-mirroring feature peer', () => {
+    expect(getPackageLayerDependencyViolation('@flighthq/surface', '@flighthq/app')).toBeNull();
+    expect(getPackageLayerDependencyViolation('@flighthq/scene2d-canvas', '@flighthq/app')).toBeNull();
   });
 
   it('allows both sibling tiers to depend on feature contracts', () => {
@@ -37,5 +38,10 @@ describe('package dependency layers', () => {
       .map((manifest) => manifest.name);
 
     expect(getPackageLayerCoverageViolations(workspacePackageNames, isSdkBarrelExcludedPackage)).toEqual([]);
+  });
+
+  it('marks Types as a transitional type aggregator without changing its core layer', () => {
+    expect(isTransitionalTypeAggregatorPackage('@flighthq/types')).toBe(true);
+    expect(isTransitionalTypeAggregatorPackage('@flighthq/app')).toBe(false);
   });
 });

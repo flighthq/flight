@@ -4,11 +4,11 @@ import type {
   HostAppFocusCapability,
   HostAppLocaleCapability,
   HostAppNameCapability,
-  NonEntityCreateResult,
   HostAppQuitCapability,
   HostAppReadyCapability,
   HostAppRelaunchCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/app/contract';
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 
 // A capability GROUP: host dispatch infrastructure, not a domain object Flight defines and allocates,
 // so it is plain data formed as a literal — no Entity, no runtime tier, no allocate/finish bracket.

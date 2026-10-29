@@ -1,4 +1,4 @@
-import type { HostAppCapabilities } from '@flighthq/types/contract';
+import type { HostAppCapabilities } from '@flighthq/app/contract';
 
 import {
   webHostAppBadge,

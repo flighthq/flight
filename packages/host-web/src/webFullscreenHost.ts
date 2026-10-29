@@ -1,4 +1,4 @@
-import type { HostFullscreenCapabilities } from '@flighthq/types/contract';
+import type { HostFullscreenCapabilities } from '@flighthq/app/contract';
 
 import { webHostFullscreen } from './webWindow.ts';
 

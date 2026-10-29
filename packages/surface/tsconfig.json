@@ -6,9 +6,13 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "moduleSuffixes": [".app-types", ""]
   },
   "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
     {
       "path": "../entity"
     },

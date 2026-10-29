@@ -19,6 +19,7 @@ export * from './renderState.ts';
 export * from './renderTarget.ts';
 export * from './renderTransform2d.ts';
 export * from './renderViewport.ts';
+export * from './renderView.ts';
 export * from './renderer.ts';
 export * from './scene2dWorkingColorSpace.ts';
 export * from './sceneRender.ts';

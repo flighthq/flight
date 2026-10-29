@@ -1,3 +1,6 @@
+import type { HostWindowCapabilities } from '@flighthq/app/contract';
+import type { TauriMenuCapabilities } from '@flighthq/menu/contract';
+
 import type {
   Host,
   HostClipboardCapabilities,
@@ -5,9 +8,7 @@ import type {
   HostPlatformCapabilities,
   HostShellCapabilities,
   HostShortcutCapabilities,
-  HostWindowCapabilities,
 } from './Host.ts';
-import type { TauriMenuCapabilities } from './Menu.ts';
 import type { TauriNotificationCapabilities } from './Notification.ts';
 import type { TauriAppCapabilities } from './TauriAppCapabilities.ts';
 import type { TauriTrayCapabilitiesFor } from './TauriTrayCapabilitiesFor.ts';

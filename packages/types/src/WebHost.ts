@@ -1,8 +1,10 @@
+import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+
 import type { HostHapticsCapabilities } from './Haptics.ts';
 import type {
   Host,
   HostAccessibilityCapabilities,
-  HostAppCapabilities,
   HostAudioCapabilities,
   HostBitmapCapabilities,
   HostClipboardCapabilities,
@@ -11,7 +13,6 @@ import type {
   HostDialogCapabilities,
   HostFileSystemCapabilities,
   HostFontCapabilities,
-  HostFullscreenCapabilities,
   HostGeolocationCapabilities,
   HostGlCapabilities,
   HostGlyphCapabilities,
@@ -19,7 +20,6 @@ import type {
   HostInputCapabilities,
   HostLifecycleCapabilities,
   HostMediaSessionCapabilities,
-  HostMenuCapabilities,
   HostNetCapabilities,
   HostNotificationCapabilities,
   HostPermissionsCapabilities,
@@ -37,7 +37,6 @@ import type {
   HostCanvasCapabilities,
   HostSurfaceCapabilities,
   HostVideoCapabilities,
-  HostWindowCapabilities,
 } from './Host.ts';
 
 export type WebHost = Omit<

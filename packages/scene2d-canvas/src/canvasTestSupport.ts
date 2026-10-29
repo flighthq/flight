@@ -1,10 +1,10 @@
+import type { AppWindow } from '@flighthq/app/contract';
 import {
   createCanvasSurfaceFromNativeHandle,
   destroyCanvasSurface,
   getSurfaceHandle,
 } from '@flighthq/surface/contract';
 import type {
-  AppWindow,
   CanvasRenderOptions,
   CanvasRenderPass,
   CanvasRenderState,

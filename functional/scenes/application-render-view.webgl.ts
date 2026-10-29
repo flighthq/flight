@@ -1,4 +1,4 @@
-import { attachAppRenderView, createAppRenderView, createAppWindow } from '@flighthq/app';
+import { createAppWindow } from '@flighthq/app';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
@@ -7,7 +7,7 @@ import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry';
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene3DRender } from '@flighthq/render';
+import { createRenderView, prepareScene3DRender, resizeRenderView } from '@flighthq/render';
 import {
   beginGlRenderPass,
   createGlRenderViewResources,
@@ -17,7 +17,7 @@ import {
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { renderGlScene3D, glScene3DRenderPreset } from '@flighthq/scene3d-gl';
-import { emitSignal } from '@flighthq/signals';
+import { connectSignal, emitSignal } from '@flighthq/signals';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -48,9 +48,8 @@ canvas.style.width = `${width}px`;
 canvas.style.height = `${height}px`;
 document.body.appendChild(canvas);
 
-// The render-layer half (context, state, storage, viewport) and the application half (the window and
-// the resize wiring between them) are composed here rather than by an assembly package: a render
-// backend may not import @flighthq/app, so the join belongs to the caller.
+// The render view is windowless. This caller owns both the AppWindow size authority and the GL
+// resources, so it composes the resize connection directly without creating an App -> Render edge.
 const context = getWebGlContext(canvas, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
@@ -71,18 +70,20 @@ const resources = createGlRenderViewResources(
     sampleCount: 1,
   },
 );
-const view = createAppRenderView(
-  applicationWindow,
-  resources.renderState,
-  resources.renderTarget,
-  resources.viewport,
-  (_state, _target, nextWidth, nextHeight) => {
-    canvas.width = nextWidth;
-    canvas.height = nextHeight;
-    resizeGlRenderViewResources(resources, nextWidth, nextHeight);
-  },
+const view = createRenderView(resources.renderState, resources.renderTarget, resources.viewport);
+connectSignal(applicationWindow.onResize, () =>
+  resizeRenderView(
+    view,
+    applicationWindow.width,
+    applicationWindow.height,
+    applicationWindow.devicePixelRatio,
+    (_state, _target, nextWidth, nextHeight) => {
+      canvas.width = nextWidth;
+      canvas.height = nextHeight;
+      resizeGlRenderViewResources(resources, nextWidth, nextHeight);
+    },
+  ),
 );
-attachAppRenderView(view);
 
 applicationWindow.width = width;
 applicationWindow.height = height;

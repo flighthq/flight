@@ -1,5 +1,6 @@
+import type { MenuItemTemplate } from '@flighthq/menu/contract';
+
 import type { Entity } from './Entity.ts';
-import type { MenuItemTemplate } from './Menu.ts';
 import type { RectangleLike } from './Rectangle.ts';
 import type { Signal } from './Signal.ts';
 import type { Vector2Like } from './Vector2.ts';

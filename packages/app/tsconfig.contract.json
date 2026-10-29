@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".menu-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [{ "path": "../entity" }, { "path": "../menu/tsconfig.contract.json" }, { "path": "../signals" }],
+  "include": ["src/contract.app-types.ts", "src/types/**/*.ts"]
+}

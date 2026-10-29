@@ -1,9 +1,6 @@
 import { notifyWindowClosed } from '@flighthq/app/contract';
-import { emitSignal } from '@flighthq/signals/contract';
 import type {
   AppWindow,
-  ElectronApi,
-  ElectronBrowserWindow,
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
   HostWindowAttentionCapability,
@@ -24,7 +21,9 @@ import type {
   NativeWindowHandle,
   WindowAttachmentOwnership,
   WindowBounds,
-} from '@flighthq/types/contract';
+} from '@flighthq/app/contract';
+import { emitSignal } from '@flighthq/signals/contract';
+import type { ElectronApi, ElectronBrowserWindow } from '@flighthq/types/contract';
 
 // Maps Flight's window capability slots onto Electron's BrowserWindow, one BrowserWindow per
 // AppWindow. open() constructs the real OS window from WindowOptions and wires BrowserWindow OS

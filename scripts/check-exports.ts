@@ -11,7 +11,11 @@ import {
   isTestSupportSource,
 } from './export-lane-source.ts';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const rootFlagIndex = process.argv.indexOf('--root');
+const rootArgument = rootFlagIndex === -1 ? undefined : process.argv[rootFlagIndex + 1];
+if (rootFlagIndex !== -1 && rootArgument === undefined) throw new Error('--root requires a path');
+const ROOT =
+  rootArgument === undefined ? resolve(dirname(fileURLToPath(import.meta.url)), '..') : resolve(rootArgument);
 const PACKAGES_DIR = join(ROOT, 'packages');
 const FIX = process.argv.includes('--fix');
 
@@ -437,10 +441,17 @@ function withoutTypeScriptExtension(moduleSpecifier: string): string {
   return moduleSpecifier.replace(/\.ts$/, '');
 }
 
-function getExportNamesFromFile(filePath: string, srcDir: string): Set<string> | 'all' | null {
+function getExportNamesFromFile(
+  filePath: string,
+  srcDir: string,
+  expandContract = false,
+  visited = new Set<string>(),
+): Set<string> | 'all' | null {
   if (!existsSync(filePath)) return null;
+  if (visited.has(filePath)) return new Set();
+  visited.add(filePath);
   const src = readFileSync(filePath, 'utf8');
-  const names = new Set<string>();
+  const names = new Set(getModulePublishedValueExports(filePath));
 
   for (const m of src.matchAll(/export\s*\{([^}]+)\}/g)) {
     for (const item of m[1].split(',')) {
@@ -456,9 +467,11 @@ function getExportNamesFromFile(filePath: string, srcDir: string): Set<string> |
 
   for (const m of src.matchAll(/export \* from '\.\/([^']+)'/g)) {
     const moduleName = withoutTypeScriptExtension(m[1]);
-    if (moduleName === 'contract') return 'all';
+    if (moduleName === 'contract' && !expandContract) return 'all';
     const fp = join(srcDir, moduleName + '.ts');
-    for (const n of getModulePublishedValueExports(fp)) names.add(n);
+    const nestedNames = getExportNamesFromFile(fp, srcDir, true, visited);
+    if (nestedNames === null || nestedNames === 'all') return nestedNames;
+    for (const name of nestedNames) names.add(name);
   }
 
   return names;
@@ -513,10 +526,15 @@ function getIndexDuplicateNames(filePath: string, srcDir: string): string[] {
 // The wildcard is kept where nothing is excluded, because it is the more durable spelling: a new
 // export joins the lane without an edit here. The named list is the price of an exclusion, paid only
 // by the modules that actually declare one.
-function generateContract(exportsByModule: ModuleExports[], classification: Map<string, Classification>): string {
+function generateContract(
+  exportsByModule: ModuleExports[],
+  classification: Map<string, Classification>,
+  skippedModules: ReadonlySet<string> = new Set(),
+): string {
   const lines: string[] = [];
 
   for (const { module: mod, names, publishedNames } of exportsByModule) {
+    if (skippedModules.has(mod)) continue;
     const owned = names.filter((n) => classification.get(n)?.module === mod);
     const laneNames = owned.filter((n) => classification.get(n)?.lane !== 'exclude');
     if (laneNames.length === 0) continue;
@@ -536,10 +554,15 @@ function generateContract(exportsByModule: ModuleExports[], classification: Map<
   return lines.join('\n') + '\n';
 }
 
-function generateIndex(exportsByModule: ModuleExports[], classification: Map<string, Classification>): string {
+function generateIndex(
+  exportsByModule: ModuleExports[],
+  classification: Map<string, Classification>,
+  skippedModules: ReadonlySet<string> = new Set(),
+): string {
   const lines: string[] = [];
 
   for (const { module: mod, names, publishedNames } of exportsByModule) {
+    if (skippedModules.has(mod)) continue;
     const publicNames = names.filter((n) => {
       const c = classification.get(n);
       return c?.lane === 'public' && c.module === mod;
@@ -624,7 +647,12 @@ for (const pkg of GOVERNED_PACKAGES) {
   }
 
   const contractPath = join(srcDir, 'contract.ts');
+  const contractTypesFile = readdirSync(srcDir).find((file) => /^contract\.[^.]+-types\.ts$/.test(file));
+  const contractTypesModule = contractTypesFile?.replace(/\.ts$/, '') ?? 'contract.types';
+  const contractTypesPath = join(srcDir, contractTypesFile ?? 'contract.types.ts');
   const indexPath = join(srcDir, 'index.ts');
+  const runtimePath = join(srcDir, 'runtime.ts');
+  const hasSplitRuntimeLane = existsSync(join(pkgDir, 'tsconfig.runtime.json')) && existsSync(runtimePath);
 
   const exportsByModule = getExportsByModule(srcDir);
   const allExports = new Set(exportsByModule.flatMap((m) => m.names));
@@ -661,9 +689,30 @@ for (const pkg of GOVERNED_PACKAGES) {
     [...classification.entries()].filter(([, v]) => v.lane === 'public').map(([k]) => k),
   );
 
-  const actualContractModules = getModulesFromFile(contractPath);
-  const contractMissing = [...expectedContractModules].filter((m) => !actualContractModules?.has(m)).sort();
-  const contractExtra = [...(actualContractModules ?? [])].filter((m) => !expectedContractModules.has(m)).sort();
+  // A split owner lane compiles its contract.<owner>-types.ts entry independently, but the actual package
+  // contract MUST still be contract.ts: a full runtime barrel over both the type lane and runtime.ts.
+  // Only expand the split modules when contract.ts really publishes those barrels. Counting an
+  // unexported runtime.ts as part of the contract would certify a surface consumers cannot import.
+  const contractSourceModules = getModulesFromFile(contractPath);
+  const splitRuntimePublished = !hasSplitRuntimeLane || contractSourceModules?.has('runtime') === true;
+  const splitTypesPublished = !hasSplitRuntimeLane || contractSourceModules?.has(contractTypesModule) === true;
+  const runtimeSourceModules = hasSplitRuntimeLane && splitRuntimePublished ? getModulesFromFile(runtimePath) : null;
+  const contractTypesSourceModules =
+    hasSplitRuntimeLane && splitTypesPublished ? getModulesFromFile(contractTypesPath) : null;
+  const actualContractModules = new Set([
+    ...(contractSourceModules ?? []),
+    ...(contractTypesSourceModules ?? []),
+    ...(runtimeSourceModules ?? []),
+  ]);
+  const contractMissing = [...expectedContractModules].filter((m) => !actualContractModules.has(m)).sort();
+  const contractExtra = [...actualContractModules]
+    .filter((module) => {
+      if (expectedContractModules.has(module)) return false;
+      if (!hasSplitRuntimeLane || (!contractSourceModules?.has(module) && !contractTypesSourceModules?.has(module)))
+        return true;
+      return getModuleValueExports(join(srcDir, module + '.ts')).length > 0;
+    })
+    .sort();
 
   // ★ CONTRACT IS CHECKED BY NAME, NOT ONLY BY MODULE, because `export *` publishes a module WHOLE.
   // Comparing modules answers "is the right set of files re-exported", which stays true while the lane
@@ -680,7 +729,7 @@ for (const pkg of GOVERNED_PACKAGES) {
   // Checking only for leaks accepted a named list that had quietly lost a name, so `--fix` saw nothing
   // to repair and left the file stale; that was found by restoring a config and watching the
   // regeneration decline to restore the file with it.
-  const actualContractNames = getExportNamesFromFile(contractPath, srcDir);
+  const actualContractNames = getExportNamesFromFile(contractPath, srcDir, true);
   const contractNameLeaks = [...(actualContractNames instanceof Set ? actualContractNames : [])]
     .filter((n) => !expectedContractNames.has(n))
     .sort();
@@ -692,9 +741,11 @@ for (const pkg of GOVERNED_PACKAGES) {
     contractMissing.length === 0 &&
     contractExtra.length === 0 &&
     contractNameLeaks.length === 0 &&
-    contractNameDrops.length === 0;
+    contractNameDrops.length === 0 &&
+    splitRuntimePublished &&
+    splitTypesPublished;
 
-  const actualPublicNames = getExportNamesFromFile(indexPath, srcDir);
+  const actualPublicNames = getExportNamesFromFile(indexPath, srcDir, hasSplitRuntimeLane);
   let indexOk: boolean;
   let indexMissing: string[] = [];
   let indexExtra: string[] = [];
@@ -728,6 +779,18 @@ for (const pkg of GOVERNED_PACKAGES) {
   exitCode = 1;
 
   if (!contractOk) {
+    if (!splitRuntimePublished) {
+      console.log(
+        pc.red(`✗  ${pkg} contract.ts`) +
+          `: split runtime lane is not exported; add "export * from './runtime.ts'" to the real contract barrel`,
+      );
+    }
+    if (!splitTypesPublished) {
+      console.log(
+        pc.red(`✗  ${pkg} contract.ts`) +
+          `: split type lane is not exported; add "export * from './${contractTypesModule}.ts'" to the real contract barrel`,
+      );
+    }
     if (contractMissing.length > 0) {
       console.log(pc.red(`✗  ${pkg} contract.ts`) + `: ${contractMissing.length} source module(s) missing:`);
       for (const m of contractMissing) {
@@ -807,9 +870,24 @@ for (const pkg of GOVERNED_PACKAGES) {
   );
 
   if (FIX) {
-    writeFileSync(contractPath, generateContract(exportsByModule, classification));
-    writeFileSync(indexPath, generateIndex(exportsByModule, classification));
-    console.log(pc.green(`   → fixed: regenerated contract.ts + index.ts`));
+    if (hasSplitRuntimeLane) {
+      const contractTypesModules = getModulesFromFile(contractTypesPath) ?? new Set<string>();
+      writeFileSync(runtimePath, generateContract(exportsByModule, classification, contractTypesModules));
+      writeFileSync(contractPath, `export * from './${contractTypesModule}.ts';\nexport * from './runtime.ts';\n`);
+      writeFileSync(
+        indexPath,
+        `export * from './${contractTypesModule}.ts';\n\n${generateIndex(
+          exportsByModule,
+          classification,
+          contractTypesModules,
+        )}`,
+      );
+      console.log(pc.green(`   → fixed: regenerated contract.ts + runtime.ts + index.ts`));
+    } else {
+      writeFileSync(contractPath, generateContract(exportsByModule, classification));
+      writeFileSync(indexPath, generateIndex(exportsByModule, classification));
+      console.log(pc.green(`   → fixed: regenerated contract.ts + index.ts`));
+    }
   } else {
     console.log(`   Run with --fix to regenerate`);
   }

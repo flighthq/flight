@@ -1,10 +1,10 @@
 import type {
-  ElectronApi,
   ElectronMenuCapabilities,
   HostAppMenuCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/menu/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate.ts';
 

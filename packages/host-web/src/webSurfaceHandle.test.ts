@@ -1,6 +1,6 @@
-import { createAppWindow, openWindow } from '@flighthq/app/contract';
+import { createAppWindow, openWindow } from '@flighthq/app';
+import type { AppWindow } from '@flighthq/app/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
-import type { AppWindow } from '@flighthq/types/contract';
 
 import {
   allocateWebSurfaceCanvas,

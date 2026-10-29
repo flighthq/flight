@@ -8,6 +8,8 @@ export { createRenderCache, registerRenderCacheNodeRenderer, useRenderCache, Ren
 export { disposeScene2DRender, prepareScene2DRender } from './renderProxy.ts';
 export { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from './renderRegistryGuards.ts';
 export * from './renderRegistrySignals.ts';
+export { createRenderView, resizeRenderView } from './renderView.ts';
+export type { RenderView, RenderViewResize, RenderViewTargetOptions } from './renderView.ts';
 export { destroyRenderState } from './renderState.ts';
 export { registerNodeRenderer, registerNodeRenderers } from './renderer.ts';
 export * from './scene2dWorkingColorSpace.ts';

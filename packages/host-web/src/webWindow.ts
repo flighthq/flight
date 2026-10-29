@@ -1,8 +1,6 @@
 import { notifyWindowClosed } from '@flighthq/app/contract';
-import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   AppWindow,
-  EntityConstruction,
   FullscreenTargetHandle,
   HostElementFullscreenCapability,
   HostWindowAppearanceCapability,
@@ -14,7 +12,9 @@ import type {
   NativeWindowHandle,
   WindowAttachmentOwnership,
   WindowResizeTargetHandle,
-} from '@flighthq/types/contract';
+} from '@flighthq/app/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
 // The web window group, decomposed one capability per independently-coverable concept. Web covers
 // attach, appearance, focus, fullscreen, geometry and lifecycle. It omits attention, contentProtection,

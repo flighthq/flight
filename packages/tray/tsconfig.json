@@ -6,8 +6,15 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "moduleSuffixes": [".menu-types", ""]
   },
-  "references": [{ "path": "../entity" }, { "path": "../log" }, { "path": "../signals" }, { "path": "../types" }],
+  "references": [
+    { "path": "../entity" },
+    { "path": "../log" },
+    { "path": "../menu/tsconfig.contract.json" },
+    { "path": "../signals" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }

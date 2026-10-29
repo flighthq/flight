@@ -1,5 +1,5 @@
-import { createAppWindow, openWindow } from '@flighthq/app/contract';
-import type { AppWindow } from '@flighthq/types/contract';
+import { createAppWindow, openWindow } from '@flighthq/app';
+import type { AppWindow } from '@flighthq/app/contract';
 
 import { webHostGl } from './webHostGl.ts';
 import { createWebSurfaceFromElement } from './webSurfaceHandle.ts';

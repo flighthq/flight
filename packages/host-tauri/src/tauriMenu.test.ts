@@ -2,8 +2,9 @@ import type {
   HostAppMenuCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
-} from '@flighthq/types/contract';
-import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
+  MenuItemTemplate,
+} from '@flighthq/menu/contract';
+import type { TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 
 import { tauriHostMenu, tauriHostAppMenu, tauriHostMenuPopup, tauriHostMenuSelect } from './tauriMenu.ts';
 
