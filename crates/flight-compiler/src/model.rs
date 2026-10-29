@@ -26,6 +26,7 @@ pub(crate) struct Program {
     pub(crate) export_names: BTreeMap<String, String>,
     // `extern crate` items, whose (renamed) bindings can stand in for the `std` / `core` / `alloc` roots.
     pub(crate) extern_crates: Vec<syn::ItemExternCrate>,
+    pub(crate) facts: SourceFacts,
     pub(crate) frozen_objects: BTreeMap<String, String>,
     pub(crate) functions: Vec<ItemFn>,
     // `#![no_std]`: the `std` root and the `std` prelude's `Box` are absent unless bound explicitly.
@@ -71,6 +72,25 @@ struct DataUnionMetadata {
     reserved_key: HashSet<String>,
 }
 
+// What a source contributes to implicit trait dispatch, which the eager-initialization proof must see
+// across the whole crate: every attribute, trait or inherent `impl` and macro invocation outside
+// `#[cfg(test)]` and `#[test]` code, the `macro_rules!` macros it defines, and the value names it
+// declares. Macro arguments are opaque token trees, so a nested `name!` invocation in them is recorded
+// as a macro and an `impl` or `#[...]` in them as a hidden item. Names a nested module or block binds
+// with `use` (`*` for a glob) are recorded too: facts are resolved from the file's top-level scope, so
+// such a name has an owner the proof cannot decide.
+#[derive(Default)]
+pub(crate) struct SourceFacts {
+    pub(crate) attributes: Vec<Attribute>,
+    pub(crate) hidden_items: bool,
+    pub(crate) nested_use_names: BTreeSet<String>,
+    pub(crate) impls: Vec<syn::ItemImpl>,
+    pub(crate) macro_definitions: BTreeSet<String>,
+    pub(crate) macro_use_extern_crate: bool,
+    pub(crate) macros: Vec<syn::Path>,
+    pub(crate) value_names: BTreeSet<String>,
+}
+
 pub(crate) struct TestProgram {
     pub(crate) constants: Vec<ItemConst>,
     pub(crate) helpers: Vec<ItemFn>,
@@ -93,6 +113,144 @@ pub(crate) struct TestSuite {
 pub(crate) struct TestCase {
     pub(crate) function: ItemFn,
     pub(crate) should_panic: bool,
+}
+
+pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
+    struct Collector {
+        depth: usize,
+        facts: SourceFacts,
+    }
+    impl Collector {
+        fn scan_tokens(&mut self, tokens: proc_macro2::TokenStream) {
+            let tokens = tokens.into_iter().collect::<Vec<_>>();
+            for (index, token) in tokens.iter().enumerate() {
+                match token {
+                    proc_macro2::TokenTree::Group(group) => self.scan_tokens(group.stream()),
+                    proc_macro2::TokenTree::Ident(ident) if ident == "impl" => {
+                        self.facts.hidden_items = true;
+                    }
+                    proc_macro2::TokenTree::Ident(ident) => {
+                        if let (
+                            Some(proc_macro2::TokenTree::Punct(bang)),
+                            Some(proc_macro2::TokenTree::Group(_)),
+                        ) = (tokens.get(index + 1), tokens.get(index + 2))
+                            && bang.as_char() == '!'
+                        {
+                            self.facts.macros.push(syn::Path::from(ident.clone()));
+                        }
+                    }
+                    proc_macro2::TokenTree::Punct(punct) if punct.as_char() == '#' => {
+                        if matches!(
+                            tokens.get(index + 1),
+                            Some(proc_macro2::TokenTree::Group(group))
+                                if group.delimiter() == proc_macro2::Delimiter::Bracket
+                        ) {
+                            self.facts.hidden_items = true;
+                        }
+                    }
+                    proc_macro2::TokenTree::Punct(_) | proc_macro2::TokenTree::Literal(_) => {}
+                }
+            }
+        }
+    }
+    impl<'ast> syn::visit::Visit<'ast> for Collector {
+        fn visit_attribute(&mut self, attribute: &'ast Attribute) {
+            self.facts.attributes.push(attribute.clone());
+        }
+
+        fn visit_block(&mut self, block: &'ast syn::Block) {
+            self.depth += 1;
+            syn::visit::visit_block(self, block);
+            self.depth -= 1;
+        }
+
+        fn visit_item_extern_crate(&mut self, item: &'ast syn::ItemExternCrate) {
+            if has_attribute(&item.attrs, "macro_use") {
+                self.facts.macro_use_extern_crate = true;
+            }
+            syn::visit::visit_item_extern_crate(self, item);
+        }
+
+        fn visit_item_fn(&mut self, function: &'ast ItemFn) {
+            if !has_attribute(&function.attrs, "test") {
+                syn::visit::visit_item_fn(self, function);
+            }
+        }
+
+        fn visit_item_impl(&mut self, item: &'ast syn::ItemImpl) {
+            self.facts.impls.push(item.clone());
+            syn::visit::visit_item_impl(self, item);
+        }
+
+        fn visit_item_macro(&mut self, item: &'ast syn::ItemMacro) {
+            if item.mac.path.is_ident("macro_rules") {
+                if let Some(ident) = &item.ident {
+                    self.facts.macro_definitions.insert(ident.to_string());
+                }
+                for attribute in &item.attrs {
+                    self.visit_attribute(attribute);
+                }
+                return;
+            }
+            syn::visit::visit_item_macro(self, item);
+        }
+
+        fn visit_item_mod(&mut self, module: &'ast syn::ItemMod) {
+            if !is_cfg_test(&module.attrs) {
+                self.depth += 1;
+                syn::visit::visit_item_mod(self, module);
+                self.depth -= 1;
+            }
+        }
+
+        fn visit_macro(&mut self, mac: &'ast syn::Macro) {
+            self.facts.macros.push(mac.path.clone());
+            self.scan_tokens(mac.tokens.clone());
+        }
+
+        fn visit_use_glob(&mut self, _glob: &'ast syn::UseGlob) {
+            if self.depth > 0 {
+                self.facts.nested_use_names.insert("*".to_string());
+            }
+        }
+
+        fn visit_use_name(&mut self, name: &'ast syn::UseName) {
+            if self.depth > 0 {
+                self.facts.nested_use_names.insert(name.ident.to_string());
+            }
+        }
+
+        fn visit_use_rename(&mut self, rename: &'ast syn::UseRename) {
+            if self.depth > 0 {
+                self.facts
+                    .nested_use_names
+                    .insert(rename.rename.to_string());
+            }
+        }
+    }
+    let mut collector = Collector {
+        depth: 0,
+        facts: SourceFacts::default(),
+    };
+    syn::visit::Visit::visit_file(&mut collector, file);
+    for item in &file.items {
+        match item {
+            Item::Const(item) => {
+                collector.facts.value_names.insert(item.ident.to_string());
+            }
+            Item::Fn(item) => {
+                collector
+                    .facts
+                    .value_names
+                    .insert(item.sig.ident.to_string());
+            }
+            Item::Static(item) => {
+                collector.facts.value_names.insert(item.ident.to_string());
+            }
+            _ => {}
+        }
+    }
+    return collector.facts;
 }
 
 fn collect_standard_constant(
@@ -221,6 +379,16 @@ fn has_rust_only_directive(attributes: &[Attribute]) -> bool {
 }
 
 // A literal, optionally negated or parenthesized: a value that reads no other item.
+// Whether `#[cfg(test)]` is among the attributes: the item exists only in test builds.
+fn is_cfg_test(attributes: &[Attribute]) -> bool {
+    return attributes.iter().any(|attribute| {
+        return attribute.path().is_ident("cfg")
+            && attribute
+                .parse_args::<syn::Ident>()
+                .is_ok_and(|predicate| predicate == "test");
+    });
+}
+
 fn is_independent_literal(expression: &syn::Expr) -> bool {
     return match expression {
         syn::Expr::Group(group) => is_independent_literal(&group.expr),
@@ -470,6 +638,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let source_mode = source_mode(source)?;
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let facts = collect_source_facts(&file);
     let callable_field_parameters = parse_callable_field_parameters(&file.attrs)?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let data_union_metadata = parse_data_unions(&file.attrs)?;
@@ -628,6 +797,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         enums,
         export_names,
         extern_crates,
+        facts,
         frozen_objects,
         functions,
         no_std,
@@ -987,6 +1157,53 @@ fn parse_frozen_objects(
         directives.insert(constant.to_string(), target.to_string());
     }
     return Ok(directives);
+}
+
+// A source the crate compiles but this compiler does not emit (a target-native module, the crate
+// root): parsed only for what the eager-initialization proof must see across the whole crate, its
+// implicit-dispatch facts and the declarations that resolve names in it. It is never validated as
+// portable Rust, and none of its items are walked or emitted.
+pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let mut program = parse_program("")?;
+    program.facts = collect_source_facts(&file);
+    program.no_std = file
+        .attrs
+        .iter()
+        .any(|attribute| attribute.path().is_ident("no_std"));
+    for item in &file.items {
+        match item {
+            Item::Enum(item) => {
+                program.type_names.insert(item.ident.to_string());
+                program.enums.push(item.clone());
+            }
+            Item::ExternCrate(item) => program.extern_crates.push(item.clone()),
+            Item::Mod(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::Struct(item) => {
+                program.type_names.insert(item.ident.to_string());
+                program.structs.push(item.clone());
+            }
+            Item::Trait(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::TraitAlias(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::Type(item) => {
+                program.type_names.insert(item.ident.to_string());
+                program.type_aliases.push(item.clone());
+            }
+            Item::Union(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::Use(item) => program.uses.push(item.clone()),
+            _ => {}
+        }
+    }
+    return Ok(program);
 }
 
 fn is_struct_literal(expression: &syn::Expr) -> bool {

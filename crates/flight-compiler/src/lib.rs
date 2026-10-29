@@ -77,12 +77,17 @@ fn compile_typescript_sources(
     alias_sources: &[&str],
     external_alias_sources: &[ExternalAliasSource<'_>],
     module_identities: Option<Vec<String>>,
+    visibility_sources: &[&str],
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_program(source)?;
     let alias_programs = alias_sources
         .iter()
         .map(|alias_source| model::parse_program(alias_source))
+        .collect::<Result<Vec<_>, _>>()?;
+    let visibility_programs = visibility_sources
+        .iter()
+        .map(|visibility_source| model::parse_visibility_program(visibility_source))
         .collect::<Result<Vec<_>, _>>()?;
     let external_alias_programs = external_alias_sources
         .iter()
@@ -112,6 +117,7 @@ fn compile_typescript_sources(
         &external_record_structs,
         &dependency_export_names,
         module_identities.as_deref(),
+        &visibility_programs,
     )?;
     output =
         lower_string_union_variants(output, &program.string_unions, &program.string_union_values)?;
@@ -157,6 +163,7 @@ pub fn compile_typescript_with_external_alias_sources(
         alias_sources,
         external_alias_sources,
         None,
+        &[],
     );
 }
 
@@ -170,6 +177,27 @@ pub fn compile_typescript_with_module_sources(
     entity_module: Option<&str>,
     alias_sources: &[ModuleSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
+) -> Result<String, CompileError> {
+    return compile_typescript_with_visibility_sources(
+        source,
+        entity_module,
+        alias_sources,
+        external_alias_sources,
+        &[],
+    );
+}
+
+/// Compiles one Rust module like `compile_typescript_with_module_sources`, also seeing the crate's
+/// other sources (target-native modules, the crate root) as visibility-only inputs: the
+/// eager-initialization proof reads their `impl`, derive, attribute and macro facts, and nothing in
+/// them is validated, walked or emitted.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_visibility_sources(
+    source: ModuleSource<'_>,
+    entity_module: Option<&str>,
+    alias_sources: &[ModuleSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    visibility_sources: &[&str],
 ) -> Result<String, CompileError> {
     let identities = std::iter::once(&source)
         .chain(alias_sources)
@@ -192,6 +220,7 @@ pub fn compile_typescript_with_module_sources(
         &alias_source_texts,
         external_alias_sources,
         identities,
+        visibility_sources,
     );
 }
 

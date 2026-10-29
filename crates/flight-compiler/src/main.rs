@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
        flight-compile source-mode --source <rust-file>
 ";
@@ -25,6 +25,7 @@ struct GenerateOptions {
     external_alias_sources: Vec<PathBuf>,
     out: PathBuf,
     source: PathBuf,
+    visibility_sources: Vec<PathBuf>,
 }
 
 fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String> {
@@ -63,7 +64,18 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .zip(&alias_source_refs)
                 .map(|(path, source)| flight_compiler::ModuleSource { path, source })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_typescript_with_module_sources(
+            let visibility_sources = options
+                .visibility_sources
+                .iter()
+                .map(|path| {
+                    fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let visibility_source_refs = visibility_sources
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>();
+            flight_compiler::compile_typescript_with_visibility_sources(
                 flight_compiler::ModuleSource {
                     path: &source_path,
                     source: &source,
@@ -71,6 +83,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 options.entity_module.as_deref(),
                 &alias_modules,
                 &external_aliases,
+                &visibility_source_refs,
             )
         }
         GenerateKind::Tests => {
@@ -192,6 +205,7 @@ fn parse_generate_options(
     let mut entity_module = None;
     let mut external_alias_modules = Vec::new();
     let mut external_alias_sources = Vec::new();
+    let mut visibility_sources = Vec::new();
     let mut out = None;
     let mut source = None;
     let mut index = 0;
@@ -242,6 +256,13 @@ fn parse_generate_options(
                 index += 1;
                 source = arguments.get(index).map(PathBuf::from);
             }
+            "--visibility-source" => {
+                index += 1;
+                let path = arguments
+                    .get(index)
+                    .ok_or_else(|| format!("--visibility-source requires a path\n\n{USAGE}"))?;
+                visibility_sources.push(PathBuf::from(path));
+            }
             argument => return Err(format!("unknown generate option `{argument}`\n\n{USAGE}")),
         }
         index += 1;
@@ -250,6 +271,11 @@ fn parse_generate_options(
         GenerateKind::Source if contract_module.is_some() || contract_source.is_some() => {
             return Err(format!(
                 "contract options are only valid for generate-tests\n\n{USAGE}"
+            ));
+        }
+        GenerateKind::Tests if !visibility_sources.is_empty() => {
+            return Err(format!(
+                "--visibility-source is only valid for generate\n\n{USAGE}"
             ));
         }
         GenerateKind::Tests if entity_module.is_some() => {
@@ -274,6 +300,7 @@ fn parse_generate_options(
         external_alias_sources,
         out: out.ok_or_else(|| format!("--out is required\n\n{USAGE}"))?,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
+        visibility_sources,
     });
 }
 

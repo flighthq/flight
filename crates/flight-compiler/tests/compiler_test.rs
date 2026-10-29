@@ -1,9 +1,10 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, VitestAliasSource, compile_typescript,
     compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
-    compile_typescript_with_module_sources, compile_vitest, compile_vitest_with_alias_sources,
-    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
-    compile_vitest_with_module_alias_sources, source_mode,
+    compile_typescript_with_module_sources, compile_typescript_with_visibility_sources,
+    compile_vitest, compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
+    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
+    source_mode,
 };
 
 mod source_modes {
@@ -3640,6 +3641,7 @@ use std::sync::LazyLock;
 
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
+#[derive(Default)]
 pub struct Kernel {
     runtime: EntityRuntimeSlot,
     pub scale: f64,
@@ -3975,6 +3977,289 @@ pub fn create_checked_kernel(count: i32, flag: bool) -> Kernel {
         assert!(output.contains("export const CHECKED: Kernel = createCheckedKernel(3, true);\n"));
         assert!(output.contains("count > 0 && count <= 4 && flag === true"));
         assert!(output.contains("  out.scale += 0.5 * (LIMIT - 1.0 / 4.0);\n"));
+    }
+
+    #[test]
+    fn proves_lazy_lock_defaults_across_the_whole_crate() {
+        let compile = |source: &str, visibility: &[&str]| {
+            return compile_typescript_with_visibility_sources(
+                ModuleSource {
+                    path: "crates/flight-kernel/src/kernel.rs",
+                    source,
+                },
+                Some("@flighthq/entity/contract"),
+                &[],
+                &[],
+                visibility,
+            );
+        };
+        let unsafe_initializer = |reason: &str| {
+            format!(
+                "`LazyLock` static `KERNEL` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; {reason}"
+            )
+        };
+        let prelude = "use std::sync::LazyLock;\n\nuse flight_entity::{EntityRuntimeSlot, allocate_entity};\n\n";
+        let factory = "\nflight_entity::impl_entity!(Kernel);\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub fn create_kernel() -> Kernel {\n    let mut out: Kernel = allocate_entity();\n    out.scale = 2.0;\n    return out;\n}\n";
+        let kernel = |declaration: &str| format!("{prelude}{declaration}{factory}");
+        let derived = "#[derive(Debug, Clone, Default, PartialEq)]\npub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n    pub tags: Vec<f64>,\n    pub label: String,\n    pub limit: Option<f64>,\n}\n";
+
+        let output = compile(&kernel(derived), &[]).unwrap();
+        assert!(output.contains("export const KERNEL: KernelRaw = createKernel();\n"));
+        assert!(output.contains("allocateEntity<KernelRaw>()"));
+
+        let pure_manual = "pub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n    pub tags: Vec<f64>,\n    pub label: String,\n    pub limit: Option<f64>,\n    pub compute: fn(f64) -> f64,\n}\n\nimpl Default for Kernel {\n    fn default() -> Self {\n        return Kernel {\n            runtime: EntityRuntimeSlot::default(),\n            scale: 0.0,\n            tags: Vec::new(),\n            label: String::new(),\n            limit: None,\n            compute: identity,\n        };\n    }\n}\n\npub fn identity(value: f64) -> f64 {\n    return value;\n}\n";
+        let pure_manual_factory = pure_manual.to_string()
+            + "\nflight_entity::impl_entity!(Kernel);\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub fn create_kernel() -> Kernel {\n    let mut out: Kernel = allocate_entity();\n    initialize_kernel(&mut out);\n    return out;\n}\n\npub fn initialize_kernel(out: &mut Kernel) {\n    out.compute = identity;\n}\n";
+        let output = compile(&format!("{prelude}{pure_manual_factory}"), &[]).unwrap();
+        assert!(output.contains("export const KERNEL: KernelRaw = createKernel();\n"));
+
+        let hidden_impure = "use std::sync::atomic::{AtomicU32, Ordering};\n\nuse crate::kernel::Kernel;\n\nstatic DEFAULTS: AtomicU32 = AtomicU32::new(0);\n\nimpl Default for Kernel {\n    fn default() -> Kernel {\n        DEFAULTS.fetch_add(1, Ordering::SeqCst);\n        return Kernel { runtime: flight_entity::EntityRuntimeSlot::default(), scale: 0.0 };\n    }\n}\n";
+        let plain =
+            "pub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n}\n";
+        let cases: [(String, Vec<&str>, String); 21] = [
+            (
+                kernel(plain),
+                vec![],
+                "`Kernel` has no `Default` implementation this crate shows, so a macro, a hidden module or nothing provides the one `allocate_entity` runs".to_string(),
+            ),
+            (
+                kernel(plain),
+                vec![hidden_impure],
+                "the manual `Default` for `Kernel` must return one struct literal of `Kernel`, so its field values can be compared with the generated allocation".to_string(),
+            ),
+            (
+                kernel(&format!("{plain}\nimpl Default for Kernel {{\n    fn default() -> Kernel {{\n        return Kernel {{ runtime: EntityRuntimeSlot::default(), scale: 7.0 }};\n    }}\n}}\n")),
+                vec![],
+                "the manual `Default` for `Kernel` sets `scale` to `7.0`, which the generated allocation does not reproduce".to_string(),
+            ),
+            (
+                kernel(&format!("{plain}\nimpl Default for Kernel {{\n    fn default() -> Kernel {{\n        return Kernel {{ runtime: EntityRuntimeSlot::default(), scale: read_scale() }};\n    }}\n}}\n\npub fn read_scale() -> f64 {{\n    return flight_math::random();\n}}\n")),
+                vec![],
+                "the manual `Default` for `Kernel` sets `scale` to `read_scale ()`, which the generated allocation does not reproduce".to_string(),
+            ),
+            (
+                kernel("pub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n    pub compute: fn(f64) -> f64,\n}\n\nimpl Default for Kernel {\n    fn default() -> Kernel {\n        return Kernel { runtime: EntityRuntimeSlot::default(), scale: 0.0, compute: pick() };\n    }\n}\n\npub fn pick() -> fn(f64) -> f64 {\n    return flight_math::random_function();\n}\n"),
+                vec![],
+                "it calls `flight_math::random_function`, which is not a side-effect-free function of this crate".to_string(),
+            ),
+            (
+                kernel("#[derive(Default)]\npub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n    pub inner: Inner,\n}\n\npub struct Inner {\n    pub value: f64,\n}\n\nimpl Default for Inner {\n    fn default() -> Inner {\n        return Inner { value: flight_math::random() };\n    }\n}\n"),
+                vec![],
+                "it calls `flight_math::random`, which is not a side-effect-free function of this crate".to_string(),
+            ),
+            (
+                kernel("#[derive(Default)]\npub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n    pub inner: Inner,\n}\n\npub struct Inner {\n    pub value: f64,\n}\n"),
+                vec![],
+                "`Inner` has no `Default` implementation this crate shows, so a macro, a hidden module or nothing provides the one `allocate_entity` runs".to_string(),
+            ),
+            (
+                kernel("#[derive(Default)]\npub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n    pub matrix: flight_geometry::Matrix,\n}\n"),
+                vec![],
+                "the `Default` of `flight_geometry::Matrix` (`flight_geometry::Matrix`) is not visible to the proof".to_string(),
+            ),
+            (
+                kernel("#[derive(Default)]\npub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n    pub tags: Vec,\n}\n\n#[derive(Default)]\npub struct Vec {\n    pub length: f64,\n}\n"),
+                vec![],
+                "the generated allocation defaults `Kernel.tags` by the spelling of `Vec`, which does not resolve to the standard type with that default".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}\nimpl Drop for Kernel {{\n    fn drop(&mut self) {{}}\n}}\n")),
+                vec![],
+                "the crate implements `Drop` for `Kernel`, which Rust runs implicitly".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["use crate::kernel::Kernel;\n\nimpl Drop for Kernel {\n    fn drop(&mut self) {}\n}\n"],
+                "the crate implements `Drop` for `Kernel`, which Rust runs implicitly".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["use std::ops::Deref;\n\npub struct Wrapper {\n    pub value: f64,\n}\n\nimpl Deref for Wrapper {\n    type Target = f64;\n    fn deref(&self) -> &f64 {\n        return &self.value;\n    }\n}\n"],
+                "the crate implements `Deref` for `Wrapper`, which Rust runs implicitly".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["use std::ops::DerefMut as Mutable;\n\npub struct Wrapper {\n    pub value: f64,\n}\n\nimpl Mutable for Wrapper {\n    fn deref_mut(&mut self) -> &mut f64 {\n        return &mut self.value;\n    }\n}\n"],
+                "the crate implements `DerefMut` for `Wrapper`, which Rust runs implicitly".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["use flight_hidden::*;\n\npub struct Wrapper;\n\nimpl Finalize for Wrapper {}\n"],
+                "it cannot resolve the trait of `impl Finalize for Wrapper`, which could be `Default`, `Drop` or `Deref`".to_string(),
+            ),
+            (
+                kernel(&format!("use serde::Serialize;\n\n#[derive(Default, Serialize)]\n{plain}")),
+                vec![],
+                "the crate derives `Serialize`, which is not a standard derive and can generate any `impl`".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["#[derive(Clone, flight_macros::Tracked)]\npub struct Probe;\n"],
+                "the crate derives `flight_macros::Tracked`, which is not a standard derive and can generate any `impl`".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["#[flight_macros::instrument]\npub fn probe() {}\n"],
+                "the crate uses the attribute `#[flight_macros::instrument]`, which is not built in and can generate any item".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["#[cfg_attr(feature = \"trace\", tracked)]\npub fn probe() {}\n"],
+                "the crate uses the attribute `#[tracked]`, which is not built in and can generate any item".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["macro_rules! finalize {\n    ($t:ty) => {\n        impl Drop for $t {\n            fn drop(&mut self) {}\n        }\n    };\n}\n\nfinalize!(crate::kernel::Kernel);\n"],
+                "it cannot prove what the macro `finalize!` in this crate expands to, and a macro can generate any `impl`".to_string(),
+            ),
+            (
+                kernel(&format!("#[derive(Default)]\n{plain}")),
+                vec!["pub fn probe() -> Vec<u8> {\n    return vec![{\n        impl Drop for crate::kernel::Kernel {\n            fn drop(&mut self) {}\n        }\n        1\n    }];\n}\n"],
+                "a macro invocation in this crate carries an `impl` or attribute in its arguments, which the proof cannot see".to_string(),
+            ),
+            (
+                format!("{prelude}#[derive(Default)]\n{plain}\nflight_entity::impl_entity!(Kernel);\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub fn create_kernel() -> Kernel {{\n    return wrap(allocate_entity());\n}}\n\npub fn wrap(kernel: Kernel) -> Kernel {{\n    return kernel;\n}}\n"),
+                vec![],
+                "it calls `allocate_entity` without a declared result type (a turbofish or an annotated `let`), so the `Default` it runs is not proven".to_string(),
+            ),
+        ];
+        for (source, visibility, reason) in cases {
+            assert_eq!(
+                compile(&source, &visibility).unwrap_err().to_string(),
+                unsafe_initializer(&reason),
+                "{source}\n{visibility:?}"
+            );
+        }
+
+        let turbofish = format!(
+            "{prelude}#[derive(Default)]\n{plain}\nflight_entity::impl_entity!(Kernel);\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub fn create_kernel() -> Kernel {{\n    return wrap(allocate_entity::<Kernel>());\n}}\n\npub fn wrap(kernel: Kernel) -> Kernel {{\n    return kernel;\n}}\n"
+        );
+        assert!(
+            compile(&turbofish, &[])
+                .unwrap()
+                .contains("export const KERNEL: KernelRaw = createKernel();\n")
+        );
+
+        let visible_only = "use crate::kernel::Kernel;\n\npub struct HiddenPool {\n    pub size: f64,\n}\n\npub fn acquire_hidden_pool() -> f64 {\n    return 1.0;\n}\n\npub trait Undeclared {}\n";
+        let output = compile(&kernel(derived), &[visible_only]).unwrap();
+        assert!(output.contains("export const KERNEL: KernelRaw = createKernel();\n"));
+        assert!(!output.contains("HiddenPool"));
+        assert!(!output.contains("acquireHiddenPool"));
+        assert!(!output.contains("Undeclared"));
+
+        let without_lazy_lock = format!(
+            "{prelude}{plain}\nimpl Drop for Kernel {{\n    fn drop(&mut self) {{}}\n}}\n\npub fn create_kernel() -> Kernel {{\n    let out: Kernel = allocate_entity();\n    return out;\n}}\n"
+        );
+        assert!(compile(&without_lazy_lock, &[]).is_ok());
+    }
+
+    #[test]
+    fn rejects_hidden_default_and_drop_through_the_cli() {
+        let directory = std::env::temp_dir().join(format!(
+            "flight-compiler-lazy-lock-default-cli-{}",
+            std::process::id()
+        ));
+        let source_root = directory.join("flight-kernel").join("src");
+        std::fs::create_dir_all(&source_root).unwrap();
+        let repro = source_root.join("lazy_lock_default_repro.rs");
+        std::fs::write(
+            &repro,
+            r#"use std::sync::LazyLock;
+use std::sync::atomic::{AtomicU32, Ordering};
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+static DEFAULTS: AtomicU32 = AtomicU32::new(0);
+
+pub struct Kernel {
+    runtime: EntityRuntimeSlot,
+    pub scale: f64,
+}
+
+flight_entity::impl_entity!(Kernel);
+
+impl Default for Kernel {
+    fn default() -> Kernel {
+        DEFAULTS.fetch_add(1, Ordering::SeqCst);
+        return Kernel {
+            runtime: EntityRuntimeSlot::default(),
+            scale: 1.0,
+        };
+    }
+}
+
+pub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);
+
+pub fn create_kernel() -> Kernel {
+    let out: Kernel = allocate_entity();
+    return out;
+}
+
+pub fn get_defaults() -> u32 {
+    return DEFAULTS.fetch_add(0, Ordering::SeqCst);
+}
+"#,
+        )
+        .unwrap();
+        let derived = source_root.join("kernel.rs");
+        std::fs::write(
+            &derived,
+            "use std::sync::LazyLock;\n\nuse flight_entity::{EntityRuntimeSlot, allocate_entity};\n\n#[derive(Default)]\npub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n}\n\nflight_entity::impl_entity!(Kernel);\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub fn create_kernel() -> Kernel {\n    let out: Kernel = allocate_entity();\n    return out;\n}\n",
+        )
+        .unwrap();
+        let hidden = source_root.join("kernel_drop.rs");
+        std::fs::write(
+            &hidden,
+            "//! flight-compiler: target-native\n\nuse crate::kernel::Kernel;\n\nimpl Drop for Kernel {\n    fn drop(&mut self) {}\n}\n",
+        )
+        .unwrap();
+        let run = |source: &std::path::Path, visibility: &[&std::path::Path]| {
+            let output = source.with_extension("ts");
+            let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_flight-compile"));
+            command
+                .arg("generate")
+                .arg("--source")
+                .arg(source)
+                .arg("--out")
+                .arg(&output)
+                .arg("--entity-module")
+                .arg("@flighthq/entity/contract");
+            for path in visibility {
+                command.arg("--visibility-source").arg(path);
+            }
+            let result = command.output().unwrap();
+            return (
+                result.status.code(),
+                String::from_utf8(result.stderr).unwrap(),
+                output,
+            );
+        };
+        let prefix = "`LazyLock` static `KERNEL` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; ";
+
+        let (code, stderr, output) = run(&repro, &[]);
+        assert_eq!(code, Some(2), "{stderr}");
+        assert!(stderr.contains(&format!("{prefix}the manual `Default` for `Kernel` must return one struct literal of `Kernel`, so its field values can be compared with the generated allocation")), "{stderr}");
+        assert!(!output.exists());
+
+        let (code, stderr, output) = run(&derived, &[]);
+        assert_eq!(code, Some(0), "{stderr}");
+        assert!(
+            std::fs::read_to_string(&output)
+                .unwrap()
+                .contains("export const KERNEL: KernelRaw = createKernel();")
+        );
+        std::fs::remove_file(&output).unwrap();
+
+        let (code, stderr, output) = run(&derived, &[&hidden]);
+        assert_eq!(code, Some(2), "{stderr}");
+        assert!(
+            stderr.contains(&format!(
+                "{prefix}the crate implements `Drop` for `Kernel`, which Rust runs implicitly"
+            )),
+            "{stderr}"
+        );
+        assert!(!output.exists());
+        std::fs::remove_dir_all(&directory).unwrap();
     }
 
     #[test]

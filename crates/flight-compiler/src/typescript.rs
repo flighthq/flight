@@ -6967,10 +6967,26 @@ fn reject_unresolved_pattern_field(
 // operation), macros, casts, bitwise operators, reads of other statics, indexing, `?` and `unsafe`
 // all fail closed. The initializer must also name an emitted free function: an associated path such
 // as `Kernel::default` has no TypeScript value.
+//
+// Rust also runs trait code no call site spells: `Default` (behind `allocate_entity`, which is
+// `T::default()`), `Drop` at scope exit, and `Deref` in auto-dereference and coercion. So the proof
+// reads the whole crate (the emitted sources and `visibility_programs`, the crate's other sources),
+// and fails closed when it cannot see every such implementation: any `Drop`, `Deref` or `DerefMut`
+// impl, an `impl` whose trait does not resolve, a derive other than the standard ones, an attribute
+// other than the built-in and tool ones, a macro other than the standard library's and
+// `flight_entity::impl_entity`, or an `impl` or attribute hidden in macro arguments.
+// `allocate_entity::<T>` needs a declared `T` (a turbofish or an annotated `let`) and proves
+// `T::default()`: a standard `derive(Default)` defaults each field by its type, which must resolve to
+// the standard type the generated allocation defaults by spelling (`0`, `false`, `""`, `undefined`,
+// `[]`); a manual `impl Default` must return one struct literal, each such field set to exactly that
+// default value, and its other values are walked like the factory. Every other field type's own
+// `Default` is proven the same way, for purity.
 // flight-lint: allow(hashmap-iteration) it iterates `names`, a BTreeSet, and `constants`, a Vec, both in a defined order
+// flight-lint: allow(f64) it parses a float literal only to compare its value with zero
 fn reject_unsafe_lazy_lock_initializers(
     program: &Program,
     programs: &[&Program],
+    visibility_programs: &[Program],
 ) -> Result<(), CompileError> {
     #[derive(Clone, Debug, PartialEq)]
     enum EagerType {
@@ -7009,6 +7025,15 @@ fn reject_unsafe_lazy_lock_initializers(
             | (EagerType::IntegerLiteral, EagerType::Integer(name)) => exact_integer(name),
             _ => false,
         };
+    }
+    // A path as written, for messages.
+    fn path_text(path: &syn::Path) -> String {
+        return path
+            .segments
+            .iter()
+            .map(|segment| segment.ident.to_string())
+            .collect::<Vec<_>>()
+            .join("::");
     }
     // The scalar type a primitive type name denotes.
     fn primitive_eager_type(name: &str) -> Option<EagerType> {
@@ -7075,15 +7100,24 @@ fn reject_unsafe_lazy_lock_initializers(
         program: &'a Program,
         values: BTreeSet<String>,
     }
+    // Manual `impl Default` blocks by the struct they implement, each with its source's scope.
+    type ManualDefaults = BTreeMap<String, Vec<(usize, syn::ItemImpl)>>;
     struct EagerSafety<'a> {
+        // An annotated `let` whose initializer is this call, with the declared type and its scope.
+        allocation_site: Option<(*const syn::ExprCall, usize, Type)>,
         env: BTreeMap<String, EagerType>,
         error: Option<String>,
         functions: &'a [(usize, &'a ItemFn)],
+        manual_defaults: &'a ManualDefaults,
         other_statics: &'a BTreeSet<String>,
         pending: Vec<String>,
+        // Structs whose `Default` is proven (or being proven), and whether value equivalence was.
+        proven_defaults: BTreeSet<(String, bool)>,
         readable_statics: &'a BTreeSet<String>,
         scope: usize,
         scopes: &'a [EagerScope<'a>],
+        // The struct a manual `impl Default` body is walked for, which `Self` names there.
+        self_type: Option<String>,
         static_name: &'a str,
         type_items: &'a BTreeSet<String>,
     }
@@ -7459,6 +7493,20 @@ fn reject_unsafe_lazy_lock_initializers(
                 .map(|segment| segment.ident.to_string())
                 .collect::<Vec<_>>();
             let (first, rest) = segments.split_first()?;
+            if first == "Self"
+                && let Some(self_type) = &self.self_type
+            {
+                return Some(
+                    ["crate".to_string(), self_type.clone()]
+                        .into_iter()
+                        .chain(rest.iter().cloned())
+                        .collect(),
+                );
+            }
+            let nested = &self.scopes[scope].program.facts.nested_use_names;
+            if nested.contains(first) || nested.contains("*") {
+                return None;
+            }
             let mut resolved = if path.leading_colon.is_some() {
                 canonical_type_path_root(segments.clone(), context)?
             } else if context.contains(&format!("{TYPE_USE_MARKER}{first}")) {
@@ -7493,7 +7541,8 @@ fn reject_unsafe_lazy_lock_initializers(
                 if self.has_foreign_glob(scope) {
                     return None;
                 }
-                for glob in marker_suffixes(context, TYPE_USE_GLOB_MARKER) {
+                let globs = marker_suffixes(context, TYPE_USE_GLOB_MARKER);
+                for glob in &globs {
                     let candidate = canonical_type_path_root(
                         glob.split("::")
                             .map(str::to_string)
@@ -7507,17 +7556,59 @@ fn reject_unsafe_lazy_lock_initializers(
                 }
                 let no_std = context.contains(TYPE_NO_STD_MARKER);
                 let prelude = match first.as_str() {
-                    "Box" | "String" | "Vec" if no_std => return None,
+                    "Box" | "String" | "ToOwned" | "ToString" | "Vec" if no_std => return None,
+                    "AsMut" | "AsRef" | "From" | "Into" | "TryFrom" | "TryInto" => "core::convert",
                     "Box" => "std::boxed::Box",
+                    "Clone" => "core::clone::Clone",
+                    "Copy" | "Send" | "Sized" | "Sync" | "Unpin" => "core::marker",
+                    "Debug" => "core::fmt::Debug",
+                    "Default" => "core::default::Default",
+                    "DoubleEndedIterator"
+                    | "ExactSizeIterator"
+                    | "Extend"
+                    | "FromIterator"
+                    | "IntoIterator"
+                    | "Iterator" => "core::iter",
+                    "Drop" | "Fn" | "FnMut" | "FnOnce" => "core::ops",
+                    "Eq" | "Ord" | "PartialEq" | "PartialOrd" => "core::cmp",
+                    "Err" | "Ok" | "Result" => "core::result",
+                    "Hash" => "core::hash::Hash",
+                    "None" | "Option" | "Some" => "core::option",
                     "String" => "std::string::String",
+                    "ToOwned" => "std::borrow::ToOwned",
+                    "ToString" => "std::string::ToString",
                     "Vec" => "std::vec::Vec",
-                    "Option" if no_std => "core::option::Option",
-                    "Option" => "std::option::Option",
-                    "Some" if no_std => "core::option::Option::Some",
-                    "Some" => "std::option::Option::Some",
+                    // A standard-library glob supplies any other name, or a qualified path's first
+                    // segment, from the standard library; more than one leaves the owner undecided.
+                    _ if globs.len() == 1 => {
+                        return canonical_type_path_root(
+                            globs
+                                .iter()
+                                .flat_map(|glob| glob.split("::").map(str::to_string))
+                                .chain(segments.iter().cloned())
+                                .collect(),
+                            context,
+                        );
+                    }
+                    _ if !globs.is_empty() => return None,
                     // Any other qualified path's first segment is an extern-prelude crate.
                     _ if !rest.is_empty() => return Some(segments),
                     _ => return None,
+                };
+                // Names the prelude re-exports from a module are completed with that name.
+                let prelude = if prelude.ends_with(first.as_str()) {
+                    prelude.to_string()
+                } else if prelude == "core::option" && first != "Option" {
+                    format!("core::option::Option::{first}")
+                } else if prelude == "core::result" && first != "Result" {
+                    format!("core::result::Result::{first}")
+                } else {
+                    format!("{prelude}::{first}")
+                };
+                let prelude = if prelude.starts_with("core::option") && !no_std {
+                    prelude.replacen("core", "std", 1)
+                } else {
+                    prelude
                 };
                 prelude
                     .split("::")
@@ -7532,6 +7623,657 @@ fn reject_unsafe_lazy_lock_initializers(
                 resolved[0] = "crate".to_string();
             }
             return Some(resolved);
+        }
+
+        // The manual `impl Default` blocks of the crate, after failing closed on every implicit
+        // dispatch the proof cannot see (see the function comment).
+        fn crate_dispatch(&self) -> Result<ManualDefaults, String> {
+            let macro_definitions = self
+                .scopes
+                .iter()
+                .flat_map(|scope| scope.program.facts.macro_definitions.iter().cloned())
+                .collect::<BTreeSet<_>>();
+            let macro_use = self
+                .scopes
+                .iter()
+                .any(|scope| scope.program.facts.macro_use_extern_crate);
+            let mut defaults = ManualDefaults::new();
+            for (index, scope) in self.scopes.iter().enumerate() {
+                let facts = &scope.program.facts;
+                if facts.hidden_items {
+                    return Err("a macro invocation in this crate carries an `impl` or attribute in its arguments, which the proof cannot see".to_string());
+                }
+                for attribute in &facts.attributes {
+                    self.check_meta(index, &attribute.meta)?;
+                }
+                for path in &facts.macros {
+                    if !self.is_standard_macro(index, path, &macro_definitions, macro_use) {
+                        return Err(format!(
+                            "it cannot prove what the macro `{}!` in this crate expands to, and a macro can generate any `impl`",
+                            path_text(path)
+                        ));
+                    }
+                }
+                for item in &facts.impls {
+                    let Some((_, trait_path, _)) = &item.trait_ else {
+                        continue;
+                    };
+                    let self_text = rust_type_description(&item.self_ty);
+                    let Some(owner) = self.resolve(index, trait_path) else {
+                        return Err(format!(
+                            "it cannot resolve the trait of `impl {} for {self_text}`, which could be `Default`, `Drop` or `Deref`",
+                            path_text(trait_path)
+                        ));
+                    };
+                    let standard = matches!(
+                        owner.first().map(String::as_str),
+                        Some("std" | "core" | "alloc")
+                    );
+                    match owner.last().map(String::as_str) {
+                        Some(name @ ("Deref" | "DerefMut" | "Drop")) if standard => {
+                            return Err(format!(
+                                "the crate implements `{name}` for `{self_text}`, which Rust runs implicitly"
+                            ));
+                        }
+                        Some("Default") if standard => {
+                            let Some(EagerType::Struct(_, name)) =
+                                self.convert(index, &item.self_ty, 0)
+                            else {
+                                return Err(format!(
+                                    "it cannot resolve the struct of `impl Default for {self_text}`"
+                                ));
+                            };
+                            let declaration = item.to_token_stream().to_string();
+                            let impls: &mut Vec<(usize, syn::ItemImpl)> =
+                                defaults.entry(name).or_default();
+                            if !impls.iter().any(|(_, other)| {
+                                other.to_token_stream().to_string() == declaration
+                            }) {
+                                impls.push((index, item.clone()));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            return Ok(defaults);
+        }
+
+        // Fails closed on an attribute that is not built in (or a tool attribute), and on a derive
+        // that is not standard; `cfg_attr` is checked through the attributes it may apply.
+        fn check_meta(&self, scope: usize, meta: &syn::Meta) -> Result<(), String> {
+            let path = meta.path();
+            let first = path
+                .segments
+                .first()
+                .map(|segment| segment.ident.to_string())
+                .unwrap_or_default();
+            if path.segments.len() > 1 {
+                return if matches!(first.as_str(), "clippy" | "diagnostic" | "rustfmt") {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "the crate uses the attribute `#[{}]`, which is not built in and can generate any item",
+                        path_text(path)
+                    ))
+                };
+            }
+            if self.scopes[scope]
+                .context
+                .contains(&format!("{TYPE_USE_MARKER}{first}"))
+                || self.scopes[scope]
+                    .program
+                    .facts
+                    .nested_use_names
+                    .contains(&first)
+            {
+                return Err(format!(
+                    "the crate uses the imported attribute `#[{first}]`, which can generate any item"
+                ));
+            }
+            match first.as_str() {
+                "derive" => {
+                    let syn::Meta::List(list) = meta else {
+                        return Err("the crate uses a malformed `#[derive]`".to_string());
+                    };
+                    let derives = list
+                        .parse_args_with(Punctuated::<syn::Path, Token![,]>::parse_terminated)
+                        .map_err(|_| "the crate uses a malformed `#[derive]`".to_string())?;
+                    for derive in &derives {
+                        if self.standard_derive(scope, derive).is_none() {
+                            return Err(format!(
+                                "the crate derives `{}`, which is not a standard derive and can generate any `impl`",
+                                path_text(derive)
+                            ));
+                        }
+                    }
+                    return Ok(());
+                }
+                "cfg_attr" => {
+                    let syn::Meta::List(list) = meta else {
+                        return Err("the crate uses a malformed `#[cfg_attr]`".to_string());
+                    };
+                    let metas = list
+                        .parse_args_with(Punctuated::<syn::Meta, Token![,]>::parse_terminated)
+                        .map_err(|_| "the crate uses a malformed `#[cfg_attr]`".to_string())?;
+                    for applied in metas.iter().skip(1) {
+                        self.check_meta(scope, applied)?;
+                    }
+                    return Ok(());
+                }
+                "allow"
+                | "automatically_derived"
+                | "cfg"
+                | "cold"
+                | "deny"
+                | "deprecated"
+                | "doc"
+                | "expect"
+                | "forbid"
+                | "ignore"
+                | "inline"
+                | "macro_export"
+                | "macro_use"
+                | "must_use"
+                | "no_mangle"
+                | "no_std"
+                | "non_exhaustive"
+                | "path"
+                | "repr"
+                | "should_panic"
+                | "test"
+                | "track_caller"
+                | "unsafe"
+                | "warn" => {
+                    return Ok(());
+                }
+                _ => {
+                    return Err(format!(
+                        "the crate uses the attribute `#[{first}]`, which is not built in and can generate any item"
+                    ));
+                }
+            }
+        }
+
+        // Whether `field`'s type is one the generated allocation defaults by its spelling, and resolves
+        // to the standard type whose `Default` is exactly that value.
+        fn is_emitted_default_type(&self, scope: usize, ty: &Type) -> bool {
+            return match ty {
+                Type::Group(group) => self.is_emitted_default_type(scope, &group.elem),
+                Type::Paren(paren) => self.is_emitted_default_type(scope, &paren.elem),
+                Type::Reference(reference) => self.is_emitted_default_type(scope, &reference.elem),
+                Type::Tuple(tuple) => tuple
+                    .elems
+                    .iter()
+                    .all(|element| self.is_emitted_default_type(scope, element)),
+                Type::Path(path) if path.qself.is_none() => {
+                    let Some(segment) = path.path.segments.last() else {
+                        return false;
+                    };
+                    let name = segment.ident.to_string();
+                    if primitive_eager_type(&name).is_some() {
+                        return matches!(
+                            self.convert(scope, ty, 0),
+                            Some(
+                                EagerType::Bool
+                                    | EagerType::F32
+                                    | EagerType::F64
+                                    | EagerType::Integer(_)
+                            )
+                        );
+                    }
+                    let Some(owner) = self.resolve(scope, &path.path) else {
+                        return false;
+                    };
+                    let owner = owner.iter().map(String::as_str).collect::<Vec<_>>();
+                    let inner = || {
+                        let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                            return false;
+                        };
+                        return arguments.args.iter().any(|argument| {
+                            return matches!(argument, GenericArgument::Type(inner) if self.is_emitted_default_type(scope, inner));
+                        });
+                    };
+                    match owner.as_slice() {
+                        ["std" | "alloc", "string", "String"]
+                        | ["std" | "core", "option", "Option"]
+                        | ["std" | "alloc", "vec", "Vec"] => true,
+                        ["std" | "alloc", "sync", "Arc"]
+                        | ["flight_entity", "Ref"]
+                        | ["flight_entity", "ir", "Ref"] => inner(),
+                        _ => false,
+                    }
+                }
+                _ => false,
+            };
+        }
+
+        // Whether `value` is exactly the default the generated allocation writes for a field of `ty`.
+        fn is_emitted_default_value(&self, scope: usize, ty: &Type, value: &Expr) -> bool {
+            if let Expr::Call(call) = value
+                && call.args.is_empty()
+                && let Expr::Path(path) = call.func.as_ref()
+                && path.qself.is_none()
+                && self.resolve(scope, &path.path).is_some_and(|owner| {
+                    return matches!(
+                        owner
+                            .iter()
+                            .map(String::as_str)
+                            .collect::<Vec<_>>()
+                            .as_slice(),
+                        ["std" | "core", "default", "Default", "default"]
+                    );
+                })
+            {
+                return true;
+            }
+            let ty = match ty {
+                Type::Group(group) => {
+                    return self.is_emitted_default_value(scope, &group.elem, value);
+                }
+                Type::Paren(paren) => {
+                    return self.is_emitted_default_value(scope, &paren.elem, value);
+                }
+                Type::Tuple(tuple) => {
+                    let Expr::Tuple(values) = value else {
+                        return false;
+                    };
+                    return tuple.elems.len() == values.elems.len()
+                        && tuple
+                            .elems
+                            .iter()
+                            .zip(&values.elems)
+                            .all(|(element, value)| {
+                                self.is_emitted_default_value(scope, element, value)
+                            });
+                }
+                Type::Path(path) => path,
+                _ => return false,
+            };
+            let Some(segment) = ty.path.segments.last() else {
+                return false;
+            };
+            let constructed = |expected: &[&str]| -> Option<&Punctuated<Expr, Token![,]>> {
+                let Expr::Call(call) = value else {
+                    return None;
+                };
+                let Expr::Path(path) = call.func.as_ref() else {
+                    return None;
+                };
+                let owner = self.resolve(scope, &path.path)?;
+                return (owner
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<Vec<_>>()
+                    .as_slice()
+                    == expected)
+                    .then_some(&call.args);
+            };
+            return match segment.ident.to_string().as_str() {
+                "bool" => {
+                    matches!(value, Expr::Lit(literal) if matches!(&literal.lit, Lit::Bool(flag) if !flag.value))
+                }
+                name if primitive_eager_type(name).is_some() => match value {
+                    Expr::Lit(literal) => match &literal.lit {
+                        Lit::Int(integer) => {
+                            integer.base10_digits().bytes().all(|digit| digit == b'0')
+                        }
+                        Lit::Float(float) => float
+                            .base10_parse::<f64>()
+                            .is_ok_and(|number| number == 0.0 && number.is_sign_positive()),
+                        _ => false,
+                    },
+                    _ => false,
+                },
+                "String" => constructed(&["std", "string", "String", "new"])
+                    .is_some_and(Punctuated::is_empty),
+                "Vec" => {
+                    constructed(&["std", "vec", "Vec", "new"]).is_some_and(Punctuated::is_empty)
+                }
+                "Option" => {
+                    matches!(value, Expr::Path(path) if path.qself.is_none() && self.resolve(scope, &path.path).is_some_and(|owner| {
+                        return matches!(owner.iter().map(String::as_str).collect::<Vec<_>>().as_slice(), ["std" | "core", "option", "Option", "None"]);
+                    }))
+                }
+                "Arc" | "Ref" => {
+                    let arguments = constructed(&["std", "sync", "Arc", "new"])
+                        .or_else(|| constructed(&["flight_entity", "Ref", "new"]));
+                    let PathArguments::AngleBracketed(generics) = &segment.arguments else {
+                        return false;
+                    };
+                    let Some(GenericArgument::Type(inner)) = generics.args.first() else {
+                        return false;
+                    };
+                    arguments.is_some_and(|arguments| {
+                        return arguments.len() == 1
+                            && self.is_emitted_default_value(scope, inner, &arguments[0]);
+                    })
+                }
+                _ => false,
+            };
+        }
+
+        // Whether `path` invokes a macro of the standard library (through its macro prelude or a
+        // resolved path) or `flight_entity::impl_entity`.
+        fn is_standard_macro(
+            &self,
+            scope: usize,
+            path: &syn::Path,
+            definitions: &BTreeSet<String>,
+            macro_use: bool,
+        ) -> bool {
+            let EagerScope {
+                context, program, ..
+            } = &self.scopes[scope];
+            if path.leading_colon.is_none() && path.segments.len() == 1 {
+                let name = path.segments[0].ident.to_string();
+                if !context.contains(&format!("{TYPE_USE_MARKER}{name}")) {
+                    return !definitions.contains(&name)
+                        && !macro_use
+                        && !program.facts.nested_use_names.contains(&name)
+                        && !program.facts.nested_use_names.contains("*")
+                        && marker_suffixes(context, TYPE_USE_GLOB_MARKER).is_empty();
+                }
+            }
+            return self.resolve(scope, path).is_some_and(|owner| {
+                let owner = owner.iter().map(String::as_str).collect::<Vec<_>>();
+                return matches!(owner.first(), Some(&("std" | "core" | "alloc")))
+                    || owner.as_slice() == ["flight_entity", "impl_entity"];
+            });
+        }
+
+        // Proves `allocate_entity::<ty>()`: `ty` is a struct of this crate whose `Default` is pure
+        // and reproduces the generated allocation's field values.
+        fn prove_allocation(&mut self, scope: usize, ty: &Type) {
+            match self.convert(scope, ty, 0) {
+                Some(EagerType::Struct(_, name)) => self.prove_struct_default(&name, true),
+                _ => self.reject(format!(
+                    "it allocates `{}` with `allocate_entity`, which is not one struct of this crate",
+                    rust_type_description(ty)
+                )),
+            }
+        }
+
+        // Proves a struct's `Default` pure (and, with `equivalent`, value-equivalent to the
+        // generated allocation): through its standard derive field by field, or through its manual
+        // `impl Default`. Every struct is proven once per mode, so recursive defaults terminate.
+        fn prove_struct_default(&mut self, name: &str, equivalent: bool) {
+            if !self.proven_defaults.insert((name.to_string(), equivalent)) {
+                return;
+            }
+            let mut declarations = Vec::<(usize, &ItemStruct)>::new();
+            for (index, scope) in self.scopes.iter().enumerate() {
+                for structure in scope
+                    .program
+                    .structs
+                    .iter()
+                    .filter(|structure| structure.ident == name)
+                {
+                    let tokens = structure.to_token_stream().to_string();
+                    if !declarations
+                        .iter()
+                        .any(|(_, other)| other.to_token_stream().to_string() == tokens)
+                    {
+                        declarations.push((index, structure));
+                    }
+                }
+            }
+            let [(index, structure)] = declarations.as_slice() else {
+                self.reject(format!(
+                    "`{name}` is not one unambiguous struct of this crate"
+                ));
+                return;
+            };
+            let (index, structure) = (*index, *structure);
+            let derived = structure
+                .attrs
+                .iter()
+                .filter(|attribute| attribute.path().is_ident("derive"))
+                .filter_map(|attribute| {
+                    return attribute
+                        .parse_args_with(Punctuated::<syn::Path, Token![,]>::parse_terminated)
+                        .ok();
+                })
+                .flatten()
+                .any(|derive| self.standard_derive(index, &derive).as_deref() == Some("Default"));
+            let manual = self.manual_defaults.get(name).cloned().unwrap_or_default();
+            match (derived, manual.as_slice()) {
+                (true, []) => {
+                    let nullable = self.scopes[index].program.nullable_options;
+                    for field in &structure.fields {
+                        let field_name = field
+                            .ident
+                            .as_ref()
+                            .map_or_else(|| "field".to_string(), ToString::to_string);
+                        if equivalent && rust_default_expression(&field.ty).is_some() {
+                            if !self.is_emitted_default_type(index, &field.ty) {
+                                self.reject(format!(
+                                    "the generated allocation defaults `{name}.{field_name}` by the spelling of `{}`, which does not resolve to the standard type with that default",
+                                    rust_type_description(&field.ty)
+                                ));
+                                return;
+                            }
+                            if nullable && option_inner_type(&field.ty).is_some() {
+                                self.reject(format!(
+                                    "`{name}.{field_name}` is an `Option` its source represents as `null`, but the generated allocation writes `undefined`"
+                                ));
+                                return;
+                            }
+                        }
+                        self.prove_type_default(index, &field.ty);
+                    }
+                }
+                (false, [(impl_scope, item)]) => {
+                    self.walk_manual_default(*impl_scope, name, index, structure, item, equivalent);
+                }
+                (false, []) => self.reject(format!(
+                    "`{name}` has no `Default` implementation this crate shows, so a macro, a hidden module or nothing provides the one `allocate_entity` runs"
+                )),
+                _ => self.reject(format!(
+                    "`{name}` has more than one `Default` implementation"
+                )),
+            }
+        }
+
+        // Proves a type's `Default` pure: primitives and the standard `String`, `Vec` and `Option`
+        // (whose defaults are empty), the entity runtime slot, the standard pointers by their
+        // target, and this crate's structs and aliases recursively.
+        fn prove_type_default(&mut self, scope: usize, ty: &Type) {
+            match ty {
+                Type::Group(group) => return self.prove_type_default(scope, &group.elem),
+                Type::Paren(paren) => return self.prove_type_default(scope, &paren.elem),
+                Type::Array(array) => return self.prove_type_default(scope, &array.elem),
+                Type::Tuple(tuple) => {
+                    for element in &tuple.elems {
+                        self.prove_type_default(scope, element);
+                    }
+                    return;
+                }
+                Type::Path(path) if path.qself.is_none() => {
+                    let Some(segment) = path.path.segments.last() else {
+                        return;
+                    };
+                    if primitive_eager_type(&segment.ident.to_string()).is_some()
+                        && self.convert(scope, ty, 0).is_some()
+                    {
+                        return;
+                    }
+                    let owner = self.resolve(scope, &path.path);
+                    let owner_text = owner.as_ref().map(|owner| owner.join("::"));
+                    let owner = owner
+                        .iter()
+                        .flatten()
+                        .map(String::as_str)
+                        .collect::<Vec<_>>();
+                    match owner.as_slice() {
+                        ["std" | "alloc", "string", "String"]
+                        | ["std" | "core", "option", "Option"]
+                        | ["std" | "alloc", "vec", "Vec"]
+                        | ["flight_entity", "EntityRuntimeSlot"] => return,
+                        ["std" | "alloc", "boxed", "Box"]
+                        | ["std" | "alloc", "sync", "Arc"]
+                        | ["std", "sync", "RwLock"]
+                        | ["flight_entity", "Ref"]
+                        | ["flight_entity", "ir", "Ref"] => {
+                            if let PathArguments::AngleBracketed(arguments) = &segment.arguments
+                                && let Some(GenericArgument::Type(inner)) = arguments.args.first()
+                            {
+                                return self.prove_type_default(scope, inner);
+                            }
+                        }
+                        ["crate", .., name] => {
+                            let name = name.to_string();
+                            match self.crate_type(&name, 0) {
+                                Some(EagerType::Struct(_, structure)) if structure == name => {
+                                    return self.prove_struct_default(&name, false);
+                                }
+                                Some(_) => {
+                                    if let Some((alias_scope, alias)) =
+                                        self.scopes.iter().enumerate().find_map(|(index, scope)| {
+                                            return scope
+                                                .program
+                                                .type_aliases
+                                                .iter()
+                                                .find(|alias| {
+                                                    alias.ident == name
+                                                        && alias.generics.params.is_empty()
+                                                })
+                                                .map(|alias| (index, alias.ty.as_ref().clone()));
+                                        })
+                                    {
+                                        return self.prove_type_default(alias_scope, &alias);
+                                    }
+                                }
+                                None => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                    self.reject(format!(
+                        "the `Default` of `{}`{} is not visible to the proof",
+                        rust_type_description(ty),
+                        owner_text.map_or_else(String::new, |owner| format!(" (`{owner}`)"))
+                    ));
+                }
+                _ => self.reject(format!(
+                    "the `Default` of `{}` is not visible to the proof",
+                    rust_type_description(ty)
+                )),
+            }
+        }
+
+        // The standard derive `path` names (`Clone`, `Copy`, `Debug`, `Default`, `Eq`, `Hash`,
+        // `Ord`, `PartialEq`, `PartialOrd`), resolved through the derive-macro prelude or imports.
+        fn standard_derive(&self, scope: usize, path: &syn::Path) -> Option<String> {
+            const DERIVES: [&str; 9] = [
+                "Clone",
+                "Copy",
+                "Debug",
+                "Default",
+                "Eq",
+                "Hash",
+                "Ord",
+                "PartialEq",
+                "PartialOrd",
+            ];
+            let owner = self.resolve(scope, path)?;
+            let standard = matches!(owner.first().map(String::as_str), Some("std" | "core"));
+            let name = owner.last()?;
+            return (standard && DERIVES.contains(&name.as_str())).then(|| name.clone());
+        }
+
+        // Walks a manual `impl Default` for `name`: its body must return one struct literal of the
+        // struct, each field the generated allocation defaults set to exactly that default (with
+        // `equivalent`), and every value proven like the factory.
+        fn walk_manual_default(
+            &mut self,
+            scope: usize,
+            name: &str,
+            struct_scope: usize,
+            structure: &ItemStruct,
+            item: &syn::ItemImpl,
+            equivalent: bool,
+        ) {
+            let Some(function) = item.items.iter().find_map(|member| match member {
+                syn::ImplItem::Fn(function) if function.sig.ident == "default" => Some(function),
+                _ => None,
+            }) else {
+                self.reject(format!(
+                    "the manual `Default` for `{name}` has no `default` function"
+                ));
+                return;
+            };
+            let literal = match function.block.stmts.as_slice() {
+                [Stmt::Expr(Expr::Return(returned), _)] => returned.expr.as_deref(),
+                [Stmt::Expr(value, None)] => Some(value),
+                _ => None,
+            };
+            let previous = (
+                self.scope,
+                std::mem::take(&mut self.env),
+                self.self_type.replace(name.to_string()),
+            );
+            let fields = match literal {
+                Some(Expr::Struct(literal))
+                    if literal.rest.is_none()
+                        && literal.qself.is_none()
+                        && matches!(self.resolve(scope, &literal.path).as_deref(), Some([root, .., last]) if root == "crate" && last == name) =>
+                {
+                    Some(&literal.fields)
+                }
+                _ => None,
+            };
+            let Some(fields) = fields else {
+                self.reject(format!(
+                    "the manual `Default` for `{name}` must return one struct literal of `{name}`, so its field values can be compared with the generated allocation"
+                ));
+                (self.scope, self.env, self.self_type) = previous;
+                return;
+            };
+            self.bind(scope, Vec::new());
+            for value in fields {
+                let syn::Member::Named(member) = &value.member else {
+                    continue;
+                };
+                let Some(field) = structure
+                    .fields
+                    .iter()
+                    .find(|field| field.ident.as_ref() == Some(member))
+                else {
+                    continue;
+                };
+                if equivalent
+                    && rust_default_expression(&field.ty).is_some()
+                    && !(self.is_emitted_default_type(struct_scope, &field.ty)
+                        && self.is_emitted_default_value(scope, &field.ty, &value.expr))
+                {
+                    self.reject(format!(
+                        "the manual `Default` for `{name}` sets `{member}` to `{}`, which the generated allocation does not reproduce",
+                        value.expr.to_token_stream()
+                    ));
+                    break;
+                }
+                if let Expr::Call(call) = &value.expr
+                    && call.args.is_empty()
+                    && let Expr::Path(path) = call.func.as_ref()
+                    && path.qself.is_none()
+                    && self.resolve(scope, &path.path).is_some_and(|owner| {
+                        return matches!(
+                            owner
+                                .iter()
+                                .map(String::as_str)
+                                .collect::<Vec<_>>()
+                                .as_slice(),
+                            ["std" | "core", "default", "Default", "default"]
+                        );
+                    })
+                {
+                    self.prove_type_default(struct_scope, &field.ty);
+                } else {
+                    self.visit_expr(&value.expr);
+                }
+            }
+            (self.scope, self.env, self.self_type) = previous;
         }
 
         // Visits an operand whose type the enclosing proven operation fixed, so nested arithmetic
@@ -7607,11 +8349,73 @@ fn reject_unsafe_lazy_lock_initializers(
                 self.reject("it calls a function value".to_string());
                 return;
             };
-            let constructor = path.qself.is_none()
-                && self
-                    .resolve(self.scope, &path.path)
-                    .is_some_and(|owner| is_eager_construction_intrinsic(&owner));
-            if !constructor {
+            let owner = if path.qself.is_none() {
+                self.resolve(self.scope, &path.path)
+            } else {
+                None
+            };
+            let constructor = owner
+                .as_ref()
+                .is_some_and(|owner| is_eager_construction_intrinsic(owner));
+            if constructor
+                && owner
+                    .as_ref()
+                    .and_then(|owner| owner.last())
+                    .map(String::as_str)
+                    == Some("allocate_entity")
+            {
+                let declared = path
+                    .path
+                    .segments
+                    .last()
+                    .and_then(|segment| match &segment.arguments {
+                        PathArguments::AngleBracketed(arguments) => {
+                            arguments.args.iter().find_map(|argument| match argument {
+                                GenericArgument::Type(ty) => Some((self.scope, ty.clone())),
+                                _ => None,
+                            })
+                        }
+                        _ => None,
+                    })
+                    .or_else(|| {
+                        let (site, scope, ty) = self.allocation_site.as_ref()?;
+                        return std::ptr::eq(*site, call).then(|| (*scope, ty.clone()));
+                    });
+                let Some((scope, ty)) = declared else {
+                    self.reject("it calls `allocate_entity` without a declared result type (a turbofish or an annotated `let`), so the `Default` it runs is not proven".to_string());
+                    return;
+                };
+                self.prove_allocation(scope, &ty);
+            }
+            let associated_default = !constructor
+                && call.args.is_empty()
+                && path.qself.is_none()
+                && path.path.segments.len() > 1
+                && path
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| segment.ident == "default");
+            if associated_default {
+                let mut owner_path = path.path.clone();
+                owner_path.segments.pop();
+                owner_path.segments.pop_punct();
+                let owner_type = Type::Path(syn::TypePath {
+                    qself: None,
+                    path: owner_path,
+                });
+                if matches!(
+                    owner
+                        .as_deref()
+                        .map(|owner| owner.iter().map(String::as_str).collect::<Vec<_>>())
+                        .as_deref(),
+                    Some(["std" | "core", "default", "Default", "default"])
+                ) {
+                    self.reject("it calls `Default::default()` without a declared result type, so the `Default` it runs is not proven".to_string());
+                    return;
+                }
+                self.prove_type_default(self.scope, &owner_type);
+            } else if !constructor {
                 let Some(name) = self.crate_function(path) else {
                     self.reject(format!(
                         "it calls `{}`, which is not a side-effect-free function of this crate",
@@ -7629,6 +8433,17 @@ fn reject_unsafe_lazy_lock_initializers(
             for argument in &call.args {
                 self.visit_expr(argument);
             }
+        }
+
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            if let (Pat::Type(typed), Some(init)) = (&local.pat, &local.init)
+                && let Expr::Call(call) = init.expr.as_ref()
+            {
+                self.allocation_site =
+                    Some((std::ptr::from_ref(call), self.scope, (*typed.ty).clone()));
+            }
+            syn::visit::visit_local(self, local);
+            self.allocation_site = None;
         }
 
         fn visit_expr_cast(&mut self, _cast: &'ast syn::ExprCast) {
@@ -7727,6 +8542,8 @@ fn reject_unsafe_lazy_lock_initializers(
     }
     let scopes = programs
         .iter()
+        .copied()
+        .chain(visibility_programs)
         .map(|source| {
             let mut context = HashSet::new();
             insert_program_type_path_context(&mut context, source);
@@ -7746,6 +8563,7 @@ fn reject_unsafe_lazy_lock_initializers(
                         .iter()
                         .map(|rust_static| rust_static.ident.to_string()),
                 )
+                .chain(source.facts.value_names.iter().cloned())
                 .collect();
             return EagerScope {
                 context,
@@ -7795,6 +8613,8 @@ fn reject_unsafe_lazy_lock_initializers(
         .iter()
         .position(|source| std::ptr::eq(*source, program))
         .unwrap_or(0);
+    let no_defaults = ManualDefaults::new();
+    let mut manual_defaults = None;
     let mut readable_statics = BTreeSet::new();
     for rust_static in &program.statics {
         let name = rust_static.ident.to_string();
@@ -7807,15 +8627,45 @@ fn reject_unsafe_lazy_lock_initializers(
             }
             continue;
         };
+        if manual_defaults.is_none() {
+            let checker = EagerSafety {
+                allocation_site: None,
+                env: BTreeMap::new(),
+                error: None,
+                functions: &functions,
+                manual_defaults: &no_defaults,
+                other_statics: &all_statics,
+                pending: Vec::new(),
+                proven_defaults: BTreeSet::new(),
+                readable_statics: &readable_statics,
+                scope: generated,
+                scopes: &scopes,
+                self_type: None,
+                static_name: &name,
+                type_items: &type_items,
+            };
+            match checker.crate_dispatch() {
+                Ok(defaults) => manual_defaults = Some(defaults),
+                Err(reason) => {
+                    return Err(compile_error(format!(
+                        "`LazyLock` static `{name}` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; {reason}"
+                    )));
+                }
+            }
+        }
         let mut safety = EagerSafety {
+            allocation_site: None,
             env: BTreeMap::new(),
             error: None,
             functions: &functions,
+            manual_defaults: manual_defaults.as_ref().unwrap_or(&no_defaults),
             other_statics: &all_statics,
             pending: Vec::new(),
+            proven_defaults: BTreeSet::new(),
             readable_statics: &readable_statics,
             scope: generated,
             scopes: &scopes,
+            self_type: None,
             static_name: &name,
             type_items: &type_items,
         };
@@ -12036,6 +12886,7 @@ pub(crate) fn emit_program(
     external_record_structs: &[ItemStruct],
     dependency_export_names: &[(BTreeMap<String, String>, &str)],
     module_identities: Option<&[String]>,
+    visibility_programs: &[Program],
 ) -> Result<String, CompileError> {
     let programs = std::iter::once(program)
         .chain(alias_programs)
@@ -12169,7 +13020,7 @@ pub(crate) fn emit_program(
             .insert(name);
     }
     reject_entity_runtime_state_store_collisions(program, &programs)?;
-    reject_unsafe_lazy_lock_initializers(program, &programs)?;
+    reject_unsafe_lazy_lock_initializers(program, &programs, visibility_programs)?;
     reject_unsupported_array_like_uses(program, &expression_context)?;
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
