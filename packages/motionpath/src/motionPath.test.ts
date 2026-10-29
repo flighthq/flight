@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { createVector2 } from '@flighthq/geometry/contract';
-import { PathWinding, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 

@@ -33,7 +33,7 @@ export function createMotionPath(
  * at the current distance (TS `getMotionPathHeading`). An empty/degenerate path falls back to the
  * path tangent's `(1, 0)` default, giving a heading of 0.
  */
-export function getMotionPathHeading(mp: Readonly<MotionPathRaw>): number {
+export function getMotionPathHeading(mp: MotionPathRaw): number {
   let tangent = createVector2(0.0, 0.0);
   getPathTangentAtDistance(mp.path!, mp.distance, tangent, undefined);
   return Math.atan2(tangent.y, tangent.x);
@@ -89,11 +89,7 @@ function applyMotionPathLoopMode(mp: MotionPathRaw, movement: number, length: nu
  * (TS `getMotionPathPosition`). Returns false for an empty/degenerate path, in which case the point
  * output is left unchanged.
  */
-export function getMotionPathPosition(
-  mp: Readonly<MotionPathRaw>,
-  pointOut: Vector2Like,
-  tangentOut: Vector2Like,
-): boolean {
+export function getMotionPathPosition(mp: MotionPathRaw, pointOut: Vector2Like, tangentOut: Vector2Like): boolean {
   return getPathPositionAtDistance(mp.path!, mp.distance, pointOut, tangentOut, undefined);
 }
 
@@ -101,7 +97,7 @@ export function getMotionPathPosition(
  * Returns the marker's normalized progress `distance / length` in `[0, 1]` (TS
  * `getMotionPathProgress`). A zero-length path reports 0.
  */
-export function getMotionPathProgress(mp: Readonly<MotionPathRaw>): number {
+export function getMotionPathProgress(mp: MotionPathRaw): number {
   return mp.length > 0.0 ? mp.distance / mp.length : 0.0;
 }
 
@@ -129,7 +125,7 @@ export function initializeMotionPath(
  * True when the marker sits at the terminal edge for its current direction (TS
  * `isMotionPathAtEnd`).
  */
-export function isMotionPathAtEnd(mp: Readonly<MotionPathRaw>): boolean {
+export function isMotionPathAtEnd(mp: MotionPathRaw): boolean {
   return (() => {
     const matchValue = mp.direction;
     switch (matchValue) {

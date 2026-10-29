@@ -34,8 +34,8 @@ import type {
   ClipRegionExplanation,
   ClipRegionReleaseGuard,
   ClipRegionUseGuard,
+  PathWinding,
 } from './types.ts';
-import { ClipRegionContoursReason, ClipRegionStatus, PathWinding } from './types.ts';
 
 const NORMALIZE_EPSILON: number = 1e-6;
 
@@ -49,7 +49,7 @@ export function acquireClipRegion(): ClipRegion {
   return createEmptyClipRegion();
 }
 
-export function clipRegionContainsClipRegion(a: Readonly<ClipRegion>, b: Readonly<ClipRegion>): boolean {
+export function clipRegionContainsClipRegion(a: ClipRegion, b: ClipRegion): boolean {
   guardClipRegionUse(a);
   guardClipRegionUse(b);
   const aRect = a!.rect;
@@ -73,7 +73,7 @@ function callClipRegionContoursGuard(
   installedGuard(issue, contours);
 }
 
-export function clipRegionContainsPoint(clip: Readonly<ClipRegion>, x: number, y: number): boolean {
+export function clipRegionContainsPoint(clip: ClipRegion, x: number, y: number): boolean {
   guardClipRegionUse(clip);
   clip = clip!;
   if (!containsRectanglePointXY(clip.rect, x, y)) {
@@ -86,12 +86,12 @@ export function clipRegionContainsPoint(clip: Readonly<ClipRegion>, x: number, y
   return true;
 }
 
-export function clipRegionContainsRectangle(clip: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>): boolean {
+export function clipRegionContainsRectangle(clip: ClipRegion, rectangle: Readonly<RectangleLike>): boolean {
   guardClipRegionUse(clip);
   return enclosesRectangle(clip!.rect, rectangle);
 }
 
-export function clipRegionIntersectsClipRegion(a: Readonly<ClipRegion>, b: Readonly<ClipRegion>): boolean {
+export function clipRegionIntersectsClipRegion(a: ClipRegion, b: ClipRegion): boolean {
   guardClipRegionUse(a);
   guardClipRegionUse(b);
   const aRect = a!.rect;
@@ -103,12 +103,12 @@ function createEmptyClipRegion(): ClipRegion {
   let out: ClipRegion = allocateEntity<ClipRegion>();
   out.rect = createRectangle(0.0, 0.0, 0.0, 0.0);
   out.contours = null;
-  out.winding = PathWinding.NonZero;
+  out.winding = 'nonZero';
   out.version = 0;
   return out;
 }
 
-function resetClipRegion(region: Readonly<ClipRegion>): void {
+function resetClipRegion(region: ClipRegion): void {
   region = region!;
   const mutableRegion: EntityConstruction<ClipRegion> = region;
   mutableRegion.rect.x = 0.0;
@@ -116,16 +116,16 @@ function resetClipRegion(region: Readonly<ClipRegion>): void {
   mutableRegion.rect.width = 0.0;
   mutableRegion.rect.height = 0.0;
   mutableRegion.contours = null;
-  mutableRegion.winding = PathWinding.NonZero;
+  mutableRegion.winding = 'nonZero';
   mutableRegion.version = 0;
 }
 
-export function clipRegionIntersectsRectangle(clip: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>): boolean {
+export function clipRegionIntersectsRectangle(clip: ClipRegion, rectangle: Readonly<RectangleLike>): boolean {
   guardClipRegionUse(clip);
   return intersectsRectangle(clip!.rect, rectangle);
 }
 
-export function cloneClipRegion(clip: Readonly<ClipRegion>): ClipRegion {
+export function cloneClipRegion(clip: ClipRegion): ClipRegion {
   guardClipRegionUse(clip);
   clip = clip!;
   let out: ClipRegion = allocateEntity<ClipRegion>();
@@ -136,7 +136,7 @@ export function cloneClipRegion(clip: Readonly<ClipRegion>): ClipRegion {
   return out;
 }
 
-export function copyClipRegion(out: Readonly<ClipRegion>, source: Readonly<ClipRegion>): void {
+export function copyClipRegion(out: ClipRegion, source: ClipRegion): void {
   guardClipRegionUse(out);
   guardClipRegionUse(source);
   if (out === source) {
@@ -163,7 +163,7 @@ export function createClipRegionFromRectangle(rectangle: Readonly<RectangleLike>
   return out;
 }
 
-export function equalsClipRegion(a: Readonly<ClipRegion>, b: Readonly<ClipRegion>): boolean {
+export function equalsClipRegion(a: ClipRegion, b: ClipRegion): boolean {
   guardClipRegionUse(a);
   guardClipRegionUse(b);
   if (a === b) {
@@ -178,10 +178,10 @@ export function equalsClipRegion(a: Readonly<ClipRegion>, b: Readonly<ClipRegion
   );
 }
 
-export function explainClipRegion(clip: Readonly<ClipRegion>): ClipRegionExplanation {
+export function explainClipRegion(clip: ClipRegion): ClipRegionExplanation {
   const conservative = clip!.contours !== null;
   const released = isClipRegionReleased(clip);
-  return { conservative: conservative, status: released ? ClipRegionStatus.Released : ClipRegionStatus.Active };
+  return { conservative: conservative, status: released ? 'released' : 'active' };
 }
 
 export function explainClipRegionContours(contours: Readonly<number[][]>): ClipRegionContoursExplanation | null {
@@ -189,18 +189,10 @@ export function explainClipRegionContours(contours: Readonly<number[][]>): ClipR
     const contour = contours[contourIndex];
     const coordinateCount = contour.length;
     if ((coordinateCount & 1) !== 0) {
-      return {
-        contourIndex: contourIndex,
-        coordinateCount: coordinateCount,
-        reason: ClipRegionContoursReason.OddCoordinateCount,
-      };
+      return { contourIndex: contourIndex, coordinateCount: coordinateCount, reason: 'odd-coordinate-count' };
     }
     if (coordinateCount < 6) {
-      return {
-        contourIndex: contourIndex,
-        coordinateCount: coordinateCount,
-        reason: ClipRegionContoursReason.TooFewPoints,
-      };
+      return { contourIndex: contourIndex, coordinateCount: coordinateCount, reason: 'too-few-points' };
     }
   }
   return null;
@@ -253,7 +245,7 @@ function equalClipRegionRectangles(a: Readonly<Rectangle>, b: Readonly<Rectangle
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-export function getClipRegionBounds(out: RectangleLike, clip: Readonly<ClipRegion>): void {
+export function getClipRegionBounds(out: RectangleLike, clip: ClipRegion): void {
   guardClipRegionUse(clip);
   copyRectangle(out, clip!.rect);
 }
@@ -277,10 +269,10 @@ export function initializeClipRegionFromRectangle(out: ClipRegion, rectangle: Re
   out.rect = cloneRectangle(rectangle);
   out.contours = null;
   out.version = 0;
-  out.winding = PathWinding.NonZero;
+  out.winding = 'nonZero';
 }
 
-function guardClipRegionUse(clip: Readonly<ClipRegion>): void {
+function guardClipRegionUse(clip: ClipRegion): void {
   const [guard, released] = snapshotClipRegionUseGuard(clip);
   const installedGuard = guard;
   if (installedGuard === null) {
@@ -291,11 +283,7 @@ function guardClipRegionUse(clip: Readonly<ClipRegion>): void {
   }
 }
 
-export function intersectClipRegions(
-  out: Readonly<ClipRegion>,
-  a: Readonly<ClipRegion>,
-  b: Readonly<ClipRegion>,
-): void {
+export function intersectClipRegions(out: ClipRegion, a: ClipRegion, b: ClipRegion): void {
   guardClipRegionUse(out);
   guardClipRegionUse(a);
   guardClipRegionUse(b);
@@ -313,7 +301,7 @@ export function intersectClipRegions(
     mutableOut.rect.width = 0.0;
     mutableOut.rect.height = 0.0;
     mutableOut.contours = null;
-    mutableOut.winding = PathWinding.NonZero;
+    mutableOut.winding = 'nonZero';
     mutableOut.version = (mutableOut.version + 1) >>> 0;
     return;
   }
@@ -327,14 +315,14 @@ export function intersectClipRegions(
   mutableOut.version = (mutableOut.version + 1) >>> 0;
 }
 
-export function invalidateClipRegion(clip: Readonly<ClipRegion>): void {
+export function invalidateClipRegion(clip: ClipRegion): void {
   guardClipRegionUse(clip);
   clip = clip!;
   const mutableClip: EntityConstruction<ClipRegion> = clip;
   mutableClip.version = (mutableClip.version + 1) >>> 0;
 }
 
-export function isClipRegionEmpty(clip: Readonly<ClipRegion>): boolean {
+export function isClipRegionEmpty(clip: ClipRegion): boolean {
   guardClipRegionUse(clip);
   clip = clip!;
   if (isEmptyRectangle(clip.rect)) {
@@ -347,7 +335,7 @@ export function isClipRegionEmpty(clip: Readonly<ClipRegion>): boolean {
   return false;
 }
 
-export function isClipRegionRectangular(clip: Readonly<ClipRegion>): boolean {
+export function isClipRegionRectangular(clip: ClipRegion): boolean {
   guardClipRegionUse(clip);
   return clip!.contours === null;
 }
@@ -394,7 +382,7 @@ function normalizedClipRegionBounds(contours: Readonly<number[][] | null>): numb
   return null;
 }
 
-export function normalizeClipRegion(out: Readonly<ClipRegion>, clip: Readonly<ClipRegion>): void {
+export function normalizeClipRegion(out: ClipRegion, clip: ClipRegion): void {
   guardClipRegionUse(out);
   guardClipRegionUse(clip);
   const [rect, contours, winding] = snapshotClipRegion(clip);
@@ -408,7 +396,7 @@ export function normalizeClipRegion(out: Readonly<ClipRegion>, clip: Readonly<Cl
     mutableOut.rect.width = bounds[2] - bounds[0];
     mutableOut.rect.height = bounds[3] - bounds[1];
     mutableOut.contours = null;
-    mutableOut.winding = PathWinding.NonZero;
+    mutableOut.winding = 'nonZero';
   } else {
     copyRectangle(mutableOut.rect, rect);
     mutableOut.contours = contours;
@@ -441,13 +429,13 @@ function pointInContours(contours: Readonly<number[][]>, winding: PathWinding, p
       index += 2;
     }
   }
-  if (winding === PathWinding.EvenOdd) {
+  if (winding === 'evenOdd') {
     return (windingNumber & 1) !== 0;
   }
   return windingNumber !== 0;
 }
 
-export function releaseClipRegion(clip: Readonly<ClipRegion>): void {
+export function releaseClipRegion(clip: ClipRegion): void {
   const [guard, released] = snapshotClipRegionReleaseGuard(clip);
   if (!released) {
     releaseClipRegionToPool(clip);
@@ -481,7 +469,7 @@ function selectContours(
     const bValues = bContours;
     return [bValues, bWinding];
   }
-  return [null, PathWinding.NonZero];
+  return [null, 'nonZero'];
 }
 
 export function setClipRegionContoursGuard(guard: ClipRegionContoursGuard | null): void {
@@ -492,11 +480,7 @@ export function setClipRegionReleaseGuard(guard: ClipRegionReleaseGuard | null):
   setClipRegionReleaseGuardSlot(guard);
 }
 
-export function setClipRegionToContours(
-  out: Readonly<ClipRegion>,
-  contours: Readonly<number[][]>,
-  winding: PathWinding,
-): void {
+export function setClipRegionToContours(out: ClipRegion, contours: Readonly<number[][]>, winding: PathWinding): void {
   guardClipRegionUse(out);
   const explanation = explainClipRegionContours(contours);
   const guard = getClipRegionContoursGuard();
@@ -509,13 +493,13 @@ export function setClipRegionToContours(
   mutableOut.version = (mutableOut.version + 1) >>> 0;
 }
 
-export function setClipRegionToRectangle(out: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>): void {
+export function setClipRegionToRectangle(out: ClipRegion, rectangle: Readonly<RectangleLike>): void {
   guardClipRegionUse(out);
   out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   mutableOut.rect = cloneRectangle(rectangle);
   mutableOut.contours = null;
-  mutableOut.winding = PathWinding.NonZero;
+  mutableOut.winding = 'nonZero';
   mutableOut.version = (mutableOut.version + 1) >>> 0;
 }
 
@@ -554,16 +538,12 @@ function setRectangleToContoursBounds(out: Rectangle, contours: Readonly<number[
   out.height = maxY - minY;
 }
 
-function snapshotClipRegion(clip: Readonly<ClipRegion>): readonly [Rectangle, number[][] | null, PathWinding] {
+function snapshotClipRegion(clip: ClipRegion): readonly [Rectangle, number[][] | null, PathWinding] {
   clip = clip!;
   return [cloneRectangle(clip.rect), cloneClipRegionContours(clip.contours), clip.winding];
 }
 
-export function transformClipRegion(
-  out: Readonly<ClipRegion>,
-  clip: Readonly<ClipRegion>,
-  matrix: Readonly<MatrixLike>,
-): void {
+export function transformClipRegion(out: ClipRegion, clip: ClipRegion, matrix: Readonly<MatrixLike>): void {
   guardClipRegionUse(out);
   guardClipRegionUse(clip);
   const [rect, contours, winding] = snapshotClipRegion(clip);
@@ -597,7 +577,7 @@ export function transformClipRegion(
     if (matrix.b === 0.0 && matrix.c === 0.0) {
       matrixTransformRectangle(mutableOut.rect, matrix, rect);
       mutableOut.contours = null;
-      mutableOut.winding = PathWinding.NonZero;
+      mutableOut.winding = 'nonZero';
     } else {
       const a = matrix.a;
       const b = matrix.b;
@@ -622,13 +602,13 @@ export function transformClipRegion(
       const contours = [quad];
       setRectangleToContoursBounds(mutableOut.rect, contours);
       mutableOut.contours = contours;
-      mutableOut.winding = PathWinding.NonZero;
+      mutableOut.winding = 'nonZero';
     }
   }
   mutableOut.version = (mutableOut.version + 1) >>> 0;
 }
 
-export function unionClipRegions(out: Readonly<ClipRegion>, a: Readonly<ClipRegion>, b: Readonly<ClipRegion>): void {
+export function unionClipRegions(out: ClipRegion, a: ClipRegion, b: ClipRegion): void {
   guardClipRegionUse(out);
   guardClipRegionUse(a);
   guardClipRegionUse(b);

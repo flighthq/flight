@@ -27,7 +27,7 @@ export function acquireClipRegionFromPool(): ClipRegion | null {
   return runtime.pool[runtime.poolSize];
 }
 
-function getClipRegionRuntime(state: Readonly<ClipRegionStateRaw>): ClipRegionRuntime {
+function getClipRegionRuntime(state: ClipRegionStateRaw): ClipRegionRuntime {
   return clipRegionStateStateStore.get(state)!;
 }
 
@@ -40,7 +40,7 @@ function getBoundClipRegionRuntime(): ClipRegionRuntime {
 export function createClipRegionState(): ClipRegionStateRaw {
   let out: ClipRegionStateRaw = allocateEntity<ClipRegionStateRaw>();
   clipRegionStateStateStore.set(out, {
-    pool: [] as never[],
+    pool: [],
     poolSize: 0,
     contoursGuard: null,
     releaseGuard: null,
@@ -55,13 +55,13 @@ export function getClipRegionContoursGuard(): ClipRegionContoursGuard | null {
   return runtime.contoursGuard;
 }
 
-export function isClipRegionReleased(clip: Readonly<ClipRegion>): boolean {
+export function isClipRegionReleased(clip: ClipRegion): boolean {
   let runtime = getBoundClipRegionRuntime();
   runtime = runtime!;
   return clipRegionRuntimeContains(runtime, clip);
 }
 
-export function releaseClipRegionToPool(clip: Readonly<ClipRegion>): void {
+export function releaseClipRegionToPool(clip: ClipRegion): void {
   let runtime = getBoundClipRegionRuntime();
   runtime = runtime!;
   const index = runtime.poolSize;
@@ -91,21 +91,19 @@ export function setClipRegionUseGuardSlot(guard: ClipRegionUseGuard | null): voi
   runtime.useGuard = guard;
 }
 
-export function snapshotClipRegionReleaseGuard(
-  clip: Readonly<ClipRegion>,
-): readonly [ClipRegionReleaseGuard | null, boolean] {
+export function snapshotClipRegionReleaseGuard(clip: ClipRegion): readonly [ClipRegionReleaseGuard | null, boolean] {
   let runtime = getBoundClipRegionRuntime();
   runtime = runtime!;
   return [runtime.releaseGuard, clipRegionRuntimeContains(runtime, clip)];
 }
 
-export function snapshotClipRegionUseGuard(clip: Readonly<ClipRegion>): readonly [ClipRegionUseGuard | null, boolean] {
+export function snapshotClipRegionUseGuard(clip: ClipRegion): readonly [ClipRegionUseGuard | null, boolean] {
   let runtime = getBoundClipRegionRuntime();
   runtime = runtime!;
   return [runtime.useGuard, clipRegionRuntimeContains(runtime, clip)];
 }
 
-function clipRegionRuntimeContains(runtime: Readonly<ClipRegionRuntime>, clip: Readonly<ClipRegion>): boolean {
+function clipRegionRuntimeContains(runtime: Readonly<ClipRegionRuntime>, clip: ClipRegion): boolean {
   for (let index = 0; index < runtime.poolSize; index += 1) {
     if (runtime.pool[index] === clip) {
       return true;

@@ -1,7 +1,8 @@
 // Generated from crates/flight-motionpath/tests/types_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { PathWinding, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMotionPath, getMotionPathLoopModeString, parseMotionPathLoopMode } from './contract.ts';
@@ -48,7 +49,7 @@ describe('pathIdentity', () => {
     let path = createPath('nonZero');
     appendPathMoveTo(path, 0.0, 0.0);
     appendPathLineTo(path, 10.0, 0.0);
-    const handle = path;
+    const handle: Path = path;
     const marker = createMotionPath(handle, 0.0, undefined, undefined);
     expect(marker.path === handle).toBe(true);
   });

@@ -42,7 +42,7 @@ import {
   unionClipRegions,
 } from './contract.ts';
 
-type SharedGuardCalls = Readonly<{ value: GuardCalls }>;
+type SharedGuardCalls = { value: GuardCalls };
 
 interface GuardCalls {
   values: number[];
@@ -57,7 +57,7 @@ function triangle(): number[][] {
 }
 
 function guardCalls(): SharedGuardCalls {
-  return { value: { values: [] as never[] } };
+  return { value: { values: [] } };
 }
 
 describe('acquireClipRegion', () => {

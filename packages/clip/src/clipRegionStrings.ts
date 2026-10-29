@@ -1,7 +1,7 @@
 // Generated from crates/flight-clip/src/clip_region_strings.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { ClipRegionContoursReason, ClipRegionStatus } from './types.ts';
+import type { ClipRegionContoursReason, ClipRegionStatus } from './types.ts';
 
 /**
  * The canonical TypeScript string for a contour validation reason.
@@ -10,9 +10,9 @@ export function getClipRegionContoursReasonString(reason: ClipRegionContoursReas
   return (() => {
     const matchValue = reason;
     switch (matchValue) {
-      case ClipRegionContoursReason.OddCoordinateCount:
+      case 'odd-coordinate-count':
         return 'odd-coordinate-count';
-      case ClipRegionContoursReason.TooFewPoints:
+      case 'too-few-points':
         return 'too-few-points';
     }
   })();
@@ -25,9 +25,9 @@ export function getClipRegionStatusString(status: ClipRegionStatus): string {
   return (() => {
     const matchValue = status;
     switch (matchValue) {
-      case ClipRegionStatus.Active:
+      case 'active':
         return 'active';
-      case ClipRegionStatus.Released:
+      case 'released':
         return 'released';
     }
   })();
@@ -41,9 +41,9 @@ export function parseClipRegionContoursReason(value: string): ClipRegionContours
     const matchValue = value;
     switch (matchValue) {
       case 'odd-coordinate-count':
-        return ClipRegionContoursReason.OddCoordinateCount;
+        return 'odd-coordinate-count';
       case 'too-few-points':
-        return ClipRegionContoursReason.TooFewPoints;
+        return 'too-few-points';
       default:
         return undefined;
     }
@@ -58,9 +58,9 @@ export function parseClipRegionStatus(value: string): ClipRegionStatus | undefin
     const matchValue = value;
     switch (matchValue) {
       case 'active':
-        return ClipRegionStatus.Active;
+        return 'active';
       case 'released':
-        return ClipRegionStatus.Released;
+        return 'released';
       default:
         return undefined;
     }
