@@ -76,6 +76,9 @@
     },
     {
       "path": "../velocity/tsconfig.contract.json"
+    },
+    {
+      "path": "../xml"
     }
   ],
   "include": ["src"]

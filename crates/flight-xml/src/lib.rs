@@ -1,4 +1,3 @@
-mod rust_types;
 mod types;
 pub mod xml_native;
 mod xml_parse;
@@ -14,4 +13,5 @@ pub use contract::get_xml_element_child_by_name;
 pub use contract::get_xml_element_children_by_name;
 pub use contract::parse_xml_attributes;
 pub use contract::parse_xml_document;
-pub use rust_types::*;
+pub use contract::XmlContent;
+pub use contract::XmlElement;

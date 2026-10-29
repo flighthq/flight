@@ -23,9 +23,9 @@ import type {
   Scene3DDocumentNode,
   Scene3DDocumentScene,
   Transform3D,
-  XmlElement,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { applyColladaBindMaterial, parseColladaBindMaterial } from './colladaSceneShared.ts';

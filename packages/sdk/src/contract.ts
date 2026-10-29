@@ -193,4 +193,5 @@ export type { Velocity2D, VelocityExplanation, VelocityField, VelocitySample } f
 export * from '@flighthq/video';
 export * from '@flighthq/webcam';
 export * from '@flighthq/xml';
+export type { XmlContent, XmlElement } from '@flighthq/xml';
 export * from './sdkHost.ts';

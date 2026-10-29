@@ -7,7 +7,7 @@ import type {
   BitmapFontParseOptions,
   BitmapFontRecord,
 } from '@flighthq/types/contract';
-import type { XmlElement } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import {
   getXmlElementAttribute,
   getXmlElementAttributeNumber,

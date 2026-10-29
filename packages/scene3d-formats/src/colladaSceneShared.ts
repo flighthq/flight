@@ -1,5 +1,6 @@
 import { composeMatrix4FromTransform3D, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
-import type { Matrix4Like, Scene3DDocument, Scene3DDocumentNode, XmlElement } from '@flighthq/types/contract';
+import type { Matrix4Like, Scene3DDocument, Scene3DDocumentNode } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { colladaChild, colladaChildren } from './colladaXml.ts';
 

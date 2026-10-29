@@ -2,6 +2,6 @@
 //! Consumers that need the complete surface (other Flight crates, internal seams) import here;
 //! the crate root exposes only the curated public lane from TS `index.ts` plus type sugar.
 
-pub use super::rust_types::*;
+pub use super::types::*;
 pub use super::xml_parse::*;
 pub use super::xml_query::*;

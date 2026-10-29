@@ -16,8 +16,8 @@ import type {
   ImportDiagnostic,
   Light,
   Scene3DDocument,
-  XmlElement,
 } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';
 import { colladaChild, colladaChildren, colladaIdOf, colladaLocalName } from './colladaXml.ts';

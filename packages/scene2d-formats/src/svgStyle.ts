@@ -1,5 +1,6 @@
 import { clamp } from '@flighthq/math/contract';
-import type { PathWinding, SvgCssRule, SvgImportContext, SvgStyle, XmlElement } from '@flighthq/types/contract';
+import type { PathWinding, SvgCssRule, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { svgAttribute, svgLocalName, parseSvgCssNumber, parseSvgLength, visitSvgElements } from './svgXml.ts';
 

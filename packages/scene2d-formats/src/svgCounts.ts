@@ -1,5 +1,5 @@
-import type { XmlElement } from '@flighthq/types/contract';
 import { SvgClipKind, SvgElementKind } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 export function collectSvgCounts(source: string): Map<string, number> | null {

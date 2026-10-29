@@ -10,8 +10,8 @@ import type {
   MorphTarget,
   Scene3DDocument,
   Scene3DDocumentSkin,
-  XmlElement,
 } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { applyColladaMaterialOverrides } from './colladaSceneShared.ts';

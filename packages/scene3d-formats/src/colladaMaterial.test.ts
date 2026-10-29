@@ -5,9 +5,9 @@ import type {
   ImportDiagnostic,
   MaterialLike,
   StandardPbrMaterial,
-  XmlElement,
 } from '@flighthq/types/contract';
 import { ImageResourceReferenceKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';
 

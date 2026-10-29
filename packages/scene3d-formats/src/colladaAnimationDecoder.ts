@@ -15,8 +15,8 @@ import type {
   Scene3DAnimationPath,
   Scene3DDocument,
   Scene3DDocumentAnimationChannel,
-  XmlElement,
 } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { colladaChild, colladaDescendants, colladaIdOf, colladaNumbers } from './colladaXml.ts';

@@ -17,9 +17,9 @@ import type {
   Rectangle,
   SvgImportContext,
   SvgStyle,
-  XmlElement,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { createSvgNode2DBounds, hasUnmeasurableSvgText } from './svgBounds.ts';
 import { createSvgGeometryPath } from './svgGeometryPath.ts';

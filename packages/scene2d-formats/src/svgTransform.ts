@@ -4,7 +4,8 @@ import {
   decomposeMatrixToTransform2D,
   multiplyMatrix,
 } from '@flighthq/geometry/contract';
-import type { Matrix, Node2D, Transform2D, XmlElement } from '@flighthq/types/contract';
+import type { Matrix, Node2D, Transform2D } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { svgAttribute, svgNumberAttribute, parseSvgLength, parseSvgNumberList } from './svgXml.ts';
 

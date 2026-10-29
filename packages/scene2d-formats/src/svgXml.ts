@@ -1,4 +1,4 @@
-import type { XmlElement } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 export function parseSvgCoordinate(value: string | null, fallback: number): number {
   if (value === null) return fallback;

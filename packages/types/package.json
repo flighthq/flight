@@ -54,7 +54,8 @@
     "@flighthq/statechart": "*",
     "@flighthq/textformat": "*",
     "@flighthq/useragent": "*",
-    "@flighthq/velocity": "*"
+    "@flighthq/velocity": "*",
+    "@flighthq/xml": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

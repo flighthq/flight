@@ -14,9 +14,9 @@ import type {
   SvgGradient,
   SvgGradientStop,
   SvgImportContext,
-  XmlElement,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { resolveSvgColor } from './svgColor.ts';
 import { parseStyleDeclarations, resolveSvgDefinitionStyle } from './svgStyle.ts';

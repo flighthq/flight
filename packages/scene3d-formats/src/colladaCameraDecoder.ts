@@ -10,8 +10,8 @@ import type {
   ImportDiagnostic,
   Scene3DDocument,
   Scene3DDocumentCamera,
-  XmlElement,
 } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';
 import { colladaChild, colladaChildren, colladaDescendants, colladaIdOf, colladaText } from './colladaXml.ts';

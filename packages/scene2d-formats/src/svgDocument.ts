@@ -11,9 +11,9 @@ import type {
   SvgImportContext,
   SvgRegistry,
   SvgStyle,
-  XmlElement,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, SvgClipKind, SvgElementKind } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { parseSvgGradient } from './svgGradient.ts';

@@ -1,6 +1,8 @@
 //! flight-compiler: target-native
+//! flight-compiler: contract XmlContent XmlElement
 //!
-//! Public TypeScript XML types are aliases to their established owner in `@flighthq/types`.
+//! XML owns its public element model. The target-native TypeScript declaration keeps the JavaScript
+//! object graph representation while this Rust twin uses shared `Ref` children.
 
 use flight_entity::Ref;
 

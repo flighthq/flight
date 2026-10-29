@@ -19,8 +19,8 @@ import type {
   TiledTilesetTileFrame,
   Vector2Like,
 } from '@flighthq/types/contract';
-import type { XmlElement } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import {
   getXmlElementAttribute,
   getXmlElementChildByName,

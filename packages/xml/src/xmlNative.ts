@@ -1,4 +1,4 @@
-import type { XmlElement } from '@flighthq/types/contract';
+import type { XmlElement } from './types.ts';
 
 export type XmlRecord<Key extends string, Value> = Record<Key, Value>;
 

@@ -10,16 +10,9 @@ import {
   appendShapePath,
   createShape,
 } from '@flighthq/shape/contract';
-import type {
-  Node2D,
-  Path,
-  Shape,
-  SvgElementContext,
-  SvgImportContext,
-  SvgStyle,
-  XmlElement,
-} from '@flighthq/types/contract';
+import type { Node2D, Path, Shape, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { resolveSvgColor } from './svgColor.ts';
 import { applySvgElementClipFamily } from './svgDocument.ts';

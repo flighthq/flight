@@ -8,9 +8,9 @@ import type {
   ImportDiagnostic,
   SpritesheetData,
   SpritesheetFrameData,
-  XmlElement,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 function parsePlistPair(s: string): [number, number] {
   const m = s.match(/{?\s*([-\d.]+)\s*,\s*([-\d.]+)\s*}?/);

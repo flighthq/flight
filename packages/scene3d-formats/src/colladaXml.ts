@@ -1,4 +1,4 @@
-import type { XmlElement } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 export function colladaChild(element: XmlElement | undefined, name: string): XmlElement | undefined {
   return element?.children.find((entry) => entry.name === name || entry.name.endsWith(`:${name}`));

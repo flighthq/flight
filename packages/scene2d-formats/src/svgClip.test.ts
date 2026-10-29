@@ -1,6 +1,7 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
-import type { ImportDiagnostic, Node2D, XmlElement } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { SvgClipKind } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';
 

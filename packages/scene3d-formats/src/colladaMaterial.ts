@@ -9,9 +9,9 @@ import type {
   StandardPbrMaterial,
   Texture,
   TextureColorSpace,
-  XmlElement,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import { createExternalTextureRef } from './shared.ts';
 

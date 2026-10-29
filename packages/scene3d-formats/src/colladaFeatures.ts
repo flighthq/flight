@@ -1,6 +1,7 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { Requirement, RequirementSet, XmlElement } from '@flighthq/types/contract';
+import type { Requirement, RequirementSet } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { COLLADA_FEATURE_SCENE_REQUIREMENTS } from './colladaFeatureRequirements.ts';
