@@ -27,10 +27,10 @@ import type {
 interface TrayRecord {
   destroying: boolean;
   icon: TauriTrayIcon;
-  interactionEvents: Signal<(event: Readonly<TrayInteractionEvent>) => void>;
+  interactionEvents: Signal<Readonly<TrayInteractionEvent>>;
   menuGeneration: number;
   menus: TauriMenu[];
-  menuSelectionEvents: Signal<(event: Readonly<TrayMenuSelectionEvent>) => void>;
+  menuSelectionEvents: Signal<Readonly<TrayMenuSelectionEvent>>;
   nativePending: boolean;
   pendingMenuOperations: Set<Promise<void>>;
   title: string;
@@ -145,8 +145,8 @@ function createTrayLifecycle(
   const out = {} as HostTrayLifecycleCapability;
   out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
     if (options.signal?.aborted) return { outcome: 'cancelled' as const };
-    const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
-    const menuSelectionEvents = createSignal<(event: Readonly<TrayMenuSelectionEvent>) => void>();
+    const interactionEvents = createSignal<Readonly<TrayInteractionEvent>>();
+    const menuSelectionEvents = createSignal<Readonly<TrayMenuSelectionEvent>>();
     const nativeOptions: TauriTrayIconOptions = {
       action: (event) => emitInteraction(interactionEvents, event),
       icon: options.icon,
@@ -352,10 +352,7 @@ function activeRecord(records: ReadonlyMap<TrayIcon, TrayRecord>, tray: TrayIcon
   return record !== undefined && !record.destroying ? record : null;
 }
 
-function emitInteraction(
-  signal: Signal<(event: Readonly<TrayInteractionEvent>) => void>,
-  event: Readonly<TauriTrayIconEvent>,
-): void {
+function emitInteraction(signal: Signal<Readonly<TrayInteractionEvent>>, event: Readonly<TauriTrayIconEvent>): void {
   const type = toInteractionType(event);
   if (type === null) return;
   emitSignal(signal, {

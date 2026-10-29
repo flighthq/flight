@@ -317,7 +317,7 @@ function buildTauriWindowContext(tauri: TauriApi): TauriWindowContext {
       handle.onMoved((event) => {
         win.x = event.payload.x;
         win.y = event.payload.y;
-        emitSignal(win.onMove);
+        emitSignal(win.onMove, undefined);
       }),
     );
     addCleanup(
@@ -325,14 +325,14 @@ function buildTauriWindowContext(tauri: TauriApi): TauriWindowContext {
       handle.onResized((event) => {
         win.width = event.payload.width;
         win.height = event.payload.height;
-        emitSignal(win.onResize);
+        emitSignal(win.onResize, undefined);
       }),
     );
     addCleanup(
       record,
       handle.onFocusChanged((event) => {
         win.focused = event.payload;
-        emitSignal(event.payload ? win.onFocusIn : win.onFocusOut);
+        emitSignal(event.payload ? win.onFocusIn : win.onFocusOut, undefined);
       }),
     );
     addCleanup(
