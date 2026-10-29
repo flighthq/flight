@@ -19,6 +19,7 @@ export function registerMarkupClassStyles(
   registry: MarkupTagRegistry,
   styles: Readonly<Record<string, Readonly<Partial<TextFormat>>>>,
 ): void {
-  const resolver: MarkupClassResolver = (className: string) => styles[className] ?? null;
+  const resolver: MarkupClassResolver = (className: string) =>
+    Object.hasOwn(styles, className) ? styles[className] : null;
   registry.classResolver = resolver;
 }

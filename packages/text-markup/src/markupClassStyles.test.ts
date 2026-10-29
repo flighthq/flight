@@ -32,6 +32,17 @@ describe('registerMarkupClassStyles', () => {
     expect(content.formatRanges).toEqual([]);
   });
 
+  it('leaves a span inert when its class is inherited from the map prototype', () => {
+    const registry = createMarkupTagRegistry();
+    registerStandardMarkupTags(registry);
+    const styles: Record<string, Readonly<Partial<TextFormat>>> = {};
+    Object.setPrototypeOf(styles, { inherited: { bold: true } });
+    registerMarkupClassStyles(registry, styles);
+    const content = parseTextMarkup('<span class="inherited">x</span>', registry);
+    expect(content.text).toBe('x');
+    expect(content.formatRanges).toEqual([]);
+  });
+
   it('merges several space-separated classes left to right', () => {
     const registry = createMarkupTagRegistry();
     registerStandardMarkupTags(registry);
