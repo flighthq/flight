@@ -97,8 +97,8 @@ export function getRichTextCharBoundaries(
   layout: Readonly<TextLayoutResult>,
   charIndex: number,
 ): boolean {
-  const group = richTextGetGroupContainingIndex(layout, charIndex);
-  if (group === null) {
+  const group = richTextGetGroupContainingIndex(layout, charIndex) ?? undefined;
+  if (group === undefined) {
     return false;
   }
   let x = group.offsetX;
@@ -140,9 +140,7 @@ export function getRichTextLineIndexAtPoint(layout: Readonly<TextLayoutResult>, 
 }
 
 export function getRichTextLineIndexOfChar(layout: Readonly<TextLayoutResult>, charIndex: number): number {
-  return (
-    ((group) => (group === null ? null : group.lineIndex))(richTextGetGroupContainingIndex(layout, charIndex)) ?? 0
-  );
+  return (richTextGetGroupContainingIndex(layout, charIndex) ?? undefined)?.lineIndex ?? 0;
 }
 
 export function getRichTextLineLength(layout: Readonly<TextLayoutResult>, lineIndex: number): number {
