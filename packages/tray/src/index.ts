@@ -25,4 +25,5 @@ export {
   setTrayPressedIcon,
   startTrayIconAnimation,
   stopTrayIconAnimation,
-} from './contract.ts';
+} from './runtime.ts';
+export * from './contract.tray-types.ts';
