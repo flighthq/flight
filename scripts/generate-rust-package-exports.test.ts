@@ -98,6 +98,52 @@ describe('mergeRustExportNames', () => {
   });
 });
 
+describe('renderGeneratedImports', () => {
+  const symbols = new Map([
+    ['RequirementFacet', { fileName: 'types.ts', hasType: true, hasValue: true, isClass: false }],
+    ['Requirement', { fileName: 'types.ts', hasType: true, hasValue: false, isClass: false }],
+    ['getRequirementFacetString', { fileName: 'types.ts', hasType: false, hasValue: true, isClass: false }],
+  ]);
+  const render = (typescript: string): string => renderGeneratedImports('', typescript, 'requirementSet.ts', symbols);
+
+  it('imports a dual const/type symbol as a type when only type positions reference it', () => {
+    expect(
+      render(
+        'export function first(covers: Readonly<RequirementFacet[]>, out: Requirement[]): RequirementFacet {\n' +
+          '  return covers[0] as RequirementFacet;\n}\n',
+      ),
+    ).toBe("import type { Requirement, RequirementFacet } from './types.ts';\n\n");
+  });
+
+  it('imports value-only symbols and value-referenced dual symbols as values', () => {
+    expect(
+      render(
+        'export function name(): string {\n  return getRequirementFacetString(RequirementFacet.SceneNodeKind);\n}\n',
+      ),
+    ).toBe("import { RequirementFacet, getRequirementFacetString } from './types.ts';\n\n");
+  });
+
+  it('keeps a value import when a dual symbol has both type and value references', () => {
+    expect(
+      render(
+        'export function node(): RequirementFacet {\n  const facet: RequirementFacet = RequirementFacet.SceneNodeKind;\n  return facet;\n}\n',
+      ),
+    ).toBe("import { RequirementFacet } from './types.ts';\n\n");
+  });
+
+  it('treats a typeof operand as a value reference and property names as non-references', () => {
+    expect(render('export type Facets = typeof RequirementFacet;\n')).toBe(
+      "import { RequirementFacet } from './types.ts';\n\n",
+    );
+    expect(
+      render(
+        'export function read(source: { RequirementFacet: number }, out: RequirementFacet): number {\n' +
+          '  return source.RequirementFacet;\n}\n',
+      ),
+    ).toBe("import type { RequirementFacet } from './types.ts';\n\n");
+  });
+});
+
 describe('renderPublicExports', () => {
   it('passes production source hints to contract and test generation', () => {
     expect(compilerAliasArguments('generate', ['ease_steps.rs'])).toEqual(['--alias-source', 'ease_steps.rs']);

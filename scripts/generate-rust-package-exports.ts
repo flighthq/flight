@@ -133,6 +133,7 @@ export function renderGeneratedImports(
 ): string {
   const code = referencedCode(typescript);
   const importedNames = new Set(collectReferencedExportNames(typescript, ownFileName, symbols));
+  const valueReferences = collectValueReferenceNames(typescript);
   const rustImports = new Set<string>();
   for (const match of rust.matchAll(/^use crate::(?:[A-Za-z0-9_]+::)?([A-Za-z0-9_]+);$/gm)) {
     rustImports.add(snakeToLowerCamel(match[1]));
@@ -152,7 +153,9 @@ export function renderGeneratedImports(
     const owner = symbols.get(name);
     if (!owner || owner.fileName === ownFileName) continue;
     const entry = imports.get(owner.fileName) ?? { types: [], values: [] };
-    if (owner.hasValue) entry.values.push(name);
+    // A symbol with both a value and a type (a const object paired with its union type, or a class) is
+    // imported as a type when this file references it only in type positions.
+    if (owner.hasValue && (!owner.hasType || valueReferences.has(name))) entry.values.push(name);
     else entry.types.push(name);
     imports.set(owner.fileName, entry);
   }
@@ -175,6 +178,73 @@ function referencedCode(typescript: string): string {
     .replace(/\/\/.*$/gm, '')
     .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g, '')
     .replace(/\.\s*[A-Za-z_$][A-Za-z0-9_$]*/g, '');
+}
+
+// Names the module references in value positions. Identifiers under a type annotation, type argument or
+// other type node are type references, except the operand of `typeof`, which reads a value. Property
+// names (`a.name`, `{ name: ... }`) and import declarations are not references.
+function collectValueReferenceNames(typescript: string): Set<string> {
+  const parsed = parseSync('generated.ts', typescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(`could not parse generated TypeScript while resolving imports: ${parsed.errors[0]?.message}`);
+  }
+  const expressionTypeNodes = new Set([
+    'TSAsExpression',
+    'TSInstantiationExpression',
+    'TSNonNullExpression',
+    'TSSatisfiesExpression',
+    'TSTypeAssertion',
+  ]);
+  const names = new Set<string>();
+
+  function visit(value: unknown, inType: boolean): void {
+    if (value === null || typeof value !== 'object') return;
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item, inType);
+      return;
+    }
+    const node = value as Record<string, unknown>;
+    const type = node.type as string | undefined;
+    if (type === 'ImportDeclaration') return;
+    if (type === 'Identifier') {
+      if (!inType) names.add(node.name as string);
+      visit(node.typeAnnotation, true);
+      return;
+    }
+    if (type === 'TSTypeQuery') {
+      visit(node.exprName, false);
+      visit(node.typeArguments, true);
+      return;
+    }
+    if (type !== undefined && expressionTypeNodes.has(type)) {
+      visit(node.expression, false);
+      visit(node.typeAnnotation, true);
+      visit(node.typeArguments, true);
+      return;
+    }
+    const childInType = inType || (type !== undefined && type.startsWith('TS'));
+    for (const [key, child] of Object.entries(node)) {
+      if (key === 'type') continue;
+      if (
+        (type === 'MemberExpression' && key === 'property' && node.computed !== true) ||
+        ((type === 'Property' || type === 'PropertyDefinition' || type === 'MethodDefinition') &&
+          key === 'key' &&
+          node.computed !== true)
+      ) {
+        continue;
+      }
+      const typeKey =
+        key === 'typeAnnotation' ||
+        key === 'returnType' ||
+        key === 'typeParameters' ||
+        key === 'typeArguments' ||
+        key === 'superTypeArguments';
+      visit(child, childInType || typeKey);
+    }
+  }
+
+  visit(parsed.program, false);
+  return names;
 }
 
 function collectLocalBindingNames(typescript: string): Set<string> {
