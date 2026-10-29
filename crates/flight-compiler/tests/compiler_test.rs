@@ -2033,10 +2033,6 @@ mod retain {
                 "portable `std::mem::take` has no portable lowering",
             ),
             (
-                "pub fn f(values: &mut Vec<u32>, other: Vec<u32>) -> Vec<u32> { return std::mem::replace(values, other); }\n",
-                "portable `std::mem::replace` has no portable lowering",
-            ),
-            (
                 "use std::mem::take;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
                 "portable `std::mem::take` has no portable lowering",
             ),
@@ -2055,10 +2051,6 @@ mod retain {
             (
                 "use std::mem::*;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
                 "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use core::mem::replace;\npub fn f(value: &mut u32) -> u32 { return replace(value, 1); }\n",
-                "portable `std::mem::replace` has no portable lowering",
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
@@ -2099,6 +2091,34 @@ mod retain {
             )
             .unwrap(),
             "export function f(a: number, b: number): void {\n  [a, b] = [b, a];\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_std_mem_replace_to_capture_and_assign() {
+        assert_eq!(
+            compile_typescript(
+                "pub fn f(values: &mut Vec<u32>, other: Vec<u32>) -> Vec<u32> { return std::mem::replace(values, other); }\n",
+                None,
+            )
+            .unwrap(),
+            "export function f(values: number[], other: number[]): number[] {\n  return (() => { const __tmp = values; values = other; return __tmp; })();\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "use core::mem::replace;\npub fn f(value: &mut u32) -> u32 { return replace(value, 1); }\n",
+                None,
+            )
+            .unwrap(),
+            "export function f(value: number): number {\n  return ((() => { const __tmp = value; value = 1; return __tmp; })()) >>> 0;\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub fn f(flag: &mut bool, new_value: bool) -> bool { return std::mem::replace(flag, new_value); }\n",
+                None,
+            )
+            .unwrap(),
+            "export function f(flag: boolean, newValue: boolean): boolean {\n  return (() => { const __tmp = flag; flag = newValue; return __tmp; })();\n}\n"
         );
     }
 

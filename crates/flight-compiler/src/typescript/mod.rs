@@ -6742,9 +6742,18 @@ fn emit_expression_value(
                 });
             }
             if let Some(name) = std_mem_function(&call.func, entities) {
-                return Err(compile_error(format!(
-                    "portable `std::mem::{name}` has no portable lowering"
-                )));
+                return match name.as_str() {
+                    "replace" if call.args.len() == 2 => {
+                        let target = emit_expression(&call.args[0], entities)?;
+                        let replacement = emit_expression(&call.args[1], entities)?;
+                        Ok(format!(
+                            "(() => {{ const __tmp = {target}; {target} = {replacement}; return __tmp; }})()"
+                        ))
+                    }
+                    _ => Err(compile_error(format!(
+                        "portable `std::mem::{name}` has no portable lowering"
+                    ))),
+                };
             }
             if let Some((owner, variant, _)) = data_union_expression_variant(&call.func, entities) {
                 if data_union_unit(entities, &owner, &variant) || call.args.len() != 1 {
