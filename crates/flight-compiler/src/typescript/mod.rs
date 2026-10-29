@@ -11640,9 +11640,26 @@ fn emit_method_call(
         "find" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}.find({})", arguments[0]))
         }
-        "find" if arguments.len() == 1 => Err(compile_error(
-            "portable `.find()` requires a receiver known to be `String`, `str`, or a sequence",
-        )),
+        "find"
+            if arguments.len() == 1
+                && matches!(
+                    peel_reference_and_paren(&call.args[0]),
+                    Expr::Closure(_)
+                ) =>
+        {
+            Ok(format!("{receiver}.find({})", arguments[0]))
+        }
+        "find" if arguments.len() == 1 => {
+            let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            };
+            Ok(format!(
+                "((value: string, pattern: string): number | {absent} => {{ const index = value.indexOf(pattern); return index === -1 ? {absent} : index; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
         "find_map" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(

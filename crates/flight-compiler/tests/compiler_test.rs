@@ -3543,6 +3543,38 @@ pub fn first_even(values: &Vec<i32>) -> Option<i32> {
     }
 
     #[test]
+    fn lowers_find_by_argument_disambiguation() {
+        let source = r#"
+pub fn find_in_string(text: &str, pattern: &str) -> Option<usize> {
+    return text.find(pattern);
+}
+
+pub fn find_in_sequence(values: &Vec<i32>, predicate: fn(&i32) -> bool) -> Option<&i32> {
+    return values.find(predicate);
+}
+
+pub fn find_with_closure(items: Vec<i32>) -> Option<i32> {
+    return items.iter().find(|v| **v > 0).copied();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("indexOf(pattern)"),
+            "string .find() should lower to indexOf: {output}"
+        );
+        assert!(
+            output.contains("values.find(predicate)"),
+            "sequence .find() should lower to .find(): {output}"
+        );
+        assert!(
+            output.contains(".find((v)"),
+            "closure .find() should lower to .find(): {output}"
+        );
+    }
+
+    #[test]
     fn lowers_get_or_insert_with_on_option() {
         let source = r#"
 pub fn ensure(value: &mut Option<i32>) -> i32 {
