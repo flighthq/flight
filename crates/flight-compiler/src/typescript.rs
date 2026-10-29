@@ -1763,8 +1763,8 @@ fn resolve_owner_inner(
 }
 
 fn next_source_access(access: SourceAccess, from: &str, target: &str) -> SourceAccess {
-    if access == SourceAccess::Public {
-        return SourceAccess::Public;
+    if access == SourceAccess::Public || from == target {
+        return access;
     }
     let same_crate = module_identity_segments(from)
         .and_then(|from| {

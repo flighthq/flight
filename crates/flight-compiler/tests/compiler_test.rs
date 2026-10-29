@@ -4872,6 +4872,42 @@ pub fn all_present(holder: &Holder) -> bool {
     }
 
     #[test]
+    fn resolves_nullable_private_aliases_through_qualified_same_module_paths() {
+        let source = r#"//! flight-compiler: nullable-option Inner.contour
+
+pub struct Inner {
+    pub contour: Option<f64>,
+}
+
+type SharedInner = std::sync::Arc<Inner>;
+
+pub struct Holder {
+    pub self_qualified: self::SharedInner,
+    pub crate_qualified: crate::owner::SharedInner,
+}
+
+pub fn all_present(holder: &Holder) -> bool {
+    return holder.self_qualified.contour.is_some()
+        && holder.crate_qualified.contour.is_some();
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-share/src/owner.rs",
+                source,
+            },
+            None,
+            &[],
+            &[],
+        )
+        .unwrap();
+        for field in ["selfQualified", "crateQualified"] {
+            let expected = format!("((holder.{field}.contour) ?? undefined) !== undefined");
+            assert!(output.contains(&expected), "{expected}\n{output}");
+        }
+    }
+
+    #[test]
     fn converts_between_nullable_and_ordinary_options_at_every_boundary() {
         let source = r#"
 //! flight-compiler: nullable-option find_scale nullable_from_ordinary Explanation.contour
