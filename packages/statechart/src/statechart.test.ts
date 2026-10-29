@@ -41,12 +41,12 @@ function condition(inputIndex: number, comparison: StatechartComparison, value: 
 function createEmptyChart(): StatechartRaw {
   return {
     inputs: [],
-    name: null,
+    name: undefined,
     regions: [
       {
         initialStateIndex: 0,
-        name: null,
-        states: [{ kind: String(StatechartAtomicStateKind), name: null, transitions: [] }],
+        name: undefined,
+        states: [{ kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] }],
       },
     ],
   };
@@ -60,18 +60,18 @@ function createSingleTransitionChart(
 ): StatechartRaw {
   return {
     inputs: inputs,
-    name: null,
+    name: undefined,
     regions: [
       {
         initialStateIndex: 0,
-        name: null,
+        name: undefined,
         states: [
           {
             kind: String(StatechartAtomicStateKind),
-            name: null,
+            name: undefined,
             transitions: [transition(1, conditions, durationMs, exitTimeRatio)],
           },
-          { kind: String(StatechartAtomicStateKind), name: null, transitions: [] },
+          { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] },
         ],
       },
     ],
@@ -82,7 +82,7 @@ function createTwoRegionTriggerChart(): StatechartRaw {
   const triggerTransition = transition(1, [condition(0, 'GreaterThan', 999.0)], 0.0, -1.0);
   return {
     inputs: [{ initialValue: 0.0, kind: 'Trigger', name: 'go' }],
-    name: null,
+    name: undefined,
     regions: [createTriggerRegion(triggerTransition), createTriggerRegion(triggerTransition)],
   };
 }
@@ -90,10 +90,10 @@ function createTwoRegionTriggerChart(): StatechartRaw {
 function createTriggerRegion(transition: StatechartTransition): StatechartRegion {
   return {
     initialStateIndex: 0,
-    name: null,
+    name: undefined,
     states: [
-      { kind: String(StatechartAtomicStateKind), name: null, transitions: [transition] },
-      { kind: String(StatechartAtomicStateKind), name: null, transitions: [] },
+      { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [transition] },
+      { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] },
     ],
   };
 }
@@ -129,23 +129,23 @@ describe('advanceStatechartInstance', () => {
         { initialValue: 0.0, kind: 'Boolean', name: 'armed' },
         { initialValue: 2.0, kind: 'Number', name: 'speed' },
       ],
-      name: null,
+      name: undefined,
       regions: [
         {
           initialStateIndex: 0,
-          name: null,
+          name: undefined,
           states: [
             {
               kind: String(StatechartAtomicStateKind),
-              name: null,
+              name: undefined,
               transitions: [
                 transition(1, [condition(0, 'Equal', 1.0)], 0.0, -1.0),
                 transition(2, [condition(0, 'Equal', 0.0), condition(1, 'GreaterThan', 4.0)], 0.0, -1.0),
                 transition(1, [condition(0, 'Equal', 0.0), condition(1, 'LessThanOrEqual', 2.0)], 0.0, -1.0),
               ],
             },
-            { kind: String(StatechartAtomicStateKind), name: null, transitions: [] },
-            { kind: String(StatechartAtomicStateKind), name: null, transitions: [] },
+            { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] },
+            { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] },
           ],
         },
       ],
@@ -156,7 +156,7 @@ describe('advanceStatechartInstance', () => {
   });
   it('evaluates equal numeric comparison', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 3.0, kind: 'Number', name: null }],
+      [{ initialValue: 3.0, kind: 'Number', name: undefined }],
       [condition(0, 'Equal', 3.0)],
       0.0,
       -1.0,
@@ -165,7 +165,7 @@ describe('advanceStatechartInstance', () => {
   });
   it('evaluates greater than numeric comparison', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 3.0, kind: 'Number', name: null }],
+      [{ initialValue: 3.0, kind: 'Number', name: undefined }],
       [condition(0, 'GreaterThan', 2.0)],
       0.0,
       -1.0,
@@ -174,7 +174,7 @@ describe('advanceStatechartInstance', () => {
   });
   it('evaluates greater than or equal numeric comparison', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 3.0, kind: 'Number', name: null }],
+      [{ initialValue: 3.0, kind: 'Number', name: undefined }],
       [condition(0, 'GreaterThanOrEqual', 3.0)],
       0.0,
       -1.0,
@@ -183,7 +183,7 @@ describe('advanceStatechartInstance', () => {
   });
   it('evaluates less than numeric comparison', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 3.0, kind: 'Number', name: null }],
+      [{ initialValue: 3.0, kind: 'Number', name: undefined }],
       [condition(0, 'LessThan', 4.0)],
       0.0,
       -1.0,
@@ -192,7 +192,7 @@ describe('advanceStatechartInstance', () => {
   });
   it('evaluates less than or equal numeric comparison', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 3.0, kind: 'Number', name: null }],
+      [{ initialValue: 3.0, kind: 'Number', name: undefined }],
       [condition(0, 'LessThanOrEqual', 3.0)],
       0.0,
       -1.0,
@@ -201,7 +201,7 @@ describe('advanceStatechartInstance', () => {
   });
   it('evaluates not equal numeric comparison', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 3.0, kind: 'Number', name: null }],
+      [{ initialValue: 3.0, kind: 'Number', name: undefined }],
       [condition(0, 'NotEqual', 4.0)],
       0.0,
       -1.0,
@@ -232,23 +232,23 @@ describe('advanceStatechartInstance', () => {
   it('changes a region at most once per call even when the target has an immediate transition', () => {
     const chart: StatechartRaw = {
       inputs: [],
-      name: null,
+      name: undefined,
       regions: [
         {
           initialStateIndex: 0,
-          name: null,
+          name: undefined,
           states: [
             {
               kind: String(StatechartAtomicStateKind),
-              name: null,
+              name: undefined,
               transitions: [transition(1, [] as never[], 0.0, -1.0)],
             },
             {
               kind: String(StatechartAtomicStateKind),
-              name: null,
+              name: undefined,
               transitions: [transition(2, [] as never[], 0.0, -1.0)],
             },
-            { kind: String(StatechartAtomicStateKind), name: null, transitions: [] },
+            { kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] },
           ],
         },
       ],
@@ -272,18 +272,18 @@ describe('createStatechartInstance', () => {
   it('creates independent typed array actor state while retaining the immutable chart', () => {
     const chart: StatechartRaw = {
       inputs: [
-        { initialValue: -2.0, kind: 'Boolean', name: null },
-        { initialValue: 3.5, kind: 'Number', name: null },
-        { initialValue: 0.0, kind: 'Trigger', name: null },
+        { initialValue: -2.0, kind: 'Boolean', name: undefined },
+        { initialValue: 3.5, kind: 'Number', name: undefined },
+        { initialValue: 0.0, kind: 'Trigger', name: undefined },
       ],
       name: 'shared',
       regions: [
         {
           initialStateIndex: 1,
-          name: null,
+          name: undefined,
           states: [
-            { kind: String(StatechartNestedStateKind), name: null, transitions: [] },
-            { kind: 'acme.CustomState', name: null, transitions: [] },
+            { kind: String(StatechartNestedStateKind), name: undefined, transitions: [] },
+            { kind: 'acme.CustomState', name: undefined, transitions: [] },
           ],
         },
       ],
@@ -311,12 +311,12 @@ describe('createStatechartInstance', () => {
     expect(() => {
       const chart: StatechartRaw = {
         inputs: [],
-        name: null,
+        name: undefined,
         regions: [
           {
             initialStateIndex: 1,
-            name: null,
-            states: [{ kind: String(StatechartAtomicStateKind), name: null, transitions: [] }],
+            name: undefined,
+            states: [{ kind: String(StatechartAtomicStateKind), name: undefined, transitions: [] }],
           },
         ],
       };
@@ -326,14 +326,14 @@ describe('createStatechartInstance', () => {
   it('accepts nested and vendor prefixed state kinds without closed dispatch', () => {
     const chart: StatechartRaw = {
       inputs: [],
-      name: null,
+      name: undefined,
       regions: [
         {
           initialStateIndex: 0,
-          name: null,
+          name: undefined,
           states: [
-            { kind: String(StatechartNestedStateKind), name: null, transitions: [] },
-            { kind: 'vendor.Special', name: null, transitions: [] },
+            { kind: String(StatechartNestedStateKind), name: undefined, transitions: [] },
+            { kind: 'vendor.Special', name: undefined, transitions: [] },
           ],
         },
       ],
@@ -362,7 +362,7 @@ describe('explainStatechartTransition', () => {
   });
   it('identifies the first unmet condition', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 0.0, kind: 'Number', name: null }],
+      [{ initialValue: 0.0, kind: 'Number', name: undefined }],
       [condition(0, 'GreaterThan', 2.0)],
       0.0,
       -1.0,
@@ -409,7 +409,7 @@ describe('fireStatechartTrigger', () => {
   it('throws for an invalid index', () => {
     expect(() => {
       const chart = createSingleTransitionChart(
-        [{ initialValue: 0.0, kind: 'Number', name: null }],
+        [{ initialValue: 0.0, kind: 'Number', name: undefined }],
         [] as never[],
         0.0,
         -1.0,
@@ -421,7 +421,7 @@ describe('fireStatechartTrigger', () => {
   it('throws for non trigger input', () => {
     expect(() => {
       const chart = createSingleTransitionChart(
-        [{ initialValue: 0.0, kind: 'Number', name: null }],
+        [{ initialValue: 0.0, kind: 'Number', name: undefined }],
         [] as never[],
         0.0,
         -1.0,
@@ -439,7 +439,7 @@ describe('getStatechartInputIndex', () => {
         { initialValue: 0.0, kind: 'Number', name: 'speed' },
         { initialValue: 1.0, kind: 'Number', name: 'speed' },
       ],
-      name: null,
+      name: undefined,
       regions: [],
     } as const;
     expect(getStatechartInputIndex(chart, 'speed')).toEqual(0);
@@ -477,7 +477,7 @@ describe('initializeStatechartInstancePortable', () => {
 describe('setStatechartBooleanInput', () => {
   it('writes the boolean input vocabulary as numeric 0 1', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 0.0, kind: 'Boolean', name: null }],
+      [{ initialValue: 0.0, kind: 'Boolean', name: undefined }],
       [] as never[],
       0.0,
       -1.0,
@@ -491,7 +491,7 @@ describe('setStatechartBooleanInput', () => {
   it('throws for an invalid index', () => {
     expect(() => {
       const chart = createSingleTransitionChart(
-        [{ initialValue: 0.0, kind: 'Number', name: null }],
+        [{ initialValue: 0.0, kind: 'Number', name: undefined }],
         [] as never[],
         0.0,
         -1.0,
@@ -503,7 +503,7 @@ describe('setStatechartBooleanInput', () => {
   it('throws for non boolean input', () => {
     expect(() => {
       const chart = createSingleTransitionChart(
-        [{ initialValue: 0.0, kind: 'Number', name: null }],
+        [{ initialValue: 0.0, kind: 'Number', name: undefined }],
         [] as never[],
         0.0,
         -1.0,
@@ -517,7 +517,7 @@ describe('setStatechartBooleanInput', () => {
 describe('setStatechartNumberInput', () => {
   it('writes an exact numeric value', () => {
     const chart = createSingleTransitionChart(
-      [{ initialValue: 0.0, kind: 'Number', name: null }],
+      [{ initialValue: 0.0, kind: 'Number', name: undefined }],
       [] as never[],
       0.0,
       -1.0,
@@ -529,7 +529,7 @@ describe('setStatechartNumberInput', () => {
   it('throws for an invalid index', () => {
     expect(() => {
       const chart = createSingleTransitionChart(
-        [{ initialValue: 0.0, kind: 'Boolean', name: null }],
+        [{ initialValue: 0.0, kind: 'Boolean', name: undefined }],
         [] as never[],
         0.0,
         -1.0,
@@ -541,7 +541,7 @@ describe('setStatechartNumberInput', () => {
   it('throws for non number input', () => {
     expect(() => {
       const chart = createSingleTransitionChart(
-        [{ initialValue: 0.0, kind: 'Boolean', name: null }],
+        [{ initialValue: 0.0, kind: 'Boolean', name: undefined }],
         [] as never[],
         0.0,
         -1.0,

@@ -16582,6 +16582,82 @@ mod is_even_odd {
     }
 
     #[test]
+    fn stores_ordinary_option_fields_as_undefined_in_nullable_options_tests() {
+        let production = r#"
+//! flight-compiler: nullable-option Marked.contour
+
+pub struct Plain {
+    pub name: Option<String>,
+    pub count: i32,
+}
+
+pub struct Marked {
+    pub contour: Option<f64>,
+    pub label: Option<String>,
+}
+
+pub fn plain_count(plain: &Plain) -> i32 {
+    return plain.count;
+}
+"#;
+        let source = r#"
+//! flight-compiler: nullable-options
+use flight_pairs::*;
+
+fn make_plain(name: Option<String>) -> Plain {
+    return Plain { name: name, count: 0 };
+}
+
+mod plain_count {
+    use super::*;
+
+    #[test]
+    fn counts_plain_and_marked_literals() {
+        let plain = Plain { name: None, count: 1 };
+        let named = Plain { name: Some("a".to_string()), count: 2 };
+        let marked = Marked { contour: None, label: None };
+        assert_eq!(plain_count(&plain), 1);
+        assert_eq!(plain_count(&named), 2);
+        assert_eq!(plain_count(&make_plain(None)), 0);
+        assert!(marked.contour.is_none());
+    }
+}
+"#;
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/pairs/contract", &[production])
+                .unwrap();
+
+        assert!(
+            output.contains("{ name: (name) ?? undefined, count: 0 }"),
+            "{output}"
+        );
+        assert!(output.contains("{ name: undefined, count: 1 }"), "{output}");
+        assert!(output.contains("{ name: \"a\", count: 2 }"), "{output}");
+        assert!(
+            output.contains("{ contour: null, label: undefined }"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn keeps_null_for_private_structs_of_nullable_options_sources() {
+        let source = r#"//! flight-compiler: nullable-options
+
+struct Runtime {
+    guard: Option<f64>,
+}
+
+pub fn guard_or(fallback: f64) -> f64 {
+    let runtime = Runtime { guard: None };
+    return runtime.guard.unwrap_or(fallback);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("{ guard: null }"), "{output}");
+        assert!(!output.contains("guard: undefined"), "{output}");
+    }
+
+    #[test]
     fn keeps_own_crate_items_off_a_foreign_wildcard_import() {
         let production = r#"
 pub type PairContour = Vec<f64>;

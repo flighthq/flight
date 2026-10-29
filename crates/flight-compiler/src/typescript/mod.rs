@@ -281,6 +281,9 @@ const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
 // `{source}␟{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is declared or
 // built by literal.
 pub(super) const NULLABLE_OPTION_LITERAL_FIELD_MARKER: &str = "@nullable-option-literal-field:";
+// `{module}` for each source declaring module-wide `nullable-options`: every `Option` its structs
+// declare is `T | null`.
+const NULLABLE_OPTIONS_SOURCE_MARKER: &str = "@nullable-options-source:";
 
 // A function whose `Option` return is designated `nullable-option`: its returns use `null`.
 pub(super) const RETURNS_NULLABLE_MARKER: &str = "@returns-nullable";
@@ -1900,6 +1903,38 @@ fn initializes_resolved_readonly_entity(function: &ItemFn, context: &HashSet<Str
         return false;
     };
     return context.contains(&format!("{READONLY_ENTITY_MARKER}{identity}"));
+}
+
+// Whether a literal of the struct `identity`, built inside a `nullable-options` source (where `None` is
+// `null`), stores `field` as `undefined`: an `Option` field its struct declares, outside any
+// `nullable-options` source and with no nullable designation, which TypeScript types as optional
+// (`field?: T`).
+fn is_ordinary_option_literal_field(
+    entities: &HashSet<String>,
+    identity: &str,
+    field: &syn::Ident,
+) -> bool {
+    if !entities.contains(NULLABLE_OPTIONS_MARKER)
+        || identity
+            .rsplit_once(PROVENANCE_SEPARATOR)
+            .is_none_or(|(module, _)| {
+                entities.contains(&format!("{NULLABLE_OPTIONS_SOURCE_MARKER}{module}"))
+            })
+    {
+        return false;
+    }
+    let option_field = format!(
+        "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}{PROVENANCE_SEPARATOR}"
+    );
+    return entities
+        .iter()
+        .any(|marker| marker.starts_with(&option_field))
+        && !entities.contains(&format!(
+            "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}"
+        ))
+        && !entities.contains(&format!(
+            "{NULLABLE_OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}"
+        ));
 }
 
 // Whether a literal of the struct `identity` stores `field` as `null`: a `nullable-option` field, or,
@@ -5899,8 +5934,11 @@ fn generation_context_with_types(
             .iter()
             .map(|entity| format!("{SHARED_IDENTITY_ENTITY_MARKER}{entity}")),
     );
-    for (_, program) in programs {
+    for (module, program) in programs {
         insert_typed_array_constant_context(&mut context, &program.constants);
+        if program.nullable_options {
+            context.insert(format!("{NULLABLE_OPTIONS_SOURCE_MARKER}{module}"));
+        }
     }
     for (module, program) in programs {
         for structure in &program.structs {
@@ -8552,9 +8590,14 @@ fn emit_expression_value(
                         };
                         if let syn::Member::Named(field_name) = &field.member
                             && let Some(identity) = &structure_identity
-                            && is_nullable_literal_field(entities, identity, field_name)
                         {
-                            value = nullable_option_value(&field.expr, value);
+                            if is_nullable_literal_field(entities, identity, field_name) {
+                                value = nullable_option_value(&field.expr, value);
+                            } else if is_ordinary_option_literal_field(
+                                entities, identity, field_name,
+                            ) {
+                                value = ordinary_option_value(&field.expr, value);
+                            }
                         }
                         Ok(format!("{}: {value}", emit_member(&field.member)))
                     })
@@ -8745,13 +8788,20 @@ fn emit_contextual_struct_literal_expression(
                                 path: structure.path.clone(),
                             }),
                         );
-                        let value = if let syn::Member::Named(field_name) = &field.member
-                            && let Some(identity) = literal_identity
-                            && is_nullable_literal_field(entities, &identity, field_name)
-                        {
-                            nullable_option_value(&field.expr, value)
-                        } else {
-                            value
+                        let value = match (&field.member, literal_identity) {
+                            (syn::Member::Named(field_name), Some(identity))
+                                if is_nullable_literal_field(entities, &identity, field_name) =>
+                            {
+                                nullable_option_value(&field.expr, value)
+                            }
+                            (syn::Member::Named(field_name), Some(identity))
+                                if is_ordinary_option_literal_field(
+                                    entities, &identity, field_name,
+                                ) =>
+                            {
+                                ordinary_option_value(&field.expr, value)
+                            }
+                            _ => value,
                         };
                         Ok(format!("{}: {value}", emit_member(&field.member)))
                     })
@@ -12757,6 +12807,25 @@ fn nullable_guard_types(
 
 // The `T | null` value of an `Option` expression whose emitted form is `emitted`: `None` is `null`,
 // `Some(x)` is `x`, and any other `Option` value (absent as `undefined`) coalesces to `null`.
+// The ordinary (`undefined`-absent) value of an `Option` expression emitted in a `nullable-options`
+// source, where `None` and absent values are `null`.
+fn ordinary_option_value(expression: &Expr, emitted: String) -> String {
+    let expression = match expression {
+        Expr::Group(group) => group.expr.as_ref(),
+        Expr::Paren(paren) => paren.expr.as_ref(),
+        expression => expression,
+    };
+    if expression_is_path(expression, "None") {
+        return "undefined".to_string();
+    }
+    if let Expr::Call(call) = expression
+        && expression_is_path(&call.func, "Some")
+    {
+        return emitted;
+    }
+    return format!("({emitted}) ?? undefined");
+}
+
 fn nullable_option_value(expression: &Expr, emitted: String) -> String {
     let expression = match expression {
         Expr::Group(group) => group.expr.as_ref(),
