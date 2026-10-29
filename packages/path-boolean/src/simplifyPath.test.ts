@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest';
 import { createMartinezPathBooleanKernel, simplifyPath } from './contract.ts';
 import type { PathBooleanOptions } from './contract.ts';
 
-const BOWTIE: Readonly<number[]> = [0.0, 0.0, 2.0, 2.0, 2.0, 0.0, 0.0, 2.0];
+const BOWTIE: Float64Array = new Float64Array([0.0, 0.0, 2.0, 2.0, 2.0, 0.0, 0.0, 2.0]);
 
-const UNIT_SQUARE: Readonly<number[]> = [0.0, 0.0, 3.0, 0.0, 3.0, 3.0, 0.0, 3.0];
+const UNIT_SQUARE: Float64Array = new Float64Array([0.0, 0.0, 3.0, 0.0, 3.0, 3.0, 0.0, 3.0]);
 
 function flattenedPath(path: Readonly<Path>, tolerance: number | undefined): number[][] {
   const out = flattenPath(path, tolerance);
@@ -88,7 +88,7 @@ function pentagramPath(radius: number): Path {
 describe('simplifyPath', () => {
   it('writes into an existing output using a distinct source snapshot', () => {
     const kernel = createMartinezPathBooleanKernel();
-    let path = polygonPath(BOWTIE);
+    let path = polygonPath(Array.from(BOWTIE));
     const pathClone = path;
     simplifyPath(path, kernel, pathClone, undefined);
     expect(ringCount(path)).toEqual(2);
@@ -97,7 +97,7 @@ describe('simplifyPath', () => {
   it('resolves a self intersecting bowtie into two triangles', () => {
     const kernel = createMartinezPathBooleanKernel();
     let out = createPath('nonZero');
-    simplifyPath(out, kernel, polygonPath(BOWTIE), undefined);
+    simplifyPath(out, kernel, polygonPath(Array.from(BOWTIE)), undefined);
     expect(ringCount(out)).toEqual(2);
     expect(Math.abs(pathArea(out) - 2.0) < 5e-7).toBe(true);
   });
@@ -157,7 +157,7 @@ describe('simplifyPath', () => {
   it('passes an already simple convex path through unchanged', () => {
     const kernel = createMartinezPathBooleanKernel();
     let out = createPath('nonZero');
-    simplifyPath(out, kernel, polygonPath(UNIT_SQUARE), undefined);
+    simplifyPath(out, kernel, polygonPath(Array.from(UNIT_SQUARE)), undefined);
     expect(ringCount(out)).toEqual(1);
     expect(Math.abs(pathArea(out) - 9.0) < 5e-7).toBe(true);
     const [minX, minY, maxX, maxY] = pathBounds(out);

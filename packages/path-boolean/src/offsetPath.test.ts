@@ -23,7 +23,7 @@ import {
 } from './contract.ts';
 import type { PathBooleanOptions, PathOffsetOptions } from './contract.ts';
 
-const UNIT_SQUARE: Readonly<number[]> = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+const UNIT_SQUARE: Float64Array = new Float64Array([0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0]);
 
 function flattenedPath(path: Readonly<Path>, tolerance: number | undefined): number[][] {
   const out = flattenPath(path, tolerance);
@@ -133,7 +133,7 @@ describe('offsetPath', () => {
   it('inflates a closed square by delta on every side with a miter join', () => {
     const kernel = createMartinezPathBooleanKernel();
     let out = createPath('nonZero');
-    offsetPath(out, kernel, polygonPath(UNIT_SQUARE, true), 1.0, undefined);
+    offsetPath(out, kernel, polygonPath(Array.from(UNIT_SQUARE), true), 1.0, undefined);
     const [minX, minY, maxX, maxY] = pathBounds(out);
     expect(Math.abs(minX - -1.0) < 5e-7).toBe(true);
     expect(Math.abs(minY - -1.0) < 5e-7).toBe(true);
@@ -155,7 +155,7 @@ describe('offsetPath', () => {
   it('emits an empty path when deflation collapses the region', () => {
     const kernel = createMartinezPathBooleanKernel();
     let out = createPath('nonZero');
-    offsetPath(out, kernel, polygonPath(UNIT_SQUARE, true), -1.0, undefined);
+    offsetPath(out, kernel, polygonPath(Array.from(UNIT_SQUARE), true), -1.0, undefined);
     expect(out.commands.length).toEqual(0);
     expect(Math.abs(pathArea(out) - 0.0) < 5e-7).toBe(true);
   });
@@ -169,7 +169,7 @@ describe('offsetPath', () => {
       arcTolerance: undefined,
     } as const;
     let out = createPath('nonZero');
-    offsetPath(out, kernel, polygonPath(UNIT_SQUARE, true), 1.0, opts);
+    offsetPath(out, kernel, polygonPath(Array.from(UNIT_SQUARE), true), 1.0, opts);
     const [minX, , maxX] = pathBounds(out);
     expect(Math.abs(minX - -1.0) < 5e-7).toBe(true);
     expect(Math.abs(maxX - 2.0) < 5e-7).toBe(true);
@@ -185,7 +185,7 @@ describe('offsetPath', () => {
       arcTolerance: undefined,
     } as const;
     let out = createPath('nonZero');
-    offsetPath(out, kernel, polygonPath(UNIT_SQUARE, true), 1.0, opts);
+    offsetPath(out, kernel, polygonPath(Array.from(UNIT_SQUARE), true), 1.0, opts);
     const [minX, , maxX] = pathBounds(out);
     expect(Math.abs(minX - -1.0) < 5e-7).toBe(true);
     expect(Math.abs(maxX - 2.0) < 5e-7).toBe(true);
@@ -197,7 +197,7 @@ describe('offsetPath', () => {
       arcTolerance: 0.001,
     } as const;
     let fine = createPath('nonZero');
-    offsetPath(fine, kernel, polygonPath(UNIT_SQUARE, true), 1.0, fineOpts);
+    offsetPath(fine, kernel, polygonPath(Array.from(UNIT_SQUARE), true), 1.0, fineOpts);
     const fineArea = pathArea(fine);
     expect(Math.abs(fineArea - (5.0 + Math.PI)) < 0.2).toBe(true);
   });
@@ -237,7 +237,7 @@ describe('offsetPath', () => {
       arcTolerance: undefined,
     } as const;
     let out = createPath('nonZero');
-    offsetPath(out, kernel, polygonPath(UNIT_SQUARE, true), 1.0, opts);
+    offsetPath(out, kernel, polygonPath(Array.from(UNIT_SQUARE), true), 1.0, opts);
     const [minX, , maxX] = pathBounds(out);
     expect(Math.abs(minX - -1.0) < 5e-7).toBe(true);
     expect(Math.abs(maxX - 2.0) < 5e-7).toBe(true);
@@ -250,7 +250,7 @@ describe('offsetPath', () => {
       arcTolerance: undefined,
     } as const;
     let bevel = createPath('nonZero');
-    offsetPath(bevel, kernel, polygonPath(UNIT_SQUARE, true), 1.0, bevelOpts);
+    offsetPath(bevel, kernel, polygonPath(Array.from(UNIT_SQUARE), true), 1.0, bevelOpts);
     expect(pathArea(out) > pathArea(bevel)).toBe(true);
   });
   it('cleans a concave corner into a single valid outline', () => {

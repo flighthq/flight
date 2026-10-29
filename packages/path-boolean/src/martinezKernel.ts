@@ -239,8 +239,8 @@ function classifySegments(
   unique: Readonly<UniqueSegment[]>,
   operation: PathBooleanOperation,
   fillRule: PathBooleanFillRule,
-): Array<readonly [number, number, number, number]> {
-  let kept: Array<readonly [number, number, number, number]> = [] as never[];
+): Float64Array[] {
+  let kept: Float64Array[] = [] as never[];
   for (const seg of unique) {
     const mx = (seg.ax + seg.bx) / 2.0;
     const my = (seg.ay + seg.by) / 2.0;
@@ -263,9 +263,9 @@ function classifySegments(
       continue;
     }
     if (filledLeft) {
-      kept.push([seg.ax, seg.ay, seg.bx, seg.by]);
+      kept.push(new Float64Array([seg.ax, seg.ay, seg.bx, seg.by]));
     } else {
-      kept.push([seg.bx, seg.by, seg.ax, seg.ay]);
+      kept.push(new Float64Array([seg.bx, seg.by, seg.ax, seg.ay]));
     }
   }
   return kept;
@@ -426,12 +426,7 @@ function computeVertexSnap(subject: Readonly<number[][]>, clip: Readonly<number[
 /**
  * `from` and `to` are snapped-vertex ids in first-occurrence order (see `firstOccurrenceIds`).
  */
-function directedGraphAddEdge(
-  graph: DirectedGraph,
-  from: number,
-  to: number,
-  edge: Readonly<readonly [number, number, number, number]>,
-): void {
+function directedGraphAddEdge(graph: DirectedGraph, from: number, to: number, edge: Readonly<Float64Array>): void {
   from = directedGraphVertex(graph, from, edge[0], edge[1]);
   to = directedGraphVertex(graph, to, edge[2], edge[3]);
   if (from === to) {
@@ -1062,7 +1057,7 @@ function snappedKeysEqual(keys: Readonly<number[]>, stride: number, a: number, b
   return true;
 }
 
-function traceRings(edges: Readonly<Array<readonly [number, number, number, number]>>, vertexSnap: number): number[][] {
+function traceRings(edges: Readonly<Float64Array[]>, vertexSnap: number): number[][] {
   let keys: number[] = [] as never[];
   for (const e of edges) {
     keys.push(snap(e[0], vertexSnap));

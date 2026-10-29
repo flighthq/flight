@@ -65,9 +65,9 @@ function randomSimplePolygon(random: FuzzRandom, count: number): number[] {
 }
 
 function randomConvexPolygon(random: FuzzRandom, count: number): number[] {
-  let points: Array<readonly [number, number]> = [] as never[];
+  let points: Float64Array[] = [] as never[];
   for (let _ = 0; _ < count; _ += 1) {
-    points.push([10.0 + nextRandom(random) * 80.0, 10.0 + nextRandom(random) * 80.0]);
+    points.push(new Float64Array([10.0 + nextRandom(random) * 80.0, 10.0 + nextRandom(random) * 80.0]));
   }
   return convexHull(points);
 }
@@ -81,15 +81,11 @@ function randomMessyPolygon(random: FuzzRandom, count: number): number[] {
   return vertices;
 }
 
-function hullCross(
-  o: Readonly<readonly [number, number]>,
-  a: Readonly<readonly [number, number]>,
-  b: Readonly<readonly [number, number]>,
-): number {
+function hullCross(o: Readonly<Float64Array>, a: Readonly<Float64Array>, b: Readonly<Float64Array>): number {
   return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
 }
 
-function convexHull(points: Readonly<Array<readonly [number, number]>>): number[] {
+function convexHull(points: Readonly<Float64Array[]>): number[] {
   let sorted = [...points];
   sorted.sort((a, b) => {
     if (a[0] !== b[0]) {
@@ -97,7 +93,7 @@ function convexHull(points: Readonly<Array<readonly [number, number]>>): number[
     }
     return a[1] - b[1]!;
   });
-  let lower: Array<readonly [number, number]> = [] as never[];
+  let lower: Float64Array[] = [] as never[];
   let lowerLength: number = 0;
   for (const p of sorted) {
     while (lowerLength >= 2 && hullCross(lower[lowerLength - 2], lower[lowerLength - 1], p) <= 0.0) {
@@ -110,7 +106,7 @@ function convexHull(points: Readonly<Array<readonly [number, number]>>): number[
     }
     lowerLength += 1;
   }
-  let upper: Array<readonly [number, number]> = [] as never[];
+  let upper: Float64Array[] = [] as never[];
   let upperLength: number = 0;
   let i = sorted.length;
   while (i > 0) {

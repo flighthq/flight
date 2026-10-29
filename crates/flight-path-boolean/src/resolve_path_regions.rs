@@ -8,13 +8,12 @@ mod sugar_tests {
     use flight_path::create_path;
 
     use crate::contract::*;
-    use flight_path::PathWinding;
 
     #[test]
     fn kernel_resolve_path_regions_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(Some(PathWinding::NonZero));
-        let mut ob = create_path(Some(PathWinding::NonZero));
+        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
         k.resolve_path_regions(
             &mut oa,
             &[
