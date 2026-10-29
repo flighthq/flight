@@ -2979,6 +2979,7 @@ pub struct Kernel {
     runtime: EntityRuntimeSlot,
     pub scale: f64,
     pub tags: Vec<f64>,
+    pub weight: f64,
 }
 
 pub type KernelScale = f64;
@@ -3004,8 +3005,8 @@ pub fn create_kernel() -> Kernel {
 pub fn create_scaled_kernel(scale: f64) -> Kernel {
     let mut out: Kernel = allocate_entity();
     out.scale = scale;
-    out.tags = vec![scale];
-    out.tags.push(scale * 2.0);
+    out.tags = Vec::new();
+    out.weight = scale * 2.0 - 0.5 / 4.0;
     return out;
 }
 
@@ -3114,19 +3115,19 @@ pub fn get_kernel(kernel: Option<&Kernel>) -> &Kernel {
             ),
             (
                 "use std::sync::atomic::{AtomicU32, Ordering};\n\nstatic CREATED: AtomicU32 = AtomicU32::new(0);\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_counted_kernel);\n\npub fn create_counted_kernel() -> Kernel {\n    CREATED.fetch_add(1, Ordering::SeqCst);\n    return Kernel { scale: 1.0 };\n}\n".to_string(),
-                unsafe_initializer("KERNEL", "it calls `.fetch_add()`"),
+                unsafe_initializer("KERNEL", "it calls `.fetch_add()`, and a method name does not prove which operation its receiver performs"),
             ),
             (
                 "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: read_scale() });\n\npub fn read_scale() -> f64 {\n    return flight_math::random();\n}\n".to_string(),
                 unsafe_initializer("KERNEL", "it calls `flight_math::random`, which is not a side-effect-free function of this crate"),
             ),
             (
-                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| {\n    let scales = vec![1.0];\n    return Kernel { scale: scales[0] };\n});\n".to_string(),
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: first_scale(&[1.0]) });\n\npub fn first_scale(scales: &[f64]) -> f64 {\n    return scales[0];\n}\n".to_string(),
                 unsafe_initializer("KERNEL", "it indexes, which can panic"),
             ),
             (
                 "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: Some(1.0).unwrap() });\n".to_string(),
-                unsafe_initializer("KERNEL", "it calls `.unwrap()`"),
+                unsafe_initializer("KERNEL", "it calls `.unwrap()`, and a method name does not prove which operation its receiver performs"),
             ),
             (
                 "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| {\n    let label = format!(\"created\");\n    return Kernel { scale: label.len() as f64 };\n});\n".to_string(),
@@ -3143,6 +3144,42 @@ pub fn get_kernel(kernel: Option<&Kernel>) -> &Kernel {
             (
                 "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: LIMIT });\n\npub static LIMIT: f64 = 2.0;\n".to_string(),
                 unsafe_initializer("KERNEL", "it reads `LIMIT`, which is not a `LazyLock` or immutable primitive static declared before it"),
+            ),
+            (
+                "pub struct Tally {\n    pub count: i32,\n}\n\npub static TALLY: LazyLock<Tally> = LazyLock::new(|| Tally { count: 1 / 0 });\n".to_string(),
+                unsafe_initializer("TALLY", "it applies `/` to operands not proven to be floating point, and integer arithmetic can panic or wrap differently in Rust"),
+            ),
+            (
+                "pub struct Tally {\n    pub count: i32,\n}\n\npub static TALLY: LazyLock<Tally> = LazyLock::new(make_tally);\n\npub fn make_tally() -> Tally {\n    let divisor = 0;\n    return Tally { count: 7 % divisor };\n}\n".to_string(),
+                unsafe_initializer("TALLY", "it applies `%` to operands not proven to be floating point, and integer arithmetic can panic or wrap differently in Rust"),
+            ),
+            (
+                "pub struct Tally {\n    pub count: i32,\n}\n\npub static TALLY: LazyLock<Tally> = LazyLock::new(|| Tally { count: 2147483647 + 1 });\n".to_string(),
+                unsafe_initializer("TALLY", "it applies `+` to operands not proven to be floating point, and integer arithmetic can panic or wrap differently in Rust"),
+            ),
+            (
+                "pub struct Tally {\n    pub count: i32,\n}\n\npub static TALLY: LazyLock<Tally> = LazyLock::new(|| Tally { count: 1 << 31 });\n".to_string(),
+                unsafe_initializer("TALLY", "it applies `<<` to operands not proven to be floating point, and integer arithmetic can panic or wrap differently in Rust"),
+            ),
+            (
+                "use std::sync::atomic::{AtomicU32, Ordering};\n\nstatic CLONES: AtomicU32 = AtomicU32::new(0);\n\npub struct Seed {\n    pub scale: f64,\n}\n\nimpl Clone for Seed {\n    fn clone(&self) -> Seed {\n        CLONES.fetch_add(1, Ordering::SeqCst);\n        return Seed { scale: self.scale };\n    }\n}\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| {\n    let seed = Seed { scale: 1.0 };\n    return Kernel { scale: seed.clone().scale };\n});\n".to_string(),
+                unsafe_initializer("KERNEL", "it calls `.clone()`, and a method name does not prove which operation its receiver performs"),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: scale_of(&[1.0, 2.0]) });\n\npub fn scale_of(scales: &[f64]) -> f64 {\n    return if scales.len() > 1 { 2.0 } else { 1.0 };\n}\n".to_string(),
+                unsafe_initializer("KERNEL", "it calls `.len()`, and a method name does not prove which operation its receiver performs"),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: 1 as f64 });\n".to_string(),
+                unsafe_initializer("KERNEL", "it casts with `as`, which converts differently in Rust"),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: -create_kernel().scale });\n".to_string(),
+                unsafe_initializer("KERNEL", "it applies `-` to an operand not proven to be floating point"),
+            ),
+            (
+                "pub struct Vec {\n    pub length: f64,\n}\n\nimpl Vec {\n    pub fn new() -> Vec {\n        return Vec { length: 0.0 };\n    }\n}\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| {\n    let values = Vec::new();\n    return Kernel { scale: values.length };\n});\n".to_string(),
+                unsafe_initializer("KERNEL", "it calls `Vec::new`, which is not a side-effect-free function of this crate"),
             ),
             (
                 "//! flight-compiler: export-name KERNEL sharedKernel\nstatic KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n".to_string(),
@@ -3164,12 +3201,76 @@ pub fn get_kernel(kernel: Option<&Kernel>) -> &Kernel {
             );
         }
 
+        let auditor_repros = [
+            (
+                r#"
+use std::sync::LazyLock;
+
+pub struct Kernel {
+    pub scale: i32,
+}
+
+pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| create_kernel(0));
+
+pub fn create_kernel(divisor: i32) -> Kernel {
+    return Kernel { scale: 1 / divisor };
+}
+"#,
+                "it applies `/` to operands not proven to be floating point, and integer arithmetic can panic or wrap differently in Rust",
+            ),
+            (
+                r#"
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::LazyLock;
+
+static CLONES: AtomicU32 = AtomicU32::new(0);
+
+pub struct Seed {
+    pub scale: f64,
+}
+
+impl Clone for Seed {
+    fn clone(&self) -> Self {
+        CLONES.fetch_add(1, Ordering::SeqCst);
+        Self { scale: self.scale }
+    }
+}
+
+pub struct Kernel {
+    pub scale: f64,
+}
+
+pub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);
+
+pub fn create_kernel() -> Kernel {
+    let seed = Seed { scale: 1.0 };
+    let cloned = seed.clone();
+    return Kernel { scale: cloned.scale };
+}
+
+pub fn get_clones() -> u32 {
+    return CLONES.fetch_add(0, Ordering::SeqCst);
+}
+"#,
+                "it calls `.clone()`, and a method name does not prove which operation its receiver performs",
+            ),
+        ];
+        for (source, reason) in auditor_repros {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                unsafe_initializer("KERNEL", reason)
+            );
+        }
+
         let ordered = format!(
-            "{declarations}\npub static LIMIT: f64 = 2.0;\n\npub static FIRST: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub static SECOND: LazyLock<Kernel> = LazyLock::new(|| Kernel {{ scale: FIRST.scale + LIMIT }});\n"
+            "{declarations}\npub static LIMIT: f64 = 2.0;\n\npub static FIRST: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub static SECOND: LazyLock<Kernel> = LazyLock::new(|| Kernel {{ scale: FIRST.scale * 1.0 + LIMIT * -0.5 }});\n\npub static THIRD: LazyLock<Kernel> = LazyLock::new(|| {{\n    let mut unused: Option<Vec<f64>> = Some(Vec::new());\n    unused = None;\n    return Kernel {{ scale: 1.0 / 3.0 + -2.0 }};\n}});\n"
         );
         let output = compile_typescript(&ordered, None).unwrap();
         assert!(output.contains("export const FIRST: Kernel = createKernel();\n"));
-        assert!(output.contains("export const SECOND: Kernel = { scale: FIRST.scale + LIMIT };\n"));
+        assert!(output.contains(
+            "export const SECOND: Kernel = { scale: FIRST.scale * 1.0 + LIMIT * -0.5 };\n"
+        ));
+        assert!(output.contains("export const THIRD: Kernel = (() => {\n"));
     }
 
     #[test]

@@ -5432,6 +5432,31 @@ pub(crate) fn is_transparent_data_union_variant(
     return data_union_variant_categories(entities, owner, variant).is_some();
 }
 
+// Whether Rust types `expression` as floating point by its form alone: a float literal (`2.0`,
+// `2f64`), or parentheses, negation or `+ - * / %` around an operand that is. Rust requires both
+// operands of an arithmetic operator to share a type, so one proven-float operand types the whole.
+fn is_proven_float(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Group(group) => is_proven_float(&group.expr),
+        Expr::Paren(paren) => is_proven_float(&paren.expr),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Neg(_)) => is_proven_float(&unary.expr),
+        Expr::Binary(binary)
+            if matches!(
+                binary.op,
+                BinOp::Add(_) | BinOp::Div(_) | BinOp::Mul(_) | BinOp::Rem(_) | BinOp::Sub(_)
+            ) =>
+        {
+            is_proven_float(&binary.left) || is_proven_float(&binary.right)
+        }
+        Expr::Lit(literal) => match &literal.lit {
+            Lit::Float(_) => true,
+            Lit::Int(integer) => matches!(integer.suffix(), "f32" | "f64"),
+            _ => false,
+        },
+        _ => false,
+    };
+}
+
 fn is_tagged_data_union_variant(entities: &HashSet<String>, owner: &str, variant: &str) -> bool {
     return entities.contains(&format!(
         "{TAGGED_DATA_UNION_VARIANT_MARKER}{owner}:{variant}"
@@ -6044,14 +6069,17 @@ fn reject_unresolved_pattern_field(
 }
 
 // A `LazyLock` static lowers to an eagerly initialized constant, so its initializer must be provably
-// unobservable to run at module load instead of at first access: through the same-crate functions it
-// calls, it may only build values (entity allocation, records, literals, `Vec`/`Ref`/`RwLock`/`Arc`/
-// `Box`/`String` constructors, `Some`, `vec!`), call a small set of pure methods, and read statics
-// this module declares before it that are `LazyLock`s or immutable primitives. Any read of another
-// static (an atomic counter or other interior-mutable value included),
-// dependency or host call, indexing, `unwrap`, `?`, other macro or `unsafe` block could observe the
-// earlier timing or panic early, so it fails closed. The initializer must also name an emitted free
-// function: an associated path such as `Kernel::default` has no TypeScript value.
+// unobservable to run at module load instead of at first access. Through the same-crate functions it
+// calls, it may only build values (entity allocation, records, literals, `Some`, and `new` of the
+// standard `Vec`/`Ref`/`RwLock`/`Arc`/`Box`/`String` when no crate item shadows that name), read and
+// assign fields, compare, do arithmetic with a floating-point literal operand (Rust then types the
+// whole operation as a float, whose IEEE semantics TypeScript shares and which cannot panic), and
+// read statics this module declares before it that are `LazyLock`s or immutable primitives. Method
+// calls (whose receiver type is not proven here, so a name says nothing about the operation), macros,
+// casts, other arithmetic or bitwise operators (integer division, remainder and overflow panic in
+// Rust but not in TypeScript), negation or `!` of non-literals, reads of other statics, dependency or
+// host calls, indexing, `?` and `unsafe` all fail closed. The initializer must also name an emitted
+// free function: an associated path such as `Kernel::default` has no TypeScript value.
 fn reject_unsafe_lazy_lock_initializers(
     program: &Program,
     programs: &[&Program],
@@ -6062,6 +6090,7 @@ fn reject_unsafe_lazy_lock_initializers(
         readable_statics: &'a BTreeSet<String>,
         other_statics: &'a BTreeSet<String>,
         pending: Vec<String>,
+        shadowed: &'a BTreeSet<String>,
         static_name: &'a str,
     }
     impl EagerSafety<'_> {
@@ -6088,12 +6117,16 @@ fn reject_unsafe_lazy_lock_initializers(
                 .collect::<Vec<_>>();
             let name = segments.last().cloned().unwrap_or_default();
             let constructor = match segments.as_slice() {
-                [only] => matches!(only.as_str(), "allocate_entity" | "Some"),
+                [only] => {
+                    matches!(only.as_str(), "allocate_entity" | "Some")
+                        && !self.shadowed.contains(only)
+                }
                 [.., owner, member] => {
                     matches!(
                         owner.as_str(),
                         "Arc" | "Box" | "Ref" | "RwLock" | "String" | "Vec"
                     ) && member == "new"
+                        && !self.shadowed.contains(owner)
                         || owner == "flight_entity" && member == "allocate_entity"
                 }
                 [] => false,
@@ -6122,19 +6155,67 @@ fn reject_unsafe_lazy_lock_initializers(
             self.reject("it indexes, which can panic".to_string());
         }
 
-        fn visit_expr_macro(&mut self, expression: &'ast syn::ExprMacro) {
-            if !expression.mac.path.is_ident("vec") {
+        fn visit_expr_binary(&mut self, binary: &'ast syn::ExprBinary) {
+            let arithmetic = matches!(
+                binary.op,
+                BinOp::Add(_)
+                    | BinOp::AddAssign(_)
+                    | BinOp::Div(_)
+                    | BinOp::DivAssign(_)
+                    | BinOp::Mul(_)
+                    | BinOp::MulAssign(_)
+                    | BinOp::Rem(_)
+                    | BinOp::RemAssign(_)
+                    | BinOp::Sub(_)
+                    | BinOp::SubAssign(_)
+            );
+            let bitwise = matches!(
+                binary.op,
+                BinOp::BitAnd(_)
+                    | BinOp::BitAndAssign(_)
+                    | BinOp::BitOr(_)
+                    | BinOp::BitOrAssign(_)
+                    | BinOp::BitXor(_)
+                    | BinOp::BitXorAssign(_)
+                    | BinOp::Shl(_)
+                    | BinOp::ShlAssign(_)
+                    | BinOp::Shr(_)
+                    | BinOp::ShrAssign(_)
+            );
+            if bitwise
+                || arithmetic && !is_proven_float(&binary.left) && !is_proven_float(&binary.right)
+            {
                 self.reject(format!(
-                    "it invokes `{}!`",
-                    expression
-                        .mac
-                        .path
-                        .segments
-                        .last()
-                        .map(|segment| segment.ident.to_string())
-                        .unwrap_or_default()
+                    "it applies `{}` to operands not proven to be floating point, and integer arithmetic can panic or wrap differently in Rust",
+                    binary.op.to_token_stream()
                 ));
+                return;
             }
+            syn::visit::visit_expr_binary(self, binary);
+        }
+
+        fn visit_expr_cast(&mut self, _cast: &'ast syn::ExprCast) {
+            self.reject("it casts with `as`, which converts differently in Rust".to_string());
+        }
+
+        fn visit_expr_macro(&mut self, expression: &'ast syn::ExprMacro) {
+            self.reject(format!(
+                "it invokes `{}!`",
+                expression
+                    .mac
+                    .path
+                    .segments
+                    .last()
+                    .map(|segment| segment.ident.to_string())
+                    .unwrap_or_default()
+            ));
+        }
+
+        fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+            self.reject(format!(
+                "it calls `.{}()`, and a method name does not prove which operation its receiver performs",
+                call.method
+            ));
         }
 
         fn visit_stmt_macro(&mut self, statement: &'ast syn::StmtMacro) {
@@ -6150,16 +6231,17 @@ fn reject_unsafe_lazy_lock_initializers(
             ));
         }
 
-        fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
-            let method = call.method.to_string();
-            if !matches!(
-                method.as_str(),
-                "clone" | "is_empty" | "len" | "push" | "to_string" | "to_vec"
-            ) {
-                self.reject(format!("it calls `.{method}()`"));
-                return;
+        fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
+            match unary.op {
+                UnOp::Deref(_) => syn::visit::visit_expr_unary(self, unary),
+                UnOp::Neg(_) if is_proven_float(&unary.expr) => {
+                    syn::visit::visit_expr_unary(self, unary);
+                }
+                _ => self.reject(format!(
+                    "it applies `{}` to an operand not proven to be floating point",
+                    unary.op.to_token_stream()
+                )),
             }
-            syn::visit::visit_expr_method_call(self, call);
         }
 
         fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
@@ -6197,6 +6279,33 @@ fn reject_unsafe_lazy_lock_initializers(
         .flat_map(|program| &program.statics)
         .map(|rust_static| rust_static.ident.to_string())
         .collect::<BTreeSet<_>>();
+    let shadowed = programs
+        .iter()
+        .flat_map(|program| {
+            program
+                .structs
+                .iter()
+                .map(|structure| structure.ident.to_string())
+                .chain(
+                    program
+                        .enums
+                        .iter()
+                        .map(|rust_enum| rust_enum.ident.to_string()),
+                )
+                .chain(
+                    program
+                        .type_aliases
+                        .iter()
+                        .map(|type_alias| type_alias.ident.to_string()),
+                )
+                .chain(
+                    program
+                        .functions
+                        .iter()
+                        .map(|function| function.sig.ident.to_string()),
+                )
+        })
+        .collect::<BTreeSet<_>>();
     let mut readable_statics = BTreeSet::new();
     for rust_static in &program.statics {
         let name = rust_static.ident.to_string();
@@ -6227,6 +6336,7 @@ fn reject_unsafe_lazy_lock_initializers(
         };
         let mut safety = EagerSafety {
             error: None,
+            shadowed: &shadowed,
             functions: &functions,
             readable_statics: &readable_statics,
             other_statics: &all_statics,
