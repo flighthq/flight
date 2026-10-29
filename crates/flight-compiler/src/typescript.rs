@@ -6,7 +6,7 @@ use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
 use syn::{
-    Attribute, BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, ItemUse, Lit, Pat,
+    Attribute, BinOp, Expr, FnArg, GenericArgument, Item, ItemFn, ItemStruct, ItemUse, Lit, Pat,
     PathArguments, ReturnType, Stmt, Token, Type, UnOp, UseTree, Visibility,
 };
 
@@ -52,6 +52,8 @@ const VITEST_REBOUND_TYPE_MARKER: &str = "@vitest-rebound-type:";
 const VITEST_STRUCT_RETURN_MARKER: &str = "@vitest-struct-return:";
 const VITEST_STRUCT_VEC_CALLBACK_MARKER: &str = "@vitest-struct-vec-callback:";
 const VITEST_STRUCT_TYPE_MARKER: &str = "@vitest-struct-type:";
+const VITEST_UNSELECTED_FUNCTION_MARKER: &str = "@vitest-unselected-function:";
+const VITEST_UNSELECTED_STRUCT_MARKER: &str = "@vitest-unselected-struct:";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
 const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
@@ -71,6 +73,12 @@ enum RuntimeCategory {
 struct DataUnionPatternTest {
     bindings: Vec<(String, String)>,
     predicate: Option<String>,
+}
+
+#[derive(Default)]
+struct ContractExportSelection {
+    explicit: BTreeMap<String, BTreeSet<(String, String)>>,
+    wildcard_modules: BTreeSet<String>,
 }
 
 impl RuntimeCategory {
@@ -635,10 +643,138 @@ fn frozen_object_expression_name<'a>(
     };
 }
 
+fn contract_export_selection(source: &str) -> Result<ContractExportSelection, CompileError> {
+    fn module_name(prefix: &[String]) -> Option<String> {
+        return prefix
+            .iter()
+            .rev()
+            .find(|segment| !matches!(segment.as_str(), "crate" | "self" | "super"))
+            .cloned();
+    }
+
+    fn collect(selection: &mut ContractExportSelection, tree: &UseTree, prefix: &mut Vec<String>) {
+        match tree {
+            UseTree::Glob(_) => {
+                if let Some(module) = module_name(prefix) {
+                    selection.wildcard_modules.insert(module);
+                }
+            }
+            UseTree::Group(group) => {
+                for tree in &group.items {
+                    collect(selection, tree, prefix);
+                }
+            }
+            UseTree::Name(name) if name.ident != "self" => {
+                if let Some(module) = module_name(prefix) {
+                    let name = name.ident.to_string();
+                    selection
+                        .explicit
+                        .entry(name.clone())
+                        .or_default()
+                        .insert((module, name));
+                }
+            }
+            UseTree::Rename(rename) => {
+                if let Some(module) = module_name(prefix) {
+                    selection
+                        .explicit
+                        .entry(rename.rename.to_string())
+                        .or_default()
+                        .insert((module, rename.ident.to_string()));
+                }
+            }
+            UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(selection, &path.tree, prefix);
+                prefix.pop();
+            }
+            UseTree::Name(_) => {}
+        }
+    }
+
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust contract source: {error}")))?;
+    let mut selection = ContractExportSelection::default();
+    for item in file.items {
+        let Item::Use(rust_use) = item else {
+            continue;
+        };
+        if is_public(&rust_use.vis) {
+            collect(&mut selection, &rust_use.tree, &mut Vec::new());
+        }
+    }
+    return Ok(selection);
+}
+
+fn source_module_name(source: &str) -> String {
+    let file_name = source.rsplit(['/', '\\']).next().unwrap_or(source);
+    return file_name
+        .strip_suffix(".rs")
+        .unwrap_or(file_name)
+        .to_string();
+}
+
+fn provenance_bindings(
+    declarations: &BTreeMap<String, BTreeSet<String>>,
+    selection: Option<&ContractExportSelection>,
+    kind: &str,
+) -> Result<BTreeMap<String, (String, String)>, CompileError> {
+    let mut candidates = BTreeMap::<String, BTreeSet<(String, String)>>::new();
+    for (declaration, owners) in declarations {
+        for owner in owners {
+            let module = source_module_name(owner);
+            if let Some(selection) = selection {
+                if selection.wildcard_modules.contains(&module) {
+                    candidates
+                        .entry(declaration.clone())
+                        .or_default()
+                        .insert((owner.clone(), declaration.clone()));
+                }
+                for (exported, explicit) in &selection.explicit {
+                    if explicit.contains(&(module.clone(), declaration.clone())) {
+                        candidates
+                            .entry(exported.clone())
+                            .or_default()
+                            .insert((owner.clone(), declaration.clone()));
+                    }
+                }
+            } else {
+                candidates
+                    .entry(declaration.clone())
+                    .or_default()
+                    .insert((owner.clone(), declaration.clone()));
+            }
+        }
+    }
+    let mut bindings = BTreeMap::new();
+    for (exported, matches) in candidates {
+        if matches.len() != 1 {
+            let owners = matches
+                .iter()
+                .map(|(owner, declaration)| format!("`{declaration}` in `{owner}`"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let guidance = if selection.is_some() {
+                "make the contract re-export select exactly one source owner"
+            } else {
+                "provide contract.rs with --contract-source so its public re-export selects the source owner"
+            };
+            return Err(compile_error(format!(
+                "ambiguous public {kind} export `{exported}` resolves to {owners}; {guidance}"
+            )));
+        }
+        if let Some(binding) = matches.into_iter().next() {
+            bindings.insert(exported, binding);
+        }
+    }
+    return Ok(bindings);
+}
+
 pub(crate) fn generation_context(
     programs: &[(&str, &Program)],
+    contract_source: Option<&str>,
 ) -> Result<HashSet<String>, CompileError> {
-    return generation_context_with_types(programs, &HashSet::new());
+    return generation_context_with_types(programs, &HashSet::new(), contract_source, true);
 }
 
 pub(crate) fn insert_string_union_context<'a>(
@@ -672,6 +808,20 @@ pub(crate) fn insert_vitest_struct_context<'a>(
             }
         }
     }
+}
+
+pub(crate) fn insert_vitest_local_struct_context<'a>(
+    context: &mut HashSet<String>,
+    structures: impl Iterator<Item = &'a ItemStruct>,
+) {
+    let structures = structures.collect::<Vec<_>>();
+    for structure in &structures {
+        let name = structure.ident.to_string();
+        let owner_prefix = format!("{VITEST_STRUCT_OWNER_MARKER}{name}{PROVENANCE_SEPARATOR}");
+        let unselected = format!("{VITEST_UNSELECTED_STRUCT_MARKER}{name}");
+        context.retain(|marker| !marker.starts_with(&owner_prefix) && marker != &unselected);
+    }
+    insert_vitest_struct_context(context, structures.into_iter());
 }
 
 pub(crate) fn insert_vitest_import_alias_context<'a>(
@@ -712,6 +862,17 @@ pub(crate) fn insert_vitest_helper_return_context<'a>(
     helpers: impl Iterator<Item = &'a ItemFn>,
 ) {
     for helper in helpers {
+        let function = helper.sig.ident.to_string();
+        let alias_prefix =
+            format!("{VITEST_FUNCTION_ALIAS_MARKER}{function}{PROVENANCE_SEPARATOR}");
+        let function_prefix =
+            format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}");
+        let unselected = format!("{VITEST_UNSELECTED_FUNCTION_MARKER}{function}");
+        context.retain(|marker| {
+            !marker.starts_with(&alias_prefix)
+                && !marker.starts_with(&function_prefix)
+                && marker != &unselected
+        });
         let ReturnType::Type(_, rust_type) = &helper.sig.output else {
             continue;
         };
@@ -721,21 +882,157 @@ pub(crate) fn insert_vitest_helper_return_context<'a>(
         let Some(identity) = vitest_struct_owner(context, &structure) else {
             continue;
         };
-        let function = helper.sig.ident.to_string();
-        let alias_prefix =
-            format!("{VITEST_FUNCTION_ALIAS_MARKER}{function}{PROVENANCE_SEPARATOR}");
-        let function_prefix =
-            format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}");
-        context.retain(|marker| {
-            !marker.starts_with(&alias_prefix) && !marker.starts_with(&function_prefix)
-        });
         context.insert(format!(
-            "{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}{module}"
+            "{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}{module}{PROVENANCE_SEPARATOR}{function}"
         ));
         context.insert(format!(
             "{VITEST_STRUCT_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function}{PROVENANCE_SEPARATOR}{identity}"
         ));
     }
+}
+
+pub(crate) fn validate_vitest_function_provenance(
+    function: &ItemFn,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    fn pattern_bindings(pattern: &Pat) -> BTreeSet<String> {
+        struct PatternBindingCollector {
+            bindings: BTreeSet<String>,
+        }
+
+        impl<'ast> Visit<'ast> for PatternBindingCollector {
+            fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+                self.bindings.insert(pattern.ident.to_string());
+                syn::visit::visit_pat_ident(self, pattern);
+            }
+        }
+
+        let mut collector = PatternBindingCollector {
+            bindings: BTreeSet::new(),
+        };
+        collector.visit_pat(pattern);
+        return collector.bindings;
+    }
+
+    struct ProvenanceUseCollector {
+        calls: BTreeSet<String>,
+        scopes: Vec<BTreeSet<String>>,
+        structures: BTreeSet<String>,
+    }
+
+    impl ProvenanceUseCollector {
+        fn insert_pattern_bindings(&mut self, pattern: &Pat) {
+            if let Some(scope) = self.scopes.last_mut() {
+                scope.extend(pattern_bindings(pattern));
+            }
+        }
+
+        fn is_shadowed(&self, name: &str) -> bool {
+            return self.scopes.iter().rev().any(|scope| scope.contains(name));
+        }
+    }
+
+    impl<'ast> Visit<'ast> for ProvenanceUseCollector {
+        fn visit_block(&mut self, block: &'ast syn::Block) {
+            self.scopes.push(BTreeSet::new());
+            for statement in &block.stmts {
+                if let Stmt::Local(local) = statement {
+                    if let Some(initializer) = &local.init {
+                        self.visit_expr(&initializer.expr);
+                        if let Some((_, diverge)) = &initializer.diverge {
+                            self.visit_expr(diverge);
+                        }
+                    }
+                    self.insert_pattern_bindings(&local.pat);
+                } else {
+                    self.visit_stmt(statement);
+                }
+            }
+            self.scopes.pop();
+        }
+
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            if let Expr::Path(path) = call.func.as_ref()
+                && let Some(function) = path.path.segments.last()
+                && !self.is_shadowed(&function.ident.to_string())
+            {
+                self.calls.insert(function.ident.to_string());
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            self.scopes.push(BTreeSet::new());
+            for input in &closure.inputs {
+                self.insert_pattern_bindings(input);
+            }
+            self.visit_expr(&closure.body);
+            self.scopes.pop();
+        }
+
+        fn visit_expr_struct(&mut self, structure: &'ast syn::ExprStruct) {
+            if structure.path.segments.len() == 1
+                && let Some(owner) = structure.path.segments.first()
+            {
+                self.structures.insert(owner.ident.to_string());
+            }
+            syn::visit::visit_expr_struct(self, structure);
+        }
+    }
+
+    fn unselected_error(kind: &str, name: &str) -> CompileError {
+        return compile_error(format!(
+            "portable test {kind} `{name}` is declared by production sources, but contract.rs does not select a unique public export; re-export exactly one source owner"
+        ));
+    }
+
+    if let ReturnType::Type(_, rust_type) = &function.sig.output
+        && let Some(structure) = named_type(rust_type)
+        && vitest_struct_owner(context, &structure).is_none()
+        && context.contains(&format!("{VITEST_UNSELECTED_STRUCT_MARKER}{structure}"))
+    {
+        return Err(unselected_error("return type", &structure));
+    }
+    let parameter_bindings = function
+        .sig
+        .inputs
+        .iter()
+        .filter_map(|argument| match argument {
+            FnArg::Typed(argument) => Some(argument.pat.as_ref()),
+            FnArg::Receiver(_) => None,
+        })
+        .flat_map(pattern_bindings)
+        .collect();
+    let mut collector = ProvenanceUseCollector {
+        calls: BTreeSet::new(),
+        scopes: vec![parameter_bindings],
+        structures: BTreeSet::new(),
+    };
+    collector.visit_block(&function.block);
+    for local_function in collector.calls {
+        let Some(function) = vitest_function_declaration(context, &local_function) else {
+            return Err(compile_error(format!(
+                "portable test function binding `{local_function}` resolves to more than one imported declaration"
+            )));
+        };
+        let resolved = unique_marker_suffix(
+            context,
+            &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}"),
+        )
+        .is_some();
+        if !resolved && context.contains(&format!("{VITEST_UNSELECTED_FUNCTION_MARKER}{function}"))
+        {
+            return Err(unselected_error("function", &function));
+        }
+    }
+    for structure in collector.structures {
+        if vitest_struct_owner(context, &structure).is_none()
+            && context.contains(&format!("{VITEST_UNSELECTED_STRUCT_MARKER}{structure}"))
+        {
+            return Err(unselected_error("struct/type", &structure));
+        }
+    }
+    return Ok(());
 }
 
 pub(crate) fn is_vitest_struct(context: &HashSet<String>, name: &str) -> bool {
@@ -749,6 +1046,8 @@ pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
 fn generation_context_with_types(
     programs: &[(&str, &Program)],
     type_context: &HashSet<String>,
+    contract_source: Option<&str>,
+    strict_vitest_provenance: bool,
 ) -> Result<HashSet<String>, CompileError> {
     let mut context = type_context.clone();
     let program_refs = programs
@@ -793,18 +1092,48 @@ fn generation_context_with_types(
             }
         }
     }
-    for (structure, owners) in &public_struct_owners {
-        for owner in owners {
+    if strict_vitest_provenance {
+        let selection = contract_source.map(contract_export_selection).transpose()?;
+        let struct_bindings =
+            provenance_bindings(&public_struct_owners, selection.as_ref(), "struct/type")?;
+        let function_bindings =
+            provenance_bindings(&public_function_owners, selection.as_ref(), "function")?;
+        for (exported, (owner, declaration)) in &struct_bindings {
             context.insert(format!(
-                "{VITEST_STRUCT_OWNER_MARKER}{structure}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{structure}"
+                "{VITEST_STRUCT_OWNER_MARKER}{exported}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{declaration}"
             ));
         }
-    }
-    for (function, owners) in &public_function_owners {
-        for owner in owners {
+        for (exported, (owner, declaration)) in &function_bindings {
             context.insert(format!(
-                "{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}{owner}"
+                "{VITEST_PUBLIC_FUNCTION_MARKER}{exported}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{declaration}"
             ));
+        }
+        if selection.is_some() {
+            for declaration in public_struct_owners.keys() {
+                if !struct_bindings.contains_key(declaration) {
+                    context.insert(format!("{VITEST_UNSELECTED_STRUCT_MARKER}{declaration}"));
+                }
+            }
+            for declaration in public_function_owners.keys() {
+                if !function_bindings.contains_key(declaration) {
+                    context.insert(format!("{VITEST_UNSELECTED_FUNCTION_MARKER}{declaration}"));
+                }
+            }
+        }
+    } else {
+        for (structure, owners) in &public_struct_owners {
+            for owner in owners {
+                context.insert(format!(
+                    "{VITEST_STRUCT_OWNER_MARKER}{structure}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{structure}"
+                ));
+            }
+        }
+        for (function, owners) in &public_function_owners {
+            for owner in owners {
+                context.insert(format!(
+                    "{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{function}"
+                ));
+            }
         }
     }
     let record_vec_fields = programs
@@ -2521,14 +2850,15 @@ fn inferred_vitest_struct_literal_name(
             };
             let local_function = path.path.segments.last()?.ident.to_string();
             let function = vitest_function_declaration(entities, &local_function)?;
-            let owner = unique_marker_suffix(
+            let binding = unique_marker_suffix(
                 entities,
                 &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}"),
             )?;
+            let (owner, declaration) = binding.split_once(PROVENANCE_SEPARATOR)?;
             unique_marker_suffix(
                 entities,
                 &format!(
-                    "{VITEST_STRUCT_RETURN_MARKER}{owner}{PROVENANCE_SEPARATOR}{function}{PROVENANCE_SEPARATOR}"
+                    "{VITEST_STRUCT_RETURN_MARKER}{owner}{PROVENANCE_SEPARATOR}{declaration}{PROVENANCE_SEPARATOR}"
                 ),
             )
         }
@@ -5333,7 +5663,8 @@ pub(crate) fn emit_program(
         .zip(&programs)
         .map(|(module, program)| (module.as_str(), *program))
         .collect::<Vec<_>>();
-    let expression_context = generation_context_with_types(&program_sources, &identity_context)?;
+    let expression_context =
+        generation_context_with_types(&program_sources, &identity_context, None, false)?;
     let mut source_context = expression_context.clone();
     if program.nullable_options {
         source_context.insert(NULLABLE_OPTIONS_MARKER.to_string());

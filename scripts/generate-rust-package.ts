@@ -104,7 +104,13 @@ try {
       continue;
     }
     const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
-    let typescript = compile('generate-tests', compilePath, join(rawRoot, fileName), ['./contract.ts'], aliasSources);
+    let typescript = compile(
+      'generate-tests',
+      compilePath,
+      join(rawRoot, fileName),
+      ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
+      aliasSources,
+    );
     if (typescript.includes('crate.')) {
       typescript = addRustTestSupportImport(typescript);
     }

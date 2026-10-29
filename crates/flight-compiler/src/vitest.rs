@@ -13,7 +13,8 @@ use crate::typescript::{
     function_expression_context, insert_vitest_helper_return_context,
     insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
     is_data_union_variant, is_string_union, is_vitest_struct, numeric_literal_spelling,
-    snake_to_lower_camel, update_vitest_struct_local_context, write_indent,
+    snake_to_lower_camel, update_vitest_struct_local_context, validate_vitest_function_provenance,
+    write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -514,6 +515,7 @@ fn emit_helper(
             function.sig.ident
         )));
     }
+    validate_vitest_function_provenance(function, context)?;
     let context = function_expression_context(function, context);
     let parameters = function
         .sig
@@ -746,6 +748,7 @@ fn emit_test(
             function.sig.ident
         )));
     }
+    validate_vitest_function_provenance(function, context)?;
     let context = function_expression_context(function, context);
     if !function.sig.inputs.is_empty() || !matches!(function.sig.output, ReturnType::Default) {
         return Err(compile_error(format!(

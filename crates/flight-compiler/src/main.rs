@@ -5,7 +5,7 @@ use std::process;
 
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--alias-source <rust-file> ...] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--check]
        flight-compile source-mode --source <rust-file>
 ";
 
@@ -19,6 +19,7 @@ struct GenerateOptions {
     alias_sources: Vec<PathBuf>,
     check: bool,
     contract_module: Option<String>,
+    contract_source: Option<PathBuf>,
     entity_module: Option<String>,
     external_alias_modules: Vec<String>,
     external_alias_sources: Vec<PathBuf>,
@@ -76,14 +77,26 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .zip(&alias_modules)
                 .map(|(source, module)| flight_compiler::VitestAliasSource { source, module })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_vitest_with_module_alias_sources(
-                &source,
-                options
-                    .contract_module
-                    .as_deref()
-                    .ok_or_else(|| format!("--contract-module is required\n\n{USAGE}"))?,
-                &alias_source_refs,
-            )
+            let contract_module = options
+                .contract_module
+                .as_deref()
+                .ok_or_else(|| format!("--contract-module is required\n\n{USAGE}"))?;
+            if let Some(contract_path) = &options.contract_source {
+                let contract_source = fs::read_to_string(contract_path)
+                    .map_err(|error| format!("{}: {error}", contract_path.display()))?;
+                flight_compiler::compile_vitest_with_contract_alias_sources(
+                    &source,
+                    contract_module,
+                    &contract_source,
+                    &alias_source_refs,
+                )
+            } else {
+                flight_compiler::compile_vitest_with_module_alias_sources(
+                    &source,
+                    contract_module,
+                    &alias_source_refs,
+                )
+            }
         }
     }
     .map_err(|error| error.to_string())?;
@@ -150,6 +163,7 @@ fn parse_generate_options(
     let mut check = false;
     let mut alias_sources = Vec::new();
     let mut contract_module = None;
+    let mut contract_source = None;
     let mut entity_module = None;
     let mut external_alias_modules = Vec::new();
     let mut external_alias_sources = Vec::new();
@@ -169,6 +183,13 @@ fn parse_generate_options(
             "--contract-module" => {
                 index += 1;
                 contract_module = arguments.get(index).cloned();
+            }
+            "--contract-source" => {
+                index += 1;
+                contract_source =
+                    Some(PathBuf::from(arguments.get(index).ok_or_else(|| {
+                        format!("--contract-source requires a path\n\n{USAGE}")
+                    })?));
             }
             "--external-alias-module" => {
                 index += 1;
@@ -201,9 +222,9 @@ fn parse_generate_options(
         index += 1;
     }
     match kind {
-        GenerateKind::Source if contract_module.is_some() => {
+        GenerateKind::Source if contract_module.is_some() || contract_source.is_some() => {
             return Err(format!(
-                "--contract-module is only valid for generate-tests\n\n{USAGE}"
+                "contract options are only valid for generate-tests\n\n{USAGE}"
             ));
         }
         GenerateKind::Tests if entity_module.is_some() => {
@@ -229,6 +250,7 @@ fn parse_generate_options(
         alias_sources,
         check,
         contract_module,
+        contract_source,
         entity_module,
         external_alias_modules,
         external_alias_sources,

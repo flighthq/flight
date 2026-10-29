@@ -161,6 +161,36 @@ pub fn compile_vitest_with_module_alias_sources(
     contract_module: &str,
     alias_sources: &[VitestAliasSource<'_>],
 ) -> Result<String, CompileError> {
+    return compile_vitest_with_contract_alias_sources_internal(
+        source,
+        contract_module,
+        None,
+        alias_sources,
+    );
+}
+
+/// Compiles one Rust test module with production hints selected by public contract re-exports.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_contract_alias_sources(
+    source: &str,
+    contract_module: &str,
+    contract_source: &str,
+    alias_sources: &[VitestAliasSource<'_>],
+) -> Result<String, CompileError> {
+    return compile_vitest_with_contract_alias_sources_internal(
+        source,
+        contract_module,
+        Some(contract_source),
+        alias_sources,
+    );
+}
+
+fn compile_vitest_with_contract_alias_sources_internal(
+    source: &str,
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
     let alias_programs = alias_sources
@@ -173,7 +203,7 @@ pub fn compile_vitest_with_module_alias_sources(
         .map(|(source, program)| (source.module, program))
         .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
-    let mut context = typescript::generation_context(&alias_program_refs)?;
+    let mut context = typescript::generation_context(&alias_program_refs, contract_source)?;
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
     typescript::insert_vitest_helper_return_context(
@@ -183,11 +213,9 @@ pub fn compile_vitest_with_module_alias_sources(
     );
     typescript::insert_vitest_struct_context(
         &mut context,
-        alias_programs
-            .iter()
-            .flat_map(|program| &program.structs)
-            .chain(&program.structs),
+        alias_programs.iter().flat_map(|program| &program.structs),
     );
+    typescript::insert_vitest_local_struct_context(&mut context, program.structs.iter());
     let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
     output =
         lower_string_union_variants(output, &string_unions.styles, &string_unions.values, false)?;
