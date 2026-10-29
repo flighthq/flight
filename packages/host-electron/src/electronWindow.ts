@@ -483,44 +483,44 @@ function attachElectronWindow(
     const bounds = handle.getBounds();
     win.x = bounds.x;
     win.y = bounds.y;
-    emitSignal(win.onMove);
+    emitSignal(win.onMove, undefined);
   });
   addElectronWindowListener(record, 'resize', () => {
     const bounds = handle.getBounds();
     win.width = bounds.width;
     win.height = bounds.height;
-    emitSignal(win.onResize);
+    emitSignal(win.onResize, undefined);
   });
   addElectronWindowListener(record, 'minimize', () => {
     win.minimized = true;
-    emitSignal(win.onMinimize);
+    emitSignal(win.onMinimize, undefined);
   });
   addElectronWindowListener(record, 'maximize', () => {
     win.maximized = true;
-    emitSignal(win.onMaximize);
+    emitSignal(win.onMaximize, undefined);
   });
   const onUnmaximize = () => {
     win.minimized = false;
     win.maximized = false;
-    emitSignal(win.onRestore);
+    emitSignal(win.onRestore, undefined);
   };
   addElectronWindowListener(record, 'unmaximize', onUnmaximize);
   addElectronWindowListener(record, 'restore', onUnmaximize);
   addElectronWindowListener(record, 'enter-full-screen', () => {
     win.fullscreen = true;
-    emitSignal(win.onFullscreenChanged);
+    emitSignal(win.onFullscreenChanged, undefined);
   });
   addElectronWindowListener(record, 'leave-full-screen', () => {
     win.fullscreen = false;
-    emitSignal(win.onFullscreenChanged);
+    emitSignal(win.onFullscreenChanged, undefined);
   });
   addElectronWindowListener(record, 'focus', () => {
     win.focused = true;
-    emitSignal(win.onFocusIn);
+    emitSignal(win.onFocusIn, undefined);
   });
   addElectronWindowListener(record, 'blur', () => {
     win.focused = false;
-    emitSignal(win.onFocusOut);
+    emitSignal(win.onFocusOut, undefined);
   });
   addElectronWindowListener(record, 'closed', () => {
     detachElectronWindow(win, false);
