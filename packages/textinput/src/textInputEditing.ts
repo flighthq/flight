@@ -1,21 +1,7 @@
 // Generated from crates/flight-textinput/src/text_input_editing.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import {
-  KEY_CODE_A,
-  KEY_CODE_BACKSPACE,
-  KEY_CODE_C,
-  KEY_CODE_DELETE,
-  KEY_CODE_DOWN,
-  KEY_CODE_END,
-  KEY_CODE_HOME,
-  KEY_CODE_LEFT,
-  KEY_CODE_RETURN,
-  KEY_CODE_RIGHT,
-  KEY_CODE_UP,
-  KEY_CODE_V,
-  KEY_CODE_X,
-} from '@flighthq/input/contract';
+import { KeyCode } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import { invalidateNodeAppearance, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import type { NodeRef } from '@flighthq/node/contract';
@@ -339,77 +325,77 @@ function getKeyboardCommand(data: Readonly<InputKeyboardData>): KeyboardCommand 
   if (data.ctrlKey || data.metaKey) {
     let key: string = data.key;
     key = key.toLowerCase();
-    if (key === 'a' || data.keyCode === KEY_CODE_A) {
+    if (key === 'a' || data.keyCode === KeyCode.A) {
       return KeyboardCommand.SelectAll;
     }
-    if (key === 'c' || data.keyCode === KEY_CODE_C) {
+    if (key === 'c' || data.keyCode === KeyCode.C) {
       return KeyboardCommand.Copy;
     }
-    if (key === 'v' || data.keyCode === KEY_CODE_V) {
+    if (key === 'v' || data.keyCode === KeyCode.V) {
       return KeyboardCommand.Paste;
     }
-    if (key === 'x' || data.keyCode === KEY_CODE_X) {
+    if (key === 'x' || data.keyCode === KeyCode.X) {
       return KeyboardCommand.Cut;
     }
-    if (data.keyCode === KEY_CODE_LEFT || data.key === 'ArrowLeft') {
+    if (data.keyCode === KeyCode.LEFT || data.key === 'ArrowLeft') {
       return KeyboardCommand.WordLeft;
     }
-    if (data.keyCode === KEY_CODE_RIGHT || data.key === 'ArrowRight') {
+    if (data.keyCode === KeyCode.RIGHT || data.key === 'ArrowRight') {
       return KeyboardCommand.WordRight;
     }
-    if (data.keyCode === KEY_CODE_BACKSPACE || data.key === 'Backspace') {
+    if (data.keyCode === KeyCode.BACKSPACE || data.key === 'Backspace') {
       return KeyboardCommand.DeleteWordBackward;
     }
-    if (data.keyCode === KEY_CODE_DELETE || data.key === 'Delete') {
+    if (data.keyCode === KeyCode.DELETE || data.key === 'Delete') {
       return KeyboardCommand.DeleteWordForward;
     }
-    if (data.keyCode === KEY_CODE_HOME || data.key === 'Home') {
+    if (data.keyCode === KeyCode.HOME || data.key === 'Home') {
       return KeyboardCommand.DocumentStart;
     }
-    if (data.keyCode === KEY_CODE_END || data.key === 'End') {
+    if (data.keyCode === KeyCode.END || data.key === 'End') {
       return KeyboardCommand.DocumentEnd;
     }
     return KeyboardCommand.None;
   }
   if (data.altKey) {
-    if (data.keyCode === KEY_CODE_LEFT || data.key === 'ArrowLeft') {
+    if (data.keyCode === KeyCode.LEFT || data.key === 'ArrowLeft') {
       return KeyboardCommand.WordLeft;
     }
-    if (data.keyCode === KEY_CODE_RIGHT || data.key === 'ArrowRight') {
+    if (data.keyCode === KeyCode.RIGHT || data.key === 'ArrowRight') {
       return KeyboardCommand.WordRight;
     }
-    if (data.keyCode === KEY_CODE_BACKSPACE || data.key === 'Backspace') {
+    if (data.keyCode === KeyCode.BACKSPACE || data.key === 'Backspace') {
       return KeyboardCommand.DeleteWordBackward;
     }
-    if (data.keyCode === KEY_CODE_DELETE || data.key === 'Delete') {
+    if (data.keyCode === KeyCode.DELETE || data.key === 'Delete') {
       return KeyboardCommand.DeleteWordForward;
     }
   }
-  if (data.keyCode === KEY_CODE_BACKSPACE || data.key === 'Backspace') {
+  if (data.keyCode === KeyCode.BACKSPACE || data.key === 'Backspace') {
     return KeyboardCommand.Backspace;
   }
-  if (data.keyCode === KEY_CODE_DELETE || data.key === 'Delete') {
+  if (data.keyCode === KeyCode.DELETE || data.key === 'Delete') {
     return KeyboardCommand.Delete;
   }
-  if (data.keyCode === KEY_CODE_DOWN || data.key === 'ArrowDown') {
+  if (data.keyCode === KeyCode.DOWN || data.key === 'ArrowDown') {
     return KeyboardCommand.Down;
   }
-  if (data.keyCode === KEY_CODE_END || data.key === 'End') {
+  if (data.keyCode === KeyCode.END || data.key === 'End') {
     return KeyboardCommand.End;
   }
-  if (data.keyCode === KEY_CODE_HOME || data.key === 'Home') {
+  if (data.keyCode === KeyCode.HOME || data.key === 'Home') {
     return KeyboardCommand.Home;
   }
-  if (data.keyCode === KEY_CODE_LEFT || data.key === 'ArrowLeft') {
+  if (data.keyCode === KeyCode.LEFT || data.key === 'ArrowLeft') {
     return KeyboardCommand.Left;
   }
-  if (data.keyCode === KEY_CODE_RETURN || data.key === 'Enter') {
+  if (data.keyCode === KeyCode.RETURN || data.key === 'Enter') {
     return KeyboardCommand.Return;
   }
-  if (data.keyCode === KEY_CODE_RIGHT || data.key === 'ArrowRight') {
+  if (data.keyCode === KeyCode.RIGHT || data.key === 'ArrowRight') {
     return KeyboardCommand.Right;
   }
-  if (data.keyCode === KEY_CODE_UP || data.key === 'ArrowUp') {
+  if (data.keyCode === KeyCode.UP || data.key === 'ArrowUp') {
     return KeyboardCommand.Up;
   }
   return KeyboardCommand.None;

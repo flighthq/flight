@@ -1,7 +1,7 @@
 // Generated from crates/flight-textinput/tests/selectable_rich_text_manager_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { KEY_CODE_A, KEY_CODE_C } from '@flighthq/input/contract';
+import { KeyCode } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { getRichTextRuntime, setTextLayoutResult } from '@flighthq/text/contract';
@@ -385,7 +385,7 @@ describe('dispatchSelectableRichTextKeyDown', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'c';
-    data.keyCode = KEY_CODE_C;
+    data.keyCode = KeyCode.C;
     dispatchSelectableRichTextKeyDown(manager, data, (text) => {
       callbackValues.value.push(String(text));
     });
@@ -403,7 +403,7 @@ describe('dispatchSelectableRichTextKeyDown', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'c';
-    data.keyCode = KEY_CODE_C;
+    data.keyCode = KeyCode.C;
     expect(
       dispatchSelectableRichTextKeyDown(manager, data, (value) => {
         callbackValues.value.push(String(value));
@@ -428,7 +428,7 @@ describe('dispatchSelectableRichTextKeyDown', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'a';
-    data.keyCode = KEY_CODE_A;
+    data.keyCode = KeyCode.A;
     expect(dispatchSelectableRichTextKeyDown(manager, data, undefined)).toBe(true);
     const richTextRuntime = runtime(text);
     expect(richTextRuntime!.selectionBeginIndex).toEqual(0);

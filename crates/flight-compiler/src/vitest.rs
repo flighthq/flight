@@ -1170,10 +1170,14 @@ pub(crate) fn emit_test_program(
     if program.standard_constants.contains("PI") {
         local_values.insert("PI".to_string());
     }
-    contract_symbols
-        .retain(|symbol| !cross_crate_local_names.contains(&emit_path_name(symbol, context)));
-    contract_type_symbols
-        .retain(|symbol| !cross_crate_local_names.contains(&emit_path_name(symbol, context)));
+    contract_symbols.retain(|symbol| {
+        return !dependency_items.contains(symbol)
+            && !cross_crate_local_names.contains(&emit_path_name(symbol, context));
+    });
+    contract_type_symbols.retain(|symbol| {
+        return !dependency_items.contains(symbol)
+            && !cross_crate_local_names.contains(&emit_path_name(symbol, context));
+    });
     let mut out = String::new();
     out.push_str("import { describe, expect, it } from 'vitest';\n");
     for (module, names) in &cross_crate_values {

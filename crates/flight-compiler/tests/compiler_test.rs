@@ -852,27 +852,40 @@ export function isA(code: KeyCode): boolean {
     }
 
     #[test]
-    fn rejects_importing_const_group_members_across_packages() {
-        let keys = "//! flight-compiler: const-group KeyCode KEY_CODE_\npub const KEY_CODE_A: i32 = 0x61;\npub type KeyCode = i32;\n";
+    fn lowers_imported_const_group_members_through_their_owner() {
+        let keys = "//! flight-compiler: const-group KeyCode KEY_CODE_\npub const KEY_CODE_A: i32 = 0x61;\npub const KEY_CODE_B: i32 = 0x62;\npub type KeyCode = i32;\n";
         let keys_package = [ExternalAliasSource {
             source: keys,
             module: "@flighthq/keys/contract",
         }];
-        for (consumer, expected) in [
-            (
-                "use flight_keys::KEY_CODE_A;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n",
-                "importing `const-group` member `KEY_CODE_A` from `@flighthq/keys/contract` has no portable lowering; it is `KeyCode.A` in TypeScript",
-            ),
-            (
-                "use flight_keys::*;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n",
-                "a wildcard import of `@flighthq/keys/contract` would bring in `const-group` member `KEY_CODE_A` (`KeyCode.A` in TypeScript), which has no portable lowering",
-            ),
-        ] {
-            let error =
-                compile_typescript_with_external_alias_sources(consumer, None, &[], &keys_package)
-                    .unwrap_err();
-            assert_eq!(error.to_string(), expected, "{consumer}");
-        }
+        let consumer = "use flight_keys::{KEY_CODE_A, KEY_CODE_B as B};\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A || code == B;\n}\n";
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(consumer, None, &[], &keys_package)
+                .unwrap(),
+            "import { KeyCode } from \"@flighthq/keys/contract\";\n\nexport function isA(code: number): boolean {\n  return code === KeyCode.A || code === KeyCode.B;\n}\n"
+        );
+
+        let tests = "use flight_keys::{KEY_CODE_A, KEY_CODE_B as B};\n\n#[test]\nfn compares_keys() {\n    assert_ne!(KEY_CODE_A, B);\n}\n";
+        assert_eq!(
+            compile_vitest_with_external_alias_sources(
+                tests,
+                "@flighthq/consumer/contract",
+                None,
+                &[],
+                &keys_package,
+            )
+            .unwrap(),
+            "import { describe, expect, it } from 'vitest';\n\nimport { KeyCode } from \"@flighthq/keys/contract\";\n\ndescribe(\"portableTests\", () => {\n  it(\"compares keys\", () => {\n    expect(KeyCode.A).not.toEqual(KeyCode.B);\n  });\n});\n"
+        );
+
+        let wildcard = "use flight_keys::*;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n";
+        let error =
+            compile_typescript_with_external_alias_sources(wildcard, None, &[], &keys_package)
+                .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "a wildcard import of `@flighthq/keys/contract` would bring in `const-group` member `KEY_CODE_A` (`KeyCode.A` in TypeScript), which has no portable lowering"
+        );
     }
 
     #[test]

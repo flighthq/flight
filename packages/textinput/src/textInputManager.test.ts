@@ -1,7 +1,7 @@
 // Generated from crates/flight-textinput/tests/text_input_manager_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { KEY_CODE_BACKSPACE, KEY_CODE_C, KEY_CODE_END, KEY_CODE_HOME } from '@flighthq/input/contract';
+import { KeyCode } from '@flighthq/input/contract';
 import type { InputKeyboardData, InputTextData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
@@ -423,7 +423,7 @@ describe('dispatchTextInputKeyDown', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'c';
-    data.keyCode = KEY_CODE_C;
+    data.keyCode = KeyCode.C;
     dispatchTextInputKeyDown(manager, data, undefined, (value) => {
       callbackValues.value.push(String(value));
     });
@@ -436,7 +436,7 @@ describe('dispatchTextInputKeyDown', () => {
     focusTextInput(manager, target);
     let data = keyboardData();
     data.key = 'Backspace';
-    data.keyCode = KEY_CODE_BACKSPACE;
+    data.keyCode = KeyCode.BACKSPACE;
     expect(dispatchTextInputKeyDown(manager, data, undefined, undefined)).toBe(true);
     expect(target!.data.text).toEqual('ac');
   });
@@ -448,13 +448,13 @@ describe('dispatchTextInputKeyDown', () => {
     setTextInputSelection(target, 6, 6);
     let home = keyboardData();
     home.key = 'Home';
-    home.keyCode = KEY_CODE_HOME;
+    home.keyCode = KeyCode.HOME;
     dispatchTextInputKeyDown(manager, home, undefined, undefined);
     expect(getTextInputCaretIndex(target)).toEqual(3);
     setTextInputSelection(target, 1, 1);
     let end = keyboardData();
     end.key = 'End';
-    end.keyCode = KEY_CODE_END;
+    end.keyCode = KeyCode.END;
     dispatchTextInputKeyDown(manager, end, undefined, undefined);
     expect(getTextInputCaretIndex(target)).toEqual(3);
   });

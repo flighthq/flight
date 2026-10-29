@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { allocateEntity } from '@flighthq/entity/contract';
-import { KEY_CODE_A, KEY_CODE_C } from '@flighthq/input/contract';
+import { KeyCode } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { getRichTextRuntime, getTextLayout, setRichTextScrollV } from '@flighthq/text/contract';
@@ -42,7 +42,7 @@ export function dispatchSelectableRichTextKeyDown(
   }
   const command = data.ctrlKey || data.metaKey;
   const key: string = data.key;
-  if (command && (key.toLowerCase() === 'a' || data.keyCode === KEY_CODE_A)) {
+  if (command && (key.toLowerCase() === 'a' || data.keyCode === KeyCode.A)) {
     const textLength = utf16Len(target!.data.text);
     const runtime = getMutableRuntime(target);
     let runtimeGuard = runtime!;
@@ -50,7 +50,7 @@ export function dispatchSelectableRichTextKeyDown(
     runtimeGuard.selectionEndIndex = textLength;
     return true;
   }
-  if (command && (key.toLowerCase() === 'c' || data.keyCode === KEY_CODE_C)) {
+  if (command && (key.toLowerCase() === 'c' || data.keyCode === KeyCode.C)) {
     const runtime = getMutableRuntime(target);
     const [start, end] = (() => {
       const runtimeGuard = runtime!;

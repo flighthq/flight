@@ -1,20 +1,7 @@
 // Generated from crates/flight-textinput/tests/text_input_editing_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import {
-  KEY_CODE_A,
-  KEY_CODE_BACKSPACE,
-  KEY_CODE_C,
-  KEY_CODE_DELETE,
-  KEY_CODE_DOWN,
-  KEY_CODE_END,
-  KEY_CODE_HOME,
-  KEY_CODE_LEFT,
-  KEY_CODE_RETURN,
-  KEY_CODE_RIGHT,
-  KEY_CODE_UP,
-  KEY_CODE_V,
-} from '@flighthq/input/contract';
+import { KeyCode } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import { getNodeAppearanceRevision } from '@flighthq/node/contract';
 import type { NodeRef } from '@flighthq/node/contract';
@@ -660,7 +647,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'End';
-    data.keyCode = KEY_CODE_END;
+    data.keyCode = KeyCode.END;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text)).toEqual(7);
   });
@@ -670,7 +657,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'Home';
-    data.keyCode = KEY_CODE_HOME;
+    data.keyCode = KeyCode.HOME;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text)).toEqual(0);
   });
@@ -679,7 +666,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 1, 1);
     let data = keyboardData();
     data.key = 'End';
-    data.keyCode = KEY_CODE_END;
+    data.keyCode = KeyCode.END;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text)).toEqual(3);
   });
@@ -688,7 +675,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 1, 1);
     let data = keyboardData();
     data.key = 'ArrowRight';
-    data.keyCode = KEY_CODE_RIGHT;
+    data.keyCode = KeyCode.RIGHT;
     data.shiftKey = true;
     handleTextInputKeyboard(text, data, undefined);
     expect(getTextInputSelectionBeginIndex(text)).toEqual(1);
@@ -699,7 +686,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 2, 2);
     let data = keyboardData();
     data.key = 'ArrowLeft';
-    data.keyCode = KEY_CODE_LEFT;
+    data.keyCode = KeyCode.LEFT;
     expect(handleTextInputKeyboard(text, data, undefined)).toBe(true);
     expect(getTextInputCaretIndex(text)).toEqual(1);
   });
@@ -708,7 +695,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 2, 2);
     let data = keyboardData();
     data.key = 'Backspace';
-    data.keyCode = KEY_CODE_BACKSPACE;
+    data.keyCode = KeyCode.BACKSPACE;
     handleTextInputKeyboard(text, data, undefined);
     expect(text!.data.text).toEqual('ac');
   });
@@ -717,7 +704,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'a';
-    data.keyCode = KEY_CODE_A;
+    data.keyCode = KeyCode.A;
     handleTextInputKeyboard(text, data, undefined);
     expect(getTextInputSelectionBeginIndex(text)).toEqual(0);
     expect(getTextInputSelectionEndIndex(text)).toEqual(3);
@@ -728,7 +715,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'Backspace';
-    data.keyCode = KEY_CODE_BACKSPACE;
+    data.keyCode = KeyCode.BACKSPACE;
     handleTextInputKeyboard(text, data, undefined);
     expect(text!.data.text).toEqual('hello ');
   });
@@ -738,7 +725,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'Delete';
-    data.keyCode = KEY_CODE_DELETE;
+    data.keyCode = KeyCode.DELETE;
     handleTextInputKeyboard(text, data, undefined);
     expect(text!.data.text).toEqual('hello ');
   });
@@ -748,7 +735,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'ArrowLeft';
-    data.keyCode = KEY_CODE_LEFT;
+    data.keyCode = KeyCode.LEFT;
     handleTextInputKeyboard(text, data, undefined);
     expect(getTextInputCaretIndex(text)).toEqual(6);
   });
@@ -757,7 +744,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'ArrowRight';
-    data.keyCode = KEY_CODE_RIGHT;
+    data.keyCode = KeyCode.RIGHT;
     handleTextInputKeyboard(text, data, undefined);
     expect(getTextInputCaretIndex(text)).toEqual(5);
   });
@@ -766,7 +753,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 1, 1);
     let data = keyboardData();
     data.key = 'ArrowDown';
-    data.keyCode = KEY_CODE_DOWN;
+    data.keyCode = KeyCode.DOWN;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text) >= 3).toBe(true);
   });
@@ -775,7 +762,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 5, 5);
     let data = keyboardData();
     data.key = 'ArrowDown';
-    data.keyCode = KEY_CODE_DOWN;
+    data.keyCode = KeyCode.DOWN;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text)).toEqual(7);
   });
@@ -785,7 +772,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'v';
-    data.keyCode = KEY_CODE_V;
+    data.keyCode = KeyCode.V;
     const options: HandleTextInputKeyboardOptions = { clipboardText: 'b23', layout: undefined, onCopy: undefined };
     handleTextInputKeyboard(text, data, options);
     expect(text!.data.text).toEqual('a23');
@@ -795,7 +782,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 5, 5);
     let data = keyboardData();
     data.key = 'ArrowUp';
-    data.keyCode = KEY_CODE_UP;
+    data.keyCode = KeyCode.UP;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text) <= 3).toBe(true);
   });
@@ -804,7 +791,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 1, 1);
     let data = keyboardData();
     data.key = 'ArrowUp';
-    data.keyCode = KEY_CODE_UP;
+    data.keyCode = KeyCode.UP;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text)).toEqual(0);
   });
@@ -813,7 +800,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 6, 6);
     let data = keyboardData();
     data.key = 'Home';
-    data.keyCode = KEY_CODE_HOME;
+    data.keyCode = KeyCode.HOME;
     handleTextInputKeyboard(text, data, layoutOptions());
     expect(getTextInputCaretIndex(text)).toEqual(3);
   });
@@ -822,7 +809,7 @@ describe('handleTextInputKeyboard', () => {
     setTextInputSelection(text, 1, 1);
     let data = keyboardData();
     data.key = 'Enter';
-    data.keyCode = KEY_CODE_RETURN;
+    data.keyCode = KeyCode.RETURN;
     expect(handleTextInputKeyboard(text, data, undefined)).toBe(true);
     expect(text!.data.text).toEqual('a\n');
   });
@@ -841,7 +828,7 @@ describe('handleTextInputKeyboard', () => {
     let data = keyboardData();
     data.ctrlKey = true;
     data.key = 'c';
-    data.keyCode = KEY_CODE_C;
+    data.keyCode = KeyCode.C;
     handleTextInputKeyboard(text, data, options);
     expect(copied.value).toEqual(['hello']);
   });

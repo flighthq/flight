@@ -1,5 +1,5 @@
-import { webHost } from '@flighthq/host-web';
-import type { KeyboardEventData, RichText, TextInputState } from '@flighthq/sdk';
+import { getWebKeyCodeFromKeyboardEvent, getWebKeyModifierFromKeyboardEvent, webHost } from '@flighthq/host-web';
+import type { InputKeyboardData, RichText, TextInputState } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -193,15 +193,22 @@ window.addEventListener('pointerdown', (e: PointerEvent) => {
   if (!hit) blurAll();
 });
 
-// Keyboard handling: convert DOM KeyboardEvent to KeyboardEventData for handleTextInputKeyboard.
-function toKeyboardEventData(e: KeyboardEvent): KeyboardEventData {
+// Keyboard handling: normalize DOM KeyboardEvent data for handleTextInputKeyboard.
+function toInputKeyboardData(e: KeyboardEvent): InputKeyboardData {
   return {
     altKey: e.altKey,
+    capsLock: e.getModifierState('CapsLock'),
+    code: e.code,
     ctrlKey: e.ctrlKey,
     key: e.key,
-    keyCode: e.keyCode,
+    keyCode: getWebKeyCodeFromKeyboardEvent(e),
+    location: e.location,
     metaKey: e.metaKey,
+    modifier: getWebKeyModifierFromKeyboardEvent(e),
+    numLock: e.getModifierState('NumLock'),
+    repeat: e.repeat,
     shiftKey: e.shiftKey,
+    timeStamp: e.timeStamp,
   };
 }
 
@@ -227,7 +234,7 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
     }
   }
 
-  const data = toKeyboardEventData(e);
+  const data = toInputKeyboardData(e);
   const handled = handleTextInputKeyboard(focusedField, data);
   if (handled) {
     e.preventDefault();

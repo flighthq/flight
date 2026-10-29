@@ -778,18 +778,15 @@ fn insert_dependency_export_name_context(
     }
     let mut references = BTreeMap::<String, (String, String)>::new();
     for symbol in symbols.values() {
-        if symbol.local != symbol.imported {
-            continue;
-        }
         if let Some(target) = modules
             .get(symbol.module.as_str())
             .and_then(|names| names.get(symbol.imported.as_str()))
         {
-            if target.contains('.') {
-                return Err(compile_error(format!(
-                    "importing `const-group` member `{}` from `{}` has no portable lowering; it is `{target}` in TypeScript",
-                    symbol.imported, symbol.module
-                )));
+            // Ordinary renamed imports keep their local alias. A const-group member has no
+            // standalone TypeScript export to alias, so both renamed and unrenamed Rust bindings
+            // are instead rewritten to the owner's `Owner.Member` expression below.
+            if symbol.local != symbol.imported && !target.contains('.') {
+                continue;
             }
             references.insert(
                 symbol.local.clone(),
@@ -2266,9 +2263,12 @@ pub(crate) fn validate_dependency_export_name_bindings(
     imports: &BTreeMap<String, BTreeSet<String>>,
 ) -> Result<(), CompileError> {
     for (target, module, _) in dependency_export_name_bindings(context) {
-        if local_values.contains(&target) {
+        let imported = target
+            .split_once('.')
+            .map_or(target.as_str(), |(owner, _)| owner);
+        if local_values.contains(imported) {
             return Err(compile_error(format!(
-                "`flight-compiler: export-name` TypeScript name `{target}` imported from `{module}` collides with a local item"
+                "`flight-compiler: export-name` TypeScript name `{imported}` imported from `{module}` collides with a local item"
             )));
         }
         for (import_module, specifiers) in imports {
@@ -2276,9 +2276,9 @@ pub(crate) fn validate_dependency_export_name_bindings(
                 let local = specifier
                     .rsplit_once(" as ")
                     .map_or(specifier.as_str(), |(_, local)| local);
-                if local == target && (*import_module != module || *specifier != target) {
+                if local == imported && (*import_module != module || *specifier != imported) {
                     return Err(compile_error(format!(
-                        "`flight-compiler: export-name` TypeScript name `{target}` imported from `{module}` collides with another import from `{import_module}`"
+                        "`flight-compiler: export-name` TypeScript name `{imported}` imported from `{module}` collides with another import from `{import_module}`"
                     )));
                 }
             }
@@ -14611,6 +14611,9 @@ fn emit_data_union_tuple_binding(
 fn import_specifier(symbol: &CrossCrateSymbol, context: &HashSet<String>) -> String {
     let imported = dependency_export_name(context, &symbol.module, &symbol.imported)
         .map_or_else(|| emit_path_segment(&symbol.imported), str::to_string);
+    if let Some((owner, _)) = imported.split_once('.') {
+        return owner.to_string();
+    }
     let local = if symbol.local == symbol.imported {
         imported.clone()
     } else {
