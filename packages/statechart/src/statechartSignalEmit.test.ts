@@ -6,7 +6,7 @@ import { emitStatechartStateChange } from './statechartSignalEmit.ts';
 import { enableStatechartSignals } from './statechartSignals.ts';
 
 describe('emitStatechartStateChange', () => {
-  it('forwards the three positional state-change arguments', () => {
+  it('emits the region, previous state and state as one tuple payload', () => {
     const instance = createStatechartInstance({ inputs: [], regions: [] });
     const signals = enableStatechartSignals(instance);
     const listener = vi.fn();
@@ -14,6 +14,6 @@ describe('emitStatechartStateChange', () => {
 
     emitStatechartStateChange(signals, 2, 3, 4);
 
-    expect(listener).toHaveBeenCalledWith(2, 3, 4);
+    expect(listener).toHaveBeenCalledWith([2, 3, 4]);
   });
 });

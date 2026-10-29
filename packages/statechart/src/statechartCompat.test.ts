@@ -123,7 +123,7 @@ describe('StatechartInstance', () => {
 
     const received: number[][] = [];
     const signals = instance.enableSignals();
-    connectSignal(signals.onStateChange, (...args) => received.push(args));
+    connectSignal(signals.onStateChange, (payload) => received.push([...payload]));
     expect(instance.getSignals()).toBe(signals);
     expect(instance.signals).toBe(signals);
 

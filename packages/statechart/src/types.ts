@@ -84,7 +84,7 @@ export type StatechartDurationGuard = (
 // Optional observation for the mutable actor half. Signals are never stored on authored Statechart data;
 // enableStatechartSignals attaches this group lazily to one instance instead.
 export interface StatechartSignals extends EntityRaw {
-  onStateChange: Signal<(regionIndex: number, previousStateIndex: number, stateIndex: number) => void>;
+  onStateChange: Signal<readonly [regionIndex: number, previousStateIndex: number, stateIndex: number]>;
 }
 
 // Per-actor mutable state. The parallel numeric buffers make concurrent-region stepping allocation-free.

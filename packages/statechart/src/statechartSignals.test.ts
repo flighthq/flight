@@ -17,14 +17,14 @@ describe('enableStatechartSignals', () => {
     const second = enableStatechartSignals(instance);
     expect(first).toBe(second);
     expect(instance.signals).toBe(first);
-    expect(first.onStateChange.data).toBeNull();
+    expect(first.onStateChange.data).toBeUndefined();
   });
 
   it('observes completed entry and exit without putting a closure on authored state data', () => {
     const chart = createImmediateChart();
     const instance = createStatechartInstance(chart);
     const calls: number[][] = [];
-    connectSignal(enableStatechartSignals(instance).onStateChange, (regionIndex, previousState, state) => {
+    connectSignal(enableStatechartSignals(instance).onStateChange, ([regionIndex, previousState, state]) => {
       calls.push([regionIndex, previousState, state]);
     });
 
@@ -60,7 +60,7 @@ describe('enableStatechartSignals', () => {
   it('lets composition supply the entered state duration after core resets the old one', () => {
     const instance = createStatechartInstance(createImmediateChart());
     setStatechartRegionDuration(instance, 0, 100);
-    connectSignal(enableStatechartSignals(instance).onStateChange, (regionIndex) => {
+    connectSignal(enableStatechartSignals(instance).onStateChange, ([regionIndex]) => {
       setStatechartRegionDuration(instance, regionIndex, 250);
     });
     advanceStatechartInstance(instance, 0);

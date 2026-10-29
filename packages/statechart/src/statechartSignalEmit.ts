@@ -8,5 +8,5 @@ export function emitStatechartStateChange(
   previousStateIndex: number,
   stateIndex: number,
 ): void {
-  emitSignal(signals.onStateChange, regionIndex, previousStateIndex, stateIndex);
+  emitSignal(signals.onStateChange, [regionIndex, previousStateIndex, stateIndex]);
 }
