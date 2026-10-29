@@ -45,8 +45,8 @@ export function connectFocusNavigation<N extends NodeAny>(
     const direction = arrowKeyDirection(data.key);
     if (direction !== null) focusNodeInDirection(manager, direction);
   };
-  connectSignal(input.onKeyDown, onKeyDown);
-  return () => disconnectSignal(input.onKeyDown, onKeyDown);
+  const slot = connectSignal(input.onKeyDown, onKeyDown);
+  return () => disconnectSignal(input.onKeyDown, slot);
 }
 
 export function createFocusManager<N extends NodeAny>(
@@ -232,7 +232,7 @@ function emitFocusSignal(target: NodeAny, root: NodeAny, name: FocusSignalName, 
     _focusData.currentTarget = current;
     const signals = getInteractionSignals(current);
     const signal = signals !== null ? signals[name] : null;
-    if (signal !== null) emitSignal(signal as Signal<(data: Readonly<FocusEventData>) => void>, _focusData);
+    if (signal !== null) emitSignal(signal as Signal<Readonly<FocusEventData>>, _focusData);
     if (current === root) break;
     current = getNodeParent(current) as NodeAny | null;
   }

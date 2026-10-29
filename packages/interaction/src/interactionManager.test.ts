@@ -7,13 +7,17 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import { connectSignal, createSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   Cursor,
+  FocusEventData,
   InputKeyboardData,
   InputPointerData,
   InputSignals,
   InteractionManagerOptions,
+  KeyboardEventData,
+  PointerEventData,
 } from '@flighthq/types/contract';
 import { DisplayObjectKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -314,6 +318,49 @@ describe('connectInteractionSignal', () => {
     expect(fired).toBe(1);
     expect(hitTests).toBe(1);
   });
+
+  it('delivers once per connection when the same callback is also connected directly', () => {
+    const kind = 'DirectAndManagedHitTest';
+    const root = createNode(kind);
+    setNodeHitTestEnabled(root, true);
+    const manager = createInteractionManager(root);
+    let fired = 0;
+    const slot = () => fired++;
+    registerHitTest(kind, () => true);
+
+    connectSignal(enableInteractionSignals(root).onPointerDown, slot);
+    connectInteractionSignal(manager, root, 'onPointerDown', slot);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    expect(fired).toBe(2);
+  });
+
+  it('does not connect the same callback twice', () => {
+    const kind = 'DuplicateManagedHitTest';
+    const root = createNode(kind);
+    setNodeHitTestEnabled(root, true);
+    const manager = createInteractionManager(root);
+    let fired = 0;
+    const slot = () => fired++;
+    registerHitTest(kind, () => true);
+
+    connectInteractionSignal(manager, root, 'onPointerDown', slot);
+    connectInteractionSignal(manager, root, 'onPointerDown', slot);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    expect(fired).toBe(1);
+  });
+
+  it('types the slot with the signal payload', () => {
+    const root = createNode('TypedPayloadHitTest');
+    const manager = createInteractionManager(root);
+
+    connectInteractionSignal(manager, root, 'onPointerDown', (data) => {
+      expectTypeOf(data).toEqualTypeOf<Readonly<PointerEventData>>();
+    });
+    connectInteractionSignal(manager, root, 'onKeyDown', (data) => {
+      expectTypeOf(data).toEqualTypeOf<Readonly<KeyboardEventData>>();
+    });
+    expectTypeOf(enableInteractionSignals(root).onFocusIn).toEqualTypeOf<Signal<Readonly<FocusEventData>>>();
+  });
 });
 
 describe('createInteractionManager', () => {
@@ -406,6 +453,38 @@ describe('disconnectInteractionSignal', () => {
     dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(0);
     expect(hitTests).toBe(0);
+  });
+
+  it('leaves a direct-only connection of the same callback connected', () => {
+    const kind = 'DisconnectDirectOnlyHitTest';
+    const root = createNode(kind);
+    setNodeHitTestEnabled(root, true);
+    const manager = createInteractionManager(root);
+    let fired = 0;
+    const slot = () => fired++;
+    registerHitTest(kind, () => true);
+
+    const id = connectSignal(enableInteractionSignals(root).onPointerDown, slot);
+    disconnectInteractionSignal(manager, root, 'onPointerDown', slot);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    expect(fired).toBe(1);
+    expect(isSlotConnected(enableInteractionSignals(root).onPointerDown, id)).toBe(true);
+  });
+
+  it('removes only the managed connection when the same callback is also connected directly', () => {
+    const kind = 'DisconnectManagedKeepsDirectHitTest';
+    const root = createNode(kind);
+    setNodeHitTestEnabled(root, true);
+    const manager = createInteractionManager(root);
+    let fired = 0;
+    const slot = () => fired++;
+    registerHitTest(kind, () => true);
+
+    connectSignal(enableInteractionSignals(root).onPointerDown, slot);
+    connectInteractionSignal(manager, root, 'onPointerDown', slot);
+    disconnectInteractionSignal(manager, root, 'onPointerDown', slot);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    expect(fired).toBe(1);
   });
 });
 

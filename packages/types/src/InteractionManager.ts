@@ -1,3 +1,5 @@
+import type { SlotId } from '@flighthq/signals/contract';
+
 import type { CursorBackend } from './Cursor.ts';
 import type { Entity, EntityRuntimeKey } from './Entity.ts';
 import type { FocusEventData } from './FocusEventData.ts';
@@ -56,7 +58,9 @@ export interface InteractionManager<N extends NodeAny = Node<NodeFields>> extend
   // are unaffected — only the hover family is suppressed. Set `false` for a stylus-like device where
   // the platform reports touch but a real hover position exists.
   suppressTouchHover: boolean;
-  trackedSignalSlots: Map<N, Map<InteractionSignalName, Map<AnyInteractionSignalSlot, AnyInteractionSignalSlot>>>;
+  // The SlotId of each connection connectInteractionSignal made, by target, signal name and callback. Only
+  // these connections are managed; a slot connected directly on the signal is never tracked here.
+  trackedSignalSlots: Map<N, Map<InteractionSignalName, Map<AnyInteractionSignalSlot, SlotId>>>;
   trackedSubscribersOnly: boolean;
 }
 

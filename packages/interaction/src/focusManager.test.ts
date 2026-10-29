@@ -38,7 +38,7 @@ function placed(x: number, y: number): Node2D {
 }
 
 function keyInput() {
-  return { onKeyDown: createSignal<(data: Readonly<InputKeyboardData>) => void>() };
+  return { onKeyDown: createSignal<Readonly<InputKeyboardData>>() };
 }
 
 function keyData(key: string, shiftKey: boolean = false): InputKeyboardData {

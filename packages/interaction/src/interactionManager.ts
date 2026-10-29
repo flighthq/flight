@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
-import type { Signal, SignalConnectOptions } from '@flighthq/signals/contract';
+import type { Signal, SignalConnectOptions, SlotId } from '@flighthq/signals/contract';
 import type {
   AnyInteractionSignalSlot,
   Cursor,
@@ -76,22 +76,22 @@ export function connectInputToInteraction<N extends NodeAny>(
   const onWheel = (data: Readonly<InputPointerData>) =>
     dispatchInteractionWheel(manager, sx(data.x), sx(data.y), data.deltaX, data.deltaY, data);
 
-  connectSignal(input.onKeyDown, onKeyDown);
-  connectSignal(input.onKeyUp, onKeyUp);
-  connectSignal(input.onPointerCancel, onPointerCancel);
-  connectSignal(input.onPointerDown, onPointerDown);
-  connectSignal(input.onPointerMove, onPointerMove);
-  connectSignal(input.onPointerUp, onPointerUp);
-  connectSignal(input.onWheel, onWheel);
+  const keyDownSlot = connectSignal(input.onKeyDown, onKeyDown);
+  const keyUpSlot = connectSignal(input.onKeyUp, onKeyUp);
+  const pointerCancelSlot = connectSignal(input.onPointerCancel, onPointerCancel);
+  const pointerDownSlot = connectSignal(input.onPointerDown, onPointerDown);
+  const pointerMoveSlot = connectSignal(input.onPointerMove, onPointerMove);
+  const pointerUpSlot = connectSignal(input.onPointerUp, onPointerUp);
+  const wheelSlot = connectSignal(input.onWheel, onWheel);
 
   return () => {
-    disconnectSignal(input.onKeyDown, onKeyDown);
-    disconnectSignal(input.onKeyUp, onKeyUp);
-    disconnectSignal(input.onPointerCancel, onPointerCancel);
-    disconnectSignal(input.onPointerDown, onPointerDown);
-    disconnectSignal(input.onPointerMove, onPointerMove);
-    disconnectSignal(input.onPointerUp, onPointerUp);
-    disconnectSignal(input.onWheel, onWheel);
+    disconnectSignal(input.onKeyDown, keyDownSlot);
+    disconnectSignal(input.onKeyUp, keyUpSlot);
+    disconnectSignal(input.onPointerCancel, pointerCancelSlot);
+    disconnectSignal(input.onPointerDown, pointerDownSlot);
+    disconnectSignal(input.onPointerMove, pointerMoveSlot);
+    disconnectSignal(input.onPointerUp, pointerUpSlot);
+    disconnectSignal(input.onWheel, wheelSlot);
     resetInteractionClickStates(manager);
   };
 }
@@ -132,15 +132,11 @@ export function connectInteractionSignal<N extends NodeAny, Name extends Interac
   slot: InteractionSignalSlot<Name>,
   options?: Readonly<SignalConnectOptions>,
 ): void {
-  const signal = enableInteractionSignals(target)[name] as Signal<InteractionSignalSlot<Name>>;
-  const trackedSlot = getTrackedInteractionSignalSlot(manager, target, name, slot);
-  if (trackedSlot !== null && isSlotConnected(signal, trackedSlot as InteractionSignalSlot<Name>)) return;
-
-  if (isSlotConnected(signal, slot)) {
-    setTrackedInteractionSignalSlot(manager, target, name, slot, slot);
-    incrementInteractionSignalSubscriberCount(manager, name);
-    return;
-  }
+  // Only connections made here are managed. A slot also connected directly on the signal stays a
+  // separate connection, so the callback is delivered once per connection.
+  const signal = enableInteractionSignals(target)[name] as Signal<InteractionSignalPayload<Name>>;
+  const trackedId = getTrackedInteractionSignalSlot(manager, target, name, slot);
+  if (trackedId !== null && isSlotConnected(signal, trackedId)) return;
 
   const connectedSlot =
     options?.once === true
@@ -151,8 +147,8 @@ export function connectInteractionSignal<N extends NodeAny, Name extends Interac
         }
       : slot;
 
-  connectSignal(signal, connectedSlot, options);
-  setTrackedInteractionSignalSlot(manager, target, name, slot, connectedSlot);
+  const id = connectSignal(signal, connectedSlot, options);
+  setTrackedInteractionSignalSlot(manager, target, name, slot, id);
   incrementInteractionSignalSubscriberCount(manager, name);
 
   // Diagnostics seam: the guard module (separately imported) fills this to catch listeners on nodes
@@ -181,14 +177,15 @@ export function disconnectInteractionSignal<N extends NodeAny, Name extends Inte
   name: Name,
   slot: InteractionSignalSlot<Name>,
 ): void {
-  const signal = getInteractionSignal(target, name) as Signal<InteractionSignalSlot<Name>> | null;
+  // Disconnects only the connection connectInteractionSignal made for this callback; a slot connected
+  // directly on the signal is not this API's to remove.
+  const signal = getInteractionSignal(target, name) as Signal<InteractionSignalPayload<Name>> | null;
   if (signal === null) return;
 
-  const trackedSlot = getTrackedInteractionSignalSlot(manager, target, name, slot);
-  const connectedSlot = (trackedSlot ?? slot) as InteractionSignalSlot<Name>;
-  if (!isSlotConnected(signal, connectedSlot)) return;
+  const trackedId = getTrackedInteractionSignalSlot(manager, target, name, slot);
+  if (trackedId === null || !isSlotConnected(signal, trackedId)) return;
 
-  disconnectSignal(signal, connectedSlot);
+  disconnectSignal(signal, trackedId);
   removeTrackedInteractionSignalSlot(manager, target, name, slot);
   decrementInteractionSignalSubscriberCount(manager, name);
 }
@@ -588,7 +585,7 @@ function emitInteractionSignalDirect<N extends NodeAny, Name extends Interaction
   data: InteractionSignalPayload<Name>,
 ): void {
   const signal = getInteractionSignal(target, name);
-  if (signal !== null) emitSignal(signal as Signal<(value: InteractionSignalPayload<Name>) => void>, data);
+  if (signal !== null) emitSignal(signal as Signal<InteractionSignalPayload<Name>>, data);
 }
 
 function dispatchInteractionLayers<N extends NodeAny, Name extends InteractionSignalName>(
@@ -782,7 +779,7 @@ function getTrackedInteractionSignalSlot<N extends NodeAny, Name extends Interac
   target: N,
   name: Name,
   slot: InteractionSignalSlot<Name>,
-): AnyInteractionSignalSlot | null {
+): SlotId | null {
   return (
     manager.trackedSignalSlots
       .get(target)
@@ -920,7 +917,7 @@ function setTrackedInteractionSignalSlot<N extends NodeAny, Name extends Interac
   target: N,
   name: Name,
   slot: InteractionSignalSlot<Name>,
-  connectedSlot: InteractionSignalSlot<Name>,
+  id: SlotId,
 ): void {
   let targetSlots = manager.trackedSignalSlots.get(target);
   if (targetSlots === undefined) {
@@ -934,7 +931,7 @@ function setTrackedInteractionSignalSlot<N extends NodeAny, Name extends Interac
     targetSlots.set(name, signalSlots);
   }
 
-  signalSlots.set(slot as AnyInteractionSignalSlot, connectedSlot as AnyInteractionSignalSlot);
+  signalSlots.set(slot as AnyInteractionSignalSlot, id);
 }
 
 function setPointerDataLocalPosition(data: PointerEventData, currentTarget: NodeAny): void {
