@@ -25,6 +25,7 @@ import {
   dependencyAliasArguments,
   mergeRustExportNames,
   renderPublicExports,
+  resolveCrateExportSymbols,
   resolveRustExportName,
   snakeToLowerCamel,
 } from './generate-rust-package-exports.ts';
@@ -99,8 +100,9 @@ try {
   const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
   const externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
   const publicSymbols = new Map([...symbols, ...externalExports.symbols]);
-  // Intra-package imports also resolve crate-internal exports; the public lanes keep using `symbols`.
-  const importSymbols = new Map([...collectCrateExportSymbols(symbolModules), ...symbols]);
+  // Intra-package imports also resolve crate-internal exports, owner-qualified through each module's Rust
+  // paths; the public lanes keep using `symbols`.
+  const crateOwners = collectCrateExportSymbols(symbolModules);
   const generatedFiles: string[] = [];
 
   for (const module of modules) {
@@ -109,7 +111,14 @@ try {
       join(crateRoot, 'src', module.rustSource),
       module.fileName,
       module.typescript,
-      importSymbols,
+      new Map([
+        ...resolveCrateExportSymbols(
+          readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8'),
+          module.fileName,
+          crateOwners,
+        ),
+        ...symbols,
+      ]),
     );
     writeGenerated(
       join(stagingSourceRoot, module.fileName),

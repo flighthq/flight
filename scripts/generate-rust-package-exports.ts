@@ -88,25 +88,74 @@ export function collectFlightDependencyCrates(cargoToml: string, includeDevelopm
 // lists: crate-visible Rust items a sibling module references, and module-owned runtime stores. They
 // resolve intra-package imports only; the public lanes read `export <declaration>` lines alone, so these
 // never reach `contract.ts` or `index.ts`.
-export function collectCrateExportSymbols(modules: readonly ExportModule[]): Map<string, ExportSymbolOwner> {
-  const symbols = new Map<string, ExportSymbolOwner>();
+export function collectCrateExportSymbols(modules: readonly ExportModule[]): Map<string, ExportSymbolOwner[]> {
+  const symbols = new Map<string, ExportSymbolOwner[]>();
   for (const module of modules) {
     if (module.typescript === undefined) continue;
     for (const match of module.typescript.matchAll(/^export (type )?\{([^}]*)\};?$/gm)) {
       for (const specifier of match[2].split(',')) {
         const name = specifier.trim();
         if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) continue;
-        const owner = symbols.get(name) ?? { fileName: module.fileName, hasType: false, hasValue: false };
-        if (owner.fileName !== module.fileName) {
-          throw new Error(`duplicate crate-internal symbol ${name} in ${owner.fileName} and ${module.fileName}`);
+        const owners = symbols.get(name) ?? [];
+        let owner = owners.find((candidate) => candidate.fileName === module.fileName);
+        if (owner === undefined) {
+          owner = { fileName: module.fileName, hasType: false, hasValue: false };
+          owners.push(owner);
         }
         if (match[1] === undefined) owner.hasValue = true;
         owner.hasType ||= match[1] !== undefined;
-        symbols.set(name, owner);
+        symbols.set(name, owners);
       }
     }
   }
   return symbols;
+}
+
+// The crate-internal symbols one module may import, resolved through its own Rust paths. Rust reaches a
+// sibling's crate-visible item only by naming its module, so a symbol resolves to the module the source
+// names in `use crate::<module>::…` / `use super::<module>::…` (directly, grouped, renamed or by glob) or
+// in a `<module>::Name` path. Same-named items of other modules, and the module's own declarations, never
+// resolve.
+export function resolveCrateExportSymbols(
+  rust: string,
+  ownFileName: string,
+  owners: ReadonlyMap<string, readonly ExportSymbolOwner[]>,
+): Map<string, ExportSymbolOwner> {
+  const qualified = new Map<string, string>();
+  const globModules = new Set<string>();
+  for (const match of rust.matchAll(
+    /^use (?:crate|super)::([a-z0-9_]+)::(\{[^}]*\}|[A-Za-z0-9_*]+(?:\s+as\s+[A-Za-z0-9_]+)?);/gm,
+  )) {
+    const fileName = `${snakeToLowerCamel(match[1])}.ts`;
+    const items = match[2].startsWith('{') ? match[2].slice(1, -1).split(',') : [match[2]];
+    for (const item of items) {
+      const original = item
+        .trim()
+        .split(/\s+as\s+/)[0]
+        ?.trim();
+      if (!original) continue;
+      if (original === '*') globModules.add(fileName);
+      else qualified.set(snakeToLowerCamel(original), fileName);
+    }
+  }
+  for (const match of rust.matchAll(/\b([a-z0-9_]+)::([A-Za-z_][A-Za-z0-9_]*)\b/g)) {
+    if (match[1] === 'crate' || match[1] === 'super' || match[1] === 'self') continue;
+    const name = snakeToLowerCamel(match[2]);
+    if (!qualified.has(name)) qualified.set(name, `${snakeToLowerCamel(match[1])}.ts`);
+  }
+  const resolved = new Map<string, ExportSymbolOwner>();
+  for (const [name, candidates] of owners) {
+    if (candidates.some((owner) => owner.fileName === ownFileName)) continue;
+    const named = qualified.get(name);
+    const owner =
+      named !== undefined
+        ? candidates.find((candidate) => candidate.fileName === named)
+        : candidates.filter((candidate) => globModules.has(candidate.fileName)).length === 1
+          ? candidates.find((candidate) => globModules.has(candidate.fileName))
+          : undefined;
+    if (owner !== undefined) resolved.set(name, owner);
+  }
+  return resolved;
 }
 
 export function collectExportSymbols(modules: readonly ExportModule[]): Map<string, ExportSymbolOwner> {

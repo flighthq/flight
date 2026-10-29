@@ -10,6 +10,7 @@ import {
   collectCrateExportSymbols,
   collectExportSymbols,
   renderGeneratedImports,
+  resolveCrateExportSymbols,
 } from './generate-rust-package-exports.ts';
 
 // Regressions for crate-visible Rust items referenced across a package's modules, run through the real
@@ -46,6 +47,28 @@ pub(crate) fn unused_helper() -> i32 {
 
 pub fn public_value() -> i32 {
     return REGISTRY_LIMIT;
+}
+`;
+
+const ALPHA_FIXTURE = `pub(crate) const LIMIT: i32 = 1;
+
+pub(crate) struct State {
+    pub(crate) value: i32,
+}
+`;
+
+const BETA_FIXTURE = `pub(crate) const LIMIT: i32 = 2;
+
+pub(crate) struct State {
+    pub(crate) label: String,
+}
+`;
+
+const QUALIFIED_USER_FIXTURE = `use crate::alpha::{LIMIT, State};
+
+pub fn read_limit() -> i32 {
+    let state = State { value: LIMIT };
+    return state.value;
 }
 `;
 
@@ -99,14 +122,95 @@ function generatedPair(): { owner: string; user: string } {
     { fileName: 'owner.ts', typescript: ownerTypescript },
     { fileName: 'user.ts', typescript: userTypescript },
   ];
-  const symbols = new Map([...collectCrateExportSymbols(modules), ...collectExportSymbols(modules)]);
+  const owners = collectCrateExportSymbols(modules);
+  const publicSymbols = collectExportSymbols(modules);
+  const symbolsFor = (rust: string, fileName: string) =>
+    new Map([...resolveCrateExportSymbols(rust, fileName, owners), ...publicSymbols]);
   return {
-    owner: renderGeneratedImports(OWNER_FIXTURE, ownerTypescript, 'owner.ts', symbols) + ownerTypescript,
-    user: renderGeneratedImports(USER_FIXTURE, userTypescript, 'user.ts', symbols) + userTypescript,
+    owner:
+      renderGeneratedImports(OWNER_FIXTURE, ownerTypescript, 'owner.ts', symbolsFor(OWNER_FIXTURE, 'owner.ts')) +
+      ownerTypescript,
+    user:
+      renderGeneratedImports(USER_FIXTURE, userTypescript, 'user.ts', symbolsFor(USER_FIXTURE, 'user.ts')) +
+      userTypescript,
   };
 }
 
 describe('flight-compile crate-visible items', () => {
+  it('keeps same-named crate-visible items of different modules apart', () => {
+    const modules = new Map([
+      ['alpha', ALPHA_FIXTURE],
+      ['beta', BETA_FIXTURE],
+      ['user', QUALIFIED_USER_FIXTURE],
+    ]);
+    const directory = mkdtempSync(join(workDirectory, 'modules-'));
+    for (const [name, rust] of modules) writeFileSync(join(directory, `${name}.rs`), rust);
+    const generated = new Map<string, string>();
+    for (const name of modules.keys()) {
+      const out = join(directory, `${name}.raw.ts`);
+      const siblings = [...modules.keys()]
+        .filter((other) => other !== name)
+        .flatMap((other) => ['--alias-source', join(directory, `${other}.rs`)]);
+      const result = spawnSync(
+        compilerPath,
+        ['generate', '--source', join(directory, `${name}.rs`), '--out', out, ...siblings],
+        {
+          encoding: 'utf8',
+        },
+      );
+      expect(result.stderr.trim()).toBe('');
+      generated.set(name, readFileSync(out, 'utf8'));
+    }
+    expect(generated.get('alpha')).toContain('export { LIMIT };');
+    expect(generated.get('alpha')).toContain('export type { State };');
+    expect(generated.get('beta')).not.toContain('export {');
+    expect(generated.get('beta')).not.toContain('export type {');
+    const exportModules = [...generated].map(([name, typescript]) => ({ fileName: `${name}.ts`, typescript }));
+    const owners = collectCrateExportSymbols(exportModules);
+    const publicSymbols = collectExportSymbols(exportModules);
+    for (const [name, typescript] of generated) {
+      const symbols = new Map([
+        ...resolveCrateExportSymbols(modules.get(name) ?? '', `${name}.ts`, owners),
+        ...publicSymbols,
+      ]);
+      writeFileSync(
+        join(directory, `${name}.ts`),
+        renderGeneratedImports(modules.get(name) ?? '', typescript, `${name}.ts`, symbols) + typescript,
+      );
+    }
+    expect(readFileSync(join(directory, 'user.ts'), 'utf8')).toContain("from './alpha.ts';");
+    const program = ts.createProgram(
+      [...modules.keys()].map((name) => join(directory, `${name}.ts`)),
+      {
+        allowImportingTsExtensions: true,
+        lib: ['lib.es2022.d.ts'],
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.Bundler,
+        noEmit: true,
+        strict: true,
+        target: ts.ScriptTarget.ES2022,
+        types: [],
+      },
+    );
+    expect(
+      ts
+        .getPreEmitDiagnostics(program)
+        .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')),
+    ).toEqual([]);
+    const loaded = new Map<string, Record<string, unknown>>();
+    for (const name of ['alpha', 'beta', 'user']) {
+      const javascript = ts.transpileModule(readFileSync(join(directory, `${name}.ts`), 'utf8'), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      }).outputText;
+      const module = { exports: {} as Record<string, unknown> };
+      new Function('exports', 'module', 'require', javascript)(module.exports, module, (specifier: string) =>
+        loaded.get(specifier),
+      );
+      loaded.set(`./${name}.ts`, module.exports);
+    }
+    expect((loaded.get('./user.ts') as { readLimit: () => number }).readLimit()).toBe(1);
+  });
+
   it('exports only referenced crate-visible items through lists the public scan ignores', () => {
     const { owner } = generatedPair();
     expect(owner).toContain('export { REGISTRY_LIMIT, Slot };');

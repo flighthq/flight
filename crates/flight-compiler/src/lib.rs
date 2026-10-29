@@ -220,7 +220,12 @@ fn compile_typescript_sources(
         )?;
     }
     validate_const_group_bindings(&output, &program.const_groups)?;
-    return Ok(export_crate_visible_items(output, &program, alias_sources));
+    return Ok(export_crate_visible_items(
+        output,
+        &program,
+        alias_sources,
+        source_paths.first().copied(),
+    ));
 }
 
 /// Compiles one Rust module while reusing canonical callable aliases declared by sibling sources.
@@ -593,6 +598,83 @@ struct StringUnionMetadataSource<'a> {
     values: &'a std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
 }
 
+// The items of `module` that a sibling source names through that module: `use crate::module::…` /
+// `use super::module::…` trees (by original name, through renames and groups) and `module::Name`
+// paths, plus whether it glob-imports the module. Same-named crate-visible items of other modules
+// therefore stay unexported here.
+fn sibling_references_to_module(
+    source: &str,
+    module: &str,
+) -> (std::collections::BTreeSet<String>, bool) {
+    fn collect(
+        tree: &syn::UseTree,
+        prefix: &mut Vec<String>,
+        module: &str,
+        names: &mut std::collections::BTreeSet<String>,
+        glob: &mut bool,
+    ) {
+        let in_module = prefix.last().is_some_and(|last| last == module)
+            && prefix.len() >= 2
+            && matches!(prefix[0].as_str(), "crate" | "super" | "self");
+        match tree {
+            syn::UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(&path.tree, prefix, module, names, glob);
+                prefix.pop();
+            }
+            syn::UseTree::Group(group) => {
+                for item in &group.items {
+                    collect(item, prefix, module, names, glob);
+                }
+            }
+            syn::UseTree::Name(name) if in_module => {
+                names.insert(name.ident.to_string());
+            }
+            syn::UseTree::Rename(rename) if in_module => {
+                names.insert(rename.ident.to_string());
+            }
+            syn::UseTree::Glob(_) if in_module => *glob = true,
+            _ => {}
+        }
+    }
+
+    let mut names = std::collections::BTreeSet::new();
+    let mut glob = false;
+    if let Ok(file) = syn::parse_file(source) {
+        for item in &file.items {
+            if let syn::Item::Use(item_use) = item {
+                collect(
+                    &item_use.tree,
+                    &mut Vec::new(),
+                    module,
+                    &mut names,
+                    &mut glob,
+                );
+            }
+        }
+    }
+    let tokens = source
+        .split(|character: char| {
+            !(character.is_ascii_alphanumeric() || character == '_' || character == ':')
+        })
+        .collect::<Vec<_>>();
+    let qualifier = format!("{module}::");
+    for token in tokens {
+        if let Some(index) = token.find(&qualifier)
+            && (index == 0 || token[..index].ends_with("::"))
+        {
+            let name = token[index + qualifier.len()..]
+                .split("::")
+                .next()
+                .unwrap_or_default();
+            if !name.is_empty() {
+                names.insert(name.to_string());
+            }
+        }
+    }
+    return (names, glob);
+}
+
 fn validate_string_union_metadata<'a>(
     sources: impl IntoIterator<Item = StringUnionMetadataSource<'a>>,
 ) -> Result<(), CompileError> {
@@ -782,15 +864,33 @@ fn export_crate_visible_items(
     mut output: String,
     program: &model::Program,
     alias_sources: &[&str],
+    source_path: Option<&str>,
 ) -> String {
-    let referenced = alias_sources
-        .iter()
-        .flat_map(|source| {
-            source
-                .split(|character: char| !(character.is_ascii_alphanumeric() || character == '_'))
-                .filter(|word| !word.is_empty())
-        })
-        .collect::<std::collections::BTreeSet<_>>();
+    let own_module = source_path.and_then(|path| {
+        std::path::Path::new(path)
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .map(str::to_string)
+    });
+    let mut referenced = std::collections::BTreeSet::<String>::new();
+    let mut referenced_all = false;
+    for source in alias_sources {
+        match &own_module {
+            Some(module) => {
+                let (names, glob) = sibling_references_to_module(source, module);
+                referenced.extend(names);
+                referenced_all |= glob;
+            }
+            None => referenced.extend(
+                source
+                    .split(|character: char| {
+                        !(character.is_ascii_alphanumeric() || character == '_')
+                    })
+                    .filter(|word| !word.is_empty())
+                    .map(str::to_string),
+            ),
+        }
+    }
     let crate_visible = |visibility: &syn::Visibility| {
         return matches!(visibility, syn::Visibility::Restricted(_));
     };
@@ -844,7 +944,7 @@ fn export_crate_visible_items(
     let mut values = Vec::new();
     let mut types = Vec::new();
     for (rust_name, name) in candidates {
-        if !referenced.contains(rust_name.as_str()) {
+        if !referenced_all && !referenced.contains(rust_name.as_str()) {
             continue;
         }
         let declares = |keyword: &str| {

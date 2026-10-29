@@ -24,6 +24,7 @@ import {
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
+  resolveCrateExportSymbols,
   resolveExternalContractExports,
   resolveRustExportName,
 } from './generate-rust-package-exports.ts';
@@ -38,8 +39,8 @@ describe('collectCrateExportSymbols', () => {
       },
     ];
     expect([...collectCrateExportSymbols(modules)]).toEqual([
-      ['createRegistry', { fileName: 'owner.ts', hasType: false, hasValue: true }],
-      ['Registry', { fileName: 'owner.ts', hasType: true, hasValue: false }],
+      ['createRegistry', [{ fileName: 'owner.ts', hasType: false, hasValue: true }]],
+      ['Registry', [{ fileName: 'owner.ts', hasType: true, hasValue: false }]],
     ]);
     expect([...collectExportSymbols(modules).keys()]).toEqual(['publicValue']);
   });
@@ -216,6 +217,34 @@ describe('mergeRustExportNames', () => {
         ]),
       ),
     ).toThrow('export-name decode_utf8 is decodeUtf8Text in text.ts and decodeUTF8 in utf8.ts');
+  });
+});
+
+describe('resolveCrateExportSymbols', () => {
+  it('resolves same-named crate symbols through the module the Rust source names', () => {
+    const owners = collectCrateExportSymbols([
+      {
+        fileName: 'alpha.ts',
+        typescript: 'const LIMIT = 1;\ninterface State {}\n\nexport { LIMIT };\nexport type { State };\n',
+      },
+      {
+        fileName: 'beta.ts',
+        typescript: 'const LIMIT = 2;\ninterface State {}\n\nexport { LIMIT };\nexport type { State };\n',
+      },
+      { fileName: 'gamma.ts', typescript: 'const ONLY = 3;\n\nexport { ONLY };\n' },
+    ]);
+    const viaUse = resolveCrateExportSymbols('use crate::beta::{LIMIT, State as BetaState};\n', 'user.ts', owners);
+    expect(viaUse.get('LIMIT')?.fileName).toBe('beta.ts');
+    expect(viaUse.get('State')?.fileName).toBe('beta.ts');
+    expect(viaUse.has('ONLY')).toBe(false);
+    expect(
+      resolveCrateExportSymbols('fn f() -> i32 { return gamma::ONLY; }\n', 'user.ts', owners).get('ONLY')?.fileName,
+    ).toBe('gamma.ts');
+    const viaGlob = resolveCrateExportSymbols('use crate::alpha::*;\n', 'user.ts', owners);
+    expect(viaGlob.get('LIMIT')?.fileName).toBe('alpha.ts');
+    const unqualified = resolveCrateExportSymbols('', 'user.ts', owners);
+    expect(unqualified.has('LIMIT')).toBe(false);
+    expect(resolveCrateExportSymbols('use crate::beta::LIMIT;\n', 'alpha.ts', owners).has('LIMIT')).toBe(false);
   });
 });
 

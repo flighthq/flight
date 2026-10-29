@@ -1153,6 +1153,54 @@ mod foreign_macro_arguments {
     }
 
     #[test]
+    fn exports_crate_visible_items_only_from_the_module_siblings_name() {
+        let alpha = "pub(crate) const LIMIT: i32 = 1;\n\npub(crate) struct State {\n    pub(crate) value: i32,\n}\n";
+        let beta = "pub(crate) const LIMIT: i32 = 2;\n\npub(crate) struct State {\n    pub(crate) label: String,\n}\n";
+        let user = "use crate::alpha::{LIMIT, State};\n\npub fn read_limit() -> i32 {\n    let state = State { value: LIMIT };\n    return state.value;\n}\n";
+        let qualified = "pub fn read_limit() -> i32 {\n    return crate::beta::LIMIT;\n}\n";
+        let compile = |path: &str, source: &str, siblings: &[(&str, &str)]| {
+            let siblings = siblings
+                .iter()
+                .map(|(path, source)| ModuleSource { path, source })
+                .collect::<Vec<_>>();
+            return compile_typescript_with_visibility_sources(
+                ModuleSource { path, source },
+                None,
+                &siblings,
+                &[],
+                &[],
+            )
+            .unwrap();
+        };
+
+        let alpha_output = compile(
+            "src/alpha.rs",
+            alpha,
+            &[("src/beta.rs", beta), ("src/user.rs", user)],
+        );
+        assert!(
+            alpha_output.ends_with("export { LIMIT };\nexport type { State };\n"),
+            "{alpha_output}"
+        );
+        let beta_output = compile(
+            "src/beta.rs",
+            beta,
+            &[("src/alpha.rs", alpha), ("src/user.rs", user)],
+        );
+        assert!(!beta_output.contains("export {"), "{beta_output}");
+        assert!(!beta_output.contains("export type {"), "{beta_output}");
+        let beta_qualified = compile(
+            "src/beta.rs",
+            beta,
+            &[("src/alpha.rs", alpha), ("src/user.rs", qualified)],
+        );
+        assert!(
+            beta_qualified.ends_with("export { LIMIT };\n"),
+            "{beta_qualified}"
+        );
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment
