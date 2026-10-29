@@ -56,7 +56,8 @@ describe('base Vitest TypeScript configuration', () => {
     ];
     const packageConfigs = readdirSync(path.resolve(rootDir, 'packages'))
       .map((directory) => path.resolve(rootDir, 'packages', directory, 'tsconfig.json'))
-      .filter(existsSync);
+      .filter(existsSync)
+      .flatMap(compiledProjectConfigs);
 
     for (const configPath of packageConfigs) {
       const config = ts.readConfigFile(configPath, ts.sys.readFile);
@@ -69,3 +70,17 @@ describe('base Vitest TypeScript configuration', () => {
     }
   });
 });
+
+// A solution-style package root (`files: []` plus references) compiles nothing itself; the projects it
+// references inside the package are what Vitest's esbuild transform reads settings from, so check those.
+function compiledProjectConfigs(configPath: string): string[] {
+  const config = ts.readConfigFile(configPath, ts.sys.readFile).config as {
+    files?: unknown[];
+    references?: { path: string }[];
+  };
+  if (!Array.isArray(config?.files) || config.files.length !== 0) return [configPath];
+  const packageDir = path.dirname(configPath);
+  return (config.references ?? [])
+    .map((reference) => path.resolve(packageDir, reference.path))
+    .filter((referencePath) => path.dirname(referencePath) === packageDir && referencePath.endsWith('.json'));
+}
