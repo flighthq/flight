@@ -296,6 +296,35 @@ pub fn negated_flag(flag: bool) -> bool {
         assert!(output.contains("return !flag;"));
     }
 
+    // Ordinary calls lower to operator expressions too (`Arc::ptr_eq(a, b)` emits `a === b`), so the
+    // operand guard classifies emitted text rather than enumerating method calls.
+    #[test]
+    fn parenthesizes_operator_lowered_calls_used_as_operands() {
+        let source = r#"
+use std::sync::Arc;
+
+pub fn different(a: &Arc<i32>, b: &Arc<i32>) -> bool {
+    return !Arc::ptr_eq(a, b);
+}
+
+pub fn equality_matches(a: &Arc<i32>, b: &Arc<i32>, expected: bool) -> bool {
+    return Arc::ptr_eq(a, b) == expected;
+}
+
+pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
+    return Arc::ptr_eq(a, b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return !(a === b);"));
+        assert!(output.contains("return (a === b) === expected;"));
+        assert!(output.contains("return a === b;"));
+        assert!(!output.contains("!a === b"));
+        assert!(!output.contains("a === b === expected"));
+    }
+
     #[test]
     fn maps_trailing_options_to_optional_undefined_contracts() {
         let source = r#"

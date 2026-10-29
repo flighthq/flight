@@ -28,6 +28,8 @@ const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
+// The precedence `expression_precedence` assigns to Rust primary expressions.
+const PRIMARY_PRECEDENCE: u8 = 15;
 const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
 const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
 const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
@@ -1040,7 +1042,7 @@ fn expression_precedence(expression: &Expr) -> u8 {
         Expr::If(_) => 2,
         Expr::Reference(reference) => expression_precedence(&reference.expr),
         Expr::Unary(_) => 13,
-        _ => 15,
+        _ => PRIMARY_PRECEDENCE,
     };
 }
 
@@ -5340,10 +5342,10 @@ fn emit_type_parameters(generics: &syn::Generics) -> String {
     return format!("<{}>", parameters.join(", "));
 }
 
-// A Rust method call is a primary expression, but its lowering can be an operator expression
-// (`v.is_empty()` emits `v.length === 0`, `o.is_some()` emits `o !== undefined`). The precedence
-// model above is Rust-shaped, so wherever such a lowering becomes an operand it is parenthesized here
-// rather than trusted: an unparenthesized `!v.length === 0` parses as `(!v.length) === 0`.
+// A Rust primary can lower to an operator expression (`v.is_empty()` emits `v.length === 0`,
+// `Arc::ptr_eq(a, b)` emits `a === b`). The precedence model above is Rust-shaped, so wherever such a
+// lowering becomes an operand it is parenthesized here rather than trusted: an unparenthesized
+// `!v.length === 0` parses as `(!v.length) === 0`.
 fn emit_unary_expression(
     unary: &syn::ExprUnary,
     entities: &HashSet<String>,
@@ -5413,15 +5415,13 @@ fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
     return finder.found;
 }
 
-// Whether the emitted text of `expression` can stand as an operand without parentheses. Only method
-// calls lower to text whose shape differs from their Rust precedence; everything else is governed by
-// `expression_precedence`.
+// Whether the emitted text of `expression` can stand as an operand without parentheses. Expressions the
+// Rust-shaped `expression_precedence` already ranks below a primary are parenthesized by that model. Every
+// expression it ranks as a primary (calls, method calls, macros, paths, fields, indexes, ...) is checked
+// against its emitted text instead, because a lowering can turn a Rust primary into a JS operator
+// expression (`Arc::ptr_eq(a, b)` emits `a === b`, `v.is_empty()` emits `v.length === 0`).
 fn is_lowered_primary(expression: &Expr, text: &str) -> bool {
-    let mut inner = expression;
-    while let Expr::Reference(reference) = inner {
-        inner = &reference.expr;
-    }
-    if !matches!(inner, Expr::MethodCall(_)) {
+    if expression_precedence(expression) < PRIMARY_PRECEDENCE {
         return true;
     }
     return is_primary_expression_text(text);

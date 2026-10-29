@@ -121,7 +121,7 @@ export function randomInsideUnitSphere(out: Float32Array, random: RandomSource):
  * `out[0]` / `out[1]`. The result has unit length.
  */
 export function randomOnUnitCircle(out: Float32Array, random: RandomSource): void {
-  const angle = random() * Math.PI * 2;
+  const angle = random() * (Math.PI * 2);
   const x = Math.cos(angle);
   const y = Math.sin(angle);
   out[0] = x;
