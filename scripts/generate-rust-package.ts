@@ -9,6 +9,7 @@ import {
   compilerAliasArguments,
   collectExportSymbols,
   collectFlightDependencyCrates,
+  collectRootOnlyNames,
   collectRustExportNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
@@ -423,6 +424,15 @@ function publicExports(
   symbolModules: PackageModule[],
   symbols: Map<string, SymbolOwner>,
 ): string {
+  const exactRoots = [
+    ...new Set(
+      modules.flatMap((module) =>
+        collectRootOnlyNames(readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8')),
+      ),
+    ),
+  ];
+  if (exactRoots.length > 0) return renderPublicExports(symbolModules, symbols, exactRoots);
+
   const roots: string[] = [];
   for (const module of modules) {
     roots.push(...sourceDirective(crateRoot, module, 'root'));

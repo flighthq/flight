@@ -2448,6 +2448,57 @@ pub fn advance_decoder(bytes: Vec<u8>) -> usize {
     }
 
     #[test]
+    fn emits_generic_struct_parameters_and_parenthesizes_array_unions() {
+        let source = r#"
+pub struct Envelope<T: Clone> {
+    pub value: T,
+    pub history: Vec<Option<T>>,
+}
+
+pub struct EntityBox<T> {
+    pub value: T,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(EntityBox<T>);
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains(
+            "export interface Envelope<T> {\n  value: T;\n  history: (T | undefined)[];\n}"
+        ));
+        assert!(
+            output.contains("export interface EntityBoxRaw<T> extends EntityRaw {\n  value: T;\n}")
+        );
+    }
+
+    #[test]
+    fn lowers_unit_values_to_undefined() {
+        let source = r#"
+pub fn accept_unit(value: ()) {}
+
+pub fn call_unit() {
+    accept_unit(());
+    let value: () = ();
+    accept_unit(value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("export function acceptUnit(value: void): void"),
+            "{output}"
+        );
+        assert!(output.contains("acceptUnit(undefined);"), "{output}");
+        assert!(
+            output.contains("const value: void = undefined;"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn lowers_designated_entity_runtime_state_into_the_runtime_slot() {
         let source = r#"
 //! flight-compiler: entity-runtime-state LassoSelection.state
@@ -10559,7 +10610,7 @@ mod begin_lasso_selection {
 
     #[test]
     fn activates_only_the_begun_selection() {
-        let mut selection = create_lasso_selection();
+        let mut selection: LassoSelection = create_lasso_selection();
         let other = create_lasso_selection();
         begin_lasso_selection(&mut selection);
         assert!(is_lasso_selection_active(&selection));
@@ -10575,7 +10626,12 @@ mod begin_lasso_selection {
         )
         .unwrap();
 
-        assert!(output.contains("    let selection = createLassoSelection();\n"));
+        assert!(output.contains(
+            "import type {\n  LassoSelectionRaw,\n} from \"@flighthq/selection/contract\";"
+        ));
+        assert!(
+            output.contains("    let selection: LassoSelectionRaw = createLassoSelection();\n")
+        );
         assert!(output.contains("    beginLassoSelection(selection);\n"));
         assert!(output.contains("    expect(isLassoSelectionActive(selection)).toBe(true);\n"));
         assert!(output.contains("    expect(!isLassoSelectionActive(other)).toBe(true);\n"));

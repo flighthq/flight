@@ -377,6 +377,9 @@ fn array_type(inner: String) -> String {
     if inner.starts_with("readonly [") {
         return format!("Array<{inner}>");
     }
+    if inner.contains(" | ") || inner.contains("=>") {
+        return format!("({inner})[]");
+    }
     return format!("{inner}[]");
 }
 
@@ -6853,6 +6856,7 @@ pub(crate) fn emit_expression(
             }
             Ok(format!("{{ {} }}", fields.join(", ")))
         }
+        Expr::Tuple(tuple) if tuple.elems.is_empty() => Ok("undefined".to_string()),
         Expr::Tuple(tuple) => {
             let elements = tuple
                 .elems
@@ -8127,6 +8131,9 @@ fn emit_expression_for_type(
             _ => emit_expression(expression, entities),
         },
         Type::Tuple(tuple_type) => match expression {
+            Expr::Tuple(tuple) if tuple.elems.is_empty() && tuple_type.elems.is_empty() => {
+                Ok("undefined".to_string())
+            }
             Expr::Tuple(tuple) if tuple.elems.len() == tuple_type.elems.len() => {
                 let elements = tuple
                     .elems
@@ -12613,8 +12620,12 @@ fn emit_struct(
     };
     let module_private_plain_data = !is_public(&structure.vis) && !entity;
     let extension = if entity { " extends EntityRaw" } else { "" };
-    writeln!(out, "{export}interface {name}{extension} {{")
-        .expect("writing to a String cannot fail");
+    let type_parameters = emit_type_parameters(&structure.generics);
+    writeln!(
+        out,
+        "{export}interface {name}{type_parameters}{extension} {{"
+    )
+    .expect("writing to a String cannot fail");
     for field in &structure.fields {
         if !module_private_plain_data && !is_public(&field.vis) {
             continue;

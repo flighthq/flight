@@ -111,6 +111,11 @@ fn collect_contract_symbols(
         }
 
         fn record_type_name(&mut self, name: String) {
+            let name = if self.context.contains(&name) {
+                format!("{name}Raw")
+            } else {
+                name
+            };
             if !self.declared.contains(&name)
                 && !self.helper_names.contains(&name)
                 && !self.standard_constants.contains(&name)
