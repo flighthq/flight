@@ -117,7 +117,7 @@ pub fn connect_input_state_to_input_manager(
                 .get(&data.pointer_id)
                 .unwrap_or(&0);
             let bit = pointer_button_bit(data.button);
-            let next = previous & !bit;
+            let next = previous & (bit ^ 0xFFFF_FFFF);
             if next == 0 {
                 locked.pointer_buttons_down.remove(&data.pointer_id);
             } else {
