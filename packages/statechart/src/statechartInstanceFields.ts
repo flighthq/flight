@@ -1,8 +1,8 @@
-import type { Statechart, StatechartInstance } from './types.ts';
+import type { StatechartInstanceRaw, StatechartRaw } from './types.ts';
 
 export function initializeStatechartInstanceFields(
-  out: StatechartInstance,
-  chart: Readonly<Statechart>,
+  out: StatechartInstanceRaw,
+  chart: Readonly<StatechartRaw>,
   inputValues: Float64Array,
   regionBlend: Float32Array,
   regionDuration: Float64Array,
@@ -10,7 +10,7 @@ export function initializeStatechartInstanceFields(
   regionStates: Int32Array,
   regionTransitions: Int32Array,
 ): void {
-  const target = out as { -readonly [Key in keyof StatechartInstance]: StatechartInstance[Key] };
+  const target = out as { -readonly [Key in keyof StatechartInstanceRaw]: StatechartInstanceRaw[Key] };
   target.chart = chart;
   target.durationGuard = null;
   target.inputValues = inputValues;

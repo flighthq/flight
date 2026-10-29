@@ -1,15 +1,15 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 
-import type { StatechartInstance, StatechartTransitionExplanation } from './types.ts';
+import type { StatechartInstanceRaw, StatechartTransitionExplanation } from './types.ts';
 
 // Report whether caller-misuse diagnostics are installed for this actor.
-export function areStatechartGuardsEnabled(instance: Readonly<StatechartInstance>): boolean {
+export function areStatechartGuardsEnabled(instance: Readonly<StatechartInstanceRaw>): boolean {
   return instance.durationGuard === warnMissingStatechartRegionDuration;
 }
 
 // Remove the opt-in diagnostics hook without changing transition behavior.
-export function disableStatechartGuards(instance: StatechartInstance): void {
+export function disableStatechartGuards(instance: StatechartInstanceRaw): void {
   instance.durationGuard = null;
 }
 
@@ -17,13 +17,13 @@ export function disableStatechartGuards(instance: StatechartInstance): void {
 // positive state duration. Core still coerces that gate to no requirement; this module owns the message
 // and @flighthq/log dependency, so an unguarded count/read consumer sheds both completely. Warnings go to
 // the caller-owned `logState`, stamped with `clock()` when reported.
-export function enableStatechartGuards(instance: StatechartInstance, logState: LogState, clock: () => number): void {
+export function enableStatechartGuards(instance: StatechartInstanceRaw, logState: LogState, clock: () => number): void {
   statechartGuardLogs.set(instance, { clock, logState });
   instance.durationGuard = warnMissingStatechartRegionDuration;
 }
 
 function warnMissingStatechartRegionDuration(
-  instance: Readonly<StatechartInstance>,
+  instance: Readonly<StatechartInstanceRaw>,
   explanation: Readonly<StatechartTransitionExplanation>,
 ): void {
   const log = statechartGuardLogs.get(instance);
@@ -69,5 +69,5 @@ interface StatechartGuardLog {
 const statechartGuardChartIds = new WeakMap<object, number>();
 // The log state and clock each instance's guard reports into, so the installed guard stays one shared
 // function (areStatechartGuardsEnabled compares it by identity).
-const statechartGuardLogs = new WeakMap<Readonly<StatechartInstance>, StatechartGuardLog>();
+const statechartGuardLogs = new WeakMap<Readonly<StatechartInstanceRaw>, StatechartGuardLog>();
 let nextStatechartGuardChartId = 1;

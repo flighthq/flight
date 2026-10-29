@@ -7,6 +7,7 @@ pub use crate::statechart::{
     get_statechart_region_state, set_statechart_boolean_input, set_statechart_number_input,
     set_statechart_region_duration,
 };
+pub use crate::statechart_compat::{Statechart, StatechartInstance};
 pub use crate::statechart_instance_init::initialize_statechart_instance;
 pub use crate::statechart_signals::*;
 pub use crate::types::*;

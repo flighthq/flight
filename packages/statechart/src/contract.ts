@@ -18,6 +18,7 @@ export {
   setStatechartNumberInput,
   setStatechartRegionDuration,
 } from './statechart.ts';
+export { Statechart, StatechartInstance } from './statechartCompat.ts';
 export { initializeStatechartInstance } from './statechartInstanceInit.ts';
 export { enableStatechartSignals, getStatechartSignals, initializeStatechartSignals } from './statechartSignals.ts';
 export {
@@ -28,11 +29,11 @@ export {
   StatechartTransitionStatus,
 } from './types.ts';
 export type {
-  Statechart,
   StatechartCondition,
   StatechartDurationGuard,
   StatechartInput,
-  StatechartInstance,
+  StatechartInstanceRaw,
+  StatechartRaw,
   StatechartRegion,
   StatechartSignals,
   StatechartState,

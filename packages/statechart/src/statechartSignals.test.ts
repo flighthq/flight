@@ -1,6 +1,5 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import { StatechartAtomicStateKind } from '@flighthq/types/contract';
-import type { Statechart } from '@flighthq/types/contract';
 
 import {
   advanceStatechartInstance,
@@ -9,6 +8,7 @@ import {
   setStatechartRegionDuration,
 } from './statechart.ts';
 import { enableStatechartSignals, getStatechartSignals, initializeStatechartSignals } from './statechartSignals.ts';
+import type { StatechartRaw } from './types.ts';
 
 describe('enableStatechartSignals', () => {
   it('lazily attaches one standard signal group to the mutable instance', () => {
@@ -34,7 +34,7 @@ describe('enableStatechartSignals', () => {
   });
 
   it('emits after trigger cleanup so a listener can latch an edge for the next pass', () => {
-    const chart: Statechart = {
+    const chart: StatechartRaw = {
       inputs: [{ initialValue: 0, kind: 'Trigger' }],
       regions: [
         {
@@ -77,7 +77,7 @@ describe('getStatechartSignals', () => {
   });
 });
 
-function createImmediateChart(): Statechart {
+function createImmediateChart(): StatechartRaw {
   return {
     inputs: [],
     regions: [

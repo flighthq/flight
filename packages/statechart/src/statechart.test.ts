@@ -21,15 +21,15 @@ import {
   setStatechartRegionDuration,
 } from './contract.ts';
 import type {
-  Statechart,
   StatechartCondition,
   StatechartInput,
-  StatechartInstance,
+  StatechartInstanceRaw,
+  StatechartRaw,
   StatechartRegion,
   StatechartTransition,
 } from './contract.ts';
 
-function createInstance(chart: Readonly<Statechart>): StatechartInstance {
+function createInstance(chart: Readonly<StatechartRaw>): StatechartInstanceRaw {
   const chartRef = chart;
   return createStatechartInstance(chartRef);
 }
@@ -38,7 +38,7 @@ function condition(inputIndex: number, comparison: StatechartComparison, value: 
   return { comparison: comparison, inputIndex: inputIndex, value: value };
 }
 
-function createEmptyChart(): Statechart {
+function createEmptyChart(): StatechartRaw {
   return {
     inputs: [] as never[],
     name: undefined,
@@ -57,7 +57,7 @@ function createSingleTransitionChart(
   conditions: StatechartCondition[],
   durationMs: number,
   exitTimeRatio: number,
-): Statechart {
+): StatechartRaw {
   return {
     inputs: inputs,
     name: undefined,
@@ -78,7 +78,7 @@ function createSingleTransitionChart(
   };
 }
 
-function createTwoRegionTriggerChart(): Statechart {
+function createTwoRegionTriggerChart(): StatechartRaw {
   const triggerTransition = transition(1, [condition(0, StatechartComparison.GreaterThan, 999.0)], 0.0, -1.0);
   return {
     inputs: [{ initialValue: 0.0, kind: StatechartInputKind.Trigger, name: 'go' }],

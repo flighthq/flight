@@ -19,8 +19,8 @@ fn log_state() -> LogStateRef {
     return Arc::new(RwLock::new(create_log_state()));
 }
 
-fn create_exit_time_chart() -> Statechart {
-    return Statechart {
+fn create_exit_time_chart() -> StatechartRaw {
+    return StatechartRaw {
         inputs: Vec::new(),
         name: None,
         regions: vec![StatechartRegion {
@@ -69,7 +69,7 @@ mod are_statechart_guards_enabled {
         assert!(!are_statechart_guards_enabled(&unguarded));
 
         let custom: StatechartDurationGuard = Arc::new(
-            |_: &flight_entity::Ref<StatechartInstance>, _: &StatechartTransitionExplanation| {},
+            |_: &flight_entity::Ref<StatechartInstanceRaw>, _: &StatechartTransitionExplanation| {},
         );
         guarded.write().unwrap().duration_guard = Some(custom);
         assert!(!are_statechart_guards_enabled(&guarded));

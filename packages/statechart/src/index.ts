@@ -25,14 +25,15 @@ export {
 } from './contract.ts';
 
 export type {
-  Statechart,
   StatechartCondition,
   StatechartDurationGuard,
   StatechartInput,
-  StatechartInstance,
+  StatechartInstanceRaw,
+  StatechartRaw,
   StatechartRegion,
   StatechartSignals,
   StatechartState,
   StatechartTransition,
   StatechartTransitionExplanation,
 } from './contract.ts';
+export { Statechart, StatechartInstance } from './statechartCompat.ts';

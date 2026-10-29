@@ -21,8 +21,8 @@ mod sugar_tests {
     use super::*;
     use std::sync::{Arc, RwLock};
 
-    fn chart_ref() -> Ref<Statechart> {
-        let chart = Statechart {
+    fn chart_ref() -> Ref<StatechartRaw> {
+        let chart = StatechartRaw {
             inputs: vec![
                 StatechartInput {
                     initial_value: 0.0,
@@ -94,7 +94,7 @@ mod sugar_tests {
     #[test]
     fn statechart_instance_new_matches_create_statechart_instance() {
         let chart = chart_ref();
-        let via_new = StatechartInstance::new(&chart);
+        let via_new = StatechartInstanceRaw::new(&chart);
         let via_free = create_statechart_instance(&chart);
         assert!(std::sync::Arc::ptr_eq(
             &via_new.read().unwrap().chart,
@@ -294,7 +294,7 @@ mod sugar_tests {
 // Advance every concurrent region, returning how many reached a new state. Triggers are cleared
 // before signals are emitted, and every lock is released before signal callbacks so listeners may
 // mutate the instance (fire triggers, set durations) during emission, as in the TS source.
-pub fn advance_statechart_instance(instance: &Ref<StatechartInstance>, delta_time: f64) -> i32 {
+pub fn advance_statechart_instance(instance: &Ref<StatechartInstanceRaw>, delta_time: f64) -> i32 {
     let delta_time_ms = if delta_time.is_finite() && delta_time > 0.0 {
         delta_time
     } else {
@@ -302,7 +302,7 @@ pub fn advance_statechart_instance(instance: &Ref<StatechartInstance>, delta_tim
     };
     let chart = instance.read().unwrap().chart.clone();
     let region_count = chart.read().unwrap().regions.len();
-    let mut changed: Vec<(i32, i32)> = Vec::new();
+    let mut changed: Option<Vec<i32>> = None;
     let mut changed_count = 0;
 
     for region_index in 0..region_count {
@@ -310,7 +310,12 @@ pub fn advance_statechart_instance(instance: &Ref<StatechartInstance>, delta_tim
         if advance_statechart_region(instance, &chart, region_index as i32, delta_time_ms) {
             changed_count += 1;
             if instance.read().unwrap().signals.is_some() {
-                changed.push((region_index as i32, previous_state_index));
+                if changed.is_none() {
+                    changed = Some(Vec::new());
+                }
+                let active_changed = changed.as_mut().unwrap();
+                active_changed.push(region_index as i32);
+                active_changed.push(previous_state_index);
             }
         }
     }
@@ -319,30 +324,33 @@ pub fn advance_statechart_instance(instance: &Ref<StatechartInstance>, delta_tim
 
     let signals = instance.read().unwrap().signals.clone();
     if let Some(active_signals) = signals {
-        let mut changed_index = 0;
-        while changed_index < changed.len() {
-            let (region_index, previous_state_index) = changed[changed_index];
-            let new_state_index = instance.read().unwrap().region_states[region_index as usize];
-            emit_statechart_state_change(
-                &active_signals,
-                region_index,
-                previous_state_index,
-                new_state_index,
-            );
-            changed_index += 1;
+        if let Some(active_changed) = changed {
+            let mut changed_index = 0;
+            while changed_index < active_changed.len() {
+                let region_index = active_changed[changed_index];
+                let previous_state_index = active_changed[changed_index + 1];
+                let new_state_index = instance.read().unwrap().region_states[region_index as usize];
+                emit_statechart_state_change(
+                    &active_signals,
+                    region_index,
+                    previous_state_index,
+                    new_state_index,
+                );
+                changed_index += 2;
+            }
         }
     }
     return changed_count;
 }
 
-pub fn create_statechart_instance(chart: &Ref<Statechart>) -> Ref<StatechartInstance> {
-    let mut out: StatechartInstance = allocate_entity();
+pub fn create_statechart_instance(chart: &Ref<StatechartRaw>) -> Ref<StatechartInstanceRaw> {
+    let mut out: StatechartInstanceRaw = allocate_entity();
     initialize_statechart_instance_portable(&mut out, chart);
     return Ref::new(RwLock::new(out));
 }
 
 pub fn explain_statechart_transition(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     region_index: i32,
 ) -> StatechartTransitionExplanation {
     if !is_statechart_integer(region_index) || region_index < 0 {
@@ -444,13 +452,13 @@ pub fn explain_statechart_transition(
     return first_blocked.unwrap();
 }
 
-pub fn fire_statechart_trigger(instance: &Ref<StatechartInstance>, input_index: i32) {
+pub fn fire_statechart_trigger(instance: &Ref<StatechartInstanceRaw>, input_index: i32) {
     assert_statechart_input_kind(instance, input_index, StatechartInputKind::Trigger);
     let mut current = instance.write().unwrap();
     current.input_values[input_index as usize] = 1.0;
 }
 
-pub fn get_statechart_input_index(chart: &Statechart, name: &str) -> i32 {
+pub fn get_statechart_input_index(chart: &StatechartRaw, name: &str) -> i32 {
     for input_index in 0..chart.inputs.len() {
         if chart.inputs[input_index].name.as_deref() == Some(name) {
             return input_index as i32;
@@ -459,25 +467,37 @@ pub fn get_statechart_input_index(chart: &Statechart, name: &str) -> i32 {
     return -1;
 }
 
-pub fn get_statechart_region_blend(instance: &Ref<StatechartInstance>, region_index: i32) -> f32 {
+pub fn get_statechart_region_blend(
+    instance: &Ref<StatechartInstanceRaw>,
+    region_index: i32,
+) -> f32 {
     let current = instance.read().unwrap();
-    if region_index >= 0 && (region_index as usize) < current.region_blend.len() {
+    if is_statechart_integer(region_index)
+        && region_index >= 0
+        && (region_index as usize) < current.region_blend.len()
+    {
         return current.region_blend[region_index as usize];
     }
     return -1.0;
 }
 
-pub fn get_statechart_region_state(instance: &Ref<StatechartInstance>, region_index: i32) -> i32 {
+pub fn get_statechart_region_state(
+    instance: &Ref<StatechartInstanceRaw>,
+    region_index: i32,
+) -> i32 {
     let current = instance.read().unwrap();
-    if region_index >= 0 && (region_index as usize) < current.region_states.len() {
+    if is_statechart_integer(region_index)
+        && region_index >= 0
+        && (region_index as usize) < current.region_states.len()
+    {
         return current.region_states[region_index as usize];
     }
     return -1;
 }
 
 pub fn initialize_statechart_instance_portable(
-    out: &mut StatechartInstance,
-    chart: &Ref<Statechart>,
+    out: &mut StatechartInstanceRaw,
+    chart: &Ref<StatechartRaw>,
 ) {
     validate_statechart(&chart.read().unwrap());
     let chart_input_count = chart.read().unwrap().inputs.len();
@@ -512,7 +532,7 @@ pub fn initialize_statechart_instance_portable(
 }
 
 pub fn set_statechart_boolean_input(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     input_index: i32,
     value: bool,
 ) {
@@ -522,7 +542,7 @@ pub fn set_statechart_boolean_input(
 }
 
 pub fn set_statechart_number_input(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     input_index: i32,
     value: f64,
 ) {
@@ -532,7 +552,7 @@ pub fn set_statechart_number_input(
 }
 
 pub fn set_statechart_region_duration(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     region_index: i32,
     duration: f64,
 ) {
@@ -554,8 +574,8 @@ pub fn set_statechart_region_duration(
 // ============================================================================
 
 fn advance_statechart_region(
-    instance: &Ref<StatechartInstance>,
-    chart: &Ref<Statechart>,
+    instance: &Ref<StatechartInstanceRaw>,
+    chart: &Ref<StatechartRaw>,
     region_index: i32,
     delta_time_ms: f64,
 ) -> bool {
@@ -612,7 +632,7 @@ fn advance_statechart_region(
 }
 
 fn assert_statechart_input_kind(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     input_index: i32,
     expected_kind: StatechartInputKind,
 ) {
@@ -642,7 +662,7 @@ fn compare_statechart_condition(value: f64, condition: &StatechartCondition) -> 
     };
 }
 
-fn clear_statechart_triggers(instance: &Ref<StatechartInstance>, chart: &Ref<Statechart>) {
+fn clear_statechart_triggers(instance: &Ref<StatechartInstanceRaw>, chart: &Ref<StatechartRaw>) {
     let chart = chart.read().unwrap();
     let mut current = instance.write().unwrap();
     let mut input_index = 0;
@@ -655,7 +675,7 @@ fn clear_statechart_triggers(instance: &Ref<StatechartInstance>, chart: &Ref<Sta
 }
 
 fn get_statechart_transition_count(
-    chart: &Ref<Statechart>,
+    chart: &Ref<StatechartRaw>,
     region_index: i32,
     source_state_index: i32,
 ) -> usize {
@@ -671,8 +691,8 @@ fn get_statechart_transition_count(
 }
 
 fn get_first_unmet_condition(
-    instance: &Ref<StatechartInstance>,
-    chart: &Statechart,
+    instance: &Ref<StatechartInstanceRaw>,
+    chart: &StatechartRaw,
     transition: &StatechartTransition,
 ) -> i32 {
     for condition_index in 0..transition.conditions.len() {
@@ -695,8 +715,8 @@ fn get_first_unmet_condition(
 }
 
 fn get_ready_transition_index(
-    instance: &Ref<StatechartInstance>,
-    chart: &Ref<Statechart>,
+    instance: &Ref<StatechartInstanceRaw>,
+    chart: &Ref<StatechartRaw>,
     region_index: i32,
 ) -> i32 {
     let ri = region_index as usize;
@@ -735,7 +755,7 @@ fn get_ready_transition_index(
 }
 
 fn get_statechart_exit_status(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     region_index: usize,
     transition: &StatechartTransition,
 ) -> StatechartTransitionStatus {
@@ -766,7 +786,7 @@ fn invalid_region_explanation(region_index: i32) -> StatechartTransitionExplanat
     };
 }
 
-fn validate_statechart(chart: &Statechart) {
+fn validate_statechart(chart: &StatechartRaw) {
     for input_index in 0..chart.inputs.len() {
         let kind = chart.inputs[input_index].kind;
         if kind != StatechartInputKind::Boolean
@@ -778,7 +798,8 @@ fn validate_statechart(chart: &Statechart) {
     }
     for region_index in 0..chart.regions.len() {
         let region = &chart.regions[region_index];
-        if region.initial_state_index < 0
+        if !is_statechart_integer(region.initial_state_index)
+            || region.initial_state_index < 0
             || region.initial_state_index as usize >= region.states.len()
         {
             throw_range_error(&format!(
@@ -808,7 +829,8 @@ fn validate_statechart(chart: &Statechart) {
                         region_index, state_index, transition_index
                     ));
                 }
-                if transition.target_state_index < 0
+                if !is_statechart_integer(transition.target_state_index)
+                    || transition.target_state_index < 0
                     || transition.target_state_index as usize >= region.states.len()
                 {
                     throw_range_error(&format!(
@@ -843,7 +865,7 @@ fn validate_statechart(chart: &Statechart) {
 // D18 sugar: extension methods on the shared entity handle delegate to the contract
 // ============================================================================
 
-/// Sugar for the shared StatechartInstance handle (TS object). One method per public-lane source
+/// Sugar for the shared StatechartInstanceRaw handle (TS object). One method per public-lane source
 /// function whose first argument is the instance.
 #[allow(dead_code)]
 pub(crate) trait StatechartInstanceMethods {
@@ -871,13 +893,13 @@ pub(crate) trait StatechartInstanceMethods {
     fn set_region_duration(&self, region_index: i32, duration: f64);
 }
 
-impl Statechart {
+impl StatechartRaw {
     pub fn get_input_index(&self, name: &str) -> i32 {
         return get_statechart_input_index(self, name);
     }
 }
 
-impl StatechartInstanceMethods for Ref<StatechartInstance> {
+impl StatechartInstanceMethods for Ref<StatechartInstanceRaw> {
     // flight-lint: allow(f64) D1: frame delta is a millisecond number
     fn advance(&self, delta_time: f64) -> i32 {
         return advance_statechart_instance(self, delta_time);
@@ -945,8 +967,8 @@ impl StatechartInstanceMethods for Ref<StatechartInstance> {
     }
 }
 
-impl StatechartInstance {
-    pub fn new(chart: &Ref<Statechart>) -> Ref<StatechartInstance> {
+impl StatechartInstanceRaw {
+    pub fn new(chart: &Ref<StatechartRaw>) -> Ref<StatechartInstanceRaw> {
         return create_statechart_instance(chart);
     }
 }

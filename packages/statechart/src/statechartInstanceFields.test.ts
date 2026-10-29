@@ -2,12 +2,12 @@ import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import { initializeStatechartInstanceFields } from './statechartInstanceFields.ts';
-import type { Statechart, StatechartInstance } from './types.ts';
+import type { StatechartInstanceRaw, StatechartRaw } from './types.ts';
 
 describe('initializeStatechartInstanceFields', () => {
   it('installs caller-owned buffers and clears nullable runtime slots', () => {
-    const out = allocateEntity<StatechartInstance>();
-    const chart: Statechart = { inputs: [], regions: [] };
+    const out = allocateEntity<StatechartInstanceRaw>();
+    const chart: StatechartRaw = { inputs: [], regions: [] };
     const inputValues = new Float64Array(1);
     const regionBlend = new Float32Array(1);
     const regionDuration = new Float64Array(1);
@@ -16,7 +16,7 @@ describe('initializeStatechartInstanceFields', () => {
     const regionTransitions = new Int32Array([-1]);
 
     initializeStatechartInstanceFields(
-      out as StatechartInstance,
+      out as StatechartInstanceRaw,
       chart,
       inputValues,
       regionBlend,

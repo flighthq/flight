@@ -7,11 +7,11 @@ export {
   StatechartTransitionStatus,
 } from '@flighthq/statechart/contract';
 export type {
-  Statechart,
   StatechartCondition,
   StatechartDurationGuard,
   StatechartInput,
-  StatechartInstance,
+  StatechartInstanceRaw as StatechartInstance,
+  StatechartRaw as Statechart,
   StatechartRegion,
   StatechartState,
   StatechartTransition,

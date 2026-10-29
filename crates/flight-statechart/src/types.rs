@@ -1,8 +1,8 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract Statechart StatechartAtomicStateKind StatechartComparison StatechartCondition
-//! flight-compiler: contract StatechartDurationGuard StatechartInput StatechartInputKind StatechartInstance
+//! flight-compiler: contract StatechartAtomicStateKind StatechartComparison StatechartCondition
+//! flight-compiler: contract StatechartDurationGuard StatechartInput StatechartInputKind StatechartInstanceRaw
 //! flight-compiler: contract StatechartNestedStateKind StatechartRegion StatechartSignals StatechartState
-//! flight-compiler: contract StatechartTransition StatechartTransitionExplanation StatechartTransitionStatus
+//! flight-compiler: contract StatechartRaw StatechartTransition StatechartTransitionExplanation StatechartTransitionStatus
 //! flight-compiler: string-union StatechartComparison=exact
 //! flight-compiler: string-union-value StatechartComparison Equal "Equal"
 //! flight-compiler: string-union-value StatechartComparison GreaterThan "GreaterThan"
@@ -22,10 +22,10 @@
 //! flight-compiler: string-union-value StatechartTransitionStatus NoTransitions "NoTransitions"
 //! flight-compiler: string-union-value StatechartTransitionStatus Ready "Ready"
 //! flight-compiler: string-union-value StatechartTransitionStatus Transitioning "Transitioning"
-//! flight-compiler: readonly-fields Statechart StatechartCondition StatechartInput StatechartInstance StatechartRegion StatechartState
+//! flight-compiler: readonly-fields StatechartRaw StatechartCondition StatechartInput StatechartInstanceRaw StatechartRegion StatechartState
 //! flight-compiler: readonly-fields StatechartTransition StatechartTransitionExplanation
 //! flight-compiler: callable-parameters StatechartDurationGuard instance explanation
-//! flight-compiler: entity-runtime-state StatechartInstance.builtin_guard
+//! flight-compiler: entity-runtime-state StatechartInstanceRaw.builtin_guard
 // flight-lint: allow-file(f64) D1: authored input/condition numbers, transition durations and region timing carry millisecond/f64 values from TS `number`
 use std::sync::{Arc, RwLock, Weak};
 
@@ -113,7 +113,7 @@ pub struct StatechartRegion {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Statechart {
+pub struct StatechartRaw {
     pub inputs: Vec<StatechartInput>,
     pub name: Option<String>,
     pub regions: Vec<StatechartRegion>,
@@ -151,11 +151,11 @@ pub struct StatechartTransitionExplanation {
 
 /// Stored, capturing callback (D9), source-shaped: `(instance, explanation) => void`.
 pub type StatechartDurationGuard =
-    Arc<dyn Fn(&Ref<StatechartInstance>, &StatechartTransitionExplanation) + Send + Sync>;
+    Arc<dyn Fn(&Ref<StatechartInstanceRaw>, &StatechartTransitionExplanation) + Send + Sync>;
 
 /// Non-owning chart handle used by the diagnostic id map (D5 non-owning cache; D15 WeakMap analogue).
 // flight-lint: allow(contract-vocabulary) D5: non-owning diagnostics cache key (WeakRef vocabulary row)
-pub type ChartWeakRef = Weak<RwLock<Statechart>>;
+pub type ChartWeakRef = Weak<RwLock<StatechartRaw>>;
 
 /// One diagnostic chart id, keyed by a non-owning chart handle.
 pub struct StatechartChartIdEntry {
@@ -176,8 +176,8 @@ pub type StatechartGuardStateRef = Ref<StatechartGuardState>;
 // StatechartInstance (TS extends Entity)
 // ============================================================================
 
-pub struct StatechartInstance {
-    pub chart: Ref<Statechart>,
+pub struct StatechartInstanceRaw {
+    pub chart: Ref<StatechartRaw>,
     pub duration_guard: Option<StatechartDurationGuard>,
     pub input_values: Box<[f64]>,
     pub region_blend: Box<[f32]>,
@@ -190,7 +190,7 @@ pub struct StatechartInstance {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(StatechartInstance);
+flight_entity::impl_entity!(StatechartInstanceRaw);
 flight_entity::impl_entity!(StatechartSignals);
 
 // ============================================================================
@@ -327,9 +327,9 @@ impl Default for StatechartRegion {
     }
 }
 
-impl Default for Statechart {
+impl Default for StatechartRaw {
     fn default() -> Self {
-        return Statechart {
+        return StatechartRaw {
             inputs: Vec::new(),
             name: None,
             regions: Vec::new(),
@@ -360,10 +360,10 @@ impl Default for StatechartTransitionExplanation {
     }
 }
 
-impl Default for StatechartInstance {
+impl Default for StatechartInstanceRaw {
     fn default() -> Self {
-        return StatechartInstance {
-            chart: Ref::new(RwLock::new(Statechart::default())),
+        return StatechartInstanceRaw {
+            chart: Ref::new(RwLock::new(StatechartRaw::default())),
             duration_guard: None,
             input_values: Box::new([]),
             region_blend: Box::new([]),

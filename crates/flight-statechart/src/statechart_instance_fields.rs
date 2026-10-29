@@ -2,12 +2,12 @@
 
 use flight_entity::Ref;
 
-use crate::types::{Statechart, StatechartInstance};
+use crate::types::{StatechartInstanceRaw, StatechartRaw};
 
 #[allow(clippy::too_many_arguments)]
 pub fn initialize_statechart_instance_fields(
-    out: &mut StatechartInstance,
-    chart: &Ref<Statechart>,
+    out: &mut StatechartInstanceRaw,
+    chart: &Ref<StatechartRaw>,
     input_values: Box<[f64]>,
     region_blend: Box<[f32]>,
     region_duration: Box<[f64]>,

@@ -68,7 +68,7 @@ export interface StatechartRegion {
 }
 
 // Immutable, authored, shareable graph data. One chart can drive any number of mutable instances.
-export interface Statechart {
+export interface StatechartRaw {
   inputs: readonly Readonly<StatechartInput>[];
   name?: string;
   regions: readonly Readonly<StatechartRegion>[];
@@ -77,7 +77,7 @@ export interface Statechart {
 // Optional diagnostics hook installed by enableStatechartGuards. It lives only on the mutable instance;
 // core calls it with a plain explanation and contains no log dependency or caller-facing message.
 export type StatechartDurationGuard = (
-  instance: Readonly<StatechartInstance>,
+  instance: Readonly<StatechartInstanceRaw>,
   explanation: Readonly<StatechartTransitionExplanation>,
 ) => void;
 
@@ -93,8 +93,8 @@ export interface StatechartSignals extends EntityRaw {
 // state's denominator via setStatechartRegionDuration without the statechart knowing what produced it.
 // Both reset whenever a region reaches a new state. Optional diagnostics/observers are actor-local and
 // never enter immutable authored data.
-export interface StatechartInstance extends EntityRaw {
-  readonly chart: Readonly<Statechart>;
+export interface StatechartInstanceRaw extends EntityRaw {
+  readonly chart: Readonly<StatechartRaw>;
   durationGuard: StatechartDurationGuard | null;
   readonly inputValues: Float64Array;
   readonly regionBlend: Float32Array;

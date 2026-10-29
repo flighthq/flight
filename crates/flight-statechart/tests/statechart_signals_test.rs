@@ -9,8 +9,8 @@ use flight_statechart::*;
 // Test helpers
 // ============================================================================
 
-fn create_immediate_chart() -> Statechart {
-    return Statechart {
+fn create_immediate_chart() -> StatechartRaw {
+    return StatechartRaw {
         inputs: Vec::new(),
         name: None,
         regions: vec![StatechartRegion {
@@ -84,11 +84,11 @@ mod enable_statechart_signals_tests {
     }
 
     #[test]
-    // Representability gap: the listener cannot re-borrow `&mut StatechartInstance` during emission.
+    // Representability gap: the listener cannot re-borrow `&mut StatechartInstanceRaw` during emission.
     // This preserves the observable intent (cleanup happened, a next-pass latch takes effect) by
     // applying the mutation after `advance`; it does NOT test mutation during emission.
     fn emits_after_trigger_cleanup_so_a_listener_can_latch_an_edge_for_the_next_pass() {
-        let chart = Statechart {
+        let chart = StatechartRaw {
             inputs: vec![StatechartInput {
                 initial_value: 0.0,
                 kind: StatechartInputKind::Trigger,

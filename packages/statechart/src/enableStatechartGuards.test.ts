@@ -1,7 +1,7 @@
 import type { LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import { StatechartAtomicStateKind, StatechartTransitionStatus } from '@flighthq/types/contract';
-import type { LogEntry, Statechart } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/types/contract';
 
 import {
   areStatechartGuardsEnabled,
@@ -9,6 +9,7 @@ import {
   enableStatechartGuards,
 } from './enableStatechartGuards.ts';
 import { advanceStatechartInstance, createStatechartInstance, setStatechartRegionDuration } from './statechart.ts';
+import type { StatechartRaw } from './types.ts';
 
 let logState: LogState;
 
@@ -86,7 +87,7 @@ function captureLog(run: () => void): readonly LogEntry[] {
   return entries;
 }
 
-function createExitTimeChart(): Statechart {
+function createExitTimeChart(): StatechartRaw {
   return {
     inputs: [],
     regions: [

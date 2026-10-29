@@ -5,7 +5,7 @@ use std::sync::RwLock;
 use flight_entity::Ref;
 use flight_statechart::*;
 
-fn create_instance(chart: &Statechart) -> Ref<StatechartInstance> {
+fn create_instance(chart: &StatechartRaw) -> Ref<StatechartInstanceRaw> {
     let chart_ref = Ref::new(RwLock::new(chart.clone()));
     return create_statechart_instance(&chart_ref);
 }
@@ -26,8 +26,8 @@ fn condition(
     };
 }
 
-fn create_empty_chart() -> Statechart {
-    return Statechart {
+fn create_empty_chart() -> StatechartRaw {
+    return StatechartRaw {
         inputs: Vec::new(),
         name: None,
         regions: vec![StatechartRegion {
@@ -47,8 +47,8 @@ fn create_single_transition_chart(
     conditions: Vec<StatechartCondition>,
     duration_ms: f64,
     exit_time_ratio: f64,
-) -> Statechart {
-    return Statechart {
+) -> StatechartRaw {
+    return StatechartRaw {
         inputs,
         name: None,
         regions: vec![StatechartRegion {
@@ -70,14 +70,14 @@ fn create_single_transition_chart(
     };
 }
 
-fn create_two_region_trigger_chart() -> Statechart {
+fn create_two_region_trigger_chart() -> StatechartRaw {
     let trigger_transition = transition(
         1,
         vec![condition(0, StatechartComparison::GreaterThan, 999.0)],
         0.0,
         -1.0,
     );
-    return Statechart {
+    return StatechartRaw {
         inputs: vec![StatechartInput {
             initial_value: 0.0,
             kind: StatechartInputKind::Trigger,
@@ -146,7 +146,7 @@ mod advance_statechart_instance {
 
     #[test]
     fn requires_all_data_only_conditions_and_selects_the_first_eligible_transition() {
-        let chart = Statechart {
+        let chart = StatechartRaw {
             inputs: vec![
                 StatechartInput {
                     initial_value: 0.0,
@@ -350,7 +350,7 @@ mod advance_statechart_instance {
 
     #[test]
     fn changes_a_region_at_most_once_per_call_even_when_the_target_has_an_immediate_transition() {
-        let chart = Statechart {
+        let chart = StatechartRaw {
             inputs: Vec::new(),
             name: None,
             regions: vec![StatechartRegion {
@@ -403,7 +403,7 @@ mod create_statechart_instance_tests {
 
     #[test]
     fn creates_independent_typed_array_actor_state_while_retaining_the_immutable_chart() {
-        let chart = Statechart {
+        let chart = StatechartRaw {
             inputs: vec![
                 StatechartInput {
                     initial_value: -2.0,
@@ -477,7 +477,7 @@ mod create_statechart_instance_tests {
     #[test]
     #[should_panic]
     fn rejects_malformed_authored_indices_as_programmer_errors() {
-        let chart = Statechart {
+        let chart = StatechartRaw {
             inputs: Vec::new(),
             name: None,
             regions: vec![StatechartRegion {
@@ -495,7 +495,7 @@ mod create_statechart_instance_tests {
 
     #[test]
     fn accepts_nested_and_vendor_prefixed_state_kinds_without_closed_dispatch() {
-        let chart = Statechart {
+        let chart = StatechartRaw {
             inputs: Vec::new(),
             name: None,
             regions: vec![StatechartRegion {
@@ -678,7 +678,7 @@ mod get_statechart_input_index_tests {
 
     #[test]
     fn returns_the_first_matching_input_index_and_negative_one_when_absent() {
-        let chart = Statechart {
+        let chart = StatechartRaw {
             inputs: vec![
                 StatechartInput {
                     initial_value: 0.0,

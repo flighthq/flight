@@ -1,5 +1,6 @@
 mod enable_statechart_guards;
 mod statechart;
+mod statechart_compat;
 mod statechart_instance_fields;
 mod statechart_instance_init;
 mod statechart_runtime;
@@ -36,7 +37,9 @@ pub use contract::StatechartDurationGuard;
 pub use contract::StatechartInput;
 pub use contract::StatechartInputKind;
 pub use contract::StatechartInstance;
+pub use contract::StatechartInstanceRaw;
 pub use contract::StatechartNestedStateKind;
+pub use contract::StatechartRaw;
 pub use contract::StatechartRegion;
 pub use contract::StatechartSignals;
 pub use contract::StatechartState;

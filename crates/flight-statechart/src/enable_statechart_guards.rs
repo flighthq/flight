@@ -10,7 +10,7 @@ use crate::types::*;
 
 // Report whether the built-in diagnostics are installed for this actor; a custom guard is not the
 // built-in one (source identity distinction preserved).
-pub fn are_statechart_guards_enabled(instance: &Ref<StatechartInstance>) -> bool {
+pub fn are_statechart_guards_enabled(instance: &Ref<StatechartInstanceRaw>) -> bool {
     let current = instance.read().unwrap();
     return match (&current.duration_guard, &current.builtin_guard) {
         (Some(installed), Some(builtin)) => Arc::ptr_eq(installed, builtin),
@@ -18,7 +18,7 @@ pub fn are_statechart_guards_enabled(instance: &Ref<StatechartInstance>) -> bool
     };
 }
 
-fn chart_id_for(guard_state: &StatechartGuardStateRef, chart: &Ref<Statechart>) -> i32 {
+fn chart_id_for(guard_state: &StatechartGuardStateRef, chart: &Ref<StatechartRaw>) -> i32 {
     let mut state = guard_state.write().unwrap();
     state
         .chart_ids
@@ -38,7 +38,7 @@ fn chart_id_for(guard_state: &StatechartGuardStateRef, chart: &Ref<Statechart>) 
     return id;
 }
 
-pub fn disable_statechart_guards(instance: &Ref<StatechartInstance>) {
+pub fn disable_statechart_guards(instance: &Ref<StatechartInstanceRaw>) {
     let mut current = instance.write().unwrap();
     current.duration_guard = None;
     current.builtin_guard = None;
@@ -50,7 +50,7 @@ pub fn disable_statechart_guards(instance: &Ref<StatechartInstance>) {
 // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
 // flight-lint: allow(conform-params) D5: approved enable-time log state, live clock and guard state
 pub fn enable_statechart_guards(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     guard_state: &StatechartGuardStateRef,
     log_state: &LogStateRef,
     clock: Arc<dyn Fn() -> f64 + Send + Sync>,
@@ -74,7 +74,7 @@ pub fn enable_statechart_guards(
 
 // flight-lint: allow(f64) D1: operation time is a millisecond timestamp
 fn log_missing_statechart_region_duration(
-    instance: &Ref<StatechartInstance>,
+    instance: &Ref<StatechartInstanceRaw>,
     explanation: &StatechartTransitionExplanation,
     guard_state: &StatechartGuardStateRef,
     log_state: &LogStateRef,

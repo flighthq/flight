@@ -1,11 +1,11 @@
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeStatechartInstancePortable } from './statechart.ts';
-import type { Statechart, StatechartInstance } from './types.ts';
+import type { StatechartInstanceRaw, StatechartRaw } from './types.ts';
 
 export function initializeStatechartInstance(
-  out: EntityConstruction<StatechartInstance>,
-  chart: Readonly<Statechart>,
+  out: EntityConstruction<StatechartInstanceRaw>,
+  chart: Readonly<StatechartRaw>,
 ): void {
-  initializeStatechartInstancePortable(out as StatechartInstance, chart);
+  initializeStatechartInstancePortable(out as StatechartInstanceRaw, chart);
 }

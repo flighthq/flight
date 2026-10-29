@@ -148,6 +148,8 @@ export * from '@flighthq/physics3d-abi';
 export * from '@flighthq/spatial';
 export * from '@flighthq/spring';
 export * from '@flighthq/statechart';
+export { Statechart, StatechartInstance } from '@flighthq/statechart';
+export type { StatechartInstanceRaw, StatechartRaw } from '@flighthq/statechart';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/spritesheet-formats';
 export * from '@flighthq/statusbar';

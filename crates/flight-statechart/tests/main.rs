@@ -3,8 +3,8 @@ pub(crate) fn log_state() -> flight_log::LogStateRef {
 }
 
 pub(crate) fn create_instance(
-    chart: &flight_statechart::Statechart,
-) -> flight_entity::Ref<flight_statechart::StatechartInstance> {
+    chart: &flight_statechart::StatechartRaw,
+) -> flight_entity::Ref<flight_statechart::StatechartInstanceRaw> {
     let chart_ref = std::sync::Arc::new(std::sync::RwLock::new(chart.clone()));
     return flight_statechart::create_statechart_instance(&chart_ref);
 }
@@ -22,6 +22,8 @@ pub(crate) fn guard_state() -> flight_statechart::contract::StatechartGuardState
 mod flight_statechart_enable_statechart_guards_test;
 #[path = "statechart_instance_init_test.rs"]
 mod flight_statechart_statechart_instance_init_test;
+#[path = "statechart_integer_domain_test.rs"]
+mod flight_statechart_statechart_integer_domain_test;
 #[path = "statechart_signals_test.rs"]
 mod flight_statechart_statechart_signals_test;
 #[path = "statechart_test.rs"]
