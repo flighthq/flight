@@ -46,7 +46,7 @@ export function explainVelocitySample(sample: Readonly<VelocitySample> | null, f
     const x = stored.velocity.x;
     const y = stored.velocity.y;
     if (x === 0.0 && y === 0.0) {
-      const reason = explicit ? 'explicit-zero' : ('derived-zero' as const);
+      const reason = explicit ? 'explicit-zero' : 'derived-zero';
       return {
         currentFrameId: frameId,
         explicit: explicit,
