@@ -4568,6 +4568,54 @@ pub fn take_ownership(cow: &str) -> String {
     }
 
     #[test]
+    fn lowers_narrow_casts_with_bitmasks() {
+        let source = r#"
+pub fn narrow(value: i32) -> (u8, u16, i8, i16) {
+    return (value as u8, value as u16, value as i8, value as i16);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("& 0xff"),
+            "u8 cast should mask: {output}"
+        );
+        assert!(
+            output.contains("& 0xffff"),
+            "u16 cast should mask: {output}"
+        );
+        assert!(
+            output.contains("<< 24) >> 24"),
+            "i8 cast should sign-extend: {output}"
+        );
+        assert!(
+            output.contains("<< 16) >> 16"),
+            "i16 cast should sign-extend: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_usize_and_isize_casts() {
+        let source = r#"
+pub fn convert(value: f64) -> (usize, isize) {
+    return (value as usize, value as isize);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(">>> 0"),
+            "usize cast should use >>> 0: {output}"
+        );
+        assert!(
+            output.contains("| 0"),
+            "isize cast should use | 0: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {

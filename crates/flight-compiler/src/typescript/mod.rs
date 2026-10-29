@@ -8206,11 +8206,27 @@ fn emit_expression_value(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("{function}({})", arguments.join(", ")))
         }
-        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") => Ok(format!(
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u8") => Ok(format!(
+            "({}) & 0xff",
+            emit_expression(&cast.expr, entities)?
+        )),
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u16") => Ok(format!(
+            "({}) & 0xffff",
+            emit_expression(&cast.expr, entities)?
+        )),
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") || type_is_named(&cast.ty, "usize") => Ok(format!(
             "({}) >>> 0",
             emit_expression(&cast.expr, entities)?
         )),
-        Expr::Cast(cast) if type_is_named(&cast.ty, "i32") => {
+        Expr::Cast(cast) if type_is_named(&cast.ty, "i8") => Ok(format!(
+            "(({}) << 24) >> 24",
+            emit_expression(&cast.expr, entities)?
+        )),
+        Expr::Cast(cast) if type_is_named(&cast.ty, "i16") => Ok(format!(
+            "(({}) << 16) >> 16",
+            emit_expression(&cast.expr, entities)?
+        )),
+        Expr::Cast(cast) if type_is_named(&cast.ty, "i32") || type_is_named(&cast.ty, "isize") => {
             Ok(format!("({}) | 0", emit_expression(&cast.expr, entities)?))
         }
         Expr::Cast(cast) => emit_expression(&cast.expr, entities),
@@ -11764,7 +11780,7 @@ fn emit_method_call(
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
         "skip" if arguments.len() == 1 => Ok(format!("{receiver}.slice({})", arguments[0])),
-        "sort_by_key" if arguments.len() == 1 => Ok(format!(
+        "sort_by_key" | "sort_unstable_by_key" if arguments.len() == 1 => Ok(format!(
             "(<T>(items: T[], key: (item: T) => number): void => {{ items.sort((a, b) => key(a) - key(b)); }})({receiver}, {})",
             arguments[0]
         )),
