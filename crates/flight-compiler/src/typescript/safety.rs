@@ -17,24 +17,6 @@ use super::{
     TYPE_NO_STD_MARKER, TYPE_USE_GLOB_MARKER, TYPE_USE_MARKER, TYPE_USE_TARGET_MARKER,
 };
 
-// A source path with `.` and `..` segments resolved and `/` separators, so paths given in different
-// spellings compare equal.
-fn normalize_source_path(path: &str) -> String {
-    let mut segments: Vec<&str> = Vec::new();
-    for segment in path.split(['/', '\\']) {
-        match segment {
-            "" | "." if !segments.is_empty() => {}
-            ".." if segments
-                .last()
-                .is_some_and(|last| !last.is_empty() && *last != "..") =>
-            {
-                segments.pop();
-            }
-            segment => segments.push(segment),
-        }
-    }
-    return segments.join("/");
-}
 // Whether `op` is binary arithmetic (`+ - * / %`), which Rust dispatches through `Add` and its kin.
 fn is_eager_arithmetic(op: &BinOp) -> bool {
     return matches!(
@@ -71,6 +53,24 @@ fn is_eager_construction_intrinsic(owner: &[String]) -> bool {
     );
 }
 
+// A source path with `.` and `..` segments resolved and `/` separators, so paths given in different
+// spellings compare equal.
+fn normalize_source_path(path: &str) -> String {
+    let mut segments: Vec<&str> = Vec::new();
+    for segment in path.split(['/', '\\']) {
+        match segment {
+            "" | "." if !segments.is_empty() => {}
+            ".." if segments
+                .last()
+                .is_some_and(|last| !last.is_empty() && *last != "..") =>
+            {
+                segments.pop();
+            }
+            segment => segments.push(segment),
+        }
+    }
+    return segments.join("/");
+}
 
 // Rejects a Rust identifier in `program` that lowers to the name of a visible entity runtime state
 // store, so a store reference in emitted code is always the store itself.

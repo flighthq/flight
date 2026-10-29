@@ -17,12 +17,6 @@ pub enum SourceMode {
     TargetNative,
 }
 
-/// Returns the exact TypeScript package-root export names designated by this Rust source.
-// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
-pub fn root_only_names(source: &str) -> Result<Vec<String>, CompileError> {
-    return model::parse_root_only_metadata(source);
-}
-
 /// A Rust source that owns target-language-only identity aliases in an external module.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExternalAliasSource<'a> {
@@ -60,6 +54,21 @@ pub struct VitestAliasSource<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompileError {
     message: String,
+}
+
+// Emitted `Owner.Variant` expressions retain the owner name but not the source or dependency module.
+// Equal declarations therefore lower identically, while conflicting declarations would let the
+// current-program, same-package-alias and external lowering order choose the literal. Reject that
+// ambiguous input before either emitter builds its owner-only context.
+struct ExternalStringUnionMetadata<'a> {
+    metadata: model::StringUnionMetadata,
+    module: &'a str,
+}
+
+struct StringUnionMetadataSource<'a> {
+    identity: String,
+    styles: &'a std::collections::BTreeMap<String, model::StringUnionStyle>,
+    values: &'a std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
 }
 
 pub(crate) fn compile_error(message: impl Into<String>) -> CompileError {
@@ -247,26 +256,6 @@ fn compile_typescript_sources(
     ));
 }
 
-fn has_nullable_option_directive(source: &str) -> bool {
-    return source.lines().any(|line| {
-        let Some(directive) = line
-            .trim()
-            .strip_prefix("//! flight-compiler: ")
-            .and_then(|line| line.split_whitespace().next())
-        else {
-            return false;
-        };
-        return matches!(directive, "nullable-option" | "nullable-options");
-    });
-}
-
-fn external_rust_crate_root(module: &str) -> Option<String> {
-    let package = module
-        .strip_prefix("@flighthq/")?
-        .strip_suffix("/contract")?;
-    return Some(format!("flight_{}", package.replace('-', "_")));
-}
-
 /// Compiles one Rust module while reusing canonical callable aliases declared by sibling sources.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_typescript_with_alias_sources(
@@ -408,41 +397,6 @@ pub fn compile_vitest_with_alias_sources(
         .map(|(source, module)| VitestAliasSource { source, module })
         .collect::<Vec<_>>();
     return compile_vitest_with_module_alias_sources(source, contract_module, &named_alias_sources);
-}
-
-/// Compiles one Rust test module with production hints and dependency sources owned by other
-/// packages, whose `export-name` directives name the items the tests import from them.
-// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
-pub fn compile_vitest_with_external_alias_sources(
-    source: &str,
-    contract_module: &str,
-    contract_source: Option<&str>,
-    alias_sources: &[VitestAliasSource<'_>],
-    external_alias_sources: &[ExternalAliasSource<'_>],
-) -> Result<String, CompileError> {
-    return compile_vitest_with_contract_alias_sources_internal(
-        source,
-        contract_module,
-        contract_source,
-        alias_sources,
-        external_alias_sources,
-    );
-}
-
-/// Compiles one Rust test module with source-qualified production hints.
-// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
-pub fn compile_vitest_with_module_alias_sources(
-    source: &str,
-    contract_module: &str,
-    alias_sources: &[VitestAliasSource<'_>],
-) -> Result<String, CompileError> {
-    return compile_vitest_with_contract_alias_sources_internal(
-        source,
-        contract_module,
-        None,
-        alias_sources,
-        &[],
-    );
 }
 
 /// Compiles one Rust test module with production hints selected by public contract re-exports.
@@ -608,155 +562,97 @@ fn compile_vitest_with_contract_alias_sources_internal(
     return Ok(output);
 }
 
-// Emitted `Owner.Variant` expressions retain the owner name but not the source or dependency module.
-// Equal declarations therefore lower identically, while conflicting declarations would let the
-// current-program, same-package-alias and external lowering order choose the literal. Reject that
-// ambiguous input before either emitter builds its owner-only context.
-struct ExternalStringUnionMetadata<'a> {
-    metadata: model::StringUnionMetadata,
-    module: &'a str,
-}
-
-fn parse_external_string_union_metadata<'a>(
-    external_alias_sources: &[ExternalAliasSource<'a>],
-) -> Result<Vec<ExternalStringUnionMetadata<'a>>, CompileError> {
-    return external_alias_sources
-        .iter()
-        .map(|external| {
-            return Ok(ExternalStringUnionMetadata {
-                metadata: model::parse_string_union_metadata(external.source)?,
-                module: external.module,
-            });
-        })
-        .collect();
-}
-
-struct StringUnionMetadataSource<'a> {
-    identity: String,
-    styles: &'a std::collections::BTreeMap<String, model::StringUnionStyle>,
-    values: &'a std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
-}
-
-// The items of `module` that a sibling source names through that module: `use crate::module::…` /
-// `use super::module::…` trees (by original name, through renames and groups) and `module::Name`
-// paths, plus whether it glob-imports the module. Same-named crate-visible items of other modules
-// therefore stay unexported here.
-fn sibling_references_to_module(
+/// Compiles one Rust test module with production hints and dependency sources owned by other
+/// packages, whose `export-name` directives name the items the tests import from them.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_external_alias_sources(
     source: &str,
-    module: &str,
-) -> (std::collections::BTreeSet<String>, bool) {
-    fn collect(
-        tree: &syn::UseTree,
-        prefix: &mut Vec<String>,
-        module: &str,
-        names: &mut std::collections::BTreeSet<String>,
-        glob: &mut bool,
-    ) {
-        let in_module = prefix.last().is_some_and(|last| last == module)
-            && prefix.len() >= 2
-            && matches!(prefix[0].as_str(), "crate" | "super" | "self");
-        match tree {
-            syn::UseTree::Path(path) => {
-                prefix.push(path.ident.to_string());
-                collect(&path.tree, prefix, module, names, glob);
-                prefix.pop();
-            }
-            syn::UseTree::Group(group) => {
-                for item in &group.items {
-                    collect(item, prefix, module, names, glob);
-                }
-            }
-            syn::UseTree::Name(name) if in_module => {
-                names.insert(name.ident.to_string());
-            }
-            syn::UseTree::Rename(rename) if in_module => {
-                names.insert(rename.ident.to_string());
-            }
-            syn::UseTree::Glob(_) if in_module => *glob = true,
-            _ => {}
-        }
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+) -> Result<String, CompileError> {
+    return compile_vitest_with_contract_alias_sources_internal(
+        source,
+        contract_module,
+        contract_source,
+        alias_sources,
+        external_alias_sources,
+    );
+}
+
+/// Compiles one Rust test module with source-qualified production hints.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_module_alias_sources(
+    source: &str,
+    contract_module: &str,
+    alias_sources: &[VitestAliasSource<'_>],
+) -> Result<String, CompileError> {
+    return compile_vitest_with_contract_alias_sources_internal(
+        source,
+        contract_module,
+        None,
+        alias_sources,
+        &[],
+    );
+}
+
+fn crate_root_module_identity(path: &str, crate_roots: &[CrateRootSource<'_>]) -> Option<String> {
+    fn canonical(path: &str) -> std::path::PathBuf {
+        return std::fs::canonicalize(path).unwrap_or_else(|_| std::path::PathBuf::from(path));
     }
 
-    let mut names = std::collections::BTreeSet::new();
-    let mut glob = false;
-    if let Ok(file) = syn::parse_file(source) {
-        for item in &file.items {
-            if let syn::Item::Use(item_use) = item {
-                collect(
-                    &item_use.tree,
-                    &mut Vec::new(),
-                    module,
-                    &mut names,
-                    &mut glob,
-                );
-            }
+    fn module_segments(path: &std::path::Path) -> Option<Vec<String>> {
+        let mut segments = path
+            .components()
+            .map(|component| component.as_os_str().to_str().map(str::to_string))
+            .collect::<Option<Vec<_>>>()?;
+        let file = segments.pop()?;
+        let stem = file.strip_suffix(".rs")?;
+        if stem != "mod" {
+            segments.push(stem.to_string());
         }
+        let valid = segments.iter().all(|segment| {
+            !segment.is_empty()
+                && segment
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || character == '_')
+        });
+        return valid.then_some(segments);
     }
-    let tokens = source
-        .split(|character: char| {
-            !(character.is_ascii_alphanumeric() || character == '_' || character == ':')
+
+    let path = canonical(path);
+    let roots = crate_roots
+        .iter()
+        .map(|root| (root, canonical(root.path)))
+        .collect::<Vec<_>>();
+    if let Some((root, _)) = roots.iter().find(|(_, root_path)| *root_path == path) {
+        return valid_crate_name(root.crate_name).then(|| root.crate_name.replace('-', "_"));
+    }
+    let mut candidates = roots
+        .iter()
+        .filter_map(|(root, root_path)| {
+            let relative = path.strip_prefix(root_path.parent()?).ok()?;
+            let modules = module_segments(relative)?;
+            let depth = root_path.parent()?.components().count();
+            Some((depth, root, modules))
         })
         .collect::<Vec<_>>();
-    let qualifier = format!("{module}::");
-    for token in tokens {
-        if let Some(index) = token.find(&qualifier)
-            && (index == 0 || token[..index].ends_with("::"))
-        {
-            let name = token[index + qualifier.len()..]
-                .split("::")
-                .next()
-                .unwrap_or_default();
-            if !name.is_empty() {
-                names.insert(name.to_string());
-            }
-        }
+    candidates.sort_by_key(|(depth, _, _)| *depth);
+    let (depth, root, modules) = candidates.pop()?;
+    if candidates
+        .last()
+        .is_some_and(|(other_depth, _, _)| *other_depth == depth)
+        || !valid_crate_name(root.crate_name)
+    {
+        return None;
     }
-    return (names, glob);
-}
-
-fn validate_string_union_metadata<'a>(
-    sources: impl IntoIterator<Item = StringUnionMetadataSource<'a>>,
-) -> Result<(), CompileError> {
-    let mut owners = std::collections::BTreeMap::<
-        String,
-        Vec<(
-            String,
-            model::StringUnionStyle,
-            std::collections::BTreeMap<String, String>,
-        )>,
-    >::new();
-    for source in sources {
-        for (owner, style) in source.styles {
-            owners.entry(owner.clone()).or_default().push((
-                source.identity.clone(),
-                *style,
-                source.values.get(owner).cloned().unwrap_or_default(),
-            ));
-        }
-    }
-    for (owner, declarations) in owners {
-        let Some((_, first_style, first_values)) = declarations.first() else {
-            continue;
-        };
-        if declarations
-            .iter()
-            .skip(1)
-            .any(|(_, style, values)| style != first_style || values != first_values)
-        {
-            let identities = declarations
-                .iter()
-                .map(|(identity, _, _)| identity)
-                .collect::<std::collections::BTreeSet<_>>()
-                .into_iter()
-                .cloned()
-                .collect::<Vec<_>>()
-                .join(", ");
-            return Err(compile_error(format!(
-                "string union `{owner}` has conflicting metadata across {identities}"
-            )));
-        }
-    }
-    return Ok(());
+    return Some(
+        std::iter::once(root.crate_name.replace('-', "_"))
+            .chain(modules)
+            .collect::<Vec<_>>()
+            .join("::"),
+    );
 }
 
 fn dependency_export_names<'a>(
@@ -1030,6 +926,26 @@ fn export_crate_visible_items(
     return output;
 }
 
+fn external_rust_crate_root(module: &str) -> Option<String> {
+    let package = module
+        .strip_prefix("@flighthq/")?
+        .strip_suffix("/contract")?;
+    return Some(format!("flight_{}", package.replace('-', "_")));
+}
+
+fn has_nullable_option_directive(source: &str) -> bool {
+    return source.lines().any(|line| {
+        let Some(directive) = line
+            .trim()
+            .strip_prefix("//! flight-compiler: ")
+            .and_then(|line| line.split_whitespace().next())
+        else {
+            return false;
+        };
+        return matches!(directive, "nullable-option" | "nullable-options");
+    });
+}
+
 // Replaces each emitted `Owner.Variant` reference to a numeric union with the variant's declared
 // integer discriminant and drops the owner from value import lists: the TypeScript declaration is a
 // type-only alias, so no runtime value exists. Only code is rewritten (see `typescript_code_ranges`);
@@ -1194,71 +1110,6 @@ fn module_identity_from_path(path: &str, crate_roots: &[CrateRootSource<'_>]) ->
     return valid.then(|| identity.join("::"));
 }
 
-fn crate_root_module_identity(path: &str, crate_roots: &[CrateRootSource<'_>]) -> Option<String> {
-    fn canonical(path: &str) -> std::path::PathBuf {
-        return std::fs::canonicalize(path).unwrap_or_else(|_| std::path::PathBuf::from(path));
-    }
-
-    fn module_segments(path: &std::path::Path) -> Option<Vec<String>> {
-        let mut segments = path
-            .components()
-            .map(|component| component.as_os_str().to_str().map(str::to_string))
-            .collect::<Option<Vec<_>>>()?;
-        let file = segments.pop()?;
-        let stem = file.strip_suffix(".rs")?;
-        if stem != "mod" {
-            segments.push(stem.to_string());
-        }
-        let valid = segments.iter().all(|segment| {
-            !segment.is_empty()
-                && segment
-                    .chars()
-                    .all(|character| character.is_ascii_alphanumeric() || character == '_')
-        });
-        return valid.then_some(segments);
-    }
-
-    let path = canonical(path);
-    let roots = crate_roots
-        .iter()
-        .map(|root| (root, canonical(root.path)))
-        .collect::<Vec<_>>();
-    if let Some((root, _)) = roots.iter().find(|(_, root_path)| *root_path == path) {
-        return valid_crate_name(root.crate_name).then(|| root.crate_name.replace('-', "_"));
-    }
-    let mut candidates = roots
-        .iter()
-        .filter_map(|(root, root_path)| {
-            let relative = path.strip_prefix(root_path.parent()?).ok()?;
-            let modules = module_segments(relative)?;
-            let depth = root_path.parent()?.components().count();
-            Some((depth, root, modules))
-        })
-        .collect::<Vec<_>>();
-    candidates.sort_by_key(|(depth, _, _)| *depth);
-    let (depth, root, modules) = candidates.pop()?;
-    if candidates
-        .last()
-        .is_some_and(|(other_depth, _, _)| *other_depth == depth)
-        || !valid_crate_name(root.crate_name)
-    {
-        return None;
-    }
-    return Some(
-        std::iter::once(root.crate_name.replace('-', "_"))
-            .chain(modules)
-            .collect::<Vec<_>>()
-            .join("::"),
-    );
-}
-
-fn valid_crate_name(name: &str) -> bool {
-    return !name.is_empty()
-        && name
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'));
-}
-
 // Every function and arrow parameter name: the list after `function [name][<…>]`, a parenthesized
 // list followed by `=>` (optionally after a `: ReturnType` annotation), and a bare `name =>`.
 fn parameter_bindings(code: &str, out: &mut Vec<String>) {
@@ -1345,6 +1196,20 @@ fn parameter_bindings(code: &str, out: &mut Vec<String>) {
             pattern_bindings(&before[start..], out);
         }
     }
+}
+
+fn parse_external_string_union_metadata<'a>(
+    external_alias_sources: &[ExternalAliasSource<'a>],
+) -> Result<Vec<ExternalStringUnionMetadata<'a>>, CompileError> {
+    return external_alias_sources
+        .iter()
+        .map(|external| {
+            return Ok(ExternalStringUnionMetadata {
+                metadata: model::parse_string_union_metadata(external.source)?,
+                module: external.module,
+            });
+        })
+        .collect();
 }
 
 // The names a binding pattern introduces: an identifier, or every name an array or object
@@ -1468,6 +1333,89 @@ fn rewrite_typescript_code(
     }
     result.push_str(&source[copied..]);
     return Ok(result);
+}
+
+/// Returns the exact TypeScript package-root export names designated by this Rust source.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn root_only_names(source: &str) -> Result<Vec<String>, CompileError> {
+    return model::parse_root_only_metadata(source);
+}
+
+// The items of `module` that a sibling source names through that module: `use crate::module::…` /
+// `use super::module::…` trees (by original name, through renames and groups) and `module::Name`
+// paths, plus whether it glob-imports the module. Same-named crate-visible items of other modules
+// therefore stay unexported here.
+fn sibling_references_to_module(
+    source: &str,
+    module: &str,
+) -> (std::collections::BTreeSet<String>, bool) {
+    fn collect(
+        tree: &syn::UseTree,
+        prefix: &mut Vec<String>,
+        module: &str,
+        names: &mut std::collections::BTreeSet<String>,
+        glob: &mut bool,
+    ) {
+        let in_module = prefix.last().is_some_and(|last| last == module)
+            && prefix.len() >= 2
+            && matches!(prefix[0].as_str(), "crate" | "super" | "self");
+        match tree {
+            syn::UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(&path.tree, prefix, module, names, glob);
+                prefix.pop();
+            }
+            syn::UseTree::Group(group) => {
+                for item in &group.items {
+                    collect(item, prefix, module, names, glob);
+                }
+            }
+            syn::UseTree::Name(name) if in_module => {
+                names.insert(name.ident.to_string());
+            }
+            syn::UseTree::Rename(rename) if in_module => {
+                names.insert(rename.ident.to_string());
+            }
+            syn::UseTree::Glob(_) if in_module => *glob = true,
+            _ => {}
+        }
+    }
+
+    let mut names = std::collections::BTreeSet::new();
+    let mut glob = false;
+    if let Ok(file) = syn::parse_file(source) {
+        for item in &file.items {
+            if let syn::Item::Use(item_use) = item {
+                collect(
+                    &item_use.tree,
+                    &mut Vec::new(),
+                    module,
+                    &mut names,
+                    &mut glob,
+                );
+            }
+        }
+    }
+    let tokens = source
+        .split(|character: char| {
+            !(character.is_ascii_alphanumeric() || character == '_' || character == ':')
+        })
+        .collect::<Vec<_>>();
+    let qualifier = format!("{module}::");
+    for token in tokens {
+        if let Some(index) = token.find(&qualifier)
+            && (index == 0 || token[..index].ends_with("::"))
+        {
+            let name = token[index + qualifier.len()..]
+                .split("::")
+                .next()
+                .unwrap_or_default();
+            if !name.is_empty() {
+                names.insert(name.to_string());
+            }
+        }
+    }
+    return (names, glob);
 }
 
 /// Reads the source-local generation mode for a Rust module or test file.
@@ -1597,6 +1545,13 @@ fn typescript_code_ranges(source: &str) -> Vec<std::ops::Range<usize>> {
     return ranges;
 }
 
+fn valid_crate_name(name: &str) -> bool {
+    return !name.is_empty()
+        && name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'));
+}
+
 // A `const-group` owner is one exported value; any other value binding of that name anywhere in the
 // final output (a declaration, a compiler-injected local, or a provided or dependency import) would
 // redeclare or shadow it, so it fails closed before the TypeScript is written.
@@ -1612,6 +1567,51 @@ fn validate_const_group_bindings(
         if bindings.iter().filter(|binding| *binding == owner).count() > 1 {
             return Err(compile_error(format!(
                 "`const-group {owner}` collides with another emitted value binding named `{owner}`"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_string_union_metadata<'a>(
+    sources: impl IntoIterator<Item = StringUnionMetadataSource<'a>>,
+) -> Result<(), CompileError> {
+    let mut owners = std::collections::BTreeMap::<
+        String,
+        Vec<(
+            String,
+            model::StringUnionStyle,
+            std::collections::BTreeMap<String, String>,
+        )>,
+    >::new();
+    for source in sources {
+        for (owner, style) in source.styles {
+            owners.entry(owner.clone()).or_default().push((
+                source.identity.clone(),
+                *style,
+                source.values.get(owner).cloned().unwrap_or_default(),
+            ));
+        }
+    }
+    for (owner, declarations) in owners {
+        let Some((_, first_style, first_values)) = declarations.first() else {
+            continue;
+        };
+        if declarations
+            .iter()
+            .skip(1)
+            .any(|(_, style, values)| style != first_style || values != first_values)
+        {
+            let identities = declarations
+                .iter()
+                .map(|(identity, _, _)| identity)
+                .collect::<std::collections::BTreeSet<_>>()
+                .into_iter()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ");
+            return Err(compile_error(format!(
+                "string union `{owner}` has conflicting metadata across {identities}"
             )));
         }
     }

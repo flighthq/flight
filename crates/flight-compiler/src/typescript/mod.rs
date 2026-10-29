@@ -9898,6 +9898,15 @@ fn emit_method_call(
         "chars" if arguments.is_empty() => Err(compile_error(
             "portable `.chars()` requires a receiver known to be `String` or `str`",
         )),
+        "chain" if arguments.len() == 1 => Ok(format!("[...{receiver}, ...{}]", arguments[0])),
+        "checked_add" if arguments.len() == 1 => Ok(format!(
+            "((a: number, b: number): number | undefined => {{ const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum }})({receiver}, {})",
+            arguments[0]
+        )),
+        "checked_sub" if arguments.len() == 1 => Ok(format!(
+            "((a: number, b: number): number | undefined => {{ const diff = a - b; return diff > 0x7FFFFFFF || diff < -0x80000000 ? undefined : diff }})({receiver}, {})",
+            arguments[0]
+        )),
         "clamp" if arguments.len() == 2 => Ok(format!(
             "Math.min({}, Math.max({}, {receiver}))",
             arguments[1], arguments[0]
@@ -9988,6 +9997,12 @@ fn emit_method_call(
             "portable `.count()` requires an iterator with proven sequence provenance",
         )),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
+        "contains_key" if arguments.len() == 1 => Ok(format!("{receiver}.has({})", arguments[0])),
+        "dedup" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!(
+                "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read += 1) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write += 1; }} }} items.length = Math.min(write, items.length); }})({receiver})"
+            ))
+        }
         "drain" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             let Some(Expr::Range(range)) = call.args.first() else {
                 return Err(compile_error(
@@ -10044,6 +10059,8 @@ fn emit_method_call(
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
         "fract" if arguments.is_empty() => Ok(format!("({receiver} % 1)")),
         "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
+        "flat_map" if arguments.len() == 1 => Ok(format!("{receiver}.flatMap({})", arguments[0])),
+        "flatten" if arguments.is_empty() => Ok(format!("{receiver}.flat()")),
         "fetch_add" if arguments.len() == 2 => Ok(format!(
             "(() => {{ const previous = {receiver}.value; {receiver}.value = ({receiver}.value + {}) >>> 0; return previous; }})()",
             arguments[0]
@@ -10130,6 +10147,7 @@ fn emit_method_call(
             Ok(format!("{receiver} += {}", arguments[0]))
         }
         "push" if arguments.len() == 1 => Ok(format!("{receiver}.push({})", arguments[0])),
+        "push_str" if arguments.len() == 1 => Ok(format!("{receiver} += {}", arguments[0])),
         "remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
                 "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError(\"Vec removal index out of bounds\"); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
@@ -10157,6 +10175,15 @@ fn emit_method_call(
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
         "skip" if arguments.len() == 1 => Ok(format!("{receiver}.slice({})", arguments[0])),
+        "sort_unstable_by" if arguments.len() == 1 => {
+            Ok(format!("{receiver}.sort({})", arguments[0]))
+        }
+        "split" if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!("{receiver}.split({})", arguments[0]))
+        }
+        "split" if arguments.len() == 1 => Err(compile_error(
+            "portable `.split()` requires a receiver known to be `String` or `str`",
+        )),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
         "starts_with"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
@@ -10173,6 +10200,24 @@ fn emit_method_call(
         }
         "ends_with" if arguments.len() == 1 => Err(compile_error(
             "portable `.ends_with()` requires a receiver known to be `String` or `str`",
+        )),
+        "trim" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!("{receiver}.trim()"))
+        }
+        "trim" if arguments.is_empty() => Err(compile_error(
+            "portable `.trim()` requires a receiver known to be `String` or `str`",
+        )),
+        "trim_end" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!("{receiver}.trimEnd()"))
+        }
+        "trim_end" if arguments.is_empty() => Err(compile_error(
+            "portable `.trim_end()` requires a receiver known to be `String` or `str`",
+        )),
+        "trim_start" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+            Ok(format!("{receiver}.trimStart()"))
+        }
+        "trim_start" if arguments.is_empty() => Err(compile_error(
+            "portable `.trim_start()` requires a receiver known to be `String` or `str`",
         )),
         "trim_start_matches"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
@@ -10208,7 +10253,17 @@ fn emit_method_call(
             "([{receiver}[{}], {receiver}[{}]] = [{receiver}[{}], {receiver}[{}]])",
             arguments[0], arguments[1], arguments[1], arguments[0]
         )),
+        "take" if arguments.is_empty() => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "(() => {{ const __tmp = {receiver}; {receiver} = {absent}; return __tmp; }})()"
+            ))
+        }
         "tan" if arguments.is_empty() => Ok(format!("Math.tan({receiver})")),
+        "then_some" if arguments.len() == 1 => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!("({receiver} ? {} : {absent})", arguments[0]))
+        }
         "to_string"
             if arguments.is_empty()
                 && matches!(call.receiver.as_ref(), Expr::Lit(literal) if matches!(&literal.lit, Lit::Str(_))) =>
@@ -10266,11 +10321,16 @@ fn emit_method_call(
         "unwrap" if arguments.is_empty() && expression_contains_method(&call.receiver, "lock") => {
             Ok(format!("{receiver}.value"))
         }
+        "unsigned_abs" if arguments.is_empty() => Ok(format!("Math.abs({receiver}) >>> 0")),
         "unwrap" if arguments.is_empty() => Ok(if receiver.ends_with('!') {
             receiver
         } else {
             format!("{receiver}!")
         }),
+        "zip" if arguments.len() == 1 => Ok(format!(
+            "{receiver}.map((item, index) => [item, {}[index]] as const)",
+            arguments[0]
+        )),
         _ => Err(compile_error(format!(
             "unsupported Rust method call `.{method}()`; impl sugar is not a transpilation source"
         ))),

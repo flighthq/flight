@@ -2870,6 +2870,239 @@ pub fn call_nullable_contract() {
     }
 
     #[test]
+    fn lowers_chain_to_spread_concatenation() {
+        let source = r#"
+pub fn join(a: Vec<i32>, b: Vec<i32>) -> Vec<i32> {
+    return a.into_iter().chain(b.into_iter()).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("[...a, ...b]"), "{output}");
+    }
+
+    #[test]
+    fn lowers_checked_add_and_checked_sub_with_overflow_guards() {
+        let source = r#"
+pub fn safe_add(a: i32, b: i32) -> Option<i32> {
+    return a.checked_add(b);
+}
+
+pub fn safe_sub(a: i32, b: i32) -> Option<i32> {
+    return a.checked_sub(b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const diff = a - b; return diff > 0x7FFFFFFF || diff < -0x80000000 ? undefined : diff"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_contains_key_to_map_has() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn has_entry(map: &HashMap<String, i32>, key: &str) -> bool {
+    return map.contains_key(key);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("map.has(key)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_dedup_on_sorted_sequences() {
+        let source = r#"
+pub fn unique_sorted(values: &mut Vec<i32>) {
+    values.dedup();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("items[read] !== items[read - 1]"), "{output}");
+        assert!(output.contains("items.length = Math.min(write, items.length)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_flat_map_and_flatten() {
+        let source = r#"
+pub fn expand(values: Vec<Vec<i32>>) -> Vec<i32> {
+    return values.into_iter().flat_map(|inner| inner).collect();
+}
+
+pub fn merge(values: Vec<Vec<i32>>) -> Vec<i32> {
+    return values.into_iter().flatten().collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".flatMap("), "{output}");
+        assert!(output.contains(".flat()"), "{output}");
+    }
+
+    #[test]
+    fn lowers_push_str_to_string_concatenation() {
+        let source = r#"
+pub fn append_suffix(value: &mut String) {
+    value.push_str("_end");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("value += \"_end\""), "{output}");
+    }
+
+    #[test]
+    fn lowers_sort_unstable_by_to_array_sort() {
+        let source = r#"
+pub fn sort_by_key(values: &mut Vec<i32>, compare: fn(&i32, &i32) -> std::cmp::Ordering) {
+    values.sort_unstable_by(compare);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("values.sort(compare)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_string_split_with_provenance() {
+        let source = r#"
+pub fn words(text: String) -> Vec<String> {
+    return text.split(' ').map(|value| value.to_string()).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("text.split("), "{output}");
+    }
+
+    #[test]
+    fn rejects_split_without_string_provenance() {
+        let source = "pub fn bad_split(value: &[u8]) -> Vec<u8> { return value.split(0).collect(); }\n";
+
+        let error = compile_typescript(source, None).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "portable `.split()` requires a receiver known to be `String` or `str`"
+        );
+    }
+
+    #[test]
+    fn lowers_take_with_option_absent_value() {
+        let source = r#"
+pub fn consume(value: &mut Option<i32>) -> Option<i32> {
+    return value.take();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("const __tmp = value"), "{output}");
+        assert!(output.contains("return __tmp"), "{output}");
+    }
+
+    #[test]
+    fn lowers_then_some_with_option_absent_value() {
+        let source = r#"
+pub fn when_true(flag: bool, value: i32) -> Option<i32> {
+    return flag.then_some(value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("(flag ? value : undefined)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_trim_family_with_string_provenance() {
+        let source = r#"
+pub fn strip(text: String) -> String {
+    return text.trim().to_string();
+}
+
+pub fn strip_start(text: String) -> String {
+    return text.trim_start().to_string();
+}
+
+pub fn strip_end(text: String) -> String {
+    return text.trim_end().to_string();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("text.trim()"), "{output}");
+        assert!(output.contains("text.trimStart()"), "{output}");
+        assert!(output.contains("text.trimEnd()"), "{output}");
+    }
+
+    #[test]
+    fn rejects_trim_without_string_provenance() {
+        for (source, expected) in [
+            (
+                "pub fn bad(value: i32) { value.trim(); }\n",
+                "portable `.trim()` requires a receiver known to be `String` or `str`",
+            ),
+            (
+                "pub fn bad(value: i32) { value.trim_start(); }\n",
+                "portable `.trim_start()` requires a receiver known to be `String` or `str`",
+            ),
+            (
+                "pub fn bad(value: i32) { value.trim_end(); }\n",
+                "portable `.trim_end()` requires a receiver known to be `String` or `str`",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn lowers_unsigned_abs_to_unsigned_right_shift() {
+        let source = "pub fn magnitude(value: i32) -> u32 { return value.unsigned_abs(); }\n";
+
+        assert!(
+            compile_typescript(source, None)
+                .unwrap()
+                .contains("Math.abs(value) >>> 0"),
+        );
+    }
+
+    #[test]
+    fn lowers_zip_to_index_mapped_tuples() {
+        let source = r#"
+pub fn pairs(keys: Vec<String>, values: Vec<i32>) -> Vec<(String, i32)> {
+    return keys.into_iter().zip(values.into_iter()).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".map((item, index) => [item,"),
+            "{output}"
+        );
+        assert!(output.contains("as const"), "{output}");
+    }
+
+    #[test]
     fn lowers_real_velocity_sources_with_nullable_option_semantics() {
         let sample_source = include_str!("../../flight-velocity/src/velocity_sample.rs");
         let sample_output = compile_typescript(sample_source, None).unwrap();

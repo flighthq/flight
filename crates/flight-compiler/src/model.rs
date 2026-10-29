@@ -157,6 +157,51 @@ pub(crate) struct ExternalModule {
     pub(crate) conditional_paths: Vec<String>,
 }
 
+fn callable_arity(rust_type: &Type) -> Option<usize> {
+    return match rust_type {
+        Type::BareFn(function) => Some(function.inputs.len()),
+        Type::Paren(paren) => callable_arity(&paren.elem),
+        Type::Path(path) => {
+            let segment = path.path.segments.last()?;
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Arc" | "Box" | "Option" | "Ref"
+            ) {
+                return None;
+            }
+            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return None;
+            };
+            let mut types = arguments.args.iter().filter_map(|argument| match argument {
+                GenericArgument::Type(rust_type) => Some(rust_type),
+                _ => None,
+            });
+            let inner = types.next()?;
+            if types.next().is_some() {
+                return None;
+            }
+            callable_arity(inner)
+        }
+        Type::TraitObject(object) => object.bounds.iter().find_map(|bound| {
+            let syn::TypeParamBound::Trait(bound) = bound else {
+                return None;
+            };
+            let segment = bound.path.segments.last()?;
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Fn" | "FnMut" | "FnOnce"
+            ) {
+                return None;
+            }
+            let PathArguments::Parenthesized(arguments) = &segment.arguments else {
+                return None;
+            };
+            Some(arguments.inputs.len())
+        }),
+        _ => None,
+    };
+}
+
 pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
     struct Collector {
         depth: usize,
@@ -482,10 +527,53 @@ pub(crate) fn const_group_members(
         .collect());
 }
 
+pub(crate) fn directive_names(source: &str, directive: &str) -> HashSet<String> {
+    let prefix = format!("//! flight-compiler: {directive} ");
+    return source
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix(&prefix))
+        .flat_map(|names| {
+            names.split(|character: char| character == ',' || character.is_whitespace())
+        })
+        .filter(|name| !name.is_empty())
+        .map(str::to_string)
+        .collect();
+}
+
+fn doc_directive(attribute: &Attribute) -> Option<String> {
+    if !attribute.path().is_ident("doc") {
+        return None;
+    }
+    let syn::Meta::NameValue(meta) = &attribute.meta else {
+        return None;
+    };
+    let syn::Expr::Lit(value) = &meta.value else {
+        return None;
+    };
+    let syn::Lit::Str(value) = &value.lit else {
+        return None;
+    };
+    let value = value.value();
+    return value
+        .trim()
+        .strip_prefix("flight-compiler:")
+        .map(str::trim)
+        .map(str::to_string);
+}
+
 fn has_attribute(attributes: &[Attribute], expected: &str) -> bool {
     return attributes
         .iter()
         .any(|attribute| attribute.path().is_ident(expected));
+}
+
+pub(crate) fn has_companion_metadata(source: &str) -> Result<bool, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    return Ok(file.attrs.iter().any(|attribute| {
+        doc_directive(attribute)
+            .is_some_and(|directive| directive.split_whitespace().next() == Some("companion"))
+    }));
 }
 
 fn has_entity_runtime(structure: &ItemStruct) -> bool {
@@ -514,6 +602,37 @@ fn has_rust_only_directive(attributes: &[Attribute]) -> bool {
     });
 }
 
+fn identity_parameter(rust_type: &Type) -> Option<&syn::Ident> {
+    return match rust_type {
+        Type::Group(group) => identity_parameter(&group.elem),
+        Type::Paren(paren) => identity_parameter(&paren.elem),
+        Type::Path(path)
+            if path.qself.is_none()
+                && path.path.leading_colon.is_none()
+                && path.path.segments.len() == 1
+                && matches!(path.path.segments[0].arguments, PathArguments::None) =>
+        {
+            Some(&path.path.segments[0].ident)
+        }
+        _ => None,
+    };
+}
+
+fn integer_discriminant_value(expression: &syn::Expr) -> Option<i64> {
+    return match expression {
+        syn::Expr::Lit(literal) => match &literal.lit {
+            syn::Lit::Int(integer) => integer.base10_parse::<i64>().ok(),
+            _ => None,
+        },
+        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
+            integer_discriminant_value(&unary.expr).and_then(i64::checked_neg)
+        }
+        syn::Expr::Group(group) => integer_discriminant_value(&group.expr),
+        syn::Expr::Paren(paren) => integer_discriminant_value(&paren.expr),
+        _ => None,
+    };
+}
+
 // A literal, optionally negated or parenthesized: a value that reads no other item.
 // Whether `#[cfg(test)]` is among the attributes: the item exists only in test builds.
 fn is_cfg_test(attributes: &[Attribute]) -> bool {
@@ -537,6 +656,85 @@ fn is_independent_literal(expression: &syn::Expr) -> bool {
     };
 }
 
+fn is_integer_discriminant(expression: &syn::Expr) -> bool {
+    return match expression {
+        syn::Expr::Group(group) => is_integer_discriminant(&group.expr),
+        syn::Expr::Lit(literal) => matches!(literal.lit, syn::Lit::Int(_)),
+        syn::Expr::Paren(paren) => is_integer_discriminant(&paren.expr),
+        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
+            matches!(unary.expr.as_ref(), syn::Expr::Lit(literal) if matches!(literal.lit, syn::Lit::Int(_)))
+        }
+        _ => false,
+    };
+}
+
+fn is_javascript_binding_reserved(name: &str) -> bool {
+    return matches!(
+        name,
+        "arguments"
+            | "await"
+            | "break"
+            | "case"
+            | "catch"
+            | "class"
+            | "const"
+            | "continue"
+            | "debugger"
+            | "default"
+            | "delete"
+            | "do"
+            | "else"
+            | "enum"
+            | "eval"
+            | "export"
+            | "extends"
+            | "false"
+            | "finally"
+            | "for"
+            | "function"
+            | "if"
+            | "implements"
+            | "import"
+            | "in"
+            | "instanceof"
+            | "interface"
+            | "let"
+            | "new"
+            | "null"
+            | "package"
+            | "private"
+            | "protected"
+            | "public"
+            | "return"
+            | "static"
+            | "super"
+            | "switch"
+            | "this"
+            | "throw"
+            | "true"
+            | "try"
+            | "typeof"
+            | "var"
+            | "void"
+            | "while"
+            | "with"
+            | "yield"
+    );
+}
+
+fn is_public(visibility: &Visibility) -> bool {
+    return matches!(visibility, Visibility::Public(_));
+}
+
+fn is_struct_literal(expression: &syn::Expr) -> bool {
+    return match expression {
+        syn::Expr::Group(group) => is_struct_literal(&group.expr),
+        syn::Expr::Paren(paren) => is_struct_literal(&paren.expr),
+        syn::Expr::Struct(_) => true,
+        _ => false,
+    };
+}
+
 fn is_typescript_identifier(name: &str) -> bool {
     let mut characters = name.chars();
     return characters
@@ -547,235 +745,17 @@ fn is_typescript_identifier(name: &str) -> bool {
         });
 }
 
-fn parse_const_groups(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
-    let mut groups = BTreeMap::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("const-group") {
-            continue;
-        }
-        let (Some(owner), Some(prefix), None) = (fields.next(), fields.next(), fields.next())
-        else {
-            return Err(compile_error(
-                "`flight-compiler: const-group` requires exactly a TypeScript name and a constant prefix",
-            ));
-        };
-        if !is_typescript_identifier(owner) {
-            return Err(compile_error(format!(
-                "`flight-compiler: const-group` name `{owner}` is not a TypeScript identifier"
-            )));
-        }
-        if prefix.is_empty()
-            || !prefix
-                .chars()
-                .all(|character| character.is_ascii_alphanumeric() || character == '_')
-        {
-            return Err(compile_error(format!(
-                "`flight-compiler: const-group {owner}` prefix `{prefix}` is not a constant-name prefix"
-            )));
-        }
-        if groups
-            .insert(owner.to_string(), prefix.to_string())
-            .is_some()
-        {
-            return Err(compile_error(format!(
-                "`flight-compiler: const-group {owner}` is declared more than once"
-            )));
-        }
-    }
-    return Ok(groups);
+fn is_valid_callable_field_parameter_name(name: &str) -> bool {
+    return is_valid_callable_parameter_identifier(name)
+        && (name == "await" || !is_javascript_binding_reserved(name));
 }
 
-// The validated `export-name` directives of a dependency source, which a consuming package needs to
-// import and reference the source's mapped public items by their TypeScript names. Each `const-group`
-// member maps to its `Owner.Member` reference.
-pub(crate) fn parse_export_name_metadata(
-    source: &str,
-) -> Result<BTreeMap<String, String>, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    let directives = parse_export_names(&file.attrs)?;
-    let const_groups = parse_const_groups(&file.attrs)?;
-    if directives.is_empty() && const_groups.is_empty() {
-        return Ok(directives);
-    }
-    let frozen_objects = parse_frozen_objects(&file.attrs)?;
-    let mut constants = Vec::new();
-    let mut functions = Vec::new();
-    let mut statics = Vec::new();
-    for item in file.items {
-        match item {
-            Item::Const(item) => constants.push(item),
-            Item::Fn(function) => functions.push(function),
-            Item::Static(item) => statics.push(item),
-            _ => {}
-        }
-    }
-    validate_export_names(
-        &directives,
-        &frozen_objects,
-        &functions,
-        &constants,
-        &statics,
-    )?;
-    let mut metadata = directives;
-    for (rust_name, owner, member) in const_group_members(&const_groups, &constants)? {
-        if metadata.contains_key(&rust_name) {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name` item `{rust_name}` is already named by `const-group {owner}`"
-            )));
-        }
-        metadata.insert(rust_name, format!("{owner}.{member}"));
-    }
-    return Ok(metadata);
+fn is_valid_callable_parameter_identifier(name: &str) -> bool {
+    return !name.starts_with("r#") && syn::Ident::parse_any.parse_str(name).is_ok();
 }
 
-pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    parse_root_only_directives(&file.attrs)?;
-    let mut rust_only = false;
-    let mut target_native = false;
-    for attribute in &file.attrs {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let name = directive.split_whitespace().next().unwrap_or_default();
-        match name {
-            "rust-only" => rust_only = true,
-            "target-native" => target_native = true,
-            "callable-field-parameters"
-            | "callable-parameters"
-            | "companion"
-            | "const-group"
-            | "contract"
-            | "data-union"
-            | "entity-clone-fields"
-            | "entity-runtime-state"
-            | "export-name"
-            | "frozen-object"
-            | "identity-alias"
-            | "array-like"
-            | "nullable-option"
-            | "nullable-options"
-            | "numeric-union"
-            | "readonly-fields"
-            | "root"
-            | "root-only"
-            | "string-union"
-            | "string-union-value" => {}
-            _ => {
-                return Err(compile_error(format!(
-                    "unknown `flight-compiler` source directive `{name}`"
-                )));
-            }
-        }
-    }
-    if rust_only && target_native {
-        return Err(compile_error(
-            "source cannot be both `flight-compiler: rust-only` and `flight-compiler: target-native`",
-        ));
-    }
-    return Ok(if rust_only {
-        SourceMode::RustOnly
-    } else if target_native {
-        SourceMode::TargetNative
-    } else {
-        SourceMode::Generate
-    });
-}
-
-// `root-only` is consumed by package generation rather than TypeScript emission, but every source
-// passes through `source-mode` before the generator derives its package surface. Validate it here so
-// a typo cannot silently bypass the exact-root branch and fall back to inferred Rust exports.
-fn parse_root_only_directives(attributes: &[Attribute]) -> Result<Vec<String>, CompileError> {
-    let mut names = Vec::new();
-    let mut seen = HashSet::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let Some(targets) = directive.strip_prefix("root-only") else {
-            continue;
-        };
-        if targets
-            .chars()
-            .next()
-            .is_some_and(|character| !character.is_whitespace())
-        {
-            continue;
-        }
-        let targets = targets.trim();
-        if targets.is_empty() {
-            return Err(compile_error(
-                "`flight-compiler: root-only` requires at least one TypeScript export name",
-            ));
-        }
-        for group in targets.split(',') {
-            let group = group.trim();
-            if group.is_empty() {
-                return Err(compile_error(
-                    "`flight-compiler: root-only` contains an empty export target",
-                ));
-            }
-            for target in group.split_whitespace() {
-                if !is_typescript_identifier(target) {
-                    return Err(compile_error(format!(
-                        "`flight-compiler: root-only` target `{target}` is not a TypeScript identifier"
-                    )));
-                }
-                if seen.insert(target.to_string()) {
-                    names.push(target.to_string());
-                }
-            }
-        }
-    }
-    return Ok(names);
-}
-
-pub(crate) fn parse_root_only_metadata(source: &str) -> Result<Vec<String>, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    return parse_root_only_directives(&file.attrs);
-}
-
-fn doc_directive(attribute: &Attribute) -> Option<String> {
-    if !attribute.path().is_ident("doc") {
-        return None;
-    }
-    let syn::Meta::NameValue(meta) = &attribute.meta else {
-        return None;
-    };
-    let syn::Expr::Lit(value) = &meta.value else {
-        return None;
-    };
-    let syn::Lit::Str(value) = &value.lit else {
-        return None;
-    };
-    let value = value.value();
-    return value
-        .trim()
-        .strip_prefix("flight-compiler:")
-        .map(str::trim)
-        .map(str::to_string);
-}
-
-fn integer_discriminant_value(expression: &syn::Expr) -> Option<i64> {
-    return match expression {
-        syn::Expr::Lit(literal) => match &literal.lit {
-            syn::Lit::Int(integer) => integer.base10_parse::<i64>().ok(),
-            _ => None,
-        },
-        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
-            integer_discriminant_value(&unary.expr).and_then(i64::checked_neg)
-        }
-        syn::Expr::Group(group) => integer_discriminant_value(&group.expr),
-        syn::Expr::Paren(paren) => integer_discriminant_value(&paren.expr),
-        _ => None,
-    };
+fn is_valid_callable_parameter_name(name: &str) -> bool {
+    return is_valid_callable_parameter_identifier(name) && !is_javascript_binding_reserved(name);
 }
 
 // The `T` and initializer of a `static NAME: LazyLock<T> = LazyLock::new(init)`, or `None` for an
@@ -824,8 +804,707 @@ fn next_directive_field(value: &str) -> Option<(&str, &str)> {
     return Some((&value[..end], &value[end..]));
 }
 
-fn is_public(visibility: &Visibility) -> bool {
-    return matches!(visibility, Visibility::Public(_));
+// flight-lint: allow(hashmap-iteration) directive designations are a Vec in source order
+fn parse_array_like_parameters(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
+    let mut parameters = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("array-like") {
+            continue;
+        }
+        let designations = fields.collect::<Vec<_>>();
+        if designations.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: array-like` requires at least one `function.parameter`",
+            ));
+        }
+        for designation in designations {
+            let valid = designation
+                .split_once('.')
+                .is_some_and(|(function, parameter)| {
+                    [function, parameter].iter().all(|name| {
+                        syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
+                    })
+                });
+            if !valid {
+                return Err(compile_error(format!(
+                    "`flight-compiler: array-like` designation `{designation}` is not `function.parameter`"
+                )));
+            }
+            if !parameters.insert(designation.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: array-like` designation `{designation}`"
+                )));
+            }
+        }
+    }
+    return Ok(parameters);
+}
+
+fn parse_callable_field_parameters(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<(String, String), Vec<String>>, CompileError> {
+    let mut directives = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("callable-field-parameters") {
+            continue;
+        }
+        let Some(owner) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: callable-field-parameters` requires an owner struct name",
+            ));
+        };
+        if syn::parse_str::<syn::Ident>(owner).is_err() || owner.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` owner name `{owner}` is not a valid identifier"
+            )));
+        }
+        let Some(field) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters {owner}` requires a field name"
+            )));
+        };
+        if syn::parse_str::<syn::Ident>(field).is_err() || field.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters {owner}` field name `{field}` is not a valid identifier"
+            )));
+        }
+        let mut names = Vec::new();
+        let mut seen = HashSet::new();
+        for name in fields {
+            if !is_valid_callable_field_parameter_name(name) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-field-parameters {owner} {field}` parameter name `{name}` is not a valid identifier"
+                )));
+            }
+            if !seen.insert(name) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-field-parameters {owner} {field}` repeats parameter name `{name}`"
+                )));
+            }
+            names.push(name.to_string());
+        }
+        if directives
+            .insert((owner.to_string(), field.to_string()), names)
+            .is_some()
+        {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: callable-field-parameters` directive for field `{owner}.{field}`"
+            )));
+        }
+    }
+    return Ok(directives);
+}
+
+fn parse_callable_parameters(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, Vec<String>>, CompileError> {
+    let mut directives = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("callable-parameters") {
+            continue;
+        }
+        let Some(alias) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: callable-parameters` requires an alias name",
+            ));
+        };
+        if syn::parse_str::<syn::Ident>(alias).is_err() || alias.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias name `{alias}` is not a valid identifier"
+            )));
+        }
+        let mut names = Vec::new();
+        let mut seen = HashSet::new();
+        for name in fields {
+            if !is_valid_callable_parameter_name(name) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-parameters {alias}` parameter name `{name}` is not a valid identifier"
+                )));
+            }
+            if !seen.insert(name) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-parameters {alias}` repeats parameter name `{name}`"
+                )));
+            }
+            names.push(name.to_string());
+        }
+        if directives.insert(alias.to_string(), names).is_some() {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: callable-parameters` directive for alias `{alias}`"
+            )));
+        }
+    }
+    return Ok(directives);
+}
+
+fn parse_const_groups(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut groups = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("const-group") {
+            continue;
+        }
+        let (Some(owner), Some(prefix), None) = (fields.next(), fields.next(), fields.next())
+        else {
+            return Err(compile_error(
+                "`flight-compiler: const-group` requires exactly a TypeScript name and a constant prefix",
+            ));
+        };
+        if !is_typescript_identifier(owner) {
+            return Err(compile_error(format!(
+                "`flight-compiler: const-group` name `{owner}` is not a TypeScript identifier"
+            )));
+        }
+        if prefix.is_empty()
+            || !prefix
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || character == '_')
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: const-group {owner}` prefix `{prefix}` is not a constant-name prefix"
+            )));
+        }
+        if groups
+            .insert(owner.to_string(), prefix.to_string())
+            .is_some()
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: const-group {owner}` is declared more than once"
+            )));
+        }
+    }
+    return Ok(groups);
+}
+
+fn parse_data_unions(attributes: &[Attribute]) -> Result<DataUnionMetadata, CompileError> {
+    let mut data_unions = HashSet::new();
+    let mut reserved_key = HashSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("data-union") {
+            continue;
+        }
+        let names = fields.collect::<Vec<_>>();
+        if names.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: data-union` requires at least one enum name",
+            ));
+        }
+        for specification in names {
+            let mut parts = specification.split('=');
+            let name = parts.next().unwrap_or_default();
+            let style = parts.next();
+            if parts.next().is_some() {
+                return Err(compile_error(format!(
+                    "`flight-compiler: data-union` enum specification `{specification}` is malformed"
+                )));
+            }
+            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+                return Err(compile_error(format!(
+                    "`flight-compiler: data-union` enum name `{name}` is not a valid identifier"
+                )));
+            }
+            match style {
+                None => {}
+                Some("reserved-key") => {
+                    reserved_key.insert(name.to_string());
+                }
+                Some(style) => {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: data-union` enum `{name}` has unknown style `{style}`"
+                    )));
+                }
+            }
+            if !data_unions.insert(name.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: data-union` directive for enum `{name}`"
+                )));
+            }
+        }
+    }
+    return Ok(DataUnionMetadata {
+        names: data_unions,
+        reserved_key,
+    });
+}
+
+fn parse_entity_clone_shared_fields(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, BTreeSet<String>>, CompileError> {
+    let mut owners = BTreeMap::<String, BTreeSet<String>>::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("entity-clone-fields") {
+            continue;
+        }
+        let designations = fields.collect::<Vec<_>>();
+        if designations.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: entity-clone-fields` requires at least one `Owner.field` designation",
+            ));
+        }
+        for designation in designations {
+            let Some((owner, field)) = designation.split_once('.').filter(|(owner, field)| {
+                [owner, field].iter().all(|name| {
+                    syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
+                })
+            }) else {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-clone-fields` designation `{designation}` is not `Owner.field`"
+                )));
+            };
+            if !owners
+                .entry(owner.to_string())
+                .or_default()
+                .insert(field.to_string())
+            {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: entity-clone-fields` designation `{designation}`"
+                )));
+            }
+        }
+    }
+    return Ok(owners);
+}
+
+pub(crate) fn parse_entity_names(source: &str) -> Result<HashSet<String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let mut entities = HashSet::new();
+    for item in &file.items {
+        if let Item::Struct(structure) = item
+            && has_entity_runtime(structure)
+        {
+            entities.insert(structure.ident.to_string());
+        }
+        if let Item::Macro(item_macro) = item
+            && item_macro
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == "impl_entity")
+            && let Ok(entity_type) = syn::parse2::<Type>(item_macro.mac.tokens.clone())
+            && let Some(name) = type_name(&entity_type)
+        {
+            entities.insert(name);
+        }
+    }
+    return Ok(entities);
+}
+
+// `//! flight-compiler: export-name <rust_item> <TypeScriptName>` names one public function or constant
+// explicitly in TypeScript, for acronyms that lower-camel conversion cannot spell (`decode_utf8` ->
+// `decodeUTF8`). Cross-module uniqueness and shadowing are validated when sources are combined.
+fn parse_entity_runtime_states(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut states = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("entity-runtime-state") {
+            continue;
+        }
+        let designations = fields.collect::<Vec<_>>();
+        if designations.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: entity-runtime-state` requires at least one `Owner.field` designation",
+            ));
+        }
+        for designation in designations {
+            let Some((owner, field)) = designation.split_once('.').filter(|(owner, field)| {
+                [owner, field].iter().all(|name| {
+                    syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
+                })
+            }) else {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-runtime-state` designation `{designation}` is not `Owner.field`"
+                )));
+            };
+            if let Some(existing) = states.insert(owner.to_string(), field.to_string()) {
+                return Err(compile_error(format!(
+                    "ambiguous `flight-compiler: entity-runtime-state` for `{owner}`: `{existing}` and `{field}` are both designated; an entity has one runtime state field"
+                )));
+            }
+        }
+    }
+    return Ok(states);
+}
+
+// The validated `export-name` directives of a dependency source, which a consuming package needs to
+// import and reference the source's mapped public items by their TypeScript names. Each `const-group`
+// member maps to its `Owner.Member` reference.
+pub(crate) fn parse_export_name_metadata(
+    source: &str,
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let directives = parse_export_names(&file.attrs)?;
+    let const_groups = parse_const_groups(&file.attrs)?;
+    if directives.is_empty() && const_groups.is_empty() {
+        return Ok(directives);
+    }
+    let frozen_objects = parse_frozen_objects(&file.attrs)?;
+    let mut constants = Vec::new();
+    let mut functions = Vec::new();
+    let mut statics = Vec::new();
+    for item in file.items {
+        match item {
+            Item::Const(item) => constants.push(item),
+            Item::Fn(function) => functions.push(function),
+            Item::Static(item) => statics.push(item),
+            _ => {}
+        }
+    }
+    validate_export_names(
+        &directives,
+        &frozen_objects,
+        &functions,
+        &constants,
+        &statics,
+    )?;
+    let mut metadata = directives;
+    for (rust_name, owner, member) in const_group_members(&const_groups, &constants)? {
+        if metadata.contains_key(&rust_name) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{rust_name}` is already named by `const-group {owner}`"
+            )));
+        }
+        metadata.insert(rust_name, format!("{owner}.{member}"));
+    }
+    return Ok(metadata);
+}
+
+fn parse_export_names(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut directives = BTreeMap::new();
+    let mut target_names = HashSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("export-name") {
+            continue;
+        }
+        let Some(item) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: export-name` requires a Rust item name and TypeScript name",
+            ));
+        };
+        let Some(target) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` requires a TypeScript name"
+            )));
+        };
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` accepts exactly one TypeScript name"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(item).is_err() || item.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` Rust item name `{item}` is not a valid identifier"
+            )));
+        }
+        if !is_typescript_identifier(target) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` TypeScript name `{target}` is not a valid identifier"
+            )));
+        }
+        if is_javascript_binding_reserved(target)
+            || matches!(target, "Infinity" | "NaN" | "undefined")
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` TypeScript name `{target}` is reserved"
+            )));
+        }
+        if directives.contains_key(item) {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: export-name` directive for `{item}`"
+            )));
+        }
+        if !target_names.insert(target.to_string()) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` TypeScript name `{target}` is assigned more than once"
+            )));
+        }
+        directives.insert(item.to_string(), target.to_string());
+    }
+    return Ok(directives);
+}
+
+pub(crate) fn parse_external_nullable_options(
+    source: &str,
+) -> Result<ExternalNullableOptionProgram, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
+    let nullable_option_items = parse_nullable_option_items(&file.attrs)?;
+    let functions = file
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Fn(function) => Some(function.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let structs = file
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Struct(structure) => Some(structure.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    validate_nullable_option_items(&nullable_option_items, &functions, &structs)?;
+    return Ok(ExternalNullableOptionProgram {
+        functions,
+        nullable_option_items,
+        nullable_options,
+        structs,
+    });
+}
+
+fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool, CompileError> {
+    let mut found = false;
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some(expected) {
+            continue;
+        }
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: {expected}` does not accept arguments"
+            )));
+        }
+        if found {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: {expected}` directive"
+            )));
+        }
+        found = true;
+    }
+    return Ok(found);
+}
+
+fn parse_frozen_objects(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut directives = BTreeMap::new();
+    let mut target_names = HashSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("frozen-object") {
+            continue;
+        }
+        let Some(constant) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: frozen-object` requires a constant name and TypeScript name",
+            ));
+        };
+        let Some(target) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object {constant}` requires a TypeScript name"
+            )));
+        };
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object {constant}` accepts exactly one TypeScript name"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(constant).is_err() || constant.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant name `{constant}` is not a valid identifier"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(target).is_err() || target.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object {constant}` TypeScript name `{target}` is not a valid identifier"
+            )));
+        }
+        if directives.contains_key(constant) {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: frozen-object` directive for constant `{constant}`"
+            )));
+        }
+        if !target_names.insert(target.to_string()) {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` TypeScript name `{target}` is assigned more than once"
+            )));
+        }
+        directives.insert(constant.to_string(), target.to_string());
+    }
+    return Ok(directives);
+}
+
+pub(crate) fn parse_identity_alias_metadata(
+    source: &str,
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let directives = parse_identity_aliases(&file.attrs)?;
+    let type_aliases = file
+        .items
+        .into_iter()
+        .filter_map(|item| match item {
+            Item::Type(type_alias) => Some(type_alias),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    validate_identity_aliases(&directives, &type_aliases)?;
+    return Ok(directives);
+}
+
+fn parse_identity_aliases(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut directives = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("identity-alias") {
+            continue;
+        }
+        let Some(alias) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: identity-alias` requires an alias name and reason tag",
+            ));
+        };
+        let Some(tag) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias {alias}` requires a reason tag"
+            )));
+        };
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias {alias}` accepts exactly one reason tag"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(alias).is_err() || alias.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias name `{alias}` is not a valid identifier"
+            )));
+        }
+        if tag.is_empty()
+            || !tag.chars().all(|character| {
+                character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
+            })
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias {alias}` reason tag `{tag}` must contain only lowercase ASCII letters, digits, or hyphens"
+            )));
+        }
+        if directives
+            .insert(alias.to_string(), tag.to_string())
+            .is_some()
+        {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: identity-alias` directive for alias `{alias}`"
+            )));
+        }
+    }
+    return Ok(directives);
+}
+
+// flight-lint: allow(hashmap-iteration) directive names are a Vec in source order
+fn parse_nullable_option_items(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
+    let mut items = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("nullable-option") {
+            continue;
+        }
+        let names = fields.collect::<Vec<_>>();
+        if names.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: nullable-option` requires at least one `function` or `Struct.field`",
+            ));
+        }
+        for name in names {
+            let valid = name.split('.').count() <= 2
+                && name.split('.').all(|part| {
+                    syn::parse_str::<syn::Ident>(part).is_ok() && !part.starts_with("r#")
+                });
+            if !valid {
+                return Err(compile_error(format!(
+                    "`flight-compiler: nullable-option` item `{name}` is not `function` or `Struct.field`"
+                )));
+            }
+            if !items.insert(name.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: nullable-option` item `{name}`"
+                )));
+            }
+        }
+    }
+    return Ok(items);
+}
+
+fn parse_numeric_unions(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
+    let mut names = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("numeric-union") {
+            continue;
+        }
+        let enum_names = fields.collect::<Vec<_>>();
+        if enum_names.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: numeric-union` requires at least one enum name",
+            ));
+        }
+        for name in enum_names {
+            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+                return Err(compile_error(format!(
+                    "`flight-compiler: numeric-union` enum name `{name}` is not a valid identifier"
+                )));
+            }
+            if !names.insert(name.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: numeric-union` directive for enum `{name}`"
+                )));
+            }
+        }
+    }
+    return Ok(names);
 }
 
 pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
@@ -1018,38 +1697,6 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     });
 }
 
-pub(crate) fn parse_external_nullable_options(
-    source: &str,
-) -> Result<ExternalNullableOptionProgram, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
-    let nullable_option_items = parse_nullable_option_items(&file.attrs)?;
-    let functions = file
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            Item::Fn(function) => Some(function.clone()),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    let structs = file
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            Item::Struct(structure) => Some(structure.clone()),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    validate_nullable_option_items(&nullable_option_items, &functions, &structs)?;
-    return Ok(ExternalNullableOptionProgram {
-        functions,
-        nullable_option_items,
-        nullable_options,
-        structs,
-    });
-}
-
 pub(crate) fn parse_public_record_structs(source: &str) -> Result<Vec<ItemStruct>, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
@@ -1063,133 +1710,66 @@ pub(crate) fn parse_public_record_structs(source: &str) -> Result<Vec<ItemStruct
         .collect());
 }
 
-pub(crate) fn parse_entity_names(source: &str) -> Result<HashSet<String>, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    let mut entities = HashSet::new();
-    for item in &file.items {
-        if let Item::Struct(structure) = item
-            && has_entity_runtime(structure)
-        {
-            entities.insert(structure.ident.to_string());
-        }
-        if let Item::Macro(item_macro) = item
-            && item_macro
-                .mac
-                .path
-                .segments
-                .last()
-                .is_some_and(|segment| segment.ident == "impl_entity")
-            && let Ok(entity_type) = syn::parse2::<Type>(item_macro.mac.tokens.clone())
-            && let Some(name) = type_name(&entity_type)
-        {
-            entities.insert(name);
-        }
-    }
-    return Ok(entities);
-}
-
-pub(crate) fn has_companion_metadata(source: &str) -> Result<bool, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    return Ok(file.attrs.iter().any(|attribute| {
-        doc_directive(attribute)
-            .is_some_and(|directive| directive.split_whitespace().next() == Some("companion"))
-    }));
-}
-
-fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool, CompileError> {
-    let mut found = false;
+// `root-only` is consumed by package generation rather than TypeScript emission, but every source
+// passes through `source-mode` before the generator derives its package surface. Validate it here so
+// a typo cannot silently bypass the exact-root branch and fall back to inferred Rust exports.
+fn parse_root_only_directives(attributes: &[Attribute]) -> Result<Vec<String>, CompileError> {
+    let mut names = Vec::new();
+    let mut seen = HashSet::new();
     for attribute in attributes {
         let Some(directive) = doc_directive(attribute) else {
             continue;
         };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some(expected) {
-            continue;
-        }
-        if fields.next().is_some() {
-            return Err(compile_error(format!(
-                "`flight-compiler: {expected}` does not accept arguments"
-            )));
-        }
-        if found {
-            return Err(compile_error(format!(
-                "duplicate `flight-compiler: {expected}` directive"
-            )));
-        }
-        found = true;
-    }
-    return Ok(found);
-}
-
-// flight-lint: allow(hashmap-iteration) directive names are a Vec in source order
-fn parse_nullable_option_items(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
-    let mut items = BTreeSet::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
+        let Some(targets) = directive.strip_prefix("root-only") else {
             continue;
         };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("nullable-option") {
+        if targets
+            .chars()
+            .next()
+            .is_some_and(|character| !character.is_whitespace())
+        {
             continue;
         }
-        let names = fields.collect::<Vec<_>>();
-        if names.is_empty() {
+        let targets = targets.trim();
+        if targets.is_empty() {
             return Err(compile_error(
-                "`flight-compiler: nullable-option` requires at least one `function` or `Struct.field`",
+                "`flight-compiler: root-only` requires at least one TypeScript export name",
             ));
         }
-        for name in names {
-            let valid = name.split('.').count() <= 2
-                && name.split('.').all(|part| {
-                    syn::parse_str::<syn::Ident>(part).is_ok() && !part.starts_with("r#")
-                });
-            if !valid {
-                return Err(compile_error(format!(
-                    "`flight-compiler: nullable-option` item `{name}` is not `function` or `Struct.field`"
-                )));
+        for group in targets.split(',') {
+            let group = group.trim();
+            if group.is_empty() {
+                return Err(compile_error(
+                    "`flight-compiler: root-only` contains an empty export target",
+                ));
             }
-            if !items.insert(name.to_string()) {
-                return Err(compile_error(format!(
-                    "duplicate `flight-compiler: nullable-option` item `{name}`"
-                )));
-            }
-        }
-    }
-    return Ok(items);
-}
-
-fn parse_numeric_unions(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
-    let mut names = BTreeSet::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("numeric-union") {
-            continue;
-        }
-        let enum_names = fields.collect::<Vec<_>>();
-        if enum_names.is_empty() {
-            return Err(compile_error(
-                "`flight-compiler: numeric-union` requires at least one enum name",
-            ));
-        }
-        for name in enum_names {
-            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
-                return Err(compile_error(format!(
-                    "`flight-compiler: numeric-union` enum name `{name}` is not a valid identifier"
-                )));
-            }
-            if !names.insert(name.to_string()) {
-                return Err(compile_error(format!(
-                    "duplicate `flight-compiler: numeric-union` directive for enum `{name}`"
-                )));
+            for target in group.split_whitespace() {
+                if !is_typescript_identifier(target) {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: root-only` target `{target}` is not a TypeScript identifier"
+                    )));
+                }
+                if seen.insert(target.to_string()) {
+                    names.push(target.to_string());
+                }
             }
         }
     }
     return Ok(names);
+}
+
+pub(crate) fn parse_root_only_metadata(source: &str) -> Result<Vec<String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    return parse_root_only_directives(&file.attrs);
+}
+
+pub(crate) fn parse_string_union_metadata(
+    source: &str,
+) -> Result<StringUnionMetadata, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    return parse_string_union_metadata_from_attributes(&file.attrs);
 }
 
 fn parse_string_union_metadata_from_attributes(
@@ -1301,934 +1881,6 @@ fn parse_string_union_metadata_from_attributes(
         styles: directives,
         values,
     });
-}
-
-pub(crate) fn parse_string_union_metadata(
-    source: &str,
-) -> Result<StringUnionMetadata, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    return parse_string_union_metadata_from_attributes(&file.attrs);
-}
-
-// `//! flight-compiler: export-name <rust_item> <TypeScriptName>` names one public function or constant
-// explicitly in TypeScript, for acronyms that lower-camel conversion cannot spell (`decode_utf8` ->
-// `decodeUTF8`). Cross-module uniqueness and shadowing are validated when sources are combined.
-fn parse_entity_runtime_states(
-    attributes: &[Attribute],
-) -> Result<BTreeMap<String, String>, CompileError> {
-    let mut states = BTreeMap::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("entity-runtime-state") {
-            continue;
-        }
-        let designations = fields.collect::<Vec<_>>();
-        if designations.is_empty() {
-            return Err(compile_error(
-                "`flight-compiler: entity-runtime-state` requires at least one `Owner.field` designation",
-            ));
-        }
-        for designation in designations {
-            let Some((owner, field)) = designation.split_once('.').filter(|(owner, field)| {
-                [owner, field].iter().all(|name| {
-                    syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
-                })
-            }) else {
-                return Err(compile_error(format!(
-                    "`flight-compiler: entity-runtime-state` designation `{designation}` is not `Owner.field`"
-                )));
-            };
-            if let Some(existing) = states.insert(owner.to_string(), field.to_string()) {
-                return Err(compile_error(format!(
-                    "ambiguous `flight-compiler: entity-runtime-state` for `{owner}`: `{existing}` and `{field}` are both designated; an entity has one runtime state field"
-                )));
-            }
-        }
-    }
-    return Ok(states);
-}
-
-fn parse_entity_clone_shared_fields(
-    attributes: &[Attribute],
-) -> Result<BTreeMap<String, BTreeSet<String>>, CompileError> {
-    let mut owners = BTreeMap::<String, BTreeSet<String>>::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("entity-clone-fields") {
-            continue;
-        }
-        let designations = fields.collect::<Vec<_>>();
-        if designations.is_empty() {
-            return Err(compile_error(
-                "`flight-compiler: entity-clone-fields` requires at least one `Owner.field` designation",
-            ));
-        }
-        for designation in designations {
-            let Some((owner, field)) = designation.split_once('.').filter(|(owner, field)| {
-                [owner, field].iter().all(|name| {
-                    syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
-                })
-            }) else {
-                return Err(compile_error(format!(
-                    "`flight-compiler: entity-clone-fields` designation `{designation}` is not `Owner.field`"
-                )));
-            };
-            if !owners
-                .entry(owner.to_string())
-                .or_default()
-                .insert(field.to_string())
-            {
-                return Err(compile_error(format!(
-                    "duplicate `flight-compiler: entity-clone-fields` designation `{designation}`"
-                )));
-            }
-        }
-    }
-    return Ok(owners);
-}
-
-fn parse_export_names(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
-    let mut directives = BTreeMap::new();
-    let mut target_names = HashSet::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("export-name") {
-            continue;
-        }
-        let Some(item) = fields.next() else {
-            return Err(compile_error(
-                "`flight-compiler: export-name` requires a Rust item name and TypeScript name",
-            ));
-        };
-        let Some(target) = fields.next() else {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name {item}` requires a TypeScript name"
-            )));
-        };
-        if fields.next().is_some() {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name {item}` accepts exactly one TypeScript name"
-            )));
-        }
-        if syn::parse_str::<syn::Ident>(item).is_err() || item.starts_with("r#") {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name` Rust item name `{item}` is not a valid identifier"
-            )));
-        }
-        if !is_typescript_identifier(target) {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name {item}` TypeScript name `{target}` is not a valid identifier"
-            )));
-        }
-        if is_javascript_binding_reserved(target)
-            || matches!(target, "Infinity" | "NaN" | "undefined")
-        {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name {item}` TypeScript name `{target}` is reserved"
-            )));
-        }
-        if directives.contains_key(item) {
-            return Err(compile_error(format!(
-                "duplicate `flight-compiler: export-name` directive for `{item}`"
-            )));
-        }
-        if !target_names.insert(target.to_string()) {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name` TypeScript name `{target}` is assigned more than once"
-            )));
-        }
-        directives.insert(item.to_string(), target.to_string());
-    }
-    return Ok(directives);
-}
-
-fn parse_frozen_objects(
-    attributes: &[Attribute],
-) -> Result<BTreeMap<String, String>, CompileError> {
-    let mut directives = BTreeMap::new();
-    let mut target_names = HashSet::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("frozen-object") {
-            continue;
-        }
-        let Some(constant) = fields.next() else {
-            return Err(compile_error(
-                "`flight-compiler: frozen-object` requires a constant name and TypeScript name",
-            ));
-        };
-        let Some(target) = fields.next() else {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object {constant}` requires a TypeScript name"
-            )));
-        };
-        if fields.next().is_some() {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object {constant}` accepts exactly one TypeScript name"
-            )));
-        }
-        if syn::parse_str::<syn::Ident>(constant).is_err() || constant.starts_with("r#") {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object` constant name `{constant}` is not a valid identifier"
-            )));
-        }
-        if syn::parse_str::<syn::Ident>(target).is_err() || target.starts_with("r#") {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object {constant}` TypeScript name `{target}` is not a valid identifier"
-            )));
-        }
-        if directives.contains_key(constant) {
-            return Err(compile_error(format!(
-                "duplicate `flight-compiler: frozen-object` directive for constant `{constant}`"
-            )));
-        }
-        if !target_names.insert(target.to_string()) {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object` TypeScript name `{target}` is assigned more than once"
-            )));
-        }
-        directives.insert(constant.to_string(), target.to_string());
-    }
-    return Ok(directives);
-}
-
-// A source the crate compiles but this compiler does not emit (a target-native module, the crate
-// root): parsed only for what the eager-initialization proof must see across the whole crate, its
-// implicit-dispatch facts and the declarations that resolve names in it. It is never validated as
-// portable Rust, and none of its items are walked or emitted.
-pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    let mut program = parse_program("")?;
-    program.facts = collect_source_facts(&file);
-    program.no_std = file
-        .attrs
-        .iter()
-        .any(|attribute| attribute.path().is_ident("no_std"));
-    for item in &file.items {
-        match item {
-            Item::Enum(item) => {
-                program.type_names.insert(item.ident.to_string());
-                program.enums.push(item.clone());
-            }
-            Item::ExternCrate(item) => program.extern_crates.push(item.clone()),
-            Item::Mod(item) => {
-                program.type_names.insert(item.ident.to_string());
-            }
-            Item::Struct(item) => {
-                program.type_names.insert(item.ident.to_string());
-                program.structs.push(item.clone());
-            }
-            Item::Trait(item) => {
-                program.type_names.insert(item.ident.to_string());
-            }
-            Item::TraitAlias(item) => {
-                program.type_names.insert(item.ident.to_string());
-            }
-            Item::Type(item) => {
-                program.type_names.insert(item.ident.to_string());
-                program.type_aliases.push(item.clone());
-            }
-            Item::Union(item) => {
-                program.type_names.insert(item.ident.to_string());
-            }
-            Item::Use(item) => program.uses.push(item.clone()),
-            _ => {}
-        }
-    }
-    return Ok(program);
-}
-
-fn is_struct_literal(expression: &syn::Expr) -> bool {
-    return match expression {
-        syn::Expr::Group(group) => is_struct_literal(&group.expr),
-        syn::Expr::Paren(paren) => is_struct_literal(&paren.expr),
-        syn::Expr::Struct(_) => true,
-        _ => false,
-    };
-}
-
-// `//! flight-compiler: const-group <TypeScriptName> <PREFIX>`: the public constants named `<PREFIX>*`
-// become one exported TypeScript const object.
-// A `const-group` owner becomes an exported TypeScript value, so it may share its name only with a
-// type (an alias or interface), never with another emitted value: an enum, a function, a constant, a
-// static, or an `export-name` / `frozen-object` target.
-// flight-lint: allow(hashmap-iteration) items are Vecs in Rust source order and directives are BTreeMaps
-fn validate_const_group_owners(
-    groups: &BTreeMap<String, String>,
-    members: &[(String, String, String)],
-    enums: &[ItemEnum],
-    functions: &[ItemFn],
-    constants: &[ItemConst],
-    statics: &[ItemStatic],
-    export_names: &BTreeMap<String, String>,
-    frozen_objects: &BTreeMap<String, String>,
-) -> Result<(), CompileError> {
-    let named = |rust_name: String, default: String| {
-        return export_names
-            .get(&rust_name)
-            .or_else(|| frozen_objects.get(&rust_name))
-            .cloned()
-            .unwrap_or(default);
-    };
-    let mut values = enums
-        .iter()
-        .map(|item| (item.ident.to_string(), "enum"))
-        .collect::<Vec<_>>();
-    values.extend(functions.iter().map(|function| {
-        let rust_name = function.sig.ident.to_string();
-        let default = crate::typescript::snake_to_lower_camel(&rust_name);
-        return (named(rust_name, default), "function");
-    }));
-    values.extend(
-        constants
-            .iter()
-            .filter(|constant| {
-                !members
-                    .iter()
-                    .any(|(rust_name, _, _)| constant.ident == rust_name.as_str())
-            })
-            .map(|constant| {
-                let rust_name = constant.ident.to_string();
-                return (named(rust_name.clone(), rust_name), "constant");
-            }),
-    );
-    values.extend(statics.iter().map(|rust_static| {
-        let rust_name = rust_static.ident.to_string();
-        return (named(rust_name.clone(), rust_name), "static");
-    }));
-    for owner in groups.keys() {
-        if let Some((_, kind)) = values.iter().find(|(name, _)| name == owner) {
-            return Err(compile_error(format!(
-                "`const-group {owner}` collides with an emitted {kind} named `{owner}`"
-            )));
-        }
-    }
-    return Ok(());
-}
-
-// flight-lint: allow(hashmap-iteration) directives are BTreeMaps and items retain Rust source order in Vecs
-fn validate_export_names(
-    directives: &BTreeMap<String, String>,
-    frozen_objects: &BTreeMap<String, String>,
-    functions: &[ItemFn],
-    constants: &[ItemConst],
-    statics: &[ItemStatic],
-) -> Result<(), CompileError> {
-    for (item, target) in directives {
-        let visibility = functions
-            .iter()
-            .find(|function| function.sig.ident == item.as_str())
-            .map(|function| &function.vis)
-            .or_else(|| {
-                constants
-                    .iter()
-                    .find(|constant| constant.ident == item.as_str())
-                    .map(|constant| &constant.vis)
-            })
-            .or_else(|| {
-                statics
-                    .iter()
-                    .find(|rust_static| rust_static.ident == item.as_str())
-                    .map(|rust_static| &rust_static.vis)
-            });
-        let Some(visibility) = visibility else {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name` item `{item}` is not a function, constant or static of this source"
-            )));
-        };
-        if !is_public(visibility) {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name` item `{item}` must be public"
-            )));
-        }
-        if frozen_objects.contains_key(item) {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name` item `{item}` is already named by `frozen-object`"
-            )));
-        }
-        if *target == crate::typescript::snake_to_lower_camel(item) {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name {item}` repeats the default TypeScript name `{target}`"
-            )));
-        }
-        let collides = functions
-            .iter()
-            .map(|function| function.sig.ident.to_string())
-            .chain(constants.iter().map(|constant| constant.ident.to_string()))
-            .chain(statics.iter().map(|item| item.ident.to_string()))
-            .filter(|other| other != item)
-            .any(|other| {
-                directives.get(&other).map_or_else(
-                    || crate::typescript::default_item_name(&other) == *target,
-                    |other_target| other_target == target,
-                )
-            });
-        if collides {
-            return Err(compile_error(format!(
-                "`flight-compiler: export-name {item}` TypeScript name `{target}` collides with another item"
-            )));
-        }
-    }
-    return Ok(());
-}
-
-// flight-lint: allow(hashmap-iteration) frozen directives are a BTreeMap and constants retain Rust source order in a Vec
-fn validate_frozen_objects(
-    directives: &BTreeMap<String, String>,
-    constants: &[ItemConst],
-) -> Result<(), CompileError> {
-    for constant_name in directives.keys() {
-        let Some(constant) = constants
-            .iter()
-            .find(|constant| constant.ident == constant_name.as_str())
-        else {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object` constant `{constant_name}` does not exist"
-            )));
-        };
-        if !is_public(&constant.vis) {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object` constant `{constant_name}` must be public"
-            )));
-        }
-        if !is_struct_literal(&constant.expr) {
-            return Err(compile_error(format!(
-                "`flight-compiler: frozen-object` constant `{constant_name}` must be initialized with a struct literal"
-            )));
-        }
-    }
-    return Ok(());
-}
-
-// flight-lint: allow(hashmap-iteration) directive designations are a Vec in source order
-fn parse_array_like_parameters(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
-    let mut parameters = BTreeSet::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("array-like") {
-            continue;
-        }
-        let designations = fields.collect::<Vec<_>>();
-        if designations.is_empty() {
-            return Err(compile_error(
-                "`flight-compiler: array-like` requires at least one `function.parameter`",
-            ));
-        }
-        for designation in designations {
-            let valid = designation
-                .split_once('.')
-                .is_some_and(|(function, parameter)| {
-                    [function, parameter].iter().all(|name| {
-                        syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
-                    })
-                });
-            if !valid {
-                return Err(compile_error(format!(
-                    "`flight-compiler: array-like` designation `{designation}` is not `function.parameter`"
-                )));
-            }
-            if !parameters.insert(designation.to_string()) {
-                return Err(compile_error(format!(
-                    "duplicate `flight-compiler: array-like` designation `{designation}`"
-                )));
-            }
-        }
-    }
-    return Ok(parameters);
-}
-
-fn parse_data_unions(attributes: &[Attribute]) -> Result<DataUnionMetadata, CompileError> {
-    let mut data_unions = HashSet::new();
-    let mut reserved_key = HashSet::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("data-union") {
-            continue;
-        }
-        let names = fields.collect::<Vec<_>>();
-        if names.is_empty() {
-            return Err(compile_error(
-                "`flight-compiler: data-union` requires at least one enum name",
-            ));
-        }
-        for specification in names {
-            let mut parts = specification.split('=');
-            let name = parts.next().unwrap_or_default();
-            let style = parts.next();
-            if parts.next().is_some() {
-                return Err(compile_error(format!(
-                    "`flight-compiler: data-union` enum specification `{specification}` is malformed"
-                )));
-            }
-            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
-                return Err(compile_error(format!(
-                    "`flight-compiler: data-union` enum name `{name}` is not a valid identifier"
-                )));
-            }
-            match style {
-                None => {}
-                Some("reserved-key") => {
-                    reserved_key.insert(name.to_string());
-                }
-                Some(style) => {
-                    return Err(compile_error(format!(
-                        "`flight-compiler: data-union` enum `{name}` has unknown style `{style}`"
-                    )));
-                }
-            }
-            if !data_unions.insert(name.to_string()) {
-                return Err(compile_error(format!(
-                    "duplicate `flight-compiler: data-union` directive for enum `{name}`"
-                )));
-            }
-        }
-    }
-    return Ok(DataUnionMetadata {
-        names: data_unions,
-        reserved_key,
-    });
-}
-
-fn parse_identity_aliases(
-    attributes: &[Attribute],
-) -> Result<BTreeMap<String, String>, CompileError> {
-    let mut directives = BTreeMap::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("identity-alias") {
-            continue;
-        }
-        let Some(alias) = fields.next() else {
-            return Err(compile_error(
-                "`flight-compiler: identity-alias` requires an alias name and reason tag",
-            ));
-        };
-        let Some(tag) = fields.next() else {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias {alias}` requires a reason tag"
-            )));
-        };
-        if fields.next().is_some() {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias {alias}` accepts exactly one reason tag"
-            )));
-        }
-        if syn::parse_str::<syn::Ident>(alias).is_err() || alias.starts_with("r#") {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias` alias name `{alias}` is not a valid identifier"
-            )));
-        }
-        if tag.is_empty()
-            || !tag.chars().all(|character| {
-                character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
-            })
-        {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias {alias}` reason tag `{tag}` must contain only lowercase ASCII letters, digits, or hyphens"
-            )));
-        }
-        if directives
-            .insert(alias.to_string(), tag.to_string())
-            .is_some()
-        {
-            return Err(compile_error(format!(
-                "duplicate `flight-compiler: identity-alias` directive for alias `{alias}`"
-            )));
-        }
-    }
-    return Ok(directives);
-}
-
-fn identity_parameter(rust_type: &Type) -> Option<&syn::Ident> {
-    return match rust_type {
-        Type::Group(group) => identity_parameter(&group.elem),
-        Type::Paren(paren) => identity_parameter(&paren.elem),
-        Type::Path(path)
-            if path.qself.is_none()
-                && path.path.leading_colon.is_none()
-                && path.path.segments.len() == 1
-                && matches!(path.path.segments[0].arguments, PathArguments::None) =>
-        {
-            Some(&path.path.segments[0].ident)
-        }
-        _ => None,
-    };
-}
-
-fn validate_identity_aliases(
-    directives: &BTreeMap<String, String>,
-    type_aliases: &[ItemType],
-) -> Result<(), CompileError> {
-    for alias in directives.keys() {
-        let Some(type_alias) = type_aliases
-            .iter()
-            .find(|type_alias| type_alias.ident == alias.as_str())
-        else {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias` alias `{alias}` does not exist"
-            )));
-        };
-        if !is_public(&type_alias.vis) {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias` alias `{alias}` must be public"
-            )));
-        }
-        let mut parameters = type_alias.generics.params.iter();
-        let Some(syn::GenericParam::Type(parameter)) = parameters.next() else {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias` alias `{alias}` must declare exactly one type parameter"
-            )));
-        };
-        if parameters.next().is_some() {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias` alias `{alias}` must declare exactly one type parameter"
-            )));
-        }
-        if identity_parameter(&type_alias.ty) != Some(&parameter.ident) {
-            return Err(compile_error(format!(
-                "`flight-compiler: identity-alias` alias `{alias}` must resolve directly to its type parameter `{}`",
-                parameter.ident
-            )));
-        }
-    }
-    return Ok(());
-}
-
-pub(crate) fn parse_identity_alias_metadata(
-    source: &str,
-) -> Result<BTreeMap<String, String>, CompileError> {
-    let file = syn::parse_file(source)
-        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    let directives = parse_identity_aliases(&file.attrs)?;
-    let type_aliases = file
-        .items
-        .into_iter()
-        .filter_map(|item| match item {
-            Item::Type(type_alias) => Some(type_alias),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    validate_identity_aliases(&directives, &type_aliases)?;
-    return Ok(directives);
-}
-
-fn callable_arity(rust_type: &Type) -> Option<usize> {
-    return match rust_type {
-        Type::BareFn(function) => Some(function.inputs.len()),
-        Type::Paren(paren) => callable_arity(&paren.elem),
-        Type::Path(path) => {
-            let segment = path.path.segments.last()?;
-            if !matches!(
-                segment.ident.to_string().as_str(),
-                "Arc" | "Box" | "Option" | "Ref"
-            ) {
-                return None;
-            }
-            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
-                return None;
-            };
-            let mut types = arguments.args.iter().filter_map(|argument| match argument {
-                GenericArgument::Type(rust_type) => Some(rust_type),
-                _ => None,
-            });
-            let inner = types.next()?;
-            if types.next().is_some() {
-                return None;
-            }
-            callable_arity(inner)
-        }
-        Type::TraitObject(object) => object.bounds.iter().find_map(|bound| {
-            let syn::TypeParamBound::Trait(bound) = bound else {
-                return None;
-            };
-            let segment = bound.path.segments.last()?;
-            if !matches!(
-                segment.ident.to_string().as_str(),
-                "Fn" | "FnMut" | "FnOnce"
-            ) {
-                return None;
-            }
-            let PathArguments::Parenthesized(arguments) = &segment.arguments else {
-                return None;
-            };
-            Some(arguments.inputs.len())
-        }),
-        _ => None,
-    };
-}
-
-fn is_valid_callable_parameter_name(name: &str) -> bool {
-    return is_valid_callable_parameter_identifier(name) && !is_javascript_binding_reserved(name);
-}
-
-fn is_valid_callable_field_parameter_name(name: &str) -> bool {
-    return is_valid_callable_parameter_identifier(name)
-        && (name == "await" || !is_javascript_binding_reserved(name));
-}
-
-fn is_valid_callable_parameter_identifier(name: &str) -> bool {
-    return !name.starts_with("r#") && syn::Ident::parse_any.parse_str(name).is_ok();
-}
-
-fn is_javascript_binding_reserved(name: &str) -> bool {
-    return matches!(
-        name,
-        "arguments"
-            | "await"
-            | "break"
-            | "case"
-            | "catch"
-            | "class"
-            | "const"
-            | "continue"
-            | "debugger"
-            | "default"
-            | "delete"
-            | "do"
-            | "else"
-            | "enum"
-            | "eval"
-            | "export"
-            | "extends"
-            | "false"
-            | "finally"
-            | "for"
-            | "function"
-            | "if"
-            | "implements"
-            | "import"
-            | "in"
-            | "instanceof"
-            | "interface"
-            | "let"
-            | "new"
-            | "null"
-            | "package"
-            | "private"
-            | "protected"
-            | "public"
-            | "return"
-            | "static"
-            | "super"
-            | "switch"
-            | "this"
-            | "throw"
-            | "true"
-            | "try"
-            | "typeof"
-            | "var"
-            | "void"
-            | "while"
-            | "with"
-            | "yield"
-    );
-}
-
-fn parse_callable_field_parameters(
-    attributes: &[Attribute],
-) -> Result<BTreeMap<(String, String), Vec<String>>, CompileError> {
-    let mut directives = BTreeMap::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("callable-field-parameters") {
-            continue;
-        }
-        let Some(owner) = fields.next() else {
-            return Err(compile_error(
-                "`flight-compiler: callable-field-parameters` requires an owner struct name",
-            ));
-        };
-        if syn::parse_str::<syn::Ident>(owner).is_err() || owner.starts_with("r#") {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-field-parameters` owner name `{owner}` is not a valid identifier"
-            )));
-        }
-        let Some(field) = fields.next() else {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-field-parameters {owner}` requires a field name"
-            )));
-        };
-        if syn::parse_str::<syn::Ident>(field).is_err() || field.starts_with("r#") {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-field-parameters {owner}` field name `{field}` is not a valid identifier"
-            )));
-        }
-        let mut names = Vec::new();
-        let mut seen = HashSet::new();
-        for name in fields {
-            if !is_valid_callable_field_parameter_name(name) {
-                return Err(compile_error(format!(
-                    "`flight-compiler: callable-field-parameters {owner} {field}` parameter name `{name}` is not a valid identifier"
-                )));
-            }
-            if !seen.insert(name) {
-                return Err(compile_error(format!(
-                    "`flight-compiler: callable-field-parameters {owner} {field}` repeats parameter name `{name}`"
-                )));
-            }
-            names.push(name.to_string());
-        }
-        if directives
-            .insert((owner.to_string(), field.to_string()), names)
-            .is_some()
-        {
-            return Err(compile_error(format!(
-                "duplicate `flight-compiler: callable-field-parameters` directive for field `{owner}.{field}`"
-            )));
-        }
-    }
-    return Ok(directives);
-}
-
-fn parse_callable_parameters(
-    attributes: &[Attribute],
-) -> Result<BTreeMap<String, Vec<String>>, CompileError> {
-    let mut directives = BTreeMap::new();
-    for attribute in attributes {
-        let Some(directive) = doc_directive(attribute) else {
-            continue;
-        };
-        let mut fields = directive.split_whitespace();
-        if fields.next() != Some("callable-parameters") {
-            continue;
-        }
-        let Some(alias) = fields.next() else {
-            return Err(compile_error(
-                "`flight-compiler: callable-parameters` requires an alias name",
-            ));
-        };
-        if syn::parse_str::<syn::Ident>(alias).is_err() || alias.starts_with("r#") {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-parameters` alias name `{alias}` is not a valid identifier"
-            )));
-        }
-        let mut names = Vec::new();
-        let mut seen = HashSet::new();
-        for name in fields {
-            if !is_valid_callable_parameter_name(name) {
-                return Err(compile_error(format!(
-                    "`flight-compiler: callable-parameters {alias}` parameter name `{name}` is not a valid identifier"
-                )));
-            }
-            if !seen.insert(name) {
-                return Err(compile_error(format!(
-                    "`flight-compiler: callable-parameters {alias}` repeats parameter name `{name}`"
-                )));
-            }
-            names.push(name.to_string());
-        }
-        if directives.insert(alias.to_string(), names).is_some() {
-            return Err(compile_error(format!(
-                "duplicate `flight-compiler: callable-parameters` directive for alias `{alias}`"
-            )));
-        }
-    }
-    return Ok(directives);
-}
-
-fn validate_callable_field_parameters(
-    directives: &BTreeMap<(String, String), Vec<String>>,
-    structs: &[ItemStruct],
-) -> Result<(), CompileError> {
-    for ((owner, field), names) in directives {
-        let Some(structure) = structs
-            .iter()
-            .find(|structure| structure.ident == owner.as_str())
-        else {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-field-parameters` owner `{owner}` does not exist"
-            )));
-        };
-        let Some(rust_field) = structure.fields.iter().find(|rust_field| {
-            rust_field
-                .ident
-                .as_ref()
-                .is_some_and(|ident| ident == field)
-        }) else {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` does not exist"
-            )));
-        };
-        let Some(arity) = callable_arity(&rust_field.ty) else {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` is not callable"
-            )));
-        };
-        if names.len() != arity {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` expects {arity} parameter names, got {}",
-                names.len()
-            )));
-        }
-    }
-    return Ok(());
-}
-
-fn validate_callable_parameters(
-    directives: &BTreeMap<String, Vec<String>>,
-    type_aliases: &[ItemType],
-) -> Result<(), CompileError> {
-    for (alias, names) in directives {
-        let Some(type_alias) = type_aliases
-            .iter()
-            .find(|type_alias| type_alias.ident == alias.as_str())
-        else {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-parameters` alias `{alias}` does not exist"
-            )));
-        };
-        let Some(arity) = callable_arity(&type_alias.ty) else {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-parameters` alias `{alias}` is not callable"
-            )));
-        };
-        if names.len() != arity {
-            return Err(compile_error(format!(
-                "`flight-compiler: callable-parameters` alias `{alias}` expects {arity} parameter names, got {}",
-                names.len()
-            )));
-        }
-    }
-    return Ok(());
-}
-
-pub(crate) fn directive_names(source: &str, directive: &str) -> HashSet<String> {
-    let prefix = format!("//! flight-compiler: {directive} ");
-    return source
-        .lines()
-        .filter_map(|line| line.trim().strip_prefix(&prefix))
-        .flat_map(|names| {
-            names.split(|character: char| character == ',' || character.is_whitespace())
-        })
-        .filter(|name| !name.is_empty())
-        .map(str::to_string)
-        .collect();
 }
 
 pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileError> {
@@ -2372,6 +2024,108 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
     });
 }
 
+// A source the crate compiles but this compiler does not emit (a target-native module, the crate
+// root): parsed only for what the eager-initialization proof must see across the whole crate, its
+// implicit-dispatch facts and the declarations that resolve names in it. It is never validated as
+// portable Rust, and none of its items are walked or emitted.
+pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let mut program = parse_program("")?;
+    program.facts = collect_source_facts(&file);
+    program.no_std = file
+        .attrs
+        .iter()
+        .any(|attribute| attribute.path().is_ident("no_std"));
+    for item in &file.items {
+        match item {
+            Item::Enum(item) => {
+                program.type_names.insert(item.ident.to_string());
+                program.enums.push(item.clone());
+            }
+            Item::ExternCrate(item) => program.extern_crates.push(item.clone()),
+            Item::Mod(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::Struct(item) => {
+                program.type_names.insert(item.ident.to_string());
+                program.structs.push(item.clone());
+            }
+            Item::Trait(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::TraitAlias(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::Type(item) => {
+                program.type_names.insert(item.ident.to_string());
+                program.type_aliases.push(item.clone());
+            }
+            Item::Union(item) => {
+                program.type_names.insert(item.ident.to_string());
+            }
+            Item::Use(item) => program.uses.push(item.clone()),
+            _ => {}
+        }
+    }
+    return Ok(program);
+}
+
+pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    parse_root_only_directives(&file.attrs)?;
+    let mut rust_only = false;
+    let mut target_native = false;
+    for attribute in &file.attrs {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let name = directive.split_whitespace().next().unwrap_or_default();
+        match name {
+            "rust-only" => rust_only = true,
+            "target-native" => target_native = true,
+            "callable-field-parameters"
+            | "callable-parameters"
+            | "companion"
+            | "const-group"
+            | "contract"
+            | "data-union"
+            | "entity-clone-fields"
+            | "entity-runtime-state"
+            | "export-name"
+            | "frozen-object"
+            | "identity-alias"
+            | "array-like"
+            | "nullable-option"
+            | "nullable-options"
+            | "numeric-union"
+            | "readonly-fields"
+            | "root"
+            | "root-only"
+            | "string-union"
+            | "string-union-value" => {}
+            _ => {
+                return Err(compile_error(format!(
+                    "unknown `flight-compiler` source directive `{name}`"
+                )));
+            }
+        }
+    }
+    if rust_only && target_native {
+        return Err(compile_error(
+            "source cannot be both `flight-compiler: rust-only` and `flight-compiler: target-native`",
+        ));
+    }
+    return Ok(if rust_only {
+        SourceMode::RustOnly
+    } else if target_native {
+        SourceMode::TargetNative
+    } else {
+        SourceMode::Generate
+    });
+}
+
 fn type_name(rust_type: &Type) -> Option<String> {
     let Type::Path(path) = rust_type else {
         return None;
@@ -2422,6 +2176,208 @@ fn validate_array_like_parameters(
     return Ok(());
 }
 
+fn validate_callable_field_parameters(
+    directives: &BTreeMap<(String, String), Vec<String>>,
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for ((owner, field), names) in directives {
+        let Some(structure) = structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` owner `{owner}` does not exist"
+            )));
+        };
+        let Some(rust_field) = structure.fields.iter().find(|rust_field| {
+            rust_field
+                .ident
+                .as_ref()
+                .is_some_and(|ident| ident == field)
+        }) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` does not exist"
+            )));
+        };
+        let Some(arity) = callable_arity(&rust_field.ty) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` is not callable"
+            )));
+        };
+        if names.len() != arity {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` expects {arity} parameter names, got {}",
+                names.len()
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_callable_parameters(
+    directives: &BTreeMap<String, Vec<String>>,
+    type_aliases: &[ItemType],
+) -> Result<(), CompileError> {
+    for (alias, names) in directives {
+        let Some(type_alias) = type_aliases
+            .iter()
+            .find(|type_alias| type_alias.ident == alias.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias `{alias}` does not exist"
+            )));
+        };
+        let Some(arity) = callable_arity(&type_alias.ty) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias `{alias}` is not callable"
+            )));
+        };
+        if names.len() != arity {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias `{alias}` expects {arity} parameter names, got {}",
+                names.len()
+            )));
+        }
+    }
+    return Ok(());
+}
+
+// `//! flight-compiler: const-group <TypeScriptName> <PREFIX>`: the public constants named `<PREFIX>*`
+// become one exported TypeScript const object.
+// A `const-group` owner becomes an exported TypeScript value, so it may share its name only with a
+// type (an alias or interface), never with another emitted value: an enum, a function, a constant, a
+// static, or an `export-name` / `frozen-object` target.
+// flight-lint: allow(hashmap-iteration) items are Vecs in Rust source order and directives are BTreeMaps
+fn validate_const_group_owners(
+    groups: &BTreeMap<String, String>,
+    members: &[(String, String, String)],
+    enums: &[ItemEnum],
+    functions: &[ItemFn],
+    constants: &[ItemConst],
+    statics: &[ItemStatic],
+    export_names: &BTreeMap<String, String>,
+    frozen_objects: &BTreeMap<String, String>,
+) -> Result<(), CompileError> {
+    let named = |rust_name: String, default: String| {
+        return export_names
+            .get(&rust_name)
+            .or_else(|| frozen_objects.get(&rust_name))
+            .cloned()
+            .unwrap_or(default);
+    };
+    let mut values = enums
+        .iter()
+        .map(|item| (item.ident.to_string(), "enum"))
+        .collect::<Vec<_>>();
+    values.extend(functions.iter().map(|function| {
+        let rust_name = function.sig.ident.to_string();
+        let default = crate::typescript::snake_to_lower_camel(&rust_name);
+        return (named(rust_name, default), "function");
+    }));
+    values.extend(
+        constants
+            .iter()
+            .filter(|constant| {
+                !members
+                    .iter()
+                    .any(|(rust_name, _, _)| constant.ident == rust_name.as_str())
+            })
+            .map(|constant| {
+                let rust_name = constant.ident.to_string();
+                return (named(rust_name.clone(), rust_name), "constant");
+            }),
+    );
+    values.extend(statics.iter().map(|rust_static| {
+        let rust_name = rust_static.ident.to_string();
+        return (named(rust_name.clone(), rust_name), "static");
+    }));
+    for owner in groups.keys() {
+        if let Some((_, kind)) = values.iter().find(|(name, _)| name == owner) {
+            return Err(compile_error(format!(
+                "`const-group {owner}` collides with an emitted {kind} named `{owner}`"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_data_union(rust_enum: &ItemEnum) -> Result<(), CompileError> {
+    let has_named = rust_enum
+        .variants
+        .iter()
+        .any(|variant| matches!(variant.fields, Fields::Named(_)));
+    let mut has_unnamed = false;
+    let mut tags = HashSet::new();
+    let mut unit_count = 0;
+    for variant in &rust_enum.variants {
+        if variant.discriminant.is_some() {
+            return Err(compile_error(format!(
+                "data union `{}::{}` cannot declare an explicit discriminant",
+                rust_enum.ident, variant.ident
+            )));
+        }
+        if has_named {
+            let name = variant.ident.to_string();
+            let tag = name
+                .chars()
+                .next()
+                .into_iter()
+                .flat_map(char::to_lowercase)
+                .chain(name.chars().skip(1))
+                .collect::<String>();
+            if !tags.insert(tag.clone()) {
+                return Err(compile_error(format!(
+                    "data union `{}` has more than one variant with discriminator `{tag}`",
+                    rust_enum.ident
+                )));
+            }
+        }
+        match &variant.fields {
+            Fields::Named(fields) => {
+                if fields
+                    .named
+                    .iter()
+                    .any(|field| field.ident.as_ref().is_some_and(|ident| ident == "kind"))
+                {
+                    return Err(compile_error(format!(
+                        "data union variant `{}::{}` cannot declare the reserved discriminator field `kind`",
+                        rust_enum.ident, variant.ident
+                    )));
+                }
+            }
+            Fields::Unnamed(fields) => {
+                has_unnamed = true;
+                if fields.unnamed.len() != 1 {
+                    return Err(compile_error(format!(
+                        "untagged data union variant `{}::{}` must contain exactly one field",
+                        rust_enum.ident, variant.ident
+                    )));
+                }
+            }
+            Fields::Unit => unit_count += 1,
+        }
+    }
+    if has_named && has_unnamed {
+        return Err(compile_error(format!(
+            "data union `{}` cannot mix named and unnamed variant fields",
+            rust_enum.ident
+        )));
+    }
+    if !has_named && unit_count > 1 {
+        return Err(compile_error(format!(
+            "untagged data union `{}` can contain at most one unit variant because every unit variant lowers to `null`",
+            rust_enum.ident
+        )));
+    }
+    if !has_named && !has_unnamed {
+        return Err(compile_error(format!(
+            "data union `{}` has no payload variants; use `flight-compiler: string-union` instead",
+            rust_enum.ident
+        )));
+    }
+    return Ok(());
+}
+
 fn validate_data_union_directives(
     data_unions: &HashSet<String>,
     reserved_key_data_unions: &HashSet<String>,
@@ -2454,6 +2410,284 @@ fn validate_data_union_directives(
                     "reserved-key data union `{name}` requires exactly one unnamed payload field per variant"
                 )));
             }
+        }
+    }
+    return Ok(());
+}
+
+fn validate_entity_clone_shared_fields(
+    designations: &BTreeMap<String, BTreeSet<String>>,
+    entities: &HashSet<String>,
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for (owner, field_names) in designations {
+        if !entities.contains(owner) {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-clone-fields {owner}` requires `{owner}` to be an entity"
+            )));
+        }
+        let Some(structure) = structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-clone-fields {owner}` names no struct declared in this source"
+            )));
+        };
+        for field_name in field_names {
+            let Some(field) = structure.fields.iter().find(|field| {
+                field
+                    .ident
+                    .as_ref()
+                    .is_some_and(|ident| ident == field_name)
+            }) else {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-clone-fields {owner}.{field_name}` names no field of `{owner}`"
+                )));
+            };
+            if !is_public(&field.vis) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-clone-fields {owner}.{field_name}` must designate a public field"
+                )));
+            }
+        }
+    }
+    return Ok(());
+}
+
+fn validate_entity_runtime_states(
+    states: &BTreeMap<String, String>,
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for (owner, field_name) in states {
+        let Some(structure) = structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` names no struct declared in this source"
+            )));
+        };
+        if !has_entity_runtime(structure) {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` requires `{owner}` to be an entity with a private `runtime: EntityRuntimeSlot`"
+            )));
+        }
+        let Some(field) = structure.fields.iter().find(|field| {
+            field
+                .ident
+                .as_ref()
+                .is_some_and(|ident| ident == field_name)
+        }) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` names no field of `{owner}`"
+            )));
+        };
+        if field_name == "runtime" || is_public(&field.vis) {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-runtime-state {owner}.{field_name}` must designate a crate-private state field, not a public field or the runtime slot"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_enum(rust_enum: &ItemEnum, data_union: bool) -> Result<(), CompileError> {
+    if data_union {
+        return validate_data_union(rust_enum);
+    }
+    for variant in &rust_enum.variants {
+        if !matches!(variant.fields, Fields::Unit) {
+            return Err(compile_error(format!(
+                "unsupported enum variant `{}::{}`; only unit variants are portable",
+                rust_enum.ident, variant.ident
+            )));
+        }
+        if let Some((_, discriminant)) = &variant.discriminant
+            && !is_integer_discriminant(discriminant)
+        {
+            return Err(compile_error(format!(
+                "unsupported enum discriminant `{}::{}`; explicit discriminants must be integer literals",
+                rust_enum.ident, variant.ident
+            )));
+        }
+    }
+    return Ok(());
+}
+
+// flight-lint: allow(hashmap-iteration) directives are BTreeMaps and items retain Rust source order in Vecs
+fn validate_export_names(
+    directives: &BTreeMap<String, String>,
+    frozen_objects: &BTreeMap<String, String>,
+    functions: &[ItemFn],
+    constants: &[ItemConst],
+    statics: &[ItemStatic],
+) -> Result<(), CompileError> {
+    for (item, target) in directives {
+        let visibility = functions
+            .iter()
+            .find(|function| function.sig.ident == item.as_str())
+            .map(|function| &function.vis)
+            .or_else(|| {
+                constants
+                    .iter()
+                    .find(|constant| constant.ident == item.as_str())
+                    .map(|constant| &constant.vis)
+            })
+            .or_else(|| {
+                statics
+                    .iter()
+                    .find(|rust_static| rust_static.ident == item.as_str())
+                    .map(|rust_static| &rust_static.vis)
+            });
+        let Some(visibility) = visibility else {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` is not a function, constant or static of this source"
+            )));
+        };
+        if !is_public(visibility) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` must be public"
+            )));
+        }
+        if frozen_objects.contains_key(item) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` is already named by `frozen-object`"
+            )));
+        }
+        if *target == crate::typescript::snake_to_lower_camel(item) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` repeats the default TypeScript name `{target}`"
+            )));
+        }
+        let collides = functions
+            .iter()
+            .map(|function| function.sig.ident.to_string())
+            .chain(constants.iter().map(|constant| constant.ident.to_string()))
+            .chain(statics.iter().map(|item| item.ident.to_string()))
+            .filter(|other| other != item)
+            .any(|other| {
+                directives.get(&other).map_or_else(
+                    || crate::typescript::default_item_name(&other) == *target,
+                    |other_target| other_target == target,
+                )
+            });
+        if collides {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` TypeScript name `{target}` collides with another item"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_fields(
+    structure: &ItemStruct,
+    designated_state: Option<&str>,
+) -> Result<(), CompileError> {
+    let Fields::Named(fields) = &structure.fields else {
+        return Err(compile_error(format!(
+            "unsupported struct `{}`: only named fields can be transpiled",
+            structure.ident
+        )));
+    };
+    let module_private_plain_data = !is_public(&structure.vis) && !has_entity_runtime(structure);
+    for field in &fields.named {
+        if !(module_private_plain_data
+            || is_public(&field.vis)
+            || field.ident.as_ref().is_some_and(|ident| ident == "runtime")
+                && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
+            || designated_state.is_some_and(|designated| {
+                field
+                    .ident
+                    .as_ref()
+                    .is_some_and(|ident| ident == designated)
+            }))
+        {
+            let field_name = field
+                .ident
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "<unnamed>".to_string());
+            let designation = if has_entity_runtime(structure) {
+                format!(
+                    " unless the field is designated with `flight-compiler: entity-runtime-state {}.{field_name}`",
+                    structure.ident
+                )
+            } else {
+                String::new()
+            };
+            return Err(compile_error(format!(
+                "unsupported private field `{field_name}` on `{}`; only the EntityRuntimeSlot is target-private{designation}",
+                structure.ident
+            )));
+        }
+    }
+    return Ok(());
+}
+
+// flight-lint: allow(hashmap-iteration) frozen directives are a BTreeMap and constants retain Rust source order in a Vec
+fn validate_frozen_objects(
+    directives: &BTreeMap<String, String>,
+    constants: &[ItemConst],
+) -> Result<(), CompileError> {
+    for constant_name in directives.keys() {
+        let Some(constant) = constants
+            .iter()
+            .find(|constant| constant.ident == constant_name.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant `{constant_name}` does not exist"
+            )));
+        };
+        if !is_public(&constant.vis) {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant `{constant_name}` must be public"
+            )));
+        }
+        if !is_struct_literal(&constant.expr) {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant `{constant_name}` must be initialized with a struct literal"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_identity_aliases(
+    directives: &BTreeMap<String, String>,
+    type_aliases: &[ItemType],
+) -> Result<(), CompileError> {
+    for alias in directives.keys() {
+        let Some(type_alias) = type_aliases
+            .iter()
+            .find(|type_alias| type_alias.ident == alias.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` does not exist"
+            )));
+        };
+        if !is_public(&type_alias.vis) {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must be public"
+            )));
+        }
+        let mut parameters = type_alias.generics.params.iter();
+        let Some(syn::GenericParam::Type(parameter)) = parameters.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must declare exactly one type parameter"
+            )));
+        };
+        if parameters.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must declare exactly one type parameter"
+            )));
+        }
+        if identity_parameter(&type_alias.ty) != Some(&parameter.ident) {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must resolve directly to its type parameter `{}`",
+                parameter.ident
+            )));
         }
     }
     return Ok(());
@@ -2706,240 +2940,6 @@ fn validate_string_union_directives(
                     "exact string union `{name}` repeats value `{value}`"
                 )));
             }
-        }
-    }
-    return Ok(());
-}
-
-fn validate_enum(rust_enum: &ItemEnum, data_union: bool) -> Result<(), CompileError> {
-    if data_union {
-        return validate_data_union(rust_enum);
-    }
-    for variant in &rust_enum.variants {
-        if !matches!(variant.fields, Fields::Unit) {
-            return Err(compile_error(format!(
-                "unsupported enum variant `{}::{}`; only unit variants are portable",
-                rust_enum.ident, variant.ident
-            )));
-        }
-        if let Some((_, discriminant)) = &variant.discriminant
-            && !is_integer_discriminant(discriminant)
-        {
-            return Err(compile_error(format!(
-                "unsupported enum discriminant `{}::{}`; explicit discriminants must be integer literals",
-                rust_enum.ident, variant.ident
-            )));
-        }
-    }
-    return Ok(());
-}
-
-fn validate_data_union(rust_enum: &ItemEnum) -> Result<(), CompileError> {
-    let has_named = rust_enum
-        .variants
-        .iter()
-        .any(|variant| matches!(variant.fields, Fields::Named(_)));
-    let mut has_unnamed = false;
-    let mut tags = HashSet::new();
-    let mut unit_count = 0;
-    for variant in &rust_enum.variants {
-        if variant.discriminant.is_some() {
-            return Err(compile_error(format!(
-                "data union `{}::{}` cannot declare an explicit discriminant",
-                rust_enum.ident, variant.ident
-            )));
-        }
-        if has_named {
-            let name = variant.ident.to_string();
-            let tag = name
-                .chars()
-                .next()
-                .into_iter()
-                .flat_map(char::to_lowercase)
-                .chain(name.chars().skip(1))
-                .collect::<String>();
-            if !tags.insert(tag.clone()) {
-                return Err(compile_error(format!(
-                    "data union `{}` has more than one variant with discriminator `{tag}`",
-                    rust_enum.ident
-                )));
-            }
-        }
-        match &variant.fields {
-            Fields::Named(fields) => {
-                if fields
-                    .named
-                    .iter()
-                    .any(|field| field.ident.as_ref().is_some_and(|ident| ident == "kind"))
-                {
-                    return Err(compile_error(format!(
-                        "data union variant `{}::{}` cannot declare the reserved discriminator field `kind`",
-                        rust_enum.ident, variant.ident
-                    )));
-                }
-            }
-            Fields::Unnamed(fields) => {
-                has_unnamed = true;
-                if fields.unnamed.len() != 1 {
-                    return Err(compile_error(format!(
-                        "untagged data union variant `{}::{}` must contain exactly one field",
-                        rust_enum.ident, variant.ident
-                    )));
-                }
-            }
-            Fields::Unit => unit_count += 1,
-        }
-    }
-    if has_named && has_unnamed {
-        return Err(compile_error(format!(
-            "data union `{}` cannot mix named and unnamed variant fields",
-            rust_enum.ident
-        )));
-    }
-    if !has_named && unit_count > 1 {
-        return Err(compile_error(format!(
-            "untagged data union `{}` can contain at most one unit variant because every unit variant lowers to `null`",
-            rust_enum.ident
-        )));
-    }
-    if !has_named && !has_unnamed {
-        return Err(compile_error(format!(
-            "data union `{}` has no payload variants; use `flight-compiler: string-union` instead",
-            rust_enum.ident
-        )));
-    }
-    return Ok(());
-}
-
-fn is_integer_discriminant(expression: &syn::Expr) -> bool {
-    return match expression {
-        syn::Expr::Group(group) => is_integer_discriminant(&group.expr),
-        syn::Expr::Lit(literal) => matches!(literal.lit, syn::Lit::Int(_)),
-        syn::Expr::Paren(paren) => is_integer_discriminant(&paren.expr),
-        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
-            matches!(unary.expr.as_ref(), syn::Expr::Lit(literal) if matches!(literal.lit, syn::Lit::Int(_)))
-        }
-        _ => false,
-    };
-}
-
-fn validate_entity_runtime_states(
-    states: &BTreeMap<String, String>,
-    structs: &[ItemStruct],
-) -> Result<(), CompileError> {
-    for (owner, field_name) in states {
-        let Some(structure) = structs
-            .iter()
-            .find(|structure| structure.ident == owner.as_str())
-        else {
-            return Err(compile_error(format!(
-                "`flight-compiler: entity-runtime-state {owner}.{field_name}` names no struct declared in this source"
-            )));
-        };
-        if !has_entity_runtime(structure) {
-            return Err(compile_error(format!(
-                "`flight-compiler: entity-runtime-state {owner}.{field_name}` requires `{owner}` to be an entity with a private `runtime: EntityRuntimeSlot`"
-            )));
-        }
-        let Some(field) = structure.fields.iter().find(|field| {
-            field
-                .ident
-                .as_ref()
-                .is_some_and(|ident| ident == field_name)
-        }) else {
-            return Err(compile_error(format!(
-                "`flight-compiler: entity-runtime-state {owner}.{field_name}` names no field of `{owner}`"
-            )));
-        };
-        if field_name == "runtime" || is_public(&field.vis) {
-            return Err(compile_error(format!(
-                "`flight-compiler: entity-runtime-state {owner}.{field_name}` must designate a crate-private state field, not a public field or the runtime slot"
-            )));
-        }
-    }
-    return Ok(());
-}
-
-fn validate_entity_clone_shared_fields(
-    designations: &BTreeMap<String, BTreeSet<String>>,
-    entities: &HashSet<String>,
-    structs: &[ItemStruct],
-) -> Result<(), CompileError> {
-    for (owner, field_names) in designations {
-        if !entities.contains(owner) {
-            return Err(compile_error(format!(
-                "`flight-compiler: entity-clone-fields {owner}` requires `{owner}` to be an entity"
-            )));
-        }
-        let Some(structure) = structs
-            .iter()
-            .find(|structure| structure.ident == owner.as_str())
-        else {
-            return Err(compile_error(format!(
-                "`flight-compiler: entity-clone-fields {owner}` names no struct declared in this source"
-            )));
-        };
-        for field_name in field_names {
-            let Some(field) = structure.fields.iter().find(|field| {
-                field
-                    .ident
-                    .as_ref()
-                    .is_some_and(|ident| ident == field_name)
-            }) else {
-                return Err(compile_error(format!(
-                    "`flight-compiler: entity-clone-fields {owner}.{field_name}` names no field of `{owner}`"
-                )));
-            };
-            if !is_public(&field.vis) {
-                return Err(compile_error(format!(
-                    "`flight-compiler: entity-clone-fields {owner}.{field_name}` must designate a public field"
-                )));
-            }
-        }
-    }
-    return Ok(());
-}
-
-fn validate_fields(
-    structure: &ItemStruct,
-    designated_state: Option<&str>,
-) -> Result<(), CompileError> {
-    let Fields::Named(fields) = &structure.fields else {
-        return Err(compile_error(format!(
-            "unsupported struct `{}`: only named fields can be transpiled",
-            structure.ident
-        )));
-    };
-    let module_private_plain_data = !is_public(&structure.vis) && !has_entity_runtime(structure);
-    for field in &fields.named {
-        if !(module_private_plain_data
-            || is_public(&field.vis)
-            || field.ident.as_ref().is_some_and(|ident| ident == "runtime")
-                && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
-            || designated_state.is_some_and(|designated| {
-                field
-                    .ident
-                    .as_ref()
-                    .is_some_and(|ident| ident == designated)
-            }))
-        {
-            let field_name = field
-                .ident
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_else(|| "<unnamed>".to_string());
-            let designation = if has_entity_runtime(structure) {
-                format!(
-                    " unless the field is designated with `flight-compiler: entity-runtime-state {}.{field_name}`",
-                    structure.ident
-                )
-            } else {
-                String::new()
-            };
-            return Err(compile_error(format!(
-                "unsupported private field `{field_name}` on `{}`; only the EntityRuntimeSlot is target-private{designation}",
-                structure.ident
-            )));
         }
     }
     return Ok(());

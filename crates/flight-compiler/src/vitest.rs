@@ -443,25 +443,6 @@ fn collect_contract_symbols(
     return (symbols, type_symbols, external_modules);
 }
 
-fn pattern_names(pattern: &Pat) -> HashSet<String> {
-    struct DeclaredNameCollector {
-        names: HashSet<String>,
-    }
-
-    impl<'ast> Visit<'ast> for DeclaredNameCollector {
-        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
-            self.names.insert(pattern.ident.to_string());
-            syn::visit::visit_pat_ident(self, pattern);
-        }
-    }
-
-    let mut collector = DeclaredNameCollector {
-        names: HashSet::new(),
-    };
-    collector.visit_pat(pattern);
-    return collector.names;
-}
-
 fn collect_declared_names(function: &ItemFn) -> HashSet<String> {
     let mut names = HashSet::new();
     for argument in &function.sig.inputs {
@@ -569,37 +550,6 @@ fn emit_assertion_expression(
     return emit_expression(expression, context);
 }
 
-fn expression_contains_suffixed_f32(expression: &Expr) -> bool {
-    struct F32Finder {
-        found: bool,
-    }
-
-    impl<'ast> Visit<'ast> for F32Finder {
-        fn visit_lit_float(&mut self, literal: &'ast syn::LitFloat) {
-            self.found |= literal.suffix() == "f32";
-            syn::visit::visit_lit_float(self, literal);
-        }
-    }
-
-    let mut finder = F32Finder { found: false };
-    finder.visit_expr(expression);
-    return finder.found;
-}
-
-fn is_array_expression(expression: &Expr) -> bool {
-    return matches!(
-        unparenthesized(expression),
-        Expr::Array(_) | Expr::Repeat(_)
-    );
-}
-
-fn unparenthesized(mut expression: &Expr) -> &Expr {
-    while let Expr::Paren(parenthesized) = expression {
-        expression = &parenthesized.expr;
-    }
-    return expression;
-}
-
 fn emit_block(
     out: &mut String,
     statements: &[Stmt],
@@ -683,68 +633,6 @@ fn emit_helper(
     emit_block(out, &function.block.stmts, &context, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
-    return Ok(());
-}
-
-fn emit_test_constant(
-    out: &mut String,
-    constant: &syn::ItemConst,
-    context: &HashSet<String>,
-) -> Result<(), CompileError> {
-    writeln!(
-        out,
-        "const {}: {} = {};",
-        constant.ident,
-        emit_type(&constant.ty, context)?,
-        emit_expression(&constant.expr, context)?
-    )
-    .expect("writing to a String cannot fail");
-    return Ok(());
-}
-
-fn emit_test_struct(
-    out: &mut String,
-    structure: &syn::ItemStruct,
-    context: &HashSet<String>,
-) -> Result<(), CompileError> {
-    let Fields::Named(fields) = &structure.fields else {
-        return Err(compile_error(format!(
-            "portable test struct `{}` must use named fields",
-            structure.ident
-        )));
-    };
-    writeln!(out, "interface {} {{", structure.ident).expect("writing to a String cannot fail");
-    for field in &fields.named {
-        let Some(name) = &field.ident else {
-            return Err(compile_error(format!(
-                "portable test struct `{}` has an unnamed field",
-                structure.ident
-            )));
-        };
-        writeln!(
-            out,
-            "  {}: {};",
-            snake_to_lower_camel(&name.to_string()),
-            emit_type(&field.ty, context)?
-        )
-        .expect("writing to a String cannot fail");
-    }
-    out.push_str("}\n");
-    return Ok(());
-}
-
-fn emit_test_type_alias(
-    out: &mut String,
-    type_alias: &syn::ItemType,
-    context: &HashSet<String>,
-) -> Result<(), CompileError> {
-    writeln!(
-        out,
-        "type {} = {};",
-        type_alias.ident,
-        emit_type(&type_alias.ty, context)?
-    )
-    .expect("writing to a String cannot fail");
     return Ok(());
 }
 
@@ -918,18 +806,6 @@ fn emit_suite(
     return Ok(());
 }
 
-fn resolve_suite_name<'a>(name: &'a str, contract_symbols: &'a [String]) -> &'a str {
-    if contract_symbols.iter().any(|symbol| symbol == name) {
-        return name;
-    }
-    if let Some(callable) = name.strip_suffix("_tests")
-        && contract_symbols.iter().any(|symbol| symbol == callable)
-    {
-        return callable;
-    }
-    return name;
-}
-
 fn emit_test(
     out: &mut String,
     test: &TestCase,
@@ -963,56 +839,20 @@ fn emit_test(
     return Ok(());
 }
 
-fn test_display_name(function: &ItemFn) -> String {
-    struct DecimalLiteralCollector {
-        literals: HashSet<(String, String)>,
-    }
-
-    impl<'ast> Visit<'ast> for DecimalLiteralCollector {
-        fn visit_lit_float(&mut self, literal: &'ast syn::LitFloat) {
-            let spelling = numeric_literal_spelling(&literal.to_string(), literal.suffix());
-            let Some((whole, fraction)) = spelling.split_once('.') else {
-                return;
-            };
-            let fractional_digits = fraction.replace('_', "");
-            if !whole
-                .chars()
-                .all(|character| character.is_ascii_digit() || character == '_')
-                || fractional_digits.is_empty()
-                || !fractional_digits
-                    .chars()
-                    .all(|character| character.is_ascii_digit())
-                || !fractional_digits.chars().any(|character| character != '0')
-            {
-                return;
-            }
-            self.literals.insert((
-                spelling.replace('.', "_"),
-                format!("{}.{}", whole.replace('_', ""), fractional_digits),
-            ));
-        }
-
-        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
-            if let Ok(arguments) = parse_macro_arguments(rust_macro) {
-                for argument in &arguments {
-                    self.visit_expr(argument);
-                }
-            }
-        }
-    }
-
-    let mut collector = DecimalLiteralCollector {
-        literals: HashSet::new(),
-    };
-    collector.visit_block(&function.block);
-    let mut literals = collector.literals.into_iter().collect::<Vec<_>>();
-    literals.sort_by_key(|(encoded, _)| std::cmp::Reverse(encoded.len()));
-
-    let mut name = format!("_{}_", function.sig.ident);
-    for (encoded, display) in literals {
-        name = name.replace(&format!("_{encoded}_"), &format!("_{display}_"));
-    }
-    return name.trim_matches('_').replace('_', " ");
+fn emit_test_constant(
+    out: &mut String,
+    constant: &syn::ItemConst,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    writeln!(
+        out,
+        "const {}: {} = {};",
+        constant.ident,
+        emit_type(&constant.ty, context)?,
+        emit_expression(&constant.expr, context)?
+    )
+    .expect("writing to a String cannot fail");
+    return Ok(());
 }
 
 pub(crate) fn emit_test_program(
@@ -1267,6 +1107,76 @@ pub(crate) fn emit_test_program(
     return Ok(out);
 }
 
+fn emit_test_struct(
+    out: &mut String,
+    structure: &syn::ItemStruct,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    let Fields::Named(fields) = &structure.fields else {
+        return Err(compile_error(format!(
+            "portable test struct `{}` must use named fields",
+            structure.ident
+        )));
+    };
+    writeln!(out, "interface {} {{", structure.ident).expect("writing to a String cannot fail");
+    for field in &fields.named {
+        let Some(name) = &field.ident else {
+            return Err(compile_error(format!(
+                "portable test struct `{}` has an unnamed field",
+                structure.ident
+            )));
+        };
+        writeln!(
+            out,
+            "  {}: {};",
+            snake_to_lower_camel(&name.to_string()),
+            emit_type(&field.ty, context)?
+        )
+        .expect("writing to a String cannot fail");
+    }
+    out.push_str("}\n");
+    return Ok(());
+}
+
+fn emit_test_type_alias(
+    out: &mut String,
+    type_alias: &syn::ItemType,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    writeln!(
+        out,
+        "type {} = {};",
+        type_alias.ident,
+        emit_type(&type_alias.ty, context)?
+    )
+    .expect("writing to a String cannot fail");
+    return Ok(());
+}
+
+fn expression_contains_suffixed_f32(expression: &Expr) -> bool {
+    struct F32Finder {
+        found: bool,
+    }
+
+    impl<'ast> Visit<'ast> for F32Finder {
+        fn visit_lit_float(&mut self, literal: &'ast syn::LitFloat) {
+            self.found |= literal.suffix() == "f32";
+            syn::visit::visit_lit_float(self, literal);
+        }
+    }
+
+    let mut finder = F32Finder { found: false };
+    finder.visit_expr(expression);
+    return finder.found;
+}
+
+fn is_array_expression(expression: &Expr) -> bool {
+    return matches!(
+        unparenthesized(expression),
+        Expr::Array(_) | Expr::Repeat(_)
+    );
+}
+
 fn local_name(pattern: &Pat) -> Option<String> {
     return match pattern {
         Pat::Ident(identifier) => Some(identifier.ident.to_string()),
@@ -1297,4 +1207,94 @@ fn parse_macro_arguments(
                     .unwrap_or_else(|| "<unknown>".to_string())
             ))
         });
+}
+
+fn pattern_names(pattern: &Pat) -> HashSet<String> {
+    struct DeclaredNameCollector {
+        names: HashSet<String>,
+    }
+
+    impl<'ast> Visit<'ast> for DeclaredNameCollector {
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            self.names.insert(pattern.ident.to_string());
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut collector = DeclaredNameCollector {
+        names: HashSet::new(),
+    };
+    collector.visit_pat(pattern);
+    return collector.names;
+}
+
+fn resolve_suite_name<'a>(name: &'a str, contract_symbols: &'a [String]) -> &'a str {
+    if contract_symbols.iter().any(|symbol| symbol == name) {
+        return name;
+    }
+    if let Some(callable) = name.strip_suffix("_tests")
+        && contract_symbols.iter().any(|symbol| symbol == callable)
+    {
+        return callable;
+    }
+    return name;
+}
+
+fn test_display_name(function: &ItemFn) -> String {
+    struct DecimalLiteralCollector {
+        literals: HashSet<(String, String)>,
+    }
+
+    impl<'ast> Visit<'ast> for DecimalLiteralCollector {
+        fn visit_lit_float(&mut self, literal: &'ast syn::LitFloat) {
+            let spelling = numeric_literal_spelling(&literal.to_string(), literal.suffix());
+            let Some((whole, fraction)) = spelling.split_once('.') else {
+                return;
+            };
+            let fractional_digits = fraction.replace('_', "");
+            if !whole
+                .chars()
+                .all(|character| character.is_ascii_digit() || character == '_')
+                || fractional_digits.is_empty()
+                || !fractional_digits
+                    .chars()
+                    .all(|character| character.is_ascii_digit())
+                || !fractional_digits.chars().any(|character| character != '0')
+            {
+                return;
+            }
+            self.literals.insert((
+                spelling.replace('.', "_"),
+                format!("{}.{}", whole.replace('_', ""), fractional_digits),
+            ));
+        }
+
+        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            if let Ok(arguments) = parse_macro_arguments(rust_macro) {
+                for argument in &arguments {
+                    self.visit_expr(argument);
+                }
+            }
+        }
+    }
+
+    let mut collector = DecimalLiteralCollector {
+        literals: HashSet::new(),
+    };
+    collector.visit_block(&function.block);
+    let mut literals = collector.literals.into_iter().collect::<Vec<_>>();
+    literals.sort_by_key(|(encoded, _)| std::cmp::Reverse(encoded.len()));
+
+    let mut name = format!("_{}_", function.sig.ident);
+    for (encoded, display) in literals {
+        name = name.replace(&format!("_{encoded}_"), &format!("_{display}_"));
+    }
+    return name.trim_matches('_').replace('_', " ");
+}
+
+fn unparenthesized(mut expression: &Expr) -> &Expr {
+    while let Expr::Paren(parenthesized) = expression {
+        expression = &parenthesized.expr;
+    }
+    return expression;
 }

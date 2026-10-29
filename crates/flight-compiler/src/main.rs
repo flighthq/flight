@@ -40,6 +40,142 @@ struct OwnedCrateRoot {
     path: String,
 }
 
+fn canonical_path(path: &Path) -> Result<PathBuf, String> {
+    return fs::canonicalize(path).map_err(|error| format!("{}: {error}", path.display()));
+}
+
+fn discover_crate_roots<'a>(
+    sources: impl Iterator<Item = &'a PathBuf>,
+    explicit: &[ExplicitCrateRoot],
+) -> Result<Vec<OwnedCrateRoot>, String> {
+    let sources = sources.collect::<Vec<_>>();
+    let mut roots = std::collections::BTreeMap::<PathBuf, String>::new();
+    let insert = |roots: &mut std::collections::BTreeMap<PathBuf, String>,
+                  path: PathBuf,
+                  crate_name: String|
+     -> Result<(), String> {
+        if let Some(existing) = roots.get(&path)
+            && existing != &crate_name
+        {
+            return Err(format!(
+                "crate root {} is designated as both `{existing}` and `{crate_name}`",
+                path.display()
+            ));
+        }
+        roots.insert(path, crate_name);
+        return Ok(());
+    };
+    for root in explicit {
+        insert(
+            &mut roots,
+            canonical_path(&root.path)?,
+            root.crate_name.clone(),
+        )?;
+    }
+    let manifests = sources
+        .iter()
+        .filter_map(|source| nearest_manifest(source))
+        .collect::<std::collections::BTreeSet<_>>();
+    for manifest in manifests {
+        let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+        let output = Command::new(cargo)
+            .args([
+                "metadata",
+                "--format-version",
+                "1",
+                "--no-deps",
+                "--manifest-path",
+            ])
+            .arg(&manifest)
+            .output()
+            .map_err(|error| {
+                format!(
+                    "failed to discover Cargo targets from {}: {error}",
+                    manifest.display()
+                )
+            })?;
+        if !output.status.success() {
+            return Err(format!(
+                "failed to discover Cargo targets from {}: {}",
+                manifest.display(),
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        let metadata: serde_json::Value =
+            serde_json::from_slice(&output.stdout).map_err(|error| {
+                format!("invalid Cargo metadata for {}: {error}", manifest.display())
+            })?;
+        let manifest = canonical_path(&manifest)?;
+        let Some(packages) = metadata
+            .get("packages")
+            .and_then(serde_json::Value::as_array)
+        else {
+            return Err("Cargo metadata has no packages array".to_string());
+        };
+        for package in packages {
+            let Some(package_manifest) = package
+                .get("manifest_path")
+                .and_then(serde_json::Value::as_str)
+            else {
+                continue;
+            };
+            if canonical_path(Path::new(package_manifest))? != manifest {
+                continue;
+            }
+            let Some(targets) = package.get("targets").and_then(serde_json::Value::as_array) else {
+                continue;
+            };
+            for target in targets {
+                let supported = target
+                    .get("kind")
+                    .and_then(serde_json::Value::as_array)
+                    .is_some_and(|kinds| {
+                        kinds.iter().any(|kind| {
+                            matches!(
+                                kind.as_str(),
+                                Some(
+                                    "lib"
+                                        | "rlib"
+                                        | "dylib"
+                                        | "cdylib"
+                                        | "staticlib"
+                                        | "proc-macro"
+                                        | "bin"
+                                )
+                            )
+                        })
+                    });
+                if !supported {
+                    continue;
+                }
+                let (Some(crate_name), Some(source_path)) = (
+                    target.get("name").and_then(serde_json::Value::as_str),
+                    target.get("src_path").and_then(serde_json::Value::as_str),
+                ) else {
+                    continue;
+                };
+                if !valid_crate_name(crate_name) {
+                    return Err(format!(
+                        "Cargo target name `{crate_name}` is not a Rust crate name"
+                    ));
+                }
+                insert(
+                    &mut roots,
+                    canonical_path(Path::new(source_path))?,
+                    crate_name.to_string(),
+                )?;
+            }
+        }
+    }
+    return Ok(roots
+        .into_iter()
+        .map(|(path, crate_name)| OwnedCrateRoot {
+            crate_name,
+            path: path.to_string_lossy().into_owned(),
+        })
+        .collect());
+}
+
 fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String> {
     let source = fs::read_to_string(&options.source)
         .map_err(|error| format!("{}: {error}", options.source.display()))?;
@@ -205,43 +341,12 @@ fn main() {
     }
 }
 
-fn root_only(arguments: &[String]) -> Result<(), String> {
-    let [flag, source] = arguments else {
-        return Err(format!(
-            "root-only requires --source <rust-file>\n\n{USAGE}"
-        ));
-    };
-    if flag != "--source" {
-        return Err(format!("unknown root-only option `{flag}`\n\n{USAGE}"));
-    }
-    let source = fs::read_to_string(source).map_err(|error| format!("{source}: {error}"))?;
-    let names = flight_compiler::root_only_names(&source).map_err(|error| error.to_string())?;
-    for name in names {
-        println!("{name}");
-    }
-    return Ok(());
-}
-
-fn source_mode(arguments: &[String]) -> Result<(), String> {
-    let [flag, source] = arguments else {
-        return Err(format!(
-            "source-mode requires --source <rust-file>\n\n{USAGE}"
-        ));
-    };
-    if flag != "--source" {
-        return Err(format!("unknown source-mode option `{flag}`\n\n{USAGE}"));
-    }
-    let source = fs::read_to_string(source).map_err(|error| format!("{source}: {error}"))?;
-    let mode = flight_compiler::source_mode(&source).map_err(|error| error.to_string())?;
-    println!(
-        "{}",
-        match mode {
-            flight_compiler::SourceMode::Generate => "generate",
-            flight_compiler::SourceMode::RustOnly => "rust-only",
-            flight_compiler::SourceMode::TargetNative => "target-native",
-        }
-    );
-    return Ok(());
+fn nearest_manifest(source: &Path) -> Option<PathBuf> {
+    let source = fs::canonicalize(source).ok()?;
+    return source.parent()?.ancestors().find_map(|directory| {
+        let manifest = directory.join("Cargo.toml");
+        manifest.is_file().then_some(manifest)
+    });
 }
 
 fn parse_generate_options(
@@ -379,148 +484,43 @@ fn parse_generate_options(
     });
 }
 
-fn canonical_path(path: &Path) -> Result<PathBuf, String> {
-    return fs::canonicalize(path).map_err(|error| format!("{}: {error}", path.display()));
-}
-
-fn discover_crate_roots<'a>(
-    sources: impl Iterator<Item = &'a PathBuf>,
-    explicit: &[ExplicitCrateRoot],
-) -> Result<Vec<OwnedCrateRoot>, String> {
-    let sources = sources.collect::<Vec<_>>();
-    let mut roots = std::collections::BTreeMap::<PathBuf, String>::new();
-    let insert = |roots: &mut std::collections::BTreeMap<PathBuf, String>,
-                  path: PathBuf,
-                  crate_name: String|
-     -> Result<(), String> {
-        if let Some(existing) = roots.get(&path)
-            && existing != &crate_name
-        {
-            return Err(format!(
-                "crate root {} is designated as both `{existing}` and `{crate_name}`",
-                path.display()
-            ));
-        }
-        roots.insert(path, crate_name);
-        return Ok(());
+fn root_only(arguments: &[String]) -> Result<(), String> {
+    let [flag, source] = arguments else {
+        return Err(format!(
+            "root-only requires --source <rust-file>\n\n{USAGE}"
+        ));
     };
-    for root in explicit {
-        insert(
-            &mut roots,
-            canonical_path(&root.path)?,
-            root.crate_name.clone(),
-        )?;
+    if flag != "--source" {
+        return Err(format!("unknown root-only option `{flag}`\n\n{USAGE}"));
     }
-    let manifests = sources
-        .iter()
-        .filter_map(|source| nearest_manifest(source))
-        .collect::<std::collections::BTreeSet<_>>();
-    for manifest in manifests {
-        let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-        let output = Command::new(cargo)
-            .args([
-                "metadata",
-                "--format-version",
-                "1",
-                "--no-deps",
-                "--manifest-path",
-            ])
-            .arg(&manifest)
-            .output()
-            .map_err(|error| {
-                format!(
-                    "failed to discover Cargo targets from {}: {error}",
-                    manifest.display()
-                )
-            })?;
-        if !output.status.success() {
-            return Err(format!(
-                "failed to discover Cargo targets from {}: {}",
-                manifest.display(),
-                String::from_utf8_lossy(&output.stderr).trim()
-            ));
-        }
-        let metadata: serde_json::Value =
-            serde_json::from_slice(&output.stdout).map_err(|error| {
-                format!("invalid Cargo metadata for {}: {error}", manifest.display())
-            })?;
-        let manifest = canonical_path(&manifest)?;
-        let Some(packages) = metadata
-            .get("packages")
-            .and_then(serde_json::Value::as_array)
-        else {
-            return Err("Cargo metadata has no packages array".to_string());
-        };
-        for package in packages {
-            let Some(package_manifest) = package
-                .get("manifest_path")
-                .and_then(serde_json::Value::as_str)
-            else {
-                continue;
-            };
-            if canonical_path(Path::new(package_manifest))? != manifest {
-                continue;
-            }
-            let Some(targets) = package.get("targets").and_then(serde_json::Value::as_array) else {
-                continue;
-            };
-            for target in targets {
-                let supported = target
-                    .get("kind")
-                    .and_then(serde_json::Value::as_array)
-                    .is_some_and(|kinds| {
-                        kinds.iter().any(|kind| {
-                            matches!(
-                                kind.as_str(),
-                                Some(
-                                    "lib"
-                                        | "rlib"
-                                        | "dylib"
-                                        | "cdylib"
-                                        | "staticlib"
-                                        | "proc-macro"
-                                        | "bin"
-                                )
-                            )
-                        })
-                    });
-                if !supported {
-                    continue;
-                }
-                let (Some(crate_name), Some(source_path)) = (
-                    target.get("name").and_then(serde_json::Value::as_str),
-                    target.get("src_path").and_then(serde_json::Value::as_str),
-                ) else {
-                    continue;
-                };
-                if !valid_crate_name(crate_name) {
-                    return Err(format!(
-                        "Cargo target name `{crate_name}` is not a Rust crate name"
-                    ));
-                }
-                insert(
-                    &mut roots,
-                    canonical_path(Path::new(source_path))?,
-                    crate_name.to_string(),
-                )?;
-            }
-        }
+    let source = fs::read_to_string(source).map_err(|error| format!("{source}: {error}"))?;
+    let names = flight_compiler::root_only_names(&source).map_err(|error| error.to_string())?;
+    for name in names {
+        println!("{name}");
     }
-    return Ok(roots
-        .into_iter()
-        .map(|(path, crate_name)| OwnedCrateRoot {
-            crate_name,
-            path: path.to_string_lossy().into_owned(),
-        })
-        .collect());
+    return Ok(());
 }
 
-fn nearest_manifest(source: &Path) -> Option<PathBuf> {
-    let source = fs::canonicalize(source).ok()?;
-    return source.parent()?.ancestors().find_map(|directory| {
-        let manifest = directory.join("Cargo.toml");
-        manifest.is_file().then_some(manifest)
-    });
+fn source_mode(arguments: &[String]) -> Result<(), String> {
+    let [flag, source] = arguments else {
+        return Err(format!(
+            "source-mode requires --source <rust-file>\n\n{USAGE}"
+        ));
+    };
+    if flag != "--source" {
+        return Err(format!("unknown source-mode option `{flag}`\n\n{USAGE}"));
+    }
+    let source = fs::read_to_string(source).map_err(|error| format!("{source}: {error}"))?;
+    let mode = flight_compiler::source_mode(&source).map_err(|error| error.to_string())?;
+    println!(
+        "{}",
+        match mode {
+            flight_compiler::SourceMode::Generate => "generate",
+            flight_compiler::SourceMode::RustOnly => "rust-only",
+            flight_compiler::SourceMode::TargetNative => "target-native",
+        }
+    );
+    return Ok(());
 }
 
 fn valid_crate_name(name: &str) -> bool {
