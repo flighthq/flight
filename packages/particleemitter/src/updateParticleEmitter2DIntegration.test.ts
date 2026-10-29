@@ -229,7 +229,7 @@ describe('onParticleDeath signal', () => {
     });
     const signals = enableParticleEmitterSignals(state);
     const deaths: Array<[number, number, number]> = [];
-    signals.onParticleDeath.emit = (x: number, y: number, z: number) => deaths.push([x, y, z]);
+    signals.onParticleDeath.emit = ({ x, y, z }) => deaths.push([x, y, z]);
     updateParticleEmitter2D(emitter, state, config, 1); // spawn
     updateParticleEmitter2D(emitter, state, config, 1.1); // age past lifetime → death
     expect(deaths.length).toBe(1);
@@ -255,8 +255,7 @@ describe('onParticleSpawn signal', () => {
     });
     const signals = enableParticleEmitterSignals(state);
     const spawns: Array<[number, number, number, number, number, number]> = [];
-    signals.onParticleSpawn.emit = (x: number, y: number, z: number, vx: number, vy: number, vz: number) =>
-      spawns.push([x, y, z, vx, vy, vz]);
+    signals.onParticleSpawn.emit = ({ vx, vy, vz, x, y, z }) => spawns.push([x, y, z, vx, vy, vz]);
     updateParticleEmitter2D(emitter, state, config, 1);
     expect(spawns.length).toBe(1);
     const [, , z, vx, vy, vz] = spawns[0];

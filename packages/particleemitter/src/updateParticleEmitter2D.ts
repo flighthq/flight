@@ -124,7 +124,7 @@ export function updateParticleEmitter2D(
         const dx = data.transforms[tt];
         const dy = data.transforms[tt + 1];
         onDeath?.(dx, dy, 0);
-        signals?.onParticleDeath.emit(dx, dy, 0);
+        signals?.onParticleDeath.emit({ x: dx, y: dy, z: 0 });
       }
       liveCount--;
       if (i < liveCount) {
@@ -443,7 +443,14 @@ export function updateParticleEmitter2D(
 
       onSpawn?.(spawnX, spawnY, 0);
       if (signals !== null) {
-        signals.onParticleSpawn.emit(spawnX, spawnY, 0, state.velocities[vt], state.velocities[vt + 1], 0);
+        signals.onParticleSpawn.emit({
+          vx: state.velocities[vt],
+          vy: state.velocities[vt + 1],
+          vz: 0,
+          x: spawnX,
+          y: spawnY,
+          z: 0,
+        });
       }
     }
     data.particleCount = newCount;
@@ -468,7 +475,7 @@ export function updateParticleEmitter2D(
 
   // Fire onEmitterComplete when a finite emitter has just finished and all particles are gone.
   if (signals !== null && isParticleEmitter2DComplete(emitter, state, config)) {
-    signals.onEmitterComplete.emit();
+    signals.onEmitterComplete.emit(undefined);
   }
 
   invalidateNodeLocalBounds(emitter);

@@ -345,7 +345,7 @@ describe('updateParticleEmitter3D', () => {
     const state = createParticleEmitterState(seededRandom(42));
     const signals = enableParticleEmitterSignals(state);
     const spawns: number[][] = [];
-    signals.onParticleSpawn.emit = (x, y, z, vx, vy, vz) => spawns.push([x, y, z, vx, vy, vz]);
+    signals.onParticleSpawn.emit = ({ vx, vy, vz, x, y, z }) => spawns.push([x, y, z, vx, vy, vz]);
     const config = createParticleEmitterConfig({
       burstCount: 1,
       burstInterval: 0,

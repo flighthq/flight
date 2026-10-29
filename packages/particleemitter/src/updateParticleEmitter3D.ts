@@ -112,7 +112,7 @@ export function updateParticleEmitter3D(
         const dy = data.transforms[tt + 1];
         const dz = positionsZ[i];
         onDeath?.(dx, dy, dz);
-        signals?.onParticleDeath.emit(dx, dy, dz);
+        signals?.onParticleDeath.emit({ x: dx, y: dy, z: dz });
       }
       liveCount--;
       if (i < liveCount) {
@@ -418,7 +418,7 @@ export function updateParticleEmitter3D(
 
       onSpawn?.(spawnX, spawnY, spawnZ);
       if (signals !== null) {
-        signals.onParticleSpawn.emit(spawnX, spawnY, spawnZ, vx, vy, vz);
+        signals.onParticleSpawn.emit({ vx, vy, vz, x: spawnX, y: spawnY, z: spawnZ });
       }
     }
     data.particleCount = newCount;
@@ -439,7 +439,7 @@ export function updateParticleEmitter3D(
   }
 
   if (signals !== null && isParticleEmitter3DComplete(emitter, state, config)) {
-    signals.onEmitterComplete.emit();
+    signals.onEmitterComplete.emit(undefined);
   }
 }
 
