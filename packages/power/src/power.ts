@@ -66,7 +66,7 @@ export function attachPower(
         if (current !== null && current.isCharging !== wasCharging) {
           wasCharging = current.isCharging;
           const transition = current.isCharging ? power.onCharging : power.onDischarging;
-          if (transition !== null) emitSignal(transition);
+          if (transition !== null) emitSignal(transition, undefined);
         }
       }),
     );
@@ -105,7 +105,7 @@ export function attachPower(
       const current = idle.getIdleState(idleThresholdSeconds);
       if (current !== lastIdleState) {
         lastIdleState = current;
-        emitSignal(idleSignal);
+        emitSignal(idleSignal, undefined);
       }
     }, _idlePollingIntervalMs);
     teardowns.push(() => clearInterval(idleIntervalId));
@@ -279,7 +279,7 @@ export function setPowerIdlePollingIntervalMs(intervalMs: number): void {
 }
 
 function emitSignalWhenPresent(signal: Power['onSuspend']): void {
-  if (signal !== null) emitSignal(signal);
+  if (signal !== null) emitSignal(signal, undefined);
 }
 
 let _idlePollingIntervalMs = 5000;

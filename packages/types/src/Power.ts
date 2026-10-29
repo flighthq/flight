@@ -144,13 +144,13 @@ export type WebPowerCapabilities = Required<
 // onCharging / onDischarging / onIdleStateChange are CORE-derived — no provider emits them; core computes
 // them from status transitions and idle polling. They are therefore signals rather than host slots.
 export interface Power extends Entity {
-  onChange: Signal<(status: Readonly<PowerStatus>) => void> | null;
-  onCharging: Signal<() => void> | null;
-  onDischarging: Signal<() => void> | null;
-  onIdleStateChange: Signal<() => void> | null;
-  onLockScreen: Signal<() => void> | null;
-  onResume: Signal<() => void> | null;
-  onSuspend: Signal<() => void> | null;
-  onThermalStateChange: Signal<(state: PowerThermalState) => void> | null;
-  onUnlockScreen: Signal<() => void> | null;
+  onChange: Signal<Readonly<PowerStatus>> | null;
+  onCharging: Signal<void> | null;
+  onDischarging: Signal<void> | null;
+  onIdleStateChange: Signal<void> | null;
+  onLockScreen: Signal<void> | null;
+  onResume: Signal<void> | null;
+  onSuspend: Signal<void> | null;
+  onThermalStateChange: Signal<PowerThermalState> | null;
+  onUnlockScreen: Signal<void> | null;
 }
