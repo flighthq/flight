@@ -15,7 +15,7 @@ export interface Scene2DDocumentFetchProgress {
 export type Scene2DDocumentFetcher = (
   url: string,
   signal: AbortSignal,
-  progress: Signal<(event: Readonly<Scene2DDocumentFetchProgress>) => void> | null,
+  progress: Signal<Readonly<Scene2DDocumentFetchProgress>> | null,
 ) => Promise<Uint8Array | null>;
 
 export interface Scene2DDocumentImportContext {
@@ -45,7 +45,7 @@ export interface Scene2DDocumentImporterRegistry {
 
 export interface Scene2DDocumentLoadOptions {
   mimeType?: string | null;
-  progress?: Signal<(event: Readonly<Scene2DDocumentFetchProgress>) => void>;
+  progress?: Signal<Readonly<Scene2DDocumentFetchProgress>>;
   signal?: AbortSignal;
 }
 
@@ -87,7 +87,7 @@ export interface LoadScene2DImageResourcesOptions {
   decode?: ImageDecodeFallback;
   // Resolves an External reference's uri. A document whose images are all embedded never needs one.
   fetch?: ImageResourceFetch;
-  progress?: Signal<(event: Readonly<Scene2DImageResourceLoadProgress>) => void>;
+  progress?: Signal<Readonly<Scene2DImageResourceLoadProgress>>;
   select?: (reference: Readonly<ImageResourceReference>) => boolean;
   signal?: AbortSignal;
 }
@@ -114,7 +114,7 @@ export interface LoadScene2DAudioResourcesOptions {
   decoders?: AudioDecoderRegistry;
   // Resolves an External reference's uri. A document whose sounds are all embedded never needs one.
   fetch?: AudioResourceFetch;
-  progress?: Signal<(event: Readonly<Scene2DAudioResourceLoadProgress>) => void>;
+  progress?: Signal<Readonly<Scene2DAudioResourceLoadProgress>>;
   select?: (reference: Readonly<AudioResourceReference>) => boolean;
   signal?: AbortSignal;
 }

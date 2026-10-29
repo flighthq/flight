@@ -93,7 +93,7 @@ describe('loadScene2DAudioResources', () => {
 
   it('emits progress once per selected reference', async () => {
     const events: Scene2DAudioResourceLoadProgress[] = [];
-    const progress = createSignal<(event: Readonly<Scene2DAudioResourceLoadProgress>) => void>();
+    const progress = createSignal<Readonly<Scene2DAudioResourceLoadProgress>>();
     connectSignal(progress, (event) => events.push({ ...event }));
     const references = [
       createEmbeddedAudioResourceReference(new Uint8Array([1]), 'audio/mpeg'),

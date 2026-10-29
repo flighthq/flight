@@ -108,7 +108,7 @@ describe('loadScene2DImageResources', () => {
 
   it('emits progress once per reference with the running count', async () => {
     const events: Scene2DImageResourceLoadProgress[] = [];
-    const progress = createSignal<(event: Readonly<Scene2DImageResourceLoadProgress>) => void>();
+    const progress = createSignal<Readonly<Scene2DImageResourceLoadProgress>>();
     connectSignal(progress, (event) => events.push({ ...event }));
     const document = createScene2DDocument(createDisplayObject(), [], 'acme', null, [
       externalResource('a.png'),
