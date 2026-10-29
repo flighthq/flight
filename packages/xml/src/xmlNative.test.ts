@@ -1,6 +1,66 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseXmlAttributes, parseXmlDocument } from './contract.ts';
+import {
+  createXmlRecord,
+  getXmlRecordValue,
+  parseXmlNumberNative,
+  pushXmlElementContent,
+  pushXmlTextContent,
+  setXmlRecordValue,
+  xmlIsWhitespace,
+  xmlRecordIsEmpty,
+  xmlStringFromCodePoint,
+  xmlTrim,
+  xmlUtf16Slice,
+} from './xmlNative.ts';
+
+describe('createXmlRecord', () => {
+  it('creates an empty record', () => {
+    expect(createXmlRecord()).toEqual({});
+  });
+});
+
+describe('getXmlRecordValue', () => {
+  it('distinguishes stored values from missing keys', () => {
+    expect(getXmlRecordValue({ present: '' }, 'present')).toBe('');
+    expect(getXmlRecordValue({ present: '' }, 'missing')).toBeNull();
+  });
+});
+
+describe('parseXmlNumberNative', () => {
+  it('uses JavaScript number parsing with an explicit invalid result', () => {
+    expect(parseXmlNumberNative('12.5')).toBe(12.5);
+    expect(parseXmlNumberNative('not-a-number')).toBeNull();
+  });
+});
+
+describe('pushXmlElementContent', () => {
+  it('preserves element identity in mixed content', () => {
+    const element = parseXmlDocument('<child/>')!;
+    const content: typeof element.content = [];
+    pushXmlElementContent(content, element);
+    expect(content[0]).toBe(element);
+  });
+});
+
+describe('pushXmlTextContent', () => {
+  it('appends text to mixed content', () => {
+    const element = parseXmlDocument('<root/>')!;
+    const content: typeof element.content = [];
+    pushXmlTextContent(content, 'text');
+    expect(content).toEqual(['text']);
+  });
+});
+
+describe('setXmlRecordValue', () => {
+  it('sets and replaces record values', () => {
+    const record = createXmlRecord();
+    setXmlRecordValue(record, 'name', 'first');
+    setXmlRecordValue(record, 'name', 'second');
+    expect(record).toEqual({ name: 'second' });
+  });
+});
 
 describe('XML target representations', () => {
   it('creates an empty attribute record for empty input', () => {
@@ -37,5 +97,39 @@ describe('XML target representations', () => {
     const attributes = parseXmlAttributes('z="first" a="second" z="updated"');
     expect(Object.keys(attributes)).toEqual(['z', 'a']);
     expect(attributes.z).toBe('updated');
+  });
+});
+
+describe('xmlIsWhitespace', () => {
+  it('classifies UTF-16 code units with JavaScript whitespace semantics', () => {
+    expect(xmlIsWhitespace('\n'.charCodeAt(0))).toBe(true);
+    expect(xmlIsWhitespace('x'.charCodeAt(0))).toBe(false);
+  });
+});
+
+describe('xmlRecordIsEmpty', () => {
+  it('detects own enumerable keys', () => {
+    expect(xmlRecordIsEmpty({})).toBe(true);
+    expect(xmlRecordIsEmpty({ present: '' })).toBe(false);
+  });
+});
+
+describe('xmlStringFromCodePoint', () => {
+  it('rejects invalid Unicode scalar values', () => {
+    expect(xmlStringFromCodePoint(0x1f600)).toBe('😀');
+    expect(xmlStringFromCodePoint(0xd800)).toBeNull();
+    expect(xmlStringFromCodePoint(0x110000)).toBeNull();
+  });
+});
+
+describe('xmlTrim', () => {
+  it('trims JavaScript whitespace', () => {
+    expect(xmlTrim(' \nvalue\t')).toBe('value');
+  });
+});
+
+describe('xmlUtf16Slice', () => {
+  it('slices by UTF-16 code-unit offsets', () => {
+    expect(xmlUtf16Slice('a😀b', 1, 3)).toBe('😀');
   });
 });
