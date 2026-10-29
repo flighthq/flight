@@ -2,10 +2,10 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import * as flightEntity from '@flighthq/entity/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createTextFormatRange, initializeTextFormatRange } from './contract.ts';
-import type { TextFormat } from './contract.ts';
 
 function emptyTextFormat(): TextFormat {
   return {
@@ -56,7 +56,7 @@ describe('createTextFormatRange', () => {
     const format = emptyTextFormat();
     const range = createTextFormatRange(format, 1, 3);
     const units: number[] = Array.from({ length: 'a😀b'.length }, (_, index) => 'a😀b'.charCodeAt(index));
-    expect(units.slice(range.start, range.end)).toEqual([55357, 56832]);
+    expect(units.slice(range.start, range.end)).toEqual([0xd83d, 0xde00]);
     expect([range.start, range.end]).toEqual([1, 3]);
   });
   it('allocates independent range entity identities', () => {
@@ -79,7 +79,7 @@ describe('initializeTextFormatRange', () => {
   it('preserves the entity slot', () => {
     const original = emptyTextFormat();
     let range = createTextFormatRange(original, 0, 10);
-    flightEntity.setEntityUid(range, String('existing-range'));
+    flightEntity.setEntityUid(range, 'existing-range');
     const replacement = emptyTextFormat();
     initializeTextFormatRange(range, replacement, 9, 2);
     expect(flightEntity.getEntityUid(range)).toEqual('existing-range');

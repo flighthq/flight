@@ -1,6 +1,7 @@
 // Generated from crates/flight-textformat/tests/text_format_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import type { TextFormat } from '@flighthq/textformat/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -16,7 +17,7 @@ import {
   parseTextFormatAlign,
   parseTextFormatListMarker,
 } from './contract.ts';
-import type { TextFormat } from './contract.ts';
+import type { FontVariation } from './contract.ts';
 
 function emptyTextFormat(): TextFormat {
   return {
@@ -119,11 +120,11 @@ describe('mergeTextFormat', () => {
     base.bold = false;
     let overrides = emptyTextFormat();
     overrides.bold = true;
-    overrides.color = 4278190335;
+    overrides.color = 0xff0000ff;
     const result = mergeTextFormat(base, overrides);
     expect(result.size).toEqual(12.0);
     expect(result.bold).toEqual(true);
-    expect(result.color).toEqual(4278190335);
+    expect(result.color).toEqual(0xff0000ff);
   });
   it('does not mutate the base object', () => {
     let base = emptyTextFormat();
@@ -266,11 +267,11 @@ describe('textFormatFields', () => {
   });
   it('preserves the full packed rgba integer domain', () => {
     let format = emptyTextFormat();
-    format.color = 4027588863;
+    format.color = 0xf01020ff;
     const color: number = format.color!;
-    expect(color >>> 24).toEqual(240);
-    expect(color & 255).toEqual(255);
+    expect(color >>> 24).toEqual(0xf0);
+    expect(color & 0xff).toEqual(0xff);
     format.color = 0xffffffff;
-    expect(format.color).toEqual(4294967295);
+    expect(format.color).toEqual(0xffff_ffff);
   });
 });

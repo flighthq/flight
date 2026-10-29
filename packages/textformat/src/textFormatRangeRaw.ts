@@ -19,7 +19,7 @@ export interface TextFormatRangeRaw extends EntityRaw {
  * Mechanically relocated from textlayout/textFormatRange.ts to its approved D8 type owner.
  */
 export function createTextFormatRange(format: TextFormat, start: number, end: number): TextFormatRangeRaw {
-  let out: TextFormatRangeRaw = allocateEntity<TextFormatRangeRaw>();
+  let out: TextFormatRangeRaw = Object.assign(allocateEntity<TextFormatRangeRaw>(), { end: 0, start: 0 });
   initializeTextFormatRange(out, format, start, end);
   return out;
 }

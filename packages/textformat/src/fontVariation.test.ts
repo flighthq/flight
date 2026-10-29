@@ -10,10 +10,11 @@ import {
   FontVariationWeight,
   FontVariationWidth,
 } from './contract.ts';
+import type { FontVariation } from './contract.ts';
 
 describe('fontVariation', () => {
   it('preserves custom axis spelling and the given value', () => {
-    const variation = { axis: String('XTRA'), value: -12.5 };
+    const variation: FontVariation = { axis: 'XTRA', value: -12.5 };
     expect(variation.axis).toEqual('XTRA');
     expect(variation.value).toEqual(-12.5);
   });
