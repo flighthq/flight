@@ -48,7 +48,7 @@ export function detectEndiannessNative(): PlatformEndianness {
   return 'unknown';
 }
 
-export function parseUserAgentRuntimeNative(win: Record<unknown> | null | undefined): PlatformRuntime {
+export function parseUserAgentRuntimeNative(win: UserAgentRuntimeWindow): PlatformRuntime {
   if (win == null) return 'unknown';
   const process = win.process as Record<unknown> | undefined;
   if (process?.versions && (process.versions as Record<unknown>).electron) return 'electron';
