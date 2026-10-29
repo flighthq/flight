@@ -752,7 +752,6 @@ fn is_javascript_binding_reserved(name: &str) -> bool {
     return matches!(
         name,
         "arguments"
-            | "await"
             | "break"
             | "case"
             | "catch"

@@ -1398,6 +1398,21 @@ pub type Callback = fn(i32, Option<i32>) -> bool;
     }
 
     #[test]
+    fn accepts_await_as_a_callable_field_parameter_name() {
+        let source = r#"
+//! flight-compiler: callable-field-parameters Hooks run await
+
+pub struct Hooks {
+    pub run: fn(f32) -> f32,
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("run: (await: number) => number;"));
+    }
+
+    #[test]
     fn rejects_malformed_callable_parameter_directives() {
         let cases = [
             (
@@ -1476,6 +1491,10 @@ pub type Callback = fn(i32, Option<i32>) -> bool;
             (
                 "//! flight-compiler: callable-field-parameters Hooks run super\npub struct Hooks { pub run: fn(f32) -> f32 }\n",
                 "`flight-compiler: callable-field-parameters Hooks run` parameter name `super` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks run this\npub struct Hooks { pub run: fn(f32) -> f32 }\n",
+                "`flight-compiler: callable-field-parameters Hooks run` parameter name `this` is not a valid identifier",
             ),
             (
                 "//! flight-compiler: callable-field-parameters Hooks run value value\npub struct Hooks { pub run: fn(f32, f32) }\n",
