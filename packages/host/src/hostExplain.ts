@@ -6,7 +6,8 @@ import type {
   HostCapabilityExplanation,
   HostCapabilityGroupExplanation,
   HostExplanation,
-} from './types.ts';
+} from './hostExplanation.ts';
+import { explainHostCapabilitySlot } from './hostExplanation.ts';
 
 // Pull queries over a Host: what it provides, what it does not, and — for the slots whose absence is a
 // common and confusing failure — where to get the missing capability. Plain data, no logging; the active
@@ -83,19 +84,15 @@ function _explainSlot(host: Readonly<Host>, group: string, slot: string): HostCa
   const coverage = _COVERAGE.find((entry) => entry.group === group && entry.slot === slot);
   const remedy = _REMEDIES[`${group}.${slot}`];
   const isPresent = _isSlotPresent(host, group, slot);
-  const capability = coverage?.capability ?? '';
-  const accessor = `get${capability.slice(0, -'Capability'.length)}`;
-  const message = isPresent
-    ? `${accessor}: host.${group}.${slot} is present`
-    : `${accessor}: host.${group}.${slot} is absent, so ${remedy?.consequence ?? 'the capability is unavailable'} — ${remedy?.fix ?? 'build the host from a @flighthq/host-* package that provides it'}`;
-  return {
-    backends: remedy?.backends ?? [],
-    capability,
+  return explainHostCapabilitySlot(
+    coverage?.capability ?? '',
     group,
-    isPresent,
-    message,
     slot,
-  };
+    isPresent,
+    remedy?.consequence ?? 'the capability is unavailable',
+    remedy?.fix ?? 'build the host from a @flighthq/host-* package that provides it',
+    [...(remedy?.backends ?? [])],
+  );
 }
 
 const _COVERAGE: readonly { readonly capability: string; readonly group: string; readonly slot: string }[] = [

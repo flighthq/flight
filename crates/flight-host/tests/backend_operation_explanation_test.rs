@@ -18,8 +18,9 @@ mod backend_operation_explanation {
             operation: "getAccessoryBarVisible".to_string(),
         };
         let absent = BackendOperationExplanation {
+            implemented: false,
             layer: BackendOperationExplanationLayer::None,
-            ..sentinel.clone()
+            operation: "getAccessoryBarVisible".to_string(),
         };
         assert!(!sentinel.implemented && !absent.implemented);
         assert_ne!(sentinel, absent);

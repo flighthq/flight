@@ -1,3 +1,7 @@
+//! flight-compiler: rust-only
+//!
+//! The module under test is Rust-only (H6): TypeScript keeps its current companion shapes.
+
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};

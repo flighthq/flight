@@ -34,8 +34,10 @@ mod backend_explanation {
         assert_ne!(
             explanation,
             BackendExplanation {
+                conflict: false,
+                layer: BackendExplanationLayer::HostNotEnabled,
                 operation: Some("read".to_string()),
-                ..explanation.clone()
+                viability: BackendExplanationViability::Unobserved,
             }
         );
     }

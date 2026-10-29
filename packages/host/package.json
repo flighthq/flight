@@ -35,7 +35,9 @@
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",
-    "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
+    "clean:dist": "tsx ../../scripts/clean-package-dist.ts",
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-host --package host",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-host --package host --check"
   },
   "dependencies": {
     "@flighthq/entity": "*",

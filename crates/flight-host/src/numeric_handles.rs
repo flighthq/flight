@@ -1,5 +1,6 @@
 //! Provider-issued numeric host ids (D26 host vocabulary): the TS branded `number` identities a host
 //! issues and alone interprets. Each is a `Copy` newtype that keeps its TS sentinel.
+//! flight-compiler: rust-only
 
 /// Opaque host buffer identity (TS branded `AudioBufferHandle`). Zero is the invalid sentinel.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]

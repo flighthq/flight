@@ -10,9 +10,14 @@
 
 mod backend_explanation;
 mod backend_operation_explanation;
+mod enable_host_guards;
+mod host;
+mod host_explain;
 mod host_explanation;
+mod host_query;
 mod host_spawn_capability;
 mod host_timer_capability;
+mod input_ingress_source;
 mod numeric_handles;
 mod platform_handles;
 mod provider_ref;

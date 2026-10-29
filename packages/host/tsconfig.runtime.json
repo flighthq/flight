@@ -16,5 +16,12 @@
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],
-  "exclude": ["src/contract.host-types.ts", "src/types.ts"]
+  "exclude": [
+    "src/backendExplanation.ts",
+    "src/backendOperationExplanation.ts",
+    "src/contract.host-types.ts",
+    "src/hostExplanation.ts",
+    "src/inputIngressSource.ts",
+    "src/providerRef.ts"
+  ]
 }

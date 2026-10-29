@@ -1,3 +1,7 @@
+//! flight-compiler: rust-only
+//!
+//! The module under test is Rust-only (H6): TypeScript keeps its current companion shapes.
+
 use flight_host::contract::*;
 
 // Provider-issued ids are plain Copy numbers: equality is the id. Zero is the invalid sentinel of the

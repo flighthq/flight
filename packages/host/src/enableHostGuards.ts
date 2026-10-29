@@ -12,7 +12,7 @@ import {
   explainHostTextShaper,
   explainHostVideo,
 } from './hostExplain.ts';
-import type { HostCapabilityExplanation } from './types.ts';
+import type { HostCapabilityExplanation } from './hostExplanation.ts';
 
 // Opt-in warnings for a host that is missing a capability Flight packages commonly need. Importing this
 // module is what costs; a build that never diagnoses a host carries neither the sentences nor the

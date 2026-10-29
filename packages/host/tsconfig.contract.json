@@ -10,5 +10,12 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [],
-  "include": ["src/contract.host-types.ts", "src/types.ts"]
+  "include": [
+    "src/backendExplanation.ts",
+    "src/backendOperationExplanation.ts",
+    "src/contract.host-types.ts",
+    "src/hostExplanation.ts",
+    "src/inputIngressSource.ts",
+    "src/providerRef.ts"
+  ]
 }

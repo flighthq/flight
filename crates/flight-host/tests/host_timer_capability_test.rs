@@ -1,3 +1,7 @@
+//! flight-compiler: rust-only
+//!
+//! The module under test is Rust-only (H6): TypeScript keeps its current companion shapes.
+
 use std::sync::{Arc, Mutex};
 
 use flight_host::contract::*;

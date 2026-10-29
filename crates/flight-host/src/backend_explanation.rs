@@ -1,3 +1,6 @@
+//! flight-compiler: string-union BackendExplanationLayer=kebab-case BackendExplanationViability=kebab-case
+//! flight-compiler: nullable-option BackendExplanation.operation
+
 /// Which layer answers for a backend (TS inline `BackendExplanation['layer']`): `custom` or `host`
 /// backends, a host that exists but has not enabled one, or a host with no implementation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

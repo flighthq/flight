@@ -62,10 +62,12 @@ pub fn explain_host_capability_slot(
     fix: &str,
     backends: Vec<HostCapabilityBackend>,
 ) -> HostCapabilityExplanation {
-    let accessor = format!(
-        "get{}",
-        capability.strip_suffix("Capability").unwrap_or(capability)
-    );
+    let name = if capability.ends_with("Capability") {
+        &capability[0..capability.len() - "Capability".len()]
+    } else {
+        capability
+    };
+    let accessor = format!("get{}", name);
     let message = if is_present {
         format!("{}: host.{}.{} is present", accessor, group, slot)
     } else {

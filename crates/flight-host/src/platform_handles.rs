@@ -3,6 +3,7 @@
 //! identity, and only the backend that consumes a handle narrows it to its native type. Where TS
 //! allows the object to be null, the SDK field is an `Option` of the handle. No GL, GPU or windowing
 //! dependency lives here.
+//! flight-compiler: rust-only
 
 use std::any::Any;
 use std::fmt;
@@ -81,16 +82,6 @@ pub struct GlContext {
 /// host's own value, which portable code never inspects. Resources never own or free the handle.
 // flight-lint: allow(contract-vocabulary) D26 opaque host-vocabulary handle: the Arc<dyn Any> identity is the platform object
 pub struct HostImageSource {
-    pub provider: ProviderRef,
-    pub handle: Arc<dyn Any + Send + Sync>,
-}
-
-/// The host-neutral identity of one input source (TS `InputIngressSource`, an `object` whose exact
-/// identity the installed ingress backend interprets). Attachments are keyed by the `Arc` identity
-/// of `handle`.
-// flight-lint: allow(contract-vocabulary) D26 opaque host-vocabulary handle: the Arc<dyn Any> identity is the platform object
-#[derive(Clone)]
-pub struct InputIngressSource {
     pub provider: ProviderRef,
     pub handle: Arc<dyn Any + Send + Sync>,
 }

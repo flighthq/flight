@@ -1,3 +1,5 @@
+//! flight-compiler: string-union BackendOperationExplanationLayer=kebab-case
+
 /// Which layer provides one operation (TS inline `BackendOperationExplanation['layer']`). A
 /// different vocabulary from `BackendExplanationLayer`, which never had to name what serves an
 /// unimplemented operation. `Sentinel` and `None` both mean nothing real implements it, and stay

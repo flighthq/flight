@@ -1,3 +1,7 @@
+//! flight-compiler: rust-only
+//!
+//! The module under test is Rust-only (H6): TypeScript keeps its current companion shapes.
+
 use std::sync::{Arc, Mutex};
 
 use flight_host::contract::*;
@@ -177,22 +181,6 @@ fn native_handles_keep_their_platform_object_and_provider_through_a_copy() {
         assert!(Arc::ptr_eq(token, &provider));
     }
     assert_eq!(surface.handle.downcast_ref::<i32>(), Some(&7));
-}
-
-#[test]
-fn input_ingress_sources_are_told_apart_by_handle_identity_not_by_provider() {
-    let provider: ProviderRef = Arc::new(());
-    let first = InputIngressSource {
-        provider: provider.clone(),
-        handle: Arc::new(()),
-    };
-    let second = InputIngressSource {
-        provider: provider.clone(),
-        handle: Arc::new(()),
-    };
-    assert!(Arc::ptr_eq(&first.clone().handle, &first.handle));
-    assert!(Arc::ptr_eq(&first.provider, &second.provider));
-    assert!(!Arc::ptr_eq(&first.handle, &second.handle));
 }
 
 // The 2D handle is the drawing API itself: callers draw through it directly, with no narrowing, and
