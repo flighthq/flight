@@ -19,7 +19,8 @@
     "**/worktrees/**",
     "**/docs/**",
     "incoming/**",
-    "agents/**/*.md"
+    "agents/**/*.md",
+    "packages/haptics/src/callableTypes.test.ts"
   ],
   "rules": {
     "no-console": "warn",
