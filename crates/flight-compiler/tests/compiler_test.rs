@@ -2363,68 +2363,147 @@ mod retain {
         }
     }
 
+    // `std::mem::swap` lowers to a destructuring reassignment only over two explicit `&mut` places the
+    // caller observes (a field, an index, a local binding). Reference parameters and `*` reborrows lower
+    // to values the swap would exchange only locally, so they fail closed.
     #[test]
-    fn lowers_std_mem_swap_to_destructuring_assignment() {
+    fn lowers_std_mem_swap_only_over_caller_visible_places() {
+        let source = r#"
+pub struct Joint {
+    pub ax: f64,
+    pub bx: f64,
+}
+
+pub fn flip(j: &mut Joint) {
+    std::mem::swap(&mut j.ax, &mut j.bx);
+}
+
+pub fn order(values: &mut Vec<i32>) {
+    if values[0] > values[1] {
+        let (first, second) = (0, 1);
+        values.swap(first, second);
+    }
+    std::mem::swap(&mut values[2], &mut values[3]);
+}
+
+pub fn ordered(a: i32, b: i32) -> i32 {
+    let mut low = a;
+    let mut high = b;
+    if low > high {
+        std::mem::swap(&mut low, &mut high);
+    }
+    return high - low;
+}
+"#;
         assert_eq!(
-            compile_typescript(
-                "pub fn f(a: &mut u32, b: &mut u32) { core::mem::swap(a, b); }\n",
-                None,
-            )
-            .unwrap(),
-            "export function f(a: number, b: number): void {\n  [a, b] = [b, a];\n}\n"
+            compile_typescript(source, None).unwrap(),
+            r#"export interface Joint {
+  ax: number;
+  bx: number;
+}
+
+export function flip(j: Joint): void {
+  [j.ax, j.bx] = [j.bx, j.ax];
+}
+
+export function order(values: number[]): void {
+  if (values[0] > values[1]) {
+    const [first, second] = [0, 1] as const;
+    ([values[first], values[second]] = [values[second], values[first]]);
+  }
+  [values[2], values[3]] = [values[3], values[2]];
+}
+
+export function ordered(a: number, b: number): number {
+  let low = a;
+  let high = b;
+  if (low > high) {
+    [low, high] = [high, low];
+  }
+  return high - low;
+}
+"#
         );
-        assert_eq!(
-            compile_typescript(
-                "use std::mem::{replace, swap};\npub fn f(a: &mut u32, b: &mut u32) { swap(a, b); }\n",
-                None,
-            )
-            .unwrap(),
-            "export function f(a: number, b: number): void {\n  [a, b] = [b, a];\n}\n"
-        );
-        assert_eq!(
-            compile_typescript(
-                "pub struct Joint { pub ax: f64, pub bx: f64, pub ay: f64, pub by: f64 }\npub fn flip(j: &mut Joint) { std::mem::swap(&mut j.ax, &mut j.bx); std::mem::swap(&mut j.ay, &mut j.by); }\n",
-                None,
-            )
-            .unwrap(),
-            "export interface Joint {\n  ax: number;\n  bx: number;\n  ay: number;\n  by: number;\n}\n\nexport function flip(j: Joint): void {\n  [j.ax, j.bx] = [j.bx, j.ax];\n  [j.ay, j.by] = [j.by, j.ay];\n}\n"
-        );
-        assert_eq!(
-            compile_typescript(
-                "use std::mem::swap as exchange;\npub fn f(a: &mut u32, b: &mut u32) { exchange(a, b); }\n",
-                None,
-            )
-            .unwrap(),
-            "export function f(a: number, b: number): void {\n  [a, b] = [b, a];\n}\n"
-        );
+        for source in [
+            "pub fn f(a: &mut u32, b: &mut u32) { core::mem::swap(a, b); }\n",
+            "use std::mem::{replace, swap};\npub fn f(a: &mut u32, b: &mut u32) { swap(a, b); }\n",
+            "use std::mem::swap as exchange;\npub fn f(a: &mut u32, b: &mut u32) { exchange(a, b); }\n",
+            "pub fn f(a: &mut u32, b: &mut u32) { std::mem::swap(&mut *a, &mut *b); }\n",
+            "pub struct Joint { pub ax: f64 }\npub fn f(j: &mut Joint, k: &mut f64) { std::mem::swap(&mut j.ax, k); }\n",
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                "portable `std::mem::swap` has no portable lowering",
+                "{source}"
+            );
+        }
     }
 
+    // `std::mem::replace` captures and reassigns only an explicit `&mut` place the caller observes (a
+    // field, an index, a local binding); a reference parameter would be reassigned only locally.
     #[test]
-    fn lowers_std_mem_replace_to_capture_and_assign() {
+    fn lowers_std_mem_replace_only_over_caller_visible_places() {
+        let source = r#"
+pub struct Slot {
+    pub value: u32,
+    pub items: Vec<u32>,
+}
+
+pub fn swap_value(slot: &mut Slot, next: u32) -> u32 {
+    return std::mem::replace(&mut slot.value, next);
+}
+
+pub fn swap_items(slot: &mut Slot, next: Vec<u32>) -> Vec<u32> {
+    return std::mem::replace(&mut slot.items, next);
+}
+
+pub fn first(values: &mut Vec<u32>, next: u32) -> u32 {
+    return std::mem::replace(&mut values[0], next);
+}
+
+pub fn local(seed: u32) -> u32 {
+    let mut current = seed;
+    let previous = std::mem::replace(&mut current, seed + 1);
+    return previous + current;
+}
+"#;
         assert_eq!(
-            compile_typescript(
-                "pub fn f(values: &mut Vec<u32>, other: Vec<u32>) -> Vec<u32> { return std::mem::replace(values, other); }\n",
-                None,
-            )
-            .unwrap(),
-            "export function f(values: number[], other: number[]): number[] {\n  return (() => { const __tmp = values; values = other; return __tmp; })();\n}\n"
+            compile_typescript(source, None).unwrap(),
+            r#"export interface Slot {
+  value: number;
+  items: number[];
+}
+
+export function swapValue(slot: Slot, next: number): number {
+  return ((() => { const __tmp = slot.value; slot.value = next; return __tmp; })()) >>> 0;
+}
+
+export function swapItems(slot: Slot, next: number[]): number[] {
+  return (() => { const __tmp = slot.items; slot.items = next; return __tmp; })();
+}
+
+export function first(values: number[], next: number): number {
+  return ((() => { const __tmp = values[0]; values[0] = next; return __tmp; })()) >>> 0;
+}
+
+export function local(seed: number): number {
+  let current = seed;
+  const previous = (() => { const __tmp = current; current = seed + 1; return __tmp; })();
+  return (previous + current) >>> 0;
+}
+"#
         );
-        assert_eq!(
-            compile_typescript(
-                "use core::mem::replace;\npub fn f(value: &mut u32) -> u32 { return replace(value, 1); }\n",
-                None,
-            )
-            .unwrap(),
-            "export function f(value: number): number {\n  return ((() => { const __tmp = value; value = 1; return __tmp; })()) >>> 0;\n}\n"
-        );
-        assert_eq!(
-            compile_typescript(
-                "pub fn f(flag: &mut bool, new_value: bool) -> bool { return std::mem::replace(flag, new_value); }\n",
-                None,
-            )
-            .unwrap(),
-            "export function f(flag: boolean, newValue: boolean): boolean {\n  return (() => { const __tmp = flag; flag = newValue; return __tmp; })();\n}\n"
-        );
+        for source in [
+            "pub fn f(values: &mut Vec<u32>, other: Vec<u32>) -> Vec<u32> { return std::mem::replace(values, other); }\n",
+            "use core::mem::replace;\npub fn f(value: &mut u32) -> u32 { return replace(value, 1); }\n",
+            "pub fn f(flag: &mut bool, new_value: bool) -> bool { return std::mem::replace(&mut *flag, new_value); }\n",
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                "portable `std::mem::replace` has no portable lowering",
+                "{source}"
+            );
+        }
     }
 
     #[test]

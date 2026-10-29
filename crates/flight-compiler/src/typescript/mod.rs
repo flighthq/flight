@@ -3130,6 +3130,28 @@ fn statement_may_exit_early(statement: &Stmt) -> bool {
         .any(|token| matches!(token, "return" | "break" | "continue" | "?"));
 }
 
+// An explicit `&mut` borrow of a place whose reassignment the caller observes (the `std::mem::swap` and
+// `std::mem::replace` operands): a local binding, or a field or index chain over one. No `*` reborrow
+// appears anywhere in the chain.
+fn swap_operand_is_place(operand: &Expr) -> bool {
+    fn is_place(expression: &Expr) -> bool {
+        return match expression {
+            Expr::Paren(paren) => is_place(&paren.expr),
+            Expr::Group(group) => is_place(&group.expr),
+            Expr::Path(path) => path.qself.is_none() && path.path.segments.len() == 1,
+            Expr::Field(field) => is_place(&field.base),
+            Expr::Index(index) => is_place(&index.expr),
+            _ => false,
+        };
+    }
+    return match operand {
+        Expr::Paren(paren) => swap_operand_is_place(&paren.expr),
+        Expr::Group(group) => swap_operand_is_place(&group.expr),
+        Expr::Reference(reference) => reference.mutability.is_some() && is_place(&reference.expr),
+        _ => false,
+    };
+}
+
 // An array literal or repeat in a typed-array position (`Float64Array`), constructed as that array.
 fn typed_array_literal(
     expression: &Expr,
@@ -7876,7 +7898,9 @@ fn emit_expression_value(
             }
             if let Some(name) = std_mem_function(&call.func, entities) {
                 return match name.as_str() {
-                    "replace" if call.args.len() == 2 => {
+                    // Like `swap`, the reassignment is the Rust replace only for an explicit `&mut`
+                    // place the caller observes.
+                    "replace" if call.args.len() == 2 && swap_operand_is_place(&call.args[0]) => {
                         let target = emit_expression(&call.args[0], entities)?;
                         let replacement = emit_expression(&call.args[1], entities)?;
                         Ok(format!(
@@ -13298,6 +13322,15 @@ fn emit_statement(
             if call.args.len() != 2 {
                 return Err(compile_error(
                     "std::mem::swap requires exactly two arguments",
+                ));
+            }
+            // `[a, b] = [b, a]` reassigns what the two places name. That is the Rust swap only for
+            // explicit `&mut` places whose writes the caller observes: a local binding, or a field or
+            // index chain. A reference parameter, a reborrow through `*` or any other operand lowers
+            // to a value the swap would only exchange locally, so it fails closed.
+            if !call.args.iter().all(swap_operand_is_place) {
+                return Err(compile_error(
+                    "portable `std::mem::swap` has no portable lowering",
                 ));
             }
             let a = emit_expression(&call.args[0], entities)?;

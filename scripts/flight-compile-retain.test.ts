@@ -50,6 +50,57 @@ const TRACE_FIXTURE = `pub fn retain_trace(values: &mut Vec<i32>) -> Vec<i32> {
 }
 `;
 
+const REPLACE_FIXTURE = `pub struct Slot {
+    pub value: u32,
+    pub items: Vec<u32>,
+}
+
+pub fn swap_value(slot: &mut Slot, next: u32) -> u32 {
+    return std::mem::replace(&mut slot.value, next);
+}
+
+pub fn swap_items(slot: &mut Slot, next: Vec<u32>) -> Vec<u32> {
+    return std::mem::replace(&mut slot.items, next);
+}
+
+pub fn first(values: &mut Vec<u32>, next: u32) -> u32 {
+    return std::mem::replace(&mut values[0], next);
+}
+
+pub fn local(seed: u32) -> u32 {
+    let mut current = seed;
+    let previous = std::mem::replace(&mut current, seed + 1);
+    return previous + current;
+}
+`;
+
+const SWAP_FIXTURE = `pub struct Joint {
+    pub ax: f64,
+    pub bx: f64,
+}
+
+pub fn flip(j: &mut Joint) {
+    std::mem::swap(&mut j.ax, &mut j.bx);
+}
+
+pub fn order(values: &mut Vec<i32>) {
+    if values[0] > values[1] {
+        let (first, second) = (0, 1);
+        values.swap(first, second);
+    }
+    std::mem::swap(&mut values[2], &mut values[3]);
+}
+
+pub fn ordered(a: i32, b: i32) -> i32 {
+    let mut low = a;
+    let mut high = b;
+    if low > high {
+        std::mem::swap(&mut low, &mut high);
+    }
+    return high - low;
+}
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -183,6 +234,54 @@ describe('flight-compile std::mem imports', () => {
       ['use core::mem::replace;\npub fn f(v: &mut u32) -> u32 { return replace(v, 1); }\n', 'replace'],
     ] as const) {
       expect(compileRust('mem', rust).error).toBe(`error: portable \`std::mem::${name}\` has no portable lowering`);
+    }
+  });
+
+  it('replaces caller-visible places under strict TypeScript and at runtime', () => {
+    const { error, typescript } = compileRust('replace', REPLACE_FIXTURE);
+    expect(error).toBe('');
+    expect(strictDiagnostics(typescript)).toEqual([]);
+    const module = loadModule(typescript) as unknown as {
+      first: (values: number[], next: number) => number;
+      local: (seed: number) => number;
+      swapItems: (slot: { value: number; items: number[] }, next: number[]) => number[];
+      swapValue: (slot: { value: number; items: number[] }, next: number) => number;
+    };
+    const slot = { value: 3, items: [1] };
+    expect(module.swapValue(slot, 4)).toBe(3);
+    expect(slot.value).toBe(4);
+    expect(module.swapItems(slot, [2])).toEqual([1]);
+    expect(slot.items).toEqual([2]);
+    const values = [7, 8];
+    expect(module.first(values, 9)).toBe(7);
+    expect(values).toEqual([9, 8]);
+    expect(module.local(5)).toBe(11);
+  });
+
+  it('swaps caller-visible places under strict TypeScript and at runtime', () => {
+    const { error, typescript } = compileRust('swap', SWAP_FIXTURE);
+    expect(error).toBe('');
+    expect(strictDiagnostics(typescript)).toEqual([]);
+    const module = loadModule(typescript) as unknown as {
+      flip: (joint: { ax: number; bx: number }) => void;
+      order: (values: number[]) => void;
+      ordered: (a: number, b: number) => number;
+    };
+    const joint = { ax: 1, bx: 2 };
+    module.flip(joint);
+    expect(joint).toEqual({ ax: 2, bx: 1 });
+    const values = [5, 4, 3, 2];
+    module.order(values);
+    expect(values).toEqual([4, 5, 2, 3]);
+    expect(module.ordered(9, 2)).toBe(7);
+  });
+
+  it('fails closed for reference parameters and reborrows, whose swap the caller would not see', () => {
+    for (const rust of [
+      'pub fn f(a: &mut u32, b: &mut u32) { std::mem::swap(a, b); }\n',
+      'pub fn f(a: &mut u32, b: &mut u32) { std::mem::swap(&mut *a, &mut *b); }\n',
+    ]) {
+      expect(compileRust('reference', rust).error).toBe('error: portable `std::mem::swap` has no portable lowering');
     }
   });
 
