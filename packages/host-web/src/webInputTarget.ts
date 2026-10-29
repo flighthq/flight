@@ -10,13 +10,15 @@ import type {
   InputTargetHandle,
 } from '@flighthq/types/contract';
 
+import { webHostInputIngress } from './webInputIngress.ts';
+
 interface WebHostTargetStyle extends CSSStyleDeclaration {
   webkitTapHighlightColor: string;
 }
 
-export const webHostInputDropFile = (() => {
-  const out = {} as HostInputDropFileCapability;
-  out.subscribe = (target: Readonly<InputTargetHandle>, listener: (path: string) => void) => {
+export const webHostInputDropFile: HostInputDropFileCapability = {
+  provider: webHostInputIngress.provider,
+  subscribe: (target: Readonly<InputTargetHandle>, listener: (path: string) => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     const onDragOver = (event: DragEvent): void => event.preventDefault();
@@ -30,13 +32,12 @@ export const webHostInputDropFile = (() => {
       element.removeEventListener('dragover', onDragOver);
       element.removeEventListener('drop', onDrop);
     });
-  };
-  return out;
-})();
+  },
+};
 
-export const webHostInputFocus = (() => {
-  const out = {} as HostInputFocusCapability;
-  out.subscribe = (target: Readonly<InputTargetHandle>, onFocus: () => void, onBlur: () => void) => {
+export const webHostInputFocus: HostInputFocusCapability = {
+  provider: webHostInputIngress.provider,
+  subscribe: (target: Readonly<InputTargetHandle>, onFocus: () => void, onBlur: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     element.addEventListener('focus', onFocus);
@@ -45,13 +46,12 @@ export const webHostInputFocus = (() => {
       element.removeEventListener('focus', onFocus);
       element.removeEventListener('blur', onBlur);
     });
-  };
-  return out;
-})();
+  },
+};
 
-export const webHostInputPointerLock = (() => {
-  const out = {} as HostInputPointerLockCapability;
-  out.exit = () => {
+export const webHostInputPointerLock: HostInputPointerLockCapability = {
+  provider: webHostInputIngress.provider,
+  exit: () => {
     if (typeof document === 'undefined') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
     if (document.pointerLockElement === null) return Promise.resolve(POINTER_LOCK_OK);
     const exitPointerLock = document.exitPointerLock;
@@ -68,8 +68,8 @@ export const webHostInputPointerLock = (() => {
       return Promise.resolve(POINTER_LOCK_OK);
     }
     return observation.outcome;
-  };
-  out.request = (target: Readonly<InputTargetHandle>) => {
+  },
+  request: (target: Readonly<InputTargetHandle>) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return Promise.resolve(POINTER_LOCK_TARGET_NOT_FOUND);
     const requestPointerLock = element.requestPointerLock;
@@ -88,13 +88,12 @@ export const webHostInputPointerLock = (() => {
       () => POINTER_LOCK_OK,
       (error: unknown) => classifyPointerLockRequestFailure(error),
     );
-  };
-  return out;
-})();
+  },
+};
 
-export const webHostInputTarget = (() => {
-  const out = {} as HostInputTargetCapability;
-  out.prepare = (target: Readonly<InputTargetHandle>) => {
+export const webHostInputTarget: HostInputTargetCapability = {
+  provider: webHostInputIngress.provider,
+  prepare: (target: Readonly<InputTargetHandle>) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;
     element.style.touchAction = 'none';
@@ -102,9 +101,8 @@ export const webHostInputTarget = (() => {
     element.style.webkitUserSelect = 'none';
     (element.style as WebHostTargetStyle).webkitTapHighlightColor = 'transparent';
     if (element instanceof HTMLCanvasElement) element.style.transform = 'translateZ(0)';
-  };
-  return out;
-})();
+  },
+};
 
 export function createWebInputTargetHandle(element: HTMLElement): InputTargetHandle {
   const target = allocateEntity<InputTargetHandle>();

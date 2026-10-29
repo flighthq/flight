@@ -3,6 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
 
 import { webHost } from './webHost.ts';
+import { webHostInputIngress } from './webInputIngress.ts';
 import {
   createWebInputTargetHandle,
   initializeWebInputTargetHandle,
@@ -64,6 +65,10 @@ describe('resetWebInputTargetBackendForTest', () => {
 });
 
 describe('webHostInputDropFile', () => {
+  it('carries the canonical web input provider token', () => {
+    expect(webHostInputDropFile.provider).toBe(webHostInputIngress.provider);
+  });
+
   it('forwards every dropped file name and removes the exact listeners', () => {
     const element = document.createElement('div');
     const listener = vi.fn();
@@ -84,6 +89,10 @@ describe('webHostInputDropFile', () => {
 });
 
 describe('webHostInputFocus', () => {
+  it('carries the canonical web input provider token', () => {
+    expect(webHostInputFocus.provider).toBe(webHostInputIngress.provider);
+  });
+
   it('forwards focus and blur and removes both exact listeners', () => {
     const element = document.createElement('div');
     const onFocus = vi.fn();
@@ -102,6 +111,10 @@ describe('webHostInputFocus', () => {
 });
 
 describe('webHostInputPointerLock', () => {
+  it('carries the canonical web input provider token', () => {
+    expect(webHostInputPointerLock.provider).toBe(webHostInputIngress.provider);
+  });
+
   it('does not pin the Web provider when the target is unknown', async () => {
     const target = createWebInputTargetHandle(document.createElement('div'));
     const fallbackExit = vi.fn(async () => ({ reason: 'ok' as const }));
@@ -359,6 +372,10 @@ describe('webHostInputPointerLock', () => {
 });
 
 describe('webHostInputTarget', () => {
+  it('carries the canonical web input provider token', () => {
+    expect(webHostInputTarget.provider).toBe(webHostInputIngress.provider);
+  });
+
   it('prepares the bound element without exposing DOM through the neutral contract', () => {
     const element = document.createElement('div');
 
