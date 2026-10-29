@@ -13,7 +13,7 @@ import {
 import type { SelectionModifierStateRaw, SelectionStateRaw } from './types.ts';
 
 export function applyPointerSelectionPolicyCore(
-  state: Readonly<SelectionStateRaw>,
+  state: SelectionStateRaw,
   hit: Readonly<NodeRef> | null,
   modifiers: Readonly<SelectionModifierStateRaw>,
 ): void {
@@ -40,7 +40,7 @@ export function applyPointerSelectionPolicyCore(
 }
 
 export function applyPointerUpSelectionPolicyCore(
-  state: Readonly<SelectionStateRaw>,
+  state: SelectionStateRaw,
   hit: Readonly<NodeRef> | null,
   modifiers: Readonly<SelectionModifierStateRaw>,
   didDrag: boolean,

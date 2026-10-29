@@ -3,6 +3,7 @@
 mod lasso_selection;
 mod marquee_mode_native;
 mod marquee_selection;
+mod node_compat;
 mod path_compat;
 mod pointer_selection_policy;
 mod selection_compat;

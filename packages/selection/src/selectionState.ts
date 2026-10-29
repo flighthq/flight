@@ -5,6 +5,7 @@ import { allocateEntity } from '@flighthq/entity/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
+import { isSameSelectionNode } from './nodeCompat.ts';
 import type { SelectionSignals } from './selectionCompat.ts';
 import type { SelectionStateRaw, SelectionStateRuntime } from './types.ts';
 import { selectionStateStateStore } from './types.ts';
@@ -21,7 +22,7 @@ interface ActiveChangeEvent {
   activeNode: NodeRef | null;
 }
 
-export function addNodeToSelectionCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+export function addNodeToSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
   const mutation = addNodeMutation(selectionStateStateStore.get(state)!, node);
   if (mutation === null) {
     return;
@@ -29,7 +30,7 @@ export function addNodeToSelectionCore(state: Readonly<SelectionStateRaw>, node:
   emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
-export function clearSelectionCore(state: Readonly<SelectionStateRaw>): void {
+export function clearSelectionCore(state: SelectionStateRaw): void {
   const mutation = clearSelectionMutation(selectionStateStateStore.get(state)!);
   if (mutation === null) {
     return;
@@ -65,12 +66,12 @@ export function createSelectionStateCore(): SelectionStateRaw {
   return out;
 }
 
-export function getActiveNodeCore(state: Readonly<SelectionStateRaw>): NodeRef | null {
+export function getActiveNodeCore(state: SelectionStateRaw): NodeRef | null {
   return selectionStateStateStore.get(state)!.activeNode;
 }
 
 function containsNode(nodes: Readonly<NodeRef[]>, node: Readonly<NodeRef>): boolean {
-  return nodes.some((selected) => selected === node);
+  return nodes.some((selected) => isSameSelectionNode(selected, node));
 }
 
 function lastNode(nodes: Readonly<NodeRef[]>): NodeRef | null {
@@ -80,7 +81,7 @@ function lastNode(nodes: Readonly<NodeRef[]>): NodeRef | null {
   return nodes[nodes.length - 1];
 }
 
-function emitSelectionChanges(state: Readonly<SelectionStateRaw>, previousActiveNode: NodeRef | null): void {
+function emitSelectionChanges(state: SelectionStateRaw, previousActiveNode: NodeRef | null): void {
   const changeEvent: SelectionChangeEvent | null = (() => {
     const runtime = selectionStateStateStore.get(state)!;
     const selectedNodes: Readonly<NodeRef[]> = runtime.selectedNodes;
@@ -102,7 +103,7 @@ function emitSelectionChanges(state: Readonly<SelectionStateRaw>, previousActive
   }
 }
 
-export function getSelectedNodesCore(out: NodeRef[], state: Readonly<SelectionStateRaw>): void {
+export function getSelectedNodesCore(out: NodeRef[], state: SelectionStateRaw): void {
   out.length = 0;
   const selectedNodes = selectionStateStateStore.get(state)!.selectedNodes;
   for (const node of selectedNodes) {
@@ -110,28 +111,28 @@ export function getSelectedNodesCore(out: NodeRef[], state: Readonly<SelectionSt
   }
 }
 
-export function getSelectionCountCore(state: Readonly<SelectionStateRaw>): number {
+export function getSelectionCountCore(state: SelectionStateRaw): number {
   return selectionStateStateStore.get(state)!.selectedNodes.length;
 }
 
-export function getSelectionSignalsCore(state: Readonly<SelectionStateRaw>): SelectionSignals {
+export function getSelectionSignalsCore(state: SelectionStateRaw): SelectionSignals {
   return selectionStateStateStore.get(state)!.signals;
 }
 
-export function hasSelectionCore(state: Readonly<SelectionStateRaw>): boolean {
+export function hasSelectionCore(state: SelectionStateRaw): boolean {
   return selectionStateStateStore.get(state)!.selectedNodes.length !== 0;
 }
 
 export function initializeSelectionStateCore(out: SelectionStateRaw): void {
   selectionStateStateStore.set(out, {
     activeNode: null,
-    selectedNodeSet: [] as never[],
-    selectedNodes: [] as never[],
+    selectedNodeSet: [],
+    selectedNodes: [],
     signals: { onActiveChange: createSignal(), onChange: createSignal() },
   });
 }
 
-export function isNodeSelectedCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): boolean {
+export function isNodeSelectedCore(state: SelectionStateRaw, node: Readonly<NodeRef>): boolean {
   return containsNode(selectionStateStateStore.get(state)!.selectedNodeSet, node);
 }
 
@@ -159,7 +160,7 @@ function removeNodeMutation(runtime: SelectionStateRuntime, node: Readonly<NodeR
       }
       items.length = kept + length - index;
     }
-  })(selectedNodeSet, (selected) => !(selected === node));
+  })(selectedNodeSet, (selected) => !isSameSelectionNode(selected, node));
   const selectedNodes: NodeRef[] = runtime.selectedNodes;
   (<T>(items: T[], keep: (item: T) => boolean): void => {
     let kept = 0;
@@ -179,14 +180,14 @@ function removeNodeMutation(runtime: SelectionStateRuntime, node: Readonly<NodeR
       }
       items.length = kept + length - index;
     }
-  })(selectedNodes, (selected) => !(selected === node));
+  })(selectedNodes, (selected) => !isSameSelectionNode(selected, node));
   if (sameOptionalNode(runtime.activeNode, node)) {
     runtime.activeNode = lastNode(runtime.selectedNodes);
   }
   return { previousActiveNode: previousActiveNode };
 }
 
-export function removeNodeFromSelectionCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+export function removeNodeFromSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
   const mutation = removeNodeMutation(selectionStateStateStore.get(state)!, node);
   if (mutation === null) {
     return;
@@ -199,7 +200,7 @@ function sameNodeList(a: Readonly<NodeRef[]>, b: Readonly<NodeRef[]>): boolean {
     return false;
   }
   for (let index = 0; index < a.length; index += 1) {
-    if (!(a[index] === b[index])) {
+    if (!isSameSelectionNode(a[index], b[index])) {
       return false;
     }
   }
@@ -211,7 +212,7 @@ function sameOptionalNode(a: Readonly<NodeRef | null>, b: Readonly<NodeRef | nul
     const aNode = a;
     if (b !== null) {
       const bNode = b;
-      return aNode === bNode;
+      return isSameSelectionNode(aNode, bNode);
     }
     return false;
   }
@@ -229,7 +230,7 @@ function replaceSelectionMutation(runtime: SelectionStateRuntime, selectedNodes:
   return { previousActiveNode: previousActiveNode };
 }
 
-export function selectAllNodesCore(state: Readonly<SelectionStateRaw>, candidates: Readonly<NodeRef[]>): void {
+export function selectAllNodesCore(state: SelectionStateRaw, candidates: Readonly<NodeRef[]>): void {
   let selectedNodes: NodeRef[] = [] as never[];
   for (const candidate of candidates) {
     if (!containsNode(selectedNodes, candidate)) {
@@ -243,7 +244,7 @@ export function selectAllNodesCore(state: Readonly<SelectionStateRaw>, candidate
   emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
-export function selectNodeCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+export function selectNodeCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
   const mutation = replaceSelectionMutation(selectionStateStateStore.get(state)!, [node]);
   if (mutation === null) {
     return;
@@ -251,7 +252,7 @@ export function selectNodeCore(state: Readonly<SelectionStateRaw>, node: Readonl
   emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
-export function toggleNodeSelectionCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+export function toggleNodeSelectionCore(state: SelectionStateRaw, node: Readonly<NodeRef>): void {
   if (isNodeSelectedCore(state, node)) {
     removeNodeFromSelectionCore(state, node);
   } else {

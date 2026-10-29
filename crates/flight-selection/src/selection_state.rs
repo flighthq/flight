@@ -1,11 +1,10 @@
 //! flight-compiler: nullable-options
 
-use std::sync::Arc;
-
 use flight_entity::allocate_entity;
 use flight_node::NodeRef;
 use flight_signals::{create_signal, emit_signal};
 
+use crate::node_compat::is_same_selection_node;
 use crate::selection_compat::SelectionSignals;
 use crate::types::*;
 
@@ -277,7 +276,9 @@ pub fn clear_selection_core(state: &SelectionState) {
 }
 
 fn contains_node(nodes: &[NodeRef], node: &NodeRef) -> bool {
-    return nodes.iter().any(|selected| Arc::ptr_eq(selected, node));
+    return nodes
+        .iter()
+        .any(|selected| is_same_selection_node(selected, node));
 }
 
 fn last_node(nodes: &[NodeRef]) -> Option<NodeRef> {
@@ -358,9 +359,9 @@ fn remove_node_mutation(
     }
     let previous_active_node = runtime.active_node.clone();
     let selected_node_set: &mut Vec<NodeRef> = &mut runtime.selected_node_set;
-    selected_node_set.retain(|selected| !Arc::ptr_eq(selected, node));
+    selected_node_set.retain(|selected| !is_same_selection_node(selected, node));
     let selected_nodes: &mut Vec<NodeRef> = &mut runtime.selected_nodes;
-    selected_nodes.retain(|selected| !Arc::ptr_eq(selected, node));
+    selected_nodes.retain(|selected| !is_same_selection_node(selected, node));
     if same_optional_node(&runtime.active_node, &Some(node.clone())) {
         runtime.active_node = last_node(&runtime.selected_nodes);
     }
@@ -382,7 +383,7 @@ fn same_node_list(a: &[NodeRef], b: &[NodeRef]) -> bool {
         return false;
     }
     for index in 0..a.len() {
-        if !Arc::ptr_eq(&a[index], &b[index]) {
+        if !is_same_selection_node(&a[index], &b[index]) {
             return false;
         }
     }
@@ -392,7 +393,7 @@ fn same_node_list(a: &[NodeRef], b: &[NodeRef]) -> bool {
 fn same_optional_node(a: &Option<NodeRef>, b: &Option<NodeRef>) -> bool {
     if let Some(a_node) = a {
         if let Some(b_node) = b {
-            return Arc::ptr_eq(a_node, b_node);
+            return is_same_selection_node(a_node, b_node);
         }
         return false;
     }
