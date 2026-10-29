@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+//! flight-compiler: string-union PathBooleanFillRule PathBooleanOperation
+
 use std::sync::LazyLock;
 
 use flight_entity::{EntityRuntimeSlot, allocate_entity, throw_error};
@@ -109,14 +110,15 @@ struct UniqueSegment {
 }
 
 /// Binary min-heap over sweep event arena indices ordered by compare_events.
+// `data[..length]` is the heap; slots past `length` are spare capacity a later push reuses.
 struct EventHeap {
     data: Vec<usize>,
+    length: usize,
 }
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Directed graph of kept boundary edges for ring tracing.
 struct DirectedGraph {
-    keys: HashMap<(i64, i64), usize>,
     xs: Vec<f64>,
     ys: Vec<f64>,
     outgoing: Vec<Vec<usize>>,
@@ -189,7 +191,10 @@ fn build_arrangement(
     vertex_snap: f64,
 ) -> Vec<ArrangementSegment> {
     let mut events: Vec<SweepEvent> = Vec::new();
-    let mut heap = EventHeap { data: Vec::new() };
+    let mut heap = EventHeap {
+        data: Vec::new(),
+        length: 0,
+    };
 
     fill_queue(subject, true, &mut events, &mut heap, vertex_snap);
     fill_queue(clip, false, &mut events, &mut heap, vertex_snap);
@@ -222,14 +227,18 @@ fn build_arrangement(
             let index = find_status(&status, left_event);
             if index >= 0 {
                 let idx = index as usize;
-                let prev = if idx > 0 { Some(status[idx - 1]) } else { None };
-                let next = if idx < status.len() - 1 {
-                    Some(status[idx + 1])
+                // Both neighbors exist only when `idx` is interior; they become adjacent after removal.
+                let has_neighbors = idx > 0 && idx + 1 < status.len();
+                let prev_ev = if idx > 0 { status[idx - 1] } else { 0 };
+                let next_ev = if idx + 1 < status.len() {
+                    status[idx + 1]
                 } else {
-                    None
+                    0
                 };
-                status.remove(idx);
-                if let (Some(prev_ev), Some(next_ev)) = (prev, next) {
+                let mut kept: Vec<usize> = status[0..idx].to_vec();
+                kept.extend_from_slice(&status[idx + 1..status.len()]);
+                status = kept;
+                if has_neighbors {
                     possible_intersection(&mut events, &mut heap, vertex_snap, prev_ev, next_ev);
                 }
             }
@@ -381,6 +390,22 @@ fn compare_segments(events: &[SweepEvent], le1: usize, le2: usize) -> i32 {
     };
 }
 
+// Orders keys `a` and `b`, each `stride` consecutive values of `keys`, lexicographically and then by
+// position, so equal keys sort in first-occurrence order.
+fn compare_snapped_keys(keys: &[i64], stride: usize, a: usize, b: usize) -> std::cmp::Ordering {
+    for offset in 0..stride {
+        let left = keys[a * stride + offset];
+        let right = keys[b * stride + offset];
+        if left < right {
+            return std::cmp::Ordering::Less;
+        }
+        if left > right {
+            return std::cmp::Ordering::Greater;
+        }
+    }
+    return a.cmp(&b);
+}
+
 /// Placeholder strategy of a default-constructed (not yet initialized) kernel: computes nothing.
 fn compute_empty_path_boolean(
     _subject: &[PathBooleanContour],
@@ -448,16 +473,10 @@ fn compute_vertex_snap(subject: &[Vec<f64>], clip: &[Vec<f64>]) -> f64 {
 }
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
-fn directed_graph_add_edge(
-    graph: &mut DirectedGraph,
-    from_x: f64,
-    from_y: f64,
-    to_x: f64,
-    to_y: f64,
-    vertex_snap: f64,
-) {
-    let from = directed_graph_vertex(graph, from_x, from_y, vertex_snap);
-    let to = directed_graph_vertex(graph, to_x, to_y, vertex_snap);
+/// `from` and `to` are snapped-vertex ids in first-occurrence order (see `first_occurrence_ids`).
+fn directed_graph_add_edge(graph: &mut DirectedGraph, from: usize, to: usize, edge: &[f64; 4]) {
+    let from = directed_graph_vertex(graph, from, edge[0], edge[1]);
+    let to = directed_graph_vertex(graph, to, edge[2], edge[3]);
     if from == to {
         return;
     }
@@ -470,7 +489,6 @@ fn directed_graph_add_edge(
 
 fn directed_graph_new() -> DirectedGraph {
     return DirectedGraph {
-        keys: HashMap::new(),
         xs: Vec::new(),
         ys: Vec::new(),
         outgoing: Vec::new(),
@@ -528,17 +546,15 @@ fn directed_graph_trace_rings(graph: &mut DirectedGraph) -> Vec<Vec<f64>> {
 }
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
-fn directed_graph_vertex(graph: &mut DirectedGraph, x: f64, y: f64, vertex_snap: f64) -> usize {
-    let key = (snap(x, vertex_snap), snap(y, vertex_snap));
-    if let Some(&existing) = graph.keys.get(&key) {
-        return existing;
+// The vertex for snapped-vertex `id`, created at `(x, y)` when the id first occurs. Ids arrive in
+// first-occurrence order, so a new id is always the next vertex index.
+fn directed_graph_vertex(graph: &mut DirectedGraph, id: usize, x: f64, y: f64) -> usize {
+    if id == graph.xs.len() {
+        graph.xs.push(x);
+        graph.ys.push(y);
+        graph.outgoing.push(Vec::new());
     }
-    let index = graph.xs.len();
-    graph.keys.insert(key, index);
-    graph.xs.push(x);
-    graph.ys.push(y);
-    graph.outgoing.push(Vec::new());
-    return index;
+    return id;
 }
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
@@ -606,16 +622,17 @@ fn divide_segment(events: &mut Vec<SweepEvent>, heap: &mut EventHeap, le: usize,
 }
 
 fn event_heap_is_empty(heap: &EventHeap) -> bool {
-    return heap.data.is_empty();
+    return heap.length == 0;
 }
 
 fn event_heap_pop(heap: &mut EventHeap, events: &[SweepEvent]) -> usize {
     let top = heap.data[0];
-    let last = heap.data.pop().unwrap();
-    if !heap.data.is_empty() {
+    heap.length -= 1;
+    let last = heap.data[heap.length];
+    if heap.length > 0 {
         heap.data[0] = last;
         let mut i: usize = 0;
-        let n = heap.data.len();
+        let n = heap.length;
         loop {
             let left = i * 2 + 1;
             let right = left + 1;
@@ -637,8 +654,13 @@ fn event_heap_pop(heap: &mut EventHeap, events: &[SweepEvent]) -> usize {
 }
 
 fn event_heap_push(heap: &mut EventHeap, events: &[SweepEvent], event: usize) {
-    heap.data.push(event);
-    let mut i = heap.data.len() - 1;
+    if heap.length < heap.data.len() {
+        heap.data[heap.length] = event;
+    } else {
+        heap.data.push(event);
+    }
+    heap.length += 1;
+    let mut i = heap.length - 1;
     while i > 0 {
         let parent = (i - 1) >> 1;
         if compare_events(events, heap.data[i], heap.data[parent]) < 0 {
@@ -695,6 +717,36 @@ fn find_status(status: &[usize], event: usize) -> i32 {
     return -1;
 }
 
+// Numbers each `stride`-wide key of `keys` so equal keys share one id and ids increase in the order
+// keys first occur, as a lookup-or-insert hash map assigns them, by sorting instead of hashing.
+fn first_occurrence_ids(keys: &[i64], stride: usize) -> Vec<usize> {
+    let count = keys.len() / stride;
+    let mut order: Vec<usize> = Vec::new();
+    for position in 0..count {
+        order.push(position);
+    }
+    order.sort_by(|a, b| compare_snapped_keys(keys, stride, *a, *b));
+    let mut first: Vec<usize> = vec![0; count];
+    let mut group_start = 0;
+    for rank in 0..count {
+        if !snapped_keys_equal(keys, stride, order[group_start], order[rank]) {
+            group_start = rank;
+        }
+        first[order[rank]] = order[group_start];
+    }
+    let mut ids: Vec<usize> = vec![0; count];
+    let mut next = 0;
+    for position in 0..count {
+        if first[position] == position {
+            ids[position] = next;
+            next += 1;
+        } else {
+            ids[position] = ids[first[position]];
+        }
+    }
+    return ids;
+}
+
 fn get_other_event(events: &[SweepEvent], event: usize) -> usize {
     return match events[event].other_event {
         Some(other) => other,
@@ -735,7 +787,13 @@ fn insert_status(status: &mut Vec<usize>, events: &[SweepEvent], event: usize) -
             hi = mid;
         }
     }
-    status.insert(lo, event);
+    status.push(event);
+    let mut shift = status.len() - 1;
+    while shift > lo {
+        status[shift] = status[shift - 1];
+        shift -= 1;
+    }
+    status[lo] = event;
     return lo;
 }
 
@@ -779,9 +837,8 @@ fn merge_coincident_segments(
     segments: &[ArrangementSegment],
     vertex_snap: f64,
 ) -> Vec<UniqueSegment> {
-    let mut map: HashMap<(i64, i64, i64, i64), usize> = HashMap::new();
-    let mut unique: Vec<UniqueSegment> = Vec::new();
-
+    let mut oriented: Vec<f64> = Vec::new();
+    let mut keys: Vec<i64> = Vec::new();
     for seg in segments {
         let mut ax = seg.ax;
         let mut ay = seg.ay;
@@ -793,20 +850,31 @@ fn merge_coincident_segments(
             bx = seg.ax;
             by = seg.ay;
         }
-        let key = (
-            snap(ax, vertex_snap),
-            snap(ay, vertex_snap),
-            snap(bx, vertex_snap),
-            snap(by, vertex_snap),
-        );
-        if let Some(&idx) = map.get(&key) {
+        oriented.push(ax);
+        oriented.push(ay);
+        oriented.push(bx);
+        oriented.push(by);
+        keys.push(snap(ax, vertex_snap));
+        keys.push(snap(ay, vertex_snap));
+        keys.push(snap(bx, vertex_snap));
+        keys.push(snap(by, vertex_snap));
+    }
+    let ids = first_occurrence_ids(&keys, 4);
+    let mut unique: Vec<UniqueSegment> = Vec::new();
+    for index in 0..segments.len() {
+        let seg = &segments[index];
+        let idx = ids[index];
+        if idx < unique.len() {
             if seg.is_subject {
                 unique[idx].subject_delta += seg.winding_delta;
             } else {
                 unique[idx].clip_delta += seg.winding_delta;
             }
         } else {
-            let idx = unique.len();
+            let ax = oriented[index * 4];
+            let ay = oriented[index * 4 + 1];
+            let bx = oriented[index * 4 + 2];
+            let by = oriented[index * 4 + 3];
             unique.push(UniqueSegment {
                 ax,
                 ay,
@@ -815,7 +883,6 @@ fn merge_coincident_segments(
                 subject_delta: if seg.is_subject { seg.winding_delta } else { 0 },
                 clip_delta: if seg.is_subject { 0 } else { seg.winding_delta },
             });
-            map.insert(key, idx);
         }
     }
     return unique;
@@ -1052,12 +1119,34 @@ fn snap(v: f64, vertex_snap: f64) -> i64 {
     return (v / vertex_snap).round() as i64;
 }
 
+fn snapped_keys_equal(keys: &[i64], stride: usize, a: usize, b: usize) -> bool {
+    for offset in 0..stride {
+        if keys[a * stride + offset] != keys[b * stride + offset] {
+            return false;
+        }
+    }
+    return true;
+}
+
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 // Pipeline stage 2c: traces kept segments into closed rings.
 fn trace_rings(edges: &[[f64; 4]], vertex_snap: f64) -> Vec<Vec<f64>> {
-    let mut graph = directed_graph_new();
+    let mut keys: Vec<i64> = Vec::new();
     for e in edges {
-        directed_graph_add_edge(&mut graph, e[0], e[1], e[2], e[3], vertex_snap);
+        keys.push(snap(e[0], vertex_snap));
+        keys.push(snap(e[1], vertex_snap));
+        keys.push(snap(e[2], vertex_snap));
+        keys.push(snap(e[3], vertex_snap));
+    }
+    let ids = first_occurrence_ids(&keys, 2);
+    let mut graph = directed_graph_new();
+    for index in 0..edges.len() {
+        directed_graph_add_edge(
+            &mut graph,
+            ids[index * 2],
+            ids[index * 2 + 1],
+            &edges[index],
+        );
     }
     return directed_graph_trace_rings(&mut graph);
 }

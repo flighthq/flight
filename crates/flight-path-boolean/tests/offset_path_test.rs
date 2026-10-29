@@ -46,6 +46,23 @@ fn path_bounds(path: &Path) -> (f64, f64, f64, f64) {
     return (min_x, min_y, max_x, max_y);
 }
 
+fn l_shape(s: f64) -> Vec<f64> {
+    return vec![
+        0.0,
+        0.0,
+        2.0 * s,
+        0.0,
+        2.0 * s,
+        2.0 * s,
+        s,
+        2.0 * s,
+        s,
+        s,
+        0.0,
+        s,
+    ];
+}
+
 fn path_area(path: &Path) -> f64 {
     let mut total: f64 = 0.0;
     for ring in flattened_path(path, Some(0.25)) {
@@ -325,11 +342,12 @@ mod offset_path {
         assert!((min_y - (-0.25)).abs() < 5e-7);
         assert!((max_x - 2.25).abs() < 5e-7);
         assert!((max_y - 2.25).abs() < 5e-7);
-        let move_count = out
-            .commands
-            .iter()
-            .filter(|&&c| c == PathCommand::MOVE_TO as u8)
-            .count();
+        let mut move_count = 0;
+        for command in &out.commands {
+            if *command == PathCommand::MOVE_TO as u8 {
+                move_count += 1;
+            }
+        }
         assert_eq!(move_count, 1);
         assert!(path_area(&out) > 3.0);
     }
@@ -466,22 +484,6 @@ mod offset_path {
     #[test]
     fn offsets_consistently_across_coordinate_scales() {
         let kernel = create_martinez_path_boolean_kernel();
-        fn l_shape(s: f64) -> Vec<f64> {
-            return vec![
-                0.0,
-                0.0,
-                2.0 * s,
-                0.0,
-                2.0 * s,
-                2.0 * s,
-                s,
-                2.0 * s,
-                s,
-                s,
-                0.0,
-                s,
-            ];
-        }
         let mut small = create_path(Some(flight_path::PathWinding::NonZero));
         let mut mid = create_path(Some(flight_path::PathWinding::NonZero));
         let mut large = create_path(Some(flight_path::PathWinding::NonZero));

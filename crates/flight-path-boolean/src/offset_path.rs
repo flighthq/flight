@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+//! flight-compiler: string-union PathOffsetEnd PathOffsetJoin
 
 use flight_path::{Path, flatten_path};
 
@@ -101,7 +101,7 @@ pub struct PathOffsetOptions {
 fn build_offset_ring(
     vertices: &[f64],
     signed_delta: f64,
-    cap_indices: &HashSet<usize>,
+    cap_indices: &[usize],
     join: PathOffsetJoin,
     end: PathOffsetEnd,
     miter_limit: f64,
@@ -314,7 +314,7 @@ fn get_clean_contour_vertices(contour: &[f64], closed: bool, point_eps_sq: f64) 
         let dx = out[0] - out[out.len() - 2];
         let dy = out[1] - out[out.len() - 1];
         if dx * dx + dy * dy <= point_eps_sq {
-            out.truncate(out.len() - 2);
+            out = out[0..out.len() - 2].to_vec();
         }
     }
     return out;
@@ -475,7 +475,7 @@ pub fn offset_path(
                 continue;
             }
             let orientation = get_ring_orientation_sign(&vertices);
-            let no_caps: HashSet<usize> = HashSet::new();
+            let no_caps: Vec<usize> = Vec::new();
             let ring = build_offset_ring(
                 &vertices,
                 delta * orientation as f64,
@@ -505,9 +505,7 @@ pub fn offset_path(
                 continue;
             }
             let count = vertices.len() / 2;
-            let mut caps: HashSet<usize> = HashSet::new();
-            caps.insert(0);
-            caps.insert(count - 1);
+            let caps: Vec<usize> = vec![0, count - 1];
             let loop_verts = get_open_contour_loop(&vertices);
             let ring = build_offset_ring(
                 &loop_verts,

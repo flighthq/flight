@@ -1,5 +1,14 @@
 use flight_path_boolean::contract::*;
 
+fn compute_empty_test_path_boolean(
+    _subject: &[PathBooleanContour],
+    _clip: &[PathBooleanContour],
+    _operation: PathBooleanOperation,
+    _fill_rule: PathBooleanFillRule,
+) -> Vec<PathBooleanContour> {
+    return Vec::new();
+}
+
 fn square(x: f64, y: f64, s: f64) -> Vec<f64> {
     return vec![x, y, x + s, y, x + s, y + s, x, y + s];
 }
@@ -28,6 +37,13 @@ fn net_area(rings: &[Vec<f64>]) -> f64 {
         total += signed_area_ring(ring);
     }
     return total.abs();
+}
+
+fn overlap(s: f64) -> Vec<Vec<f64>> {
+    return vec![
+        square(0.0, 0.0, 10.0 * s),
+        square(5.0 * s, 5.0 * s, 10.0 * s),
+    ];
 }
 
 fn signed_area_ring(ring: &[f64]) -> f64 {
@@ -474,12 +490,6 @@ mod create_martinez_path_boolean_kernel {
 
     #[test]
     fn resolves_the_same_topology_across_coordinate_scales() {
-        fn overlap(s: f64) -> Vec<Vec<f64>> {
-            return vec![
-                square(0.0, 0.0, 10.0 * s),
-                square(5.0 * s, 5.0 * s, 10.0 * s),
-            ];
-        }
         let small = run(
             &overlap(1e-3),
             &[],
@@ -730,7 +740,8 @@ mod initialize_martinez_path_boolean_kernel {
 
     #[test]
     fn is_the_construction_initializer_of_create_martinez_path_boolean_kernel() {
-        let mut kernel: PathBooleanKernel = flight_entity::allocate_entity();
+        let mut kernel = create_martinez_path_boolean_kernel();
+        kernel.compute_path_boolean = compute_empty_test_path_boolean;
         initialize_martinez_path_boolean_kernel(&mut kernel);
         assert_eq!(kernel, create_martinez_path_boolean_kernel());
         let result = (kernel.compute_path_boolean)(

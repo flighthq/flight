@@ -1,3 +1,5 @@
+//! flight-compiler: string-union PathBooleanExplanationOperation PathBooleanExplanationReason=kebab-case
+
 use flight_path::{Path, create_path, flatten_path};
 
 use crate::boolean_paths::PathBooleanOptions;

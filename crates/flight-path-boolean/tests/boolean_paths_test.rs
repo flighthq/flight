@@ -342,23 +342,20 @@ mod union_paths {
         assert!(path_fill_contains(&b, 12.0, 12.0));
     }
 
-    static CUSTOM_KERNEL_SEEN: std::sync::atomic::AtomicBool =
-        std::sync::atomic::AtomicBool::new(false);
-
-    fn compute_seen_path_boolean(
+    // A kernel whose result no real boolean operation would produce, so the output proves routing.
+    fn compute_sentinel_path_boolean(
         _subject: &[PathBooleanContour],
         _clip: &[PathBooleanContour],
         _operation: PathBooleanOperation,
         _fill_rule: PathBooleanFillRule,
     ) -> Vec<PathBooleanContour> {
-        CUSTOM_KERNEL_SEEN.store(true, std::sync::atomic::Ordering::SeqCst);
-        return Vec::new();
+        return vec![vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]];
     }
 
     #[test]
     fn routes_through_a_provided_kernel() {
-        let mut custom: PathBooleanKernel = flight_entity::allocate_entity();
-        custom.compute_path_boolean = compute_seen_path_boolean;
+        let mut custom = create_martinez_path_boolean_kernel();
+        custom.compute_path_boolean = compute_sentinel_path_boolean;
         let mut out = create_path(Some(flight_path::PathWinding::NonZero));
         union_paths(
             &mut out,
@@ -367,8 +364,7 @@ mod union_paths {
             &rectangle_path(5.0, 5.0, 10.0, 10.0),
             None,
         );
-        assert!(CUSTOM_KERNEL_SEEN.load(std::sync::atomic::Ordering::SeqCst));
-        assert_eq!(out.commands.len(), 0);
+        assert_eq!(out.data, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
     }
 
     #[test]
