@@ -8,6 +8,8 @@ mod flight_text_markup_markup_class_styles_test;
 mod flight_text_markup_markup_named_colors_test;
 #[path = "markup_tag_registry_test.rs"]
 mod flight_text_markup_markup_tag_registry_test;
+#[path = "normalize_markup_tag_result_test.rs"]
+mod flight_text_markup_normalize_markup_tag_result_test;
 #[path = "text_markup_guards_test.rs"]
 mod flight_text_markup_text_markup_guards_test;
 #[path = "text_markup_test.rs"]

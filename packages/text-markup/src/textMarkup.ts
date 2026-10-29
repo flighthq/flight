@@ -4,10 +4,8 @@ import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat
 import type { TextFormat } from '@flighthq/textformat/contract';
 import { createRichTextContent } from '@flighthq/textlayout/contract';
 import type {
-  MarkupTagEffect,
   MarkupTagHandler,
   MarkupTagRegistry,
-  MarkupTagResult,
   RichTextContent,
   TextMarkupExplanation,
   TextMarkupGuard,
@@ -15,6 +13,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry.ts';
+import { normalizeMarkupTagResult } from './normalizeMarkupTagResult.ts';
 import { reportTextMarkupIssue } from './textMarkupGuards.ts';
 
 /**
@@ -340,14 +339,6 @@ function handleMarkupToken(
 
   const merged: TextFormat = { ...top, ...result.format };
   if (!selfClosing) stack.push(merged);
-}
-
-// Normalizes a handler result to the `MarkupTagEffect` shape. The common `Partial<TextFormat>` return
-// carries none of the reserved effect keys, so it is wrapped as `{ format }`; a richer return is used
-// as-is. `TextFormat` shares no field name with `format`/`breakBefore`/`text`, so the test is exact.
-function normalizeMarkupTagResult(result: Readonly<MarkupTagResult>): MarkupTagEffect {
-  if ('format' in result || 'breakBefore' in result || 'text' in result) return result as MarkupTagEffect;
-  return { format: result as Partial<TextFormat> };
 }
 
 function parseMarkupAttributes(source: string): Record<string, string> {

@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! Parse and format the `htmlText` subset (TS `textMarkup.ts`).
 
 use std::sync::{Arc, RwLock};
@@ -10,6 +11,7 @@ use flight_textlayout::{RichTextContent, create_rich_text_content};
 use crate::markup_tag_registry::{
     create_markup_tag_registry, merge_markup_format, register_standard_markup_tags,
 };
+use crate::normalize_markup_tag_result::normalize_markup_tag_result;
 use crate::text_markup_guards::report_text_markup_issue;
 use crate::types::*;
 
@@ -348,67 +350,53 @@ fn handle_markup_token(
     };
 
     let mut attributes = parse_markup_attributes(attributes_source);
-    if name == "a" {
-        if let Some(href) = get_record_value(&attributes, "href").cloned() {
-            if !is_safe_markup_href(&href) {
-                report(&TextMarkupIssue {
-                    kind: TextMarkupIssueKind::UnsafeHref,
-                    offset,
-                    tag: String::from("a"),
-                    value: Some(href),
-                });
-                flight_entity::delete_record_value(&mut attributes, "href");
-            }
+    if name == "a"
+        && let Some(href) = get_record_value(&attributes, "href").cloned()
+        && !is_safe_markup_href(&href)
+    {
+        report(&TextMarkupIssue {
+            kind: TextMarkupIssueKind::UnsafeHref,
+            offset,
+            tag: String::from("a"),
+            value: Some(href),
+        });
+        flight_entity::delete_record_value(&mut attributes, "href");
+    }
+
+    let result = normalize_markup_tag_result(handler(&attributes, &top));
+    if name == "font"
+        && let Some(color) = get_record_value(&attributes, "color")
+    {
+        let resolved = result
+            .format
+            .as_ref()
+            .is_some_and(|format| format.color.is_some());
+        if !resolved {
+            report(&TextMarkupIssue {
+                kind: TextMarkupIssueKind::UnresolvedFontColor,
+                offset,
+                tag: String::from("font"),
+                value: Some(color.clone()),
+            });
         }
     }
 
-    let result = handler(&attributes, &top);
-    if name == "font" {
-        if let Some(color) = get_record_value(&attributes, "color") {
-            let resolved = match &result {
-                MarkupTagResult::Format(format) => format.color.is_some(),
-                MarkupTagResult::Effect(effect) => effect
-                    .format
-                    .as_ref()
-                    .is_some_and(|format| format.color.is_some()),
-            };
-            if !resolved {
-                report(&TextMarkupIssue {
-                    kind: TextMarkupIssueKind::UnresolvedFontColor,
-                    offset,
-                    tag: String::from("font"),
-                    value: Some(color.clone()),
-                });
-            }
-        }
+    if result.format.is_none() && result.text.is_some() {
+        append_markup_string(content, result.text.as_deref().unwrap_or(""), &top);
+        return;
     }
-
-    match result {
-        MarkupTagResult::Effect(effect) => {
-            if effect.format.is_none() && effect.text.is_some() {
-                append_markup_string(content, effect.text.as_deref().unwrap_or(""), &top);
-                return;
-            }
-            if effect.break_before == Some(true) {
-                append_markup_break_before(content);
-            }
-            if let Some(text) = &effect.text {
-                append_markup_string(content, text, &top);
-            }
-            let merged = merge_markup_format(
-                &top,
-                effect.format.as_ref().unwrap_or(&TextFormat::default()),
-            );
-            if !self_closing {
-                stack.push(merged);
-            }
-        }
-        MarkupTagResult::Format(format) => {
-            let merged = merge_markup_format(&top, &format);
-            if !self_closing {
-                stack.push(merged);
-            }
-        }
+    if result.break_before == Some(true) {
+        append_markup_break_before(content);
+    }
+    if let Some(text) = &result.text {
+        append_markup_string(content, text, &top);
+    }
+    let merged = merge_markup_format(
+        &top,
+        result.format.as_ref().unwrap_or(&TextFormat::default()),
+    );
+    if !self_closing {
+        stack.push(merged);
     }
 }
 
@@ -558,11 +546,12 @@ fn push_markup_range(content: &mut RichTextContent, format: &TextFormat, start: 
     if start == end || is_markup_format_empty(format) {
         return;
     }
-    if let Some(previous) = content.format_ranges.last_mut() {
-        if previous.end == start && *previous.format.read().unwrap() == *format {
-            previous.end = end;
-            return;
-        }
+    if let Some(previous) = content.format_ranges.last_mut()
+        && previous.end == start
+        && *previous.format.read().unwrap() == *format
+    {
+        previous.end = end;
+        return;
     }
     content.format_ranges.push(create_text_format_range(
         Arc::new(RwLock::new(format.clone())),
@@ -597,11 +586,11 @@ fn resolve_markup_format_runs(content: &RichTextContent) -> Vec<MarkupFormatRun>
                 format = merge_markup_format(&format, range_format);
             }
         }
-        if let Some(previous) = runs.last_mut() {
-            if previous.format == format {
-                previous.end = end;
-                continue;
-            }
+        if let Some(previous) = runs.last_mut()
+            && previous.format == format
+        {
+            previous.end = end;
+            continue;
         }
         runs.push(MarkupFormatRun { start, end, format });
     }

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+//! flight-compiler: data-union MarkupTagResult=reserved-key
 //! Text-markup declarations (TS `MarkupTagRegistry`, `MarkupTagHandler`, `MarkupTagEffect`,
 //! `MarkupColorResolver`, `MarkupClassResolver`, `TextMarkupExplanation`).
 

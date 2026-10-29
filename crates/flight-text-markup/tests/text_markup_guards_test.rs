@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex};
 
 use flight_text_markup::contract::*;

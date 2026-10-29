@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! The opt-in CSS named-color table and the named color seam (TS `markupNamedColors.ts`).
 
 use std::sync::Arc;

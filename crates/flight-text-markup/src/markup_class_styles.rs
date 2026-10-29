@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! Opt-in `<span class>` styling over a caller-owned class map (TS `markupClassStyles.ts`).
 
 use std::sync::Arc;

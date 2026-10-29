@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_text_markup::contract::*;
 
 use crate::support::*;

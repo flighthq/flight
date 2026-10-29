@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! Opt-in logging for lossy markup parses (TS `enableTextMarkupGuards.ts`). The log state and clock
 //! are caller-owned explicit context (D5).
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_log::{LogData, LogEntry, LogStateRef, LogValue, create_log_state, set_log_sink};
@@ -8,10 +10,10 @@ fn log_state(entries: Arc<Mutex<Vec<String>>>) -> LogStateRef {
     set_log_sink(
         &state,
         Some(Arc::new(move |entry: &LogEntry| {
-            if let LogData::Record(record) = &entry.data {
-                if let Some(LogValue::Str(message)) = record.get("message") {
-                    entries.lock().unwrap().push(message.clone());
-                }
+            if let LogData::Record(record) = &entry.data
+                && let Some(LogValue::Str(message)) = record.get("message")
+            {
+                entries.lock().unwrap().push(message.clone());
             }
         })),
     );

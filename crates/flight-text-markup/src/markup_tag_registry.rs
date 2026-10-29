@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! The open markup tag registry, the standard htmlText dialect and the hex color seam
 //! (TS `markupTagRegistry.ts`).
 
@@ -35,26 +36,26 @@ fn font_tag_handler(seams: Ref<MarkupResolverSeams>) -> MarkupTagHandler {
                 format.color = Some(parsed);
             }
         }
-        if let Some(size) = get_record_value(attributes, "size") {
-            if let Some(parsed) = parse_markup_float(size) {
-                let trimmed = size.trim();
-                let relative = trimmed.starts_with('+') || trimmed.starts_with('-');
-                format.size = Some(if relative {
-                    match enclosing.size {
-                        Some(base) => base + parsed,
-                        None => parsed,
-                    }
-                } else {
-                    parsed
-                });
-            }
+        if let Some(size) = get_record_value(attributes, "size")
+            && let Some(parsed) = parse_markup_float(size)
+        {
+            let trimmed = size.trim();
+            let relative = trimmed.starts_with('+') || trimmed.starts_with('-');
+            format.size = Some(if relative {
+                match enclosing.size {
+                    Some(base) => base + parsed,
+                    None => parsed,
+                }
+            } else {
+                parsed
+            });
         }
         let face =
             get_record_value(attributes, "face").or_else(|| get_record_value(attributes, "font"));
-        if let Some(face) = face {
-            if !face.is_empty() {
-                format.font = Some(face.clone());
-            }
+        if let Some(face) = face
+            && !face.is_empty()
+        {
+            format.font = Some(face.clone());
         }
         return MarkupTagResult::Format(format);
     });
@@ -345,9 +346,7 @@ fn read_markup_number_attribute(attributes: &Record<String>, name: &str) -> Opti
 }
 
 fn read_markup_tab_stops_attribute(attributes: &Record<String>, name: &str) -> Option<Vec<f32>> {
-    let Some(raw) = get_record_value(attributes, name) else {
-        return None;
-    };
+    let raw = get_record_value(attributes, name)?;
     let mut stops = Vec::new();
     for part in raw.split(',') {
         if let Some(parsed) = parse_markup_float(part.trim()) {

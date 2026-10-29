@@ -50,7 +50,7 @@ export function registerMarkupTag(
  * shape as named colors.
  */
 export function registerStandardMarkupTags(registry: MarkupTagRegistry): void {
-  registry.colorResolver = resolveMarkupHexColor;
+  registry.colorResolver = MARKUP_HEX_COLOR_RESOLVER;
   registerMarkupTag(registry, 'a', markupAnchorTagHandler);
   registerMarkupTag(registry, 'b', markupBoldTagHandler);
   registerMarkupTag(registry, 'br', markupBreakTagHandler);
@@ -93,6 +93,10 @@ export function resolveMarkupHexColor(value: string): number | null {
   }
   return null;
 }
+
+// Rust names this canonical resolver value so identity assertions do not depend on recreating a
+// closure. TypeScript functions already have stable identity; the alias keeps both targets aligned.
+export const MARKUP_HEX_COLOR_RESOLVER: MarkupColorResolver = resolveMarkupHexColor;
 
 // Builds the `<span>` handler bound to `registry`, so it consults the live `classResolver` seam at
 // parse time — letting `registerMarkupClassStyles` add class styling after registration without

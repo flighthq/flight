@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! The parser's opt-in diagnostic seam (TS `textMarkupGuards.ts`). Caller-owned state (D5).
 
 use crate::types::*;
