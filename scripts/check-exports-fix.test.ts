@@ -43,6 +43,31 @@ it('repairs a split contract barrel and remains clean on the next check and fix'
   expect(secondCheck.status, secondCheck.output).toBe(0);
 });
 
+it('accepts dependency-owned values derived into generated Rust lanes', () => {
+  const fixtureRoot = mkdtempSync(join(tmpdir(), 'flight-check-exports-generated-'));
+  temporaryDirectories.push(fixtureRoot);
+  const fixtureSource = join(fixtureRoot, 'packages', 'textlayout', 'src');
+  mkdirSync(fixtureSource, { recursive: true });
+
+  writeFileSync(join(fixtureSource, 'local.ts'), 'export function localValue() {}\n');
+  writeFileSync(
+    join(fixtureSource, 'contract.ts'),
+    '// Generated from crates/flight-textlayout/src/lib.rs by flight-compiler.\n' +
+      "export { localValue } from './local.ts';\n" +
+      "export { dependencyProtected, dependencyPublic } from '@flighthq/dependency/contract';\n",
+  );
+  writeFileSync(
+    join(fixtureSource, 'index.ts'),
+    '// Generated from crates/flight-textlayout/src/lib.rs by flight-compiler.\n' +
+      "export { localValue } from './local.ts';\n" +
+      "export { dependencyPublic } from '@flighthq/dependency/contract';\n",
+  );
+
+  const check = runCheck(fixtureRoot);
+  expect(check.status, check.output).toBe(0);
+  expect(check.output).toContain('textlayout: both files match');
+});
+
 function runCheck(root: string, ...args: string[]): { output: string; status: number | null } {
   const result = spawnSync(process.execPath, [TSX, CHECK_EXPORTS, '--root', root, ...args], {
     cwd: ROOT,

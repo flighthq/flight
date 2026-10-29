@@ -1,111 +1,35 @@
 use flight_textlayout::contract::*;
 
-mod get_text_auto_size_string {
+mod text_auto_size {
     use super::*;
 
     #[test]
-    fn returns_every_exact_source_literal() {
-        assert_eq!(get_text_auto_size_string(TextAutoSize::Center), "center");
-        assert_eq!(get_text_auto_size_string(TextAutoSize::Left), "left");
-        assert_eq!(get_text_auto_size_string(TextAutoSize::None), "none");
-        assert_eq!(get_text_auto_size_string(TextAutoSize::Right), "right");
+    fn keeps_every_variant_distinct() {
+        assert_ne!(TextAutoSize::Center, TextAutoSize::Left);
+        assert_ne!(TextAutoSize::Left, TextAutoSize::None);
+        assert_ne!(TextAutoSize::None, TextAutoSize::Right);
     }
 }
 
-mod get_text_justification_string {
+mod text_justification {
     use super::*;
 
     #[test]
-    fn returns_every_exact_source_literal() {
-        assert_eq!(
-            get_text_justification_string(TextJustification::InterCharacter),
-            "interCharacter"
+    fn keeps_every_variant_distinct() {
+        assert_ne!(
+            TextJustification::InterCharacter,
+            TextJustification::InterWord
         );
-        assert_eq!(
-            get_text_justification_string(TextJustification::InterWord),
-            "interWord"
-        );
-        assert_eq!(
-            get_text_justification_string(TextJustification::None),
-            "none"
-        );
+        assert_ne!(TextJustification::InterWord, TextJustification::None);
     }
 }
 
-mod get_text_vertical_align_string {
+mod text_vertical_align {
     use super::*;
 
     #[test]
-    fn returns_every_current_exact_source_literal() {
-        assert_eq!(
-            get_text_vertical_align_string(TextVerticalAlign::Bottom),
-            "bottom"
-        );
-        assert_eq!(
-            get_text_vertical_align_string(TextVerticalAlign::Middle),
-            "middle"
-        );
-        assert_eq!(
-            get_text_vertical_align_string(TextVerticalAlign::Top),
-            "top"
-        );
-    }
-}
-
-mod parse_text_auto_size {
-    use super::*;
-
-    #[test]
-    fn accepts_every_literal_and_rejects_non_source_spellings() {
-        assert_eq!(parse_text_auto_size("center"), Some(TextAutoSize::Center));
-        assert_eq!(parse_text_auto_size("left"), Some(TextAutoSize::Left));
-        assert_eq!(parse_text_auto_size("none"), Some(TextAutoSize::None));
-        assert_eq!(parse_text_auto_size("right"), Some(TextAutoSize::Right));
-        assert_eq!(parse_text_auto_size("Center"), None);
-        assert_eq!(parse_text_auto_size(""), None);
-    }
-}
-
-mod parse_text_justification {
-    use super::*;
-
-    #[test]
-    fn accepts_every_literal_and_rejects_non_source_spellings() {
-        assert_eq!(
-            parse_text_justification("interCharacter"),
-            Some(TextJustification::InterCharacter)
-        );
-        assert_eq!(
-            parse_text_justification("interWord"),
-            Some(TextJustification::InterWord)
-        );
-        assert_eq!(
-            parse_text_justification("none"),
-            Some(TextJustification::None)
-        );
-        assert_eq!(parse_text_justification("inter-word"), None);
-        assert_eq!(parse_text_justification(""), None);
-    }
-}
-
-mod parse_text_vertical_align {
-    use super::*;
-
-    #[test]
-    fn accepts_current_literals_and_rejects_reserved_future_values() {
-        assert_eq!(
-            parse_text_vertical_align("bottom"),
-            Some(TextVerticalAlign::Bottom)
-        );
-        assert_eq!(
-            parse_text_vertical_align("middle"),
-            Some(TextVerticalAlign::Middle)
-        );
-        assert_eq!(
-            parse_text_vertical_align("top"),
-            Some(TextVerticalAlign::Top)
-        );
-        assert_eq!(parse_text_vertical_align("baseline"), None);
-        assert_eq!(parse_text_vertical_align("justify"), None);
+    fn keeps_every_variant_distinct() {
+        assert_ne!(TextVerticalAlign::Bottom, TextVerticalAlign::Middle);
+        assert_ne!(TextVerticalAlign::Middle, TextVerticalAlign::Top);
     }
 }

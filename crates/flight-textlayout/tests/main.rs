@@ -16,5 +16,7 @@ mod flight_textlayout_text_layout_test;
 mod flight_textlayout_text_line_breaks_test;
 #[path = "text_metrics_test.rs"]
 mod flight_textlayout_text_metrics_test;
+#[path = "type_strings_test.rs"]
+mod flight_textlayout_type_strings_test;
 #[path = "types_test.rs"]
 mod flight_textlayout_types_test;

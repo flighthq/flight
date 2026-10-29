@@ -672,6 +672,17 @@ for (const pkg of GOVERNED_PACKAGES) {
     ? classifyGeneratedExports(exportsByModule, derivedContractNames, derivedPublicNames)
     : classifyExports(exportsByModule, policy);
 
+  // A generated Rust contract may intentionally re-export dependency-owned values directly from
+  // another package. They have no local source module to classify: generate-rust-package validates
+  // them against the dependency contract, while this gate owns only the local package lanes. Keep
+  // those generated names in the expected surfaces without pretending they are locally owned.
+  const generatedDependencyContractNames = generatedLanes
+    ? new Set(getModuleValueExports(contractPath).filter((name) => !classification.has(name)))
+    : new Set<string>();
+  const generatedDependencyPublicNames = new Set(
+    [...generatedDependencyContractNames].filter((name) => derivedPublicNames.has(name)),
+  );
+
   const counts = { public: 0, protected: 0, exclude: 0 };
   for (const { lane } of classification.values()) counts[lane]++;
 
@@ -685,9 +696,10 @@ for (const pkg of GOVERNED_PACKAGES) {
       )
       .map((m) => m.module),
   );
-  const expectedPublicNames = new Set(
-    [...classification.entries()].filter(([, v]) => v.lane === 'public').map(([k]) => k),
-  );
+  const expectedPublicNames = new Set([
+    ...[...classification.entries()].filter(([, v]) => v.lane === 'public').map(([k]) => k),
+    ...generatedDependencyPublicNames,
+  ]);
 
   // A split owner lane compiles its contract.<owner>-types.ts entry independently, but the actual package
   // contract MUST still be contract.ts: a full runtime barrel over both the type lane and runtime.ts.
@@ -719,9 +731,10 @@ for (const pkg of GOVERNED_PACKAGES) {
   // carries a name the policy excluded — the exact hole that let host-electron report a clean
   // "1 excluded" over a surface that still exported it. index.ts was already checked by name; this is
   // the other half of that symmetry.
-  const expectedContractNames = new Set(
-    [...classification.entries()].filter(([, v]) => v.lane !== 'exclude').map(([k]) => k),
-  );
+  const expectedContractNames = new Set([
+    ...[...classification.entries()].filter(([, v]) => v.lane !== 'exclude').map(([k]) => k),
+    ...generatedDependencyContractNames,
+  ]);
   //
   // Checked in BOTH directions, because the two failures have opposite causes and only one of them is
   // the wildcard's. A LEAK is an excluded name the lane still publishes; a DROP is a lane name a named
