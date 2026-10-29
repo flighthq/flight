@@ -87,7 +87,7 @@ connectSignal(applicationWindow.onResize, () =>
 
 applicationWindow.width = width;
 applicationWindow.height = height;
-emitSignal(applicationWindow.onResize);
+emitSignal(applicationWindow.onResize, undefined);
 
 const expectedWidth = width * scale;
 const expectedHeight = height * scale;

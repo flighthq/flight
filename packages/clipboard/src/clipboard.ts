@@ -22,7 +22,7 @@ export function attachClipboardWatch(
   detachClipboardWatch(watch);
   _watchSubscriptions.set(
     watch,
-    hostClipboardChange.subscribe(() => emitSignal(watch.onChange)),
+    hostClipboardChange.subscribe(() => emitSignal(watch.onChange, undefined)),
   );
 }
 

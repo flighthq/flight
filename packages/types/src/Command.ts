@@ -52,7 +52,7 @@ export interface CommandHistory extends Entity {
   maxSize: number;
   // Opt-in change signal; null until enableCommandHistorySignals allocates it, so a bare history pays no
   // signal allocation or dispatch cost. Emits after any execute, undo, redo, or clear that changed state.
-  onChange: Signal<() => void> | null;
+  onChange: Signal<void> | null;
   // Open transaction bracket. `transactionDepth` counts nested begins; `transactionIndex` records where
   // the bracket started so end can fold and abort can unwind exactly that range.
   transactionDepth: number;

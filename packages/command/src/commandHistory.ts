@@ -100,7 +100,7 @@ export function initializeCommandHistory(out: EntityConstruction<CommandHistory>
 // Emits the opt-in change signal if a caller allocated one. Internal rather than exported: emitting a
 // change nobody made is how a history panel learns to distrust the signal.
 export function notifyCommandHistoryChanged(history: Readonly<CommandHistory>): void {
-  if (history.onChange !== null) emitSignal(history.onChange);
+  if (history.onChange !== null) emitSignal(history.onChange, undefined);
 }
 
 // Re-applies the next reversed entry. Uses the registered `execute`; there is no separate `redo` hook,

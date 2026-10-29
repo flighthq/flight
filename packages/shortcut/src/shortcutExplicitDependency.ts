@@ -57,7 +57,7 @@ export async function attachGlobalShortcut(
   _pendingAccelerators.add(accelerator);
   _pendingShortcuts.add(shortcut);
   try {
-    const outcome = await provider.subscribe(accelerator, () => emitSignal(shortcut.onTrigger));
+    const outcome = await provider.subscribe(accelerator, () => emitSignal(shortcut.onTrigger, undefined));
     if (outcome.reason === 'refused') return NATIVE_REFUSED;
 
     const attachment = { accelerator, provider, subscription: outcome.subscription };

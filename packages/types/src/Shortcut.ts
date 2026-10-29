@@ -7,7 +7,7 @@ import type { Signal } from './Signal.ts';
 // signal, native subscription token, provider origin, and attachment state are runtime-only.
 export interface GlobalShortcut extends Entity {
   readonly accelerator: Accelerator;
-  readonly onTrigger: Signal<() => void>;
+  readonly onTrigger: Signal<void>;
 }
 
 // Opaque handle returned by the native trigger provider after registration succeeds. Providers keep

@@ -82,7 +82,7 @@ export function setScene2DSize(source: Scene2D, width: number, height: number): 
   source.scene2dWidth = width;
   source.scene2dHeight = height;
   const runtime = source[EntityRuntimeKey] as Scene2DRuntime | undefined;
-  if (runtime?.scene2dSignals) emitSignal(runtime.scene2dSignals.onResize);
+  if (runtime?.scene2dSignals) emitSignal(runtime.scene2dSignals.onResize, undefined);
 }
 
 function ensureScene2DRuntime(source: Scene2D): Scene2DRuntime {

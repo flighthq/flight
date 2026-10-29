@@ -5,5 +5,5 @@ import type { Signal } from './Signal.ts';
 // attachClipboardWatch (which wires the supplied host's change subscription to onChange) and
 // release with detachClipboardWatch / disposeClipboardWatch. The signal stays inert until attached.
 export interface ClipboardWatch extends Entity {
-  onChange: Signal<() => void>;
+  onChange: Signal<void>;
 }
