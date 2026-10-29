@@ -71,7 +71,7 @@ export function initializeRenderCacheAdapter(
   adapter.cache = cache;
   adapter.signals = null as RenderCacheAdapter['signals'];
   adapter.adapt = (_state: RenderState, _source: NodeAny, node: RenderProxy2D): boolean | null => {
-    adapter.signals?.onPrepare.emit();
+    adapter.signals?.onPrepare.emit(undefined);
     const attached = adapter.cache ?? null;
     if (attached === null) return null;
     // Switch the render node to the cache renderer and fold in the cache's placement

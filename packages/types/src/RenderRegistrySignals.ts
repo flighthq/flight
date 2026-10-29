@@ -29,5 +29,5 @@ export interface RenderRegistriesMissExplanation {
 }
 
 export interface RenderRegistrySignals {
-  onRegistryMiss: Signal<(registry: RenderRegistryTable, kind: Kind) => void>;
+  onRegistryMiss: Signal<readonly [RenderRegistryTable, Kind]>;
 }

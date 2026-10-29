@@ -24,7 +24,7 @@ export function enableRenderRegistriesGuards(state: RenderState, logState: LogSt
   const stateId = ++_nextStateId;
   _stateIds.set(state, stateId);
   _stateMisses.set(state, []);
-  connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
+  connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, ([registry, kind]) => {
     recordRenderRegistriesMiss(state, _stateLogStates.get(state) ?? null, stateId, registry, kind);
   });
 }

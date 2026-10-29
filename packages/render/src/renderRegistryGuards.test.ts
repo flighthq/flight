@@ -74,10 +74,10 @@ describe('enableRenderRegistriesGuards', () => {
     const sink = createMemoryLogSink(8);
     addLogSink(logState, sink.sink);
     enableRenderRegistriesGuards(state, logState);
-    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.First');
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, [RenderRegistryTable.TextureResolver, 'acme.First']);
     expect(readMemoryLogEntries(sink)).toHaveLength(1);
     enableRenderRegistriesGuards(state, null);
-    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Second');
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, [RenderRegistryTable.TextureResolver, 'acme.Second']);
     expect(readMemoryLogEntries(sink)).toHaveLength(1);
     expect(areRenderRegistriesGuardsEnabled(state)).toBe(true);
     expect(explainRenderRegistriesMisses(state).misses).toHaveLength(2);
@@ -93,9 +93,9 @@ describe('enableRenderRegistriesGuards', () => {
     addLogSink(second, secondSink.sink);
     enableRenderRegistriesGuards(state, null);
     enableRenderRegistriesGuards(state, first);
-    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.First');
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, [RenderRegistryTable.TextureResolver, 'acme.First']);
     enableRenderRegistriesGuards(state, second);
-    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Second');
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, [RenderRegistryTable.TextureResolver, 'acme.Second']);
     expect(readMemoryLogEntries(firstSink)).toHaveLength(1);
     expect(readMemoryLogEntries(secondSink)).toHaveLength(1);
   });
@@ -120,9 +120,9 @@ describe('explainRenderRegistriesMisses', () => {
     const state = createRenderState();
     enableRenderRegistriesGuards(state, logState);
     const signals = enableRenderRegistrySignals(state);
-    emitSignal(signals.onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Texture');
-    emitSignal(signals.onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Texture');
-    emitSignal(signals.onRegistryMiss, RenderRegistryTable.ShapeCommandHandler, 'acme.ShapeCommand');
+    emitSignal(signals.onRegistryMiss, [RenderRegistryTable.TextureResolver, 'acme.Texture']);
+    emitSignal(signals.onRegistryMiss, [RenderRegistryTable.TextureResolver, 'acme.Texture']);
+    emitSignal(signals.onRegistryMiss, [RenderRegistryTable.ShapeCommandHandler, 'acme.ShapeCommand']);
 
     expect(explainRenderRegistriesMisses(state)).toEqual({
       misses: [

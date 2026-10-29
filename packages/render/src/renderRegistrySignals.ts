@@ -13,7 +13,7 @@ export function enableRenderRegistrySignals(state: RenderState): RenderRegistryS
   if (runtime.registryMiss !== null) return runtime.registryMiss.signals;
   const signals: RenderRegistrySignals = { onRegistryMiss: createSignal() };
   const emitter = ((registry, kind) =>
-    emitSignal(signals.onRegistryMiss, registry, kind)) as RenderRegistriesMissEmitter;
+    emitSignal(signals.onRegistryMiss, [registry, kind])) as RenderRegistriesMissEmitter;
   Object.assign(emitter, {
     clear: () => clearSignal(signals.onRegistryMiss),
     signals,
