@@ -7,6 +7,8 @@ pub(crate) use flight_platform::{
     PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
 };
 
+pub(crate) type UserAgentRuntimeWindow<'a> = Option<&'a Record<Unknown>>;
+
 pub(crate) fn detect_endianness_native() -> PlatformEndianness {
     let bytes = 0x0102_u16.to_ne_bytes();
     if bytes[0] == 0x01 {
@@ -16,23 +18,6 @@ pub(crate) fn detect_endianness_native() -> PlatformEndianness {
         return PlatformEndianness::Little;
     }
     return PlatformEndianness::Unknown;
-}
-
-pub(crate) fn parse_user_agent_runtime_native(win: Option<&Record<Unknown>>) -> PlatformRuntime {
-    let Some(win) = win else {
-        return PlatformRuntime::Unknown;
-    };
-    let versions = get_property(get_record_value(win, "process"), "versions");
-    if is_truthy(versions) && is_truthy(get_property(versions, "electron")) {
-        return PlatformRuntime::Electron;
-    }
-    if is_truthy(get_record_value(win, "__TAURI__")) {
-        return PlatformRuntime::Tauri;
-    }
-    if is_truthy(get_record_value(win, "Capacitor")) {
-        return PlatformRuntime::Capacitor;
-    }
-    return PlatformRuntime::Web;
 }
 
 fn get_property<'a>(value: Option<&'a Unknown>, key: &str) -> Option<&'a Unknown> {
@@ -74,4 +59,21 @@ fn is_truthy(value: Option<&Unknown>) -> bool {
         return *n != 0;
     }
     return true;
+}
+
+pub(crate) fn parse_user_agent_runtime_native(win: UserAgentRuntimeWindow<'_>) -> PlatformRuntime {
+    let Some(win) = win else {
+        return PlatformRuntime::Unknown;
+    };
+    let versions = get_property(get_record_value(win, "process"), "versions");
+    if is_truthy(versions) && is_truthy(get_property(versions, "electron")) {
+        return PlatformRuntime::Electron;
+    }
+    if is_truthy(get_record_value(win, "__TAURI__")) {
+        return PlatformRuntime::Tauri;
+    }
+    if is_truthy(get_record_value(win, "Capacitor")) {
+        return PlatformRuntime::Capacitor;
+    }
+    return PlatformRuntime::Web;
 }

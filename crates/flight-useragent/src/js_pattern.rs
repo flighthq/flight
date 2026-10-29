@@ -11,6 +11,36 @@
 //! Text is handled as UTF-16 code units, matching JavaScript string indexing. Every pattern and
 //! capture class is ASCII, so a match cannot consume either half of a surrogate pair.
 
+fn ascii_lower(value: u16) -> u16 {
+    if (0x0041..=0x005A).contains(&value) {
+        return value + 0x0020;
+    }
+    return value;
+}
+
+fn ascii_slice_to_string(text: &[u16], start: usize, end: usize) -> String {
+    let mut out = String::new();
+    for i in start..end {
+        let value = match text[i] {
+            0x002E => ".",
+            0x0030 => "0",
+            0x0031 => "1",
+            0x0032 => "2",
+            0x0033 => "3",
+            0x0034 => "4",
+            0x0035 => "5",
+            0x0036 => "6",
+            0x0037 => "7",
+            0x0038 => "8",
+            0x0039 => "9",
+            0x005F => "_",
+            _ => "",
+        };
+        out = format!("{out}{value}");
+    }
+    return out;
+}
+
 /// JS `/prefix(class+)/i.exec(text)?.[1]`: the first occurrence of `prefix` followed by at least
 /// one `class` char, capturing that greedy run.
 pub(crate) fn capture_after(
@@ -55,17 +85,6 @@ pub(crate) fn chars_of(text: &str) -> Vec<u16> {
     return text.encode_utf16().collect();
 }
 
-/// Replaces ASCII underscores with dots in a capture made only of digits, underscores, and dots.
-pub(crate) fn underscores_to_dots(value: &str) -> String {
-    let mut units: Vec<u16> = value.encode_utf16().collect();
-    for i in 0..units.len() {
-        if units[i] == 0x005F {
-            units[i] = 0x002E;
-        }
-    }
-    return ascii_slice_to_string(&units, 0, units.len());
-}
-
 /// JS `/needle/i.test(text)`.
 pub(crate) fn contains(text: &[u16], needle: &str) -> bool {
     return find_from(text, 0, needle).is_some();
@@ -102,6 +121,10 @@ pub(crate) fn find_from(text: &[u16], from: usize, needle: &str) -> Option<usize
     return (from..=text.len() - len).find(|&i| matches_at(text, i, needle));
 }
 
+pub(crate) fn is_ascii_digit(c: u16) -> bool {
+    return (0x0030..=0x0039).contains(&c);
+}
+
 /// `[\d.]`
 pub(crate) fn is_digit_or_dot(c: u16) -> bool {
     return is_ascii_digit(c) || c == 0x002E;
@@ -115,14 +138,6 @@ pub(crate) fn is_digit_or_underscore(c: u16) -> bool {
 /// `[\d_.]`
 pub(crate) fn is_digit_underscore_or_dot(c: u16) -> bool {
     return is_ascii_digit(c) || c == 0x005F || c == 0x002E;
-}
-
-pub(crate) fn is_ascii_digit(c: u16) -> bool {
-    return (0x0030..=0x0039).contains(&c);
-}
-
-pub(crate) fn is_not_js_whitespace(c: u16) -> bool {
-    return !is_js_whitespace(c);
 }
 
 /// JS LineTerminator: the characters `.` does not match.
@@ -144,6 +159,10 @@ pub(crate) fn is_js_whitespace(c: u16) -> bool {
         || c == 0x3000
         || c == 0xFEFF
         || is_js_line_terminator(c);
+}
+
+pub(crate) fn is_not_js_whitespace(c: u16) -> bool {
+    return !is_js_whitespace(c);
 }
 
 /// True when `needle` (ASCII, lowercase) matches `text` at `at` under JS non-unicode `/i` folding.
@@ -186,37 +205,18 @@ pub(crate) fn run_len(text: &[u16], at: usize, predicate: fn(u16) -> bool) -> us
     return end - start;
 }
 
-fn ascii_lower(value: u16) -> u16 {
-    if (0x0041..=0x005A).contains(&value) {
-        return value + 0x0020;
+/// Replaces ASCII underscores with dots in a capture made only of digits, underscores, and dots.
+pub(crate) fn underscores_to_dots(value: &str) -> String {
+    let mut units: Vec<u16> = value.encode_utf16().collect();
+    for i in 0..units.len() {
+        if units[i] == 0x005F {
+            units[i] = 0x002E;
+        }
     }
-    return value;
+    return ascii_slice_to_string(&units, 0, units.len());
 }
 
 fn utf16_len(value: &str) -> usize {
     let units: Vec<u16> = value.encode_utf16().collect();
     return units.len();
-}
-
-fn ascii_slice_to_string(text: &[u16], start: usize, end: usize) -> String {
-    let mut out = String::new();
-    for i in start..end {
-        let value = match text[i] {
-            0x002E => ".",
-            0x0030 => "0",
-            0x0031 => "1",
-            0x0032 => "2",
-            0x0033 => "3",
-            0x0034 => "4",
-            0x0035 => "5",
-            0x0036 => "6",
-            0x0037 => "7",
-            0x0038 => "8",
-            0x0039 => "9",
-            0x005F => "_",
-            _ => "",
-        };
-        out = format!("{out}{value}");
-    }
-    return out;
 }

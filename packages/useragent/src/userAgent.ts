@@ -11,7 +11,7 @@ import {
   matchesAt,
   positions,
 } from './jsPattern.ts';
-import type { PlatformEndianness, PlatformRuntime, Record, Unknown } from './userAgentNative.ts';
+import type { PlatformEndianness, PlatformRuntime, UserAgentRuntimeWindow } from './userAgentNative.ts';
 import {
   PlatformEngine,
   PlatformKind,
@@ -20,6 +20,11 @@ import {
   parseUserAgentRuntimeNative,
 } from './userAgentNative.ts';
 import { parseUserAgentOsVersion } from './userAgentParse.ts';
+
+/**
+ * Pointer width in bits, or `Unknown` when the architecture does not identify one.
+ */
+export type UserAgentPointerWidth = 32 | 64 | -1;
 
 /**
  * Probes host CPU byte order with a local two-byte write-then-read (the source's
@@ -203,7 +208,7 @@ export function parseUserAgentName(ua: string): PlatformName {
  * Pointer width in bits from a canonical arch token: 64 for "x64"/"arm64", 32 for "x86"/"arm", -1
  * otherwise (TS `32 | 64 | -1`).
  */
-export function parseUserAgentPointerWidth(arch: string): number {
+export function parseUserAgentPointerWidth(arch: string): UserAgentPointerWidth {
   if (arch === 'x64' || arch === 'arm64') {
     return 64;
   }
@@ -220,7 +225,7 @@ export function parseUserAgentPointerWidth(arch: string): number {
  * `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see `isTruthy`):
  * a nested object is a `Record<Unknown>` stored in the `Unknown`.
  */
-export function parseUserAgentRuntime(win?: Readonly<Record<Unknown>>): PlatformRuntime {
+export function parseUserAgentRuntime(win: UserAgentRuntimeWindow): PlatformRuntime {
   return parseUserAgentRuntimeNative(win);
 }
 
