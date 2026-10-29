@@ -298,6 +298,17 @@ fn compile_vitest_with_contract_alias_sources_internal(
         &program,
         &dependency_export_names,
     )?;
+    typescript::insert_std_mem_import_context(
+        &mut context,
+        program
+            .uses
+            .iter()
+            .chain(program.suites.iter().flat_map(|suite| &suite.uses)),
+        program
+            .helpers
+            .iter()
+            .map(|helper| helper.sig.ident.to_string()),
+    );
     typescript::insert_vitest_struct_context(
         &mut context,
         alias_programs.iter().flat_map(|program| &program.structs),

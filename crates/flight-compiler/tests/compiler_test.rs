@@ -705,7 +705,7 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
     // forms whose emission is not yet valid typed TypeScript fail closed.
     #[test]
     fn lowers_vec_retain_in_place_and_rejects_std_mem_moves() {
-        let retain = "((items, keep) => { let kept = 0; for (let index = 0; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } items.length = kept; })";
+        let retain = "(<T>(items: T[], keep: (item: T) => boolean): void => { let kept = 0; let index = 0; try { for (; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } } finally { const length = items.length; for (let rest = index; rest < length; rest += 1) { items[kept + rest - index] = items[rest]; } items.length = kept + length - index; } })";
         let source = r#"
 pub struct Range {
     pub start: u32,
@@ -782,6 +782,34 @@ mod retain {
             (
                 "pub fn f(a: &mut u32, b: &mut u32) { core::mem::swap(a, b); }\n",
                 "portable `std::mem::swap` has no portable lowering",
+            ),
+            (
+                "use std::mem::take;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
+                "portable `std::mem::take` has no portable lowering",
+            ),
+            (
+                "use std::mem::take as grab;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return grab(values); }\n",
+                "portable `std::mem::take` has no portable lowering",
+            ),
+            (
+                "use std::mem::{replace, swap};\npub fn f(a: &mut u32, b: &mut u32) { swap(a, b); }\n",
+                "portable `std::mem::swap` has no portable lowering",
+            ),
+            (
+                "use std::{mem::{self as m}, vec::Vec};\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return m::take(values); }\n",
+                "portable `std::mem::take` has no portable lowering",
+            ),
+            (
+                "use std::mem as m;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return m::take(values); }\n",
+                "portable `std::mem::take` has no portable lowering",
+            ),
+            (
+                "use std::mem::*;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
+                "portable `std::mem::take` has no portable lowering",
+            ),
+            (
+                "use core::mem::replace;\npub fn f(value: &mut u32) -> u32 { return replace(value, 1); }\n",
+                "portable `std::mem::replace` has no portable lowering",
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
@@ -8986,4 +9014,32 @@ mod easing_family {
         assert!(!output.contains("  EPSILON,"));
         assert!(!output.contains("  Family,"));
     }
+}
+
+// Rust's own `Vec::retain` unwind behavior, which the TypeScript lowering mirrors (exercised against the
+// generated code by scripts/flight-compile-retain.test.ts): kept elements, then the element whose predicate
+// panicked and the unprocessed tail.
+#[test]
+fn vec_retain_unwind_reference() {
+    fn retain_even_until(values: &[i32], stop: i32) -> Vec<i32> {
+        let mut values = values.to_vec();
+        let previous_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(|_| {}));
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            values.retain(|value| {
+                if *value == stop {
+                    panic!("stop");
+                }
+                return *value % 2 == 0;
+            });
+        }));
+        std::panic::set_hook(previous_hook);
+        return values;
+    }
+
+    assert_eq!(retain_even_until(&[1, 2, 3, 4], 3), vec![2, 3, 4]);
+    assert_eq!(retain_even_until(&[1, 3, 5, 2, 7, 9], 7), vec![2, 7, 9]);
+    assert_eq!(retain_even_until(&[2, 4, 6], 4), vec![2, 4, 6]);
+    assert_eq!(retain_even_until(&[1, 2, 3], 1), vec![1, 2, 3]);
+    assert_eq!(retain_even_until(&[1, 2, 3, 4], 99), vec![2, 4]);
 }

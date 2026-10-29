@@ -33,6 +33,13 @@ const EXPORT_NAME_MARKER: &str = "@export-name:";
 // item of that package's contract module and `@dependency-export-name-target:module|rust:Name`
 // carries its TypeScript name.
 const DEPENDENCY_EXPORT_NAME_MARKER: &str = "@dependency-export-name:";
+// `std::mem` provenance recorded from `use` items (see `insert_std_mem_import_context`).
+const STD_MEM_FUNCTION_MARKER: &str = "@std-mem-function:";
+const STD_MEM_FUNCTION_TARGET_MARKER: &str = "@std-mem-function-target:";
+const STD_MEM_FUNCTIONS: &[&str] = &["replace", "swap", "take"];
+const STD_MEM_GLOB_MARKER: &str = "@std-mem-glob";
+const STD_MEM_MODULE_MARKER: &str = "@std-mem-module:";
+const STD_MEM_SHADOWED_MARKER: &str = "@std-mem-shadowed:";
 const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
 // A dependency item the current source binds by its mapped name: `@dependency-export-name-binding:
 // Name|module|rust`. `@dependency-export-name-bindings` marks that at least one exists.
@@ -692,6 +699,72 @@ fn collect_definitely_assigned_fields(
         }
     }
     return true;
+}
+
+// Records how `use` items bring `std::mem` (or `core::mem`) into scope: the module itself (`use
+// std::mem;`, `use std::mem as m;`, `use std::{mem, ...};`), single functions (`use std::mem::take;`,
+// `use std::mem::{replace as put, swap};`), or every function (`use std::mem::*;`). Local
+// declarations named like a `std::mem` function shadow a wildcard import.
+pub(crate) fn insert_std_mem_import_context<'a>(
+    context: &mut HashSet<String>,
+    uses: impl Iterator<Item = &'a syn::ItemUse>,
+    local_names: impl Iterator<Item = String>,
+) {
+    fn collect(tree: &syn::UseTree, prefix: &mut Vec<String>, context: &mut HashSet<String>) {
+        let in_mem =
+            prefix.len() == 2 && (prefix[0] == "std" || prefix[0] == "core") && prefix[1] == "mem";
+        let at_root = prefix.len() == 1 && (prefix[0] == "std" || prefix[0] == "core");
+        match tree {
+            syn::UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(&path.tree, prefix, context);
+                prefix.pop();
+            }
+            syn::UseTree::Group(group) => {
+                for item in &group.items {
+                    collect(item, prefix, context);
+                }
+            }
+            syn::UseTree::Name(name) if in_mem => {
+                let name = name.ident.to_string();
+                if name == "self" {
+                    context.insert(format!("{STD_MEM_MODULE_MARKER}mem"));
+                } else {
+                    context.insert(format!("{STD_MEM_FUNCTION_MARKER}{name}"));
+                    context.insert(format!("{STD_MEM_FUNCTION_TARGET_MARKER}{name}:{name}"));
+                }
+            }
+            syn::UseTree::Rename(rename) if in_mem => {
+                let local = rename.rename.to_string();
+                if rename.ident == "self" {
+                    context.insert(format!("{STD_MEM_MODULE_MARKER}{local}"));
+                } else {
+                    context.insert(format!("{STD_MEM_FUNCTION_MARKER}{local}"));
+                    context.insert(format!(
+                        "{STD_MEM_FUNCTION_TARGET_MARKER}{local}:{}",
+                        rename.ident
+                    ));
+                }
+            }
+            syn::UseTree::Glob(_) if in_mem => {
+                context.insert(STD_MEM_GLOB_MARKER.to_string());
+            }
+            syn::UseTree::Name(name) if at_root && name.ident == "mem" => {
+                context.insert(format!("{STD_MEM_MODULE_MARKER}mem"));
+            }
+            syn::UseTree::Rename(rename) if at_root && rename.ident == "mem" => {
+                context.insert(format!("{STD_MEM_MODULE_MARKER}{}", rename.rename));
+            }
+            syn::UseTree::Glob(_) | syn::UseTree::Name(_) | syn::UseTree::Rename(_) => {}
+        }
+    }
+
+    for item_use in uses {
+        collect(&item_use.tree, &mut Vec::new(), context);
+    }
+    for name in local_names {
+        context.insert(format!("{STD_MEM_SHADOWED_MARKER}{name}"));
+    }
 }
 
 // Records the dependency `export-name` mappings a Rust test module imports, across its top-level and
@@ -1361,12 +1434,17 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     return (named_type(rust_type).as_deref() == Some("Vec")).then_some(false);
 }
 
-// The function a `std::mem::f` / `core::mem::f` path, or a `mem::take` / `mem::replace` / `mem::swap`
-// path through `use std::mem`, names. These move values in place, which has no TypeScript lowering.
-fn std_mem_function(expression: &Expr) -> Option<String> {
+// The `std::mem` function a call path names: `std::mem::f` / `core::mem::f`; `mem::take` /
+// `mem::replace` / `mem::swap`; `m::f` through a `use std::mem [as m]` module import; or `f` through a
+// direct, aliased, grouped, or wildcard `use std::mem::...` import recorded by
+// `insert_std_mem_import_context`. These move values in place, which has no TypeScript lowering.
+fn std_mem_function(expression: &Expr, context: &HashSet<String>) -> Option<String> {
     let Expr::Path(path) = expression else {
         return None;
     };
+    if path.qself.is_some() {
+        return None;
+    }
     let segments = path
         .path
         .segments
@@ -1378,12 +1456,33 @@ fn std_mem_function(expression: &Expr) -> Option<String> {
             Some(name.clone())
         }
         [module, name]
-            if module == "mem" && matches!(name.as_str(), "replace" | "swap" | "take") =>
+            if (module == "mem" && matches!(name.as_str(), "replace" | "swap" | "take"))
+                || context.contains(&format!("{STD_MEM_MODULE_MARKER}{module}")) =>
         {
             Some(name.clone())
         }
+        [local] => std_mem_imported_function(context, local),
         _ => None,
     };
+}
+
+// The `std::mem` function a single-segment call name was imported as, if any.
+// flight-lint: allow(hashmap-iteration) each local name has at most one recorded std::mem function
+fn std_mem_imported_function(context: &HashSet<String>, local: &str) -> Option<String> {
+    if context.contains(&format!("{STD_MEM_FUNCTION_MARKER}{local}")) {
+        let prefix = format!("{STD_MEM_FUNCTION_TARGET_MARKER}{local}:");
+        return context
+            .iter()
+            .find_map(|marker| marker.strip_prefix(&prefix))
+            .map(str::to_string);
+    }
+    if context.contains(STD_MEM_GLOB_MARKER)
+        && !context.contains(&format!("{STD_MEM_SHADOWED_MARKER}{local}"))
+        && STD_MEM_FUNCTIONS.contains(&local)
+    {
+        return Some(local.to_string());
+    }
+    return None;
 }
 
 fn transparent_data_union(rust_enum: &syn::ItemEnum) -> bool {
@@ -5168,7 +5267,7 @@ pub(crate) fn emit_expression(
         }
         Expr::Block(block) => emit_block_expression(&block.block, entities),
         Expr::Call(call) => {
-            if let Some(name) = std_mem_function(&call.func) {
+            if let Some(name) = std_mem_function(&call.func, entities) {
                 return Err(compile_error(format!(
                     "portable `std::mem::{name}` has no portable lowering"
                 )));
@@ -8067,9 +8166,12 @@ fn emit_method_call(
         }
         // In place, like Rust: the predicate runs once per element in forward order, kept elements move
         // forward in the same array (keeping their identity and order), and the array is then truncated.
+        // The generic parameter types the predicate from the receiver. When the predicate throws, the
+        // `finally` keeps the unprocessed tail (from the throwing element on) after the kept elements, as
+        // Rust's retain guard backshifts it during unwind.
         "retain" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
-                "((items, keep) => {{ let kept = 0; for (let index = 0; index < items.length; index += 1) {{ const item = items[index]; if (keep(item)) {{ items[kept] = item; kept += 1; }} }} items.length = kept; }})({receiver}, {})",
+                "(<T>(items: T[], keep: (item: T) => boolean): void => {{ let kept = 0; let index = 0; try {{ for (; index < items.length; index += 1) {{ const item = items[index]; if (keep(item)) {{ items[kept] = item; kept += 1; }} }} }} finally {{ const length = items.length; for (let rest = index; rest < length; rest += 1) {{ items[kept + rest - index] = items[rest]; }} items.length = kept + length - index; }} }})({receiver}, {})",
                 arguments[0]
             ))
         }
@@ -9317,6 +9419,14 @@ pub(crate) fn emit_program(
         &program.constants.iter().collect::<Vec<_>>(),
         &program.statics.iter().collect::<Vec<_>>(),
     )?;
+    insert_std_mem_import_context(
+        &mut expression_context,
+        program.uses.iter(),
+        program
+            .functions
+            .iter()
+            .map(|function| function.sig.ident.to_string()),
+    );
     let (mut value_imports, mut type_imports) = cross_crate_imports(program, &expression_context);
     let mut source_context = expression_context.clone();
     if program.nullable_options {
