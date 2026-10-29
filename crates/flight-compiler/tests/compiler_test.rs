@@ -3905,6 +3905,22 @@ pub fn vec_default(value: Option<Vec<i32>>) -> Vec<i32> {
     }
 
     #[test]
+    fn lowers_unwrap_or_else_with_closure_default() {
+        let source = r#"
+pub fn with_default(value: Option<i32>, fallback: i32) -> i32 {
+    return value.unwrap_or_else(|| fallback * 2);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("?? fallback * 2"),
+            "unwrap_or_else with zero-arg closure should use nullish coalescing: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_clone_from_to_object_assign() {
         let source = r#"
 pub struct Point { pub x: f32, pub y: f32 }

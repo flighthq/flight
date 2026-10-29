@@ -12310,6 +12310,29 @@ fn emit_method_call(
         {
             Ok(receiver)
         }
+        "unwrap_or_else"
+            if arguments.len() == 1
+                && (expression_contains_method(&call.receiver, "read")
+                    || expression_contains_method(&call.receiver, "write"))
+                && matches!(
+                    peel_reference_and_paren(&call.args[0]),
+                    Expr::Path(_)
+                ) =>
+        {
+            Ok(receiver)
+        }
+        "unwrap_or_else" if arguments.len() == 1 => {
+            if let Expr::Closure(closure) = peel_reference_and_paren(&call.args[0]) {
+                if closure.inputs.is_empty() {
+                    let body = emit_expression(&closure.body, entities)?;
+                    Ok(format!("({receiver} ?? {body})"))
+                } else {
+                    Ok(format!("({receiver} ?? ({})())", arguments[0]))
+                }
+            } else {
+                Ok(format!("({receiver} ?? ({})())", arguments[0]))
+            }
+        }
         "unwrap_or"
             if arguments.len() == 1
                 && expression_contains_method(&call.receiver, "partial_cmp") =>
