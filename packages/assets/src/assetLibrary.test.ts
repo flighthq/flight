@@ -271,7 +271,7 @@ describe('loadAssetGroup', () => {
     registerAssetManifest(library, manifest);
 
     const ticks: AssetLoadProgress[] = [];
-    const progress = createSignal<(p: Readonly<AssetLoadProgress>) => void>();
+    const progress = createSignal<Readonly<AssetLoadProgress>>();
     connectSignal(progress, (p) => {
       ticks.push({ loaded: p.loaded, total: p.total });
     });

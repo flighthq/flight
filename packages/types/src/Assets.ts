@@ -97,5 +97,5 @@ export interface AssetLoadProgress {
 // Options for loadAssetGroup. `progress` is an opt-in signal emitted with an AssetLoadProgress each
 // time a scheduled group member settles, composing the underlying loader's aggregate progress.
 export interface AssetGroupLoadOptions {
-  progress?: Signal<(progress: Readonly<AssetLoadProgress>) => void>;
+  progress?: Signal<Readonly<AssetLoadProgress>>;
 }
