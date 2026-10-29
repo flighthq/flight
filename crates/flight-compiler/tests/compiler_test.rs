@@ -544,6 +544,56 @@ pub fn same_serial(a: &Source, b: &Source) -> bool {
         );
     }
 
+    // A shadowing `let x = x.clone()` over a shared handle erases to the binding itself, so it emits no
+    // self-assignment; a shadow whose initializer computes a new value still rebinds.
+    #[test]
+    fn omits_shadowing_rebinds_that_erase_to_the_binding_itself() {
+        let source = r#"
+use std::sync::Arc;
+
+pub struct Node {
+    pub value: i32,
+}
+
+pub fn reader(node: Arc<Node>) -> Arc<dyn Fn() -> i32 + Send + Sync> {
+    return Arc::new({
+        let node = node.clone();
+        move || {
+            return node.value;
+        }
+    });
+}
+
+pub fn offset(node: &Arc<Node>, delta: i32) -> i32 {
+    let node = Arc::clone(node);
+    let delta = delta + 1;
+    return node.value + delta;
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export interface Node {
+  value: number;
+}
+
+export function reader(node: Readonly<Node>): () => number {
+  return (() => {
+  return () => {
+  return node.value;
+};
+})();
+}
+
+export function offset(node: Readonly<Readonly<Node>>, delta: number): number {
+  delta = delta + 1;
+  return node.value + delta;
+}
+"#
+        );
+    }
+
+    // Ordinary calls lower to operator expressions too (`Arc::ptr_eq(a, b)` emits `a === b`), so the
+    // operand guard classifies emitted text rather than enumerating method calls.
     // Ordinary calls lower to operator expressions too (`Arc::ptr_eq(a, b)` emits `a === b`), so the
     // operand guard classifies emitted text rather than enumerating method calls.
     #[test]
