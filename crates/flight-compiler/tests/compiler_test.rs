@@ -758,7 +758,9 @@ pub struct Capability {
     fn lowers_qualified_and_aliased_standard_pinned_futures() {
         for source in [
             "pub type P = std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = u32> + std::marker::Send>>;\n",
-            "pub type P = ::core::pin::Pin<alloc::boxed::Box<dyn core::future::Future<Output = u32> + core::marker::Send + Sync + 'static>>;\n",
+            "extern crate alloc;\npub type P = ::core::pin::Pin<alloc::boxed::Box<dyn core::future::Future<Output = u32> + core::marker::Send + Sync + 'static>>;\n",
+            "extern crate std as standard;\npub type P = standard::pin::Pin<standard::boxed::Box<dyn Future<Output = u32> + Send>>;\n",
+            "#![no_std]\nextern crate std;\npub type P = std::pin::Pin<std::boxed::Box<dyn Future<Output = u32> + Send>>;\n",
             "use std::boxed::Box as Owned;\nuse std::future::Future as Pending;\nuse std::marker::Send as Movable;\nuse std::pin::Pin as Pinned;\npub type P = Pinned<Owned<dyn Pending<Output = u32> + Movable>>;\n",
             "use std as standard;\nuse std::pin;\npub type P = pin::Pin<standard::boxed::Box<dyn Future<Output = u32>>>;\n",
             "use std::pin::{self as pinning};\npub type P = pinning::Pin<Box<dyn Future<Output = u32> + Send>>;\n",
@@ -812,6 +814,30 @@ pub struct Capability {
             (
                 "pub type P = shapes::Pin<Box<dyn Future<Output = u32>>>;\n",
                 unresolved,
+            ),
+            (
+                "#![no_std]\n\nextern crate future_shapes as std;\n\npub type LocalPending = std::pin::Pin<\n    std::boxed::Box<dyn std::future::Future<Output = u32>>,\n>;\n",
+                "portable `Pin` here resolves to `future_shapes::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`",
+            ),
+            (
+                "extern crate future_shapes as std;\nuse std::pin::Pin;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                "portable `Pin` here resolves to `future_shapes::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`",
+            ),
+            (
+                "extern crate future_shapes as std;\npub type P = ::std::pin::Pin<Box<dyn Future<Output = u32>>>;\n",
+                "portable `Pin` here resolves to `future_shapes::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`",
+            ),
+            (
+                "#![no_std]\npub type P = std::pin::Pin<std::boxed::Box<dyn Future<Output = u32>>>;\n",
+                unresolved,
+            ),
+            (
+                "#![no_std]\npub type P = core::pin::Pin<Box<dyn Future<Output = u32>>>;\n",
+                not_standard,
+            ),
+            (
+                "pub type P = core::pin::Pin<alloc::boxed::Box<dyn Future<Output = u32>>>;\n",
+                not_standard,
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();

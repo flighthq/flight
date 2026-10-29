@@ -51,7 +51,36 @@ const SHADOW_CONSUMER_FIXTURE = `use future_shapes::{Box, Future, Pin};
 pub type LocalPending = Pin<Box<dyn Future<Output = u32>>>;
 `;
 
-const QUALIFIED_FIXTURE = `pub type Qualified = std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = u32> + std::marker::Send>>;
+// Valid \`no_std\` Rust whose \`extern crate ... as std\` makes the \`std\` root name an unrelated crate.
+const EXTERN_SHADOW_DEPENDENCY_FIXTURE = `#![no_std]
+
+pub mod pin {
+    pub struct Pin<T: ?Sized>(pub *const T);
+}
+
+pub mod boxed {
+    pub struct Box<T: ?Sized>(pub *const T);
+}
+
+pub mod future {
+    pub trait Future {
+        type Output;
+    }
+}
+`;
+
+const EXTERN_SHADOW_CONSUMER_FIXTURE = `#![no_std]
+
+extern crate future_shapes as std;
+
+pub type LocalPending = std::pin::Pin<
+    std::boxed::Box<dyn std::future::Future<Output = u32>>,
+>;
+`;
+
+const QUALIFIED_FIXTURE = `extern crate alloc;
+
+pub type Qualified = std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = u32> + std::marker::Send>>;
 
 pub type Rooted = ::core::pin::Pin<alloc::boxed::Box<dyn core::future::Future<Output = String> + Send + Sync>>;
 `;
@@ -87,6 +116,29 @@ function compileRust(name: string, rust: string): { error: string; typescript: s
   const result = spawnSync(compilerPath, ['generate', '--source', source, '--out', out], { encoding: 'utf8' });
   if (result.status !== 0) return { error: result.stderr.trim(), typescript: '' };
   return { error: '', typescript: readFileSync(out, 'utf8') };
+}
+
+// Builds a dependency crate named \`future_shapes\` and a consumer linked against it with rustc, throwing if
+// either is not valid Rust.
+function buildRustCrates(dependencyRust: string, consumerRust: string): void {
+  const dependency = join(workDirectory, 'future_shapes.rs');
+  const consumer = join(workDirectory, 'consumer.rs');
+  writeFileSync(dependency, dependencyRust);
+  writeFileSync(consumer, consumerRust);
+  const common = ['--edition', '2024', '--crate-type', 'lib', '--out-dir', workDirectory, '-A', 'warnings'];
+  execFileSync('rustc', [...common, '--crate-name', 'future_shapes', dependency], { stdio: 'pipe' });
+  execFileSync(
+    'rustc',
+    [
+      ...common,
+      '--crate-name',
+      'consumer',
+      '--extern',
+      `future_shapes=${join(workDirectory, 'libfuture_shapes.rlib')}`,
+      consumer,
+    ],
+    { stdio: 'pipe' },
+  );
 }
 
 function strictDiagnostics(name: string, typescript: string): string[] {
@@ -167,47 +219,18 @@ describe('flight-compile pinned future lowering', () => {
   });
 
   it('fails closed for the two-crate look-alike Pin, Box and Future', () => {
-    // Both crates are valid Rust: rustc builds the dependency and the consumer against it.
-    const dependency = join(workDirectory, 'future_shapes.rs');
-    const consumer = join(workDirectory, 'consumer.rs');
-    writeFileSync(dependency, SHADOW_DEPENDENCY_FIXTURE);
-    writeFileSync(consumer, SHADOW_CONSUMER_FIXTURE);
-    execFileSync(
-      'rustc',
-      [
-        '--edition',
-        '2024',
-        '--crate-type',
-        'lib',
-        '--crate-name',
-        'future_shapes',
-        '--out-dir',
-        workDirectory,
-        dependency,
-      ],
-      { stdio: 'pipe' },
-    );
-    execFileSync(
-      'rustc',
-      [
-        '--edition',
-        '2024',
-        '--crate-type',
-        'lib',
-        '--crate-name',
-        'consumer',
-        '--out-dir',
-        workDirectory,
-        '--extern',
-        `future_shapes=${join(workDirectory, 'libfuture_shapes.rlib')}`,
-        '-A',
-        'warnings',
-        consumer,
-      ],
-      { stdio: 'pipe' },
-    );
+    // Each pair is valid Rust: rustc builds the dependency, then the consumer against it.
+    for (const [dependencyFixture, consumerFixture] of [
+      [SHADOW_DEPENDENCY_FIXTURE, SHADOW_CONSUMER_FIXTURE],
+      [EXTERN_SHADOW_DEPENDENCY_FIXTURE, EXTERN_SHADOW_CONSUMER_FIXTURE],
+    ] as const) {
+      buildRustCrates(dependencyFixture, consumerFixture);
+    }
     expect(compileRust('consumer', SHADOW_CONSUMER_FIXTURE).error).toBe(
       'error: portable `Pin` here resolves to `future_shapes::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',
+    );
+    expect(compileRust('extern-consumer', EXTERN_SHADOW_CONSUMER_FIXTURE).error).toBe(
+      'error: portable `Pin` here resolves to `future_shapes::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',
     );
     for (const [rust, expected] of [
       [

@@ -21,8 +21,12 @@ pub(crate) struct Program {
     pub(crate) enums: Vec<ItemEnum>,
     // `export-name` directives: Rust item name to its explicit TypeScript name.
     pub(crate) export_names: BTreeMap<String, String>,
+    // `extern crate` items, whose (renamed) bindings can stand in for the `std` / `core` / `alloc` roots.
+    pub(crate) extern_crates: Vec<syn::ItemExternCrate>,
     pub(crate) frozen_objects: BTreeMap<String, String>,
     pub(crate) functions: Vec<ItemFn>,
+    // `#![no_std]`: the `std` root and the `std` prelude's `Box` are absent unless bound explicitly.
+    pub(crate) no_std: bool,
     pub(crate) nullable_options: bool,
     // Unit enums lowered to a type-only TS union of their declared integer discriminants, in
     // declaration order (`numeric-union`).
@@ -36,7 +40,7 @@ pub(crate) struct Program {
     pub(crate) type_aliases: Vec<ItemType>,
     // Every item the source declares in the type namespace (structs, enums, unions, traits, aliases,
     // modules), so `use`-path resolution can see local shadows of standard names.
-    pub(crate) type_names: HashSet<String>,
+    pub(crate) type_names: BTreeSet<String>,
     pub(crate) uses: Vec<ItemUse>,
 }
 
@@ -336,6 +340,11 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let string_unions = string_union_metadata.styles;
     let string_union_values = string_union_metadata.values;
 
+    let no_std = file
+        .attrs
+        .iter()
+        .any(|attribute| attribute.path().is_ident("no_std"));
+    let mut extern_crates = Vec::new();
     let type_names = file
         .items
         .iter()
@@ -349,7 +358,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             Item::Union(item) => Some(item.ident.to_string()),
             _ => None,
         })
-        .collect::<HashSet<_>>();
+        .collect::<BTreeSet<_>>();
     for item in &file.items {
         if let Item::Struct(structure) = item
             && has_entity_runtime(structure)
@@ -399,11 +408,8 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             Item::Union(item) if is_public(&item.vis) => {
                 return Err(unsupported_public("union", &item.ident.to_string()));
             }
-            Item::ExternCrate(_)
-            | Item::ForeignMod(_)
-            | Item::Impl(_)
-            | Item::Macro(_)
-            | Item::Mod(_) => {}
+            Item::ExternCrate(item) => extern_crates.push(item),
+            Item::ForeignMod(_) | Item::Impl(_) | Item::Macro(_) | Item::Mod(_) => {}
             _ => {}
         }
     }
@@ -439,8 +445,10 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         entity_runtime_states,
         enums,
         export_names,
+        extern_crates,
         frozen_objects,
         functions,
+        no_std,
         nullable_options,
         numeric_unions,
         standard_constants,

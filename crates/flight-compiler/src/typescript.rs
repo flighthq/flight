@@ -45,6 +45,8 @@ const STD_MEM_SHADOWED_MARKER: &str = "@std-mem-shadowed:";
 // locally declared type-namespace name.
 const TYPE_USE_MARKER: &str = "@type-use:";
 const TYPE_USE_TARGET_MARKER: &str = "@type-use-target:";
+const TYPE_EXTERN_CRATE_MARKER: &str = "@type-extern-crate:";
+const TYPE_NO_STD_MARKER: &str = "@type-no-std";
 const TYPE_USE_GLOB_MARKER: &str = "@type-use-glob:";
 const TYPE_LOCAL_MARKER: &str = "@type-local:";
 const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
@@ -707,6 +709,35 @@ fn collect_definitely_assigned_fields(
         }
     }
     return true;
+}
+
+// Records a program's type-namespace provenance: its `use` items and local declarations (see
+// `insert_type_path_context`), each `extern crate` binding (`extern crate a as b;` binds `b` to crate
+// `a`, `self` to this crate), and `#![no_std]`.
+pub(crate) fn insert_program_type_path_context(context: &mut HashSet<String>, program: &Program) {
+    insert_type_path_context(
+        context,
+        program.uses.iter(),
+        program.type_names.iter().cloned(),
+    );
+    for extern_crate in &program.extern_crates {
+        let name = extern_crate.ident.to_string();
+        let local = extern_crate
+            .rename
+            .as_ref()
+            .map_or_else(|| name.clone(), |(_, rename)| rename.to_string());
+        let target = if name == "self" {
+            "crate".to_string()
+        } else {
+            name
+        };
+        context.insert(format!(
+            "{TYPE_EXTERN_CRATE_MARKER}{local}{PROVENANCE_SEPARATOR}{target}"
+        ));
+    }
+    if program.no_std {
+        context.insert(TYPE_NO_STD_MARKER.to_string());
+    }
 }
 
 // Records how `use` items bring `std::mem` (or `core::mem`) into scope: the module itself (`use
@@ -1647,6 +1678,28 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     return (named_type(rust_type).as_deref() == Some("Vec")).then_some(false);
 }
 
+// `path` with its root crate made canonical: an `extern crate` binding is replaced by the crate it names;
+// `std` without one is absent under `#![no_std]`, and `alloc` is never in scope without one.
+// flight-lint: allow(hashmap-iteration) each local name has at most one recorded extern crate
+fn canonical_type_path_root(
+    mut path: Vec<String>,
+    context: &HashSet<String>,
+) -> Option<Vec<String>> {
+    let first = path.first()?.clone();
+    let prefix = format!("{TYPE_EXTERN_CRATE_MARKER}{first}{PROVENANCE_SEPARATOR}");
+    if let Some(target) = context
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix))
+    {
+        path[0] = target.to_string();
+        return Some(path);
+    }
+    if (first == "std" && context.contains(TYPE_NO_STD_MARKER)) || first == "alloc" {
+        return None;
+    }
+    return Some(path);
+}
+
 // Whether a resolved path names the standard-library item `name`: `Pin` in `std`/`core::pin`, `Box`
 // in `std`/`alloc::boxed`, `Future` in `std`/`core::future`, and `Send` / `Sync` in
 // `std`/`core::marker`.
@@ -1675,7 +1728,7 @@ fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<
         .collect::<Vec<_>>();
     let (first, rest) = segments.split_first()?;
     if path.leading_colon.is_some() {
-        return Some(segments);
+        return canonical_type_path_root(segments, context);
     }
     if context.contains(&format!("{TYPE_USE_MARKER}{first}")) {
         let prefix = format!("{TYPE_USE_TARGET_MARKER}{first}{PROVENANCE_SEPARATOR}");
@@ -1684,7 +1737,7 @@ fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<
             .find_map(|marker| marker.strip_prefix(&prefix))?;
         let mut resolved = imported.split("::").map(str::to_string).collect::<Vec<_>>();
         resolved.extend(rest.iter().cloned());
-        return Some(resolved);
+        return canonical_type_path_root(resolved, context);
     }
     if context.contains(&format!("{TYPE_LOCAL_MARKER}{first}"))
         || matches!(first.as_str(), "crate" | "self" | "super" | "Self")
@@ -1698,24 +1751,33 @@ fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<
     let globs = context
         .iter()
         .filter_map(|marker| marker.strip_prefix(TYPE_USE_GLOB_MARKER))
-        .collect::<Vec<_>>();
-    let standard_root = |path: &str| {
-        return matches!(path.split("::").next(), Some("std" | "core" | "alloc"));
-    };
-    if globs.iter().any(|glob| !standard_root(glob)) {
+        .map(|glob| {
+            return canonical_type_path_root(
+                glob.split("::").map(str::to_string).collect(),
+                context,
+            );
+        })
+        .collect::<Option<Vec<_>>>()?;
+    if globs.iter().any(|glob| {
+        !matches!(
+            glob.first().map(String::as_str),
+            Some("std" | "core" | "alloc")
+        )
+    }) {
         return None;
     }
     if rest.is_empty() {
         for glob in globs {
-            let candidate = format!("{glob}::{first}")
-                .split("::")
-                .map(str::to_string)
+            let candidate = glob
+                .into_iter()
+                .chain(std::iter::once(first.clone()))
                 .collect::<Vec<_>>();
             if is_standard_type_path(&candidate, first) {
                 return Some(candidate);
             }
         }
         let prelude = match first.as_str() {
+            "Box" if context.contains(TYPE_NO_STD_MARKER) => return None,
             "Box" => "std::boxed::Box",
             "Future" => "core::future::Future",
             "Send" => "core::marker::Send",
@@ -1726,8 +1788,12 @@ fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<
         };
         return Some(prelude.split("::").map(str::to_string).collect());
     }
-    if matches!(first.as_str(), "std" | "core" | "alloc") {
-        return Some(segments);
+    if matches!(first.as_str(), "std" | "core" | "alloc")
+        || marker_suffixes(context, TYPE_EXTERN_CRATE_MARKER)
+            .iter()
+            .any(|binding| binding.split(PROVENANCE_SEPARATOR).next() == Some(first.as_str()))
+    {
+        return canonical_type_path_root(segments, context);
     }
     return None;
 }
@@ -10104,11 +10170,7 @@ pub(crate) fn emit_program(
             .iter()
             .map(|function| function.sig.ident.to_string()),
     );
-    insert_type_path_context(
-        &mut expression_context,
-        program.uses.iter(),
-        program.type_names.iter().cloned(),
-    );
+    insert_program_type_path_context(&mut expression_context, program);
     let (mut value_imports, mut type_imports) = cross_crate_imports(program, &expression_context);
     let mut source_context = expression_context.clone();
     if program.nullable_options {
@@ -11830,7 +11892,6 @@ fn pattern_is_mutable(pattern: &Pat) -> bool {
     };
 }
 
-// flight-lint: allow(hashmap-iteration) type namespace names only populate a HashSet context
 fn preferred_aliases(
     program: &Program,
     alias_programs: &[Program],
@@ -11842,11 +11903,7 @@ fn preferred_aliases(
                 continue;
             }
             let mut context = alias_program.entities.clone();
-            insert_type_path_context(
-                &mut context,
-                alias_program.uses.iter(),
-                alias_program.type_names.iter().cloned(),
-            );
+            insert_program_type_path_context(&mut context, alias_program);
             let rendered = emit_type(&type_alias.ty, &context)?;
             if rendered.contains("=>") {
                 aliases
