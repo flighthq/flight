@@ -502,6 +502,14 @@ fn emit_assertion(
         }
     };
     if matches!(name.as_str(), "assert_eq" | "assert_ne") && arguments.len() >= 2 {
+        // A literal `None` compares as the absent value of the other operand: `null` for a
+        // `nullable-option` return or field, `undefined` otherwise.
+        if crate::typescript::expression_is_path(unparenthesized(&arguments[1]), "None") {
+            expected = crate::typescript::option_absent_value(&arguments[0], context).to_string();
+        }
+        if crate::typescript::expression_is_path(unparenthesized(&arguments[0]), "None") {
+            actual = crate::typescript::option_absent_value(&arguments[1], context).to_string();
+        }
         if is_array_expression(&arguments[1]) {
             actual = format!("Array.from({actual})");
         }

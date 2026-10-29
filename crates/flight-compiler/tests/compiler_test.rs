@@ -4046,6 +4046,135 @@ pub fn sample_count(mesh: &Mesh, extra: Box<Int16Array>) -> usize {
     }
 
     #[test]
+    fn represents_designated_option_returns_and_fields_as_nullable() {
+        let source = r#"
+//! flight-compiler: nullable-option find_scale Explanation.contour
+
+pub struct Explanation {
+    pub supported: bool,
+    pub contour: Option<f64>,
+    pub detail: Option<f64>,
+}
+
+pub fn find_scale(values: &[f64], tolerance: Option<f64>) -> Option<f64> {
+    let limit = tolerance.unwrap_or(0.25);
+    if values.is_empty() {
+        return None;
+    }
+    if values[0] > limit {
+        return Some(values[0]);
+    }
+    return lookup(values);
+}
+
+pub fn lookup(values: &[f64]) -> Option<f64> {
+    if values.len() > 1 {
+        return Some(values[1]);
+    }
+    return None;
+}
+
+pub fn explain(values: &[f64]) -> Explanation {
+    let found = lookup(values);
+    let scale = find_scale(values, None);
+    if let Some(value) = scale {
+        return Explanation { supported: value > 0.0, contour: found, detail: None };
+    }
+    return Explanation { supported: false, contour: None, detail: found };
+}
+"#;
+        let report = r#"
+use crate::scales::*;
+
+pub fn has_scale(values: &[f64]) -> bool {
+    let scale = find_scale(values, Some(0.5));
+    return scale.is_some();
+}
+
+pub fn contour_or_zero(values: &[f64]) -> f64 {
+    let explanation = explain(values);
+    return explanation.contour.unwrap_or(0.0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "export interface Explanation {\n  supported: boolean;\n  contour: number | null;\n  detail?: number;\n}\n"
+        ));
+        assert!(output.contains(
+            "export function findScale(values: Readonly<number[]>, tolerance?: number): number | null {"
+        ));
+        assert!(output.contains("    return null;\n"));
+        assert!(output.contains("    return values[0];\n"));
+        assert!(output.contains("  return (lookup(values)) ?? null;\n"));
+        assert!(
+            output.contains(
+                "export function lookup(values: Readonly<number[]>): number | undefined {"
+            )
+        );
+        assert!(output.contains("  return undefined;\n"));
+        assert!(output.contains("  if (scale !== null) {\n"));
+        assert!(output.contains(
+            "return { supported: value > 0.0, contour: (found) ?? null, detail: undefined };"
+        ));
+        assert!(output.contains("return { supported: false, contour: null, detail: found };"));
+
+        let sibling = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-scales/src/report.rs",
+                source: report,
+            },
+            None,
+            &[ModuleSource {
+                path: "crates/flight-scales/src/scales.rs",
+                source,
+            }],
+            &[],
+        )
+        .unwrap();
+        assert!(sibling.contains("  return scale !== null;\n"));
+        assert!(sibling.contains("  return (explanation.contour ?? 0.0);\n"));
+    }
+
+    #[test]
+    fn rejects_invalid_nullable_option_directives() {
+        let cases = [
+            (
+                "//! flight-compiler: nullable-option\npub fn f() -> Option<f64> { return None; }\n",
+                "`flight-compiler: nullable-option` requires at least one `function` or `Struct.field`",
+            ),
+            (
+                "//! flight-compiler: nullable-option Shape.radius.inner\npub struct Shape { pub radius: Option<f64> }\n",
+                "`flight-compiler: nullable-option` item `Shape.radius.inner` is not `function` or `Struct.field`",
+            ),
+            (
+                "//! flight-compiler: nullable-option f f\npub fn f() -> Option<f64> { return None; }\n",
+                "duplicate `flight-compiler: nullable-option` item `f`",
+            ),
+            (
+                "//! flight-compiler: nullable-option missing\npub fn f() -> Option<f64> { return None; }\n",
+                "`flight-compiler: nullable-option` item `missing` must name a function returning `Option` or an `Option` field of a struct in this source",
+            ),
+            (
+                "//! flight-compiler: nullable-option f\npub fn f() -> f64 { return 1.0; }\n",
+                "`flight-compiler: nullable-option` item `f` must name a function returning `Option` or an `Option` field of a struct in this source",
+            ),
+            (
+                "//! flight-compiler: nullable-option Shape.radius\npub struct Shape { pub radius: f64 }\n",
+                "`flight-compiler: nullable-option` item `Shape.radius` must name a function returning `Option` or an `Option` field of a struct in this source",
+            ),
+        ];
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn lowers_lazy_lock_statics_with_proven_operators_and_constructors() {
         let source = r#"
 use std::sync::*;
@@ -11160,6 +11289,70 @@ mod sum_pairs {
             output.contains("    expect(sumPairs([1.0, 2.0, 3.0, 4.0], 0.5)).toEqual(17.5);\n")
         );
         assert!(output.contains("    expect(sumPairs(typed, 0.5)).toEqual(17.5);\n"));
+    }
+
+    #[test]
+    fn compares_none_against_the_absent_value_of_nullable_options() {
+        let production = r#"
+//! flight-compiler: nullable-option find_scale Explanation.contour
+
+pub struct Explanation {
+    pub supported: bool,
+    pub contour: Option<f64>,
+    pub detail: Option<f64>,
+}
+
+pub fn find_scale(values: &[f64], tolerance: Option<f64>) -> Option<f64> {
+    let limit = tolerance.unwrap_or(0.25);
+    if values.is_empty() {
+        return None;
+    }
+    if values[0] > limit {
+        return Some(values[0]);
+    }
+    return lookup(values);
+}
+
+pub fn lookup(values: &[f64]) -> Option<f64> {
+    if values.len() > 1 {
+        return Some(values[1]);
+    }
+    return None;
+}
+
+pub fn explain(values: &[f64]) -> Explanation {
+    let found = lookup(values);
+    let scale = find_scale(values, None);
+    if let Some(value) = scale {
+        return Explanation { supported: value > 0.0, contour: found, detail: None };
+    }
+    return Explanation { supported: false, contour: None, detail: found };
+}
+"#;
+        let source = r#"
+use flight_scales::*;
+
+mod find_scale {
+    use super::*;
+
+    #[test]
+    fn reports_absent_scales_as_none() {
+        assert_eq!(find_scale(&[], None), None);
+        assert!(find_scale(&[1.0], None).is_some());
+        assert_eq!(explain(&[]).contour, None);
+        assert_eq!(lookup(&[]), None);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/scales/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("    expect(findScale([], undefined)).toEqual(null);\n"));
+        assert!(output.contains("    expect(findScale([1.0], undefined) !== null).toBe(true);\n"));
+        assert!(output.contains("    expect(explain([]).contour).toEqual(null);\n"));
+        assert!(output.contains("    expect(lookup([])).toEqual(undefined);\n"));
     }
 
     #[test]

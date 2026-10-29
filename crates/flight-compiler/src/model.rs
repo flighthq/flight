@@ -34,6 +34,9 @@ pub(crate) struct Program {
     // `function.parameter` slice parameters TypeScript types as `ArrayLike<T>`, so typed arrays are
     // accepted; the function body may only read their length and elements or pass them on.
     pub(crate) array_like_parameters: BTreeSet<String>,
+    // Functions whose `Option` return, and `Struct.field`s whose `Option` field, TypeScript represents
+    // as `T | null` instead of an absent `undefined`; trailing `Option` parameters stay optional.
+    pub(crate) nullable_option_items: BTreeSet<String>,
     pub(crate) nullable_options: bool,
     // Unit enums lowered to a type-only TS union of their declared integer discriminants, in
     // declaration order (`numeric-union`).
@@ -521,6 +524,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "frozen-object"
             | "identity-alias"
             | "array-like"
+            | "nullable-option"
             | "nullable-options"
             | "numeric-union"
             | "readonly-fields"
@@ -651,6 +655,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
     let array_like_parameters = parse_array_like_parameters(&file.attrs)?;
+    let nullable_option_items = parse_nullable_option_items(&file.attrs)?;
     let numeric_union_names = parse_numeric_unions(&file.attrs)?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
@@ -750,6 +755,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     )?;
     validate_entity_runtime_states(&entity_runtime_states, &structs)?;
     validate_array_like_parameters(&array_like_parameters, &functions)?;
+    validate_nullable_option_items(&nullable_option_items, &functions, &structs)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
     let numeric_unions = validate_numeric_union_directives(
         &numeric_union_names,
@@ -801,6 +807,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         frozen_objects,
         functions,
         no_std,
+        nullable_option_items,
         nullable_options,
         array_like_parameters,
         numeric_unions,
@@ -854,6 +861,43 @@ fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool
         found = true;
     }
     return Ok(found);
+}
+
+// flight-lint: allow(hashmap-iteration) directive names are a Vec in source order
+fn parse_nullable_option_items(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
+    let mut items = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("nullable-option") {
+            continue;
+        }
+        let names = fields.collect::<Vec<_>>();
+        if names.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: nullable-option` requires at least one `function` or `Struct.field`",
+            ));
+        }
+        for name in names {
+            let valid = name.split('.').count() <= 2
+                && name.split('.').all(|part| {
+                    syn::parse_str::<syn::Ident>(part).is_ok() && !part.starts_with("r#")
+                });
+            if !valid {
+                return Err(compile_error(format!(
+                    "`flight-compiler: nullable-option` item `{name}` is not `function` or `Struct.field`"
+                )));
+            }
+            if !items.insert(name.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: nullable-option` item `{name}`"
+                )));
+            }
+        }
+    }
+    return Ok(items);
 }
 
 fn parse_numeric_unions(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
@@ -2206,6 +2250,40 @@ fn validate_lazy_lock_statics(
         if initializer_visitor.found {
             return Err(compile_error(format!(
                 "`LazyLock` initializer for `{name}` cannot construct another `LazyLock`"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_nullable_option_items(
+    items: &BTreeSet<String>,
+    functions: &[ItemFn],
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for item in items {
+        let option_type = |rust_type: &Type| type_name(rust_type).as_deref() == Some("Option");
+        let valid = match item.split_once('.') {
+            Some((owner, field_name)) => structs
+                .iter()
+                .find(|structure| structure.ident == owner)
+                .and_then(|structure| {
+                    structure
+                        .fields
+                        .iter()
+                        .find(|field| field.ident.as_ref().is_some_and(|ident| ident == field_name))
+                })
+                .is_some_and(|field| option_type(&field.ty)),
+            None => functions
+                .iter()
+                .find(|function| function.sig.ident == item.as_str())
+                .is_some_and(|function| {
+                    matches!(&function.sig.output, syn::ReturnType::Type(_, rust_type) if option_type(rust_type))
+                }),
+        };
+        if !valid {
+            return Err(compile_error(format!(
+                "`flight-compiler: nullable-option` item `{item}` must name a function returning `Option` or an `Option` field of a struct in this source"
             )));
         }
     }

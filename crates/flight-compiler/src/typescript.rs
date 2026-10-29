@@ -105,6 +105,10 @@ const ARRAY_LIKE_ARGUMENT_MARKER: &str = "@array-like-argument:";
 // `{source}␟{function}␟{parameter}` for each `array-like` slice parameter, typed `ArrayLike<T>`; the
 // source identity keeps a sibling's designation from applying to a same-named local function.
 const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
+// `{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is built by literal.
+const NULLABLE_OPTION_LITERAL_FIELD_MARKER: &str = "@nullable-option-literal-field:";
+// A function whose `Option` return is designated `nullable-option`: its returns use `null`.
+const RETURNS_NULLABLE_MARKER: &str = "@returns-nullable";
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
 // Struct fields (`struct identity SEP field SEP payload`), locals and parameters (`name:payload`), and
 // function returns (`module SEP function SEP payload`) declared as Rust `Option<T>`. The payload is the
@@ -4947,7 +4951,11 @@ fn generation_context_with_types(
                     "{OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
                     resolved_type_identity(&context, module, inner).unwrap_or_default()
                 ));
-                if program.nullable_options {
+                if program.nullable_options
+                    || program
+                        .nullable_option_items
+                        .contains(&function_name.to_string())
+                {
                     owned_facts.push(format!(
                         "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
                     ));
@@ -4981,22 +4989,28 @@ fn generation_context_with_types(
                 ));
             }
         }
-        if program.nullable_options {
-            for structure in program
-                .structs
-                .iter()
-                .filter(|structure| is_public(&structure.vis))
-            {
-                for field in &structure.fields {
-                    if is_public(&field.vis)
-                        && option_inner_type(&field.ty).is_some()
-                        && let Some(field_name) = &field.ident
-                    {
-                        context.insert(format!(
-                            "{NULLABLE_OPTION_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
-                            structure.ident,
-                        ));
-                    }
+        for structure in &program.structs {
+            for field in &structure.fields {
+                let Some(field_name) = &field.ident else {
+                    continue;
+                };
+                let designated = program
+                    .nullable_option_items
+                    .contains(&format!("{}.{field_name}", structure.ident));
+                if (designated || program.nullable_options && is_public(&structure.vis))
+                    && is_public(&field.vis)
+                    && option_inner_type(&field.ty).is_some()
+                {
+                    context.insert(format!(
+                        "{NULLABLE_OPTION_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
+                        structure.ident,
+                    ));
+                }
+                if designated {
+                    context.insert(format!(
+                        "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{}{PROVENANCE_SEPARATOR}{field_name}",
+                        structure.ident,
+                    ));
                 }
             }
         }
@@ -5809,7 +5823,9 @@ fn emit_closure_with_parameter_types(
     let mut closure_context = entities
         .iter()
         .filter(|marker| {
-            !marker.starts_with(RETURN_TYPE_MARKER) && marker.as_str() != RETURNS_U32_MARKER
+            !marker.starts_with(RETURN_TYPE_MARKER)
+                && marker.as_str() != RETURNS_U32_MARKER
+                && marker.as_str() != RETURNS_NULLABLE_MARKER
         })
         .cloned()
         .collect::<HashSet<_>>();
@@ -6874,15 +6890,25 @@ pub(crate) fn emit_expression(
                 );
                 return Ok(format!("{{ {} }}", fields.join(", ")));
             }
+            let structure_name = structure
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string())
+                .unwrap_or_default();
             let fields = structure
                 .fields
                 .iter()
                 .map(|field| {
-                    Ok(format!(
-                        "{}: {}",
-                        emit_member(&field.member),
-                        emit_expression(&field.expr, entities)?
-                    ))
+                    let mut value = emit_expression(&field.expr, entities)?;
+                    if let syn::Member::Named(field_name) = &field.member
+                        && entities.contains(&format!(
+                            "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{structure_name}{PROVENANCE_SEPARATOR}{field_name}"
+                        ))
+                    {
+                        value = nullable_option_value(&field.expr, value);
+                    }
+                    Ok(format!("{}: {value}", emit_member(&field.member)))
                 })
                 .collect::<Result<Vec<_>, CompileError>>()?;
             if structure.rest.is_some() {
@@ -9456,8 +9482,19 @@ fn emit_function(
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let nullable_return = current_source(entities).is_some_and(|module| {
+        entities.contains(&format!(
+            "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}",
+            function.sig.ident
+        ))
+    }) && !entities.contains(NULLABLE_OPTIONS_MARKER);
     let return_type = match &function.sig.output {
         ReturnType::Default => "void".to_string(),
+        ReturnType::Type(_, rust_type) if nullable_return => nullable_type(emit_preferred_type(
+            option_inner_type(rust_type).expect("nullable-option returns were validated"),
+            entities,
+            aliases,
+        )?),
         ReturnType::Type(_, rust_type) => emit_preferred_type(rust_type, entities, aliases)?,
     };
     writeln!(
@@ -9477,6 +9514,7 @@ fn emit_function(
         }
     }
     struct NullableLocalCollector<'a> {
+        context: &'a HashSet<String>,
         names: HashSet<String>,
         nullable_static_names: &'a HashSet<String>,
     }
@@ -9484,10 +9522,11 @@ fn emit_function(
     impl<'ast> syn::visit::Visit<'ast> for NullableLocalCollector<'_> {
         fn visit_local(&mut self, local: &'ast syn::Local) {
             if let Some(initializer) = &local.init
-                && self
+                && (self
                     .nullable_static_names
                     .iter()
                     .any(|name| expression_contains_identifier(&initializer.expr, name))
+                    || expression_is_nullable_option_return(&initializer.expr, self.context))
                 && let Some(name) = local_pattern_name(&local.pat)
             {
                 self.names.insert(name);
@@ -9497,6 +9536,7 @@ fn emit_function(
     }
 
     let mut nullable_locals = NullableLocalCollector {
+        context: entities,
         names: HashSet::new(),
         nullable_static_names,
     };
@@ -9509,6 +9549,9 @@ fn emit_function(
     if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if type_is_named(rust_type, "u32"))
     {
         function_context.insert(RETURNS_U32_MARKER.to_string());
+    }
+    if nullable_return {
+        function_context.insert(RETURNS_NULLABLE_MARKER.to_string());
     }
     emit_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
@@ -12047,7 +12090,7 @@ fn expression_struct_name(expression: &Expr, entities: &HashSet<String>) -> Opti
     };
 }
 
-fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
+pub(crate) fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
     if entities.contains(NULLABLE_OPTIONS_MARKER)
         || expression_is_nullable_option_field(expression, entities)
         || expression_is_nullable_option_return(expression, entities)
@@ -12324,6 +12367,25 @@ fn nullable_guard_types(
         }
     }
     return Ok(types);
+}
+
+// The `T | null` value of an `Option` expression whose emitted form is `emitted`: `None` is `null`,
+// `Some(x)` is `x`, and any other `Option` value (absent as `undefined`) coalesces to `null`.
+fn nullable_option_value(expression: &Expr, emitted: String) -> String {
+    let expression = match expression {
+        Expr::Group(group) => group.expr.as_ref(),
+        Expr::Paren(paren) => paren.expr.as_ref(),
+        expression => expression,
+    };
+    if expression_is_path(expression, "None") {
+        return "null".to_string();
+    }
+    if let Expr::Call(call) = expression
+        && expression_is_path(&call.func, "Some")
+    {
+        return emitted;
+    }
+    return format!("({emitted}) ?? null");
 }
 
 fn type_contains_nullable(
@@ -13390,6 +13452,7 @@ fn emit_statement(
         Stmt::Expr(Expr::Return(return_expression), _) => {
             write_indent(out, indent);
             if let Some(value) = &return_expression.expr {
+                let returned = value.as_ref();
                 let mut value = if expression_is_path_call(value, "allocate_entity") {
                     let return_type = entities
                         .iter()
@@ -13403,6 +13466,9 @@ fn emit_statement(
                 };
                 if entities.contains(RETURNS_U32_MARKER) {
                     value = format!("({value}) >>> 0");
+                }
+                if entities.contains(RETURNS_NULLABLE_MARKER) {
+                    value = nullable_option_value(returned, value);
                 }
                 writeln!(out, "return {value};").expect("writing to a String cannot fail");
             } else {
@@ -13526,6 +13592,20 @@ fn emit_struct(
         };
         let name = snake_to_lower_camel(&field_name.to_string());
         let prefix = if readonly { "readonly " } else { "" };
+        if let Some(inner) = option_inner_type(&field.ty)
+            && entities.contains(&format!(
+                "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{}{PROVENANCE_SEPARATOR}{field_name}",
+                structure.ident
+            ))
+        {
+            writeln!(
+                out,
+                "  {prefix}{name}: {};",
+                nullable_type(emit_preferred_type(inner, entities, aliases)?)
+            )
+            .expect("writing to a String cannot fail");
+            continue;
+        }
         let (optional, rust_type) = if entities.contains(NULLABLE_OPTIONS_MARKER) {
             ("", &field.ty)
         } else if let Some(inner) = option_inner_type(&field.ty) {
@@ -14399,7 +14479,7 @@ fn expression_is_none(expression: &Expr) -> bool {
         .is_some_and(|segment| segment.ident == "None");
 }
 
-fn expression_is_path(expression: &Expr, expected: &str) -> bool {
+pub(crate) fn expression_is_path(expression: &Expr, expected: &str) -> bool {
     let Expr::Path(path) = expression else {
         return false;
     };
