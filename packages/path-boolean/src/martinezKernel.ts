@@ -213,7 +213,7 @@ function buildArrangement(
       const leftEvent = getOtherEvent(events, event);
       const index = findStatus(status, leftEvent);
       if (index >= 0) {
-        const idx = index;
+        const idx = index >>> 0;
         const hasNeighbors = idx > 0 && idx + 1 < status.length;
         const prevEv = idx > 0 ? status[idx - 1] : 0;
         const nextEv = idx + 1 < status.length ? status[idx + 1] : 0;
@@ -512,10 +512,10 @@ function directedGraphWalk(graph: DirectedGraph, startEdge: number): number[] | 
     ring.push(graph.ys[from]);
     const to = graph.edgeTo[edge];
     const next = directedGraphNextEdge(graph, to, from);
-    if (next < 0 || next === startEdge || graph.used[next]) {
+    if (next < 0 || next >>> 0 === startEdge || graph.used[next >>> 0]) {
       break;
     }
-    edge = next;
+    edge = next >>> 0;
   }
   return ring;
 }

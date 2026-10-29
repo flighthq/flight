@@ -28,13 +28,13 @@ describe('writePathBooleanContours', () => {
     ]);
     let moveCount = 0;
     for (const command of out.commands) {
-      if (command === PathCommand.MOVE_TO) {
+      if (command === (PathCommand.MOVE_TO & 0xff)) {
         moveCount += 1;
       }
     }
     let closeCount = 0;
     for (const command of out.commands) {
-      if (command === PathCommand.CLOSE) {
+      if (command === (PathCommand.CLOSE & 0xff)) {
         closeCount += 1;
       }
     }

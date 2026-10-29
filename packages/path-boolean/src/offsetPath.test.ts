@@ -240,7 +240,7 @@ describe('offsetPath', () => {
     expect(Math.abs(maxY - 2.25) < 5e-7).toBe(true);
     let moveCount = 0;
     for (const command of out.commands) {
-      if (command === PathCommand.MOVE_TO) {
+      if (command === (PathCommand.MOVE_TO & 0xff)) {
         moveCount += 1;
       }
     }

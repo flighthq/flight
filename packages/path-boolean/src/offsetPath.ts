@@ -261,8 +261,8 @@ function getOpenContourLoop(vertices: Readonly<number[]>): number[] {
   let result = [...vertices];
   let k = count - 2;
   while (k >= 1) {
-    result.push(vertices[2 * k]);
-    result.push(vertices[2 * k + 1]);
+    result.push(vertices[2 * (k >>> 0)]);
+    result.push(vertices[2 * (k >>> 0) + 1]);
     k -= 1;
   }
   return result;
@@ -390,7 +390,7 @@ function pushOffsetArc(
   arcTolerance: number,
 ): void {
   const maxAngle = arcTolerance > 0.0 && arcTolerance < radius ? 2.0 * Math.acos(1.0 - arcTolerance / radius) : Math.PI;
-  const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxAngle));
+  const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxAngle) >>> 0);
   for (let i = 1; i < steps; i += 1) {
     const angle = startAngle + sweep * (i / steps);
     ring.push(cx + radius * Math.cos(angle));
