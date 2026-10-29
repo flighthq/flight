@@ -1285,6 +1285,58 @@ pub fn read(gate: &Gate) -> i32 {
     }
 
     #[test]
+    fn lowers_standard_any_trait_objects_to_object() {
+        let source = r#"
+use std::any::Any;
+use std::sync::Arc;
+
+pub type ProviderRef = Arc<dyn Any + Send + Sync>;
+
+pub struct Source {
+    pub provider: ProviderRef,
+    pub handle: Arc<dyn Any + Send + Sync>,
+}
+
+pub fn same_source(a: &Source, b: &Source) -> bool {
+    return Arc::ptr_eq(&a.handle, &b.handle);
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export type ProviderRef = object;
+
+export interface Source {
+  provider: ProviderRef;
+  handle: object;
+}
+
+export function sameSource(a: Readonly<Source>, b: Readonly<Source>): boolean {
+  return a.handle === b.handle;
+}
+"#
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub type Opaque = std::sync::Arc<dyn core::any::Any>;\n",
+                None
+            )
+            .unwrap(),
+            "export type Opaque = object;\n\n"
+        );
+        for source in [
+            "use std::sync::Arc;\ntrait Any {}\npub type Local = Arc<dyn Any>;\n",
+            "use std::sync::Arc;\npub type Unimported = Arc<dyn Any>;\n",
+            "use std::any::Any;\nuse std::sync::Arc;\ntrait Extra {}\npub type Mixed = Arc<dyn Any + Extra>;\n",
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                "unsupported Rust trait object; only callable traits are portable",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment

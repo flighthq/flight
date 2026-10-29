@@ -11033,6 +11033,9 @@ fn emit_function_trait_type_with_parameter_names(
     entities: &HashSet<String>,
     parameter_names: Option<&[String]>,
 ) -> Result<String, CompileError> {
+    if trait_object_is_standard_any(bounds, entities) {
+        return Ok("object".to_string());
+    }
     for bound in bounds {
         let syn::TypeParamBound::Trait(bound) = bound else {
             continue;
@@ -13992,6 +13995,60 @@ fn nullable_option_value(expression: &Expr, emitted: String) -> String {
     return format!("({emitted}) ?? null");
 }
 
+// `dyn Any [+ Send | + Sync | + 'a]` whose `Any` resolves (see `resolve_type_path`) to `std::any::Any`
+// or `core::any::Any`: an opaque value portable code never inspects, `object` in TypeScript. `object`
+// rather than `unknown` keeps `Arc::ptr_eq` (lowered to `===`) an identity comparison, and makes a
+// payload with no identity (`Arc::new(())` lowers to `undefined`) a type error rather than a value that
+// compares equal to every other. Any other bound, or an `Any` of uncertain provenance, is not this shape.
+fn trait_object_is_standard_any(
+    bounds: &syn::punctuated::Punctuated<syn::TypeParamBound, syn::token::Plus>,
+    entities: &HashSet<String>,
+) -> bool {
+    let mut any = false;
+    for bound in bounds {
+        match bound {
+            syn::TypeParamBound::Trait(trait_bound) => {
+                if trait_bound.lifetimes.is_some()
+                    || !matches!(trait_bound.modifier, syn::TraitBoundModifier::None)
+                    || !matches!(
+                        trait_bound
+                            .path
+                            .segments
+                            .last()
+                            .map(|segment| &segment.arguments),
+                        Some(PathArguments::None)
+                    )
+                {
+                    return false;
+                }
+                let Some(resolved) = resolve_type_path(&trait_bound.path, entities) else {
+                    return false;
+                };
+                if matches!(
+                    resolved
+                        .iter()
+                        .map(String::as_str)
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                    ["std" | "core", "any", "Any"]
+                ) {
+                    if any {
+                        return false;
+                    }
+                    any = true;
+                } else if !is_standard_type_path(&resolved, "Send")
+                    && !is_standard_type_path(&resolved, "Sync")
+                {
+                    return false;
+                }
+            }
+            syn::TypeParamBound::Lifetime(_) => {}
+            _ => return false,
+        }
+    }
+    return any;
+}
+
 fn type_contains_nullable(
     rust_type: &Type,
     entities: &HashSet<String>,
@@ -16542,8 +16599,10 @@ fn float_constant_type(path: &syn::Path) -> Option<&'static str> {
 }
 
 fn is_primitive_typescript_type(typescript_type: &str) -> bool {
-    return matches!(typescript_type, "boolean" | "number" | "string" | "void")
-        || typescript_type.contains("=>");
+    return matches!(
+        typescript_type,
+        "boolean" | "number" | "object" | "string" | "void"
+    ) || typescript_type.contains("=>");
 }
 
 fn is_public(visibility: &Visibility) -> bool {
