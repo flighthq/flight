@@ -59,7 +59,7 @@ fn gamepad_connect(gamepad: i32) -> InputGamepadConnectData {
     return InputGamepadConnectData {
         gamepad,
         id: "Pad".to_string(),
-        mapping: GamepadMappingKind::Standard,
+        mapping: GamepadMapping::Standard,
     };
 }
 

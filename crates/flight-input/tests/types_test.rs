@@ -48,21 +48,21 @@ mod get_gamepad_button_kind_string {
     }
 }
 
-mod get_gamepad_mapping_kind_string {
+mod get_gamepad_mapping_string {
     use super::*;
 
     #[test]
     fn returns_the_exact_ts_mapping_strings_including_the_empty_one() {
         assert_eq!(
-            get_gamepad_mapping_kind_string(GamepadMappingKind::Standard),
+            get_gamepad_mapping_string(GamepadMapping::Standard),
             "standard"
         );
         assert_eq!(
-            get_gamepad_mapping_kind_string(GamepadMappingKind::Raw),
+            get_gamepad_mapping_string(GamepadMapping::Raw),
             "raw"
         );
         assert_eq!(
-            get_gamepad_mapping_kind_string(GamepadMappingKind::Unspecified),
+            get_gamepad_mapping_string(GamepadMapping::Unspecified),
             ""
         );
     }
@@ -212,24 +212,24 @@ mod parse_gamepad_button_kind {
     }
 }
 
-mod parse_gamepad_mapping_kind {
+mod parse_gamepad_mapping {
     use super::*;
 
     #[test]
     fn round_trips_standard_raw_and_empty_and_rejects_others() {
         assert_eq!(
-            parse_gamepad_mapping_kind("standard"),
-            Some(GamepadMappingKind::Standard)
+            parse_gamepad_mapping("standard"),
+            Some(GamepadMapping::Standard)
         );
         assert_eq!(
-            parse_gamepad_mapping_kind("raw"),
-            Some(GamepadMappingKind::Raw)
+            parse_gamepad_mapping("raw"),
+            Some(GamepadMapping::Raw)
         );
         assert_eq!(
-            parse_gamepad_mapping_kind(""),
-            Some(GamepadMappingKind::Unspecified)
+            parse_gamepad_mapping(""),
+            Some(GamepadMapping::Unspecified)
         );
-        assert_eq!(parse_gamepad_mapping_kind("other"), None);
+        assert_eq!(parse_gamepad_mapping("other"), None);
     }
 }
 

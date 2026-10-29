@@ -53,7 +53,7 @@ pub use crate::key_code::*;
 pub use contract::AttachInputOptions;
 pub use contract::GamepadAxisKind;
 pub use contract::GamepadButtonKind;
-pub use contract::GamepadMappingKind;
+pub use contract::GamepadMapping;
 pub use contract::GamepadStickOutput;
 pub use contract::HostInputCapabilities;
 pub use contract::HostInputDropFileCapability;

@@ -62,8 +62,8 @@ pub fn apply_gamepad_stick_dead_zone(out: &mut GamepadStickOutput, x: f32, y: f3
 }
 
 /// Returns the semantic axis name for a standard-mapping index (TS `getGamepadAxisName`).
-pub fn get_gamepad_axis_name(mapping: GamepadMappingKind, index: i32) -> Option<GamepadAxisKind> {
-    if mapping != GamepadMappingKind::Standard {
+pub fn get_gamepad_axis_name(mapping: GamepadMapping, index: i32) -> Option<GamepadAxisKind> {
+    if mapping != GamepadMapping::Standard {
         return None;
     }
     if index < 0 || index as usize >= STANDARD_AXIS_NAMES.len() {
@@ -74,10 +74,10 @@ pub fn get_gamepad_axis_name(mapping: GamepadMappingKind, index: i32) -> Option<
 
 /// Returns the semantic button name for a standard-mapping index (TS `getGamepadButtonName`).
 pub fn get_gamepad_button_name(
-    mapping: GamepadMappingKind,
+    mapping: GamepadMapping,
     index: i32,
 ) -> Option<GamepadButtonKind> {
-    if mapping != GamepadMappingKind::Standard {
+    if mapping != GamepadMapping::Standard {
         return None;
     }
     if index < 0 || index as usize >= STANDARD_BUTTON_NAMES.len() {

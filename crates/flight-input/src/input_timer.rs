@@ -109,7 +109,7 @@ fn take_due_input_key_repeat_tick(
     if interval <= 0.0 {
         cycle.next_fire_ms = now_ms;
     } else {
-        cycle.next_fire_ms = cycle.next_fire_ms + interval;
+        cycle.next_fire_ms += interval;
     }
     return Some((callback, interval <= 0.0));
 }

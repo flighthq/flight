@@ -5,6 +5,8 @@ use std::sync::{Arc, RwLock};
 use crate::input_binding::InputManagerRuntime;
 use crate::types::*;
 
+// The contract file-structure rule requires modules before functions and impls.
+#[allow(clippy::items_after_test_module)]
 #[cfg(test)]
 mod sugar_tests {
     use super::*;

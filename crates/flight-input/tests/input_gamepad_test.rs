@@ -72,29 +72,29 @@ mod get_gamepad_axis_name {
     #[test]
     fn maps_standard_indices_to_the_exact_kinds() {
         assert_eq!(
-            get_gamepad_axis_name(GamepadMappingKind::Standard, 0),
+            get_gamepad_axis_name(GamepadMapping::Standard, 0),
             Some(GamepadAxisKind::StickLeftX)
         );
         assert_eq!(
-            get_gamepad_axis_name(GamepadMappingKind::Standard, 1),
+            get_gamepad_axis_name(GamepadMapping::Standard, 1),
             Some(GamepadAxisKind::StickLeftY)
         );
         assert_eq!(
-            get_gamepad_axis_name(GamepadMappingKind::Standard, 2),
+            get_gamepad_axis_name(GamepadMapping::Standard, 2),
             Some(GamepadAxisKind::StickRightX)
         );
         assert_eq!(
-            get_gamepad_axis_name(GamepadMappingKind::Standard, 3),
+            get_gamepad_axis_name(GamepadMapping::Standard, 3),
             Some(GamepadAxisKind::StickRightY)
         );
-        assert_eq!(get_gamepad_axis_name(GamepadMappingKind::Standard, 4), None);
+        assert_eq!(get_gamepad_axis_name(GamepadMapping::Standard, 4), None);
     }
 
     #[test]
     fn returns_none_for_non_standard_mapping() {
-        assert_eq!(get_gamepad_axis_name(GamepadMappingKind::Raw, 0), None);
+        assert_eq!(get_gamepad_axis_name(GamepadMapping::Raw, 0), None);
         assert_eq!(
-            get_gamepad_axis_name(GamepadMappingKind::Unspecified, 0),
+            get_gamepad_axis_name(GamepadMapping::Unspecified, 0),
             None
         );
     }
@@ -106,32 +106,32 @@ mod get_gamepad_button_name {
     #[test]
     fn maps_standard_indices_to_the_exact_kinds() {
         assert_eq!(
-            get_gamepad_button_name(GamepadMappingKind::Standard, 0),
+            get_gamepad_button_name(GamepadMapping::Standard, 0),
             Some(GamepadButtonKind::ButtonSouth)
         );
         assert_eq!(
-            get_gamepad_button_name(GamepadMappingKind::Standard, 12),
+            get_gamepad_button_name(GamepadMapping::Standard, 12),
             Some(GamepadButtonKind::DpadUp)
         );
         assert_eq!(
-            get_gamepad_button_name(GamepadMappingKind::Standard, 16),
+            get_gamepad_button_name(GamepadMapping::Standard, 16),
             Some(GamepadButtonKind::Home)
         );
     }
 
     #[test]
     fn returns_none_for_non_standard_mapping_or_out_of_range_indices() {
-        assert_eq!(get_gamepad_button_name(GamepadMappingKind::Raw, 0), None);
+        assert_eq!(get_gamepad_button_name(GamepadMapping::Raw, 0), None);
         assert_eq!(
-            get_gamepad_button_name(GamepadMappingKind::Unspecified, 0),
+            get_gamepad_button_name(GamepadMapping::Unspecified, 0),
             None
         );
         assert_eq!(
-            get_gamepad_button_name(GamepadMappingKind::Standard, 99),
+            get_gamepad_button_name(GamepadMapping::Standard, 99),
             None
         );
         assert_eq!(
-            get_gamepad_button_name(GamepadMappingKind::Standard, -1),
+            get_gamepad_button_name(GamepadMapping::Standard, -1),
             None
         );
     }

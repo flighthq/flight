@@ -1,5 +1,31 @@
 //! flight-compiler: entity-runtime-state InputKeyRepeatTimer.cycle
 //! flight-compiler: entity-runtime-state InputManager.registry
+//! flight-compiler: string-union GamepadAxisKind=exact GamepadButtonKind=exact GamepadMapping=exact MouseWheelMode PointerType InputPointerLockExitReason=kebab-case InputPointerLockRequestReason=kebab-case
+//! flight-compiler: string-union-value GamepadAxisKind StickLeftX "StickLeftX"
+//! flight-compiler: string-union-value GamepadAxisKind StickLeftY "StickLeftY"
+//! flight-compiler: string-union-value GamepadAxisKind StickRightX "StickRightX"
+//! flight-compiler: string-union-value GamepadAxisKind StickRightY "StickRightY"
+//! flight-compiler: string-union-value GamepadButtonKind ButtonEast "ButtonEast"
+//! flight-compiler: string-union-value GamepadButtonKind ButtonNorth "ButtonNorth"
+//! flight-compiler: string-union-value GamepadButtonKind ButtonSouth "ButtonSouth"
+//! flight-compiler: string-union-value GamepadButtonKind ButtonWest "ButtonWest"
+//! flight-compiler: string-union-value GamepadButtonKind DpadDown "DpadDown"
+//! flight-compiler: string-union-value GamepadButtonKind DpadLeft "DpadLeft"
+//! flight-compiler: string-union-value GamepadButtonKind DpadRight "DpadRight"
+//! flight-compiler: string-union-value GamepadButtonKind DpadUp "DpadUp"
+//! flight-compiler: string-union-value GamepadButtonKind Home "Home"
+//! flight-compiler: string-union-value GamepadButtonKind Select "Select"
+//! flight-compiler: string-union-value GamepadButtonKind ShoulderLeft "ShoulderLeft"
+//! flight-compiler: string-union-value GamepadButtonKind ShoulderRight "ShoulderRight"
+//! flight-compiler: string-union-value GamepadButtonKind Start "Start"
+//! flight-compiler: string-union-value GamepadButtonKind StickLeft "StickLeft"
+//! flight-compiler: string-union-value GamepadButtonKind StickRight "StickRight"
+//! flight-compiler: string-union-value GamepadButtonKind Touchpad "Touchpad"
+//! flight-compiler: string-union-value GamepadButtonKind TriggerLeft "TriggerLeft"
+//! flight-compiler: string-union-value GamepadButtonKind TriggerRight "TriggerRight"
+//! flight-compiler: string-union-value GamepadMapping Standard "standard"
+//! flight-compiler: string-union-value GamepadMapping Raw "raw"
+//! flight-compiler: string-union-value GamepadMapping Unspecified ""
 
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
@@ -44,11 +70,10 @@ pub enum GamepadButtonKind {
     TriggerRight,
 }
 
-/// The gamepad layout convention (TS `GamepadMappingKind`). `Unspecified` is the source's empty
-/// string. TS also declares an identical `GamepadMapping` alias for connect data; the same string
-/// set is reused here.
+/// The gamepad layout convention (TS `GamepadMapping`). `Unspecified` is the source's empty
+/// string.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum GamepadMappingKind {
+pub enum GamepadMapping {
     Standard,
     Raw,
     #[default]
@@ -100,7 +125,7 @@ pub struct InputGamepadButtonData {
 pub struct InputGamepadConnectData {
     pub gamepad: i32,
     pub id: String,
-    pub mapping: GamepadMappingKind,
+    pub mapping: GamepadMapping,
 }
 
 /// One normalized keyboard event (TS `InputKeyboardData`).
@@ -443,12 +468,12 @@ pub fn get_gamepad_button_kind_string(value: GamepadButtonKind) -> &'static str 
     };
 }
 
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS GamepadMappingKind union; TS exports no get_/parse_ free functions
-pub fn get_gamepad_mapping_kind_string(value: GamepadMappingKind) -> &'static str {
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS GamepadMapping union; TS exports no get_/parse_ free functions
+pub fn get_gamepad_mapping_string(value: GamepadMapping) -> &'static str {
     return match value {
-        GamepadMappingKind::Standard => "standard",
-        GamepadMappingKind::Raw => "raw",
-        GamepadMappingKind::Unspecified => "",
+        GamepadMapping::Standard => "standard",
+        GamepadMapping::Raw => "raw",
+        GamepadMapping::Unspecified => "",
     };
 }
 
@@ -532,12 +557,12 @@ pub fn parse_gamepad_button_kind(value: &str) -> Option<GamepadButtonKind> {
     };
 }
 
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS GamepadMappingKind union; TS exports no get_/parse_ free functions
-pub fn parse_gamepad_mapping_kind(value: &str) -> Option<GamepadMappingKind> {
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS GamepadMapping union; TS exports no get_/parse_ free functions
+pub fn parse_gamepad_mapping(value: &str) -> Option<GamepadMapping> {
     return match value {
-        "standard" => Some(GamepadMappingKind::Standard),
-        "raw" => Some(GamepadMappingKind::Raw),
-        "" => Some(GamepadMappingKind::Unspecified),
+        "standard" => Some(GamepadMapping::Standard),
+        "raw" => Some(GamepadMapping::Raw),
+        "" => Some(GamepadMapping::Unspecified),
         _ => None,
     };
 }
