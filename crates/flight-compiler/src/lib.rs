@@ -249,10 +249,20 @@ fn compile_typescript_sources(
         )?;
     }
     validate_const_group_bindings(&output, &program.const_groups)?;
+    let sibling_sources = alias_sources
+        .iter()
+        .copied()
+        .chain(
+            visibility_sources
+                .iter()
+                .map(|visibility_source| visibility_source.source)
+                .filter(|source| matches!(source_mode(source), Ok(SourceMode::TargetNative))),
+        )
+        .collect::<Vec<_>>();
     return Ok(export_crate_visible_items(
         output,
         &program,
-        alias_sources,
+        &sibling_sources,
         source_paths.first().copied(),
     ));
 }
@@ -805,7 +815,8 @@ fn emitted_value_bindings(output: &str) -> Vec<String> {
 }
 
 // Appends crate-internal exports for the crate-visible items (`pub(crate)`, `pub(super)`,
-// `pub(in …)`) a sibling source of the same package references, so those modules can import them. They
+// `pub(in …)`) a generated or target-native sibling source of the same package references, so those
+// modules can import them. Rust-only modules and the lane roots have no TypeScript twin to import with. They
 // use `export { … }` / `export type { … }` lists, which the public-lane scan of `export <declaration>`
 // lines does not read: a crate-visible item never reaches `contract.ts` or `index.ts`. Items no sibling
 // names stay unexported.
@@ -813,7 +824,7 @@ fn emitted_value_bindings(output: &str) -> Vec<String> {
 fn export_crate_visible_items(
     mut output: String,
     program: &model::Program,
-    alias_sources: &[&str],
+    sibling_sources: &[&str],
     source_path: Option<&str>,
 ) -> String {
     let own_module = source_path.and_then(|path| {
@@ -824,7 +835,7 @@ fn export_crate_visible_items(
     });
     let mut referenced = std::collections::BTreeSet::<String>::new();
     let mut referenced_all = false;
-    for source in alias_sources {
+    for source in sibling_sources {
         match &own_module {
             Some(module) => {
                 let (names, glob) = sibling_references_to_module(source, module);

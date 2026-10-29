@@ -1519,6 +1519,31 @@ mod foreign_macro_arguments {
     }
 
     #[test]
+    fn exports_crate_visible_items_that_target_native_siblings_reference() {
+        let owner = "pub(crate) fn create_count_core() -> i32 {\n    return 0;\n}\n\npub(crate) fn unused_core() -> i32 {\n    return 1;\n}\n";
+        let wrapper = "//! flight-compiler: target-native\n\nuse crate::owner::create_count_core;\n\npub fn create_count() -> i32 {\n    return create_count_core();\n}\n";
+
+        let output = compile_typescript_with_visibility_sources(
+            ModuleSource {
+                path: "src/owner.rs",
+                source: owner,
+            },
+            None,
+            &[],
+            &[],
+            &[ModuleSource {
+                path: "src/wrapper.rs",
+                source: wrapper,
+            }],
+        )
+        .unwrap();
+        assert!(
+            output.ends_with("export { createCountCore };\n"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn renders_generic_dependency_entities_by_their_companion_raw_name() {
         let signals = [ExternalAliasSource {
             source: include_str!("../../flight-signals/src/types.rs"),
