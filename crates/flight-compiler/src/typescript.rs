@@ -4512,10 +4512,13 @@ fn cross_crate_imports(
 
 pub(crate) fn test_cross_crate_imports(
     program: &TestProgram,
-) -> (
-    BTreeMap<String, BTreeSet<String>>,
-    BTreeMap<String, BTreeSet<String>>,
-) {
+) -> Result<
+    (
+        BTreeMap<String, BTreeSet<String>>,
+        BTreeMap<String, BTreeSet<String>>,
+    ),
+    CompileError,
+> {
     fn merge_imports(
         target: &mut BTreeMap<String, BTreeSet<String>>,
         source: BTreeMap<String, BTreeSet<String>>,
@@ -4523,6 +4526,29 @@ pub(crate) fn test_cross_crate_imports(
         for (module, names) in source {
             target.entry(module).or_default().extend(names);
         }
+    }
+
+    fn record_bindings(
+        imports: &BTreeMap<String, BTreeSet<String>>,
+        bindings: &mut BTreeMap<String, (String, String)>,
+    ) -> Result<(), CompileError> {
+        for (module, specifiers) in imports {
+            for specifier in specifiers {
+                let local = specifier
+                    .rsplit_once(" as ")
+                    .map_or(specifier.as_str(), |(_, local)| local);
+                let Some((previous_module, previous_specifier)) = bindings.get(local) else {
+                    bindings.insert(local.to_string(), (module.clone(), specifier.clone()));
+                    continue;
+                };
+                if previous_module != module || previous_specifier != specifier {
+                    return Err(compile_error(format!(
+                        "portable test modules import TypeScript binding `{local}` from both `{previous_specifier}` in `{previous_module}` and `{specifier}` in `{module}`; use distinct Rust import aliases"
+                    )));
+                }
+            }
+        }
+        return Ok(());
     }
 
     let top_level_symbols = cross_crate_symbols(&program.uses);
@@ -4545,6 +4571,9 @@ pub(crate) fn test_cross_crate_imports(
         collector.visit_item_type(type_alias);
     }
     let (mut value_imports, mut type_imports) = finish_cross_crate_imports(collector);
+    let mut bindings = BTreeMap::new();
+    record_bindings(&value_imports, &mut bindings)?;
+    record_bindings(&type_imports, &mut bindings)?;
     for suite in &program.suites {
         let mut symbols = top_level_symbols.clone();
         symbols.extend(cross_crate_symbols(&suite.uses));
@@ -4562,6 +4591,8 @@ pub(crate) fn test_cross_crate_imports(
             collector.visit_item_fn(function);
         }
         let (suite_value_imports, suite_type_imports) = finish_cross_crate_imports(collector);
+        record_bindings(&suite_value_imports, &mut bindings)?;
+        record_bindings(&suite_type_imports, &mut bindings)?;
         merge_imports(&mut value_imports, suite_value_imports);
         merge_imports(&mut type_imports, suite_type_imports);
     }
@@ -4571,7 +4602,7 @@ pub(crate) fn test_cross_crate_imports(
         }
     }
     type_imports.retain(|_, names| !names.is_empty());
-    return (value_imports, type_imports);
+    return Ok((value_imports, type_imports));
 }
 
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules

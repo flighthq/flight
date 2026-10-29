@@ -808,7 +808,7 @@ pub(crate) fn emit_test_program(
     let (mut contract_symbols, mut contract_type_symbols, external_modules) =
         collect_contract_symbols(program, context);
     let (cross_crate_values, cross_crate_types) =
-        crate::typescript::test_cross_crate_imports(program);
+        crate::typescript::test_cross_crate_imports(program)?;
     let cross_crate_local_names = cross_crate_values
         .values()
         .chain(cross_crate_types.values())

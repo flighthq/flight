@@ -2715,6 +2715,46 @@ mod sample_velocity {
     }
 
     #[test]
+    fn rejects_colliding_module_local_cross_crate_test_imports() {
+        let source = r#"
+use flight_velocity::contract::*;
+
+mod geometry_suite {
+    use flight_geometry::Matrix;
+
+    fn accepts_geometry(value: &Matrix) -> bool {
+        return value.a == 1.0;
+    }
+
+    #[test]
+    fn accepts() {
+        assert!(true);
+    }
+}
+
+mod node_suite {
+    use flight_node::NodeRef as Matrix;
+
+    fn accepts_node(value: &Matrix) -> bool {
+        return value.visible;
+    }
+
+    #[test]
+    fn accepts() {
+        assert!(true);
+    }
+}
+"#;
+
+        let error = compile_vitest(source, "@flighthq/velocity/contract").unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable test modules import TypeScript binding `Matrix` from both `Matrix` in `@flighthq/geometry/contract` and `NodeRef as Matrix` in `@flighthq/node/contract`; use distinct Rust import aliases"
+        );
+    }
+
+    #[test]
     fn lowers_shared_test_state_and_string_union_case_tables() {
         let production = r#"
 //! flight-compiler: string-union Status
