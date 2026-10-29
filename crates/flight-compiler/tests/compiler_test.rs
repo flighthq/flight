@@ -4228,6 +4228,129 @@ pub fn from_u32(bits: u32) -> f32 {
     }
 
     #[test]
+    fn lowers_eq_ignore_ascii_case_with_string_provenance() {
+        let source = r#"
+pub fn same(a: &str, b: &str) -> bool {
+    return a.eq_ignore_ascii_case(b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".toLowerCase() === "),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_leading_zeros_to_clz32() {
+        let source = r#"
+pub fn zeros(value: u32) -> u32 {
+    return value.leading_zeros();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("Math.clz32(value)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_log2_and_log10() {
+        let source = r#"
+pub fn logs(value: f64) -> (f64, f64) {
+    return (value.log2(), value.log10());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("Math.log2(value)"), "{output}");
+        assert!(output.contains("Math.log10(value)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_rfind_with_string_provenance() {
+        let source = r#"
+pub fn last_index(text: &str, pattern: &str) -> Option<usize> {
+    return text.rfind(pattern);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("lastIndexOf(pattern)"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_rsplit_with_string_provenance() {
+        let source = r#"
+pub fn parts(text: &str, sep: &str) -> Vec<String> {
+    return text.rsplit(sep).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".split(sep).reverse()"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_to_owned_and_to_string_lossy_to_identity() {
+        let source = r#"
+pub fn owned(value: &str) -> String {
+    return value.to_owned();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("return value;"),
+            "to_owned should be identity: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_try_from_on_numeric_types() {
+        let source = r#"
+pub fn narrow(value: i64) -> Option<u32> {
+    return u32::try_from(value).ok();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains("try_from"),
+            "try_from should be lowered: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_wrapping_neg() {
+        let source = r#"
+pub fn negate(value: u32) -> u32 {
+    return value.wrapping_neg();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(">>> 0"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {

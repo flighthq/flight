@@ -8103,6 +8103,9 @@ fn emit_expression_value(
                             ))),
                         };
                     }
+                    ("try_from" | "try_into", 1) => {
+                        return emit_expression(&call.args[0], entities);
+                    }
                     _ => {}
                 }
             }
@@ -11295,6 +11298,17 @@ fn emit_method_call(
         "encode_utf16" if arguments.is_empty() => Ok(format!(
             "Array.from({{ length: {receiver}.length }}, (_, index) => {receiver}.charCodeAt(index))"
         )),
+        "eq_ignore_ascii_case"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "({receiver}.toLowerCase() === {}.toLowerCase())",
+                arguments[0]
+            ))
+        }
+        "eq_ignore_ascii_case" if arguments.len() == 1 => Err(compile_error(
+            "portable `.eq_ignore_ascii_case()` requires a receiver known to be `String` or `str`",
+        )),
         "enumerate" if arguments.is_empty() => Ok(format!("{receiver}.entries()")),
         "exp" if arguments.is_empty() => Ok(format!("Math.exp({receiver})")),
         "expect" if arguments.len() == 1 => {
@@ -11460,6 +11474,9 @@ fn emit_method_call(
         "as_slice" if arguments.is_empty() => Ok(receiver),
         "as_str" | "to_str" if arguments.is_empty() => Ok(receiver),
         "borrow" | "borrow_mut" if arguments.is_empty() => Ok(receiver),
+        "leading_zeros" if arguments.is_empty() => {
+            Ok(format!("Math.clz32({receiver})"))
+        }
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "last" | "last_mut"
             if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) =>
@@ -11485,6 +11502,8 @@ fn emit_method_call(
             "portable `.lines()` requires a receiver known to be `String` or `str`",
         )),
         "ln" if arguments.is_empty() => Ok(format!("Math.log({receiver})")),
+        "log2" if arguments.is_empty() => Ok(format!("Math.log2({receiver})")),
+        "log10" if arguments.is_empty() => Ok(format!("Math.log10({receiver})")),
         "map" if arguments.len() == 1 => Ok(format!("{receiver}.map({})", arguments[0])),
         "map_or"
             if arguments.len() == 2
@@ -11631,6 +11650,33 @@ fn emit_method_call(
             ))
         }
         "reduce" if arguments.len() == 1 => Ok(format!("{receiver}.reduce({})", arguments[0])),
+        "rfind"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            };
+            Ok(format!(
+                "((value: string, pattern: string): number | {absent} => {{ const index = value.lastIndexOf(pattern); return index === -1 ? {absent} : index; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "rfind" if arguments.len() == 1 => Err(compile_error(
+            "portable `.rfind()` requires a receiver known to be `String` or `str`",
+        )),
+        "rsplit"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "{receiver}.split({}).reverse()",
+                arguments[0]
+            ))
+        }
+        "rsplit" if arguments.len() == 1 => Err(compile_error(
+            "portable `.rsplit()` requires a receiver known to be `String` or `str`",
+        )),
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
         "saturating_add" if arguments.len() == 1 => {
@@ -11907,6 +11953,8 @@ fn emit_method_call(
             "portable `.to_uppercase()` requires a receiver known to be `String` or `str`",
         )),
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
+        "to_owned" if arguments.is_empty() => Ok(receiver),
+        "to_string_lossy" if arguments.is_empty() => Ok(receiver),
         "trim_matches"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
         {
@@ -11945,6 +11993,9 @@ fn emit_method_call(
         }
         "wrapping_mul" if arguments.len() == 1 => {
             Ok(format!("Math.imul(({receiver}), {}) >>> 0", arguments[0]))
+        }
+        "wrapping_neg" if arguments.is_empty() => {
+            Ok(format!("((-({receiver})) >>> 0)"))
         }
         "wrapping_shl" if arguments.len() == 1 => {
             Ok(format!("(({receiver}) << {}) >>> 0", arguments[0]))
