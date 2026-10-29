@@ -102,6 +102,18 @@ use std::pin::Pin;
 pub type LocalPending = Pin<Box<dyn Future<Output = u32>>>;
 `;
 
+// Valid Rust with a local \`mod std\` whose \`use ::std::...\` imports still start in the extern prelude.
+const ABSOLUTE_STD_FIXTURE = `mod std {
+    pub struct Local;
+}
+
+use ::std::boxed::Box;
+use ::std::future::Future;
+use ::std::pin::Pin;
+
+pub type Pending = Pin<Box<dyn Future<Output = u32>>>;
+`;
+
 const QUALIFIED_FIXTURE = `extern crate alloc;
 
 pub type Qualified = std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = u32> + std::marker::Send>>;
@@ -276,6 +288,12 @@ describe('flight-compile pinned future lowering', () => {
     expect(compileRust('consumer', SHADOW_CONSUMER_FIXTURE).error).toBe(
       'error: portable `Pin` here resolves to `future_shapes::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',
     );
+    buildRustSource('absolute_std', ABSOLUTE_STD_FIXTURE);
+    const absolute = compileRust('absolute-std', ABSOLUTE_STD_FIXTURE);
+    expect(absolute).toEqual({ error: '', typescript: 'export type Pending = Promise<number>;\n\n' });
+    expect(
+      strictDiagnostics('absolute', `${absolute.typescript}export const pending: Pending = Promise.resolve(1);\n`),
+    ).toEqual([]);
     buildRustSource('local_std', LOCAL_STD_FIXTURE);
     expect(compileRust('local-std', LOCAL_STD_FIXTURE).error).toBe(
       'error: portable `Pin` here resolves to `crate::std::pin::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',

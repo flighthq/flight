@@ -866,7 +866,14 @@ pub(crate) fn insert_type_path_context<'a>(
     }
 
     for item_use in uses {
-        collect(&item_use.tree, &mut Vec::new(), context);
+        // An absolute `use ::root::...` keeps a leading empty segment: it names the extern-prelude root
+        // even where a local item shares that name.
+        let mut prefix = if item_use.leading_colon.is_some() {
+            vec![String::new()]
+        } else {
+            Vec::new()
+        };
+        collect(&item_use.tree, &mut prefix, context);
     }
     for name in local_names {
         context.insert(format!("{TYPE_LOCAL_MARKER}{name}"));
@@ -1685,15 +1692,20 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
 }
 
 // `path` with its root crate made canonical: a root this source declares itself (a local `mod std`) is
-// this crate's item; an `extern crate` binding is replaced by the crate it names; `std` without one is
+// this crate's item unless the path is absolute (a leading empty segment for `::root`, which starts in
+// the extern prelude); an `extern crate` binding is replaced by the crate it names; `std` without one is
 // absent under `#![no_std]`, and `alloc` is never in scope without one.
 // flight-lint: allow(hashmap-iteration) each local name has at most one recorded extern crate
 fn canonical_type_path_root(
     mut path: Vec<String>,
     context: &HashSet<String>,
 ) -> Option<Vec<String>> {
+    let absolute = path.first().is_some_and(String::is_empty);
+    if absolute {
+        path.remove(0);
+    }
     let first = path.first()?.clone();
-    if context.contains(&format!("{TYPE_LOCAL_MARKER}{first}")) {
+    if !absolute && context.contains(&format!("{TYPE_LOCAL_MARKER}{first}")) {
         return Some(std::iter::once("crate".to_string()).chain(path).collect());
     }
     let prefix = format!("{TYPE_EXTERN_CRATE_MARKER}{first}{PROVENANCE_SEPARATOR}");
@@ -1949,7 +1961,10 @@ fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<
         .collect::<Vec<_>>();
     let (first, rest) = segments.split_first()?;
     if path.leading_colon.is_some() {
-        return canonical_type_path_root(segments, context);
+        return canonical_type_path_root(
+            std::iter::once(String::new()).chain(segments).collect(),
+            context,
+        );
     }
     if context.contains(&format!("{TYPE_USE_MARKER}{first}")) {
         let prefix = format!("{TYPE_USE_TARGET_MARKER}{first}{PROVENANCE_SEPARATOR}");

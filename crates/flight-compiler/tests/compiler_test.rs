@@ -986,6 +986,9 @@ pub struct Capability {
             "extern crate alloc;\npub type P = ::core::pin::Pin<alloc::boxed::Box<dyn core::future::Future<Output = u32> + core::marker::Send + Sync + 'static>>;\n",
             "extern crate std as standard;\npub type P = standard::pin::Pin<standard::boxed::Box<dyn Future<Output = u32> + Send>>;\n",
             "#![no_std]\nextern crate std;\npub type P = std::pin::Pin<std::boxed::Box<dyn Future<Output = u32> + Send>>;\n",
+            "mod std {\n    pub struct Local;\n}\n\nuse ::std::boxed::Box;\nuse ::std::future::Future;\nuse ::std::pin::Pin;\n\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+            "mod std {}\npub type P = ::std::pin::Pin<::std::boxed::Box<dyn ::std::future::Future<Output = u32>>>;\n",
+            "mod std {}\nuse ::std::pin::*;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
             "use std::boxed::Box as Owned;\nuse std::future::Future as Pending;\nuse std::marker::Send as Movable;\nuse std::pin::Pin as Pinned;\npub type P = Pinned<Owned<dyn Pending<Output = u32> + Movable>>;\n",
             "use std as standard;\nuse std::pin;\npub type P = pin::Pin<standard::boxed::Box<dyn Future<Output = u32>>>;\n",
             "use std::pin::{self as pinning};\npub type P = pinning::Pin<Box<dyn Future<Output = u32> + Send>>;\n",
@@ -1004,6 +1007,7 @@ pub struct Capability {
         for source in [
             "extern crate std as standard;\npub fn a(s: &mut standard::collections::HashSet<i32>) -> bool {\n    return s.insert(1);\n}\n",
             "#![no_std]\nextern crate std;\nuse std::collections::HashSet;\npub fn a(s: &mut HashSet<i32>) -> bool {\n    return s.insert(1);\n}\n",
+            "mod std {\n    pub mod collections {\n        pub struct HashSet<T>(pub T);\n    }\n}\nuse ::std::collections::HashSet;\npub fn a(s: &mut HashSet<i32>) -> bool {\n    return s.insert(1);\n}\n",
         ] {
             assert_eq!(
                 compile_typescript(source, None).unwrap(),

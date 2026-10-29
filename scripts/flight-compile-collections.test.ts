@@ -138,6 +138,25 @@ pub type LocalSet = HashSet<String>;
 pub type LocalMap = HashMap<String, u32>;
 `;
 
+// Valid Rust where a local \`mod std\` owns \`std::collections\` but \`::std::collections\` is the standard crate.
+const ABSOLUTE_STD_COLLECTIONS_FIXTURE = `mod std {
+    pub mod collections {
+        pub struct HashSet<T>(pub T);
+    }
+}
+
+pub type LocalSet = std::collections::HashSet<String>;
+pub type StandardSet = ::std::collections::HashSet<String>;
+
+pub fn create_standard_set() -> StandardSet {
+    return ::std::collections::HashSet::new();
+}
+
+pub fn mark_standard_set(set: &mut ::std::collections::HashSet<String>, value: String) -> bool {
+    return set.insert(value);
+}
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -317,6 +336,20 @@ describe('flight-compile HashSet and HashMap lowering', () => {
       error: '',
       typescript: 'export type LocalSet = HashSet<string>;\n\nexport type LocalMap = HashMap<string, number>;\n\n',
     });
+  });
+
+  it('lowers absolute std collections beside a local std module', () => {
+    buildRustSource('absolute_std_collections', ABSOLUTE_STD_COLLECTIONS_FIXTURE);
+    const { error, typescript } = compileRust('absolute-std-collections', ABSOLUTE_STD_COLLECTIONS_FIXTURE);
+    expect(error).toBe('');
+    expect(typescript).toContain('export type LocalSet = HashSet<string>;');
+    expect(typescript).toContain('export type StandardSet = Set<string>;');
+    const exports = loadModule(typescript);
+    const set = (exports.createStandardSet as unknown as () => Set<string>)();
+    const mark = exports.markStandardSet as unknown as (set: Set<string>, value: string) => boolean;
+    expect(set).toBeInstanceOf(Set);
+    expect(mark(set, 'a')).toBe(true);
+    expect(mark(set, 'a')).toBe(false);
   });
 
   it('fails closed on standard collection names without standard provenance', () => {
