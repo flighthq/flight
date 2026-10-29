@@ -15,9 +15,9 @@ export interface SoftKeyboardInfo {
   width: number;
 }
 export interface SoftKeyboard {
-  onShow: Signal<(height: number) => void>;
-  onHide: Signal<() => void>;
-  onResize: Signal<(height: number) => void>;
+  onShow: Signal<number>;
+  onHide: Signal<void>;
+  onResize: Signal<number>;
 }
 
 export type SoftKeyboardVisibilityResult = 'ok' | 'operation-failed';

@@ -39,7 +39,7 @@ export async function attachSoftKeyboard(
       emitSignal(keyboard.onShow, nowHeight);
     } else if (!nowVisible && wasVisible) {
       prevHeight = 0;
-      emitSignal(keyboard.onHide);
+      emitSignal(keyboard.onHide, undefined);
     } else if (nowVisible && nowHeight !== prevHeight) {
       prevHeight = nowHeight;
       emitSignal(keyboard.onResize, nowHeight);
