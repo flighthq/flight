@@ -4532,6 +4532,42 @@ pub fn max_index() -> usize {
     }
 
     #[test]
+    fn lowers_string_from_utf8_and_from_utf8_lossy() {
+        let source = r#"
+pub fn decode(bytes: Vec<u8>) -> String {
+    return String::from_utf8(bytes).unwrap();
+}
+
+pub fn decode_lossy(bytes: &[u8]) -> String {
+    return String::from_utf8_lossy(bytes).into_owned();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("new TextDecoder().decode(new Uint8Array("),
+            "from_utf8 should use TextDecoder: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_into_owned_to_identity() {
+        let source = r#"
+pub fn take_ownership(cow: &str) -> String {
+    return cow.into_owned();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("return cow;"),
+            "into_owned should be identity: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {

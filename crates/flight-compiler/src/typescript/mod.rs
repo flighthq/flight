@@ -8010,6 +8010,22 @@ fn emit_expression_value(
                     "((units: Readonly<number[]>): string => {{ let value = ''; for (let index = 0; index < units.length; index += 0x8000) value += String.fromCharCode(...units.slice(index, index + 0x8000)); return value; }})({units})"
                 ));
             }
+            if expression_is_associated_path(&call.func, "String", "from_utf8")
+                && call.args.len() == 1
+            {
+                let bytes = emit_expression(&call.args[0], entities)?;
+                return Ok(format!(
+                    "new TextDecoder().decode(new Uint8Array({bytes}))"
+                ));
+            }
+            if expression_is_associated_path(&call.func, "String", "from_utf8_lossy")
+                && call.args.len() == 1
+            {
+                let bytes = emit_expression(&call.args[0], entities)?;
+                return Ok(format!(
+                    "new TextDecoder().decode(new Uint8Array({bytes}))"
+                ));
+            }
             if expression_is_associated_path(&call.func, "Vec", "new") && call.args.is_empty() {
                 return Ok("[] as never[]".to_string());
             }
@@ -11456,6 +11472,7 @@ fn emit_method_call(
         "into" if arguments.is_empty() => Ok(receiver),
         "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
+        "into_owned" if arguments.is_empty() => Ok(receiver),
         "is_ascii_digit" if arguments.is_empty() => {
             Ok(format!(
                 "((ch: string): boolean => ch >= '0' && ch <= '9')({receiver})"
