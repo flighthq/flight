@@ -216,7 +216,7 @@ describe('disconnectSignalScope', () => {
     emitSignal(signal, undefined);
     expect(scope.connections!.length).toEqual(1);
     expect(isSignalConnectionConnected(scope.connections![0])).toBe(true);
-    calls.value.length = 0;
+    calls.value = [] as never[];
     emitSignal(signal, undefined);
     expect(calls.value).toEqual(['replacement']);
   });

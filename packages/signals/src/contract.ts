@@ -9,22 +9,12 @@ export {
   pauseSignalConnection,
   resumeSignalConnection,
 } from './connection.ts';
-export { cancelSignal, dispatchSignalData, emitSignal, signalDataCancelled } from './emitter.ts';
+export { cancelSignal, emitSignal } from './emitter.ts';
 export { nullSignalEmit } from './internal.ts';
 export { emitSignalSafe } from './safe.ts';
 export { createSignalScope, disconnectSignalScope, initializeSignalScope } from './scope.ts';
-export { createSignal, initializeSignal, installDefaultSignalEmitter } from './signal.ts';
-export {
-  clearSignal,
-  compactSignalData,
-  connectSignal,
-  countLiveSlots,
-  disconnectSignal,
-  hasSignalSlots,
-  initSignalData,
-  isSlotConnected,
-  setSlotPaused,
-} from './slot.ts';
+export { createSignal, initializeSignal } from './signal.ts';
+export { clearSignal, connectSignal, disconnectSignal, hasSignalSlots, isSlotConnected } from './slot.ts';
 export {
   advanceSignalTimers,
   clearSignalTimeout,

@@ -32,8 +32,7 @@ export function initializeSignalScope(out: SignalScopeRaw): void {
   out.connections = [] as never[];
 }
 
-function takeSignalScopeConnections(scope: SignalScopeRaw): SignalConnection[] | undefined {
-  let connections = scope.connections!;
+function drainSignalScopeConnections(connections: SignalConnection[]): SignalConnection[] | undefined {
   if (connections.length === 0) {
     return undefined;
   }
@@ -43,4 +42,9 @@ function takeSignalScopeConnections(scope: SignalScopeRaw): SignalConnection[] |
   }
   connections.length = 0;
   return snapshot;
+}
+
+function takeSignalScopeConnections(scope: SignalScopeRaw): SignalConnection[] | undefined {
+  let connections = scope.connections!;
+  return drainSignalScopeConnections(connections);
 }

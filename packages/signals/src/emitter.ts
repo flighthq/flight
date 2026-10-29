@@ -17,7 +17,7 @@ export function cancelSignal<T>(signal: SignalRaw<T>): void {
  * a time, never across a callback, so a slot may re-entrantly connect, disconnect, emit or
  * cancel (D4). Slots added ahead of the cursor during the walk are reached, as in TS.
  */
-export function dispatchSignalData<T>(signal: SignalRaw<T>, args: T): boolean {
+function dispatchSignalData<T>(signal: SignalRaw<T>, args: T): boolean {
   if (!beginSignalDispatch(signal.data)) {
     return false;
   }
@@ -47,12 +47,13 @@ export function dispatchSignalData<T>(signal: SignalRaw<T>, args: T): boolean {
   return false;
 }
 
-/**
- * Calls the source-required emitter, including custom callbacks and spread wrappers.
- */
-export function emitSignal<T>(signal: SignalRaw<T>, args: T): void {
-  const emit = signal.emit!;
-  emit(args);
+function signalDataCancelled<T>(data: SignalData<T> | undefined): boolean {
+  const state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  return signalData.cancelled;
 }
 
 function beginSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
@@ -97,11 +98,12 @@ function getSignalDispatchSlot<T>(data: SignalData<T> | undefined, index: number
   return signalData.slots[index];
 }
 
-export function signalDataCancelled<T>(data: SignalData<T> | undefined): boolean {
-  const state = data!;
-  const signalData = state;
-  if (signalData === undefined) {
-    return false;
-  }
-  return signalData.cancelled;
+/**
+ * Calls the source-required emitter, including custom callbacks and spread wrappers.
+ */
+export function emitSignal<T>(signal: SignalRaw<T>, args: T): void {
+  const emit = signal.emit!;
+  emit(args);
 }
+
+export { dispatchSignalData, signalDataCancelled };

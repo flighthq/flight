@@ -22,7 +22,7 @@ export function initializeSignal<T>(out: SignalRaw<T>): void {
 /**
  * Restores native D4 dispatch without holding an emitter-cell lock during callbacks.
  */
-export function installDefaultSignalEmitter<T>(signal: SignalRaw<T>): void {
+function installDefaultSignalEmitter<T>(signal: SignalRaw<T>): void {
   const dispatchSignal = Object.defineProperties(
     { ...signal },
     {
@@ -43,3 +43,5 @@ export function installDefaultSignalEmitter<T>(signal: SignalRaw<T>): void {
     }
   };
 }
+
+export { installDefaultSignalEmitter };

@@ -73,7 +73,7 @@ describe('emitSignalSafe', () => {
     connectSignal(signal, (_unused0: void) => bCalls.value.push('b'), undefined);
     emitSignalSafe(signal, undefined);
     expect(calls.value).toEqual(['a', 'b']);
-    calls.value.length = 0;
+    calls.value = [] as never[];
     emitSignalSafe(signal, undefined);
     expect(calls.value).toEqual(['a', 'b', 'added']);
   });
@@ -112,7 +112,7 @@ describe('emitSignalSafe', () => {
     idHolder.value = removedId;
     emitSignalSafe(signal, undefined);
     expect(calls.value).toEqual(['first', 'removed']);
-    calls.value.length = 0;
+    calls.value = [] as never[];
     emitSignalSafe(signal, undefined);
     expect(calls.value).toEqual(['first']);
   });

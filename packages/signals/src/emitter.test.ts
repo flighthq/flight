@@ -602,7 +602,7 @@ describe('emitSignal', () => {
     expect(data.priorities.length).toEqual(1);
     expect(data.repeat.length).toEqual(1);
     void state;
-    calls.value.length = 0;
+    calls.value = [] as never[];
     emitSignal(signal, undefined);
     expect(calls.value).toEqual(['a']);
   });

@@ -17,7 +17,7 @@ export function clearSignal<T>(signal: SignalRaw<T>): void {
  * Removes tombstoned entries once the outermost emission exits, and detaches the signal when
  * the array becomes empty (the teardown a disconnect during dispatch defers).
  */
-export function compactSignalData<T>(data: SignalData<T> | undefined): boolean {
+function compactSignalData<T>(data: SignalData<T> | undefined): boolean {
   let state = data!;
   const signalData = state;
   if (signalData === undefined) {
@@ -136,7 +136,7 @@ export function connectSignal<T>(
   }
 }
 
-export function countLiveSlots<T>(data: Readonly<SignalData<T>>): number {
+function countLiveSlots<T>(data: Readonly<SignalData<T>>): number {
   let live = 0;
   for (const slot of data.slots) {
     if (slot !== undefined) {
@@ -222,7 +222,7 @@ export function hasSignalSlots<T>(signal: SignalRaw<T>): boolean {
   return countLiveSlots(signalData) > 0;
 }
 
-export function initSignalData<T>(signal: SignalRaw<T>): void {
+function initSignalData<T>(signal: SignalRaw<T>): void {
   let state = signal.data!;
   if (state !== undefined) {
     return;
@@ -250,7 +250,7 @@ export function isSlotConnected<T>(signal: SignalRaw<T>, id: SlotId): boolean {
  * Pauses or resumes one registration in place (priority order is preserved). Returns false when
  * the registration no longer exists, so resuming a torn-down connection cannot resurrect it.
  */
-export function setSlotPaused<T>(signal: SignalRaw<T>, id: SlotId, paused: boolean): boolean {
+function setSlotPaused<T>(signal: SignalRaw<T>, id: SlotId, paused: boolean): boolean {
   let state = signal.data!;
   const signalData = state;
   if (signalData === undefined) {
@@ -264,3 +264,5 @@ export function setSlotPaused<T>(signal: SignalRaw<T>, id: SlotId, paused: boole
   }
   return false;
 }
+
+export { compactSignalData, setSlotPaused };

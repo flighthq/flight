@@ -81,7 +81,7 @@ describe('connectSignalAtFrameRate', () => {
     const source: SignalRaw<FrameTick> = createSignal();
     const fired = { value: 0 };
     const count = fired;
-    connectSignalAtFrameRate(source, 10.0, (Delta: number) => (count.value += 1));
+    connectSignalAtFrameRate(source, 10.0, (_delta: number) => (count.value += 1));
     emitSignal(source, { deltaTime: 110.0 });
     emitSignal(source, { deltaTime: 110.0 });
     expect(fired.value).toEqual(2);
@@ -90,7 +90,7 @@ describe('connectSignalAtFrameRate', () => {
     const source: SignalRaw<FrameTick> = createSignal();
     const fired = { value: 0 };
     const count = fired;
-    const detach = connectSignalAtFrameRate(source, 10.0, (Delta: number) => (count.value += 1));
+    const detach = connectSignalAtFrameRate(source, 10.0, (_delta: number) => (count.value += 1));
     detach();
     emitSignal(source, { deltaTime: 200.0 });
     expect(fired.value).toEqual(0);
