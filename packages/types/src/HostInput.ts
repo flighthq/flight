@@ -1,4 +1,9 @@
+import type { InputPointerLockExitOutcome, InputPointerLockRequestOutcome } from '@flighthq/input/contract';
+
 import type { InputTargetHandle } from './HostInputTarget.ts';
+
+/** @deprecated Import pointer-lock outcomes from `@flighthq/input/contract`. */
+export type { InputPointerLockExitOutcome, InputPointerLockRequestOutcome } from '@flighthq/input/contract';
 
 // Host-emitted file drops are an event capability, separate from target preparation and pointer-lock
 // commands even when one platform covers all three. The returned release closes over the exact provider
@@ -18,14 +23,6 @@ export interface HostInputFocusCapability {
 // request outcome is method-tight: only request can report target lookup or denial, while exit can report
 // only release availability/failure. A successful request's consumer must retain this backend until exit
 // so later Host selection cannot reroute it.
-export type InputPointerLockExitOutcome =
-  | { readonly reason: 'ok' }
-  | { readonly reason: 'api-unavailable' | 'operation-failed' };
-
-export type InputPointerLockRequestOutcome =
-  | { readonly reason: 'ok' }
-  | { readonly reason: 'api-unavailable' | 'denied' | 'operation-failed' | 'target-not-found' };
-
 export interface HostInputPointerLockCapability {
   exit(): Promise<InputPointerLockExitOutcome>;
   request(target: InputTargetHandle): Promise<InputPointerLockRequestOutcome>;
