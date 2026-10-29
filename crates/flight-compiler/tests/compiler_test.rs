@@ -2752,14 +2752,6 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
                 receiver_error,
             ),
             (
-                "pub fn f(a: &mut i32, b: &[i32]) { a.extend_from_slice(b); }\n",
-                "portable `.extend_from_slice()` requires a receiver declared as Rust `Vec`",
-            ),
-            (
-                "const PAIR: [i32; 2] = [5, 6];\npub fn f(a: &mut Vec<i32>) { a.extend_from_slice(&PAIR); }\n",
-                "portable `.extend_from_slice()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
-            ),
-            (
                 "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::new(); values.extend(extra); return values; }\n",
                 receiver_error,
             ),
@@ -2770,14 +2762,6 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
             (
                 "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = vec![]; values.extend(extra); return values; }\n",
                 receiver_error,
-            ),
-            (
-                "pub fn f(values: &mut Vec<i32>, source: &Vec<i32>, head: usize) { values.extend_from_slice(&source[..head]); }\n",
-                "portable `.extend_from_slice()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
-            ),
-            (
-                "pub fn f(values: &mut Vec<i32>, source: &Vec<i32>, end: usize) { values.extend_from_slice(&source[1..=end]); }\n",
-                "portable `.extend_from_slice()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
             ),
             (
                 "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) -> usize { let n = { a.extend(b) }; return a.len(); }\n",

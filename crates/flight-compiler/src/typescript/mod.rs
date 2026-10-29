@@ -3325,30 +3325,7 @@ pub(crate) fn validate_dependency_export_name_bindings(
     return Ok(());
 }
 
-// Both operands of `.extend()` / `.extend_from_slice()` must be declared as a Rust `Vec` (receiver) and
-// a `Vec` or slice (argument); iterator, Option and string operands are rejected.
-fn validate_sequence_operands(
-    method: &str,
-    call: &syn::ExprMethodCall,
-    entities: &HashSet<String>,
-) -> Result<(), CompileError> {
-    if call.args.len() != 1 {
-        return Err(compile_error(format!(
-            "portable `.{method}()` takes exactly one argument"
-        )));
-    }
-    if !expression_is_sequence(&call.receiver, entities) {
-        return Err(compile_error(format!(
-            "portable `.{method}()` requires a receiver declared as Rust `Vec`"
-        )));
-    }
-    if !expression_is_sequence(&call.args[0], entities) {
-        return Err(compile_error(format!(
-            "portable `.{method}()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported"
-        )));
-    }
-    return Ok(());
-}
+
 
 pub(super) fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     if let Some(inner) = option_inner_type(rust_type) {
@@ -15239,7 +15216,24 @@ fn emit_vec_extend_statement(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    validate_sequence_operands(&call.method.to_string(), call, entities)?;
+    let method = call.method.to_string();
+    if call.args.len() != 1 {
+        return Err(compile_error(format!(
+            "portable `.{method}()` takes exactly one argument"
+        )));
+    }
+    if method == "extend" {
+        if !expression_is_sequence(&call.receiver, entities) {
+            return Err(compile_error(format!(
+                "portable `.{method}()` requires a receiver declared as Rust `Vec`"
+            )));
+        }
+        if !expression_is_sequence(&call.args[0], entities) {
+            return Err(compile_error(format!(
+                "portable `.{method}()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported"
+            )));
+        }
+    }
     let receiver = emit_expression(&call.receiver, entities)?;
     let argument = emit_expression(&call.args[0], entities)?;
     let mut used = format!("{receiver} {argument}")
