@@ -1440,6 +1440,14 @@ pub struct Hooks {
                 "`flight-compiler: callable-parameters Remap` parameter name `x-y` is not a valid identifier",
             ),
             (
+                "//! flight-compiler: callable-parameters Remap await\npub type Remap = fn(f32) -> f32;\n",
+                "`flight-compiler: callable-parameters Remap` parameter name `await` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: callable-parameters Remap super\npub type Remap = fn(f32) -> f32;\n",
+                "`flight-compiler: callable-parameters Remap` parameter name `super` is not a valid identifier",
+            ),
+            (
                 "//! flight-compiler: callable-parameters Remap x x\npub type Remap = fn(f32, f32) -> f32;\n",
                 "`flight-compiler: callable-parameters Remap` repeats parameter name `x`",
             ),
