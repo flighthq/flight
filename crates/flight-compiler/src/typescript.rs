@@ -76,9 +76,10 @@ const ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER: &str = "@entity-definitely-ini
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
-// A local bound to a `MutexGuard`. `Mutex<T>` is a `{ value: T }` cell in TypeScript, so the local
-// must retain that cell identity while dereferences read or replace its `value`.
-const MUTEX_GUARD_LOCAL_MARKER: &str = "@mutex-guard-local:";
+// The BindingId of a local bound to a dereferenced `MutexGuard`. `Mutex<T>` is a `{ value: T }` cell
+// in TypeScript, so that exact binding must retain the cell while dereferences read or replace its
+// `value`; another binding with the same identifier remains independent.
+const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
@@ -2723,8 +2724,10 @@ fn insert_data_union_context(
 fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<String>) {
     struct Resolver<'a> {
         context: &'a HashSet<String>,
+        dereferenced: HashSet<String>,
         facts: Vec<(String, BindingFact)>,
         function: String,
+        mutex_guards: HashSet<String>,
         ordinal: usize,
         scopes: Vec<BTreeMap<String, String>>,
         sites: Vec<(String, String)>,
@@ -2847,13 +2850,21 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             }
         }
 
+        fn binding_id(&self, name: &str) -> Option<String> {
+            return self
+                .scopes
+                .iter()
+                .rev()
+                .find_map(|scope| scope.get(name).cloned());
+        }
+
         fn fact_of(&self, name: &str) -> Option<BindingFact> {
-            let id = self.scopes.iter().rev().find_map(|scope| scope.get(name))?;
+            let id = self.binding_id(name)?;
             return self
                 .facts
                 .iter()
                 .rev()
-                .find(|(fact_id, _)| fact_id == id)
+                .find(|(fact_id, _)| *fact_id == id)
                 .map(|(_, fact)| fact.clone());
         }
 
@@ -3180,9 +3191,23 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             self.scopes.pop();
         }
 
+        fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
+            if matches!(unary.op, UnOp::Deref(_))
+                && let Some(name) = referenced_path_identifier(&unary.expr)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.dereferenced.insert(id);
+            }
+            syn::visit::visit_expr_unary(self, unary);
+        }
+
         fn visit_item_fn(&mut self, _function: &'ast ItemFn) {}
 
         fn visit_local(&mut self, local: &'ast syn::Local) {
+            let mutex_guard = local
+                .init
+                .as_ref()
+                .is_some_and(|initializer| mutex_guard_receiver(&initializer.expr).is_some());
             let mut fact = BindingFact::Unknown;
             if let Some(initializer) = &local.init {
                 self.visit_expr(&initializer.expr);
@@ -3194,6 +3219,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 }
             }
             self.bind_pattern(&local.pat, fact);
+            if mutex_guard
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.mutex_guards.insert(id);
+            }
         }
     }
 
@@ -3210,11 +3241,13 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     let function_name = function.sig.ident.to_string();
     let mut resolver = Resolver {
         context,
+        dereferenced: HashSet::new(),
         facts: Vec::new(),
         function: match current_source(context) {
             Some(module) => format!("{module}::{function_name}"),
             None => function_name,
         },
+        mutex_guards: HashSet::new(),
         ordinal: 0,
         scopes: vec![BTreeMap::new()],
         sites: Vec::new(),
@@ -3240,6 +3273,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     }
     for (name, id) in parameters {
         markers.push(format!("{BINDING_MARKER}{name}={id}"));
+    }
+    for id in resolver.mutex_guards.intersection(&resolver.dereferenced) {
+        markers.push(format!("{MUTEX_GUARD_BINDING_MARKER}{id}"));
     }
     context.extend(markers);
 }
@@ -5279,35 +5315,6 @@ pub(crate) fn function_expression_context(
     function: &ItemFn,
     base: &HashSet<String>,
 ) -> HashSet<String> {
-    #[derive(Default)]
-    struct MutexGuardCollector {
-        dereferenced: HashSet<String>,
-        guards: HashSet<String>,
-    }
-
-    impl<'ast> syn::visit::Visit<'ast> for MutexGuardCollector {
-        fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
-            if matches!(unary.op, UnOp::Deref(_))
-                && let Some(name) = referenced_path_identifier(&unary.expr)
-            {
-                self.dereferenced.insert(name);
-            }
-            syn::visit::visit_expr_unary(self, unary);
-        }
-
-        fn visit_local(&mut self, local: &'ast syn::Local) {
-            if local
-                .init
-                .as_ref()
-                .is_some_and(|initializer| mutex_guard_receiver(&initializer.expr).is_some())
-                && let Some(name) = local_pattern_name(&local.pat)
-            {
-                self.guards.insert(name);
-            }
-            syn::visit::visit_local(self, local);
-        }
-    }
-
     struct CallbackUseCollector<'a> {
         context: &'a mut HashSet<String>,
     }
@@ -5478,14 +5485,6 @@ pub(crate) fn function_expression_context(
             context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
         }
     }
-    let mut mutex_guards = MutexGuardCollector::default();
-    syn::visit::Visit::visit_block(&mut mutex_guards, &function.block);
-    context.extend(
-        mutex_guards
-            .guards
-            .intersection(&mutex_guards.dereferenced)
-            .map(|name| format!("{MUTEX_GUARD_LOCAL_MARKER}{name}")),
-    );
     syn::visit::Visit::visit_block(
         &mut CallbackUseCollector {
             context: &mut context,
@@ -10162,9 +10161,8 @@ pub(crate) fn emit_local_with_shadow_and_else(
         .as_deref()
         .map(|name| closure_parameter_types(entities, name))
         .unwrap_or_default();
-    let mut value = if local_name
-        .as_ref()
-        .is_some_and(|name| entities.contains(&format!("{MUTEX_GUARD_LOCAL_MARKER}{name}")))
+    let mut value = if local_pattern_binding_id(entities, &local.pat)
+        .is_some_and(|id| entities.contains(&format!("{MUTEX_GUARD_BINDING_MARKER}{id}")))
         && let Some(receiver) = mutex_guard_receiver(&initializer.expr)
     {
         emit_expression(receiver, entities)?
@@ -14330,7 +14328,8 @@ fn emit_unary_expression(
     let operand = emit_expression(&unary.expr, entities)?;
     if matches!(unary.op, UnOp::Deref(_))
         && referenced_path_identifier(&unary.expr)
-            .is_some_and(|name| entities.contains(&format!("{MUTEX_GUARD_LOCAL_MARKER}{name}")))
+            .and_then(|name| lexical_binding(entities, &name))
+            .is_some_and(|id| entities.contains(&format!("{MUTEX_GUARD_BINDING_MARKER}{id}")))
     {
         return Ok(format!("{operand}.value"));
     }
@@ -15020,6 +15019,18 @@ fn local_pattern_name(pattern: &Pat) -> Option<String> {
         Pat::Type(typed) => local_pattern_name(&typed.pat),
         _ => None,
     };
+}
+
+fn local_pattern_binding_id(entities: &HashSet<String>, pattern: &Pat) -> Option<String> {
+    let identifier = match pattern {
+        Pat::Ident(identifier) => &identifier.ident,
+        Pat::Type(typed) => return local_pattern_binding_id(entities, &typed.pat),
+        _ => return None,
+    };
+    return unique_marker_suffix(
+        entities,
+        &format!("{BINDING_SITE_MARKER}{}=", binding_site_key(identifier)),
+    );
 }
 
 pub(crate) fn lower_camel_from_upper_camel(name: &str) -> String {
