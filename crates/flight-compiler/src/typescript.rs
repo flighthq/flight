@@ -3080,6 +3080,19 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
 
         fn expression_structure_identity(&self, expression: &Expr) -> Option<String> {
             return match peel_reference_and_paren(expression) {
+                Expr::Call(call) => {
+                    let Expr::Path(path) = call.func.as_ref() else {
+                        return None;
+                    };
+                    if path.qself.is_some()
+                        || single_path_identifier(&call.func)
+                            .is_some_and(|name| self.fact_of(&name).is_some())
+                    {
+                        return None;
+                    }
+                    call_fact(self.context, STRUCT_RETURN_MARKER, &path.path)
+                        .filter(|identity| !identity.is_empty())
+                }
                 Expr::Field(field) => {
                     let syn::Member::Named(field_name) = &field.member else {
                         return None;
@@ -3181,7 +3194,11 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     )
                 }
                 Expr::Group(group) => self.initializer_fact(&group.expr),
-                Expr::Field(_) => self.option_fact(expression).unwrap_or(BindingFact::Unknown),
+                Expr::Field(_) => self
+                    .expression_structure_identity(expression)
+                    .map(BindingFact::Structure)
+                    .or_else(|| self.option_fact(expression))
+                    .unwrap_or(BindingFact::Unknown),
                 Expr::Macro(invocation) if invocation.mac.path.is_ident("vec") => {
                     if invocation.mac.tokens.is_empty() {
                         return BindingFact::Unknown;

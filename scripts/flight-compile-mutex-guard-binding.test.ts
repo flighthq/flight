@@ -34,8 +34,23 @@ pub struct Owner {
     pub state: SignalState,
 }
 
+pub fn borrow_owner(owner: &Owner) -> &Owner {
+    return owner;
+}
+
 pub fn replace_nested_emit(owner: &Owner, value: i32) {
     let emit = owner.state.signal.emit.clone();
+    *emit.write().unwrap() = value;
+}
+
+pub fn replace_inferred_state_emit(owner: &Owner, value: i32) {
+    let state = &owner.state;
+    let emit = state.signal.emit.clone();
+    *emit.write().unwrap() = value;
+}
+
+pub fn replace_returned_owner_emit(owner: &Owner, value: i32) {
+    let emit = borrow_owner(owner).state.signal.emit.clone();
     *emit.write().unwrap() = value;
 }
 
@@ -158,6 +173,23 @@ describe('flight-compile nested Ref alias provenance', () => {
     expect(typescript).not.toMatch(/^\s*emit = value;$/mu);
   });
 
+  it('typechecks inferred struct-field locals under strict TypeScript', () => {
+    const { error, typescript } = compileRust();
+    expect(error).toBe('');
+    expect(strictDiagnostics(typescript)).toEqual([]);
+    expect(typescript).toContain('const state = owner.state;');
+    expect(typescript).toContain('const emit = state.signal.emit;');
+    expect(typescript).toContain('state.signal.emit = value;');
+  });
+
+  it('typechecks declared struct-returning call receivers under strict TypeScript', () => {
+    const { error, typescript } = compileRust();
+    expect(error).toBe('');
+    expect(strictDiagnostics(typescript)).toEqual([]);
+    expect(typescript).toContain('const emit = borrowOwner(owner).state.signal.emit;');
+    expect(typescript).toContain('borrowOwner(owner).state.signal.emit = value;');
+  });
+
   it('writes through every declared struct layer at runtime', () => {
     const module = loadModule(compileRust().typescript);
     type Owner = { state: { signal: { emit: number } } };
@@ -167,5 +199,33 @@ describe('flight-compile nested Ref alias provenance', () => {
     replaceNestedEmit(owner, 7);
 
     expect(owner.state.signal.emit).toBe(7);
+  });
+
+  it('writes through a struct-valued field inferred into a local', () => {
+    const module = loadModule(compileRust().typescript);
+    type Owner = { state: { signal: { emit: number } } };
+    const owner: Owner = { state: { signal: { emit: 1 } } };
+    const replaceInferredStateEmit = module.replaceInferredStateEmit as unknown as (
+      owner: Owner,
+      value: number,
+    ) => void;
+
+    replaceInferredStateEmit(owner, 8);
+
+    expect(owner.state.signal.emit).toBe(8);
+  });
+
+  it('writes through a declared struct-returning call receiver', () => {
+    const module = loadModule(compileRust().typescript);
+    type Owner = { state: { signal: { emit: number } } };
+    const owner: Owner = { state: { signal: { emit: 1 } } };
+    const replaceReturnedOwnerEmit = module.replaceReturnedOwnerEmit as unknown as (
+      owner: Owner,
+      value: number,
+    ) => void;
+
+    replaceReturnedOwnerEmit(owner, 9);
+
+    expect(owner.state.signal.emit).toBe(9);
   });
 });

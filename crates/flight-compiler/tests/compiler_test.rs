@@ -9236,6 +9236,10 @@ pub struct Owner {
     pub state: SignalState,
 }
 
+pub fn borrow_owner(owner: &Owner) -> &Owner {
+    return owner;
+}
+
 pub fn replace_emit(signal: &Signal) {
     let cell = signal.emit.clone();
     *cell.write().unwrap() = 2;
@@ -9247,6 +9251,17 @@ pub fn replace_emit(signal: &Signal) {
 pub fn replace_nested_emit(owner: &Owner) {
     let cell = owner.state.signal.emit.clone();
     *cell.write().unwrap() = 5;
+}
+
+pub fn replace_inferred_state_emit(owner: &Owner) {
+    let state = &owner.state;
+    let cell = state.signal.emit.clone();
+    *cell.write().unwrap() = 6;
+}
+
+pub fn replace_returned_owner_emit(owner: &Owner) {
+    let cell = borrow_owner(owner).state.signal.emit.clone();
+    *cell.write().unwrap() = 7;
 }
 "#;
 
@@ -9261,9 +9276,25 @@ pub fn replace_nested_emit(owner: &Owner) {
             "{output}"
         );
         assert!(output.contains("owner.state.signal.emit = 5;"), "{output}");
+        assert!(output.contains("const state = owner.state;"), "{output}");
+        assert!(
+            output.contains("const cell = state.signal.emit;"),
+            "{output}"
+        );
+        assert!(output.contains("state.signal.emit = 6;"), "{output}");
+        assert!(
+            output.contains("const cell = borrowOwner(owner).state.signal.emit;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("borrowOwner(owner).state.signal.emit = 7;"),
+            "{output}"
+        );
         assert!(!output.contains("const Captured"), "{output}");
         assert!(!output.contains("cell = 2;"), "{output}");
         assert!(!output.contains("cell = 5;"), "{output}");
+        assert!(!output.contains("cell = 6;"), "{output}");
+        assert!(!output.contains("cell = 7;"), "{output}");
     }
 
     #[test]
