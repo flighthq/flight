@@ -2,6 +2,7 @@ use flight_entity::{Ref, allocate_entity};
 use flight_signals::create_signal;
 use std::sync::{Arc, RwLock};
 
+use crate::input_binding::InputManagerRuntime;
 use crate::types::*;
 
 #[cfg(test)]
@@ -95,6 +96,10 @@ pub fn initialize_input_manager(out: &mut InputManager) {
     out.on_text_edit = borrowed.on_text_edit.clone();
     out.on_text_input = borrowed.on_text_input.clone();
     out.on_wheel = borrowed.on_wheel.clone();
+    out.registry = InputManagerRuntime {
+        sink: None,
+        bindings: Vec::new(),
+    };
 }
 
 /// Gives a signal group under construction all 15 inert signals (TS `initializeInputSignals`).

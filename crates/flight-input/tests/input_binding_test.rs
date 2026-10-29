@@ -4,10 +4,11 @@ use flight_host::{InputIngressSource, ProviderRef};
 use flight_input::contract::*;
 use flight_signals::connect_signal;
 
+
 fn create_source() -> InputIngressSource {
     return InputIngressSource {
-        provider: Arc::new(()),
-        handle: Arc::new(()),
+        provider: identity(),
+        handle: identity(),
     };
 }
 
@@ -28,18 +29,18 @@ fn create_recorder() -> Recorder {
 
 fn recording_host(recorder: Recorder) -> HostInputIngressCapability {
     let attach = |kind: &'static str| -> InputIngressAttach {
-        let recorder = recorder.clone();
+        let recorded = recorder.clone();
         return Arc::new(
             move |source: &InputIngressSource,
                   sink: InputIngressSink,
                   _options: Option<&AttachInputOptions>| {
-                recorder
+                recorded
                     .attachments
                     .lock()
                     .unwrap()
                     .push((kind.to_string(), source.clone()));
-                recorder.sinks.lock().unwrap().push(sink);
-                let releases = recorder.releases.clone();
+                recorded.sinks.lock().unwrap().push(sink);
+                let releases = recorded.releases.clone();
                 let release: InputIngressRelease = Arc::new(move || {
                     releases.lock().unwrap().push(kind.to_string());
                 });
@@ -48,7 +49,7 @@ fn recording_host(recorder: Recorder) -> HostInputIngressCapability {
         );
     };
     return HostInputIngressCapability {
-        provider: Arc::new(()),
+        provider: identity(),
         attach_gamepad: attach("gamepad"),
         attach_keyboard: attach("keyboard"),
         attach_pointer: attach("pointer"),
@@ -333,7 +334,7 @@ mod provider_identity {
 
     #[test]
     fn facets_from_one_provider_share_identity_and_distinct_providers_stay_distinct() {
-        let provider: ProviderRef = Arc::new(());
+        let provider: ProviderRef = identity();
         let callback: InputIngressRelease = Arc::new(|| {});
         let attach: InputIngressAttach = Arc::new(
             move |_source: &InputIngressSource,
@@ -347,7 +348,13 @@ mod provider_identity {
         assert!(Arc::ptr_eq(&first.provider, &second.provider));
         assert!(Arc::ptr_eq(&first.attach_gamepad, &second.attach_gamepad));
 
-        let other = host_with(Arc::new(()), attach);
+        let other = host_with(identity(), attach);
         assert!(!Arc::ptr_eq(&first.provider, &other.provider));
     }
+}
+
+// An identity-bearing payload: each call allocates a distinct object on every target (an array in
+// TypeScript), as a platform handle is. A unit payload has no identity once lowered.
+fn identity() -> Arc<Vec<i32>> {
+    return Arc::new(Vec::new());
 }

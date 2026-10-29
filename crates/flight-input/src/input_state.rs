@@ -77,9 +77,9 @@ pub fn connect_input_state_to_input_manager(
     };
 
     let on_key_down: SignalSlot<InputKeyboardData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputKeyboardData| {
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             if !locked.keys_down.contains(&data.key_code) {
                 locked.just_pressed_keys.insert(data.key_code);
             }
@@ -87,17 +87,17 @@ pub fn connect_input_state_to_input_manager(
         }
     });
     let on_key_up: SignalSlot<InputKeyboardData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputKeyboardData| {
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             locked.keys_down.remove(&data.key_code);
             locked.just_released_keys.insert(data.key_code);
         }
     });
     let on_pointer_down: SignalSlot<InputPointerData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputPointerData| {
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             let previous = *locked
                 .pointer_buttons_down
                 .get(&data.pointer_id)
@@ -109,9 +109,9 @@ pub fn connect_input_state_to_input_manager(
         }
     });
     let on_pointer_up: SignalSlot<InputPointerData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputPointerData| {
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             let previous = *locked
                 .pointer_buttons_down
                 .get(&data.pointer_id)
@@ -126,17 +126,17 @@ pub fn connect_input_state_to_input_manager(
         }
     });
     let on_pointer_cancel: SignalSlot<InputPointerData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputPointerData| {
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             locked.pointer_buttons_down.remove(&data.pointer_id);
         }
     });
     let on_gamepad_button_down: SignalSlot<InputGamepadButtonData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputGamepadButtonData| {
             let key = data.gamepad * MAX_GAMEPAD_BUTTONS + data.button;
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             if !locked.gamepad_buttons_down.contains(&key) {
                 locked.just_pressed_gamepad_buttons.insert(key);
             }
@@ -144,33 +144,33 @@ pub fn connect_input_state_to_input_manager(
         }
     });
     let on_gamepad_button_up: SignalSlot<InputGamepadButtonData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputGamepadButtonData| {
             let key = data.gamepad * MAX_GAMEPAD_BUTTONS + data.button;
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             locked.gamepad_buttons_down.remove(&key);
             locked.just_released_gamepad_buttons.insert(key);
         }
     });
     let on_gamepad_axis_move: SignalSlot<InputGamepadAxisData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputGamepadAxisData| {
             let key = data.gamepad * MAX_GAMEPAD_AXES + data.axis;
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             locked.axis_values.insert(key, data.value);
         }
     });
     let on_gamepad_connect: SignalSlot<InputGamepadConnectData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputGamepadConnectData| {
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             clear_gamepad_state(locked, data.gamepad);
         }
     });
     let on_gamepad_disconnect: SignalSlot<InputGamepadConnectData> = Arc::new({
-        let state = state.clone();
+        let target = state.clone();
         move |data: &InputGamepadConnectData| {
-            let locked: &mut InputState = &mut state.write().unwrap();
+            let locked: &mut InputState = &mut target.write().unwrap();
             clear_gamepad_state(locked, data.gamepad);
         }
     });

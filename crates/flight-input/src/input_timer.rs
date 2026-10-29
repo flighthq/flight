@@ -18,12 +18,14 @@ pub fn initialize_input_key_repeat_timer(
     out: &mut InputKeyRepeatTimer,
     options: &InputKeyRepeatOptions,
 ) {
-    out.cycle.callback = None;
-    out.cycle.delay_ms = options.delay;
-    out.cycle.interval_ms = options.interval;
-    out.cycle.next_fire_ms = 0.0;
-    out.cycle.repeating = false;
-    out.cycle.started = false;
+    out.cycle = InputKeyRepeatTimerState {
+        callback: None,
+        delay_ms: options.delay,
+        interval_ms: options.interval,
+        next_fire_ms: 0.0,
+        repeating: false,
+        started: false,
+    };
 }
 
 /// Drives the timer against the caller's clock (explicit-clock replacement for the source's real
