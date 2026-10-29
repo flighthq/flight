@@ -376,8 +376,8 @@ mod input_timer_sugar_tests {
         let method_timer = InputKeyRepeatTimer::new(&options());
         let free_timer = create_input_key_repeat_timer(&options());
         assert_eq!(
-            method_timer.read().unwrap().delay_ms,
-            free_timer.read().unwrap().delay_ms
+            method_timer.read().unwrap().cycle.delay_ms,
+            free_timer.read().unwrap().cycle.delay_ms
         );
     }
 
@@ -390,8 +390,8 @@ mod input_timer_sugar_tests {
         method_timer.advance(500.0);
         advance_input_key_repeat_timer(&free_timer, 500.0);
         assert_eq!(
-            method_timer.read().unwrap().next_fire_ms,
-            free_timer.read().unwrap().next_fire_ms
+            method_timer.read().unwrap().cycle.next_fire_ms,
+            free_timer.read().unwrap().cycle.next_fire_ms
         );
     }
 
@@ -421,8 +421,8 @@ mod input_timer_sugar_tests {
         method_timer.stop();
         stop_input_key_repeat_timer(&free_timer);
         assert_eq!(
-            method_timer.read().unwrap().started,
-            free_timer.read().unwrap().started
+            method_timer.read().unwrap().cycle.started,
+            free_timer.read().unwrap().cycle.started
         );
     }
 }

@@ -79,7 +79,7 @@ pub fn connect_input_state_to_input_manager(
     let on_key_down: SignalSlot<InputKeyboardData> = Arc::new({
         let state = state.clone();
         move |data: &InputKeyboardData| {
-            let mut locked = state.write().unwrap();
+            let locked: &mut InputState = &mut state.write().unwrap();
             if !locked.keys_down.contains(&data.key_code) {
                 locked.just_pressed_keys.insert(data.key_code);
             }
@@ -89,7 +89,7 @@ pub fn connect_input_state_to_input_manager(
     let on_key_up: SignalSlot<InputKeyboardData> = Arc::new({
         let state = state.clone();
         move |data: &InputKeyboardData| {
-            let mut locked = state.write().unwrap();
+            let locked: &mut InputState = &mut state.write().unwrap();
             locked.keys_down.remove(&data.key_code);
             locked.just_released_keys.insert(data.key_code);
         }
@@ -97,12 +97,12 @@ pub fn connect_input_state_to_input_manager(
     let on_pointer_down: SignalSlot<InputPointerData> = Arc::new({
         let state = state.clone();
         move |data: &InputPointerData| {
-            let mut locked = state.write().unwrap();
+            let locked: &mut InputState = &mut state.write().unwrap();
             let previous = *locked
                 .pointer_buttons_down
                 .get(&data.pointer_id)
                 .unwrap_or(&0);
-            let bit = 1u32.wrapping_shl(data.button as u32);
+            let bit = pointer_button_bit(data.button);
             locked
                 .pointer_buttons_down
                 .insert(data.pointer_id, previous | bit);
@@ -111,12 +111,12 @@ pub fn connect_input_state_to_input_manager(
     let on_pointer_up: SignalSlot<InputPointerData> = Arc::new({
         let state = state.clone();
         move |data: &InputPointerData| {
-            let mut locked = state.write().unwrap();
+            let locked: &mut InputState = &mut state.write().unwrap();
             let previous = *locked
                 .pointer_buttons_down
                 .get(&data.pointer_id)
                 .unwrap_or(&0);
-            let bit = 1u32.wrapping_shl(data.button as u32);
+            let bit = pointer_button_bit(data.button);
             let next = previous & !bit;
             if next == 0 {
                 locked.pointer_buttons_down.remove(&data.pointer_id);
@@ -139,7 +139,7 @@ pub fn connect_input_state_to_input_manager(
         let state = state.clone();
         move |data: &InputGamepadButtonData| {
             let key = data.gamepad * MAX_GAMEPAD_BUTTONS + data.button;
-            let mut locked = state.write().unwrap();
+            let locked: &mut InputState = &mut state.write().unwrap();
             if !locked.gamepad_buttons_down.contains(&key) {
                 locked.just_pressed_gamepad_buttons.insert(key);
             }
@@ -150,7 +150,7 @@ pub fn connect_input_state_to_input_manager(
         let state = state.clone();
         move |data: &InputGamepadButtonData| {
             let key = data.gamepad * MAX_GAMEPAD_BUTTONS + data.button;
-            let mut locked = state.write().unwrap();
+            let locked: &mut InputState = &mut state.write().unwrap();
             locked.gamepad_buttons_down.remove(&key);
             locked.just_released_gamepad_buttons.insert(key);
         }
@@ -159,21 +159,22 @@ pub fn connect_input_state_to_input_manager(
         let state = state.clone();
         move |data: &InputGamepadAxisData| {
             let key = data.gamepad * MAX_GAMEPAD_AXES + data.axis;
-            state.write().unwrap().axis_values.insert(key, data.value);
+            let locked: &mut InputState = &mut state.write().unwrap();
+            locked.axis_values.insert(key, data.value);
         }
     });
     let on_gamepad_connect: SignalSlot<InputGamepadConnectData> = Arc::new({
         let state = state.clone();
         move |data: &InputGamepadConnectData| {
-            let mut locked = state.write().unwrap();
-            clear_gamepad_state(&mut locked, data.gamepad);
+            let locked: &mut InputState = &mut state.write().unwrap();
+            clear_gamepad_state(locked, data.gamepad);
         }
     });
     let on_gamepad_disconnect: SignalSlot<InputGamepadConnectData> = Arc::new({
         let state = state.clone();
         move |data: &InputGamepadConnectData| {
-            let mut locked = state.write().unwrap();
-            clear_gamepad_state(&mut locked, data.gamepad);
+            let locked: &mut InputState = &mut state.write().unwrap();
+            clear_gamepad_state(locked, data.gamepad);
         }
     });
 
@@ -217,7 +218,7 @@ pub fn connect_input_state_to_input_manager(
 
 /// Clears the four per-frame edge sets (TS `endInputStateFrame`).
 pub fn end_input_state_frame(state: &Ref<InputState>) {
-    let mut locked = state.write().unwrap();
+    let locked: &mut InputState = &mut state.write().unwrap();
     locked.just_pressed_keys.clear();
     locked.just_released_keys.clear();
     locked.just_pressed_gamepad_buttons.clear();
@@ -246,14 +247,21 @@ pub fn is_input_gamepad_button_down(state: &Ref<InputState>, gamepad: i32, butto
 
 /// Returns whether the key code is held (TS `isInputKeyDown`).
 pub fn is_input_key_down(state: &Ref<InputState>, key_code: i32) -> bool {
-    return state.read().unwrap().keys_down.contains(&key_code);
+    let locked: &InputState = &state.read().unwrap();
+    return locked.keys_down.contains(&key_code);
 }
 
 /// Returns whether the pointer button is held for that pointer (TS `isInputPointerButtonDown`).
 pub fn is_input_pointer_button_down(state: &Ref<InputState>, pointer_id: i32, button: i32) -> bool {
-    let locked = state.read().unwrap();
+    let locked: &InputState = &state.read().unwrap();
     let bits = *locked.pointer_buttons_down.get(&pointer_id).unwrap_or(&0);
-    return (bits & 1u32.wrapping_shl(button as u32)) != 0;
+    return (bits & pointer_button_bit(button)) != 0;
+}
+
+// The bit for a pointer button: `1 << button` with the shift count taken modulo 32, as Rust's
+// `wrapping_shl` and JavaScript's `<<` both do.
+fn pointer_button_bit(button: i32) -> u32 {
+    return 1u32 << ((button as u32) & 31);
 }
 
 /// Returns whether the gamepad button transitioned up -> down this frame (TS
@@ -286,10 +294,12 @@ pub fn was_input_gamepad_button_released(
 
 /// Returns whether the key transitioned up -> down this frame (TS `wasInputKeyPressed`).
 pub fn was_input_key_pressed(state: &Ref<InputState>, key_code: i32) -> bool {
-    return state.read().unwrap().just_pressed_keys.contains(&key_code);
+    let locked: &InputState = &state.read().unwrap();
+    return locked.just_pressed_keys.contains(&key_code);
 }
 
 /// Returns whether the key transitioned down -> up this frame (TS `wasInputKeyReleased`).
 pub fn was_input_key_released(state: &Ref<InputState>, key_code: i32) -> bool {
-    return state.read().unwrap().just_released_keys.contains(&key_code);
+    let locked: &InputState = &state.read().unwrap();
+    return locked.just_released_keys.contains(&key_code);
 }

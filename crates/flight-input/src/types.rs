@@ -1,3 +1,6 @@
+//! flight-compiler: entity-runtime-state InputKeyRepeatTimer.cycle
+//! flight-compiler: entity-runtime-state InputManager.registry
+
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::pin::Pin;
@@ -6,6 +9,8 @@ use std::sync::Arc;
 use flight_entity::EntityRuntimeSlot;
 use flight_host::{InputIngressSource, ProviderRef};
 use flight_signals::Signal;
+
+use crate::input_binding::InputManagerRuntime;
 
 /// The gamepad axis semantic name (TS `GamepadAxisKind`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -348,6 +353,7 @@ pub struct InputSignals {
 #[derive(Default)]
 pub struct InputManager {
     runtime: EntityRuntimeSlot,
+    pub(crate) registry: InputManagerRuntime,
     pub enabled: bool,
     pub on_gamepad_axis_move: Signal<InputGamepadAxisData>,
     pub on_gamepad_button_down: Signal<InputGamepadButtonData>,
@@ -388,6 +394,13 @@ pub struct InputState {
 // flight-lint: allow(f64) D1: repeat delays, intervals and injected clock values are millisecond durations
 pub struct InputKeyRepeatTimer {
     runtime: EntityRuntimeSlot,
+    pub(crate) cycle: InputKeyRepeatTimerState,
+}
+
+/// The timer's crate-private cycle state, kept in the entity's runtime slot in TypeScript.
+#[derive(Default)]
+// flight-lint: allow(f64) D1: repeat delays, intervals and injected clock values are millisecond durations
+pub(crate) struct InputKeyRepeatTimerState {
     pub(crate) callback: Option<InputRepeatCallback>,
     pub(crate) delay_ms: f64,
     pub(crate) interval_ms: f64,

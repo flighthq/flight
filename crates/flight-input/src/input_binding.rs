@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_entity::{Entity, Ref, attach_entity_binding, get_entity_binding_as};
+use flight_entity::Ref;
 use flight_host::InputIngressSource;
 use flight_signals::emit_signal;
 
@@ -193,13 +193,7 @@ fn clear_input_binding(
     source: &InputIngressSource,
     kind: InputBindingKind,
 ) {
-    let removed = with_manager_runtime_mut(manager, |runtime| {
-        let position = runtime.bindings.iter().position(|binding| {
-            return binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle);
-        });
-        return position.map(|index| runtime.bindings.remove(index).release);
-    });
-    if let Some(release) = removed {
+    if let Some(release) = take_input_binding_release(manager, source, kind) {
         release();
     }
 }
@@ -399,22 +393,20 @@ fn emit_wheel(manager: &Ref<InputManager>, data: &InputPointerData) {
     emit_signal(&signal, data);
 }
 
-fn ensure_manager_runtime(manager: &Ref<InputManager>) {
-    let mut locked = manager.write().unwrap();
-    if get_entity_binding_as::<InputManagerRuntime, InputManager>(&*locked).is_none() {
-        attach_entity_binding(&mut *locked, Box::new(InputManagerRuntime::default()));
-    }
+// The designated runtime state of `manager`, reached through a typed entity reference.
+fn get_input_manager_registry(manager: &mut InputManager) -> &mut InputManagerRuntime {
+    return &mut manager.registry;
 }
 
 fn get_or_create_sink(manager: &Ref<InputManager>) -> InputIngressSink {
     let candidate = build_input_ingress_sink(manager);
-    return with_manager_runtime_mut(manager, |runtime| {
-        if let Some(sink) = runtime.sink.as_ref() {
-            return sink.clone();
-        }
-        runtime.sink = Some(candidate);
-        return runtime.sink.as_ref().expect("inert sink").clone();
-    });
+    let mut locked = manager.write().unwrap();
+    let registry = get_input_manager_registry(&mut locked);
+    if let Some(sink) = registry.sink.as_ref() {
+        return sink.clone();
+    }
+    registry.sink = Some(candidate.clone());
+    return candidate;
 }
 
 fn is_manager_enabled(manager: &Ref<InputManager>) -> bool {
@@ -427,39 +419,37 @@ fn set_input_binding(
     kind: InputBindingKind,
     release: InputIngressRelease,
 ) {
-    let previous = with_manager_runtime_mut(manager, |runtime| {
-        let position = runtime.bindings.iter().position(|binding| {
-            return binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle);
-        });
-        return position.map(|index| runtime.bindings.remove(index).release);
-    });
-    if let Some(previous) = previous {
+    if let Some(previous) = take_input_binding_release(manager, source, kind) {
         previous();
     }
-    with_manager_runtime_mut(manager, |runtime| {
-        runtime.bindings.push(InputBinding {
-            source: source.clone(),
-            kind,
-            release,
-        });
+    let mut locked = manager.write().unwrap();
+    let registry = get_input_manager_registry(&mut locked);
+    registry.bindings.push(InputBinding {
+        source: source.clone(),
+        kind,
+        release,
     });
 }
 
-fn with_manager_runtime_mut<R>(
+// Removes the binding of `kind` for `source` and returns its release, which the caller runs after the
+// manager's lock is released. A manager holds at most one binding per kind and source
+// (`set_input_binding` removes the previous one first).
+fn take_input_binding_release(
     manager: &Ref<InputManager>,
-    run: impl FnOnce(&mut InputManagerRuntime) -> R,
-) -> R {
-    ensure_manager_runtime(manager);
+    source: &InputIngressSource,
+    kind: InputBindingKind,
+) -> Option<InputIngressRelease> {
     let mut locked = manager.write().unwrap();
-    let runtime = locked
-        .entity_runtime_mut()
-        .data
-        .as_mut()
-        .expect("manager runtime")
-        .binding
-        .as_mut()
-        .expect("manager runtime binding")
-        .downcast_mut::<InputManagerRuntime>()
-        .expect("manager runtime type");
-    return run(runtime);
+    let registry = get_input_manager_registry(&mut locked);
+    let mut release = None;
+    for binding in registry.bindings.iter() {
+        if binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle) {
+            release = Some(binding.release.clone());
+            break;
+        }
+    }
+    registry.bindings.retain(|binding| {
+        return !(binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle));
+    });
+    return release;
 }
