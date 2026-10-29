@@ -41,6 +41,7 @@
     "@flighthq/clock": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
+    "@flighthq/geometry": "*",
     "@flighthq/haptics": "*",
     "@flighthq/math": "*",
     "@flighthq/menu": "*",

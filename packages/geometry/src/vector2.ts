@@ -1,5 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Vector2, Vector2Like, Vector3Like } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Vector3Like } from '@flighthq/types/contract';
+
+import type { Vector2, Vector2Like } from './types.ts';
 
 export function addVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
   const ax = a.x,

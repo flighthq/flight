@@ -41,9 +41,9 @@ import {
   setRectangleTop,
   setRectangleTopLeft,
 } from '@flighthq/geometry/contract';
-import type { Rectangle } from '@flighthq/types/contract';
 
 import { initializeRectangle } from './rectangle.ts';
+import type { Rectangle } from './types.ts';
 
 let r: Rectangle;
 let r2: Rectangle;

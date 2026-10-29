@@ -390,3 +390,4 @@ export {
 } from './vector4.ts';
 export * from './vector4Pool.ts';
 export type { Matrix } from './matrix.ts';
+export type { Rectangle, RectangleLike, Vector2, Vector2Like } from './types.ts';

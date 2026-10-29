@@ -1,8 +1,1 @@
-import type { Entity, EntityWithoutRuntime } from './Entity.ts';
-
-export interface Vector2 extends Entity {
-  x: number;
-  y: number;
-}
-
-export type Vector2Like = EntityWithoutRuntime<Vector2>;
+export type { Vector2, Vector2Like } from '@flighthq/geometry/contract';

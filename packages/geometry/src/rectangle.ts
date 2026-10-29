@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Rectangle, RectangleLike, Vector2Like } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Rectangle, RectangleLike, Vector2Like } from './types.ts';
 
 export function cloneRectangle(source: Readonly<RectangleLike>): Rectangle {
   return createRectangle(source.x, source.y, source.width, source.height);

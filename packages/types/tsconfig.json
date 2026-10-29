@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".app-types", ".menu-types", ""],
+    "moduleSuffixes": [".app-types", ".geometry-types", ".menu-types", ""],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -25,6 +25,9 @@
     },
     {
       "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
     },
     {
       "path": "../haptics"

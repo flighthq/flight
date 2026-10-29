@@ -1,7 +1,7 @@
 import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
-import type { Rectangle } from '@flighthq/types/contract';
 
 import { acquireEmptyRectangle, acquireRectangle, clearRectanglePool, releaseRectangle } from './rectanglePool.ts';
+import type { Rectangle } from './types.ts';
 
 beforeEach(() => {
   clearRectanglePool();

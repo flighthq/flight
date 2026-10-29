@@ -34,8 +34,8 @@ import {
   subtractVector2,
   writeVector2ToFloat32Array,
 } from '@flighthq/geometry/contract';
-import type { Vector2 } from '@flighthq/types/contract';
 
+import type { Vector2 } from './types.ts';
 import { initializeVector2 } from './vector2.ts';
 
 let pt: Vector2;
