@@ -4,7 +4,7 @@ import {
   createDeviceInfo,
   createSafeAreaInsets,
 } from '@flighthq/device/contract';
-import { DeviceFormFactorDesktop, DeviceFormFactorUnknown } from '@flighthq/types/contract';
+import { DeviceFormFactorDesktop, DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
 
 import { enableWebSafeAreaInsets, webHostDevice } from './webDevice.ts';
 

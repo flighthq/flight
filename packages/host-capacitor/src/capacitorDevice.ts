@@ -7,7 +7,7 @@ import type {
   DeviceInfo,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
-import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
+import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
 
 export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapability {
   const out = {} as HostDeviceCapability;

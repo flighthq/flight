@@ -55,6 +55,9 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "../useragent"
     }
   ],
   "include": ["src"]

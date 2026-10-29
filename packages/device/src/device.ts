@@ -6,7 +6,7 @@ import type {
   NonEntityCreateResult,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
-import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
+import { DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
 
 export function createDeviceCapabilities(): NonEntityCreateResult<DeviceCapabilities, 'descriptor'> {
   return { hasKeyboard: false, hasMouse: false, hasStylus: false };

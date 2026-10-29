@@ -5,7 +5,7 @@ import type {
   DeviceInfo,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
-import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
+import { DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
 
 import * as deviceContract from './device.ts';
 import {
