@@ -210,7 +210,7 @@ function consumeAnimationPlayerLoop(player: AnimationPlayer): boolean {
 }
 
 function emitAnimationPlayerFinished(player: Readonly<AnimationPlayer>): void {
-  if (player.onFinished != null) emitSignal(player.onFinished);
+  if (player.onFinished != null) emitSignal(player.onFinished, undefined);
 }
 
 function emitAnimationPlayerEvents(
@@ -245,7 +245,7 @@ function emitAnimationPlayerEvents(
 }
 
 function emitAnimationPlayerLooped(player: Readonly<AnimationPlayer>): void {
-  if (player.onLooped != null) emitSignal(player.onLooped);
+  if (player.onLooped != null) emitSignal(player.onLooped, undefined);
 }
 
 // Clamps the playhead to `time`, clears `playing`, and emits onFinished — the shared end-of-playback

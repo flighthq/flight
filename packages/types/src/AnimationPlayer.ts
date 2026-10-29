@@ -19,9 +19,9 @@ export interface AnimationPlayer extends Entity {
   clip: AnimationClip;
   loop: boolean;
   loopMode?: AnimationLoopMode;
-  onEvent?: Signal<(event: Readonly<AnimationClipEvent>) => void> | null;
-  onFinished?: Signal<() => void> | null;
-  onLooped?: Signal<() => void> | null;
+  onEvent?: Signal<Readonly<AnimationClipEvent>> | null;
+  onFinished?: Signal<void> | null;
+  onLooped?: Signal<void> | null;
   playing: boolean;
   repeatCount?: number;
   speed: number;
