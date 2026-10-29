@@ -4592,6 +4592,76 @@ pub fn wide_present(wide: &Wide) -> bool {
     }
 
     #[test]
+    fn resolves_nullable_fields_through_proven_standard_arc() {
+        let compile = |source: &str| {
+            return compile_typescript_with_module_sources(
+                ModuleSource {
+                    path: "crates/flight-share/src/share.rs",
+                    source,
+                },
+                None,
+                &[],
+                &[],
+            )
+            .unwrap();
+        };
+        let output = compile(
+            r#"//! flight-compiler: nullable-option Inner.contour
+
+use std::sync::Arc;
+
+pub struct Inner {
+    pub contour: Option<f64>,
+}
+
+pub struct Holder {
+    pub inner: Arc<Inner>,
+    pub qualified: std::sync::Arc<Inner>,
+}
+
+pub fn holder_present(holder: &Holder) -> bool {
+    return holder.inner.contour.is_some();
+}
+
+pub fn make_holder(value: Option<f64>) -> Holder {
+    return Holder {
+        inner: Arc::new(Inner { contour: value }),
+        qualified: Arc::new(Inner { contour: value }),
+    };
+}
+
+pub fn qualified_or(holder: &Holder) -> f64 {
+    return holder.qualified.contour.unwrap_or(-1.0);
+}
+
+pub fn shared_present(shared: &Arc<Inner>) -> bool {
+    return shared.contour.is_some();
+}
+"#,
+        );
+        assert!(
+            output.contains("  return ((holder.inner.contour) ?? undefined) !== undefined;\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  return (((holder.qualified.contour) ?? undefined) ?? -1.0);\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  return ((shared.contour) ?? undefined) !== undefined;\n"),
+            "{output}"
+        );
+
+        for arc in ["use flight_cells::Arc;\n", "use flight_cells::*;\n"] {
+            let source = format!(
+                "//! flight-compiler: nullable-option Inner.contour\n\n{arc}\npub struct Inner {{\n    pub contour: Option<f64>,\n}}\n\npub struct Holder {{\n    pub inner: Arc<Inner>,\n}}\n\npub fn holder_present(holder: &Holder) -> bool {{\n    return holder.inner.contour.is_some();\n}}\n"
+            );
+            let output = compile(&source);
+            assert!(!output.contains("?? undefined"), "{source}\n{output}");
+        }
+    }
+
+    #[test]
     fn converts_between_nullable_and_ordinary_options_at_every_boundary() {
         let source = r#"
 //! flight-compiler: nullable-option find_scale nullable_from_ordinary Explanation.contour

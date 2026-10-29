@@ -163,6 +163,11 @@ const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
 const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
+// `{module}␟{name}` for each name a source proves resolves to the standard `Arc`, and `{module}␟{root}`
+// for each unshadowed `std` / `alloc` root whose qualified `sync::Arc` is the standard one. `Arc<T>` is
+// lowered to `T`, so a struct's identity is seen through it only under that provenance.
+const STD_ARC_NAME_MARKER: &str = "@std-arc-name:";
+const STD_ARC_ROOT_MARKER: &str = "@std-arc-root:";
 // Functions returning a resolved struct (`module SEP function SEP struct identity`).
 const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 // `{struct identity}␟{field}␟{field struct identity}` for each field whose declared type is a struct of
@@ -1164,6 +1169,17 @@ pub(crate) fn insert_vitest_dependency_export_name_context(
     );
 }
 
+// Whether a resolved type path names the standard `Arc` (`std` or `alloc` `sync::Arc`).
+fn is_standard_arc_path(path: &[String]) -> bool {
+    return matches!(
+        path.iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .as_slice(),
+        ["std" | "alloc", "sync", "Arc"]
+    );
+}
+
 // The name and entity type of a function's leading `name: &mut Entity` parameter.
 fn leading_mutable_entity_parameter(
     function: &ItemFn,
@@ -1754,6 +1770,30 @@ fn resolved_type_identity(
         Type::Path(path) if path.qself.is_none() => &path.path,
         _ => return None,
     };
+    // A proven standard `Arc<T>` is `T` in TypeScript, so it has `T`'s identity.
+    let segments = path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    let standard_arc = match segments.as_slice() {
+        [name] if path.leading_colon.is_none() => entities.contains(&format!(
+            "{STD_ARC_NAME_MARKER}{from}{PROVENANCE_SEPARATOR}{name}"
+        )),
+        [root, module, name] if module == "sync" && name == "Arc" => entities.contains(&format!(
+            "{STD_ARC_ROOT_MARKER}{from}{PROVENANCE_SEPARATOR}{root}"
+        )),
+        _ => false,
+    };
+    if standard_arc {
+        let PathArguments::AngleBracketed(arguments) = &path.segments.last()?.arguments else {
+            return None;
+        };
+        let [GenericArgument::Type(inner)] = arguments.args.iter().collect::<Vec<_>>()[..] else {
+            return None;
+        };
+        return resolved_type_identity(entities, from, inner);
+    }
     let (owner, declaration) = resolve_path_owner(entities, STRUCT_OWNER_MARKER, from, path)?;
     return Some(format!("{owner}{PROVENANCE_SEPARATOR}{declaration}"));
 }
@@ -5185,6 +5225,36 @@ fn generation_context_with_types(
                 &function.sig.ident.to_string(),
                 is_public(&function.vis),
             ));
+        }
+        let arc_names = std::iter::once("Arc".to_string()).chain(
+            marker_suffixes(&type_path_context, TYPE_USE_TARGET_MARKER)
+                .into_iter()
+                .filter_map(|binding| {
+                    let (local, target) = binding.split_once(PROVENANCE_SEPARATOR)?;
+                    return target.ends_with("::Arc").then(|| local.to_string());
+                }),
+        );
+        for name in arc_names.collect::<BTreeSet<_>>() {
+            if syn::parse_str::<syn::Path>(&name)
+                .ok()
+                .and_then(|path| resolve_type_path(&path, &type_path_context))
+                .is_some_and(|owner| is_standard_arc_path(&owner))
+            {
+                context.insert(format!(
+                    "{STD_ARC_NAME_MARKER}{module}{PROVENANCE_SEPARATOR}{name}"
+                ));
+            }
+        }
+        for root in ["std", "alloc"] {
+            if syn::parse_str::<syn::Path>(&format!("{root}::sync::Arc"))
+                .ok()
+                .and_then(|path| resolve_type_path(&path, &type_path_context))
+                .is_some_and(|owner| is_standard_arc_path(&owner))
+            {
+                context.insert(format!(
+                    "{STD_ARC_ROOT_MARKER}{module}{PROVENANCE_SEPARATOR}{root}"
+                ));
+            }
         }
     }
     for (module, program) in programs {
