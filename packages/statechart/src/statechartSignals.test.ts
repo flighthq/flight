@@ -1,5 +1,4 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import { StatechartAtomicStateKind } from '@flighthq/types/contract';
 
 import {
   advanceStatechartInstance,
@@ -8,6 +7,7 @@ import {
   setStatechartRegionDuration,
 } from './statechart.ts';
 import { enableStatechartSignals, getStatechartSignals, initializeStatechartSignals } from './statechartSignals.ts';
+import { StatechartAtomicStateKind } from './types.ts';
 import type { StatechartRaw } from './types.ts';
 
 describe('enableStatechartSignals', () => {

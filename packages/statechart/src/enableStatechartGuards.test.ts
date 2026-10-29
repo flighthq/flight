@@ -1,6 +1,5 @@
 import type { LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
-import { StatechartAtomicStateKind, StatechartTransitionStatus } from '@flighthq/types/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
 import {
@@ -9,6 +8,7 @@ import {
   enableStatechartGuards,
 } from './enableStatechartGuards.ts';
 import { advanceStatechartInstance, createStatechartInstance, setStatechartRegionDuration } from './statechart.ts';
+import { StatechartAtomicStateKind, StatechartTransitionStatus } from './types.ts';
 import type { StatechartRaw } from './types.ts';
 
 let logState: LogState;
