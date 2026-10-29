@@ -9581,7 +9581,7 @@ fn analyze_reserved_key_data_union_pattern(
 fn reserved_key_data_union_keys_predicate(keys: &BTreeSet<String>, value: &str) -> String {
     return keys
         .iter()
-        .map(|key| format!("{key:?} in {value}"))
+        .map(|key| format!("Object.hasOwn({value}, {key:?})"))
         .collect::<Vec<_>>()
         .join(" || ");
 }

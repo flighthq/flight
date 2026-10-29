@@ -11,7 +11,11 @@ import type { MarkupTagEffect, MarkupTagResult } from './types.ts';
 export function normalizeMarkupTagResult(result: MarkupTagResult): MarkupTagEffect {
   return (() => {
     const matchValue = result;
-    if ('breakBefore' in matchValue || 'format' in matchValue || 'text' in matchValue) {
+    if (
+      Object.hasOwn(matchValue, 'breakBefore') ||
+      Object.hasOwn(matchValue, 'format') ||
+      Object.hasOwn(matchValue, 'text')
+    ) {
       const effect = matchValue as MarkupTagEffect;
       return effect;
     } else {

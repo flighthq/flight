@@ -56,6 +56,32 @@ pub fn format(value: TextFormat) -> MarkupResult {
 }
 `;
 
+const PROTOTYPE_KEY_FIXTURE = `//! flight-compiler: data-union MarkupResult=reserved-key
+
+pub struct MarkupEffect {
+    pub to_string: Option<String>,
+    pub constructor: Option<String>,
+    pub value_of: Option<String>,
+    pub has_own_property: Option<String>,
+}
+
+pub struct TextFormat {
+    pub bold: Option<bool>,
+}
+
+pub enum MarkupResult {
+    Effect(MarkupEffect),
+    Format(TextFormat),
+}
+
+pub fn classify(result: MarkupResult) -> &'static str {
+    return match result {
+        MarkupResult::Effect(_) => "effect",
+        MarkupResult::Format(_) => "format",
+    };
+}
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -109,7 +135,9 @@ describe('flight-compile reserved-key structural unions', () => {
     const { error, typescript } = compileRust('markup-result', FIXTURE);
     expect(error).toBe('');
     expect(typescript).toContain('export type MarkupResult = MarkupEffect | TextFormat;');
-    expect(typescript).toContain('"breakBefore" in matchValue || "format" in matchValue || "text" in matchValue');
+    expect(typescript).toContain(
+      'Object.hasOwn(matchValue, "breakBefore") || Object.hasOwn(matchValue, "format") || Object.hasOwn(matchValue, "text")',
+    );
     expect(strictDiagnostics(typescript)).toEqual([]);
     expect(
       strictDiagnostics(`${typescript}
@@ -143,6 +171,32 @@ classify(emptyFormat);
     const formatValue = { bold: true };
     expect(effect(effectValue)).toBe(effectValue);
     expect(format(formatValue)).toBe(formatValue);
+  });
+
+  it('tests prototype-named reserved keys by own-property presence', () => {
+    const { error, typescript } = compileRust('prototype-reserved-keys', PROTOTYPE_KEY_FIXTURE);
+    expect(error).toBe('');
+    expect(strictDiagnostics(typescript)).toEqual([]);
+    for (const key of ['constructor', 'hasOwnProperty', 'toString', 'valueOf']) {
+      expect(typescript).toContain(`Object.hasOwn(matchValue, "${key}")`);
+    }
+
+    const module = loadModule(typescript);
+    const classify = module.classify as unknown as (value: Record<string, unknown>) => string;
+    expect(classify({ bold: true })).toBe('format');
+
+    for (const key of ['constructor', 'hasOwnProperty', 'toString', 'valueOf']) {
+      expect(classify({ [key]: undefined })).toBe('effect');
+    }
+
+    const inherited = Object.create({
+      constructor: undefined,
+      hasOwnProperty: undefined,
+      toString: undefined,
+      valueOf: undefined,
+    }) as Record<string, unknown>;
+    inherited.bold = true;
+    expect(classify(inherited)).toBe('format');
   });
 
   it('fails closed for unknown, unresolved, non-record and keyless declarations', () => {

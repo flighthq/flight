@@ -6176,14 +6176,14 @@ pub fn normalize(result: MarkupResult) -> MarkupEffect {
 
         assert!(output.contains("export type MarkupResult = MarkupEffect | TextFormat;"));
         assert!(output.contains(
-            "if (\"breakBefore\" in matchValue || \"format\" in matchValue || \"text\" in matchValue)"
+            "if (Object.hasOwn(matchValue, \"breakBefore\") || Object.hasOwn(matchValue, \"format\") || Object.hasOwn(matchValue, \"text\"))"
         ));
         assert!(output.contains("else {\n    return \"format\";"));
         assert!(output.contains(
-            "return \"breakBefore\" in result || \"format\" in result || \"text\" in result;"
+            "return Object.hasOwn(result, \"breakBefore\") || Object.hasOwn(result, \"format\") || Object.hasOwn(result, \"text\");"
         ));
         assert!(output.contains(
-            "return !(\"breakBefore\" in result || \"format\" in result || \"text\" in result);"
+            "return !(Object.hasOwn(result, \"breakBefore\") || Object.hasOwn(result, \"format\") || Object.hasOwn(result, \"text\"));"
         ));
         assert!(output.contains("return value;"));
         assert!(output.contains("const effect = matchValue as MarkupEffect;"));
@@ -6236,7 +6236,9 @@ pub struct TextFormat {
         )
         .unwrap();
 
-        assert!(output.contains("if (\"format\" in matchValue || \"text\" in matchValue)"));
+        assert!(output.contains(
+            "if (Object.hasOwn(matchValue, \"format\") || Object.hasOwn(matchValue, \"text\"))"
+        ));
         assert!(output.contains("else {\n    return \"format\";"));
     }
 
@@ -10895,7 +10897,7 @@ mod markup_results {
         .unwrap();
 
         assert!(output.contains("const result = { text: \"replacement\" };"));
-        assert!(output.contains("if (\"text\" in matchValue)"));
+        assert!(output.contains("if (Object.hasOwn(matchValue, \"text\"))"));
         assert!(
             output.contains("else {\n    return \"format\";"),
             "{output}"
