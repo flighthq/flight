@@ -13,7 +13,7 @@
     { "path": "../entity" },
     { "path": "../log" },
     { "path": "../textformat" },
-    { "path": "../textlayout" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../types" }
   ],
   "include": ["src"]

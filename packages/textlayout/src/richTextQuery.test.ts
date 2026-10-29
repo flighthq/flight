@@ -146,7 +146,7 @@ describe('computeRichTextLineMetrics', () => {
     expect([metrics.ascent, metrics.descent, metrics.width]).toEqual([10.0, 2.0, 30.0]);
   });
   it('returns none for a non existent line', () => {
-    expect(computeRichTextLineMetrics(createLayout(), 5)).toEqual(undefined);
+    expect(computeRichTextLineMetrics(createLayout(), 5)).toEqual(null);
   });
 });
 
@@ -218,7 +218,7 @@ describe('getRichTextLineText', () => {
 
 describe('getRichTextLinkAtPoint', () => {
   it('returns none when the point does not hit a linked group', () => {
-    expect(getRichTextLinkAtPoint(createLayout(), 10.0, 5.0)).toEqual(undefined);
+    expect(getRichTextLinkAtPoint(createLayout(), 10.0, 5.0)).toEqual(null);
   });
   it('returns the url when the point hits a group with a url', () => {
     expect(getRichTextLinkAtPoint(createLayout(), 10.0, 18.0)).toEqual('https://example.com');

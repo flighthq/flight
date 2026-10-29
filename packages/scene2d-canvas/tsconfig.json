@@ -71,7 +71,7 @@
       "path": "../textinput"
     },
     {
-      "path": "../textlayout"
+      "path": "../textlayout/tsconfig.runtime.json"
     },
     {
       "path": "../texture"

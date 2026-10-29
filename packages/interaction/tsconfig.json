@@ -24,7 +24,7 @@
     { "path": "../bitmap" },
     { "path": "../clip" },
     { "path": "../text" },
-    { "path": "../textlayout" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../types" }
   ],
   "include": ["src"]

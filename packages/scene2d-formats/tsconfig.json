@@ -28,7 +28,7 @@
     { "path": "../skeleton2d" },
     { "path": "../text" },
     { "path": "../textformat" },
-    { "path": "../textlayout" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../texture" },
     { "path": "../entity" },
     { "path": "../types" },

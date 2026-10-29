@@ -3,6 +3,7 @@
 //! flight-compiler: root-only getRichTextLineIndexAtPoint getRichTextLineIndexOfChar getRichTextLineLength
 //! flight-compiler: root-only getRichTextLineOffset getRichTextLineText getRichTextLinkAtPoint
 //! flight-compiler: root-only getRichTextParagraphLength getRichTextSelectionRectangles
+//! flight-compiler: nullable-option compute_rich_text_line_metrics get_rich_text_link_at_point rich_text_get_group_containing_index
 
 use flight_geometry::Rectangle;
 

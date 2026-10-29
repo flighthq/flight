@@ -1,4 +1,4 @@
-import type { RichTextData, TextLayoutResult } from '@flighthq/types/contract';
+import type { RichTextData } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -10,6 +10,7 @@ import {
   computeRichTextTextWidth,
   getRichTextScrollYOffset,
 } from './richTextMetrics.ts';
+import type { TextLayoutResult } from './types.ts';
 
 function createData(data: Partial<RichTextData> = {}): RichTextData {
   return {

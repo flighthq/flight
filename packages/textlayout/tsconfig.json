@@ -2,9 +2,9 @@
   "files": [],
   "references": [
     { "path": "../entity" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../textformat" },
-    { "path": "../textshaper" },
+    { "path": "../textshaper/tsconfig.runtime.json" },
     { "path": "../types" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }

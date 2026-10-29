@@ -61,7 +61,7 @@ export function computeRichTextCharIndexAtPoint(layout: Readonly<TextLayoutResul
 export function computeRichTextLineMetrics(
   layout: Readonly<TextLayoutResult>,
   lineIndex: number,
-): TextLineMetrics | undefined {
+): TextLineMetrics | null {
   let ascent = 0.0;
   let descent = 0.0;
   let leading = 0.0;
@@ -80,7 +80,7 @@ export function computeRichTextLineMetrics(
     right = jsMax(right, group.offsetX + group.width);
   }
   if (!found) {
-    return undefined;
+    return null;
   }
   return {
     ascent: ascent,
@@ -98,7 +98,7 @@ export function getRichTextCharBoundaries(
   charIndex: number,
 ): boolean {
   const group = richTextGetGroupContainingIndex(layout, charIndex);
-  if (group === undefined) {
+  if (group === null) {
     return false;
   }
   let x = group.offsetX;
@@ -140,7 +140,9 @@ export function getRichTextLineIndexAtPoint(layout: Readonly<TextLayoutResult>, 
 }
 
 export function getRichTextLineIndexOfChar(layout: Readonly<TextLayoutResult>, charIndex: number): number {
-  return richTextGetGroupContainingIndex(layout, charIndex)?.lineIndex ?? 0;
+  return (
+    ((group) => (group === null ? null : group.lineIndex))(richTextGetGroupContainingIndex(layout, charIndex)) ?? 0
+  );
 }
 
 export function getRichTextLineLength(layout: Readonly<TextLayoutResult>, lineIndex: number): number {
@@ -190,7 +192,7 @@ export function getRichTextLineText(text: string, layout: Readonly<TextLayoutRes
   return utf16Slice(units, Math.min(start, units.length), Math.min(end, units.length));
 }
 
-export function getRichTextLinkAtPoint(layout: Readonly<TextLayoutResult>, x: number, y: number): string | undefined {
+export function getRichTextLinkAtPoint(layout: Readonly<TextLayoutResult>, x: number, y: number): string | null {
   for (const group of layout.groups) {
     const url = group.format!.url;
     if (url === undefined) {
@@ -202,10 +204,10 @@ export function getRichTextLinkAtPoint(layout: Readonly<TextLayoutResult>, x: nu
       y >= group.offsetY &&
       y <= group.offsetY + group.height
     ) {
-      return url;
+      return url ?? null;
     }
   }
-  return undefined;
+  return null;
 }
 
 export function getRichTextParagraphLength(text: string, charIndex: number): number {
@@ -257,8 +259,8 @@ function richTextGetCaretX(group: Readonly<TextLayoutGroup>, index: number): num
 function richTextGetGroupContainingIndex(
   layout: Readonly<TextLayoutResult>,
   charIndex: number,
-): Readonly<TextLayoutGroup> | undefined {
-  return layout.groups.find((group) => charIndex >= group.startIndex && charIndex < group.endIndex);
+): Readonly<TextLayoutGroup> | null {
+  return layout.groups.find((group) => charIndex >= group.startIndex && charIndex < group.endIndex) ?? null;
 }
 
 function richTextGetLineOffsetY(layout: Readonly<TextLayoutResult>, lineIndex: number): number {

@@ -1,12 +1,7 @@
 import { getNodeAppearanceRevision } from '@flighthq/node/contract';
 import { createRichText, setRichTextFormatRange } from '@flighthq/text/contract';
-import type {
-  KeyboardEventData,
-  RichText,
-  RichTextData,
-  TextInputOptions,
-  TextLayoutResult,
-} from '@flighthq/types/contract';
+import type { TextLayoutResult } from '@flighthq/textlayout/contract';
+import type { KeyboardEventData, RichText, RichTextData, TextInputOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey, KeyCode } from '@flighthq/types/contract';
 
 import { enableTextInput, getTextInputState } from './textInput.ts';

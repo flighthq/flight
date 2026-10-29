@@ -13,7 +13,7 @@
     { "path": "../text" },
     { "path": "../signals" },
     { "path": "../textformat" },
-    { "path": "../textlayout" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../entity" },
     { "path": "../types" }
   ],
