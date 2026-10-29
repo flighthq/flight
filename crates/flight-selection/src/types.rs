@@ -1,8 +1,14 @@
+//! flight-compiler: entity-runtime-state LassoSelection.state
+//! flight-compiler: entity-runtime-state MarqueeSelection.state
+//! flight-compiler: entity-runtime-state SelectionState.state
+//! flight-compiler: nullable-options
+
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_geometry::Rectangle;
 use flight_node::NodeRef;
 use flight_path::Path;
-use flight_signals::Signal;
+
+use crate::selection_compat::SelectionSignals;
 
 /// Opaque freeform gesture state (TS `LassoSelection`).
 pub struct LassoSelection {
@@ -24,7 +30,7 @@ pub struct MarqueeSelection {
 
 /// Whether a marquee accepts intersecting bounds or only fully enclosed bounds.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MarqueeSelectionMode {
+pub enum MarqueeSelectionModeRaw {
     Contain,
     Intersect,
 }
@@ -39,18 +45,11 @@ pub struct MarqueeSelectionRuntime {
 
 /// Pointer modifiers consumed by the base selection policy.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct SelectionModifierState {
+pub struct SelectionModifierStateRaw {
     pub alt_key: bool,
     pub ctrl_key: bool,
     pub meta_key: bool,
     pub shift_key: bool,
-}
-
-/// The two signals exposed by an ordered selection state.
-#[derive(Clone)]
-pub struct SelectionSignals {
-    pub on_active_change: Signal<Option<NodeRef>>,
-    pub on_change: Signal<Vec<NodeRef>>,
 }
 
 /// Ordered node selection. Contents are mutated only through this crate's functions.
@@ -94,9 +93,9 @@ impl Default for MarqueeSelection {
     }
 }
 
-impl Default for MarqueeSelectionMode {
+impl Default for MarqueeSelectionModeRaw {
     fn default() -> Self {
-        return MarqueeSelectionMode::Intersect;
+        return MarqueeSelectionModeRaw::Intersect;
     }
 }
 
@@ -107,15 +106,6 @@ impl Default for MarqueeSelectionRuntime {
             rectangle: Rectangle::default(),
             start_x: 0.0,
             start_y: 0.0,
-        };
-    }
-}
-
-impl Default for SelectionSignals {
-    fn default() -> Self {
-        return SelectionSignals {
-            on_active_change: flight_signals::create_signal(),
-            on_change: flight_signals::create_signal(),
         };
     }
 }

@@ -1,41 +1,45 @@
 use flight_entity::allocate_entity;
 use flight_node::{NodeRef, get_node_local_bounds_rectangle};
-use flight_path::{Path, PathCommand, PathWinding, create_path};
+use flight_path::Path;
 
+use crate::path_compat::{
+    append_lasso_close, append_lasso_line_to, append_lasso_move_to, create_lasso_path,
+};
 use crate::types::*;
 
 #[cfg(test)]
+/// flight-compiler: rust-only — Rust-only extension-method parity tests.
 mod sugar_tests {
     use super::*;
 
     #[test]
     fn lasso_selection_add_point_matches_add_lasso_selection_point() {
         let mut a = LassoSelection::new();
-        let mut b = create_lasso_selection();
+        let mut b = create_lasso_selection_core();
         a.begin(1.0, 2.0);
-        begin_lasso_selection(&mut b, 1.0, 2.0);
+        begin_lasso_selection_core(&mut b, 1.0, 2.0);
         a.add_point(3.0, 4.0);
-        add_lasso_selection_point(&mut b, 3.0, 4.0);
-        assert_eq!(a.path(), get_lasso_selection_path(&b));
+        add_lasso_selection_point_core(&mut b, 3.0, 4.0);
+        assert_eq!(a.path(), get_lasso_selection_path_core(&b));
     }
 
     #[test]
     fn lasso_selection_begin_matches_begin_lasso_selection() {
         let mut a = LassoSelection::new();
-        let mut b = create_lasso_selection();
+        let mut b = create_lasso_selection_core();
         a.begin(1.0, 2.0);
-        begin_lasso_selection(&mut b, 1.0, 2.0);
-        assert_eq!(a.path(), get_lasso_selection_path(&b));
+        begin_lasso_selection_core(&mut b, 1.0, 2.0);
+        assert_eq!(a.path(), get_lasso_selection_path_core(&b));
     }
 
     #[test]
     fn lasso_selection_end_matches_end_lasso_selection() {
         let mut a = LassoSelection::new();
-        let mut b = create_lasso_selection();
+        let mut b = create_lasso_selection_core();
         a.begin(1.0, 2.0);
-        begin_lasso_selection(&mut b, 1.0, 2.0);
+        begin_lasso_selection_core(&mut b, 1.0, 2.0);
         let method = a.end().clone();
-        let free = end_lasso_selection(&mut b).clone();
+        let free = end_lasso_selection_core(&mut b).clone();
         assert_eq!(method, free);
     }
 
@@ -44,77 +48,63 @@ mod sugar_tests {
         let selection = LassoSelection::new();
         let (mut method, mut free) = (Vec::new(), Vec::new());
         selection.find_nodes(&mut method, &[]);
-        find_nodes_in_lasso_selection(&mut free, &selection, &[]);
+        find_nodes_in_lasso_selection_into(&mut free, &selection, &[]);
         assert!(method.is_empty() && free.is_empty());
     }
 
     #[test]
     fn lasso_selection_new_matches_create_lasso_selection() {
         let a = LassoSelection::new();
-        let b = create_lasso_selection();
-        assert_eq!(a.path(), get_lasso_selection_path(&b));
+        let b = create_lasso_selection_core();
+        assert_eq!(a.path(), get_lasso_selection_path_core(&b));
     }
 
     #[test]
     fn lasso_selection_path_matches_get_lasso_selection_path() {
         let selection = LassoSelection::new();
-        assert_eq!(selection.path(), get_lasso_selection_path(&selection));
+        assert_eq!(selection.path(), get_lasso_selection_path_core(&selection));
     }
 }
 
 // flight-lint: allow-file(f64) lasso coordinates feed canonical f64 Path.data without truncation
 
-pub fn create_lasso_selection() -> LassoSelection {
+pub fn create_lasso_selection_core() -> LassoSelection {
     let mut out: LassoSelection = allocate_entity();
-    initialize_lasso_selection(&mut out);
+    initialize_lasso_selection_core(&mut out);
     return out;
 }
 
-pub fn initialize_lasso_selection(out: &mut LassoSelection) {
-    let mut path = create_path(flight_path::PathWinding::NonZero);
-    path.winding = PathWinding::EvenOdd;
+pub fn initialize_lasso_selection_core(out: &mut LassoSelection) {
     out.state = LassoSelectionRuntime {
         active: false,
-        path,
+        path: create_lasso_path(),
     };
 }
 
-pub fn add_lasso_selection_point(selection: &mut LassoSelection, x: f64, y: f64) {
+pub fn add_lasso_selection_point_core(selection: &mut LassoSelection, x: f64, y: f64) {
     if !selection.state.active {
         return;
     }
-    selection
-        .state
-        .path
-        .commands
-        .push(PathCommand::LineTo as u8);
-    selection.state.path.data.push(x);
-    selection.state.path.data.push(y);
+    append_lasso_line_to(&mut selection.state.path, x, y);
 }
 
-pub fn begin_lasso_selection(selection: &mut LassoSelection, start_x: f64, start_y: f64) {
+pub fn begin_lasso_selection_core(selection: &mut LassoSelection, start_x: f64, start_y: f64) {
     selection.state.active = true;
     selection.state.path.commands.clear();
     selection.state.path.data.clear();
-    selection
-        .state
-        .path
-        .commands
-        .push(PathCommand::MoveTo as u8);
-    selection.state.path.data.push(start_x);
-    selection.state.path.data.push(start_y);
+    append_lasso_move_to(&mut selection.state.path, start_x, start_y);
 }
 
-pub fn end_lasso_selection(selection: &mut LassoSelection) -> &Path {
+pub fn end_lasso_selection_core(selection: &mut LassoSelection) -> &Path {
     if selection.state.active {
-        selection.state.path.commands.push(PathCommand::Close as u8);
+        append_lasso_close(&mut selection.state.path);
     }
     selection.state.active = false;
     return &selection.state.path;
 }
 
 // flight-lint: allow(conform-params) D24 (Principal 21f7557f): the matches fill a caller-owned out, cleared first
-pub fn find_nodes_in_lasso_selection(
+pub fn find_nodes_in_lasso_selection_into(
     out: &mut Vec<NodeRef>,
     selection: &LassoSelection,
     candidates: &[NodeRef],
@@ -134,7 +124,7 @@ pub fn find_nodes_in_lasso_selection(
     }
 }
 
-pub fn get_lasso_selection_path(selection: &LassoSelection) -> &Path {
+pub fn get_lasso_selection_path_core(selection: &LassoSelection) -> &Path {
     return &selection.state.path;
 }
 
@@ -178,26 +168,26 @@ fn is_point_on_segment(x: f64, y: f64, start_x: f64, start_y: f64, end_x: f64, e
 
 impl LassoSelection {
     pub fn new() -> Self {
-        return create_lasso_selection();
+        return create_lasso_selection_core();
     }
 
     pub fn add_point(&mut self, x: f64, y: f64) {
-        add_lasso_selection_point(self, x, y);
+        add_lasso_selection_point_core(self, x, y);
     }
 
     pub fn begin(&mut self, start_x: f64, start_y: f64) {
-        begin_lasso_selection(self, start_x, start_y);
+        begin_lasso_selection_core(self, start_x, start_y);
     }
 
     pub fn end(&mut self) -> &Path {
-        return end_lasso_selection(self);
+        return end_lasso_selection_core(self);
     }
 
     pub fn find_nodes(&self, out: &mut Vec<NodeRef>, candidates: &[NodeRef]) {
-        find_nodes_in_lasso_selection(out, self, candidates);
+        find_nodes_in_lasso_selection_into(out, self, candidates);
     }
 
     pub fn path(&self) -> &Path {
-        return get_lasso_selection_path(self);
+        return get_lasso_selection_path_core(self);
     }
 }

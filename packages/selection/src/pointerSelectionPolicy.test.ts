@@ -1,88 +1,67 @@
-import { createNode } from '@flighthq/node/contract';
-import type { HierarchyNodeAny, SelectionModifierState } from '@flighthq/types/contract';
+// Generated from crates/flight-selection/tests/pointer_selection_policy_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
-import {
-  applyPointerSelectionPolicy,
-  applyPointerUpSelectionPolicy,
-  createSelectionState,
-  getSelectedNodes,
-  selectAllNodes,
-} from './index.ts';
+import { applyPointerUpSelectionPolicy, createSelectionState, selectAllNodes } from './contract.ts';
+import type { SelectionModifierState } from './contract.ts';
+import { rustTestSupport as crate } from './rustTestSupport.ts';
+
+function modifiers(altKey: boolean, ctrlKey: boolean, metaKey: boolean, shiftKey: boolean): SelectionModifierState {
+  return { altKey: altKey, ctrlKey: ctrlKey, metaKey: metaKey, shiftKey: shiftKey };
+}
 
 describe('applyPointerSelectionPolicy', () => {
-  it('applies unmodified hit and empty-space behavior', () => {
-    const first = createTestNode('first');
-    const second = createTestNode('second');
+  it('adds or removes with shift and toggles with ctrl or command', () => {
+    const first = crate.createTestNode('first');
+    const second = crate.createTestNode('second');
+    const selection = createSelectionState();
+    crate.applyPointerPolicy(selection, first, modifiers(false, false, false, true));
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [first])).toBe(true);
+    crate.applyPointerPolicy(selection, first, modifiers(false, false, false, true));
+    expect(crate.selectedNodesOf(selection).length === 0).toBe(true);
+    crate.applyPointerPolicy(selection, first, modifiers(false, true, false, false));
+    crate.applyPointerPolicy(selection, second, modifiers(false, false, true, false));
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [first, second])).toBe(true);
+    crate.applyPointerPolicy(selection, first, modifiers(false, false, true, false));
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [second])).toBe(true);
+    crate.applyPointerPolicy(selection, undefined, modifiers(false, true, false, false));
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [second])).toBe(true);
+  });
+  it('applies unmodified hit and empty space behavior', () => {
+    const first = crate.createTestNode('first');
+    const second = crate.createTestNode('second');
     const selection = createSelectionState();
     selectAllNodes(selection, [first, second]);
-
-    applyPointerSelectionPolicy(selection, first, modifiers());
-    expect(getSelectedNodes(selection)).toEqual([first, second]);
-
-    const third = createTestNode('third');
-    applyPointerSelectionPolicy(selection, third, modifiers());
-    expect(getSelectedNodes(selection)).toEqual([third]);
-
-    applyPointerSelectionPolicy(selection, null, modifiers());
-    expect(getSelectedNodes(selection)).toEqual([]);
+    crate.applyPointerPolicy(selection, first, modifiers(false, false, false, false));
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [first, second])).toBe(true);
+    const third = crate.createTestNode('third');
+    crate.applyPointerPolicy(selection, third, modifiers(false, false, false, false));
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [third])).toBe(true);
+    crate.applyPointerPolicy(selection, undefined, modifiers(false, false, false, false));
+    expect(crate.selectedNodesOf(selection).length === 0).toBe(true);
   });
-
-  it('adds or removes with Shift and toggles with Ctrl or Command', () => {
-    const first = createTestNode('first');
-    const second = createTestNode('second');
-    const selection = createSelectionState();
-
-    applyPointerSelectionPolicy(selection, first, modifiers({ shiftKey: true }));
-    expect(getSelectedNodes(selection)).toEqual([first]);
-    applyPointerSelectionPolicy(selection, first, modifiers({ shiftKey: true }));
-    expect(getSelectedNodes(selection)).toEqual([]);
-
-    applyPointerSelectionPolicy(selection, first, modifiers({ ctrlKey: true }));
-    applyPointerSelectionPolicy(selection, second, modifiers({ metaKey: true }));
-    expect(getSelectedNodes(selection)).toEqual([first, second]);
-    applyPointerSelectionPolicy(selection, first, modifiers({ metaKey: true }));
-    expect(getSelectedNodes(selection)).toEqual([second]);
-
-    applyPointerSelectionPolicy(selection, null, modifiers({ ctrlKey: true }));
-    expect(getSelectedNodes(selection)).toEqual([second]);
-  });
-
-  it('leaves Alt gestures available for caller-defined alternate-pick behavior', () => {
-    const first = createTestNode('first');
-    const second = createTestNode('second');
+  it('leaves alt gestures available for caller defined alternate pick behavior', () => {
+    const first = crate.createTestNode('first');
+    const second = crate.createTestNode('second');
     const selection = createSelectionState();
     selectAllNodes(selection, [first]);
-
-    applyPointerSelectionPolicy(selection, second, modifiers({ altKey: true }));
-    applyPointerSelectionPolicy(selection, null, modifiers({ altKey: true }));
-
-    expect(getSelectedNodes(selection)).toEqual([first]);
+    crate.applyPointerPolicy(selection, second, modifiers(true, false, false, false));
+    crate.applyPointerPolicy(selection, undefined, modifiers(true, false, false, false));
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [first])).toBe(true);
   });
 });
 
 describe('applyPointerUpSelectionPolicy', () => {
-  it('narrows an already-selected hit only on an unmodified pointer-up without a drag', () => {
-    const first = createTestNode('first');
-    const second = createTestNode('second');
+  it('narrows an already selected hit only on unmodified pointer up without a drag', () => {
+    const first = crate.createTestNode('first');
+    const second = crate.createTestNode('second');
     const selection = createSelectionState();
     selectAllNodes(selection, [first, second]);
-
-    applyPointerUpSelectionPolicy(selection, first, modifiers(), true);
-    applyPointerUpSelectionPolicy(selection, first, modifiers({ shiftKey: true }), false);
-    expect(getSelectedNodes(selection)).toEqual([first, second]);
-
-    applyPointerUpSelectionPolicy(selection, first, modifiers(), false);
-    expect(getSelectedNodes(selection)).toEqual([first]);
+    applyPointerUpSelectionPolicy(selection, first, modifiers(false, false, false, false), true);
+    applyPointerUpSelectionPolicy(selection, first, modifiers(false, false, false, true), false);
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [first, second])).toBe(true);
+    applyPointerUpSelectionPolicy(selection, first, modifiers(false, false, false, false), false);
+    expect(crate.sameNodes(crate.selectedNodesOf(selection), [first])).toBe(true);
   });
 });
-
-function createTestNode(name: string): HierarchyNodeAny {
-  const node = createNode('SelectionTestNode');
-  node.name = name;
-  return node;
-}
-
-function modifiers(overrides?: Partial<SelectionModifierState>): SelectionModifierState {
-  return { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, ...overrides };
-}

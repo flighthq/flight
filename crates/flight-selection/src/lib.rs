@@ -1,8 +1,11 @@
 //! Ordered node selection plus marquee, lasso, and pointer selection policies.
 
 mod lasso_selection;
+mod marquee_mode_native;
 mod marquee_selection;
+mod path_compat;
 mod pointer_selection_policy;
+mod selection_compat;
 mod selection_state;
 mod types;
 
@@ -25,13 +28,11 @@ pub use contract::find_nodes_in_marquee_selection;
 pub use contract::get_active_node;
 pub use contract::get_lasso_selection_path;
 pub use contract::get_marquee_rectangle;
-pub use contract::get_marquee_selection_mode_string;
 pub use contract::get_selected_nodes;
 pub use contract::get_selection_count;
 pub use contract::get_selection_signals;
 pub use contract::has_selection;
 pub use contract::is_node_selected;
-pub use contract::parse_marquee_selection_mode;
 pub use contract::remove_node_from_selection;
 pub use contract::select_all_nodes;
 pub use contract::select_node;

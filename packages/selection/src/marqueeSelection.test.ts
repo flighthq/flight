@@ -1,96 +1,87 @@
-import { createNode, createNodeRuntime, initBoundsRectangleRuntimeTrait } from '@flighthq/node/contract';
-import type { BoundsNodeAny, HasBoundsRectangleRuntime, NodeRuntime, RectangleLike } from '@flighthq/types/contract';
+// Generated from crates/flight-selection/tests/marquee_selection_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { createRectangle } from '@flighthq/geometry/contract';
+import { describe, expect, it } from 'vitest';
 
 import {
   beginMarqueeSelection,
   createMarqueeSelection,
   endMarqueeSelection,
-  findNodesInMarqueeSelection,
   getMarqueeRectangle,
   updateMarqueeSelection,
-} from './index.ts';
+} from './contract.ts';
+import { rustTestSupport as crate } from './rustTestSupport.ts';
 
 describe('beginMarqueeSelection', () => {
-  it('starts a new zero-area rectangle at the pointer location', () => {
-    const marquee = createMarqueeSelection();
-    beginMarqueeSelection(marquee, 10, 20);
-
-    expect(getMarqueeRectangle(marquee)).toMatchObject({ x: 10, y: 20, width: 0, height: 0 });
+  it('starts a new zero area rectangle at the pointer location', () => {
+    let marquee = createMarqueeSelection();
+    beginMarqueeSelection(marquee, 10.0, 20.0);
+    expect(getMarqueeRectangle(marquee)).toEqual(createRectangle(10.0, 20.0, 0.0, 0.0));
   });
 });
 
 describe('createMarqueeSelection', () => {
   it('creates an inactive marquee with an empty rectangle', () => {
-    const marquee = createMarqueeSelection();
-
-    updateMarqueeSelection(marquee, 100, 100);
-    expect(getMarqueeRectangle(marquee)).toMatchObject({ x: 0, y: 0, width: 0, height: 0 });
+    let marquee = createMarqueeSelection();
+    updateMarqueeSelection(marquee, 100.0, 100.0);
+    expect(getMarqueeRectangle(marquee)).toEqual(createRectangle(0.0, 0.0, 0.0, 0.0));
   });
 });
 
 describe('endMarqueeSelection', () => {
   it('returns the live rectangle and makes later updates inert', () => {
-    const marquee = createMarqueeSelection();
-    beginMarqueeSelection(marquee, 1, 2);
-    updateMarqueeSelection(marquee, 3, 4);
-
-    const rectangle = endMarqueeSelection(marquee);
-    updateMarqueeSelection(marquee, 50, 50);
-
-    expect(rectangle).toBe(getMarqueeRectangle(marquee));
-    expect(rectangle).toMatchObject({ x: 1, y: 2, width: 2, height: 2 });
+    let marquee = createMarqueeSelection();
+    beginMarqueeSelection(marquee, 1.0, 2.0);
+    updateMarqueeSelection(marquee, 3.0, 4.0);
+    const returned = endMarqueeSelection(marquee);
+    updateMarqueeSelection(marquee, 50.0, 50.0);
+    expect(crate.sameRectangle(returned, getMarqueeRectangle(marquee))).toBe(true);
+    expect(getMarqueeRectangle(marquee)).toEqual(createRectangle(1.0, 2.0, 2.0, 2.0));
   });
 });
 
 describe('findNodesInMarqueeSelection', () => {
+  // Rust-only: clears a reused out and keeps its capacity
   it('finds intersecting or fully contained bounds in caller order', () => {
-    const marquee = createMarqueeSelection();
-    beginMarqueeSelection(marquee, 0, 0);
-    updateMarqueeSelection(marquee, 10, 10);
-    const contained = createBoundedNode('contained', { x: 2, y: 2, width: 2, height: 2 });
-    const overlapping = createBoundedNode('overlapping', { x: 8, y: 8, width: 5, height: 5 });
-    const outside = createBoundedNode('outside', { x: 20, y: 20, width: 1, height: 1 });
-
-    expect(findNodesInMarqueeSelection(marquee, [overlapping, outside, contained])).toEqual([overlapping, contained]);
-    expect(findNodesInMarqueeSelection(marquee, [overlapping, outside, contained], 'contain')).toEqual([contained]);
+    let marquee = createMarqueeSelection();
+    beginMarqueeSelection(marquee, 0.0, 0.0);
+    updateMarqueeSelection(marquee, 10.0, 10.0);
+    const contained = crate.createBoundedNode('contained', createRectangle(2.0, 2.0, 2.0, 2.0), true, true);
+    const overlapping = crate.createBoundedNode('overlapping', createRectangle(8.0, 8.0, 5.0, 5.0), true, true);
+    const outside = crate.createBoundedNode('outside', createRectangle(20.0, 20.0, 1.0, 1.0), true, true);
+    const candidates = [overlapping, outside, contained];
+    expect(crate.sameNodes(crate.marqueeMatches(marquee, candidates, undefined), [overlapping, contained])).toBe(true);
+    expect(crate.sameNodes(crate.marqueeMatches(marquee, candidates, crate.containMarqueeMode()), [contained])).toBe(
+      true,
+    );
+  });
+  it('uses local bounds without filtering disabled or hidden candidates', () => {
+    let marquee = createMarqueeSelection();
+    beginMarqueeSelection(marquee, 0.0, 0.0);
+    updateMarqueeSelection(marquee, 10.0, 10.0);
+    const disabled = crate.createBoundedNode('disabled', createRectangle(1.0, 1.0, 1.0, 1.0), false, true);
+    const hidden = crate.createBoundedNode('hidden', createRectangle(2.0, 2.0, 1.0, 1.0), true, false);
+    expect(crate.sameNodes(crate.marqueeMatches(marquee, [disabled, hidden], undefined), [disabled, hidden])).toBe(
+      true,
+    );
   });
 });
 
 describe('getMarqueeRectangle', () => {
   it('exposes the same rectangle throughout a gesture', () => {
-    const marquee = createMarqueeSelection();
-    const rectangle = getMarqueeRectangle(marquee);
-
-    beginMarqueeSelection(marquee, 4, 5);
-
-    expect(getMarqueeRectangle(marquee)).toBe(rectangle);
+    let marquee = createMarqueeSelection();
+    const original = getMarqueeRectangle(marquee);
+    beginMarqueeSelection(marquee, 4.0, 5.0);
+    expect(crate.sameRectangle(original, getMarqueeRectangle(marquee))).toBe(true);
   });
 });
 
 describe('updateMarqueeSelection', () => {
   it('normalizes a reverse drag into positive rectangle dimensions', () => {
-    const marquee = createMarqueeSelection();
-    beginMarqueeSelection(marquee, 10, 20);
-
-    updateMarqueeSelection(marquee, 2, 5);
-
-    expect(getMarqueeRectangle(marquee)).toMatchObject({ x: 2, y: 5, width: 8, height: 15 });
+    let marquee = createMarqueeSelection();
+    beginMarqueeSelection(marquee, 10.0, 20.0);
+    updateMarqueeSelection(marquee, 2.0, 5.0);
+    expect(getMarqueeRectangle(marquee)).toEqual(createRectangle(2.0, 5.0, 8.0, 15.0));
   });
 });
-
-function createBoundedNode(name: string, rectangle: Readonly<RectangleLike>): BoundsNodeAny {
-  const node = createNode('SelectionBoundsTestNode', undefined, () => {
-    const runtime = createNodeRuntime() as NodeRuntime & HasBoundsRectangleRuntime;
-    initBoundsRectangleRuntimeTrait(runtime, {
-      computeLocalBoundsRectangle(out) {
-        out.x = rectangle.x;
-        out.y = rectangle.y;
-        out.width = rectangle.width;
-        out.height = rectangle.height;
-      },
-    });
-    return runtime;
-  }) as BoundsNodeAny;
-  node.name = name;
-  return node;
-}

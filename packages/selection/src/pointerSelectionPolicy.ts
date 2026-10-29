@@ -1,53 +1,63 @@
-import type { HierarchyNodeAny, SelectionModifierState, SelectionState } from '@flighthq/types/contract';
+// Generated from crates/flight-selection/src/pointer_selection_policy.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { NodeRef } from '@flighthq/node/contract';
 
 import {
-  addNodeToSelection,
-  clearSelection,
-  isNodeSelected,
-  selectNode,
-  toggleNodeSelection,
+  addNodeToSelectionCore,
+  clearSelectionCore,
+  isNodeSelectedCore,
+  selectNodeCore,
+  toggleNodeSelectionCore,
 } from './selectionState.ts';
+import type { SelectionModifierStateRaw, SelectionStateRaw } from './types.ts';
 
-export function applyPointerSelectionPolicy<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-  hit: NodeType | null,
-  modifiers: Readonly<SelectionModifierState>,
+export function applyPointerSelectionPolicyCore(
+  state: Readonly<SelectionStateRaw>,
+  hit: Readonly<NodeRef> | null,
+  modifiers: Readonly<SelectionModifierStateRaw>,
 ): void {
-  // Alt is carried so callers can layer an alternate-pick policy on top. The base selection policy
-  // does not give it an implicit mutation that the caller cannot distinguish from an ordinary click.
-  if (modifiers.altKey) return;
-
-  if (hit === null) {
-    if (!hasToggleModifier(modifiers)) clearSelection(state);
+  if (modifiers.altKey) {
     return;
   }
-
-  if (hasToggleModifier(modifiers)) {
-    if (modifiers.shiftKey && !isNodeSelected(state, hit)) {
-      addNodeToSelection(state, hit);
-    } else {
-      toggleNodeSelection(state, hit);
+  if (hit === null) {
+    if (!hasToggleModifier(modifiers)) {
+      clearSelectionCore(state);
     }
     return;
   }
-
-  if (!isNodeSelected(state, hit)) selectNode(state, hit);
+  if (hasToggleModifier(modifiers)) {
+    if (modifiers.shiftKey && !isNodeSelectedCore(state, hit)) {
+      addNodeToSelectionCore(state, hit);
+    } else {
+      toggleNodeSelectionCore(state, hit);
+    }
+    return;
+  }
+  if (!isNodeSelectedCore(state, hit)) {
+    selectNodeCore(state, hit);
+  }
 }
 
-export function applyPointerUpSelectionPolicy<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-  hit: NodeType | null,
-  modifiers: Readonly<SelectionModifierState>,
+export function applyPointerUpSelectionPolicyCore(
+  state: Readonly<SelectionStateRaw>,
+  hit: Readonly<NodeRef> | null,
+  modifiers: Readonly<SelectionModifierStateRaw>,
   didDrag: boolean,
 ): void {
-  if (didDrag || hit === null || hasAnyModifier(modifiers) || !isNodeSelected(state, hit)) return;
-  selectNode(state, hit);
+  if (hit === null) {
+    return;
+  }
+  if (didDrag || hasAnyModifier(modifiers) || !isNodeSelectedCore(state, hit)) {
+    return;
+  }
+  selectNodeCore(state, hit);
 }
 
-function hasAnyModifier(modifiers: Readonly<SelectionModifierState>): boolean {
+function hasAnyModifier(modifiers: Readonly<SelectionModifierStateRaw>): boolean {
   return modifiers.altKey || hasToggleModifier(modifiers);
 }
 
-function hasToggleModifier(modifiers: Readonly<SelectionModifierState>): boolean {
+function hasToggleModifier(modifiers: Readonly<SelectionModifierStateRaw>): boolean {
   return modifiers.ctrlKey || modifiers.metaKey || modifiers.shiftKey;
 }

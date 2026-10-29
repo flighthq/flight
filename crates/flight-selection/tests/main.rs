@@ -1,5 +1,7 @@
 mod support;
 
+pub use support::*;
+
 #[path = "lasso_selection_test.rs"]
 mod flight_selection_lasso_selection_test;
 #[path = "marquee_selection_test.rs"]

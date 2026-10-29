@@ -1,5 +1,5 @@
 use std::any::Any;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::{Entity, EntityRuntimeSlot};
 use flight_geometry::Rectangle;
@@ -9,6 +9,7 @@ use flight_node::{
     HasBoundsRectangle, HasBoundsRectangleRuntime, Node, NodeFields, NodeRef, create_node,
     init_bounds_rectangle_runtime_trait,
 };
+use flight_path::{Path, PathCommand, PathWinding};
 
 #[derive(Default)]
 struct TestNode {
@@ -157,12 +158,66 @@ pub fn node_name(node: &NodeRef) -> String {
     return node.read().unwrap().node_fields().name.clone().unwrap();
 }
 
+pub fn joined_node_names(nodes: &[NodeRef]) -> String {
+    return nodes.iter().map(node_name).collect::<Vec<_>>().join(",");
+}
+
+pub fn optional_node_name(node: &Option<NodeRef>) -> String {
+    return node.as_ref().map(node_name).unwrap_or_default();
+}
+
 pub fn same_node(a: &NodeRef, b: &NodeRef) -> bool {
     return Arc::ptr_eq(a, b);
 }
 
 pub fn same_nodes(a: &[NodeRef], b: &[NodeRef]) -> bool {
     return a.len() == b.len() && a.iter().zip(b).all(|(a, b)| Arc::ptr_eq(a, b));
+}
+
+pub fn same_path(a: *const flight_path::Path, b: &flight_path::Path) -> bool {
+    return std::ptr::eq(a, b as *const flight_path::Path);
+}
+
+pub fn has_even_odd_winding(path: &Path) -> bool {
+    return path.winding == PathWinding::EvenOdd;
+}
+
+pub fn has_only_move_command(path: &Path) -> bool {
+    return path.commands == [PathCommand::MoveTo as u8];
+}
+
+pub fn has_move_line_close_commands(path: &Path) -> bool {
+    return path.commands
+        == [
+            PathCommand::MoveTo as u8,
+            PathCommand::LineTo as u8,
+            PathCommand::Close as u8,
+        ];
+}
+
+pub fn take_reentrant_flag(flag: &Mutex<bool>) -> bool {
+    let mut flag = flag.lock().unwrap();
+    if *flag {
+        return false;
+    }
+    *flag = true;
+    return true;
+}
+
+pub fn apply_pointer_policy(
+    state: &flight_selection::SelectionState,
+    hit: Option<&NodeRef>,
+    modifiers: &flight_selection::SelectionModifierState,
+) {
+    flight_selection::apply_pointer_selection_policy(state, hit, modifiers);
+}
+
+pub fn same_rectangle(a: *const Rectangle, b: &Rectangle) -> bool {
+    return std::ptr::eq(a, b as *const Rectangle);
+}
+
+pub fn contain_marquee_mode() -> flight_selection::MarqueeSelectionMode {
+    return flight_selection::MarqueeSelectionMode::Contain;
 }
 
 // D24 out collectors: each call fills a fresh caller-owned Vec.

@@ -1,169 +1,260 @@
+// Generated from crates/flight-selection/src/selection_state.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { allocateEntity } from '@flighthq/entity/contract';
+import type { NodeRef } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  HierarchyNodeAny,
-  SelectionSignals,
-  SelectionState,
-  SelectionStateRuntime,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-export function addNodeToSelection<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-  node: NodeType,
-): void {
-  const runtime = getSelectionStateRuntime(state);
-  if (runtime.selectedNodeSet.has(node)) return;
+import type { SelectionSignals } from './selectionCompat.ts';
+import type { SelectionStateRaw, SelectionStateRuntime } from './types.ts';
+import { selectionStateStateStore } from './types.ts';
 
+interface SelectionMutation {
+  previousActiveNode: NodeRef | null;
+}
+
+interface SelectionChangeEvent {
+  selectedNodes: NodeRef[];
+}
+
+interface ActiveChangeEvent {
+  activeNode: NodeRef | null;
+}
+
+export function addNodeToSelectionCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+  const mutation = addNodeMutation(selectionStateStateStore.get(state)!, node);
+  if (mutation === null) {
+    return;
+  }
+  emitSelectionChanges(state, mutation!.previousActiveNode);
+}
+
+export function clearSelectionCore(state: Readonly<SelectionStateRaw>): void {
+  const mutation = clearSelectionMutation(selectionStateStateStore.get(state)!);
+  if (mutation === null) {
+    return;
+  }
+  emitSelectionChanges(state, mutation!.previousActiveNode);
+}
+
+function addNodeMutation(runtime: SelectionStateRuntime, node: Readonly<NodeRef>): SelectionMutation | null {
+  if (containsNode(runtime.selectedNodeSet, node)) {
+    return null;
+  }
   const previousActiveNode = runtime.activeNode;
   runtime.selectedNodes.push(node);
-  runtime.selectedNodeSet.add(node);
+  runtime.selectedNodeSet.push(node);
   runtime.activeNode = node;
-  emitSelectionChanges(runtime, true, previousActiveNode);
+  return { previousActiveNode: previousActiveNode };
 }
 
-export function clearSelection<NodeType extends HierarchyNodeAny>(state: SelectionState<NodeType>): void {
-  const runtime = getSelectionStateRuntime(state);
-  if (runtime.selectedNodes.length === 0) return;
-
+function clearSelectionMutation(runtime: SelectionStateRuntime): SelectionMutation | null {
+  if (runtime.selectedNodes.length === 0) {
+    return null;
+  }
   const previousActiveNode = runtime.activeNode;
-  runtime.selectedNodes = [];
-  runtime.selectedNodeSet = new Set();
+  runtime.selectedNodes.length = 0;
+  runtime.selectedNodeSet.length = 0;
   runtime.activeNode = null;
-  emitSelectionChanges(runtime, true, previousActiveNode);
+  return { previousActiveNode: previousActiveNode };
 }
 
-export function createSelectionState<NodeType extends HierarchyNodeAny = HierarchyNodeAny>(): SelectionState<NodeType> {
-  const state = { [EntityRuntimeKey]: undefined } as SelectionState<NodeType>;
-  const runtime = {
+export function createSelectionStateCore(): SelectionStateRaw {
+  let out: SelectionStateRaw = allocateEntity<SelectionStateRaw>();
+  initializeSelectionStateCore(out);
+  return out;
+}
+
+export function getActiveNodeCore(state: Readonly<SelectionStateRaw>): NodeRef | null {
+  return selectionStateStateStore.get(state)!.activeNode;
+}
+
+function containsNode(nodes: Readonly<NodeRef[]>, node: Readonly<NodeRef>): boolean {
+  return nodes.some((selected) => selected === node);
+}
+
+function lastNode(nodes: Readonly<NodeRef[]>): NodeRef | null {
+  if (nodes.length === 0) {
+    return null;
+  }
+  return nodes[nodes.length - 1];
+}
+
+function emitSelectionChanges(state: Readonly<SelectionStateRaw>, previousActiveNode: NodeRef | null): void {
+  const changeEvent: SelectionChangeEvent | null = (() => {
+    const runtime = selectionStateStateStore.get(state)!;
+    const selectedNodes: Readonly<NodeRef[]> = runtime.selectedNodes;
+    return runtime.signals.onChange.data! !== null ? { selectedNodes: selectedNodes.slice() } : null;
+  })();
+  if (changeEvent !== null) {
+    const event = changeEvent;
+    const signals = getSelectionSignalsCore(state);
+    emitSignal(signals.onChange, event.selectedNodes);
+  }
+  const activeEvent: ActiveChangeEvent | null = (() => {
+    const runtime = selectionStateStateStore.get(state)!;
+    return sameOptionalNode(previousActiveNode, runtime.activeNode) ? null : { activeNode: runtime.activeNode };
+  })();
+  if (activeEvent !== null) {
+    const event = activeEvent;
+    const signals = getSelectionSignalsCore(state);
+    emitSignal(signals.onActiveChange, event.activeNode);
+  }
+}
+
+export function getSelectedNodesCore(out: NodeRef[], state: Readonly<SelectionStateRaw>): void {
+  out.length = 0;
+  const selectedNodes = selectionStateStateStore.get(state)!.selectedNodes;
+  for (const node of selectedNodes) {
+    out.push(node);
+  }
+}
+
+export function getSelectionCountCore(state: Readonly<SelectionStateRaw>): number {
+  return selectionStateStateStore.get(state)!.selectedNodes.length;
+}
+
+export function getSelectionSignalsCore(state: Readonly<SelectionStateRaw>): SelectionSignals {
+  return selectionStateStateStore.get(state)!.signals;
+}
+
+export function hasSelectionCore(state: Readonly<SelectionStateRaw>): boolean {
+  return selectionStateStateStore.get(state)!.selectedNodes.length !== 0;
+}
+
+export function initializeSelectionStateCore(out: SelectionStateRaw): void {
+  selectionStateStateStore.set(out, {
     activeNode: null,
-    binding: null,
-    selectedNodeSet: new Set<NodeType>(),
-    selectedNodes: [],
-    signals: {
-      onActiveChange: createSignal(),
-      onChange: createSignal(),
-    },
-  } satisfies SelectionStateRuntime<NodeType>;
-  state[EntityRuntimeKey] = runtime;
-  return state;
+    selectedNodeSet: [] as never[],
+    selectedNodes: [] as never[],
+    signals: { onActiveChange: createSignal(), onChange: createSignal() },
+  });
 }
 
-export function getActiveNode<NodeType extends HierarchyNodeAny>(state: SelectionState<NodeType>): NodeType | null {
-  return getSelectionStateRuntime(state).activeNode;
+export function isNodeSelectedCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): boolean {
+  return containsNode(selectionStateStateStore.get(state)!.selectedNodeSet, node);
 }
 
-export function getSelectedNodes<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-): readonly NodeType[] {
-  return getSelectionStateRuntime(state).selectedNodes;
-}
-
-export function getSelectionCount<NodeType extends HierarchyNodeAny>(state: SelectionState<NodeType>): number {
-  return getSelectionStateRuntime(state).selectedNodes.length;
-}
-
-export function getSelectionSignals<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-): Readonly<SelectionSignals<NodeType>> {
-  return getSelectionStateRuntime(state).signals;
-}
-
-export function hasSelection<NodeType extends HierarchyNodeAny>(state: SelectionState<NodeType>): boolean {
-  return getSelectionStateRuntime(state).selectedNodes.length !== 0;
-}
-
-export function isNodeSelected<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-  node: NodeType,
-): boolean {
-  return getSelectionStateRuntime(state).selectedNodeSet.has(node);
-}
-
-export function removeNodeFromSelection<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-  node: NodeType,
-): void {
-  const runtime = getSelectionStateRuntime(state);
-  if (!runtime.selectedNodeSet.has(node)) return;
-
+function removeNodeMutation(runtime: SelectionStateRuntime, node: Readonly<NodeRef>): SelectionMutation | null {
+  if (!containsNode(runtime.selectedNodeSet, node)) {
+    return null;
+  }
   const previousActiveNode = runtime.activeNode;
-  runtime.selectedNodeSet.delete(node);
-  runtime.selectedNodes.splice(runtime.selectedNodes.indexOf(node), 1);
-  if (runtime.activeNode === node) {
-    runtime.activeNode = runtime.selectedNodes[runtime.selectedNodes.length - 1] ?? null;
+  const selectedNodeSet: NodeRef[] = runtime.selectedNodeSet;
+  (<T>(items: T[], keep: (item: T) => boolean): void => {
+    let kept = 0;
+    let index = 0;
+    try {
+      for (; index < items.length; index += 1) {
+        const item = items[index];
+        if (keep(item)) {
+          items[kept] = item;
+          kept += 1;
+        }
+      }
+    } finally {
+      const length = items.length;
+      for (let rest = index; rest < length; rest += 1) {
+        items[kept + rest - index] = items[rest];
+      }
+      items.length = kept + length - index;
+    }
+  })(selectedNodeSet, (selected) => !(selected === node));
+  const selectedNodes: NodeRef[] = runtime.selectedNodes;
+  (<T>(items: T[], keep: (item: T) => boolean): void => {
+    let kept = 0;
+    let index = 0;
+    try {
+      for (; index < items.length; index += 1) {
+        const item = items[index];
+        if (keep(item)) {
+          items[kept] = item;
+          kept += 1;
+        }
+      }
+    } finally {
+      const length = items.length;
+      for (let rest = index; rest < length; rest += 1) {
+        items[kept + rest - index] = items[rest];
+      }
+      items.length = kept + length - index;
+    }
+  })(selectedNodes, (selected) => !(selected === node));
+  if (sameOptionalNode(runtime.activeNode, node)) {
+    runtime.activeNode = lastNode(runtime.selectedNodes);
   }
-  emitSelectionChanges(runtime, true, previousActiveNode);
+  return { previousActiveNode: previousActiveNode };
 }
 
-export function selectAllNodes<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-  candidates: readonly NodeType[],
-): void {
-  const runtime = getSelectionStateRuntime(state);
-  const selectedNodeSet = new Set<NodeType>();
-  const selectedNodes: NodeType[] = [];
-  for (let i = 0; i < candidates.length; i++) {
-    const candidate = candidates[i];
-    if (selectedNodeSet.has(candidate)) continue;
-    selectedNodeSet.add(candidate);
-    selectedNodes.push(candidate);
+export function removeNodeFromSelectionCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+  const mutation = removeNodeMutation(selectionStateStateStore.get(state)!, node);
+  if (mutation === null) {
+    return;
   }
+  emitSelectionChanges(state, mutation!.previousActiveNode);
+}
 
-  let selectionChanged = runtime.selectedNodes.length !== selectedNodes.length;
-  if (!selectionChanged) {
-    for (let i = 0; i < selectedNodes.length; i++) {
-      if (runtime.selectedNodes[i] !== selectedNodes[i]) {
-        selectionChanged = true;
-        break;
-      }
+function sameNodeList(a: Readonly<NodeRef[]>, b: Readonly<NodeRef[]>): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    if (!(a[index] === b[index])) {
+      return false;
     }
   }
-  if (!selectionChanged) return;
+  return true;
+}
 
+function sameOptionalNode(a: Readonly<NodeRef | null>, b: Readonly<NodeRef | null>): boolean {
+  if (a !== null) {
+    const aNode = a;
+    if (b !== null) {
+      const bNode = b;
+      return aNode === bNode;
+    }
+    return false;
+  }
+  return b === null;
+}
+
+function replaceSelectionMutation(runtime: SelectionStateRuntime, selectedNodes: NodeRef[]): SelectionMutation | null {
+  if (sameNodeList(runtime.selectedNodes, selectedNodes)) {
+    return null;
+  }
   const previousActiveNode = runtime.activeNode;
-  runtime.selectedNodeSet = selectedNodeSet;
+  runtime.selectedNodeSet = selectedNodes.slice();
   runtime.selectedNodes = selectedNodes;
-  runtime.activeNode = selectedNodes[selectedNodes.length - 1] ?? null;
-  emitSelectionChanges(runtime, true, previousActiveNode);
+  runtime.activeNode = lastNode(runtime.selectedNodes);
+  return { previousActiveNode: previousActiveNode };
 }
 
-export function selectNode<NodeType extends HierarchyNodeAny>(state: SelectionState<NodeType>, node: NodeType): void {
-  const runtime = getSelectionStateRuntime(state);
-  if (runtime.selectedNodes.length === 1 && runtime.selectedNodes[0] === node) return;
-
-  const previousActiveNode = runtime.activeNode;
-  runtime.selectedNodeSet = new Set([node]);
-  runtime.selectedNodes = [node];
-  runtime.activeNode = node;
-  emitSelectionChanges(runtime, true, previousActiveNode);
+export function selectAllNodesCore(state: Readonly<SelectionStateRaw>, candidates: Readonly<NodeRef[]>): void {
+  let selectedNodes: NodeRef[] = [] as never[];
+  for (const candidate of candidates) {
+    if (!containsNode(selectedNodes, candidate)) {
+      selectedNodes.push(candidate);
+    }
+  }
+  const mutation = replaceSelectionMutation(selectionStateStateStore.get(state)!, selectedNodes);
+  if (mutation === null) {
+    return;
+  }
+  emitSelectionChanges(state, mutation!.previousActiveNode);
 }
 
-export function toggleNodeSelection<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-  node: NodeType,
-): void {
-  if (isNodeSelected(state, node)) {
-    removeNodeFromSelection(state, node);
+export function selectNodeCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+  const mutation = replaceSelectionMutation(selectionStateStateStore.get(state)!, [node]);
+  if (mutation === null) {
+    return;
+  }
+  emitSelectionChanges(state, mutation!.previousActiveNode);
+}
+
+export function toggleNodeSelectionCore(state: Readonly<SelectionStateRaw>, node: Readonly<NodeRef>): void {
+  if (isNodeSelectedCore(state, node)) {
+    removeNodeFromSelectionCore(state, node);
   } else {
-    addNodeToSelection(state, node);
+    addNodeToSelectionCore(state, node);
   }
-}
-
-function emitSelectionChanges<NodeType extends HierarchyNodeAny>(
-  runtime: SelectionStateRuntime<NodeType>,
-  selectionChanged: boolean,
-  previousActiveNode: NodeType | null,
-): void {
-  if (selectionChanged && runtime.signals.onChange.data !== null) {
-    emitSignal(runtime.signals.onChange, runtime.selectedNodes.slice());
-  }
-  if (previousActiveNode !== runtime.activeNode) {
-    emitSignal(runtime.signals.onActiveChange, runtime.activeNode);
-  }
-}
-
-function getSelectionStateRuntime<NodeType extends HierarchyNodeAny>(
-  state: SelectionState<NodeType>,
-): SelectionStateRuntime<NodeType> {
-  return state[EntityRuntimeKey] as SelectionStateRuntime<NodeType>;
 }

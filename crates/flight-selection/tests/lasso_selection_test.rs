@@ -1,10 +1,5 @@
-use std::ptr;
-
 use flight_geometry::create_rectangle;
-use flight_path::{PathCommand, PathWinding};
 use flight_selection::contract::*;
-
-use crate::support::*;
 
 mod add_lasso_selection_point {
     use super::*;
@@ -37,10 +32,9 @@ mod begin_lasso_selection {
 
         begin_lasso_selection(&mut lasso, 10.0, 11.0);
 
-        assert_eq!(
-            get_lasso_selection_path(&lasso).commands,
-            vec![PathCommand::MoveTo as u8]
-        );
+        assert!(crate::has_only_move_command(get_lasso_selection_path(
+            &lasso
+        )));
         assert_eq!(get_lasso_selection_path(&lasso).data, vec![10.0, 11.0]);
     }
 }
@@ -55,7 +49,7 @@ mod create_lasso_selection {
 
         assert!(path.commands.is_empty());
         assert!(path.data.is_empty());
-        assert_eq!(path.winding, PathWinding::EvenOdd);
+        assert!(crate::has_even_odd_winding(path));
     }
 }
 
@@ -71,21 +65,17 @@ mod end_lasso_selection {
         let returned = end_lasso_selection(&mut lasso) as *const _;
         end_lasso_selection(&mut lasso);
 
-        assert!(ptr::eq(returned, get_lasso_selection_path(&lasso)));
-        assert_eq!(
-            get_lasso_selection_path(&lasso).commands,
-            vec![
-                PathCommand::MoveTo as u8,
-                PathCommand::LineTo as u8,
-                PathCommand::Close as u8,
-            ]
-        );
+        assert!(crate::same_path(returned, get_lasso_selection_path(&lasso)));
+        assert!(crate::has_move_line_close_commands(
+            get_lasso_selection_path(&lasso)
+        ));
     }
 }
 
 mod find_nodes_in_lasso_selection {
     use super::*;
 
+    /// flight-compiler: rust-only — JavaScript arrays expose no allocation capacity.
     #[test]
     fn clears_a_reused_out_and_keeps_its_capacity() {
         let mut lasso = create_lasso_selection();
@@ -95,13 +85,13 @@ mod find_nodes_in_lasso_selection {
         add_lasso_selection_point(&mut lasso, 0.0, 10.0);
         end_lasso_selection(&mut lasso);
         let inside =
-            create_bounded_node("inside", &create_rectangle(4.0, 4.0, 2.0, 2.0), true, true);
+            crate::create_bounded_node("inside", &create_rectangle(4.0, 4.0, 2.0, 2.0), true, true);
         let mut out = Vec::with_capacity(8);
-        out.push(create_test_node("stale"));
+        out.push(crate::create_test_node("stale"));
 
         find_nodes_in_lasso_selection(&mut out, &lasso, &[inside.clone()]);
 
-        assert!(same_nodes(&out, &[inside]));
+        assert!(crate::same_nodes(&out, &[inside]));
         assert!(out.capacity() >= 8);
     }
 
@@ -114,15 +104,15 @@ mod find_nodes_in_lasso_selection {
         add_lasso_selection_point(&mut lasso, 10.0, 10.0);
         add_lasso_selection_point(&mut lasso, 0.0, 10.0);
         end_lasso_selection(&mut lasso);
-        let boundary = create_bounded_node(
+        let boundary = crate::create_bounded_node(
             "boundary",
             &create_rectangle(10.0, 0.0, 0.0, 0.0),
             true,
             true,
         );
 
-        assert!(same_nodes(
-            &lasso_matches(&lasso, &[boundary.clone()]),
+        assert!(crate::same_nodes(
+            &crate::lasso_matches(&lasso, &[boundary.clone()]),
             &[boundary]
         ));
     }
@@ -136,22 +126,22 @@ mod find_nodes_in_lasso_selection {
         add_lasso_selection_point(&mut lasso, 0.0, 10.0);
         end_lasso_selection(&mut lasso);
         let inside =
-            create_bounded_node("inside", &create_rectangle(4.0, 4.0, 2.0, 2.0), true, true);
-        let boundary = create_bounded_node(
+            crate::create_bounded_node("inside", &create_rectangle(4.0, 4.0, 2.0, 2.0), true, true);
+        let boundary = crate::create_bounded_node(
             "boundary",
             &create_rectangle(9.0, 4.0, 2.0, 2.0),
             true,
             true,
         );
-        let outside = create_bounded_node(
+        let outside = crate::create_bounded_node(
             "outside",
             &create_rectangle(11.0, 11.0, 2.0, 2.0),
             true,
             true,
         );
 
-        assert!(same_nodes(
-            &lasso_matches(&lasso, &[outside, boundary.clone(), inside.clone()]),
+        assert!(crate::same_nodes(
+            &crate::lasso_matches(&lasso, &[outside, boundary.clone(), inside.clone()]),
             &[boundary, inside]
         ));
     }
@@ -164,14 +154,14 @@ mod find_nodes_in_lasso_selection {
         add_lasso_selection_point(&mut lasso, 10.0, 10.0);
         add_lasso_selection_point(&mut lasso, 0.0, 10.0);
         end_lasso_selection(&mut lasso);
-        let overlaps_with_center_outside = create_bounded_node(
+        let overlaps_with_center_outside = crate::create_bounded_node(
             "overlap",
             &create_rectangle(9.0, 9.0, 10.0, 10.0),
             true,
             true,
         );
 
-        assert!(lasso_matches(&lasso, &[overlaps_with_center_outside]).is_empty());
+        assert!(crate::lasso_matches(&lasso, &[overlaps_with_center_outside]).is_empty());
     }
 
     #[test]
@@ -181,9 +171,9 @@ mod find_nodes_in_lasso_selection {
         add_lasso_selection_point(&mut lasso, 10.0, 0.0);
         end_lasso_selection(&mut lasso);
         let candidate =
-            create_bounded_node("node", &create_rectangle(0.0, 0.0, 1.0, 1.0), true, true);
+            crate::create_bounded_node("node", &create_rectangle(0.0, 0.0, 1.0, 1.0), true, true);
 
-        assert!(lasso_matches(&lasso, &[candidate]).is_empty());
+        assert!(crate::lasso_matches(&lasso, &[candidate]).is_empty());
     }
 }
 
@@ -197,7 +187,7 @@ mod get_lasso_selection_path {
 
         begin_lasso_selection(&mut lasso, 1.0, 2.0);
 
-        assert!(ptr::eq(original, get_lasso_selection_path(&lasso)));
+        assert!(crate::same_path(original, get_lasso_selection_path(&lasso)));
     }
 }
 
@@ -213,6 +203,6 @@ mod initialize_lasso_selection {
         let path = get_lasso_selection_path(&lasso);
         assert!(path.commands.is_empty());
         assert!(path.data.is_empty());
-        assert_eq!(path.winding, PathWinding::EvenOdd);
+        assert!(crate::has_even_odd_winding(path));
     }
 }

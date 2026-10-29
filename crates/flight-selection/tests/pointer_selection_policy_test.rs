@@ -1,6 +1,6 @@
-use flight_selection::contract::*;
+//! flight-compiler: nullable-options
 
-use crate::support::*;
+use flight_selection::contract::*;
 
 fn modifiers(
     alt_key: bool,
@@ -21,95 +21,107 @@ mod apply_pointer_selection_policy {
 
     #[test]
     fn adds_or_removes_with_shift_and_toggles_with_ctrl_or_command() {
-        let first = create_test_node("first");
-        let second = create_test_node("second");
+        let first = crate::create_test_node("first");
+        let second = crate::create_test_node("second");
         let selection = create_selection_state();
 
-        apply_pointer_selection_policy(
+        crate::apply_pointer_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, false, true),
         );
-        assert!(same_nodes(&selected_nodes_of(&selection), &[first.clone()]));
-        apply_pointer_selection_policy(
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
+            &[first.clone()]
+        ));
+        crate::apply_pointer_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, false, true),
         );
-        assert!(selected_nodes_of(&selection).is_empty());
+        assert!(crate::selected_nodes_of(&selection).is_empty());
 
-        apply_pointer_selection_policy(
+        crate::apply_pointer_policy(
             &selection,
             Some(&first),
             &modifiers(false, true, false, false),
         );
-        apply_pointer_selection_policy(
+        crate::apply_pointer_policy(
             &selection,
             Some(&second),
             &modifiers(false, false, true, false),
         );
-        assert!(same_nodes(
-            &selected_nodes_of(&selection),
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
             &[first.clone(), second.clone()]
         ));
-        apply_pointer_selection_policy(
+        crate::apply_pointer_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, true, false),
         );
-        assert!(same_nodes(
-            &selected_nodes_of(&selection),
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
             &[second.clone()]
         ));
 
-        apply_pointer_selection_policy(&selection, None, &modifiers(false, true, false, false));
-        assert!(same_nodes(&selected_nodes_of(&selection), &[second]));
+        crate::apply_pointer_policy(&selection, None, &modifiers(false, true, false, false));
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
+            &[second]
+        ));
     }
 
     #[test]
     fn applies_unmodified_hit_and_empty_space_behavior() {
-        let first = create_test_node("first");
-        let second = create_test_node("second");
+        let first = crate::create_test_node("first");
+        let second = crate::create_test_node("second");
         let selection = create_selection_state();
         select_all_nodes(&selection, &[first.clone(), second.clone()]);
 
-        apply_pointer_selection_policy(
+        crate::apply_pointer_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, false, false),
         );
-        assert!(same_nodes(
-            &selected_nodes_of(&selection),
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
             &[first.clone(), second]
         ));
 
-        let third = create_test_node("third");
-        apply_pointer_selection_policy(
+        let third = crate::create_test_node("third");
+        crate::apply_pointer_policy(
             &selection,
             Some(&third),
             &modifiers(false, false, false, false),
         );
-        assert!(same_nodes(&selected_nodes_of(&selection), &[third]));
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
+            &[third]
+        ));
 
-        apply_pointer_selection_policy(&selection, None, &modifiers(false, false, false, false));
-        assert!(selected_nodes_of(&selection).is_empty());
+        crate::apply_pointer_policy(&selection, None, &modifiers(false, false, false, false));
+        assert!(crate::selected_nodes_of(&selection).is_empty());
     }
 
     #[test]
     fn leaves_alt_gestures_available_for_caller_defined_alternate_pick_behavior() {
-        let first = create_test_node("first");
-        let second = create_test_node("second");
+        let first = crate::create_test_node("first");
+        let second = crate::create_test_node("second");
         let selection = create_selection_state();
         select_all_nodes(&selection, &[first.clone()]);
 
-        apply_pointer_selection_policy(
+        crate::apply_pointer_policy(
             &selection,
             Some(&second),
             &modifiers(true, false, false, false),
         );
-        apply_pointer_selection_policy(&selection, None, &modifiers(true, false, false, false));
+        crate::apply_pointer_policy(&selection, None, &modifiers(true, false, false, false));
 
-        assert!(same_nodes(&selected_nodes_of(&selection), &[first]));
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
+            &[first]
+        ));
     }
 }
 
@@ -118,8 +130,8 @@ mod apply_pointer_up_selection_policy {
 
     #[test]
     fn narrows_an_already_selected_hit_only_on_unmodified_pointer_up_without_a_drag() {
-        let first = create_test_node("first");
-        let second = create_test_node("second");
+        let first = crate::create_test_node("first");
+        let second = crate::create_test_node("second");
         let selection = create_selection_state();
         select_all_nodes(&selection, &[first.clone(), second.clone()]);
 
@@ -135,8 +147,8 @@ mod apply_pointer_up_selection_policy {
             &modifiers(false, false, false, true),
             false,
         );
-        assert!(same_nodes(
-            &selected_nodes_of(&selection),
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
             &[first.clone(), second]
         ));
 
@@ -146,6 +158,9 @@ mod apply_pointer_up_selection_policy {
             &modifiers(false, false, false, false),
             false,
         );
-        assert!(same_nodes(&selected_nodes_of(&selection), &[first]));
+        assert!(crate::same_nodes(
+            &crate::selected_nodes_of(&selection),
+            &[first]
+        ));
     }
 }

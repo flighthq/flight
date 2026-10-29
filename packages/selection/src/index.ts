@@ -1,3 +1,6 @@
+// Generated from crates/flight-selection/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
   addLassoSelectionPoint,
   addNodeToSelection,
@@ -27,3 +30,13 @@ export {
   toggleNodeSelection,
   updateMarqueeSelection,
 } from './contract.ts';
+
+export type { SelectionSignals } from './contract.ts';
+
+export type {
+  LassoSelection,
+  MarqueeSelection,
+  MarqueeSelectionMode,
+  SelectionModifierState,
+  SelectionState,
+} from './selectionCompat.ts';

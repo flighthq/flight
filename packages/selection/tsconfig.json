@@ -12,8 +12,8 @@
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../node" },
-    { "path": "../signals" },
-    { "path": "../types" }
+    { "path": "../path" },
+    { "path": "../signals" }
   ],
   "include": ["src"]
 }

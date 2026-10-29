@@ -1,94 +1,82 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+// Generated from crates/flight-selection/src/lasso_selection.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { allocateEntity } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import type {
-  BoundsNodeAny,
-  EntityConstruction,
-  LassoSelection,
-  LassoSelectionRuntime,
-  Path,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import type { NodeRef } from '@flighthq/node/contract';
+import type { Path } from '@flighthq/path/contract';
 
-export function addLassoSelectionPoint(selection: LassoSelection, x: number, y: number): void {
-  const runtime = getLassoSelectionRuntime(selection);
-  if (!runtime.active) return;
-  runtime.path.commands.push(PathCommand.LINE_TO);
-  runtime.path.data.push(x, y);
+import { appendLassoClose, appendLassoLineTo, appendLassoMoveTo, createLassoPath } from './pathCompat.ts';
+import type { LassoSelectionRaw } from './types.ts';
+import { lassoSelectionStateStore } from './types.ts';
+
+export function addLassoSelectionPointCore(selection: LassoSelectionRaw, x: number, y: number): void {
+  if (!lassoSelectionStateStore.get(selection)!.active) {
+    return;
+  }
+  appendLassoLineTo(lassoSelectionStateStore.get(selection)!.path, x, y);
 }
 
-export function beginLassoSelection(selection: LassoSelection, startX: number, startY: number): void {
-  const runtime = getLassoSelectionRuntime(selection);
-  runtime.active = true;
-  runtime.path.commands.length = 0;
-  runtime.path.data.length = 0;
-  runtime.path.commands.push(PathCommand.MOVE_TO);
-  runtime.path.data.push(startX, startY);
+export function beginLassoSelectionCore(selection: LassoSelectionRaw, startX: number, startY: number): void {
+  lassoSelectionStateStore.get(selection)!.active = true;
+  lassoSelectionStateStore.get(selection)!.path.commands.length = 0;
+  lassoSelectionStateStore.get(selection)!.path.data.length = 0;
+  appendLassoMoveTo(lassoSelectionStateStore.get(selection)!.path, startX, startY);
 }
 
-export function createLassoSelection(): LassoSelection {
-  const selection = allocateEntity<LassoSelection>();
-  initializeLassoSelection(selection);
-  const runtime = {
-    active: false,
-    binding: null,
-    path: (() => {
-      const out = allocateEntity<Path>();
-      out.commands = [] as number[];
-      out.data = [] as number[];
-      out.winding = 'evenOdd' as const;
-      return finishEntity(out);
-    })(),
-  } satisfies LassoSelectionRuntime;
-  selection[EntityRuntimeKey] = runtime;
-  return finishEntity(selection);
+export function createLassoSelectionCore(): LassoSelectionRaw {
+  let out: LassoSelectionRaw = allocateEntity<LassoSelectionRaw>();
+  initializeLassoSelectionCore(out);
+  return out;
 }
 
-export function endLassoSelection(selection: LassoSelection): Path {
-  const runtime = getLassoSelectionRuntime(selection);
-  if (runtime.active) runtime.path.commands.push(PathCommand.CLOSE);
-  runtime.active = false;
-  return runtime.path;
+export function endLassoSelectionCore(selection: LassoSelectionRaw): Readonly<Path> {
+  if (lassoSelectionStateStore.get(selection)!.active) {
+    appendLassoClose(lassoSelectionStateStore.get(selection)!.path);
+  }
+  lassoSelectionStateStore.get(selection)!.active = false;
+  return lassoSelectionStateStore.get(selection)!.path;
 }
 
-export function findNodesInLassoSelection<NodeType extends BoundsNodeAny>(
-  selection: Readonly<LassoSelection>,
-  candidates: readonly NodeType[],
-): NodeType[] {
-  const path = getLassoSelectionRuntime(selection).path;
-  if (path.data.length < 6) return [];
-
-  const matches: NodeType[] = [];
-  for (let i = 0; i < candidates.length; i++) {
-    const candidate = candidates[i];
+export function findNodesInLassoSelectionInto(
+  out: NodeRef[],
+  selection: Readonly<LassoSelectionRaw>,
+  candidates: Readonly<NodeRef[]>,
+): void {
+  out.length = 0;
+  if (lassoSelectionStateStore.get(selection)!.path.data.length < 6) {
+    return;
+  }
+  for (const candidate of candidates) {
     const bounds = getNodeLocalBoundsRectangle(candidate);
-    if (isPointInPolygon(path.data, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)) {
-      matches.push(candidate);
+    const centerX = bounds.x + bounds.width / 2.0;
+    const centerY = bounds.y + bounds.height / 2.0;
+    if (isPointInPolygon(lassoSelectionStateStore.get(selection)!.path.data, centerX, centerY)) {
+      out.push(candidate);
     }
   }
-  return matches;
 }
 
-export function getLassoSelectionPath(selection: Readonly<LassoSelection>): Readonly<Path> {
-  return getLassoSelectionRuntime(selection).path;
+export function getLassoSelectionPathCore(selection: Readonly<LassoSelectionRaw>): Readonly<Path> {
+  return lassoSelectionStateStore.get(selection)!.path;
 }
 
-export function initializeLassoSelection(_out: EntityConstruction<LassoSelection>): void {}
-
-function getLassoSelectionRuntime(selection: Readonly<LassoSelection>): LassoSelectionRuntime {
-  return selection[EntityRuntimeKey] as LassoSelectionRuntime;
+export function initializeLassoSelectionCore(out: LassoSelectionRaw): void {
+  lassoSelectionStateStore.set(out, { active: false, path: createLassoPath() });
 }
 
-function isPointInPolygon(points: readonly number[], x: number, y: number): boolean {
+function isPointInPolygon(points: Readonly<number[]>, x: number, y: number): boolean {
   let inside = false;
-  const pointCount = points.length / 2;
+  const pointCount = Math.trunc(points.length / 2);
   let previousIndex = pointCount - 1;
-  for (let currentIndex = 0; currentIndex < pointCount; currentIndex++) {
+  for (let currentIndex = 0; currentIndex < pointCount; currentIndex += 1) {
     const currentX = points[currentIndex * 2];
     const currentY = points[currentIndex * 2 + 1];
     const previousX = points[previousIndex * 2];
     const previousY = points[previousIndex * 2 + 1];
-
-    if (isPointOnSegment(x, y, previousX, previousY, currentX, currentY)) return true;
+    if (isPointOnSegment(x, y, previousX, previousY, currentX, currentY)) {
+      return true;
+    }
     if (
       currentY > y !== previousY > y &&
       x < ((previousX - currentX) * (y - currentY)) / (previousY - currentY) + currentX
@@ -102,8 +90,10 @@ function isPointInPolygon(points: readonly number[], x: number, y: number): bool
 
 function isPointOnSegment(x: number, y: number, startX: number, startY: number, endX: number, endY: number): boolean {
   const cross = (x - startX) * (endY - startY) - (y - startY) * (endX - startX);
-  const scale = Math.max(1, Math.abs(endX - startX), Math.abs(endY - startY));
-  if (Math.abs(cross) > Number.EPSILON * scale * 16) return false;
+  const scale = Math.max(Math.max(1.0, Math.abs(endX - startX)), Math.abs(endY - startY));
+  if (Math.abs(cross) > Number.EPSILON * scale * 16.0) {
+    return false;
+  }
   return (
     x >= Math.min(startX, endX) &&
     x <= Math.max(startX, endX) &&

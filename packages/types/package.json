@@ -50,6 +50,7 @@
     "@flighthq/menu": "*",
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
+    "@flighthq/selection": "*",
     "@flighthq/signals": "*",
     "@flighthq/statechart": "*",
     "@flighthq/textformat": "*",

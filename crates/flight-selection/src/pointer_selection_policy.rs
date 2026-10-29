@@ -1,11 +1,18 @@
+//! flight-compiler: nullable-options
+
 use flight_node::NodeRef;
 
 use crate::selection_state::{
-    add_node_to_selection, clear_selection, is_node_selected, select_node, toggle_node_selection,
+    add_node_to_selection_core, clear_selection_core, is_node_selected_core, select_node_core,
+    toggle_node_selection_core,
 };
-use crate::types::{SelectionModifierState, SelectionState};
+use crate::types::{SelectionModifierStateRaw, SelectionState};
 
 #[cfg(test)]
+use crate::selection_compat::SelectionModifierState;
+
+#[cfg(test)]
+/// flight-compiler: rust-only — Rust-only extension-method parity tests.
 mod sugar_tests {
     use std::any::Any;
     use std::sync::{Arc, RwLock};
@@ -70,7 +77,11 @@ mod sugar_tests {
         let b = create_selection_state();
         let selected = node("selected");
         a.apply_pointer_selection_policy(Some(&selected), &SelectionModifierState::default());
-        apply_pointer_selection_policy(&b, Some(&selected), &SelectionModifierState::default());
+        apply_pointer_selection_policy_core(
+            &b,
+            Some(&selected),
+            &SelectionModifierState::default(),
+        );
         assert!(same_nodes(&selected_of(&a), &selected_of(&b)));
     }
 
@@ -88,7 +99,7 @@ mod sugar_tests {
             &SelectionModifierState::default(),
             false,
         );
-        apply_pointer_up_selection_policy(
+        apply_pointer_up_selection_policy_core(
             &b,
             Some(&first),
             &SelectionModifierState::default(),
@@ -98,10 +109,10 @@ mod sugar_tests {
     }
 }
 
-pub fn apply_pointer_selection_policy(
+pub fn apply_pointer_selection_policy_core(
     state: &SelectionState,
     hit: Option<&NodeRef>,
-    modifiers: &SelectionModifierState,
+    modifiers: &SelectionModifierStateRaw,
 ) {
     if modifiers.alt_key {
         return;
@@ -109,45 +120,45 @@ pub fn apply_pointer_selection_policy(
 
     let Some(hit) = hit else {
         if !has_toggle_modifier(modifiers) {
-            clear_selection(state);
+            clear_selection_core(state);
         }
         return;
     };
 
     if has_toggle_modifier(modifiers) {
-        if modifiers.shift_key && !is_node_selected(state, hit) {
-            add_node_to_selection(state, hit);
+        if modifiers.shift_key && !is_node_selected_core(state, hit) {
+            add_node_to_selection_core(state, hit);
         } else {
-            toggle_node_selection(state, hit);
+            toggle_node_selection_core(state, hit);
         }
         return;
     }
 
-    if !is_node_selected(state, hit) {
-        select_node(state, hit);
+    if !is_node_selected_core(state, hit) {
+        select_node_core(state, hit);
     }
 }
 
-pub fn apply_pointer_up_selection_policy(
+pub fn apply_pointer_up_selection_policy_core(
     state: &SelectionState,
     hit: Option<&NodeRef>,
-    modifiers: &SelectionModifierState,
+    modifiers: &SelectionModifierStateRaw,
     did_drag: bool,
 ) {
     let Some(hit) = hit else {
         return;
     };
-    if did_drag || has_any_modifier(modifiers) || !is_node_selected(state, hit) {
+    if did_drag || has_any_modifier(modifiers) || !is_node_selected_core(state, hit) {
         return;
     }
-    select_node(state, hit);
+    select_node_core(state, hit);
 }
 
-fn has_any_modifier(modifiers: &SelectionModifierState) -> bool {
+fn has_any_modifier(modifiers: &SelectionModifierStateRaw) -> bool {
     return modifiers.alt_key || has_toggle_modifier(modifiers);
 }
 
-fn has_toggle_modifier(modifiers: &SelectionModifierState) -> bool {
+fn has_toggle_modifier(modifiers: &SelectionModifierStateRaw) -> bool {
     return modifiers.ctrl_key || modifiers.meta_key || modifiers.shift_key;
 }
 
@@ -155,17 +166,17 @@ impl SelectionState {
     pub fn apply_pointer_selection_policy(
         &self,
         hit: Option<&NodeRef>,
-        modifiers: &SelectionModifierState,
+        modifiers: &SelectionModifierStateRaw,
     ) {
-        apply_pointer_selection_policy(self, hit, modifiers);
+        apply_pointer_selection_policy_core(self, hit, modifiers);
     }
 
     pub fn apply_pointer_up_selection_policy(
         &self,
         hit: Option<&NodeRef>,
-        modifiers: &SelectionModifierState,
+        modifiers: &SelectionModifierStateRaw,
         did_drag: bool,
     ) {
-        apply_pointer_up_selection_policy(self, hit, modifiers, did_drag);
+        apply_pointer_up_selection_policy_core(self, hit, modifiers, did_drag);
     }
 }

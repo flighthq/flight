@@ -1,122 +1,132 @@
-import { createNode, createNodeRuntime, initBoundsRectangleRuntimeTrait } from '@flighthq/node/contract';
-import type { BoundsNodeAny, HasBoundsRectangleRuntime, NodeRuntime, RectangleLike } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+// Generated from crates/flight-selection/tests/lasso_selection_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { createRectangle } from '@flighthq/geometry/contract';
+import { describe, expect, it } from 'vitest';
 
 import {
   addLassoSelectionPoint,
   beginLassoSelection,
   createLassoSelection,
   endLassoSelection,
-  findNodesInLassoSelection,
   getLassoSelectionPath,
-} from './index.ts';
-import { initializeLassoSelection } from './lassoSelection.ts';
+  initializeLassoSelection,
+} from './contract.ts';
+import { rustTestSupport as crate } from './rustTestSupport.ts';
 
 describe('addLassoSelectionPoint', () => {
   it('appends line points only during an active gesture', () => {
-    const lasso = createLassoSelection();
-    addLassoSelectionPoint(lasso, 99, 99);
-    beginLassoSelection(lasso, 1, 2);
-    addLassoSelectionPoint(lasso, 3, 4);
+    let lasso = createLassoSelection();
+    addLassoSelectionPoint(lasso, 99.0, 99.0);
+    beginLassoSelection(lasso, 1.0, 2.0);
+    addLassoSelectionPoint(lasso, 3.0, 4.0);
     endLassoSelection(lasso);
-    addLassoSelectionPoint(lasso, 5, 6);
-
-    expect(getLassoSelectionPath(lasso).data).toEqual([1, 2, 3, 4]);
+    addLassoSelectionPoint(lasso, 5.0, 6.0);
+    expect(getLassoSelectionPath(lasso).data).toEqual([1.0, 2.0, 3.0, 4.0]);
   });
 });
 
 describe('beginLassoSelection', () => {
   it('resets the reused path and starts it with a move command', () => {
-    const lasso = createLassoSelection();
-    beginLassoSelection(lasso, 1, 2);
-    addLassoSelectionPoint(lasso, 3, 4);
+    let lasso = createLassoSelection();
+    beginLassoSelection(lasso, 1.0, 2.0);
+    addLassoSelectionPoint(lasso, 3.0, 4.0);
     endLassoSelection(lasso);
-
-    beginLassoSelection(lasso, 10, 11);
-
-    expect(getLassoSelectionPath(lasso).commands).toEqual([PathCommand.MOVE_TO]);
-    expect(getLassoSelectionPath(lasso).data).toEqual([10, 11]);
+    beginLassoSelection(lasso, 10.0, 11.0);
+    expect(crate.hasOnlyMoveCommand(getLassoSelectionPath(lasso))).toBe(true);
+    expect(getLassoSelectionPath(lasso).data).toEqual([10.0, 11.0]);
   });
 });
 
 describe('createLassoSelection', () => {
-  it('creates an empty even-odd path', () => {
-    const path = getLassoSelectionPath(createLassoSelection());
-
-    expect(path).toMatchObject({ commands: [], data: [], winding: 'evenOdd' });
+  it('creates an empty even odd path', () => {
+    const lasso = createLassoSelection();
+    const path = getLassoSelectionPath(lasso);
+    expect(path.commands.length === 0).toBe(true);
+    expect(path.data.length === 0).toBe(true);
+    expect(crate.hasEvenOddWinding(path)).toBe(true);
   });
 });
 
 describe('endLassoSelection', () => {
   it('closes an active path once and returns the live path object', () => {
-    const lasso = createLassoSelection();
-    beginLassoSelection(lasso, 1, 2);
-    addLassoSelectionPoint(lasso, 3, 4);
-
-    const path = endLassoSelection(lasso);
+    let lasso = createLassoSelection();
+    beginLassoSelection(lasso, 1.0, 2.0);
+    addLassoSelectionPoint(lasso, 3.0, 4.0);
+    const returned = endLassoSelection(lasso);
     endLassoSelection(lasso);
-
-    expect(path).toBe(getLassoSelectionPath(lasso));
-    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.CLOSE]);
+    expect(crate.samePath(returned, getLassoSelectionPath(lasso))).toBe(true);
+    expect(crate.hasMoveLineCloseCommands(getLassoSelectionPath(lasso))).toBe(true);
   });
 });
 
 describe('findNodesInLassoSelection', () => {
-  it('selects bounds centers inside or on the lasso boundary in caller order', () => {
-    const lasso = createLassoSelection();
-    beginLassoSelection(lasso, 0, 0);
-    addLassoSelectionPoint(lasso, 10, 0);
-    addLassoSelectionPoint(lasso, 10, 10);
-    addLassoSelectionPoint(lasso, 0, 10);
+  // Rust-only: clears a reused out and keeps its capacity
+  it('includes degenerate boundary edges without changing even odd fill', () => {
+    let lasso = createLassoSelection();
+    beginLassoSelection(lasso, 0.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 10.0);
+    addLassoSelectionPoint(lasso, 0.0, 10.0);
     endLassoSelection(lasso);
-    const inside = createBoundedNode('inside', { x: 4, y: 4, width: 2, height: 2 });
-    const boundary = createBoundedNode('boundary', { x: 9, y: 4, width: 2, height: 2 });
-    const outside = createBoundedNode('outside', { x: 11, y: 11, width: 2, height: 2 });
-
-    expect(findNodesInLassoSelection(lasso, [outside, boundary, inside])).toEqual([boundary, inside]);
+    const boundary = crate.createBoundedNode('boundary', createRectangle(10.0, 0.0, 0.0, 0.0), true, true);
+    expect(crate.sameNodes(crate.lassoMatches(lasso, [boundary]), [boundary])).toBe(true);
   });
-
-  it('returns no candidates for a path with fewer than three points', () => {
-    const lasso = createLassoSelection();
-    beginLassoSelection(lasso, 0, 0);
-    addLassoSelectionPoint(lasso, 10, 0);
+  it('selects bounds centers inside or on the lasso boundary in caller order', () => {
+    let lasso = createLassoSelection();
+    beginLassoSelection(lasso, 0.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 10.0);
+    addLassoSelectionPoint(lasso, 0.0, 10.0);
     endLassoSelection(lasso);
-
-    expect(findNodesInLassoSelection(lasso, [createBoundedNode('node', { x: 0, y: 0, width: 1, height: 1 })])).toEqual(
-      [],
+    const inside = crate.createBoundedNode('inside', createRectangle(4.0, 4.0, 2.0, 2.0), true, true);
+    const boundary = crate.createBoundedNode('boundary', createRectangle(9.0, 4.0, 2.0, 2.0), true, true);
+    const outside = crate.createBoundedNode('outside', createRectangle(11.0, 11.0, 2.0, 2.0), true, true);
+    expect(crate.sameNodes(crate.lassoMatches(lasso, [outside, boundary, inside]), [boundary, inside])).toBe(true);
+  });
+  it('tests the bounds center rather than rectangle overlap', () => {
+    let lasso = createLassoSelection();
+    beginLassoSelection(lasso, 0.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 10.0);
+    addLassoSelectionPoint(lasso, 0.0, 10.0);
+    endLassoSelection(lasso);
+    const overlapsWithCenterOutside = crate.createBoundedNode(
+      'overlap',
+      createRectangle(9.0, 9.0, 10.0, 10.0),
+      true,
+      true,
     );
+    expect(crate.lassoMatches(lasso, [overlapsWithCenterOutside]).length === 0).toBe(true);
+  });
+  it('returns no candidates for a path with fewer than three points', () => {
+    let lasso = createLassoSelection();
+    beginLassoSelection(lasso, 0.0, 0.0);
+    addLassoSelectionPoint(lasso, 10.0, 0.0);
+    endLassoSelection(lasso);
+    const candidate = crate.createBoundedNode('node', createRectangle(0.0, 0.0, 1.0, 1.0), true, true);
+    expect(crate.lassoMatches(lasso, [candidate]).length === 0).toBe(true);
   });
 });
 
 describe('getLassoSelectionPath', () => {
   it('exposes the same path throughout a gesture', () => {
-    const lasso = createLassoSelection();
-    const path = getLassoSelectionPath(lasso);
-
-    beginLassoSelection(lasso, 1, 2);
-
-    expect(getLassoSelectionPath(lasso)).toBe(path);
+    let lasso = createLassoSelection();
+    const original = getLassoSelectionPath(lasso);
+    beginLassoSelection(lasso, 1.0, 2.0);
+    expect(crate.samePath(original, getLassoSelectionPath(lasso))).toBe(true);
   });
 });
 
-function createBoundedNode(name: string, rectangle: Readonly<RectangleLike>): BoundsNodeAny {
-  const node = createNode('SelectionBoundsTestNode', undefined, () => {
-    const runtime = createNodeRuntime() as NodeRuntime & HasBoundsRectangleRuntime;
-    initBoundsRectangleRuntimeTrait(runtime, {
-      computeLocalBoundsRectangle(out) {
-        out.x = rectangle.x;
-        out.y = rectangle.y;
-        out.width = rectangle.width;
-        out.height = rectangle.height;
-      },
-    });
-    return runtime;
-  }) as BoundsNodeAny;
-  node.name = name;
-  return node;
-}
 describe('initializeLassoSelection', () => {
-  it('is the construction initializer of createLassoSelection', () => {
-    expect(typeof initializeLassoSelection).toBe('function');
+  it('restores an empty even odd path', () => {
+    let lasso = createLassoSelection();
+    beginLassoSelection(lasso, 1.0, 2.0);
+    initializeLassoSelection(lasso);
+    const path = getLassoSelectionPath(lasso);
+    expect(path.commands.length === 0).toBe(true);
+    expect(path.data.length === 0).toBe(true);
+    expect(crate.hasEvenOddWinding(path)).toBe(true);
   });
 });

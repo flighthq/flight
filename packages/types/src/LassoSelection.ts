@@ -1,4 +1,2 @@
-import type { Entity } from './Entity.ts';
-
-/** Opaque freeform gesture state created and updated by @flighthq/selection. */
-export interface LassoSelection extends Entity {}
+/** @deprecated Import selection contracts from `@flighthq/selection/contract`. */
+export type { LassoSelection } from '@flighthq/selection/contract';

@@ -1,9 +1,5 @@
-use std::ptr;
-
 use flight_geometry::create_rectangle;
 use flight_selection::contract::*;
-
-use crate::support::*;
 
 mod begin_marquee_selection {
     use super::*;
@@ -48,7 +44,10 @@ mod end_marquee_selection {
         let returned = end_marquee_selection(&mut marquee) as *const _;
         update_marquee_selection(&mut marquee, 50.0, 50.0);
 
-        assert!(ptr::eq(returned, get_marquee_rectangle(&marquee)));
+        assert!(crate::same_rectangle(
+            returned,
+            get_marquee_rectangle(&marquee)
+        ));
         assert_eq!(
             get_marquee_rectangle(&marquee),
             &create_rectangle(1.0, 2.0, 2.0, 2.0)
@@ -59,19 +58,20 @@ mod end_marquee_selection {
 mod find_nodes_in_marquee_selection {
     use super::*;
 
+    /// flight-compiler: rust-only — JavaScript arrays expose no allocation capacity.
     #[test]
     fn clears_a_reused_out_and_keeps_its_capacity() {
         let mut marquee = create_marquee_selection();
         begin_marquee_selection(&mut marquee, 0.0, 0.0);
         update_marquee_selection(&mut marquee, 10.0, 10.0);
         let inside =
-            create_bounded_node("inside", &create_rectangle(2.0, 2.0, 2.0, 2.0), true, true);
+            crate::create_bounded_node("inside", &create_rectangle(2.0, 2.0, 2.0, 2.0), true, true);
         let mut out = Vec::with_capacity(8);
-        out.push(create_test_node("stale"));
+        out.push(crate::create_test_node("stale"));
 
         find_nodes_in_marquee_selection(&mut out, &marquee, &[inside.clone()], None);
 
-        assert!(same_nodes(&out, &[inside]));
+        assert!(crate::same_nodes(&out, &[inside]));
         assert!(out.capacity() >= 8);
     }
 
@@ -80,19 +80,19 @@ mod find_nodes_in_marquee_selection {
         let mut marquee = create_marquee_selection();
         begin_marquee_selection(&mut marquee, 0.0, 0.0);
         update_marquee_selection(&mut marquee, 10.0, 10.0);
-        let contained = create_bounded_node(
+        let contained = crate::create_bounded_node(
             "contained",
             &create_rectangle(2.0, 2.0, 2.0, 2.0),
             true,
             true,
         );
-        let overlapping = create_bounded_node(
+        let overlapping = crate::create_bounded_node(
             "overlapping",
             &create_rectangle(8.0, 8.0, 5.0, 5.0),
             true,
             true,
         );
-        let outside = create_bounded_node(
+        let outside = crate::create_bounded_node(
             "outside",
             &create_rectangle(20.0, 20.0, 1.0, 1.0),
             true,
@@ -100,12 +100,12 @@ mod find_nodes_in_marquee_selection {
         );
         let candidates = vec![overlapping.clone(), outside, contained.clone()];
 
-        assert!(same_nodes(
-            &marquee_matches(&marquee, &candidates, None),
+        assert!(crate::same_nodes(
+            &crate::marquee_matches(&marquee, &candidates, None),
             &[overlapping.clone(), contained.clone()]
         ));
-        assert!(same_nodes(
-            &marquee_matches(&marquee, &candidates, Some(MarqueeSelectionMode::Contain)),
+        assert!(crate::same_nodes(
+            &crate::marquee_matches(&marquee, &candidates, Some(crate::contain_marquee_mode())),
             &[contained]
         ));
     }
@@ -115,17 +115,21 @@ mod find_nodes_in_marquee_selection {
         let mut marquee = create_marquee_selection();
         begin_marquee_selection(&mut marquee, 0.0, 0.0);
         update_marquee_selection(&mut marquee, 10.0, 10.0);
-        let disabled = create_bounded_node(
+        let disabled = crate::create_bounded_node(
             "disabled",
             &create_rectangle(1.0, 1.0, 1.0, 1.0),
             false,
             true,
         );
-        let hidden =
-            create_bounded_node("hidden", &create_rectangle(2.0, 2.0, 1.0, 1.0), true, false);
+        let hidden = crate::create_bounded_node(
+            "hidden",
+            &create_rectangle(2.0, 2.0, 1.0, 1.0),
+            true,
+            false,
+        );
 
-        assert!(same_nodes(
-            &marquee_matches(&marquee, &[disabled.clone(), hidden.clone()], None),
+        assert!(crate::same_nodes(
+            &crate::marquee_matches(&marquee, &[disabled.clone(), hidden.clone()], None),
             &[disabled, hidden]
         ));
     }
@@ -141,13 +145,17 @@ mod get_marquee_rectangle {
 
         begin_marquee_selection(&mut marquee, 4.0, 5.0);
 
-        assert!(ptr::eq(original, get_marquee_rectangle(&marquee)));
+        assert!(crate::same_rectangle(
+            original,
+            get_marquee_rectangle(&marquee)
+        ));
     }
 }
 
 mod get_marquee_selection_mode_string {
     use super::*;
 
+    /// flight-compiler: rust-only — the exact-string helper is native-contract-only.
     #[test]
     fn returns_the_exact_source_strings() {
         assert_eq!(
@@ -164,6 +172,7 @@ mod get_marquee_selection_mode_string {
 mod initialize_marquee_selection {
     use super::*;
 
+    /// flight-compiler: rust-only — target construction is internal to the generated core.
     #[test]
     fn restores_inactive_empty_gesture_state() {
         let mut marquee = create_marquee_selection();
@@ -183,6 +192,7 @@ mod initialize_marquee_selection {
 mod parse_marquee_selection_mode {
     use super::*;
 
+    /// flight-compiler: rust-only — the exact-string helper is native-contract-only.
     #[test]
     fn accepts_only_the_exact_source_strings() {
         assert_eq!(
