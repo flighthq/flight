@@ -161,6 +161,9 @@ const STRING_UNION_MARKER: &str = "@string-union:";
 const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
 // Functions returning a resolved struct (`module SEP function SEP struct identity`).
 const STRUCT_RETURN_MARKER: &str = "@struct-return:";
+// `{struct identity}␟{field}␟{field struct identity}` for each field whose declared type is a struct of
+// a source, so a nested field read resolves its owner through the declarations.
+const STRUCT_FIELD_TYPE_MARKER: &str = "@struct-field-type:";
 const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
 const VITEST_FUNCTION_RETURN_CANDIDATE_MARKER: &str = "@vitest-function-return-candidate:";
 const VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER: &str = "@vitest-function-return-unresolved:";
@@ -604,6 +607,46 @@ fn expression_is_rereadable(expression: &Expr) -> bool {
         Expr::Path(path) => path.qself.is_none() && path.path.segments.len() == 1,
         Expr::Reference(reference) => expression_is_rereadable(&reference.expr),
         expression => expression_is_field_reference(expression),
+    };
+}
+
+// The canonical identity of the struct `expression` evaluates to in emitted code, derived from
+// declarations: a typed binding, a struct-returning call, a struct literal's resolved path, or a field
+// whose declared type is a struct (recursively, so `a.b.c` resolves `b`'s owner through `a`).
+fn expression_struct_identity(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    return match expression {
+        Expr::Group(group) => expression_struct_identity(&group.expr, entities),
+        Expr::Paren(paren) => expression_struct_identity(&paren.expr, entities),
+        Expr::Reference(reference) => expression_struct_identity(&reference.expr, entities),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            expression_struct_identity(&unary.expr, entities)
+        }
+        Expr::Call(call) => match call.func.as_ref() {
+            Expr::Path(path) if path.qself.is_none() => {
+                call_fact(entities, STRUCT_RETURN_MARKER, &path.path)
+            }
+            _ => None,
+        },
+        Expr::Struct(literal) if literal.qself.is_none() => context_type_identity(
+            entities,
+            &Type::Path(syn::TypePath {
+                qself: None,
+                path: literal.path.clone(),
+            }),
+        ),
+        Expr::Field(field) => {
+            let syn::Member::Named(member) = &field.member else {
+                return None;
+            };
+            let owner = expression_struct_identity(&field.base, entities)?;
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{STRUCT_FIELD_TYPE_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+        }
+        expression => expression_struct_name(expression, entities),
     };
 }
 
@@ -1154,6 +1197,22 @@ fn initializes_readonly_entity(
         return false;
     };
     return readonly_structs.contains(&entity);
+}
+
+// Whether a literal of the struct `identity` stores `field` as `null`: a `nullable-option` field, or,
+// built outside a `nullable-options` source (whose values are already `null`-based), a public
+// `Option` field such a source declares.
+fn is_nullable_literal_field(
+    entities: &HashSet<String>,
+    identity: &str,
+    field: &syn::Ident,
+) -> bool {
+    return entities.contains(&format!(
+        "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}"
+    )) || !entities.contains(NULLABLE_OPTIONS_MARKER)
+        && entities.contains(&format!(
+            "{NULLABLE_OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}"
+        ));
 }
 
 fn nullable_type(inner: String) -> String {
@@ -5164,6 +5223,12 @@ fn generation_context_with_types(
                 let Some(field_name) = &field.ident else {
                     continue;
                 };
+                if let Some(field_identity) = resolved_type_identity(&context, module, &field.ty) {
+                    context.insert(format!(
+                        "{STRUCT_FIELD_TYPE_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{field_identity}",
+                        structure.ident
+                    ));
+                }
                 let designated = program
                     .nullable_option_items
                     .contains(&format!("{}.{field_name}", structure.ident));
@@ -7262,9 +7327,7 @@ fn emit_expression_value(
                     };
                     if let syn::Member::Named(field_name) = &field.member
                         && let Some(identity) = &structure_identity
-                        && entities.contains(&format!(
-                            "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
-                        ))
+                        && is_nullable_literal_field(entities, identity, field_name)
                     {
                         value = nullable_option_value(&field.expr, value);
                     }
@@ -9704,9 +9767,8 @@ fn emit_contextual_struct_literal_expression(
                     );
                     let value = if let syn::Member::Named(field_name) = &field.member
                         && let Some(identity) = literal_identity
-                        && entities.contains(&format!(
-                            "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
-                        )) {
+                        && is_nullable_literal_field(entities, &identity, field_name)
+                    {
                         nullable_option_value(&field.expr, value)
                     } else {
                         value
@@ -12824,19 +12886,7 @@ fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<Str
         return false;
     };
     let structure = if current_source(entities).is_some() {
-        let base = match field.base.as_ref() {
-            Expr::Paren(paren) => paren.expr.as_ref(),
-            base => base,
-        };
-        match base {
-            Expr::Call(call) => match call.func.as_ref() {
-                Expr::Path(path) if path.qself.is_none() => {
-                    call_fact(entities, STRUCT_RETURN_MARKER, &path.path)
-                }
-                _ => None,
-            },
-            base => expression_struct_name(base, entities),
-        }
+        expression_struct_identity(&field.base, entities)
     } else {
         inferred_vitest_struct_literal_name(&field.base, entities)
     };

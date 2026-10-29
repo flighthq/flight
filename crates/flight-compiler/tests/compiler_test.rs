@@ -4358,6 +4358,133 @@ pub fn sample_count(mesh: &Mesh, extra: Box<Int16Array>) -> usize {
     }
 
     #[test]
+    fn converts_nested_literal_and_sibling_nullable_fields_through_the_cli() {
+        let directory = std::env::temp_dir().join(format!(
+            "flight-compiler-nullable-fields-cli-{}",
+            std::process::id()
+        ));
+        let source_root = directory.join("flight-nest").join("src");
+        std::fs::create_dir_all(&source_root).unwrap();
+        let modules = [
+            (
+                "outer",
+                r#"//! flight-compiler: nullable-option Inner.contour
+
+pub struct Inner {
+    pub contour: Option<f64>,
+}
+
+pub struct Outer {
+    pub inner: Inner,
+    pub label: f64,
+}
+
+pub fn literal_present(value: Option<f64>) -> bool {
+    return Inner { contour: value }.contour.is_some();
+}
+
+pub fn make_outer(value: Option<f64>) -> Outer {
+    return Outer {
+        inner: Inner { contour: value },
+        label: 1.0,
+    };
+}
+
+pub fn nested_or(outer: &Outer) -> f64 {
+    return outer.inner.contour.unwrap_or(-1.0);
+}
+
+pub fn nested_present(outer: &Outer) -> bool {
+    return outer.inner.contour.is_some();
+}
+
+pub fn set_nested(outer: &mut Outer, value: Option<f64>) {
+    outer.inner.contour = value;
+}
+"#,
+            ),
+            (
+                "wide",
+                r#"//! flight-compiler: nullable-options
+
+pub struct Wide {
+    pub value: Option<f64>,
+}
+"#,
+            ),
+            (
+                "builder",
+                r#"use crate::outer::Inner;
+use crate::wide::Wide;
+
+pub fn build_inner(value: Option<f64>) -> Inner {
+    return Inner { contour: value };
+}
+
+pub fn build_wide(value: Option<f64>) -> Wide {
+    return Wide { value };
+}
+
+pub fn wide_present(wide: &Wide) -> bool {
+    return wide.value.is_some();
+}
+"#,
+            ),
+        ];
+        for (name, source) in modules {
+            std::fs::write(source_root.join(format!("{name}.rs")), source).unwrap();
+        }
+        let generate = |name: &str| {
+            let source = source_root.join(format!("{name}.rs"));
+            let output = source.with_extension("ts");
+            let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_flight-compile"));
+            command
+                .arg("generate")
+                .arg("--source")
+                .arg(&source)
+                .arg("--out")
+                .arg(&output);
+            for (other, _) in modules {
+                if other != name {
+                    command
+                        .arg("--alias-source")
+                        .arg(source_root.join(format!("{other}.rs")));
+                }
+            }
+            let result = command.output().unwrap();
+            assert_eq!(
+                result.status.code(),
+                Some(0),
+                "{}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+            return std::fs::read_to_string(output).unwrap();
+        };
+
+        let outer = generate("outer");
+        for expected in [
+            "  return (({ contour: (value) ?? null }.contour) ?? undefined) !== undefined;\n",
+            "  return { inner: { contour: (value) ?? null }, label: 1.0 };\n",
+            "  return (((outer.inner.contour) ?? undefined) ?? -1.0);\n",
+            "  return ((outer.inner.contour) ?? undefined) !== undefined;\n",
+            "  outer.inner.contour = (value) ?? null;\n",
+        ] {
+            assert!(outer.contains(expected), "{expected}\n{outer}");
+        }
+        let builder = generate("builder");
+        for expected in [
+            "  return { contour: (value) ?? null };\n",
+            "  return { value: (value) ?? null };\n",
+            "  return ((wide.value) ?? undefined) !== undefined;\n",
+        ] {
+            assert!(builder.contains(expected), "{expected}\n{builder}");
+        }
+        let wide = generate("wide");
+        assert!(wide.contains("value: number | null;"), "{wide}");
+        std::fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[test]
     fn converts_between_nullable_and_ordinary_options_at_every_boundary() {
         let source = r#"
 //! flight-compiler: nullable-option find_scale nullable_from_ordinary Explanation.contour
