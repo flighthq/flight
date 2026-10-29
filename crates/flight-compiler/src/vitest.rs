@@ -13,8 +13,8 @@ use crate::typescript::{
     function_expression_context, insert_vitest_helper_return_context,
     insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
     is_data_union_variant, is_string_union, is_vitest_struct, numeric_literal_spelling,
-    snake_to_lower_camel, update_vitest_struct_local_context, validate_vitest_function_provenance,
-    write_indent,
+    snake_to_lower_camel, update_vitest_local_function_context, update_vitest_struct_local_context,
+    validate_vitest_function_provenance, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -496,6 +496,10 @@ fn emit_block(
                 emit_block,
             )?;
             update_vitest_struct_local_context(local, &mut block_context);
+            update_vitest_local_function_context(local, &mut block_context);
+        } else if let Stmt::Local(local) = statement {
+            emit_statement(out, statement, &block_context, indent)?;
+            update_vitest_local_function_context(local, &mut block_context);
         } else {
             emit_statement(out, statement, &block_context, indent)?;
         }
