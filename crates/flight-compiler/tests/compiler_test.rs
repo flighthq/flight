@@ -11319,6 +11319,7 @@ pub fn single() -> &'static str {
 pub fn build(name: &str) -> String {
     let mut result = String::with_capacity(name.len());
     result.push_str(name);
+    result.push('!');
     return result;
 }
 "#;
@@ -11327,6 +11328,10 @@ pub fn build(name: &str) -> String {
 
         assert!(output.contains("let result = ''"));
         assert!(output.contains("result += name"));
+        assert!(
+            output.contains("result += \"!\""),
+            "push(char) on String::with_capacity should use += not .push(): {output}"
+        );
     }
 
     #[test]

@@ -2095,7 +2095,7 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
                     return false;
                 };
                 entities.contains(&format!("{STRING_RETURN_MARKER}{}", function.ident))
-                    || (function.ident == "new"
+                    || ((function.ident == "new" || function.ident == "with_capacity")
                         && segments.next().is_some_and(|owner| owner.ident == "String"))
             }
             _ => false,
