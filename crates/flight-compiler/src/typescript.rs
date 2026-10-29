@@ -13682,6 +13682,11 @@ impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
         syn::visit::visit_expr_struct(self, expression);
     }
 
+    fn visit_macro(&mut self, mac: &'ast syn::Macro) {
+        visit_cross_crate_macro_arguments(self, mac);
+        syn::visit::visit_macro(self, mac);
+    }
+
     fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
         if pattern.qself.is_none() {
             self.record_value_path(&pattern.path);
@@ -13701,6 +13706,20 @@ impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
             self.record_type_path(&rust_type.path);
         }
         syn::visit::visit_type_path(self, rust_type);
+    }
+}
+
+// A macro body (`assert!`, `assert_eq!`, `vec!`, …) is opaque tokens to the syntax visitor, but the
+// emitter lowers its arguments as expressions; parsing them records the foreign items they use.
+fn visit_cross_crate_macro_arguments(
+    collector: &mut CrossCrateUsageCollector<'_>,
+    mac: &syn::Macro,
+) {
+    if let Ok(arguments) = mac.parse_body_with(Punctuated::<Expr, syn::Token![,]>::parse_terminated)
+    {
+        for argument in &arguments {
+            Visit::visit_expr(collector, argument);
+        }
     }
 }
 

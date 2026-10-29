@@ -1,10 +1,10 @@
 // Generated from crates/flight-easing/tests/ease_steps_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { setEasingStepsGuard } from '@flighthq/easing/contract';
+import { getStepPositionString, parseStepPosition, setEasingStepsGuard } from '@flighthq/easing/contract';
 import { describe, expect, it } from 'vitest';
 
-import { easeSteps, getStepPositionString, parseStepPosition } from './contract.ts';
+import { easeSteps } from './contract.ts';
 import type { EasingFunction } from './contract.ts';
 
 function assertApprox(actual: number, expected: number): void {

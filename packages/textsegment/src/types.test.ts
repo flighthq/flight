@@ -1,16 +1,15 @@
 // Generated from crates/flight-textsegment/tests/types_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { describe, expect, it } from 'vitest';
-
 import {
-  TextSegmentGranularity,
-  TextSegmenterKind,
   getTextSegmentGranularityString,
   getTextSegmenterKindString,
   parseTextSegmentGranularity,
   parseTextSegmenterKind,
-} from './contract.ts';
+} from '@flighthq/textsegment/contract';
+import { describe, expect, it } from 'vitest';
+
+import { TextSegmentGranularity, TextSegmenterKind } from './contract.ts';
 
 describe('getTextSegmenterKindString', () => {
   it('returns the exact ts strings', () => {

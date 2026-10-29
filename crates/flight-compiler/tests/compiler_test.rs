@@ -1070,6 +1070,40 @@ export type { Registry };
     }
 
     #[test]
+    fn imports_foreign_items_used_only_inside_assertion_macros() {
+        let source = r#"
+use flight_entity::has_entity_runtime;
+
+mod foreign_assertions {
+    use super::*;
+
+    #[test]
+    fn reads_foreign_values_inside_assertions() {
+        let value = 1;
+        assert!(!has_entity_runtime(&value));
+        assert_eq!(has_entity_runtime(&value), false);
+    }
+}
+"#;
+
+        assert_eq!(
+            compile_vitest(source, "./contract.ts").unwrap(),
+            r#"import { describe, expect, it } from 'vitest';
+
+import { hasEntityRuntime } from "@flighthq/entity/contract";
+
+describe("foreignAssertions", () => {
+  it("reads foreign values inside assertions", () => {
+    const value = 1;
+    expect(!hasEntityRuntime(value)).toBe(true);
+    expect(hasEntityRuntime(value)).toEqual(false);
+  });
+});
+"#
+        );
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment
