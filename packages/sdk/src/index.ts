@@ -53,6 +53,7 @@ export * from '@flighthq/entity';
 export { Entity } from './entity.ts';
 export * from '@flighthq/filesystem';
 export * from '@flighthq/flow';
+export type { FlowStack, FlowState } from '@flighthq/flow';
 export * from '@flighthq/font';
 export * from '@flighthq/font-formats';
 export * from '@flighthq/geolocation';

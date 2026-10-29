@@ -273,7 +273,7 @@ function enterFrame(): void {
 
   // Rebuild root's children each frame from the visible-state list. Only states reachable through
   // the renderBelow chain are drawn; the flow stack decides what is on screen.
-  getFlowStackVisibleStates(stack, visibleStates);
+  getFlowStackVisibleStates(visibleStates, stack);
   removeNodeChildren(root);
 
   for (let i = 0; i < visibleStates.length; i++) {
