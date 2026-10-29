@@ -216,7 +216,7 @@ mod create_input_state {
     #[test]
     fn starts_with_empty_maps_and_sets() {
         let state = create_input_state();
-        let borrowed = state.read().unwrap();
+        let borrowed: &InputState = &state.read().unwrap();
         assert!(borrowed.keys_down.is_empty());
         assert!(borrowed.pointer_buttons_down.is_empty());
         assert!(borrowed.gamepad_buttons_down.is_empty());
@@ -351,8 +351,8 @@ mod was_input_key_pressed {
 
     #[test]
     fn returns_false_before_any_event_and_after_the_frame_ends() {
-        let state = create_input_state();
-        assert!(!was_input_key_pressed(&state, 65));
+        let idle = create_input_state();
+        assert!(!was_input_key_pressed(&idle, 65));
         let (state, manager, _disposer) = connected();
         emit_signal(
             &manager.read().unwrap().on_key_down.clone(),
@@ -369,8 +369,8 @@ mod was_input_key_released {
 
     #[test]
     fn returns_true_only_for_a_release_this_frame() {
-        let state = create_input_state();
-        assert!(!was_input_key_released(&state, 65));
+        let idle = create_input_state();
+        assert!(!was_input_key_released(&idle, 65));
         let (state, manager, _disposer) = connected();
         emit_signal(
             &manager.read().unwrap().on_key_down.clone(),

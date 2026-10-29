@@ -5,7 +5,7 @@ mod get_gamepad_axis_kind_string {
 
     #[test]
     fn returns_every_exact_ts_value() {
-        let cases = [
+        let cases: [(GamepadAxisKind, &str); 4] = [
             (GamepadAxisKind::StickLeftX, "StickLeftX"),
             (GamepadAxisKind::StickLeftY, "StickLeftY"),
             (GamepadAxisKind::StickRightX, "StickRightX"),
@@ -22,7 +22,7 @@ mod get_gamepad_button_kind_string {
 
     #[test]
     fn returns_every_exact_ts_value() {
-        let cases = [
+        let cases: [(GamepadButtonKind, &str); 18] = [
             (GamepadButtonKind::ButtonEast, "ButtonEast"),
             (GamepadButtonKind::ButtonNorth, "ButtonNorth"),
             (GamepadButtonKind::ButtonSouth, "ButtonSouth"),
@@ -127,7 +127,7 @@ mod get_mouse_wheel_mode_string {
 
     #[test]
     fn returns_every_exact_ts_value() {
-        let cases = [
+        let cases: [(MouseWheelMode, &str); 4] = [
             (MouseWheelMode::Lines, "lines"),
             (MouseWheelMode::Pages, "pages"),
             (MouseWheelMode::Pixels, "pixels"),
@@ -144,7 +144,7 @@ mod get_pointer_type_string {
 
     #[test]
     fn returns_every_exact_ts_value() {
-        let cases = [
+        let cases: [(PointerType, &str); 4] = [
             (PointerType::Mouse, "mouse"),
             (PointerType::Pen, "pen"),
             (PointerType::Touch, "touch"),
