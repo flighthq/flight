@@ -18,6 +18,9 @@ pub(crate) struct Program {
     pub(crate) const_groups: BTreeMap<String, String>,
     pub(crate) data_unions: HashSet<String>,
     pub(crate) entities: HashSet<String>,
+    // Entity fields whose `Ref` cells remain shared when Rust clones the entity. TypeScript lowers
+    // those fields as forwarding accessors on a fresh spread object.
+    pub(crate) entity_clone_shared_fields: BTreeMap<String, BTreeSet<String>>,
     // Entity struct name to its one designated crate-private state field, which TypeScript stores in
     // the entity's runtime slot instead of the public record.
     pub(crate) entity_runtime_states: BTreeMap<String, String>,
@@ -568,6 +571,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "const-group"
             | "contract"
             | "data-union"
+            | "entity-clone-fields"
             | "entity-runtime-state"
             | "export-name"
             | "frozen-object"
@@ -762,6 +766,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let data_union_metadata = parse_data_unions(&file.attrs)?;
     let data_unions = data_union_metadata.names;
     let reserved_key_data_unions = data_union_metadata.reserved_key;
+    let entity_clone_shared_fields = parse_entity_clone_shared_fields(&file.attrs)?;
     let entity_runtime_states = parse_entity_runtime_states(&file.attrs)?;
     let export_names = parse_export_names(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
@@ -868,6 +873,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         &string_unions,
     )?;
     validate_entity_runtime_states(&entity_runtime_states, &structs)?;
+    validate_entity_clone_shared_fields(&entity_clone_shared_fields, &entities, &structs)?;
     validate_array_like_parameters(&array_like_parameters, &functions)?;
     validate_nullable_option_items(&nullable_option_items, &functions, &structs)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
@@ -913,6 +919,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         const_groups,
         data_unions,
         entities,
+        entity_clone_shared_fields,
         entity_runtime_states,
         enums,
         export_names,
@@ -1239,6 +1246,48 @@ fn parse_entity_runtime_states(
         }
     }
     return Ok(states);
+}
+
+fn parse_entity_clone_shared_fields(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, BTreeSet<String>>, CompileError> {
+    let mut owners = BTreeMap::<String, BTreeSet<String>>::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("entity-clone-fields") {
+            continue;
+        }
+        let designations = fields.collect::<Vec<_>>();
+        if designations.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: entity-clone-fields` requires at least one `Owner.field` designation",
+            ));
+        }
+        for designation in designations {
+            let Some((owner, field)) = designation.split_once('.').filter(|(owner, field)| {
+                [owner, field].iter().all(|name| {
+                    syn::parse_str::<syn::Ident>(name).is_ok() && !name.starts_with("r#")
+                })
+            }) else {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-clone-fields` designation `{designation}` is not `Owner.field`"
+                )));
+            };
+            if !owners
+                .entry(owner.to_string())
+                .or_default()
+                .insert(field.to_string())
+            {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: entity-clone-fields` designation `{designation}`"
+                )));
+            }
+        }
+    }
+    return Ok(owners);
 }
 
 fn parse_export_names(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
@@ -2702,6 +2751,46 @@ fn validate_entity_runtime_states(
             return Err(compile_error(format!(
                 "`flight-compiler: entity-runtime-state {owner}.{field_name}` must designate a crate-private state field, not a public field or the runtime slot"
             )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_entity_clone_shared_fields(
+    designations: &BTreeMap<String, BTreeSet<String>>,
+    entities: &HashSet<String>,
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for (owner, field_names) in designations {
+        if !entities.contains(owner) {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-clone-fields {owner}` requires `{owner}` to be an entity"
+            )));
+        }
+        let Some(structure) = structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-clone-fields {owner}` names no struct declared in this source"
+            )));
+        };
+        for field_name in field_names {
+            let Some(field) = structure.fields.iter().find(|field| {
+                field
+                    .ident
+                    .as_ref()
+                    .is_some_and(|ident| ident == field_name)
+            }) else {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-clone-fields {owner}.{field_name}` names no field of `{owner}`"
+                )));
+            };
+            if !is_public(&field.vis) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: entity-clone-fields {owner}.{field_name}` must designate a public field"
+                )));
+            }
         }
     }
     return Ok(());

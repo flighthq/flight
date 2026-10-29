@@ -2703,6 +2703,10 @@ pub fn advance_decoder(bytes: Vec<u8>) -> usize {
     #[test]
     fn emits_generic_struct_parameters_and_parenthesizes_array_unions() {
         let source = r#"
+use std::sync::Arc;
+
+pub type PayloadSlot<T> = Arc<dyn Fn(&T) + Send + Sync>;
+
 pub struct Envelope<T: Clone> {
     pub value: T,
     pub history: Vec<Option<T>>,
@@ -2714,6 +2718,14 @@ pub struct EntityBox<T> {
 }
 
 flight_entity::impl_entity!(EntityBox<T>);
+
+pub fn borrow_entity_box<T>(value: &EntityBox<T>) -> &T {
+    return &value.value;
+}
+
+pub fn borrow_payload<T>(value: &T) -> &T {
+    return value;
+}
 "#;
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
@@ -2724,6 +2736,13 @@ flight_entity::impl_entity!(EntityBox<T>);
         assert!(
             output.contains("export interface EntityBoxRaw<T> extends EntityRaw {\n  value: T;\n}")
         );
+        assert!(
+            output.contains(
+                "export function borrowEntityBox<T>(value: Readonly<EntityBoxRaw<T>>): T"
+            )
+        );
+        assert!(output.contains("export function borrowPayload<T>(value: T): T"));
+        assert!(output.contains("export type PayloadSlot<T> = (arg0: T) => void;"));
     }
 
     #[test]
@@ -2873,9 +2892,9 @@ pub fn get_selection_count(state: &SelectionState) -> f64 {
             output.starts_with("import type { EntityRaw } from \"@flighthq/entity/contract\";\n")
         );
         assert!(output.contains("export interface SelectionStateRaw extends EntityRaw {\n}\n"));
-        assert!(output.contains(
-            "  selectionStateStateStore.set(out, { count: 0.0, items: [] as never[] });\n"
-        ));
+        assert!(
+            output.contains("  selectionStateStateStore.set(out, { count: 0.0, items: [] });\n")
+        );
         assert!(output.contains(
             "const selectionStateStateStore = /* @__PURE__ */ new WeakMap<Readonly<SelectionStateRaw>, SelectionStateRuntime>();\n\nexport { selectionStateStateStore };\n"
         ));
@@ -8305,6 +8324,7 @@ mod shared_ref {
         let uid = flight_entity::get_entity_uid(&mut value);
         assert_eq!(flight_entity::get_entity_uid(&mut value), uid);
     }
+
 }
 "#;
 
@@ -8316,6 +8336,119 @@ mod shared_ref {
         assert!(output.contains("expect(value === alias).toBe(true);"));
         assert!(output.contains("import * as flightEntity from \"@flighthq/entity/contract\";"));
         assert!(output.contains("const uid = flightEntity.getEntityUid(value);"));
+    }
+
+    #[test]
+    fn lowers_rwlock_guard_assignments_without_mutex_wrapper_cells() {
+        let source = r#"
+use std::sync::{Arc, Mutex, RwLock};
+
+pub fn replace_shared(shared: Arc<RwLock<i32>>, fallback: Arc<Mutex<i32>>) {
+    *shared.write().unwrap() = 2;
+    let mut shared_guard = shared.write().unwrap();
+    *shared_guard = 3;
+    *shared_guard += 1;
+    *fallback.lock().unwrap() = 4;
+    drop(shared_guard);
+}
+
+pub fn replace_shadowed(shared: Arc<RwLock<i32>>, target: &mut i32) {
+    if true {
+        let mut target = shared.write().unwrap();
+        *target = 5;
+    }
+    *target = 6;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("shared = 2;"), "{output}");
+        assert!(output.contains("shared = 3;"), "{output}");
+        assert!(output.contains("shared += 1;"), "{output}");
+        assert!(output.contains("fallback.value = 4;"), "{output}");
+        assert!(output.contains("shared = 5;"), "{output}");
+        assert!(output.contains("target = 6;"), "{output}");
+        assert!(!output.contains("target.value"), "{output}");
+        assert!(output.contains("void sharedGuard;"), "{output}");
+        assert!(!output.contains(".value.value"), "{output}");
+    }
+
+    #[test]
+    fn writes_through_cloned_ref_fields_to_the_original_typescript_field() {
+        let source = r#"
+use std::sync::{Arc, RwLock};
+
+pub struct Signal {
+    pub emit: Arc<RwLock<i32>>,
+}
+
+pub fn replace_emit(signal: &Signal) {
+    let cell = signal.emit.clone();
+    *cell.write().unwrap() = 2;
+    *cell.write().unwrap() += 1;
+    let _captured = signal.emit.clone();
+    *_captured.write().unwrap() = 4;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("const cell = signal.emit;"), "{output}");
+        assert!(output.contains("signal.emit = 2;"), "{output}");
+        assert!(output.contains("signal.emit += 1;"), "{output}");
+        assert!(output.contains("signal.emit = 4;"), "{output}");
+        assert!(!output.contains("const Captured"), "{output}");
+        assert!(!output.contains("cell = 2;"), "{output}");
+    }
+
+    #[test]
+    fn preserves_tuple_positions_in_literal_array_for_loops() {
+        let source = r#"
+pub fn visit() {
+    for (label, priority) in [("low", -1), ("high", 10)] {
+        consume(label, priority);
+    }
+}
+
+fn consume(_label: &str, _priority: i32) {}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("for (const [label, priority] of [[")
+                && output.contains("]] as const)"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn clones_designated_entity_fields_as_shared_forwarding_properties() {
+        let source = r#"
+//! flight-compiler: entity-clone-fields Wrapper.data
+
+pub struct Wrapper {
+    pub data: std::sync::Arc<std::sync::RwLock<Option<i32>>>,
+    runtime: flight_entity::EntityRuntimeSlot,
+}
+
+pub fn clone_wrapper(wrapper: &Wrapper) -> Wrapper {
+    return wrapper.clone();
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(
+            output.contains("Object.defineProperties({ ...wrapper },"),
+            "{output}"
+        );
+        assert!(output.contains("get: () => wrapper.data"), "{output}");
+        assert!(
+            output.contains("set: (value) => { wrapper.data = value; }"),
+            "{output}"
+        );
     }
 
     #[test]

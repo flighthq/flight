@@ -49,6 +49,10 @@ const TYPE_EXTERN_CRATE_MARKER: &str = "@type-extern-crate:";
 const TYPE_NO_STD_MARKER: &str = "@type-no-std";
 const TYPE_USE_GLOB_MARKER: &str = "@type-use-glob:";
 const TYPE_LOCAL_MARKER: &str = "@type-local:";
+// Type parameters of the declaration currently being emitted. A borrowed generic payload is `T`
+// in TypeScript, not `Readonly<T>`: the latter turns primitive substitutions such as `number` into
+// their boxed object surface.
+const TYPE_PARAMETER_MARKER: &str = "@type-parameter:";
 const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
 // A dependency item the current source binds by its mapped name: `@dependency-export-name-binding:
 // Name|module|rust`. `@dependency-export-name-bindings` marks that at least one exists.
@@ -77,12 +81,20 @@ const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 // completing path (`function:type:field`).
 const ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER: &str = "@entity-definitely-initialized-field:";
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
+const ENTITY_CLONE_FIELD_MARKER: &str = "@entity-clone-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 // The BindingId of a local bound to a dereferenced `MutexGuard`. `Mutex<T>` is a `{ value: T }` cell
 // in TypeScript, so that exact binding must retain the cell while dereferences read or replace its
 // `value`; another binding with the same identifier remains independent.
 const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
+// A local initialized from `RwLock::read`/`write`. `Ref<T>` and `Arc<RwLock<T>>` lower to `T`, so
+// dereferencing this guard is a target no-op rather than a `.value` wrapper access.
+const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
+const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
+const INTERIOR_MUTABLE_STRUCT_MARKER: &str = "@interior-mutable-struct:";
+const REF_ALIAS_TARGET_MARKER: &str = "@ref-alias-target:";
+const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:";
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
@@ -4964,6 +4976,13 @@ fn generation_context_with_types(
                 "{ENTITY_RUNTIME_STATE_FIELD_MARKER}{field_name}{PROVENANCE_SEPARATOR}{owner}"
             ));
         }
+        for (owner, fields) in &program.entity_clone_shared_fields {
+            for field in fields {
+                context.insert(format!(
+                    "{ENTITY_CLONE_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field}"
+                ));
+            }
+        }
         for structure in &program.structs {
             context.insert(owner_marker(
                 STRUCT_OWNER_MARKER,
@@ -4971,6 +4990,16 @@ fn generation_context_with_types(
                 &structure.ident.to_string(),
                 is_public(&structure.vis),
             ));
+            if structure
+                .fields
+                .iter()
+                .any(|field| rust_type_has_interior_mutability(&field.ty))
+            {
+                context.insert(format!(
+                    "{INTERIOR_MUTABLE_STRUCT_MARKER}{}",
+                    structure.ident
+                ));
+            }
         }
         for function in &program.functions {
             context.insert(owner_marker(
@@ -5421,6 +5450,29 @@ pub(crate) fn function_expression_context(
                 self.context
                     .insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
             }
+            if let Some(initializer) = &local.init
+                && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
+                && let Some(id) = local_pattern_binding_id(self.context, &local.pat)
+            {
+                self.context
+                    .insert(format!("{DIRECT_LOCK_GUARD_BINDING_MARKER}{id}"));
+                self.context.insert(format!(
+                    "{DIRECT_LOCK_GUARD_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}{}",
+                    receiver.to_token_stream()
+                ));
+            }
+            if let Some(initializer) = &local.init
+                && let Expr::MethodCall(clone) = initializer.expr.as_ref()
+                && clone.method == "clone"
+                && clone.args.is_empty()
+                && matches!(clone.receiver.as_ref(), Expr::Field(_))
+                && let Some(id) = local_pattern_binding_id(self.context, &local.pat)
+            {
+                self.context.insert(format!(
+                    "{REF_ALIAS_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}{}",
+                    clone.receiver.to_token_stream()
+                ));
+            }
             syn::visit::visit_local(self, local);
         }
 
@@ -5465,6 +5517,7 @@ pub(crate) fn function_expression_context(
     }
 
     let mut context = base.clone();
+    insert_lexical_binding_context(function, &mut context);
     let function_name = function.sig.ident.to_string();
     let vec_prefix = format!("{VEC_CLONE_ARGUMENT_MARKER}{function_name}:");
     let vec_markers = context
@@ -5484,6 +5537,11 @@ pub(crate) fn function_expression_context(
         let Pat::Ident(pattern) = argument.pat.as_ref() else {
             continue;
         };
+        if matches!(argument.ty.as_ref(), Type::Reference(_))
+            && let Some(id) = lexical_binding(&context, &pattern.ident.to_string())
+        {
+            context.insert(format!("{REFERENCE_PARAMETER_BINDING_MARKER}{id}"));
+        }
         if let Some(structure) = vitest_named_type(&argument.ty, &context)
             && let Some(identity) = vitest_struct_owner(&context, &structure)
         {
@@ -5514,7 +5572,6 @@ pub(crate) fn function_expression_context(
         },
         &function.block,
     );
-    insert_lexical_binding_context(function, &mut context);
     return context;
 }
 
@@ -5871,6 +5928,22 @@ fn binary_precedence(operator: &BinOp) -> u8 {
     };
 }
 
+fn binary_is_assignment(operator: &BinOp) -> bool {
+    return matches!(
+        operator,
+        BinOp::AddAssign(_)
+            | BinOp::BitAndAssign(_)
+            | BinOp::BitOrAssign(_)
+            | BinOp::BitXorAssign(_)
+            | BinOp::DivAssign(_)
+            | BinOp::MulAssign(_)
+            | BinOp::RemAssign(_)
+            | BinOp::ShlAssign(_)
+            | BinOp::ShrAssign(_)
+            | BinOp::SubAssign(_)
+    );
+}
+
 fn expression_precedence(expression: &Expr) -> u8 {
     return match expression {
         Expr::Assign(_) => 1,
@@ -6208,9 +6281,21 @@ fn emit_entity_runtime_state_stores(
                 ))
             })?;
         let store = entity_runtime_state_store(owner, field_name);
+        let structure = program
+            .structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+            .expect("entity runtime state owner was validated");
+        let key = if structure.generics.params.is_empty() {
+            format!("Readonly<{owner}Raw>")
+        } else {
+            // One store serves every monomorphization. Entity identity is the only key fact the
+            // runtime needs, and spelling a particular generic substitution would be unsound.
+            "object".to_string()
+        };
         writeln!(
             out,
-            "\n// Crate-private `{owner}.{field_name}`, keyed by entity identity and reachable only from this package's modules.\nconst {store} = /* @__PURE__ */ new WeakMap<Readonly<{owner}Raw>, {}>();\n\nexport {{ {store} }};",
+            "\n// Crate-private `{owner}.{field_name}`, keyed by entity identity and reachable only from this package's modules.\nconst {store} = /* @__PURE__ */ new WeakMap<{key}, {}>();\n\nexport {{ {store} }};",
             emit_type(&field.ty, entities)?
         )
         .expect("writing to a String cannot fail");
@@ -6618,10 +6703,40 @@ fn emit_expression_value(
             let left = if let Expr::Unary(unary) = assign.left.as_ref()
                 && matches!(unary.op, UnOp::Deref(_))
             {
-                format!("{}.value", emit_expression(&unary.expr, entities)?)
+                let operand = emit_expression(&unary.expr, entities)?;
+                let direct_guard = referenced_path_identifier(&unary.expr)
+                    .and_then(|name| lexical_binding(entities, &name))
+                    .filter(|id| {
+                        entities.contains(&format!("{DIRECT_LOCK_GUARD_BINDING_MARKER}{id}"))
+                    });
+                let direct_receiver = direct_lock_guard_receiver(&unary.expr);
+                let reference_parameter = referenced_path_identifier(&unary.expr)
+                    .and_then(|name| lexical_binding(entities, &name))
+                    .is_some_and(|id| {
+                        entities.contains(&format!("{REFERENCE_PARAMETER_BINDING_MARKER}{id}"))
+                    });
+                if let Some(id) = &direct_guard
+                    && let Some(target) = direct_lock_guard_target(entities, id)?
+                {
+                    emit_expression(&target, entities)?
+                } else if let Some(receiver) = direct_receiver
+                    && let Some(target) = ref_alias_target(entities, receiver)?
+                {
+                    emit_expression(&target, entities)?
+                } else if direct_guard.is_some()
+                    || reference_parameter
+                    || expression_contains_method(&unary.expr, "read")
+                    || expression_contains_method(&unary.expr, "write")
+                    || operand.ends_with(".value")
+                {
+                    operand
+                } else {
+                    format!("{operand}.value")
+                }
             } else {
                 emit_expression(&assign.left, entities)?
             };
+            let left = left.strip_suffix('!').unwrap_or(&left);
             let right_context = contextual_assignment_field_context(assign, entities);
             Ok(format!(
                 "{left} = {}",
@@ -6630,6 +6745,18 @@ fn emit_expression_value(
         }
         Expr::Binary(binary) => {
             let precedence = binary_precedence(&binary.op);
+            if binary_is_assignment(&binary.op)
+                && let Expr::Unary(unary) = binary.left.as_ref()
+                && matches!(unary.op, UnOp::Deref(_))
+                && let Some(target) = direct_lock_assignment_target(entities, &unary.expr)?
+            {
+                return Ok(format!(
+                    "{} {} {}",
+                    emit_expression(&target, entities)?,
+                    emit_binary_operator(&binary.op)?,
+                    emit_binary_operand(&binary.right, entities, precedence, true)?
+                ));
+            }
             if let Some(comparison) = emit_inclusive_comparison(binary, entities)? {
                 return Ok(comparison);
             }
@@ -6694,6 +6821,12 @@ fn emit_expression_value(
         }
         Expr::Block(block) => emit_block_expression(&block.block, entities),
         Expr::Call(call) => {
+            if expression_is_path(&call.func, "drop") && call.args.len() == 1 {
+                return Ok(format!(
+                    "void {}",
+                    emit_expression(&call.args[0], entities)?
+                ));
+            }
             if let Some(kind) = hash_collection_construction(expression, entities) {
                 return Ok(match kind {
                     BindingFact::HashMap => "new Map()".to_string(),
@@ -6913,6 +7046,12 @@ fn emit_expression_value(
         Expr::MethodCall(call) => emit_method_call(call, entities),
         Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
         Expr::Path(path) => {
+            if path.qself.is_none()
+                && path.path.segments.len() == 1
+                && let Some(target) = ref_alias_target(entities, expression)?
+            {
+                return emit_expression(&target, entities);
+            }
             if let Some((owner, variant)) = associated_owner_and_member(expression)
                 && is_tagged_data_union_variant(entities, &owner, &variant)
             {
@@ -7116,7 +7255,11 @@ fn emit_expression_value(
                 .fields
                 .iter()
                 .map(|field| {
-                    let mut value = emit_expression(&field.expr, entities)?;
+                    let mut value = if expression_is_empty_vec(&field.expr) {
+                        "[]".to_string()
+                    } else {
+                        emit_expression(&field.expr, entities)?
+                    };
                     if let syn::Member::Named(field_name) = &field.member
                         && let Some(identity) = &structure_identity
                         && entities.contains(&format!(
@@ -9770,6 +9913,38 @@ fn unique_marker_suffix(entities: &HashSet<String>, prefix: &str) -> Option<Stri
     return matches.first().map(|suffix| (*suffix).to_string());
 }
 
+fn has_entity_clone_fields(entities: &HashSet<String>, owner: &str) -> bool {
+    let prefix = format!("{ENTITY_CLONE_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}");
+    return entities.iter().any(|marker| marker.starts_with(&prefix));
+}
+
+fn entity_clone_expression_owner(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    let identity = expression_struct_name(expression, entities)?;
+    let owner = identity
+        .rsplit_once(PROVENANCE_SEPARATOR)
+        .map_or(identity.as_str(), |(_, owner)| owner);
+    return has_entity_clone_fields(entities, owner).then(|| owner.to_string());
+}
+
+fn emit_entity_clone(receiver: &str, owner: &str, entities: &HashSet<String>) -> String {
+    let prefix = format!("{ENTITY_CLONE_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}");
+    let fields = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&prefix))
+        .map(snake_to_lower_camel)
+        .collect::<BTreeSet<_>>();
+    let descriptors = fields
+        .iter()
+        .map(|field| {
+            format!(
+                "{field}: {{ get: () => {receiver}.{field}, set: (value) => {{ {receiver}.{field} = value; }}, enumerable: true, configurable: true }}"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    return format!("Object.defineProperties({{ ...{receiver} }}, {{ {descriptors} }})");
+}
+
 fn vitest_struct_local(entities: &HashSet<String>, local: &str) -> Option<String> {
     return unique_marker_suffix(
         entities,
@@ -9813,10 +9988,20 @@ pub(crate) fn emit_for_header(
             "let {pattern} = {start}; {pattern} {comparison} {end}; {pattern} += 1"
         ));
     }
-    return Ok(format!(
-        "const {pattern} of {}",
-        emit_expression(expression, entities)?
-    ));
+    let mut iterable = emit_expression(expression, entities)?;
+    if let Expr::Array(array) = expression
+        && !array.elems.is_empty()
+        && array
+            .elems
+            .iter()
+            .all(|element| matches!(element, Expr::Tuple(_)))
+    {
+        // TypeScript otherwise widens heterogeneous tuple literals into arrays of unions before
+        // destructuring them. A Rust array of tuples has fixed positional types, so retain those
+        // facts for the loop binding with a const assertion.
+        iterable = format!("{iterable} as const");
+    }
+    return Ok(format!("const {pattern} of {iterable}"));
 }
 
 fn emit_function(
@@ -9829,7 +10014,7 @@ fn emit_function(
 ) -> Result<(), CompileError> {
     reject_async_function(function)?;
     emit_documentation(out, &function.attrs, 0);
-    let export = if is_public(&function.vis) {
+    let export = if is_visible_outside_module(&function.vis) {
         "export "
     } else {
         ""
@@ -9838,7 +10023,9 @@ fn emit_function(
     let name = export_name(entities, &rust_name)
         .map_or_else(|| snake_to_lower_camel(&rust_name), str::to_string);
     let type_parameters = emit_type_parameters(&function.sig.generics);
-    let nullable_options = entities.contains(NULLABLE_OPTIONS_MARKER);
+    let mut signature_context = entities.clone();
+    insert_type_parameter_context(&mut signature_context, &function.sig.generics);
+    let nullable_options = signature_context.contains(NULLABLE_OPTIONS_MARKER);
     let trailing_optional_start = function
         .sig
         .inputs
@@ -9860,7 +10047,7 @@ fn emit_function(
             }
             emit_parameter_with_aliases(
                 argument,
-                entities,
+                &signature_context,
                 aliases,
                 index >= trailing_optional_start
                     && !argument_is_nullable_guard(function, argument)
@@ -9881,10 +10068,12 @@ fn emit_function(
         ReturnType::Default => "void".to_string(),
         ReturnType::Type(_, rust_type) if nullable_return => nullable_type(emit_preferred_type(
             option_inner_type(rust_type).expect("nullable-option returns were validated"),
-            entities,
+            &signature_context,
             aliases,
         )?),
-        ReturnType::Type(_, rust_type) => emit_preferred_type(rust_type, entities, aliases)?,
+        ReturnType::Type(_, rust_type) => {
+            emit_preferred_type(rust_type, &signature_context, aliases)?
+        }
     };
     writeln!(
         out,
@@ -9892,7 +10081,7 @@ fn emit_function(
         parameters.join(", ")
     )
     .expect("writing to a String cannot fail");
-    let mut function_context = entities.clone();
+    let mut function_context = signature_context;
     for argument in &function.sig.inputs {
         if (argument_is_nullable_guard(function, argument)
             || (nullable_options && argument_is_option(argument)))
@@ -10208,6 +10397,22 @@ pub(crate) fn emit_local_with_shadow_and_else(
         return Ok(());
     };
     let local_name = local_pattern_name(&local.pat);
+    if local_name
+        .as_deref()
+        .is_some_and(|name| name.starts_with('_'))
+        && local_pattern_binding_id(entities, &local.pat).is_some_and(|id| {
+            entities.iter().any(|marker| {
+                marker.starts_with(&format!(
+                    "{REF_ALIAS_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}"
+                ))
+            })
+        })
+    {
+        // A leading-underscore Ref alias is an implementation-only capture for writes through the
+        // original field. Those writes resolve through its BindingId; emitting the snapshot local
+        // would be both unused and semantically misleading in TypeScript.
+        return Ok(());
+    }
     let inferred_struct_type = if rust_type.is_none() {
         inferred_vitest_struct_literal_type(&initializer.expr, entities)
     } else {
@@ -12026,6 +12231,14 @@ fn emit_method_call(
                 format!(", {}", fields.join(", "))
             };
             Ok(format!("{{ ...{receiver}{fields} }}"))
+        }
+        "clone"
+            if arguments.is_empty()
+                && entity_clone_expression_owner(&call.receiver, entities).is_some() =>
+        {
+            let owner = entity_clone_expression_owner(&call.receiver, entities)
+                .expect("entity clone owner was resolved");
+            Ok(emit_entity_clone(&receiver, &owner, entities))
         }
         "clone" if arguments.is_empty() => Ok(receiver),
         "cloned" | "copied"
@@ -14061,6 +14274,8 @@ fn emit_struct(
     let module_private_plain_data = !is_public(&structure.vis) && !entity;
     let extension = if entity { " extends EntityRaw" } else { "" };
     let type_parameters = emit_type_parameters(&structure.generics);
+    let mut type_context = entities.clone();
+    insert_type_parameter_context(&mut type_context, &structure.generics);
     writeln!(
         out,
         "{export}interface {name}{type_parameters}{extension} {{"
@@ -14105,9 +14320,9 @@ fn emit_struct(
             .get(&(structure.ident.to_string(), field_name.to_string()))
             .map(Vec::as_slice);
         let typescript_type = if let Some(parameter_names) = parameter_names {
-            emit_named_callable_type(rust_type, entities, parameter_names)?
+            emit_named_callable_type(rust_type, &type_context, parameter_names)?
         } else {
-            emit_preferred_type(rust_type, entities, aliases)?
+            emit_preferred_type(rust_type, &type_context, aliases)?
         };
         writeln!(out, "  {prefix}{name}{optional}: {};", typescript_type)
             .expect("writing to a String cannot fail");
@@ -14258,10 +14473,11 @@ pub(crate) fn emit_type(
                 }
                 "Ref" => emit_single_generic_type(segment, entities),
                 _ if entities.contains(&name) => {
+                    let arguments = emit_path_type_arguments(segment, entities)?;
                     if entities.contains(&format!("{TARGET_NATIVE_ENTITY_MARKER}{name}")) {
-                        Ok(name)
+                        Ok(format!("{name}{arguments}"))
                     } else {
-                        Ok(format!("{name}Raw"))
+                        Ok(format!("{name}Raw{arguments}"))
                     }
                 }
                 _ => {
@@ -14297,6 +14513,10 @@ pub(crate) fn emit_type(
             if reference.mutability.is_some()
                 || is_primitive_typescript_type(&inner)
                 || rust_type_has_interior_mutability(&reference.elem)
+                || named_type(&reference.elem).is_some_and(|name| {
+                    entities.contains(&format!("{INTERIOR_MUTABLE_STRUCT_MARKER}{name}"))
+                })
+                || type_is_current_parameter(&reference.elem, entities)
             {
                 Ok(inner)
             } else {
@@ -14319,6 +14539,48 @@ pub(crate) fn emit_type(
             "unsupported Rust type `{}`",
             type_kind(rust_type)
         ))),
+    };
+}
+
+fn emit_path_type_arguments(
+    segment: &syn::PathSegment,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return Ok(String::new());
+    };
+    let rendered = arguments
+        .args
+        .iter()
+        .filter_map(|argument| match argument {
+            GenericArgument::Type(rust_type) => Some(emit_type(rust_type, entities)),
+            _ => None,
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if rendered.is_empty() {
+        return Ok(String::new());
+    }
+    return Ok(format!("<{}>", rendered.join(", ")));
+}
+
+fn insert_type_parameter_context(context: &mut HashSet<String>, generics: &syn::Generics) {
+    for parameter in &generics.params {
+        if let syn::GenericParam::Type(parameter) = parameter {
+            context.insert(format!("{TYPE_PARAMETER_MARKER}{}", parameter.ident));
+        }
+    }
+}
+
+fn type_is_current_parameter(rust_type: &Type, entities: &HashSet<String>) -> bool {
+    return match rust_type {
+        Type::Group(group) => type_is_current_parameter(&group.elem, entities),
+        Type::Paren(paren) => type_is_current_parameter(&paren.elem, entities),
+        Type::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            path.path.segments.first().is_some_and(|segment| {
+                entities.contains(&format!("{TYPE_PARAMETER_MARKER}{}", segment.ident))
+            })
+        }
+        _ => false,
     };
 }
 
@@ -14372,10 +14634,12 @@ fn emit_type_alias(
     } else {
         ""
     };
+    let mut type_context = entities.clone();
+    insert_type_parameter_context(&mut type_context, &type_alias.generics);
     let rendered = if let Some(parameter_names) = parameter_names {
-        emit_named_callable_type(&type_alias.ty, entities, parameter_names)?
+        emit_named_callable_type(&type_alias.ty, &type_context, parameter_names)?
     } else {
-        emit_type(&type_alias.ty, entities)?
+        emit_type(&type_alias.ty, &type_context)?
     };
     writeln!(
         out,
@@ -14528,6 +14792,92 @@ fn mutex_guard_receiver(expression: &Expr) -> Option<&Expr> {
         return None;
     };
     return (lock.method == "lock" && lock.args.is_empty()).then_some(lock.receiver.as_ref());
+}
+
+// The cell whose guard is produced by an exact `cell.read().unwrap()` or
+// `cell.write().unwrap()` expression.
+fn direct_lock_guard_receiver(expression: &Expr) -> Option<&Expr> {
+    let Expr::MethodCall(unwrap) = expression else {
+        return None;
+    };
+    if unwrap.method != "unwrap" || !unwrap.args.is_empty() {
+        return None;
+    }
+    let Expr::MethodCall(lock) = unwrap.receiver.as_ref() else {
+        return None;
+    };
+    return (matches!(lock.method.to_string().as_str(), "read" | "write") && lock.args.is_empty())
+        .then_some(lock.receiver.as_ref());
+}
+
+fn direct_lock_guard_target(
+    entities: &HashSet<String>,
+    id: &str,
+) -> Result<Option<Expr>, CompileError> {
+    let prefix = format!("{DIRECT_LOCK_GUARD_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}");
+    let mut targets = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&prefix));
+    let Some(target) = targets.next() else {
+        return Ok(None);
+    };
+    if targets.next().is_some() {
+        return Err(compile_error(format!(
+            "direct lock guard binding `{id}` has ambiguous target cells"
+        )));
+    }
+    let target = syn::parse_str::<Expr>(target)
+        .map_err(|error| compile_error(format!("failed to recover lock target: {error}")))?;
+    if let Some(alias) = ref_alias_target(entities, &target)? {
+        return Ok(Some(alias));
+    }
+    return Ok(Some(target));
+}
+
+fn direct_lock_assignment_target(
+    entities: &HashSet<String>,
+    expression: &Expr,
+) -> Result<Option<Expr>, CompileError> {
+    if let Some(receiver) = direct_lock_guard_receiver(expression) {
+        if let Some(target) = ref_alias_target(entities, receiver)? {
+            return Ok(Some(target));
+        }
+        return Ok(Some(receiver.clone()));
+    }
+    if let Some(id) = referenced_path_identifier(expression)
+        .and_then(|name| lexical_binding(entities, &name))
+        .filter(|id| entities.contains(&format!("{DIRECT_LOCK_GUARD_BINDING_MARKER}{id}")))
+    {
+        return direct_lock_guard_target(entities, &id);
+    }
+    return Ok(None);
+}
+
+fn ref_alias_target(
+    entities: &HashSet<String>,
+    expression: &Expr,
+) -> Result<Option<Expr>, CompileError> {
+    let Expr::Path(path) = expression else {
+        return Ok(None);
+    };
+    if path.qself.is_some() || path.path.segments.len() != 1 {
+        return Ok(None);
+    }
+    let Some(alias) = path.path.segments.first() else {
+        return Ok(None);
+    };
+    let Some(id) = lexical_binding(entities, &alias.ident.to_string()) else {
+        return Ok(None);
+    };
+    let Some(target) = unique_marker_suffix(
+        entities,
+        &format!("{REF_ALIAS_TARGET_MARKER}{}{PROVENANCE_SEPARATOR}", id),
+    ) else {
+        return Ok(None);
+    };
+    return syn::parse_str::<Expr>(&target)
+        .map(Some)
+        .map_err(|error| compile_error(format!("failed to recover Ref alias target: {error}")));
 }
 
 // Shared locks retain interior mutability through immutable Rust references. Wrapping those cells in
@@ -15156,6 +15506,13 @@ fn is_primitive_typescript_type(typescript_type: &str) -> bool {
 
 fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
+}
+
+// Rust `pub(crate)`/`pub(super)` items can cross source modules. Generated TypeScript preserves
+// that package-internal reachability with a named module export; contract/index generation still
+// decides the actual package surface from Rust's public re-exports.
+fn is_visible_outside_module(visibility: &Visibility) -> bool {
+    return !matches!(visibility, Visibility::Inherited);
 }
 
 // The BindingId of the lexical value binding of `name` in scope, `Some("")` for an in-scope binding

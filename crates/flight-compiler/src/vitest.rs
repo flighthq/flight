@@ -100,7 +100,7 @@ fn collect_contract_symbols(
             if !self.declared.contains(&name)
                 && !self.helper_names.contains(&name)
                 && !self.standard_constants.contains(&name)
-                && !matches!(name.as_str(), "None" | "Some")
+                && !matches!(name.as_str(), "None" | "Some" | "drop")
                 && !self.symbols.contains(&name)
             {
                 self.symbols.push(name);
