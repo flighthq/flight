@@ -1,4 +1,4 @@
-import { Entity, getEntityWrapperAs } from '@flighthq/entity/contract';
+import { Entity, attachEntityWrapper, getEntityWrapperAs } from '@flighthq/entity/contract';
 
 import type { TextFormat } from './textFormat.ts';
 import { createTextFormatRange } from './textFormatRangeRaw.ts';
@@ -50,8 +50,11 @@ export class TextFormatRange extends Entity {
       throw new TypeError('TextFormatRangeRaw is already attached to an incompatible OOP wrapper');
     }
 
-    // Calling the Entity constructor with this class as newTarget attaches the same raw object
-    // without running the public field-based constructor and allocating a replacement raw.
-    return Reflect.construct(Entity, [raw], TextFormatRange) as TextFormatRange;
+    // The public constructor owns raw allocation, so conversion forms the target-native wrapper
+    // directly and performs the same explicit attachment as the Entity constructor.
+    const wrapper = Object.create(TextFormatRange.prototype) as TextFormatRange;
+    Object.assign(wrapper, { raw });
+    attachEntityWrapper(raw, wrapper);
+    return wrapper;
   }
 }
