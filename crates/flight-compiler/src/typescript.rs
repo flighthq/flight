@@ -29,7 +29,15 @@ const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
+<<<<<<< HEAD
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
+=======
+// Struct fields, locals and parameters, and function returns declared as Rust `Option<T>`, each with
+// the named payload type (empty when unnamed). They make Option `.and_then()` / `.map()` type-directed.
+const OPTION_FIELD_MARKER: &str = "@option-field:";
+const OPTION_LOCAL_MARKER: &str = "@option-local:";
+const OPTION_RETURN_MARKER: &str = "@option-return:";
+>>>>>>> 9232abe27 (feat(compiler): lower type-directed Option and_then and map)
 // Locals and parameters known to hold a Rust integer or string, the operand types `.cmp()` lowers
 // to a JavaScript relational comparison.
 const ORDERED_PRIMITIVE_MARKER: &str = "@ordered-primitive:";
@@ -44,6 +52,8 @@ const RETURNS_U32_MARKER: &str = "@returns-u32";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
+// Locals and parameters declared as a named, non-Option Rust type, for resolving Option field reads.
+const STRUCT_LOCAL_MARKER: &str = "@struct-local:";
 const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
 const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
 const VITEST_PUBLIC_FUNCTION_MARKER: &str = "@vitest-public-function:";
@@ -1165,6 +1175,19 @@ fn generation_context_with_types(
                 }),
         );
         insert_string_union_context(&mut context, program.string_unions.keys());
+        for structure in &program.structs {
+            for field in &structure.fields {
+                if let Some(inner) = option_inner_type(&field.ty)
+                    && let Some(field_name) = &field.ident
+                {
+                    context.insert(format!(
+                        "{OPTION_FIELD_MARKER}{}:{field_name}:{}",
+                        structure.ident,
+                        named_type(inner).unwrap_or_default()
+                    ));
+                }
+            }
+        }
         if program.nullable_options {
             for structure in program
                 .structs
@@ -1248,6 +1271,14 @@ fn generation_context_with_types(
             if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if rust_type_is_string(rust_type))
             {
                 context.insert(format!("{STRING_RETURN_MARKER}{function_name}"));
+            }
+            if let ReturnType::Type(_, rust_type) = &function.sig.output
+                && let Some(inner) = option_inner_type(rust_type)
+            {
+                context.insert(format!(
+                    "{OPTION_RETURN_MARKER}{function_name}:{}",
+                    named_type(inner).unwrap_or_default()
+                ));
             }
             for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
                 if argument_is_nullable_guard(function, argument)
@@ -1367,6 +1398,8 @@ pub(crate) fn function_expression_context(
                     self.context
                         .insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
                 }
+                self.context
+                    .extend(declared_type_markers(&pattern.ident.to_string(), &typed.ty));
                 if let Some(record) = named_type(&typed.ty)
                     && self
                         .context
@@ -1473,6 +1506,10 @@ pub(crate) fn function_expression_context(
         if rust_type_is_ordered_primitive(&argument.ty) {
             context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
         }
+        context.extend(declared_type_markers(
+            &pattern.ident.to_string(),
+            &argument.ty,
+        ));
     }
     syn::visit::Visit::visit_block(
         &mut CallbackUseCollector {
@@ -1483,6 +1520,7 @@ pub(crate) fn function_expression_context(
     return context;
 }
 
+<<<<<<< HEAD
 pub(crate) fn insert_vitest_rebound_struct_context(
     statements: &[Stmt],
     context: &mut HashSet<String>,
@@ -1544,6 +1582,20 @@ pub(crate) fn update_vitest_struct_local_context(
             "{VITEST_STRUCT_LOCAL_MARKER}{local_name}{PROVENANCE_SEPARATOR}{identity}"
         ));
     }
+=======
+// The Option and named-type markers for a local or parameter declared with `rust_type`.
+fn declared_type_markers(name: &str, rust_type: &Type) -> Vec<String> {
+    if let Some(inner) = option_inner_type(rust_type) {
+        return vec![format!(
+            "{OPTION_LOCAL_MARKER}{name}:{}",
+            named_type(inner).unwrap_or_default()
+        )];
+    }
+    return named_type(rust_type)
+        .map(|structure| format!("{STRUCT_LOCAL_MARKER}{name}:{structure}"))
+        .into_iter()
+        .collect();
+>>>>>>> 9232abe27 (feat(compiler): lower type-directed Option and_then and map)
 }
 
 fn documentation(attributes: &[Attribute]) -> Vec<String> {
@@ -4595,6 +4647,16 @@ fn emit_method_call(
         }
     }
     let receiver = emit_expression(&call.receiver, entities)?;
+    if call.method == "and_then" || call.method == "map" {
+        if let Some(payload) = option_expression_payload(&call.receiver, entities) {
+            return emit_option_combinator(call, &receiver, &payload, entities);
+        }
+        if call.method == "and_then" {
+            return Err(compile_error(
+                "portable `.and_then()` requires a receiver declared as Rust `Option`",
+            ));
+        }
+    }
     let arguments = call
         .args
         .iter()
@@ -4838,6 +4900,81 @@ fn emit_option_binding(
     )));
 }
 
+// Option `.and_then(f)` / `.map(f)` over a receiver declared as Rust `Option`. The receiver is evaluated
+// once. A body that only reads fields of the closure parameter lowers to optional chaining when the
+// absent value is `undefined`; every other body binds the receiver in an arrow and tests it against the
+// absent value. `.and_then` bodies already yield an Option, and `.map` bodies a payload, so both share
+// one shape.
+// flight-lint: allow(hashmap-iteration) the closure context filters one set into another; order is never observed
+fn emit_option_combinator(
+    call: &syn::ExprMethodCall,
+    receiver: &str,
+    payload: &str,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let method = call.method.to_string();
+    let closure = match call.args.first() {
+        Some(Expr::Closure(closure)) if call.args.len() == 1 && closure.inputs.len() == 1 => {
+            closure
+        }
+        _ => {
+            return Err(compile_error(format!(
+                "portable Option `.{method}()` needs a single-parameter closure"
+            )));
+        }
+    };
+    let Some(parameter) = option_closure_parameter(&closure.inputs[0]) else {
+        return Err(compile_error(format!(
+            "portable Option `.{method}()` closure parameter must be an identifier"
+        )));
+    };
+    let parameter_name = parameter.to_string();
+    let shadowed = [
+        format!("{OPTION_LOCAL_MARKER}{parameter_name}:"),
+        format!("{STRUCT_LOCAL_MARKER}{parameter_name}:"),
+    ];
+    let mut closure_context = entities
+        .iter()
+        .filter(|marker| {
+            !shadowed.iter().any(|prefix| marker.starts_with(prefix))
+                && **marker != format!("{ORDERED_PRIMITIVE_MARKER}{parameter_name}")
+                && **marker != format!("{STRING_EXPRESSION_MARKER}{parameter_name}")
+                && **marker != format!("@nullable:{parameter_name}")
+        })
+        .cloned()
+        .collect::<HashSet<_>>();
+    if !payload.is_empty() {
+        closure_context.insert(format!("{STRUCT_LOCAL_MARKER}{parameter_name}:{payload}"));
+    }
+    let absent = option_absent_value(&call.receiver, entities);
+    let binding = snake_to_lower_camel(&parameter_name);
+    let body = emit_closure(closure, &closure_context)?;
+    let Some(body) = body.strip_prefix(&format!("({binding}) => ")) else {
+        return Err(compile_error(format!(
+            "portable Option `.{method}()` closure cannot declare parameter or return types"
+        )));
+    };
+    if absent == "undefined"
+        && expression_is_field_projection(&closure.body, parameter)
+        && let Some(fields) = body.strip_prefix(&format!("{binding}."))
+    {
+        let receiver = if is_lowered_primary(&call.receiver, receiver) {
+            receiver.to_string()
+        } else {
+            format!("({receiver})")
+        };
+        return Ok(format!("{receiver}?.{fields}"));
+    }
+    let body = if matches!(closure.body.as_ref(), Expr::Block(_)) {
+        format!("(({binding}) => {body})({binding})")
+    } else {
+        body.to_string()
+    };
+    return Ok(format!(
+        "(({binding}) => {binding} === {absent} ? {absent} : {body})({receiver})"
+    ));
+}
+
 fn emit_ordered_comparison(
     left: &Expr,
     right: &Expr,
@@ -4860,6 +4997,19 @@ fn emit_ordered_comparison(
     return Ok(format!(
         "((left, right) => (left < right ? -1 : left > right ? 1 : 0))({left_text}, {right_text})"
     ));
+}
+
+// Whether `expression` reads only named fields, directly or through a chain, of `parameter`.
+fn expression_is_field_projection(expression: &Expr, parameter: &syn::Ident) -> bool {
+    return match expression {
+        Expr::Field(field) => {
+            matches!(field.member, syn::Member::Named(_))
+                && (expression_is_field_projection(&field.base, parameter)
+                    || matches!(field.base.as_ref(), Expr::Path(path) if path.path.is_ident(parameter)))
+        }
+        Expr::Group(group) => expression_is_field_projection(&group.expr, parameter),
+        _ => false,
+    };
 }
 
 fn expression_is_ordered_primitive(expression: &Expr, entities: &HashSet<String>) -> bool {
@@ -4903,6 +5053,30 @@ fn expression_is_reusable(expression: &Expr) -> bool {
             expression_is_reusable(&unary.expr)
         }
         _ => false,
+    };
+}
+
+// The named type of a local, parameter or closure parameter declared as a non-Option Rust type.
+fn expression_struct_name(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    return match expression {
+        Expr::Group(group) => expression_struct_name(&group.expr, entities),
+        Expr::Paren(paren) => expression_struct_name(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let mut structures = marker_suffixes(
+                entities,
+                &format!("{STRUCT_LOCAL_MARKER}{}:", path.path.segments[0].ident),
+            );
+            if structures.len() == 1 {
+                structures.pop_first()
+            } else {
+                None
+            }
+        }
+        Expr::Reference(reference) => expression_struct_name(&reference.expr, entities),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            expression_struct_name(&unary.expr, entities)
+        }
+        _ => None,
     };
 }
 
@@ -6837,6 +7011,15 @@ pub(crate) fn lower_camel_from_upper_camel(name: &str) -> String {
     return first.to_lowercase().chain(characters).collect();
 }
 
+// The suffixes of every marker starting with `prefix`, in sorted order.
+// flight-lint: allow(hashmap-iteration) the matches are collected into a BTreeSet, so order is never observed
+fn marker_suffixes(entities: &HashSet<String>, prefix: &str) -> BTreeSet<String> {
+    return entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(prefix).map(str::to_string))
+        .collect();
+}
+
 pub(crate) fn string_union_literal(name: &str, style: StringUnionStyle) -> String {
     if style == StringUnionStyle::Exact {
         unreachable!("exact string-union values require their declared metadata");
@@ -6867,6 +7050,69 @@ pub(crate) fn string_union_literal(name: &str, style: StringUnionStyle) -> Strin
         literal.extend(character.to_lowercase());
     }
     return literal;
+}
+
+fn option_closure_parameter(pattern: &Pat) -> Option<&syn::Ident> {
+    return match pattern {
+        Pat::Ident(identifier) if identifier.subpat.is_none() => Some(&identifier.ident),
+        Pat::Reference(reference) => option_closure_parameter(&reference.pat),
+        _ => None,
+    };
+}
+
+// The payload type name of an expression declared as Rust `Option` (empty when unnamed), or `None` when
+// the expression is not known to be an Option. Option-ness comes from declared types only.
+fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    // A name declared as `Option` with different payloads is still an Option, of no known payload.
+    let find = |prefix: String| {
+        let mut payloads = marker_suffixes(entities, &prefix);
+        return match payloads.len() {
+            0 => None,
+            1 => payloads.pop_first(),
+            _ => Some(String::new()),
+        };
+    };
+    return match expression {
+        Expr::Call(call) => {
+            let Expr::Path(path) = call.func.as_ref() else {
+                return None;
+            };
+            if path.qself.is_some() || path.path.segments.len() != 1 {
+                return None;
+            }
+            find(format!(
+                "{OPTION_RETURN_MARKER}{}:",
+                path.path.segments[0].ident
+            ))
+        }
+        Expr::Field(field) => {
+            let syn::Member::Named(field_name) = &field.member else {
+                return None;
+            };
+            let structure = expression_struct_name(&field.base, entities)?;
+            find(format!("{OPTION_FIELD_MARKER}{structure}:{field_name}:"))
+        }
+        Expr::Group(group) => option_expression_payload(&group.expr, entities),
+        Expr::MethodCall(call) if call.method == "and_then" || call.method == "map" => {
+            option_expression_payload(&call.receiver, entities).map(|_| String::new())
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "as_mut" | "as_ref" | "cloned" | "copied"
+                ) =>
+        {
+            option_expression_payload(&call.receiver, entities)
+        }
+        Expr::Paren(paren) => option_expression_payload(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => find(format!(
+            "{OPTION_LOCAL_MARKER}{}:",
+            path.path.segments[0].ident
+        )),
+        Expr::Reference(reference) => option_expression_payload(&reference.expr, entities),
+        _ => None,
+    };
 }
 
 fn option_inner_type(rust_type: &Type) -> Option<&Type> {

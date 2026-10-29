@@ -411,6 +411,145 @@ pub fn is_closed(segment: &Segment) -> bool {
         }
     }
 
+    // Option `.and_then()` and `.map()` lower only over receivers declared as Rust `Option`: a field
+    // projection becomes optional chaining, any other body tests the once-evaluated receiver against
+    // the absent value, and `.unwrap_or()` stays `??` so falsy payloads survive.
+    #[test]
+    fn lowers_option_and_then_and_map_over_declared_options() {
+        let source = r#"
+//! flight-compiler: string-union Heuristic
+pub enum Heuristic {
+    BestShortSideFit,
+    BestAreaFit,
+}
+
+pub struct Options {
+    pub padding: Option<f32>,
+    pub growable: Option<bool>,
+    pub heuristic: Option<Heuristic>,
+    pub max_width: Option<f32>,
+}
+
+pub fn padding_of(options: Option<&Options>) -> f32 {
+    return options.and_then(|o| o.padding).unwrap_or(0.0);
+}
+
+pub fn growable_of(options: Option<&Options>) -> bool {
+    return options.and_then(|o| o.growable).unwrap_or(true);
+}
+
+pub fn inner_width(options: Option<&Options>, border: f32) -> f32 {
+    return options.and_then(|o| o.max_width).unwrap_or(100.0) - 2.0 * border;
+}
+
+pub fn heuristic_of(options: Option<&Options>) -> Heuristic {
+    return options
+        .and_then(|o| o.heuristic)
+        .unwrap_or(Heuristic::BestShortSideFit);
+}
+
+pub fn shrunk_width(options: Option<&Options>) -> f32 {
+    return options
+        .and_then(|o| o.max_width.map(|w| w - 2.0))
+        .unwrap_or(0.0);
+}
+
+pub fn pick(options: Option<&Options>, counter: &mut Vec<i32>) -> Option<&Options> {
+    counter.push(1);
+    return options;
+}
+
+pub fn picked_padding(options: Option<&Options>, counter: &mut Vec<i32>) -> f32 {
+    return pick(options, counter).and_then(|o| o.padding).unwrap_or(0.0);
+}
+
+pub fn shadowed(border: Option<&Options>, extra: f32) -> f32 {
+    return border.and_then(|border| border.padding.map(|p| p + extra)).unwrap_or(0.0);
+}
+
+pub fn conditional_padding(options: Option<&Options>, enabled: bool) -> f32 {
+    return options
+        .and_then(|o| if enabled { o.padding } else { None })
+        .unwrap_or(7.0);
+}
+
+pub fn doubled(value: Option<f32>) -> f32 {
+    let scaled: Option<f32> = value.map(|w| w * 2.0);
+    return scaled.unwrap_or(0.0);
+}
+
+pub fn doubled_all(values: &Vec<f32>) -> Vec<f32> {
+    return values.iter().map(|w| w * 2.0).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return (options?.padding ?? 0.0);"));
+        assert!(output.contains("return (options?.growable ?? true);"));
+        assert!(output.contains("return (options?.maxWidth ?? 100.0) - 2.0 * border;"));
+        assert!(output.contains("return (options?.heuristic ?? \"bestShortSideFit\");"));
+        assert!(output.contains(
+            "return (((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w - 2.0)(o.maxWidth))(options) ?? 0.0);"
+        ));
+        assert!(output.contains("return (pick(options, counter)?.padding ?? 0.0);"));
+        assert!(output.contains(
+            "return (((border) => border === undefined ? undefined : ((p) => p === undefined ? undefined : p + extra)(border.padding))(border) ?? 0.0);"
+        ));
+        assert!(output.contains(
+            "return (((o) => o === undefined ? undefined : enabled ? o.padding : undefined)(options) ?? 7.0);"
+        ));
+        assert!(output.contains(
+            "const scaled: number | undefined = ((w) => w === undefined ? undefined : w * 2.0)(value);"
+        ));
+        assert!(output.contains("return values.map((w) => w * 2.0);"));
+        assert!(!output.contains("||"));
+
+        let source = r#"
+//! flight-compiler: nullable-options
+pub struct Options {
+    pub padding: Option<f32>,
+}
+
+pub fn padding_of(options: Option<&Options>) -> f32 {
+    return options.and_then(|o| o.padding).unwrap_or(0.0);
+}
+
+pub fn widened(value: Option<f32>) -> f32 {
+    return value.map(|w| w + 1.0).unwrap_or(0.0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("return (((o) => o === null ? null : o.padding)(options) ?? 0.0);")
+        );
+        assert!(output.contains("return (((w) => w === null ? null : w + 1.0)(value) ?? 0.0);"));
+
+        for (source, expected) in [
+            (
+                "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n",
+                "portable `.and_then()` requires a receiver declared as Rust `Option`",
+            ),
+            (
+                "pub fn inferred(value: f32) -> f32 { let local = Some(value); return local.and_then(|v| Some(v)).unwrap_or(0.0); }\n",
+                "portable `.and_then()` requires a receiver declared as Rust `Option`",
+            ),
+            (
+                "pub fn sum(value: Option<(f32, f32)>) -> f32 { return value.map(|(a, b)| a + b).unwrap_or(0.0); }\n",
+                "portable Option `.map()` closure parameter must be an identifier",
+            ),
+            (
+                "pub fn apply(value: Option<f32>, f: fn(f32) -> Option<f32>) -> Option<f32> { return value.and_then(f); }\n",
+                "portable Option `.and_then()` needs a single-parameter closure",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
     // `.cmp()` on integers and strings is a normalized three-way comparison, `Ordering` lowers to a
     // signed number, and `==` against its variants compares signs, which keeps `.partial_cmp()`
     // differences correct; a `match` on its variants is rejected rather than lowered unsoundly.
