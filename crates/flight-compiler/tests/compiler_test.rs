@@ -9694,13 +9694,18 @@ pub fn replace_returned_owner_emit(owner: &Owner) {
         );
         assert!(output.contains("state.signal.emit = 6;"), "{output}");
         assert!(
-            output.contains("const cell = borrowOwner(owner).state.signal.emit;"),
+            output.contains("const cellReceiver = borrowOwner(owner);"),
             "{output}"
         );
         assert!(
-            output.contains("borrowOwner(owner).state.signal.emit = 7;"),
+            output.contains("const cell = cellReceiver.state.signal.emit;"),
             "{output}"
         );
+        assert!(
+            output.contains("cellReceiver.state.signal.emit = 7;"),
+            "{output}"
+        );
+        assert_eq!(output.matches("borrowOwner(owner)").count(), 1, "{output}");
         assert!(!output.contains("const Captured"), "{output}");
         assert!(!output.contains("cell = 2;"), "{output}");
         assert!(!output.contains("cell = 5;"), "{output}");

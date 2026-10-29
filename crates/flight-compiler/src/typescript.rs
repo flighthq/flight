@@ -98,6 +98,7 @@ const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
 const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
 const INTERIOR_MUTABLE_STRUCT_MARKER: &str = "@interior-mutable-struct:";
 const REF_ALIAS_TARGET_MARKER: &str = "@ref-alias-target:";
+const REF_ALIAS_RECEIVER_CAPTURE_MARKER: &str = "@ref-alias-receiver-capture:";
 const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:";
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
@@ -3028,6 +3029,17 @@ fn insert_data_union_context(
 // because a local value always shadows an imported or sibling function. Parameters are left bound in
 // the returned context; every other site is bound during emission by `lexical_pattern_context`.
 fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<String>) {
+    struct ReservedIdentifierCollector {
+        names: HashSet<String>,
+    }
+
+    impl<'ast> Visit<'ast> for ReservedIdentifierCollector {
+        fn visit_ident(&mut self, identifier: &'ast syn::Ident) {
+            self.names
+                .insert(snake_to_lower_camel(&identifier.to_string()));
+        }
+    }
+
     struct Resolver<'a> {
         context: &'a HashSet<String>,
         dereferenced: HashSet<String>,
@@ -3037,6 +3049,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         nullable_option_bindings: HashSet<String>,
         ordinal: usize,
         ref_aliases: Vec<(String, String)>,
+        ref_alias_receiver_captures: Vec<(String, String, String)>,
+        reserved_identifiers: HashSet<String>,
         scopes: Vec<BTreeMap<String, String>>,
         sites: Vec<(String, String)>,
     }
@@ -3174,6 +3188,84 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .rev()
                 .find(|(fact_id, _)| *fact_id == id)
                 .map(|(_, fact)| fact.clone());
+        }
+
+        fn fresh_ref_alias_receiver(&mut self, alias: &str) -> String {
+            for index in 0.. {
+                let candidate = if index == 0 {
+                    format!("{alias}_receiver")
+                } else {
+                    format!("{alias}_receiver_{index}")
+                };
+                if self
+                    .reserved_identifiers
+                    .insert(snake_to_lower_camel(&candidate))
+                {
+                    return candidate;
+                }
+            }
+            unreachable!("an unbounded candidate sequence always yields an unused identifier")
+        }
+
+        fn replace_struct_call_receiver(
+            &self,
+            expression: &Expr,
+            replacement: &Expr,
+        ) -> Option<(Expr, Expr)> {
+            return match expression {
+                Expr::Field(field) => {
+                    let (capture, base) =
+                        self.replace_struct_call_receiver(&field.base, replacement)?;
+                    let mut stabilized = field.clone();
+                    stabilized.base = Box::new(base);
+                    Some((capture, Expr::Field(stabilized)))
+                }
+                Expr::Group(group) => {
+                    let (capture, inner) =
+                        self.replace_struct_call_receiver(&group.expr, replacement)?;
+                    let mut stabilized = group.clone();
+                    stabilized.expr = Box::new(inner);
+                    Some((capture, Expr::Group(stabilized)))
+                }
+                Expr::Paren(paren) => {
+                    let (capture, inner) =
+                        self.replace_struct_call_receiver(&paren.expr, replacement)?;
+                    let mut stabilized = paren.clone();
+                    stabilized.expr = Box::new(inner);
+                    Some((capture, Expr::Paren(stabilized)))
+                }
+                Expr::Reference(reference) => {
+                    let (capture, inner) =
+                        self.replace_struct_call_receiver(&reference.expr, replacement)?;
+                    let mut stabilized = reference.clone();
+                    stabilized.expr = Box::new(inner);
+                    Some((capture, Expr::Reference(stabilized)))
+                }
+                Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+                    let (capture, inner) =
+                        self.replace_struct_call_receiver(&unary.expr, replacement)?;
+                    let mut stabilized = unary.clone();
+                    stabilized.expr = Box::new(inner);
+                    Some((capture, Expr::Unary(stabilized)))
+                }
+                Expr::Call(_) if self.expression_structure_identity(expression).is_some() => {
+                    Some((expression.clone(), replacement.clone()))
+                }
+                _ => None,
+            };
+        }
+
+        fn stabilize_ref_alias_target(
+            &mut self,
+            expression: &Expr,
+            alias: &str,
+        ) -> Option<(String, Expr, Expr)> {
+            let placeholder: Expr = syn::parse_str("__flight_ref_alias_receiver").ok()?;
+            self.replace_struct_call_receiver(expression, &placeholder)?;
+            let stable = self.fresh_ref_alias_receiver(alias);
+            let replacement = syn::parse_str::<Expr>(&stable).ok()?;
+            let (capture, target) = self.replace_struct_call_receiver(expression, &replacement)?;
+            return Some((stable, capture, target));
         }
 
         fn expression_structure_identity(&self, expression: &Expr) -> Option<String> {
@@ -3628,15 +3720,26 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .init
                 .as_ref()
                 .is_some_and(|initializer| mutex_guard_receiver(&initializer.expr).is_some());
-            let ref_alias_target = local.init.as_ref().and_then(|initializer| {
-                let Expr::MethodCall(clone) = initializer.expr.as_ref() else {
-                    return None;
-                };
-                (clone.method == "clone"
-                    && clone.args.is_empty()
-                    && self.erased_shared_cell_field(&clone.receiver))
-                .then(|| clone.receiver.to_token_stream().to_string())
-            });
+            let mut ref_alias_target = None;
+            let mut ref_alias_receiver_capture = None;
+            if let Some(initializer) = &local.init
+                && let Expr::MethodCall(clone) = initializer.expr.as_ref()
+                && clone.method == "clone"
+                && clone.args.is_empty()
+                && self.erased_shared_cell_field(&clone.receiver)
+            {
+                let target = clone.receiver.as_ref().clone();
+                if let Some(alias) = local_pattern_name(&local.pat)
+                    && let Some((stable, capture, stabilized)) =
+                        self.stabilize_ref_alias_target(&target, &alias)
+                {
+                    ref_alias_target = Some(stabilized.to_token_stream().to_string());
+                    ref_alias_receiver_capture =
+                        Some((stable, capture.to_token_stream().to_string()));
+                } else {
+                    ref_alias_target = Some(target.to_token_stream().to_string());
+                }
+            }
             let mut fact = BindingFact::Unknown;
             let mut retains_nullable_option = false;
             if let Some(initializer) = &local.init {
@@ -3661,6 +3764,10 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 && let Some(name) = local_pattern_name(&local.pat)
                 && let Some(id) = self.binding_id(&name)
             {
+                if let Some((stable, capture)) = ref_alias_receiver_capture {
+                    self.ref_alias_receiver_captures
+                        .push((id.clone(), stable, capture));
+                }
                 self.ref_aliases.push((id, target));
             }
             if mutex_guard
@@ -3682,6 +3789,10 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         return Some(path.path.segments[0].ident.to_string());
     }
 
+    let mut reserved_identifiers = ReservedIdentifierCollector {
+        names: HashSet::new(),
+    };
+    reserved_identifiers.visit_item_fn(function);
     let function_name = function.sig.ident.to_string();
     let mut resolver = Resolver {
         context,
@@ -3695,6 +3806,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         nullable_option_bindings: HashSet::new(),
         ordinal: 0,
         ref_aliases: Vec::new(),
+        ref_alias_receiver_captures: Vec::new(),
+        reserved_identifiers: reserved_identifiers.names,
         scopes: vec![BTreeMap::new()],
         sites: Vec::new(),
     };
@@ -3720,6 +3833,11 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     for (id, target) in resolver.ref_aliases {
         markers.push(format!(
             "{REF_ALIAS_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}{target}"
+        ));
+    }
+    for (id, stable, capture) in resolver.ref_alias_receiver_captures {
+        markers.push(format!(
+            "{REF_ALIAS_RECEIVER_CAPTURE_MARKER}{id}{PROVENANCE_SEPARATOR}{stable}{PROVENANCE_SEPARATOR}{capture}"
         ));
     }
     for (name, id) in parameters {
@@ -11100,10 +11218,22 @@ pub(crate) fn emit_local_with_shadow_and_else(
         return Ok(());
     };
     let local_name = local_pattern_name(&local.pat);
+    let local_binding_id = local_pattern_binding_id(entities, &local.pat);
+    let ref_alias_receiver_capture = local_binding_id
+        .as_deref()
+        .map(|id| ref_alias_receiver_capture(entities, id))
+        .transpose()?
+        .flatten();
+    let ref_alias_target = local_binding_id
+        .as_deref()
+        .map(|id| ref_alias_target_for_id(entities, id))
+        .transpose()?
+        .flatten();
     if local_name
         .as_deref()
         .is_some_and(|name| name.starts_with('_'))
-        && local_pattern_binding_id(entities, &local.pat).is_some_and(|id| {
+        && ref_alias_receiver_capture.is_none()
+        && local_binding_id.as_deref().is_some_and(|id| {
             entities.iter().any(|marker| {
                 marker.starts_with(&format!(
                     "{REF_ALIAS_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}"
@@ -11152,11 +11282,24 @@ pub(crate) fn emit_local_with_shadow_and_else(
         .as_deref()
         .map(|name| closure_parameter_types(entities, name))
         .unwrap_or_default();
-    let mut value = if local_pattern_binding_id(entities, &local.pat)
+    if let Some((stable, capture)) = &ref_alias_receiver_capture {
+        write_indent(out, indent);
+        writeln!(
+            out,
+            "const {} = {};",
+            snake_to_lower_camel(stable),
+            emit_expression(capture, entities)?
+        )
+        .expect("writing to a String cannot fail");
+    }
+    let mut value = if local_binding_id
+        .as_deref()
         .is_some_and(|id| entities.contains(&format!("{MUTEX_GUARD_BINDING_MARKER}{id}")))
         && let Some(receiver) = mutex_guard_receiver(&initializer.expr)
     {
         emit_expression(receiver, entities)?
+    } else if let Some(target) = &ref_alias_target {
+        emit_expression(target, entities)?
     } else if expression_is_path_call(&initializer.expr, "allocate_entity") {
         let Some(typescript_type) = &typescript_type else {
             return Err(compile_error(
@@ -15673,6 +15816,13 @@ fn ref_alias_target(
     let Some(id) = lexical_binding(entities, &alias.ident.to_string()) else {
         return Ok(None);
     };
+    return ref_alias_target_for_id(entities, &id);
+}
+
+fn ref_alias_target_for_id(
+    entities: &HashSet<String>,
+    id: &str,
+) -> Result<Option<Expr>, CompileError> {
     let Some(target) = unique_marker_suffix(
         entities,
         &format!("{REF_ALIAS_TARGET_MARKER}{}{PROVENANCE_SEPARATOR}", id),
@@ -15682,6 +15832,29 @@ fn ref_alias_target(
     return syn::parse_str::<Expr>(&target)
         .map(Some)
         .map_err(|error| compile_error(format!("failed to recover Ref alias target: {error}")));
+}
+
+fn ref_alias_receiver_capture(
+    entities: &HashSet<String>,
+    id: &str,
+) -> Result<Option<(String, Expr)>, CompileError> {
+    let Some(capture) = unique_marker_suffix(
+        entities,
+        &format!("{REF_ALIAS_RECEIVER_CAPTURE_MARKER}{id}{PROVENANCE_SEPARATOR}"),
+    ) else {
+        return Ok(None);
+    };
+    let Some((stable, expression)) = capture.split_once(PROVENANCE_SEPARATOR) else {
+        return Err(compile_error(
+            "malformed stable Ref alias receiver capture marker",
+        ));
+    };
+    let expression = syn::parse_str::<Expr>(expression).map_err(|error| {
+        compile_error(format!(
+            "failed to recover stable Ref alias receiver capture: {error}"
+        ))
+    })?;
+    return Ok(Some((stable.to_string(), expression)));
 }
 
 // Shared locks retain interior mutability through immutable Rust references. Wrapping those cells in

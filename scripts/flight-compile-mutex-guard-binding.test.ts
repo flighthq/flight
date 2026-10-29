@@ -34,8 +34,14 @@ pub struct Owner {
     pub state: SignalState,
 }
 
-pub fn borrow_owner(owner: &Owner) -> &Owner {
-    return owner;
+pub struct BorrowOwnerState {
+    pub calls: i32,
+    pub owner: Owner,
+}
+
+pub fn borrow_owner(state: &mut BorrowOwnerState) -> &Owner {
+    state.calls += 1;
+    return &state.owner;
 }
 
 pub fn replace_nested_emit(owner: &Owner, value: i32) {
@@ -49,8 +55,8 @@ pub fn replace_inferred_state_emit(owner: &Owner, value: i32) {
     *emit.write().unwrap() = value;
 }
 
-pub fn replace_returned_owner_emit(owner: &Owner, value: i32) {
-    let emit = borrow_owner(owner).state.signal.emit.clone();
+pub fn replace_returned_owner_emit(state: &mut BorrowOwnerState, value: i32) {
+    let emit = borrow_owner(state).state.signal.emit.clone();
     *emit.write().unwrap() = value;
 }
 
@@ -186,8 +192,10 @@ describe('flight-compile nested Ref alias provenance', () => {
     const { error, typescript } = compileRust();
     expect(error).toBe('');
     expect(strictDiagnostics(typescript)).toEqual([]);
-    expect(typescript).toContain('const emit = borrowOwner(owner).state.signal.emit;');
-    expect(typescript).toContain('borrowOwner(owner).state.signal.emit = value;');
+    expect(typescript).toContain('const emitReceiver = borrowOwner(state);');
+    expect(typescript).toContain('const emit = emitReceiver.state.signal.emit;');
+    expect(typescript).toContain('emitReceiver.state.signal.emit = value;');
+    expect(typescript.match(/borrowOwner\(state\)/gu)).toHaveLength(1);
   });
 
   it('writes through every declared struct layer at runtime', () => {
@@ -218,14 +226,16 @@ describe('flight-compile nested Ref alias provenance', () => {
   it('writes through a declared struct-returning call receiver', () => {
     const module = loadModule(compileRust().typescript);
     type Owner = { state: { signal: { emit: number } } };
-    const owner: Owner = { state: { signal: { emit: 1 } } };
+    type BorrowOwnerState = { calls: number; owner: Owner };
+    const state: BorrowOwnerState = { calls: 0, owner: { state: { signal: { emit: 1 } } } };
     const replaceReturnedOwnerEmit = module.replaceReturnedOwnerEmit as unknown as (
-      owner: Owner,
+      state: BorrowOwnerState,
       value: number,
     ) => void;
 
-    replaceReturnedOwnerEmit(owner, 9);
+    replaceReturnedOwnerEmit(state, 9);
 
-    expect(owner.state.signal.emit).toBe(9);
+    expect(state.calls).toBe(1);
+    expect(state.owner.state.signal.emit).toBe(9);
   });
 });
