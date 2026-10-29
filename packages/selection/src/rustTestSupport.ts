@@ -82,7 +82,7 @@ function marqueeMatches(
   return findNodesInMarqueeSelection(selection, candidates, mode);
 }
 
-function selectedNodesOf(state: SelectionState): readonly NodeRef[] {
+function selectedNodesOf(state: SelectionState<NodeRef>): readonly NodeRef[] {
   return getSelectedNodes(state);
 }
 
@@ -117,7 +117,7 @@ function takeReentrantFlag(flag: { value: boolean }): boolean {
 }
 
 function applyPointerPolicy(
-  state: SelectionState,
+  state: SelectionState<NodeRef>,
   hit: NodeRef | null | undefined,
   modifiers: Readonly<SelectionModifierState>,
 ): void {

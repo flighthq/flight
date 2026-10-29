@@ -1,8 +1,7 @@
-import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import type { NodeRef, getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import type { Path } from '@flighthq/path/contract';
-import type { Signal } from '@flighthq/signals/contract';
 
 import {
   addLassoSelectionPointCore,
@@ -22,6 +21,14 @@ import {
   updateMarqueeSelectionCore,
 } from './marqueeSelection.ts';
 import { applyPointerSelectionPolicyCore, applyPointerUpSelectionPolicyCore } from './pointerSelectionPolicy.ts';
+import type {
+  LassoSelection,
+  MarqueeSelection,
+  MarqueeSelectionMode,
+  SelectionModifierState,
+  SelectionSignals,
+  SelectionState,
+} from './selectionCompat.selection-types.ts';
 import {
   addNodeToSelectionCore,
   clearSelectionCore,
@@ -37,7 +44,6 @@ import {
   selectNodeCore,
   toggleNodeSelectionCore,
 } from './selectionState.ts';
-import type { SelectionStateNodeTypeKey } from './selectionStateNodeTypeKey.ts';
 import type {
   LassoSelectionRaw,
   MarqueeSelectionModeRaw,
@@ -46,32 +52,16 @@ import type {
   SelectionStateRaw,
 } from './types.ts';
 
+export type {
+  LassoSelection,
+  MarqueeSelection,
+  MarqueeSelectionMode,
+  SelectionModifierState,
+  SelectionSignals,
+  SelectionState,
+} from './selectionCompat.selection-types.ts';
+
 type BoundsNodeAny = Parameters<typeof getNodeLocalBoundsRectangle>[0];
-
-/** Opaque freeform gesture state created and updated by @flighthq/selection. */
-export interface LassoSelection extends EntityRaw {}
-
-/** Opaque rubber-band gesture state created and updated by @flighthq/selection. */
-export interface MarqueeSelection extends EntityRaw {}
-
-export type MarqueeSelectionMode = 'contain' | 'intersect';
-
-export interface SelectionModifierState {
-  altKey: boolean;
-  ctrlKey: boolean;
-  metaKey: boolean;
-  shiftKey: boolean;
-}
-
-export interface SelectionSignals<NodeType extends NodeRef = NodeRef> {
-  onActiveChange: Signal<NodeType | null>;
-  onChange: Signal<readonly NodeType[]>;
-}
-
-/** Ordered node selection. Its contents are mutated only through @flighthq/selection functions. */
-export interface SelectionState<NodeType extends NodeRef = NodeRef> extends EntityRaw {
-  readonly [SelectionStateNodeTypeKey]?: NodeType;
-}
 
 export function addLassoSelectionPoint(selection: LassoSelection, x: number, y: number): void {
   addLassoSelectionPointCore(selection as LassoSelectionRaw, x, y);
