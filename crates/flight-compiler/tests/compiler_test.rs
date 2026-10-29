@@ -1745,6 +1745,31 @@ pub fn is_closed(segment: &Segment) -> bool {
         }
     }
 
+    #[test]
+    fn lowers_match_on_bare_constant_identifiers_to_switch_case() {
+        let source = r#"
+pub const MODE_ADD: u32 = 0;
+pub const MODE_SUBTRACT: u32 = 1;
+pub const MODE_MULTIPLY: u32 = 2;
+
+pub fn apply(mode: u32, a: f64, b: f64) -> f64 {
+    return match mode {
+        MODE_ADD => a + b,
+        MODE_SUBTRACT => a - b,
+        MODE_MULTIPLY => a * b,
+        _ => a,
+    };
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("case MODE_ADD:"));
+        assert!(output.contains("case MODE_SUBTRACT:"));
+        assert!(output.contains("case MODE_MULTIPLY:"));
+        assert!(output.contains("default:"));
+    }
+
     // Option `.and_then()` and `.map()` lower only over receivers declared as Rust `Option`: a field
     // projection becomes optional chaining, any other body tests the once-evaluated receiver against
     // the absent value, and `.unwrap_or()` stays `??` so falsy payloads survive.

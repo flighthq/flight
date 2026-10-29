@@ -11318,6 +11318,14 @@ fn emit_match_patterns(
             }),
             entities,
         )?]),
+        Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            let name = identifier.ident.to_string();
+            if name == "_" {
+                Ok(vec!["default".to_string()])
+            } else {
+                Ok(vec![emit_path_segment(&name)])
+            }
+        }
         Pat::Wild(_) => Ok(vec!["default".to_string()]),
         _ => Err(compile_error("unsupported portable Rust match pattern")),
     };
