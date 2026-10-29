@@ -15463,8 +15463,9 @@ pub(crate) fn emit_type(
                                 _ => None,
                             })
                             .collect::<Result<Vec<_>, _>>()?;
+                        let name = export_name(entities, &name).unwrap_or(&name);
                         if rendered.is_empty() {
-                            Ok(name)
+                            Ok(name.to_string())
                         } else {
                             Ok(format!("{name}<{}>", rendered.join(", ")))
                         }

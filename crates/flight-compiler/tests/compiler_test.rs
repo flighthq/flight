@@ -1201,6 +1201,20 @@ mod foreign_macro_arguments {
     }
 
     #[test]
+    fn renders_generic_dependency_entities_by_their_companion_raw_name() {
+        let signals = [ExternalAliasSource {
+            source: include_str!("../../flight-signals/src/types.rs"),
+            module: "@flighthq/signals/contract",
+        }];
+        let source = "use flight_signals::Signal;\n\npub struct Hub {\n    pub on_tick: Signal<i32>,\n}\n\npub fn tick(hub: &Hub) -> &Signal<i32> {\n    return &hub.on_tick;\n}\n";
+
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(source, None, &[], &signals).unwrap(),
+            "import type { SignalRaw } from \"@flighthq/signals/contract\";\n\nexport interface Hub {\n  onTick: SignalRaw<number>;\n}\n\nexport function tick(hub: Readonly<Hub>): Readonly<SignalRaw<number>> {\n  return hub.onTick;\n}\n"
+        );
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment
