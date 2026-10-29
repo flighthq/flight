@@ -1,4 +1,5 @@
 import { connectSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type { ResourceLoadHandle, ResourceLoadReport } from '@flighthq/types/contract';
 
 import {
@@ -448,6 +449,16 @@ describe('cancelResourceLoad', () => {
 });
 
 describe('createResourceLoader', () => {
+  it('types the loader signals by their payload, tuples where several values travel together', () => {
+    const loader = createResourceLoader();
+    expectTypeOf(loader.onError).toEqualTypeOf<Signal<readonly [unknown, string]>>();
+    expectTypeOf(loader.onProgress).toEqualTypeOf<Signal<number>>();
+    expectTypeOf(loader.onCancel).toEqualTypeOf<Signal<void>>();
+    const items = enableResourceLoaderItemSignals(loader);
+    expectTypeOf(items.onItemRetry).toEqualTypeOf<Signal<readonly [string, number, number]>>();
+    expectTypeOf(items.onItemStart).toEqualTypeOf<Signal<string>>();
+  });
+
   it('returns an object with all signal properties', () => {
     const loader = createResourceLoader();
     expect(loader.onCancel).toBeDefined();
@@ -517,7 +528,7 @@ describe('enableResourceLoaderItemSignals', () => {
     const completed: string[] = [];
 
     connectSignal(signals.onItemStart, (key) => started.push(key));
-    connectSignal(signals.onItemComplete, (key) => completed.push(key));
+    connectSignal(signals.onItemComplete, ([key]) => completed.push(key));
 
     queueResourceLoad(loader, { key: 'a', load: () => Promise.resolve(1) });
     queueResourceLoad(loader, { key: 'b', load: () => Promise.resolve(2) });
@@ -535,7 +546,7 @@ describe('enableResourceLoaderItemSignals', () => {
     const signals = enableResourceLoaderItemSignals(loader);
     const errors: Array<{ key: string; attempt: number }> = [];
 
-    connectSignal(signals.onItemError, (key, _err, attempt) => errors.push({ attempt, key }));
+    connectSignal(signals.onItemError, ([key, _err, attempt]) => errors.push({ attempt, key }));
 
     const handle = queueResourceLoad(loader, { key: 'fail', load: () => Promise.reject(new Error('oops')) });
     handle.promise.catch(() => {});
@@ -1011,7 +1022,7 @@ describe('queueResourceLoad', () => {
   it('fires onError for a failed item but still completes by default', async () => {
     const loader = createResourceLoader();
     const errors: Array<{ error: unknown; key: string }> = [];
-    connectSignal(loader.onError, (err, key) => {
+    connectSignal(loader.onError, ([err, key]) => {
       errors.push({ error: err, key });
     });
 
@@ -1124,7 +1135,7 @@ describe('reset while loading', () => {
   it('discards an in-flight load rather than settling it against the next batch', async () => {
     const loader = createResourceLoader();
     const errorKeys: string[] = [];
-    connectSignal(loader.onError, (_error, key) => errorKeys.push(key));
+    connectSignal(loader.onError, ([_error, key]) => errorKeys.push(key));
 
     let release!: () => void;
     queueResourceLoad(loader, {

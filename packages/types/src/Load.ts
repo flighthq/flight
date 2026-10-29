@@ -7,5 +7,5 @@ export interface LoadProgress {
 }
 export interface LoadOptions {
   readonly signal?: AbortSignal;
-  readonly progress?: Signal<(progress: Readonly<LoadProgress>) => void>;
+  readonly progress?: Signal<Readonly<LoadProgress>>;
 }

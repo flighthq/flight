@@ -171,7 +171,7 @@ export function cancelResourceLoad(loader: ResourceLoader): void {
   }
   internal.pending = [];
 
-  emitSignal(loader.onCancel);
+  emitSignal(loader.onCancel, undefined);
 
   // Complete immediately if nothing is currently running
   if (internal.inFlight.size === 0) {
@@ -352,7 +352,7 @@ export function pauseResourceLoad(loader: ResourceLoader): void {
   const internal = loader as ResourceLoaderInternal;
   if (!internal.started || internal.paused || internal.cancelled) return;
   internal.paused = true;
-  emitSignal(loader.onPause);
+  emitSignal(loader.onPause, undefined);
 }
 
 export function queueResourceLoad<T>(
@@ -469,7 +469,7 @@ export function resumeResourceLoad(loader: ResourceLoader): void {
   const internal = loader as ResourceLoaderInternal;
   if (!internal.paused || internal.cancelled) return;
   internal.paused = false;
-  emitSignal(loader.onResume);
+  emitSignal(loader.onResume, undefined);
   void drainQueue(internal, loader);
 }
 
@@ -632,7 +632,7 @@ async function runEntry(
     entry.resolve(value);
 
     if (internal.itemSignals !== null) {
-      emitSignal(internal.itemSignals.onItemComplete, entry.key, value);
+      emitSignal(internal.itemSignals.onItemComplete, [entry.key, value]);
     }
 
     settleEntry(entry, internal, loader);
@@ -673,7 +673,7 @@ async function runEntry(
       const delayMs = computeRetryDelay(attempt, internal);
 
       if (internal.itemSignals !== null) {
-        emitSignal(internal.itemSignals.onItemRetry, entry.key, attempt + 1, delayMs);
+        emitSignal(internal.itemSignals.onItemRetry, [entry.key, attempt + 1, delayMs]);
       }
 
       await delay(delayMs);
@@ -704,11 +704,11 @@ async function runEntry(
     internal.reports.push(report);
 
     if (internal.itemSignals !== null) {
-      emitSignal(internal.itemSignals.onItemError, entry.key, error, attempt + 1);
+      emitSignal(internal.itemSignals.onItemError, [entry.key, error, attempt + 1]);
     }
 
     entry.reject(error);
-    emitSignal(loader.onError, error, entry.key);
+    emitSignal(loader.onError, [error, entry.key]);
 
     // Fail-fast: cancel remaining pending loads before settling
     if (internal.errorPolicy === 'fail-fast') {

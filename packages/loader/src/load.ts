@@ -4,7 +4,7 @@ import type { HostNetCapability, LoadOptions, LoadProgress, NetProgress } from '
 function requestOptions(url: string, input?: Readonly<LoadOptions>) {
   if (!input) return undefined;
   if (!input.progress) return { signal: input.signal };
-  const progress = createSignal<(p: Readonly<NetProgress>) => void>();
+  const progress = createSignal<Readonly<NetProgress>>();
   connectSignal(progress, (event) =>
     emitSignal(input.progress!, {
       url,
