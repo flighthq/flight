@@ -562,6 +562,113 @@ pub fn payload_kind(value: Payload) -> String {
     }
 
     #[test]
+    fn lowers_const_groups_to_exported_const_objects() {
+        let source = r#"
+//! The table.
+//! flight-compiler: const-group KeyCode KEY_CODE_
+
+/// `KeyCode.A`.
+pub const KEY_CODE_A: i32 = 0x61;
+
+/// B.
+pub const KEY_CODE_B: i32 = 0x62;
+
+pub const OTHER: f32 = 1.5;
+
+pub const KEY_CODE_NUMBER_0: i32 = 0x30;
+
+pub type KeyCode = i32;
+
+pub fn is_a(code: KeyCode) -> bool { return code == KEY_CODE_A || code == KEY_CODE_NUMBER_0; }
+"#;
+
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export type KeyCode = number;
+
+export const KeyCode = {
+  /**
+   * `KeyCode.A`.
+   */
+  A: 0x61,
+  /**
+   * B.
+   */
+  B: 0x62,
+  NUMBER_0: 0x30,
+};
+
+export const OTHER: number = 1.5;
+
+export function isA(code: KeyCode): boolean {
+  return code === KeyCode.A || code === KeyCode.NUMBER_0;
+}
+"#
+        );
+        for (source, expected) in [
+            (
+                "//! flight-compiler: const-group KeyCode KEY_\npub const KEY_0: i32 = 1;\n",
+                "`const-group KeyCode` member `KEY_0` leaves `0`, which is not a TypeScript identifier",
+            ),
+            (
+                "//! flight-compiler: const-group KeyCode KEY_\nconst KEY_A: i32 = 1;\n",
+                "`const-group KeyCode` member `KEY_A` must be public",
+            ),
+            (
+                "//! flight-compiler: const-group KeyCode KEY_\npub const KEY_A: i32 = 1;\npub const KEY_B: u8 = 1;\n",
+                "`const-group KeyCode` members must share one type",
+            ),
+            (
+                "//! flight-compiler: const-group KeyCode NOPE_\npub const KEY_A: i32 = 1;\n",
+                "`const-group KeyCode` prefix `NOPE_` matches no constant",
+            ),
+            (
+                "//! flight-compiler: const-group Key KEY_\n//! flight-compiler: const-group KeyCode KEY_C\npub const KEY_CA: i32 = 1;\n",
+                "constant `KEY_CA` matches more than one `const-group` prefix",
+            ),
+            (
+                "//! flight-compiler: const-group KeyCode\npub const KEY_A: i32 = 1;\n",
+                "`flight-compiler: const-group` requires exactly a TypeScript name and a constant prefix",
+            ),
+            (
+                "//! flight-compiler: const-group Key-Code KEY_\npub const KEY_A: i32 = 1;\n",
+                "`flight-compiler: const-group` name `Key-Code` is not a TypeScript identifier",
+            ),
+            (
+                "//! flight-compiler: const-group KeyCode KEY_\n//! flight-compiler: export-name KEY_A KeyA\npub const KEY_A: i32 = 1;\n",
+                "`const-group KeyCode` member `KEY_A` is also named by another directive",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+    }
+
+    #[test]
+    fn rejects_importing_const_group_members_across_packages() {
+        let keys = "//! flight-compiler: const-group KeyCode KEY_CODE_\npub const KEY_CODE_A: i32 = 0x61;\npub type KeyCode = i32;\n";
+        let keys_package = [ExternalAliasSource {
+            source: keys,
+            module: "@flighthq/keys/contract",
+        }];
+        for (consumer, expected) in [
+            (
+                "use flight_keys::KEY_CODE_A;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n",
+                "importing `const-group` member `KEY_CODE_A` from `@flighthq/keys/contract` has no portable lowering; it is `KeyCode.A` in TypeScript",
+            ),
+            (
+                "use flight_keys::*;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n",
+                "a wildcard import of `@flighthq/keys/contract` would bring in `const-group` member `KEY_CODE_A` (`KeyCode.A` in TypeScript), which has no portable lowering",
+            ),
+        ] {
+            let error =
+                compile_typescript_with_external_alias_sources(consumer, None, &[], &keys_package)
+                    .unwrap_err();
+            assert_eq!(error.to_string(), expected, "{consumer}");
+        }
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment

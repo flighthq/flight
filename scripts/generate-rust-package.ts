@@ -13,6 +13,7 @@ import {
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
+  hasRustConstGroup,
   renderCompanionContractExports,
   renderGeneratedImports,
   dependencyAliasArguments,
@@ -252,7 +253,7 @@ function crateImports(
   return renderGeneratedImports(rust, typescript, outputFileName, symbols);
 }
 
-// Sources of this crate's `flight-*` dependencies that carry `export-name` directives, with their
+// Sources of this crate's `flight-*` dependencies that carry `export-name` or `const-group` directives, with their
 // contract modules, so imports of mapped dependency items use the owner's TypeScript names. Tests also
 // see dev-dependencies.
 function dependencySources(command: string): DependencySource[] {
@@ -268,7 +269,8 @@ function dependencySources(command: string): DependencySource[] {
       .filter((name) => name.endsWith('.rs'))
       .sort()) {
       const path = join(sourceRoot, fileName);
-      if (collectRustExportNames(readFileSync(path, 'utf8')).size > 0) sources.push({ module, path });
+      const rust = readFileSync(path, 'utf8');
+      if (collectRustExportNames(rust).size > 0 || hasRustConstGroup(rust)) sources.push({ module, path });
     }
   }
   return sources;

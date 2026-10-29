@@ -74,6 +74,8 @@ const ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER: &str = "@entity-definitely-ini
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
+// A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
+const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
 // Free functions and structs by declaring module (`module SEP name SEP public|private`). A name used
 // in a source resolves to that source's own declaration, else to the single public declaration in
@@ -336,6 +338,18 @@ fn array_type(inner: String) -> String {
     return format!("{inner}[]");
 }
 
+// The `Owner.Member` a `const-group` member constant is referenced as.
+// flight-lint: allow(hashmap-iteration) const-group validation gives each constant at most one group
+fn const_group_member_reference<'a>(
+    context: &'a HashSet<String>,
+    rust_name: &str,
+) -> Option<&'a str> {
+    let prefix = format!("{CONST_GROUP_MEMBER_MARKER}{rust_name}:");
+    return context
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
 // The TypeScript name of a Rust item or path segment: SCREAMING_CASE constants keep their name, and
 // everything else is lower camel case.
 pub(crate) fn default_item_name(segment: &str) -> String {
@@ -392,6 +406,33 @@ pub(crate) fn dependency_export_name_local_items(context: &HashSet<String>) -> B
         .collect();
 }
 
+// `export const Owner = { Member: value, ... };` from the `const-group` members, in source order, each
+// keeping its documentation and its literal spelling.
+// flight-lint: allow(hashmap-iteration) constants are a Vec slice in Rust source order
+fn emit_const_group(
+    out: &mut String,
+    owner: &str,
+    members: &[(String, String, String)],
+    constants: &[syn::ItemConst],
+    entities: &HashSet<String>,
+) -> Result<(), CompileError> {
+    writeln!(out, "export const {owner} = {{").expect("writing to a String cannot fail");
+    for (rust_name, member_owner, member) in members {
+        if member_owner != owner {
+            continue;
+        }
+        let constant = constants
+            .iter()
+            .find(|constant| constant.ident == rust_name.as_str())
+            .expect("const-group members come from these constants");
+        emit_documentation(out, &constant.attrs, 1);
+        let value = emit_expression_for_type(&constant.expr, &constant.ty, entities)?;
+        writeln!(out, "  {member}: {value},").expect("writing to a String cannot fail");
+    }
+    out.push_str("};\n");
+    return Ok(());
+}
+
 // Whether an enum emits a runtime value binding: a TypeScript `enum`, or the `const` object of an exact
 // string union. Numeric, data and other string unions are type-only.
 fn enum_has_runtime_binding(program: &Program, rust_enum: &syn::ItemEnum) -> bool {
@@ -416,8 +457,6 @@ pub(crate) fn export_name<'a>(context: &'a HashSet<String>, rust_name: &str) -> 
         .find_map(|marker| marker.strip_prefix(&prefix));
 }
 
-// `flight_*` crates imported with a wildcard anywhere in a use tree (`use flight_codec::*;`,
-// `use {flight_codec::*, ...};`, `use flight_codec::{*, Name};`), as contract modules.
 fn foreign_wildcard_modules(uses: &[&syn::ItemUse]) -> Vec<String> {
     fn collect(tree: &syn::UseTree, root: Option<&str>, modules: &mut BTreeSet<String>) {
         match tree {
@@ -489,12 +528,19 @@ fn insert_dependency_export_name_context(
             .get(symbol.module.as_str())
             .and_then(|names| names.get(symbol.imported.as_str()))
         {
+            if target.contains('.') {
+                return Err(compile_error(format!(
+                    "importing `const-group` member `{}` from `{}` has no portable lowering; it is `{target}` in TypeScript",
+                    symbol.imported, symbol.module
+                )));
+            }
             references.insert(
                 symbol.local.clone(),
                 (target.to_string(), symbol.module.clone()),
             );
         }
     }
+    reject_const_group_wildcard_imports(dependencies, wildcard_modules)?;
     for module in wildcard_modules {
         for (item, target) in modules.get(module.as_str()).into_iter().flatten() {
             let reference = (target.to_string(), module.clone());
@@ -1322,6 +1368,28 @@ fn reject_async_function(function: &ItemFn) -> Result<(), CompileError> {
             "portable `async fn {}` has no portable lowering",
             function.sig.ident
         )));
+    }
+    return Ok(());
+}
+
+// `flight_*` crates imported with a wildcard anywhere in a use tree (`use flight_codec::*;`,
+// `use {flight_codec::*, ...};`, `use flight_codec::{*, Name};`), as contract modules.
+// A wildcard import of a dependency module that declares a `const-group` would bring its members in
+// under their Rust names, which have no portable TypeScript lowering; it fails closed.
+// flight-lint: allow(hashmap-iteration) each dependency's names are a BTreeMap
+fn reject_const_group_wildcard_imports(
+    dependencies: &[(BTreeMap<String, String>, &str)],
+    wildcard_modules: &[String],
+) -> Result<(), CompileError> {
+    for (names, module) in dependencies {
+        if !wildcard_modules.iter().any(|wildcard| wildcard == module) {
+            continue;
+        }
+        if let Some((item, target)) = names.iter().find(|(_, target)| target.contains('.')) {
+            return Err(compile_error(format!(
+                "a wildcard import of `{module}` would bring in `const-group` member `{item}` (`{target}` in TypeScript), which has no portable lowering"
+            )));
+        }
     }
     return Ok(());
 }
@@ -4555,6 +4623,13 @@ fn generation_context_with_types(
                     format!("{FROZEN_OBJECT_MARKER}{rust_name}:{typescript_name}")
                 }),
         );
+        context.extend(
+            crate::model::const_group_members(&program.const_groups, &program.constants)?
+                .into_iter()
+                .map(|(rust_name, owner, member)| {
+                    format!("{CONST_GROUP_MEMBER_MARKER}{rust_name}:{owner}.{member}")
+                }),
+        );
         insert_string_union_context(&mut context, program.string_unions.keys());
         let mut owned_facts = Vec::new();
         let mut type_path_context = HashSet::new();
@@ -6234,6 +6309,14 @@ pub(crate) fn emit_expression(
                     frozen_object_name(entities, &path.path.segments[0].ident.to_string())
             {
                 return Ok(name.to_string());
+            }
+            if path.qself.is_none()
+                && path.path.leading_colon.is_none()
+                && path.path.segments.len() == 1
+                && let Some(reference) =
+                    const_group_member_reference(entities, &path.path.segments[0].ident.to_string())
+            {
+                return Ok(reference.to_string());
             }
             if expression_is_associated_path(expression, "f32", "min")
                 || expression_is_associated_path(expression, "f64", "min")
@@ -10500,6 +10583,10 @@ pub(crate) fn emit_program(
     let mut expression_context =
         generation_context_with_types(&program_sources, &identity_context, None, false)?;
     expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));
+    reject_const_group_wildcard_imports(
+        dependency_export_names,
+        &foreign_wildcard_modules(&program.uses.iter().collect::<Vec<_>>()),
+    )?;
     insert_dependency_export_name_context(
         &mut expression_context,
         dependency_export_names,
@@ -10640,15 +10727,29 @@ pub(crate) fn emit_program(
         )?;
         body.push('\n');
     }
+    let group_members =
+        crate::model::const_group_members(&program.const_groups, &program.constants)?;
+    let mut emitted_groups = BTreeSet::new();
     for constant in &program.constants {
+        let rust_name = constant.ident.to_string();
+        if let Some((_, owner, _)) = group_members.iter().find(|(name, _, _)| *name == rust_name) {
+            if emitted_groups.insert(owner.clone()) {
+                emit_const_group(
+                    &mut body,
+                    owner,
+                    &group_members,
+                    &program.constants,
+                    &source_context,
+                )?;
+                body.push('\n');
+            }
+            continue;
+        }
         emit_constant(
             &mut body,
             constant,
             &source_context,
-            program
-                .frozen_objects
-                .get(&constant.ident.to_string())
-                .map(String::as_str),
+            program.frozen_objects.get(&rust_name).map(String::as_str),
         )?;
         body.push('\n');
     }

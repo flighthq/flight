@@ -13,6 +13,9 @@ pub(crate) struct Program {
     pub(crate) callable_field_parameters: BTreeMap<(String, String), Vec<String>>,
     pub(crate) callable_parameters: BTreeMap<String, Vec<String>>,
     pub(crate) constants: Vec<ItemConst>,
+    // `const-group` directives: TypeScript const-object name to the Rust constant-name prefix whose
+    // public constants become its members, in source order (`KEY_CODE_A` -> `KeyCode.A`).
+    pub(crate) const_groups: BTreeMap<String, String>,
     pub(crate) data_unions: HashSet<String>,
     pub(crate) entities: HashSet<String>,
     // Entity struct name to its one designated crate-private state field, which TypeScript stores in
@@ -105,6 +108,68 @@ fn collect_standard_constant(
     }
 }
 
+// The members of each `const-group`, in source order: every constant whose name starts with the
+// group's prefix, as `(rust_name, owner, member)`. A group must match at least one constant, every
+// member must be public, share one type, and leave a TypeScript identifier after the prefix, and no
+// constant may belong to two groups.
+// flight-lint: allow(hashmap-iteration) constants are a Vec slice in Rust source order
+pub(crate) fn const_group_members(
+    groups: &BTreeMap<String, String>,
+    constants: &[ItemConst],
+) -> Result<Vec<(String, String, String)>, CompileError> {
+    let mut members = Vec::new();
+    for constant in constants {
+        let rust_name = constant.ident.to_string();
+        let owners = groups
+            .iter()
+            .filter(|(_, prefix)| rust_name.starts_with(prefix.as_str()))
+            .collect::<Vec<_>>();
+        let [(owner, prefix)] = owners.as_slice() else {
+            if owners.len() > 1 {
+                return Err(compile_error(format!(
+                    "constant `{rust_name}` matches more than one `const-group` prefix"
+                )));
+            }
+            continue;
+        };
+        let member = rust_name[prefix.len()..].to_string();
+        if !is_typescript_identifier(&member) {
+            return Err(compile_error(format!(
+                "`const-group {owner}` member `{rust_name}` leaves `{member}`, which is not a TypeScript identifier"
+            )));
+        }
+        if !is_public(&constant.vis) {
+            return Err(compile_error(format!(
+                "`const-group {owner}` member `{rust_name}` must be public"
+            )));
+        }
+        members.push((rust_name, (*owner).clone(), member, constant));
+    }
+    for (owner, prefix) in groups {
+        let typed = members
+            .iter()
+            .filter(|(_, member_owner, _, _)| member_owner == owner)
+            .map(|(_, _, _, constant)| {
+                quote::ToTokens::to_token_stream(constant.ty.as_ref()).to_string()
+            })
+            .collect::<BTreeSet<_>>();
+        if typed.is_empty() {
+            return Err(compile_error(format!(
+                "`const-group {owner}` prefix `{prefix}` matches no constant"
+            )));
+        }
+        if typed.len() > 1 {
+            return Err(compile_error(format!(
+                "`const-group {owner}` members must share one type"
+            )));
+        }
+    }
+    return Ok(members
+        .into_iter()
+        .map(|(rust_name, owner, member, _)| (rust_name, owner, member))
+        .collect());
+}
+
 fn has_attribute(attributes: &[Attribute], expected: &str) -> bool {
     return attributes
         .iter()
@@ -147,15 +212,61 @@ fn is_typescript_identifier(name: &str) -> bool {
         });
 }
 
+// `//! flight-compiler: const-group <TypeScriptName> <PREFIX>`: the public constants named `<PREFIX>*`
+// become one exported TypeScript const object.
+fn parse_const_groups(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut groups = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("const-group") {
+            continue;
+        }
+        let (Some(owner), Some(prefix), None) = (fields.next(), fields.next(), fields.next())
+        else {
+            return Err(compile_error(
+                "`flight-compiler: const-group` requires exactly a TypeScript name and a constant prefix",
+            ));
+        };
+        if !is_typescript_identifier(owner) {
+            return Err(compile_error(format!(
+                "`flight-compiler: const-group` name `{owner}` is not a TypeScript identifier"
+            )));
+        }
+        if prefix.is_empty()
+            || !prefix
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || character == '_')
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: const-group {owner}` prefix `{prefix}` is not a constant-name prefix"
+            )));
+        }
+        if groups
+            .insert(owner.to_string(), prefix.to_string())
+            .is_some()
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: const-group {owner}` is declared more than once"
+            )));
+        }
+    }
+    return Ok(groups);
+}
+
 // The validated `export-name` directives of a dependency source, which a consuming package needs to
-// import and reference the source's mapped public items by their TypeScript names.
+// import and reference the source's mapped public items by their TypeScript names. Each `const-group`
+// member maps to its `Owner.Member` reference.
 pub(crate) fn parse_export_name_metadata(
     source: &str,
 ) -> Result<BTreeMap<String, String>, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
     let directives = parse_export_names(&file.attrs)?;
-    if directives.is_empty() {
+    let const_groups = parse_const_groups(&file.attrs)?;
+    if directives.is_empty() && const_groups.is_empty() {
         return Ok(directives);
     }
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
@@ -177,7 +288,16 @@ pub(crate) fn parse_export_name_metadata(
         &constants,
         &statics,
     )?;
-    return Ok(directives);
+    let mut metadata = directives;
+    for (rust_name, owner, member) in const_group_members(&const_groups, &constants)? {
+        if metadata.contains_key(&rust_name) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{rust_name}` is already named by `const-group {owner}`"
+            )));
+        }
+        metadata.insert(rust_name, format!("{owner}.{member}"));
+    }
+    return Ok(metadata);
 }
 
 pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
@@ -196,6 +316,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             "callable-field-parameters"
             | "callable-parameters"
             | "companion"
+            | "const-group"
             | "contract"
             | "data-union"
             | "entity-runtime-state"
@@ -324,6 +445,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let entity_runtime_states = parse_entity_runtime_states(&file.attrs)?;
     let export_names = parse_export_names(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
+    let const_groups = parse_const_groups(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
     let numeric_union_names = parse_numeric_unions(&file.attrs)?;
@@ -427,6 +549,13 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         &string_unions,
     )?;
     validate_frozen_objects(&frozen_objects, &constants)?;
+    for (rust_name, owner, _) in const_group_members(&const_groups, &constants)? {
+        if frozen_objects.contains_key(&rust_name) || export_names.contains_key(&rust_name) {
+            return Err(compile_error(format!(
+                "`const-group {owner}` member `{rust_name}` is also named by another directive"
+            )));
+        }
+    }
     validate_export_names(
         &export_names,
         &frozen_objects,
@@ -441,6 +570,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         callable_field_parameters,
         callable_parameters,
         constants,
+        const_groups,
         data_unions,
         entities,
         entity_runtime_states,

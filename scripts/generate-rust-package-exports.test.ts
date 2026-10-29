@@ -14,6 +14,7 @@ import {
   collectStaleGeneratedFileNames,
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
+  hasRustConstGroup,
   mergeRustExportNames,
   renderCompanionContractExports,
   renderGeneratedImports,
@@ -73,6 +74,16 @@ describe('dependencyAliasArguments', () => {
       '@flighthq/encoding/contract',
     ]);
     expect(dependencyAliasArguments([])).toEqual([]);
+  });
+});
+
+describe('hasRustConstGroup', () => {
+  it('detects a const-group directive only', () => {
+    expect(
+      hasRustConstGroup('//! flight-compiler: const-group KeyCode KEY_CODE_\npub const KEY_CODE_A: i32 = 1;\n'),
+    ).toBe(true);
+    expect(hasRustConstGroup('//! flight-compiler: export-name decode_utf8 decodeUTF8\n')).toBe(false);
+    expect(hasRustConstGroup('// flight-compiler: const-group KeyCode KEY_CODE_\n')).toBe(false);
   });
 });
 

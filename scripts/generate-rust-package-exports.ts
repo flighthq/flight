@@ -363,6 +363,12 @@ export function dependencyAliasArguments(sources: readonly DependencySource[]): 
   ]);
 }
 
+// Whether a Rust source declares a `//! flight-compiler: const-group <Name> <PREFIX>` directive, whose
+// members a consuming package must learn about to fail closed on importing them.
+export function hasRustConstGroup(rust: string): boolean {
+  return /^\/\/!\s*flight-compiler:\s*const-group\s+\S+\s+\S+\s*$/m.test(rust);
+}
+
 export function hasGeneratedProvenanceHeader(contents: string): boolean {
   return contents.startsWith('// Generated from crates/');
 }
