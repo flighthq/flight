@@ -70,10 +70,10 @@ export function getGamepadAxisName(mapping: GamepadMapping, index: number): Game
   if (mapping !== 'standard') {
     return undefined;
   }
-  if (index < 0 || index >= STANDARD_AXIS_NAMES.length) {
+  if (index < 0 || index >>> 0 >= STANDARD_AXIS_NAMES.length) {
     return undefined;
   }
-  return STANDARD_AXIS_NAMES[index];
+  return STANDARD_AXIS_NAMES[index >>> 0];
 }
 
 /**
@@ -83,8 +83,8 @@ export function getGamepadButtonName(mapping: GamepadMapping, index: number): Ga
   if (mapping !== 'standard') {
     return undefined;
   }
-  if (index < 0 || index >= STANDARD_BUTTON_NAMES.length) {
+  if (index < 0 || index >>> 0 >= STANDARD_BUTTON_NAMES.length) {
     return undefined;
   }
-  return STANDARD_BUTTON_NAMES[index];
+  return STANDARD_BUTTON_NAMES[index >>> 0];
 }
