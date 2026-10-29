@@ -24,8 +24,8 @@ export interface SelectionModifierState {
 }
 
 export interface SelectionSignals<NodeType extends SelectionNode = SelectionNode> {
-  onActiveChange: Signal<(active: NodeType | null) => void>;
-  onChange: Signal<(selected: readonly NodeType[]) => void>;
+  onActiveChange: Signal<NodeType | null>;
+  onChange: Signal<readonly NodeType[]>;
 }
 
 declare const SelectionStateNodeTypeKey: unique symbol;

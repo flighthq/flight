@@ -63,8 +63,8 @@ export interface SelectionModifierState {
 }
 
 export interface SelectionSignals<NodeType extends NodeRef = NodeRef> {
-  onActiveChange: Signal<(active: NodeType | null) => void>;
-  onChange: Signal<(selected: readonly NodeType[]) => void>;
+  onActiveChange: Signal<NodeType | null>;
+  onChange: Signal<readonly NodeType[]>;
 }
 
 declare const SelectionStateNodeTypeKey: unique symbol;
