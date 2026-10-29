@@ -251,6 +251,6 @@ describe('parseXmlDocumentInternalDtdEntities', () => {
   it('terminates on an entity that references itself', () => {
     const xml = doctype('<!ENTITY loop "&loop;">', '&loop;');
     const root = parseXmlDocument(xml);
-    expect(root !== undefined).toBe(true);
+    expect(root !== null).toBe(true);
   });
 });
