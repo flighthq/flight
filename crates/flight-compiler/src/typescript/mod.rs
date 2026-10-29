@@ -13005,6 +13005,8 @@ pub(crate) fn emit_pattern(pattern: &Pat) -> Result<String, CompileError> {
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
+        Pat::Paren(paren) => emit_pattern(&paren.pat),
+        Pat::Type(typed) => emit_pattern(&typed.pat),
         Pat::Wild(_) => Ok("_".to_string()),
         _ => Err(compile_error("unsupported portable loop pattern")),
     };
