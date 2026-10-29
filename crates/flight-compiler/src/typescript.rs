@@ -24,6 +24,7 @@ const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
 const BINDING_MARKER: &str = "@binding:";
 const BINDING_FACT_MARKER: &str = "@binding-fact:";
 const BINDING_SITE_MARKER: &str = "@binding-site:";
+const BINDING_FACT_SEPARATOR: char = '\u{1e}';
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
 // The module of the program being emitted; struct and function facts resolve against it.
 const CURRENT_SOURCE_MARKER: &str = "@current-source:";
@@ -70,6 +71,7 @@ const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
 const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
 const RETURN_TYPE_MARKER: &str = "@return-type:";
+const RETURN_BINDING_FACT_MARKER: &str = "@return-binding-fact:";
 const RETURNS_U32_MARKER: &str = "@returns-u32";
 // Struct fields (`struct identity SEP field`) and locals or parameters whose every binding is declared
 // as a Rust `Vec`, slice or fixed array, the operand types `.extend()` and `.extend_from_slice()` lower
@@ -86,6 +88,7 @@ const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
 const VITEST_FUNCTION_RETURN_CANDIDATE_MARKER: &str = "@vitest-function-return-candidate:";
 const VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER: &str = "@vitest-function-return-unresolved:";
+const VITEST_LOCAL_CRATE_ALIAS_MARKER: &str = "@vitest-local-crate-alias:";
 const VITEST_LOCAL_CRATE_MARKER: &str = "@vitest-local-crate:";
 const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
 const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
@@ -125,10 +128,23 @@ struct UsePath {
 // A fact proven about a lexical binding's value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum BindingFact {
-    Option(String),
-    Sequence,
+    Option(Box<BindingFact>),
+    Sequence(Box<BindingFact>),
     Structure(String),
+    Tuple(Vec<BindingFact>),
     Unknown,
+    UnresolvedPattern,
+}
+
+impl BindingFact {
+    fn has_source_structure(&self) -> bool {
+        return match self {
+            Self::Option(payload) | Self::Sequence(payload) => payload.has_source_structure(),
+            Self::Structure(_) => true,
+            Self::Tuple(facts) => facts.iter().any(Self::has_source_structure),
+            Self::Unknown | Self::UnresolvedPattern => false,
+        };
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -561,6 +577,32 @@ fn rust_type_is_sequence(rust_type: &Type) -> bool {
     };
 }
 
+fn sequence_inner_type(rust_type: &Type) -> Option<&Type> {
+    return match rust_type {
+        Type::Array(array) => Some(&array.elem),
+        Type::Group(group) => sequence_inner_type(&group.elem),
+        Type::Paren(paren) => sequence_inner_type(&paren.elem),
+        Type::Reference(reference) => sequence_inner_type(&reference.elem),
+        Type::Slice(slice) => Some(&slice.elem),
+        Type::Path(path) => {
+            let segment = path.path.segments.last()?;
+            if segment.ident != "Vec" {
+                return None;
+            }
+            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return None;
+            };
+            let mut types = arguments.args.iter().filter_map(|argument| match argument {
+                GenericArgument::Type(rust_type) => Some(rust_type),
+                _ => None,
+            });
+            let inner = types.next()?;
+            types.next().is_none().then_some(inner)
+        }
+        _ => None,
+    };
+}
+
 fn rust_type_is_string(rust_type: &Type) -> bool {
     return matches!(named_type(rust_type).as_deref(), Some("String" | "str"));
 }
@@ -918,18 +960,106 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
 
         fn bind_pattern(&mut self, pattern: &Pat, fact: BindingFact) {
             match pattern {
-                Pat::Ident(identifier) if identifier.subpat.is_none() => {
-                    self.bind(&identifier.ident, fact);
-                }
-                Pat::Type(typed) if matches!(typed.pat.as_ref(), Pat::Ident(_)) => {
-                    let fact = self.typed_fact(&typed.ty);
-                    self.bind_pattern(&typed.pat, fact);
-                }
-                _ => {
-                    for identifier in pattern_identifiers(pattern) {
-                        self.bind(identifier, BindingFact::Unknown);
+                Pat::Ident(identifier) => {
+                    self.bind(&identifier.ident, fact.clone());
+                    if let Some((_, subpattern)) = &identifier.subpat {
+                        self.bind_pattern(subpattern, fact);
                     }
                 }
+                Pat::Paren(paren) => self.bind_pattern(&paren.pat, fact),
+                Pat::Reference(reference) => self.bind_pattern(&reference.pat, fact),
+                Pat::Slice(slice) => {
+                    let BindingFact::Sequence(element) = fact else {
+                        self.bind_unresolved_pattern(pattern);
+                        return;
+                    };
+                    if slice
+                        .elems
+                        .iter()
+                        .any(|element| matches!(element, Pat::Rest(_)))
+                    {
+                        self.bind_unresolved_pattern(pattern);
+                        return;
+                    }
+                    for pattern in &slice.elems {
+                        self.bind_pattern(pattern, (*element).clone());
+                    }
+                }
+                Pat::Struct(structure) => {
+                    let BindingFact::Structure(identity) = fact else {
+                        self.bind_unresolved_pattern(pattern);
+                        return;
+                    };
+                    for field in &structure.fields {
+                        let syn::Member::Named(name) = &field.member else {
+                            self.bind_unresolved_pattern(&field.pat);
+                            continue;
+                        };
+                        let option_prefix = format!(
+                            "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}"
+                        );
+                        let field_fact = unique_marker_suffix(self.context, &option_prefix)
+                            .map(|payload| {
+                                BindingFact::Option(Box::new(if payload.is_empty() {
+                                    BindingFact::Unknown
+                                } else {
+                                    BindingFact::Structure(payload)
+                                }))
+                            })
+                            .or_else(|| {
+                                self.context
+                                    .contains(&format!(
+                                        "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{name}"
+                                    ))
+                                    .then(|| BindingFact::Sequence(Box::new(BindingFact::Unknown)))
+                            })
+                            .unwrap_or(BindingFact::UnresolvedPattern);
+                        self.bind_pattern(&field.pat, field_fact);
+                    }
+                }
+                Pat::Tuple(tuple) => {
+                    let BindingFact::Tuple(facts) = fact else {
+                        self.bind_unresolved_pattern(pattern);
+                        return;
+                    };
+                    if tuple.elems.len() != facts.len()
+                        || tuple
+                            .elems
+                            .iter()
+                            .any(|element| matches!(element, Pat::Rest(_)))
+                    {
+                        self.bind_unresolved_pattern(pattern);
+                        return;
+                    }
+                    for (pattern, fact) in tuple.elems.iter().zip(facts) {
+                        self.bind_pattern(pattern, fact);
+                    }
+                }
+                Pat::TupleStruct(tuple)
+                    if tuple
+                        .path
+                        .segments
+                        .last()
+                        .is_some_and(|segment| segment.ident == "Some")
+                        && tuple.elems.len() == 1 =>
+                {
+                    let BindingFact::Option(payload) = fact else {
+                        self.bind_unresolved_pattern(pattern);
+                        return;
+                    };
+                    self.bind_pattern(&tuple.elems[0], *payload);
+                }
+                Pat::Type(typed) => {
+                    self.bind_pattern(&typed.pat, self.typed_fact(&typed.ty));
+                }
+                Pat::Wild(_) | Pat::Rest(_) => {}
+                _ => self.bind_unresolved_pattern(pattern),
+            }
+        }
+
+        fn bind_unresolved_pattern(&mut self, pattern: &Pat) {
+            for identifier in pattern_identifiers(pattern) {
+                self.bind(identifier, BindingFact::UnresolvedPattern);
             }
         }
 
@@ -944,11 +1074,24 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn initializer_fact(&self, expression: &Expr) -> BindingFact {
-            if expression_is_vec_construction(expression) {
-                return BindingFact::Sequence;
-            }
             return match expression {
+                Expr::Array(array) => BindingFact::Sequence(Box::new(
+                    self.merged_facts(
+                        array
+                            .elems
+                            .iter()
+                            .map(|element| self.initializer_fact(element)),
+                    ),
+                )),
                 Expr::Call(call) => {
+                    if expression_is_path(&call.func, "Some") && call.args.len() == 1 {
+                        let payload = self.initializer_fact(&call.args[0]);
+                        return if payload.has_source_structure() {
+                            BindingFact::Option(Box::new(payload))
+                        } else {
+                            BindingFact::Unknown
+                        };
+                    }
                     let Expr::Path(path) = call.func.as_ref() else {
                         return BindingFact::Unknown;
                     };
@@ -958,8 +1101,13 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     {
                         return BindingFact::Unknown;
                     }
+                    if let Some(fact) =
+                        call_fact(self.context, RETURN_BINDING_FACT_MARKER, &path.path)
+                    {
+                        return binding_fact_from_marker(&fact);
+                    }
                     if call_fact(self.context, SEQUENCE_RETURN_MARKER, &path.path).is_some() {
-                        return BindingFact::Sequence;
+                        return BindingFact::Sequence(Box::new(BindingFact::Unknown));
                     }
                     if let Some(identity) =
                         call_fact(self.context, STRUCT_RETURN_MARKER, &path.path)
@@ -967,25 +1115,174 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     {
                         return BindingFact::Structure(identity);
                     }
-                    call_fact(self.context, OPTION_RETURN_MARKER, &path.path)
-                        .map_or(BindingFact::Unknown, BindingFact::Option)
+                    call_fact(self.context, OPTION_RETURN_MARKER, &path.path).map_or(
+                        BindingFact::Unknown,
+                        |payload| {
+                            BindingFact::Option(Box::new(if payload.is_empty() {
+                                BindingFact::Unknown
+                            } else {
+                                BindingFact::Structure(payload)
+                            }))
+                        },
+                    )
                 }
                 Expr::Group(group) => self.initializer_fact(&group.expr),
+                Expr::Field(_) => self.option_fact(expression).unwrap_or(BindingFact::Unknown),
+                Expr::Macro(invocation) if invocation.mac.path.is_ident("vec") => {
+                    if invocation.mac.tokens.is_empty() {
+                        return BindingFact::Unknown;
+                    }
+                    let repeat_parser = |input: syn::parse::ParseStream<'_>| {
+                        let value = input.parse::<Expr>()?;
+                        input.parse::<Token![;]>()?;
+                        let _: Expr = input.parse()?;
+                        if !input.is_empty() {
+                            return Err(input.error("unexpected tokens after `vec!` repeat length"));
+                        }
+                        return Ok(value);
+                    };
+                    let element = if let Ok(value) =
+                        repeat_parser.parse2(invocation.mac.tokens.clone())
+                    {
+                        self.initializer_fact(&value)
+                    } else if let Ok(values) = Punctuated::<Expr, Token![,]>::parse_terminated
+                        .parse2(invocation.mac.tokens.clone())
+                    {
+                        self.merged_facts(values.iter().map(|value| self.initializer_fact(value)))
+                    } else {
+                        BindingFact::Unknown
+                    };
+                    BindingFact::Sequence(Box::new(element))
+                }
                 Expr::Paren(paren) => self.initializer_fact(&paren.expr),
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "as_mut" | "as_ref" | "cloned" | "copied"
+                        ) =>
+                {
+                    if let Some(fact) = self.option_fact(expression) {
+                        return fact;
+                    }
+                    self.initializer_fact(&call.receiver)
+                }
+                Expr::Struct(structure) if structure.qself.is_none() => {
+                    let identity = match current_source(self.context) {
+                        Some(current) => resolve_path_owner(
+                            self.context,
+                            STRUCT_OWNER_MARKER,
+                            &current,
+                            &structure.path,
+                        )
+                        .map(|(module, declaration)| {
+                            format!("{module}{PROVENANCE_SEPARATOR}{declaration}")
+                        }),
+                        None => vitest_path_binding_name(&structure.path, self.context)
+                            .and_then(|name| vitest_struct_owner(self.context, &name)),
+                    };
+                    identity.map_or(BindingFact::Unknown, BindingFact::Structure)
+                }
+                Expr::Tuple(tuple) => BindingFact::Tuple(
+                    tuple
+                        .elems
+                        .iter()
+                        .map(|element| self.initializer_fact(element))
+                        .collect(),
+                ),
                 expression => single_path_identifier(expression)
                     .and_then(|name| self.fact_of(&name))
                     .unwrap_or(BindingFact::Unknown),
             };
         }
 
+        fn option_fact(&self, expression: &Expr) -> Option<BindingFact> {
+            return match expression {
+                Expr::Call(call) => {
+                    let Expr::Path(path) = call.func.as_ref() else {
+                        return None;
+                    };
+                    let payload = call_fact(self.context, OPTION_RETURN_MARKER, &path.path)?;
+                    Some(BindingFact::Option(Box::new(if payload.is_empty() {
+                        BindingFact::Unknown
+                    } else {
+                        BindingFact::Structure(payload)
+                    })))
+                }
+                Expr::Field(field) => {
+                    let syn::Member::Named(field_name) = &field.member else {
+                        return None;
+                    };
+                    let base = single_path_identifier(&field.base)?;
+                    let BindingFact::Structure(identity) = self.fact_of(&base)? else {
+                        return None;
+                    };
+                    let payload = unique_marker_suffix(
+                        self.context,
+                        &format!(
+                            "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                        ),
+                    )?;
+                    Some(BindingFact::Option(Box::new(if payload.is_empty() {
+                        BindingFact::Unknown
+                    } else {
+                        BindingFact::Structure(payload)
+                    })))
+                }
+                Expr::Group(group) => self.option_fact(&group.expr),
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "as_mut" | "as_ref" | "cloned" | "copied"
+                        ) =>
+                {
+                    self.option_fact(&call.receiver)
+                }
+                Expr::Paren(paren) => self.option_fact(&paren.expr),
+                Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+                    match self.fact_of(&path.path.segments[0].ident.to_string())? {
+                        fact @ BindingFact::Option(_) => Some(fact),
+                        _ => None,
+                    }
+                }
+                Expr::Reference(reference) => self.option_fact(&reference.expr),
+                _ => None,
+            };
+        }
+
+        fn merged_facts(&self, facts: impl Iterator<Item = BindingFact>) -> BindingFact {
+            let mut facts = facts;
+            let Some(first) = facts.next() else {
+                return BindingFact::Unknown;
+            };
+            return if facts.all(|fact| fact == first) {
+                first
+            } else {
+                BindingFact::Unknown
+            };
+        }
+
         fn typed_fact(&self, rust_type: &Type) -> BindingFact {
             if let Some(inner) = option_inner_type(rust_type) {
-                return BindingFact::Option(
-                    context_type_identity(self.context, inner).unwrap_or_default(),
-                );
+                return BindingFact::Option(Box::new(self.typed_fact(inner)));
             }
-            if rust_type_is_sequence(rust_type) {
-                return BindingFact::Sequence;
+            if let Some(inner) = sequence_inner_type(rust_type) {
+                let element = self.typed_fact(inner);
+                return BindingFact::Sequence(Box::new(if element.has_source_structure() {
+                    element
+                } else {
+                    BindingFact::Unknown
+                }));
+            }
+            if let Type::Tuple(tuple) = rust_type {
+                return BindingFact::Tuple(
+                    tuple
+                        .elems
+                        .iter()
+                        .map(|element| self.typed_fact(element))
+                        .collect(),
+                );
             }
             return context_type_identity(self.context, rust_type)
                 .map_or(BindingFact::Unknown, BindingFact::Structure);
@@ -993,16 +1290,6 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     }
 
     impl<'ast> syn::visit::Visit<'ast> for Resolver<'_> {
-        fn visit_arm(&mut self, arm: &'ast syn::Arm) {
-            self.scopes.push(BTreeMap::new());
-            self.bind_pattern(&arm.pat, BindingFact::Unknown);
-            if let Some((_, guard)) = &arm.guard {
-                self.visit_expr(guard);
-            }
-            self.visit_expr(&arm.body);
-            self.scopes.pop();
-        }
-
         fn visit_block(&mut self, block: &'ast syn::Block) {
             self.scopes.push(BTreeMap::new());
             syn::visit::visit_block(self, block);
@@ -1020,8 +1307,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
 
         fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
             self.visit_expr(&expression.expr);
+            let fact = match self.initializer_fact(&expression.expr) {
+                BindingFact::Sequence(element) => *element,
+                _ => BindingFact::UnresolvedPattern,
+            };
             self.scopes.push(BTreeMap::new());
-            self.bind_pattern(&expression.pat, BindingFact::Unknown);
+            self.bind_pattern(&expression.pat, fact);
             self.visit_block(&expression.body);
             self.scopes.pop();
         }
@@ -1038,7 +1329,28 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
 
         fn visit_expr_let(&mut self, expression: &'ast syn::ExprLet) {
             self.visit_expr(&expression.expr);
-            self.bind_pattern(&expression.pat, BindingFact::Unknown);
+            let fact = match self.initializer_fact(&expression.expr) {
+                BindingFact::Unknown => BindingFact::UnresolvedPattern,
+                fact => fact,
+            };
+            self.bind_pattern(&expression.pat, fact);
+        }
+
+        fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
+            self.visit_expr(&expression.expr);
+            let fact = match self.initializer_fact(&expression.expr) {
+                BindingFact::Unknown => BindingFact::UnresolvedPattern,
+                fact => fact,
+            };
+            for arm in &expression.arms {
+                self.scopes.push(BTreeMap::new());
+                self.bind_pattern(&arm.pat, fact.clone());
+                if let Some((_, guard)) = &arm.guard {
+                    self.visit_expr(guard);
+                }
+                self.visit_expr(&arm.body);
+                self.scopes.pop();
+            }
         }
 
         fn visit_expr_while(&mut self, expression: &'ast syn::ExprWhile) {
@@ -1174,7 +1486,9 @@ fn function_path_fact(
             format!("{owner}{PROVENANCE_SEPARATOR}{declaration}")
         }
         None => {
-            let function = vitest_path_binding_name(path, entities)?;
+            let function = vitest_function_path_binding_name(path, entities)
+                .ok()
+                .flatten()?;
             unique_marker_suffix(
                 entities,
                 &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}"),
@@ -1794,21 +2108,215 @@ fn resolved_vitest_struct_binding(
     );
 }
 
+fn vitest_current_path_prefix(context: &HashSet<String>, local: &str) -> Option<String> {
+    if marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER).contains(local) {
+        return Some(local.to_string());
+    }
+    if matches!(local, "crate" | "self" | "super") {
+        let crates = marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER);
+        return (crates.len() == 1)
+            .then(|| crates.first().cloned())
+            .flatten();
+    }
+    unique_marker_suffix(
+        context,
+        &format!("{VITEST_LOCAL_CRATE_ALIAS_MARKER}{local}{PROVENANCE_SEPARATOR}"),
+    )
+}
+
+fn selected_vitest_binding_for_identity(
+    context: &HashSet<String>,
+    binding_marker: &str,
+    identity: &str,
+    declaration: &str,
+    kind: &str,
+) -> Result<String, CompileError> {
+    let bindings = provenance_binding_table(context, binding_marker)
+        .into_iter()
+        .filter_map(|(local, identities)| identities.contains(identity).then_some(local))
+        .collect::<BTreeSet<_>>();
+    if bindings.contains(declaration) {
+        return Ok(declaration.to_string());
+    }
+    if bindings.len() == 1 {
+        return Ok(bindings.into_iter().next().expect("one binding exists"));
+    }
+    let description = ProvenanceIdentity::encoded_description(identity);
+    if bindings.is_empty() {
+        return Err(compile_error(format!(
+            "qualified current-package {kind} path resolves to {description}, but contract.rs does not select that exact declaration"
+        )));
+    }
+    return Err(compile_error(format!(
+        "qualified current-package {kind} path resolves to {description}, which contract.rs exports under multiple aliases {}; use one selected contract binding explicitly",
+        bindings.into_iter().collect::<Vec<_>>().join(", ")
+    )));
+}
+
+fn resolved_qualified_vitest_identity(
+    context: &HashSet<String>,
+    segments: &[String],
+    canonical_crate: &str,
+    owner_marker_name: &str,
+    candidate_marker: &str,
+    kind: &str,
+) -> Result<String, CompileError> {
+    let declaration = segments.last().expect("a qualified path has a declaration");
+    let relative_module = segments[1..segments.len() - 1].join("::");
+    let mut identities = BTreeSet::new();
+    for module in [
+        format!("{canonical_crate}::{relative_module}"),
+        relative_module.clone(),
+    ] {
+        if let Some((owner, declaration)) = resolve_owner_inner(
+            context,
+            owner_marker_name,
+            &module,
+            declaration,
+            true,
+            &mut BTreeSet::new(),
+        ) {
+            identities.insert(format!("{owner}{PROVENANCE_SEPARATOR}{declaration}"));
+        }
+    }
+    identities.extend(
+        provenance_marker_values(context, candidate_marker, declaration)
+            .into_iter()
+            .filter(|identity| {
+                let Some((module, _)) = identity.split_once(PROVENANCE_SEPARATOR) else {
+                    return false;
+                };
+                let module = source_module_name(module);
+                module == relative_module
+                    || module == format!("{canonical_crate}::{relative_module}")
+            }),
+    );
+    if identities.len() == 1 {
+        return Ok(identities.into_iter().next().expect("one identity exists"));
+    }
+    let rust_path = segments.join("::");
+    if identities.is_empty() {
+        return Err(compile_error(format!(
+            "qualified current-package {kind} path `{rust_path}` does not resolve to one public declaration in its complete module"
+        )));
+    }
+    return Err(compile_error(format!(
+        "qualified current-package {kind} path `{rust_path}` is ambiguous between {}; preserve a unique module declaration",
+        identities
+            .iter()
+            .map(|identity| ProvenanceIdentity::encoded_description(identity))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )));
+}
+
+fn resolved_vitest_path_binding(
+    path: &syn::Path,
+    context: &HashSet<String>,
+    binding_marker: &str,
+    candidate_marker: &str,
+    owner_marker_name: &str,
+    kind: &str,
+) -> Result<Option<String>, CompileError> {
+    let Some(last) = path
+        .segments
+        .last()
+        .map(|segment| segment.ident.to_string())
+    else {
+        return Ok(None);
+    };
+    if path.segments.len() == 1 {
+        return Ok(Some(last));
+    }
+    let first = path
+        .segments
+        .first()
+        .expect("a qualified path has a first segment")
+        .ident
+        .to_string();
+    let Some(prefix) = vitest_current_path_prefix(context, &first) else {
+        return Ok(None);
+    };
+    let mut resolved_segments = prefix.split("::").map(str::to_string).collect::<Vec<_>>();
+    resolved_segments.extend(
+        path.segments
+            .iter()
+            .skip(1)
+            .map(|segment| segment.ident.to_string()),
+    );
+    let canonical_crate = resolved_segments
+        .first()
+        .expect("a current-package path has a crate root")
+        .clone();
+    if resolved_segments.len() == 2 {
+        let Some(identity) =
+            resolved_provenance_binding(context, binding_marker, candidate_marker, &last, kind)?
+        else {
+            return Err(compile_error(format!(
+                "qualified current-package {kind} path `{first}::{last}` is not selected by contract.rs"
+            )));
+        };
+        return selected_vitest_binding_for_identity(
+            context,
+            binding_marker,
+            &identity,
+            &last,
+            kind,
+        )
+        .map(Some);
+    }
+    let identity = resolved_qualified_vitest_identity(
+        context,
+        &resolved_segments,
+        &canonical_crate,
+        owner_marker_name,
+        candidate_marker,
+        kind,
+    )?;
+    return selected_vitest_binding_for_identity(context, binding_marker, &identity, &last, kind)
+        .map(Some);
+}
+
+pub(crate) fn vitest_function_path_binding_name(
+    path: &syn::Path,
+    context: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    return resolved_vitest_path_binding(
+        path,
+        context,
+        VITEST_PUBLIC_FUNCTION_MARKER,
+        VITEST_FUNCTION_CANDIDATE_MARKER,
+        FUNCTION_OWNER_MARKER,
+        "function",
+    );
+}
+
+pub(crate) fn vitest_struct_path_binding_name(
+    path: &syn::Path,
+    context: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    return resolved_vitest_path_binding(
+        path,
+        context,
+        VITEST_STRUCT_OWNER_MARKER,
+        VITEST_STRUCT_CANDIDATE_MARKER,
+        STRUCT_OWNER_MARKER,
+        "struct/type",
+    );
+}
+
 pub(crate) fn vitest_path_binding_name(
     path: &syn::Path,
     context: &HashSet<String>,
 ) -> Option<String> {
-    let last = path.segments.last()?.ident.to_string();
-    if path.segments.len() == 1 {
-        return Some(last);
-    }
-    let first = path.segments.first()?.ident.to_string();
-    if matches!(first.as_str(), "crate" | "self" | "super")
-        || marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER).contains(&first)
-    {
-        return Some(last);
-    }
-    return None;
+    return vitest_struct_path_binding_name(path, context)
+        .ok()
+        .flatten()
+        .or_else(|| {
+            vitest_function_path_binding_name(path, context)
+                .ok()
+                .flatten()
+        });
 }
 
 fn vitest_named_type(rust_type: &Type, context: &HashSet<String>) -> Option<String> {
@@ -1916,11 +2424,71 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
 ) {
     let local_crates = marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER);
     let all_rules = provenance_import_rules(uses, None);
+    let mut crate_aliases = local_crates
+        .iter()
+        .map(|local| (local.clone(), local.clone()))
+        .collect::<BTreeMap<_, _>>();
+    for _ in 0..=all_rules.len() {
+        let mut changed = false;
+        for rule in &all_rules {
+            let ProvenanceImportRule::Explicit {
+                exported,
+                imported,
+                module,
+            } = rule
+            else {
+                continue;
+            };
+            let canonical = match module.as_deref() {
+                None => crate_aliases.get(imported).cloned(),
+                Some(module) => {
+                    let mut segments = module.split("::");
+                    let first = segments.next().unwrap_or_default();
+                    let prefix = if matches!(first, "crate" | "self" | "super") {
+                        (local_crates.len() == 1)
+                            .then(|| local_crates.first().cloned())
+                            .flatten()
+                    } else {
+                        crate_aliases.get(first).cloned()
+                    };
+                    let Some(prefix) = prefix else {
+                        continue;
+                    };
+                    let mut target = prefix;
+                    for segment in segments {
+                        target.push_str("::");
+                        target.push_str(segment);
+                    }
+                    target.push_str("::");
+                    target.push_str(imported);
+                    Some(target)
+                }
+            };
+            let Some(canonical) = canonical else {
+                continue;
+            };
+            changed |= crate_aliases
+                .insert(exported.clone(), canonical.clone())
+                .as_ref()
+                != Some(&canonical);
+        }
+        if !changed {
+            break;
+        }
+    }
+    context.extend(
+        crate_aliases
+            .iter()
+            .filter(|(alias, canonical)| alias != canonical)
+            .map(|(alias, canonical)| {
+                format!("{VITEST_LOCAL_CRATE_ALIAS_MARKER}{alias}{PROVENANCE_SEPARATOR}{canonical}")
+            }),
+    );
     let module_is_local = |module: &str| {
         module == "crate"
-            || local_crates
+            || crate_aliases
                 .iter()
-                .any(|local| module == local || module.starts_with(&format!("{local}::")))
+                .any(|(local, _)| module == local || module.starts_with(&format!("{local}::")))
     };
     let foreign_wildcard = all_rules.iter().any(|rule| {
         matches!(rule, ProvenanceImportRule::Wildcard { module } if !module_is_local(module))
@@ -1935,7 +2503,7 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
                 exported,
                 imported,
                 module,
-            } if module.as_deref().is_none_or(module_is_local) => {
+            } if module.as_deref().is_none_or(&module_is_local) => {
                 Some((exported.clone(), imported.clone()))
             }
             ProvenanceImportRule::Explicit { .. } => None,
@@ -2012,6 +2580,10 @@ pub(crate) fn insert_vitest_helper_return_context<'a>(
         let ReturnType::Type(_, rust_type) = &helper.sig.output else {
             continue;
         };
+        context.insert(format!(
+            "{RETURN_BINDING_FACT_MARKER}{function_identity}{PROVENANCE_SEPARATOR}{}",
+            binding_fact_marker(&binding_fact_for_type(context, None, rust_type))
+        ));
         let Some(structure) = vitest_named_type(rust_type, context) else {
             continue;
         };
@@ -2034,6 +2606,7 @@ pub(crate) fn validate_vitest_function_provenance(
     struct ProvenanceUseCollector<'a> {
         calls: BTreeSet<String>,
         context: &'a HashSet<String>,
+        error: Option<CompileError>,
         scopes: Vec<BTreeSet<String>>,
         structures: BTreeSet<String>,
     }
@@ -2055,6 +2628,26 @@ pub(crate) fn validate_vitest_function_provenance(
                     .is_empty()
             {
                 self.structures.insert(name);
+            }
+        }
+
+        fn record_function_path(&mut self, path: &syn::Path) {
+            match vitest_function_path_binding_name(path, self.context) {
+                Ok(Some(function)) if !self.is_shadowed(&function) => {
+                    self.calls.insert(function);
+                }
+                Ok(_) => {}
+                Err(error) if self.error.is_none() => self.error = Some(error),
+                Err(_) => {}
+            }
+        }
+
+        fn record_struct_path(&mut self, path: &syn::Path) {
+            match vitest_struct_path_binding_name(path, self.context) {
+                Ok(Some(structure)) => self.record_struct_binding(structure),
+                Ok(None) => {}
+                Err(error) if self.error.is_none() => self.error = Some(error),
+                Err(_) => {}
             }
         }
     }
@@ -2082,10 +2675,8 @@ pub(crate) fn validate_vitest_function_provenance(
         fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
             if let Expr::Path(path) = call.func.as_ref()
                 && path.qself.is_none()
-                && let Some(function) = vitest_path_binding_name(&path.path, self.context)
-                && !self.is_shadowed(&function)
             {
-                self.calls.insert(function);
+                self.record_function_path(&path.path);
             }
             syn::visit::visit_expr_call(self, call);
         }
@@ -2151,19 +2742,15 @@ pub(crate) fn validate_vitest_function_provenance(
         }
 
         fn visit_expr_struct(&mut self, structure: &'ast syn::ExprStruct) {
-            if structure.qself.is_none()
-                && let Some(owner) = vitest_path_binding_name(&structure.path, self.context)
-            {
-                self.record_struct_binding(owner);
+            if structure.qself.is_none() {
+                self.record_struct_path(&structure.path);
             }
             syn::visit::visit_expr_struct(self, structure);
         }
 
         fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
-            if rust_type.qself.is_none()
-                && let Some(name) = vitest_path_binding_name(&rust_type.path, self.context)
-            {
-                self.record_struct_binding(name);
+            if rust_type.qself.is_none() {
+                self.record_struct_path(&rust_type.path);
             }
             syn::visit::visit_type_path(self, rust_type);
         }
@@ -2181,11 +2768,15 @@ pub(crate) fn validate_vitest_function_provenance(
     let mut collector = ProvenanceUseCollector {
         calls: BTreeSet::new(),
         context,
+        error: None,
         scopes: vec![parameter_bindings],
         structures: BTreeSet::new(),
     };
     collector.visit_signature(&function.sig);
     collector.visit_block(&function.block);
+    if let Some(error) = collector.error {
+        return Err(error);
+    }
     for local_function in collector.calls {
         let Some(function_identity) = resolved_vitest_function_binding(context, &local_function)?
         else {
@@ -2232,6 +2823,11 @@ pub(crate) fn validate_vitest_function_provenance(
 pub(crate) fn is_vitest_struct(context: &HashSet<String>, name: &str) -> bool {
     return !provenance_marker_values(context, VITEST_STRUCT_OWNER_MARKER, name).is_empty()
         || !provenance_marker_values(context, VITEST_STRUCT_CANDIDATE_MARKER, name).is_empty();
+}
+
+pub(crate) fn is_vitest_function(context: &HashSet<String>, name: &str) -> bool {
+    return !provenance_marker_values(context, VITEST_PUBLIC_FUNCTION_MARKER, name).is_empty()
+        || !provenance_marker_values(context, VITEST_FUNCTION_CANDIDATE_MARKER, name).is_empty();
 }
 
 pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
@@ -2498,6 +3094,10 @@ fn generation_context_with_types(
                 continue;
             };
             let function_name = function.sig.ident.to_string();
+            owned_facts.push(format!(
+                "{RETURN_BINDING_FACT_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
+                binding_fact_marker(&binding_fact_for_type(&context, Some(module), rust_type))
+            ));
             if rust_type_is_sequence(rust_type) {
                 owned_facts.push(format!(
                     "{SEQUENCE_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
@@ -2949,13 +3549,19 @@ fn bind_lexical_pattern(context: &mut HashSet<String>, pattern: &Pat) {
 
 fn binding_fact_from_marker(encoded: &str) -> BindingFact {
     if encoded == "sequence" {
-        return BindingFact::Sequence;
+        return BindingFact::Sequence(Box::new(BindingFact::Unknown));
     }
-    if let Some(payload) = encoded
+    if let Some(fact) = encoded
+        .strip_prefix("sequence")
+        .and_then(|rest| rest.strip_prefix(PROVENANCE_SEPARATOR))
+    {
+        return BindingFact::Sequence(Box::new(binding_fact_from_marker(fact)));
+    }
+    if let Some(fact) = encoded
         .strip_prefix("option")
         .and_then(|rest| rest.strip_prefix(PROVENANCE_SEPARATOR))
     {
-        return BindingFact::Option(payload.to_string());
+        return BindingFact::Option(Box::new(binding_fact_from_marker(fact)));
     }
     if let Some(identity) = encoded
         .strip_prefix("struct")
@@ -2963,15 +3569,44 @@ fn binding_fact_from_marker(encoded: &str) -> BindingFact {
     {
         return BindingFact::Structure(identity.to_string());
     }
+    if let Some(facts) = encoded
+        .strip_prefix("tuple")
+        .and_then(|rest| rest.strip_prefix(PROVENANCE_SEPARATOR))
+    {
+        return BindingFact::Tuple(
+            facts
+                .split(BINDING_FACT_SEPARATOR)
+                .map(binding_fact_from_marker)
+                .collect(),
+        );
+    }
+    if encoded == "unresolved-pattern" {
+        return BindingFact::UnresolvedPattern;
+    }
     return BindingFact::Unknown;
 }
 
 fn binding_fact_marker(fact: &BindingFact) -> String {
     return match fact {
-        BindingFact::Option(payload) => format!("option{PROVENANCE_SEPARATOR}{payload}"),
-        BindingFact::Sequence => "sequence".to_string(),
+        BindingFact::Option(payload) => format!(
+            "option{PROVENANCE_SEPARATOR}{}",
+            binding_fact_marker(payload)
+        ),
+        BindingFact::Sequence(element) => format!(
+            "sequence{PROVENANCE_SEPARATOR}{}",
+            binding_fact_marker(element)
+        ),
         BindingFact::Structure(identity) => format!("struct{PROVENANCE_SEPARATOR}{identity}"),
+        BindingFact::Tuple(facts) => format!(
+            "tuple{PROVENANCE_SEPARATOR}{}",
+            facts
+                .iter()
+                .map(binding_fact_marker)
+                .collect::<Vec<_>>()
+                .join(&BINDING_FACT_SEPARATOR.to_string())
+        ),
         BindingFact::Unknown => "unknown".to_string(),
+        BindingFact::UnresolvedPattern => "unresolved-pattern".to_string(),
     };
 }
 
@@ -2998,7 +3633,50 @@ fn context_type_identity(entities: &HashSet<String>, rust_type: &Type) -> Option
     if let Some(current) = current_source(entities) {
         return resolved_type_identity(entities, &current, rust_type);
     }
-    return vitest_struct_owner(entities, &named_type(rust_type)?);
+    let structure = match rust_type {
+        Type::Group(group) => return context_type_identity(entities, &group.elem),
+        Type::Paren(paren) => return context_type_identity(entities, &paren.elem),
+        Type::Reference(reference) => return context_type_identity(entities, &reference.elem),
+        Type::Path(path) if path.qself.is_none() => {
+            vitest_struct_path_binding_name(&path.path, entities)
+                .ok()
+                .flatten()?
+        }
+        _ => named_type(rust_type)?,
+    };
+    return vitest_struct_owner(entities, &structure);
+}
+
+fn binding_fact_for_type(
+    entities: &HashSet<String>,
+    from: Option<&str>,
+    rust_type: &Type,
+) -> BindingFact {
+    if let Some(inner) = option_inner_type(rust_type) {
+        return BindingFact::Option(Box::new(binding_fact_for_type(entities, from, inner)));
+    }
+    if let Some(inner) = sequence_inner_type(rust_type) {
+        let element = binding_fact_for_type(entities, from, inner);
+        return BindingFact::Sequence(Box::new(if element.has_source_structure() {
+            element
+        } else {
+            BindingFact::Unknown
+        }));
+    }
+    if let Type::Tuple(tuple) = rust_type {
+        return BindingFact::Tuple(
+            tuple
+                .elems
+                .iter()
+                .map(|element| binding_fact_for_type(entities, from, element))
+                .collect(),
+        );
+    }
+    let identity = match from {
+        Some(from) => resolved_type_identity(entities, from, rust_type),
+        None => context_type_identity(entities, rust_type),
+    };
+    return identity.map_or(BindingFact::Unknown, BindingFact::Structure);
 }
 
 // The module of the program being emitted, when exactly one is recorded.
@@ -3769,7 +4447,18 @@ pub(crate) fn emit_expression(
                     emit_expression(&call.args[0], entities)?
                 ));
             }
-            let function = emit_expression(&call.func, entities)?;
+            let function = if let Expr::Path(path) = call.func.as_ref()
+                && path.qself.is_none()
+                && path.path.segments.len() > 1
+                && path.path.segments.first().is_some_and(|segment| {
+                    vitest_current_path_prefix(entities, &segment.ident.to_string()).is_some()
+                }) {
+                let binding = vitest_function_path_binding_name(&path.path, entities)?
+                    .ok_or_else(|| compile_error("current-package function path has no binding"))?;
+                emit_path_segment(&binding)
+            } else {
+                emit_expression(&call.func, entities)?
+            };
             let function_name = match call.func.as_ref() {
                 Expr::Path(path) => path
                     .path
@@ -3804,6 +4493,7 @@ pub(crate) fn emit_expression(
         Expr::Cast(cast) => emit_expression(&cast.expr, entities),
         Expr::Closure(closure) => emit_closure(closure, entities),
         Expr::Field(field) => {
+            reject_unresolved_pattern_field(&field.base, entities)?;
             let base = emit_expression(&field.base, entities)?;
             match &field.member {
                 syn::Member::Named(identifier) => Ok(format!(
@@ -4045,6 +4735,32 @@ pub(crate) fn emit_expression(
     };
 }
 
+fn reject_unresolved_pattern_field(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Result<(), CompileError> {
+    // Production modules retain their source-wide Option directive when an external return owner is
+    // intentionally unavailable. Vitest has no current source and must never guess a selected
+    // contract owner's field semantics.
+    if current_source(entities).is_some() {
+        return Ok(());
+    }
+    let expression = peel_reference_and_paren(expression);
+    let Expr::Path(path) = expression else {
+        return Ok(());
+    };
+    if path.qself.is_some() || path.path.segments.len() != 1 {
+        return Ok(());
+    }
+    let local = path.path.segments[0].ident.to_string();
+    if lexical_fact(entities, &local) == Some(BindingFact::UnresolvedPattern) {
+        return Err(compile_error(format!(
+            "portable pattern binding `{local}` has no source-qualified type provenance; add a typed iterable or matched payload before accessing its fields"
+        )));
+    }
+    return Ok(());
+}
+
 fn emit_block_expression(
     block: &syn::Block,
     entities: &HashSet<String>,
@@ -4075,6 +4791,10 @@ fn emit_expression_for_type(
 ) -> Result<String, CompileError> {
     if let Expr::Reference(reference) = expression {
         return emit_expression_for_type(&reference.expr, rust_type, entities);
+    }
+    if matches!(expression, Expr::Struct(_)) && context_type_identity(entities, rust_type).is_some()
+    {
+        return emit_contextual_struct_literal_expression(expression, entities);
     }
     return match rust_type {
         Type::Array(array_type) => match expression {
@@ -4251,10 +4971,10 @@ fn contextual_assignment_field_context(
     let Expr::Field(field) = assignment.left.as_ref() else {
         return entities.clone();
     };
-    let Some(local) = referenced_path_identifier(&field.base) else {
-        return entities.clone();
-    };
-    let Some(identity) = vitest_struct_local(entities, &local) else {
+    let Some(identity) = expression_struct_name(&field.base, entities).or_else(|| {
+        referenced_path_identifier(&field.base)
+            .and_then(|local| vitest_struct_local(entities, &local))
+    }) else {
         return entities.clone();
     };
     let Some(structure) = vitest_struct_name(&identity) else {
@@ -4374,7 +5094,10 @@ fn inferred_vitest_struct_literal_name(
         Expr::Paren(paren) => inferred_vitest_struct_literal_name(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             let local = path.path.segments.first()?.ident.to_string();
-            vitest_struct_local(entities, &local)
+            match lexical_fact(entities, &local) {
+                Some(BindingFact::Structure(identity)) => Some(identity),
+                _ => vitest_struct_local(entities, &local),
+            }
         }
         Expr::Reference(reference) => {
             inferred_vitest_struct_literal_name(&reference.expr, entities)
@@ -4407,6 +5130,35 @@ fn inferred_vitest_struct_return_type(
         identity,
         format!("ReturnType<typeof {typescript_function}>"),
     ));
+}
+
+// `Some(value)` erases to `value`, so an unannotated mutable local would otherwise infer only the
+// payload type and reject a later Rust-valid `None` assignment. Preserve the Option's TypeScript
+// union when the payload has exact selected-contract provenance.
+fn inferred_vitest_option_initializer_type(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    return match expression {
+        Expr::Call(call) if call.args.len() == 1 && expression_is_path(&call.func, "Some") => {
+            let payload = &call.args[0];
+            let typescript_type = inferred_vitest_struct_return_type(payload, entities)
+                .map(|(_, typescript_type)| typescript_type)
+                .or_else(|| inferred_vitest_struct_literal_type(payload, entities))?;
+            let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            };
+            Some(format!("{typescript_type} | {absent}"))
+        }
+        Expr::Group(group) => inferred_vitest_option_initializer_type(&group.expr, entities),
+        Expr::Paren(paren) => inferred_vitest_option_initializer_type(&paren.expr, entities),
+        Expr::Reference(reference) => {
+            inferred_vitest_option_initializer_type(&reference.expr, entities)
+        }
+        _ => None,
+    };
 }
 
 fn unique_marker_suffix(entities: &HashSet<String>, prefix: &str) -> Option<String> {
@@ -4841,6 +5593,11 @@ pub(crate) fn emit_local_with_shadow_and_else(
     } else {
         None
     };
+    let inferred_option_type = if rust_type.is_none() {
+        inferred_vitest_option_initializer_type(&initializer.expr, entities)
+    } else {
+        None
+    };
     let rebound_struct_type = (rebound && !shadowed)
         .then(|| {
             unique_marker_suffix(
@@ -4861,6 +5618,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
                 .and_then(|name| inferred_fixed_buffer_type(entities, name))
         })
         .or_else(|| inferred_struct_type.clone())
+        .or_else(|| inferred_option_type.clone())
         .or_else(|| rebound_struct_type.clone());
     let closure_parameter_types = local_name
         .as_deref()
@@ -4898,6 +5656,16 @@ pub(crate) fn emit_local_with_shadow_and_else(
     {
         value = format!("{value} as const");
     }
+    if !mutable
+        && rust_type.is_none()
+        && matches!(initializer.expr.as_ref(), Expr::Tuple(_))
+        && !value.ends_with(" as const")
+    {
+        // TypeScript widens `[a, b]` to an array union, losing positional facts before a later tuple
+        // pattern. An immutable Rust tuple is the exact `as const` case; mutable tuples retain their
+        // existing writable-array emission until they carry an explicit Rust type.
+        value = format!("{value} as const");
+    }
     if mutable && let Some(name) = frozen_object_expression_name(&initializer.expr, entities) {
         value = format!("{{ ...{name} }}");
     }
@@ -4930,7 +5698,10 @@ pub(crate) fn emit_local_with_shadow_and_else(
         write!(out, "{declaration} {pattern}").expect("writing to a String cannot fail");
     }
     if !rebind
-        && (rust_type.is_some() || inferred_struct_type.is_some() || rebound_struct_type.is_some())
+        && (rust_type.is_some()
+            || inferred_struct_type.is_some()
+            || inferred_option_type.is_some()
+            || rebound_struct_type.is_some())
         && let Some(typescript_type) = typescript_type
     {
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
@@ -5786,10 +6557,87 @@ fn runtime_categories_predicate(categories: &BTreeSet<RuntimeCategory>, value: &
         .join(" || ");
 }
 
+struct OptionMatchArm {
+    binding: Option<String>,
+    present: bool,
+}
+
+fn analyze_option_match(arms: &[syn::Arm]) -> Option<Vec<OptionMatchArm>> {
+    let mut has_some = false;
+    let mut analyzed = Vec::new();
+    for arm in arms {
+        let info = match &arm.pat {
+            Pat::TupleStruct(pattern)
+                if pattern.path.is_ident("Some") && pattern.elems.len() == 1 =>
+            {
+                let binding = match &pattern.elems[0] {
+                    Pat::Ident(identifier) if identifier.subpat.is_none() => {
+                        Some(snake_to_lower_camel(&identifier.ident.to_string()))
+                    }
+                    Pat::Wild(_) => None,
+                    _ => return None,
+                };
+                has_some = true;
+                OptionMatchArm {
+                    binding,
+                    present: true,
+                }
+            }
+            Pat::Path(path) if path.path.is_ident("None") => OptionMatchArm {
+                binding: None,
+                present: false,
+            },
+            Pat::Ident(identifier) if identifier.ident == "None" && identifier.subpat.is_none() => {
+                OptionMatchArm {
+                    binding: None,
+                    present: false,
+                }
+            }
+            Pat::Wild(_) => OptionMatchArm {
+                binding: None,
+                present: false,
+            },
+            _ => return None,
+        };
+        analyzed.push(info);
+    }
+    return has_some.then_some(analyzed);
+}
+
 fn emit_match_expression(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if let Some(arms) = analyze_option_match(&expression.arms) {
+        let mut out = String::new();
+        out.push_str("(() => {\n  const matchValue = ");
+        out.push_str(&emit_expression(&expression.expr, entities)?);
+        out.push_str(";\n");
+        let absent = option_absent_value(&expression.expr, entities);
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            let prefix = if index == 0 { "if" } else { "else if" };
+            let operator = if info.present { "!==" } else { "===" };
+            writeln!(out, "  {prefix} (matchValue {operator} {absent}) {{")
+                .expect("writing to a String cannot fail");
+            if let Some(binding) = info.binding {
+                writeln!(out, "    const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            writeln!(
+                out,
+                "    return {};",
+                emit_expression(&arm.body, &arm_context)?
+            )
+            .expect("writing to a String cannot fail");
+            out.push_str("  }\n");
+        }
+        out.push_str("})()");
+        return Ok(out);
+    }
     if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
         let mut out = String::new();
         out.push_str("(() => {\n  const matchValue = ");
@@ -5902,12 +6750,56 @@ fn emit_match_expression(
     return Ok(out);
 }
 
-fn emit_match_statement(
+pub(crate) fn emit_match_statement(
     out: &mut String,
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    if let Some(arms) = analyze_option_match(&expression.arms) {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        let absent = option_absent_value(&expression.expr, entities);
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            write_indent(out, indent + 1);
+            let prefix = if index == 0 { "if" } else { "else if" };
+            let operator = if info.present { "!==" } else { "===" };
+            writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
+                .expect("writing to a String cannot fail");
+            if let Some(binding) = info.binding {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            match arm.body.as_ref() {
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
+                }
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    &arm_context,
+                    indent + 2,
+                )?,
+            }
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
     if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
         write_indent(out, indent);
         out.push_str("{\n");
@@ -6345,7 +7237,7 @@ fn emit_method_call(
     };
 }
 
-fn emit_option_binding(
+pub(crate) fn emit_option_binding(
     condition: &Expr,
     entities: &HashSet<String>,
 ) -> Result<Option<(String, String, &'static str)>, CompileError> {
@@ -6581,8 +7473,10 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         }
         Expr::Paren(paren) => expression_is_sequence(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
-            lexical_fact(entities, &path.path.segments[0].ident.to_string())
-                == Some(BindingFact::Sequence)
+            matches!(
+                lexical_fact(entities, &path.path.segments[0].ident.to_string()),
+                Some(BindingFact::Sequence(_))
+            )
         }
         Expr::Reference(reference) => expression_is_sequence(&reference.expr, entities),
         Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
@@ -7706,13 +8600,23 @@ fn emit_statement(
             } else {
                 entities.clone()
             };
+            let option_binding = emit_option_binding(&loop_expression.cond, entities)?;
             write_indent(out, indent);
-            writeln!(
-                out,
-                "while ({}) {{",
-                emit_expression(&loop_expression.cond, entities)?
-            )
-            .expect("writing to a String cannot fail");
+            if let Some((_, value, absent)) = &option_binding {
+                writeln!(out, "while ({value} !== {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            } else {
+                writeln!(
+                    out,
+                    "while ({}) {{",
+                    emit_expression(&loop_expression.cond, entities)?
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some((name, value, _)) = option_binding {
+                write_indent(out, indent + 1);
+                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
+            }
             emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
@@ -7897,7 +8801,16 @@ pub(crate) fn emit_type(
             let Some(segment) = path.path.segments.last() else {
                 return Err(compile_error("empty Rust type path"));
             };
-            let name = segment.ident.to_string();
+            let mut name = segment.ident.to_string();
+            if path.path.segments.len() > 1
+                && path.path.segments.first().is_some_and(|segment| {
+                    vitest_current_path_prefix(entities, &segment.ident.to_string()).is_some()
+                })
+            {
+                name = vitest_struct_path_binding_name(&path.path, entities)?.ok_or_else(|| {
+                    compile_error("current-package struct/type path has no binding")
+                })?;
+            }
             if path.path.segments.len() > 1
                 && let Some(first) = path.path.segments.first()
                 && first.ident.to_string().starts_with("flight_")
@@ -8813,7 +9726,10 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
         Expr::Paren(paren) => option_expression_payload(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             match lexical_fact(entities, &path.path.segments[0].ident.to_string()) {
-                Some(BindingFact::Option(payload)) => Some(payload),
+                Some(BindingFact::Option(payload)) => match *payload {
+                    BindingFact::Structure(identity) => Some(identity),
+                    _ => Some(String::new()),
+                },
                 _ => None,
             }
         }

@@ -9,13 +9,14 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local,
-    emit_local_with_shadow_and_else, emit_parameter, emit_type, frozen_object_name,
-    function_expression_context, insert_vitest_helper_return_context,
-    insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
-    is_data_union_variant, is_string_union, is_vitest_struct, numeric_literal_spelling,
+    emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
+    emit_type, frozen_object_name, function_expression_context,
+    insert_vitest_helper_return_context, insert_vitest_import_alias_context,
+    insert_vitest_rebound_struct_context, is_data_union_variant, is_string_union,
+    is_vitest_function, is_vitest_struct, lexical_pattern_context, numeric_literal_spelling,
     snake_to_lower_camel, update_vitest_local_function_context, update_vitest_struct_local_context,
-    validate_vitest_function_provenance, vitest_path_binding_name, vitest_pattern_context,
-    write_indent,
+    validate_vitest_function_provenance, vitest_function_path_binding_name,
+    vitest_struct_path_binding_name, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -91,7 +92,10 @@ fn collect_contract_symbols(
         }
 
         fn record_identifier(&mut self, identifier: &syn::Ident) {
-            let name = identifier.to_string();
+            self.record_identifier_name(identifier.to_string());
+        }
+
+        fn record_identifier_name(&mut self, name: String) {
             if !self.declared.contains(&name)
                 && !self.helper_names.contains(&name)
                 && !self.standard_constants.contains(&name)
@@ -103,7 +107,10 @@ fn collect_contract_symbols(
         }
 
         fn record_type_identifier(&mut self, identifier: &syn::Ident) {
-            let name = identifier.to_string();
+            self.record_type_name(identifier.to_string());
+        }
+
+        fn record_type_name(&mut self, name: String) {
             if !self.declared.contains(&name)
                 && !self.helper_names.contains(&name)
                 && !self.standard_constants.contains(&name)
@@ -218,6 +225,13 @@ fn collect_contract_symbols(
             if expression.qself.is_none() {
                 let segments = &expression.path.segments;
                 if segments.len() > 1
+                    && let Ok(Some(name)) =
+                        vitest_function_path_binding_name(&expression.path, self.context)
+                    && is_vitest_function(self.context, &name)
+                {
+                    self.record_identifier_name(name);
+                }
+                if segments.len() > 1
                     && let Some(segment) = segments.first()
                 {
                     self.record_external_module(&segment.ident);
@@ -271,15 +285,11 @@ fn collect_contract_symbols(
 
         fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
             if expression.qself.is_none()
-                && let Some(name) = vitest_path_binding_name(&expression.path, self.context)
+                && let Ok(Some(name)) =
+                    vitest_struct_path_binding_name(&expression.path, self.context)
                 && is_vitest_struct(self.context, &name)
             {
-                let segment = expression
-                    .path
-                    .segments
-                    .last()
-                    .expect("resolved struct path has a final segment");
-                self.record_type_identifier(&segment.ident);
+                self.record_type_name(name);
             }
             syn::visit::visit_expr_struct(self, expression);
         }
@@ -288,6 +298,13 @@ fn collect_contract_symbols(
             if rust_type.qself.is_none()
                 && let Some(first) = rust_type.path.segments.first()
             {
+                if rust_type.path.segments.len() > 1
+                    && let Ok(Some(name)) =
+                        vitest_struct_path_binding_name(&rust_type.path, self.context)
+                    && is_vitest_struct(self.context, &name)
+                {
+                    self.record_type_name(name);
+                }
                 if rust_type.path.segments.len() > 1 {
                     self.record_external_module(&first.ident);
                 }
@@ -722,17 +739,27 @@ fn emit_statement(
         Stmt::Local(local) => emit_local(out, local, context, indent)?,
         Stmt::Expr(Expr::If(expression), _) => {
             let then_context = if let Expr::Let(binding) = expression.cond.as_ref() {
-                vitest_pattern_context(context, &binding.pat)
+                lexical_pattern_context(context, &binding.pat)
             } else {
                 context.clone()
             };
+            let option_binding = emit_option_binding(&expression.cond, context)?;
             write_indent(out, indent);
-            writeln!(
-                out,
-                "if ({}) {{",
-                emit_expression(&expression.cond, context)?
-            )
-            .expect("writing to a String cannot fail");
+            if let Some((_, value, absent)) = &option_binding {
+                writeln!(out, "if ({value} !== {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            } else {
+                writeln!(
+                    out,
+                    "if ({}) {{",
+                    emit_expression(&expression.cond, context)?
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some((name, value, _)) = option_binding {
+                write_indent(out, indent + 1);
+                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
+            }
             emit_block(
                 out,
                 &expression.then_branch.stmts,
@@ -753,7 +780,7 @@ fn emit_statement(
             out.push_str("}\n");
         }
         Stmt::Expr(Expr::ForLoop(expression), _) => {
-            let loop_context = vitest_pattern_context(context, &expression.pat);
+            let loop_context = lexical_pattern_context(context, &expression.pat);
             write_indent(out, indent);
             writeln!(
                 out,
@@ -767,20 +794,33 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::While(expression), _) => {
             let loop_context = if let Expr::Let(binding) = expression.cond.as_ref() {
-                vitest_pattern_context(context, &binding.pat)
+                lexical_pattern_context(context, &binding.pat)
             } else {
                 context.clone()
             };
+            let option_binding = emit_option_binding(&expression.cond, context)?;
             write_indent(out, indent);
-            writeln!(
-                out,
-                "while ({}) {{",
-                emit_expression(&expression.cond, context)?
-            )
-            .expect("writing to a String cannot fail");
+            if let Some((_, value, absent)) = &option_binding {
+                writeln!(out, "while ({value} !== {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            } else {
+                writeln!(
+                    out,
+                    "while ({}) {{",
+                    emit_expression(&expression.cond, context)?
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some((name, value, _)) = option_binding {
+                write_indent(out, indent + 1);
+                writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
+            }
             emit_block(out, &expression.body.stmts, &loop_context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
+        }
+        Stmt::Expr(Expr::Match(expression), _) => {
+            emit_match_statement(out, expression, context, indent)?;
         }
         Stmt::Expr(Expr::Break(_), _) => {
             write_indent(out, indent);

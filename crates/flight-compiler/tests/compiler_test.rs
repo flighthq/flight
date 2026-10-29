@@ -3957,6 +3957,250 @@ mod sample {
         assert!(!output.contains("sample.previous === undefined"));
     }
 
+    #[test]
+    fn propagates_selected_struct_provenance_through_supported_patterns() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use super::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn follows_pattern_payloads() {
+    let samples = vec![create_sample()];
+    for mut sample in samples {
+        sample.previous = None;
+        assert!(sample.previous.is_none());
+    }
+
+    let maybe = Some(create_sample());
+    if let Some(mut sample) = maybe {
+        sample.previous = None;
+    }
+
+    let mut repeated = Some(create_sample());
+    while let Some(mut sample) = repeated {
+        sample.previous = None;
+        repeated = None;
+    }
+
+    match Some(create_sample()) {
+        Some(mut sample) => sample.previous = None,
+        None => {}
+    }
+
+    let pair = (create_sample(), 1);
+    let (mut sample, _) = pair;
+    sample.previous = None;
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.matches(".previous = null;").count() >= 5, "{output}");
+        assert!(output.contains(".previous === null"));
+        assert!(output.contains(
+            "let repeated: ReturnType<typeof createSample> | undefined = createSample();"
+        ));
+        assert!(output.contains("const pair = [createSample(), 1] as const;"));
+        assert!(!output.contains(".previous = undefined;"));
+        assert!(!output.contains(".previous === undefined"));
+    }
+
+    #[test]
+    fn rejects_field_access_from_an_unresolved_pattern_owner() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let contract = "pub use super::sample::Sample;\n";
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn refuses_to_guess_the_iterable_owner() {
+    for mut sample in unknown_samples() {
+        sample.previous = None;
+    }
+}
+"#;
+
+        let error = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap_err()
+        .to_string();
+
+        assert!(error.contains("pattern binding `sample` has no source-qualified type provenance"));
+        assert!(error.contains("typed iterable or matched payload"));
+    }
+
+    #[test]
+    fn resolves_selected_package_crate_aliases_without_a_runtime_namespace() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use super::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_example as current;
+
+#[test]
+fn uses_the_selected_package_alias() {
+    let mut literal: current::Sample = current::Sample { previous: None };
+    literal.previous = None;
+    let mut created = current::create_sample();
+    created.previous = None;
+    assert!(created.previous.is_none());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("  createSample,"), "{output}");
+        assert!(output.contains("  Sample,"));
+        assert!(output.contains("literal: Sample = { previous: null }"));
+        assert!(output.contains("created = createSample();"));
+        assert!(!output.contains("current."));
+        assert!(!output.contains("previous = undefined"));
+    }
+
+    #[test]
+    fn preserves_submodule_identity_through_relative_and_module_alias_paths() {
+        let nullable_root = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let optional_submodule = r#"
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let aliases = [
+            VitestAliasSource {
+                source: nullable_root,
+                module: "src/root.rs",
+            },
+            VitestAliasSource {
+                source: optional_submodule,
+                module: "src/optional.rs",
+            },
+        ];
+        let root_only_contract = "pub use super::root::Sample;\n";
+        let unselected_source = r#"
+#[test]
+fn refuses_the_same_leaf_root_fallback() {
+    let sample = flight_example::optional::Sample { previous: None };
+    assert!(sample.previous.is_none());
+}
+"#;
+        let first = compile_vitest_with_contract_alias_sources(
+            unselected_source,
+            "@flighthq/example/contract",
+            root_only_contract,
+            &aliases,
+        )
+        .unwrap_err()
+        .to_string();
+        let second = compile_vitest_with_contract_alias_sources(
+            unselected_source,
+            "@flighthq/example/contract",
+            root_only_contract,
+            &aliases,
+        )
+        .unwrap_err()
+        .to_string();
+        assert_eq!(first, second);
+        assert!(first.contains("`Sample` in `src/optional.rs`"));
+        assert!(first.contains("does not select that exact declaration"));
+
+        let contract = r#"
+pub use super::root::Sample;
+pub use super::optional::Sample as OptionalSample;
+"#;
+        let source = r#"
+use crate::optional as storage;
+
+#[test]
+fn uses_complete_module_paths() {
+    let aliased = storage::Sample { previous: None };
+    let absolute = crate::optional::Sample { previous: None };
+    let local = self::optional::Sample { previous: None };
+    let parent = super::optional::Sample { previous: None };
+    assert!(aliased.previous.is_none());
+    assert!(absolute.previous.is_none());
+    assert!(local.previous.is_none());
+    assert!(parent.previous.is_none());
+}
+"#;
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &aliases,
+        )
+        .unwrap();
+
+        assert!(output.contains("  OptionalSample,"), "{output}");
+        assert_eq!(
+            output
+                .matches(": OptionalSample = { previous: undefined }")
+                .count(),
+            4
+        );
+        assert!(!output.contains("previous: null"));
+        assert!(!output.contains("storage."));
+        assert!(!output.contains("crate."));
+        assert!(!output.contains("self."));
+        assert!(!output.contains("super."));
+    }
+
     // Option `.map()` / `.and_then()` on a field of a contract-selected struct resolve the field's
     // Option fact through the Vitest owner binding; the test module is not itself a program source.
     #[test]
