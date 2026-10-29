@@ -7,19 +7,18 @@ import {
 } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
+import type { TextDirection, TextMeasureFunction } from '@flighthq/textshaper/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
+import { createTextLayoutGroup } from './textLayoutGroup.ts';
+import { getTextLineBreaks } from './textLineBreaks.ts';
 import type {
-  EntityConstruction,
-  TextDirection,
   TextJustification,
   TextLayoutGroup,
   TextLayoutParams,
   TextLayoutResult,
-  TextMeasureFunction,
   TextVerticalAlign,
-} from '@flighthq/types/contract';
-
-import { createTextLayoutGroup } from './textLayoutGroup.ts';
-import { getTextLineBreaks } from './textLineBreaks.ts';
+} from './types.ts';
 
 /** Inner padding (px) between a text box edge and its content, applied on every side. */
 export const TEXT_LAYOUT_GUTTER = 2;

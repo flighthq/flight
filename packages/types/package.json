@@ -54,6 +54,8 @@
     "@flighthq/signals": "*",
     "@flighthq/statechart": "*",
     "@flighthq/textformat": "*",
+    "@flighthq/textlayout": "*",
+    "@flighthq/textshaper": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
     "@flighthq/xml": "*"

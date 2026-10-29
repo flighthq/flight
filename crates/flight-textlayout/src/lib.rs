@@ -8,15 +8,19 @@
 // flight-lint: conform-skip(createTextFormatRange, initializeTextFormatRange) D8: defined once beside TextFormatRange in flight-textformat; re-exported here, not redefined
 
 mod rich_text_content;
+mod rich_text_metrics;
 mod rich_text_query;
 mod sugar;
 mod text_bounds;
 mod text_layout;
 mod text_layout_group;
 mod text_layout_measure;
+mod text_layout_measure_state;
+mod text_layout_runtime;
 mod text_line_breaks;
 mod text_metrics;
 mod text_units;
+mod type_strings;
 mod types;
 
 pub mod contract;
@@ -28,7 +32,6 @@ pub use contract::TextAutoSize;
 pub use contract::TextBoundsSpec;
 pub use contract::TextJustification;
 pub use contract::TextLayoutGroup;
-pub use contract::TextLayoutMeasureState;
 pub use contract::TextLayoutParams;
 pub use contract::TextLayoutResult;
 pub use contract::TextLineMetrics;
@@ -46,7 +49,6 @@ pub use contract::compute_text_layout;
 pub use contract::create_rich_text_content;
 pub use contract::create_text_format_range;
 pub use contract::create_text_layout_group;
-pub use contract::create_text_layout_measure_state;
 pub use contract::create_text_layout_result;
 pub use contract::create_text_metrics;
 pub use contract::get_rich_text_char_boundaries;

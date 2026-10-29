@@ -1,36 +1,42 @@
-/**
- * Binary search for the first break index at or after `startIndex`.
- * Returns -1 when no such break exists. The `lineBreaks` array must be sorted
- * in ascending order (as produced by `getTextLineBreaks`).
- */
-export function getTextLineBreakIndex(lineBreaks: readonly number[], startIndex = 0): number {
-  if (lineBreaks.length === 0) return -1;
-  let lo = 0;
-  let hi = lineBreaks.length - 1;
-  let result = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >>> 1;
-    if (lineBreaks[mid] >= startIndex) {
-      result = lineBreaks[mid];
-      hi = mid - 1;
+// Generated from crates/flight-textlayout/src/text_line_breaks.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { findUtf16Unit } from './textUnits.ts';
+
+export function getTextLineBreakIndex(lineBreaks: Readonly<number[]>, startIndex?: number): number {
+  if (lineBreaks.length === 0) {
+    return -1;
+  }
+  startIndex = startIndex ?? 0;
+  let low = 0;
+  let high = lineBreaks.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (lineBreaks[middle] >= startIndex) {
+      high = middle;
     } else {
-      lo = mid + 1;
+      low = middle + 1;
     }
   }
-  return result;
+  return low < lineBreaks.length ? lineBreaks[low] | 0 : -1;
 }
 
 export function getTextLineBreaks(out: number[], text: string): void {
   out.length = 0;
-  let index = -1;
-
-  while (index < text.length) {
-    const lf = text.indexOf('\n', index + 1);
-    const cr = text.indexOf('\r', index + 1);
-
-    if (lf === -1 && cr === -1) break;
-
-    index = cr === -1 ? lf : lf === -1 ? cr : Math.min(cr, lf);
+  const units: number[] = Array.from({ length: text.length }, (_, index) => text.charCodeAt(index));
+  let start = 0;
+  while (start < units.length) {
+    const lf = findUtf16Unit(units, 0x000a, start);
+    const cr = findUtf16Unit(units, 0x000d, start);
+    if (lf === undefined && cr === undefined) {
+      break;
+    }
+    let index = lf ?? units.length;
+    if (cr !== undefined) {
+      const crIndex = cr;
+      index = Math.min(index, crIndex);
+    }
     out.push(index);
+    start = index + 1;
   }
 }

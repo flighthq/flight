@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".textshaper-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../textformat" },
+    { "path": "../textshaper/tsconfig.contract.json" }
+  ],
+  "include": ["src/contract.textlayout-types.ts", "src/types.ts"]
+}

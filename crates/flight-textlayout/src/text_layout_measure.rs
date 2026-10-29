@@ -1,8 +1,11 @@
+//! flight-compiler: target-native
+//! flight-compiler: root-only getTextLayoutMeasureProvider setTextLayoutMeasureProvider
+
 use std::sync::Arc;
 
 use flight_textshaper::{HostTextShaperCapability, TextMeasureFunction, measure_text};
 
-use crate::types::TextLayoutMeasureState;
+use crate::text_layout_measure_state::TextLayoutMeasureState;
 
 // flight-lint: allow(conform-extra) D5 explicit caller-owned state replaces the source module provider slot
 pub fn create_text_layout_measure_state() -> TextLayoutMeasureState {

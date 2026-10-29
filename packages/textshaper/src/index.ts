@@ -1,3 +1,4 @@
+export * from './contract.textshaper-types.ts';
 export * from './enableTextShaperGuards.ts';
 export * from './textShaper.ts';
 export {

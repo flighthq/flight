@@ -1,5 +1,5 @@
 import { measureText } from '@flighthq/textshaper/contract';
-import type { HostTextShaperCapability, TextMeasureFunction } from '@flighthq/types/contract';
+import type { HostTextShaperCapability, TextMeasureFunction } from '@flighthq/textshaper/contract';
 
 // Resolves the text-measurement provider text-layout uses to turn characters into advances. When a
 // HostTextShaperCapability is supplied, it returns a bound measure function that delegates to

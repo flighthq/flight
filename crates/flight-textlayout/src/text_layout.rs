@@ -1,3 +1,6 @@
+//! flight-compiler: target-native
+//! flight-compiler: root-only TEXT_LAYOUT_GUTTER computeTextLayout createTextLayoutResult isTextLayoutTruncated
+
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 

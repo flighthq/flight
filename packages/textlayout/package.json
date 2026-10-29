@@ -32,6 +32,8 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-textlayout --package textlayout",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-textlayout --package textlayout --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",
@@ -39,6 +41,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/geometry": "*",
     "@flighthq/textformat": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/types": "*"

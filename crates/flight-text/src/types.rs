@@ -5,9 +5,9 @@ use flight_node::Node;
 use flight_scene2d::Node2DFields;
 use flight_signals::Signal;
 use flight_textformat::{TextFormat, TextFormatAlign, TextFormatRange};
+use flight_textlayout::contract::TextLayoutMeasureState;
 use flight_textlayout::{
-    RichTextContent, TextAutoSize, TextLayoutMeasureState, TextLayoutParams, TextLayoutResult,
-    TextVerticalAlign,
+    RichTextContent, TextAutoSize, TextLayoutParams, TextLayoutResult, TextVerticalAlign,
 };
 use flight_textshaper::{HostTextShaperCapability, TextMeasureFunction};
 

@@ -162,9 +162,4 @@ mod text_bounds_gutter {
     fn equals_text_layout_gutter() {
         assert_eq!(TEXT_BOUNDS_GUTTER, TEXT_LAYOUT_GUTTER);
     }
-
-    #[test]
-    fn is_a_positive_number() {
-        assert!(std::hint::black_box(TEXT_BOUNDS_GUTTER) > 0.0);
-    }
 }

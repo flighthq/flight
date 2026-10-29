@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_textlayout::contract::*;
 
 use crate::common::{empty_text_format, range};

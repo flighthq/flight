@@ -7,8 +7,10 @@ pub use crate::text_bounds::*;
 pub use crate::text_layout::*;
 pub use crate::text_layout_group::*;
 pub use crate::text_layout_measure::*;
+pub use crate::text_layout_measure_state::*;
 pub use crate::text_line_breaks::*;
 pub use crate::text_metrics::*;
+pub use crate::type_strings::*;
 pub use crate::types::*;
 
 pub use flight_textformat::contract::initialize_text_format_range;

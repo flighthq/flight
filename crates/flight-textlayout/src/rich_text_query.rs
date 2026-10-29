@@ -1,3 +1,9 @@
+//! flight-compiler: root-only computeRichTextCharIndexAtPoint computeRichTextLineMetrics
+//! flight-compiler: root-only getRichTextCharBoundaries getRichTextFirstCharInParagraph
+//! flight-compiler: root-only getRichTextLineIndexAtPoint getRichTextLineIndexOfChar getRichTextLineLength
+//! flight-compiler: root-only getRichTextLineOffset getRichTextLineText getRichTextLinkAtPoint
+//! flight-compiler: root-only getRichTextParagraphLength getRichTextSelectionRectangles
+
 use flight_geometry::Rectangle;
 
 use crate::text_layout::TEXT_LAYOUT_GUTTER;
@@ -14,7 +20,7 @@ pub fn compute_rich_text_char_index_at_point(layout: &TextLayoutResult, x: f32, 
     let mut closest_line_bottom = 0.0;
     for index in 0..layout.line_heights.len() {
         let line_top = rich_text_get_line_offset_y(layout, index);
-        let line_bottom = line_top + layout.line_heights.get(index).copied().unwrap_or(0.0);
+        let line_bottom = line_top + get_f32(&layout.line_heights, index, 0.0);
         let distance = if y < line_top {
             line_top - y
         } else if y > line_bottom {
@@ -39,11 +45,11 @@ pub fn compute_rich_text_char_index_at_point(layout: &TextLayoutResult, x: f32, 
         return line_end;
     }
 
-    let mut line_start = layout
-        .groups
-        .last()
-        .map(|group| group.end_index)
-        .unwrap_or(0);
+    let mut line_start = if layout.groups.is_empty() {
+        0
+    } else {
+        layout.groups[layout.groups.len() - 1].end_index
+    };
     let mut line_end = 0;
     for group in &layout.groups {
         if group.line_index != closest_line_index {
@@ -98,11 +104,7 @@ pub fn compute_rich_text_line_metrics(
     return Some(TextLineMetrics {
         ascent,
         descent,
-        height: layout
-            .line_heights
-            .get(line_index)
-            .copied()
-            .unwrap_or(ascent + descent + leading),
+        height: get_f32(&layout.line_heights, line_index, ascent + descent + leading),
         leading,
         width: right - x,
         x: if x == f32::INFINITY { 0.0 } else { x },
@@ -121,16 +123,12 @@ pub fn get_rich_text_char_boundaries(
     let mut x = group.offset_x;
     let limit = (char_index - group.start_index).min(group.positions.len());
     for index in 0..limit {
-        x += group.positions.get(index).copied().unwrap_or(0.0);
+        x += get_f32(&group.positions, index, 0.0);
     }
 
     out.x = x;
     out.y = group.offset_y;
-    out.width = group
-        .positions
-        .get(char_index - group.start_index)
-        .copied()
-        .unwrap_or(0.0);
+    out.width = get_f32(&group.positions, char_index - group.start_index, 0.0);
     out.height = group.height;
     return true;
 }
@@ -174,16 +172,20 @@ pub fn get_rich_text_line_index_of_char(layout: &TextLayoutResult, char_index: u
 }
 
 pub fn get_rich_text_line_length(layout: &TextLayoutResult, line_index: usize) -> usize {
-    let mut start = usize::MAX;
+    let mut start = 0;
     let mut end = 0;
+    let mut found = false;
     for group in &layout.groups {
         if group.line_index != line_index {
             continue;
         }
-        start = start.min(group.start_index);
+        if !found || group.start_index < start {
+            start = group.start_index;
+        }
         end = end.max(group.end_index);
+        found = true;
     }
-    return if start == usize::MAX { 0 } else { end - start };
+    return if found { end - start } else { 0 };
 }
 
 pub fn get_rich_text_line_offset(layout: &TextLayoutResult, line_index: usize) -> usize {
@@ -196,16 +198,20 @@ pub fn get_rich_text_line_offset(layout: &TextLayoutResult, line_index: usize) -
 }
 
 pub fn get_rich_text_line_text(text: &str, layout: &TextLayoutResult, line_index: usize) -> String {
-    let mut start = usize::MAX;
+    let mut start = 0;
     let mut end = 0;
+    let mut found = false;
     for group in &layout.groups {
         if group.line_index != line_index {
             continue;
         }
-        start = start.min(group.start_index);
+        if !found || group.start_index < start {
+            start = group.start_index;
+        }
         end = end.max(group.end_index);
+        found = true;
     }
-    if start == usize::MAX {
+    if !found {
         return String::new();
     }
     let units: Vec<u16> = text.encode_utf16().collect();
@@ -232,11 +238,13 @@ pub fn get_rich_text_link_at_point(layout: &TextLayoutResult, x: f32, y: f32) ->
 pub fn get_rich_text_paragraph_length(text: &str, char_index: usize) -> usize {
     let units: Vec<u16> = text.encode_utf16().collect();
     let start = get_rich_text_first_char_in_paragraph(text, char_index);
-    let end = units[start..]
-        .iter()
-        .position(|unit| *unit == 0x000a)
-        .map(|offset| start + offset + 1)
-        .unwrap_or(units.len());
+    let mut end = units.len();
+    for (offset, unit) in units[start..].iter().enumerate() {
+        if *unit == 0x000a {
+            end = start + offset + 1;
+            break;
+        }
+    }
     return end - start;
 }
 
@@ -275,7 +283,7 @@ fn rich_text_get_caret_x(group: &TextLayoutGroup, index: usize) -> f32 {
     let mut x = group.offset_x;
     let limit = index.min(group.end_index).saturating_sub(group.start_index);
     for position_index in 0..limit {
-        x += group.positions.get(position_index).copied().unwrap_or(0.0);
+        x += get_f32(&group.positions, position_index, 0.0);
     }
     return x;
 }
@@ -298,7 +306,15 @@ fn rich_text_get_line_offset_y(layout: &TextLayoutResult, line_index: usize) -> 
     }
     let mut y = TEXT_LAYOUT_GUTTER;
     for index in 0..line_index {
-        y += layout.line_heights.get(index).copied().unwrap_or(0.0);
+        y += get_f32(&layout.line_heights, index, 0.0);
     }
     return y;
+}
+
+fn get_f32(values: &[f32], index: usize, fallback: f32) -> f32 {
+    return if index < values.len() {
+        values[index]
+    } else {
+        fallback
+    };
 }

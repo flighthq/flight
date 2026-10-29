@@ -15,6 +15,8 @@
       ".menu-types",
       ".selection-types",
       ".statechart-types",
+      ".textlayout-types",
+      ".textshaper-types",
       ".velocity-types",
       ""
     ],
@@ -74,6 +76,12 @@
     },
     {
       "path": "../textformat"
+    },
+    {
+      "path": "../textlayout/tsconfig.contract.json"
+    },
+    {
+      "path": "../textshaper/tsconfig.contract.json"
     },
     {
       "path": "../useragent"

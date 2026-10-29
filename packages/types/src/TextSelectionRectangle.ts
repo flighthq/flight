@@ -1,7 +1,2 @@
-export interface TextSelectionRectangle {
-  height: number;
-  lineIndex: number;
-  width: number;
-  x: number;
-  y: number;
-}
+/** @deprecated Import text-layout contracts from `@flighthq/textlayout/contract`. */
+export type { TextSelectionRectangle } from '@flighthq/textlayout/contract';

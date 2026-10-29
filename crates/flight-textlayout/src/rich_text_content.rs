@@ -1,3 +1,6 @@
+//! flight-compiler: target-native
+//! flight-compiler: root-only clearRichTextContent computeRichTextContent createRichTextContent getRichTextContent
+
 use flight_entity::allocate_entity;
 
 use crate::types::RichTextContent;

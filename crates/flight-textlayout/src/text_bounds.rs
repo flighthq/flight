@@ -1,3 +1,6 @@
+//! flight-compiler: root-only TEXT_BOUNDS_GUTTER computeTextBoundsHeight computeTextBoundsOffsetX
+//! flight-compiler: root-only computeTextBoundsRectangle computeTextBoundsWidth
+
 use flight_geometry::Rectangle;
 
 use crate::text_layout::TEXT_LAYOUT_GUTTER;

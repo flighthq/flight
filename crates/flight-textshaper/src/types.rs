@@ -1,3 +1,8 @@
+//! flight-compiler: string-union TextDirection=exact
+//! flight-compiler: string-union-value TextDirection LeftToRight "LeftToRight"
+//! flight-compiler: string-union-value TextDirection RightToLeft "RightToLeft"
+//! flight-compiler: string-union-value TextDirection TopToBottom "TopToBottom"
+
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt;

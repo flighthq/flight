@@ -1,8 +1,2 @@
-import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
-
-import type { Entity } from './Entity.ts';
-
-export interface RichTextContent extends Entity {
-  formatRanges: TextFormatRange[];
-  text: string;
-}
+/** @deprecated Import text-layout contracts from `@flighthq/textlayout/contract`. */
+export type { RichTextContent } from '@flighthq/textlayout/contract';

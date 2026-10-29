@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
-use flight_textlayout::create_text_layout_measure_state;
+use flight_textlayout::contract::create_text_layout_measure_state;
 use flight_textshaper::HostTextShaperCapability;
 
 use crate::types::TextLayoutContext;

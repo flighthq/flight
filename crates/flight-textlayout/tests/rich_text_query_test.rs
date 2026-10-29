@@ -231,7 +231,7 @@ mod get_rich_text_selection_rectangles {
 
     #[test]
     fn fills_out_with_one_rectangle_per_intersected_group() {
-        let mut out = Vec::new();
+        let mut out: Vec<TextSelectionRectangle> = Vec::new();
         get_rich_text_selection_rectangles(&mut out, 1, 5, &create_layout());
         assert_eq!(out.len(), 2);
         assert_eq!((out[0].line_index, out[1].line_index), (0, 1));
@@ -239,7 +239,7 @@ mod get_rich_text_selection_rectangles {
 
     #[test]
     fn returns_empty_for_a_collapsed_selection() {
-        let mut out = Vec::new();
+        let mut out: Vec<TextSelectionRectangle> = Vec::new();
         get_rich_text_selection_rectangles(&mut out, 2, 2, &create_layout());
         assert!(out.is_empty());
     }

@@ -1,8 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
-import type { TextLayoutGroup, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
-export function createTextLayoutGroup(format: TextFormat, startIndex: number, endIndex: number): TextLayoutGroup {
+import type { TextLayoutGroup } from './types.ts';
+
+export function createTextLayoutGroup(format: TextFormat, startIndex = 0, endIndex = 0): TextLayoutGroup {
   const out = allocateEntity<TextLayoutGroup>();
   initializeTextLayoutGroup(out, format, startIndex, endIndex);
   return finishEntity(out);
@@ -11,8 +13,8 @@ export function createTextLayoutGroup(format: TextFormat, startIndex: number, en
 export function initializeTextLayoutGroup(
   out: EntityConstruction<TextLayoutGroup>,
   format: TextFormat,
-  startIndex: number,
-  endIndex: number,
+  startIndex = 0,
+  endIndex = 0,
 ): void {
   out.ascent = 0;
   out.descent = 0;

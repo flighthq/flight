@@ -1,3 +1,5 @@
+//! flight-compiler: root-only getTextLineBreakIndex getTextLineBreaks
+
 use crate::text_units::find_utf16_unit;
 
 pub fn get_text_line_break_index(line_breaks: &[usize], start_index: Option<usize>) -> i32 {
@@ -8,14 +10,18 @@ pub fn get_text_line_break_index(line_breaks: &[usize], start_index: Option<usiz
     let mut low = 0;
     let mut high = line_breaks.len();
     while low < high {
-        let middle = low + (high - low) / 2;
+        let middle = (low + high) >> 1;
         if line_breaks[middle] >= start_index {
             high = middle;
         } else {
             low = middle + 1;
         }
     }
-    return line_breaks.get(low).map_or(-1, |index| *index as i32);
+    return if low < line_breaks.len() {
+        line_breaks[low] as i32
+    } else {
+        -1
+    };
 }
 
 pub fn get_text_line_breaks(out: &mut Vec<usize>, text: &str) {
@@ -25,12 +31,13 @@ pub fn get_text_line_breaks(out: &mut Vec<usize>, text: &str) {
     while start < units.len() {
         let lf = find_utf16_unit(&units, 0x000a, start);
         let cr = find_utf16_unit(&units, 0x000d, start);
-        let index = match (lf, cr) {
-            (None, None) => break,
-            (Some(lf), None) => lf,
-            (None, Some(cr)) => cr,
-            (Some(lf), Some(cr)) => lf.min(cr),
-        };
+        if lf.is_none() && cr.is_none() {
+            break;
+        }
+        let mut index = lf.unwrap_or(units.len());
+        if let Some(cr_index) = cr {
+            index = index.min(cr_index);
+        }
         out.push(index);
         start = index + 1;
     }

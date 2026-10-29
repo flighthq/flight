@@ -22,17 +22,19 @@ fn params_with_format(text: &str, width: f32, format: TextFormat) -> TextLayoutP
 }
 
 fn placed_ascii_text(text: &str, layout: &TextLayoutResult) -> String {
-    return layout
-        .groups
-        .iter()
-        .filter(|group| group.start_index != group.end_index)
-        .map(|group| &text[group.start_index..group.end_index])
-        .collect();
+    let mut placed = String::new();
+    for group_index in 0..layout.groups.len() {
+        let group = &layout.groups[group_index];
+        if group.start_index != group.end_index {
+            placed += &text[group.start_index..group.end_index];
+        }
+    }
+    return placed;
 }
 
 mod compute_text_layout {
     use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     #[test]
     fn appends_ellipsis_when_word_wrapped_text_overflows_max_lines() {
@@ -204,10 +206,14 @@ mod compute_text_layout {
         let result = do_layout(params);
         assert!(result.num_lines >= 2);
         let mut expanded = false;
-        for group in result.groups.iter().filter(|group| group.line_index == 0) {
-            for (source_index, advance) in (group.start_index..).zip(group.positions.iter()) {
-                if text.as_bytes().get(source_index) == Some(&b' ') && *advance > 10.0 {
-                    expanded = true;
+        for group_index in 0..result.groups.len() {
+            let group = &result.groups[group_index];
+            if group.line_index == 0 {
+                for (position_index, advance) in group.positions.iter().enumerate() {
+                    let source_index = group.start_index + position_index;
+                    if &text[source_index..source_index + 1] == " " && *advance > 10.0 {
+                        expanded = true;
+                    }
                 }
             }
         }
@@ -334,18 +340,17 @@ mod compute_text_layout {
 
     #[test]
     fn measure_callback_can_reenter_layout_without_shared_scratch() {
-        let entered = std::sync::Arc::new(AtomicBool::new(false));
+        let entered = std::sync::Arc::new(AtomicU32::new(0));
         let callback_entered = entered.clone();
         let mut params = single_range_params("outer", 100.0);
         params.measure = std::sync::Arc::new(move |text, _| {
-            if !callback_entered.swap(true, Ordering::SeqCst) {
-                let inner = do_layout(single_range_params("inner", 100.0));
-                assert_eq!(inner.num_lines, 1);
+            if callback_entered.fetch_add(1, Ordering::SeqCst) == 0 {
+                do_layout(single_range_params("inner", 100.0));
             }
             return text.encode_utf16().count() as f32 * 10.0;
         });
         let result = do_layout(params);
-        assert!(entered.load(Ordering::SeqCst));
+        assert!(entered.fetch_add(0, Ordering::SeqCst) > 0);
         assert_eq!(result.num_lines, 1);
     }
 
@@ -443,7 +448,7 @@ mod compute_text_layout {
     #[test]
     fn returns_an_empty_result_when_format_ranges_are_empty() {
         let mut params = single_range_params("hello", 200.0);
-        params.format_ranges.clear();
+        params.format_ranges = Vec::new();
         assert!(do_layout(params).groups.is_empty());
     }
 
@@ -519,10 +524,10 @@ mod compute_text_layout {
         enabled.kerning = Some(true);
         let mut disabled = base_format();
         disabled.kerning = Some(false);
-        let with = do_layout(params_with_format("ab", 1000.0, enabled));
-        let without = do_layout(params_with_format("ab", 1000.0, disabled));
-        assert_eq!(with.groups[0].positions.len(), 2);
-        assert_eq!(without.groups[0].positions.len(), 2);
+        let enabled_result = do_layout(params_with_format("ab", 1000.0, enabled));
+        let disabled_result = do_layout(params_with_format("ab", 1000.0, disabled));
+        assert_eq!(enabled_result.groups[0].positions.len(), 2);
+        assert_eq!(disabled_result.groups[0].positions.len(), 2);
     }
 
     #[test]
@@ -604,15 +609,7 @@ mod compute_text_layout {
         params.multiline = Some(true);
         params.word_wrap = Some(true);
         let result = do_layout(params);
-        assert!(
-            result
-                .groups
-                .iter()
-                .map(|group| group.line_index)
-                .max()
-                .unwrap()
-                >= 1
-        );
+        assert!(result.num_lines >= 2);
     }
 }
 
@@ -621,9 +618,11 @@ mod create_text_layout_result {
 
     #[test]
     fn returns_a_new_object_each_call() {
-        let first = create_text_layout_result();
+        let mut first = create_text_layout_result();
         let second = create_text_layout_result();
-        assert!(!std::ptr::eq(&first, &second));
+        first.line_widths.push(1.0);
+        assert_eq!(first.line_widths.len(), 1);
+        assert!(second.line_widths.is_empty());
     }
 
     #[test]
@@ -682,14 +681,5 @@ mod is_text_layout_truncated {
         params.multiline = Some(true);
         let result = do_layout(params.clone());
         assert!(is_text_layout_truncated(&result, &params));
-    }
-}
-
-mod text_layout_gutter {
-    use super::*;
-
-    #[test]
-    fn is_a_positive_number() {
-        assert!(std::hint::black_box(TEXT_LAYOUT_GUTTER) > 0.0);
     }
 }

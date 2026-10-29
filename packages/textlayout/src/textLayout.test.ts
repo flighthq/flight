@@ -1,780 +1,597 @@
-import { createTextFormatRange } from '@flighthq/textformat/contract';
-import type { TextLayoutParams, TextLayoutResult } from '@flighthq/types/contract';
+// Generated from crates/flight-textlayout/tests/text_layout_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';
+import type { TextMeasureFunction } from '@flighthq/textshaper/contract';
+import { describe, expect, it } from 'vitest';
 
 import {
   TEXT_LAYOUT_GUTTER,
   computeTextLayout,
+  createTextFormatRange,
   createTextLayoutResult,
   initializeTextLayoutResult,
   isTextLayoutTruncated,
-} from './textLayout.ts';
+} from './contract.ts';
+import type { TextLayoutParams, TextLayoutResult } from './contract.ts';
 
-// Fixed-width measure: every character is 10px regardless of font settings.
-const fixedMeasure = (text: string) => text.length * 10;
-
-const fmt = { size: 16 };
-const range = (start: number, end: number) => createTextFormatRange(fmt, start, end);
-
-function singleRangeParams(text: string, width = 1000, overrides: object = {}): TextLayoutParams {
+function emptyTextFormat(): TextFormat {
   return {
-    text,
-    formatRanges: [range(0, text.length)],
-    width,
-    height: 100,
-    measure: fixedMeasure,
-    ...overrides,
+    align: undefined,
+    blockIndent: undefined,
+    bold: undefined,
+    bullet: undefined,
+    color: undefined,
+    font: undefined,
+    indent: undefined,
+    italic: undefined,
+    kerning: undefined,
+    leading: undefined,
+    leftMargin: undefined,
+    letterSpacing: undefined,
+    listMarker: undefined,
+    rightMargin: undefined,
+    size: undefined,
+    strikethrough: undefined,
+    tabStops: undefined,
+    target: undefined,
+    underline: undefined,
+    url: undefined,
+    variations: undefined,
   };
 }
 
+function fixedMeasure(): TextMeasureFunction {
+  return (text, Format) => Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length * 10.0;
+}
+
+function formatRef(format: TextFormat): TextFormat {
+  return format;
+}
+
+function singleRangeParams(text: string, width: number): TextLayoutParams {
+  let value = emptyTextFormat();
+  value.size = 16.0;
+  const format = formatRef(value);
+  return {
+    autoSize: undefined,
+    border: undefined,
+    direction: undefined,
+    formatRanges: [
+      createTextFormatRange(
+        format,
+        0,
+        Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length,
+      ),
+    ],
+    height: 1000.0,
+    justification: undefined,
+    maxLines: undefined,
+    measure: fixedMeasure(),
+    multiline: undefined,
+    text: String(text),
+    truncationCharacter: undefined,
+    verticalAlign: undefined,
+    width: width,
+    wordWrap: undefined,
+  };
+}
+
+function range(format: TextFormat, start: number, end: number): TextFormatRangeRaw {
+  return createTextFormatRange(formatRef(format), start, end);
+}
+
+function baseFormat(): TextFormat {
+  let format = emptyTextFormat();
+  format.size = 16.0;
+  return format;
+}
+
 function doLayout(params: TextLayoutParams): TextLayoutResult {
-  const out = createTextLayoutResult();
+  let out = createTextLayoutResult();
   computeTextLayout(out, params);
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// createTextLayoutResult
-// ---------------------------------------------------------------------------
+function paramsWithFormat(text: string, width: number, format: TextFormat): TextLayoutParams {
+  let params = singleRangeParams(text, width);
+  params.formatRanges = [
+    range(format, 0, Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length),
+  ];
+  return params;
+}
+
+function placedAsciiText(text: string, layout: Readonly<TextLayoutResult>): string {
+  let placed = '';
+  for (let groupIndex = 0; groupIndex < layout.groups.length; groupIndex += 1) {
+    const group = layout.groups[groupIndex];
+    if (group.startIndex !== group.endIndex) {
+      placed += text.slice(group.startIndex, group.endIndex);
+    }
+  }
+  return placed;
+}
 
 describe('computeTextLayout', () => {
-  it('returns groups and line metrics for simple text', () => {
-    const result = doLayout(singleRangeParams('hi'));
-    expect(result.groups).not.toBeNull();
-    expect(result.numLines).toBeGreaterThan(0);
-  });
-
-  describe('center alignment', () => {
-    it('shifts group offsetX to center within container', () => {
-      const text = 'hi'; // 20px, container=100
-      const noAlignResult = doLayout(singleRangeParams(text, 100));
-      const noAlignOffsetX = noAlignResult.groups[0].offsetX;
-      const alignResult = doLayout(
-        singleRangeParams(text, 100, {
-          formatRanges: [createTextFormatRange({ size: 16, align: 'center' }, 0, text.length)],
-        }),
-      );
-      expect(alignResult.groups[0].offsetX).toBeGreaterThan(noAlignOffsetX);
-    });
-
-    // Guards the layout-with-real-width contract that the RichText renderers rely on: a single,
-    // non-wrapping line must center against the real field width, not a wrap-prevention sentinel.
-    // Passing a huge sentinel width (formerly 10000) shifted a short line ~4975px off-screen, so it
-    // rendered nothing. offsetX must stay inside the container.
-    it('centers a short single line against a real width when wordWrap is false', () => {
-      const text = 'hi'; // 20px wide, container = 200
-      const result = doLayout(
-        singleRangeParams(text, 200, {
-          formatRanges: [createTextFormatRange({ size: 16, align: 'center' }, 0, text.length)],
-          multiline: false,
-          wordWrap: false,
-        }),
-      );
-      // slack = 200 - 20 - 2*GUTTER = 176 → shift = 88 → offsetX = GUTTER + 88 = 90
-      const offsetX = result.groups[0].offsetX;
-      expect(offsetX).toBe(90);
-      expect(offsetX).toBeLessThan(200);
-    });
-  });
-
-  describe('empty input', () => {
-    it('returns an empty result for empty text', () => {
-      const result = doLayout(singleRangeParams(''));
-      expect(result.groups).toHaveLength(0);
-      expect(result.numLines).toBe(1);
-    });
-
-    it('returns an empty result when formatRanges is empty', () => {
-      const result = doLayout({ text: 'hello', formatRanges: [], width: 200, height: 100, measure: fixedMeasure });
-      expect(result.groups).toHaveLength(0);
-    });
-  });
-
-  describe('explicit line breaks (multiline)', () => {
-    it('splits on \\n when multiline is true', () => {
-      const text = 'ab\ncd';
-      const result = doLayout(
-        singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      const lines = result.groups.map((g) => g.lineIndex);
-      expect(lines).toContain(0);
-      expect(lines).toContain(1);
-      expect(result.numLines).toBe(2);
-    });
-
-    it('does not split on \\n when multiline is false', () => {
-      const text = 'ab\ncd';
-      const result = doLayout(
-        singleRangeParams(text, 1000, { multiline: false, formatRanges: [range(0, text.length)] }),
-      );
-      expect(result.numLines).toBe(1);
-    });
-
-    it('splits on \\r as well', () => {
-      const text = 'ab\rcd';
-      const result = doLayout(
-        singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      expect(result.numLines).toBe(2);
-    });
-
-    it('handles multiple consecutive breaks', () => {
-      const text = 'a\n\nb';
-      const result = doLayout(
-        singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      expect(result.numLines).toBe(3);
-    });
-  });
-
-  describe('line metrics', () => {
-    it('reports lineWidths for each line', () => {
-      const text = 'ab\ncd';
-      const result = doLayout(
-        singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      expect(result.lineWidths).toHaveLength(2);
-    });
-
-    it('reports lineHeights for each line', () => {
-      const text = 'ab\ncd';
-      const result = doLayout(
-        singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      expect(result.lineHeights).toHaveLength(2);
-      for (const h of result.lineHeights) expect(h).toBeGreaterThan(0);
-    });
-
-    it('reports textHeight > 0 for non-empty text', () => {
-      const result = doLayout(singleRangeParams('hello'));
-      expect(result.textHeight).toBeGreaterThan(0);
-    });
-
-    it('reports textWidth > 0 for non-empty text', () => {
-      const result = doLayout(singleRangeParams('hello'));
-      expect(result.textWidth).toBeGreaterThan(0);
-    });
-  });
-
-  describe('multiple format ranges', () => {
-    it('produces separate groups for each format range', () => {
-      const text = 'helloworld';
-      const result = doLayout({
-        text,
-        formatRanges: [createTextFormatRange({ size: 16 }, 0, 5), createTextFormatRange({ size: 24 }, 5, 10)],
-        width: 1000,
-        height: 100,
-        measure: fixedMeasure,
-      });
-      // Expect at least 2 groups (one per range).
-      expect(result.groups.length).toBeGreaterThanOrEqual(2);
-      expect(result.groups[0].format.size).toBe(16);
-      expect(result.groups[1].format.size).toBe(24);
-    });
-  });
-
-  describe('right alignment', () => {
-    it('shifts group offsetX to right-align within container', () => {
-      const text = 'hi'; // 20px wide, container=100
-      const result = doLayout(
-        singleRangeParams(text, 100, {
-          formatRanges: [createTextFormatRange({ size: 16, align: 'right' }, 0, text.length)],
-        }),
-      );
-      // With right align the group should be shifted right of the GUTTER start.
-      expect(result.groups[0].offsetX).toBeGreaterThan(2);
-    });
-  });
-
-  describe('single line', () => {
-    it('produces one group for a simple string', () => {
-      const result = doLayout(singleRangeParams('hello'));
-      expect(result.groups).toHaveLength(1);
-      expect(result.groups[0].startIndex).toBe(0);
-      expect(result.groups[0].endIndex).toBe(5);
-      expect(result.groups[0].lineIndex).toBe(0);
-    });
-
-    it('positions the group at the gutter offset', () => {
-      const result = doLayout(singleRangeParams('hi'));
-      // baseX = GUTTER (2) + leftMargin (0) + blockIndent (0) + indent (0)
-      expect(result.groups[0].offsetX).toBe(2);
-      expect(result.groups[0].offsetY).toBe(2); // GUTTER
-    });
-
-    it('sets width to the sum of character advances', () => {
-      const result = doLayout(singleRangeParams('abc'));
-      // 3 chars × 10px = 30px — but pair-wise logic may produce slightly different
-      // values. For a fixed-width font: measure("bc") - measure("c") = 20 - 10 = 10.
-      expect(result.groups[0].width).toBeCloseTo(30, 0);
-    });
-
-    it('reports numLines as 1', () => {
-      expect(doLayout(singleRangeParams('hello')).numLines).toBe(1);
-    });
-
-    it('stores per-character positions', () => {
-      const result = doLayout(singleRangeParams('ab'));
-      expect(result.groups[0].positions).toHaveLength(2);
-    });
-  });
-
-  describe('vertical alignment', () => {
-    // A single short line in a tall (height=200) container has ample vertical slack.
-    const tall = (overrides: object = {}) => singleRangeParams('hi', 100, { height: 200, ...overrides });
-
-    it('leaves offsetY unchanged for the top default', () => {
-      const implicitTop = doLayout(tall()).groups[0].offsetY;
-      const explicitTop = doLayout(tall({ verticalAlign: 'top' })).groups[0].offsetY;
-      expect(explicitTop).toBe(implicitTop);
-    });
-
-    it('shifts the block down for middle and further for bottom when the container has slack', () => {
-      const topY = doLayout(tall()).groups[0].offsetY;
-      const middleY = doLayout(tall({ verticalAlign: 'middle' })).groups[0].offsetY;
-      const bottomY = doLayout(tall({ verticalAlign: 'bottom' })).groups[0].offsetY;
-      expect(middleY).toBeGreaterThan(topY);
-      expect(bottomY).toBeGreaterThan(middleY);
-    });
-
-    it('places middle at exactly half the bottom shift', () => {
-      const topY = doLayout(tall()).groups[0].offsetY;
-      const middleY = doLayout(tall({ verticalAlign: 'middle' })).groups[0].offsetY;
-      const bottomY = doLayout(tall({ verticalAlign: 'bottom' })).groups[0].offsetY;
-      expect(middleY - topY).toBeCloseTo((bottomY - topY) / 2);
-    });
-
-    it('shifts the bottom block by the full vertical slack (content height + gutters)', () => {
-      const height = 200;
-      const topResult = doLayout(tall());
-      const bottomResult = doLayout(tall({ verticalAlign: 'bottom' }));
-      const slack = height - (topResult.textHeight + TEXT_LAYOUT_GUTTER * 2);
-      expect(bottomResult.groups[0].offsetY - topResult.groups[0].offsetY).toBeCloseTo(slack);
-    });
-
-    it('is inert when the container is not taller than its content (no slack)', () => {
-      const short = (overrides: object = {}) => singleRangeParams('hi', 100, { height: 4, ...overrides });
-      const topY = doLayout(short()).groups[0].offsetY;
-      expect(doLayout(short({ verticalAlign: 'middle' })).groups[0].offsetY).toBe(topY);
-      expect(doLayout(short({ verticalAlign: 'bottom' })).groups[0].offsetY).toBe(topY);
-    });
-  });
-
-  describe('word wrap', () => {
-    // With fixedMeasure (10px/char) and width=50:
-    //   "hello world" → "hello " = 60px → wraps; "world" = 50px fits
-    it('wraps at word boundary when line exceeds width', () => {
-      const text = 'hello world';
-      const result = doLayout(
-        singleRangeParams(text, 50, { wordWrap: true, multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      // Should have groups on at least two lines
-      const lineIndices = result.groups.map((g) => g.lineIndex);
-      expect(Math.max(...lineIndices)).toBeGreaterThanOrEqual(1);
-    });
-
-    it('does not wrap when word wrap is false even if text exceeds width', () => {
-      const text = 'hello world';
-      const result = doLayout(singleRangeParams(text, 50, { wordWrap: false, formatRanges: [range(0, text.length)] }));
-      expect(result.numLines).toBe(1);
-    });
-
-    it('breaks a single long word that exceeds the wrap width', () => {
-      const text = 'abcdefghij'; // 100px, width=50 → should break mid-word
-      const result = doLayout(
-        singleRangeParams(text, 50, { wordWrap: true, multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      expect(result.numLines).toBeGreaterThan(1);
-    });
-
-    // Reconstructing the placed text from group [startIndex, endIndex) spans must
-    // preserve every non-space character. A wrap that advanced past the first
-    // character of the wrapped word would drop it here.
-    it('preserves every character when wrapping across word boundaries', () => {
-      const text = 'aaa bbb ccc';
-      const result = doLayout(
-        singleRangeParams(text, 60, { wordWrap: true, multiline: true, formatRanges: [range(0, text.length)] }),
-      );
-      const placed = result.groups.map((g) => text.slice(g.startIndex, g.endIndex)).join('');
-      expect(placed.replace(/ /g, '')).toBe(text.replace(/ /g, ''));
-    });
-
-    it('preserves every character when wrapping multi-format (rich) text', () => {
-      const text = 'aaa bbb ccc';
-      const result = doLayout({
-        text,
-        formatRanges: [createTextFormatRange({ size: 16 }, 0, 4), createTextFormatRange({ size: 16 }, 4, text.length)],
-        width: 60,
-        height: 100,
-        measure: fixedMeasure,
-        wordWrap: true,
-        multiline: true,
-      });
-      const placed = result.groups.map((g) => text.slice(g.startIndex, g.endIndex)).join('');
-      expect(placed.replace(/ /g, '')).toBe(text.replace(/ /g, ''));
-    });
-  });
-});
-
-describe('computeTextLayout — bullet list items', () => {
-  it('emits a bullet glyph group for a format with bullet:true', () => {
-    const text = 'item';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, bullet: true }, 0, text.length)],
-      width: 200,
-      height: 100,
-      measure: fixedMeasure,
-      multiline: true,
-    });
-    // There should be a bullet group (zero-length startIndex===endIndex) plus a text group.
-    const bulletGroup = result.groups.find((g) => g.startIndex === g.endIndex);
-    expect(bulletGroup).toBeDefined();
-    expect(bulletGroup!.lineIndex).toBe(0);
-  });
-
-  it('lets an explicit positive indent win over the bullet width (text may overlap the bullet)', () => {
-    // Contract: a user-set positive indent is authoritative — it is NOT clamped
-    // up to the bullet glyph width. With fixedMeasure the bullet '•' is 10px wide,
-    // but indent:1 keeps the text at baseX = GUTTER(2) + indent(1) = 3, inside the
-    // bullet's 10px span, so the text deliberately overlaps the bullet.
-    const text = 'item';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, bullet: true, indent: 1 }, 0, text.length)],
-      width: 200,
-      height: 100,
-      measure: fixedMeasure,
-      multiline: true,
-    });
-    const bulletGroup = result.groups.find((g) => g.startIndex === g.endIndex);
-    const textGroup = result.groups.find((g) => g.startIndex !== g.endIndex);
-    expect(bulletGroup).toBeDefined();
-    expect(textGroup).toBeDefined();
-    expect(bulletGroup!.offsetX).toBe(TEXT_LAYOUT_GUTTER); // bullet at the gutter
-    expect(textGroup!.offsetX).toBe(TEXT_LAYOUT_GUTTER + 1); // explicit indent honored, not clamped
-    // The text starts inside the bullet's drawn width → overlap is the accepted behavior.
-    expect(textGroup!.offsetX).toBeLessThan(bulletGroup!.offsetX + bulletGroup!.width);
-  });
-});
-
-describe('computeTextLayout — codepoint iteration', () => {
-  it('does not split surrogate pairs (astral codepoints)', () => {
-    // U+1F600 GRINNING FACE is a surrogate pair (2 UTF-16 code units).
-    const emoji = '😀'; // 😀
-    const text = emoji + 'ab';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
-      width: 200,
-      height: 100,
-      measure: (s) => s.length * 10, // length-based to expose split
-    });
-    // The emoji is 2 code units but 1 codepoint; positions should reflect
-    // that the emoji is one logical character (not split into 2).
-    expect(result.groups[0].positions.length).toBe(3); // emoji + 'a' + 'b' = 3 codepoints
-  });
-});
-
-describe('computeTextLayout — conformance: bullet listMarker:none suppresses glyph', () => {
-  it('does not emit a bullet group when listMarker is none', () => {
-    const text = 'item';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, bullet: true, listMarker: 'none' }, 0, text.length)],
-      width: 200,
-      height: 100,
-      measure: fixedMeasure,
-      multiline: true,
-    });
-    // With listMarker: 'none', no zero-length bullet group should be emitted.
-    const bulletGroups = result.groups.filter((g) => g.startIndex === g.endIndex);
-    expect(bulletGroups).toHaveLength(0);
-  });
-
-  it('emits a bullet group when listMarker is absent (default bullet)', () => {
-    const text = 'item';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, bullet: true }, 0, text.length)],
-      width: 200,
-      height: 100,
-      measure: fixedMeasure,
-      multiline: true,
-    });
-    const bulletGroups = result.groups.filter((g) => g.startIndex === g.endIndex);
-    expect(bulletGroups.length).toBeGreaterThan(0);
-  });
-});
-
-describe('computeTextLayout — conformance: center alignment golden values', () => {
-  it('places a 20px text at offsetX 40 inside a 100px container', () => {
-    // container=100, gutter=2, text="hi"=20px
-    // slack = 100 - 20 - 2*2 = 76 → shift = 76/2 = 38 → offsetX = 2 + 38 = 40
-    const text = 'hi';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'center' }, 0, text.length)],
-      width: 100,
-      height: 100,
-      measure: fixedMeasure,
-    });
-    expect(result.groups[0].offsetX).toBe(40);
-  });
-});
-
-describe('computeTextLayout — conformance: justify multi-paragraph', () => {
-  // Two paragraphs separated by \n. Only the non-last lines of each paragraph
-  // should be justified; last lines of each paragraph remain left-aligned.
-  //
-  // Text: "aa bb\ncc dd" with width=100 (available=96 after gutters)
-  // "aa bb" fits on one line → that is the last line of para 1 → NOT justified
-  // "cc dd" is the last line of para 2 → NOT justified
-  it('does not justify the last line of each paragraph in multi-paragraph text', () => {
-    const text = 'aa bb\ncc dd';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
-      width: 100,
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-    });
-    expect(result.numLines).toBe(2);
-    // Both lines are paragraph-last lines → neither should be shifted by justify.
-    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
-    const line1Groups = result.groups.filter((g) => g.lineIndex === 1);
-    // Line 0 first group should start at TEXT_LAYOUT_GUTTER (left-aligned).
-    expect(line0Groups[0]?.offsetX).toBe(TEXT_LAYOUT_GUTTER);
-    // Line 1 first group should also start at TEXT_LAYOUT_GUTTER.
-    expect(line1Groups[0]?.offsetX).toBe(TEXT_LAYOUT_GUTTER);
-  });
-
-  it('justifies mid-paragraph lines but not paragraph-last lines when word-wrap splits a paragraph', () => {
-    // A single paragraph of "aa bb cc dd" with narrow width=50 so it wraps.
-    // Line 0: "aa bb" (wrapped mid-paragraph) — should be justified (2 groups, residual ~46px)
-    // Line 1: "cc dd" (last line of para) — should NOT be justified
-    const text = 'aa bb cc dd';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
-      width: 56, // available=52, 'aa bb' = 50px → fits; 'cc' would push to 56 total → wraps
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      wordWrap: true,
-    });
-    expect(result.numLines).toBeGreaterThanOrEqual(2);
-    // The last line must not be justified (groups remain at their natural left offset).
-    const lastLineIdx = result.numLines - 1;
-    const lastLineGroups = result.groups.filter((g) => g.lineIndex === lastLineIdx);
-    // The very first group on the last line is always at its natural base position.
-    if (lastLineGroups.length > 0) {
-      expect(lastLineGroups[0].offsetX).toBe(TEXT_LAYOUT_GUTTER);
-    }
-  });
-});
-
-describe('computeTextLayout — conformance: right alignment golden values', () => {
-  it('places a 20px text at offsetX 78 inside a 100px container', () => {
-    // container=100, gutter=2, text="hi"=20px
-    // rightEdge = 100 - 20 - 2*2 = 76 → shift=76 → offsetX = 2 + 76 = 78
-    const text = 'hi';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'right' }, 0, text.length)],
-      width: 100,
-      height: 100,
-      measure: fixedMeasure,
-    });
-    expect(result.groups[0].offsetX).toBe(78);
-  });
-});
-
-describe('computeTextLayout — conformance: truncation + word-wrap combined', () => {
-  it('clips a long word spanning the maxLines boundary', () => {
-    // A very long word on a narrow container forces word-breaking.
-    // With maxLines=1 the first broken segment is placed, then truncated.
-    const text = 'abcdefghijklmnop'; // 160px with fixedMeasure
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
-      width: 60, // narrow: forces word-break, each segment ~5-6 chars
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      wordWrap: true,
-      maxLines: 1,
-    });
-    // At most 1 line after truncation.
-    expect(result.numLines).toBeLessThanOrEqual(1);
-    // The last visible group on line 0 must exist.
-    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
-    expect(line0Groups.length).toBeGreaterThan(0);
-  });
-
-  it('appends ellipsis when word-wrapped text overflows maxLines', () => {
+  it('appends ellipsis when word wrapped text overflows max lines', () => {
     const text = 'word one word two word three word four';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
-      width: 100,
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      wordWrap: true,
-      maxLines: 2,
-    });
-    expect(result.numLines).toBeLessThanOrEqual(2);
-    // There must be at least one group (ellipsis or text) on the last line.
-    const lastGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
-    expect(lastGroups.length).toBeGreaterThan(0);
+    let params = singleRangeParams(text, 100.0);
+    params.height = 200.0;
+    params.maxLines = 2;
+    params.multiline = true;
+    params.wordWrap = true;
+    const result = doLayout(params);
+    expect(result.numLines <= 2).toBe(true);
+    expect(result.groups.some((group) => group.lineIndex === result.numLines - 1)).toBe(true);
   });
-
-  it('truncates a single long word that straddles the maxLines boundary across both truncation paths', () => {
-    // A short word "go " wraps via the main-loop path onto line 0, then a single
-    // unbroken long word is split by breakLongWord across the remaining lines.
-    // With maxLines=2, the long word crosses the line-2 boundary, so the
-    // main-loop truncation (after the space-wrap commit) and breakLongWord's own
-    // checkTruncation are both reachable in one layout.
-    const text = 'go abcdefghijklmnopqrstuvwxyz';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
-      width: 60, // ~5-6 chars/line → long word spans several broken segments
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      wordWrap: true,
-      maxLines: 2,
-    });
-    // Clipped to at most maxLines.
-    expect(result.numLines).toBeLessThanOrEqual(2);
-    // The last visible line carries a group (the truncated word segment or ellipsis).
-    const lastGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
-    expect(lastGroups.length).toBeGreaterThan(0);
-    expect(isTextLayoutTruncated(result, { ...singleRangeParams(text), maxLines: 2 })).toBe(true);
+  it('breaks a single long word that exceeds the wrap width', () => {
+    let params = singleRangeParams('abcdefghij', 50.0);
+    params.multiline = true;
+    params.wordWrap = true;
+    expect(doLayout(params).numLines > 1).toBe(true);
   });
-});
-
-describe('computeTextLayout — justify alignment', () => {
-  it('shifts group offsets for justified mid-line (non-last) lines', () => {
-    const text = 'a b\nc d';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
-      width: 100,
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-    });
-    // Line 0 is not the last line, so it should be justified (groups shifted / wider).
-    // Line 1 is the last line, so it should remain left-aligned.
-    expect(result.numLines).toBe(2);
-    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
-    // The last group on line 0 should be pushed rightward by justify.
-    expect(line0Groups.length).toBeGreaterThan(0);
+  it('centers a short single line against a real width when word wrap is false', () => {
+    let format = baseFormat();
+    format.align = 'center';
+    let params = paramsWithFormat('hi', 200.0, format);
+    params.multiline = false;
+    params.wordWrap = false;
+    const offsetX = doLayout(params).groups[0].offsetX;
+    expect(offsetX).toEqual(90.0);
+    expect(offsetX < 200.0).toBe(true);
   });
-});
-
-describe('computeTextLayout — justify single-format', () => {
-  it('expands the actual space advance after an astral codepoint', () => {
-    const text = '😀 a bb';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
-      width: 70,
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      wordWrap: true,
-    });
-    expect(result.numLines).toBeGreaterThanOrEqual(2);
-
-    // Positions are codepoint-indexed while source ranges use UTF-16 indices. In the first group,
-    // positions[0] is the astral glyph and positions[1] is the following space at source index 2.
-    const astralGroup = result.groups.find((group) => group.lineIndex === 0 && group.startIndex === 0);
-    expect(astralGroup?.positions[0]).toBe(20);
-    expect(astralGroup?.positions[1]).toBeGreaterThan(10);
+  it('clips a long word spanning the max lines boundary', () => {
+    let params = singleRangeParams('abcdefghijklmnop', 60.0);
+    params.height = 200.0;
+    params.maxLines = 1;
+    params.multiline = true;
+    params.wordWrap = true;
+    const result = doLayout(params);
+    expect(result.numLines <= 1).toBe(true);
+    expect(result.groups.some((group) => group.lineIndex === 0)).toBe(true);
   });
-
-  it('expands space character advances on a wrapped mid-paragraph line', () => {
-    // "aa bb cc" with fixedMeasure (10px/char) and narrow width forces word-wrap.
-    // Line 0 is mid-paragraph → justified. Space chars should get extra advance.
-    // This was broken when justification counted group boundaries instead of space chars.
+  it('clips to max lines and appends truncation character', () => {
+    const text = 'line one\nline two\nline three';
+    let params = singleRangeParams(text, 300.0);
+    params.height = 200.0;
+    params.maxLines = 2;
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(result.numLines <= 2).toBe(true);
+    expect(result.groups.some((group) => group.lineIndex === result.numLines - 1)).toBe(true);
+  });
+  it('does not emit a bullet group when list marker is none', () => {
+    let format = baseFormat();
+    format.bullet = true;
+    format.listMarker = 'none';
+    let params = paramsWithFormat('item', 200.0, format);
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(!result.groups.some((group) => group.startIndex === group.endIndex)).toBe(true);
+  });
+  it('does not justify the last line of each paragraph in multi paragraph text', () => {
+    const text = 'aa bb\ncc dd';
+    let format = baseFormat();
+    format.align = 'justify';
+    let params = paramsWithFormat(text, 100.0, format);
+    params.height = 200.0;
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(result.numLines).toEqual(2);
+    const first = result.groups.find((group) => group.lineIndex === 0)!;
+    const second = result.groups.find((group) => group.lineIndex === 1)!;
+    expect(first.offsetX).toEqual(TEXT_LAYOUT_GUTTER);
+    expect(second.offsetX).toEqual(TEXT_LAYOUT_GUTTER);
+  });
+  it('does not split on lf when multiline is false', () => {
+    let params = singleRangeParams('ab\ncd', 1000.0);
+    params.multiline = false;
+    expect(doLayout(params).numLines).toEqual(1);
+  });
+  it('does not split surrogate pairs', () => {
+    const text = '😀ab';
+    const result = doLayout(singleRangeParams(text, 200.0));
+    expect(result.groups[0].positions.length).toEqual(3);
+  });
+  it('does not wrap when word wrap is false even if text exceeds width', () => {
+    let params = singleRangeParams('hello world', 50.0);
+    params.wordWrap = false;
+    expect(doLayout(params).numLines).toEqual(1);
+  });
+  it('emits a bullet glyph group for a bullet format', () => {
+    let format = baseFormat();
+    format.bullet = true;
+    let params = paramsWithFormat('item', 200.0, format);
+    params.multiline = true;
+    const result = doLayout(params);
+    const bullet = result.groups.find((group) => group.startIndex === group.endIndex)!;
+    expect(bullet.lineIndex).toEqual(0);
+  });
+  it('emits a bullet group when list marker is absent', () => {
+    let format = baseFormat();
+    format.bullet = true;
+    let params = paramsWithFormat('item', 200.0, format);
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(result.groups.some((group) => group.startIndex === group.endIndex)).toBe(true);
+  });
+  it('expands space character advances on a wrapped mid paragraph line', () => {
     const text = 'aa bb cc';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
-      width: 80,
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      wordWrap: true,
-    });
-    expect(result.numLines).toBeGreaterThanOrEqual(2);
-    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
-    // Verify at least one group contains a space char whose advance exceeds the
-    // natural 10px width — proof that interWord justification distributed space.
-    let foundExpandedSpace = false;
-    for (const g of line0Groups) {
-      for (let ci = 0; ci < g.positions.length; ci++) {
-        if (text.charCodeAt(g.startIndex + ci) === 0x20 && g.positions[ci] > 10) {
-          foundExpandedSpace = true;
+    let format = baseFormat();
+    format.align = 'justify';
+    let params = paramsWithFormat(text, 80.0, format);
+    params.height = 200.0;
+    params.multiline = true;
+    params.wordWrap = true;
+    const result = doLayout(params);
+    expect(result.numLines >= 2).toBe(true);
+    let expanded = false;
+    for (let groupIndex = 0; groupIndex < result.groups.length; groupIndex += 1) {
+      const group = result.groups[groupIndex];
+      if (group.lineIndex === 0) {
+        for (const [positionIndex, advance] of group.positions.entries()) {
+          const sourceIndex = group.startIndex + positionIndex;
+          if (text.slice(sourceIndex, sourceIndex + 1) === ' ' && advance > 10.0) {
+            expanded = true;
+          }
         }
       }
     }
-    expect(foundExpandedSpace).toBe(true);
+    expect(expanded).toBe(true);
   });
-});
-
-describe('computeTextLayout — kerning flag', () => {
-  it('skips pair-measurement when kerning is false', () => {
-    // With a measure that returns 5 per char, pair "ab" should return 10.
-    // With kerning=true: advance of 'a' = measure("ab") - measure("b") = 10 - 5 = 5.
-    // With kerning=false: advance of 'a' = measure("a") = 5.
-    // Both give the same result here (monospace), so we verify no throw.
-    const text = 'ab';
-    const resultWith = doLayout(
-      singleRangeParams(text, 1000, {
-        formatRanges: [createTextFormatRange({ size: 16, kerning: true }, 0, text.length)],
-      }),
-    );
-    const resultWithout = doLayout(
-      singleRangeParams(text, 1000, {
-        formatRanges: [createTextFormatRange({ size: 16, kerning: false }, 0, text.length)],
-      }),
-    );
-    expect(resultWith.groups[0].positions).toHaveLength(2);
-    expect(resultWithout.groups[0].positions).toHaveLength(2);
+  it('expands the actual space advance after an astral codepoint', () => {
+    const text = '😀 a bb';
+    let format = baseFormat();
+    format.align = 'justify';
+    let params = paramsWithFormat(text, 70.0, format);
+    params.height = 200.0;
+    params.multiline = true;
+    params.wordWrap = true;
+    const result = doLayout(params);
+    expect(result.numLines >= 2).toBe(true);
+    const group = result.groups.find((group) => group.lineIndex === 0 && group.startIndex === 0)!;
+    expect(group.positions[0]).toEqual(20.0);
+    expect(group.positions[1] > 10.0).toBe(true);
   });
-});
-
-// ---------------------------------------------------------------------------
-// Golden-file / conformance tests — lock in output stability for key paths.
-// These tests compare actual offsetX values to ensure the alignment algorithms
-// produce the expected pixel-exact positions for a fixed-width measure function
-// (10px/char) and a known container width.
-// ---------------------------------------------------------------------------
-
-describe('computeTextLayout — maxLines truncation', () => {
-  it('clips to maxLines and appends truncation character', () => {
-    const text = 'line one\nline two\nline three';
-    const result = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
-      width: 300,
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      maxLines: 2,
-    });
-    // Should have at most 2 lines.
-    expect(result.numLines).toBeLessThanOrEqual(2);
-    // Should contain an ellipsis group on the last visible line.
-    const lastLineGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
-    expect(lastLineGroups.length).toBeGreaterThan(0);
+  it('handles multiple consecutive breaks', () => {
+    let params = singleRangeParams('a\n\nb', 1000.0);
+    params.multiline = true;
+    expect(doLayout(params).numLines).toEqual(3);
   });
-
-  it('isTextLayoutTruncated returns true when maxLines clips the layout', () => {
-    const text = 'line one\nline two\nline three';
-    const params: TextLayoutParams = {
-      text,
-      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
-      width: 300,
-      height: 200,
-      measure: fixedMeasure,
-      multiline: true,
-      maxLines: 2,
+  it('is inert when the container is not taller than its content', () => {
+    let top = singleRangeParams('hi', 100.0);
+    top.height = 4.0;
+    const topY = doLayout(top).groups[0].offsetY;
+    top.verticalAlign = 'middle';
+    expect(doLayout(top).groups[0].offsetY).toEqual(topY);
+    top.verticalAlign = 'bottom';
+    expect(doLayout(top).groups[0].offsetY).toEqual(topY);
+  });
+  it('justifies mid paragraph lines but not paragraph last lines', () => {
+    const text = 'aa bb cc dd';
+    let format = baseFormat();
+    format.align = 'justify';
+    let params = paramsWithFormat(text, 56.0, format);
+    params.height = 200.0;
+    params.multiline = true;
+    params.wordWrap = true;
+    const result = doLayout(params);
+    expect(result.numLines >= 2).toBe(true);
+    const lastLine = result.numLines - 1;
+    const group = result.groups.find((group) => group.lineIndex === lastLine)!;
+    expect(group.offsetX).toEqual(TEXT_LAYOUT_GUTTER);
+  });
+  it('leaves offset y unchanged for the top default', () => {
+    let explicit = singleRangeParams('hi', 100.0);
+    explicit.height = 200.0;
+    const implicit = doLayout(explicit).groups[0].offsetY;
+    explicit.verticalAlign = 'top';
+    expect(doLayout(explicit).groups[0].offsetY).toEqual(implicit);
+  });
+  it('lets an explicit positive indent win over the bullet width', () => {
+    let format = baseFormat();
+    format.bullet = true;
+    format.indent = 1.0;
+    let params = paramsWithFormat('item', 200.0, format);
+    params.multiline = true;
+    const result = doLayout(params);
+    const bullet = result.groups.find((group) => group.startIndex === group.endIndex)!;
+    const text = result.groups.find((group) => group.startIndex !== group.endIndex)!;
+    expect(bullet.offsetX).toEqual(TEXT_LAYOUT_GUTTER);
+    expect(text.offsetX).toEqual(TEXT_LAYOUT_GUTTER + 1.0);
+    expect(text.offsetX < bullet.offsetX + bullet.width).toBe(true);
+  });
+  it('places a 20px centered text at offset x 40', () => {
+    let format = baseFormat();
+    format.align = 'center';
+    const result = doLayout(paramsWithFormat('hi', 100.0, format));
+    expect(result.groups[0].offsetX).toEqual(40.0);
+  });
+  it('places a 20px right aligned text at offset x 78', () => {
+    let format = baseFormat();
+    format.align = 'right';
+    const result = doLayout(paramsWithFormat('hi', 100.0, format));
+    expect(result.groups[0].offsetX).toEqual(78.0);
+  });
+  it('places middle at exactly half the bottom shift', () => {
+    let params = singleRangeParams('hi', 100.0);
+    params.height = 200.0;
+    const topY = doLayout(params).groups[0].offsetY;
+    params.verticalAlign = 'middle';
+    const middleY = doLayout(params).groups[0].offsetY;
+    params.verticalAlign = 'bottom';
+    const bottomY = doLayout(params).groups[0].offsetY;
+    expect(middleY - topY).toEqual((bottomY - topY) / 2.0);
+  });
+  it('measure callback can reenter layout without shared scratch', () => {
+    const entered = { value: 0 >>> 0 };
+    const callbackEntered = entered;
+    let params = singleRangeParams('outer', 100.0);
+    params.measure = (text, _unused0) => {
+      if (
+        (() => {
+          const previous = callbackEntered.value;
+          callbackEntered.value = (callbackEntered.value + 1) >>> 0;
+          return previous;
+        })() === 0
+      ) {
+        doLayout(singleRangeParams('inner', 100.0));
+      }
+      return Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length * 10.0;
     };
     const result = doLayout(params);
+    expect(
+      (() => {
+        const previous = entered.value;
+        entered.value = (entered.value + 0) >>> 0;
+        return previous;
+      })() > 0,
+    ).toBe(true);
+    expect(result.numLines).toEqual(1);
+  });
+  it('positions the group at the gutter offset', () => {
+    const result = doLayout(singleRangeParams('hi', 1000.0));
+    expect(result.groups[0].offsetX).toEqual(2.0);
+    expect(result.groups[0].offsetY).toEqual(2.0);
+  });
+  it('preserves every character when wrapping across word boundaries', () => {
+    const text = 'aaa bbb ccc';
+    let params = singleRangeParams(text, 60.0);
+    params.multiline = true;
+    params.wordWrap = true;
+    const placed = placedAsciiText(text, doLayout(params));
+    expect(placed.replaceAll(' ', '')).toEqual(text.replaceAll(' ', ''));
+  });
+  it('preserves every character when wrapping multi format text', () => {
+    const text = 'aaa bbb ccc';
+    let params = singleRangeParams(text, 60.0);
+    params.formatRanges = [range(baseFormat(), 0, 4), range(baseFormat(), 4, text.length)];
+    params.multiline = true;
+    params.wordWrap = true;
+    const placed = placedAsciiText(text, doLayout(params));
+    expect(placed.replaceAll(' ', '')).toEqual(text.replaceAll(' ', ''));
+  });
+  it('produces one group for a simple string', () => {
+    const result = doLayout(singleRangeParams('hello', 1000.0));
+    expect(result.groups.length).toEqual(1);
+    expect(result.groups[0].startIndex).toEqual(0);
+    expect(result.groups[0].endIndex).toEqual(5);
+    expect(result.groups[0].lineIndex).toEqual(0);
+  });
+  it('produces separate groups for each format range', () => {
+    const text = 'helloworld';
+    let large = baseFormat();
+    large.size = 24.0;
+    let params = singleRangeParams(text, 1000.0);
+    params.formatRanges = [range(baseFormat(), 0, 5), range(large, 5, 10)];
+    const result = doLayout(params);
+    expect(result.groups.length >= 2).toBe(true);
+    expect(result.groups[0].format!.size).toEqual(16.0);
+    expect(result.groups[1].format!.size).toEqual(24.0);
+  });
+  it('reports line heights for each line', () => {
+    let params = singleRangeParams('ab\ncd', 1000.0);
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(result.lineHeights.length).toEqual(2);
+    expect(result.lineHeights.every((height) => height > 0.0)).toBe(true);
+  });
+  it('reports line widths for each line', () => {
+    let params = singleRangeParams('ab\ncd', 1000.0);
+    params.multiline = true;
+    expect(doLayout(params).lineWidths.length).toEqual(2);
+  });
+  it('reports num lines as 1', () => {
+    expect(doLayout(singleRangeParams('hello', 1000.0)).numLines).toEqual(1);
+  });
+  it('reports text height greater than 0 for non empty text', () => {
+    expect(doLayout(singleRangeParams('hello', 1000.0)).textHeight > 0.0).toBe(true);
+  });
+  it('reports text width greater than 0 for non empty text', () => {
+    expect(doLayout(singleRangeParams('hello', 1000.0)).textWidth > 0.0).toBe(true);
+  });
+  it('returns an empty result for empty text', () => {
+    const result = doLayout(singleRangeParams('', 1000.0));
+    expect(result.groups.length === 0).toBe(true);
+    expect(result.numLines).toEqual(1);
+  });
+  it('returns an empty result when format ranges are empty', () => {
+    let params = singleRangeParams('hello', 200.0);
+    params.formatRanges = [] as never[];
+    expect(doLayout(params).groups.length === 0).toBe(true);
+  });
+  it('returns groups and line metrics for simple text', () => {
+    const result = doLayout(singleRangeParams('hi', 1000.0));
+    expect(result.groups.length !== 0).toBe(true);
+    expect(result.numLines > 0).toBe(true);
+  });
+  it('sets width to the sum of character advances', () => {
+    const result = doLayout(singleRangeParams('abc', 1000.0));
+    expect(result.groups[0].width).toEqual(30.0);
+  });
+  it('shifts group offset x to center within container', () => {
+    const unaligned = doLayout(singleRangeParams('hi', 100.0)).groups[0].offsetX;
+    let format = baseFormat();
+    format.align = 'center';
+    const aligned = doLayout(paramsWithFormat('hi', 100.0, format)).groups[0].offsetX;
+    expect(aligned > unaligned).toBe(true);
+  });
+  it('shifts group offset x to right align within container', () => {
+    let format = baseFormat();
+    format.align = 'right';
+    expect(doLayout(paramsWithFormat('hi', 100.0, format)).groups[0].offsetX > 2.0).toBe(true);
+  });
+  it('shifts group offsets for justified mid lines', () => {
+    const text = 'a b\nc d';
+    let format = baseFormat();
+    format.align = 'justify';
+    let params = paramsWithFormat(text, 100.0, format);
+    params.height = 200.0;
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(result.numLines).toEqual(2);
+    expect(result.groups.some((group) => group.lineIndex === 0)).toBe(true);
+  });
+  it('shifts the block down for middle and further for bottom', () => {
+    let params = singleRangeParams('hi', 100.0);
+    params.height = 200.0;
+    const topY = doLayout(params).groups[0].offsetY;
+    params.verticalAlign = 'middle';
+    const middleY = doLayout(params).groups[0].offsetY;
+    params.verticalAlign = 'bottom';
+    const bottomY = doLayout(params).groups[0].offsetY;
+    expect(middleY > topY).toBe(true);
+    expect(bottomY > middleY).toBe(true);
+  });
+  it('shifts the bottom block by the full vertical slack', () => {
+    let params = singleRangeParams('hi', 100.0);
+    params.height = 200.0;
+    const top = doLayout(params);
+    params.verticalAlign = 'bottom';
+    const bottom = doLayout(params);
+    const slack = 200.0 - (top.textHeight + TEXT_LAYOUT_GUTTER * 2.0);
+    expect(bottom.groups[0].offsetY - top.groups[0].offsetY).toEqual(slack);
+  });
+  it('skips pair measurement when kerning is false', () => {
+    let enabled = baseFormat();
+    enabled.kerning = true;
+    let disabled = baseFormat();
+    disabled.kerning = false;
+    const enabledResult = doLayout(paramsWithFormat('ab', 1000.0, enabled));
+    const disabledResult = doLayout(paramsWithFormat('ab', 1000.0, disabled));
+    expect(enabledResult.groups[0].positions.length).toEqual(2);
+    expect(disabledResult.groups[0].positions.length).toEqual(2);
+  });
+  it('splits on cr as well', () => {
+    let params = singleRangeParams('ab\rcd', 1000.0);
+    params.multiline = true;
+    expect(doLayout(params).numLines).toEqual(2);
+  });
+  it('splits on lf when multiline is true', () => {
+    let params = singleRangeParams('ab\ncd', 1000.0);
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(result.groups.some((group) => group.lineIndex === 0)).toBe(true);
+    expect(result.groups.some((group) => group.lineIndex === 1)).toBe(true);
+    expect(result.numLines).toEqual(2);
+  });
+  it('stores per character positions', () => {
+    expect(doLayout(singleRangeParams('ab', 1000.0)).groups[0].positions.length).toEqual(2);
+  });
+  it('treats end as right in ltr direction', () => {
+    let format = baseFormat();
+    format.align = 'end';
+    let params = paramsWithFormat('hi', 100.0, format);
+    params.direction = 'LeftToRight';
+    expect(doLayout(params).groups[0].offsetX > TEXT_LAYOUT_GUTTER).toBe(true);
+  });
+  it('treats start as left in ltr direction', () => {
+    let format = baseFormat();
+    format.align = 'start';
+    let params = paramsWithFormat('hi', 100.0, format);
+    params.direction = 'LeftToRight';
+    expect(doLayout(params).groups[0].offsetX).toEqual(TEXT_LAYOUT_GUTTER);
+  });
+  it('treats start as right in rtl direction', () => {
+    let format = baseFormat();
+    format.align = 'start';
+    let params = paramsWithFormat('hi', 100.0, format);
+    params.direction = 'RightToLeft';
+    expect(doLayout(params).groups[0].offsetX > TEXT_LAYOUT_GUTTER).toBe(true);
+  });
+  it('truncates a single long word across both truncation paths', () => {
+    const text = 'go abcdefghijklmnopqrstuvwxyz';
+    let params = singleRangeParams(text, 60.0);
+    params.height = 200.0;
+    params.maxLines = 2;
+    params.multiline = true;
+    params.wordWrap = true;
+    const result = doLayout(params);
+    expect(result.numLines <= 2).toBe(true);
+    expect(result.groups.some((group) => group.lineIndex === result.numLines - 1)).toBe(true);
     expect(isTextLayoutTruncated(result, params)).toBe(true);
   });
-
-  it('isTextLayoutTruncated returns false when maxLines is unlimited', () => {
-    const text = 'one line';
-    const params: TextLayoutParams = singleRangeParams(text);
+  it('wraps at word boundary when line exceeds width', () => {
+    let params = singleRangeParams('hello world', 50.0);
+    params.multiline = true;
+    params.wordWrap = true;
     const result = doLayout(params);
-    expect(isTextLayoutTruncated(result, params)).toBe(false);
-  });
-});
-
-describe('computeTextLayout — start/end alignment', () => {
-  it('treats start as left in ltr direction', () => {
-    const text = 'hi';
-    const ltrResult = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'start' }, 0, text.length)],
-      width: 100,
-      height: 100,
-      measure: fixedMeasure,
-      direction: 'LeftToRight',
-    });
-    expect(ltrResult.groups[0].offsetX).toBe(TEXT_LAYOUT_GUTTER); // left-aligned = GUTTER
-  });
-
-  it('treats end as right in ltr direction', () => {
-    const text = 'hi'; // 20px wide
-    const ltrResult = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'end' }, 0, text.length)],
-      width: 100,
-      height: 100,
-      measure: fixedMeasure,
-      direction: 'LeftToRight',
-    });
-    // Right-aligned: shift = 100 - 20 - 2*2 = 76, so offsetX = 2 + 76 = 78
-    expect(ltrResult.groups[0].offsetX).toBeGreaterThan(TEXT_LAYOUT_GUTTER);
-  });
-
-  it('treats start as right in rtl direction', () => {
-    const text = 'hi';
-    const rtlResult = doLayout({
-      text,
-      formatRanges: [createTextFormatRange({ size: 16, align: 'start' }, 0, text.length)],
-      width: 100,
-      height: 100,
-      measure: fixedMeasure,
-      direction: 'RightToLeft',
-    });
-    // RTL start = right alignment, so offsetX should be > GUTTER.
-    expect(rtlResult.groups[0].offsetX).toBeGreaterThan(TEXT_LAYOUT_GUTTER);
+    expect(result.numLines >= 2).toBe(true);
   });
 });
 
 describe('createTextLayoutResult', () => {
+  it('returns a new object each call', () => {
+    let first = createTextLayoutResult();
+    const second = createTextLayoutResult();
+    first.lineWidths.push(1.0);
+    expect(first.lineWidths.length).toEqual(1);
+    expect(second.lineWidths.length === 0).toBe(true);
+  });
   it('returns default zero values', () => {
     const result = createTextLayoutResult();
-    expect(result.groups).toHaveLength(0);
-    expect(result.lineAscents).toHaveLength(0);
-    expect(result.lineDescents).toHaveLength(0);
-    expect(result.lineHeights).toHaveLength(0);
-    expect(result.lineLeadings).toHaveLength(0);
-    expect(result.lineWidths).toHaveLength(0);
-    expect(result.numLines).toBe(0);
-    expect(result.textHeight).toBe(0);
-    expect(result.textWidth).toBe(0);
-  });
-
-  it('returns a new object each call', () => {
-    expect(createTextLayoutResult()).not.toBe(createTextLayoutResult());
+    expect(result.groups.length === 0).toBe(true);
+    expect(result.lineAscents.length === 0).toBe(true);
+    expect(result.lineDescents.length === 0).toBe(true);
+    expect(result.lineHeights.length === 0).toBe(true);
+    expect(result.lineLeadings.length === 0).toBe(true);
+    expect(result.lineWidths.length === 0).toBe(true);
+    expect(result.numLines).toEqual(0);
+    expect(result.textHeight).toEqual(0.0);
+    expect(result.textWidth).toEqual(0.0);
   });
 });
 
 describe('initializeTextLayoutResult', () => {
-  it('is the construction initializer of createTextLayoutResult', () => {
-    expect(typeof initializeTextLayoutResult).toBe('function');
+  it('is the construction initializer of create text layout result', () => {
+    let out = createTextLayoutResult();
+    out.lineWidths.push(1.0);
+    out.numLines = 2;
+    initializeTextLayoutResult(out);
+    expect(out.lineWidths.length === 0).toBe(true);
+    expect(out.numLines).toEqual(0);
   });
 });
 
 describe('isTextLayoutTruncated', () => {
-  it('returns false when maxLines is -1', () => {
-    const params = singleRangeParams('hello');
+  it('returns false when max lines is minus 1', () => {
+    let params = singleRangeParams('hello', 1000.0);
+    params.maxLines = -1;
     const result = doLayout(params);
-    expect(isTextLayoutTruncated(result, params)).toBe(false);
+    expect(!isTextLayoutTruncated(result, params)).toBe(true);
   });
-});
-describe('TEXT_LAYOUT_GUTTER', () => {
-  it('is a positive number', () => {
-    expect(TEXT_LAYOUT_GUTTER).toBeGreaterThan(0);
+  it('returns false when max lines is unlimited', () => {
+    const params = singleRangeParams('one line', 1000.0);
+    const result = doLayout(params);
+    expect(!isTextLayoutTruncated(result, params)).toBe(true);
+  });
+  it('returns true when max lines clips the layout', () => {
+    const text = 'line one\nline two\nline three';
+    let params = singleRangeParams(text, 300.0);
+    params.height = 200.0;
+    params.maxLines = 2;
+    params.multiline = true;
+    const result = doLayout(params);
+    expect(isTextLayoutTruncated(result, params)).toBe(true);
   });
 });

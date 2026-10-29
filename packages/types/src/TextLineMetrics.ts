@@ -1,8 +1,2 @@
-export interface TextLineMetrics {
-  ascent: number;
-  descent: number;
-  height: number;
-  leading: number;
-  width: number;
-  x: number;
-}
+/** @deprecated Import text-layout contracts from `@flighthq/textlayout/contract`. */
+export type { TextLineMetrics } from '@flighthq/textlayout/contract';

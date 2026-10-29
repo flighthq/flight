@@ -7,7 +7,9 @@ use crate::text_bounds::*;
 use crate::text_layout::*;
 use crate::text_layout_group::*;
 use crate::text_layout_measure::*;
+use crate::text_layout_measure_state::TextLayoutMeasureState;
 use crate::text_metrics::*;
+use crate::type_strings::*;
 use crate::types::*;
 
 #[cfg(test)]

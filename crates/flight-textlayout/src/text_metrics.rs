@@ -1,3 +1,5 @@
+//! flight-compiler: root-only createTextMetrics getTextMetrics
+
 use flight_entity::allocate_entity;
 
 use crate::types::{TextLayoutResult, TextMetrics};

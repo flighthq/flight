@@ -1,15 +1,46 @@
+// Generated from crates/flight-textlayout/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
+  TEXT_BOUNDS_GUTTER,
+  TEXT_LAYOUT_GUTTER,
   clearRichTextContent,
+  clearTextLayoutResult,
+  computeRichTextBottomScrollV,
+  computeRichTextCharIndexAtPoint,
   computeRichTextContent,
+  computeRichTextLineCount,
+  computeRichTextLineMetrics,
+  computeRichTextMaxScrollH,
+  computeRichTextMaxScrollV,
+  computeRichTextTextHeight,
+  computeRichTextTextWidth,
+  computeTextBoundsHeight,
+  computeTextBoundsOffsetX,
+  computeTextBoundsRectangle,
+  computeTextBoundsWidth,
+  computeTextLayout,
   createRichTextContent,
+  createTextLayoutGroup,
+  createTextLayoutResult,
+  createTextMetrics,
+  getRichTextCharBoundaries,
   getRichTextContent,
-} from './richTextContent.ts';
-export * from './richTextMetrics.ts';
-export * from './richTextQuery.ts';
-export * from './textBounds.ts';
-export { TEXT_LAYOUT_GUTTER, computeTextLayout, createTextLayoutResult, isTextLayoutTruncated } from './textLayout.ts';
-export { createTextLayoutGroup } from './textLayoutGroup.ts';
-export * from './textLayoutMeasure.ts';
-export * from './textLayoutRuntime.ts';
-export * from './textLineBreaks.ts';
-export { createTextMetrics, getTextMetrics } from './textMetrics.ts';
+  getRichTextFirstCharInParagraph,
+  getRichTextLineIndexAtPoint,
+  getRichTextLineIndexOfChar,
+  getRichTextLineLength,
+  getRichTextLineOffset,
+  getRichTextLineText,
+  getRichTextLinkAtPoint,
+  getRichTextParagraphLength,
+  getRichTextScrollYOffset,
+  getRichTextSelectionRectangles,
+  getTextLayoutMeasureProvider,
+  getTextLayoutResult,
+  getTextLineBreakIndex,
+  getTextLineBreaks,
+  getTextMetrics,
+  isTextLayoutTruncated,
+  setTextLayoutMeasureProvider,
+} from './contract.ts';

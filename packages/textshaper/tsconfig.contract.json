@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [{ "path": "../textformat" }],
+  "include": ["src/contract.textshaper-types.ts", "src/textShaperTypes.ts"]
+}
