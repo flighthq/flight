@@ -76,6 +76,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub external_record_structs: &'a [ItemStruct],
     pub dependency_export_names: &'a [(BTreeMap<String, String>, &'a str)],
     pub external_string_unions: &'a BTreeSet<String>,
+    pub external_shared_identity_fields: &'a BTreeSet<String>,
     pub module_identities: Option<&'a [String]>,
     pub visibility_programs: &'a [Program],
     pub visibility_identities: &'a [Option<String>],
@@ -356,6 +357,33 @@ pub(super) const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 // `{struct identity}␟{field}␟{field struct identity}` for each field whose declared type is a struct of
 // a source, so a nested field read resolves its owner through the declarations.
 pub(super) const STRUCT_FIELD_TYPE_MARKER: &str = "@struct-field-type:";
+// `{struct identity}␟{field}` for each field whose declared type lowers to an identity-bearing
+// TypeScript object that is not a source struct (see `rust_type_is_shared_identity`).
+pub(super) const SHARED_IDENTITY_FIELD_MARKER: &str = "@shared-identity-field:";
+// The BindingId of a binding proven to hold an identity-bearing TypeScript object that is not a source
+// struct: declared with such a type, or initialized from one.
+pub(super) const SHARED_IDENTITY_BINDING_MARKER: &str = "@shared-identity-binding:";
+// `{struct identity}␟{field}` for a field declared as a sequence (`Vec`, slice, array) whose elements
+// lower to identity-bearing objects, so an indexed element compares by allocation.
+pub(super) const SHARED_IDENTITY_ELEMENT_FIELD_MARKER: &str = "@shared-identity-element-field:";
+// `{module}␟{function}␟` (or a Vitest helper's identity) for a function whose declared return type
+// lowers to an identity-bearing object.
+pub(super) const SHARED_IDENTITY_RETURN_MARKER: &str = "@shared-identity-return:";
+// An entity name of any loaded source, recorded before any source's facts are derived so a fact about
+// a type declared in a later (for example target-native) source sees it.
+pub(super) const SHARED_IDENTITY_ENTITY_MARKER: &str = "@shared-identity-entity:";
+// `{crate}::{Struct}␟{field}` for each public field of a dependency crate's public struct whose declared
+// type lowers to an identity-bearing object, read in that crate's own source (see
+// `external_shared_identity_fields`).
+pub(super) const SHARED_IDENTITY_EXTERNAL_FIELD_MARKER: &str = "@shared-identity-external-field:";
+// `{BindingId}␟{crate}::{Struct}` for a parameter or local declared as a dependency crate's struct.
+pub(super) const EXTERNAL_STRUCT_BINDING_MARKER: &str = "@external-struct-binding:";
+// `{struct identity}␟{field}␟{crate}::{Struct}` for a source struct field declared as a dependency
+// crate's struct.
+pub(super) const EXTERNAL_STRUCT_FIELD_MARKER: &str = "@external-struct-field:";
+// `{crate}::{Name}` for a dependency crate's public struct, or public type alias whose definition
+// lowers to an identity-bearing object, read in that crate's own source.
+pub(super) const SHARED_IDENTITY_EXTERNAL_TYPE_MARKER: &str = "@shared-identity-external-type:";
 
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
 
@@ -660,6 +688,32 @@ pub(crate) fn begin_option_while(
     writeln!(out, "const {name} = ${name};").expect("writing to a String cannot fail");
 }
 
+// Whether the function a call names declares an identity-bearing return type (see
+// `SHARED_IDENTITY_RETURN_MARKER`), as a source function or a Vitest helper.
+fn call_returns_shared_identity(entities: &HashSet<String>, callee: &Expr) -> bool {
+    let Expr::Path(path) = callee else {
+        return false;
+    };
+    if path.qself.is_some() {
+        return false;
+    }
+    if call_fact(entities, SHARED_IDENTITY_RETURN_MARKER, &path.path).is_some() {
+        return true;
+    }
+    let Some(local) = vitest_path_binding_name(&path.path, entities) else {
+        return false;
+    };
+    return unique_marker_suffix(
+        entities,
+        &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{local}{PROVENANCE_SEPARATOR}"),
+    )
+    .is_some_and(|function| {
+        entities.contains(&format!(
+            "{SHARED_IDENTITY_RETURN_MARKER}{function}{PROVENANCE_SEPARATOR}"
+        ))
+    });
+}
+
 // The `Owner.Member` a `const-group` member constant is referenced as.
 // flight-lint: allow(hashmap-iteration) const-group validation gives each constant at most one group
 fn const_group_member_reference<'a>(
@@ -670,6 +724,18 @@ fn const_group_member_reference<'a>(
     return context
         .iter()
         .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
+// The one loaded source alias a `crate::...::Name` path can name when sources are identified by file
+// rather than module path (test generation): exactly one alias called `Name`, or nothing.
+fn crate_alias_owner(entities: &HashSet<String>, resolved: &[String]) -> Option<(String, String)> {
+    let [first, .., name] = resolved else {
+        return None;
+    };
+    if first != "crate" {
+        return None;
+    }
+    return unique_alias_owner(entities, name);
 }
 
 // The TypeScript name of a Rust item or path segment: SCREAMING_CASE constants keep their name, and
@@ -728,6 +794,24 @@ pub(crate) fn dependency_export_name_local_items(context: &HashSet<String>) -> B
         .collect();
 }
 
+// A dependency source's own type context plus the identity-bearing types proven so far, its own
+// crate's also under `crate`.
+fn dependency_source_context(
+    mut context: HashSet<String>,
+    known: &BTreeSet<String>,
+    crate_name: &str,
+) -> HashSet<String> {
+    for name in known {
+        context.insert(format!("{SHARED_IDENTITY_EXTERNAL_TYPE_MARKER}{name}"));
+        if let Some(item) = name.strip_prefix(&format!("{crate_name}::")) {
+            context.insert(format!(
+                "{SHARED_IDENTITY_EXTERNAL_TYPE_MARKER}crate::{item}"
+            ));
+        }
+    }
+    return context;
+}
+
 // `export const Owner = { Member: value, ... };` from the `const-group` members, in source order, each
 // keeping its documentation and its literal spelling.
 // flight-lint: allow(hashmap-iteration) constants are a Vec slice in Rust source order
@@ -779,6 +863,63 @@ pub(crate) fn export_name<'a>(context: &'a HashSet<String>, rust_name: &str) -> 
         .find_map(|marker| marker.strip_prefix(&prefix));
 }
 
+// The dependency-crate struct (`crate::Struct`) an expression holds: a parameter or local declared as
+// one, or a source struct field declared as one, seen through references and clones.
+fn expression_external_struct(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    return match expression {
+        Expr::Group(group) => expression_external_struct(&group.expr, entities),
+        Expr::Paren(paren) => expression_external_struct(&paren.expr, entities),
+        Expr::Reference(reference) => expression_external_struct(&reference.expr, entities),
+        Expr::MethodCall(call) if call.method == "clone" && call.args.is_empty() => {
+            expression_external_struct(&call.receiver, entities)
+        }
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let id = lexical_binding(entities, &path.path.segments[0].ident.to_string())?;
+            unique_marker_suffix(
+                entities,
+                &format!("{EXTERNAL_STRUCT_BINDING_MARKER}{id}{PROVENANCE_SEPARATOR}"),
+            )
+        }
+        Expr::Field(field) => {
+            let syn::Member::Named(member) = &field.member else {
+                return None;
+            };
+            let owner = expression_struct_identity(&field.base, entities)?;
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{EXTERNAL_STRUCT_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+        }
+        _ => None,
+    };
+}
+
+// A shared-allocation payload whose TypeScript lowering is a fresh object: a struct literal, a
+// closure, or a new collection or `Mutex` cell, possibly inside an erased `RwLock`.
+fn expression_is_identity_payload(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Group(group) => expression_is_identity_payload(&group.expr),
+        Expr::Paren(paren) => expression_is_identity_payload(&paren.expr),
+        Expr::Struct(_) | Expr::Closure(_) | Expr::Array(_) => true,
+        Expr::Macro(expression) => expression.mac.path.is_ident("vec"),
+        // `RwLock<T>` lowers to `T`, so its payload decides.
+        Expr::Call(call)
+            if expression_is_associated_path(&call.func, "RwLock", "new")
+                && call.args.len() == 1 =>
+        {
+            expression_is_identity_payload(&call.args[0])
+        }
+        Expr::Call(call) => [
+            "Vec", "VecDeque", "HashMap", "HashSet", "BTreeMap", "BTreeSet", "Mutex",
+        ]
+        .iter()
+        .any(|owner| expression_is_associated_path(&call.func, owner, "new")),
+        _ => false,
+    };
+}
+
 fn expression_is_rereadable(expression: &Expr) -> bool {
     return match expression {
         Expr::Group(group) => expression_is_rereadable(&group.expr),
@@ -795,6 +936,74 @@ fn expression_is_rereadable(expression: &Expr) -> bool {
         Expr::Path(path) => path.qself.is_none() && path.path.segments.len() == 1,
         Expr::Reference(reference) => expression_is_rereadable(&reference.expr),
         expression => expression_is_field_reference(expression),
+    };
+}
+
+// An `Arc::ptr_eq` operand proven to hold an identity-bearing TypeScript object, so `===` compares
+// allocations as Rust does. A primitive or unit payload lowers to its value and never qualifies.
+fn expression_is_shared_identity(expression: &Expr, entities: &HashSet<String>) -> bool {
+    let expression = peel_shared_view(expression);
+    return match expression {
+        Expr::Call(call)
+            if (expression_is_associated_path(&call.func, "Arc", "new")
+                || expression_is_associated_path(&call.func, "Rc", "new"))
+                && call.args.len() == 1 =>
+        {
+            shared_payload_is_identity(&call.args[0], entities)
+        }
+        Expr::Call(call) => {
+            call_returns_shared_identity(entities, &call.func)
+                || expression_struct_identity(expression, entities).is_some()
+        }
+        Expr::Field(field) => {
+            if expression_struct_identity(expression, entities).is_some() {
+                return true;
+            }
+            let syn::Member::Named(member) = &field.member else {
+                return false;
+            };
+            let base = peel_shared_view(&field.base);
+            if expression_struct_identity(base, entities).is_some_and(|owner| {
+                entities.contains(&format!(
+                    "{SHARED_IDENTITY_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}"
+                ))
+            }) {
+                return true;
+            }
+            expression_external_struct(base, entities).is_some_and(|external| {
+                entities.contains(&format!(
+                    "{SHARED_IDENTITY_EXTERNAL_FIELD_MARKER}{external}{PROVENANCE_SEPARATOR}{member}"
+                ))
+            })
+        }
+        Expr::Index(index) => {
+            let Expr::Field(field) = peel_shared_view(&index.expr) else {
+                return false;
+            };
+            let syn::Member::Named(member) = &field.member else {
+                return false;
+            };
+            expression_struct_identity(peel_shared_view(&field.base), entities).is_some_and(
+                |owner| {
+                    entities.contains(&format!(
+                        "{SHARED_IDENTITY_ELEMENT_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}"
+                    ))
+                },
+            )
+        }
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let name = path.path.segments[0].ident.to_string();
+            if matches!(
+                lexical_fact(entities, &name),
+                Some(BindingFact::Structure(_) | BindingFact::HashMap | BindingFact::HashSet)
+            ) {
+                return true;
+            }
+            lexical_binding(entities, &name).is_some_and(|id| {
+                entities.contains(&format!("{SHARED_IDENTITY_BINDING_MARKER}{id}"))
+            })
+        }
+        _ => expression_struct_identity(expression, entities).is_some(),
     };
 }
 
@@ -873,6 +1082,216 @@ fn expression_struct_identity(expression: &Expr, entities: &HashSet<String>) -> 
         }
         expression => expression_struct_name(expression, entities),
     };
+}
+
+// `SHARED_IDENTITY_EXTERNAL_TYPE_MARKER` and `SHARED_IDENTITY_EXTERNAL_FIELD_MARKER` facts for the
+// dependency sources, each `(source, module)` of the crate the package `module`
+// (`@flighthq/<name>/contract`) is generated from. Every type is read in its own source's `use` items
+// and type aliases; an alias naming another source of its crate resolves once that alias is proven,
+// so the facts are a fixpoint over the crate's sources.
+pub(crate) fn external_shared_identity_facts(
+    sources: &[(&str, &str)],
+) -> Result<BTreeSet<String>, CompileError> {
+    struct DependencySource {
+        crate_name: String,
+        context: HashSet<String>,
+        aliases: BTreeMap<String, Type>,
+        structures: BTreeSet<String>,
+        file: syn::File,
+    }
+    let mut parsed = Vec::new();
+    for (source, module) in sources {
+        let Some(package) = module
+            .strip_prefix("@flighthq/")
+            .and_then(|rest| rest.strip_suffix("/contract"))
+        else {
+            continue;
+        };
+        let file = syn::parse_file(source)
+            .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+        let mut aliases = BTreeMap::new();
+        let mut structures = BTreeSet::new();
+        let mut local_names = Vec::new();
+        for item in &file.items {
+            match item {
+                syn::Item::Struct(structure) => {
+                    structures.insert(structure.ident.to_string());
+                    local_names.push(structure.ident.to_string());
+                }
+                syn::Item::Type(alias) => {
+                    local_names.push(alias.ident.to_string());
+                    if alias.generics.params.is_empty() {
+                        aliases.insert(alias.ident.to_string(), alias.ty.as_ref().clone());
+                    }
+                }
+                syn::Item::Enum(item) => local_names.push(item.ident.to_string()),
+                syn::Item::Trait(item) => local_names.push(item.ident.to_string()),
+                _ => {}
+            }
+        }
+        let mut context = HashSet::new();
+        insert_type_path_context(
+            &mut context,
+            file.items.iter().filter_map(|item| match item {
+                syn::Item::Use(item_use) => Some(item_use),
+                _ => None,
+            }),
+            local_names.into_iter(),
+        );
+        parsed.push(DependencySource {
+            crate_name: format!("flight_{}", package.replace('-', "_")),
+            context,
+            aliases,
+            structures,
+            file,
+        });
+    }
+    let mut known = parsed
+        .iter()
+        .flat_map(|source| {
+            source
+                .structures
+                .iter()
+                .map(|name| format!("{}::{name}", source.crate_name))
+        })
+        .collect::<BTreeSet<_>>();
+    loop {
+        let mut changed = false;
+        for source in &parsed {
+            let context =
+                dependency_source_context(source.context.clone(), &known, &source.crate_name);
+            for item in &source.file.items {
+                let syn::Item::Type(alias) = item else {
+                    continue;
+                };
+                let name = format!("{}::{}", source.crate_name, alias.ident);
+                if alias.generics.params.is_empty()
+                    && !known.contains(&name)
+                    && external_type_is_shared_identity(
+                        &context,
+                        &source.aliases,
+                        &source.structures,
+                        &alias.ty,
+                        0,
+                    )
+                {
+                    known.insert(name);
+                    changed = true;
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    let mut facts = known
+        .iter()
+        .map(|name| format!("{SHARED_IDENTITY_EXTERNAL_TYPE_MARKER}{name}"))
+        .collect::<BTreeSet<_>>();
+    for source in &parsed {
+        let context = dependency_source_context(source.context.clone(), &known, &source.crate_name);
+        for item in &source.file.items {
+            let syn::Item::Struct(structure) = item else {
+                continue;
+            };
+            if !is_public(&structure.vis) {
+                continue;
+            }
+            for field in &structure.fields {
+                let Some(field_name) = &field.ident else {
+                    continue;
+                };
+                if is_public(&field.vis)
+                    && external_type_is_shared_identity(
+                        &context,
+                        &source.aliases,
+                        &source.structures,
+                        &field.ty,
+                        0,
+                    )
+                {
+                    facts.insert(format!(
+                        "{SHARED_IDENTITY_EXTERNAL_FIELD_MARKER}{}::{}{PROVENANCE_SEPARATOR}{field_name}",
+                        source.crate_name, structure.ident
+                    ));
+                }
+            }
+        }
+    }
+    return Ok(facts);
+}
+
+// The dependency-crate struct a declared type names (`crate::Struct`), through references: a path
+// resolving into another `flight_*` crate. Only its crate and item name are kept, so a re-export from
+// the crate root and the defining module name the same struct.
+fn external_struct_type(entities: &HashSet<String>, rust_type: &Type) -> Option<String> {
+    return match current_source(entities) {
+        Some(from) => external_struct_type_in(entities, &from, rust_type),
+        None => external_struct_type_with(entities, rust_type),
+    };
+}
+
+fn external_struct_type_in(
+    entities: &HashSet<String>,
+    from: &str,
+    rust_type: &Type,
+) -> Option<String> {
+    return external_struct_type_with(&source_type_context(entities, from), rust_type);
+}
+
+// `external_struct_type` resolved through the type-namespace provenance `context`.
+fn external_struct_type_with(context: &HashSet<String>, rust_type: &Type) -> Option<String> {
+    let path = match rust_type {
+        Type::Group(group) => return external_struct_type_with(context, &group.elem),
+        Type::Paren(paren) => return external_struct_type_with(context, &paren.elem),
+        Type::Reference(reference) => return external_struct_type_with(context, &reference.elem),
+        Type::Path(path) if path.qself.is_none() => &path.path,
+        _ => return None,
+    };
+    if !matches!(path.segments.last()?.arguments, PathArguments::None) {
+        return None;
+    }
+    let resolved = resolve_type_path(path, context)?;
+    let (first, last) = (resolved.first()?, resolved.last()?);
+    if resolved.len() < 2 || !first.starts_with("flight_") {
+        return None;
+    }
+    return Some(format!("{first}::{last}"));
+}
+
+// `rust_type_is_shared_identity` for a dependency source read on its own: its source structs are
+// objects and its type aliases stand for their definitions; anything else must resolve through its
+// `use` items to a standard identity-bearing type.
+fn external_type_is_shared_identity(
+    context: &HashSet<String>,
+    aliases: &BTreeMap<String, Type>,
+    structures: &BTreeSet<String>,
+    rust_type: &Type,
+    depth: usize,
+) -> bool {
+    if depth > 16 {
+        return false;
+    }
+    if let Type::Path(path) = rust_type
+        && path.qself.is_none()
+        && path.path.leading_colon.is_none()
+        && path.path.segments.len() == 1
+    {
+        let name = path.path.segments[0].ident.to_string();
+        if structures.contains(&name) {
+            return true;
+        }
+        if let Some(definition) = aliases.get(&name) {
+            return external_type_is_shared_identity(
+                context,
+                aliases,
+                structures,
+                definition,
+                depth + 1,
+            );
+        }
+    }
+    return shared_identity_type_at_depth(context, None, rust_type, depth);
 }
 
 pub(super) fn foreign_wildcard_modules(uses: &[&syn::ItemUse]) -> Vec<String> {
@@ -1613,6 +2032,44 @@ pub(crate) fn option_scrutinee_is_rereadable(condition: &Expr) -> bool {
     return expression_is_rereadable(&binding.expr);
 }
 
+// Views of one allocation that `Arc::ptr_eq` sees through: borrows, clones, guards of an erased
+// `RwLock`/`Mutex`, and the `Some` payload of an `Option` handle.
+fn peel_shared_view(expression: &Expr) -> &Expr {
+    let mut expression = expression;
+    loop {
+        expression = match expression {
+            Expr::Group(group) => &group.expr,
+            Expr::Paren(paren) => &paren.expr,
+            Expr::Reference(reference) => &reference.expr,
+            Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => &unary.expr,
+            Expr::MethodCall(call)
+                if call.args.is_empty()
+                    && matches!(
+                        call.method.to_string().as_str(),
+                        "as_deref"
+                            | "as_mut"
+                            | "as_ref"
+                            | "clone"
+                            | "lock"
+                            | "read"
+                            | "unwrap"
+                            | "write"
+                    ) =>
+            {
+                &call.receiver
+            }
+            Expr::Call(call)
+                if (expression_is_associated_path(&call.func, "Arc", "clone")
+                    || expression_is_associated_path(&call.func, "Rc", "clone"))
+                    && call.args.len() == 1 =>
+            {
+                &call.args[0]
+            }
+            _ => return expression,
+        };
+    }
+}
+
 // `Pin<Box<dyn Future<Output = T> [+ Send | + Sync | + 'a]>>`, accepted only when `Pin`, `Box`, `Future`
 // and every auto-trait bound resolve (see `resolve_type_path`) to the standard library. A path named
 // `Pin` that resolves elsewhere is an ordinary type unless it spells the future shape, which fails
@@ -2171,6 +2628,20 @@ fn rust_type_is_sequence(rust_type: &Type) -> bool {
     };
 }
 
+// A declared type whose TypeScript lowering is an identity-bearing object that `===` compares by
+// allocation: a source struct, a collection, a callable, a `Mutex` cell or an opaque `dyn Any`, seen
+// through `Arc` / `Rc` / `RwLock` / `Ref` layers and source type aliases. A primitive, string, unit,
+// `Option` or type parameter is not: its lowering is a value.
+fn rust_type_is_shared_identity(entities: &HashSet<String>, rust_type: &Type) -> bool {
+    return context_type_identity(entities, rust_type).is_some()
+        || shared_identity_type_at_depth(
+            entities,
+            current_source(entities).as_deref(),
+            rust_type,
+            0,
+        );
+}
+
 fn sequence_inner_type(rust_type: &Type) -> Option<&Type> {
     return match rust_type {
         Type::Array(array) => Some(&array.elem),
@@ -2340,6 +2811,204 @@ fn entity_allocation(
     ));
 }
 
+// `rust_type_is_shared_identity` read in source `from` (or the bare context), expanding at most 16
+// wrapper or alias layers so an alias cycle fails closed.
+fn shared_identity_type_at_depth(
+    entities: &HashSet<String>,
+    from: Option<&str>,
+    rust_type: &Type,
+    depth: usize,
+) -> bool {
+    if depth > 16 {
+        return false;
+    }
+    let path = match rust_type {
+        Type::Group(group) => {
+            return shared_identity_type_at_depth(entities, from, &group.elem, depth);
+        }
+        Type::Paren(paren) => {
+            return shared_identity_type_at_depth(entities, from, &paren.elem, depth);
+        }
+        Type::Reference(reference) => {
+            return shared_identity_type_at_depth(entities, from, &reference.elem, depth);
+        }
+        Type::Array(_) | Type::Slice(_) => return true,
+        Type::TraitObject(object) => {
+            let any = match from {
+                Some(from) => trait_object_is_standard_any(
+                    &object.bounds,
+                    &source_type_context(entities, from),
+                ),
+                None => trait_object_is_standard_any(&object.bounds, entities),
+            };
+            return any
+                || object.bounds.iter().any(|bound| {
+                    matches!(bound, syn::TypeParamBound::Trait(bound) if bound.path.segments.last().is_some_and(|segment| matches!(segment.ident.to_string().as_str(), "Fn" | "FnMut" | "FnOnce")))
+                });
+        }
+        Type::Path(path) if path.qself.is_none() => &path.path,
+        _ => return false,
+    };
+    let resolved = match from {
+        Some(from) => resolve_type_path(path, &source_type_context(entities, from)),
+        None => resolve_type_path(path, entities),
+    };
+    // A prelude name resolves through no `use`; unless the source declares that name itself, it is
+    // the standard type.
+    let resolved = resolved.or_else(|| {
+        let [segment] = path.segments.iter().collect::<Vec<_>>()[..] else {
+            return None;
+        };
+        if path.leading_colon.is_some()
+            || entities.contains(&format!("{TYPE_LOCAL_MARKER}{}", segment.ident))
+            || from.is_some_and(|from| {
+                resolve_path_owner(entities, STRUCT_OWNER_MARKER, from, path).is_some()
+                    || resolve_path_owner(entities, TYPE_ALIAS_OWNER_MARKER, from, path).is_some()
+            })
+        {
+            return None;
+        }
+        return match segment.ident.to_string().as_str() {
+            "Option" => Some(vec![
+                "std".to_string(),
+                "option".to_string(),
+                "Option".to_string(),
+            ]),
+            "Vec" => Some(vec![
+                "std".to_string(),
+                "vec".to_string(),
+                "Vec".to_string(),
+            ]),
+            _ => None,
+        };
+    });
+    let inner = || -> Option<&Type> {
+        let PathArguments::AngleBracketed(arguments) = &path.segments.last()?.arguments else {
+            return None;
+        };
+        return arguments.args.iter().find_map(|argument| match argument {
+            GenericArgument::Type(rust_type) => Some(rust_type),
+            _ => None,
+        });
+    };
+    if let Some(resolved) = &resolved {
+        let resolved = resolved.iter().map(String::as_str).collect::<Vec<_>>();
+        match resolved.as_slice() {
+            ["std" | "alloc", "sync", "Arc"]
+            | ["std" | "alloc", "rc", "Rc"]
+            | ["std", "sync", "RwLock"]
+            | ["flight_entity", .., "Ref"] => {
+                return inner().is_some_and(|inner| {
+                    shared_identity_type_at_depth(entities, from, inner, depth + 1)
+                        || context_type_identity(entities, inner).is_some()
+                        || from.is_some_and(|from| {
+                            resolved_type_identity(entities, from, inner).is_some()
+                        })
+                });
+            }
+            [first, .., name] if first.starts_with("flight_") => {
+                return entities.contains(&format!(
+                    "{SHARED_IDENTITY_EXTERNAL_TYPE_MARKER}{first}::{name}"
+                ));
+            }
+            // Only while reading a dependency source on its own (`external_shared_identity_facts`)
+            // are its own crate's identity-bearing types recorded under `crate`.
+            ["crate", .., name]
+                if entities.contains(&format!(
+                    "{SHARED_IDENTITY_EXTERNAL_TYPE_MARKER}crate::{name}"
+                )) =>
+            {
+                return true;
+            }
+            // An `Option` handle holds its payload's allocation once unwrapped.
+            ["std" | "core", "option", "Option"] => {
+                return inner().is_some_and(|inner| {
+                    shared_identity_type_at_depth(entities, from, inner, depth + 1)
+                        || context_type_identity(entities, inner).is_some()
+                        || from.is_some_and(|from| {
+                            resolved_type_identity(entities, from, inner).is_some()
+                        })
+                });
+            }
+            ["std", "sync", "Mutex"]
+            | ["std" | "alloc", "vec", "Vec"]
+            | [
+                "std" | "alloc",
+                "collections",
+                ..,
+                "VecDeque" | "HashMap" | "HashSet" | "BTreeMap" | "BTreeSet",
+            ] => {
+                return true;
+            }
+            _ => {}
+        }
+    }
+    // An entity always lowers to an object; a target-native sibling's entity has no source struct to
+    // resolve, so its recorded name stands for it unless the path resolves outside the crate family.
+    if let Some(segment) = path.segments.last()
+        && matches!(segment.arguments, PathArguments::None)
+        && (entities.contains(&segment.ident.to_string())
+            || entities.contains(&format!("{SHARED_IDENTITY_ENTITY_MARKER}{}", segment.ident)))
+        && resolved.as_ref().is_none_or(|resolved| {
+            resolved
+                .first()
+                .is_some_and(|root| root == "crate" || root.starts_with("flight_"))
+        })
+    {
+        return true;
+    }
+    let Some(from) = from else {
+        return false;
+    };
+    if resolve_path_owner(entities, STRUCT_OWNER_MARKER, from, path).is_some() {
+        return true;
+    }
+    let Some((owner, alias)) = resolve_path_owner(entities, TYPE_ALIAS_OWNER_MARKER, from, path)
+        .or_else(|| crate_alias_owner(entities, resolved.as_deref()?))
+    else {
+        return false;
+    };
+    let Some(definition) = unique_marker_suffix(
+        entities,
+        &format!(
+            "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+        ),
+    )
+    .and_then(|definition| syn::parse_str::<Type>(&definition).ok()) else {
+        return false;
+    };
+    return shared_identity_type_at_depth(entities, Some(&owner), &definition, depth + 1);
+}
+
+// The payload of `Arc::new` / `Rc::new` proven to lower to a fresh or existing object: a literal
+// allocation, an erased `RwLock` around one, or a struct value.
+fn shared_payload_is_identity(payload: &Expr, entities: &HashSet<String>) -> bool {
+    return match payload {
+        Expr::Group(group) => shared_payload_is_identity(&group.expr, entities),
+        Expr::Paren(paren) => shared_payload_is_identity(&paren.expr, entities),
+        Expr::Call(call)
+            if expression_is_associated_path(&call.func, "RwLock", "new")
+                && call.args.len() == 1 =>
+        {
+            shared_payload_is_identity(&call.args[0], entities)
+        }
+        payload => {
+            expression_is_identity_payload(payload)
+                || expression_struct_identity(payload, entities).is_some()
+        }
+    };
+}
+
+// The type-namespace provenance (`use` items and local declarations) recorded for source `from`.
+fn source_type_context(entities: &HashSet<String>, from: &str) -> HashSet<String> {
+    return marker_suffixes(
+        entities,
+        &format!("{SOURCE_TYPE_PATH_CONTEXT_MARKER}{from}{PROVENANCE_SEPARATOR}"),
+    )
+    .into_iter()
+    .collect();
+}
+
 // Whether a statement contains `return`, `?`, `break` or `continue` anywhere, closures included, so
 // a definite-assignment scan stops conservatively before it. Tokens print space-separated.
 fn statement_may_exit_early(statement: &Stmt) -> bool {
@@ -2372,6 +3041,30 @@ fn typed_array_literal(
         )),
         _ => emit_expression(expression, entities),
     };
+}
+
+fn typed_binding_name(pattern: &Pat) -> Option<String> {
+    return match pattern {
+        Pat::Ident(identifier) => Some(identifier.ident.to_string()),
+        Pat::Type(typed) => typed_binding_name(&typed.pat),
+        _ => None,
+    };
+}
+
+// The owner of the one loaded source alias named `name`, or nothing when none or several are loaded.
+// flight-lint: allow(hashmap-iteration) the scan only counts matches; uniqueness does not depend on order
+fn unique_alias_owner(entities: &HashSet<String>, name: &str) -> Option<(String, String)> {
+    let mut owners = entities.iter().filter_map(|marker| {
+        let rest = marker.strip_prefix(TYPE_ALIAS_DEFINITION_MARKER)?;
+        let mut fields = rest.split(PROVENANCE_SEPARATOR);
+        let (owner, alias) = (fields.next()?, fields.next()?);
+        return (alias == name).then(|| owner.to_string());
+    });
+    let owner = owners.next()?;
+    if owners.next().is_some() {
+        return None;
+    }
+    return Some((owner, name.to_string()));
 }
 
 // Checks each dependency item bound by its mapped name against the complete emitted value namespace:
@@ -3288,6 +3981,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         ref_alias_receiver_captures: Vec<(String, String, String)>,
         reserved_identifiers: HashSet<String>,
         scopes: Vec<BTreeMap<String, String>>,
+        external_structs: BTreeMap<String, String>,
+        shared_identities: BTreeSet<String>,
         sites: Vec<(String, String)>,
     }
 
@@ -3414,6 +4109,82 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .iter()
                 .rev()
                 .find_map(|scope| scope.get(name).cloned());
+        }
+
+        // An initializer proven to produce an identity-bearing object that is not a source struct: a
+        // shared allocation of one, or a clone of a binding already proven to hold one.
+        fn initializer_is_shared_identity(&self, expression: &Expr) -> bool {
+            let expression = peel_shared_view(expression);
+            return match expression {
+                Expr::Call(call)
+                    if (expression_is_associated_path(&call.func, "Arc", "new")
+                        || expression_is_associated_path(&call.func, "Rc", "new"))
+                        && call.args.len() == 1 =>
+                {
+                    self.payload_is_identity(&call.args[0])
+                }
+                Expr::Call(call) => {
+                    call_returns_shared_identity(self.context, &call.func)
+                        || self.expression_structure_identity(expression).is_some()
+                }
+                Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+                    let name = path.path.segments[0].ident.to_string();
+                    self.binding_id(&name)
+                        .is_some_and(|id| self.shared_identities.contains(&id))
+                        || matches!(
+                            self.fact_of(&name),
+                            Some(
+                                BindingFact::Structure(_)
+                                    | BindingFact::HashMap
+                                    | BindingFact::HashSet
+                            )
+                        )
+                }
+                _ => false,
+            };
+        }
+
+        // `shared_payload_is_identity` over the bindings this resolver has proven so far.
+        fn payload_is_identity(&self, payload: &Expr) -> bool {
+            return match payload {
+                Expr::Group(group) => self.payload_is_identity(&group.expr),
+                Expr::Paren(paren) => self.payload_is_identity(&paren.expr),
+                Expr::Call(call)
+                    if expression_is_associated_path(&call.func, "RwLock", "new")
+                        && call.args.len() == 1 =>
+                {
+                    self.payload_is_identity(&call.args[0])
+                }
+                payload => {
+                    expression_is_identity_payload(payload)
+                        || self.expression_structure_identity(payload).is_some()
+                }
+            };
+        }
+
+        fn mark_external_struct(&mut self, pattern: &Pat, rust_type: &Type) {
+            let Some(name) = typed_binding_name(pattern) else {
+                return;
+            };
+            if let Some(external) = external_struct_type(self.context, rust_type)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.external_structs.insert(id, external);
+            }
+        }
+
+        fn mark_shared_identity(&mut self, pattern: &Pat, proven: bool) {
+            let name = match pattern {
+                Pat::Ident(identifier) => identifier.ident.to_string(),
+                Pat::Type(typed) => match typed.pat.as_ref() {
+                    Pat::Ident(identifier) => identifier.ident.to_string(),
+                    _ => return,
+                },
+                _ => return,
+            };
+            if proven && let Some(id) = self.binding_id(&name) {
+                self.shared_identities.insert(id);
+            }
         }
 
         fn fact_of(&self, name: &str) -> Option<BindingFact> {
@@ -3981,7 +4752,18 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         && self.initializer_retains_nullable_option(&initializer.expr);
                 }
             }
+            let shared_identity = match &local.pat {
+                Pat::Type(typed) => rust_type_is_shared_identity(self.context, &typed.ty),
+                _ => local.init.as_ref().is_some_and(|initializer| {
+                    initializer.diverge.is_none()
+                        && self.initializer_is_shared_identity(&initializer.expr)
+                }),
+            };
             self.bind_pattern(&local.pat, fact);
+            self.mark_shared_identity(&local.pat, shared_identity);
+            if let Pat::Type(typed) = &local.pat {
+                self.mark_external_struct(&typed.pat, &typed.ty);
+            }
             if retains_nullable_option
                 && let Some(name) = local_pattern_name(&local.pat)
                 && let Some(id) = self.binding_id(&name)
@@ -4037,6 +4819,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         ref_alias_receiver_captures: Vec::new(),
         reserved_identifiers: reserved_identifiers.names,
         scopes: vec![BTreeMap::new()],
+        external_structs: BTreeMap::new(),
+        shared_identities: BTreeSet::new(),
         sites: Vec::new(),
     };
     for argument in &function.sig.inputs {
@@ -4045,6 +4829,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         };
         let fact = resolver.typed_fact(&argument.ty);
         resolver.bind_pattern(&argument.pat, fact);
+        let shared_identity = rust_type_is_shared_identity(context, &argument.ty);
+        resolver.mark_shared_identity(&argument.pat, shared_identity);
+        resolver.mark_external_struct(&argument.pat, &argument.ty);
     }
     let parameters = resolver.scopes[0].clone();
     syn::visit::Visit::visit_block(&mut resolver, &function.block);
@@ -4056,6 +4843,14 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         markers.push(format!(
             "{BINDING_FACT_MARKER}{id}={}",
             binding_fact_marker(&fact)
+        ));
+    }
+    for id in &resolver.shared_identities {
+        markers.push(format!("{SHARED_IDENTITY_BINDING_MARKER}{id}"));
+    }
+    for (id, external) in &resolver.external_structs {
+        markers.push(format!(
+            "{EXTERNAL_STRUCT_BINDING_MARKER}{id}{PROVENANCE_SEPARATOR}{external}"
         ));
     }
     for (id, target) in resolver.ref_aliases {
@@ -4615,12 +5410,13 @@ fn provenance_bindings(
 pub(crate) fn generation_context(
     programs: &[(&str, &Program)],
     external_record_structs: &[ItemStruct],
+    external_shared_identity_facts: &BTreeSet<String>,
     contract_source: Option<&str>,
 ) -> Result<HashSet<String>, CompileError> {
     return generation_context_with_types(
         programs,
         external_record_structs,
-        &HashSet::new(),
+        &external_shared_identity_facts.iter().cloned().collect(),
         contract_source,
         true,
     );
@@ -4897,6 +5693,11 @@ fn generation_context_with_types(
         .flat_map(|(_, program)| &program.entities)
         .cloned()
         .collect::<HashSet<_>>();
+    context.extend(
+        entity_types
+            .iter()
+            .map(|entity| format!("{SHARED_IDENTITY_ENTITY_MARKER}{entity}")),
+    );
     for (module, program) in programs {
         for structure in &program.structs {
             let name = structure.ident.to_string();
@@ -5289,6 +6090,11 @@ fn generation_context_with_types(
                     "{STRUCT_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{identity}"
                 ));
             }
+            if shared_identity_type_at_depth(&context, Some(module), rust_type, 0) {
+                owned_facts.push(format!(
+                    "{SHARED_IDENTITY_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+                ));
+            }
         }
         context.extend(owned_facts);
         for designation in &program.array_like_parameters {
@@ -5321,6 +6127,26 @@ fn generation_context_with_types(
                 if let Some(field_identity) = resolved_type_identity(&context, module, &field.ty) {
                     context.insert(format!(
                         "{STRUCT_FIELD_TYPE_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{field_identity}",
+                        structure.ident
+                    ));
+                } else if shared_identity_type_at_depth(&context, Some(module), &field.ty, 0) {
+                    context.insert(format!(
+                        "{SHARED_IDENTITY_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
+                        structure.ident
+                    ));
+                }
+                if let Some(element) = sequence_inner_type(&field.ty)
+                    && (shared_identity_type_at_depth(&context, Some(module), element, 0)
+                        || resolved_type_identity(&context, module, element).is_some())
+                {
+                    context.insert(format!(
+                        "{SHARED_IDENTITY_ELEMENT_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
+                        structure.ident
+                    ));
+                }
+                if let Some(external) = external_struct_type_in(&context, module, &field.ty) {
+                    context.insert(format!(
+                        "{EXTERNAL_STRUCT_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{external}",
                         structure.ident
                     ));
                 }
@@ -6907,6 +7733,17 @@ fn emit_expression_value(
                 return emit_expression(&call.args[0], entities);
             }
             if expression_is_associated_path(&call.func, "Arc", "ptr_eq") && call.args.len() == 2 {
+                // Both operands are `&Arc<T>` for one `T`, so proving either payload identity-bearing
+                // proves the comparison.
+                if !call
+                    .args
+                    .iter()
+                    .any(|argument| expression_is_shared_identity(argument, entities))
+                {
+                    return Err(compile_error(
+                        "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
+                    ));
+                }
                 return Ok(format!(
                     "{} === {}",
                     emit_expression(&call.args[0], entities)?,
@@ -10267,13 +11104,17 @@ fn emit_method_call(
         "trim" if arguments.is_empty() => Err(compile_error(
             "portable `.trim()` requires a receiver known to be `String` or `str`",
         )),
-        "trim_end" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+        "trim_end"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
             Ok(format!("{receiver}.trimEnd()"))
         }
         "trim_end" if arguments.is_empty() => Err(compile_error(
             "portable `.trim_end()` requires a receiver known to be `String` or `str`",
         )),
-        "trim_start" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
+        "trim_start"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
             Ok(format!("{receiver}.trimStart()"))
         }
         "trim_start" if arguments.is_empty() => Err(compile_error(
@@ -10695,9 +11536,6 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
     };
 }
 
-// A non-empty `vec![..]`, the one untyped `Vec` construction whose emitted array carries its element
-// type. `Vec::new()`, `Vec::with_capacity(..)` and `vec![]` stay unknown until their element type can
-// be proven, so an untyped binding of them is never treated as a typed sequence.
 fn expression_is_vec_construction(expression: &Expr) -> bool {
     return matches!(
         expression,
@@ -11686,6 +12524,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let visibility_programs = input.visibility_programs;
     let visibility_identities = input.visibility_identities;
     let source_paths = input.source_paths;
+    let external_shared_identity_fields = input.external_shared_identity_fields;
     let programs = std::iter::once(program)
         .chain(alias_programs)
         .collect::<Vec<_>>();
@@ -11720,10 +12559,12 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         program,
         external_nullable_programs,
     );
+    let mut type_context = identity_context.clone();
+    type_context.extend(external_shared_identity_fields.iter().cloned());
     let mut expression_context = generation_context_with_types(
         &program_sources,
         external_record_structs,
-        &identity_context,
+        &type_context,
         None,
         false,
     )?;
@@ -12223,9 +13064,7 @@ fn emit_statement(
             }
         }
         Stmt::Expr(Expr::Call(call), _)
-            if std_mem_function(&call.func, entities)
-                .as_deref()
-                == Some("swap") =>
+            if std_mem_function(&call.func, entities).as_deref() == Some("swap") =>
         {
             if call.args.len() != 2 {
                 return Err(compile_error(
@@ -12235,8 +13074,7 @@ fn emit_statement(
             let a = emit_expression(&call.args[0], entities)?;
             let b = emit_expression(&call.args[1], entities)?;
             write_indent(out, indent);
-            writeln!(out, "[{a}, {b}] = [{b}, {a}];")
-                .expect("writing to a String cannot fail");
+            writeln!(out, "[{a}, {b}] = [{b}, {a}];").expect("writing to a String cannot fail");
         }
         Stmt::Expr(expression, _) => {
             write_indent(out, indent);
@@ -14063,6 +14901,42 @@ fn type_kind(rust_type: &Type) -> &'static str {
         Type::Verbatim(_) => "verbatim type tokens",
         _ => "unknown type",
     };
+}
+
+// `rust_type_is_shared_identity` for a test file's declared type: its own aliases stand for their
+// definitions, and a bare imported name may be the one loaded source alias so called.
+fn vitest_type_is_shared_identity(
+    context: &HashSet<String>,
+    aliases: &BTreeMap<String, Type>,
+    rust_type: &Type,
+    depth: usize,
+) -> bool {
+    if depth > 16 {
+        return false;
+    }
+    if let Type::Path(path) = rust_type
+        && path.qself.is_none()
+        && path.path.leading_colon.is_none()
+        && path.path.segments.len() == 1
+        && matches!(path.path.segments[0].arguments, PathArguments::None)
+    {
+        let name = path.path.segments[0].ident.to_string();
+        if let Some(definition) = aliases.get(&name) {
+            return vitest_type_is_shared_identity(context, aliases, definition, depth + 1);
+        }
+        if let Some((owner, alias)) = unique_alias_owner(context, &name)
+            && let Some(definition) = unique_marker_suffix(
+                context,
+                &format!(
+                    "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+            .and_then(|definition| syn::parse_str::<Type>(&definition).ok())
+        {
+            return shared_identity_type_at_depth(context, Some(&owner), &definition, depth + 1);
+        }
+    }
+    return rust_type_is_shared_identity(context, rust_type);
 }
 
 pub(crate) fn write_indent(out: &mut String, indent: usize) {

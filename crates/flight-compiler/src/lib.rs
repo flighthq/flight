@@ -224,6 +224,7 @@ fn compile_typescript_sources(
         external_record_structs: &external_record_structs,
         dependency_export_names: &dependency_export_names,
         external_string_unions: &external_string_unions,
+        external_shared_identity_fields: &external_shared_identity_fields(external_alias_sources)?,
         module_identities: module_identities.as_deref(),
         visibility_programs: &visibility_programs,
         visibility_identities: &visibility_identities,
@@ -474,6 +475,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     let mut context = typescript::generation_context(
         &alias_program_refs,
         &external_record_structs,
+        &external_shared_identity_fields(external_alias_sources)?,
         contract_source,
     )?;
     let external_string_unions = external_string_union_metadata
@@ -537,6 +539,11 @@ fn compile_vitest_with_contract_alias_sources_internal(
     );
     typescript::insert_vitest_local_struct_context(&mut context, program.structs.iter());
     typescript::insert_vitest_local_type_alias_context(&mut context, program.type_aliases.iter());
+    typescript::insert_vitest_local_shared_identity_context(
+        &mut context,
+        program.structs.iter(),
+        program.type_aliases.iter(),
+    );
     typescript::insert_vitest_helper_return_context(
         &mut context,
         "vitest/top-level",
@@ -931,6 +938,19 @@ fn external_rust_crate_root(module: &str) -> Option<String> {
         .strip_prefix("@flighthq/")?
         .strip_suffix("/contract")?;
     return Some(format!("flight_{}", package.replace('-', "_")));
+}
+
+// The identity-bearing types and public fields of the dependency sources (see
+// `typescript::external_shared_identity_facts`).
+fn external_shared_identity_fields(
+    external_alias_sources: &[ExternalAliasSource<'_>],
+) -> Result<std::collections::BTreeSet<String>, CompileError> {
+    return typescript::external_shared_identity_facts(
+        &external_alias_sources
+            .iter()
+            .map(|external| (external.source, external.module))
+            .collect::<Vec<_>>(),
+    );
 }
 
 fn has_nullable_option_directive(source: &str) -> bool {

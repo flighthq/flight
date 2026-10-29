@@ -159,13 +159,13 @@ mod merge_text_format {
 
     #[test]
     fn clones_tab_stops_from_both_base_and_override() {
-        let mut base = empty_text_format();
+        let mut base: TextFormat = empty_text_format();
         base.tab_stops = Some(vec![8.0]);
         base.variations = Some(Arc::new(vec![FontVariation {
             axis: FontVariationWeight.to_string(),
             value: 400.0,
         }]));
-        let mut from_base = merge_text_format(&base, &empty_text_format());
+        let mut from_base: TextFormat = merge_text_format(&base, &empty_text_format());
         from_base.tab_stops.as_mut().unwrap()[0] = 12.0;
         assert_eq!(base.tab_stops, Some(vec![8.0]));
         assert!(Arc::ptr_eq(

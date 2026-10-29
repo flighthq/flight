@@ -7,23 +7,25 @@ use crate::model::TestProgram;
 use crate::{CompileError, compile_error};
 
 use super::{
-    argument_is_option, bind_lexical_pattern, binding_fact_for_type,
-    binding_fact_marker, callable_parameter_rust_types, clear_provenance_binding,
-    collect_cross_crate_use_tree, export_name, expression_is_associated_path,
-    expression_is_path, foreign_wildcard_modules, insert_dependency_export_name_context,
-    insert_provenance_binding, is_primitive_typescript_type, lexical_fact,
-    local_pattern_name, marker_suffixes, provenance_binding_table,
-    provenance_import_rules, provenance_marker_values, provenance_pattern_bindings,
-    replace_provenance_binding_table, resolve_owner_inner, resolved_provenance_binding,
-    snake_to_lower_camel, source_module_name, unique_marker_suffix, vec_clone_optional,
-    BindingFact, ProvenanceIdentity, ProvenanceImportRule, SourceAccess, FUNCTION_OWNER_MARKER,
-    direct_lock_guard_receiver, NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER,
-    PROVENANCE_SEPARATOR, RETURN_BINDING_FACT_MARKER, STRUCT_OWNER_MARKER,
+    BindingFact, FUNCTION_OWNER_MARKER, NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER,
+    PROVENANCE_SEPARATOR, ProvenanceIdentity, ProvenanceImportRule, RETURN_BINDING_FACT_MARKER,
+    SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER, STRUCT_OWNER_MARKER, SourceAccess,
+    argument_is_option, bind_lexical_pattern, binding_fact_for_type, binding_fact_marker,
+    callable_parameter_rust_types, clear_provenance_binding, collect_cross_crate_use_tree,
+    direct_lock_guard_receiver, export_name, expression_is_associated_path, expression_is_path,
+    foreign_wildcard_modules, insert_dependency_export_name_context, insert_provenance_binding,
+    is_primitive_typescript_type, lexical_fact, local_pattern_name, marker_suffixes,
+    provenance_binding_table, provenance_import_rules, provenance_marker_values,
+    provenance_pattern_bindings, replace_provenance_binding_table, resolve_owner_inner,
+    resolved_provenance_binding, rust_type_is_shared_identity, snake_to_lower_camel,
+    source_module_name, unique_marker_suffix, vec_clone_optional, vitest_type_is_shared_identity,
 };
 
 pub(super) const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
-pub(super) const VITEST_FUNCTION_RETURN_CANDIDATE_MARKER: &str = "@vitest-function-return-candidate:";
-pub(super) const VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER: &str = "@vitest-function-return-unresolved:";
+pub(super) const VITEST_FUNCTION_RETURN_CANDIDATE_MARKER: &str =
+    "@vitest-function-return-candidate:";
+pub(super) const VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER: &str =
+    "@vitest-function-return-unresolved:";
 pub(super) const VITEST_LOCAL_CRATE_ALIAS_MARKER: &str = "@vitest-local-crate-alias:";
 pub(super) const VITEST_LOCAL_CRATE_MARKER: &str = "@vitest-local-crate:";
 pub(super) const VITEST_LOCAL_MODULE_ALIAS_MARKER: &str = "@vitest-local-module-alias:";
@@ -233,6 +235,11 @@ pub(crate) fn insert_vitest_helper_return_context<'a>(
         let ReturnType::Type(_, rust_type) = &helper.sig.output else {
             continue;
         };
+        if rust_type_is_shared_identity(context, rust_type) {
+            context.insert(format!(
+                "{SHARED_IDENTITY_RETURN_MARKER}{function_identity}{PROVENANCE_SEPARATOR}"
+            ));
+        }
         context.insert(format!(
             "{RETURN_BINDING_FACT_MARKER}{function_identity}{PROVENANCE_SEPARATOR}{}",
             binding_fact_marker(&binding_fact_for_type(context, None, rust_type))
@@ -455,6 +462,39 @@ pub(crate) fn insert_vitest_local_crate_context<'a>(
     }
 }
 
+// `SHARED_IDENTITY_FIELD_MARKER` facts for a test file's own structs (`vitest/local`): a field whose
+// declared type lowers to an identity-bearing object, reading the file's own type aliases and, for a
+// name it imports, the one loaded source alias of that name.
+pub(crate) fn insert_vitest_local_shared_identity_context<'a>(
+    context: &mut HashSet<String>,
+    structures: impl Iterator<Item = &'a ItemStruct>,
+    aliases: impl Iterator<Item = &'a syn::ItemType>,
+) {
+    let aliases = aliases
+        .filter(|alias| alias.generics.params.is_empty())
+        .map(|alias| (alias.ident.to_string(), alias.ty.as_ref().clone()))
+        .collect::<BTreeMap<_, _>>();
+    let mut facts = Vec::new();
+    for structure in structures {
+        for field in &structure.fields {
+            let Some(field_name) = &field.ident else {
+                continue;
+            };
+            if vitest_type_is_shared_identity(context, &aliases, &field.ty, 0) {
+                facts.push(format!(
+                    "{SHARED_IDENTITY_FIELD_MARKER}{}{PROVENANCE_SEPARATOR}{field_name}",
+                    ProvenanceIdentity {
+                        declaration: structure.ident.to_string(),
+                        module: "vitest/local".to_string(),
+                    }
+                    .encoded()
+                ));
+            }
+        }
+    }
+    context.extend(facts);
+}
+
 pub(crate) fn insert_vitest_local_struct_context<'a>(
     context: &mut HashSet<String>,
     structures: impl Iterator<Item = &'a ItemStruct>,
@@ -580,7 +620,10 @@ pub(crate) fn insert_vitest_struct_context<'a>(
 // generator supplies the matching target-native `rustTestSupport` object. Preserve strict contract
 // provenance for every production candidate; only a crate-root function with no production
 // declaration at all belongs to that test-support lane.
-pub(super) fn is_vitest_crate_root_test_support_function(path: &syn::Path, context: &HashSet<String>) -> bool {
+pub(super) fn is_vitest_crate_root_test_support_function(
+    path: &syn::Path,
+    context: &HashSet<String>,
+) -> bool {
     if path.segments.len() != 2
         || path
             .segments

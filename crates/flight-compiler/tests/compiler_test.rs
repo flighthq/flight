@@ -358,6 +358,192 @@ pub fn negated_flag(flag: bool) -> bool {
         assert!(output.contains("return !flag;"));
     }
 
+    // `Arc::ptr_eq` lowers to `===`, which compares allocations only when the payload lowers to an
+    // object: struct, collection, callable, `Mutex` cell or opaque `dyn Any`, through aliases and
+    // shared clones. A primitive, string or unit payload lowers to its value and fails closed.
+    #[test]
+    fn lowers_pointer_equality_only_over_identity_bearing_payloads() {
+        let source = r#"
+use std::any::Any;
+use std::sync::{Arc, Mutex};
+
+pub type ProviderRef = Arc<dyn Any + Send + Sync>;
+
+pub struct Node {
+    pub value: i32,
+}
+
+pub struct Source {
+    pub provider: ProviderRef,
+    pub node: Arc<Node>,
+    pub items: Arc<Vec<i32>>,
+    pub cell: Arc<Mutex<i32>>,
+    pub callback: Arc<dyn Fn() + Send + Sync>,
+}
+
+pub fn same_provider(a: &Source, b: &Source) -> bool {
+    return Arc::ptr_eq(&a.provider, &b.provider);
+}
+
+pub fn same_parts(a: &Source, b: &Source) -> bool {
+    return Arc::ptr_eq(&a.node, &b.node)
+        && Arc::ptr_eq(&a.items, &b.items)
+        && Arc::ptr_eq(&a.cell, &b.cell)
+        && Arc::ptr_eq(&a.callback, &b.callback);
+}
+
+pub fn same_param(a: &ProviderRef, b: &ProviderRef) -> bool {
+    return Arc::ptr_eq(a, b);
+}
+
+pub fn fresh_differs() -> bool {
+    let first = Arc::new(Node { value: 1 });
+    let second = first.clone();
+    let third: Arc<Vec<i32>> = Arc::new(Vec::new());
+    let fourth = Arc::new(Vec::<i32>::new());
+    return Arc::ptr_eq(&first, &second) && !Arc::ptr_eq(&third, &fourth);
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export type ProviderRef = object;
+
+export interface Node {
+  value: number;
+}
+
+export interface Source {
+  provider: ProviderRef;
+  node: Readonly<Node>;
+  items: Readonly<number[]>;
+  cell: { value: number };
+  callback: () => void;
+}
+
+export function sameProvider(a: Source, b: Source): boolean {
+  return a.provider === b.provider;
+}
+
+export function sameParts(a: Source, b: Source): boolean {
+  return (a.node === b.node) && (a.items === b.items) && (a.cell === b.cell) && (a.callback === b.callback);
+}
+
+export function sameParam(a: Readonly<ProviderRef>, b: Readonly<ProviderRef>): boolean {
+  return a === b;
+}
+
+export function freshDiffers(): boolean {
+  const first: Readonly<Node> = { value: 1 };
+  const second = first;
+  const third: Readonly<number[]> = [] as never[];
+  const fourth = [] as never[];
+  return (first === second) && !(third === fourth);
+}
+"#
+        );
+        for source in [
+            r#"use std::sync::Arc;
+pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
+    return Arc::ptr_eq(a, b);
+}
+"#,
+            r#"use std::sync::Arc;
+pub fn fresh() -> bool {
+    let a = Arc::new(());
+    let b = Arc::new(());
+    return Arc::ptr_eq(&a, &b);
+}
+"#,
+            r#"use std::sync::Arc;
+pub struct Holder {
+    pub name: Arc<String>,
+}
+pub fn same(a: &Holder, b: &Holder) -> bool {
+    return Arc::ptr_eq(&a.name, &b.name);
+}
+"#,
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
+                "{source}"
+            );
+        }
+    }
+
+    // A dependency crate's identity-bearing types and public fields are read in that crate's own
+    // sources (an alias in one file, the struct using it in another), so its handles compare by
+    // allocation; its primitive payload still fails closed.
+    #[test]
+    fn proves_pointer_equality_through_dependency_struct_fields() {
+        let dependency = [
+            ExternalAliasSource {
+                source: r#"use std::any::Any;
+use std::sync::Arc;
+
+pub type ProviderRef = Arc<dyn Any + Send + Sync>;
+"#,
+                module: "@flighthq/dep/contract",
+            },
+            ExternalAliasSource {
+                source: r#"use std::any::Any;
+use std::sync::Arc;
+
+use crate::provider_ref::ProviderRef;
+
+pub struct Source {
+    pub provider: ProviderRef,
+    pub handle: Arc<dyn Any + Send + Sync>,
+    pub serial: Arc<i32>,
+}
+"#,
+                module: "@flighthq/dep/contract",
+            },
+        ];
+        let source = r#"use std::sync::Arc;
+
+use flight_dep::{ProviderRef, Source};
+
+pub struct Binding {
+    pub source: Source,
+    pub provider: ProviderRef,
+}
+
+pub fn same_handle(binding: &Binding, source: &Source) -> bool {
+    return Arc::ptr_eq(&binding.source.handle, &source.handle)
+        && Arc::ptr_eq(&binding.provider, &source.provider);
+}
+"#;
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(source, None, &[], &dependency).unwrap(),
+            r#"import type { ProviderRef, Source } from "@flighthq/dep/contract";
+
+export interface Binding {
+  source: Source;
+  provider: ProviderRef;
+}
+
+export function sameHandle(binding: Readonly<Binding>, source: Readonly<Source>): boolean {
+  return (binding.source.handle === source.handle) && (binding.provider === source.provider);
+}
+"#
+        );
+        let primitive = r#"use std::sync::Arc;
+
+use flight_dep::Source;
+
+pub fn same_serial(a: &Source, b: &Source) -> bool {
+    return Arc::ptr_eq(&a.serial, &b.serial);
+}
+"#;
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(primitive, None, &[], &dependency)
+                .unwrap_err()
+                .to_string(),
+            "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations"
+        );
+    }
+
     // Ordinary calls lower to operator expressions too (`Arc::ptr_eq(a, b)` emits `a === b`), so the
     // operand guard classifies emitted text rather than enumerating method calls.
     #[test]
@@ -365,15 +551,19 @@ pub fn negated_flag(flag: bool) -> bool {
         let source = r#"
 use std::sync::Arc;
 
-pub fn different(a: &Arc<i32>, b: &Arc<i32>) -> bool {
+pub struct Node {
+    pub value: i32,
+}
+
+pub fn different(a: &Arc<Node>, b: &Arc<Node>) -> bool {
     return !Arc::ptr_eq(a, b);
 }
 
-pub fn equality_matches(a: &Arc<i32>, b: &Arc<i32>, expected: bool) -> bool {
+pub fn equality_matches(a: &Arc<Node>, b: &Arc<Node>, expected: bool) -> bool {
     return Arc::ptr_eq(a, b) == expected;
 }
 
-pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
+pub fn same(a: &Arc<Node>, b: &Arc<Node>) -> bool {
     return Arc::ptr_eq(a, b);
 }
 "#;
@@ -2897,7 +3087,9 @@ pub fn safe_sub(a: i32, b: i32) -> Option<i32> {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum"),
+            output.contains(
+                "const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum"
+            ),
             "{output}"
         );
         assert!(
@@ -2931,8 +3123,14 @@ pub fn unique_sorted(values: &mut Vec<i32>) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("items[read] !== items[read - 1]"), "{output}");
-        assert!(output.contains("items.length = Math.min(write, items.length)"), "{output}");
+        assert!(
+            output.contains("items[read] !== items[read - 1]"),
+            "{output}"
+        );
+        assert!(
+            output.contains("items.length = Math.min(write, items.length)"),
+            "{output}"
+        );
     }
 
     #[test]
@@ -2994,7 +3192,8 @@ pub fn words(text: String) -> Vec<String> {
 
     #[test]
     fn rejects_split_without_string_provenance() {
-        let source = "pub fn bad_split(value: &[u8]) -> Vec<u8> { return value.split(0).collect(); }\n";
+        let source =
+            "pub fn bad_split(value: &[u8]) -> Vec<u8> { return value.split(0).collect(); }\n";
 
         let error = compile_typescript(source, None).unwrap_err();
         assert_eq!(
@@ -3095,10 +3294,7 @@ pub fn pairs(keys: Vec<String>, values: Vec<i32>) -> Vec<(String, i32)> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains(".map((item, index) => [item,"),
-            "{output}"
-        );
+        assert!(output.contains(".map((item, index) => [item,"), "{output}");
         assert!(output.contains("as const"), "{output}");
     }
 

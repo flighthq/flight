@@ -450,8 +450,8 @@ mod create_statechart_instance_tests {
             &chart_ref
         ));
         assert!(std::sync::Arc::ptr_eq(
-            &first.read().unwrap().chart,
-            &second.read().unwrap().chart
+            &second.read().unwrap().chart,
+            &chart_ref
         ));
 
         // Input values: Boolean -2 -> 1, Number 3.5, Trigger 0

@@ -402,6 +402,14 @@ function getOrCreateSink(manager: InputManagerRaw): InputIngressSink {
   return candidate;
 }
 
+function isInputBindingFor(
+  binding: Readonly<InputBinding>,
+  source: Readonly<InputIngressSource>,
+  kind: InputBindingKind,
+): boolean {
+  return binding.kind === kind && binding.source.handle === source.handle;
+}
+
 function isManagerEnabled(manager: InputManagerRaw): boolean {
   return manager!.enabled;
 }
@@ -433,7 +441,7 @@ function takeInputBindingRelease(
   const registry = getInputManagerRegistry(locked);
   let release = undefined;
   for (const binding of registry.bindings) {
-    if (binding.kind === kind && binding.source.handle === source.handle) {
+    if (isInputBindingFor(binding, source, kind)) {
       release = binding.release;
       break;
     }
@@ -457,7 +465,7 @@ function takeInputBindingRelease(
       items.length = kept + length - index;
     }
   })(registry.bindings, (binding) => {
-    return !(binding.kind === kind && binding.source.handle === source.handle);
+    return !isInputBindingFor(binding, source, kind);
   });
   return release;
 }

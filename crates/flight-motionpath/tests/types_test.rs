@@ -2,8 +2,9 @@
 
 use std::sync::{Arc, RwLock};
 
+use flight_entity::Ref;
 use flight_motionpath::contract::*;
-use flight_path::{PathWinding, append_path_line_to, append_path_move_to, create_path};
+use flight_path::{Path, PathWinding, append_path_line_to, append_path_move_to, create_path};
 
 mod direction_values {
     use super::*;
@@ -80,7 +81,7 @@ mod path_identity {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
-        let handle = Arc::new(RwLock::new(path));
+        let handle: Ref<Path> = Arc::new(RwLock::new(path));
         let marker = create_motion_path(handle.clone(), Some(0.0), None, None);
         assert!(Arc::ptr_eq(&marker.path, &handle));
     }

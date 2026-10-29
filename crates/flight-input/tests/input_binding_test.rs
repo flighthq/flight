@@ -4,7 +4,6 @@ use flight_host::{InputIngressSource, ProviderRef};
 use flight_input::contract::*;
 use flight_signals::connect_signal;
 
-
 fn create_source() -> InputIngressSource {
     return InputIngressSource {
         provider: identity(),
@@ -85,12 +84,13 @@ mod attach_gamepad_input {
         let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let source = create_source();
+        let source: InputIngressSource = create_source();
         attach_gamepad_input(&host, &manager, &source, None);
         let attachments = recorder.attachments.lock().unwrap();
         assert_eq!(attachments.len(), 1);
         assert_eq!(attachments[0].0, "gamepad");
-        assert!(Arc::ptr_eq(&attachments[0].1.handle, &source.handle));
+        let attached: InputIngressSource = attachments[0].1.clone();
+        assert!(Arc::ptr_eq(&attached.handle, &source.handle));
     }
 }
 
@@ -296,10 +296,9 @@ mod explicit_input_ingress_parameter {
         let attachments = recorder.attachments.lock().unwrap().clone();
         assert_eq!(attachments.len(), 6);
         for index in 0..attachments.len() {
-            assert!(Arc::ptr_eq(
-                &attachments[index].1.handle,
-                &sources[index].handle
-            ));
+            let attached: InputIngressSource = attachments[index].1.clone();
+            let expected: InputIngressSource = sources[index].clone();
+            assert!(Arc::ptr_eq(&attached.handle, &expected.handle));
         }
         detach_gamepad_input(&manager, &sources[0]);
         detach_keyboard_input(&manager, &sources[1]);

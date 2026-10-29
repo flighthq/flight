@@ -20,6 +20,7 @@ import {
   hasRustConstGroup,
   hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
+  hasRustPublicTypeAlias,
   hasRustSiblingGenerationSemantics,
   mergeRustExportNames,
   renderCompanionContractExports,
@@ -185,6 +186,14 @@ describe('hasRustPublicRecordDeclaration', () => {
     expect(hasRustPublicRecordDeclaration('pub struct Generic<T> { pub value: T }\n')).toBe(true);
     expect(hasRustPublicRecordDeclaration('struct Private { value: i32 }\n')).toBe(false);
     expect(hasRustPublicRecordDeclaration('pub(crate) struct Internal { value: i32 }\n')).toBe(false);
+  });
+});
+
+describe('hasRustPublicTypeAlias', () => {
+  it('selects public type aliases but not private or crate-visible ones', () => {
+    expect(hasRustPublicTypeAlias('pub type ProviderRef = Arc<dyn Any + Send + Sync>;\n')).toBe(true);
+    expect(hasRustPublicTypeAlias('type Local = i32;\n')).toBe(false);
+    expect(hasRustPublicTypeAlias('pub(crate) type Internal = i32;\n')).toBe(false);
   });
 });
 

@@ -98,12 +98,13 @@ describe('attachGamepadInput', () => {
     const recorder = createRecorder();
     const host = recordingHost(recorder);
     const manager = createInputManager();
-    const source = createSource();
+    const source: InputIngressSource = createSource();
     attachGamepadInput(host, manager, source, undefined);
     const attachments = recorder.attachments.value;
     expect(attachments.length).toEqual(1);
     expect(attachments[0][0]).toEqual('gamepad');
-    expect(attachments[0][1].handle === source.handle).toBe(true);
+    const attached: InputIngressSource = attachments[0][1];
+    expect(attached.handle === source.handle).toBe(true);
   });
 });
 
@@ -255,7 +256,9 @@ describe('explicitInputIngressParameter', () => {
     const attachments = recorder.attachments.value;
     expect(attachments.length).toEqual(6);
     for (let index = 0; index < attachments.length; index += 1) {
-      expect(attachments[index][1].handle === sources[index].handle).toBe(true);
+      const attached: InputIngressSource = attachments[index][1];
+      const expected: InputIngressSource = sources[index];
+      expect(attached.handle === expected.handle).toBe(true);
     }
     detachGamepadInput(manager, sources[0]);
     detachKeyboardInput(manager, sources[1]);

@@ -19,6 +19,7 @@ import {
   hasRustConstGroup,
   hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
+  hasRustPublicTypeAlias,
   hasRustSiblingGenerationSemantics,
   renderCompanionContractExports,
   resolveExternalContractExports,
@@ -306,7 +307,8 @@ function dependencySources(command: string): DependencySource[] {
         collectRustExportNames(rust).size > 0 ||
         hasRustConstGroup(rust) ||
         hasRustGenerationSemantics(rust) ||
-        hasRustPublicRecordDeclaration(rust)
+        hasRustPublicRecordDeclaration(rust) ||
+        (hasRustPublicTypeAlias(rust) && !/^\/\/!\s*flight-compiler:\s*(?:rust-only|target-native)\b/m.test(rust))
       ) {
         sources.push({ module, path });
       }

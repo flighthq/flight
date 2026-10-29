@@ -579,6 +579,12 @@ export function hasRustPublicRecordDeclaration(rust: string): boolean {
   return /^\s*pub\s+struct\s+[A-Za-z_][A-Za-z0-9_]*/m.test(rust);
 }
 
+// A public type alias is a semantic input too: a dependency's alias may name the identity-bearing
+// payload a consuming crate compares by allocation (`ProviderRef = Arc<dyn Any + Send + Sync>`).
+export function hasRustPublicTypeAlias(rust: string): boolean {
+  return /^\s*pub\s+type\s+[A-Za-z_][A-Za-z0-9_]*\s*=/m.test(rust);
+}
+
 // Target-native sources are not compiled. Union declarations can still govern a generated sibling,
 // and they use the ordinary alias lane because their full declarations participate in lowering.
 export function hasRustSiblingGenerationSemantics(rust: string): boolean {

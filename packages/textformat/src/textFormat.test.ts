@@ -142,10 +142,10 @@ describe('mergeTextFormat', () => {
     expect(result.bold).toEqual(undefined);
   });
   it('clones tab stops from both base and override', () => {
-    let base = emptyTextFormat();
+    let base: TextFormat = emptyTextFormat();
     base.tabStops = [8.0];
     base.variations = [{ axis: String(FontVariationWeight), value: 400.0 }];
-    let fromBase = mergeTextFormat(base, emptyTextFormat());
+    let fromBase: TextFormat = mergeTextFormat(base, emptyTextFormat());
     fromBase.tabStops![0] = 12.0;
     expect(base.tabStops).toEqual([8.0]);
     expect(base.variations! === fromBase.variations!).toBe(true);

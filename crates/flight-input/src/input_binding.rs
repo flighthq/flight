@@ -364,6 +364,16 @@ fn get_or_create_sink(manager: &Ref<InputManager>) -> InputIngressSink {
     return candidate;
 }
 
+// Whether `binding` attaches `kind` for `source`. Sources are the same when their handles are the same
+// allocation; the provider does not take part.
+fn is_input_binding_for(
+    binding: &InputBinding,
+    source: &InputIngressSource,
+    kind: InputBindingKind,
+) -> bool {
+    return binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle);
+}
+
 fn is_manager_enabled(manager: &Ref<InputManager>) -> bool {
     return manager.read().unwrap().enabled;
 }
@@ -398,13 +408,13 @@ fn take_input_binding_release(
     let registry = get_input_manager_registry(&mut locked);
     let mut release = None;
     for binding in registry.bindings.iter() {
-        if binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle) {
+        if is_input_binding_for(binding, source, kind) {
             release = Some(binding.release.clone());
             break;
         }
     }
     registry.bindings.retain(|binding| {
-        return !(binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle));
+        return !is_input_binding_for(binding, source, kind);
     });
     return release;
 }
