@@ -37,6 +37,7 @@ import {
   selectNodeCore,
   toggleNodeSelectionCore,
 } from './selectionState.ts';
+import type { SelectionStateNodeTypeKey } from './selectionStateNodeTypeKey.ts';
 import type {
   LassoSelectionRaw,
   MarqueeSelectionModeRaw,
@@ -66,8 +67,6 @@ export interface SelectionSignals<NodeType extends NodeRef = NodeRef> {
   onActiveChange: Signal<NodeType | null>;
   onChange: Signal<readonly NodeType[]>;
 }
-
-declare const SelectionStateNodeTypeKey: unique symbol;
 
 /** Ordered node selection. Its contents are mutated only through @flighthq/selection functions. */
 export interface SelectionState<NodeType extends NodeRef = NodeRef> extends EntityRaw {

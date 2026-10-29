@@ -1,6 +1,8 @@
 import type { EntityRaw } from '@flighthq/entity/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
+import type { SelectionStateNodeTypeKey } from './selectionStateNodeTypeKey.ts';
+
 interface SelectionNode extends EntityRaw {
   readonly data: EntityRaw | null;
   enabled: boolean;
@@ -27,8 +29,6 @@ export interface SelectionSignals<NodeType extends SelectionNode = SelectionNode
   onActiveChange: Signal<NodeType | null>;
   onChange: Signal<readonly NodeType[]>;
 }
-
-declare const SelectionStateNodeTypeKey: unique symbol;
 
 /** Ordered node selection. Its contents are mutated only through @flighthq/selection functions. */
 export interface SelectionState<NodeType extends SelectionNode = SelectionNode> extends EntityRaw {
