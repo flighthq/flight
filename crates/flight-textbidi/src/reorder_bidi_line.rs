@@ -1,5 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: root reorderBidiLine
 
 use flight_entity::{Uint8Array, throw_range_error};
 

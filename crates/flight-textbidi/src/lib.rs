@@ -8,8 +8,9 @@ mod types;
 
 pub mod contract;
 
-// Public lane: exactly the exports of the pinned TS `index.ts`. Rust-only types, constructors,
-// initializers, guard seams, and enum string tables stay available from `contract`.
+// Public lane and authority for generated TS `index.ts`: exactly the pinned package-root exports.
+// Rust-only types, constructors, initializers, guard seams, and enum string tables stay available
+// from `contract`.
 pub use contract::COMPACT_BIDI_CLASS_KERNEL;
 pub use contract::disable_text_bidi_guards;
 pub use contract::enable_text_bidi_guards;

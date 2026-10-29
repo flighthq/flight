@@ -1,5 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: root disableTextBidiGuards enableTextBidiGuards
 
 use std::collections::HashMap;
 use std::sync::Arc;

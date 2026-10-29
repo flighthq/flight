@@ -1,5 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: root resolveBidiLevels
 
 use std::collections::HashMap;
 

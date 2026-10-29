@@ -1,6 +1,6 @@
-//! The full contract lane, mirroring TS `contract.ts`: every public free function and type.
-//! Consumers that need internal seams import here; the crate root mirrors the curated TS
-//! `index.ts` lane plus the Rust types its signatures require.
+//! The full contract lane and the authority for generated TS `contract.ts`: every public free
+//! function and Rust type. Consumers that need internal seams import here; TS types remain owned by
+//! `@flighthq/types`, while the crate root is the authority for the generated package root.
 
 pub use super::bidi_class_kernel::*;
 pub use super::enable_text_bidi_guards::*;

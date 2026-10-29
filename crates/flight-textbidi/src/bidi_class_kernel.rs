@@ -1,5 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: root compactBidiClassKernel explainBidiClassKernel
 //! flight-compiler: export-name COMPACT_BIDI_CLASS_KERNEL compactBidiClassKernel
 
 use std::sync::LazyLock;
