@@ -12,7 +12,7 @@ export interface ParsedProtocolUrl {
 
 // Deep-link event entity. Enable delivery with attachProtocolHandler; the signal stays inert until then.
 export interface ProtocolHandler extends Entity {
-  onOpenUrl: Signal<(url: string) => void>;
+  onOpenUrl: Signal<string>;
 }
 
 export interface HostProtocolDefaultCapability {
