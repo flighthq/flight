@@ -669,7 +669,6 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
 // a typo cannot silently bypass the exact-root branch and fall back to inferred Rust exports.
 fn parse_root_only_directives(attributes: &[Attribute]) -> Result<Vec<String>, CompileError> {
     let mut names = Vec::new();
-    let mut found = false;
     let mut seen = HashSet::new();
     for attribute in attributes {
         let Some(directive) = doc_directive(attribute) else {
@@ -685,12 +684,6 @@ fn parse_root_only_directives(attributes: &[Attribute]) -> Result<Vec<String>, C
         {
             continue;
         }
-        if found {
-            return Err(compile_error(
-                "duplicate `flight-compiler: root-only` directive",
-            ));
-        }
-        found = true;
         let targets = targets.trim();
         if targets.is_empty() {
             return Err(compile_error(
@@ -710,12 +703,9 @@ fn parse_root_only_directives(attributes: &[Attribute]) -> Result<Vec<String>, C
                         "`flight-compiler: root-only` target `{target}` is not a TypeScript identifier"
                     )));
                 }
-                if !seen.insert(target.to_string()) {
-                    return Err(compile_error(format!(
-                        "duplicate `flight-compiler: root-only` target `{target}`"
-                    )));
+                if seen.insert(target.to_string()) {
+                    names.push(target.to_string());
                 }
-                names.push(target.to_string());
             }
         }
     }

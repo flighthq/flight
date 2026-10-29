@@ -120,9 +120,13 @@ pub use contract::*;
 
     writeFileSync(
       sourcePath,
-      `//! flight-compiler: root-only Signal\n#![doc = "flight-compiler: root-only createSignal"]\n\n${signalBody()}`,
+      `//! flight-compiler: root-only Signal, createSignal\n#![doc = "flight-compiler: root-only createSignal Signal"]\n\n${signalBody()}`,
     );
-    expect(generationError()).toContain('duplicate `flight-compiler: root-only` directive');
+    generate();
+    const repeatedRoot = readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8');
+    expect(repeatedRoot).toContain("export { createSignal } from './contract.ts';");
+    expect(repeatedRoot).toContain("export type { Signal } from './contract.ts';");
+    expect(repeatedRoot).not.toContain('ContractOnly');
 
     writeFileSync(sourcePath, signalSource('MissingSignal'));
     expect(generationError()).toContain('root export MissingSignal has no TypeScript contract symbol');

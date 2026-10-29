@@ -113,17 +113,27 @@ mod source_modes {
                 "//! flight-compiler: root-only Signal<T>\npub struct Signal<T> { pub value: T }\n",
                 "`flight-compiler: root-only` target `Signal<T>` is not a TypeScript identifier",
             ),
-            (
-                "//! flight-compiler: root-only Signal\n//! flight-compiler: root-only createSignal\npub struct Signal {}\n",
-                "duplicate `flight-compiler: root-only` directive",
-            ),
-            (
-                "#![doc = \"flight-compiler: root-only Signal Signal\"]\npub struct Signal {}\n",
-                "duplicate `flight-compiler: root-only` target `Signal`",
-            ),
         ] {
             assert_eq!(source_mode(source).unwrap_err().to_string(), expected);
         }
+    }
+
+    #[test]
+    fn unions_repeated_root_only_declarations_and_deduplicates_targets() {
+        assert_eq!(
+            root_only_names(
+                "//! flight-compiler: root-only Signal, createSignal\n#![doc = \"flight-compiler: root-only createSignal ContractOnly Signal\"]\npub struct Signal {}\n"
+            )
+            .unwrap(),
+            ["Signal", "createSignal", "ContractOnly"]
+        );
+        assert_eq!(
+            source_mode(
+                "//! flight-compiler: root-only Signal Signal\n#![doc = \"flight-compiler: root-only Signal\"]\npub struct Signal {}\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
     }
 
     #[test]
