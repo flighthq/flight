@@ -24,6 +24,13 @@ pub struct ExternalAliasSource<'a> {
     pub module: &'a str,
 }
 
+/// A production source and its stable module path for Vitest provenance inference.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VitestAliasSource<'a> {
+    pub source: &'a str,
+    pub module: &'a str,
+}
+
 /// A source construct that cannot yet be lowered mechanically.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompileError {
@@ -136,16 +143,44 @@ pub fn compile_vitest_with_alias_sources(
     contract_module: &str,
     alias_sources: &[&str],
 ) -> Result<String, CompileError> {
+    let module_paths = (0..alias_sources.len())
+        .map(|index| format!("alias-source/{index}"))
+        .collect::<Vec<_>>();
+    let named_alias_sources = alias_sources
+        .iter()
+        .zip(&module_paths)
+        .map(|(source, module)| VitestAliasSource { source, module })
+        .collect::<Vec<_>>();
+    return compile_vitest_with_module_alias_sources(source, contract_module, &named_alias_sources);
+}
+
+/// Compiles one Rust test module with source-qualified production hints.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_module_alias_sources(
+    source: &str,
+    contract_module: &str,
+    alias_sources: &[VitestAliasSource<'_>],
+) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
     let alias_programs = alias_sources
         .iter()
-        .map(|alias_source| model::parse_program(alias_source))
+        .map(|alias_source| model::parse_program(alias_source.source))
         .collect::<Result<Vec<_>, _>>()?;
-    let alias_program_refs = alias_programs.iter().collect::<Vec<_>>();
+    let alias_program_refs = alias_sources
+        .iter()
+        .zip(&alias_programs)
+        .map(|(source, program)| (source.module, program))
+        .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
     let mut context = typescript::generation_context(&alias_program_refs)?;
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
+    typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
+    typescript::insert_vitest_helper_return_context(
+        &mut context,
+        "vitest/top-level",
+        program.helpers.iter(),
+    );
     typescript::insert_vitest_struct_context(
         &mut context,
         alias_programs

@@ -10,8 +10,10 @@ use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local,
     emit_local_with_shadow_and_else, emit_parameter, emit_type, frozen_object_name,
-    function_expression_context, is_data_union_variant, is_string_union, is_vitest_struct,
-    numeric_literal_spelling, snake_to_lower_camel, write_indent,
+    function_expression_context, insert_vitest_helper_return_context,
+    insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
+    is_data_union_variant, is_string_union, is_vitest_struct, numeric_literal_spelling,
+    snake_to_lower_camel, update_vitest_struct_local_context, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -464,6 +466,8 @@ fn emit_block(
     context: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    let mut block_context = context.clone();
+    insert_vitest_rebound_struct_context(statements, &mut block_context);
     let mut declaration_counts = HashMap::new();
     for statement in statements {
         if let Stmt::Local(local) = statement
@@ -482,10 +486,17 @@ fn emit_block(
                 .is_some_and(|count| *count > 1);
             let shadowed = !declared.insert(name);
             emit_local_with_shadow_and_else(
-                out, context, local, indent, shadowed, rebound, emit_block,
+                out,
+                &block_context,
+                local,
+                indent,
+                shadowed,
+                rebound,
+                emit_block,
             )?;
+            update_vitest_struct_local_context(local, &mut block_context);
         } else {
-            emit_statement(out, statement, context, indent)?;
+            emit_statement(out, statement, &block_context, indent)?;
         }
     }
     return Ok(());
@@ -687,18 +698,25 @@ fn emit_suite(
     contract_symbols: &[String],
     context: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    let mut suite_context = context.clone();
+    insert_vitest_import_alias_context(&mut suite_context, suite.uses.iter());
+    insert_vitest_helper_return_context(
+        &mut suite_context,
+        &format!("vitest/suite/{}", suite.name),
+        suite.helpers.iter(),
+    );
     let name = resolve_suite_name(&suite.name, contract_symbols);
     writeln!(out, "describe({:?}, () => {{", snake_to_lower_camel(name))
         .expect("writing to a String cannot fail");
     for helper in &suite.helpers {
-        emit_helper(out, helper, context, 1)?;
+        emit_helper(out, helper, &suite_context, 1)?;
     }
     for test in &suite.skipped_tests {
         writeln!(out, "  // Rust-only: {}", test.replace('_', " "))
             .expect("writing to a String cannot fail");
     }
     for test in &suite.tests {
-        emit_test(out, test, context)?;
+        emit_test(out, test, &suite_context)?;
     }
     out.push_str("});\n");
     return Ok(());

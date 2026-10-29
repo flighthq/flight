@@ -66,8 +66,17 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let alias_source_refs = alias_sources.iter().map(String::as_str).collect::<Vec<_>>();
-            flight_compiler::compile_vitest_with_alias_sources(
+            let alias_modules = options
+                .alias_sources
+                .iter()
+                .map(|path| path.to_string_lossy().into_owned())
+                .collect::<Vec<_>>();
+            let alias_source_refs = alias_sources
+                .iter()
+                .zip(&alias_modules)
+                .map(|(source, module)| flight_compiler::VitestAliasSource { source, module })
+                .collect::<Vec<_>>();
+            flight_compiler::compile_vitest_with_module_alias_sources(
                 &source,
                 options
                     .contract_module

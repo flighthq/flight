@@ -6,8 +6,8 @@ use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
 use syn::{
-    Attribute, BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, Lit, Pat, PathArguments,
-    ReturnType, Stmt, Token, Type, UnOp, Visibility,
+    Attribute, BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, ItemUse, Lit, Pat,
+    PathArguments, ReturnType, Stmt, Token, Type, UnOp, UseTree, Visibility,
 };
 
 use crate::model::{Program, StringUnionStyle, TestProgram};
@@ -29,6 +29,7 @@ const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
+const PROVENANCE_SEPARATOR: char = '\u{1f}';
 // Locals and parameters known to hold a Rust integer or string, the operand types `.cmp()` lowers
 // to a JavaScript relational comparison.
 const ORDERED_PRIMITIVE_MARKER: &str = "@ordered-primitive:";
@@ -44,6 +45,10 @@ const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
 const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
+const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
+const VITEST_PUBLIC_FUNCTION_MARKER: &str = "@vitest-public-function:";
+const VITEST_FUNCTION_ALIAS_MARKER: &str = "@vitest-function-alias:";
+const VITEST_REBOUND_TYPE_MARKER: &str = "@vitest-rebound-type:";
 const VITEST_STRUCT_RETURN_MARKER: &str = "@vitest-struct-return:";
 const VITEST_STRUCT_VEC_CALLBACK_MARKER: &str = "@vitest-struct-vec-callback:";
 const VITEST_STRUCT_TYPE_MARKER: &str = "@vitest-struct-type:";
@@ -630,7 +635,9 @@ fn frozen_object_expression_name<'a>(
     };
 }
 
-pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
+pub(crate) fn generation_context(
+    programs: &[(&str, &Program)],
+) -> Result<HashSet<String>, CompileError> {
     return generation_context_with_types(programs, &HashSet::new());
 }
 
@@ -667,6 +674,70 @@ pub(crate) fn insert_vitest_struct_context<'a>(
     }
 }
 
+pub(crate) fn insert_vitest_import_alias_context<'a>(
+    context: &mut HashSet<String>,
+    uses: impl Iterator<Item = &'a ItemUse>,
+) {
+    fn insert_tree(context: &mut HashSet<String>, tree: &UseTree) {
+        match tree {
+            UseTree::Rename(rename) => {
+                let prefix = format!(
+                    "{VITEST_FUNCTION_ALIAS_MARKER}{}{PROVENANCE_SEPARATOR}",
+                    rename.rename
+                );
+                context.retain(|marker| !marker.starts_with(&prefix));
+                context.insert(format!(
+                    "{VITEST_FUNCTION_ALIAS_MARKER}{}{PROVENANCE_SEPARATOR}{}",
+                    rename.rename, rename.ident
+                ));
+            }
+            UseTree::Group(group) => {
+                for tree in &group.items {
+                    insert_tree(context, tree);
+                }
+            }
+            UseTree::Path(path) => insert_tree(context, &path.tree),
+            UseTree::Glob(_) | UseTree::Name(_) => {}
+        }
+    }
+
+    for rust_use in uses {
+        insert_tree(context, &rust_use.tree);
+    }
+}
+
+pub(crate) fn insert_vitest_helper_return_context<'a>(
+    context: &mut HashSet<String>,
+    module: &str,
+    helpers: impl Iterator<Item = &'a ItemFn>,
+) {
+    for helper in helpers {
+        let ReturnType::Type(_, rust_type) = &helper.sig.output else {
+            continue;
+        };
+        let Some(structure) = named_type(rust_type) else {
+            continue;
+        };
+        let Some(identity) = vitest_struct_owner(context, &structure) else {
+            continue;
+        };
+        let function = helper.sig.ident.to_string();
+        let alias_prefix =
+            format!("{VITEST_FUNCTION_ALIAS_MARKER}{function}{PROVENANCE_SEPARATOR}");
+        let function_prefix =
+            format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}");
+        context.retain(|marker| {
+            !marker.starts_with(&alias_prefix) && !marker.starts_with(&function_prefix)
+        });
+        context.insert(format!(
+            "{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}{module}"
+        ));
+        context.insert(format!(
+            "{VITEST_STRUCT_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function}{PROVENANCE_SEPARATOR}{identity}"
+        ));
+    }
+}
+
 pub(crate) fn is_vitest_struct(context: &HashSet<String>, name: &str) -> bool {
     return context.contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{name}"));
 }
@@ -676,21 +747,25 @@ pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
 }
 
 fn generation_context_with_types(
-    programs: &[&Program],
+    programs: &[(&str, &Program)],
     type_context: &HashSet<String>,
 ) -> Result<HashSet<String>, CompileError> {
     let mut context = type_context.clone();
-    insert_data_union_context(&mut context, programs)?;
+    let program_refs = programs
+        .iter()
+        .map(|(_, program)| *program)
+        .collect::<Vec<_>>();
+    insert_data_union_context(&mut context, &program_refs)?;
     let entity_types = programs
         .iter()
-        .flat_map(|program| &program.entities)
+        .flat_map(|(_, program)| &program.entities)
         .cloned()
         .collect::<HashSet<_>>();
     let mut callable_type_context = type_context.clone();
     callable_type_context.extend(entity_types.iter().cloned());
     let record_types = programs
         .iter()
-        .flat_map(|program| {
+        .flat_map(|(_, program)| {
             program
                 .structs
                 .iter()
@@ -698,14 +773,43 @@ fn generation_context_with_types(
                 .map(|structure| structure.ident.to_string())
         })
         .collect::<HashSet<_>>();
-    let struct_types = programs
-        .iter()
-        .flat_map(|program| &program.structs)
-        .map(|structure| structure.ident.to_string())
-        .collect::<HashSet<_>>();
+    let mut public_struct_owners = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut public_function_owners = BTreeMap::<String, BTreeSet<String>>::new();
+    for (module, program) in programs {
+        for structure in &program.structs {
+            if is_public(&structure.vis) {
+                public_struct_owners
+                    .entry(structure.ident.to_string())
+                    .or_default()
+                    .insert((*module).to_string());
+            }
+        }
+        for function in &program.functions {
+            if is_public(&function.vis) {
+                public_function_owners
+                    .entry(function.sig.ident.to_string())
+                    .or_default()
+                    .insert((*module).to_string());
+            }
+        }
+    }
+    for (structure, owners) in &public_struct_owners {
+        for owner in owners {
+            context.insert(format!(
+                "{VITEST_STRUCT_OWNER_MARKER}{structure}{PROVENANCE_SEPARATOR}{owner}{PROVENANCE_SEPARATOR}{structure}"
+            ));
+        }
+    }
+    for (function, owners) in &public_function_owners {
+        for owner in owners {
+            context.insert(format!(
+                "{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}{owner}"
+            ));
+        }
+    }
     let record_vec_fields = programs
         .iter()
-        .flat_map(|program| &program.structs)
+        .flat_map(|(_, program)| &program.structs)
         .filter(|structure| record_types.contains(&structure.ident.to_string()))
         .map(|structure| {
             let fields = structure
@@ -721,7 +825,7 @@ fn generation_context_with_types(
             (structure.ident.to_string(), fields)
         })
         .collect::<HashMap<_, _>>();
-    for program in programs {
+    for (module, program) in programs {
         context.extend(program.entities.iter().cloned());
         context.extend(
             program
@@ -733,14 +837,19 @@ fn generation_context_with_types(
         );
         insert_string_union_context(&mut context, program.string_unions.keys());
         if program.nullable_options {
-            for structure in &program.structs {
+            for structure in program
+                .structs
+                .iter()
+                .filter(|structure| is_public(&structure.vis))
+            {
                 for field in &structure.fields {
-                    if option_inner_type(&field.ty).is_some()
+                    if is_public(&field.vis)
+                        && option_inner_type(&field.ty).is_some()
                         && let Some(field_name) = &field.ident
                     {
                         context.insert(format!(
-                            "{NULLABLE_OPTION_FIELD_MARKER}{}:{field_name}",
-                            structure.ident
+                            "{NULLABLE_OPTION_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
+                            structure.ident,
                         ));
                     }
                 }
@@ -785,13 +894,27 @@ fn generation_context_with_types(
         }
         for function in &program.functions {
             let function_name = function.sig.ident.to_string();
-            if let ReturnType::Type(_, rust_type) = &function.sig.output
+            if is_public(&function.vis)
+                && let ReturnType::Type(_, rust_type) = &function.sig.output
                 && let Some(structure) = named_type(rust_type)
-                && struct_types.contains(&structure)
             {
-                context.insert(format!(
-                    "{VITEST_STRUCT_RETURN_MARKER}{function_name}:{structure}"
-                ));
+                let local_owner = program
+                    .structs
+                    .iter()
+                    .any(|candidate| {
+                        is_public(&candidate.vis) && candidate.ident == structure.as_str()
+                    })
+                    .then_some(*module);
+                let unique_owner = public_struct_owners.get(&structure).and_then(|owners| {
+                    (owners.len() == 1)
+                        .then(|| owners.first().map(String::as_str))
+                        .flatten()
+                });
+                if let Some(structure_owner) = local_owner.or(unique_owner) {
+                    context.insert(format!(
+                        "{VITEST_STRUCT_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{structure_owner}{PROVENANCE_SEPARATOR}{structure}"
+                    ));
+                }
             }
             if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if rust_type_is_string(rust_type))
             {
@@ -895,15 +1018,6 @@ pub(crate) fn function_expression_context(
         }
 
         fn visit_local(&mut self, local: &'ast syn::Local) {
-            if let Some(initializer) = &local.init
-                && let Some(local_name) = local_pattern_name(&local.pat)
-                && let Some(structure) =
-                    inferred_vitest_struct_literal_name(&initializer.expr, self.context)
-            {
-                self.context.insert(format!(
-                    "{VITEST_STRUCT_LOCAL_MARKER}{local_name}:{structure}"
-                ));
-            }
             if let Pat::Type(typed) = &local.pat
                 && let Pat::Ident(pattern) = typed.pat.as_ref()
             {
@@ -1008,10 +1122,10 @@ pub(crate) fn function_expression_context(
             continue;
         };
         if let Some(structure) = named_type(&argument.ty)
-            && context.contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{structure}"))
+            && let Some(identity) = vitest_struct_owner(&context, &structure)
         {
             context.insert(format!(
-                "{VITEST_STRUCT_LOCAL_MARKER}{}:{structure}",
+                "{VITEST_STRUCT_LOCAL_MARKER}{}{PROVENANCE_SEPARATOR}{identity}",
                 pattern.ident
             ));
         }
@@ -1038,6 +1152,69 @@ pub(crate) fn function_expression_context(
         &function.block,
     );
     return context;
+}
+
+pub(crate) fn insert_vitest_rebound_struct_context(
+    statements: &[Stmt],
+    context: &mut HashSet<String>,
+) {
+    let mut bindings = BTreeMap::<String, BTreeMap<String, String>>::new();
+    for statement in statements {
+        let Stmt::Local(local) = statement else {
+            continue;
+        };
+        let Some(local_name) = local_pattern_name(&local.pat) else {
+            continue;
+        };
+        let Some(initializer) = &local.init else {
+            continue;
+        };
+        let Some((identity, typescript_type)) =
+            inferred_vitest_struct_return_type(&initializer.expr, context)
+        else {
+            continue;
+        };
+        bindings
+            .entry(local_name)
+            .or_default()
+            .insert(identity, typescript_type);
+    }
+    for (local, types) in bindings {
+        if types.len() < 2 {
+            continue;
+        }
+        context.insert(format!(
+            "{VITEST_REBOUND_TYPE_MARKER}{local}{PROVENANCE_SEPARATOR}{}",
+            types.into_values().collect::<Vec<_>>().join(" | ")
+        ));
+    }
+}
+
+pub(crate) fn update_vitest_struct_local_context(
+    local: &syn::Local,
+    context: &mut HashSet<String>,
+) {
+    let Some(local_name) = local_pattern_name(&local.pat) else {
+        return;
+    };
+    let prefix = format!("{VITEST_STRUCT_LOCAL_MARKER}{local_name}{PROVENANCE_SEPARATOR}");
+    context.retain(|marker| !marker.starts_with(&prefix));
+    let identity = local
+        .init
+        .as_ref()
+        .and_then(|initializer| inferred_vitest_struct_literal_name(&initializer.expr, context))
+        .or_else(|| {
+            let Pat::Type(typed) = &local.pat else {
+                return None;
+            };
+            let structure = named_type(&typed.ty)?;
+            vitest_struct_owner(context, &structure)
+        });
+    if let Some(identity) = identity {
+        context.insert(format!(
+            "{VITEST_STRUCT_LOCAL_MARKER}{local_name}{PROVENANCE_SEPARATOR}{identity}"
+        ));
+    }
 }
 
 fn documentation(attributes: &[Attribute]) -> Vec<String> {
@@ -1157,6 +1334,8 @@ fn emit_block(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    let mut block_context = entities.clone();
+    insert_vitest_rebound_struct_context(statements, &mut block_context);
     let mut declaration_counts = HashMap::new();
     for statement in statements {
         if let Stmt::Local(local) = statement
@@ -1174,9 +1353,10 @@ fn emit_block(
                 .get(&name)
                 .is_some_and(|count| *count > 1);
             let shadowed = !declared.insert(name);
-            emit_local_with_shadow(out, local, entities, indent, shadowed, rebound)?;
+            emit_local_with_shadow(out, local, &block_context, indent, shadowed, rebound)?;
+            update_vitest_struct_local_context(local, &mut block_context);
         } else {
-            emit_statement(out, statement, entities, indent)?;
+            emit_statement(out, statement, &block_context, indent)?;
         }
     }
     return Ok(());
@@ -2156,6 +2336,8 @@ fn emit_contextual_struct_literal_expression(
                     "unsupported struct update expression; refusing a lossy object literal",
                 ));
             }
+            let structure_name = structure.path.segments[0].ident.to_string();
+            let structure_identity = vitest_struct_owner(entities, &structure_name);
             let fields = structure
                 .fields
                 .iter()
@@ -2165,7 +2347,8 @@ fn emit_contextual_struct_literal_expression(
                     } else {
                         let field_context = contextual_struct_field_context(
                             entities,
-                            &structure.path.segments[0].ident.to_string(),
+                            &structure_name,
+                            structure_identity.as_deref(),
                             &field.member,
                             &field.expr,
                         );
@@ -2184,10 +2367,19 @@ fn emit_contextual_struct_literal_expression(
 fn contextual_struct_field_context(
     entities: &HashSet<String>,
     structure: &str,
+    structure_identity: Option<&str>,
     member: &syn::Member,
     expression: &Expr,
 ) -> HashSet<String> {
     let mut context = entities.clone();
+    if let Some(structure_identity) = structure_identity
+        && let syn::Member::Named(field) = member
+        && context.contains(&format!(
+            "{NULLABLE_OPTION_FIELD_MARKER}{structure_identity}{PROVENANCE_SEPARATOR}{field}"
+        ))
+    {
+        context.insert(NULLABLE_OPTIONS_MARKER.to_string());
+    }
     let Some(closure) = contextual_field_closure(expression) else {
         return context;
     };
@@ -2222,16 +2414,19 @@ fn contextual_assignment_field_context(
     let Some(local) = referenced_path_identifier(&field.base) else {
         return entities.clone();
     };
-    let prefix = format!("{VITEST_STRUCT_LOCAL_MARKER}{local}:");
-    let mut structures = entities
-        .iter()
-        .filter_map(|marker| marker.strip_prefix(&prefix))
-        .collect::<Vec<_>>();
-    structures.sort_unstable();
-    let Some(structure) = structures.first() else {
+    let Some(identity) = vitest_struct_local(entities, &local) else {
         return entities.clone();
     };
-    return contextual_struct_field_context(entities, structure, &field.member, &assignment.right);
+    let Some(structure) = vitest_struct_name(&identity) else {
+        return entities.clone();
+    };
+    return contextual_struct_field_context(
+        entities,
+        structure,
+        Some(&identity),
+        &field.member,
+        &assignment.right,
+    );
 }
 
 fn contextual_field_closure(expression: &Expr) -> Option<&syn::ExprClosure> {
@@ -2324,32 +2519,97 @@ fn inferred_vitest_struct_literal_name(
             let Expr::Path(path) = call.func.as_ref() else {
                 return None;
             };
-            let function = path.path.segments.last()?.ident.to_string();
-            let prefix = format!("{VITEST_STRUCT_RETURN_MARKER}{function}:");
-            entities
-                .iter()
-                .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string))
+            let local_function = path.path.segments.last()?.ident.to_string();
+            let function = vitest_function_declaration(entities, &local_function)?;
+            let owner = unique_marker_suffix(
+                entities,
+                &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}"),
+            )?;
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{VITEST_STRUCT_RETURN_MARKER}{owner}{PROVENANCE_SEPARATOR}{function}{PROVENANCE_SEPARATOR}"
+                ),
+            )
         }
         Expr::Group(group) => inferred_vitest_struct_literal_name(&group.expr, entities),
         Expr::Paren(paren) => inferred_vitest_struct_literal_name(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             let local = path.path.segments.first()?.ident.to_string();
-            let prefix = format!("{VITEST_STRUCT_LOCAL_MARKER}{local}:");
-            entities
-                .iter()
-                .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string))
+            vitest_struct_local(entities, &local)
         }
         Expr::Reference(reference) => {
             inferred_vitest_struct_literal_name(&reference.expr, entities)
         }
         Expr::Struct(structure) if structure.path.segments.len() == 1 => {
             let name = structure.path.segments.first()?.ident.to_string();
-            entities
-                .contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{name}"))
-                .then_some(name)
+            vitest_struct_owner(entities, &name)
         }
         _ => None,
     };
+}
+
+fn inferred_vitest_struct_return_type(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<(String, String)> {
+    let Expr::Call(call) = expression else {
+        return None;
+    };
+    let Expr::Path(path) = call.func.as_ref() else {
+        return None;
+    };
+    let function = path.path.segments.last()?.ident.to_string();
+    let identity = inferred_vitest_struct_literal_name(expression, entities)?;
+    let typescript_function = snake_to_lower_camel(&function);
+    return Some((
+        identity,
+        format!("ReturnType<typeof {typescript_function}>"),
+    ));
+}
+
+fn unique_marker_suffix(entities: &HashSet<String>, prefix: &str) -> Option<String> {
+    let matches = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(prefix))
+        .collect::<BTreeSet<_>>();
+    if matches.len() != 1 {
+        return None;
+    }
+    return matches.first().map(|suffix| (*suffix).to_string());
+}
+
+fn vitest_function_declaration(entities: &HashSet<String>, local_function: &str) -> Option<String> {
+    let prefix = format!("{VITEST_FUNCTION_ALIAS_MARKER}{local_function}{PROVENANCE_SEPARATOR}");
+    let declarations = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&prefix))
+        .collect::<BTreeSet<_>>();
+    return match declarations.len() {
+        0 => Some(local_function.to_string()),
+        1 => declarations.first().map(|function| (*function).to_string()),
+        _ => None,
+    };
+}
+
+fn vitest_struct_local(entities: &HashSet<String>, local: &str) -> Option<String> {
+    return unique_marker_suffix(
+        entities,
+        &format!("{VITEST_STRUCT_LOCAL_MARKER}{local}{PROVENANCE_SEPARATOR}"),
+    );
+}
+
+fn vitest_struct_owner(entities: &HashSet<String>, structure: &str) -> Option<String> {
+    return unique_marker_suffix(
+        entities,
+        &format!("{VITEST_STRUCT_OWNER_MARKER}{structure}{PROVENANCE_SEPARATOR}"),
+    );
+}
+
+fn vitest_struct_name(identity: &str) -> Option<&str> {
+    return identity
+        .rsplit_once(PROVENANCE_SEPARATOR)
+        .map(|(_, name)| name);
 }
 
 pub(crate) fn emit_for_header(
@@ -2753,6 +3013,17 @@ pub(crate) fn emit_local_with_shadow_and_else(
     } else {
         None
     };
+    let rebound_struct_type = (rebound && !shadowed)
+        .then(|| {
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{VITEST_REBOUND_TYPE_MARKER}{}{PROVENANCE_SEPARATOR}",
+                    local_name.as_deref()?
+                ),
+            )
+        })
+        .flatten();
     let typescript_type = rust_type
         .map(|rust_type| emit_type(rust_type, entities))
         .transpose()?
@@ -2761,7 +3032,8 @@ pub(crate) fn emit_local_with_shadow_and_else(
                 .as_deref()
                 .and_then(|name| inferred_fixed_buffer_type(entities, name))
         })
-        .or_else(|| inferred_struct_type.clone());
+        .or_else(|| inferred_struct_type.clone())
+        .or_else(|| rebound_struct_type.clone());
     let closure_parameter_types = local_name
         .as_deref()
         .map(|name| closure_parameter_types(entities, name))
@@ -2830,7 +3102,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         write!(out, "{declaration} {pattern}").expect("writing to a String cannot fail");
     }
     if !rebind
-        && (rust_type.is_some() || inferred_struct_type.is_some())
+        && (rust_type.is_some() || inferred_struct_type.is_some() || rebound_struct_type.is_some())
         && let Some(typescript_type) = typescript_type
     {
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
@@ -4326,7 +4598,7 @@ fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<Str
         return false;
     };
     return entities.contains(&format!(
-        "{NULLABLE_OPTION_FIELD_MARKER}{structure}:{field_name}"
+        "{NULLABLE_OPTION_FIELD_MARKER}{structure}{PROVENANCE_SEPARATOR}{field_name}"
     ));
 }
 
@@ -5053,7 +5325,15 @@ pub(crate) fn emit_program(
     for (name, alias) in &external_identity_aliases {
         identity_context.insert(identity_alias_marker(name, &alias.tag));
     }
-    let expression_context = generation_context_with_types(&programs, &identity_context)?;
+    let program_modules = (0..programs.len())
+        .map(|index| format!("typescript-source/{index}"))
+        .collect::<Vec<_>>();
+    let program_sources = program_modules
+        .iter()
+        .zip(&programs)
+        .map(|(module, program)| (module.as_str(), *program))
+        .collect::<Vec<_>>();
+    let expression_context = generation_context_with_types(&program_sources, &identity_context)?;
     let mut source_context = expression_context.clone();
     if program.nullable_options {
         source_context.insert(NULLABLE_OPTIONS_MARKER.to_string());

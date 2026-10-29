@@ -1,7 +1,8 @@
 use flight_compiler::{
-    ExternalAliasSource, SourceMode, compile_typescript, compile_typescript_with_alias_sources,
-    compile_typescript_with_external_alias_sources, compile_vitest,
-    compile_vitest_with_alias_sources, source_mode,
+    ExternalAliasSource, SourceMode, VitestAliasSource, compile_typescript,
+    compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
+    compile_vitest, compile_vitest_with_alias_sources, compile_vitest_with_module_alias_sources,
+    source_mode,
 };
 
 mod source_modes {
@@ -3010,6 +3011,373 @@ mod option_presence {
         assert!(output.contains("expect(nullable.previous !== null).toBe(true);"));
         assert!(output.contains("expect(optional.previous === undefined).toBe(true);"));
         assert!(output.contains("expect(optional.previous !== undefined).toBe(true);"));
+    }
+
+    #[test]
+    fn ignores_private_same_named_function_provenance_deterministically() {
+        let nullable_production = r#"
+//! flight-compiler: nullable-options
+
+pub struct NullableSample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> NullableSample {
+    return NullableSample { previous: None };
+}
+"#;
+        let private_optional_production = r#"
+struct OptionalSample {
+    previous: Option<i32>,
+}
+
+fn create_sample() -> OptionalSample {
+    return OptionalSample { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn reads_public_sample() {
+        let sample = create_sample();
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+        let aliases = [
+            VitestAliasSource {
+                source: private_optional_production,
+                module: "src/private_optional.rs",
+            },
+            VitestAliasSource {
+                source: nullable_production,
+                module: "src/nullable.rs",
+            },
+        ];
+        let mut first = None;
+
+        for _ in 0..64 {
+            let output = compile_vitest_with_module_alias_sources(
+                source,
+                "@flighthq/example/contract",
+                &aliases,
+            )
+            .unwrap();
+            assert!(output.contains("expect(sample.previous === null).toBe(true);"));
+            assert!(!output.contains("sample.previous === undefined"));
+            if let Some(first) = &first {
+                assert_eq!(&output, first);
+            } else {
+                first = Some(output);
+            }
+        }
+    }
+
+    #[test]
+    fn ignores_private_same_named_nullable_struct_provenance_deterministically() {
+        let optional_production = r#"
+pub struct SharedSample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_optional_sample() -> SharedSample {
+    return SharedSample { previous: None };
+}
+"#;
+        let private_nullable_production = r#"
+//! flight-compiler: nullable-options
+
+struct SharedSample {
+    previous: Option<i32>,
+}
+
+fn create_private_sample() -> SharedSample {
+    return SharedSample { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn reads_public_sample() {
+        let sample = create_optional_sample();
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+        let aliases = [
+            VitestAliasSource {
+                source: private_nullable_production,
+                module: "src/private_nullable.rs",
+            },
+            VitestAliasSource {
+                source: optional_production,
+                module: "src/optional.rs",
+            },
+        ];
+        let mut first = None;
+
+        for _ in 0..64 {
+            let output = compile_vitest_with_module_alias_sources(
+                source,
+                "@flighthq/example/contract",
+                &aliases,
+            )
+            .unwrap();
+            assert!(output.contains("expect(sample.previous === undefined).toBe(true);"));
+            assert!(!output.contains("sample.previous === null"));
+            if let Some(first) = &first {
+                assert_eq!(&output, first);
+            } else {
+                first = Some(output);
+            }
+        }
+    }
+
+    #[test]
+    fn tracks_shadowed_struct_return_provenance_by_binding() {
+        let nullable_production = r#"
+//! flight-compiler: nullable-options
+
+pub struct NullableUnique {
+    pub previous: Option<i32>,
+}
+
+pub fn create_nullable_unique() -> NullableUnique {
+    return NullableUnique { previous: None };
+}
+"#;
+        let optional_production = r#"
+pub struct OptionalUnique {
+    pub previous: Option<i32>,
+}
+
+pub fn create_optional_unique() -> OptionalUnique {
+    return OptionalUnique { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn follows_each_shadowed_binding() {
+        let sample = create_nullable_unique();
+        assert!(sample.previous.is_none());
+        let sample = create_optional_unique();
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+        let aliases = [
+            VitestAliasSource {
+                source: nullable_production,
+                module: "src/nullable_unique.rs",
+            },
+            VitestAliasSource {
+                source: optional_production,
+                module: "src/optional_unique.rs",
+            },
+        ];
+
+        let output = compile_vitest_with_module_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &aliases,
+        )
+        .unwrap();
+
+        assert!(output.contains("expect(sample.previous === null).toBe(true);"));
+        assert!(output.contains("expect(sample.previous === undefined).toBe(true);"));
+        assert!(output.contains(
+            "let sample: ReturnType<typeof createNullableUnique> | ReturnType<typeof createOptionalUnique> = createNullableUnique();"
+        ));
+        assert!(output.contains("sample = createOptionalUnique();"));
+    }
+
+    #[test]
+    fn resolves_renamed_imports_to_struct_return_provenance() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct NullableUnique {
+    pub previous: Option<i32>,
+}
+
+pub fn create_nullable_unique() -> NullableUnique {
+    return NullableUnique { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::create_nullable_unique as make_sample;
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn reads_renamed_sample() {
+        let sample = make_sample();
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+
+        let output = compile_vitest_with_module_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[VitestAliasSource {
+                source: production,
+                module: "src/nullable_unique.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("createNullableUnique as makeSample"));
+        assert!(output.contains("expect(sample.previous === null).toBe(true);"));
+        assert!(!output.contains("sample.previous === undefined"));
+    }
+
+    #[test]
+    fn indexes_top_level_and_suite_helper_struct_returns() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct NullableUnique {
+    pub previous: Option<i32>,
+}
+
+pub fn create_nullable_unique() -> NullableUnique {
+    return NullableUnique { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+fn nullable_sample() -> NullableUnique {
+    return create_nullable_unique();
+}
+
+mod sample {
+    use super::*;
+
+    fn suite_nullable_sample() -> NullableUnique {
+        return create_nullable_unique();
+    }
+
+    #[test]
+    fn reads_helper_samples() {
+        let top_level = nullable_sample();
+        assert!(top_level.previous.is_none());
+        let suite_local = suite_nullable_sample();
+        assert!(suite_local.previous.is_none());
+    }
+}
+"#;
+
+        let output = compile_vitest_with_module_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[VitestAliasSource {
+                source: production,
+                module: "src/nullable_unique.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("function nullableSample(): NullableUnique"));
+        assert!(output.contains("function suiteNullableSample(): NullableUnique"));
+        assert!(output.contains("expect(topLevel.previous === null).toBe(true);"));
+        assert!(output.contains("expect(suiteLocal.previous === null).toBe(true);"));
+    }
+
+    #[test]
+    fn initializes_nullable_struct_literal_fields_with_null() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct NullableUnique {
+    pub previous: Option<i32>,
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn creates_nullable_sample() {
+        let sample = NullableUnique { previous: None };
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+
+        let output = compile_vitest_with_module_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[VitestAliasSource {
+                source: production,
+                module: "src/nullable_unique.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("const sample: NullableUnique = { previous: null };"));
+        assert!(output.contains("expect(sample.previous === null).toBe(true);"));
+        assert!(!output.contains("previous: undefined"));
+    }
+
+    #[test]
+    fn assigns_nullable_struct_fields_with_null() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct NullableUnique {
+    pub previous: Option<i32>,
+}
+
+pub fn create_nullable_unique() -> NullableUnique {
+    return NullableUnique { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn clears_nullable_sample() {
+        let mut sample = create_nullable_unique();
+        sample.previous = None;
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+
+        let output = compile_vitest_with_module_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[VitestAliasSource {
+                source: production,
+                module: "src/nullable_unique.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("sample.previous = null;"));
+        assert!(output.contains("expect(sample.previous === null).toBe(true);"));
+        assert!(!output.contains("sample.previous = undefined"));
     }
 
     #[test]
