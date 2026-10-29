@@ -11482,12 +11482,7 @@ fn emit_method_call(
             "Object.assign({receiver}, {})",
             arguments[0]
         )),
-        "cloned" | "copied"
-            if arguments.is_empty()
-                && option_expression_payload(&call.receiver, entities).is_some() =>
-        {
-            Ok(receiver)
-        }
+        "cloned" | "copied" if arguments.is_empty() => Ok(receiver),
         "collect"
             if arguments.is_empty()
                 && call.turbofish.as_ref().is_some_and(|arguments| {
