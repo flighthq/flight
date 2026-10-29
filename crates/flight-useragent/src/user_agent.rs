@@ -1,5 +1,9 @@
 //! Browser user-agent parsing to platform identity tokens (TS `userAgent.ts`). Pure functions over
 //! the UA string and optional hints; no DOM, navigator or OS queries.
+//! flight-compiler: contract detectEndianness parseUserAgentArch parseUserAgentEngine
+//! flight-compiler: contract parseUserAgentEngineVersion parseUserAgentKind parseUserAgentName
+//! flight-compiler: contract parseUserAgentPointerWidth parseUserAgentRuntime parseUserAgentVersion
+//! flight-compiler: numeric-union UserAgentPointerWidth
 //! flight-compiler: root detectEndianness parseUserAgentArch parseUserAgentEngine
 //! flight-compiler: root parseUserAgentEngineVersion parseUserAgentKind parseUserAgentName
 //! flight-compiler: root parseUserAgentPointerWidth parseUserAgentRuntime parseUserAgentVersion
@@ -7,10 +11,18 @@
 use crate::js_pattern::*;
 use crate::user_agent_native::{
     PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
-    UserAgentPointerWidth, UserAgentRuntimeWindow, detect_endianness_native,
-    parse_user_agent_runtime_native,
+    UserAgentRuntimeWindow, detect_endianness_native, parse_user_agent_runtime_native,
 };
 use crate::user_agent_parse::parse_user_agent_os_version;
+
+/// Pointer width in bits, or `Unknown` when the architecture does not identify one.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(i8)]
+pub enum UserAgentPointerWidth {
+    Bits32 = 32,
+    Bits64 = 64,
+    Unknown = -1,
+}
 
 /// Probes host CPU byte order with a local two-byte write-then-read (the source's
 /// `Uint16Array`/`Uint8Array` view of one buffer): `Big` when the high byte comes first, `Little`
@@ -174,12 +186,12 @@ pub fn parse_user_agent_name(ua: &str) -> PlatformName {
 /// otherwise (TS `32 | 64 | -1`).
 pub fn parse_user_agent_pointer_width(arch: &str) -> UserAgentPointerWidth {
     if arch == "x64" || arch == "arm64" {
-        return 64;
+        return UserAgentPointerWidth::Bits64;
     }
     if arch == "x86" || arch == "arm" {
-        return 32;
+        return UserAgentPointerWidth::Bits32;
     }
-    return -1;
+    return UserAgentPointerWidth::Unknown;
 }
 
 /// The host shell from browser-global probes on a window-like record (TS `Record<string, unknown>

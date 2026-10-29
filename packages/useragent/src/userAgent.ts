@@ -11,12 +11,7 @@ import {
   matchesAt,
   positions,
 } from './jsPattern.ts';
-import type {
-  PlatformEndianness,
-  PlatformRuntime,
-  UserAgentPointerWidth,
-  UserAgentRuntimeWindow,
-} from './userAgentNative.ts';
+import type { PlatformEndianness, PlatformRuntime, UserAgentRuntimeWindow } from './userAgentNative.ts';
 import {
   PlatformEngine,
   PlatformKind,
@@ -25,6 +20,11 @@ import {
   parseUserAgentRuntimeNative,
 } from './userAgentNative.ts';
 import { parseUserAgentOsVersion } from './userAgentParse.ts';
+
+/**
+ * Pointer width in bits, or `Unknown` when the architecture does not identify one.
+ */
+export type UserAgentPointerWidth = 32 | 64 | -1;
 
 /**
  * Probes host CPU byte order with a local two-byte write-then-read (the source's

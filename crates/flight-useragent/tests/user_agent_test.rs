@@ -348,12 +348,30 @@ mod parse_user_agent_pointer_width {
 
     #[test]
     fn maps_arch_tokens_to_widths() {
-        assert_eq!(parse_user_agent_pointer_width("x64"), 64);
-        assert_eq!(parse_user_agent_pointer_width("arm64"), 64);
-        assert_eq!(parse_user_agent_pointer_width("x86"), 32);
-        assert_eq!(parse_user_agent_pointer_width("arm"), 32);
-        assert_eq!(parse_user_agent_pointer_width("wasm"), -1);
-        assert_eq!(parse_user_agent_pointer_width(""), -1);
+        assert_eq!(
+            parse_user_agent_pointer_width("x64"),
+            UserAgentPointerWidth::Bits64
+        );
+        assert_eq!(
+            parse_user_agent_pointer_width("arm64"),
+            UserAgentPointerWidth::Bits64
+        );
+        assert_eq!(
+            parse_user_agent_pointer_width("x86"),
+            UserAgentPointerWidth::Bits32
+        );
+        assert_eq!(
+            parse_user_agent_pointer_width("arm"),
+            UserAgentPointerWidth::Bits32
+        );
+        assert_eq!(
+            parse_user_agent_pointer_width("wasm"),
+            UserAgentPointerWidth::Unknown
+        );
+        assert_eq!(
+            parse_user_agent_pointer_width(""),
+            UserAgentPointerWidth::Unknown
+        );
     }
 }
 

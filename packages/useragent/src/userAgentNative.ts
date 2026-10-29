@@ -3,7 +3,6 @@ export type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
 export type PlatformKind = 'desktop' | 'mobile' | 'web' | 'unknown';
 export type PlatformName = 'web' | 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'unknown';
 export type PlatformRuntime = 'web' | 'electron' | 'tauri' | 'capacitor' | 'native' | 'unknown';
-export type UserAgentPointerWidth = 32 | 64 | -1;
 export type UserAgentRuntimeWindow = Record<unknown> | null | undefined;
 export type Unknown = unknown;
 

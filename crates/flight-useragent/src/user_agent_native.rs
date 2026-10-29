@@ -7,7 +7,6 @@ pub(crate) use flight_platform::{
     PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
 };
 
-pub(crate) type UserAgentPointerWidth = i32;
 pub(crate) type UserAgentRuntimeWindow<'a> = Option<&'a Record<Unknown>>;
 
 pub(crate) fn detect_endianness_native() -> PlatformEndianness {
