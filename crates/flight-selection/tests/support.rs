@@ -209,14 +209,6 @@ pub fn take_reentrant_flag(flag: &Mutex<bool>) -> bool {
     return true;
 }
 
-pub fn apply_pointer_policy(
-    state: &flight_selection::SelectionState,
-    hit: Option<&NodeRef>,
-    modifiers: &flight_selection::SelectionModifierState,
-) {
-    flight_selection::apply_pointer_selection_policy(state, hit, modifiers);
-}
-
 pub fn same_rectangle(a: *const Rectangle, b: &Rectangle) -> bool {
     return std::ptr::eq(a, b as *const Rectangle);
 }

@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: nullable-options
 //! flight-compiler: contract addNodeToSelection applyPointerSelectionPolicy
 //! flight-compiler: contract applyPointerUpSelectionPolicy clearSelection createSelectionState
 //! flight-compiler: contract addLassoSelectionPoint beginLassoSelection createLassoSelection

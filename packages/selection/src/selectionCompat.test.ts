@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addLassoSelectionPoint,
   addNodeToSelection,
+  applyPointerSelectionPolicy,
   applyPointerUpSelectionPolicy,
   beginLassoSelection,
   beginMarqueeSelection,
@@ -70,16 +71,16 @@ describe('applyPointerSelectionPolicy', () => {
     const first = crate.createTestNode('first');
     const second = crate.createTestNode('second');
     const selection = createSelectionState();
-    crate.applyPointerPolicy(selection, first, modifiers(false, false, false, true));
+    applyPointerSelectionPolicy(selection, first, modifiers(false, false, false, true));
     expect(crate.sameNodes(crate.selectedNodesOf(selection), [first])).toBe(true);
-    crate.applyPointerPolicy(selection, first, modifiers(false, false, false, true));
+    applyPointerSelectionPolicy(selection, first, modifiers(false, false, false, true));
     expect(crate.selectedNodesOf(selection).length === 0).toBe(true);
-    crate.applyPointerPolicy(selection, first, modifiers(false, true, false, false));
-    crate.applyPointerPolicy(selection, second, modifiers(false, false, true, false));
+    applyPointerSelectionPolicy(selection, first, modifiers(false, true, false, false));
+    applyPointerSelectionPolicy(selection, second, modifiers(false, false, true, false));
     expect(crate.sameNodes(crate.selectedNodesOf(selection), [first, second])).toBe(true);
-    crate.applyPointerPolicy(selection, first, modifiers(false, false, true, false));
+    applyPointerSelectionPolicy(selection, first, modifiers(false, false, true, false));
     expect(crate.sameNodes(crate.selectedNodesOf(selection), [second])).toBe(true);
-    crate.applyPointerPolicy(selection, undefined, modifiers(false, true, false, false));
+    applyPointerSelectionPolicy(selection, null, modifiers(false, true, false, false));
     expect(crate.sameNodes(crate.selectedNodesOf(selection), [second])).toBe(true);
   });
   it('applies unmodified hit and empty space behavior', () => {
@@ -87,12 +88,12 @@ describe('applyPointerSelectionPolicy', () => {
     const second = crate.createTestNode('second');
     const selection = createSelectionState();
     selectAllNodes(selection, [first, second]);
-    crate.applyPointerPolicy(selection, first, modifiers(false, false, false, false));
+    applyPointerSelectionPolicy(selection, first, modifiers(false, false, false, false));
     expect(crate.sameNodes(crate.selectedNodesOf(selection), [first, second])).toBe(true);
     const third = crate.createTestNode('third');
-    crate.applyPointerPolicy(selection, third, modifiers(false, false, false, false));
+    applyPointerSelectionPolicy(selection, third, modifiers(false, false, false, false));
     expect(crate.sameNodes(crate.selectedNodesOf(selection), [third])).toBe(true);
-    crate.applyPointerPolicy(selection, undefined, modifiers(false, false, false, false));
+    applyPointerSelectionPolicy(selection, null, modifiers(false, false, false, false));
     expect(crate.selectedNodesOf(selection).length === 0).toBe(true);
   });
   it('leaves alt gestures available for caller defined alternate pick behavior', () => {
@@ -100,8 +101,8 @@ describe('applyPointerSelectionPolicy', () => {
     const second = crate.createTestNode('second');
     const selection = createSelectionState();
     selectAllNodes(selection, [first]);
-    crate.applyPointerPolicy(selection, second, modifiers(true, false, false, false));
-    crate.applyPointerPolicy(selection, undefined, modifiers(true, false, false, false));
+    applyPointerSelectionPolicy(selection, second, modifiers(true, false, false, false));
+    applyPointerSelectionPolicy(selection, null, modifiers(true, false, false, false));
     expect(crate.sameNodes(crate.selectedNodesOf(selection), [first])).toBe(true);
   });
 });

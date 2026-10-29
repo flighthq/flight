@@ -4,19 +4,8 @@ import type { NodeRef } from '@flighthq/node/contract';
 import type { Path } from '@flighthq/path/contract';
 import type { SignalRaw } from '@flighthq/signals/contract';
 
-import {
-  applyPointerSelectionPolicy,
-  findNodesInLassoSelection,
-  findNodesInMarqueeSelection,
-  getSelectedNodes,
-} from './selectionCompat.ts';
-import type {
-  LassoSelection,
-  MarqueeSelection,
-  MarqueeSelectionMode,
-  SelectionModifierState,
-  SelectionState,
-} from './selectionCompat.ts';
+import { findNodesInLassoSelection, findNodesInMarqueeSelection, getSelectedNodes } from './selectionCompat.ts';
+import type { LassoSelection, MarqueeSelection, MarqueeSelectionMode, SelectionState } from './selectionCompat.ts';
 
 type AppearanceNodeRef = NodeRef & { alpha: number; visible: boolean };
 
@@ -116,16 +105,7 @@ function takeReentrantFlag(flag: { value: boolean }): boolean {
   return true;
 }
 
-function applyPointerPolicy(
-  state: SelectionState<NodeRef>,
-  hit: NodeRef | null | undefined,
-  modifiers: Readonly<SelectionModifierState>,
-): void {
-  applyPointerSelectionPolicy(state, hit ?? null, modifiers);
-}
-
 export const rustTestSupport = {
-  applyPointerPolicy,
   containMarqueeMode,
   createBoundedNode,
   createTestNode,

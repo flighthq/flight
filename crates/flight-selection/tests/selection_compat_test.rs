@@ -73,7 +73,7 @@ mod apply_pointer_selection_policy {
         let second = crate::create_test_node("second");
         let selection = create_selection_state();
 
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, false, true),
@@ -82,19 +82,19 @@ mod apply_pointer_selection_policy {
             &crate::selected_nodes_of(&selection),
             &[first.clone()]
         ));
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, false, true),
         );
         assert!(crate::selected_nodes_of(&selection).is_empty());
 
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&first),
             &modifiers(false, true, false, false),
         );
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&second),
             &modifiers(false, false, true, false),
@@ -103,7 +103,7 @@ mod apply_pointer_selection_policy {
             &crate::selected_nodes_of(&selection),
             &[first.clone(), second.clone()]
         ));
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, true, false),
@@ -113,7 +113,7 @@ mod apply_pointer_selection_policy {
             &[second.clone()]
         ));
 
-        crate::apply_pointer_policy(&selection, None, &modifiers(false, true, false, false));
+        apply_pointer_selection_policy(&selection, None, &modifiers(false, true, false, false));
         assert!(crate::same_nodes(
             &crate::selected_nodes_of(&selection),
             &[second]
@@ -127,7 +127,7 @@ mod apply_pointer_selection_policy {
         let selection = create_selection_state();
         select_all_nodes(&selection, &[first.clone(), second.clone()]);
 
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, false, false),
@@ -138,7 +138,7 @@ mod apply_pointer_selection_policy {
         ));
 
         let third = crate::create_test_node("third");
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&third),
             &modifiers(false, false, false, false),
@@ -148,7 +148,7 @@ mod apply_pointer_selection_policy {
             &[third]
         ));
 
-        crate::apply_pointer_policy(&selection, None, &modifiers(false, false, false, false));
+        apply_pointer_selection_policy(&selection, None, &modifiers(false, false, false, false));
         assert!(crate::selected_nodes_of(&selection).is_empty());
     }
 
@@ -159,12 +159,12 @@ mod apply_pointer_selection_policy {
         let selection = create_selection_state();
         select_all_nodes(&selection, &[first.clone()]);
 
-        crate::apply_pointer_policy(
+        apply_pointer_selection_policy(
             &selection,
             Some(&second),
             &modifiers(true, false, false, false),
         );
-        crate::apply_pointer_policy(&selection, None, &modifiers(true, false, false, false));
+        apply_pointer_selection_policy(&selection, None, &modifiers(true, false, false, false));
 
         assert!(crate::same_nodes(
             &crate::selected_nodes_of(&selection),
