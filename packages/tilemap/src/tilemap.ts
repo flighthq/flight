@@ -20,7 +20,7 @@ import { TilemapKind } from '@flighthq/types/contract';
 export function clearTilemap(tilemap: Tilemap): void {
   tilemap.data.tiles.fill(-1);
   const signals = getTilemapSignals(tilemap);
-  if (signals !== null) signals.onCleared.emit();
+  if (signals !== null) signals.onCleared.emit(undefined);
 }
 
 /**
@@ -209,7 +209,7 @@ export function setTilemapTile(tilemap: Tilemap, column: number, row: number, id
   if (column < 0 || column >= columns || row < 0 || row >= rows) return;
   tiles[row * columns + column] = id;
   const signals = getTilemapSignals(tilemap);
-  if (signals !== null) signals.onTileChanged.emit(column, row, id);
+  if (signals !== null) signals.onTileChanged.emit([column, row, id]);
 }
 
 /**
@@ -237,7 +237,7 @@ export function setTilemapTiles(
     }
   }
   const signals = getTilemapSignals(tilemap);
-  if (signals !== null) signals.onTilesChanged.emit(offsetColumn, offsetRow, width, height);
+  if (signals !== null) signals.onTilesChanged.emit([offsetColumn, offsetRow, width, height]);
 }
 
 // Sets one tile's compact multiply-only tint. The material-data array is allocated on first use, so

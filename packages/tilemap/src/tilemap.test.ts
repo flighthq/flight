@@ -182,11 +182,11 @@ describe('createTilemapSignals', () => {
     connectSignal(signals.onCleared, () => {
       cleared = true;
     });
-    connectSignal(signals.onTileChanged, (c, r, id) => {
+    connectSignal(signals.onTileChanged, ([c, r, id]) => {
       tileArgs = [c, r, id];
     });
-    signals.onCleared.emit();
-    signals.onTileChanged.emit(1, 2, 3);
+    signals.onCleared.emit(undefined);
+    signals.onTileChanged.emit([1, 2, 3]);
     expect(cleared).toBe(true);
     expect(tileArgs).toEqual([1, 2, 3]);
   });
@@ -214,7 +214,7 @@ describe('enableTilemapSignals', () => {
     })(createTilemap());
     const signals = enableTilemapSignals(tilemap);
     let received: readonly number[] = [];
-    connectSignal(signals.onTileChanged, (c, r, id) => {
+    connectSignal(signals.onTileChanged, ([c, r, id]) => {
       received = [c, r, id];
     });
     setTilemapTile(tilemap, 1, 2, 4);
