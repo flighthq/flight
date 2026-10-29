@@ -337,6 +337,231 @@ pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
     // `matches!` over data union variants lowers to the same runtime predicate a `match` uses; a
     // scrutinee that is not a reusable place is bound once.
     #[test]
+    fn lowers_hash_collections_through_qualified_aliased_and_derived_receivers() {
+        let source = r#"
+use std::collections::HashMap as Table;
+use std::collections::{self, hash_set};
+
+pub struct Store {
+    pub full: std::collections::hash_map::HashMap<String, i32>,
+    pub other: hash_set::HashSet<bool>,
+    pub set: collections::HashSet<String>,
+    pub table: Table<i32, f32>,
+}
+
+fn get_set(store: &Store) -> &collections::HashSet<String> {
+    return &store.set;
+}
+
+pub fn create_store() -> Store {
+    return Store {
+        full: std::collections::HashMap::default(),
+        other: hash_set::HashSet::with_capacity(2),
+        set: collections::HashSet::new(),
+        table: Table::new(),
+    };
+}
+
+pub fn fill_store(store: &mut Store) -> bool {
+    let table = &mut store.table;
+    table.insert(1, 2.0);
+    store.full.clear();
+    let set = get_set(store);
+    return set.contains("a") && get_set(store).is_empty() && store.other.is_empty();
+}
+"#;
+
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export interface Store {
+  full: Map<string, number>;
+  other: Set<boolean>;
+  set: Set<string>;
+  table: Map<number, number>;
+}
+
+function getSet(store: Readonly<Store>): Readonly<Set<string>> {
+  return store.set;
+}
+
+export function createStore(): Store {
+  return { full: new Map(), other: new Set(), set: new Set(), table: new Map() };
+}
+
+export function fillStore(store: Store): boolean {
+  const table = store.table;
+  (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(table, 1, 2.0);
+  store.full.clear();
+  const set = getSet(store);
+  return set.has("a") && (getSet(store).size === 0) && (store.other.size === 0);
+}
+"#
+        );
+    }
+
+    #[test]
+    fn lowers_hash_collections_to_sets_and_maps_on_proven_receivers() {
+        let source = r#"
+use std::collections::{HashMap, HashSet};
+
+pub struct Tracker {
+    pub counts: HashMap<i32, f32>,
+    pub seen: HashSet<String>,
+}
+
+pub fn create_tracker() -> Tracker {
+    return Tracker {
+        counts: HashMap::new(),
+        seen: HashSet::with_capacity(4),
+    };
+}
+
+pub fn count_tracker(tracker: &Tracker, id: i32) -> f32 {
+    if !tracker.counts.contains_key(&id) {
+        return -1.0;
+    }
+    return *tracker.counts.get(&id).unwrap_or(&0.0);
+}
+
+pub fn mark_tracker(tracker: &mut Tracker, label: String) -> bool {
+    return tracker.seen.insert(label);
+}
+
+pub fn measure_tracker(tracker: &Tracker) -> usize {
+    let mut local: HashSet<i32> = HashSet::default();
+    local.insert(1);
+    if local.contains(&1) && !tracker.seen.is_empty() {
+        return tracker.seen.len() + tracker.counts.len();
+    }
+    return 0;
+}
+
+pub fn reset_tracker(tracker: &mut Tracker) {
+    tracker.seen.clear();
+    tracker.counts.clear();
+}
+
+pub fn set_tracker_count(tracker: &mut Tracker, id: i32, value: f32) -> Option<f32> {
+    return tracker.counts.insert(id, value);
+}
+
+pub fn take_tracker_count(tracker: &mut Tracker, id: i32) -> Option<f32> {
+    return tracker.counts.remove(&id);
+}
+
+pub fn unmark_tracker(tracker: &mut Tracker, label: &str) -> bool {
+    return tracker.seen.remove(label);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert_eq!(
+            output,
+            r#"export interface Tracker {
+  counts: Map<number, number>;
+  seen: Set<string>;
+}
+
+export function createTracker(): Tracker {
+  return { counts: new Map(), seen: new Set() };
+}
+
+export function countTracker(tracker: Readonly<Tracker>, id: number): number {
+  if (!tracker.counts.has(id)) {
+    return -1.0;
+  }
+  return (tracker.counts.get(id) ?? 0.0);
+}
+
+export function markTracker(tracker: Tracker, label: string): boolean {
+  return (<T>(items: Set<T>, value: T): boolean => { if (items.has(value)) { return false; } items.add(value); return true; })(tracker.seen, label);
+}
+
+export function measureTracker(tracker: Readonly<Tracker>): number {
+  let local: Set<number> = new Set();
+  (<T>(items: Set<T>, value: T): boolean => { if (items.has(value)) { return false; } items.add(value); return true; })(local, 1);
+  if (local.has(1) && !(tracker.seen.size === 0)) {
+    return tracker.seen.size + tracker.counts.size;
+  }
+  return 0;
+}
+
+export function resetTracker(tracker: Tracker): void {
+  tracker.seen.clear();
+  tracker.counts.clear();
+}
+
+export function setTrackerCount(tracker: Tracker, id: number, value: number): number | undefined {
+  return (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(tracker.counts, id, value);
+}
+
+export function takeTrackerCount(tracker: Tracker, id: number): number | undefined {
+  return (<K, V>(entries: Map<K, V>, key: K): V | undefined => { const previous = entries.get(key); entries.delete(key); return previous; })(tracker.counts, id);
+}
+
+export function unmarkTracker(tracker: Tracker, label: string): boolean {
+  return tracker.seen.delete(label);
+}
+"#
+        );
+        for (source, message) in [
+            (
+                "use other::make;\npub fn a() -> bool { return make().insert(1); }",
+                "unsupported Rust method call `.insert()`; impl sugar is not a transpilation source",
+            ),
+            (
+                "use std::collections::HashSet;\npub fn a(s: &HashSet<i32>) -> usize { return s.iter().count(); }",
+                "portable `HashSet::iter` with 0 argument(s) has no portable lowering",
+            ),
+            (
+                "use std::collections::HashMap;\npub fn a(m: &mut HashMap<i32, f32>) { m.entry(1); }",
+                "portable `HashMap::entry` with 1 argument(s) has no portable lowering",
+            ),
+            (
+                "use std::collections::HashSet;\npub struct K { pub x: i32 }\npub fn a(s: &HashSet<K>) -> usize { return s.len(); }",
+                "portable `HashSet` requires a number, string or boolean key; JavaScript compares `K` keys by identity",
+            ),
+            (
+                "use std::collections::HashMap;\npub fn a(m: &HashMap<i32, Option<f32>>) -> usize { return m.len(); }",
+                "portable `HashMap` cannot hold `Option` values; `Map.get` reports a missing key and a `None` value alike",
+            ),
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                message
+            );
+        }
+    }
+
+    #[test]
+    fn lowers_hash_collection_data_union_payloads_as_non_plain_objects() {
+        let source = r#"
+//! flight-compiler: data-union Payload
+
+use std::collections::HashMap;
+
+pub enum Payload {
+    Count(i32),
+    Table(HashMap<String, i32>),
+}
+
+pub fn payload_kind(value: Payload) -> String {
+    return match value {
+        Payload::Count(_) => "count".to_string(),
+        Payload::Table(_) => "table".to_string(),
+    };
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export type Payload = number | Map<string, number>;"));
+        assert!(output.contains("Object.getPrototypeOf(matchValue) !== Object.prototype"));
+        assert!(!output.contains("Object.getPrototypeOf(matchValue) === Object.prototype"));
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment
@@ -772,6 +997,45 @@ pub struct Capability {
                 "{source}"
             );
         }
+    }
+
+    #[test]
+    fn rejects_hash_collections_without_standard_provenance() {
+        for (source, expected) in [
+            (
+                "use other::*;\npub fn a(s: &HashSet<i32>) -> usize { return s.len(); }\n",
+                "cannot resolve the provenance of `HashSet`; import it from `std::collections` to lower it to a JavaScript collection",
+            ),
+            (
+                "pub fn a(s: &HashMap<i32, i32>) -> usize { return s.len(); }\n",
+                "cannot resolve the provenance of `HashMap`; import it from `std::collections` to lower it to a JavaScript collection",
+            ),
+            (
+                "//! flight-compiler: data-union Payload\nuse other::HashMap;\npub enum Payload {\n    Count(i32),\n    Table(HashMap<String, i32>),\n}\npub fn kind(value: Payload) -> i32 {\n    return match value {\n        Payload::Count(_) => 1,\n        Payload::Table(_) => 2,\n    };\n}\n",
+                "cannot resolve data union payload `HashMap` to `std::collections::HashMap`",
+            ),
+            (
+                "use other::HashSet;\npub fn a(s: &mut HashSet<i32>) -> bool { return s.insert(1); }\n",
+                "unsupported Rust method call `.insert()`; impl sugar is not a transpilation source",
+            ),
+            (
+                "extern crate other as std;\nuse std::collections::HashSet;\npub fn a(s: &mut HashSet<i32>) -> bool { return s.insert(1); }\n",
+                "unsupported Rust method call `.insert()`; impl sugar is not a transpilation source",
+            ),
+            (
+                "#![no_std]\npub fn a(s: &std::collections::HashSet<i32>) -> usize { return s.len(); }\n",
+                "cannot resolve the provenance of `HashSet`; import it from `std::collections` to lower it to a JavaScript collection",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+        let foreign = compile_typescript(
+            "use other::HashSet;\npub struct Holder {\n    pub values: HashSet<i32>,\n}\npub fn create_holder(values: HashSet<i32>) -> Holder {\n    return Holder { values };\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(foreign.contains("values: HashSet<number>;"), "{foreign}");
     }
 
     #[test]
@@ -5169,9 +5433,13 @@ pub enum LogValue {
     Int(i64),
     Float(f64),
     Str(String),
-    Record(HashMap<String, LogValue>),
+    Record(LogRecord),
     Array(Vec<LogValue>),
     Object(UnknownValue),
+}
+
+pub struct LogRecord {
+    pub label: String,
 }
 
 pub type LogDataProvider = Arc<dyn Fn() -> LogData + Send + Sync>;

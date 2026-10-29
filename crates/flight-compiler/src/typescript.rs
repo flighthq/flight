@@ -116,6 +116,8 @@ const RETURNS_U32_MARKER: &str = "@returns-u32";
 // Struct fields (`struct identity SEP field`) and locals or parameters whose every binding is declared
 // as a Rust `Vec`, slice or fixed array, the operand types `.extend()` and `.extend_from_slice()` lower
 // over.
+// A struct field typed `HashSet` / `HashMap`: `identity SEP field SEP hash-set|hash-map`.
+const HASH_COLLECTION_FIELD_MARKER: &str = "@hash-collection-field:";
 const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
 // Functions returning a Rust `Vec`, slice or fixed array (`module SEP function SEP`).
 const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
@@ -169,6 +171,10 @@ struct UsePath {
 // A fact proven about a lexical binding's value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum BindingFact {
+    // A binding typed or constructed as `HashMap` (`Map` in TypeScript).
+    HashMap,
+    // A binding typed or constructed as `HashSet` (`Set` in TypeScript).
+    HashSet,
     Option(Box<BindingFact>),
     Sequence(Box<BindingFact>),
     Structure(String),
@@ -183,7 +189,7 @@ impl BindingFact {
             Self::Option(payload) | Self::Sequence(payload) => payload.has_source_structure(),
             Self::Structure(_) => true,
             Self::Tuple(facts) => facts.iter().any(Self::has_source_structure),
-            Self::Unknown | Self::UnresolvedPattern => false,
+            Self::HashMap | Self::HashSet | Self::Unknown | Self::UnresolvedPattern => false,
         };
     }
 }
@@ -1700,6 +1706,217 @@ fn canonical_type_path_root(
     return Some(path);
 }
 
+// Set / Map operations for a proven receiver, keeping Rust's return values: `HashSet::insert` returns
+// whether the value was new, `HashSet::remove` whether it was present, and `HashMap::get` /
+// `HashMap::insert` / `HashMap::remove` the current or previous value as an `Option`.
+fn emit_hash_collection_method(
+    call: &syn::ExprMethodCall,
+    kind: &BindingFact,
+    receiver: &str,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let arguments = call
+        .args
+        .iter()
+        .map(|argument| emit_expression(argument, entities))
+        .collect::<Result<Vec<_>, _>>()?;
+    let method = call.method.to_string();
+    let option = |value: String| {
+        return if entities.contains(NULLABLE_OPTIONS_MARKER) {
+            format!("({value} ?? null)")
+        } else {
+            value
+        };
+    };
+    let owner = if matches!(kind, BindingFact::HashMap) {
+        "HashMap"
+    } else {
+        "HashSet"
+    };
+    return match (owner, method.as_str(), arguments.as_slice()) {
+        (_, "clear", []) => Ok(format!("{receiver}.clear()")),
+        (_, "is_empty", []) => Ok(format!("({receiver}.size === 0)")),
+        (_, "len", []) => Ok(format!("{receiver}.size")),
+        ("HashSet", "contains", [value]) => Ok(format!("{receiver}.has({value})")),
+        ("HashSet", "insert", [value]) => Ok(format!(
+            "(<T>(items: Set<T>, value: T): boolean => {{ if (items.has(value)) {{ return false; }} items.add(value); return true; }})({receiver}, {value})"
+        )),
+        ("HashSet", "remove", [value]) => Ok(format!("{receiver}.delete({value})")),
+        ("HashMap", "contains_key", [key]) => Ok(format!("{receiver}.has({key})")),
+        ("HashMap", "get", [key]) => Ok(option(format!("{receiver}.get({key})"))),
+        ("HashMap", "insert", [key, value]) => Ok(option(format!(
+            "(<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => {{ const previous = entries.get(key); entries.set(key, value); return previous; }})({receiver}, {key}, {value})"
+        ))),
+        ("HashMap", "remove", [key]) => Ok(option(format!(
+            "(<K, V>(entries: Map<K, V>, key: K): V | undefined => {{ const previous = entries.get(key); entries.delete(key); return previous; }})({receiver}, {key})"
+        ))),
+        _ => Err(compile_error(format!(
+            "portable `{owner}::{method}` with {} argument(s) has no portable lowering",
+            arguments.len()
+        ))),
+    };
+}
+
+// `HashSet<T>` / `HashMap<K, V>` as `Set<T>` / `Map<K, V>`. JavaScript collections compare object keys
+// by identity where Rust compares by value, so elements and keys must lower to primitives.
+fn emit_hash_collection_type(
+    name: &str,
+    segment: &syn::PathSegment,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return Err(compile_error(format!(
+            "portable `{name}` needs type arguments"
+        )));
+    };
+    let types = arguments
+        .args
+        .iter()
+        .filter_map(|argument| match argument {
+            GenericArgument::Type(rust_type) => Some(rust_type),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let expected = if name == "HashMap" { 2 } else { 1 };
+    if types.len() != expected {
+        return Err(compile_error(format!(
+            "portable `{name}` needs {expected} type argument(s)"
+        )));
+    }
+    let key = emit_type(types[0], entities)?;
+    if !matches!(key.as_str(), "number" | "string" | "boolean") {
+        return Err(compile_error(format!(
+            "portable `{name}` requires a number, string or boolean key; JavaScript compares `{key}` keys by identity"
+        )));
+    }
+    if name == "HashMap" {
+        if option_inner_type(types[1]).is_some() {
+            return Err(compile_error(
+                "portable `HashMap` cannot hold `Option` values; `Map.get` reports a missing key and a `None` value alike",
+            ));
+        }
+        return Ok(format!("Map<{key}, {}>", emit_type(types[1], entities)?));
+    }
+    return Ok(format!("Set<{key}>"));
+}
+
+// A proven `HashSet` / `HashMap` receiver: a lexical binding, a struct field, or a call to a function
+// declared to return that type.
+fn expression_hash_collection(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<BindingFact> {
+    return match expression {
+        Expr::Field(field) => {
+            let syn::Member::Named(field_name) = &field.member else {
+                return None;
+            };
+            let identity = expression_struct_name(&field.base, entities)?;
+            [BindingFact::HashMap, BindingFact::HashSet]
+                .into_iter()
+                .find(|kind| {
+                    entities.contains(&format!(
+                        "{HASH_COLLECTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                        binding_fact_marker(kind)
+                    ))
+                })
+        }
+        Expr::Call(call) => {
+            let Expr::Path(function) = call.func.as_ref() else {
+                return None;
+            };
+            if function.qself.is_some() {
+                return None;
+            }
+            Some(binding_fact_from_marker(&call_fact(
+                entities,
+                RETURN_BINDING_FACT_MARKER,
+                &function.path,
+            )?))
+            .filter(|fact| matches!(fact, BindingFact::HashMap | BindingFact::HashSet))
+        }
+        Expr::Group(group) => expression_hash_collection(&group.expr, entities),
+        Expr::Paren(paren) => expression_hash_collection(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            lexical_fact(entities, &path.path.segments[0].ident.to_string())
+                .filter(|fact| matches!(fact, BindingFact::HashMap | BindingFact::HashSet))
+        }
+        Expr::Reference(reference) => expression_hash_collection(&reference.expr, entities),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            expression_hash_collection(&unary.expr, entities)
+        }
+        _ => None,
+    };
+}
+
+// `HashSet::new()` / `HashMap::new()`, their `default()`, or `with_capacity(..)` (a hint JavaScript
+// collections do not take), with the owner resolving to `std::collections`.
+fn hash_collection_construction(
+    expression: &Expr,
+    context: &HashSet<String>,
+) -> Option<BindingFact> {
+    let Expr::Call(call) = expression else {
+        return None;
+    };
+    let Expr::Path(function) = call.func.as_ref() else {
+        return None;
+    };
+    if function.qself.is_some() || function.path.segments.len() < 2 {
+        return None;
+    }
+    let constructor = function.path.segments.last()?.ident.to_string();
+    let arity = match constructor.as_str() {
+        "default" | "new" => 0,
+        "with_capacity" => 1,
+        _ => return None,
+    };
+    if call.args.len() != arity {
+        return None;
+    }
+    let mut owner = function.path.clone();
+    owner.segments.pop();
+    owner.segments.pop_punct();
+    return hash_collection_path(&owner, context);
+}
+
+// The collection a path names when it resolves (see `resolve_type_path`) to `std::collections`'
+// `HashMap` / `HashSet`, directly or through `hash_map` / `hash_set`.
+fn hash_collection_path(path: &syn::Path, context: &HashSet<String>) -> Option<BindingFact> {
+    let last = path.segments.last()?;
+    let aliased = path
+        .segments
+        .first()
+        .is_some_and(|first| context.contains(&format!("{TYPE_USE_MARKER}{}", first.ident)));
+    if last.ident != "HashMap" && last.ident != "HashSet" && !aliased {
+        return None;
+    }
+    let resolved = resolve_type_path(path, context)?;
+    return match resolved
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        ["std", "collections", "HashMap"] | ["std", "collections", "hash_map", "HashMap"] => {
+            Some(BindingFact::HashMap)
+        }
+        ["std", "collections", "HashSet"] | ["std", "collections", "hash_set", "HashSet"] => {
+            Some(BindingFact::HashSet)
+        }
+        _ => None,
+    };
+}
+
+fn hash_collection_type(rust_type: &Type, context: &HashSet<String>) -> Option<BindingFact> {
+    return match rust_type {
+        Type::Group(group) => hash_collection_type(&group.elem, context),
+        Type::Paren(paren) => hash_collection_type(&paren.elem, context),
+        Type::Reference(reference) => hash_collection_type(&reference.elem, context),
+        Type::Path(path) if path.qself.is_none() => hash_collection_path(&path.path, context),
+        _ => None,
+    };
+}
+
 // Whether a resolved path names the standard-library item `name`: `Pin` in `std`/`core::pin`, `Box`
 // in `std`/`alloc::boxed`, `Future` in `std`/`core::future`, and `Send` / `Sync` in
 // `std`/`core::marker`.
@@ -1894,7 +2111,29 @@ fn runtime_categories_for_type(
                 | "u64" | "usize" => Ok(BTreeSet::from([RuntimeCategory::Number])),
                 "String" | "str" => Ok(BTreeSet::from([RuntimeCategory::String])),
                 "Vec" => Ok(BTreeSet::from([RuntimeCategory::Array])),
-                "HashMap" => Ok(BTreeSet::from([RuntimeCategory::Record])),
+                // `Map` / `Set` instances have a non-plain prototype.
+                "HashMap" | "HashSet"
+                    if !programs
+                        .iter()
+                        .any(|program| program.type_names.contains(&name)) =>
+                {
+                    let resolutions = programs
+                        .iter()
+                        .filter_map(|program| {
+                            let mut context = HashSet::new();
+                            insert_program_type_path_context(&mut context, program);
+                            resolve_type_path(&path.path, &context)
+                                .map(|_| hash_collection_type(rust_type, &context).is_some())
+                        })
+                        .collect::<Vec<_>>();
+                    if resolutions.is_empty() || resolutions.contains(&false) {
+                        Err(compile_error(format!(
+                            "cannot resolve data union payload `{name}` to `std::collections::{name}`"
+                        )))
+                    } else {
+                        Ok(BTreeSet::from([RuntimeCategory::Object]))
+                    }
+                }
                 "UnknownValue" => Ok(BTreeSet::from([RuntimeCategory::Object])),
                 "Arc" | "Box" | "Ref" => {
                     let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
@@ -2202,6 +2441,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn initializer_fact(&self, expression: &Expr) -> BindingFact {
+            if let Some(kind) = hash_collection_construction(expression, self.context) {
+                return kind;
+            }
+            if let Some(kind) = self.hash_collection_field_fact(expression) {
+                return kind;
+            }
             return match expression {
                 Expr::Array(array) => BindingFact::Sequence(Box::new(
                     self.merged_facts(
@@ -2325,6 +2570,32 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             };
         }
 
+        // A field of a lexically known structure declared as `HashSet` / `HashMap`.
+        fn hash_collection_field_fact(&self, expression: &Expr) -> Option<BindingFact> {
+            return match expression {
+                Expr::Field(field) => {
+                    let syn::Member::Named(field_name) = &field.member else {
+                        return None;
+                    };
+                    let base = single_path_identifier(&field.base)?;
+                    let BindingFact::Structure(identity) = self.fact_of(&base)? else {
+                        return None;
+                    };
+                    [BindingFact::HashMap, BindingFact::HashSet]
+                        .into_iter()
+                        .find(|kind| {
+                            self.context.contains(&format!(
+                                "{HASH_COLLECTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                                binding_fact_marker(kind)
+                            ))
+                        })
+                }
+                Expr::Group(group) => self.hash_collection_field_fact(&group.expr),
+                Expr::Paren(paren) => self.hash_collection_field_fact(&paren.expr),
+                _ => None,
+            };
+        }
+
         fn option_fact(&self, expression: &Expr) -> Option<BindingFact> {
             return match expression {
                 Expr::Call(call) => {
@@ -2393,6 +2664,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn typed_fact(&self, rust_type: &Type) -> BindingFact {
+            if let Some(kind) = hash_collection_type(rust_type, self.context) {
+                return kind;
+            }
             if let Some(inner) = option_inner_type(rust_type) {
                 return BindingFact::Option(Box::new(self.typed_fact(inner)));
             }
@@ -4244,6 +4518,8 @@ fn generation_context_with_types(
         );
         insert_string_union_context(&mut context, program.string_unions.keys());
         let mut owned_facts = Vec::new();
+        let mut type_path_context = HashSet::new();
+        insert_program_type_path_context(&mut type_path_context, program);
         for structure in &program.structs {
             let identity = format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident);
             for field in &structure.fields {
@@ -4261,6 +4537,12 @@ fn generation_context_with_types(
                         "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
                 }
+                if let Some(kind) = hash_collection_type(&field.ty, &type_path_context) {
+                    owned_facts.push(format!(
+                        "{HASH_COLLECTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                        binding_fact_marker(&kind)
+                    ));
+                }
             }
         }
         for function in &program.functions {
@@ -4268,9 +4550,11 @@ fn generation_context_with_types(
                 continue;
             };
             let function_name = function.sig.ident.to_string();
+            let return_fact = hash_collection_type(rust_type, &type_path_context)
+                .unwrap_or_else(|| binding_fact_for_type(&context, Some(module), rust_type));
             owned_facts.push(format!(
                 "{RETURN_BINDING_FACT_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
-                binding_fact_marker(&binding_fact_for_type(&context, Some(module), rust_type))
+                binding_fact_marker(&return_fact)
             ));
             if rust_type_is_sequence(rust_type) {
                 owned_facts.push(format!(
@@ -4747,6 +5031,12 @@ fn bind_lexical_pattern(context: &mut HashSet<String>, pattern: &Pat) {
 }
 
 fn binding_fact_from_marker(encoded: &str) -> BindingFact {
+    if encoded == "hash-map" {
+        return BindingFact::HashMap;
+    }
+    if encoded == "hash-set" {
+        return BindingFact::HashSet;
+    }
     if encoded == "sequence" {
         return BindingFact::Sequence(Box::new(BindingFact::Unknown));
     }
@@ -4804,6 +5094,8 @@ fn binding_fact_marker(fact: &BindingFact) -> String {
                 .collect::<Vec<_>>()
                 .join(&BINDING_FACT_SEPARATOR.to_string())
         ),
+        BindingFact::HashMap => "hash-map".to_string(),
+        BindingFact::HashSet => "hash-set".to_string(),
         BindingFact::Unknown => "unknown".to_string(),
         BindingFact::UnresolvedPattern => "unresolved-pattern".to_string(),
     };
@@ -5661,6 +5953,12 @@ pub(crate) fn emit_expression(
         }
         Expr::Block(block) => emit_block_expression(&block.block, entities),
         Expr::Call(call) => {
+            if let Some(kind) = hash_collection_construction(expression, entities) {
+                return Ok(match kind {
+                    BindingFact::HashMap => "new Map()".to_string(),
+                    _ => "new Set()".to_string(),
+                });
+            }
             if let Some(name) = std_mem_function(&call.func, entities) {
                 return Err(compile_error(format!(
                     "portable `std::mem::{name}` has no portable lowering"
@@ -8707,6 +9005,9 @@ fn emit_method_call(
         }
     }
     let receiver = emit_expression(&call.receiver, entities)?;
+    if let Some(kind) = expression_hash_collection(&call.receiver, entities) {
+        return emit_hash_collection_method(call, &kind, &receiver, entities);
+    }
     if call.method == "and_then" || call.method == "map" {
         if let Some(payload) = option_expression_payload(&call.receiver, entities) {
             return emit_option_combinator(call, &receiver, &payload, entities);
@@ -10735,6 +11036,19 @@ pub(crate) fn emit_type(
             if let Some(output) = pinned_boxed_future_output(path, entities)? {
                 return Ok(format!("Promise<{}>", emit_type(output, entities)?));
             }
+            if let Some(kind) = hash_collection_type(rust_type, entities) {
+                let segment = path
+                    .path
+                    .segments
+                    .last()
+                    .expect("resolved paths have a segment");
+                let name = if matches!(kind, BindingFact::HashMap) {
+                    "HashMap"
+                } else {
+                    "HashSet"
+                };
+                return emit_hash_collection_type(name, segment, entities);
+            }
             let Some(segment) = path.path.segments.last() else {
                 return Err(compile_error("empty Rust type path"));
             };
@@ -10808,6 +11122,11 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Vec" => Ok(array_type(emit_single_generic_type(segment, entities)?)),
+                "HashSet" | "HashMap" if resolve_type_path(&path.path, entities).is_none() => {
+                    Err(compile_error(format!(
+                        "cannot resolve the provenance of `{name}`; import it from `std::collections` to lower it to a JavaScript collection"
+                    )))
+                }
                 "Mutex" => Ok(format!(
                     "{{ value: {} }}",
                     emit_single_generic_type(segment, entities)?
