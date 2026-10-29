@@ -5246,6 +5246,10 @@ pub struct Format {
     pub variations: Option<Arc<Vec<Variation>>>,
 }
 
+pub struct Bucket {
+    pub values: Vec<f32>,
+}
+
 pub fn clone_format(base: &Format, override_stops: &Format) -> Format {
     let mut result = base.clone();
     result.name = Some("copy".to_string());
@@ -5267,6 +5271,10 @@ pub fn clone_typed_locals() -> (Format, Vec<f32>) {
     };
     let stops: Vec<f32> = vec![2.0];
     return (format.clone(), stops.clone());
+}
+
+pub fn clone_sequence_field(bucket: &Bucket) -> Vec<f32> {
+    return bucket.values.clone();
 }
 
 pub fn has_empty_name(value: Option<String>) -> bool {
@@ -5300,6 +5308,7 @@ pub fn local_high_byte() -> u32 {
         assert!(output.contains(
             "return [{ ...format, tabStops: format.tabStops?.slice() }, stops.slice()];"
         ));
+        assert!(output.contains("return bucket.values.slice();"));
         assert!(output.contains("return value === \"\";"));
         assert!(output.contains("return (0xffffffff) >>> 0;"));
         assert!(output.contains("return (color >>> 24) >>> 0;"));

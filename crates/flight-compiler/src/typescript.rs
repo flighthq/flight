@@ -10002,6 +10002,9 @@ fn emit_method_call(
         {
             Ok(format!("{receiver}.slice()"))
         }
+        "clone" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!("{receiver}.slice()"))
+        }
         "clone"
             if arguments.is_empty()
                 && referenced_path_identifier(&call.receiver).is_some_and(|identifier| {
