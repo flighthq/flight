@@ -11570,7 +11570,7 @@ fn emit_method_call(
         )),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
         "contains_key" if arguments.len() == 1 => Ok(format!("{receiver}.has({})", arguments[0])),
-        "dedup" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+        "dedup" if arguments.is_empty() => {
             Ok(format!(
                 "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read += 1) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write += 1; }} }} items.length = Math.min(write, items.length); }})({receiver})"
             ))
@@ -11579,7 +11579,7 @@ fn emit_method_call(
             "Math.ceil({receiver} / {})",
             arguments[0]
         )),
-        "drain" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+        "drain" if arguments.len() == 1 => {
             let Some(Expr::Range(range)) = call.args.first() else {
                 return Err(compile_error(
                     "portable `.drain()` requires one half-open range with a start and end",
@@ -11652,12 +11652,7 @@ fn emit_method_call(
         }
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
         "fract" if arguments.is_empty() => Ok(format!("({receiver} % 1)")),
-        "fill" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
-            Ok(format!("{receiver}.fill({})", arguments[0]))
-        }
-        "fill" if arguments.len() == 1 => Err(compile_error(
-            "portable `.fill()` requires a receiver with proven sequence provenance",
-        )),
+        "fill" if arguments.len() == 1 => Ok(format!("{receiver}.fill({})", arguments[0])),
         "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
         "filter_map" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
@@ -11729,7 +11724,7 @@ fn emit_method_call(
             ))
         }
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
-        "insert" if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) => {
+        "insert" if arguments.len() == 2 => {
             Ok(format!(
                 "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError(\"Vec insertion index out of bounds\"); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
                 arguments[0], arguments[1]
@@ -11905,9 +11900,7 @@ fn emit_method_call(
             entities,
         ),
         "partial_cmp" if arguments.len() == 1 => Ok(format!("{receiver} - {}", arguments[0])),
-        "pop" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
-            Ok(format!("{receiver}.pop()"))
-        }
+        "pop" if arguments.is_empty() => Ok(format!("{receiver}.pop()")),
         "position" if arguments.len() == 1 => Ok(format!(
             "(<T>(items: readonly T[], predicate: (item: T) => boolean): number | undefined => {{ const index = items.findIndex(predicate); return index === -1 ? undefined : index; }})({receiver}, {})",
             arguments[0]
@@ -11971,7 +11964,7 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
-        "resize" if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) => {
+        "resize" if arguments.len() == 2 => {
             Ok(format!(
                 "(<T>(items: T[], length: number, value: T): void => {{ while (items.length < length) {{ items.push(value); }} items.length = length; }})({receiver}, {}, {})",
                 arguments[0], arguments[1]
@@ -12132,15 +12125,12 @@ fn emit_method_call(
             "([{receiver}[{}], {receiver}[{}]] = [{receiver}[{}], {receiver}[{}]])",
             arguments[0], arguments[1], arguments[1], arguments[0]
         )),
-        "swap_remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+        "swap_remove" if arguments.len() == 1 => {
             Ok(format!(
                 "(<T>(items: T[], index: number): T => {{ const last = items.length - 1; if (index !== last) {{ [items[index], items[last]] = [items[last], items[index]]; }} return items.pop()!; }})({receiver}, {})",
                 arguments[0]
             ))
         }
-        "swap_remove" if arguments.len() == 1 => Err(compile_error(
-            "portable `.swap_remove()` requires a receiver with proven sequence provenance",
-        )),
         "take" if arguments.is_empty() => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
