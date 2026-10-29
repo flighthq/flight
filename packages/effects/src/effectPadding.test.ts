@@ -64,7 +64,7 @@ describe('computeEffectPadding', () => {
 
   it('emits a shared registry miss only when the signal seam is enabled', () => {
     const misses: Array<readonly [RenderRegistryTable, string]> = [];
-    connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
+    connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, ([registry, kind]) => {
       misses.push([registry, kind]);
     });
     const out = { bottom: -1, left: -1, right: -1, top: -1 };
