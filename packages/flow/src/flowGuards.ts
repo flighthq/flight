@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { logOnce } from '@flighthq/log/contract';
-import type { LogDataOrProvider, LogState } from '@flighthq/log/contract';
+import type { LogDataOrProvider, LogStateRaw } from '@flighthq/log/contract';
 
 import type { FlowGuardStateRef } from './flow.ts';
 import type { FlowGuardKind } from './types.ts';
@@ -33,7 +33,7 @@ export function disableFlowGuards(state: FlowGuardStateRef): void {
  * Install the opt-in guards with the approved enable-time context: a caller-owned log state and a
  * live clock invoked at operation time.
  */
-export function enableFlowGuards(state: FlowGuardStateRef, logState: LogState, clock: () => number): void {
+export function enableFlowGuards(state: FlowGuardStateRef, logState: LogStateRaw, clock: () => number): void {
   let guardState = state!;
   guardState.enabled = true;
   guardState.context = { logState: logState, clock: clock };

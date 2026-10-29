@@ -30,7 +30,7 @@ function state(state: FlowState): FlowState {
   return state;
 }
 
-function labeledState(name: string, log: Readonly<Readonly<{ value: string[] }>>): FlowState {
+function labeledState(name: string, log: { value: string[] }): FlowState {
   const enterName = String(name);
   const exitName = String(name);
   const pauseName = String(name);
@@ -76,7 +76,7 @@ function plain(name: string): FlowState {
   });
 }
 
-function takeOnce(slot: Readonly<Readonly<{ value: boolean[] }>>): boolean {
+function takeOnce(slot: { value: boolean[] }): boolean {
   let values = slot.value;
   if (values.length !== 0) {
     return false;
@@ -87,13 +87,13 @@ function takeOnce(slot: Readonly<Readonly<{ value: boolean[] }>>): boolean {
 
 describe('clearFlowStack', () => {
   it('exits every state top to bottom and empties the stack', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
     pushFlowState(stack, labeledState('B', log), guards);
     pushFlowState(stack, labeledState('C', log), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     clearFlowStack(stack);
     expect(log.value).toEqual(['C.exit', 'B.exit', 'A.exit']);
     expect(getFlowStackDepth(stack)).toEqual(0);
@@ -106,7 +106,7 @@ describe('clearFlowStack', () => {
   it('exits while the states are still on the stack', () => {
     const stack = createFlowStack();
     const guards = guardState();
-    const seen: Readonly<{ value: number[] }> = { value: [] as never[] };
+    const seen: { value: number[] } = { value: [] as never[] };
     for (const name of ['A', 'B']) {
       const observer = stack;
       const depths = seen;
@@ -285,13 +285,13 @@ describe('initializeFlowStack', () => {
 
 describe('popFlowState', () => {
   it('exits the top and resumes the revealed state returning the popped state', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
     const b = labeledState('B', log);
     pushFlowState(stack, b, guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     const popped = popFlowState(stack)!;
     expect(log.value).toEqual(['B.exit', 'A.resume']);
     expect(popped === b).toBe(true);
@@ -304,35 +304,35 @@ describe('popFlowState', () => {
     expect(popped === fallback).toBe(true);
   });
   it('exits the last state without resuming anything below', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     popFlowState(stack);
     expect(log.value).toEqual(['A.exit']);
   });
   it('does not panic when the popped state omits callbacks', () => {
     const stack = createFlowStack();
     stack!.states.push(plain('A'));
-    expect(popFlowState(stack) !== undefined).toBe(true);
+    expect(popFlowState(stack) !== null).toBe(true);
   });
 });
 
 describe('pushFlowState', () => {
   it('enters a state pushed onto an empty stack', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
     expect(log.value).toEqual(['A.enter']);
   });
   it('pauses the previous top before entering the new state', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     pushFlowState(stack, labeledState('B', log), guards);
     expect(log.value).toEqual(['A.pause', 'B.enter']);
     expect(getFlowStackDepth(stack)).toEqual(2);
@@ -345,7 +345,7 @@ describe('pushFlowState', () => {
     expect(getFlowStackDepth(stack)).toEqual(2);
   });
   it('supports a real reentrant push from on enter', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     const nestedLog = log;
@@ -388,7 +388,7 @@ describe('pushFlowState', () => {
     const guards = guardState();
     const stackForPause = stack;
     const guardsForPause = guards;
-    const pausedOnce: Readonly<{ value: boolean[] }> = { value: [] as never[] };
+    const pausedOnce: { value: boolean[] } = { value: [] as never[] };
     const pausedOnceSlot = pausedOnce;
     let a: FlowState = {
       name: 'A',
@@ -418,20 +418,20 @@ describe('pushFlowState', () => {
 
 describe('replaceFlowState', () => {
   it('exits the top and enters the replacement without touching the state below', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     const a = labeledState('A', log);
     pushFlowState(stack, a, guards);
     pushFlowState(stack, labeledState('B', log), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     replaceFlowState(stack, labeledState('C', log), guards);
     expect(log.value).toEqual(['B.exit', 'C.enter']);
     expect(getFlowStackDepth(stack)).toEqual(2);
     expect(stack!.states[0] === a).toBe(true);
   });
   it('just pushes and enters on an empty stack', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     replaceFlowState(stack, labeledState('C', log), guards);
@@ -449,39 +449,39 @@ describe('replaceFlowState', () => {
 
 describe('updateFlowStack', () => {
   it('ticks only the top with the frame delta time', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
     pushFlowState(stack, labeledState('B', log), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     updateFlowStack(stack, 0.016);
     expect(log.value).toEqual(['B.update:0.016']);
   });
   it('ticks the state beneath a transparent update below overlay', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
     let b = labeledState('B', log)!;
     b.updateBelow = true;
     pushFlowState(stack, state(b), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     updateFlowStack(stack, 0.02);
     expect(log.value).toEqual(['B.update:0.02', 'A.update:0.02']);
   });
   it('does not tick below an opaque overlay', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
     pushFlowState(stack, labeledState('B', log), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     updateFlowStack(stack, 0.01);
     expect(log.value).toEqual(['B.update:0.01']);
   });
   it('walks a chain of update below overlays and stops at the first opaque one', () => {
-    const log: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const log: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const guards = guardState();
     pushFlowState(stack, labeledState('A', log), guards);
@@ -492,7 +492,7 @@ describe('updateFlowStack', () => {
     let d = labeledState('D', log)!;
     d.updateBelow = true;
     pushFlowState(stack, state(d), guards);
-    log.value.length = 0;
+    log.value = [] as never[];
     updateFlowStack(stack, 0.5);
     expect(log.value).toEqual(['D.update:0.5', 'C.update:0.5', 'B.update:0.5']);
   });
@@ -518,7 +518,7 @@ describe('updateFlowStack', () => {
     updateFlowStack(stack, 0.016);
   });
   it('snapshots the stack before a reentrant update clears it', () => {
-    const calls: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const calls: { value: string[] } = { value: [] as never[] };
     const stack = createFlowStack();
     const lowerCalls = calls;
     stack!.states.push(
@@ -528,7 +528,7 @@ describe('updateFlowStack', () => {
         onExit: undefined,
         onPause: undefined,
         onResume: undefined,
-        onUpdate: (DeltaTime: number) => {
+        onUpdate: (_deltaTime: number) => {
           lowerCalls.value.push('lower');
         },
         renderBelow: undefined,
@@ -544,7 +544,7 @@ describe('updateFlowStack', () => {
         onExit: undefined,
         onPause: undefined,
         onResume: undefined,
-        onUpdate: (DeltaTime: number) => {
+        onUpdate: (_deltaTime: number) => {
           topCalls.value.push('top');
           clearFlowStack(topStack);
         },

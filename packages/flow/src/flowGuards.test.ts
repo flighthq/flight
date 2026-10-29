@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { addLogSink, createJsonLogFormatter, createLogState } from '@flighthq/log/contract';
-import type { LogState } from '@flighthq/log/contract';
+import type { LogStateRaw } from '@flighthq/log/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -22,12 +22,12 @@ function guardState(): FlowGuardStateRef {
   return state;
 }
 
-function logState(): LogState {
+function logState(): LogStateRaw {
   return createLogState();
 }
 
-function captureFormattedEntries(state: Readonly<LogState>): Readonly<{ value: string[] }> {
-  const entries: Readonly<{ value: string[] }> = { value: [] as never[] };
+function captureFormattedEntries(state: LogStateRaw): { value: string[] } {
+  const entries: { value: string[] } = { value: [] as never[] };
   const captured = entries;
   const formatter = createJsonLogFormatter(state);
   addLogSink(state, (entry) => {
@@ -64,7 +64,7 @@ describe('enableFlowGuards', () => {
     const state = logState();
     enableFlowGuards(guards, state, () => 0.0);
     expect(guards!.enabled).toBe(true);
-    expect(guards!.context !== undefined).toBe(true);
+    expect(guards!.context !== null).toBe(true);
     disableFlowGuards(guards);
     expect(!guards!.enabled).toBe(true);
   });

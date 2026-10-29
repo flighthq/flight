@@ -1,7 +1,7 @@
 // Generated from crates/flight-flow/src/types.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import type { LogState } from '@flighthq/log/contract';
+import type { LogStateRaw } from '@flighthq/log/contract';
 
 /**
  * The kind of flow guard violation detected during a stack transition. The strings match the TS
@@ -14,7 +14,7 @@ export type FlowGuardKind = 'duplicate-state-push' | 'transition-during-transiti
  * operation time (never a frozen timestamp or hidden clock).
  */
 export interface FlowGuardContext {
-  logState: LogState;
+  logState: LogStateRaw;
   clock: () => number;
 }
 

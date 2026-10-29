@@ -22,5 +22,5 @@ export {
   reportFlowGuard,
 } from './flowGuards.ts';
 export { FlowStack } from './flowStackCompat.ts';
-export type { FlowCallback, FlowState, FlowUpdateCallback } from './flowTypes.ts';
+export type { FlowCallback, FlowStackRaw, FlowState, FlowUpdateCallback } from './flowTypes.ts';
 export type { FlowGuardContext, FlowGuardKind, FlowGuardState } from './types.ts';
