@@ -7795,11 +7795,13 @@ fn reject_unsafe_lazy_lock_initializers(
         Initialized(&'a Expr),
         Unknown,
     }
-    // How Rust reached a source file. Ordinary `name.rs` files own a `name/` directory for their
-    // children; every file selected by `#[path]` is treated like `mod.rs`, so its children live
-    // beside it. A source can have both reaches under different `cfg_attr` configurations.
+    // How Rust reached a source file. The crate root and every file selected by `#[path]` own their
+    // containing directory, while an ordinary `name.rs` module owns a `name/` directory (including
+    // ordinary nested files named `lib.rs` or `main.rs`). A source can have multiple reaches under
+    // different `cfg_attr` configurations.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
     enum ModuleReach {
+        CrateRoot,
         Ordinary,
         PathLoaded,
     }
@@ -7817,11 +7819,10 @@ fn reject_unsafe_lazy_lock_initializers(
             .file_stem()
             .and_then(|stem| stem.to_str())
             .unwrap_or_default();
-        let ordinary = if reach == ModuleReach::PathLoaded || matches!(stem, "lib" | "main" | "mod")
-        {
-            directory.to_path_buf()
-        } else {
-            directory.join(stem)
+        let ordinary = match reach {
+            ModuleReach::CrateRoot | ModuleReach::PathLoaded => directory.to_path_buf(),
+            ModuleReach::Ordinary if stem == "mod" => directory.to_path_buf(),
+            ModuleReach::Ordinary => directory.join(stem),
         };
         // A top-level `#[path]` is relative to the source file's directory even when the source is
         // an ordinary non-mod-rs file. Once inside an inline module, both kinds of child path start
@@ -9586,9 +9587,10 @@ fn reject_unsafe_lazy_lock_initializers(
                 .push(index);
         }
     }
-    // Carry each declaration's load kind to its target source. Crate roots are known ordinary
-    // reaches; a source not connected to an inventoried root is conservatively treated as the root
-    // of the supplied fragment, preserving the API's ability to prove a partial source inventory.
+    // Carry each declaration's load kind to its target source. Crate roots are known root
+    // reaches; a source not connected to an inventoried root is conservatively treated as an
+    // ordinary module of the supplied fragment, preserving the API's partial-inventory behavior
+    // without granting it crate-root directory rules.
     let propagate_reaches = |scopes: &mut Vec<EagerScope<'_>>| loop {
         let known = scopes
             .iter()
@@ -9624,17 +9626,8 @@ fn reject_unsafe_lazy_lock_initializers(
         }
     };
     for scope in &mut scopes {
-        if scope.module.is_empty()
-            || scope.path.as_deref().is_some_and(|path| {
-                return matches!(
-                    std::path::Path::new(path)
-                        .file_name()
-                        .and_then(|name| name.to_str()),
-                    Some("lib.rs" | "main.rs")
-                );
-            })
-        {
-            scope.reaches.insert(ModuleReach::Ordinary);
+        if scope.module.is_empty() {
+            scope.reaches.insert(ModuleReach::CrateRoot);
         }
     }
     propagate_reaches(&mut scopes);

@@ -5463,6 +5463,8 @@ pub fn get_defaults() -> u32 {
             source_root.join("path_loaded").join("parent"),
             source_root.join("conditional"),
             source_root.join("alternative").join("conditional"),
+            source_root.join("nested_lib").join("lib"),
+            source_root.join("nested_main").join("main"),
             source_root.join("hidden_dir"),
             outside.clone(),
         ] {
@@ -5537,6 +5539,35 @@ pub fn get_defaults() -> u32 {
         let raw_match = write(
             source_root.join("outer").join("match.rs"),
             "pub fn raw() {}\n",
+        );
+        let nested_lib_parent = write(source_root.join("nested_lib.rs"), "mod lib;\n");
+        let nested_lib_module = write(
+            source_root.join("nested_lib").join("lib.rs"),
+            "mod child;\n",
+        );
+        let nested_lib_child = write(
+            source_root.join("nested_lib").join("lib").join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let nested_lib_decoy = write(
+            source_root.join("nested_lib").join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let nested_main_parent = write(source_root.join("nested_main.rs"), "mod main;\n");
+        let nested_main_module = write(
+            source_root.join("nested_main").join("main.rs"),
+            "mod child;\n",
+        );
+        let nested_main_child = write(
+            source_root
+                .join("nested_main")
+                .join("main")
+                .join("child.rs"),
+            "pub fn child() {}\n",
+        );
+        let nested_main_decoy = write(
+            source_root.join("nested_main").join("child.rs"),
+            "pub fn child() {}\n",
         );
         let run = |root: &str, visibility: &[&std::path::PathBuf]| {
             let lib = write(source_root.join("lib.rs"), root);
@@ -5618,6 +5649,16 @@ pub fn get_defaults() -> u32 {
                 vec![],
                 unseen("mod r#type"),
             ),
+            (
+                "pub mod kernel;\nmod nested_lib;\n",
+                vec![&nested_lib_parent, &nested_lib_module, &nested_lib_decoy],
+                unseen("mod child"),
+            ),
+            (
+                "pub mod kernel;\nmod nested_main;\n",
+                vec![&nested_main_parent, &nested_main_module, &nested_main_decoy],
+                unseen("mod child"),
+            ),
         ];
         for (root, visibility, reason) in &negatives {
             let (code, stderr, emitted) = run(root, visibility);
@@ -5659,6 +5700,14 @@ pub fn get_defaults() -> u32 {
             (
                 "pub mod kernel;\nmod r#type;\nmod r#outer {\n    mod r#match;\n}\n",
                 vec![&raw_type, &raw_match],
+            ),
+            (
+                "pub mod kernel;\nmod nested_lib;\n",
+                vec![&nested_lib_parent, &nested_lib_module, &nested_lib_child],
+            ),
+            (
+                "pub mod kernel;\nmod nested_main;\n",
+                vec![&nested_main_parent, &nested_main_module, &nested_main_child],
             ),
             (
                 "pub mod kernel;\n#[cfg_attr(feature = \"trace\", path = \"nested/mod.rs\")]\nmod helper;\n",
