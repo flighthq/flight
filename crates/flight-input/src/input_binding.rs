@@ -229,167 +229,122 @@ pub fn detach_wheel_input(manager: &Ref<InputManager>, source: &InputIngressSour
 }
 
 fn emit_gamepad_axis_move(manager: &Ref<InputManager>, data: &InputGamepadAxisData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_gamepad_axis_move.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_gamepad_axis_move.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_gamepad_button_down(manager: &Ref<InputManager>, data: &InputGamepadButtonData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_gamepad_button_down.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_gamepad_button_down.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_gamepad_button_up(manager: &Ref<InputManager>, data: &InputGamepadButtonData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_gamepad_button_up.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_gamepad_button_up.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_gamepad_connect(manager: &Ref<InputManager>, data: &InputGamepadConnectData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_gamepad_connect.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_gamepad_connect.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_gamepad_disconnect(manager: &Ref<InputManager>, data: &InputGamepadConnectData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_gamepad_disconnect.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_gamepad_disconnect.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_key_down(manager: &Ref<InputManager>, data: &InputKeyboardData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_key_down.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_key_down.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_key_up(manager: &Ref<InputManager>, data: &InputKeyboardData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_key_up.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_key_up.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_pointer_cancel(manager: &Ref<InputManager>, data: &InputPointerData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_pointer_cancel.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_pointer_cancel.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_pointer_down(manager: &Ref<InputManager>, data: &InputPointerData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_pointer_down.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_pointer_down.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_pointer_move(manager: &Ref<InputManager>, data: &InputPointerData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_pointer_move.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_pointer_move.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_pointer_move_relative(manager: &Ref<InputManager>, data: &InputPointerData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_pointer_move_relative.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_pointer_move_relative.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_pointer_up(manager: &Ref<InputManager>, data: &InputPointerData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_pointer_up.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_pointer_up.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_text_edit(manager: &Ref<InputManager>, data: &InputTextData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_text_edit.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_text_edit.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_text_input(manager: &Ref<InputManager>, data: &InputTextData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_text_input.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_text_input.clone();
     emit_signal(&signal, data);
 }
 
 fn emit_wheel(manager: &Ref<InputManager>, data: &InputPointerData) {
-    let signal = {
-        let locked = manager.read().unwrap();
-        if !locked.enabled {
-            return;
-        }
-        locked.on_wheel.clone()
-    };
+    if !is_manager_enabled(manager) {
+        return;
+    }
+    let signal = manager.read().unwrap().on_wheel.clone();
     emit_signal(&signal, data);
 }
 

@@ -101,7 +101,7 @@ mod attach_keyboard_input {
         let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let events = Arc::new(Mutex::new(Vec::new()));
+        let events: Arc<Mutex<Vec<&str>>> = Arc::new(Mutex::new(Vec::new()));
         let captured = events.clone();
         connect_signal(
             &manager.read().unwrap().on_key_down.clone(),
