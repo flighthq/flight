@@ -4909,6 +4909,87 @@ pub fn alias_present(inner: &Chained) -> bool {
     }
 
     #[test]
+    fn gives_cross_source_readonly_entity_initializers_the_construction_view() {
+        let module = |path, source| ModuleSource { path, source };
+        let records = r#"//! flight-compiler: readonly-fields Marker
+
+pub struct Marker {
+    pub value: f64,
+    runtime: EntityRuntimeSlot,
+}
+
+pub struct Plain {
+    pub value: f64,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(Marker);
+flight_entity::impl_entity!(Plain);
+"#;
+        let builder = r#"use crate::records::{Marker, Plain};
+
+pub fn initialize_marker_value(out: &mut Marker, value: f64) {
+    out.value = value;
+}
+
+pub fn initialize_plain_value(out: &mut Plain, value: f64) {
+    out.value = value;
+}
+
+pub fn read_marker_value(marker: &mut Marker) -> f64 {
+    return marker.value;
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            module("crates/flight-records/src/builder.rs", builder),
+            Some("@flighthq/entity/contract"),
+            &[module("crates/flight-records/src/records.rs", records)],
+            &[],
+        )
+        .unwrap();
+        assert!(
+            output.contains(
+                "import type { EntityConstruction } from \"@flighthq/entity/contract\";\n"
+            ),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "export function initializeMarkerValue(out: EntityConstruction<MarkerRaw>, value: number): void {\n"
+            ),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "export function initializePlainValue(out: PlainRaw, value: number): void {\n"
+            ),
+            "{output}"
+        );
+        assert!(
+            output.contains("export function readMarkerValue(marker: MarkerRaw): number {\n"),
+            "{output}"
+        );
+
+        // An unresolved owner keeps the public type: the builder's `Marker` is its own local struct.
+        let shadowed = r#"pub struct Marker {
+    pub value: f64,
+}
+
+pub fn initialize_marker_value(out: &mut Marker, value: f64) {
+    out.value = value;
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            module("crates/flight-records/src/shadowed.rs", shadowed),
+            Some("@flighthq/entity/contract"),
+            &[module("crates/flight-records/src/records.rs", records)],
+            &[],
+        )
+        .unwrap();
+        assert!(!output.contains("EntityConstruction"), "{output}");
+    }
+
+    #[test]
     fn resolves_nullable_fields_through_proven_standard_arc() {
         let compile = |source: &str| {
             return compile_typescript_with_module_sources(

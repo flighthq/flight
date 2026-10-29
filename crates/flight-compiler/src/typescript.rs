@@ -97,6 +97,10 @@ const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
 const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
 const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
 const INTERIOR_MUTABLE_STRUCT_MARKER: &str = "@interior-mutable-struct:";
+// `{module}␟{Struct}` for each entity a source declares `readonly-fields`, so an `initialize_*`
+// function in another source that resolves its leading `&mut` parameter to it gets the writable
+// construction view.
+const READONLY_ENTITY_MARKER: &str = "@readonly-entity:";
 const REF_ALIAS_TARGET_MARKER: &str = "@ref-alias-target:";
 const REF_ALIAS_RECEIVER_CAPTURE_MARKER: &str = "@ref-alias-receiver-capture:";
 const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:";
@@ -1228,6 +1232,34 @@ fn initializes_readonly_entity(
         return false;
     };
     return readonly_structs.contains(&entity);
+}
+
+// Whether an `initialize_*` function's leading `&mut` parameter resolves, through the current
+// source's imports, to an entity some source declares `readonly-fields`. This extends the
+// source-local proof across sources; an unresolved or ambiguous owner keeps the public type.
+fn initializes_resolved_readonly_entity(function: &ItemFn, context: &HashSet<String>) -> bool {
+    if !function.sig.ident.to_string().starts_with("initialize_") {
+        return false;
+    }
+    let Some(module) = current_source(context) else {
+        return false;
+    };
+    let Some(FnArg::Typed(parameter)) = function.sig.inputs.first() else {
+        return false;
+    };
+    if !matches!(parameter.pat.as_ref(), Pat::Ident(_)) {
+        return false;
+    }
+    let Type::Reference(reference) = parameter.ty.as_ref() else {
+        return false;
+    };
+    if reference.mutability.is_none() {
+        return false;
+    }
+    let Some(identity) = resolved_type_identity(context, &module, &reference.elem) else {
+        return false;
+    };
+    return context.contains(&format!("{READONLY_ENTITY_MARKER}{identity}"));
 }
 
 // Whether a literal of the struct `identity` stores `field` as `null`: a `nullable-option` field, or,
@@ -5359,6 +5391,16 @@ fn generation_context_with_types(
         .flat_map(|(_, program)| &program.entities)
         .cloned()
         .collect::<HashSet<_>>();
+    for (module, program) in programs {
+        for structure in &program.structs {
+            let name = structure.ident.to_string();
+            if program.entities.contains(&name) && program.readonly_structs.contains(&name) {
+                context.insert(format!(
+                    "{READONLY_ENTITY_MARKER}{module}{PROVENANCE_SEPARATOR}{name}"
+                ));
+            }
+        }
+    }
     let mut callable_type_context = type_context.clone();
     callable_type_context.extend(entity_types.iter().cloned());
     let record_types = programs
@@ -14738,9 +14780,6 @@ pub(crate) fn emit_program(
         .functions
         .iter()
         .any(|function| expression_contains_path(&function.block, "allocate_entity"));
-    let uses_entity_construction = program.functions.iter().any(|function| {
-        initializes_readonly_entity(function, &program.entities, &program.readonly_structs)
-    });
     let aliases = preferred_aliases(program, alias_programs)?;
     let external_identity_aliases = external_identity_aliases(external_alias_programs)?;
     let used_identity_aliases = used_identity_aliases(program, &external_identity_aliases);
@@ -14793,6 +14832,18 @@ pub(crate) fn emit_program(
     );
     insert_program_type_path_context(&mut expression_context, program);
     let (mut value_imports, mut type_imports) = cross_crate_imports(program, &expression_context);
+    let entity_construction_parameters = program
+        .functions
+        .iter()
+        .map(|function| {
+            return initializes_readonly_entity(
+                function,
+                &program.entities,
+                &program.readonly_structs,
+            ) || initializes_resolved_readonly_entity(function, &expression_context);
+        })
+        .collect::<Vec<_>>();
+    let uses_entity_construction = entity_construction_parameters.contains(&true);
     let mut source_context = expression_context.clone();
     if program.nullable_options {
         source_context.insert(NULLABLE_OPTIONS_MARKER.to_string());
@@ -14810,15 +14861,16 @@ pub(crate) fn emit_program(
         .collect::<HashSet<_>>();
     let mut out = String::new();
 
-    let entity_module = if uses_allocate_entity || !program.entities.is_empty() {
-        Some(entity_module.ok_or_else(|| {
+    let entity_module =
+        if uses_allocate_entity || uses_entity_construction || !program.entities.is_empty() {
+            Some(entity_module.ok_or_else(|| {
             compile_error(
                 "this Rust module uses entity runtime types; provide a TypeScript entity module",
             )
         })?)
-    } else {
-        None
-    };
+        } else {
+            None
+        };
     if uses_allocate_entity {
         value_imports
             .entry(
@@ -14966,8 +15018,7 @@ pub(crate) fn emit_program(
         body.push('\n');
     }
     for (index, function) in program.functions.iter().enumerate() {
-        let entity_construction_parameter =
-            initializes_readonly_entity(function, &program.entities, &program.readonly_structs);
+        let entity_construction_parameter = entity_construction_parameters[index];
         emit_function(
             &mut body,
             function,
