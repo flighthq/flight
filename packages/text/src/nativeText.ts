@@ -1,20 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type {
-  BoundsNode,
-  EntityConstruction,
-  MethodsOf,
-  NativeText,
-  NativeTextData,
-  NativeTextRuntime,
-  NativeTextStyle,
-  Node2DFields,
-  Rectangle,
-  TextAutoSize,
-  TextVerticalAlign,
-} from '@flighthq/types/contract';
-import { NativeTextKind } from '@flighthq/types/contract';
+import type { TextAutoSize, TextVerticalAlign } from '@flighthq/textlayout/contract';
+import type { BoundsNode, MethodsOf, Node2DFields } from '@flighthq/types/contract';
+
+import type { NativeText, NativeTextData, NativeTextRuntime, NativeTextStyle } from './types.ts';
+import { NativeTextKind } from './types.ts';
 
 // Mirrors htmlView.ts (DOM-backed display object whose bounds come from numbers, not DOM measurement)
 // and textLabel.ts (create/runtime/defaultMethods shape). NativeText opts out of the TextLayout spine,

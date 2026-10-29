@@ -1,4 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
@@ -6,27 +8,34 @@ import { createTextFormatRange, mergeTextFormat } from '@flighthq/textformat/con
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 import {
-  computeRichTextBottomScrollV,
   computeRichTextCharIndexAtPoint,
-  computeRichTextContent,
-  computeRichTextLineCount,
   computeRichTextLineMetrics,
+  computeTextBoundsRectangle,
+  getRichTextLinkAtPoint,
+} from '@flighthq/textlayout/contract';
+import type {
+  RichTextContent,
+  TextLayoutParams,
+  TextLayoutResult,
+  TextLineMetrics,
+  TextMeasureFunction,
+  TextVerticalAlign,
+} from '@flighthq/textlayout/contract';
+import type { BoundsNode, MethodsOf, Node2DFields } from '@flighthq/types/contract';
+
+import { computeRichTextContent, getRichTextContent } from './richTextContent.ts';
+import {
+  computeRichTextBottomScrollV,
+  computeRichTextLineCount,
   computeRichTextMaxScrollH,
   computeRichTextMaxScrollV,
   computeRichTextTextHeight,
   computeRichTextTextWidth,
-  computeTextBoundsRectangle,
-  getRichTextContent,
-  getRichTextLinkAtPoint,
-} from '@flighthq/textlayout/contract';
+} from './richTextMetrics.ts';
+import { createTextLabelData } from './textLabel.ts';
+import { ensureTextLayout, getTextLayout } from './textLabelLayout.ts';
 import type {
-  BoundsNode,
-  EntityConstruction,
-  MethodsOf,
-  Node2DFields,
-  Rectangle,
   RichText,
-  RichTextContent,
   RichTextData,
   RichTextRuntime,
   TextFieldChangeEvent,
@@ -34,16 +43,8 @@ import type {
   TextFieldScrollEvent,
   TextFieldSignals,
   TextLabel,
-  TextLayoutParams,
-  TextLayoutResult,
-  TextLineMetrics,
-  TextMeasureFunction,
-  TextVerticalAlign,
-} from '@flighthq/types/contract';
-import { RichTextKind } from '@flighthq/types/contract';
-
-import { createTextLabelData } from './textLabel.ts';
-import { ensureTextLayout, getTextLayout } from './textLabelLayout.ts';
+} from './types.ts';
+import { RichTextKind } from './types.ts';
 
 export function appendRichTextString(source: RichText, value: string): void {
   if (value.length === 0) return;
@@ -61,7 +62,7 @@ export function buildRichTextLayoutParams(source: Readonly<TextLabel>, measure: 
   const data = richText.data;
   const runtime = getNode2DRuntime(richText) as RichTextRuntime;
   const content = getRichTextContent(runtime);
-  computeRichTextContent(content, data, getRichTextPasswordCharacter(richText));
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(richText) ?? undefined);
   return {
     formatRanges: content.formatRanges,
     height: data.height,
@@ -145,7 +146,7 @@ export function createRichTextRuntime(): RichTextRuntime {
   out.textLayout = null;
   out.textLayoutUsingContentId = -1;
   out.textLayoutUsingText = null;
-  out.richTextContent = null;
+  out.richTextContent = undefined;
   out.selectionBeginIndex = 0;
   out.selectionEndIndex = 0;
   // null until enableTextInput(node) opts this field into editing (docs/text-architecture-handoff.md,

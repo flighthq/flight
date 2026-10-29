@@ -343,7 +343,7 @@ mod compute_text_layout {
         let entered = std::sync::Arc::new(AtomicU32::new(0));
         let callback_entered = entered.clone();
         let mut params = single_range_params("outer", 100.0);
-        params.measure = std::sync::Arc::new(move |text, _| {
+        params.measure = std::sync::Arc::new(move |text: &str, _format: &TextFormat| {
             if callback_entered.fetch_add(1, Ordering::SeqCst) == 0 {
                 do_layout(single_range_params("inner", 100.0));
             }

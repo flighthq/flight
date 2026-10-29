@@ -5,6 +5,7 @@
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRichText } from '@flighthq/text/contract';
+import type { RichText } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import type {
@@ -14,7 +15,6 @@ import type {
   ImageResource,
   RendererData,
   RenderProxy2D,
-  RichText,
 } from '@flighthq/types/contract';
 
 import {

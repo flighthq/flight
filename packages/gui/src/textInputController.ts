@@ -1,5 +1,6 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import { enableTextFieldSignals, getRichTextRuntime } from '@flighthq/text/contract';
+import type { RichText } from '@flighthq/text/contract';
 import {
   blurTextInput,
   createTextInputManager,
@@ -19,7 +20,6 @@ import type {
   KeyboardEventData,
   Node2D,
   PointerEventData,
-  RichText,
   TextInputManager,
   TextInputController,
   TextInputControllerOptions,

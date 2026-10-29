@@ -1,6 +1,5 @@
 import { getOrCreateRenderProxy2D, registerNodeRenderer } from '@flighthq/render/contract';
-import { createNativeText, getNativeTextRuntime } from '@flighthq/text/contract';
-import { NativeTextKind } from '@flighthq/types/contract';
+import { createNativeText, getNativeTextRuntime, NativeTextKind } from '@flighthq/text/contract';
 
 import { domNativeTextRenderer, drawDomNativeText, drawDomNativeTextMask } from './domNativeText.ts';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';

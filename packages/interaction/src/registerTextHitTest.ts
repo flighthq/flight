@@ -1,9 +1,9 @@
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
-import { getTextLayout } from '@flighthq/text/contract';
+import { getTextLayout, RichTextKind, TextLabelKind } from '@flighthq/text/contract';
+import type { TextLabel } from '@flighthq/text/contract';
 import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout/contract';
-import type { Node2D, NodeAny, TextLabel } from '@flighthq/types/contract';
-import { RichTextKind, TextLabelKind } from '@flighthq/types/contract';
+import type { Node2D, NodeAny } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests.ts';
 

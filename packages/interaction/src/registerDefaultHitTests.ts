@@ -1,15 +1,14 @@
+import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   DisplayObjectKind,
   HtmlViewKind,
   MorphShapeKind,
   MovieClipKind,
   QuadBatchKind,
-  RichTextKind,
   Scale9ShapeKind,
   Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
-  TextLabelKind,
   TilemapKind,
 } from '@flighthq/types/contract';
 

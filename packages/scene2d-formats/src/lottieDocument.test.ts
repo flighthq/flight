@@ -1,4 +1,5 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { TextLabelKind } from '@flighthq/text/contract';
 import type {
   ImportDiagnostic,
   LottieAnimatable,
@@ -7,7 +8,7 @@ import type {
   LottieShapePath,
   Node2D,
 } from '@flighthq/types/contract';
-import { LottieLayerKind, ShapeKind, SpriteKind, TextLabelKind } from '@flighthq/types/contract';
+import { LottieLayerKind, ShapeKind, SpriteKind } from '@flighthq/types/contract';
 
 import {
   applyAnimationClipToLottieDocument,

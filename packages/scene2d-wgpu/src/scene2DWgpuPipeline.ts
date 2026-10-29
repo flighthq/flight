@@ -1,5 +1,6 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { Kind, NodeRenderer, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
@@ -8,13 +9,11 @@ import {
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
-  RichTextKind,
   Scale9ShapeKind,
   Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
   StandardMaterialKind,
-  TextLabelKind,
   TilemapKind,
 } from '@flighthq/types/contract';
 

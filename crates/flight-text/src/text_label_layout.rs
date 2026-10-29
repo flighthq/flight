@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract ensureTextLayout getTextLayout getTextLayoutMetrics setTextLabelGuard
+//! flight-compiler: root-only getTextLayout getTextLayoutMetrics
+
 use flight_entity::Ref;
 use flight_node::{Node, NodeRef, get_node_local_content_revision};
 use flight_textlayout::{

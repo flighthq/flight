@@ -1,4 +1,4 @@
-import type { RichText } from '@flighthq/types/contract';
+import type { RichText } from '@flighthq/text/contract';
 
 import { readSwfEditTextFactory } from './swfEditText.ts';
 import { SwfReader } from './swfReader.ts';

@@ -1,5 +1,6 @@
 import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
-import type { InputKeyboardData, RichTextRuntime } from '@flighthq/types/contract';
+import type { RichTextRuntime } from '@flighthq/text/contract';
+import type { InputKeyboardData } from '@flighthq/types/contract';
 import { KeyCode } from '@flighthq/types/contract';
 
 import {

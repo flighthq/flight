@@ -1,8 +1,8 @@
 import { packColor } from '@flighthq/color/contract';
 import { parseTextMarkup } from '@flighthq/text-markup/contract';
 import { createRichText } from '@flighthq/text/contract';
+import type { RichText } from '@flighthq/text/contract';
 import type { TextFormat, TextFormatAlign } from '@flighthq/textformat/contract';
-import type { RichText } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';
 

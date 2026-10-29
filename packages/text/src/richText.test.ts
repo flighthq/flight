@@ -9,8 +9,8 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
-import type { Node, RichText, RichTextRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RichTextKind } from '@flighthq/types/contract';
+import type { Node } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   appendRichTextString,
@@ -67,6 +67,8 @@ import {
   setRichTextWidth,
   setRichTextWordWrap,
 } from './richText.ts';
+import type { RichText, RichTextRuntime } from './types.ts';
+import { RichTextKind } from './types.ts';
 
 describe('appendRichTextString', () => {
   it('appends the value to the existing text', () => {
@@ -289,7 +291,7 @@ describe('createRichTextRuntime', () => {
 
   it('starts without attached content runtime state', () => {
     const runtime = createRichTextRuntime();
-    expect(runtime.richTextContent).toBeNull();
+    expect(runtime.richTextContent).toBeUndefined();
   });
 
   it('uses computeRichTextLocalBoundsRectangle', () => {

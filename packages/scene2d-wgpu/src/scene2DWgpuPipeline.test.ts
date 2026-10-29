@@ -1,4 +1,5 @@
 import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -6,13 +7,11 @@ import {
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
-  RichTextKind,
   Scale9ShapeKind,
   Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
   StandardMaterialKind,
-  TextLabelKind,
   TilemapKind,
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';

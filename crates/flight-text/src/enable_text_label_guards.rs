@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract disableTextLabelGuards enableTextLabelGuards
+//! flight-compiler: root-only disableTextLabelGuards enableTextLabelGuards
+
 use std::collections::HashMap;
 use std::sync::Arc;
 

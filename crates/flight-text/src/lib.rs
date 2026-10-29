@@ -20,26 +20,24 @@ pub mod contract;
 pub use contract::NATIVE_TEXT_KIND;
 pub use contract::NativeText;
 pub use contract::NativeTextData;
-pub use contract::NativeTextMethods;
 pub use contract::NativeTextStyle;
 pub use contract::RICH_TEXT_KIND;
 pub use contract::RichText;
 pub use contract::RichTextData;
-pub use contract::RichTextMethods;
 pub use contract::TEXT_LABEL_KIND;
 pub use contract::TextFieldChangeEvent;
 pub use contract::TextFieldLinkEvent;
 pub use contract::TextFieldScrollEvent;
 pub use contract::TextFieldSignals;
-pub use contract::TextFormatFontMethods;
 pub use contract::TextInputHistoryEntry;
 pub use contract::TextInputOptions;
 pub use contract::TextInputState;
 pub use contract::TextLabel;
 pub use contract::TextLabelContentExplanation;
 pub use contract::TextLabelData;
-pub use contract::TextLabelMethods;
-pub use contract::TextNodeMethods;
+pub use sugar::{
+    NativeTextMethods, RichTextMethods, TextFormatFontMethods, TextLabelMethods, TextNodeMethods,
+};
 
 pub use contract::append_rich_text_string;
 pub use contract::append_text_label_string;

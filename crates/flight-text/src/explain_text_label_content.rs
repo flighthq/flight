@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract explainTextLabelContent
+//! flight-compiler: root-only explainTextLabelContent
+
 use flight_node::{Node, get_node_local_content_revision};
 
 use crate::text_label_layout::text_runtime_and_string;

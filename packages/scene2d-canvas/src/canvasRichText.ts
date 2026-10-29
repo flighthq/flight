@@ -1,16 +1,21 @@
 ﻿import { computeRgbaCssString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
-import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
-import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextContent,
+  computeTextFormatFontString,
+  getRichTextContent,
+  getRichTextPasswordCharacter,
+  getRichTextRuntime,
+  getRichTextScrollYOffset,
+  getTextLayoutResult,
+} from '@flighthq/text/contract';
+import type { RichText, RichTextRuntime, TextLabelRuntime } from '@flighthq/text/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import {
   computeTextBoundsHeight,
   computeTextBoundsWidth,
   computeTextLayout,
-  getRichTextContent,
-  getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
-  getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type { TextSelectionRectangle } from '@flighthq/types/contract';
 import type {
@@ -18,9 +23,6 @@ import type {
   CanvasTextInputOverlay,
   Scene2DRenderer,
   RenderProxy2D,
-  RichText,
-  RichTextRuntime,
-  TextLabelRuntime,
 } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';

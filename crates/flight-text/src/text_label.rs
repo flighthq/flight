@@ -1,3 +1,10 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract appendTextLabelString computeTextLabelLocalBoundsRectangle createTextLabel
+//! flight-compiler: contract createTextLabelData createTextLabelRuntime getTextLabelFormat getTextLabelRuntime
+//! flight-compiler: contract getTextLabelString initializeTextLabelData setTextLabelAutoSize setTextLabelFormat
+//! flight-compiler: contract setTextLabelHeight setTextLabelString setTextLabelVerticalAlign setTextLabelWidth
+//! flight-compiler: root-only appendTextLabelString computeTextLabelLocalBoundsRectangle createTextLabel getTextLabelFormat getTextLabelString setTextLabelAutoSize setTextLabelFormat setTextLabelHeight setTextLabelString setTextLabelVerticalAlign setTextLabelWidth
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};

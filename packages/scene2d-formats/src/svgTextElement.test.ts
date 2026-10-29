@@ -1,7 +1,7 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { TextLabelKind } from '@flighthq/text/contract';
 import type { SvgElementHandler, SvgElementKind } from '@flighthq/types/contract';
 import { SvgElementKind as Kind } from '@flighthq/types/contract';
-import { TextLabelKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerSvgElementHandlers } from './svgElementHandlers.ts';

@@ -1,6 +1,6 @@
+import { TextLabelKind } from '@flighthq/text/contract';
 import type { LottieLayerHandler, LottieLayerKind } from '@flighthq/types/contract';
 import { LottieLayerKind as Kind } from '@flighthq/types/contract';
-import { TextLabelKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene2DFromLottieDocument } from './lottieImport.ts';

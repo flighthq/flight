@@ -42,7 +42,8 @@ function emptyTextFormat(): TextFormat {
 }
 
 function fixedMeasure(): TextMeasureFunction {
-  return (text, Format) => Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length * 10.0;
+  return (text: string, Format: Readonly<TextFormat>) =>
+    Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length * 10.0;
 }
 
 function formatRef(format: TextFormat): TextFormat {
@@ -327,7 +328,7 @@ describe('computeTextLayout', () => {
     const entered = { value: 0 >>> 0 };
     const callbackEntered = entered;
     let params = singleRangeParams('outer', 100.0);
-    params.measure = (text, _unused0) => {
+    params.measure = (text: string, Format: Readonly<TextFormat>) => {
       if (
         (() => {
           const previous = callbackEntered.value;

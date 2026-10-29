@@ -25,7 +25,7 @@ export interface TextFieldScrollEvent {
 // The opt-in text-field notification group attached to a RichText runtime by enableTextFieldSignals
 // (@flighthq/text). Null on a static RichText that never enables it; setters emit only when present.
 export interface TextFieldSignals extends Entity {
-  onTextFieldChange: Signal<(event: Readonly<TextFieldChangeEvent>) => void>;
-  onTextFieldLink: Signal<(event: Readonly<TextFieldLinkEvent>) => void>;
-  onTextFieldScroll: Signal<(event: Readonly<TextFieldScrollEvent>) => void>;
+  onTextFieldChange: Signal<Readonly<TextFieldChangeEvent>>;
+  onTextFieldLink: Signal<Readonly<TextFieldLinkEvent>>;
+  onTextFieldScroll: Signal<Readonly<TextFieldScrollEvent>>;
 }

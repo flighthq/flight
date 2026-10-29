@@ -1,17 +1,21 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { computeTextFormatFontString } from '@flighthq/text/contract';
-import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
-import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextContent,
+  computeTextFormatFontString,
+  getRichTextContent,
+  getRichTextPasswordCharacter,
+  getRichTextRuntime,
+  getRichTextScrollYOffset,
+  getTextLayoutResult,
+} from '@flighthq/text/contract';
+import type { RichText, RichTextRuntime, TextLabelRuntime } from '@flighthq/text/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import {
   computeTextBoundsHeight,
   computeTextBoundsWidth,
   computeTextLayout,
-  getRichTextContent,
-  getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
-  getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type {
   DomRenderState,
@@ -21,10 +25,7 @@ import type {
   RenderState,
   NodeAny,
   RendererData,
-  RichText,
-  RichTextRuntime,
   Scene2DRenderer,
-  TextLabelRuntime,
 } from '@flighthq/types/contract';
 
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource.ts';

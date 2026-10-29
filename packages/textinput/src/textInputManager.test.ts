@@ -1,7 +1,7 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
+import type { RichText, RichTextData, RichTextRuntime } from '@flighthq/text/contract';
 import type { TextLayoutResult } from '@flighthq/textlayout/contract';
-import type { RichText, RichTextData, RichTextRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey, KeyCode } from '@flighthq/types/contract';
 
 import { enableTextInput, getTextInputState } from './textInput.ts';

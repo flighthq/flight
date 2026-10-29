@@ -1,17 +1,15 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
+import { NativeTextKind, RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { DomRenderOptions, Kind, NodeRenderer } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
   HtmlViewKind,
   MorphShapeKind,
-  NativeTextKind,
   RenderCacheKind,
-  RichTextKind,
   Scale9ShapeKind,
   Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
-  TextLabelKind,
 } from '@flighthq/types/contract';
 
 import { domRenderCacheRenderer } from './domCache.ts';

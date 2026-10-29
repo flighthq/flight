@@ -32,7 +32,7 @@ pub fn empty_text_format() -> TextFormat {
 }
 
 pub fn fixed_measure() -> TextMeasureFunction {
-    return Arc::new(|text, _format| text.encode_utf16().count() as f32 * 10.0);
+    return Arc::new(|text: &str, _format: &TextFormat| text.encode_utf16().count() as f32 * 10.0);
 }
 
 pub fn format_ref(format: TextFormat) -> Ref<TextFormat> {

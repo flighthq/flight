@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 //! D18 Rust conveniences for the public text contract.
 
 use flight_entity::Ref;

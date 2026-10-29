@@ -1,22 +1,7 @@
 // Generated from crates/flight-textlayout/src/lib.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-export {
-  clearRichTextContent,
-  computeRichTextContent,
-  createRichTextContent,
-  getRichTextContent,
-  initializeRichTextContent,
-} from './richTextContent.ts';
-export {
-  computeRichTextBottomScrollV,
-  computeRichTextLineCount,
-  computeRichTextMaxScrollH,
-  computeRichTextMaxScrollV,
-  computeRichTextTextHeight,
-  computeRichTextTextWidth,
-  getRichTextScrollYOffset,
-} from './richTextMetrics.ts';
+export { createRichTextContent, initializeRichTextContent } from './richTextContent.ts';
 export {
   computeRichTextCharIndexAtPoint,
   computeRichTextLineMetrics,
@@ -47,7 +32,6 @@ export {
 } from './textLayout.ts';
 export { createTextLayoutGroup, initializeTextLayoutGroup } from './textLayoutGroup.ts';
 export { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure.ts';
-export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime.ts';
 export { getTextLineBreakIndex, getTextLineBreaks } from './textLineBreaks.ts';
 export { createTextMetrics, getTextMetrics, initializeTextMetrics } from './textMetrics.ts';
 export {

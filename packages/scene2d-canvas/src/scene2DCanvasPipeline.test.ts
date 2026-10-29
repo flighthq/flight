@@ -1,3 +1,4 @@
+import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { CanvasRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
@@ -6,12 +7,10 @@ import {
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
-  RichTextKind,
   Scale9ShapeKind,
   Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
-  TextLabelKind,
   TilemapKind,
 } from '@flighthq/types/contract';
 

@@ -4,18 +4,22 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
-import { computeTextFormatFontString } from '@flighthq/text/contract';
-import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
-import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextContent,
+  computeTextFormatFontString,
+  getRichTextContent,
+  getRichTextPasswordCharacter,
+  getRichTextRuntime,
+  getRichTextScrollYOffset,
+  getTextLayoutResult,
+} from '@flighthq/text/contract';
+import type { RichText, RichTextRuntime, TextLabelRuntime } from '@flighthq/text/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import {
   computeTextBoundsHeight,
   computeTextBoundsOffsetX,
   computeTextBoundsWidth,
   computeTextLayout,
-  getRichTextContent,
-  getRichTextScrollYOffset,
-  getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
@@ -26,10 +30,7 @@ import type {
   RenderProxy2D,
   NodeAny,
   RendererData,
-  RichText,
-  RichTextRuntime,
   Scene2DRenderer,
-  TextLabelRuntime,
 } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';

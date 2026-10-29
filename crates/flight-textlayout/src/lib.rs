@@ -8,7 +8,6 @@
 // flight-lint: conform-skip(createTextFormatRange, initializeTextFormatRange) D8: defined once beside TextFormatRange in flight-textformat; re-exported here, not redefined
 
 mod rich_text_content;
-mod rich_text_metrics;
 mod rich_text_query;
 mod sugar;
 mod text_bounds;
@@ -16,7 +15,6 @@ mod text_layout;
 mod text_layout_group;
 mod text_layout_measure;
 mod text_layout_measure_state;
-mod text_layout_runtime;
 mod text_line_breaks;
 mod text_metrics;
 mod text_units;

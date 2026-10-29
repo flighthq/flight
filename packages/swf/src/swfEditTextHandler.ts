@@ -1,8 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { RichText } from '@flighthq/text/contract';
 import type {
   ImportDiagnostic,
   Node2D,
-  RichText,
   SwfTagHandler,
   SwfTagParseResult,
   SwfTagRectangle,

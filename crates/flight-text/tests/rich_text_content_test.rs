@@ -1,8 +1,9 @@
+use crate::common::*;
+use flight_text::contract::*;
+
 use std::sync::Arc;
 
-use flight_textlayout::contract::{create_rich_text_content, create_text_format_range};
-
-use super::*;
+use flight_textlayout::contract::create_rich_text_content;
 
 mod clear_rich_text_content {
     use super::*;
@@ -26,7 +27,7 @@ mod compute_rich_text_content {
         data.text = "hello".to_string();
         let mut italic = empty_text_format();
         italic.italic = Some(true);
-        data.text_format_ranges = vec![create_text_format_range(format_ref(italic), 1, 4)];
+        data.text_format_ranges = vec![format_range(italic, 1, 4)];
         compute_rich_text_content(&mut content, &data, None);
         let ranges: Vec<(usize, usize, Option<bool>)> = content
             .format_ranges
@@ -72,7 +73,8 @@ mod compute_rich_text_content {
         data.text = "Hello world".to_string();
         compute_rich_text_content(&mut content, &data, None);
         assert_eq!(content.text, "Hello w");
-        assert_eq!(content.format_ranges.last().unwrap().end, 7);
+        let last_range_index = content.format_ranges.len() - 1;
+        assert_eq!(content.format_ranges[last_range_index].end, 7);
     }
 
     #[test]
@@ -92,7 +94,7 @@ mod compute_rich_text_content {
         data.text_color = 0x0000_00ff;
         let mut color = empty_text_format();
         color.color = Some(0xff00_00ff);
-        data.text_format_ranges = vec![create_text_format_range(format_ref(color), 1, 4)];
+        data.text_format_ranges = vec![format_range(color, 1, 4)];
         compute_rich_text_content(&mut content, &data, None);
         assert_eq!(
             content.format_ranges[1].format.read().unwrap().color,

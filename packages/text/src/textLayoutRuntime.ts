@@ -1,7 +1,7 @@
-import type { TextLabelRuntime } from '@flighthq/types/contract';
+import { createTextLayoutResult } from '@flighthq/textlayout/contract';
+import type { TextLayoutResult } from '@flighthq/textlayout/contract';
 
-import { createTextLayoutResult } from './textLayout.ts';
-import type { TextLayoutResult } from './types.ts';
+import type { TextLabelRuntime } from './types.ts';
 
 export function clearTextLayoutResult(runtime: TextLabelRuntime): void {
   runtime.textLayout = null;

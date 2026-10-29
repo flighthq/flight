@@ -1,7 +1,7 @@
-use flight_text::contract::*;
-
+mod common;
 mod support;
 
+use flight_text::contract::*;
 use support::*;
 
 #[path = "enable_text_label_guards_test.rs"]

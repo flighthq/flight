@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
+import type { RichText } from '@flighthq/text/contract';
 import type {
   EntityConstruction,
   InputKeyboardData,
   InputTextData,
-  RichText,
   TextInputManager,
   TextInputSource,
 } from '@flighthq/types/contract';

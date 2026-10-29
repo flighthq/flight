@@ -52,7 +52,12 @@ pub fn compute_rich_text_text_width(layout: &TextLayoutResult) -> f32 {
 
 // flight-lint: allow(conform-extra) D8 moved from textlayout to the approved text owner
 pub fn get_rich_text_scroll_y_offset(line_heights: &[f32], first_visible_line: usize) -> f32 {
-    return line_heights.iter().take(first_visible_line).copied().sum();
+    let mut offset = 0.0;
+    let end = first_visible_line.min(line_heights.len());
+    for index in 0..end {
+        offset += line_heights[index];
+    }
+    return offset;
 }
 
 fn get_visible_line_count(data: &RichTextData, layout: &TextLayoutResult) -> f32 {

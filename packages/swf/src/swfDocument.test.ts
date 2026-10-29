@@ -27,6 +27,8 @@ import {
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { RichText } from '@flighthq/text/contract';
+import { RichTextKind } from '@flighthq/text/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
 import type {
@@ -41,7 +43,6 @@ import type {
   MorphShape,
   MovieClip,
   Node2D,
-  RichText,
   Scale9Shape,
   Scene2DDocument,
   Shape,
@@ -60,7 +61,6 @@ import {
   MorphShapeKind,
   MovieClipKind,
   ResourceResolutionState,
-  RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,

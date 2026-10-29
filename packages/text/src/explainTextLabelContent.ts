@@ -1,6 +1,7 @@
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { TextLabel, TextLabelContentExplanation, TextLabelRuntime } from '@flighthq/types/contract';
+
+import type { TextLabel, TextLabelContentExplanation, TextLabelRuntime } from './types.ts';
 
 export function explainTextLabelContent(source: Readonly<TextLabel>): TextLabelContentExplanation {
   const runtime = getNode2DRuntime(source) as TextLabelRuntime;

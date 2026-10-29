@@ -2,13 +2,11 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
 use flight_textformat::{TextFormat, TextFormatRange};
-use flight_textlayout::contract::{
-    TextLayoutResult, create_text_layout_result, set_text_layout_measure_provider,
-};
+use flight_textlayout::contract::set_text_layout_measure_provider;
 use flight_textlayout::{TextAutoSize, TextVerticalAlign};
 use flight_textshaper::TextMeasureFunction;
 
-use super::*;
+use flight_text::contract::*;
 
 pub fn empty_text_format() -> TextFormat {
     return TextFormat {
@@ -36,8 +34,12 @@ pub fn empty_text_format() -> TextFormat {
     };
 }
 
+fn fixed_measure_value(text: &str, _format: &TextFormat) -> f32 {
+    return text.encode_utf16().count() as f32 * 7.0;
+}
+
 pub fn fixed_measure() -> TextMeasureFunction {
-    return Arc::new(|text, _format| text.encode_utf16().count() as f32 * 7.0);
+    return Arc::new(fixed_measure_value);
 }
 
 pub fn format_ref(format: TextFormat) -> Ref<TextFormat> {
@@ -90,10 +92,6 @@ pub fn native_text_style() -> NativeTextStyle {
     };
 }
 
-pub fn rich_text_data() -> RichTextData {
-    return create_rich_text_data();
-}
-
 pub fn rich_text_options() -> TestRichTextData {
     return TestRichTextData {
         auto_size: None,
@@ -129,10 +127,6 @@ pub fn text_label_options() -> TestTextLabelData {
         vertical_align: None,
         width: None,
     };
-}
-
-pub fn text_layout_result() -> TextLayoutResult {
-    return create_text_layout_result();
 }
 
 // Test scaffolding in the source's `create({ data: {...} })` shape. The canonical constructors take

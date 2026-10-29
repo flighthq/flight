@@ -1,26 +1,22 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 import { computeTextBoundsRectangle } from '@flighthq/textlayout/contract';
 import type {
-  BoundsNode,
-  EntityConstruction,
-  MethodsOf,
-  Node2DFields,
-  Rectangle,
   TextAutoSize,
-  TextLabel,
-  TextLabelData,
-  TextLabelRuntime,
   TextLayoutParams,
   TextMeasureFunction,
   TextVerticalAlign,
-} from '@flighthq/types/contract';
-import { TextLabelKind } from '@flighthq/types/contract';
+} from '@flighthq/textlayout/contract';
+import type { BoundsNode, MethodsOf, Node2DFields } from '@flighthq/types/contract';
 
 import { ensureTextLayout, getTextLayout } from './textLabelLayout.ts';
+import type { TextLabel, TextLabelData, TextLabelRuntime } from './types.ts';
+import { TextLabelKind } from './types.ts';
 
 // Per-kind layout-params hook for ensureTextLayout: a TextLabel is a single run, so it lays out its
 // whole string with one format range and no wrap — the lean path that skips RichText's range/html

@@ -1,4 +1,5 @@
-use super::*;
+use crate::common::*;
+use flight_text::contract::*;
 
 mod compute_text_format_font_string {
     use super::*;

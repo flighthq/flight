@@ -1,3 +1,14 @@
+//! flight-compiler: target-native
+//! flight-compiler: export-name NATIVE_TEXT_KIND NativeTextKind
+//! flight-compiler: export-name RICH_TEXT_KIND RichTextKind
+//! flight-compiler: export-name TEXT_LABEL_KIND TextLabelKind
+//! flight-compiler: contract NativeText NativeTextData NativeTextRuntime NativeTextStyle NativeTextKind
+//! flight-compiler: contract RichText RichTextData RichTextRuntime RichTextKind
+//! flight-compiler: contract TextFieldChangeEvent TextFieldLinkEvent TextFieldScrollEvent TextFieldSignals
+//! flight-compiler: contract TextInputHistoryEntry TextInputOptions TextInputState
+//! flight-compiler: contract TextLabel TextLabelContentExplanation TextLabelData TextLabelRuntime TextLabelKind
+//! flight-compiler: root-only NativeText NativeTextData NativeTextKind NativeTextStyle RichText RichTextData RichTextKind TextFieldChangeEvent TextFieldLinkEvent TextFieldScrollEvent TextFieldSignals TextInputHistoryEntry TextInputOptions TextInputState TextLabel TextLabelContentExplanation TextLabelData TextLabelKind
+
 use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, Ref, Unknown};

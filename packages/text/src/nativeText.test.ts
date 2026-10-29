@@ -4,8 +4,7 @@ import {
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
-import type { NativeText, NativeTextRuntime, Node, PartialNode } from '@flighthq/types/contract';
-import { NativeTextKind } from '@flighthq/types/contract';
+import type { Node, PartialNode } from '@flighthq/types/contract';
 
 import {
   computeNativeTextLocalBoundsRectangle,
@@ -26,6 +25,8 @@ import {
   setNativeTextVerticalAlign,
   setNativeTextWidth,
 } from './nativeText.ts';
+import type { NativeText, NativeTextRuntime } from './types.ts';
+import { NativeTextKind } from './types.ts';
 
 describe('computeNativeTextLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height when autoSize is none', () => {

@@ -26,7 +26,7 @@ fn append_text(
     let mut value = decode_html_entities(text);
     if condense_white {
         value = condense_whitespace(&value);
-        if out.text.is_empty() || out.text.ends_with(' ') {
+        if out.text.is_empty() || string_ends_with(&out.text, ' ') {
             value = value
                 .trim_start_matches(is_condensed_whitespace)
                 .to_string();
@@ -36,11 +36,11 @@ fn append_text(
         return;
     }
 
-    let value_length = value.encode_utf16().count();
+    let value_length = utf16_len(&value);
     let remaining = if max_chars < 0 {
         value_length
     } else {
-        (max_chars as usize).saturating_sub(out.text.encode_utf16().count())
+        saturating_sub(max_chars as usize, utf16_len(&out.text))
     };
     if remaining == 0 {
         return;
@@ -49,18 +49,38 @@ fn append_text(
         value = take_utf16_prefix(&value, remaining);
     }
 
-    let start = out.text.encode_utf16().count();
-    out.text.push_str(&value);
-    let end = out.text.encode_utf16().count();
+    let start = utf16_len(&out.text);
+    out.text = format!("{}{}", out.text, value);
+    let end = utf16_len(&out.text);
     write_format_range(&mut out.format_ranges, format, start, end);
+}
+
+fn string_ends_with(value: &str, suffix: char) -> bool {
+    return value.ends_with(suffix);
+}
+
+fn string_starts_with(value: &str, prefix: &str) -> bool {
+    return value.starts_with(prefix);
+}
+
+fn saturating_sub(value: usize, amount: usize) -> usize {
+    if amount >= value {
+        return 0;
+    }
+    return value - amount;
 }
 
 fn apply_text_format_ranges(out: &mut RichTextContent, overrides: &[TextFormatRange]) {
     if overrides.is_empty() || out.text.is_empty() {
         return;
     }
-    let text_length = out.text.encode_utf16().count();
-    let mut ranges = std::mem::take(&mut out.format_ranges);
+    let text_length = utf16_len(&out.text);
+    let source_ranges = &out.format_ranges;
+    let mut ranges: Vec<TextFormatRange> = Vec::new();
+    for range in source_ranges {
+        ranges.push(range.clone());
+    }
+    out.format_ranges = Vec::new();
     for r#override in overrides {
         let start = r#override.start.min(text_length);
         let end = r#override.end.max(start).min(text_length);
@@ -68,7 +88,7 @@ fn apply_text_format_ranges(out: &mut RichTextContent, overrides: &[TextFormatRa
             continue;
         }
         let override_format = r#override.format.read().unwrap().clone();
-        let mut next = Vec::new();
+        let mut next: Vec<TextFormatRange> = Vec::new();
         for range in ranges {
             let range_format = range.format.read().unwrap().clone();
             if range.end <= start || range.start >= end {
@@ -98,13 +118,14 @@ fn apply_text_format_ranges(out: &mut RichTextContent, overrides: &[TextFormatRa
 }
 
 fn clamp_ranges(ranges: &mut Vec<TextFormatRange>, length: usize) {
-    ranges.retain_mut(|range| {
-        if range.start >= length {
-            return false;
-        }
+    for range in ranges.iter_mut() {
         range.end = range.end.min(length);
-        return true;
-    });
+    }
+    ranges.retain(|range| range.start < length);
+}
+
+fn character_utf16_len(character: char) -> usize {
+    return utf16_len(&character.to_string());
 }
 
 // flight-lint: allow(conform-extra) D8 moved from textlayout to the approved text owner
@@ -118,8 +139,8 @@ pub fn compute_rich_text_content(
     data: &RichTextData,
     password_character: Option<&str>,
 ) {
-    out.text.clear();
-    out.format_ranges.clear();
+    out.text = String::new();
+    out.format_ranges = Vec::new();
 
     let base_format = create_base_format(data);
     let source = get_renderable_source(data, password_character);
@@ -133,7 +154,7 @@ pub fn compute_rich_text_content(
         data.condense_white,
         data.max_chars,
     );
-    let length = out.text.encode_utf16().count();
+    let length = utf16_len(&out.text);
     clamp_ranges(&mut out.format_ranges, length);
     apply_text_format_ranges(out, &data.text_format_ranges);
 }
@@ -144,11 +165,11 @@ fn condense_whitespace(value: &str) -> String {
     for character in value.chars() {
         if is_condensed_whitespace(character) {
             if !whitespace {
-                out.push(' ');
+                out = format!("{}{}", out, ' ');
                 whitespace = true;
             }
         } else {
-            out.push(character);
+            out = format!("{}{}", out, character);
             whitespace = false;
         }
     }
@@ -157,48 +178,70 @@ fn condense_whitespace(value: &str) -> String {
 
 fn decode_entity(entity: &str) -> Option<String> {
     let lower = entity.to_ascii_lowercase();
-    let decoded = match lower.as_str() {
-        "amp" => "&",
-        "apos" => "'",
-        "gt" => ">",
-        "lt" => "<",
-        "nbsp" => " ",
-        "quot" => "\"",
-        _ => {
-            let codepoint = if let Some(hex) = lower.strip_prefix("#x") {
-                u32::from_str_radix(hex, 16).ok()
-            } else if let Some(decimal) = lower.strip_prefix('#') {
-                decimal.parse::<u32>().ok()
-            } else {
-                None
-            }?;
-            return char::from_u32(codepoint).map(|value| value.to_string());
-        }
-    };
-    return Some(decoded.to_string());
+    if lower == "amp" {
+        return Some("&".to_string());
+    }
+    if lower == "apos" {
+        return Some("'".to_string());
+    }
+    if lower == "gt" {
+        return Some(">".to_string());
+    }
+    if lower == "lt" {
+        return Some("<".to_string());
+    }
+    if lower == "nbsp" {
+        return Some(" ".to_string());
+    }
+    if lower == "quot" {
+        return Some("\"".to_string());
+    }
+    if string_starts_with(&lower, "#x") {
+        return decode_entity_codepoint(&lower[2..lower.len()], 16);
+    }
+    if string_starts_with(&lower, "#") {
+        return decode_entity_codepoint(&lower[1..lower.len()], 10);
+    }
+    return None;
+}
+
+fn decode_entity_codepoint(digits: &str, radix: u32) -> Option<String> {
+    let codepoint = u32::from_str_radix(digits, radix).unwrap_or(u32::MAX);
+    return char::from_u32(codepoint).map(|value| value.to_string());
 }
 
 fn decode_html_entities(value: &str) -> String {
     let mut out = String::new();
     let mut rest = value;
     while let Some(amp) = rest.find('&') {
-        out.push_str(&rest[..amp]);
-        let after_amp = &rest[amp + 1..];
+        out = format!("{}{}", out, &rest[0..amp]);
+        let after_amp = &rest[amp + 1..rest.len()];
         let Some(semi) = after_amp.find(';') else {
-            out.push_str(&rest[amp..]);
+            out = format!("{}{}", out, &rest[amp..rest.len()]);
             return out;
         };
-        let entity = &after_amp[..semi];
-        if let Some(decoded) = decode_entity(entity) {
-            out.push_str(&decoded);
+        let entity = &after_amp[0..semi];
+        let decoded = decode_entity(entity);
+        if decoded.is_some() {
+            out = format!("{}{}", out, decoded.unwrap());
         } else {
-            out.push('&');
-            out.push_str(entity);
-            out.push(';');
+            out = format!("{}{}{}{}", out, '&', entity, ';');
         }
-        rest = &after_amp[semi + 1..];
+        rest = &after_amp[semi + 1..after_amp.len()];
     }
-    out.push_str(rest);
+    out = format!("{}{}", out, rest);
+    return out;
+}
+
+fn first_character(value: &str) -> Option<char> {
+    return value.chars().next();
+}
+
+fn repeat_string(value: &str, count: usize) -> String {
+    let mut out = String::new();
+    for _ in 0..count {
+        out = format!("{}{}", out, value);
+    }
     return out;
 }
 
@@ -206,12 +249,14 @@ fn get_renderable_source(data: &RichTextData, password_character: Option<&str>) 
     let Some(password_character) = password_character else {
         return data.text.clone();
     };
-    let mask = password_character
-        .chars()
-        .next()
+    let mask = first_character(password_character)
         .unwrap_or('\u{2022}')
         .to_string();
-    return mask.repeat(data.text.encode_utf16().count());
+    return repeat_string(&mask, utf16_len(&data.text));
+}
+
+fn utf16_len(value: &str) -> usize {
+    return value.encode_utf16().count();
 }
 
 // flight-lint: allow(conform-extra) D8 moved from textlayout to the approved text owner
@@ -223,25 +268,26 @@ pub fn get_rich_text_content(runtime: &mut RichTextRuntime) -> Ref<RichTextConte
 }
 
 fn is_condensed_whitespace(character: char) -> bool {
-    return matches!(
-        character,
-        ' ' | '\u{000c}' | '\n' | '\r' | '\t' | '\u{000b}'
-    );
+    return character == ' '
+        || character == '\u{000c}'
+        || character == '\n'
+        || character == '\r'
+        || character == '\t'
+        || character == '\u{000b}';
 }
 
 fn take_utf16_prefix(value: &str, limit: usize) -> String {
     let mut units = 0;
-    return value
-        .chars()
-        .take_while(|character| {
-            let next = units + character.len_utf16();
-            if next > limit {
-                return false;
-            }
-            units = next;
-            return true;
-        })
-        .collect();
+    let mut out = String::new();
+    for character in value.chars() {
+        let next = units + character_utf16_len(character);
+        if next > limit {
+            break;
+        }
+        units = next;
+        out = format!("{}{}", out, character);
+    }
+    return out;
 }
 
 fn write_format_range(
@@ -253,12 +299,13 @@ fn write_format_range(
     if start == end {
         return;
     }
-    if let Some(previous) = ranges.last_mut()
-        && previous.end == start
-        && *previous.format.read().unwrap() == *format
-    {
-        previous.end = end;
-        return;
+    if !ranges.is_empty() {
+        let previous_index = ranges.len() - 1;
+        let previous = &mut ranges[previous_index];
+        if previous.end == start && *previous.format.read().unwrap() == *format {
+            previous.end = end;
+            return;
+        }
     }
     ranges.push(create_text_format_range(
         Arc::new(RwLock::new(format.clone())),

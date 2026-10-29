@@ -1,4 +1,6 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
+import { getRichTextScrollYOffset } from '@flighthq/text/contract';
+import type { RichText } from '@flighthq/text/contract';
 import {
   getTextInputCaretRectangle,
   getTextInputSelectionBeginIndex,
@@ -6,8 +8,7 @@ import {
   getTextInputSelectionRectangles,
   getTextInputState,
 } from '@flighthq/textinput/contract';
-import { getRichTextScrollYOffset } from '@flighthq/textlayout/contract';
-import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
+import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
 
 import { registerGlTextInputOverlay } from './glRichText.ts';
 

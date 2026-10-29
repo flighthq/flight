@@ -1,9 +1,12 @@
+// Generated from crates/flight-text/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
+  NativeTextKind,
+  RichTextKind,
+  TextLabelKind,
   appendRichTextString,
   appendTextLabelString,
-  disableTextLabelGuards,
-  enableTextLabelGuards,
-  explainTextLabelContent,
   buildRichTextLayoutParams,
   clearRichTextFormatRanges,
   computeNativeTextLocalBoundsRectangle,
@@ -13,9 +16,12 @@ export {
   createNativeText,
   createRichText,
   createTextLabel,
+  disableTextLabelGuards,
   dispatchRichTextLinkAtPoint,
   dispatchRichTextWheel,
   enableTextFieldSignals,
+  enableTextLabelGuards,
+  explainTextLabelContent,
   getNativeTextMeasuredHeight,
   getNativeTextMeasuredWidth,
   getNativeTextString,
@@ -77,4 +83,22 @@ export {
   setTextLabelString,
   setTextLabelVerticalAlign,
   setTextLabelWidth,
+} from './contract.ts';
+
+export type {
+  NativeText,
+  NativeTextData,
+  NativeTextStyle,
+  RichText,
+  RichTextData,
+  TextFieldChangeEvent,
+  TextFieldLinkEvent,
+  TextFieldScrollEvent,
+  TextFieldSignals,
+  TextInputHistoryEntry,
+  TextInputOptions,
+  TextInputState,
+  TextLabel,
+  TextLabelContentExplanation,
+  TextLabelData,
 } from './contract.ts';

@@ -1,5 +1,6 @@
 import { invalidateNodeAppearance, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { setRichTextScrollH, setRichTextScrollV } from '@flighthq/text/contract';
+import type { RichText, RichTextData, TextInputState } from '@flighthq/text/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import {
   createTextFormatRange,
@@ -11,9 +12,6 @@ import type {
   HandleTextInputKeyboardOptions,
   KeyboardEventData,
   ReplaceTextInputOptions,
-  RichText,
-  RichTextData,
-  TextInputState,
 } from '@flighthq/types/contract';
 import { KeyCode } from '@flighthq/types/contract';
 

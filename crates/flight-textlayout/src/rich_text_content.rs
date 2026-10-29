@@ -1,5 +1,5 @@
 //! flight-compiler: target-native
-//! flight-compiler: root-only clearRichTextContent computeRichTextContent createRichTextContent getRichTextContent
+//! flight-compiler: root-only createRichTextContent
 
 use flight_entity::allocate_entity;
 

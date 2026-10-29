@@ -1,3 +1,11 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract computeNativeTextLocalBoundsRectangle createNativeText createNativeTextData
+//! flight-compiler: contract createNativeTextRuntime getNativeTextMeasuredHeight getNativeTextMeasuredWidth
+//! flight-compiler: contract getNativeTextRuntime getNativeTextString getNativeTextStyle initializeNativeTextData
+//! flight-compiler: contract patchNativeTextStyle setNativeTextAutoSize setNativeTextHeight setNativeTextString
+//! flight-compiler: contract setNativeTextStyle setNativeTextVerticalAlign setNativeTextWidth
+//! flight-compiler: root-only computeNativeTextLocalBoundsRectangle createNativeText getNativeTextMeasuredHeight getNativeTextMeasuredWidth getNativeTextString getNativeTextStyle patchNativeTextStyle setNativeTextAutoSize setNativeTextHeight setNativeTextString setNativeTextStyle setNativeTextVerticalAlign setNativeTextWidth
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};

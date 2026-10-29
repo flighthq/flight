@@ -1,12 +1,12 @@
 import { packColor } from '@flighthq/color/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRichText } from '@flighthq/text/contract';
+import type { RichText } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type { FontVariation, TextFormat } from '@flighthq/textformat/contract';
 import type {
   ImportDiagnostic,
-  RichText,
   DisplayObject,
   RiveArtboardGraph,
   RiveArtboardImportContext,

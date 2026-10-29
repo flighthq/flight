@@ -1,10 +1,130 @@
-export * from './enableTextLabelGuards.ts';
-export * from './explainTextLabelContent.ts';
-export * from './nativeText.ts';
-export * from './richText.ts';
-export * from './textFormatFont.ts';
-export * from './textLabel.ts';
-export * from './textLabelLayout.ts';
-export { initializeNativeTextData } from './nativeText.ts';
-export { initializeTextFieldSignals } from './richText.ts';
-export { initializeTextLabelData } from './textLabel.ts';
+// Generated from crates/flight-text/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+export { disableTextLabelGuards, enableTextLabelGuards } from './enableTextLabelGuards.ts';
+export { explainTextLabelContent } from './explainTextLabelContent.ts';
+export {
+  computeNativeTextLocalBoundsRectangle,
+  createNativeText,
+  createNativeTextData,
+  createNativeTextRuntime,
+  getNativeTextMeasuredHeight,
+  getNativeTextMeasuredWidth,
+  getNativeTextRuntime,
+  getNativeTextString,
+  getNativeTextStyle,
+  initializeNativeTextData,
+  patchNativeTextStyle,
+  setNativeTextAutoSize,
+  setNativeTextHeight,
+  setNativeTextString,
+  setNativeTextStyle,
+  setNativeTextVerticalAlign,
+  setNativeTextWidth,
+} from './nativeText.ts';
+export {
+  appendRichTextString,
+  buildRichTextLayoutParams,
+  clearRichTextFormatRanges,
+  computeRichTextLocalBoundsRectangle,
+  createRichText,
+  createRichTextData,
+  createRichTextRuntime,
+  createTextFieldSignals,
+  dispatchRichTextLinkAtPoint,
+  dispatchRichTextWheel,
+  enableTextFieldSignals,
+  getRichTextBottomScrollV,
+  getRichTextCharIndexAtPoint,
+  getRichTextDefaultTextFormat,
+  getRichTextFormatRangeAt,
+  getRichTextFormatRangeByIndex,
+  getRichTextFormatRangeCount,
+  getRichTextFormatRangesIn,
+  getRichTextLength,
+  getRichTextLineCount,
+  getRichTextLineMetrics,
+  getRichTextMaxScrollH,
+  getRichTextMaxScrollV,
+  getRichTextPasswordCharacter,
+  getRichTextRuntime,
+  getRichTextString,
+  getRichTextTextHeight,
+  getRichTextTextWidth,
+  getTextFieldSignals,
+  initializeTextFieldSignals,
+  insertRichTextString,
+  removeRichTextFormatRangesIn,
+  replaceRichTextString,
+  setRichTextBackground,
+  setRichTextBackgroundColor,
+  setRichTextBorder,
+  setRichTextBorderColor,
+  setRichTextCondenseWhite,
+  setRichTextContent,
+  setRichTextDefaultTextFormat,
+  setRichTextFormatRange,
+  setRichTextHeight,
+  setRichTextMaxChars,
+  setRichTextMouseWheelEnabled,
+  setRichTextMultiline,
+  setRichTextScrollH,
+  setRichTextScrollV,
+  setRichTextSelectable,
+  setRichTextString,
+  setRichTextTextColor,
+  setRichTextVerticalAlign,
+  setRichTextWidth,
+  setRichTextWordWrap,
+} from './richText.ts';
+export { clearRichTextContent, computeRichTextContent, getRichTextContent } from './richTextContent.ts';
+export {
+  computeRichTextBottomScrollV,
+  computeRichTextLineCount,
+  computeRichTextMaxScrollH,
+  computeRichTextMaxScrollV,
+  computeRichTextTextHeight,
+  computeRichTextTextWidth,
+  getRichTextScrollYOffset,
+} from './richTextMetrics.ts';
+export { computeTextFormatFontString } from './textFormatFont.ts';
+export {
+  appendTextLabelString,
+  computeTextLabelLocalBoundsRectangle,
+  createTextLabel,
+  createTextLabelData,
+  createTextLabelRuntime,
+  getTextLabelFormat,
+  getTextLabelRuntime,
+  getTextLabelString,
+  initializeTextLabelData,
+  setTextLabelAutoSize,
+  setTextLabelFormat,
+  setTextLabelHeight,
+  setTextLabelString,
+  setTextLabelVerticalAlign,
+  setTextLabelWidth,
+} from './textLabel.ts';
+export { ensureTextLayout, getTextLayout, getTextLayoutMetrics, setTextLabelGuard } from './textLabelLayout.ts';
+export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime.ts';
+export { NativeTextKind, RichTextKind, TextLabelKind } from './types.ts';
+export type {
+  NativeText,
+  NativeTextData,
+  NativeTextRuntime,
+  NativeTextStyle,
+  RichText,
+  RichTextData,
+  RichTextRuntime,
+  TextFieldChangeEvent,
+  TextFieldLinkEvent,
+  TextFieldScrollEvent,
+  TextFieldSignals,
+  TextInputHistoryEntry,
+  TextInputOptions,
+  TextInputState,
+  TextLabel,
+  TextLabelContentExplanation,
+  TextLabelData,
+  TextLabelRuntime,
+} from './types.ts';

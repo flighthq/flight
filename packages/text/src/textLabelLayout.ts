@@ -1,12 +1,10 @@
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import {
-  computeTextLayout,
-  getTextLayoutMeasureProvider,
-  getTextLayoutResult,
-  getTextMetrics,
-} from '@flighthq/textlayout/contract';
-import type { TextLabel, TextLabelRuntime, TextLayoutResult, TextMetrics } from '@flighthq/types/contract';
+import { computeTextLayout, getTextLayoutMeasureProvider, getTextMetrics } from '@flighthq/textlayout/contract';
+import type { TextLayoutResult, TextMetrics } from '@flighthq/textlayout/contract';
+
+import { getTextLayoutResult } from './textLayoutRuntime.ts';
+import type { TextLabel, TextLabelRuntime } from './types.ts';
 
 export function ensureTextLayout(source: Readonly<TextLabel>): void {
   const runtime = getNode2DRuntime(source) as TextLabelRuntime;

@@ -1,3 +1,6 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract clearTextLayoutResult getTextLayoutResult
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;

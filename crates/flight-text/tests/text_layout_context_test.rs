@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use super::*;
 
 mod create_text_layout_context {

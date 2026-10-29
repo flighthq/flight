@@ -1,11 +1,9 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { getNativeTextRuntime } from '@flighthq/text/contract';
+import type { NativeText, NativeTextRuntime, NativeTextStyle } from '@flighthq/text/contract';
 import type {
   Scene2DRenderer,
   DomRenderState,
-  NativeText,
-  NativeTextRuntime,
-  NativeTextStyle,
   NodeAny,
   RendererData,
   RenderProxy2D,

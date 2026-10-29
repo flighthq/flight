@@ -5,11 +5,11 @@ import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
-import { computeTextFormatFontString } from '@flighthq/text/contract';
-import { getTextLabelRuntime } from '@flighthq/text/contract';
+import { computeTextFormatFontString, getTextLabelRuntime, getTextLayoutResult } from '@flighthq/text/contract';
+import type { TextLabel, TextLabelRuntime } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
-import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
+import { computeTextLayout } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
   EntityConstruction,
@@ -19,8 +19,6 @@ import type {
   NodeAny,
   RendererData,
   Scene2DRenderer,
-  TextLabel,
-  TextLabelRuntime,
 } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 

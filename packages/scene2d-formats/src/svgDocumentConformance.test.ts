@@ -1,7 +1,8 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
-import type { Node2D, ImportDiagnostic, RichText, Shape } from '@flighthq/types/contract';
+import type { RichText } from '@flighthq/text/contract';
+import type { Node2D, ImportDiagnostic, Shape } from '@flighthq/types/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgImport.ts';

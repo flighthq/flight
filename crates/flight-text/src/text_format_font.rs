@@ -1,3 +1,5 @@
+//! flight-compiler: root-only computeTextFormatFontString
+
 use flight_textformat::TextFormat;
 
 pub fn compute_text_format_font_string(format: &TextFormat) -> String {

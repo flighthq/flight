@@ -5,8 +5,7 @@ import {
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
-import type { Node, PartialNode, TextLabel } from '@flighthq/types/contract';
-import { TextLabelKind } from '@flighthq/types/contract';
+import type { Node, PartialNode } from '@flighthq/types/contract';
 
 import {
   appendTextLabelString,
@@ -25,6 +24,8 @@ import {
   setTextLabelVerticalAlign,
   setTextLabelWidth,
 } from './textLabel.ts';
+import type { TextLabel } from './types.ts';
+import { TextLabelKind } from './types.ts';
 
 describe('appendTextLabelString', () => {
   it('appends the value to the existing text', () => {

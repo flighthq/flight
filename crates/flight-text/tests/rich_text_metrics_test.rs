@@ -1,4 +1,5 @@
-use super::*;
+use crate::common::*;
+use flight_text::contract::*;
 
 mod compute_rich_text_bottom_scroll_v {
     use super::*;

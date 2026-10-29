@@ -1,10 +1,10 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { computeTextFormatFontString } from '@flighthq/text/contract';
-import { getTextLabelRuntime } from '@flighthq/text/contract';
+import { computeTextFormatFontString, getTextLabelRuntime, getTextLayoutResult } from '@flighthq/text/contract';
+import type { TextLabel, TextLabelRuntime } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
-import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
+import { computeTextLayout } from '@flighthq/textlayout/contract';
 import type {
   DomRenderState,
   EntityConstruction,
@@ -13,8 +13,6 @@ import type {
   NodeAny,
   RendererData,
   Scene2DRenderer,
-  TextLabel,
-  TextLabelRuntime,
 } from '@flighthq/types/contract';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';

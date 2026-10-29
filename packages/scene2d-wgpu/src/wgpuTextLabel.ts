@@ -4,11 +4,11 @@ import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
-import { computeTextFormatFontString } from '@flighthq/text/contract';
-import { getTextLabelRuntime } from '@flighthq/text/contract';
+import { computeTextFormatFontString, getTextLabelRuntime, getTextLayoutResult } from '@flighthq/text/contract';
+import type { TextLabel, TextLabelRuntime } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
-import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
+import { computeTextLayout } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
   ImageResource,
@@ -17,8 +17,6 @@ import type {
   RenderProxy2D,
   RenderState,
   Scene2DRenderer,
-  TextLabel,
-  TextLabelRuntime,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';

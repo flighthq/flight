@@ -3,18 +3,22 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuad } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime, resolveWgpuApplyBlendMode } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
-import { computeTextFormatFontString } from '@flighthq/text/contract';
-import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
-import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextContent,
+  computeTextFormatFontString,
+  getRichTextContent,
+  getRichTextPasswordCharacter,
+  getRichTextRuntime,
+  getRichTextScrollYOffset,
+  getTextLayoutResult,
+} from '@flighthq/text/contract';
+import type { RichText, RichTextRuntime, TextLabelRuntime } from '@flighthq/text/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import {
   computeTextBoundsHeight,
   computeTextBoundsOffsetX,
   computeTextBoundsWidth,
   computeTextLayout,
-  getRichTextContent,
-  getRichTextScrollYOffset,
-  getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
@@ -23,10 +27,7 @@ import type {
   RendererData,
   RenderProxy2D,
   RenderState,
-  RichText,
-  RichTextRuntime,
   Scene2DRenderer,
-  TextLabelRuntime,
   WgpuRenderState,
   WgpuRichTextOverlay,
 } from '@flighthq/types/contract';

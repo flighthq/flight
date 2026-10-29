@@ -5,6 +5,7 @@ import {
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
+import type { TextLabel } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
@@ -13,7 +14,6 @@ import type {
   ImageResource,
   RendererData,
   RenderProxy2D,
-  TextLabel,
 } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 

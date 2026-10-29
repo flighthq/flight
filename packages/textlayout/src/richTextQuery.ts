@@ -245,7 +245,7 @@ export function getRichTextSelectionRectangles(
   }
 }
 
-function richTextGetCaretX(group: Readonly<TextLayoutGroup>, index: number): number {
+function richTextGetCaretX(group: TextLayoutGroup, index: number): number {
   let x = group.offsetX;
   const limit = Math.max(0, Math.min(index, group.endIndex) - group.startIndex);
   for (let positionIndex = 0; positionIndex < limit; positionIndex += 1) {
@@ -257,7 +257,7 @@ function richTextGetCaretX(group: Readonly<TextLayoutGroup>, index: number): num
 function richTextGetGroupContainingIndex(
   layout: Readonly<TextLayoutResult>,
   charIndex: number,
-): Readonly<TextLayoutGroup> | null {
+): TextLayoutGroup | null {
   return layout.groups.find((group) => charIndex >= group.startIndex && charIndex < group.endIndex) ?? null;
 }
 

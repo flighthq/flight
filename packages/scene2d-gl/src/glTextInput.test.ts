@@ -4,14 +4,9 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createRichText } from '@flighthq/text/contract';
+import type { RichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
-import type {
-  CanvasSurface,
-  HostCanvasCapability,
-  HostImageCapability,
-  RenderProxy2D,
-  RichText,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
 
 import { createGlRichTextData, drawGlRichText } from './glRichText.ts';
 import { createGlState } from './glTestHelper.ts';
