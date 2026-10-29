@@ -4,7 +4,7 @@ use flight_host::{InputIngressSource, ProviderRef};
 use flight_input::contract::*;
 use flight_signals::connect_signal;
 
-fn source() -> InputIngressSource {
+fn create_source() -> InputIngressSource {
     return InputIngressSource {
         provider: Arc::new(()),
         handle: Arc::new(()),
@@ -18,7 +18,7 @@ struct Recorder {
     sinks: Arc<Mutex<Vec<InputIngressSink>>>,
 }
 
-fn recorder() -> Recorder {
+fn create_recorder() -> Recorder {
     return Recorder {
         attachments: Arc::new(Mutex::new(Vec::new())),
         releases: Arc::new(Mutex::new(Vec::new())),
@@ -81,10 +81,10 @@ mod attach_gamepad_input {
 
     #[test]
     fn binds_the_exact_source_through_the_ingress_provider() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let source = source();
+        let source = create_source();
         attach_gamepad_input(&host, &manager, &source, None);
         let attachments = recorder.attachments.lock().unwrap();
         assert_eq!(attachments.len(), 1);
@@ -98,7 +98,7 @@ mod attach_keyboard_input {
 
     #[test]
     fn forwards_normalized_events_and_respects_the_enabled_flag() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
         let events = Arc::new(Mutex::new(Vec::new()));
@@ -108,7 +108,7 @@ mod attach_keyboard_input {
             Arc::new(move |_data: &InputKeyboardData| captured.lock().unwrap().push("key")),
             None,
         );
-        attach_keyboard_input(&host, &manager, &source(), None);
+        attach_keyboard_input(&host, &manager, &create_source(), None);
         let sink = recorder.sinks.lock().unwrap()[0].clone();
         (sink.key_down)(&keyboard_data(65));
         assert!(!events.lock().unwrap().is_empty());
@@ -124,10 +124,10 @@ mod attach_pointer_input {
 
     #[test]
     fn reattaching_the_same_source_releases_the_old_origin_once() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let source = source();
+        let source = create_source();
         attach_pointer_input(&host, &manager, &source, None);
         attach_pointer_input(&host, &manager, &source, None);
         assert_eq!(
@@ -145,9 +145,9 @@ mod attach_relative_pointer_input {
 
     #[test]
     fn binds_relative_pointer_ingress() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
-        attach_relative_pointer_input(&host, &create_input_manager(), &source(), None);
+        attach_relative_pointer_input(&host, &create_input_manager(), &create_source(), None);
         assert_eq!(recorder.attachments.lock().unwrap()[0].0, "relativePointer");
     }
 }
@@ -157,9 +157,9 @@ mod attach_text_input {
 
     #[test]
     fn binds_text_ingress() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
-        attach_text_input(&host, &create_input_manager(), &source(), None);
+        attach_text_input(&host, &create_input_manager(), &create_source(), None);
         assert_eq!(recorder.attachments.lock().unwrap()[0].0, "text");
     }
 }
@@ -169,9 +169,9 @@ mod attach_wheel_input {
 
     #[test]
     fn binds_wheel_ingress() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
-        attach_wheel_input(&host, &create_input_manager(), &source(), None);
+        attach_wheel_input(&host, &create_input_manager(), &create_source(), None);
         assert_eq!(recorder.attachments.lock().unwrap()[0].0, "wheel");
     }
 }
@@ -181,10 +181,10 @@ mod detach_gamepad_input {
 
     #[test]
     fn releases_the_attachment() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let source = source();
+        let source = create_source();
         attach_gamepad_input(&host, &manager, &source, None);
         detach_gamepad_input(&manager, &source);
         detach_gamepad_input(&manager, &source);
@@ -200,11 +200,11 @@ mod detach_keyboard_input {
 
     #[test]
     fn ends_only_its_own_binding() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let kept = source();
-        let dropped = source();
+        let kept = create_source();
+        let dropped = create_source();
         attach_keyboard_input(&host, &manager, &kept, None);
         attach_keyboard_input(&host, &manager, &dropped, None);
         detach_keyboard_input(&manager, &dropped);
@@ -220,8 +220,8 @@ mod detach_pointer_input {
     #[test]
     fn is_idempotent_when_never_attached() {
         let manager = create_input_manager();
-        detach_pointer_input(&manager, &source());
-        detach_pointer_input(&manager, &source());
+        detach_pointer_input(&manager, &create_source());
+        detach_pointer_input(&manager, &create_source());
     }
 }
 
@@ -230,10 +230,10 @@ mod detach_relative_pointer_input {
 
     #[test]
     fn releases_relative_pointer_ingress() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let source = source();
+        let source = create_source();
         attach_relative_pointer_input(&host, &manager, &source, None);
         detach_relative_pointer_input(&manager, &source);
         assert_eq!(recorder.releases.lock().unwrap().len(), 1);
@@ -245,10 +245,10 @@ mod detach_text_input {
 
     #[test]
     fn releases_text_ingress() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let source = source();
+        let source = create_source();
         attach_text_input(&host, &manager, &source, None);
         detach_text_input(&manager, &source);
         assert_eq!(recorder.releases.lock().unwrap().len(), 1);
@@ -260,10 +260,10 @@ mod detach_wheel_input {
 
     #[test]
     fn releases_wheel_ingress() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let source = source();
+        let source = create_source();
         attach_wheel_input(&host, &manager, &source, None);
         detach_wheel_input(&manager, &source);
         assert_eq!(recorder.releases.lock().unwrap().len(), 1);
@@ -275,10 +275,17 @@ mod explicit_input_ingress_parameter {
 
     #[test]
     fn passes_each_exact_source_identity_through_all_six_families_and_releases_each_once() {
-        let recorder = recorder();
+        let recorder = create_recorder();
         let host = recording_host(recorder.clone());
         let manager = create_input_manager();
-        let sources = [source(), source(), source(), source(), source(), source()];
+        let sources = [
+            create_source(),
+            create_source(),
+            create_source(),
+            create_source(),
+            create_source(),
+            create_source(),
+        ];
         attach_gamepad_input(&host, &manager, &sources[0], None);
         attach_keyboard_input(&host, &manager, &sources[1], None);
         attach_pointer_input(&host, &manager, &sources[2], None);
