@@ -2,6 +2,7 @@
 //! from the former aggregate host (D26; TS `hostExplain.ts` and `enableHostGuards.ts`). Each
 //! explainer appends to a caller-owned explanation, so a host provider composes its own host's
 //! explanation; there is no aggregate.
+//! flight-compiler: rust-only
 
 use flight_host::{
     HostCapabilityBackend, HostCapabilityCoverage, HostCapabilityExplanation,

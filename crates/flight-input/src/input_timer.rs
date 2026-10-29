@@ -4,73 +4,6 @@ use flight_entity::{Ref, allocate_entity};
 
 use crate::types::*;
 
-#[cfg(test)]
-mod sugar_tests {
-    use super::*;
-
-    fn options() -> InputKeyRepeatOptions {
-        return InputKeyRepeatOptions {
-            delay: 500.0,
-            interval: 33.0,
-        };
-    }
-
-    #[test]
-    fn new_matches_create_input_key_repeat_timer() {
-        let method_timer = InputKeyRepeatTimer::new(&options());
-        let free_timer = create_input_key_repeat_timer(&options());
-        assert_eq!(
-            method_timer.read().unwrap().delay_ms,
-            free_timer.read().unwrap().delay_ms
-        );
-    }
-
-    #[test]
-    fn advance_method_matches_advance_input_key_repeat_timer() {
-        let method_timer = create_input_key_repeat_timer(&options());
-        let free_timer = create_input_key_repeat_timer(&options());
-        start_input_key_repeat_timer(&method_timer, Arc::new(|| {}), 0.0);
-        start_input_key_repeat_timer(&free_timer, Arc::new(|| {}), 0.0);
-        method_timer.advance(500.0);
-        advance_input_key_repeat_timer(&free_timer, 500.0);
-        assert_eq!(
-            method_timer.read().unwrap().next_fire_ms,
-            free_timer.read().unwrap().next_fire_ms
-        );
-    }
-
-    #[test]
-    fn start_method_matches_start_input_key_repeat_timer() {
-        let method_timer = create_input_key_repeat_timer(&options());
-        let free_timer = create_input_key_repeat_timer(&options());
-        let method_calls = Arc::new(std::sync::Mutex::new(0));
-        let captured = method_calls.clone();
-        method_timer.start(Arc::new(move || *captured.lock().unwrap() += 1), 10.0);
-        let free_calls = Arc::new(std::sync::Mutex::new(0));
-        let captured = free_calls.clone();
-        start_input_key_repeat_timer(
-            &free_timer,
-            Arc::new(move || *captured.lock().unwrap() += 1),
-            10.0,
-        );
-        assert_eq!(*method_calls.lock().unwrap(), *free_calls.lock().unwrap());
-    }
-
-    #[test]
-    fn stop_method_matches_stop_input_key_repeat_timer() {
-        let method_timer = create_input_key_repeat_timer(&options());
-        let free_timer = create_input_key_repeat_timer(&options());
-        start_input_key_repeat_timer(&method_timer, Arc::new(|| {}), 0.0);
-        start_input_key_repeat_timer(&free_timer, Arc::new(|| {}), 0.0);
-        method_timer.stop();
-        stop_input_key_repeat_timer(&free_timer);
-        assert_eq!(
-            method_timer.read().unwrap().started,
-            free_timer.read().unwrap().started
-        );
-    }
-}
-
 /// Allocates a reusable key-repeat timer from the supplied timings (TS
 /// `createInputKeyRepeatTimer`). Timing is caller-driven; no real timer is created.
 pub fn create_input_key_repeat_timer(options: &InputKeyRepeatOptions) -> Ref<InputKeyRepeatTimer> {
@@ -148,37 +81,4 @@ pub fn stop_input_key_repeat_timer(timer: &Ref<InputKeyRepeatTimer>) {
     let mut locked = timer.write().unwrap();
     locked.callback = None;
     locked.started = false;
-}
-
-// ============================================================================
-// D18 sugar: methods on the timer handle delegate to the free functions
-// ============================================================================
-
-impl InputKeyRepeatTimer {
-    pub fn new(options: &InputKeyRepeatOptions) -> Ref<InputKeyRepeatTimer> {
-        return create_input_key_repeat_timer(options);
-    }
-}
-
-/// Sugar for the shared key-repeat timer handle.
-pub trait InputKeyRepeatTimerMethods {
-    fn advance(&self, now_ms: f64);
-    fn start(&self, callback: InputRepeatCallback, now_ms: f64);
-    fn stop(&self);
-}
-
-impl InputKeyRepeatTimerMethods for Ref<InputKeyRepeatTimer> {
-    // flight-lint: allow(f64) D1: the injected clock is a millisecond duration
-    fn advance(&self, now_ms: f64) {
-        return advance_input_key_repeat_timer(self, now_ms);
-    }
-
-    // flight-lint: allow(f64) D1: the injected clock is a millisecond duration
-    fn start(&self, callback: InputRepeatCallback, now_ms: f64) {
-        return start_input_key_repeat_timer(self, callback, now_ms);
-    }
-
-    fn stop(&self) {
-        return stop_input_key_repeat_timer(self);
-    }
 }

@@ -1,4 +1,5 @@
 //! The numeric key-code table (TS `KeyCode` const object and value union).
+//! flight-compiler: const-group KeyCode KEY_CODE_
 
 /// `KeyCode.A` (TS value 0x61).
 pub const KEY_CODE_A: i32 = 0x61;

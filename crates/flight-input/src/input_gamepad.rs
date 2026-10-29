@@ -28,20 +28,6 @@ const STANDARD_AXIS_NAMES: [Option<GamepadAxisKind>; 4] = [
     Some(GamepadAxisKind::StickRightY),
 ];
 
-#[cfg(test)]
-mod sugar_tests {
-    use super::*;
-
-    #[test]
-    fn apply_dead_zone_method_matches_apply_gamepad_stick_dead_zone() {
-        let mut method_out = GamepadStickOutput { x: 0.0, y: 0.0 };
-        let mut free_out = GamepadStickOutput { x: 0.0, y: 0.0 };
-        method_out.apply_dead_zone(0.8, 0.1, 0.2);
-        apply_gamepad_stick_dead_zone(&mut free_out, 0.8, 0.1, 0.2);
-        assert_eq!(method_out, free_out);
-    }
-}
-
 /// Filters one gamepad axis through a simple dead zone (TS `applyGamepadAxisDeadZone`).
 pub fn apply_gamepad_axis_dead_zone(value: f32, dead_zone: f32) -> f32 {
     if dead_zone <= 0.0 {
@@ -98,14 +84,4 @@ pub fn get_gamepad_button_name(
         return None;
     }
     return STANDARD_BUTTON_NAMES[index as usize];
-}
-
-// ============================================================================
-// D18 sugar: the out record's method delegates to the free function
-// ============================================================================
-
-impl GamepadStickOutput {
-    pub fn apply_dead_zone(&mut self, x: f32, y: f32, dead_zone: f32) {
-        return apply_gamepad_stick_dead_zone(self, x, y, dead_zone);
-    }
 }
