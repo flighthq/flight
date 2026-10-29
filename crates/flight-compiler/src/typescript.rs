@@ -10213,7 +10213,11 @@ fn emit_method_call(
         "unwrap" if arguments.is_empty() && expression_contains_method(&call.receiver, "lock") => {
             Ok(format!("{receiver}.value"))
         }
-        "unwrap" if arguments.is_empty() => Ok(format!("{receiver}!")),
+        "unwrap" if arguments.is_empty() => Ok(if receiver.ends_with('!') {
+            receiver
+        } else {
+            format!("{receiver}!")
+        }),
         _ => Err(compile_error(format!(
             "unsupported Rust method call `.{method}()`; impl sugar is not a transpilation source"
         ))),

@@ -2481,9 +2481,10 @@ pub fn get_selection_count(state: &SelectionState) -> f64 {
             "const selectionStateStateStore = /* @__PURE__ */ new WeakMap<Readonly<SelectionStateRaw>, SelectionStateRuntime>();\n\nexport { selectionStateStateStore };\n"
         ));
         assert!(!output.contains("EntityRuntimeKey"));
-        assert!(output.contains(&format!("  let runtime = {access}!;\n")));
+        assert!(output.contains(&format!("  let runtime = {access};\n")));
         assert!(output.contains("  runtime.items.push(item);\n"));
-        assert!(output.contains(&format!("  return {access}!.count;\n")));
+        assert!(output.contains(&format!("  return {access}.count;\n")));
+        assert!(!output.contains("!!"));
         assert!(!output.contains("Ref"));
         assert!(!output.contains("state.state") && !output.contains("out.state"));
     }
