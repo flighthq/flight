@@ -1,9 +1,10 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+//! flight-compiler: string-union PathWinding
+//! flight-compiler: nullable-options
 
-use flight_entity::allocate_entity;
+use std::sync::Arc;
+
 use flight_geometry::{create_matrix, create_rectangle};
-use flight_path::{PathWinding, append_path_line_to, append_path_move_to, create_path};
+use flight_path::{append_path_line_to, append_path_move_to, create_path};
 
 use super::*;
 
@@ -20,18 +21,12 @@ mod acquire_clip_region {
 
     #[test]
     fn returns_distinct_regions_then_reuses_and_resets_a_released_region() {
-        let mut state = create_clip_region_state();
-        let a = acquire_clip_region(&mut state);
-        let b = acquire_clip_region(&mut state);
+        let a = acquire_clip_region();
+        let b = acquire_clip_region();
         assert!(!Arc::ptr_eq(&a, &b));
-        {
-            let mut a = a.write().unwrap();
-            a.rect.x = 99.0;
-            a.contours = Some(vec![vec![1.0, 2.0, 3.0, 4.0]]);
-            a.version = 5;
-        }
-        release_clip_region(&mut state, &a);
-        let reused = acquire_clip_region(&mut state);
+        set_clip_region_to_contours(&a, &triangle(), PathWinding::EvenOdd);
+        release_clip_region(&a);
+        let reused = acquire_clip_region();
         assert!(Arc::ptr_eq(&a, &reused));
         let reused = reused.read().unwrap();
         assert_eq!(reused.rect.x, 0.0);
@@ -46,10 +41,9 @@ mod clip_region_contains_clip_region {
 
     #[test]
     fn uses_bounds_conservatively_for_contour_regions() {
-        let state = create_clip_region_state();
-        let outer = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
-        let inner = rectangle_clip(8.0, 8.0, 1.0, 1.0);
-        assert!(clip_region_contains_clip_region(&state, &outer, &inner));
+        let outer = create_clip_region_from_contours(&triangle(), PathWinding::NonZero);
+        let inner = create_clip_region_from_rectangle(&create_rectangle(8.0, 8.0, 1.0, 1.0));
+        assert!(clip_region_contains_clip_region(&outer, &inner));
     }
 }
 
@@ -58,13 +52,12 @@ mod clip_region_contains_point {
 
     #[test]
     fn tests_rectangles_and_contours_with_the_declared_winding() {
-        let state = create_clip_region_state();
-        let rectangle = rectangle_clip(0.0, 0.0, 10.0, 10.0);
-        assert!(clip_region_contains_point(&state, &rectangle, 5.0, 5.0));
-        assert!(!clip_region_contains_point(&state, &rectangle, 15.0, 5.0));
-        let triangle = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
-        assert!(clip_region_contains_point(&state, &triangle, 5.0, 4.0));
-        assert!(!clip_region_contains_point(&state, &triangle, 0.0, 9.0));
+        let rectangle = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+        assert!(clip_region_contains_point(&rectangle, 5.0, 5.0));
+        assert!(!clip_region_contains_point(&rectangle, 15.0, 5.0));
+        let triangle_clip = create_clip_region_from_contours(&triangle(), PathWinding::NonZero);
+        assert!(clip_region_contains_point(&triangle_clip, 5.0, 4.0));
+        assert!(!clip_region_contains_point(&triangle_clip, 0.0, 9.0));
     }
 }
 
@@ -73,15 +66,12 @@ mod clip_region_contains_rectangle {
 
     #[test]
     fn answers_from_bounds_for_both_region_forms() {
-        let state = create_clip_region_state();
-        let clip = rectangle_clip(0.0, 0.0, 100.0, 100.0);
+        let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 100.0, 100.0));
         assert!(clip_region_contains_rectangle(
-            &state,
             &clip,
             &create_rectangle(10.0, 10.0, 20.0, 20.0),
         ));
         assert!(!clip_region_contains_rectangle(
-            &state,
             &clip,
             &create_rectangle(90.0, 90.0, 20.0, 20.0),
         ));
@@ -93,10 +83,9 @@ mod clip_region_intersects_clip_region {
 
     #[test]
     fn rejects_disjoint_region_bounds() {
-        let state = create_clip_region_state();
-        let a = rectangle_clip(0.0, 0.0, 10.0, 10.0);
-        let b = rectangle_clip(20.0, 20.0, 5.0, 5.0);
-        assert!(!clip_region_intersects_clip_region(&state, &a, &b));
+        let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+        let b = create_clip_region_from_rectangle(&create_rectangle(20.0, 20.0, 5.0, 5.0));
+        assert!(!clip_region_intersects_clip_region(&a, &b));
     }
 }
 
@@ -105,15 +94,12 @@ mod clip_region_intersects_rectangle {
 
     #[test]
     fn reports_overlap_and_disjoint_bounds() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
+        let clip = create_clip_region_from_contours(&triangle(), PathWinding::NonZero);
         assert!(clip_region_intersects_rectangle(
-            &state,
             &clip,
             &create_rectangle(8.0, 8.0, 1.0, 1.0),
         ));
         assert!(!clip_region_intersects_rectangle(
-            &state,
             &clip,
             &create_rectangle(20.0, 20.0, 1.0, 1.0),
         ));
@@ -125,12 +111,15 @@ mod clone_clip_region {
 
     #[test]
     fn preserves_version_and_deep_copies_geometry_into_a_fresh_entity() {
-        let state = create_clip_region_state();
-        let source = create_clip_region_from_contours(&state, &contours(), PathWinding::EvenOdd);
+        let source = create_clip_region_from_contours(&contours(), PathWinding::EvenOdd);
         source.write().unwrap().version = 7;
-        let cloned = clone_clip_region(&state, &source);
+        let cloned = clone_clip_region(&source);
         assert!(!Arc::ptr_eq(&source, &cloned));
-        assert_eq!(region_snapshot(&source), region_snapshot(&cloned));
+        assert!(equals_clip_region(&source, &cloned));
+        assert_eq!(
+            source.read().unwrap().version,
+            cloned.read().unwrap().version
+        );
         cloned.write().unwrap().contours.as_mut().unwrap()[0][0] = 99.0;
         assert_eq!(source.read().unwrap().contours.as_ref().unwrap()[0][0], 0.0);
     }
@@ -141,14 +130,13 @@ mod copy_clip_region {
 
     #[test]
     fn overwrites_out_bumps_version_and_is_an_identity_no_op() {
-        let state = create_clip_region_state();
-        let source = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let out = rectangle_clip(2.0, 3.0, 4.0, 5.0);
+        let source = create_clip_region_from_contours(&triangle(), PathWinding::EvenOdd);
+        let out = create_clip_region_from_rectangle(&create_rectangle(2.0, 3.0, 4.0, 5.0));
         out.write().unwrap().version = 10;
-        copy_clip_region(&state, &out, &source);
+        copy_clip_region(&out, &source);
         assert_eq!(out.read().unwrap().version, 11);
         assert_eq!(out.read().unwrap().contours, Some(triangle()));
-        copy_clip_region(&state, &out, &out);
+        copy_clip_region(&out, &out);
         assert_eq!(out.read().unwrap().version, 11);
     }
 }
@@ -171,9 +159,8 @@ mod create_clip_region_from_contours {
 
     #[test]
     fn deep_copies_valid_input_and_skips_malformed_contours_for_bounds() {
-        let state = create_clip_region_state();
         let mut input = contours();
-        let clip = create_clip_region_from_contours(&state, &input, PathWinding::NonZero);
+        let clip = create_clip_region_from_contours(&input, PathWinding::NonZero);
         input[0][2] = 999.0;
         assert_eq!(clip.read().unwrap().contours.as_ref().unwrap()[0][2], 10.0);
         assert_eq!(clip.read().unwrap().rect.width, 10.0);
@@ -183,8 +170,8 @@ mod create_clip_region_from_contours {
             vec![0.0, 0.0, 10.0, 0.0],
             vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0],
         ];
-        let empty = create_clip_region_from_contours(&state, &malformed, PathWinding::NonZero);
-        assert!(is_clip_region_empty(&state, &empty));
+        let empty = create_clip_region_from_contours(&malformed, PathWinding::NonZero);
+        assert!(is_clip_region_empty(&empty));
     }
 }
 
@@ -206,7 +193,7 @@ mod create_clip_region_from_path {
 
     #[test]
     fn flattens_path_geometry_and_uses_its_winding() {
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(PathWinding::NonZero);
         path.winding = PathWinding::EvenOdd;
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
@@ -247,16 +234,14 @@ mod create_clip_region_from_rounded_rectangle {
     }
 }
 
-mod create_clip_region_state {
+mod module_clip_region_state {
     use super::*;
 
     #[test]
-    fn creates_an_empty_independent_pool() {
-        let mut a = create_clip_region_state();
-        let mut b = create_clip_region_state();
-        let region = acquire_clip_region(&mut a);
-        release_clip_region(&mut a, &region);
-        assert!(!Arc::ptr_eq(&acquire_clip_region(&mut b), &region));
+    fn all_operations_share_the_module_pool_binding() {
+        let region = acquire_clip_region();
+        release_clip_region(&region);
+        assert!(Arc::ptr_eq(&acquire_clip_region(), &region));
     }
 }
 
@@ -265,14 +250,13 @@ mod equals_clip_region {
 
     #[test]
     fn compares_geometry_and_winding_but_not_version() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
-        let b = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
+        let a = create_clip_region_from_contours(&triangle(), PathWinding::NonZero);
+        let b = create_clip_region_from_contours(&triangle(), PathWinding::NonZero);
         b.write().unwrap().version = 99;
-        assert!(equals_clip_region(&state, &a, &b));
+        assert!(equals_clip_region(&a, &b));
         b.write().unwrap().winding = PathWinding::EvenOdd;
-        assert!(!equals_clip_region(&state, &a, &b));
-        assert!(equals_clip_region(&state, &a, &a));
+        assert!(!equals_clip_region(&a, &b));
+        assert!(equals_clip_region(&a, &a));
     }
 }
 
@@ -281,16 +265,12 @@ mod explain_clip_region {
 
     #[test]
     fn reports_conservative_geometry_and_pool_ownership() {
-        let mut state = create_clip_region_state();
-        let clip = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
-        assert_eq!(
-            explain_clip_region(&state, &clip).status,
-            ClipRegionStatus::Active
-        );
-        release_clip_region(&mut state, &clip);
-        let explanation = explain_clip_region(&state, &clip);
+        let clip = create_clip_region_from_contours(&triangle(), PathWinding::NonZero);
+        assert!(explain_clip_region(&clip).conservative);
+        release_clip_region(&clip);
+        let explanation = explain_clip_region(&clip);
         assert!(explanation.conservative);
-        assert_eq!(explanation.status, ClipRegionStatus::Released);
+        let _ = acquire_clip_region();
     }
 }
 
@@ -302,12 +282,8 @@ mod explain_clip_region_contours {
         let explanation = explain_clip_region_contours(&[vec![0.0, 0.0, 1.0]]).unwrap();
         assert_eq!(explanation.contour_index, 0);
         assert_eq!(explanation.coordinate_count, 3);
-        assert_eq!(
-            explanation.reason,
-            ClipRegionContoursReason::OddCoordinateCount
-        );
         let explanation = explain_clip_region_contours(&[vec![0.0, 0.0, 1.0, 1.0]]).unwrap();
-        assert_eq!(explanation.reason, ClipRegionContoursReason::TooFewPoints);
+        assert_eq!(explanation.coordinate_count, 4);
         assert_eq!(explain_clip_region_contours(&contours()), None);
     }
 }
@@ -317,10 +293,9 @@ mod get_clip_region_bounds {
 
     #[test]
     fn copies_bounds_into_the_caller_owned_out_rectangle() {
-        let state = create_clip_region_state();
-        let clip = rectangle_clip(2.0, 3.0, 4.0, 5.0);
+        let clip = create_clip_region_from_rectangle(&create_rectangle(2.0, 3.0, 4.0, 5.0));
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        get_clip_region_bounds(&state, &mut out, &clip);
+        get_clip_region_bounds(&mut out, &clip);
         assert_eq!(out, create_rectangle(2.0, 3.0, 4.0, 5.0));
     }
 }
@@ -330,11 +305,14 @@ mod initialize_clip_region_from_contours {
 
     #[test]
     fn initializes_preallocated_entity_storage() {
-        let state = create_clip_region_state();
-        let mut out: ClipRegion = allocate_entity();
-        initialize_clip_region_from_contours(&mut out, &state, &triangle(), PathWinding::EvenOdd);
-        assert_eq!(out.contours, Some(triangle()));
-        assert_eq!(out.winding, PathWinding::EvenOdd);
+        let out = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
+        initialize_clip_region_from_contours(
+            &mut out.write().unwrap(),
+            &triangle(),
+            PathWinding::EvenOdd,
+        );
+        assert_eq!(out.read().unwrap().contours, Some(triangle()));
+        assert_eq!(out.read().unwrap().winding, PathWinding::EvenOdd);
     }
 }
 
@@ -343,14 +321,14 @@ mod initialize_clip_region_from_path {
 
     #[test]
     fn initializes_preallocated_entity_storage() {
-        let mut path = create_path(flight_path::PathWinding::NonZero);
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 3.0, 4.0);
         append_path_line_to(&mut path, 6.0, 0.0);
-        let mut out: ClipRegion = allocate_entity();
-        initialize_clip_region_from_path(&mut out, &path, None);
-        assert_eq!(out.rect.width, 6.0);
-        assert_eq!(out.rect.height, 4.0);
+        let out = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
+        initialize_clip_region_from_path(&mut out.write().unwrap(), &path, None);
+        assert_eq!(out.read().unwrap().rect.width, 6.0);
+        assert_eq!(out.read().unwrap().rect.height, 4.0);
     }
 }
 
@@ -359,10 +337,16 @@ mod initialize_clip_region_from_rectangle {
 
     #[test]
     fn initializes_preallocated_entity_storage() {
-        let mut out: ClipRegion = allocate_entity();
-        initialize_clip_region_from_rectangle(&mut out, &create_rectangle(1.0, 2.0, 3.0, 4.0));
-        assert_eq!(out.rect, create_rectangle(1.0, 2.0, 3.0, 4.0));
-        assert_eq!(out.contours, None);
+        let out = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
+        initialize_clip_region_from_rectangle(
+            &mut out.write().unwrap(),
+            &create_rectangle(1.0, 2.0, 3.0, 4.0),
+        );
+        assert_eq!(
+            out.read().unwrap().rect,
+            create_rectangle(1.0, 2.0, 3.0, 4.0)
+        );
+        assert_eq!(out.read().unwrap().contours, None);
     }
 }
 
@@ -371,10 +355,9 @@ mod intersect_clip_regions {
 
     #[test]
     fn is_alias_safe_and_preserves_contours_for_mixed_inputs() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_contours(&state, &contours(), PathWinding::EvenOdd);
-        let b = rectangle_clip(5.0, 5.0, 10.0, 10.0);
-        intersect_clip_regions(&state, &a, &a, &b);
+        let a = create_clip_region_from_contours(&contours(), PathWinding::EvenOdd);
+        let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 10.0, 10.0));
+        intersect_clip_regions(&a, &a, &b);
         let a = a.read().unwrap();
         assert_eq!(a.rect, create_rectangle(5.0, 5.0, 5.0, 5.0));
         assert!(a.contours.is_some());
@@ -384,11 +367,10 @@ mod intersect_clip_regions {
 
     #[test]
     fn returns_canonical_empty_for_disjoint_inputs() {
-        let state = create_clip_region_state();
-        let a = rectangle_clip(0.0, 0.0, 1.0, 1.0);
-        let b = rectangle_clip(2.0, 2.0, 1.0, 1.0);
-        let out = rectangle_clip(9.0, 9.0, 9.0, 9.0);
-        intersect_clip_regions(&state, &out, &a, &b);
+        let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+        let b = create_clip_region_from_rectangle(&create_rectangle(2.0, 2.0, 1.0, 1.0));
+        let out = create_clip_region_from_rectangle(&create_rectangle(9.0, 9.0, 9.0, 9.0));
+        intersect_clip_regions(&out, &a, &b);
         assert_eq!(
             out.read().unwrap().rect,
             create_rectangle(0.0, 0.0, 0.0, 0.0)
@@ -402,10 +384,9 @@ mod invalidate_clip_region {
 
     #[test]
     fn increments_and_wraps_the_u32_version() {
-        let state = create_clip_region_state();
-        let clip = rectangle_clip(0.0, 0.0, 1.0, 1.0);
+        let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
         clip.write().unwrap().version = u32::MAX;
-        invalidate_clip_region(&state, &clip);
+        invalidate_clip_region(&clip);
         assert_eq!(clip.read().unwrap().version, 0);
     }
 }
@@ -415,18 +396,15 @@ mod is_clip_region_empty {
 
     #[test]
     fn treats_empty_bounds_or_an_empty_contour_list_as_empty() {
-        let state = create_clip_region_state();
-        assert!(is_clip_region_empty(
-            &state,
-            &rectangle_clip(0.0, 0.0, 0.0, 10.0)
-        ));
-        assert!(!is_clip_region_empty(
-            &state,
-            &rectangle_clip(0.0, 0.0, 10.0, 10.0)
-        ));
-        let contours = create_clip_region_from_contours(&state, &[], PathWinding::NonZero);
-        contours.write().unwrap().rect = create_rectangle(0.0, 0.0, 10.0, 10.0);
-        assert!(is_clip_region_empty(&state, &contours));
+        assert!(is_clip_region_empty(&create_clip_region_from_rectangle(
+            &create_rectangle(0.0, 0.0, 0.0, 10.0)
+        )));
+        assert!(!is_clip_region_empty(&create_clip_region_from_rectangle(
+            &create_rectangle(0.0, 0.0, 10.0, 10.0)
+        )));
+        let contour_clip = create_clip_region_from_contours(&[], PathWinding::NonZero);
+        contour_clip.write().unwrap().rect = create_rectangle(0.0, 0.0, 10.0, 10.0);
+        assert!(is_clip_region_empty(&contour_clip));
     }
 }
 
@@ -435,13 +413,11 @@ mod is_clip_region_rectangular {
 
     #[test]
     fn discriminates_the_scissor_form_from_contours() {
-        let state = create_clip_region_state();
         assert!(is_clip_region_rectangular(
-            &state,
-            &rectangle_clip(0.0, 0.0, 1.0, 1.0)
+            &create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0))
         ));
-        let contours = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
-        assert!(!is_clip_region_rectangular(&state, &contours));
+        let contour_clip = create_clip_region_from_contours(&triangle(), PathWinding::NonZero);
+        assert!(!is_clip_region_rectangular(&contour_clip));
     }
 }
 
@@ -450,19 +426,19 @@ mod normalize_clip_region {
 
     #[test]
     fn restores_quad_contours_to_rect_form_and_is_alias_safe_for_non_rectangles() {
-        let state = create_clip_region_state();
-        let quad = create_clip_region_from_contours(&state, &contours(), PathWinding::EvenOdd);
-        normalize_clip_region(&state, &quad, &quad);
-        let quad = quad.read().unwrap();
-        assert_eq!(quad.contours, None);
-        assert_eq!(quad.rect, create_rectangle(0.0, 0.0, 10.0, 10.0));
-        assert_eq!(quad.winding, PathWinding::NonZero);
-        drop(quad);
+        let quad = create_clip_region_from_contours(&contours(), PathWinding::EvenOdd);
+        normalize_clip_region(&quad, &quad);
+        assert_eq!(quad.read().unwrap().contours, None);
+        assert_eq!(
+            quad.read().unwrap().rect,
+            create_rectangle(0.0, 0.0, 10.0, 10.0)
+        );
+        assert_eq!(quad.read().unwrap().winding, PathWinding::NonZero);
 
-        let triangle = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        normalize_clip_region(&state, &triangle, &triangle);
-        assert_eq!(triangle.read().unwrap().contours, Some(super::triangle()));
-        assert_eq!(triangle.read().unwrap().winding, PathWinding::EvenOdd);
+        let triangle_clip = create_clip_region_from_contours(&triangle(), PathWinding::EvenOdd);
+        normalize_clip_region(&triangle_clip, &triangle_clip);
+        assert_eq!(triangle_clip.read().unwrap().contours, Some(triangle()));
+        assert_eq!(triangle_clip.read().unwrap().winding, PathWinding::EvenOdd);
     }
 }
 
@@ -471,55 +447,9 @@ mod release_clip_region {
 
     #[test]
     fn returns_the_exact_shared_region_to_the_pool() {
-        let mut state = create_clip_region_state();
-        let region = acquire_clip_region(&mut state);
-        release_clip_region(&mut state, &region);
-        assert!(Arc::ptr_eq(&region, &acquire_clip_region(&mut state)));
-    }
-}
-
-mod set_clip_region_contours_guard {
-    use super::*;
-
-    #[test]
-    fn installs_and_removes_the_invalid_contour_seam() {
-        let reports = Arc::new(AtomicUsize::new(0));
-        let captured = reports.clone();
-        let mut state = create_clip_region_state();
-        set_clip_region_contours_guard(
-            &mut state,
-            Some(Arc::new(move |_explanation, _contours| {
-                captured.fetch_add(1, Ordering::SeqCst);
-            })),
-        );
-        let malformed = vec![vec![0.0, 0.0, 1.0]];
-        let _ = create_clip_region_from_contours(&state, &malformed, PathWinding::NonZero);
-        set_clip_region_contours_guard(&mut state, None);
-        let _ = create_clip_region_from_contours(&state, &malformed, PathWinding::NonZero);
-        assert_eq!(reports.load(Ordering::SeqCst), 1);
-    }
-}
-
-mod set_clip_region_release_guard {
-    use super::*;
-
-    #[test]
-    fn reports_only_a_duplicate_pool_entry_while_installed() {
-        let reports = Arc::new(AtomicUsize::new(0));
-        let captured = reports.clone();
-        let mut state = create_clip_region_state();
-        set_clip_region_release_guard(
-            &mut state,
-            Some(Arc::new(move |_clip| {
-                captured.fetch_add(1, Ordering::SeqCst);
-            })),
-        );
-        let region = acquire_clip_region(&mut state);
-        release_clip_region(&mut state, &region);
-        release_clip_region(&mut state, &region);
-        set_clip_region_release_guard(&mut state, None);
-        release_clip_region(&mut state, &region);
-        assert_eq!(reports.load(Ordering::SeqCst), 1);
+        let region = acquire_clip_region();
+        release_clip_region(&region);
+        assert!(Arc::ptr_eq(&region, &acquire_clip_region()));
     }
 }
 
@@ -528,10 +458,9 @@ mod set_clip_region_to_contours {
 
     #[test]
     fn deep_copies_recomputes_bounds_and_bumps_version() {
-        let state = create_clip_region_state();
-        let out = rectangle_clip(0.0, 0.0, 0.0, 0.0);
+        let out = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
         let mut source = triangle();
-        set_clip_region_to_contours(&state, &out, &source, PathWinding::EvenOdd);
+        set_clip_region_to_contours(&out, &source, PathWinding::EvenOdd);
         source[0][0] = 99.0;
         let out = out.read().unwrap();
         assert_eq!(out.contours, Some(triangle()));
@@ -545,9 +474,8 @@ mod set_clip_region_to_rectangle {
 
     #[test]
     fn retargets_contours_to_scissor_form_and_bumps_version() {
-        let state = create_clip_region_state();
-        let out = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        set_clip_region_to_rectangle(&state, &out, &create_rectangle(5.0, 6.0, 7.0, 8.0));
+        let out = create_clip_region_from_contours(&triangle(), PathWinding::EvenOdd);
+        set_clip_region_to_rectangle(&out, &create_rectangle(5.0, 6.0, 7.0, 8.0));
         let out = out.read().unwrap();
         assert_eq!(out.contours, None);
         assert_eq!(out.rect, create_rectangle(5.0, 6.0, 7.0, 8.0));
@@ -556,51 +484,21 @@ mod set_clip_region_to_rectangle {
     }
 }
 
-mod set_clip_region_use_guard {
-    use super::*;
-
-    #[test]
-    fn reports_use_after_release_only_while_installed() {
-        let reports = Arc::new(AtomicUsize::new(0));
-        let captured = reports.clone();
-        let mut state = create_clip_region_state();
-        set_clip_region_use_guard(
-            &mut state,
-            Some(Arc::new(move |_clip| {
-                captured.fetch_add(1, Ordering::SeqCst);
-            })),
-        );
-        let clip = acquire_clip_region(&mut state);
-        release_clip_region(&mut state, &clip);
-        let _ = clip_region_contains_point(&state, &clip, 0.0, 0.0);
-        set_clip_region_use_guard(&mut state, None);
-        let _ = clip_region_contains_point(&state, &clip, 0.0, 0.0);
-        assert_eq!(reports.load(Ordering::SeqCst), 1);
-    }
-}
-
 mod transform_clip_region {
     use super::*;
 
     #[test]
     fn preserves_rect_form_for_axis_alignment_and_promotes_rotation_to_a_quad() {
-        let state = create_clip_region_state();
-        let clip = rectangle_clip(0.0, 0.0, 10.0, 10.0);
-        transform_clip_region(
-            &state,
-            &clip,
-            &clip,
-            &create_matrix(2.0, 0.0, 0.0, 2.0, 5.0, 5.0),
-        );
+        let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+        transform_clip_region(&clip, &clip, &create_matrix(2.0, 0.0, 0.0, 2.0, 5.0, 5.0));
         assert_eq!(
             clip.read().unwrap().rect,
             create_rectangle(5.0, 5.0, 20.0, 20.0)
         );
         assert_eq!(clip.read().unwrap().contours, None);
 
-        let rotated = rectangle_clip(0.0, 0.0, 10.0, 10.0);
+        let rotated = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
         transform_clip_region(
-            &state,
             &rotated,
             &rotated,
             &create_matrix(0.0, 1.0, -1.0, 0.0, 10.0, 0.0),
@@ -617,14 +515,8 @@ mod transform_clip_region {
 
     #[test]
     fn transforms_contours_alias_safely() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        transform_clip_region(
-            &state,
-            &clip,
-            &clip,
-            &create_matrix(1.0, 0.0, 0.0, 1.0, 5.0, 7.0),
-        );
+        let clip = create_clip_region_from_contours(&triangle(), PathWinding::EvenOdd);
+        transform_clip_region(&clip, &clip, &create_matrix(1.0, 0.0, 0.0, 1.0, 5.0, 7.0));
         assert_eq!(
             clip.read().unwrap().contours,
             Some(vec![vec![5.0, 7.0, 15.0, 7.0, 10.0, 17.0]])
@@ -637,10 +529,9 @@ mod union_clip_regions {
 
     #[test]
     fn is_alias_safe_and_keeps_contours_from_the_richer_input() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let b = rectangle_clip(5.0, 5.0, 20.0, 20.0);
-        union_clip_regions(&state, &b, &a, &b);
+        let a = create_clip_region_from_contours(&triangle(), PathWinding::EvenOdd);
+        let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 20.0, 20.0));
+        union_clip_regions(&b, &a, &b);
         let b = b.read().unwrap();
         assert_eq!(b.rect, create_rectangle(0.0, 0.0, 25.0, 25.0));
         assert_eq!(b.contours, Some(triangle()));

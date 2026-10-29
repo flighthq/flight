@@ -286,6 +286,9 @@ fn compile_vitest_with_contract_alias_sources_internal(
         .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
     let mut context = typescript::generation_context(&alias_program_refs, contract_source)?;
+    if program.nullable_options {
+        typescript::insert_nullable_options_context(&mut context);
+    }
     typescript::insert_vitest_local_crate_context(
         &mut context,
         contract_module,

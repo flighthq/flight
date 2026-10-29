@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use super::*;
 
 mod get_clip_region_contours_reason_string {

@@ -3372,6 +3372,10 @@ pub(crate) fn insert_string_union_context<'a>(
     context.extend(names.map(|name| format!("{STRING_UNION_MARKER}{name}")));
 }
 
+pub(crate) fn insert_nullable_options_context(context: &mut HashSet<String>) {
+    context.insert(NULLABLE_OPTIONS_MARKER.to_string());
+}
+
 pub(crate) fn insert_vitest_struct_context<'a>(
     context: &mut HashSet<String>,
     structures: impl Iterator<Item = &'a ItemStruct>,
@@ -7658,7 +7662,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
     };
     if !mutable
         && rust_type.is_none()
-        && expression_contains_string_union_variant(&initializer.expr, entities)
+        && expression_requires_string_union_const_assertion(&initializer.expr, entities)
     {
         value = format!("{value} as const");
     }
@@ -11769,6 +11773,42 @@ fn expression_contains_string_union_variant(expression: &Expr, context: &HashSet
     };
     finder.visit_expr(expression);
     return finder.found;
+}
+
+// A const assertion is useful for aggregate literals containing string-union variants because
+// TypeScript otherwise widens their elements or fields. It is invalid on a call expression, even
+// when one of the call's arguments lowers from a Rust enum variant to a string literal.
+fn expression_requires_string_union_const_assertion(
+    expression: &Expr,
+    context: &HashSet<String>,
+) -> bool {
+    let aggregate = match expression {
+        Expr::Array(_) | Expr::Repeat(_) | Expr::Struct(_) | Expr::Tuple(_) => expression,
+        Expr::Macro(macro_expression)
+            if macro_expression
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == "vec") =>
+        {
+            expression
+        }
+        Expr::Call(call) if call.args.len() == 1 && expression_is_path(&call.func, "Some") => {
+            return expression_requires_string_union_const_assertion(&call.args[0], context);
+        }
+        Expr::Group(group) => {
+            return expression_requires_string_union_const_assertion(&group.expr, context);
+        }
+        Expr::Paren(paren) => {
+            return expression_requires_string_union_const_assertion(&paren.expr, context);
+        }
+        Expr::Reference(reference) => {
+            return expression_requires_string_union_const_assertion(&reference.expr, context);
+        }
+        _ => return false,
+    };
+    return expression_contains_string_union_variant(aggregate, context);
 }
 
 fn expression_contains_path(block: &syn::Block, expected: &str) -> bool {

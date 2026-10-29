@@ -180,7 +180,7 @@ function compile(
       '--out',
       out,
       ...entityArguments(command),
-      ...compilerAliasArguments(command, aliasSources),
+      ...compilerAliasArguments(command, aliasSources, source),
       ...dependencyAliasArguments(dependencySources(command)),
       ...contractArguments(command, trailing),
     ],

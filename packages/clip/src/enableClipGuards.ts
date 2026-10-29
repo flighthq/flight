@@ -1,71 +1,43 @@
-import type { LogState } from '@flighthq/log/contract';
-import { logOnce } from '@flighthq/log/contract';
-import type { ClipRegion, ClipRegionContoursExplanation } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+// Generated from crates/flight-clip/src/enable_clip_guards.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
+import { logClipWarning } from './clipLog.ts';
 import { setClipRegionContoursGuard, setClipRegionReleaseGuard, setClipRegionUseGuard } from './clipRegion.ts';
+import { getClipRegionContoursReasonString } from './clipRegionStrings.ts';
+import type { LogState } from './types.ts';
 
-// Uninstalls the guard installed by enableClipGuards.
+const DOUBLE_RELEASE_MESSAGE =
+  'releaseClipRegion: this region is already in the pool, so it is being released twice. Two later acquireClipRegion calls will hand back the same object and the clips will alias each other. Every acquireClipRegion pairs with exactly one releaseClipRegion, and the region must not be used after release.' as const;
+
+const USE_AFTER_RELEASE_MESSAGE =
+  'A released ClipRegion was used while it was still in the pool. Do not retain or access a region after releaseClipRegion; acquire a new region before use.' as const;
+
 export function disableClipGuards(): void {
   setClipRegionContoursGuard(null);
   setClipRegionReleaseGuard(null);
   setClipRegionUseGuard(null);
 }
 
-// Installs the caller-facing clip guard (opt-in, dev-only). The pooled ClipRegion has one silent footgun:
-// releasing the same region twice puts it in the pool twice, so two later acquires hand back the SAME
-// object and two unrelated clips alias each other. Nothing throws — the symptom is a clip that is subtly
-// wrong somewhere else entirely, which is why a comment saying "every acquire must have a matching
-// release" was not enough. The guard warns once through @flighthq/log. Not importing this module costs
-// production nothing: the message text and the @flighthq/log dependency live only here, and the O(pool)
-// membership scan that detects the double release runs only while this guard is installed. Idempotent.
-export function enableClipGuards(logState: LogState, clock: () => number): void {
-  setClipRegionContoursGuard((explanation) => warnOnInvalidContours(logState, clock, explanation));
-  setClipRegionReleaseGuard((clip) => warnOnDoubleRelease(logState, clock, clip));
-  setClipRegionUseGuard((clip) => warnOnUseAfterRelease(logState, clock, clip));
-}
-
-function warnOnInvalidContours(
-  logState: LogState,
-  clock: () => number,
-  explanation: Readonly<ClipRegionContoursExplanation>,
-): void {
-  logOnce(
-    logState,
-    clock(),
-    `clip:invalid-contour:${explanation.reason}`,
-    LogLevel.Warn,
-    {
-      message: `createClipRegionFromContours: contour ${explanation.contourIndex} has ${explanation.coordinateCount} coordinates (${explanation.reason}). Contours require at least three complete x/y pairs.`,
-    },
-    'clip',
-  );
-}
-
-function warnOnDoubleRelease(logState: LogState, clock: () => number, _clip: Readonly<ClipRegion>): void {
-  logOnce(
-    logState,
-    clock(),
-    'clip:double-release',
-    LogLevel.Warn,
-    {
-      message:
-        'releaseClipRegion: this region is already in the pool, so it is being released twice. Two later acquireClipRegion calls will hand back the same object and the clips will alias each other. Every acquireClipRegion pairs with exactly one releaseClipRegion, and the region must not be used after release.',
-    },
-    'clip',
-  );
-}
-
-function warnOnUseAfterRelease(logState: LogState, clock: () => number, _clip: Readonly<ClipRegion>): void {
-  logOnce(
-    logState,
-    clock(),
-    'clip:use-after-release',
-    LogLevel.Warn,
-    {
-      message:
-        'A released ClipRegion was used while it was still in the pool. Do not retain or access a region after releaseClipRegion; acquire a new region before use.',
-    },
-    'clip',
-  );
+/**
+ * Installs the opt-in lifecycle diagnostics. The clock capability is captured now but sampled only
+ * if an invalid contour, double release, or use-after-release is actually observed.
+ */
+export function enableClipGuards(logState: Readonly<LogState>, clock: () => number): void {
+  const contourLog = logState;
+  const contourClock = clock;
+  setClipRegionContoursGuard((explanation, _unused0) => {
+    const reason = getClipRegionContoursReasonString(explanation.reason);
+    const key = `clip:invalid-contour:${reason}`;
+    const message = `createClipRegionFromContours: contour ${explanation.contourIndex} has ${explanation.coordinateCount} coordinates (${reason}). Contours require at least three complete x/y pairs.`;
+    logClipWarning(contourLog, contourClock(), key, message);
+  });
+  const releaseLog = logState;
+  const releaseClock = clock;
+  setClipRegionReleaseGuard((_unused0) => {
+    logClipWarning(releaseLog, releaseClock(), 'clip:double-release', DOUBLE_RELEASE_MESSAGE);
+  });
+  const useLog = logState;
+  setClipRegionUseGuard((_unused0) => {
+    logClipWarning(useLog, clock(), 'clip:use-after-release', USE_AFTER_RELEASE_MESSAGE);
+  });
 }

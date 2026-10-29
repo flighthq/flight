@@ -31,9 +31,11 @@ export interface RustPublicUse {
   wildcard: boolean;
 }
 
-export function compilerAliasArguments(command: string, aliasSources: readonly string[]): string[] {
+export function compilerAliasArguments(command: string, aliasSources: readonly string[], source?: string): string[] {
   if (command !== 'generate' && command !== 'generate-tests') return [];
-  return aliasSources.flatMap((source) => ['--alias-source', source]);
+  return aliasSources
+    .filter((aliasSource) => aliasSource !== source)
+    .flatMap((aliasSource) => ['--alias-source', aliasSource]);
 }
 
 // `flight-*` crates a Cargo manifest depends on: `[dependencies]`, plus `[dev-dependencies]` when the

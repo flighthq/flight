@@ -1,3 +1,5 @@
+//! flight-compiler: export-name contains_rectangle_point_xy containsRectanglePointXY
+
 use crate::Vector2;
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 

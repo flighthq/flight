@@ -5669,6 +5669,29 @@ mod compile_vitest {
     use super::*;
 
     #[test]
+    fn honors_nullable_options_in_portable_tests() {
+        let source = r#"
+//! flight-compiler: nullable-options
+
+use flight_example::*;
+
+mod optional_value {
+    use super::*;
+
+    #[test]
+    fn preserves_the_packages_null_representation() {
+        assert_eq!(optional_value(), None);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(output.contains("expect(optionalValue()).toEqual(null);"));
+        assert!(!output.contains("toEqual(undefined)"));
+    }
+
+    #[test]
     fn emits_free_function_contract_tests_and_helpers() {
         let source = r#"
 use flight_geometry::*;
@@ -9269,6 +9292,42 @@ mod ease_steps {
         assert!(!output.contains("  StepPosition,"));
         assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn does_not_const_assert_calls_with_string_union_arguments() {
+        let production = r#"
+//! flight-compiler: string-union Mode
+
+pub enum Mode {
+    Fast,
+    Slow,
+}
+
+pub fn select(mode: Mode) -> i32 {
+    return if mode == Mode::Fast { 1 } else { 2 };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod select {
+    use super::*;
+
+    #[test]
+    fn accepts_a_string_union_argument() {
+        let selected = select(Mode::Fast);
+        assert_eq!(selected, 1);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("const selected = select(\"fast\");"));
+        assert!(!output.contains("select(\"fast\") as const"));
     }
 
     #[test]

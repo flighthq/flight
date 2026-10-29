@@ -162,6 +162,10 @@ describe('renderPublicExports', () => {
     expect(compilerAliasArguments('generate', ['ease_steps.rs'])).toEqual(['--alias-source', 'ease_steps.rs']);
     expect(compilerAliasArguments('generate-tests', ['ease_steps.rs'])).toEqual(['--alias-source', 'ease_steps.rs']);
     expect(compilerAliasArguments('source-mode', ['ease_steps.rs'])).toEqual([]);
+    expect(compilerAliasArguments('generate', ['ease.rs', 'ease_steps.rs'], 'ease.rs')).toEqual([
+      '--alias-source',
+      'ease_steps.rs',
+    ]);
   });
 
   it('discovers cross-module generated type references without matching comments', () => {

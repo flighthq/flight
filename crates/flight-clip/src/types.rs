@@ -1,8 +1,20 @@
+//! flight-compiler: target-native
+//! flight-compiler: string-union ClipRegionStatus=exact
+//! flight-compiler: string-union-value ClipRegionStatus Active "active"
+//! flight-compiler: string-union-value ClipRegionStatus Released "released"
+//! flight-compiler: string-union ClipRegionContoursReason=exact
+//! flight-compiler: string-union-value ClipRegionContoursReason OddCoordinateCount "odd-coordinate-count"
+//! flight-compiler: string-union-value ClipRegionContoursReason TooFewPoints "too-few-points"
+//!
+//! Public TypeScript Clip types retain their established owner in `@flighthq/types`.
+
 use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_geometry::{Rectangle, create_rectangle};
-use flight_path::PathWinding;
+pub use flight_path::PathWinding;
+
+pub type LogState = flight_log::LogStateRef;
 
 // flight-lint: allow(f64) clip contours preserve the source Path.data coordinates and flattened path precision
 #[derive(Debug)]
@@ -47,14 +59,6 @@ pub type ClipRegionReleaseGuard = Arc<dyn Fn(&Ref<ClipRegion>) + Send + Sync>;
 
 pub type ClipRegionUseGuard = Arc<dyn Fn(&Ref<ClipRegion>) + Send + Sync>;
 
-/// Caller-owned replacement for the source package's pool and three module-global guard slots.
-pub struct ClipRegionState {
-    pub(crate) pool: Vec<Ref<ClipRegion>>,
-    pub(crate) contours_guard: Option<ClipRegionContoursGuard>,
-    pub(crate) release_guard: Option<ClipRegionReleaseGuard>,
-    pub(crate) use_guard: Option<ClipRegionUseGuard>,
-}
-
 impl Default for ClipRegion {
     fn default() -> Self {
         return ClipRegion {
@@ -63,17 +67,6 @@ impl Default for ClipRegion {
             contours: None,
             winding: PathWinding::NonZero,
             version: 0,
-        };
-    }
-}
-
-impl Default for ClipRegionState {
-    fn default() -> Self {
-        return ClipRegionState {
-            pool: Vec::new(),
-            contours_guard: None,
-            release_guard: None,
-            use_guard: None,
         };
     }
 }

@@ -59,6 +59,7 @@ pub(crate) struct StringUnionMetadata {
 pub(crate) struct TestProgram {
     pub(crate) constants: Vec<ItemConst>,
     pub(crate) helpers: Vec<ItemFn>,
+    pub(crate) nullable_options: bool,
     pub(crate) standard_constants: HashSet<String>,
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) suites: Vec<TestSuite>,
@@ -1351,6 +1352,7 @@ pub(crate) fn directive_names(source: &str, directive: &str) -> HashSet<String> 
 pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust test source: {error}")))?;
+    let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
     let mut constants = Vec::new();
     let mut helpers = Vec::new();
     let mut standard_constants = HashSet::new();
@@ -1423,6 +1425,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
     return Ok(TestProgram {
         constants,
         helpers,
+        nullable_options,
         standard_constants,
         structs,
         suites,
