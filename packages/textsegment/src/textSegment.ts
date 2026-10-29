@@ -11,9 +11,8 @@ export function segmentGraphemes(
   locale?: string,
 ): void {
   out.length = 0;
-  const segments: TextSegment[] = hostTextSegmenter.segment(text, TextSegmentGranularity.Grapheme, locale);
-  for (let index = 0, count = segments.length; index < count; index++) {
-    out.push(segments[index]);
+  for (const segment of hostTextSegmenter.segment(text, TextSegmentGranularity.Grapheme, locale)) {
+    out.push(segment);
   }
   return;
 }
@@ -25,9 +24,8 @@ export function segmentSentences(
   locale?: string,
 ): void {
   out.length = 0;
-  const segments: TextSegment[] = hostTextSegmenter.segment(text, TextSegmentGranularity.Sentence, locale);
-  for (let index = 0, count = segments.length; index < count; index++) {
-    out.push(segments[index]);
+  for (const segment of hostTextSegmenter.segment(text, TextSegmentGranularity.Sentence, locale)) {
+    out.push(segment);
   }
   return;
 }
@@ -39,9 +37,8 @@ export function segmentWords(
   locale?: string,
 ): void {
   out.length = 0;
-  const segments: TextSegment[] = hostTextSegmenter.segment(text, TextSegmentGranularity.Word, locale);
-  for (let index = 0, count = segments.length; index < count; index++) {
-    out.push(segments[index]);
+  for (const segment of hostTextSegmenter.segment(text, TextSegmentGranularity.Word, locale)) {
+    out.push(segment);
   }
   return;
 }

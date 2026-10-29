@@ -1,3 +1,5 @@
+import type { Host } from '@flighthq/types/contract';
+
 import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment.ts';
 import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
 import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from './types.ts';
@@ -5,6 +7,20 @@ import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity }
 const backend = webTextSegmenterBackend;
 
 describe('segmentGraphemes', () => {
+  it('accepts the text segmenter capability exposed by Host', () => {
+    const readonlySegments: readonly TextSegment[] = [{ start: 0, end: 5, text: 'hello' }];
+    const hostTextSegment: Host['textSegment'] = {
+      segmenter: { segment: () => readonlySegments },
+    };
+    const hostCapability = hostTextSegment.segmenter;
+    if (hostCapability === undefined) throw new Error('fixture must provide Host.textSegment.segmenter');
+    const segments: TextSegment[] = [];
+
+    segmentGraphemes(segments, hostCapability, 'hello');
+
+    expect(segments).toEqual(readonlySegments);
+  });
+
   it('isolates callers that interleave different explicit hosts', () => {
     const first = taggingBackend('first');
     const second = taggingBackend('second');
