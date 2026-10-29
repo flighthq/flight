@@ -4,10 +4,11 @@ use std::sync::{Arc, RwLock};
 
 use flight_geometry::create_rectangle;
 use flight_node::NodeRef;
+use flight_textformat::create_text_format_range;
 use flight_textformat::{TextFormat, TextFormatRange};
 use flight_textlayout::{
-    TextAutoSize, TextVerticalAlign, create_rich_text_content, create_text_format_range,
-    create_text_layout_result, create_text_metrics,
+    TextAutoSize, TextVerticalAlign, create_rich_text_content, create_text_layout_result,
+    create_text_metrics,
 };
 use flight_textshaper::TextMeasureFunction;
 

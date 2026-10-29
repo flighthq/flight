@@ -12,10 +12,11 @@ use flight_input::{
 use flight_node::{NodeRef, invalidate_node_appearance, invalidate_node_local_content};
 use flight_text::contract::{set_rich_text_scroll_h, set_rich_text_scroll_v};
 use flight_text::{RichText, TextInputHistoryEntry, TextInputState};
+use flight_textformat::create_text_format_range;
 use flight_textformat::{TextFormat, TextFormatRange};
 use flight_textlayout::{
     TEXT_BOUNDS_GUTTER, TextLayoutGroup, TextLayoutResult, TextSelectionRectangle,
-    create_text_format_range, get_rich_text_selection_rectangles,
+    get_rich_text_selection_rectangles,
 };
 use flight_textsegment::{
     TextSegment, WEB_TEXT_SEGMENTER_BACKEND, get_next_grapheme_boundary,

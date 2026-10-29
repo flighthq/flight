@@ -13,10 +13,5 @@ pub use crate::text_metrics::*;
 pub use crate::type_strings::*;
 pub use crate::types::*;
 
-pub use flight_textformat::contract::initialize_text_format_range;
-pub use flight_textformat::{
-    TextFormat, TextFormatAlign, TextFormatListMarker, TextFormatRange, create_text_format_range,
-};
-pub use flight_textshaper::{
-    HostTextShaperCapability, TextDirection, TextMeasureFunction, measure_text,
-};
+pub use flight_textformat::{TextFormat, TextFormatAlign, TextFormatListMarker, TextFormatRange};
+pub use flight_textshaper::{HostTextShaperCapability, TextDirection, TextMeasureFunction};

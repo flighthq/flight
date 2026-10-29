@@ -7,10 +7,10 @@ use flight_geometry::create_rectangle;
 use flight_node::{Node, get_node_local_bounds_revision, get_node_local_content_revision};
 use flight_scene2d::get_node2d_runtime;
 use flight_signals::connect_signal;
+use flight_textformat::create_text_format_range;
 use flight_textformat::{TextFormat, TextFormatRange};
 use flight_textlayout::{
     RichTextContent, TextAutoSize, TextVerticalAlign, create_rich_text_content,
-    create_text_format_range,
 };
 
 use super::*;

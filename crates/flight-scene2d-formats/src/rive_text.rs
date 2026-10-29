@@ -9,8 +9,8 @@ use flight_importdiagnostics::{
 use flight_node::Node;
 use flight_scene2d::Node2DRef;
 use flight_text::{RichText, create_rich_text};
+use flight_textformat::create_text_format_range;
 use flight_textformat::{FontVariation, TextFormat, TextFormatAlign};
-use flight_textlayout::create_text_format_range;
 
 use crate::rive_core_types::is_rive_core_type_derived_from;
 use crate::rive_import_registry::{

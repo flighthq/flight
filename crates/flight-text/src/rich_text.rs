@@ -22,12 +22,12 @@ use flight_geometry::Rectangle;
 use flight_node::{Node, NodeRef, invalidate_node_local_bounds, invalidate_node_local_content};
 use flight_scene2d::{Node2DRuntime, Node2DRuntimeMethods, create_node2d, create_node2d_runtime};
 use flight_signals::{create_signal, emit_signal};
+use flight_textformat::create_text_format_range;
 use flight_textformat::{TextFormat, TextFormatRange, merge_text_format};
 use flight_textlayout::{
     RichTextContent, TextAutoSize, TextBoundsSpec, TextLayoutParams, TextLayoutResult,
     TextLineMetrics, TextVerticalAlign, compute_rich_text_char_index_at_point,
-    compute_rich_text_line_metrics, compute_text_bounds_rectangle, create_text_format_range,
-    get_rich_text_link_at_point,
+    compute_rich_text_line_metrics, compute_text_bounds_rectangle, get_rich_text_link_at_point,
 };
 use flight_textshaper::TextMeasureFunction;
 

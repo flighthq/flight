@@ -12,9 +12,10 @@ use flight_geometry::Rectangle;
 use flight_node::{Node, NodeRef, invalidate_node_local_bounds, invalidate_node_local_content};
 use flight_scene2d::{Node2DRuntime, Node2DRuntimeMethods, create_node2d, create_node2d_runtime};
 use flight_textformat::TextFormat;
+use flight_textformat::create_text_format_range;
 use flight_textlayout::{
     TextAutoSize, TextBoundsSpec, TextLayoutParams, TextVerticalAlign,
-    compute_text_bounds_rectangle, create_text_format_range,
+    compute_text_bounds_rectangle,
 };
 use flight_textshaper::TextMeasureFunction;
 

@@ -3,6 +3,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_geometry::create_rectangle;
+use flight_textformat::create_text_format_range;
 
 use super::*;
 use crate::contract::*;

@@ -1,8 +1,9 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
+use flight_textformat::create_text_format_range;
 use flight_textformat::{TextFormat, TextFormatRange, merge_text_format};
-use flight_textlayout::{RichTextContent, create_rich_text_content, create_text_format_range};
+use flight_textlayout::{RichTextContent, create_rich_text_content};
 
 use crate::types::{RichTextData, RichTextRuntime};
 

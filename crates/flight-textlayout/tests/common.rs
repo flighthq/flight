@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
+use flight_textformat::create_text_format_range;
 use flight_textformat::{TextFormat, TextFormatRange};
 use flight_textlayout::contract::*;
 use flight_textshaper::TextMeasureFunction;

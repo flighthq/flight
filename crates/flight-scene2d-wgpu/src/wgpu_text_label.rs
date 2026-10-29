@@ -20,9 +20,9 @@ use flight_surface::CanvasSurface;
 use flight_text::contract::{
     TextLabel, compute_text_format_font_string, get_text_label_runtime, get_text_layout_result,
 };
+use flight_textformat::create_text_format_range;
 use flight_textlayout::contract::{
     TextAutoSize, TextLayoutParams, TextVerticalAlign, compute_text_layout,
-    create_text_format_range,
 };
 
 use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, invalidate_wgpu_surface_image};

@@ -10,7 +10,8 @@ use flight_importdiagnostics::{
 use flight_scene2d::contract::Node2DRef;
 use flight_text::contract::{create_rich_text, create_text_label};
 use flight_textformat::contract::{TextFormat, TextFormatAlign, TextFormatRange};
-use flight_textlayout::contract::{TextAutoSize, create_text_format_range};
+use flight_textformat::create_text_format_range;
+use flight_textlayout::contract::TextAutoSize;
 use flight_xml::contract::{XmlContent, XmlElement};
 
 use crate::svg_color::resolve_svg_color;
