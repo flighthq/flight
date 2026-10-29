@@ -19,6 +19,17 @@ interface ResolvedExports {
   values: string[];
 }
 
+export interface ExternalContract {
+  exportNames: ReadonlyMap<string, string>;
+  module: string;
+  symbols: ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>;
+}
+
+export interface ResolvedExternalContractExports {
+  output: string;
+  symbols: Map<string, ExportSymbolOwner>;
+}
+
 // A Rust source of another package and that package's contract module.
 export interface DependencySource {
   module: string;
@@ -96,6 +107,87 @@ export function collectExportSymbols(modules: readonly ExportModule[]): Map<stri
     }
   }
   return symbols;
+}
+
+// Export declarations from one TypeScript module. Star exports are resolved by the package generator,
+// which owns filesystem traversal; named re-exports are classified here so a Rust dependency re-export
+// keeps type-only names type-only under verbatim module syntax.
+export function collectTypeScriptExportSymbols(typescript: string): Map<string, Omit<ExportSymbolOwner, 'fileName'>> {
+  const symbols = new Map<string, Omit<ExportSymbolOwner, 'fileName'>>();
+
+  function add(name: string, hasType: boolean, hasValue: boolean, isClass = false): void {
+    const owner = symbols.get(name) ?? { hasType: false, hasValue: false, isClass: false };
+    owner.hasType ||= hasType;
+    owner.hasValue ||= hasValue;
+    owner.isClass ||= isClass;
+    symbols.set(name, owner);
+  }
+
+  for (const match of typescript.matchAll(/^export (class|function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm)) {
+    const kind = match[1];
+    add(
+      match[2],
+      kind === 'class' || kind === 'enum' || kind === 'interface' || kind === 'type',
+      kind === 'class' || kind === 'const' || kind === 'enum' || kind === 'function',
+      kind === 'class',
+    );
+  }
+
+  for (const match of typescript.matchAll(/^export\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"][^'"]+['"];?/gm)) {
+    const groupTypeOnly = match[1] !== undefined;
+    for (const item of match[2].split(',')) {
+      const declaration = item.trim();
+      if (declaration.length === 0) continue;
+      const itemTypeOnly = groupTypeOnly || declaration.startsWith('type ');
+      const fields = declaration.replace(/^type\s+/, '').split(/\s+as\s+/);
+      const name = fields.at(-1)?.trim();
+      if (name && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) add(name, itemTypeOnly, !itemTypeOnly);
+    }
+  }
+
+  return symbols;
+}
+
+export function resolveExternalContractExports(
+  uses: readonly RustPublicUse[],
+  contracts: ReadonlyMap<string, ExternalContract>,
+): ResolvedExternalContractExports {
+  const resolved = new Map<string, ResolvedExports>();
+  const symbols = new Map<string, ExportSymbolOwner>();
+
+  for (const rustUse of uses.filter((candidate) => candidate.moduleName.startsWith('flight_'))) {
+    const contract = contracts.get(rustUse.moduleName);
+    if (!contract)
+      throw new Error(`external Rust contract ${rustUse.moduleName} has no TypeScript dependency contract`);
+    const names = rustUse.wildcard
+      ? [...contract.symbols.keys()]
+      : [resolveRustExportName(rustUse.name ?? '', dependencyOwners(contract), contract.exportNames)];
+    const entry = resolved.get(contract.module) ?? { types: [], values: [] };
+    for (const name of names) {
+      const owner = contract.symbols.get(name);
+      if (!owner) throw new Error(`external contract export ${name} is not exported by ${contract.module}`);
+      const previous = symbols.get(name);
+      if (previous && (previous.hasType !== owner.hasType || previous.hasValue !== owner.hasValue)) {
+        throw new Error(`external contract export ${name} has conflicting declarations`);
+      }
+      symbols.set(name, { ...owner, fileName: 'contract.ts' });
+      (owner.hasValue ? entry.values : entry.types).push(name);
+    }
+    resolved.set(contract.module, entry);
+  }
+
+  let output = '';
+  for (const [module, exports] of [...resolved].sort(([left], [right]) => left.localeCompare(right))) {
+    const values = [...new Set(exports.values)].sort();
+    const types = [...new Set(exports.types)].sort();
+    if (values.length > 0) output += `export { ${values.join(', ')} } from '${module}';\n`;
+    if (types.length > 0) output += `export type { ${types.join(', ')} } from '${module}';\n`;
+  }
+  return { output, symbols };
+}
+
+function dependencyOwners(contract: ExternalContract): Map<string, ExportSymbolOwner> {
+  return new Map([...contract.symbols].map(([name, owner]) => [name, { ...owner, fileName: contract.module }]));
 }
 
 export function renderCompanionContractExports(

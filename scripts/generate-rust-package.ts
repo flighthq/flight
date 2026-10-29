@@ -8,6 +8,7 @@ import {
   collectCompanionFileNames,
   compilerAliasArguments,
   compilerVisibilityArguments,
+  collectTypeScriptExportSymbols,
   collectExportSymbols,
   collectFlightDependencyCrates,
   collectRustExportNames,
@@ -18,6 +19,7 @@ import {
   hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
   renderCompanionContractExports,
+  resolveExternalContractExports,
   renderGeneratedImports,
   dependencyAliasArguments,
   mergeRustExportNames,
@@ -93,6 +95,9 @@ try {
   const companions = loadCompanions(modules);
   const symbolModules = [...modules, ...companions];
   const symbols = collectExportSymbols(symbolModules);
+  const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
+  const externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
+  const publicSymbols = new Map([...symbols, ...externalExports.symbols]);
   const generatedFiles: string[] = [];
 
   for (const module of modules) {
@@ -137,12 +142,12 @@ try {
 
   writeGenerated(
     join(stagingSourceRoot, 'contract.ts'),
-    contractExports(crateRoot, modules, symbolModules, symbols),
+    contractExports(crateRoot, modules, symbolModules, symbols) + externalExports.output,
     join(crateRoot, 'src', 'lib.rs'),
   );
   writeGenerated(
     join(stagingSourceRoot, 'index.ts'),
-    publicExports(crateRoot, modules, symbolModules, symbols),
+    publicExports(crateRoot, modules, symbolModules, publicSymbols),
     join(crateRoot, 'src', 'lib.rs'),
   );
   generatedFiles.push('contract.ts', 'index.ts');
@@ -366,6 +371,72 @@ function loadCompanions(modules: PackageModule[]): PackageModule[] {
     }
   }
   return companions;
+}
+
+function loadExternalContracts(contractUses: readonly ReturnType<typeof collectRustPublicUses>[number][]) {
+  const contracts = new Map<
+    string,
+    {
+      exportNames: Map<string, string>;
+      module: string;
+      symbols: Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }>;
+    }
+  >();
+  for (const rustModule of [...new Set(contractUses.map((rustUse) => rustUse.moduleName))]
+    .filter((name) => name.startsWith('flight_'))
+    .sort()) {
+    const crateName = rustModule.replaceAll('_', '-');
+    const packageName = crateName.slice('flight-'.length);
+    const contractPath = join(repositoryRoot, 'packages', packageName, 'src', 'contract.ts');
+    if (!existsSync(contractPath)) {
+      throw new Error(`${relative(repositoryRoot, contractPath)} is required by external Rust contract ${rustModule}`);
+    }
+    const sourceRoot = join(repositoryRoot, 'crates', crateName, 'src');
+    const exportNames = existsSync(sourceRoot)
+      ? mergeRustExportNames(
+          new Map(
+            readdirSync(sourceRoot)
+              .filter((fileName) => fileName.endsWith('.rs'))
+              .sort()
+              .map((fileName) => [fileName, collectRustExportNames(readFileSync(join(sourceRoot, fileName), 'utf8'))]),
+          ),
+        )
+      : new Map<string, string>();
+    contracts.set(rustModule, {
+      exportNames,
+      module: `@flighthq/${packageName}/contract`,
+      symbols: collectContractTypeScriptSymbols(contractPath),
+    });
+  }
+  return contracts;
+}
+
+function collectContractTypeScriptSymbols(
+  path: string,
+): Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }> {
+  const symbols = new Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }>();
+  const visited = new Set<string>();
+
+  function visit(currentPath: string): void {
+    if (visited.has(currentPath)) return;
+    visited.add(currentPath);
+    const typescript = readFileSync(currentPath, 'utf8');
+    for (const [name, owner] of collectTypeScriptExportSymbols(typescript)) {
+      const existing = symbols.get(name) ?? { hasType: false, hasValue: false, isClass: false };
+      existing.hasType ||= owner.hasType;
+      existing.hasValue ||= owner.hasValue;
+      existing.isClass ||= owner.isClass;
+      symbols.set(name, existing);
+    }
+    for (const match of typescript.matchAll(/^export\s+\*\s+from\s+['"](\.[^'"]+)['"];?/gm)) {
+      const specifier = match[1];
+      const resolved = resolve(dirname(currentPath), specifier);
+      visit(existsSync(resolved) ? resolved : `${resolved}.ts`);
+    }
+  }
+
+  visit(path);
+  return symbols;
 }
 
 function formatterPath(): string {

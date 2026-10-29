@@ -13,6 +13,7 @@ import {
   collectRustExportNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
+  collectTypeScriptExportSymbols,
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
   hasRustConstGroup,
@@ -22,8 +23,59 @@ import {
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
+  resolveExternalContractExports,
   resolveRustExportName,
 } from './generate-rust-package-exports.ts';
+
+describe('dependency contract exports', () => {
+  it('classifies direct declarations and named re-exports', () => {
+    expect([
+      ...collectTypeScriptExportSymbols(`export interface WidgetRaw {}
+export class Widget {}
+export function createWidget(): WidgetRaw { return {}; }
+export type { Format, Source as Renamed } from '@flighthq/types/contract';
+export { RuntimeValue, type RuntimeType } from './runtime.ts';
+`),
+    ]).toEqual([
+      ['WidgetRaw', { hasType: true, hasValue: false, isClass: false }],
+      ['Widget', { hasType: true, hasValue: true, isClass: true }],
+      ['createWidget', { hasType: false, hasValue: true, isClass: false }],
+      ['Format', { hasType: true, hasValue: false, isClass: false }],
+      ['Renamed', { hasType: true, hasValue: false, isClass: false }],
+      ['RuntimeValue', { hasType: false, hasValue: true, isClass: false }],
+      ['RuntimeType', { hasType: true, hasValue: false, isClass: false }],
+    ]);
+  });
+
+  it('renders dependency-owned Rust uses from the dependency contract', () => {
+    const uses = collectRustPublicUses(`pub use flight_widget::{Widget, WidgetConfig, create_widget};`);
+    const contracts = new Map([
+      [
+        'flight_widget',
+        {
+          exportNames: new Map<string, string>(),
+          module: '@flighthq/widget/contract',
+          symbols: new Map([
+            ['Widget', { hasType: true, hasValue: true, isClass: true }],
+            ['WidgetConfig', { hasType: true, hasValue: false, isClass: false }],
+            ['createWidget', { hasType: false, hasValue: true, isClass: false }],
+          ]),
+        },
+      ],
+    ]);
+
+    expect(resolveExternalContractExports(uses, contracts)).toEqual({
+      output:
+        "export { Widget, createWidget } from '@flighthq/widget/contract';\n" +
+        "export type { WidgetConfig } from '@flighthq/widget/contract';\n",
+      symbols: new Map([
+        ['Widget', { fileName: 'contract.ts', hasType: true, hasValue: true, isClass: true }],
+        ['WidgetConfig', { fileName: 'contract.ts', hasType: true, hasValue: false, isClass: false }],
+        ['createWidget', { fileName: 'contract.ts', hasType: false, hasValue: true, isClass: false }],
+      ]),
+    });
+  });
+});
 
 describe('collectFlightDependencyCrates', () => {
   const manifest = [
