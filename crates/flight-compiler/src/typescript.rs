@@ -64,6 +64,7 @@ const ENTITY_RUNTIME_STATE_FIELD_MARKER: &str = "@entity-runtime-state-field:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
 const RESERVED_KEY_DATA_UNION_VARIANT_MARKER: &str = "@reserved-key-data-union-variant:";
+const RESERVED_KEY_DATA_UNION_VARIANT_TYPE_MARKER: &str = "@reserved-key-data-union-variant-type:";
 const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
 // A field an `allocate_entity` local may leave out of its default object because the construction
 // initializer called on it in the very next statement definitely assigns it (`type:field`).
@@ -2384,17 +2385,35 @@ fn reserved_key_data_union_variant_marker(
     );
 }
 
+fn reserved_key_data_union_variant_type_marker(
+    owner: &str,
+    variant: &str,
+    payload_type: &str,
+) -> String {
+    return format!(
+        "{RESERVED_KEY_DATA_UNION_VARIANT_TYPE_MARKER}{owner}:{variant}:{payload_type}"
+    );
+}
+
 fn reserved_key_record_fields(
     rust_type: &Type,
     programs: &[&Program],
+    external_record_structs: &[ItemStruct],
     resolving: &mut BTreeSet<String>,
 ) -> Result<BTreeSet<String>, CompileError> {
     return match rust_type {
-        Type::Group(group) => reserved_key_record_fields(&group.elem, programs, resolving),
-        Type::Paren(paren) => reserved_key_record_fields(&paren.elem, programs, resolving),
-        Type::Reference(reference) => {
-            reserved_key_record_fields(&reference.elem, programs, resolving)
+        Type::Group(group) => {
+            reserved_key_record_fields(&group.elem, programs, external_record_structs, resolving)
         }
+        Type::Paren(paren) => {
+            reserved_key_record_fields(&paren.elem, programs, external_record_structs, resolving)
+        }
+        Type::Reference(reference) => reserved_key_record_fields(
+            &reference.elem,
+            programs,
+            external_record_structs,
+            resolving,
+        ),
         Type::Path(path) => {
             let Some(segment) = path.path.segments.last() else {
                 return Err(compile_error("empty Rust type path"));
@@ -2419,7 +2438,12 @@ fn reserved_key_record_fields(
                         "`{name}` reserved-key data union payload needs exactly one type argument"
                     )));
                 }
-                return reserved_key_record_fields(types[0], programs, resolving);
+                return reserved_key_record_fields(
+                    types[0],
+                    programs,
+                    external_record_structs,
+                    resolving,
+                );
             }
             if !resolving.insert(name.clone()) {
                 return Err(compile_error(format!(
@@ -2429,6 +2453,7 @@ fn reserved_key_record_fields(
             let structures = programs
                 .iter()
                 .flat_map(|program| &program.structs)
+                .chain(external_record_structs)
                 .filter(|structure| structure.ident == name)
                 .collect::<Vec<_>>();
             let aliases = programs
@@ -2457,7 +2482,12 @@ fn reserved_key_record_fields(
                     }
                     Ok(keys)
                 }
-                ([], [alias]) => reserved_key_record_fields(&alias.ty, programs, resolving),
+                ([], [alias]) => reserved_key_record_fields(
+                    &alias.ty,
+                    programs,
+                    external_record_structs,
+                    resolving,
+                ),
                 ([], []) => Err(compile_error(format!(
                     "cannot resolve reserved-key data union payload type `{name}` to a record declaration"
                 ))),
@@ -2478,13 +2508,8 @@ fn reserved_key_record_fields(
 fn insert_data_union_context(
     context: &mut HashSet<String>,
     programs: &[&Program],
-    external_record_programs: &[Program],
+    external_record_structs: &[ItemStruct],
 ) -> Result<(), CompileError> {
-    let record_programs = programs
-        .iter()
-        .copied()
-        .chain(external_record_programs)
-        .collect::<Vec<_>>();
     for program in programs {
         for rust_enum in &program.enums {
             let owner = rust_enum.ident.to_string();
@@ -2518,12 +2543,14 @@ fn insert_data_union_context(
                     .collect::<Vec<_>>();
                 let reserved_fields = reserved_key_record_fields(
                     payload_types[0],
-                    &record_programs,
+                    programs,
+                    external_record_structs,
                     &mut BTreeSet::new(),
                 )?;
                 let fallback_fields = reserved_key_record_fields(
                     payload_types[1],
-                    &record_programs,
+                    programs,
+                    external_record_structs,
                     &mut BTreeSet::new(),
                 )?;
                 let keys = reserved_fields
@@ -2547,6 +2574,12 @@ fn insert_data_union_context(
                         &owner,
                         &variant_name,
                         if index == 0 { &keys } else { &empty },
+                    ));
+                    let payload_type = emit_type(payload_types[index], context)?;
+                    context.insert(reserved_key_data_union_variant_type_marker(
+                        &owner,
+                        &variant_name,
+                        &payload_type,
                     ));
                 }
                 continue;
@@ -3611,12 +3644,12 @@ fn provenance_bindings(
 
 pub(crate) fn generation_context(
     programs: &[(&str, &Program)],
-    external_record_programs: &[Program],
+    external_record_structs: &[ItemStruct],
     contract_source: Option<&str>,
 ) -> Result<HashSet<String>, CompileError> {
     return generation_context_with_types(
         programs,
-        external_record_programs,
+        external_record_structs,
         &HashSet::new(),
         contract_source,
         true,
@@ -4612,7 +4645,7 @@ pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
 
 fn generation_context_with_types(
     programs: &[(&str, &Program)],
-    external_record_programs: &[Program],
+    external_record_structs: &[ItemStruct],
     type_context: &HashSet<String>,
     contract_source: Option<&str>,
     strict_vitest_provenance: bool,
@@ -4623,7 +4656,7 @@ fn generation_context_with_types(
         .iter()
         .map(|(_, program)| *program)
         .collect::<Vec<_>>();
-    insert_data_union_context(&mut context, &program_refs, external_record_programs)?;
+    insert_data_union_context(&mut context, &program_refs, external_record_structs)?;
     let entity_types = programs
         .iter()
         .flat_map(|(_, program)| &program.entities)
@@ -6178,6 +6211,17 @@ fn reserved_key_data_union_variant_keys(
             .map(str::to_string)
             .collect(),
     );
+}
+
+fn reserved_key_data_union_variant_type(
+    entities: &HashSet<String>,
+    owner: &str,
+    variant: &str,
+) -> Option<String> {
+    let prefix = format!("{RESERVED_KEY_DATA_UNION_VARIANT_TYPE_MARKER}{owner}:{variant}:");
+    return entities
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string));
 }
 
 fn reserved_key_data_union_variants(
@@ -9445,6 +9489,7 @@ struct ReservedKeyDataUnionPattern {
     fallback: bool,
     keys: BTreeSet<String>,
     owner: String,
+    payload_type: String,
     variant: String,
 }
 
@@ -9456,6 +9501,7 @@ enum ReservedKeyDataUnionPatternAnalysis {
 
 struct DataUnionMatchArm {
     binding: Option<String>,
+    binding_type: Option<String>,
     categories: BTreeSet<RuntimeCategory>,
     catch_all: bool,
     reserved_key_variants: Vec<(BTreeSet<String>, bool)>,
@@ -9502,6 +9548,8 @@ fn analyze_reserved_key_data_union_pattern(
             else {
                 return Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary);
             };
+            let payload_type = reserved_key_data_union_variant_type(entities, &owner, &variant)
+                .expect("reserved-key data union variants carry their payload type");
             if pattern.elems.len() != 1 {
                 return Err(compile_error(format!(
                     "reserved-key data union pattern `{owner}::{variant}` expects exactly one payload"
@@ -9513,6 +9561,7 @@ fn analyze_reserved_key_data_union_pattern(
                     fallback: keys.is_empty(),
                     keys,
                     owner,
+                    payload_type,
                     variant,
                 },
             ]))
@@ -9577,6 +9626,7 @@ fn analyze_reserved_key_data_union_match(
                 }
                 output.push(DataUnionMatchArm {
                     binding,
+                    binding_type: None,
                     categories: BTreeSet::new(),
                     catch_all: true,
                     reserved_key_variants: Vec::new(),
@@ -9590,6 +9640,7 @@ fn analyze_reserved_key_data_union_match(
             }
             ReservedKeyDataUnionPatternAnalysis::Variants(patterns) => {
                 let mut binding = None::<Option<String>>;
+                let mut binding_types = BTreeSet::new();
                 let mut variants = Vec::new();
                 for pattern in patterns {
                     if let Some(expected) = &owner {
@@ -9611,6 +9662,7 @@ fn analyze_reserved_key_data_union_match(
                         ));
                     }
                     binding.get_or_insert(pattern.binding);
+                    binding_types.insert(pattern.payload_type);
                     let label = format!("{}::{}", pattern.owner, pattern.variant);
                     if let Some(previous) = handled.insert(pattern.variant, label.clone()) {
                         return Err(compile_error(format!(
@@ -9627,8 +9679,12 @@ fn analyze_reserved_key_data_union_match(
                     };
                     variants.push((discriminator_keys, pattern.fallback));
                 }
+                let binding = binding.flatten();
                 output.push(DataUnionMatchArm {
-                    binding: binding.flatten(),
+                    binding_type: binding
+                        .as_ref()
+                        .map(|_| binding_types.into_iter().collect::<Vec<_>>().join(" | ")),
+                    binding,
                     categories: BTreeSet::new(),
                     catch_all: false,
                     reserved_key_variants: variants,
@@ -9682,6 +9738,13 @@ fn data_union_pattern_test(
                 "reserved-key data union alternatives cannot mix enum owners",
             ));
         }
+        let payload_type = patterns
+            .iter()
+            .map(|pattern| pattern.payload_type.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>()
+            .join(" | ");
         let variants = patterns
             .into_iter()
             .map(|pattern| {
@@ -9698,7 +9761,7 @@ fn data_union_pattern_test(
             .collect::<Vec<_>>();
         return Ok(Some(DataUnionPatternTest {
             bindings: binding
-                .map(|binding| (binding, value.to_string()))
+                .map(|binding| (binding, format!("({value} as {payload_type})")))
                 .into_iter()
                 .collect(),
             predicate: Some(reserved_key_data_union_predicate(&variants, value)),
@@ -9949,6 +10012,7 @@ fn analyze_data_union_match(
                 }
                 output.push(DataUnionMatchArm {
                     binding,
+                    binding_type: None,
                     categories: BTreeSet::new(),
                     catch_all: true,
                     reserved_key_variants: Vec::new(),
@@ -10003,6 +10067,7 @@ fn analyze_data_union_match(
                 }
                 output.push(DataUnionMatchArm {
                     binding: binding.flatten(),
+                    binding_type: None,
                     categories,
                     catch_all: false,
                     reserved_key_variants: Vec::new(),
@@ -10220,7 +10285,11 @@ fn emit_match_expression(
                 .expect("writing to a String cannot fail");
             }
             if let Some(binding) = info.binding {
-                writeln!(out, "    const {binding} = matchValue;")
+                let value = info.binding_type.map_or_else(
+                    || "matchValue".to_string(),
+                    |rust_type| format!("matchValue as {rust_type}"),
+                );
+                writeln!(out, "    const {binding} = {value};")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
@@ -10408,7 +10477,11 @@ pub(crate) fn emit_match_statement(
             }
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
-                writeln!(out, "const {binding} = matchValue;")
+                let value = info.binding_type.map_or_else(
+                    || "matchValue".to_string(),
+                    |rust_type| format!("matchValue as {rust_type}"),
+                );
+                writeln!(out, "const {binding} = {value};")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
@@ -11928,7 +12001,7 @@ pub(crate) fn emit_program(
     entity_module: Option<&str>,
     alias_programs: &[Program],
     external_alias_programs: &[(BTreeMap<String, String>, &str)],
-    external_record_programs: &[Program],
+    external_record_structs: &[ItemStruct],
     dependency_export_names: &[(BTreeMap<String, String>, &str)],
     module_identities: Option<&[String]>,
 ) -> Result<String, CompileError> {
@@ -11964,7 +12037,7 @@ pub(crate) fn emit_program(
         .collect::<Vec<_>>();
     let mut expression_context = generation_context_with_types(
         &program_sources,
-        external_record_programs,
+        external_record_structs,
         &identity_context,
         None,
         false,

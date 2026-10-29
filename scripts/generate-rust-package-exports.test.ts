@@ -15,6 +15,7 @@ import {
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
   hasRustConstGroup,
+  hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
   mergeRustExportNames,
   renderCompanionContractExports,
@@ -94,6 +95,17 @@ describe('hasRustPublicRecordDeclaration', () => {
     expect(hasRustPublicRecordDeclaration('pub struct Generic<T> { pub value: T }\n')).toBe(true);
     expect(hasRustPublicRecordDeclaration('struct Private { value: i32 }\n')).toBe(false);
     expect(hasRustPublicRecordDeclaration('pub(crate) struct Internal { value: i32 }\n')).toBe(false);
+  });
+});
+
+describe('hasRustGenerationSemantics', () => {
+  it('selects semantic metadata without selecting native export-surface directives', () => {
+    expect(hasRustGenerationSemantics('//! flight-compiler: data-union MarkupResult=reserved-key\n')).toBe(true);
+    expect(hasRustGenerationSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(true);
+    expect(
+      hasRustGenerationSemantics('//! flight-compiler: target-native\n//! flight-compiler: contract Value\n'),
+    ).toBe(false);
+    expect(hasRustGenerationSemantics('pub static VALUE: usize = 1;\n')).toBe(false);
   });
 });
 

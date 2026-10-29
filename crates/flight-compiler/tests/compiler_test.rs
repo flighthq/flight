@@ -6124,6 +6124,17 @@ pub fn effect(value: MarkupEffect) -> MarkupResult {
 pub fn format(value: TextFormat) -> MarkupResult {
     return MarkupResult::Format(value);
 }
+
+pub fn normalize(result: MarkupResult) -> MarkupEffect {
+    return match result {
+        MarkupResult::Effect(effect) => effect,
+        MarkupResult::Format(format) => MarkupEffect {
+            break_before: None,
+            format: Some(format),
+            text: None,
+        },
+    };
+}
 "#;
 
         let output = compile_typescript(source, None).unwrap();
@@ -6140,6 +6151,8 @@ pub fn format(value: TextFormat) -> MarkupResult {
             "return !(\"breakBefore\" in result || \"format\" in result || \"text\" in result);"
         ));
         assert!(output.contains("return value;"));
+        assert!(output.contains("const effect = matchValue as MarkupEffect;"));
+        assert!(output.contains("const format = matchValue as TextFormat;"));
         assert!(!output.contains("MarkupResult.Effect"));
         assert!(!output.contains("MarkupResult.Format"));
     }
@@ -6168,6 +6181,8 @@ pub fn kind(result: MarkupResult) -> &'static str {
 "#;
         let external = r#"
 //! flight-compiler: target-native
+
+pub trait Entity {}
 
 pub struct TextFormat {
     pub bold: Option<bool>,

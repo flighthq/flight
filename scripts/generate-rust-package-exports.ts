@@ -375,6 +375,16 @@ export function hasRustPublicRecordDeclaration(rust: string): boolean {
   return /^\s*pub\s+struct\s+[A-Za-z_][A-Za-z0-9_]*/m.test(rust);
 }
 
+// Target-native sources are not compiled, but their declaration-level semantics can still govern a
+// generated sibling. Export-surface and source-mode directives do not affect sibling lowering and
+// deliberately stay out: native implementation details must not become compiler inputs merely
+// because the file contributes a contract/root export.
+export function hasRustGenerationSemantics(rust: string): boolean {
+  return /^\/\/!\s*flight-compiler:\s*(?:callable-field-parameters|callable-parameters|const-group|data-union|entity-runtime-state|export-name|frozen-object|identity-alias|nullable-options|numeric-union|readonly-fields|string-union(?:-value)?)\b/m.test(
+    rust,
+  );
+}
+
 export function hasGeneratedProvenanceHeader(contents: string): boolean {
   return contents.startsWith('// Generated from crates/');
 }

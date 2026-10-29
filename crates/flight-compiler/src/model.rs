@@ -645,6 +645,19 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     });
 }
 
+pub(crate) fn parse_public_record_structs(source: &str) -> Result<Vec<ItemStruct>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    return Ok(file
+        .items
+        .into_iter()
+        .filter_map(|item| match item {
+            Item::Struct(structure) if is_public(&structure.vis) => Some(structure),
+            _ => None,
+        })
+        .collect());
+}
+
 fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool, CompileError> {
     let mut found = false;
     for attribute in attributes {

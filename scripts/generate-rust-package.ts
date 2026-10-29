@@ -14,6 +14,7 @@ import {
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
   hasRustConstGroup,
+  hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
   renderCompanionContractExports,
   renderGeneratedImports,
@@ -77,7 +78,12 @@ try {
   const rustSources = sourceFiles(crateRoot);
   const aliasSources = rustSources
     .map((rustSource) => join(crateRoot, 'src', rustSource))
-    .filter((rustPath) => sourceMode(rustPath) !== 'rust-only');
+    .filter((rustPath) => {
+      const mode = sourceMode(rustPath);
+      return (
+        mode === 'generate' || (mode === 'target-native' && hasRustGenerationSemantics(readFileSync(rustPath, 'utf8')))
+      );
+    });
   const modules = rustSources
     .map((rustSource) => loadModule(rustSource, aliasSources))
     .filter((module): module is PackageModule => module !== null);
