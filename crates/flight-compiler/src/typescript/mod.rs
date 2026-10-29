@@ -11669,6 +11669,9 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
+        "copy_from_slice" => Err(compile_error(
+            "portable `.copy_from_slice()` is supported only as a statement",
+        )),
         "extend" => Err(compile_error(
             "portable `.extend()` is supported only as a statement",
         )),
@@ -13431,6 +13434,9 @@ fn emit_statement(
         {
             emit_vec_extend_statement(out, call, entities, indent)?;
         }
+        Stmt::Expr(Expr::MethodCall(call), _) if call.method == "copy_from_slice" => {
+            emit_copy_from_slice_statement(out, call, entities, indent)?;
+        }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
             let loop_context = lexical_pattern_context(entities, &loop_expression.pat);
             write_indent(out, indent);
@@ -14419,6 +14425,79 @@ fn emit_vec_extend_statement(
         write_indent(out, indent);
         out.push_str("}\n");
     }
+    return Ok(());
+}
+
+fn emit_copy_from_slice_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    if call.args.len() != 1 {
+        return Err(compile_error(
+            "portable `.copy_from_slice()` requires exactly one argument",
+        ));
+    }
+    let source_expr = peel_reference_and_paren(&call.args[0]);
+    let source = emit_expression(source_expr, entities)?;
+    if let Expr::Index(index) = call.receiver.as_ref() {
+        if let Expr::Range(range) = index.index.as_ref() {
+            if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                return Err(compile_error(
+                    "portable `.copy_from_slice()` does not support inclusive range `..=`",
+                ));
+            }
+            let dest = emit_expression(&index.expr, entities)?;
+            let start = range
+                .start
+                .as_deref()
+                .map(|start| emit_expression(start, entities))
+                .transpose()?
+                .unwrap_or_else(|| "0".to_string());
+            write_indent(out, indent);
+            if let Expr::Index(src_index) = source_expr {
+                if let Expr::Range(src_range) = src_index.index.as_ref() {
+                    let src_array = emit_expression(&src_index.expr, entities)?;
+                    let src_start = src_range
+                        .start
+                        .as_deref()
+                        .map(|s| emit_expression(s, entities))
+                        .transpose()?
+                        .unwrap_or_else(|| "0".to_string());
+                    let src_end = src_range
+                        .end
+                        .as_deref()
+                        .map(|e| emit_expression(e, entities))
+                        .transpose()?;
+                    let count = if let Some(end) = &src_end {
+                        format!("{end} - {src_start}")
+                    } else {
+                        format!("{src_array}.length - {src_start}")
+                    };
+                    writeln!(
+                        out,
+                        "for (let __i = 0; __i < {count}; __i++) {{ {dest}[{start} + __i] = {src_array}[{src_start} + __i]; }}"
+                    )
+                    .expect("writing to a String cannot fail");
+                    return Ok(());
+                }
+            }
+            writeln!(
+                out,
+                "for (let __i = 0; __i < {source}.length; __i++) {{ {dest}[{start} + __i] = {source}[__i]; }}"
+            )
+            .expect("writing to a String cannot fail");
+            return Ok(());
+        }
+    }
+    let dest = emit_expression(&call.receiver, entities)?;
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "for (let __i = 0; __i < {source}.length; __i++) {{ {dest}[__i] = {source}[__i]; }}"
+    )
+    .expect("writing to a String cannot fail");
     return Ok(());
 }
 

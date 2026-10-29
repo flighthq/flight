@@ -3444,6 +3444,32 @@ pub fn chunk_exact(values: &Vec<i32>) -> Vec<Vec<i32>> {
     }
 
     #[test]
+    fn lowers_copy_from_slice_with_range_indexing() {
+        let source = r#"
+pub fn copy_range(dest: &mut Vec<f32>, source: &Vec<f32>, count: usize) {
+    dest[0..count].copy_from_slice(&source[0..count]);
+}
+pub fn copy_full(dest: &mut Vec<f32>, source: &[f32]) {
+    dest.copy_from_slice(source);
+}
+pub fn copy_literal(dest: &mut Vec<f32>) {
+    dest[0..3].copy_from_slice(&[1.0, 2.0, 3.0]);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("dest[0 + __i] = source[0 + __i]"),
+            "range copy should emit element-by-element loop: {output}"
+        );
+        assert!(
+            output.contains("for (let __i = 0;"),
+            "copy_from_slice should emit a for loop: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_fill_on_proven_sequences() {
         let source = r#"
 pub fn zero_out(values: &mut Vec<i32>) {
