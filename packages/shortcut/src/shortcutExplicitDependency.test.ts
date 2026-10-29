@@ -131,6 +131,50 @@ describe('attachGlobalShortcut', () => {
     await expect(first).resolves.toEqual({ reason: 'attached' });
   });
 
+  it('keeps the same shortcut reserved if its accelerator changes during subscription', async () => {
+    const pending = deferred<Readonly<{ reason: 'subscribed'; subscription: ShortcutSubscriptionLike }>>();
+    const firstSubscription = subscription();
+    const subscribe = vi
+      .fn<TriggerProviderLike['subscribe']>()
+      .mockImplementationOnce(() => pending.promise)
+      .mockResolvedValue({ reason: 'subscribed', subscription: subscription() });
+    const unsubscribe = vi.fn(async () => ({ reason: 'unsubscribed' as const }));
+    const hostShortcutTrigger = triggerProvider({ subscribe, unsubscribe });
+    const shortcut = createShortcut('Control+F');
+    const first = api().attachGlobalShortcut(hostShortcutTrigger, shortcut);
+
+    Object.assign(shortcut, { accelerator: 'Control+G' });
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({
+      reason: 'registration-in-progress',
+    });
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(subscribe).toHaveBeenCalledWith('Control+F', expect.any(Function));
+
+    pending.resolve({ reason: 'subscribed', subscription: firstSubscription });
+    await expect(first).resolves.toEqual({ reason: 'attached' });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({ reason: 'detached' });
+    expect(unsubscribe).toHaveBeenCalledWith(firstSubscription);
+
+    const replacementF = createShortcut('Control+F');
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, replacementF)).resolves.toEqual({
+      reason: 'attached',
+    });
+    const replacementG = createShortcut('Control+G');
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, replacementG)).resolves.toEqual({
+      reason: 'attached',
+    });
+    expect(subscribe).toHaveBeenCalledTimes(3);
+    expect(subscribe).toHaveBeenNthCalledWith(2, 'Control+F', expect.any(Function));
+    expect(subscribe).toHaveBeenNthCalledWith(3, 'Control+G', expect.any(Function));
+
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, replacementF)).resolves.toEqual({
+      reason: 'detached',
+    });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, replacementG)).resolves.toEqual({
+      reason: 'detached',
+    });
+  });
+
   it('does not overwrite the first live same-chord registration', async () => {
     const hostShortcutTrigger = triggerProvider();
     await expect(api().attachGlobalShortcut(hostShortcutTrigger, createShortcut('Control+B'))).resolves.toEqual({

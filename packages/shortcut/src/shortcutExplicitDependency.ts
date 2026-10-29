@@ -41,18 +41,21 @@ const TRIGGER_DETACH_FAILED = Object.freeze({ reason: 'trigger-provider-failed' 
 const _attachments = new WeakMap<GlobalShortcut, GlobalShortcutAttachment>();
 const _attachedByAccelerator = new Map<Accelerator, GlobalShortcut>();
 const _pendingAccelerators = new Set<Accelerator>();
+const _pendingShortcuts = new WeakSet<GlobalShortcut>();
 
 export async function attachGlobalShortcut(
   hostShortcutTrigger: Readonly<HostShortcutTriggerCapability>,
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutAttachOutcome> {
   if (_attachments.has(shortcut)) return ALREADY_ATTACHED;
+  if (_pendingShortcuts.has(shortcut)) return REGISTRATION_IN_PROGRESS;
   const accelerator = shortcut.accelerator;
   if (_attachedByAccelerator.has(accelerator)) return ALREADY_REGISTERED;
   if (_pendingAccelerators.has(accelerator)) return REGISTRATION_IN_PROGRESS;
 
   const provider = hostShortcutTrigger;
   _pendingAccelerators.add(accelerator);
+  _pendingShortcuts.add(shortcut);
   try {
     const outcome = await provider.subscribe(accelerator, () => emitSignal(shortcut.onTrigger));
     if (outcome.reason === 'refused') return NATIVE_REFUSED;
@@ -74,6 +77,7 @@ export async function attachGlobalShortcut(
     return TRIGGER_ATTACH_FAILED;
   } finally {
     _pendingAccelerators.delete(accelerator);
+    _pendingShortcuts.delete(shortcut);
   }
 }
 
