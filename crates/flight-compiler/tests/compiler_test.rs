@@ -1367,6 +1367,12 @@ pub type Callback = fn(i32, Option<i32>) -> bool;
         let source = include_str!("../../flight-haptics/src/types.rs");
         let output = compile_typescript(source, None).unwrap();
 
+        assert!(output.contains("Every operation exposed by `HostHapticsCapability`."));
+        assert!(!output.contains("[`HostHapticsCapability`]"));
+        assert!(output.contains(
+            "Snapshot of what the supplied provider supports. Filled into a caller-owned `out` value; absent"
+        ));
+        assert!(output.contains("features resolve to `false` rather than throwing."));
         assert!(output.contains("capabilities: (out: HapticsCapabilities) => void;"));
         assert!(
             output.contains("impact: (style: HapticImpactStyle, intensity?: number) => boolean;")
@@ -1377,6 +1383,18 @@ pub type Callback = fn(i32, Option<i32>) -> bool;
         assert!(output.contains(
             "vibrateWaveform?: (timings: Readonly<number[]>, amplitudes: Readonly<number[]>, repeat?: number) => boolean;"
         ));
+        for documentation in [
+            "Cancels any in-progress vibration. Returns `false` when haptics are unavailable.",
+            "Fills `out` with the provider's capabilities.",
+            "Triggers a physical impact, with optional continuous intensity (`0..1`).",
+            "Reports whether haptics are available on the current device.",
+            "Warm-up hint to reduce first-trigger latency. Optional; no-op on providers without",
+            "Vibrates with a pattern `[onMs, offMs, ...]`. Returns `false` on an empty pattern or when",
+            "Amplitude-aware waveform (`Android VibrationEffect.createWaveform`). Optional; callers fall",
+            "back to `vibratePattern(timings)` when absent. `repeat` is the loop index into `timings`, or",
+        ] {
+            assert!(output.contains(documentation), "missing {documentation}");
+        }
     }
 
     #[test]
@@ -1454,6 +1472,10 @@ pub type Callback = fn(i32, Option<i32>) -> bool;
             (
                 "//! flight-compiler: callable-field-parameters Hooks run x-y\npub struct Hooks { pub run: fn(f32) }\n",
                 "`flight-compiler: callable-field-parameters Hooks run` parameter name `x-y` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks run super\npub struct Hooks { pub run: fn(f32) -> f32 }\n",
+                "`flight-compiler: callable-field-parameters Hooks run` parameter name `super` is not a valid identifier",
             ),
             (
                 "//! flight-compiler: callable-field-parameters Hooks run value value\npub struct Hooks { pub run: fn(f32, f32) }\n",

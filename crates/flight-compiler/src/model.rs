@@ -743,7 +743,63 @@ fn callable_arity(rust_type: &Type) -> Option<usize> {
 }
 
 fn is_valid_callable_parameter_name(name: &str) -> bool {
-    return !name.starts_with("r#") && syn::Ident::parse_any.parse_str(name).is_ok();
+    return !name.starts_with("r#")
+        && syn::Ident::parse_any.parse_str(name).is_ok()
+        && !is_javascript_binding_reserved(name);
+}
+
+fn is_javascript_binding_reserved(name: &str) -> bool {
+    return matches!(
+        name,
+        "arguments"
+            | "await"
+            | "break"
+            | "case"
+            | "catch"
+            | "class"
+            | "const"
+            | "continue"
+            | "debugger"
+            | "default"
+            | "delete"
+            | "do"
+            | "else"
+            | "enum"
+            | "eval"
+            | "export"
+            | "extends"
+            | "false"
+            | "finally"
+            | "for"
+            | "function"
+            | "if"
+            | "implements"
+            | "import"
+            | "in"
+            | "instanceof"
+            | "interface"
+            | "let"
+            | "new"
+            | "null"
+            | "package"
+            | "private"
+            | "protected"
+            | "public"
+            | "return"
+            | "static"
+            | "super"
+            | "switch"
+            | "this"
+            | "throw"
+            | "true"
+            | "try"
+            | "typeof"
+            | "var"
+            | "void"
+            | "while"
+            | "with"
+            | "yield"
+    );
 }
 
 fn parse_callable_field_parameters(
