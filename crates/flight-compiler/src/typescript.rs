@@ -5781,73 +5781,6 @@ fn reject_entity_runtime_state_store_collisions(
     };
 }
 
-// Rejects a `LazyLock` static whose initializer, through the functions it calls in this crate's
-// sources, reaches the static itself or a static of this module declared after it. TypeScript
-// initializes statics eagerly in declaration order, so either would read an uninitialized binding.
-fn reject_lazy_lock_initialization_order(
-    program: &Program,
-    programs: &[&Program],
-) -> Result<(), CompileError> {
-    struct NameVisitor {
-        names: Vec<String>,
-    }
-    impl<'ast> Visit<'ast> for NameVisitor {
-        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
-            if let Some(segment) = path.path.segments.last() {
-                self.names.push(segment.ident.to_string());
-            }
-            syn::visit::visit_expr_path(self, path);
-        }
-    }
-    let functions = programs
-        .iter()
-        .flat_map(|program| &program.functions)
-        .collect::<Vec<_>>();
-    for (index, rust_static) in program.statics.iter().enumerate() {
-        let Some((_, initializer)) = crate::model::lazy_lock_static(rust_static) else {
-            continue;
-        };
-        let mut pending = {
-            let mut visitor = NameVisitor { names: Vec::new() };
-            visitor.visit_expr(initializer);
-            visitor.names
-        };
-        let mut visited = BTreeSet::new();
-        while let Some(name) = pending.pop() {
-            if !visited.insert(name.clone()) {
-                continue;
-            }
-            if let Some(position) = program
-                .statics
-                .iter()
-                .position(|candidate| candidate.ident == name.as_str())
-                && position >= index
-            {
-                return Err(compile_error(if position == index {
-                    format!(
-                        "`LazyLock` static `{}` has an initialization cycle through itself",
-                        rust_static.ident
-                    )
-                } else {
-                    format!(
-                        "`LazyLock` static `{}` is initialized from `{name}`, which is declared after it",
-                        rust_static.ident
-                    )
-                }));
-            }
-            for function in functions
-                .iter()
-                .filter(|function| function.sig.ident == name.as_str())
-            {
-                let mut visitor = NameVisitor { names: Vec::new() };
-                visitor.visit_item_fn(function);
-                pending.extend(visitor.names);
-            }
-        }
-    }
-    return Ok(());
-}
-
 fn reject_unresolved_pattern_field(
     expression: &Expr,
     entities: &HashSet<String>,
@@ -5870,6 +5803,246 @@ fn reject_unresolved_pattern_field(
         return Err(compile_error(format!(
             "portable pattern binding `{local}` has no source-qualified type provenance; add a typed iterable or matched payload before accessing its fields"
         )));
+    }
+    return Ok(());
+}
+
+// A `LazyLock` static lowers to an eagerly initialized constant, so its initializer must be provably
+// unobservable to run at module load instead of at first access: through the same-crate functions it
+// calls, it may only build values (entity allocation, records, literals, `Vec`/`Ref`/`RwLock`/`Arc`/
+// `Box`/`String` constructors, `Some`, `vec!`), call a small set of pure methods, and read statics
+// this module declares before it that are `LazyLock`s or immutable primitives. Any read of another
+// static (an atomic counter or other interior-mutable value included),
+// dependency or host call, indexing, `unwrap`, `?`, other macro or `unsafe` block could observe the
+// earlier timing or panic early, so it fails closed. The initializer must also name an emitted free
+// function: an associated path such as `Kernel::default` has no TypeScript value.
+fn reject_unsafe_lazy_lock_initializers(
+    program: &Program,
+    programs: &[&Program],
+) -> Result<(), CompileError> {
+    struct EagerSafety<'a> {
+        error: Option<String>,
+        functions: &'a [&'a ItemFn],
+        readable_statics: &'a BTreeSet<String>,
+        other_statics: &'a BTreeSet<String>,
+        pending: Vec<String>,
+        static_name: &'a str,
+    }
+    impl EagerSafety<'_> {
+        fn reject(&mut self, reason: String) {
+            if self.error.is_none() {
+                self.error = Some(format!(
+                    "`LazyLock` static `{}` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; {reason}",
+                    self.static_name
+                ));
+            }
+        }
+    }
+    impl<'ast> Visit<'ast> for EagerSafety<'_> {
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            let Expr::Path(path) = call.func.as_ref() else {
+                self.reject("it calls a function value".to_string());
+                return;
+            };
+            let segments = path
+                .path
+                .segments
+                .iter()
+                .map(|segment| segment.ident.to_string())
+                .collect::<Vec<_>>();
+            let name = segments.last().cloned().unwrap_or_default();
+            let constructor = match segments.as_slice() {
+                [only] => matches!(only.as_str(), "allocate_entity" | "Some"),
+                [.., owner, member] => {
+                    matches!(
+                        owner.as_str(),
+                        "Arc" | "Box" | "Ref" | "RwLock" | "String" | "Vec"
+                    ) && member == "new"
+                        || owner == "flight_entity" && member == "allocate_entity"
+                }
+                [] => false,
+            };
+            if constructor {
+            } else if crate_free_function_path(&path.path)
+                && self
+                    .functions
+                    .iter()
+                    .any(|function| function.sig.ident == name.as_str())
+            {
+                self.pending.push(name);
+            } else {
+                self.reject(format!(
+                    "it calls `{}`, which is not a side-effect-free function of this crate",
+                    segments.join("::")
+                ));
+                return;
+            }
+            for argument in &call.args {
+                self.visit_expr(argument);
+            }
+        }
+
+        fn visit_expr_index(&mut self, _index: &'ast syn::ExprIndex) {
+            self.reject("it indexes, which can panic".to_string());
+        }
+
+        fn visit_expr_macro(&mut self, expression: &'ast syn::ExprMacro) {
+            if !expression.mac.path.is_ident("vec") {
+                self.reject(format!(
+                    "it invokes `{}!`",
+                    expression
+                        .mac
+                        .path
+                        .segments
+                        .last()
+                        .map(|segment| segment.ident.to_string())
+                        .unwrap_or_default()
+                ));
+            }
+        }
+
+        fn visit_stmt_macro(&mut self, statement: &'ast syn::StmtMacro) {
+            self.reject(format!(
+                "it invokes `{}!`",
+                statement
+                    .mac
+                    .path
+                    .segments
+                    .last()
+                    .map(|segment| segment.ident.to_string())
+                    .unwrap_or_default()
+            ));
+        }
+
+        fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+            let method = call.method.to_string();
+            if !matches!(
+                method.as_str(),
+                "clone" | "is_empty" | "len" | "push" | "to_string" | "to_vec"
+            ) {
+                self.reject(format!("it calls `.{method}()`"));
+                return;
+            }
+            syn::visit::visit_expr_method_call(self, call);
+        }
+
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            let Some(name) = path
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string())
+            else {
+                return;
+            };
+            if name == self.static_name {
+                self.reject("it reaches the static itself (an initialization cycle)".to_string());
+            } else if self.other_statics.contains(&name) && !self.readable_statics.contains(&name) {
+                self.reject(format!(
+                    "it reads `{name}`, which is not a `LazyLock` or immutable primitive static declared before it"
+                ));
+            }
+        }
+
+        fn visit_expr_try(&mut self, _expression: &'ast syn::ExprTry) {
+            self.reject("it uses `?`".to_string());
+        }
+
+        fn visit_expr_unsafe(&mut self, _expression: &'ast syn::ExprUnsafe) {
+            self.reject("it uses `unsafe`".to_string());
+        }
+    }
+    let functions = programs
+        .iter()
+        .flat_map(|program| &program.functions)
+        .collect::<Vec<_>>();
+    let all_statics = programs
+        .iter()
+        .flat_map(|program| &program.statics)
+        .map(|rust_static| rust_static.ident.to_string())
+        .collect::<BTreeSet<_>>();
+    let mut readable_statics = BTreeSet::new();
+    for rust_static in &program.statics {
+        let name = rust_static.ident.to_string();
+        let Some((_, initializer)) = crate::model::lazy_lock_static(rust_static) else {
+            if matches!(rust_static.mutability, syn::StaticMutability::None)
+                && named_type(&rust_static.ty).is_some_and(|type_name| {
+                    matches!(
+                        type_name.as_str(),
+                        "bool"
+                            | "f32"
+                            | "f64"
+                            | "i8"
+                            | "i16"
+                            | "i32"
+                            | "i64"
+                            | "isize"
+                            | "u8"
+                            | "u16"
+                            | "u32"
+                            | "u64"
+                            | "usize"
+                    )
+                })
+            {
+                readable_statics.insert(name);
+            }
+            continue;
+        };
+        let mut safety = EagerSafety {
+            error: None,
+            functions: &functions,
+            readable_statics: &readable_statics,
+            other_statics: &all_statics,
+            pending: Vec::new(),
+            static_name: &name,
+        };
+        match initializer {
+            Expr::Path(path) => {
+                let factory = path
+                    .path
+                    .segments
+                    .last()
+                    .map(|segment| segment.ident.to_string())
+                    .unwrap_or_default();
+                if !crate_free_function_path(&path.path)
+                    || !functions
+                        .iter()
+                        .any(|function| function.sig.ident == factory.as_str())
+                {
+                    return Err(compile_error(format!(
+                        "`LazyLock` initializer for `{name}` must name a free function of this crate; `{}` has no TypeScript value",
+                        path.path
+                            .segments
+                            .iter()
+                            .map(|segment| segment.ident.to_string())
+                            .collect::<Vec<_>>()
+                            .join("::")
+                    )));
+                }
+                safety.pending.push(factory);
+            }
+            initializer => safety.visit_expr(initializer),
+        }
+        let mut visited = BTreeSet::new();
+        while let Some(function_name) = safety.pending.pop() {
+            if safety.error.is_some() {
+                break;
+            }
+            if !visited.insert(function_name.clone()) {
+                continue;
+            }
+            for function in functions
+                .iter()
+                .filter(|function| function.sig.ident == function_name.as_str())
+            {
+                safety.visit_block(&function.block);
+            }
+        }
+        if let Some(error) = safety.error {
+            return Err(compile_error(error));
+        }
+        readable_statics.insert(name);
     }
     return Ok(());
 }
@@ -9371,6 +9544,18 @@ fn finish_cross_crate_imports(
     return (value_imports, type_imports);
 }
 
+// Whether `path` names a free function of the current crate: a bare name or a `crate::`/`self::`/
+// `super::` path. A `Type::function` path names an associated function, which is never emitted.
+fn crate_free_function_path(path: &syn::Path) -> bool {
+    return path.segments.len() == 1
+        || path.segments.first().is_some_and(|segment| {
+            matches!(
+                segment.ident.to_string().as_str(),
+                "crate" | "self" | "super"
+            )
+        });
+}
+
 fn cross_crate_imports(
     program: &Program,
     context: &HashSet<String>,
@@ -9645,7 +9830,7 @@ pub(crate) fn emit_program(
             .insert(name);
     }
     reject_entity_runtime_state_store_collisions(program, &programs)?;
-    reject_lazy_lock_initialization_order(program, &programs)?;
+    reject_unsafe_lazy_lock_initializers(program, &programs)?;
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
     let mut body = String::new();
