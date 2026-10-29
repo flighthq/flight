@@ -6496,6 +6496,67 @@ pub fn is_ready(widget: &Widget) -> bool {
     }
 
     #[test]
+    fn rejects_conflicting_dependency_string_union_owners_independent_of_argument_order() {
+        let alpha = r#"
+//! flight-compiler: string-union Status=exact
+//! flight-compiler: string-union-value Status Ready "alpha.ready"
+
+pub enum Status {
+    Ready,
+}
+"#;
+        let beta = r#"
+//! flight-compiler: string-union Status=exact
+//! flight-compiler: string-union-value Status Ready "beta.ready"
+
+pub enum Status {
+    Ready,
+}
+"#;
+        let alpha = ExternalAliasSource {
+            source: alpha,
+            module: "@flighthq/alpha/contract",
+        };
+        let beta = ExternalAliasSource {
+            source: beta,
+            module: "@flighthq/beta/contract",
+        };
+        let consumer = r#"
+use flight_alpha::Status;
+
+pub fn is_ready(status: Status) -> bool {
+    return status == Status::Ready;
+}
+"#;
+        let test = r#"
+use flight_alpha::Status;
+
+#[test]
+fn accepts_ready() {
+    assert_eq!(Status::Ready, Status::Ready);
+}
+"#;
+        let expected = "external string union `Status` has conflicting metadata across modules `@flighthq/alpha/contract`, `@flighthq/beta/contract`";
+
+        for externals in [[alpha, beta], [beta, alpha]] {
+            let error =
+                compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
+                    .unwrap_err();
+            assert_eq!(error.to_string(), expected);
+
+            let error = compile_vitest_with_external_alias_sources(
+                test,
+                "@flighthq/consumer/contract",
+                None,
+                &[],
+                &externals,
+            )
+            .unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    #[test]
     fn keeps_exact_dependency_entity_names_without_companion_wrappers() {
         let dependency = r#"
 use flight_entity::EntityRuntimeSlot;
