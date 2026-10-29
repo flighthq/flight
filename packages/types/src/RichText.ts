@@ -1,62 +1,17 @@
-import type { TextFormat, TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
+import type {
+  RichText as RichTextOwned,
+  RichTextData as RichTextDataOwned,
+  RichTextRuntime as RichTextRuntimeOwned,
+} from '@flighthq/text/contract';
 
-import type { RichTextContent } from './RichTextContent.ts';
-import type { TextAutoSize } from './TextAutoSize.ts';
-import type { TextFieldSignals } from './TextFieldSignals.ts';
-import type { TextInputState } from './TextInputState.ts';
-import type { TextLabel, TextLabelData, TextLabelRuntime } from './TextLabel.ts';
+/** @deprecated Import `RichTextData` from `@flighthq/text/contract`. */
+export type RichTextData = RichTextDataOwned;
 
-export interface RichTextData extends TextLabelData {
-  autoSize: TextAutoSize;
-  background: boolean;
-  backgroundColor: number;
-  border: boolean;
-  borderColor: number;
-  condenseWhite: boolean;
-  defaultTextFormat: TextFormat;
-  height: number;
-  maxChars: number;
-  mouseWheelEnabled: boolean;
-  multiline: boolean;
-  scrollH: number;
-  scrollV: number;
-  selectable: boolean;
-  text: string;
-  // Field color as Flight's packed sRGB RGBA integer (`0xRRGGBBAA`); alpha is linear coverage.
-  textColor: number;
-  textFormatRanges: TextFormatRange[];
-  width: number;
-  wordWrap: boolean;
+/** @deprecated Import `RichTextRuntime` from `@flighthq/text/contract`. */
+export type RichTextRuntime = RichTextRuntimeOwned;
 
-  // getBottomScrollV(source: Readonly<DynamicText>): number;
-  // getCaretIndex(source: Readonly<DynamicText>): number;
-  // getLength(source: Readonly<DynamicText>): number;
-  // getMaxScrollH(source: Readonly<DynamicText>): number;
-  // getMaxScrollV(source: Readonly<DynamicText>): number;
-  // getNumLines(source: Readonly<DynamicText>): number;
-  // getSelectionBeginIndex(source: Readonly<DynamicText>): number;
-  // getSelectionEndIndex(source: Readonly<DynamicText>): number;
-  // getTextHeight(source: Readonly<DynamicText>): number;
-  // getTextWidth(source: Readonly<DynamicText>): number;
-}
+/** @deprecated Import `RichText` from `@flighthq/text/contract`. */
+export type RichText = RichTextOwned;
 
-export interface RichTextRuntime extends TextLabelRuntime {
-  // The editable-field capability slot: null on a static RichText, allocated by enableTextInput(node)
-  // in @flighthq/textinput. A nullable slot (rather than a separate entity) is what lets selection/
-  // caret/input be an opt-in mode of RichText with zero cost when unused. Renderers draw the caret/
-  // selection overlay only when this is non-null.
-  input: TextInputState | null;
-  richTextContent: RichTextContent | null;
-  selectionBeginIndex: number;
-  selectionEndIndex: number;
-  // The opt-in text-field notification group: null until enableTextFieldSignals(source) is called.
-  // Setters emit change/scroll/link events only when this is non-null, so a field that never enables
-  // signals pays nothing.
-  textFieldSignals: TextFieldSignals | null;
-}
-
-export interface RichText extends TextLabel {
-  data: RichTextData;
-}
-
-export const RichTextKind = 'RichText';
+/** @deprecated Import `RichTextKind` from `@flighthq/text/contract`. */
+export const RichTextKind = 'RichText' as const;

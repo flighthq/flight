@@ -54,6 +54,7 @@
     "@flighthq/selection": "*",
     "@flighthq/signals": "*",
     "@flighthq/statechart": "*",
+    "@flighthq/text": "*",
     "@flighthq/textformat": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/textshaper": "*",

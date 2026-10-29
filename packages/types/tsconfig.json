@@ -16,6 +16,7 @@
       ".path-types",
       ".selection-types",
       ".statechart-types",
+      ".text-types",
       ".textlayout-types",
       ".textshaper-types",
       ".velocity-types",
@@ -77,6 +78,9 @@
     },
     {
       "path": "../statechart/tsconfig.contract.json"
+    },
+    {
+      "path": "../text/tsconfig.contract.json"
     },
     {
       "path": "../textformat"

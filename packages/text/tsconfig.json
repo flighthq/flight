@@ -1,41 +1,16 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
-    {
-      "path": "../scene2d"
-    },
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../geometry"
-    },
-    {
-      "path": "../log"
-    },
-    {
-      "path": "../node"
-    },
-    {
-      "path": "../signals"
-    },
-    {
-      "path": "../textformat"
-    },
-    {
-      "path": "../textlayout/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../scene2d" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../log" },
+    { "path": "../node" },
+    { "path": "../signals" },
+    { "path": "../textformat" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }
