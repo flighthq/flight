@@ -4990,6 +4990,42 @@ pub fn initialize_marker_value(out: &mut Marker, value: f64) {
     }
 
     #[test]
+    fn constructs_typed_arrays_returned_from_fixed_array_functions() {
+        let source = r#"pub fn coefficients(p: f64) -> [f64; 4] {
+    return [p, 3.0 * p, 1.0, 0.0];
+}
+
+pub fn zeros() -> [f32; 3] {
+    return [0.0; 3];
+}
+
+pub fn flags() -> [bool; 2] {
+    return [true, false];
+}
+
+pub fn copied(values: [f64; 2]) -> [f64; 2] {
+    return values;
+}
+
+pub fn listed(p: f64) -> Vec<f64> {
+    return vec![p, p];
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("  return new Float64Array([p, 3.0 * p, 1.0, 0.0]);\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  return new Float32Array(3).fill(0.0);\n"),
+            "{output}"
+        );
+        assert!(output.contains("  return [true, false];\n"), "{output}");
+        assert!(output.contains("  return values;\n"), "{output}");
+        assert!(output.contains("  return [p, p];\n"), "{output}");
+    }
+
+    #[test]
     fn resolves_nullable_fields_through_proven_standard_arc() {
         let compile = |source: &str| {
             return compile_typescript_with_module_sources(

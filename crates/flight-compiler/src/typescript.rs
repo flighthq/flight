@@ -144,6 +144,9 @@ const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
 const NULLABLE_OPTION_LITERAL_FIELD_MARKER: &str = "@nullable-option-literal-field:";
 // A function whose `Option` return is designated `nullable-option`: its returns use `null`.
 const RETURNS_NULLABLE_MARKER: &str = "@returns-nullable";
+// A function returning a fixed array of a typed-array primitive (`[f64; 4]` is `Float64Array`): its
+// returned array literals construct that typed array.
+const RETURNS_TYPED_ARRAY_MARKER: &str = "@returns-typed-array:";
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
 // Struct fields (`struct identity SEP field SEP payload`), locals and parameters (`name:payload`), and
 // function returns (`module SEP function SEP payload`) declared as Rust `Option<T>`. The payload is the
@@ -2177,6 +2180,30 @@ fn statement_may_exit_early(statement: &Stmt) -> bool {
         .to_string()
         .split(|character: char| character.is_whitespace())
         .any(|token| matches!(token, "return" | "break" | "continue" | "?"));
+}
+
+// An array literal or repeat in a typed-array position (`Float64Array`), constructed as that array.
+fn typed_array_literal(
+    expression: &Expr,
+    array_type: &str,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    return match expression {
+        Expr::Array(array) => {
+            let elements = array
+                .elems
+                .iter()
+                .map(|element| emit_expression(element, entities))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(format!("new {array_type}([{}])", elements.join(", ")))
+        }
+        Expr::Repeat(repeat) => Ok(format!(
+            "new {array_type}({}).fill({})",
+            emit_expression(&repeat.len, entities)?,
+            emit_expression(&repeat.expr, entities)?
+        )),
+        _ => emit_expression(expression, entities),
+    };
 }
 
 // Checks each dependency item bound by its mapped name against the complete emitted value namespace:
@@ -6691,6 +6718,7 @@ fn emit_closure_with_parameter_types(
         .iter()
         .filter(|marker| {
             !marker.starts_with(RETURN_TYPE_MARKER)
+                && !marker.starts_with(RETURNS_TYPED_ARRAY_MARKER)
                 && marker.as_str() != RETURNS_U32_MARKER
                 && marker.as_str() != RETURNS_NULLABLE_MARKER
         })
@@ -11019,6 +11047,12 @@ fn emit_function(
     if nullable_return {
         function_context.insert(RETURNS_NULLABLE_MARKER.to_string());
     }
+    if let ReturnType::Type(_, rust_type) = &function.sig.output
+        && let Type::Array(array) = rust_type.as_ref()
+        && let Some(array_type) = typed_array_for_type(&array.elem)
+    {
+        function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
+    }
     emit_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
@@ -15280,6 +15314,14 @@ fn emit_statement(
                             compile_error("allocate_entity return needs an explicit Rust type")
                         })?;
                     entity_allocation(return_type, entities)?
+                } else if let Some(array_type) =
+                    unique_marker_suffix(entities, RETURNS_TYPED_ARRAY_MARKER)
+                    && matches!(
+                        peel_reference_and_paren(returned),
+                        Expr::Array(_) | Expr::Repeat(_)
+                    )
+                {
+                    typed_array_literal(peel_reference_and_paren(returned), &array_type, entities)?
                 } else {
                     emit_expression(value, entities)?
                 };
