@@ -1,1 +1,2 @@
-export { GamepadButtonKind } from '@flighthq/input/contract';
+/** @deprecated Import input contracts from `@flighthq/input/contract`. */
+export type { GamepadButtonKind } from '@flighthq/input/contract';
