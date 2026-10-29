@@ -2,8 +2,8 @@ use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, VitestAliasSource, compile_typescript,
     compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
     compile_typescript_with_module_sources, compile_vitest, compile_vitest_with_alias_sources,
-    compile_vitest_with_contract_alias_sources, compile_vitest_with_module_alias_sources,
-    source_mode,
+    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
+    compile_vitest_with_module_alias_sources, source_mode,
 };
 
 mod source_modes {
@@ -2696,6 +2696,134 @@ mod decode_utf8 {
         assert_eq!(
             compile_vitest_with_alias_sources(tests, "./contract.ts", &[utf8]).unwrap(),
             "import { describe, expect, it } from 'vitest';\n\nimport {\n  decodeUTF8,\n  encodeUTF8,\n  maxUTF8Bytes,\n} from \"./contract.ts\";\n\ndescribe(\"decodeUTF8\", () => {\n  it(\"adds the maximum\", () => {\n    expect(decodeUTF8(1)).toEqual(1 + maxUTF8Bytes);\n    expect(encodeUTF8(1)).toEqual(10);\n  });\n});\n"
+        );
+    }
+
+    #[test]
+    fn imports_dependency_export_names_across_packages() {
+        let codec = "//! flight-compiler: export-name decode_utf8 decodeUTF8\npub fn decode_utf8(value: usize) -> usize {\n    return value;\n}\n";
+        let codec_package = [ExternalAliasSource {
+            source: codec,
+            module: "@flighthq/codec/contract",
+        }];
+        let consumer = r#"use flight_codec::decode_utf8;
+use flight_codec::decode_utf8 as decode;
+
+pub fn call_decoder(value: usize) -> usize {
+    return decode_utf8(value) + decode(value);
+}
+"#;
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(consumer, None, &[], &codec_package)
+                .unwrap(),
+            "import { decodeUTF8, decodeUTF8 as decode } from \"@flighthq/codec/contract\";\n\nexport function callDecoder(value: number): number {\n  return decodeUTF8(value) + decode(value);\n}\n"
+        );
+
+        let production = "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n";
+        let production_sources = [VitestAliasSource {
+            source: production,
+            module: "crates/flight-consumer/src/caller.rs",
+        }];
+        let explicit = r#"use flight_codec::decode_utf8;
+
+mod call_decoder {
+    use super::*;
+
+    #[test]
+    fn decodes() {
+        let decoded = decode_utf8(1);
+        assert_eq!(decoded, call_decoder(1));
+    }
+}
+"#;
+        assert_eq!(
+            compile_vitest_with_external_alias_sources(
+                explicit,
+                "@flighthq/consumer/contract",
+                None,
+                &production_sources,
+                &codec_package,
+            )
+            .unwrap(),
+            "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from \"@flighthq/codec/contract\";\n\nimport {\n  callDecoder,\n} from \"@flighthq/consumer/contract\";\n\ndescribe(\"callDecoder\", () => {\n  it(\"decodes\", () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n"
+        );
+        let wildcard = "use flight_codec::*;\nuse flight_consumer::*;\n\n#[test]\nfn decodes() {\n    let decoded = decode_utf8(1);\n    assert_eq!(decoded, call_decoder(1));\n}\n";
+        assert_eq!(
+            compile_vitest_with_external_alias_sources(
+                wildcard,
+                "@flighthq/consumer/contract",
+                Some("pub use crate::caller::call_decoder;\n"),
+                &production_sources,
+                &codec_package,
+            )
+            .unwrap(),
+            "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from \"@flighthq/codec/contract\";\n\nimport {\n  callDecoder,\n} from \"@flighthq/consumer/contract\";\n\ndescribe(\"portableTests\", () => {\n  it(\"decodes\", () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n"
+        );
+
+        let other = ExternalAliasSource {
+            source: "//! flight-compiler: export-name encode_utf8 decodeUTF8\npub fn encode_utf8() {}\n",
+            module: "@flighthq/other/contract",
+        };
+        for (source, external, expected) in [
+            (
+                "use flight_codec::decode_utf8;\npub fn call(decode_utf8: usize) -> usize { return decode_utf8; }\n",
+                vec![codec_package[0]],
+                "`flight-compiler: export-name` item `decode_utf8` imported from `@flighthq/codec/contract` is shadowed by a local binding of the same name",
+            ),
+            (
+                "use flight_codec::decode_utf8;\npub fn decode_u_t_f8() -> usize { return decode_utf8(1); }\n",
+                vec![codec_package[0]],
+                "`flight-compiler: export-name` TypeScript name `decodeUTF8` imported from `@flighthq/codec/contract` collides with a local item",
+            ),
+            (
+                "use flight_codec::decode_utf8;\nuse flight_other::encode_utf8;\npub fn call() -> usize { encode_utf8(); return decode_utf8(1); }\n",
+                vec![codec_package[0], other],
+                "`flight-compiler: export-name` TypeScript name `decodeUTF8` imported from `@flighthq/codec/contract` collides with another import",
+            ),
+            (
+                "use flight_codec::decode_utf8;\npub fn call() -> usize { return decode_utf8(1); }\n",
+                vec![
+                    codec_package[0],
+                    ExternalAliasSource {
+                        source: "//! flight-compiler: export-name decode_utf8 decodeUtf8Text\npub fn decode_utf8() {}\n",
+                        module: "@flighthq/codec/contract",
+                    },
+                ],
+                "`flight-compiler: export-name` item `decode_utf8` of `@flighthq/codec/contract` is given more than one TypeScript name",
+            ),
+            (
+                "use flight_codec::decode_utf8;\npub fn call() -> usize { return decode_utf8(1); }\n",
+                vec![ExternalAliasSource {
+                    source: "//! flight-compiler: export-name decode_utf8 decodeUTF8\npub fn encode_utf8() {}\n",
+                    module: "@flighthq/codec/contract",
+                }],
+                "`flight-compiler: export-name` item `decode_utf8` is not a function or constant of this source",
+            ),
+        ] {
+            let error =
+                compile_typescript_with_external_alias_sources(source, None, &[], &external)
+                    .unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+        let error = compile_typescript_with_external_alias_sources(
+            "//! flight-compiler: export-name decode_utf8 decodeUtf8Text\npub fn decode_utf8() {}\npub fn call() -> usize { return 1; }\n",
+            None,
+            &[
+                "use flight_codec::decode_utf8;\npub fn caller() -> usize { return decode_utf8(1); }\n",
+            ],
+            &codec_package,
+        );
+        assert!(error.is_ok(), "{error:?}");
+        let error = compile_typescript_with_external_alias_sources(
+            "use flight_codec::decode_utf8;\npub fn caller() -> usize { return decode_utf8(1); }\n",
+            None,
+            &["//! flight-compiler: export-name decode_utf8 decodeUtf8Text\npub fn decode_utf8() {}\n"],
+            &codec_package,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "`flight-compiler: export-name` item `decode_utf8` imported from `@flighthq/codec/contract` as `decodeUTF8` collides with the local mapping `decodeUtf8Text`"
         );
     }
 

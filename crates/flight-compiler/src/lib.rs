@@ -96,11 +96,13 @@ fn compile_typescript_sources(
             ));
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let dependency_export_names = dependency_export_names(external_alias_sources)?;
     let mut output = typescript::emit_program(
         &program,
         entity_module,
         &alias_programs,
         &external_alias_programs,
+        &dependency_export_names,
         module_identities.as_deref(),
     )?;
     output = lower_string_union_variants(
@@ -216,6 +218,25 @@ pub fn compile_vitest_with_alias_sources(
     return compile_vitest_with_module_alias_sources(source, contract_module, &named_alias_sources);
 }
 
+/// Compiles one Rust test module with production hints and dependency sources owned by other
+/// packages, whose `export-name` directives name the items the tests import from them.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_external_alias_sources(
+    source: &str,
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+) -> Result<String, CompileError> {
+    return compile_vitest_with_contract_alias_sources_internal(
+        source,
+        contract_module,
+        contract_source,
+        alias_sources,
+        external_alias_sources,
+    );
+}
+
 /// Compiles one Rust test module with source-qualified production hints.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_vitest_with_module_alias_sources(
@@ -228,6 +249,7 @@ pub fn compile_vitest_with_module_alias_sources(
         contract_module,
         None,
         alias_sources,
+        &[],
     );
 }
 
@@ -244,6 +266,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         contract_module,
         Some(contract_source),
         alias_sources,
+        &[],
     );
 }
 
@@ -252,9 +275,11 @@ fn compile_vitest_with_contract_alias_sources_internal(
     contract_module: &str,
     contract_source: Option<&str>,
     alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
+    let dependency_export_names = dependency_export_names(external_alias_sources)?;
     let alias_programs = alias_sources
         .iter()
         .map(|alias_source| model::parse_program(alias_source.source))
@@ -273,6 +298,11 @@ fn compile_vitest_with_contract_alias_sources_internal(
     );
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
+    typescript::insert_vitest_dependency_export_name_context(
+        &mut context,
+        &program,
+        &dependency_export_names,
+    )?;
     typescript::insert_vitest_struct_context(
         &mut context,
         alias_programs.iter().flat_map(|program| &program.structs),
@@ -297,6 +327,23 @@ fn compile_vitest_with_contract_alias_sources_internal(
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
     return Ok(output);
+}
+
+fn dependency_export_names<'a>(
+    external_alias_sources: &[ExternalAliasSource<'a>],
+) -> Result<Vec<(std::collections::BTreeMap<String, String>, &'a str)>, CompileError> {
+    return external_alias_sources
+        .iter()
+        .map(|external| {
+            if external.module.is_empty() {
+                return Err(compile_error("external alias module cannot be empty"));
+            }
+            return Ok((
+                model::parse_export_name_metadata(external.source)?,
+                external.module,
+            ));
+        })
+        .collect();
 }
 
 // Replaces each emitted `Owner.Variant` reference to a numeric union with the variant's declared

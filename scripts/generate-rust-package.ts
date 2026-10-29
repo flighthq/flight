@@ -3,16 +3,22 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { DependencySource } from './generate-rust-package-exports.ts';
 import {
   collectCompanionFileNames,
   compilerAliasArguments,
   collectExportSymbols,
+  collectFlightDependencyCrates,
+  collectRustExportNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
   renderCompanionContractExports,
   renderGeneratedImports,
+  dependencyAliasArguments,
+  mergeRustExportNames,
   renderPublicExports,
+  resolveRustExportName,
   snakeToLowerCamel,
 } from './generate-rust-package-exports.ts';
 
@@ -175,6 +181,7 @@ function compile(
       out,
       ...entityArguments(command),
       ...compilerAliasArguments(command, aliasSources),
+      ...dependencyAliasArguments(dependencySources(command)),
       ...contractArguments(command, trailing),
     ],
     {
@@ -213,7 +220,9 @@ function contractExports(
         ? overrides
         : moduleUses.some((rustUse) => rustUse.wildcard)
           ? [...symbols.entries()].filter(([, owner]) => owner.fileName === module.fileName).map(([name]) => name)
-          : moduleUses.map((rustUse) => resolveRustExportName(rustUse.name ?? '', symbols, module.fileName));
+          : moduleUses.map((rustUse) =>
+              resolveRustExportName(rustUse.name ?? '', symbols, moduleExportNames(module), module.fileName),
+            );
     const types: string[] = [];
     const values: string[] = [];
     for (const name of [...new Set(names)].sort()) {
@@ -241,6 +250,28 @@ function crateImports(
 ): string {
   const rust = readFileSync(rustPath, 'utf8');
   return renderGeneratedImports(rust, typescript, outputFileName, symbols);
+}
+
+// Sources of this crate's `flight-*` dependencies that carry `export-name` directives, with their
+// contract modules, so imports of mapped dependency items use the owner's TypeScript names. Tests also
+// see dev-dependencies.
+function dependencySources(command: string): DependencySource[] {
+  if (command !== 'generate' && command !== 'generate-tests') return [];
+  const manifest = readFileSync(join(crateRoot, 'Cargo.toml'), 'utf8');
+  const sources: DependencySource[] = [];
+  for (const crateName of collectFlightDependencyCrates(manifest, command === 'generate-tests')) {
+    if (crateName === options.crateName) continue;
+    const sourceRoot = join(repositoryRoot, 'crates', crateName, 'src');
+    if (!existsSync(sourceRoot)) continue;
+    const module = `@flighthq/${crateName.slice('flight-'.length)}/contract`;
+    for (const fileName of readdirSync(sourceRoot)
+      .filter((name) => name.endsWith('.rs'))
+      .sort()) {
+      const path = join(sourceRoot, fileName);
+      if (collectRustExportNames(readFileSync(path, 'utf8')).size > 0) sources.push({ module, path });
+    }
+  }
+  return sources;
 }
 
 function entityArguments(command: string): string[] {
@@ -345,6 +376,10 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
   };
 }
 
+function moduleExportNames(module: PackageModule): Map<string, string> {
+  return collectRustExportNames(readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8'));
+}
+
 function parseOptions(arguments_: string[]): Options {
   const values = new Map<string, string>();
   let check = false;
@@ -381,8 +416,11 @@ function publicExports(
   }
   const rust = readFileSync(join(crateRoot, 'src', 'lib.rs'), 'utf8');
   const publicUses = collectRustPublicUses(rust);
+  const exportNames = mergeRustExportNames(
+    new Map(modules.map((module) => [module.fileName, moduleExportNames(module)])),
+  );
   for (const rustUse of publicUses) {
-    if (rustUse.name !== undefined) roots.push(resolveRustExportName(rustUse.name, symbols));
+    if (rustUse.name !== undefined) roots.push(resolveRustExportName(rustUse.name, symbols, exportNames));
   }
   if (roots.length === 0) {
     for (const rustUse of publicUses.filter((candidate) => candidate.wildcard)) {
@@ -402,19 +440,6 @@ function publicExports(
   }
 
   return renderPublicExports(symbolModules, symbols, roots);
-}
-
-function resolveRustExportName(
-  rustName: string,
-  symbols: ReadonlyMap<string, SymbolOwner>,
-  ownerFileName?: string,
-): string {
-  const name = snakeToLowerCamel(rustName);
-  for (const candidate of [name, `${name}Raw`]) {
-    const owner = symbols.get(candidate);
-    if (owner && (ownerFileName === undefined || owner.fileName === ownerFileName)) return candidate;
-  }
-  throw new Error(`Rust export ${rustName} has no TypeScript symbol${ownerFileName ? ` in ${ownerFileName}` : ''}`);
 }
 
 function sourceDirective(crateRoot: string, module: PackageModule, directive: string): string[] {

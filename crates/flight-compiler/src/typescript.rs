@@ -29,6 +29,11 @@ const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
 // `export-name` mappings: `@export-name:rust` marks a mapped item and `@export-name-target:rust:Name`
 // carries its TypeScript name.
 const EXPORT_NAME_MARKER: &str = "@export-name:";
+// A dependency package's `export-name` mapping: `@dependency-export-name:module|rust` marks a mapped
+// item of that package's contract module and `@dependency-export-name-target:module|rust:Name`
+// carries its TypeScript name.
+const DEPENDENCY_EXPORT_NAME_MARKER: &str = "@dependency-export-name:";
+const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
 const EXPORT_NAME_TARGET_MARKER: &str = "@export-name-target:";
 // The module of the program being emitted; struct and function facts resolve against it.
 const CURRENT_SOURCE_MARKER: &str = "@current-source:";
@@ -306,6 +311,25 @@ pub(crate) fn default_item_name(segment: &str) -> String {
     return emit_path_segment(segment);
 }
 
+// The TypeScript name a dependency package's `export-name` directive gives its item `rust_name`, as
+// exported from `module`.
+// flight-lint: allow(hashmap-iteration) dependency export-name validation guarantees one target per item
+fn dependency_export_name<'a>(
+    context: &'a HashSet<String>,
+    module: &str,
+    rust_name: &str,
+) -> Option<&'a str> {
+    if !context.contains(&format!(
+        "{DEPENDENCY_EXPORT_NAME_MARKER}{module}|{rust_name}"
+    )) {
+        return None;
+    }
+    let prefix = format!("{DEPENDENCY_EXPORT_NAME_TARGET_MARKER}{module}|{rust_name}:");
+    return context
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
 // The explicit TypeScript name an `export-name` directive gives the Rust item `rust_name`, if any.
 // flight-lint: allow(hashmap-iteration) export-name validation guarantees one target name per Rust item
 pub(crate) fn export_name<'a>(context: &'a HashSet<String>, rust_name: &str) -> Option<&'a str> {
@@ -316,6 +340,170 @@ pub(crate) fn export_name<'a>(context: &'a HashSet<String>, rust_name: &str) -> 
     return context
         .iter()
         .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
+// `flight_*` crate roots imported with a wildcard (`use flight_codec::*;`), as contract modules.
+fn foreign_wildcard_modules(uses: &[&syn::ItemUse]) -> Vec<String> {
+    let mut modules = uses
+        .iter()
+        .filter_map(|item_use| match &item_use.tree {
+            syn::UseTree::Path(path) if matches!(path.tree.as_ref(), syn::UseTree::Glob(_)) => path
+                .ident
+                .to_string()
+                .strip_prefix("flight_")
+                .map(|package| format!("@flighthq/{}/contract", package.replace('_', "-"))),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    modules.sort();
+    modules.dedup();
+    return modules;
+}
+
+// Records the `export-name` mappings of dependency packages (external alias sources) so imports of
+// their mapped items use the owner's TypeScript names. Each unrenamed import of a mapped item, and each
+// mapped item a wildcard import brings in, is referenced by that name too. It fails when a dependency
+// gives one item two names, when an imported name disagrees with a local mapping of the same Rust name,
+// collides with a local item or another import, or is shadowed by a local binding.
+// flight-lint: allow(hashmap-iteration) mappings are BTreeMaps and items retain Rust source order in Vecs
+fn insert_dependency_export_name_context(
+    context: &mut HashSet<String>,
+    dependencies: &[(BTreeMap<String, String>, &str)],
+    symbols: &BTreeMap<String, CrossCrateSymbol>,
+    wildcard_modules: &[String],
+    functions: &[&ItemFn],
+    constants: &[&syn::ItemConst],
+    statics: &[&syn::ItemStatic],
+) -> Result<(), CompileError> {
+    let mut modules = BTreeMap::<&str, BTreeMap<&str, &str>>::new();
+    for (names, module) in dependencies {
+        for (item, target) in names {
+            if modules
+                .entry(module)
+                .or_default()
+                .insert(item, target)
+                .is_some_and(|previous| previous != target)
+            {
+                return Err(compile_error(format!(
+                    "`flight-compiler: export-name` item `{item}` of `{module}` is given more than one TypeScript name"
+                )));
+            }
+            context.insert(format!("{DEPENDENCY_EXPORT_NAME_MARKER}{module}|{item}"));
+            context.insert(format!(
+                "{DEPENDENCY_EXPORT_NAME_TARGET_MARKER}{module}|{item}:{target}"
+            ));
+        }
+    }
+    let mut references = BTreeMap::<String, (String, String)>::new();
+    for symbol in symbols.values() {
+        if symbol.local != symbol.imported {
+            continue;
+        }
+        if let Some(target) = modules
+            .get(symbol.module.as_str())
+            .and_then(|names| names.get(symbol.imported.as_str()))
+        {
+            references.insert(
+                symbol.local.clone(),
+                (target.to_string(), symbol.module.clone()),
+            );
+        }
+    }
+    for module in wildcard_modules {
+        for (item, target) in modules.get(module.as_str()).into_iter().flatten() {
+            let reference = (target.to_string(), module.clone());
+            if references
+                .insert(item.to_string(), reference.clone())
+                .is_some_and(|previous| previous != reference)
+            {
+                return Err(compile_error(format!(
+                    "`flight-compiler: export-name` item `{item}` is imported from more than one package"
+                )));
+            }
+        }
+    }
+    if references.is_empty() {
+        return Ok(());
+    }
+
+    #[derive(Default)]
+    struct BindingNameCollector {
+        names: HashSet<String>,
+    }
+
+    impl<'ast> Visit<'ast> for BindingNameCollector {
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            self.names.insert(pattern.ident.to_string());
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut bindings = BindingNameCollector::default();
+    for function in functions {
+        bindings.visit_item_fn(function);
+    }
+    for constant in constants {
+        bindings.visit_item_const(constant);
+    }
+    for item in statics {
+        bindings.visit_item_static(item);
+    }
+    let declared = functions
+        .iter()
+        .map(|function| function.sig.ident.to_string())
+        .chain(constants.iter().map(|constant| constant.ident.to_string()))
+        .chain(statics.iter().map(|item| item.ident.to_string()))
+        .map(|name| {
+            export_name(context, &name).map_or_else(|| default_item_name(&name), str::to_string)
+        })
+        .collect::<BTreeSet<_>>();
+    let mut imported = BTreeMap::<String, &str>::new();
+    for symbol in symbols.values() {
+        let local = if symbol.local == symbol.imported {
+            modules
+                .get(symbol.module.as_str())
+                .and_then(|names| names.get(symbol.imported.as_str()))
+                .map_or_else(
+                    || emit_path_segment(&symbol.imported),
+                    |target| target.to_string(),
+                )
+        } else {
+            emit_path_segment(&symbol.local)
+        };
+        imported.insert(local, &symbol.local);
+    }
+    for (local, (target, module)) in &references {
+        if let Some(existing) = export_name(context, local)
+            && existing != target
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{local}` imported from `{module}` as `{target}` collides with the local mapping `{existing}`"
+            )));
+        }
+        if bindings.names.contains(local) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{local}` imported from `{module}` is shadowed by a local binding of the same name"
+            )));
+        }
+        if declared.contains(target) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` TypeScript name `{target}` imported from `{module}` collides with a local item"
+            )));
+        }
+        if imported
+            .get(target)
+            .is_some_and(|other| *other != local.as_str())
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` TypeScript name `{target}` imported from `{module}` collides with another import"
+            )));
+        }
+    }
+    for (local, (target, _)) in references {
+        context.insert(format!("{EXPORT_NAME_MARKER}{local}"));
+        context.insert(format!("{EXPORT_NAME_TARGET_MARKER}{local}:{target}"));
+    }
+    return Ok(());
 }
 
 // Records every `export-name` mapping of the combined sources. A mapped Rust name must be declared by
@@ -474,6 +662,47 @@ fn collect_definitely_assigned_fields(
         }
     }
     return true;
+}
+
+// Records the dependency `export-name` mappings a Rust test module imports, across its top-level and
+// suite `use` items.
+// flight-lint: allow(hashmap-iteration) test items retain Rust source order in Vecs
+pub(crate) fn insert_vitest_dependency_export_name_context(
+    context: &mut HashSet<String>,
+    program: &TestProgram,
+    dependencies: &[(BTreeMap<String, String>, &str)],
+) -> Result<(), CompileError> {
+    if dependencies.iter().all(|(names, _)| names.is_empty()) {
+        return Ok(());
+    }
+    let uses = program
+        .uses
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| &suite.uses))
+        .collect::<Vec<_>>();
+    let mut symbols = BTreeMap::new();
+    for item_use in &uses {
+        collect_cross_crate_use_tree(&item_use.tree, &mut Vec::new(), &mut symbols);
+    }
+    let functions = program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| {
+            suite
+                .helpers
+                .iter()
+                .chain(suite.tests.iter().map(|test| &test.function))
+        }))
+        .collect::<Vec<_>>();
+    return insert_dependency_export_name_context(
+        context,
+        dependencies,
+        &symbols,
+        &foreign_wildcard_modules(&uses),
+        &functions,
+        &program.constants.iter().collect::<Vec<_>>(),
+        &[],
+    );
 }
 
 // The name and entity type of a function's leading `name: &mut Entity` parameter.
@@ -8394,9 +8623,16 @@ fn emit_data_union_tuple_binding(
     return Ok(Some((predicates.join(" && "), bindings)));
 }
 
-fn import_specifier(symbol: &CrossCrateSymbol) -> String {
-    let imported = emit_path_segment(&symbol.imported);
-    let local = emit_path_segment(&symbol.local);
+// An import of a dependency item: its TypeScript name follows the owner's `export-name` mapping, and an
+// unrenamed import binds that same name locally.
+fn import_specifier(symbol: &CrossCrateSymbol, context: &HashSet<String>) -> String {
+    let imported = dependency_export_name(context, &symbol.module, &symbol.imported)
+        .map_or_else(|| emit_path_segment(&symbol.imported), str::to_string);
+    let local = if symbol.local == symbol.imported {
+        imported.clone()
+    } else {
+        emit_path_segment(&symbol.local)
+    };
     if imported == local {
         return imported;
     }
@@ -8599,6 +8835,7 @@ pub(crate) fn test_mixed_foreign_wildcard_roots(
 
 fn finish_cross_crate_imports(
     collector: CrossCrateUsageCollector<'_>,
+    context: &HashSet<String>,
 ) -> (
     BTreeMap<String, BTreeSet<String>>,
     BTreeMap<String, BTreeSet<String>>,
@@ -8623,7 +8860,7 @@ fn finish_cross_crate_imports(
             imports
                 .entry(symbol.module.clone())
                 .or_default()
-                .insert(import_specifier(symbol));
+                .insert(import_specifier(symbol, context));
         }
     }
     return (value_imports, type_imports);
@@ -8631,6 +8868,7 @@ fn finish_cross_crate_imports(
 
 fn cross_crate_imports(
     program: &Program,
+    context: &HashSet<String>,
 ) -> (
     BTreeMap<String, BTreeSet<String>>,
     BTreeMap<String, BTreeSet<String>>,
@@ -8667,7 +8905,7 @@ fn cross_crate_imports(
         collector.visit_item_type(type_alias);
     }
 
-    return finish_cross_crate_imports(collector);
+    return finish_cross_crate_imports(collector, context);
 }
 
 pub(crate) fn test_cross_crate_imports(
@@ -8732,7 +8970,7 @@ pub(crate) fn test_cross_crate_imports(
     for type_alias in &program.type_aliases {
         collector.visit_item_type(type_alias);
     }
-    let (mut value_imports, mut type_imports) = finish_cross_crate_imports(collector);
+    let (mut value_imports, mut type_imports) = finish_cross_crate_imports(collector, context);
     let mut bindings = BTreeMap::new();
     record_bindings(&value_imports, &mut bindings)?;
     record_bindings(&type_imports, &mut bindings)?;
@@ -8755,7 +8993,8 @@ pub(crate) fn test_cross_crate_imports(
         {
             collector.visit_item_fn(function);
         }
-        let (suite_value_imports, suite_type_imports) = finish_cross_crate_imports(collector);
+        let (suite_value_imports, suite_type_imports) =
+            finish_cross_crate_imports(collector, &suite_context);
         record_bindings(&suite_value_imports, &mut bindings)?;
         record_bindings(&suite_type_imports, &mut bindings)?;
         merge_imports(&mut value_imports, suite_value_imports);
@@ -8776,6 +9015,7 @@ pub(crate) fn emit_program(
     entity_module: Option<&str>,
     alias_programs: &[Program],
     external_alias_programs: &[(BTreeMap<String, String>, &str)],
+    dependency_export_names: &[(BTreeMap<String, String>, &str)],
     module_identities: Option<&[String]>,
 ) -> Result<String, CompileError> {
     let programs = std::iter::once(program)
@@ -8791,7 +9031,6 @@ pub(crate) fn emit_program(
     let aliases = preferred_aliases(program, alias_programs)?;
     let external_identity_aliases = external_identity_aliases(external_alias_programs)?;
     let used_identity_aliases = used_identity_aliases(program, &external_identity_aliases);
-    let (mut value_imports, mut type_imports) = cross_crate_imports(program);
     let mut identity_context = HashSet::new();
     for (name, alias) in &external_identity_aliases {
         identity_context.insert(identity_alias_marker(name, &alias.tag));
@@ -8812,6 +9051,16 @@ pub(crate) fn emit_program(
     let mut expression_context =
         generation_context_with_types(&program_sources, &identity_context, None, false)?;
     expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));
+    insert_dependency_export_name_context(
+        &mut expression_context,
+        dependency_export_names,
+        &cross_crate_symbols(&program.uses),
+        &[],
+        &program.functions.iter().collect::<Vec<_>>(),
+        &program.constants.iter().collect::<Vec<_>>(),
+        &program.statics.iter().collect::<Vec<_>>(),
+    )?;
+    let (mut value_imports, mut type_imports) = cross_crate_imports(program, &expression_context);
     let mut source_context = expression_context.clone();
     if program.nullable_options {
         source_context.insert(NULLABLE_OPTIONS_MARKER.to_string());

@@ -19,6 +19,12 @@ interface ResolvedExports {
   values: string[];
 }
 
+// A Rust source of another package and that package's contract module.
+export interface DependencySource {
+  module: string;
+  path: string;
+}
+
 export interface RustPublicUse {
   moduleName: string;
   name?: string;
@@ -28,6 +34,24 @@ export interface RustPublicUse {
 export function compilerAliasArguments(command: string, aliasSources: readonly string[]): string[] {
   if (command !== 'generate' && command !== 'generate-tests') return [];
   return aliasSources.flatMap((source) => ['--alias-source', source]);
+}
+
+// `flight-*` crates a Cargo manifest depends on: `[dependencies]`, plus `[dev-dependencies]` when the
+// caller generates tests. Sorted and unique.
+export function collectFlightDependencyCrates(cargoToml: string, includeDevelopment: boolean): string[] {
+  const crates = new Set<string>();
+  let section = '';
+  for (const line of cargoToml.split(/\r?\n/)) {
+    const header = /^\s*\[([^\]]+)\]\s*$/.exec(line);
+    if (header) {
+      section = header[1].trim();
+      continue;
+    }
+    if (section !== 'dependencies' && !(includeDevelopment && section === 'dev-dependencies')) continue;
+    const dependency = /^\s*(flight-[a-z0-9-]+)\s*=/.exec(line);
+    if (dependency) crates.add(dependency[1]);
+  }
+  return [...crates].sort();
 }
 
 export function collectExportSymbols(modules: readonly ExportModule[]): Map<string, ExportSymbolOwner> {
@@ -74,6 +98,16 @@ export function renderCompanionContractExports(
     }
   }
   return output;
+}
+
+// `//! flight-compiler: export-name <rust_item> <TypeScriptName>` directives of one Rust source. The
+// compiler validates them when it generates the source; this reads the same mapping for re-exports.
+export function collectRustExportNames(rust: string): Map<string, string> {
+  const names = new Map<string, string>();
+  for (const match of rust.matchAll(/^\/\/!\s*flight-compiler:\s*export-name\s+(\S+)\s+(\S+)\s*$/gm)) {
+    names.set(match[1], match[2]);
+  }
+  return names;
 }
 
 export function collectReferencedExportNames(
@@ -250,6 +284,17 @@ export function collectStaleGeneratedFileNames(
     .sort();
 }
 
+// The `--external-alias-source` / `--external-alias-module` pairs that hand dependency sources to the
+// compiler, so it imports their `export-name` items by the owner's TypeScript names.
+export function dependencyAliasArguments(sources: readonly DependencySource[]): string[] {
+  return sources.flatMap((source) => [
+    '--external-alias-source',
+    source.path,
+    '--external-alias-module',
+    source.module,
+  ]);
+}
+
 export function hasGeneratedProvenanceHeader(contents: string): boolean {
   return contents.startsWith('// Generated from crates/');
 }
@@ -311,6 +356,26 @@ export function snakeToLowerCamel(value: string): string {
   });
 }
 
+// One package's `export-name` mappings across its sources. Two sources naming one Rust item differently
+// is a deterministic error.
+export function mergeRustExportNames(sources: ReadonlyMap<string, ReadonlyMap<string, string>>): Map<string, string> {
+  const merged = new Map<string, string>();
+  const owners = new Map<string, string>();
+  for (const [fileName, names] of [...sources].sort(([left], [right]) => left.localeCompare(right))) {
+    for (const [rustName, typescriptName] of names) {
+      const previous = merged.get(rustName);
+      if (previous !== undefined && previous !== typescriptName) {
+        throw new Error(
+          `export-name ${rustName} is ${previous} in ${owners.get(rustName)} and ${typescriptName} in ${fileName}`,
+        );
+      }
+      merged.set(rustName, typescriptName);
+      owners.set(rustName, fileName);
+    }
+  }
+  return merged;
+}
+
 export function renderPublicExports(
   modules: readonly ExportModule[],
   symbols: ReadonlyMap<string, ExportSymbolOwner>,
@@ -343,4 +408,25 @@ export function renderPublicExports(
     }
   }
   return output;
+}
+
+// The generated TypeScript symbol of an explicitly re-exported Rust item: its `export-name` mapping
+// when one exists, otherwise its lower-camel name (or the `Raw` entity form).
+export function resolveRustExportName(
+  rustName: string,
+  symbols: ReadonlyMap<string, ExportSymbolOwner>,
+  exportNames: ReadonlyMap<string, string>,
+  ownerFileName?: string,
+): string {
+  const mapped = exportNames.get(rustName);
+  const name = snakeToLowerCamel(rustName);
+  const candidates = mapped === undefined ? [name, `${name}Raw`] : [mapped];
+  for (const candidate of candidates) {
+    const owner = symbols.get(candidate);
+    if (owner && (ownerFileName === undefined || owner.fileName === ownerFileName)) return candidate;
+  }
+  const expected = mapped === undefined ? '' : ` (export-name ${mapped})`;
+  throw new Error(
+    `Rust export ${rustName}${expected} has no TypeScript symbol${ownerFileName ? ` in ${ownerFileName}` : ''}`,
+  );
 }

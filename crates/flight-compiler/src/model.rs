@@ -136,6 +136,39 @@ fn is_typescript_identifier(name: &str) -> bool {
         });
 }
 
+// The validated `export-name` directives of a dependency source, which a consuming package needs to
+// import and reference the source's mapped public items by their TypeScript names.
+pub(crate) fn parse_export_name_metadata(
+    source: &str,
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let directives = parse_export_names(&file.attrs)?;
+    if directives.is_empty() {
+        return Ok(directives);
+    }
+    let frozen_objects = parse_frozen_objects(&file.attrs)?;
+    let mut constants = Vec::new();
+    let mut functions = Vec::new();
+    let mut statics = Vec::new();
+    for item in file.items {
+        match item {
+            Item::Const(item) => constants.push(item),
+            Item::Fn(function) => functions.push(function),
+            Item::Static(item) => statics.push(item),
+            _ => {}
+        }
+    }
+    validate_export_names(
+        &directives,
+        &frozen_objects,
+        &functions,
+        &constants,
+        &statics,
+    )?;
+    return Ok(directives);
+}
+
 pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;

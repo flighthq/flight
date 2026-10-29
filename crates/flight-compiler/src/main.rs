@@ -5,7 +5,7 @@ use std::process;
 
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
        flight-compile source-mode --source <rust-file>
 ";
 
@@ -95,22 +95,33 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .contract_module
                 .as_deref()
                 .ok_or_else(|| format!("--contract-module is required\n\n{USAGE}"))?;
-            if let Some(contract_path) = &options.contract_source {
-                let contract_source = fs::read_to_string(contract_path)
-                    .map_err(|error| format!("{}: {error}", contract_path.display()))?;
-                flight_compiler::compile_vitest_with_contract_alias_sources(
-                    &source,
-                    contract_module,
-                    &contract_source,
-                    &alias_source_refs,
-                )
-            } else {
-                flight_compiler::compile_vitest_with_module_alias_sources(
-                    &source,
-                    contract_module,
-                    &alias_source_refs,
-                )
-            }
+            let contract_source = options
+                .contract_source
+                .as_ref()
+                .map(|contract_path| {
+                    fs::read_to_string(contract_path)
+                        .map_err(|error| format!("{}: {error}", contract_path.display()))
+                })
+                .transpose()?;
+            let external_alias_sources = options
+                .external_alias_sources
+                .iter()
+                .map(|path| {
+                    fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let external_aliases = external_alias_sources
+                .iter()
+                .zip(&options.external_alias_modules)
+                .map(|(source, module)| flight_compiler::ExternalAliasSource { source, module })
+                .collect::<Vec<_>>();
+            flight_compiler::compile_vitest_with_external_alias_sources(
+                &source,
+                contract_module,
+                contract_source.as_deref(),
+                &alias_source_refs,
+                &external_aliases,
+            )
         }
     }
     .map_err(|error| error.to_string())?;
@@ -244,13 +255,6 @@ fn parse_generate_options(
         GenerateKind::Tests if entity_module.is_some() => {
             return Err(format!(
                 "--entity-module is only valid for generate\n\n{USAGE}"
-            ));
-        }
-        GenerateKind::Tests
-            if !external_alias_sources.is_empty() || !external_alias_modules.is_empty() =>
-        {
-            return Err(format!(
-                "external alias options are only valid for generate\n\n{USAGE}"
             ));
         }
         GenerateKind::Source | GenerateKind::Tests => {}

@@ -6,15 +6,97 @@ import {
   compilerAliasArguments,
   collectContractModuleNames,
   collectExportSymbols,
+  collectFlightDependencyCrates,
   collectReferencedExportNames,
   collectPublicRootNames,
+  collectRustExportNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
+  dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
+  mergeRustExportNames,
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
+  resolveRustExportName,
 } from './generate-rust-package-exports.ts';
+
+describe('collectFlightDependencyCrates', () => {
+  const manifest = [
+    '[package]',
+    'name = "flight-consumer"',
+    '',
+    '[dependencies]',
+    'flight-entity = { workspace = true }',
+    'flight-encoding = { workspace = true }',
+    'serde = "1"',
+    '',
+    '[dev-dependencies]',
+    'flight-geometry = { workspace = true }',
+    'flight-entity = { workspace = true }',
+  ].join('\n');
+
+  it('reads flight dependencies, adding dev-dependencies only for tests', () => {
+    expect(collectFlightDependencyCrates(manifest, false)).toEqual(['flight-encoding', 'flight-entity']);
+    expect(collectFlightDependencyCrates(manifest, true)).toEqual([
+      'flight-encoding',
+      'flight-entity',
+      'flight-geometry',
+    ]);
+  });
+});
+
+describe('collectRustExportNames', () => {
+  it('reads export-name directives and ignores other directives', () => {
+    const rust = [
+      '//! flight-compiler: export-name decode_utf8 decodeUTF8',
+      '//! flight-compiler: frozen-object PRESET Preset',
+      '//! flight-compiler: export-name encode_utf8 encodeUTF8',
+      'pub fn decode_utf8() {}',
+    ].join('\n');
+    expect([...collectRustExportNames(rust)]).toEqual([
+      ['decode_utf8', 'decodeUTF8'],
+      ['encode_utf8', 'encodeUTF8'],
+    ]);
+    expect(collectRustExportNames('pub fn decode_utf8() {}\n').size).toBe(0);
+  });
+});
+
+describe('dependencyAliasArguments', () => {
+  it('passes each dependency source with its contract module', () => {
+    expect(
+      dependencyAliasArguments([{ module: '@flighthq/encoding/contract', path: 'crates/flight-encoding/src/utf8.rs' }]),
+    ).toEqual([
+      '--external-alias-source',
+      'crates/flight-encoding/src/utf8.rs',
+      '--external-alias-module',
+      '@flighthq/encoding/contract',
+    ]);
+    expect(dependencyAliasArguments([])).toEqual([]);
+  });
+});
+
+describe('mergeRustExportNames', () => {
+  it('merges agreeing mappings and rejects one item named twice', () => {
+    const utf8 = new Map([['decode_utf8', 'decodeUTF8']]);
+    expect([
+      ...mergeRustExportNames(
+        new Map([
+          ['utf8.ts', utf8],
+          ['other.ts', utf8],
+        ]),
+      ),
+    ]).toEqual([['decode_utf8', 'decodeUTF8']]);
+    expect(() =>
+      mergeRustExportNames(
+        new Map([
+          ['utf8.ts', utf8],
+          ['text.ts', new Map([['decode_utf8', 'decodeUtf8Text']])],
+        ]),
+      ),
+    ).toThrow('export-name decode_utf8 is decodeUtf8Text in text.ts and decodeUTF8 in utf8.ts');
+  });
+});
 
 describe('renderPublicExports', () => {
   it('passes production source hints to contract and test generation', () => {
@@ -208,5 +290,33 @@ export function createWidget(): WidgetRaw { console.log('FREE_FUNCTION_MARKER');
     expect(stale).toEqual(['obsolete.test.ts']);
     expect(hasGeneratedProvenanceHeader(`${header}src/obsolete.rs by flight-compiler.\n`)).toBe(true);
     expect(hasGeneratedProvenanceHeader('export class Handwritten {}\n')).toBe(false);
+  });
+});
+
+describe('resolveRustExportName', () => {
+  const symbols = new Map([
+    ['decodeUTF8', { fileName: 'utf8.ts', hasType: false, hasValue: true }],
+    ['measureText', { fileName: 'text.ts', hasType: false, hasValue: true }],
+    ['WidgetRaw', { fileName: 'widget.ts', hasType: true, hasValue: false }],
+  ]);
+  const exportNames = new Map([['decode_utf8', 'decodeUTF8']]);
+
+  it('resolves explicit re-exports through export-name mappings and default names', () => {
+    expect(resolveRustExportName('decode_utf8', symbols, exportNames)).toBe('decodeUTF8');
+    expect(resolveRustExportName('decode_utf8', symbols, exportNames, 'utf8.ts')).toBe('decodeUTF8');
+    expect(resolveRustExportName('measure_text', symbols, exportNames, 'text.ts')).toBe('measureText');
+    expect(resolveRustExportName('Widget', symbols, exportNames)).toBe('WidgetRaw');
+  });
+
+  it('fails deterministically for missing or misowned mapped symbols', () => {
+    expect(() => resolveRustExportName('decode_utf8', symbols, new Map())).toThrow(
+      'Rust export decode_utf8 has no TypeScript symbol',
+    );
+    expect(() => resolveRustExportName('decode_utf8', symbols, exportNames, 'text.ts')).toThrow(
+      'Rust export decode_utf8 (export-name decodeUTF8) has no TypeScript symbol in text.ts',
+    );
+    expect(() => resolveRustExportName('decode_utf8', symbols, new Map([['decode_utf8', 'decodeUtf8Text']]))).toThrow(
+      'Rust export decode_utf8 (export-name decodeUtf8Text) has no TypeScript symbol',
+    );
   });
 });
