@@ -335,10 +335,12 @@ function recordingWindowBackend(): RecordingWindowBackend {
   return out;
 }
 
+function createHostSurface(): Surface {
+  return finishEntity(allocateEntity<Surface>());
+}
+
 function createHostTarget(): InputTargetHandle {
-  const out = allocateEntity<InputTargetHandle>();
-  out.__brand = 'InputTargetHandle' as const;
-  return finishEntity(out);
+  return finishEntity(allocateEntity<InputTargetHandle>());
 }
 
 function createWindowResizeTarget(): WindowResizeTargetHandle {
@@ -448,7 +450,7 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
   out.emitRestored = () => {
     onRestored?.();
   };
-  out.subscribe = (_target: InputTargetHandle, nextLost: () => void, nextRestored: () => void) => {
+  out.subscribe = (_surface: Readonly<Surface>, nextLost: () => void, nextRestored: () => void) => {
     calls.push('subscribe');
     onLost = nextLost;
     onRestored = nextRestored;
@@ -465,7 +467,7 @@ function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   const calls: string[] = [];
   const out = {} as RecordingRenderSurfaceBackend;
   out.calls = calls;
-  out.resize = (_target: InputTargetHandle, width: number, height: number) => {
+  out.resize = (_surface: Readonly<Surface>, width: number, height: number) => {
     calls.push(`resize:${width},${height}`);
   };
   return out;
@@ -762,7 +764,7 @@ describe('attachWindowRenderContext', () => {
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(host.graphics.renderContext, win, createHostTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createHostSurface());
     host.graphics.renderContext.emitLost();
     expect(called).toBe(true);
   });
@@ -773,7 +775,7 @@ describe('attachWindowRenderContext', () => {
     connectSignal(win.onRenderContextRestored, () => {
       called = true;
     });
-    attachWindowRenderContext(host.graphics.renderContext, win, createHostTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createHostSurface());
     host.graphics.renderContext.emitRestored();
     expect(called).toBe(true);
   });
@@ -782,7 +784,7 @@ describe('attachWindowRenderContext', () => {
     const origin = createTestHost();
     const replacement = createTestHost();
     const win = createAppWindow();
-    const target = createHostTarget();
+    const target = createHostSurface();
 
     attachWindowRenderContext(origin.graphics.renderContext, win, target);
     attachWindowRenderContext(replacement.graphics.renderContext, win, target);
@@ -800,7 +802,7 @@ describe('attachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 2;
     const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostSurface());
     expect(host.graphics.renderSurface.calls).toEqual(['resize:1600,1200']);
   });
 
@@ -810,7 +812,7 @@ describe('attachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 1;
     const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostSurface());
     win.width = 400;
     win.devicePixelRatio = 2;
     emitSignal(win.onResize, undefined);
@@ -822,7 +824,7 @@ describe('attachWindowRenderState', () => {
     win.width = 100;
     win.height = 100;
     win.devicePixelRatio = 1;
-    attachWindowRenderState(host.graphics.renderSurface, win, makeRenderState(), createHostTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, makeRenderState(), createHostSurface());
     detachWindowRenderState(win);
     win.width = 200;
     emitSignal(win.onResize, undefined);
@@ -837,7 +839,7 @@ describe('attachWindowRenderState', () => {
     win.height = 200;
     const state = makeRenderState();
 
-    attachWindowRenderState(origin.graphics.renderSurface, win, state, createHostTarget());
+    attachWindowRenderState(origin.graphics.renderSurface, win, state, createHostSurface());
     host = active;
     win.width = 640;
     emitSignal(win.onResize, undefined);
@@ -850,12 +852,13 @@ describe('attachWindowRenderState', () => {
     const targetHost = createTestHost();
     const composedHost: WindowTargetHost = targetHost;
     const target = createHostTarget();
+    const surface = createHostSurface();
     const win = createAppWindow();
 
     attachWindowDropFile(composedHost.input.dropFile, win, target);
     attachWindowFocus(composedHost.input.focus, win, target);
-    attachWindowRenderContext(composedHost.graphics.renderContext, win, target);
-    attachWindowRenderState(composedHost.graphics.renderSurface, win, makeRenderState(), target);
+    attachWindowRenderContext(composedHost.graphics.renderContext, win, surface);
+    attachWindowRenderState(composedHost.graphics.renderSurface, win, makeRenderState(), surface);
     await lockAppInputPointer(composedHost.input.pointerLock, target);
 
     expect(targetHost.input.dropFile.calls).toEqual(['subscribe']);
@@ -1143,7 +1146,7 @@ describe('detachWindowRenderContext', () => {
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(host.graphics.renderContext, win, createHostTarget());
+    attachWindowRenderContext(host.graphics.renderContext, win, createHostSurface());
     detachWindowRenderContext(win);
     host.graphics.renderContext.emitLost();
     expect(called).toBe(false);
@@ -1158,7 +1161,7 @@ describe('detachWindowRenderState', () => {
     win.height = 600;
     win.devicePixelRatio = 1;
     const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
+    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostSurface());
     detachWindowRenderState(win);
     win.width = 400;
     emitSignal(win.onResize, undefined);
@@ -1552,9 +1555,7 @@ describe('prepareElementForInput', () => {
     const backend = {} as HostInputTargetCapability;
     backend.prepare = prepare;
     const target = (() => {
-      const out = allocateEntity<InputTargetHandle>();
-      out.__brand = 'InputTargetHandle' as const;
-      return finishEntity(out);
+      return finishEntity(allocateEntity<InputTargetHandle>());
     })();
 
     prepareElementForInput({ input: { target: backend } }.input.target, target);

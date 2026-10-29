@@ -176,14 +176,14 @@ export function attachWindowOrientation(hostScreenChange: Readonly<HostScreenCha
 export function attachWindowRenderContext(
   hostGl: Readonly<HostGlCapability>,
   win: AppWindow,
-  target: InputTargetHandle,
+  surface: Readonly<Surface>,
 ): void {
   const observers = getAppWindowObservers(win);
   observers.get(kRenderContext)?.();
   observers.set(
     kRenderContext,
     hostGl.subscribe(
-      target,
+      surface,
       () => emitSignal(win.onRenderContextLost, undefined),
       () => emitSignal(win.onRenderContextRestored, undefined),
     ),
