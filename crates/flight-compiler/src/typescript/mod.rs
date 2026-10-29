@@ -10919,6 +10919,32 @@ fn emit_method_call(
             ));
         }
     }
+    if let Expr::MethodCall(entry) = call.receiver.as_ref() {
+        if entry.method == "entry"
+            && entry.args.len() == 1
+            && expression_hash_collection(&entry.receiver, entities).is_some()
+        {
+            let map = emit_expression(&entry.receiver, entities)?;
+            let key = emit_expression(&entry.args[0], entities)?;
+            return match (call.method.to_string().as_str(), call.args.len()) {
+                ("or_insert", 1) => {
+                    let default = emit_expression(&call.args[0], entities)?;
+                    Ok(format!(
+                        "(<K, V>(entries: Map<K, V>, key: K, value: V): V => {{ if (!entries.has(key)) {{ entries.set(key, value); }} return entries.get(key)!; }})({map}, {key}, {default})"
+                    ))
+                }
+                ("or_insert_with", 1) => {
+                    let init = emit_expression(&call.args[0], entities)?;
+                    Ok(format!(
+                        "(<K, V>(entries: Map<K, V>, key: K, init: () => V): V => {{ if (!entries.has(key)) {{ entries.set(key, init()); }} return entries.get(key)!; }})({map}, {key}, {init})"
+                    ))
+                }
+                (method, args) => Err(compile_error(format!(
+                    "portable `HashMap::entry().{method}` with {args} argument(s) has no portable lowering"
+                ))),
+            };
+        }
+    }
     let receiver = emit_expression(&call.receiver, entities)?;
     if let Some(kind) = expression_hash_collection(&call.receiver, entities) {
         return emit_hash_collection_method(call, &kind, &receiver, entities);

@@ -3308,6 +3308,40 @@ pub fn has_entry(map: &HashMap<String, i32>, key: &str) -> bool {
     }
 
     #[test]
+    fn lowers_hashmap_entry_or_insert_and_or_insert_with() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn count(map: &mut HashMap<String, i32>, key: String) {
+    *map.entry(key).or_insert(0) += 1;
+}
+
+pub fn get_or_create(map: &mut HashMap<String, i32>, key: String) -> i32 {
+    return *map.entry(key).or_insert_with(|| 42);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("entries.has(key)"),
+            "or_insert should check has: {output}"
+        );
+        assert!(
+            output.contains("entries.set(key, value)"),
+            "or_insert should set: {output}"
+        );
+        assert!(
+            output.contains("entries.get(key)!"),
+            "or_insert should return get: {output}"
+        );
+        assert!(
+            output.contains("entries.set(key, init())"),
+            "or_insert_with should call init: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {
