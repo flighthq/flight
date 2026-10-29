@@ -2,8 +2,7 @@ import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createDomRenderState, domTextLabelRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
-import { createTextLabel } from '@flighthq/text';
-import { TextLabelKind } from '@flighthq/types';
+import { createTextLabel, TextLabelKind } from '@flighthq/text';
 
 const container = document.createElement('div');
 container.style.width = '400px';

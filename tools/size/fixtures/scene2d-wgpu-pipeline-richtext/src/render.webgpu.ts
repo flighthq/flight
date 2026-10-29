@@ -18,8 +18,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { wgpuRichTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
-import { createRichText } from '@flighthq/text';
-import { RichTextKind } from '@flighthq/types';
+import { createRichText, RichTextKind } from '@flighthq/text';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

@@ -2,8 +2,7 @@ import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createDomRenderState, domNativeTextRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
-import { createNativeText } from '@flighthq/text';
-import { NativeTextKind } from '@flighthq/types';
+import { createNativeText, NativeTextKind } from '@flighthq/text';
 
 const container = document.createElement('div');
 container.style.width = '400px';

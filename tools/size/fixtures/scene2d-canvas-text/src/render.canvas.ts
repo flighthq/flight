@@ -13,8 +13,7 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
-import { createTextLabel } from '@flighthq/text';
-import { TextLabelKind } from '@flighthq/types';
+import { createTextLabel, TextLabelKind } from '@flighthq/text';
 
 // REQUIRED WIRING for one text primitive, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

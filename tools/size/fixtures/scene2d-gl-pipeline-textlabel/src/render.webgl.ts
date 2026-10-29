@@ -18,8 +18,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { glTextLabelRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
-import { createTextLabel } from '@flighthq/text';
-import { TextLabelKind } from '@flighthq/types';
+import { createTextLabel, TextLabelKind } from '@flighthq/text';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

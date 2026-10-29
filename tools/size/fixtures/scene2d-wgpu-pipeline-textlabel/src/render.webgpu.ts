@@ -19,8 +19,8 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import { wgpuTextLabelRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { standardWgpuQuadMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
 import { createWgpuSurface } from '@flighthq/surface';
-import { createTextLabel } from '@flighthq/text';
-import { StandardMaterialKind, TextLabelKind } from '@flighthq/types';
+import { createTextLabel, TextLabelKind } from '@flighthq/text';
+import { StandardMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

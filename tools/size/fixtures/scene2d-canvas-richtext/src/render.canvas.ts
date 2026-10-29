@@ -13,8 +13,7 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
-import { appendRichTextString, createRichText, setRichTextDefaultTextFormat } from '@flighthq/text';
-import { RichTextKind } from '@flighthq/types';
+import { appendRichTextString, createRichText, RichTextKind, setRichTextDefaultTextFormat } from '@flighthq/text';
 
 // REQUIRED WIRING for one rich text field, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

@@ -2,8 +2,7 @@ import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createDomRenderState, domRichTextRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
-import { createRichText } from '@flighthq/text';
-import { RichTextKind } from '@flighthq/types';
+import { createRichText, RichTextKind } from '@flighthq/text';
 
 const container = document.createElement('div');
 container.style.width = '400px';
