@@ -396,21 +396,63 @@ describe('flight-compile const-group lowering', () => {
     expect(exports.offset(41)).toBe(42);
   });
 
-  it('fails closed when a package imports a member by its Rust name', () => {
+  it('lowers a member imported by its Rust name through its owner, and fails closed on a wildcard import', () => {
     const keys = join(workDirectory, 'keys_package.rs');
     writeFileSync(keys, KEYS_PACKAGE_FIXTURE);
     const dependency = ['--external-alias-source', keys, '--external-alias-module', '@flighthq/keys/contract'];
-    for (const [rust, message] of [
-      [
-        'use flight_keys::KEY_CODE_A;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n',
-        'error: importing `const-group` member `KEY_CODE_A` from `@flighthq/keys/contract` has no portable lowering; it is `KeyCode.A` in TypeScript',
-      ],
-      [
+    const { error, typescript } = compileRust(
+      'consumer',
+      'use flight_keys::{KEY_CODE_A, KEY_CODE_A as A};\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A && code == A;\n}\n',
+      dependency,
+    );
+    expect(error).toBe('');
+    expect(typescript).toContain('import { KeyCode } from "@flighthq/keys/contract";');
+    expect(typescript).toContain('return code === KeyCode.A && code === KeyCode.A;');
+    expect(typescript).not.toContain('KEY_CODE_');
+    const owner = compileRust('keys_owner', KEYS_PACKAGE_FIXTURE);
+    expect(owner.error).toBe('');
+    const ownerFile = join(workDirectory, 'keys-contract.ts');
+    writeFileSync(ownerFile, owner.typescript);
+    const consumerFile = join(workDirectory, 'consumer-check.ts');
+    writeFileSync(consumerFile, typescript);
+    const program = ts.createProgram([consumerFile], {
+      baseUrl: workDirectory,
+      lib: ['lib.es2022.d.ts'],
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      noEmit: true,
+      paths: { '@flighthq/keys/contract': [ownerFile] },
+      strict: true,
+      target: ts.ScriptTarget.ES2022,
+      types: [],
+    });
+    expect(
+      ts
+        .getPreEmitDiagnostics(program)
+        .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')),
+    ).toEqual([]);
+    const transpile = (source: string): string =>
+      ts.transpileModule(source, {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      }).outputText;
+    const ownerModule = { exports: {} as Record<string, unknown> };
+    new Function('exports', 'module', transpile(owner.typescript))(ownerModule.exports, ownerModule);
+    const consumerModule = { exports: {} as { isA: (code: number) => boolean } };
+    new Function('exports', 'module', 'require', transpile(typescript))(
+      consumerModule.exports,
+      consumerModule,
+      () => ownerModule.exports,
+    );
+    expect(consumerModule.exports.isA(0x61)).toBe(true);
+    expect(consumerModule.exports.isA(0x62)).toBe(false);
+    expect(
+      compileRust(
+        'wildcard',
         'use flight_keys::*;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n',
-        'error: a wildcard import of `@flighthq/keys/contract` would bring in `const-group` member `KEY_CODE_A` (`KeyCode.A` in TypeScript), which has no portable lowering',
-      ],
-    ] as const) {
-      expect(compileRust('consumer', rust, dependency).error).toBe(message);
-    }
+        dependency,
+      ).error,
+    ).toBe(
+      'error: a wildcard import of `@flighthq/keys/contract` would bring in `const-group` member `KEY_CODE_A` (`KeyCode.A` in TypeScript), which has no portable lowering',
+    );
   });
 });
