@@ -354,10 +354,10 @@ export function packRectangles(rects: Readonly<PackableRectangle[]>, options?: R
   const maxHeight = options?.maxHeight ?? BIN_PACK_DEFAULT_MAX_EXTENT;
   if (rects.length === 0) {
     return {
-      placements: [] as never[],
+      placements: [],
       width: finalizeExtent(0.0, powerOfTwo),
       height: finalizeExtent(0.0, powerOfTwo),
-      unpacked: [] as never[],
+      unpacked: [],
     };
   }
   let degenerate: RectangleId[] = [] as never[];
@@ -371,7 +371,7 @@ export function packRectangles(rects: Readonly<PackableRectangle[]>, options?: R
   }
   if (placeable.length === 0) {
     return {
-      placements: [] as never[],
+      placements: [],
       width: finalizeExtent(0.0, powerOfTwo),
       height: finalizeExtent(0.0, powerOfTwo),
       unpacked: degenerate,
@@ -516,7 +516,7 @@ function splitFreeRectangles(free: Readonly<FreeRectangle[]>, placement: Readonl
   }
   let i = (free.length | 0) - 1;
   while (i >= 0) {
-    const idx = i;
+    const idx = i >>> 0;
     const node = free[idx];
     if (!intersectsRectangle(node, used)) {
       i -= 1;

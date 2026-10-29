@@ -533,7 +533,7 @@ describe('packRectangles', () => {
       }
       const padding = Math.floor(nextRandom(rng) * 4.0);
       const border = Math.floor(nextRandom(rng) * 4.0);
-      const heuristic = seed % 2 === 0 ? 'bestAreaFit' : ('bestShortSideFit' as const);
+      const heuristic = seed % 2 === 0 ? 'bestAreaFit' : 'bestShortSideFit';
       let options: BinPackOptions = {
         padding: 0.0,
         border: 0.0,
