@@ -6065,6 +6065,109 @@ fn ambiguous_foreign_wildcard_value() {
     }
 
     #[test]
+    fn routes_unresolved_types_from_mixed_current_and_foreign_wildcards() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_example::*;
+use flight_geometry::*;
+
+#[test]
+fn uses_each_wildcard_contract_type() {
+    let sample: Sample = create_sample();
+    let matrix: Matrix = create_matrix();
+    assert!(sample.previous.is_none());
+    assert_eq!(matrix, create_matrix());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("import { createMatrix } from \"@flighthq/geometry/contract\";"),
+            "{output}"
+        );
+        assert!(
+            output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  createSample,\n} from \"@flighthq/example/contract\";"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  Sample,\n} from \"@flighthq/example/contract\";"),
+            "{output}"
+        );
+        assert!(!output.contains("  Matrix,\n"), "{output}");
+    }
+
+    #[test]
+    fn rejects_unresolved_types_from_multiple_mixed_foreign_wildcards() {
+        let production = r#"
+pub struct Sample {
+    pub value: i32,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { value: 1 };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_example::*;
+use flight_geometry::*;
+use flight_math::*;
+
+fn keeps_the_foreign_type(_: Matrix) {}
+
+#[test]
+fn ambiguous_foreign_wildcard_type() {
+    let sample: Sample = create_sample();
+    assert_eq!(sample.value, 1);
+}
+"#;
+        let compile = || {
+            compile_vitest_with_contract_alias_sources(
+                source,
+                "@flighthq/example/contract",
+                contract,
+                &[VitestAliasSource {
+                    source: production,
+                    module: "src/sample.rs",
+                }],
+            )
+            .unwrap_err()
+            .to_string()
+        };
+
+        let first = compile();
+        assert_eq!(first, compile());
+        assert!(first.contains("portable test types Matrix"), "{first}");
+        assert!(first.contains("flight_geometry, flight_math"), "{first}");
+        assert!(first.contains("use explicit Rust imports"), "{first}");
+    }
+
+    #[test]
     fn treats_grouped_current_submodule_aliases_as_qualifiers_not_contract_imports() {
         let optional = r#"
 pub struct OptionalSample {
@@ -6161,6 +6264,55 @@ fn uses_the_grouped_crate_alias() {
         assert!(!output.contains("self as current"), "{output}");
         assert!(!output.contains("current.Sample"), "{output}");
         assert!(output.contains("sample.previous = null;"), "{output}");
+    }
+
+    #[test]
+    fn rejects_direct_foreign_crate_aliases_before_emitting_typescript() {
+        let source = r#"
+use flight_geometry as geometry;
+
+#[test]
+fn uses_the_foreign_crate_alias() {
+    let matrix: geometry::Matrix = geometry::create_matrix();
+    assert_eq!(matrix, geometry::create_matrix());
+}
+"#;
+        let compile = || {
+            compile_vitest(source, "@flighthq/example/contract")
+                .unwrap_err()
+                .to_string()
+        };
+
+        let first = compile();
+        assert_eq!(first, compile());
+        assert!(first.contains("foreign Flight crate `flight_geometry`"));
+        assert!(first.contains("namespace alias `geometry`"));
+        assert!(first.contains("import the used items explicitly"));
+    }
+
+    #[test]
+    fn rejects_grouped_foreign_crate_aliases_before_emitting_typescript() {
+        let source = r#"
+use flight_geometry::{self as geometry};
+
+#[test]
+fn uses_the_grouped_foreign_crate_alias() {
+    let matrix: geometry::Matrix = geometry::create_matrix();
+    assert_eq!(matrix, geometry::create_matrix());
+}
+"#;
+        let compile = || {
+            compile_vitest(source, "@flighthq/example/contract")
+                .unwrap_err()
+                .to_string()
+        };
+
+        let first = compile();
+        assert_eq!(first, compile());
+        assert!(first.contains("foreign Flight crate `flight_geometry`"));
+        assert!(first.contains("namespace alias `geometry`"));
+        assert!(first.contains("import the used items explicitly"));
+        assert!(!first.contains("self as geometry"));
     }
 
     #[test]

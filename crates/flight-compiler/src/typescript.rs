@@ -8122,6 +8122,50 @@ fn test_cross_crate_symbols(
     return symbols;
 }
 
+fn validate_test_foreign_crate_aliases(
+    uses: &[syn::ItemUse],
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    fn collect(
+        tree: &syn::UseTree,
+        prefix: &mut Vec<String>,
+        aliases: &mut BTreeSet<(String, String)>,
+    ) {
+        match tree {
+            syn::UseTree::Rename(rename) if prefix.is_empty() => {
+                aliases.insert((rename.ident.to_string(), rename.rename.to_string()));
+            }
+            syn::UseTree::Rename(rename) if rename.ident == "self" && prefix.len() == 1 => {
+                aliases.insert((prefix[0].clone(), rename.rename.to_string()));
+            }
+            syn::UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(&path.tree, prefix, aliases);
+                prefix.pop();
+            }
+            syn::UseTree::Group(group) => {
+                for tree in &group.items {
+                    collect(tree, prefix, aliases);
+                }
+            }
+            syn::UseTree::Glob(_) | syn::UseTree::Name(_) | syn::UseTree::Rename(_) => {}
+        }
+    }
+
+    let mut aliases = BTreeSet::new();
+    for item_use in uses {
+        collect(&item_use.tree, &mut Vec::new(), &mut aliases);
+    }
+    for (root, alias) in aliases {
+        if root.starts_with("flight_") && vitest_current_path_prefix(context, &root).is_none() {
+            return Err(compile_error(format!(
+                "portable test foreign Flight crate `{root}` is imported as namespace alias `{alias}`, which cannot be lowered to a tree-shakeable contract import; import the used items explicitly"
+            )));
+        }
+    }
+    return Ok(());
+}
+
 fn mixed_foreign_wildcard_roots(
     uses: &[syn::ItemUse],
     context: &HashSet<String>,
@@ -8278,6 +8322,7 @@ pub(crate) fn test_cross_crate_imports(
         return Ok(());
     }
 
+    validate_test_foreign_crate_aliases(&program.uses, context)?;
     let top_level_symbols = test_cross_crate_symbols(&program.uses, context);
     let mut collector = CrossCrateUsageCollector {
         symbols: &top_level_symbols,
@@ -8304,6 +8349,7 @@ pub(crate) fn test_cross_crate_imports(
     for suite in &program.suites {
         let mut suite_context = context.clone();
         insert_vitest_import_alias_context(&mut suite_context, suite.uses.iter());
+        validate_test_foreign_crate_aliases(&suite.uses, &suite_context)?;
         let mut symbols = top_level_symbols.clone();
         symbols.extend(test_cross_crate_symbols(&suite.uses, &suite_context));
         let mut collector = CrossCrateUsageCollector {

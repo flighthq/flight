@@ -984,7 +984,7 @@ pub(crate) fn emit_test_program(
 ) -> Result<String, CompileError> {
     let (mut contract_symbols, mut contract_type_symbols, external_modules) =
         collect_contract_symbols(program, context);
-    let (mut cross_crate_values, cross_crate_types) =
+    let (mut cross_crate_values, mut cross_crate_types) =
         crate::typescript::test_cross_crate_imports(program, context)?;
     let mixed_foreign_wildcards =
         crate::typescript::test_mixed_foreign_wildcard_roots(program, context);
@@ -1025,6 +1025,40 @@ pub(crate) fn emit_test_program(
                 .map(|symbol| emit_path_name(symbol)),
         );
         contract_symbols.retain(|symbol| !unresolved_wildcard_values.contains(symbol));
+    }
+    let unresolved_wildcard_types = contract_type_symbols
+        .iter()
+        .filter(|symbol| !is_vitest_struct(context, symbol) && !is_string_union(context, symbol))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !mixed_foreign_wildcards.is_empty() && !unresolved_wildcard_types.is_empty() {
+        if mixed_foreign_wildcards.len() != 1 {
+            return Err(compile_error(format!(
+                "portable test types {} are unresolved between mixed foreign wildcard crates {}; use explicit Rust imports",
+                unresolved_wildcard_types.join(", "),
+                mixed_foreign_wildcards
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
+        }
+        let foreign_root = mixed_foreign_wildcards
+            .first()
+            .expect("one foreign wildcard root exists");
+        let Some(package) = foreign_root.strip_prefix("flight_") else {
+            return Err(compile_error(format!(
+                "portable test types {} come from foreign wildcard crate `{foreign_root}`, which has no @flighthq contract mapping; use explicit Rust imports",
+                unresolved_wildcard_types.join(", ")
+            )));
+        };
+        let module = format!("@flighthq/{}/contract", package.replace('_', "-"));
+        cross_crate_types.entry(module).or_default().extend(
+            unresolved_wildcard_types
+                .iter()
+                .map(|symbol| emit_path_name(symbol)),
+        );
+        contract_type_symbols.retain(|symbol| !unresolved_wildcard_types.contains(symbol));
     }
     let cross_crate_local_names = cross_crate_values
         .values()
