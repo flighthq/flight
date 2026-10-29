@@ -1,5 +1,6 @@
 import { allocateEntity } from '@flighthq/entity/contract';
-import { connectSignal } from '@flighthq/signals/contract';
+import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
 import type {
   BufferedLogSink,
   LogContext,
@@ -728,6 +729,20 @@ describe('enableLogSignals', () => {
 
   it('gives each state its own signals', () => {
     expect(enableLogSignals(state)).not.toBe(enableLogSignals(createLogState()));
+  });
+
+  it('types both signals by their entry payload and stops a slot disconnected by its SlotId', () => {
+    const signals = enableLogSignals(state);
+    expectTypeOf(signals.onLogEntry).toEqualTypeOf<Signal<Readonly<LogEntry>>>();
+    expectTypeOf(signals.onLogError).toEqualTypeOf<Signal<Readonly<LogEntry>>>();
+    const received: string[] = [];
+    const id: SlotId = connectSignal(signals.onLogEntry, (entry: Readonly<LogEntry>) => {
+      received.push(String(entry.data));
+    });
+    log(state, 0, LogLevel.Info, 'first');
+    disconnectSignal(signals.onLogEntry, id);
+    log(state, 0, LogLevel.Info, 'second');
+    expect(received).toEqual(['first']);
   });
 
   it('onLogEntry fires for every emitted entry', () => {

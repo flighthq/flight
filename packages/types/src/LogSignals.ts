@@ -5,6 +5,6 @@ import type { Signal } from './Signal.ts';
 // Log emission event entity. Enable delivery with enableLogSignals; the signals stay inert until
 // then. onLogEntry fires for every emitted entry; onLogError fires only for Error-level entries.
 export interface LogSignals extends Entity {
-  onLogEntry: Signal<(entry: Readonly<LogEntry>) => void>;
-  onLogError: Signal<(entry: Readonly<LogEntry>) => void>;
+  onLogEntry: Signal<Readonly<LogEntry>>;
+  onLogError: Signal<Readonly<LogEntry>>;
 }

@@ -306,8 +306,8 @@ export function disposeLogSink(handle: BufferedLogSink): void {
 export function enableLogSignals(state: LogState): LogSignals {
   if (state.signals !== null) return state.signals;
   const signals = allocateEntity<LogSignals>();
-  signals.onLogEntry = createSignal<(entry: Readonly<LogEntry>) => void>();
-  signals.onLogError = createSignal<(entry: Readonly<LogEntry>) => void>();
+  signals.onLogEntry = createSignal<Readonly<LogEntry>>();
+  signals.onLogError = createSignal<Readonly<LogEntry>>();
   state.signals = finishEntity(signals);
   return state.signals;
 }
