@@ -82,6 +82,10 @@ const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 const ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER: &str = "@entity-definitely-initialized-field:";
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const ENTITY_CLONE_FIELD_MARKER: &str = "@entity-clone-field:";
+// A struct field whose declared type provably erases an identity-bearing shared cell in TypeScript:
+// `flight_entity::Ref<T>` or the equivalent standard `Arc<RwLock<T>>`. Only clones of these fields
+// may be rewritten as forwarding aliases to the original field.
+const ERASED_SHARED_CELL_FIELD_MARKER: &str = "@erased-shared-cell-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 // The BindingId of a local bound to a dereferenced `MutexGuard`. `Mutex<T>` is a `{ value: T }` cell
@@ -1818,6 +1822,58 @@ fn rust_type_is_string(rust_type: &Type) -> bool {
     return matches!(named_type(rust_type).as_deref(), Some("String" | "str"));
 }
 
+// `Ref<T>` and the spelling it aliases (`Arc<RwLock<T>>`) both lower to the payload rather than a
+// target-language cell. A clone of one of those fields therefore needs a forwarding alias when Rust
+// later writes through the cloned cell. Names alone are insufficient: a local `Ref`/`Arc`/`RwLock`
+// declaration must not acquire standard-library semantics.
+fn rust_type_is_erased_shared_cell(rust_type: &Type, context: &HashSet<String>) -> bool {
+    let path = match rust_type {
+        Type::Group(group) => return rust_type_is_erased_shared_cell(&group.elem, context),
+        Type::Paren(paren) => return rust_type_is_erased_shared_cell(&paren.elem, context),
+        Type::Path(path) if path.qself.is_none() => path,
+        _ => return false,
+    };
+    let Some(resolved) = resolve_type_path(&path.path, context) else {
+        return false;
+    };
+    let resolved = resolved.iter().map(String::as_str).collect::<Vec<_>>();
+    if matches!(
+        resolved.as_slice(),
+        ["flight_entity", "Ref"] | ["flight_entity", "ir", "Ref"]
+    ) {
+        return true;
+    }
+    if !matches!(resolved.as_slice(), ["std" | "alloc", "sync", "Arc"]) {
+        return false;
+    }
+    let Some(segment) = path.path.segments.last() else {
+        return false;
+    };
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return false;
+    };
+    let mut types = arguments.args.iter().filter_map(|argument| match argument {
+        GenericArgument::Type(rust_type) => Some(rust_type),
+        _ => None,
+    });
+    let Some(Type::Path(inner)) = types.next() else {
+        return false;
+    };
+    if types.next().is_some() || inner.qself.is_some() {
+        return false;
+    }
+    return resolve_type_path(&inner.path, context).is_some_and(|inner| {
+        matches!(
+            inner
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            ["std", "sync", "RwLock"]
+        )
+    });
+}
+
 fn rust_default_expression(rust_type: &Type) -> Option<String> {
     return match rust_type {
         Type::Group(group) => rust_default_expression(&group.elem),
@@ -2804,6 +2860,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         function: String,
         mutex_guards: HashSet<String>,
         ordinal: usize,
+        ref_aliases: Vec<(String, String)>,
         scopes: Vec<BTreeMap<String, String>>,
         sites: Vec<(String, String)>,
     }
@@ -2941,6 +2998,24 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .rev()
                 .find(|(fact_id, _)| *fact_id == id)
                 .map(|(_, fact)| fact.clone());
+        }
+
+        fn erased_shared_cell_field(&self, expression: &Expr) -> bool {
+            let Expr::Field(field) = peel_reference_and_paren(expression) else {
+                return false;
+            };
+            let syn::Member::Named(field_name) = &field.member else {
+                return false;
+            };
+            let Some(base) = referenced_path_identifier(&field.base) else {
+                return false;
+            };
+            let Some(BindingFact::Structure(identity)) = self.fact_of(&base) else {
+                return false;
+            };
+            return self.context.contains(&format!(
+                "{ERASED_SHARED_CELL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+            ));
         }
 
         fn initializer_fact(&self, expression: &Expr) -> BindingFact {
@@ -3283,6 +3358,15 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .init
                 .as_ref()
                 .is_some_and(|initializer| mutex_guard_receiver(&initializer.expr).is_some());
+            let ref_alias_target = local.init.as_ref().and_then(|initializer| {
+                let Expr::MethodCall(clone) = initializer.expr.as_ref() else {
+                    return None;
+                };
+                (clone.method == "clone"
+                    && clone.args.is_empty()
+                    && self.erased_shared_cell_field(&clone.receiver))
+                .then(|| clone.receiver.to_token_stream().to_string())
+            });
             let mut fact = BindingFact::Unknown;
             if let Some(initializer) = &local.init {
                 self.visit_expr(&initializer.expr);
@@ -3294,6 +3378,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 }
             }
             self.bind_pattern(&local.pat, fact);
+            if let Some(target) = ref_alias_target
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.ref_aliases.push((id, target));
+            }
             if mutex_guard
                 && let Some(name) = local_pattern_name(&local.pat)
                 && let Some(id) = self.binding_id(&name)
@@ -3324,6 +3414,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         },
         mutex_guards: HashSet::new(),
         ordinal: 0,
+        ref_aliases: Vec::new(),
         scopes: vec![BTreeMap::new()],
         sites: Vec::new(),
     };
@@ -3344,6 +3435,11 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         markers.push(format!(
             "{BINDING_FACT_MARKER}{id}={}",
             binding_fact_marker(&fact)
+        ));
+    }
+    for (id, target) in resolver.ref_aliases {
+        markers.push(format!(
+            "{REF_ALIAS_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}{target}"
         ));
     }
     for (name, id) in parameters {
@@ -5035,8 +5131,30 @@ fn generation_context_with_types(
                 "{ENTITY_RUNTIME_STATE_FIELD_MARKER}{field_name}{PROVENANCE_SEPARATOR}{owner}"
             ));
         }
+        let mut type_path_context = HashSet::new();
+        insert_program_type_path_context(&mut type_path_context, program);
         for (owner, fields) in &program.entity_clone_shared_fields {
             for field in fields {
+                let structure = program
+                    .structs
+                    .iter()
+                    .find(|structure| structure.ident == owner.as_str())
+                    .expect("entity clone field validation resolved the owner");
+                let rust_field = structure
+                    .fields
+                    .iter()
+                    .find(|rust_field| {
+                        rust_field
+                            .ident
+                            .as_ref()
+                            .is_some_and(|ident| ident == field)
+                    })
+                    .expect("entity clone field validation resolved the field");
+                if !rust_type_is_erased_shared_cell(&rust_field.ty, &type_path_context) {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: entity-clone-fields {owner}.{field}` must designate a proven `flight_entity::Ref<T>` or standard `Arc<RwLock<T>>` field"
+                    )));
+                }
                 context.insert(format!(
                     "{ENTITY_CLONE_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field}"
                 ));
@@ -5156,6 +5274,11 @@ fn generation_context_with_types(
                     owned_facts.push(format!(
                         "{HASH_COLLECTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
                         binding_fact_marker(&kind)
+                    ));
+                }
+                if rust_type_is_erased_shared_cell(&field.ty, &type_path_context) {
+                    owned_facts.push(format!(
+                        "{ERASED_SHARED_CELL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
                 }
             }
@@ -5524,18 +5647,6 @@ pub(crate) fn function_expression_context(
                 self.context.insert(format!(
                     "{DIRECT_LOCK_GUARD_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}{}",
                     receiver.to_token_stream()
-                ));
-            }
-            if let Some(initializer) = &local.init
-                && let Expr::MethodCall(clone) = initializer.expr.as_ref()
-                && clone.method == "clone"
-                && clone.args.is_empty()
-                && matches!(clone.receiver.as_ref(), Expr::Field(_))
-                && let Some(id) = local_pattern_binding_id(self.context, &local.pat)
-            {
-                self.context.insert(format!(
-                    "{REF_ALIAS_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}{}",
-                    clone.receiver.to_token_stream()
                 ));
             }
             syn::visit::visit_local(self, local);

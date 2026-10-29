@@ -8753,6 +8753,63 @@ pub fn replace_emit(signal: &Signal) {
     }
 
     #[test]
+    fn writes_through_proven_ref_fields_in_portable_tests() {
+        let production = r#"
+use std::sync::{Arc, RwLock};
+
+pub struct Signal {
+    pub emit: Arc<RwLock<i32>>,
+}
+
+pub fn create_signal() -> Signal {
+    unimplemented!()
+}
+"#;
+        let tests = r#"
+use flight_example::*;
+
+#[test]
+fn replaces_the_shared_cell() {
+    let signal: Signal = create_signal();
+    let cell = signal.emit.clone();
+    *cell.write().unwrap() = 2;
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(tests, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("const cell = signal.emit;"), "{output}");
+        assert!(output.contains("signal.emit = 2;"), "{output}");
+        assert!(!output.contains("cell = 2;"), "{output}");
+    }
+
+    #[test]
+    fn keeps_clones_of_non_cell_fields_independent() {
+        let source = r#"
+pub struct Bag {
+    pub values: Vec<i32>,
+}
+
+pub fn append_to_clone(bag: &Bag) -> Vec<i32> {
+    let mut copied = bag.values.clone();
+    copied.push(3);
+    return copied;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("let copied = bag.values.slice();"),
+            "{output}"
+        );
+        assert!(output.contains("copied.push(3);"), "{output}");
+        assert!(!output.contains("bag.values.push(3);"), "{output}");
+    }
+
+    #[test]
     fn preserves_tuple_positions_in_literal_array_for_loops() {
         let source = r#"
 pub fn visit() {
@@ -8798,6 +8855,48 @@ pub fn clone_wrapper(wrapper: &Wrapper) -> Wrapper {
         assert!(
             output.contains("set: (value) => { wrapper.data = value; }"),
             "{output}"
+        );
+    }
+
+    #[test]
+    fn rejects_plain_fields_designated_as_shared_entity_clone_cells() {
+        let source = r#"
+//! flight-compiler: entity-clone-fields Wrapper.data
+
+pub struct Wrapper {
+    pub data: Vec<i32>,
+    runtime: flight_entity::EntityRuntimeSlot,
+}
+"#;
+
+        let error = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "`flight-compiler: entity-clone-fields Wrapper.data` must designate a proven `flight_entity::Ref<T>` or standard `Arc<RwLock<T>>` field"
+        );
+    }
+
+    #[test]
+    fn rejects_local_types_named_like_shared_entity_clone_cells() {
+        let source = r#"
+//! flight-compiler: entity-clone-fields Wrapper.data
+
+pub struct Ref<T> {
+    pub value: T,
+}
+
+pub struct Wrapper {
+    pub data: Ref<i32>,
+    runtime: flight_entity::EntityRuntimeSlot,
+}
+"#;
+
+        let error = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "`flight-compiler: entity-clone-fields Wrapper.data` must designate a proven `flight_entity::Ref<T>` or standard `Arc<RwLock<T>>` field"
         );
     }
 
