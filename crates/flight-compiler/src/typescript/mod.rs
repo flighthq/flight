@@ -8365,8 +8365,38 @@ fn emit_expression_value(
             if path_is_float_constant(&path.path, "MAX") {
                 return Ok("Number.MAX_VALUE".to_string());
             }
-            if path_is_type_constant(&path.path, "u32", "MAX") {
+            if path_is_type_constant(&path.path, "u8", "MAX") {
+                return Ok("0xff".to_string());
+            }
+            if path_is_type_constant(&path.path, "u16", "MAX") {
+                return Ok("0xffff".to_string());
+            }
+            if path_is_type_constant(&path.path, "u32", "MAX")
+                || path_is_type_constant(&path.path, "usize", "MAX")
+            {
                 return Ok("0xffffffff".to_string());
+            }
+            if path_is_type_constant(&path.path, "i8", "MAX") {
+                return Ok("0x7f".to_string());
+            }
+            if path_is_type_constant(&path.path, "i8", "MIN") {
+                return Ok("(-0x80)".to_string());
+            }
+            if path_is_type_constant(&path.path, "i16", "MAX") {
+                return Ok("0x7fff".to_string());
+            }
+            if path_is_type_constant(&path.path, "i16", "MIN") {
+                return Ok("(-0x8000)".to_string());
+            }
+            if path_is_type_constant(&path.path, "i32", "MAX")
+                || path_is_type_constant(&path.path, "isize", "MAX")
+            {
+                return Ok("0x7fffffff".to_string());
+            }
+            if path_is_type_constant(&path.path, "i32", "MIN")
+                || path_is_type_constant(&path.path, "isize", "MIN")
+            {
+                return Ok("(-0x80000000)".to_string());
             }
             if path_is_float_constant(&path.path, "MIN_POSITIVE") {
                 return Ok("2.2250738585072014e-308".to_string());
@@ -11742,6 +11772,17 @@ fn emit_method_call(
         "split_once" if arguments.len() == 1 => Err(compile_error(
             "portable `.split_once()` requires a receiver known to be `String` or `str`",
         )),
+        "splitn"
+            if arguments.len() == 2 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((value: string, n: number, delimiter: string): string[] => {{ const parts: string[] = []; let rest = value; for (let i = 1; i < n && rest.length > 0; i++) {{ const index = rest.indexOf(delimiter); if (index === -1) break; parts.push(rest.slice(0, index)); rest = rest.slice(index + delimiter.length); }} parts.push(rest); return parts; }})({receiver}, {}, {})",
+                arguments[0], arguments[1]
+            ))
+        }
+        "splitn" if arguments.len() == 2 => Err(compile_error(
+            "portable `.splitn()` requires a receiver known to be `String` or `str`",
+        )),
         "split_whitespace"
             if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
         {
@@ -11852,6 +11893,15 @@ fn emit_method_call(
         "swap" if arguments.len() == 2 => Ok(format!(
             "([{receiver}[{}], {receiver}[{}]] = [{receiver}[{}], {receiver}[{}]])",
             arguments[0], arguments[1], arguments[1], arguments[0]
+        )),
+        "swap_remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!(
+                "(<T>(items: T[], index: number): T => {{ const last = items.length - 1; if (index !== last) {{ [items[index], items[last]] = [items[last], items[index]]; }} return items.pop()!; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "swap_remove" if arguments.len() == 1 => Err(compile_error(
+            "portable `.swap_remove()` requires a receiver with proven sequence provenance",
         )),
         "take" if arguments.is_empty() => {
             let absent = option_absent_value(&call.receiver, entities);

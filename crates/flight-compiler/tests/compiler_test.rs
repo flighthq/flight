@@ -4459,6 +4459,79 @@ pub fn conditional(flag: bool, value: i32) -> Option<i32> {
     }
 
     #[test]
+    fn lowers_i32_max_and_min_constants() {
+        let source = r#"
+pub fn bounds() -> (i32, i32) {
+    return (i32::MAX, i32::MIN);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("0x7fffffff"), "{output}");
+        assert!(output.contains("(-0x80000000)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_splitn_with_string_provenance() {
+        let source = r#"
+pub fn first_two(text: &str, sep: &str) -> Vec<String> {
+    return text.splitn(2, sep).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("indexOf(delimiter)"),
+            "splitn should use indexOf: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_swap_remove_on_sequences() {
+        let source = r#"
+pub fn fast_remove(items: &mut Vec<i32>, index: usize) -> i32 {
+    return items.swap_remove(index);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".pop()"),
+            "swap_remove should use pop: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_u8_and_i16_max_constants() {
+        let source = r#"
+pub fn limits() -> (u8, i16) {
+    return (u8::MAX, i16::MAX);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("0xff"), "{output}");
+        assert!(output.contains("0x7fff"), "{output}");
+    }
+
+    #[test]
+    fn lowers_usize_max_constant() {
+        let source = r#"
+pub fn max_index() -> usize {
+    return usize::MAX;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("0xffffffff"), "{output}");
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {
