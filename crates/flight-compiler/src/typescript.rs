@@ -15632,7 +15632,10 @@ fn emit_path_type_arguments(
     return Ok(format!("<{}>", rendered.join(", ")));
 }
 
-fn insert_type_parameter_context(context: &mut HashSet<String>, generics: &syn::Generics) {
+pub(crate) fn insert_type_parameter_context(
+    context: &mut HashSet<String>,
+    generics: &syn::Generics,
+) {
     for parameter in &generics.params {
         if let syn::GenericParam::Type(parameter) = parameter {
             context.insert(format!("{TYPE_PARAMETER_MARKER}{}", parameter.ident));
@@ -15802,7 +15805,7 @@ fn emit_named_callable_type(
     };
 }
 
-fn emit_type_parameters(generics: &syn::Generics) -> String {
+pub(crate) fn emit_type_parameters(generics: &syn::Generics) -> String {
     let parameters = generics
         .params
         .iter()

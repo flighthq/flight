@@ -10,7 +10,8 @@ use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     begin_option_if, begin_option_while, emit_expression, emit_for_header, emit_format_template,
     emit_local, emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding,
-    emit_parameter, emit_type, export_name, frozen_object_name, function_expression_context,
+    emit_parameter, emit_type, emit_type_parameters, export_name, frozen_object_name,
+    function_expression_context, insert_type_parameter_context,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_struct,
@@ -387,8 +388,17 @@ fn collect_contract_symbols(
                 .chain(suite.tests.iter().map(|test| &test.function))
         }))
     {
+        let mut declared = collect_declared_names(function);
+        // A helper's own type parameters are declared by its signature, not imported from the contract.
+        declared.extend(
+            function
+                .sig
+                .generics
+                .type_params()
+                .map(|parameter| parameter.ident.to_string()),
+        );
         let mut collector = ContractSymbolCollector {
-            declared: collect_declared_names(function),
+            declared,
             helper_names: &helper_names,
             standard_constants: &program.standard_constants,
             context,
@@ -649,7 +659,8 @@ fn emit_helper(
         )));
     }
     validate_vitest_function_provenance(function, context)?;
-    let context = function_expression_context(function, context);
+    let mut context = function_expression_context(function, context);
+    insert_type_parameter_context(&mut context, &function.sig.generics);
     let parameters = function
         .sig
         .inputs
@@ -663,8 +674,9 @@ fn emit_helper(
     write_indent(out, indent);
     writeln!(
         out,
-        "function {}({}): {return_type} {{",
+        "function {}{}({}): {return_type} {{",
         snake_to_lower_camel(&function.sig.ident.to_string()),
+        emit_type_parameters(&function.sig.generics),
         parameters.join(", ")
     )
     .expect("writing to a String cannot fail");

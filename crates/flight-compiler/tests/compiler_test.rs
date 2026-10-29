@@ -9629,6 +9629,32 @@ mod optional_value {
     }
 
     #[test]
+    fn emits_generic_test_helpers_with_their_own_type_parameters() {
+        let source = r#"
+use crate::*;
+
+fn unwrap_value<T: Clone>(boxed: &Box2<T>) -> T {
+    return boxed.value.clone();
+}
+
+#[test]
+fn wraps_values() {
+    assert_eq!(unwrap_value(&wrap(3)), 3);
+}
+"#;
+        let output = compile_vitest(source, "./contract.ts").unwrap();
+        assert!(
+            output.contains("function unwrapValue<T>(boxed: Readonly<Box2<T>>): T {"),
+            "{output}"
+        );
+        assert!(
+            output.contains("import type {\n  Box2,\n} from \"./contract.ts\";"),
+            "{output}"
+        );
+        assert!(!output.contains("  T,\n"), "{output}");
+    }
+
+    #[test]
     fn emits_free_function_contract_tests_and_helpers() {
         let source = r#"
 use flight_geometry::*;
