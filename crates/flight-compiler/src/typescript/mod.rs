@@ -14195,6 +14195,9 @@ fn emit_statement(
         Stmt::Expr(Expr::Match(match_expression), _) => {
             emit_match_statement(out, match_expression, entities, indent)?;
         }
+        Stmt::Expr(Expr::Block(block), _) => {
+            emit_block(out, &block.block.stmts, entities, indent)?;
+        }
         Stmt::Expr(Expr::Unsafe(unsafe_block), _) => {
             emit_block(out, &unsafe_block.block.stmts, entities, indent)?;
         }

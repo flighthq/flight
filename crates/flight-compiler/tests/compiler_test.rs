@@ -1628,6 +1628,33 @@ pub fn read(gate: &Gate) -> i32 {
     }
 
     #[test]
+    fn lowers_statement_level_scoping_blocks() {
+        let source = r#"
+pub fn apply(out: &mut Vec<f32>, values: &[f32]) {
+    {
+        let scaled = values[0] * 2.0;
+        out.push(scaled);
+    }
+    {
+        let offset = values[1] + 1.0;
+        out.push(offset);
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("const scaled"),
+            "scoping block should emit inline: {output}"
+        );
+        assert!(
+            output.contains("const offset"),
+            "second scoping block should emit inline: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_standard_any_trait_objects_to_object() {
         let source = r#"
 use std::any::Any;
