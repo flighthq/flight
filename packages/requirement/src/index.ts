@@ -11,3 +11,4 @@ export {
 } from './contract.ts';
 
 export type { Requirement, RequirementSetRaw } from './contract.ts';
+export { RequirementSet } from './requirementSet.ts';

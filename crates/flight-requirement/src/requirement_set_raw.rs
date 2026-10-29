@@ -1,3 +1,5 @@
+//! flight-compiler: companion requirementSet.ts
+//! flight-compiler: root RequirementSetRaw
 //! flight-compiler: readonly-fields RequirementSet
 
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
@@ -28,6 +30,14 @@ pub fn initialize_requirement_set(
 ) {
     out.covers = distinct_sorted(covers);
     out.requirements = distinct_sorted_requirements(requirements);
+}
+
+// A fresh record with `requirement`'s facet and key, so a set never shares a caller-owned record.
+fn copy_requirement(requirement: &Requirement) -> Requirement {
+    return Requirement {
+        facet: requirement.facet,
+        key: requirement.key.clone(),
+    };
 }
 
 /// Subtracts facts only for facets that both operands inspected.
@@ -70,14 +80,14 @@ fn distinct_sorted_requirements(requirements: &[Requirement]) -> Vec<Requirement
         let mut index: usize = 0;
         while index < ordered.len() {
             if ordered[index].facet == requirement.facet && ordered[index].key == requirement.key {
-                ordered[index] = requirement.clone();
+                ordered[index] = copy_requirement(requirement);
                 replaced = true;
                 break;
             }
             index += 1;
         }
         if !replaced {
-            ordered.push(requirement.clone());
+            ordered.push(copy_requirement(requirement));
         }
     }
     ordered.sort_by(|a, b| {
@@ -86,9 +96,22 @@ fn distinct_sorted_requirements(requirements: &[Requirement]) -> Vec<Requirement
         if left != right {
             return left.cmp(right);
         }
-        let left_key: &str = &a.key;
-        let right_key: &str = &b.key;
-        return left_key.cmp(right_key);
+        // Keys order by UTF-16 code unit (approved RD1), the JavaScript string order, which differs from
+        // Rust `str` order once a supplementary-plane character meets a BMP character above U+D7FF.
+        let left_units: Vec<u16> = a.key.encode_utf16().collect();
+        let right_units: Vec<u16> = b.key.encode_utf16().collect();
+        let mut index: usize = 0;
+        while index < left_units.len() && index < right_units.len() {
+            let left_unit: u16 = left_units[index];
+            let right_unit: u16 = right_units[index];
+            if left_unit != right_unit {
+                return left_unit.cmp(&right_unit);
+            }
+            index += 1;
+        }
+        let left_length: usize = left_units.len();
+        let right_length: usize = right_units.len();
+        return left_length.cmp(&right_length);
     });
     return ordered;
 }

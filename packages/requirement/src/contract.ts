@@ -7,7 +7,8 @@ export {
   diffRequirementSets,
   initializeRequirementSet,
   mergeRequirementSets,
-} from './requirementSet.ts';
-export type { RequirementSetRaw } from './requirementSet.ts';
+} from './requirementSetRaw.ts';
+export type { RequirementSetRaw } from './requirementSetRaw.ts';
 export { RequirementFacet, getRequirementFacetString, parseRequirementFacet } from './types.ts';
 export type { Requirement } from './types.ts';
+export { RequirementSet } from './requirementSet.ts';

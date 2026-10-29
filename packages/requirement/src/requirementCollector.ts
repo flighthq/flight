@@ -1,8 +1,8 @@
 // Generated from crates/flight-requirement/src/requirement_collector.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import type { RequirementSetRaw } from './requirementSet.ts';
-import { createRequirementSet } from './requirementSet.ts';
+import type { RequirementSetRaw } from './requirementSetRaw.ts';
+import { createRequirementSet } from './requirementSetRaw.ts';
 import type { Requirement, RequirementFacet } from './types.ts';
 
 /**

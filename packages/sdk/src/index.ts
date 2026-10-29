@@ -114,7 +114,7 @@ export * from '@flighthq/render-gl';
 export * from '@flighthq/render-wgpu';
 export * from '@flighthq/resource';
 export * from '@flighthq/requirement';
-export { RequirementFacet } from '@flighthq/requirement';
+export { RequirementFacet, RequirementSet } from '@flighthq/requirement';
 export type { Requirement } from '@flighthq/requirement';
 export * from '@flighthq/registry';
 export * from '@flighthq/requirement-catalog';

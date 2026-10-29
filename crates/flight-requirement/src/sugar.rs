@@ -1,7 +1,7 @@
 //! Rust-side sugar for the requirement set: inherent constructor and method forms that delegate to
 //! the free-function contract.
 
-use crate::requirement_set::{RequirementSet, create_requirement_set, diff_requirement_sets};
+use crate::requirement_set_raw::{RequirementSet, create_requirement_set, diff_requirement_sets};
 use crate::types::{Requirement, RequirementFacet};
 
 impl RequirementSet {

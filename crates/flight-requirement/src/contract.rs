@@ -2,5 +2,5 @@
 //! owned type. The crate root exposes the curated `index.ts` lane.
 
 pub use super::requirement_collector::*;
-pub use super::requirement_set::*;
+pub use super::requirement_set_raw::*;
 pub use super::types::*;

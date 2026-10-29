@@ -41,6 +41,38 @@ mod create_requirement_set {
     }
 
     #[test]
+    fn orders_keys_by_utf16_code_unit_across_planes() {
+        let covers: Vec<RequirementFacet> = vec![RequirementFacet::SceneNodeKind];
+        let facts: Vec<Requirement> = vec![
+            requirement(RequirementFacet::SceneNodeKind, "\u{E000}"),
+            requirement(RequirementFacet::SceneNodeKind, "\u{10000}"),
+        ];
+        let result = create_requirement_set(&covers, &facts);
+        let expected: Vec<Requirement> = vec![
+            requirement(RequirementFacet::SceneNodeKind, "\u{10000}"),
+            requirement(RequirementFacet::SceneNodeKind, "\u{E000}"),
+        ];
+        assert_eq!(result.requirements, expected);
+    }
+
+    #[test]
+    fn orders_bmp_keys_by_code_unit_with_uppercase_first() {
+        let covers: Vec<RequirementFacet> = vec![RequirementFacet::SceneBlendMode];
+        let facts: Vec<Requirement> = vec![
+            requirement(RequirementFacet::SceneBlendMode, "blend"),
+            requirement(RequirementFacet::SceneBlendMode, "acme.Blend"),
+            requirement(RequirementFacet::SceneBlendMode, "Multiply"),
+        ];
+        let result = create_requirement_set(&covers, &facts);
+        let expected: Vec<Requirement> = vec![
+            requirement(RequirementFacet::SceneBlendMode, "Multiply"),
+            requirement(RequirementFacet::SceneBlendMode, "acme.Blend"),
+            requirement(RequirementFacet::SceneBlendMode, "blend"),
+        ];
+        assert_eq!(result.requirements, expected);
+    }
+
+    #[test]
     fn creates_an_entity_with_an_empty_runtime_slot() {
         let result = create_requirement_set(&[], &[]);
         assert!(!flight_entity::has_entity_runtime(&result));
