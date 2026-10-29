@@ -4017,6 +4017,35 @@ pub fn scale_values(values: &[f64]) -> Vec<f64> {
     }
 
     #[test]
+    fn erases_boxed_typed_array_aliases_to_typed_arrays() {
+        let source = r#"
+use flight_entity::{Float32Array, Float64Array, Int16Array, Uint32Array};
+
+pub struct Mesh {
+    pub vertices: Box<Float32Array>,
+    pub indices: Box<Uint32Array>,
+    pub weights: Box<Float64Array>,
+    pub names: Box<Vec<f64>>,
+}
+
+pub fn sample_count(mesh: &Mesh, extra: Box<Int16Array>) -> usize {
+    return mesh.vertices.len() + extra.len();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "export interface Mesh {\n  vertices: Float32Array;\n  indices: Uint32Array;\n  weights: Float64Array;\n  names: Box<number[]>;\n}\n"
+        ));
+        assert!(output.contains(
+            "export function sampleCount(mesh: Readonly<Mesh>, extra: Int16Array): number {"
+        ));
+        assert!(!output.contains("Box<Float32Array>"));
+        assert!(!output.contains("Box<Int16Array>"));
+    }
+
+    #[test]
     fn lowers_lazy_lock_statics_with_proven_operators_and_constructors() {
         let source = r#"
 use std::sync::*;

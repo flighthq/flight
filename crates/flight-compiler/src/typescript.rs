@@ -5518,6 +5518,33 @@ fn binding_site_key(identifier: &syn::Ident) -> String {
     return format!("{identifier:p}");
 }
 
+// The typed array a `Box<Float32Array>`-style type owns: `Box` only transfers ownership, so a boxed
+// typed-array alias is that typed array in TypeScript. `None` for any other `Box` argument.
+fn boxed_typed_array(segment: &syn::PathSegment) -> Option<&'static str> {
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    let [GenericArgument::Type(Type::Path(inner))] = arguments.args.iter().collect::<Vec<_>>()[..]
+    else {
+        return None;
+    };
+    let inner_segment = inner.path.segments.last()?;
+    if inner.qself.is_some() || !matches!(inner_segment.arguments, PathArguments::None) {
+        return None;
+    }
+    return match inner_segment.ident.to_string().as_str() {
+        "Float32Array" => Some("Float32Array"),
+        "Float64Array" => Some("Float64Array"),
+        "Int8Array" => Some("Int8Array"),
+        "Int16Array" => Some("Int16Array"),
+        "Int32Array" => Some("Int32Array"),
+        "Uint8Array" => Some("Uint8Array"),
+        "Uint16Array" => Some("Uint16Array"),
+        "Uint32Array" => Some("Uint32Array"),
+        _ => None,
+    };
+}
+
 // The fact `marker` records for the function a call path names. A single-segment callee is subject to
 // lexical shadowing (`function_fact`); a qualified path names a module item directly and resolves
 // through the shared ModuleSource resolver (`function_path_fact`).
@@ -13645,6 +13672,9 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Ref" => emit_single_generic_type(segment, entities),
+                "Box" if boxed_typed_array(segment).is_some() => Ok(boxed_typed_array(segment)
+                    .expect("guarded by the match arm")
+                    .to_string()),
                 _ if entities.contains(&name) => Ok(format!("{name}Raw")),
                 _ => {
                     if matches!(segment.arguments, PathArguments::None) {
