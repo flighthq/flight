@@ -38,6 +38,17 @@ pub struct ModuleSource<'a> {
     pub source: &'a str,
 }
 
+/// A Cargo library or binary target root and the crate name paths inside it resolve from.
+///
+/// Target roots whose file names are not the conventional `src/lib.rs` or `src/main.rs` cannot be
+/// identified from a source path alone. Callers that discover Cargo targets, or otherwise know the
+/// target boundary, provide that proof explicitly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CrateRootSource<'a> {
+    pub crate_name: &'a str,
+    pub path: &'a str,
+}
+
 /// A production source and its stable module path for Vitest provenance inference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VitestAliasSource<'a> {
@@ -85,6 +96,7 @@ fn compile_typescript_sources(
     module_identities: Option<Vec<String>>,
     source_paths: &[&str],
     visibility_sources: &[ModuleSource<'_>],
+    crate_roots: &[CrateRootSource<'_>],
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_program(source)?;
@@ -98,7 +110,7 @@ fn compile_typescript_sources(
         .collect::<Result<Vec<_>, _>>()?;
     let visibility_identities = visibility_sources
         .iter()
-        .map(|visibility_source| module_identity_from_path(visibility_source.path))
+        .map(|visibility_source| module_identity_from_path(visibility_source.path, crate_roots))
         .collect::<Vec<_>>();
     let external_alias_programs = external_alias_sources
         .iter()
@@ -242,6 +254,7 @@ pub fn compile_typescript_with_external_alias_sources(
         None,
         &[],
         &[],
+        &[],
     );
 }
 
@@ -277,9 +290,29 @@ pub fn compile_typescript_with_visibility_sources(
     external_alias_sources: &[ExternalAliasSource<'_>],
     visibility_sources: &[ModuleSource<'_>],
 ) -> Result<String, CompileError> {
+    return compile_typescript_with_visibility_sources_and_crate_roots(
+        source,
+        entity_module,
+        alias_sources,
+        external_alias_sources,
+        visibility_sources,
+        &[],
+    );
+}
+
+/// Compiles one Rust module with visibility sources and proven Cargo target roots.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_visibility_sources_and_crate_roots(
+    source: ModuleSource<'_>,
+    entity_module: Option<&str>,
+    alias_sources: &[ModuleSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    visibility_sources: &[ModuleSource<'_>],
+    crate_roots: &[CrateRootSource<'_>],
+) -> Result<String, CompileError> {
     let identities = std::iter::once(&source)
         .chain(alias_sources)
-        .map(|module| module_identity_from_path(module.path))
+        .map(|module| module_identity_from_path(module.path, crate_roots))
         .collect::<Option<Vec<_>>>()
         .filter(|identities| {
             identities
@@ -302,6 +335,7 @@ pub fn compile_typescript_with_visibility_sources(
             .chain(alias_sources.iter().map(|module| module.path))
             .collect::<Vec<_>>(),
         visibility_sources,
+        crate_roots,
     );
 }
 
@@ -988,7 +1022,10 @@ fn matching_bracket_end(code: &str, open: usize) -> Option<usize> {
 // before the last `src` component (hyphens become underscores), then the module path below it, with
 // `lib.rs` / `main.rs` as the crate root and `mod.rs` as its directory. `None` when the path has no
 // such shape.
-fn module_identity_from_path(path: &str) -> Option<String> {
+fn module_identity_from_path(path: &str, crate_roots: &[CrateRootSource<'_>]) -> Option<String> {
+    if let Some(identity) = crate_root_module_identity(path, crate_roots) {
+        return Some(identity);
+    }
     let segments = path
         .split(['/', '\\'])
         .filter(|segment| !segment.is_empty() && *segment != ".")
@@ -1016,6 +1053,71 @@ fn module_identity_from_path(path: &str) -> Option<String> {
                 .all(|character| character.is_ascii_alphanumeric() || character == '_')
     });
     return valid.then(|| identity.join("::"));
+}
+
+fn crate_root_module_identity(path: &str, crate_roots: &[CrateRootSource<'_>]) -> Option<String> {
+    fn canonical(path: &str) -> std::path::PathBuf {
+        return std::fs::canonicalize(path).unwrap_or_else(|_| std::path::PathBuf::from(path));
+    }
+
+    fn module_segments(path: &std::path::Path) -> Option<Vec<String>> {
+        let mut segments = path
+            .components()
+            .map(|component| component.as_os_str().to_str().map(str::to_string))
+            .collect::<Option<Vec<_>>>()?;
+        let file = segments.pop()?;
+        let stem = file.strip_suffix(".rs")?;
+        if stem != "mod" {
+            segments.push(stem.to_string());
+        }
+        let valid = segments.iter().all(|segment| {
+            !segment.is_empty()
+                && segment
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || character == '_')
+        });
+        return valid.then_some(segments);
+    }
+
+    let path = canonical(path);
+    let roots = crate_roots
+        .iter()
+        .map(|root| (root, canonical(root.path)))
+        .collect::<Vec<_>>();
+    if let Some((root, _)) = roots.iter().find(|(_, root_path)| *root_path == path) {
+        return valid_crate_name(root.crate_name).then(|| root.crate_name.replace('-', "_"));
+    }
+    let mut candidates = roots
+        .iter()
+        .filter_map(|(root, root_path)| {
+            let relative = path.strip_prefix(root_path.parent()?).ok()?;
+            let modules = module_segments(relative)?;
+            let depth = root_path.parent()?.components().count();
+            Some((depth, root, modules))
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by_key(|(depth, _, _)| *depth);
+    let (depth, root, modules) = candidates.pop()?;
+    if candidates
+        .last()
+        .is_some_and(|(other_depth, _, _)| *other_depth == depth)
+        || !valid_crate_name(root.crate_name)
+    {
+        return None;
+    }
+    return Some(
+        std::iter::once(root.crate_name.replace('-', "_"))
+            .chain(modules)
+            .collect::<Vec<_>>()
+            .join("::"),
+    );
+}
+
+fn valid_crate_name(name: &str) -> bool {
+    return !name.is_empty()
+        && name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'));
 }
 
 // Every function and arrow parameter name: the list after `function [name][<…>]`, a parenthesized

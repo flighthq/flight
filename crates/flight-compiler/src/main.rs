@@ -1,10 +1,10 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process;
+use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
@@ -21,12 +21,23 @@ struct GenerateOptions {
     check: bool,
     contract_module: Option<String>,
     contract_source: Option<PathBuf>,
+    crate_roots: Vec<ExplicitCrateRoot>,
     entity_module: Option<String>,
     external_alias_modules: Vec<String>,
     external_alias_sources: Vec<PathBuf>,
     out: PathBuf,
     source: PathBuf,
     visibility_sources: Vec<PathBuf>,
+}
+
+struct ExplicitCrateRoot {
+    crate_name: String,
+    path: PathBuf,
+}
+
+struct OwnedCrateRoot {
+    crate_name: String,
+    path: String,
 }
 
 fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String> {
@@ -82,7 +93,20 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .zip(&visibility_sources)
                 .map(|(path, source)| flight_compiler::ModuleSource { path, source })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_typescript_with_visibility_sources(
+            let crate_roots = discover_crate_roots(
+                std::iter::once(&options.source)
+                    .chain(&options.alias_sources)
+                    .chain(&options.visibility_sources),
+                &options.crate_roots,
+            )?;
+            let crate_root_refs = crate_roots
+                .iter()
+                .map(|root| flight_compiler::CrateRootSource {
+                    crate_name: &root.crate_name,
+                    path: &root.path,
+                })
+                .collect::<Vec<_>>();
+            flight_compiler::compile_typescript_with_visibility_sources_and_crate_roots(
                 flight_compiler::ModuleSource {
                     path: &source_path,
                     source: &source,
@@ -91,6 +115,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &alias_modules,
                 &external_aliases,
                 &visibility_source_refs,
+                &crate_root_refs,
             )
         }
         GenerateKind::Tests => {
@@ -227,6 +252,7 @@ fn parse_generate_options(
     let mut alias_sources = Vec::new();
     let mut contract_module = None;
     let mut contract_source = None;
+    let mut crate_roots = Vec::new();
     let mut entity_module = None;
     let mut external_alias_modules = Vec::new();
     let mut external_alias_sources = Vec::new();
@@ -254,6 +280,24 @@ fn parse_generate_options(
                     Some(PathBuf::from(arguments.get(index).ok_or_else(|| {
                         format!("--contract-source requires a path\n\n{USAGE}")
                     })?));
+            }
+            "--crate-root" => {
+                index += 1;
+                let designation = arguments.get(index).ok_or_else(|| {
+                    format!("--crate-root requires <crate-name>=<path>\n\n{USAGE}")
+                })?;
+                let (crate_name, path) = designation.split_once('=').ok_or_else(|| {
+                    format!("--crate-root requires <crate-name>=<path>\n\n{USAGE}")
+                })?;
+                if !valid_crate_name(crate_name) || path.is_empty() {
+                    return Err(format!(
+                        "invalid --crate-root designation `{designation}`; expected <crate-name>=<path>\n\n{USAGE}"
+                    ));
+                }
+                crate_roots.push(ExplicitCrateRoot {
+                    crate_name: crate_name.to_string(),
+                    path: PathBuf::from(path),
+                });
             }
             "--external-alias-module" => {
                 index += 1;
@@ -303,6 +347,11 @@ fn parse_generate_options(
                 "--visibility-source is only valid for generate\n\n{USAGE}"
             ));
         }
+        GenerateKind::Tests if !crate_roots.is_empty() => {
+            return Err(format!(
+                "--crate-root is only valid for generate\n\n{USAGE}"
+            ));
+        }
         GenerateKind::Tests if entity_module.is_some() => {
             return Err(format!(
                 "--entity-module is only valid for generate\n\n{USAGE}"
@@ -320,6 +369,7 @@ fn parse_generate_options(
         check,
         contract_module,
         contract_source,
+        crate_roots,
         entity_module,
         external_alias_modules,
         external_alias_sources,
@@ -327,6 +377,157 @@ fn parse_generate_options(
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         visibility_sources,
     });
+}
+
+fn canonical_path(path: &Path) -> Result<PathBuf, String> {
+    return fs::canonicalize(path).map_err(|error| format!("{}: {error}", path.display()));
+}
+
+fn discover_crate_roots<'a>(
+    sources: impl Iterator<Item = &'a PathBuf>,
+    explicit: &[ExplicitCrateRoot],
+) -> Result<Vec<OwnedCrateRoot>, String> {
+    let sources = sources.collect::<Vec<_>>();
+    let mut roots = std::collections::BTreeMap::<PathBuf, String>::new();
+    let insert = |roots: &mut std::collections::BTreeMap<PathBuf, String>,
+                  path: PathBuf,
+                  crate_name: String|
+     -> Result<(), String> {
+        if let Some(existing) = roots.get(&path)
+            && existing != &crate_name
+        {
+            return Err(format!(
+                "crate root {} is designated as both `{existing}` and `{crate_name}`",
+                path.display()
+            ));
+        }
+        roots.insert(path, crate_name);
+        return Ok(());
+    };
+    for root in explicit {
+        insert(
+            &mut roots,
+            canonical_path(&root.path)?,
+            root.crate_name.clone(),
+        )?;
+    }
+    let manifests = sources
+        .iter()
+        .filter_map(|source| nearest_manifest(source))
+        .collect::<std::collections::BTreeSet<_>>();
+    for manifest in manifests {
+        let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+        let output = Command::new(cargo)
+            .args([
+                "metadata",
+                "--format-version",
+                "1",
+                "--no-deps",
+                "--manifest-path",
+            ])
+            .arg(&manifest)
+            .output()
+            .map_err(|error| {
+                format!(
+                    "failed to discover Cargo targets from {}: {error}",
+                    manifest.display()
+                )
+            })?;
+        if !output.status.success() {
+            return Err(format!(
+                "failed to discover Cargo targets from {}: {}",
+                manifest.display(),
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        let metadata: serde_json::Value =
+            serde_json::from_slice(&output.stdout).map_err(|error| {
+                format!("invalid Cargo metadata for {}: {error}", manifest.display())
+            })?;
+        let manifest = canonical_path(&manifest)?;
+        let Some(packages) = metadata
+            .get("packages")
+            .and_then(serde_json::Value::as_array)
+        else {
+            return Err("Cargo metadata has no packages array".to_string());
+        };
+        for package in packages {
+            let Some(package_manifest) = package
+                .get("manifest_path")
+                .and_then(serde_json::Value::as_str)
+            else {
+                continue;
+            };
+            if canonical_path(Path::new(package_manifest))? != manifest {
+                continue;
+            }
+            let Some(targets) = package.get("targets").and_then(serde_json::Value::as_array) else {
+                continue;
+            };
+            for target in targets {
+                let supported = target
+                    .get("kind")
+                    .and_then(serde_json::Value::as_array)
+                    .is_some_and(|kinds| {
+                        kinds.iter().any(|kind| {
+                            matches!(
+                                kind.as_str(),
+                                Some(
+                                    "lib"
+                                        | "rlib"
+                                        | "dylib"
+                                        | "cdylib"
+                                        | "staticlib"
+                                        | "proc-macro"
+                                        | "bin"
+                                )
+                            )
+                        })
+                    });
+                if !supported {
+                    continue;
+                }
+                let (Some(crate_name), Some(source_path)) = (
+                    target.get("name").and_then(serde_json::Value::as_str),
+                    target.get("src_path").and_then(serde_json::Value::as_str),
+                ) else {
+                    continue;
+                };
+                if !valid_crate_name(crate_name) {
+                    return Err(format!(
+                        "Cargo target name `{crate_name}` is not a Rust crate name"
+                    ));
+                }
+                insert(
+                    &mut roots,
+                    canonical_path(Path::new(source_path))?,
+                    crate_name.to_string(),
+                )?;
+            }
+        }
+    }
+    return Ok(roots
+        .into_iter()
+        .map(|(path, crate_name)| OwnedCrateRoot {
+            crate_name,
+            path: path.to_string_lossy().into_owned(),
+        })
+        .collect());
+}
+
+fn nearest_manifest(source: &Path) -> Option<PathBuf> {
+    let source = fs::canonicalize(source).ok()?;
+    return source.parent()?.ancestors().find_map(|directory| {
+        let manifest = directory.join("Cargo.toml");
+        manifest.is_file().then_some(manifest)
+    });
+}
+
+fn valid_crate_name(name: &str) -> bool {
+    return !name.is_empty()
+        && name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'));
 }
 
 fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {

@@ -5735,6 +5735,110 @@ pub fn get_defaults() -> u32 {
     }
 
     #[test]
+    fn discovers_and_accepts_explicit_nonstandard_cargo_target_roots() {
+        let directory = std::env::temp_dir().join(format!(
+            "flight-compiler-target-roots-cli-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        let root_source = "use std::sync::LazyLock;\n\nmod helper;\n\npub struct Value {\n    pub amount: f64,\n}\n\npub static VALUE: LazyLock<Value> = LazyLock::new(|| Value { amount: 1.0 });\n\npub fn value() -> f64 {\n    return VALUE.amount;\n}\n";
+        let helper_source = "pub fn value() -> f64 {\n    return 1.0;\n}\n";
+        let cases = [
+            (
+                "implicit-bin-file",
+                "[package]\nname = \"implicit-bin-file-package\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+                "src/bin/tool.rs",
+                "src/bin/helper.rs",
+                None,
+            ),
+            (
+                "implicit-bin-directory",
+                "[package]\nname = \"implicit-bin-directory-package\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+                "src/bin/tool/main.rs",
+                "src/bin/tool/helper.rs",
+                None,
+            ),
+            (
+                "custom-lib",
+                "[package]\nname = \"custom-lib-package\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\n[lib]\nname = \"custom_library\"\npath = \"source/root.rs\"\n",
+                "source/root.rs",
+                "source/helper.rs",
+                None,
+            ),
+            (
+                "custom-bin",
+                "[package]\nname = \"custom-bin-package\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\n[[bin]]\nname = \"custom-runner\"\npath = \"tools/runner.rs\"\n",
+                "tools/runner.rs",
+                "tools/helper.rs",
+                None,
+            ),
+            (
+                "explicit",
+                "",
+                "sources/entry.rs",
+                "sources/helper.rs",
+                Some("manual_root"),
+            ),
+        ];
+        for (name, manifest, root_relative, helper_relative, explicit_name) in cases {
+            let case = directory.join(name);
+            let root = case.join(root_relative);
+            let helper = case.join(helper_relative);
+            std::fs::create_dir_all(root.parent().unwrap()).unwrap();
+            std::fs::write(&root, root_source).unwrap();
+            std::fs::write(&helper, helper_source).unwrap();
+            if !manifest.is_empty() {
+                std::fs::write(case.join("Cargo.toml"), manifest).unwrap();
+            }
+            let output = case.join("generated.ts");
+            let run = |with_helper: bool| {
+                let _ = std::fs::remove_file(&output);
+                let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_flight-compile"));
+                command
+                    .arg("generate")
+                    .arg("--source")
+                    .arg(&root)
+                    .arg("--out")
+                    .arg(&output);
+                if with_helper {
+                    command.arg("--visibility-source").arg(&helper);
+                }
+                if let Some(crate_name) = explicit_name {
+                    command
+                        .arg("--crate-root")
+                        .arg(format!("{crate_name}={}", root.display()));
+                }
+                return command.output().unwrap();
+            };
+            let missing = run(false);
+            assert_eq!(missing.status.code(), Some(2), "{name}");
+            assert!(
+                String::from_utf8(missing.stderr)
+                    .unwrap()
+                    .contains("whose source is not among the sources the proof sees"),
+                "{name}"
+            );
+            assert!(
+                !output.exists(),
+                "{name} emitted without its declared module"
+            );
+            let complete = run(true);
+            assert_eq!(
+                complete.status.code(),
+                Some(0),
+                "{name}: {}",
+                String::from_utf8(complete.stderr).unwrap()
+            );
+            assert!(
+                output.exists(),
+                "{name} did not emit with a complete inventory"
+            );
+        }
+        std::fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[test]
     fn rejects_hidden_include_macro_and_path_module_sources_through_the_cli() {
         let directory = std::env::temp_dir().join(format!(
             "flight-compiler-lazy-lock-visibility-cli-{}",

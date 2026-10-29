@@ -19,6 +19,7 @@ path = "src/main.rs"
 [dependencies]
 proc-macro2 = "1"
 quote = "1"
+serde_json = "1"
 syn = { version = "2", features = ["full", "visit"] }
 
 [lints]
