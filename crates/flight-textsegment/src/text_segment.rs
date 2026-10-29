@@ -8,11 +8,9 @@ pub fn segment_graphemes(
     locale: Option<&str>,
 ) {
     out.clear();
-    out.extend((host_text_segmenter.segment)(
-        text,
-        TextSegmentGranularity::Grapheme,
-        locale,
-    ));
+    let segments: Vec<TextSegment> =
+        (host_text_segmenter.segment)(text, TextSegmentGranularity::Grapheme, locale);
+    out.extend(segments);
     return;
 }
 
@@ -24,11 +22,9 @@ pub fn segment_sentences(
     locale: Option<&str>,
 ) {
     out.clear();
-    out.extend((host_text_segmenter.segment)(
-        text,
-        TextSegmentGranularity::Sentence,
-        locale,
-    ));
+    let segments: Vec<TextSegment> =
+        (host_text_segmenter.segment)(text, TextSegmentGranularity::Sentence, locale);
+    out.extend(segments);
     return;
 }
 
@@ -40,10 +36,8 @@ pub fn segment_words(
     locale: Option<&str>,
 ) {
     out.clear();
-    out.extend((host_text_segmenter.segment)(
-        text,
-        TextSegmentGranularity::Word,
-        locale,
-    ));
+    let segments: Vec<TextSegment> =
+        (host_text_segmenter.segment)(text, TextSegmentGranularity::Word, locale);
+    out.extend(segments);
     return;
 }

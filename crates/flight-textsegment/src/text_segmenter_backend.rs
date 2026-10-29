@@ -1,3 +1,6 @@
+//! flight-compiler: target-native
+//! flight-compiler: export-name WEB_TEXT_SEGMENTER_BACKEND webTextSegmenterBackend
+
 use std::sync::LazyLock;
 
 use unicode_segmentation::UnicodeSegmentation;

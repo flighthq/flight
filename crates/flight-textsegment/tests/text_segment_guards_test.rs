@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_textsegment::contract::{report_text_segmenter_unavailable, set_text_segment_guard};
 use std::cell::Cell;
 use std::sync::Arc;

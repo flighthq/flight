@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::text_segmenter_backend::WEB_TEXT_SEGMENTER_BACKEND;

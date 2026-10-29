@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 /// Text segment granularity levels.

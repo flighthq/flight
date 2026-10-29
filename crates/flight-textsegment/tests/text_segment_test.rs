@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_textsegment::*;
 use std::cell::RefCell;
 

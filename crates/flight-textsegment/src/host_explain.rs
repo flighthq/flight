@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Host capability explanations for the capability group this crate owns (`textSegment`),
 //! redistributed from the former aggregate host (D26; TS `hostExplain.ts` and
 //! `enableHostGuards.ts`). Each explainer appends to a caller-owned explanation, so a host provider
