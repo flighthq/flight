@@ -1,4 +1,4 @@
-use flight_geometry::{MatrixLike, create_matrix};
+use flight_geometry::MatrixLike;
 
 use crate::copy_path::copy_path;
 use crate::path::{Path, PathCommand};
@@ -43,14 +43,33 @@ mod sugar_tests {
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`,
 /// writing the result into `out`. Alias-safe. Commands and winding are copied unchanged.
-#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn transform_path(source: &Path, matrix: &MatrixLike, out: &mut Path) {
-    let a = matrix.a as f64;
-    let b = matrix.b as f64;
-    let c = matrix.c as f64;
-    let d = matrix.d as f64;
-    let tx = matrix.tx as f64;
-    let ty = matrix.ty as f64;
+    transform_path_coordinates(
+        source,
+        matrix.a as f64,
+        matrix.b as f64,
+        matrix.c as f64,
+        matrix.d as f64,
+        matrix.tx as f64,
+        matrix.ty as f64,
+        out,
+    );
+}
+
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+// The affine map as plain coefficients, so translation needs no `Matrix` entity and the path runtime
+// keeps no value dependency on geometry.
+#[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
+fn transform_path_coordinates(
+    source: &Path,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    tx: f64,
+    ty: f64,
+    out: &mut Path,
+) {
     copy_path(out, source);
     let commands = out.commands.clone();
     let data = &mut out.data;
@@ -96,8 +115,7 @@ pub fn transform_path(source: &Path, matrix: &MatrixLike, out: &mut Path) {
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Translates all points in `source` by (dx, dy). Alias-safe.
 pub fn translate_path(source: &Path, dx: f64, dy: f64, out: &mut Path) {
-    let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, dx as f32, dy as f32);
-    transform_path(source, &matrix, out);
+    transform_path_coordinates(source, 1.0, 0.0, 0.0, 1.0, dx, dy, out);
 }
 
 impl Path {

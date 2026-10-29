@@ -1,7 +1,6 @@
 // Generated from crates/flight-path/src/transform_path.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { createMatrix } from '@flighthq/geometry/contract';
 import type { MatrixLike } from '@flighthq/geometry/contract';
 
 import { copyPath } from './copyPath.ts';
@@ -13,12 +12,19 @@ import { PathCommand } from './path.ts';
  * writing the result into `out`. Alias-safe. Commands and winding are copied unchanged.
  */
 export function transformPath(source: Readonly<PathRaw>, matrix: Readonly<MatrixLike>, out: PathRaw): void {
-  const a = matrix.a;
-  const b = matrix.b;
-  const c = matrix.c;
-  const d = matrix.d;
-  const tx = matrix.tx;
-  const ty = matrix.ty;
+  transformPathCoordinates(source, matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty, out);
+}
+
+function transformPathCoordinates(
+  source: Readonly<PathRaw>,
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx: number,
+  ty: number,
+  out: PathRaw,
+): void {
   copyPath(out, source);
   const commands = out.commands.slice();
   const data = out.data;
@@ -69,6 +75,5 @@ export function transformPath(source: Readonly<PathRaw>, matrix: Readonly<Matrix
  * Translates all points in `source` by (dx, dy). Alias-safe.
  */
 export function translatePath(source: Readonly<PathRaw>, dx: number, dy: number, out: PathRaw): void {
-  const matrix = createMatrix(1.0, 0.0, 0.0, 1.0, dx, dy);
-  transformPath(source, matrix, out);
+  transformPathCoordinates(source, 1.0, 0.0, 0.0, 1.0, dx, dy, out);
 }
