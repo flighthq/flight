@@ -95,6 +95,6 @@ describe('parseStepPosition', () => {
 
 describe('setEasingStepsGuard', () => {
   it('is available to the target native guard suite', () => {
-    const ClearGuard = () => setEasingStepsGuard(null);
+    const _clearGuard = () => setEasingStepsGuard(null);
   });
 });

@@ -17161,10 +17161,15 @@ fn rewrite_documentation(value: &str) -> String {
     return out;
 }
 
+// Leading underscores mark an intentionally unused Rust binding; TypeScript linters read the same
+// prefix the same way, so they are kept rather than treated as an empty first word (`_out` stays
+// `_out`, not `Out`).
 pub(crate) fn snake_to_lower_camel(name: &str) -> String {
     let name = name.strip_prefix("r#").unwrap_or(name);
-    let mut words = name.split('_');
-    let mut out = words.next().unwrap_or_default().to_string();
+    let body = name.trim_start_matches('_');
+    let mut out = name[..name.len() - body.len()].to_string();
+    let mut words = body.split('_');
+    out.push_str(words.next().unwrap_or_default());
     for word in words {
         let mut capitalized = false;
         for character in word.chars() {

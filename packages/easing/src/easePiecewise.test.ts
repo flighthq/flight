@@ -11,11 +11,11 @@ function assertApprox(actual: number, expected: number): void {
   expect(diff < 1e-4, `expected ${expected}, got ${actual} (diff: ${diff})`).toBe(true);
 }
 
-function constantZero(T: number): number {
+function constantZero(_t: number): number {
   return 0.0;
 }
 
-function constantOne(T: number): number {
+function constantOne(_t: number): number {
   return 1.0;
 }
 

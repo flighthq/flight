@@ -1337,6 +1337,21 @@ export function sameSource(a: Readonly<Source>, b: Readonly<Source>): boolean {
     }
 
     #[test]
+    fn keeps_leading_underscores_on_unused_bindings() {
+        let source = "pub fn initialize_handle(_out: &mut i32) {}\n\npub fn apply(values: &[f64]) -> usize {\n    let _unused_total = values.len();\n    return values.iter().map(|_delta_time: &f64| 1).count();\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("export function initializeHandle(_out: number): void {\n}"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const _unusedTotal = values.length;"),
+            "{output}"
+        );
+        assert!(output.contains("(_deltaTime: number) =>"), "{output}");
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment

@@ -306,7 +306,7 @@ describe('strokePath', () => {
     };
     style.width = 2.0;
     style.dash = [0.0, 10.0, 10.0, 10.0];
-    const Result = strokePath(path, style, 0.25);
+    const _result = strokePath(path, style, 0.25);
   });
   it('dashes solid stroke with empty dash array produces single outline', () => {
     let path = createPath('nonZero');

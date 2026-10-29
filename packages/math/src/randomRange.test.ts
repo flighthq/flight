@@ -10,7 +10,7 @@ describe('randomBool', () => {
   it('returns only booleans', () => {
     const random = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 100; _ += 1) {
-      const V: boolean = randomBool(random, undefined);
+      const _v: boolean = randomBool(random, undefined);
     }
   });
   it('returns true with probability 1', () => {

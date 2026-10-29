@@ -39,7 +39,7 @@ import {
 
 describe('contractReExports', () => {
   it('exposes all color from kelvin functions', () => {
-    const Color = colorFromKelvin(6500.0);
+    const _color = colorFromKelvin(6500.0);
   });
   it('exposes all hsl functions and types', () => {
     let hsl = allocateHslColor();
@@ -54,15 +54,15 @@ describe('contractReExports', () => {
     hsvToRgb(out, hsv.h, hsv.s, hsv.v);
   });
   it('exposes all lerp functions', () => {
-    const C = lerpColor(0x000000ff, 0xffffffff, 0.5);
+    const _c = lerpColor(0x000000ff, 0xffffffff, 0.5);
     let out = allocateLinearColor();
     const start = allocateLinearColor();
     const end = allocateLinearColor();
     lerpLinearColor(out, start, end, 0.5);
   });
   it('exposes all luminance functions', () => {
-    const Lum = getColorLuminance(0xffffffff);
-    const Ratio = getColorContrastRatio(0xffffffff, 0x000000ff);
+    const _lum = getColorLuminance(0xffffffff);
+    const _ratio = getColorContrastRatio(0xffffffff, 0x000000ff);
     let w709 = new Float32Array(3).fill(0.0);
     getRec709LuminanceWeights(w709);
     let w2020 = new Float32Array(3).fill(0.0);
@@ -79,23 +79,23 @@ describe('contractReExports', () => {
   it('exposes all pack functions and types', () => {
     let linear = allocateLinearColor();
     unpackColorToLinear(linear, 0xff8800ff);
-    const Packed = packLinearToColor(linear);
-    const Packed2 = packColor(1.0, 0.0, 0.0, 1.0);
-    const Opaque = packOpaqueColor(0xff8800);
-    const Alpha = getColorAlpha(0xff8800ff);
-    const Rgb = getColorRgb(0xff8800ff);
-    const WithAlpha = setColorAlpha(0xff8800ff, 0.5);
-    const Hex = computeRgbHexString(0xff8800);
-    const Css = computeRgbaCssString(0xff8800ff);
+    const _packed = packLinearToColor(linear);
+    const _packed2 = packColor(1.0, 0.0, 0.0, 1.0);
+    const _opaque = packOpaqueColor(0xff8800);
+    const _alpha = getColorAlpha(0xff8800ff);
+    const _rgb = getColorRgb(0xff8800ff);
+    const _withAlpha = setColorAlpha(0xff8800ff, 0.5);
+    const _hex = computeRgbHexString(0xff8800);
+    const _css = computeRgbaCssString(0xff8800ff);
     let rgba = new Float32Array(4).fill(0.0);
     unpackColorRgba(rgba, 0xff8800ff);
   });
   it('exposes all premultiply functions', () => {
-    const Pm = premultiplyColorAlpha(0xff880080);
-    const Upm = unpremultiplyColorAlpha(0xff880080);
+    const _pm = premultiplyColorAlpha(0xff880080);
+    const _upm = unpremultiplyColorAlpha(0xff880080);
   });
   it('exposes all srgb transfer functions', () => {
-    const S = linearChannelToSrgb(0.5);
-    const L = srgbChannelToLinear(0.5);
+    const _s = linearChannelToSrgb(0.5);
+    const _l = srgbChannelToLinear(0.5);
   });
 });

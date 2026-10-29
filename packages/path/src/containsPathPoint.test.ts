@@ -133,8 +133,8 @@ describe('containsPathPoint', () => {
     appendPathLineTo(path, 100.0, 100.0);
     appendPathLineTo(path, 0.0, 100.0);
     appendPathLineTo(path, 0.0, 0.0);
-    const TopEdge = containsPathPoint(path, 50.0, 0.0, 0.25);
-    const LeftEdge = containsPathPoint(path, 0.0, 50.0, 0.25);
+    const _topEdge = containsPathPoint(path, 50.0, 0.0, 0.25);
+    const _leftEdge = containsPathPoint(path, 0.0, 50.0, 0.25);
   });
   it('returns false for empty path', () => {
     const path = createPath('nonZero');
@@ -173,7 +173,7 @@ describe('containsPathPoint', () => {
     appendPathLineTo(path, 100.0, 100.0);
     appendPathLineTo(path, 0.0, 100.0);
     appendPathLineTo(path, 0.0, 0.0);
-    const AtVertex = containsPathPoint(path, 0.0, 0.0, 0.25);
-    const AtAnother = containsPathPoint(path, 100.0, 100.0, 0.25);
+    const _atVertex = containsPathPoint(path, 0.0, 0.0, 0.25);
+    const _atAnother = containsPathPoint(path, 100.0, 100.0, 0.25);
   });
 });

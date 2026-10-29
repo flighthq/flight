@@ -52,7 +52,7 @@ function emptyTextFormat(): TextFormat {
 }
 
 function fixedMeasure(): TextMeasureFunction {
-  return (text: string, Format: Readonly<TextFormat>) =>
+  return (text: string, _format: Readonly<TextFormat>) =>
     Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length * 10.0;
 }
 
