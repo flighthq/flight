@@ -11373,9 +11373,14 @@ fn emit_method_call(
             return emit_option_combinator(call, &receiver, &payload, entities);
         }
         if call.method == "and_then" {
-            return Err(compile_error(
-                "portable `.and_then()` requires a receiver declared as Rust `Option`",
-            ));
+            if expression_is_sequence(&call.receiver, entities)
+                || expression_is_known_string(&call.receiver, entities)
+            {
+                return Err(compile_error(
+                    "portable `.and_then()` requires a receiver declared as Rust `Option`",
+                ));
+            }
+            return emit_option_combinator(call, &receiver, "", entities);
         }
         // A Rust field has no `.map()` unless it is an Option (or another non-sequence type), so a
         // field whose owning struct does not resolve is rejected instead of lowered as an array map.

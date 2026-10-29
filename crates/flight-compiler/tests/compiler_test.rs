@@ -1956,6 +1956,13 @@ pub fn widened(value: Option<f32>) -> f32 {
             "wildcard closure parameter should compile: {output}"
         );
 
+        let source = "pub fn unproven(state: &RenderState) -> Option<LogState> {\n    return find_runtime(state).and_then(|runtime| runtime.log.clone());\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("((runtime) => runtime === undefined ? undefined : runtime.log") || output.contains("((runtime) => runtime === undefined ? undefined : structuredClone(runtime.log)"),
+            "unproven Option and_then should compile: {output}"
+        );
+
         for (source, expected) in [
             (
                 "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n",
