@@ -167,6 +167,10 @@ const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
 // for each unshadowed `std` / `alloc` root whose qualified `sync::Arc` is the standard one. `Arc<T>` is
 // lowered to `T`, so a struct's identity is seen through it only under that provenance.
 const STD_ARC_NAME_MARKER: &str = "@std-arc-name:";
+// Owner facts for each non-generic source type alias, and `{module}␟{alias}␟{type tokens}` for its
+// definition, so a struct identity is seen through alias chains across sources.
+const TYPE_ALIAS_DEFINITION_MARKER: &str = "@type-alias-definition:";
+const TYPE_ALIAS_OWNER_MARKER: &str = "@type-alias-owner:";
 const STD_ARC_ROOT_MARKER: &str = "@std-arc-root:";
 // Functions returning a resolved struct (`module SEP function SEP struct identity`).
 const STRUCT_RETURN_MARKER: &str = "@struct-return:";
@@ -1761,11 +1765,28 @@ fn resolved_type_identity(
     from: &str,
     rust_type: &Type,
 ) -> Option<String> {
+    return resolved_type_identity_at_depth(entities, from, rust_type, 0);
+}
+
+// `resolved_type_identity`, expanding at most 16 alias or `Arc` layers so an alias cycle fails closed.
+fn resolved_type_identity_at_depth(
+    entities: &HashSet<String>,
+    from: &str,
+    rust_type: &Type,
+    depth: usize,
+) -> Option<String> {
+    if depth > 16 {
+        return None;
+    }
     let path = match rust_type {
-        Type::Group(group) => return resolved_type_identity(entities, from, &group.elem),
-        Type::Paren(paren) => return resolved_type_identity(entities, from, &paren.elem),
+        Type::Group(group) => {
+            return resolved_type_identity_at_depth(entities, from, &group.elem, depth);
+        }
+        Type::Paren(paren) => {
+            return resolved_type_identity_at_depth(entities, from, &paren.elem, depth);
+        }
         Type::Reference(reference) => {
-            return resolved_type_identity(entities, from, &reference.elem);
+            return resolved_type_identity_at_depth(entities, from, &reference.elem, depth);
         }
         Type::Path(path) if path.qself.is_none() => &path.path,
         _ => return None,
@@ -1792,10 +1813,23 @@ fn resolved_type_identity(
         let [GenericArgument::Type(inner)] = arguments.args.iter().collect::<Vec<_>>()[..] else {
             return None;
         };
-        return resolved_type_identity(entities, from, inner);
+        return resolved_type_identity_at_depth(entities, from, inner, depth + 1);
     }
-    let (owner, declaration) = resolve_path_owner(entities, STRUCT_OWNER_MARKER, from, path)?;
-    return Some(format!("{owner}{PROVENANCE_SEPARATOR}{declaration}"));
+    if let Some((owner, declaration)) =
+        resolve_path_owner(entities, STRUCT_OWNER_MARKER, from, path)
+    {
+        return Some(format!("{owner}{PROVENANCE_SEPARATOR}{declaration}"));
+    }
+    // A source type alias stands for its definition, read in the alias's own source.
+    let (owner, alias) = resolve_path_owner(entities, TYPE_ALIAS_OWNER_MARKER, from, path)?;
+    let definition = unique_marker_suffix(
+        entities,
+        &format!(
+            "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+        ),
+    )?;
+    let definition = syn::parse_str::<Type>(&definition).ok()?;
+    return resolved_type_identity_at_depth(entities, &owner, &definition, depth + 1);
 }
 
 fn rust_type_is_ordered_primitive(rust_type: &Type) -> bool {
@@ -5224,6 +5258,23 @@ fn generation_context_with_types(
                 module,
                 &function.sig.ident.to_string(),
                 is_public(&function.vis),
+            ));
+        }
+        for alias in program
+            .type_aliases
+            .iter()
+            .filter(|alias| alias.generics.params.is_empty())
+        {
+            context.insert(owner_marker(
+                TYPE_ALIAS_OWNER_MARKER,
+                module,
+                &alias.ident.to_string(),
+                is_public(&alias.vis),
+            ));
+            context.insert(format!(
+                "{TYPE_ALIAS_DEFINITION_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+                alias.ident,
+                alias.ty.to_token_stream()
             ));
         }
         let arc_names = std::iter::once("Arc".to_string()).chain(

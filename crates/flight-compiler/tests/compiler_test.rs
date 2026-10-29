@@ -4592,6 +4592,94 @@ pub fn wide_present(wide: &Wide) -> bool {
     }
 
     #[test]
+    fn resolves_nullable_fields_through_source_type_alias_chains() {
+        let module = |path, source| ModuleSource { path, source };
+        let a = r#"//! flight-compiler: nullable-option Inner.contour
+
+pub struct Inner {
+    pub contour: Option<f64>,
+}
+
+pub type SharedInner = Inner;
+
+pub fn make_inner(value: Option<f64>) -> SharedInner {
+    return Inner { contour: value };
+}
+"#;
+        let b = r#"use crate::a::SharedInner;
+
+pub type Chained = SharedInner;
+
+pub type ChainedArc = std::sync::Arc<Chained>;
+
+pub type Loop = Cycle;
+
+pub type Cycle = Loop;
+
+pub struct Outer {
+    pub chained: Chained,
+    pub shared: ChainedArc,
+}
+
+pub fn chained_present(outer: &Outer) -> bool {
+    return outer.chained.contour.is_some();
+}
+
+pub fn shared_or(outer: &Outer) -> f64 {
+    return outer.shared.contour.unwrap_or(-1.0);
+}
+
+pub fn alias_present(inner: &Chained) -> bool {
+    return inner.contour.is_some();
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            module("crates/flight-alias/src/b.rs", b),
+            None,
+            &[module("crates/flight-alias/src/a.rs", a)],
+            &[],
+        )
+        .unwrap();
+        assert!(
+            output.contains("  return ((outer.chained.contour) ?? undefined) !== undefined;\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  return (((outer.shared.contour) ?? undefined) ?? -1.0);\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  return ((inner.contour) ?? undefined) !== undefined;\n"),
+            "{output}"
+        );
+
+        for alias in [
+            "pub type Shared = Loop;\n\npub type Loop = Shared;\n",
+            "pub type Shared<T> = T;\n",
+        ] {
+            let shared = if alias.contains("<T>") {
+                "Shared<Inner>"
+            } else {
+                "Shared"
+            };
+            let source = format!(
+                "//! flight-compiler: nullable-option Inner.contour\n\npub struct Inner {{\n    pub contour: Option<f64>,\n}}\n\n{alias}\npub struct Outer {{\n    pub inner: {shared},\n}}\n\npub fn present(outer: &Outer) -> bool {{\n    return outer.inner.contour.is_some();\n}}\n"
+            );
+            let output = compile_typescript_with_module_sources(
+                ModuleSource {
+                    path: "crates/flight-alias/src/c.rs",
+                    source: &source,
+                },
+                None,
+                &[],
+                &[],
+            )
+            .unwrap();
+            assert!(!output.contains("?? undefined"), "{source}\n{output}");
+        }
+    }
+
+    #[test]
     fn resolves_nullable_fields_through_proven_standard_arc() {
         let compile = |source: &str| {
             return compile_typescript_with_module_sources(
