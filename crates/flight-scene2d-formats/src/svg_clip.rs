@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use flight_clip::contract::{
-    ClipRegion, create_clip_region_from_path, create_clip_region_state, intersect_clip_regions,
-    transform_clip_region, union_clip_regions,
+    ClipRegion, create_clip_region_from_path, intersect_clip_regions, transform_clip_region,
+    union_clip_regions,
 };
 use flight_entity::Ref;
 use flight_geometry::{Matrix, Rectangle, clone_matrix, create_matrix};
@@ -69,7 +69,6 @@ fn create_svg_clip_region(
             clipped_regions.push(region);
         }
     }
-    let state = create_clip_region_state();
     let mut region = create_clip_region_from_path(&out, None);
     for clipped_region in clipped_regions {
         let empty = out.commands.is_empty() && {
@@ -79,7 +78,7 @@ fn create_svg_clip_region(
         if empty {
             region = clipped_region;
         } else {
-            union_clip_regions(&state, &region, &region, &clipped_region);
+            union_clip_regions(&region, &region, &clipped_region);
         }
     }
     region = intersect_svg_clip_reference(&region, element, None, context);
@@ -110,7 +109,7 @@ fn create_svg_clip_region(
         authored_transform
     };
     if let Some(transform) = transform {
-        transform_clip_region(&state, &region, &region, &transform);
+        transform_clip_region(&region, &region, &transform);
     }
     return region;
 }
@@ -412,11 +411,10 @@ fn intersect_svg_clip_reference(
     let bounds = base.read().unwrap().rect.clone();
     let referenced_region = create_svg_clip_region(&referenced, Some(&bounds), context);
     context.resolving_clips.retain(|candidate| candidate != &id);
-    let state = create_clip_region_state();
     if let Some(transform) = transform {
-        transform_clip_region(&state, &referenced_region, &referenced_region, transform);
+        transform_clip_region(&referenced_region, &referenced_region, transform);
     }
-    intersect_clip_regions(&state, base, base, &referenced_region);
+    intersect_clip_regions(base, base, &referenced_region);
     return base.clone();
 }
 

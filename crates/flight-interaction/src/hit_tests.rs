@@ -146,8 +146,7 @@ fn contains_node_clip_point(node: &NodeRef, x: f32, y: f32) -> bool {
     let matrix = get_node_world_matrix(node);
     let mut scratch = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
-    let clip_state = flight_clip::ClipRegionState::default();
-    return clip_region_contains_point(&clip_state, &clip, scratch.x as f64, scratch.y as f64);
+    return clip_region_contains_point(&clip, scratch.x as f64, scratch.y as f64);
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned hit test context

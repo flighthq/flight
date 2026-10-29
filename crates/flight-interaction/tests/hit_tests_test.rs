@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
 use crate::interaction_fixture;
+use flight_clip::create_clip_region_from_rectangle;
+use flight_geometry::create_rectangle;
 use flight_interaction::hit_tests::*;
 use flight_interaction::register_default_hit_tests::register_default_hit_tests;
 use flight_interaction::types::HitTestResult;
+use flight_scene2d::{as_node2d_ref, set_node2d_clip};
 
 mod create_hit_test_context {
     use super::*;
@@ -40,6 +43,27 @@ mod find_graph_hit_target {
         let ctx = HitTestContext::new();
         let result = find_graph_hit_target(&ctx, &root, 0.0, 0.0);
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn rejects_a_registered_geometry_hit_outside_the_public_clip_region() {
+        let root = interaction_fixture::interactive_node();
+        let node2d = as_node2d_ref(&root).unwrap();
+        set_node2d_clip(
+            &node2d,
+            Some(create_clip_region_from_rectangle(&create_rectangle(
+                0.0, 0.0, 10.0, 10.0,
+            ))),
+        );
+        let mut ctx = HitTestContext::new();
+        register_hit_test(
+            &mut ctx,
+            "DisplayObject".to_string(),
+            Arc::new(|_node, _x, _y| return true),
+        );
+
+        assert!(find_graph_hit_target(&ctx, &root, 5.0, 5.0).is_some());
+        assert!(find_graph_hit_target(&ctx, &root, 15.0, 5.0).is_none());
     }
 }
 

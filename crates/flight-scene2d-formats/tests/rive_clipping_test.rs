@@ -1,4 +1,4 @@
-use flight_clip::{ClipRegion, clip_region_contains_point, create_clip_region_state};
+use flight_clip::{ClipRegion, clip_region_contains_point};
 use flight_entity::{FlightError, Ref};
 use flight_importdiagnostics::{ImportDiagnostic, ImportDiagnosticSeverity};
 use flight_path::{PathCommand, PathWinding};
@@ -119,8 +119,7 @@ mod apply_rive_clipping {
         )
         .unwrap();
         assert_eq!(clip.read().unwrap().winding, PathWinding::NonZero);
-        let state = create_clip_region_state();
-        assert!(!clip_region_contains_point(&state, &clip, 5.0, 5.0));
+        assert!(!clip_region_contains_point(&clip, 5.0, 5.0));
     }
 
     #[test]
@@ -208,10 +207,9 @@ mod apply_rive_clipping {
             1,
         )
         .unwrap();
-        let state = create_clip_region_state();
-        assert!(clip_region_contains_point(&state, &clip, 7.0, 5.0));
-        assert!(!clip_region_contains_point(&state, &clip, 2.0, 5.0));
-        assert!(!clip_region_contains_point(&state, &clip, 12.0, 5.0));
+        assert!(clip_region_contains_point(&clip, 7.0, 5.0));
+        assert!(!clip_region_contains_point(&clip, 2.0, 5.0));
+        assert!(!clip_region_contains_point(&clip, 12.0, 5.0));
         assert!(diagnostics.is_empty());
     }
 
@@ -243,10 +241,9 @@ mod apply_rive_clipping {
         )
         .unwrap();
         assert_eq!(clip.read().unwrap().contours.as_ref().unwrap().len(), 2);
-        let state = create_clip_region_state();
-        assert!(clip_region_contains_point(&state, &clip, 7.0, 5.0));
-        assert!(clip_region_contains_point(&state, &clip, 22.0, 5.0));
-        assert!(!clip_region_contains_point(&state, &clip, 15.0, 5.0));
+        assert!(clip_region_contains_point(&clip, 7.0, 5.0));
+        assert!(clip_region_contains_point(&clip, 22.0, 5.0));
+        assert!(!clip_region_contains_point(&clip, 15.0, 5.0));
     }
 
     #[test]
@@ -271,8 +268,7 @@ mod apply_rive_clipping {
             1,
         )
         .unwrap();
-        let state = create_clip_region_state();
-        assert!(!clip_region_contains_point(&state, &clip, 5.0, 5.0));
+        assert!(!clip_region_contains_point(&clip, 5.0, 5.0));
     }
 }
 

@@ -3,10 +3,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
-use flight_clip::{
-    ClipRegion, create_clip_region_from_contours, create_clip_region_from_path,
-    create_clip_region_state,
-};
+use flight_clip::{ClipRegion, create_clip_region_from_contours, create_clip_region_from_path};
 use flight_compression::{
     CompressionFraming, HostDecompressDeflateCapability, HostDecompressLzmaCapability,
 };
@@ -234,9 +231,7 @@ fn create_swf_mask_clip_region(
     if contours.is_empty() {
         return None;
     }
-    let clip_state = create_clip_region_state();
     return Some(create_clip_region_from_contours(
-        &clip_state,
         &contours,
         PathWinding::NonZero,
     ));

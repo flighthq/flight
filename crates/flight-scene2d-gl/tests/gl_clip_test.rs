@@ -1,6 +1,4 @@
-use flight_clip::{
-    create_clip_region_from_contours, create_clip_region_from_rectangle, create_clip_region_state,
-};
+use flight_clip::{create_clip_region_from_contours, create_clip_region_from_rectangle};
 use flight_geometry::create_rectangle;
 use flight_node::NodeRef;
 use flight_path::PathWinding;
@@ -14,7 +12,6 @@ fn make_source(contour: bool) -> NodeRef {
     let object = flight_scene2d::create_display_object();
     let clip = if contour {
         create_clip_region_from_contours(
-            &create_clip_region_state(),
             &[vec![0.0, 0.0, 50.0, 0.0, 50.0, 50.0, 0.0, 50.0]],
             PathWinding::NonZero,
         )
