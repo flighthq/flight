@@ -14,7 +14,7 @@ import {
   matrixTransformRectangle,
   mergeRectangle,
 } from '@flighthq/geometry/contract';
-import type { Matrix, Rectangle } from '@flighthq/geometry/contract';
+import type { MatrixLike, Rectangle, RectangleLike } from '@flighthq/geometry/contract';
 
 import {
   acquireClipRegionFromPool,
@@ -86,7 +86,7 @@ export function clipRegionContainsPoint(clip: Readonly<ClipRegion>, x: number, y
   return true;
 }
 
-export function clipRegionContainsRectangle(clip: Readonly<ClipRegion>, rectangle: Readonly<Rectangle>): boolean {
+export function clipRegionContainsRectangle(clip: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>): boolean {
   guardClipRegionUse(clip);
   return enclosesRectangle(clip!.rect, rectangle);
 }
@@ -120,7 +120,7 @@ function resetClipRegion(region: Readonly<ClipRegion>): void {
   mutableRegion.version = 0;
 }
 
-export function clipRegionIntersectsRectangle(clip: Readonly<ClipRegion>, rectangle: Readonly<Rectangle>): boolean {
+export function clipRegionIntersectsRectangle(clip: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>): boolean {
   guardClipRegionUse(clip);
   return intersectsRectangle(clip!.rect, rectangle);
 }
@@ -157,7 +157,7 @@ export function createClipRegionFromContours(contours: Readonly<number[][]>, win
   return out;
 }
 
-export function createClipRegionFromRectangle(rectangle: Readonly<Rectangle>): ClipRegion {
+export function createClipRegionFromRectangle(rectangle: Readonly<RectangleLike>): ClipRegion {
   let out: ClipRegion = allocateEntity<ClipRegion>();
   initializeClipRegionFromRectangle(out, rectangle);
   return out;
@@ -253,7 +253,7 @@ function equalClipRegionRectangles(a: Readonly<Rectangle>, b: Readonly<Rectangle
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-export function getClipRegionBounds(out: Rectangle, clip: Readonly<ClipRegion>): void {
+export function getClipRegionBounds(out: RectangleLike, clip: Readonly<ClipRegion>): void {
   guardClipRegionUse(clip);
   copyRectangle(out, clip!.rect);
 }
@@ -273,7 +273,7 @@ export function initializeClipRegionFromContours(
   out.winding = winding;
 }
 
-export function initializeClipRegionFromRectangle(out: ClipRegion, rectangle: Readonly<Rectangle>): void {
+export function initializeClipRegionFromRectangle(out: ClipRegion, rectangle: Readonly<RectangleLike>): void {
   out.rect = cloneRectangle(rectangle);
   out.contours = null;
   out.version = 0;
@@ -509,7 +509,7 @@ export function setClipRegionToContours(
   mutableOut.version = (mutableOut.version + 1) >>> 0;
 }
 
-export function setClipRegionToRectangle(out: Readonly<ClipRegion>, rectangle: Readonly<Rectangle>): void {
+export function setClipRegionToRectangle(out: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>): void {
   guardClipRegionUse(out);
   out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
@@ -562,7 +562,7 @@ function snapshotClipRegion(clip: Readonly<ClipRegion>): readonly [Rectangle, nu
 export function transformClipRegion(
   out: Readonly<ClipRegion>,
   clip: Readonly<ClipRegion>,
-  matrix: Readonly<Matrix>,
+  matrix: Readonly<MatrixLike>,
 ): void {
   guardClipRegionUse(out);
   guardClipRegionUse(clip);

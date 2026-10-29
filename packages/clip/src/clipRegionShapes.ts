@@ -3,7 +3,7 @@
 
 import { allocateEntity } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
-import type { Rectangle } from '@flighthq/geometry/contract';
+import type { Rectangle, RectangleLike } from '@flighthq/geometry/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import { appendPathCubicCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
@@ -19,7 +19,7 @@ export function createClipRegionFromCircle(x: number, y: number, radius: number,
   return createClipRegionFromPath(path, tolerance);
 }
 
-export function createClipRegionFromEllipse(rectangle: Readonly<Rectangle>, tolerance?: number): ClipRegion {
+export function createClipRegionFromEllipse(rectangle: Readonly<RectangleLike>, tolerance?: number): ClipRegion {
   let path = createPath(PathWinding.NonZero);
   appendEllipseToPath(path, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
   return createClipRegionFromPath(path, tolerance);
@@ -32,7 +32,7 @@ export function createClipRegionFromPath(path: Readonly<Path>, tolerance?: numbe
 }
 
 export function createClipRegionFromRoundedRectangle(
-  rectangle: Readonly<Rectangle>,
+  rectangle: Readonly<RectangleLike>,
   radius: number,
   tolerance?: number,
 ): ClipRegion {

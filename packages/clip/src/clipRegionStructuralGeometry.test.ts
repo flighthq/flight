@@ -1,4 +1,5 @@
 import type { MatrixLike, RectangleLike } from '@flighthq/geometry/contract';
+import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import {
@@ -65,5 +66,24 @@ describe('ClipRegion structural geometry compatibility', () => {
     transformClipRegion(clip, clip, matrix);
     getClipRegionBounds(bounds, clip);
     expect(bounds).toEqual({ height: 4, width: 6, x: 6, y: 9 });
+  });
+
+  it('continues to accept geometry entities for every structural role', () => {
+    const source = createRectangle(1, 2, 6, 4);
+    const clip = createClipRegionFromRectangle(source);
+    expect(clipRegionContainsRectangle(clip, createRectangle(2, 3, 1, 1))).toBe(true);
+    expect(clipRegionIntersectsRectangle(clip, createRectangle(6, 4, 2, 2))).toBe(true);
+    expect(createClipRegionFromEllipse(source).rect).toEqual(source);
+    expect(createClipRegionFromRoundedRectangle(source, 1).rect).toEqual(source);
+
+    initializeClipRegionFromRectangle(clip, createRectangle(3, 4, 5, 6));
+    const bounds = createRectangle(0, 0, 0, 0);
+    getClipRegionBounds(bounds, clip);
+    expect(bounds).toEqual(createRectangle(3, 4, 5, 6));
+
+    setClipRegionToRectangle(clip, source);
+    transformClipRegion(clip, clip, createMatrix(1, 0, 0, 1, 5, 7));
+    getClipRegionBounds(bounds, clip);
+    expect(bounds).toEqual(createRectangle(6, 9, 6, 4));
   });
 });

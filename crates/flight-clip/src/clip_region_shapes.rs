@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
-use flight_geometry::{Rectangle, create_rectangle};
+use flight_geometry::{Rectangle, RectangleLike, create_rectangle};
 use flight_math::CIRCLE_KAPPA;
 use flight_path::{
     Path, append_path_cubic_curve_to, append_path_line_to, append_path_move_to, create_path,
@@ -25,7 +25,7 @@ pub fn create_clip_region_from_circle(
 
 // flight-lint: allow(f64) ellipse geometry feeds the f64 Path.data lane without truncation
 pub fn create_clip_region_from_ellipse(
-    rectangle: &Rectangle,
+    rectangle: &RectangleLike,
     tolerance: Option<f64>,
 ) -> Ref<ClipRegion> {
     let mut path = create_path(PathWinding::NonZero);
@@ -48,7 +48,7 @@ pub fn create_clip_region_from_path(path: &Path, tolerance: Option<f64>) -> Ref<
 
 // flight-lint: allow(f64) rounded rectangle geometry feeds the f64 Path.data lane without truncation
 pub fn create_clip_region_from_rounded_rectangle(
-    rectangle: &Rectangle,
+    rectangle: &RectangleLike,
     radius: f64,
     tolerance: Option<f64>,
 ) -> Ref<ClipRegion> {

@@ -11,8 +11,8 @@ use crate::clip_region_runtime::{
 use crate::types::*;
 use flight_entity::{EntityConstruction, Ref, allocate_entity};
 use flight_geometry::{
-    Matrix, Rectangle, clone_rectangle, contains_rectangle_point_xy, copy_rectangle,
-    create_rectangle, encloses_rectangle, intersects_rectangle, is_empty_rectangle,
+    MatrixLike, Rectangle, RectangleLike, clone_rectangle, contains_rectangle_point_xy,
+    copy_rectangle, create_rectangle, encloses_rectangle, intersects_rectangle, is_empty_rectangle,
     matrix_transform_rectangle, merge_rectangle,
 };
 
@@ -29,7 +29,7 @@ pub fn create_clip_region_from_contours(
     return Arc::new(RwLock::new(out));
 }
 
-pub fn create_clip_region_from_rectangle(rectangle: &Rectangle) -> Ref<ClipRegion> {
+pub fn create_clip_region_from_rectangle(rectangle: &RectangleLike) -> Ref<ClipRegion> {
     let mut out: ClipRegion = allocate_entity();
     initialize_clip_region_from_rectangle(&mut out, rectangle);
     return Arc::new(RwLock::new(out));
@@ -65,7 +65,7 @@ pub fn initialize_clip_region_from_contours(
     out.winding = winding;
 }
 
-pub fn initialize_clip_region_from_rectangle(out: &mut ClipRegion, rectangle: &Rectangle) {
+pub fn initialize_clip_region_from_rectangle(out: &mut ClipRegion, rectangle: &RectangleLike) {
     out.rect = clone_rectangle(rectangle);
     out.contours = None;
     out.version = 0;
@@ -123,7 +123,7 @@ pub fn clip_region_contains_point(clip: &Ref<ClipRegion>, x: f64, y: f64) -> boo
     return true;
 }
 
-pub fn clip_region_contains_rectangle(clip: &Ref<ClipRegion>, rectangle: &Rectangle) -> bool {
+pub fn clip_region_contains_rectangle(clip: &Ref<ClipRegion>, rectangle: &RectangleLike) -> bool {
     guard_clip_region_use(clip);
     return encloses_rectangle(&clip.read().unwrap().rect, rectangle);
 }
@@ -136,7 +136,7 @@ pub fn clip_region_intersects_clip_region(a: &Ref<ClipRegion>, b: &Ref<ClipRegio
     return intersects_rectangle(&a_rect, &b_rect);
 }
 
-pub fn clip_region_intersects_rectangle(clip: &Ref<ClipRegion>, rectangle: &Rectangle) -> bool {
+pub fn clip_region_intersects_rectangle(clip: &Ref<ClipRegion>, rectangle: &RectangleLike) -> bool {
     guard_clip_region_use(clip);
     return intersects_rectangle(&clip.read().unwrap().rect, rectangle);
 }
@@ -266,7 +266,7 @@ pub fn explain_clip_region_contours(
     return None;
 }
 
-pub fn get_clip_region_bounds(out: &mut Rectangle, clip: &Ref<ClipRegion>) {
+pub fn get_clip_region_bounds(out: &mut RectangleLike, clip: &Ref<ClipRegion>) {
     guard_clip_region_use(clip);
     copy_rectangle(out, &clip.read().unwrap().rect);
 }
@@ -489,7 +489,7 @@ pub fn set_clip_region_to_contours(
     mutable_out.version = mutable_out.version.wrapping_add(1);
 }
 
-pub fn set_clip_region_to_rectangle(out: &Ref<ClipRegion>, rectangle: &Rectangle) {
+pub fn set_clip_region_to_rectangle(out: &Ref<ClipRegion>, rectangle: &RectangleLike) {
     guard_clip_region_use(out);
     let mut out = out.write().unwrap();
     let mutable_out: &mut EntityConstruction<ClipRegion> = &mut out;
@@ -546,7 +546,7 @@ fn snapshot_clip_region(clip: &Ref<ClipRegion>) -> (Rectangle, Option<Vec<Vec<f6
 }
 
 // flight-lint: allow(f64) affine transforms operate on exact f64 Path.data contour coordinates
-pub fn transform_clip_region(out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>, matrix: &Matrix) {
+pub fn transform_clip_region(out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>, matrix: &MatrixLike) {
     guard_clip_region_use(out);
     guard_clip_region_use(clip);
     let (rect, contours, winding) = snapshot_clip_region(clip);
