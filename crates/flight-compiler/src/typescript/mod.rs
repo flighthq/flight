@@ -11036,6 +11036,9 @@ fn emit_method_call(
                         "(<K, V>(entries: Map<K, V>, key: K, init: () => V): V => {{ if (!entries.has(key)) {{ entries.set(key, init()); }} return entries.get(key)!; }})({map}, {key}, {init})"
                     ))
                 }
+                ("or_default", 0) => Err(compile_error(
+                    "portable `HashMap::entry().or_default()` as an expression is not supported; use `.or_insert(value)` or `.or_insert_with(|| value)` instead, or use `*map.entry(key).or_default() += value` or `map.entry(key).or_default().push(value)` as statements"
+                )),
                 (method, args) => Err(compile_error(format!(
                     "portable `HashMap::entry().{method}` with {args} argument(s) has no portable lowering"
                 ))),
@@ -11502,6 +11505,10 @@ fn emit_method_call(
             "portable `.lines()` requires a receiver known to be `String` or `str`",
         )),
         "ln" if arguments.is_empty() => Ok(format!("Math.log({receiver})")),
+        "log" if arguments.len() == 1 => Ok(format!(
+            "Math.log({receiver}) / Math.log({})",
+            arguments[0]
+        )),
         "log2" if arguments.is_empty() => Ok(format!("Math.log2({receiver})")),
         "log10" if arguments.is_empty() => Ok(format!("Math.log10({receiver})")),
         "map" if arguments.len() == 1 => Ok(format!("{receiver}.map({})", arguments[0])),
@@ -11677,11 +11684,29 @@ fn emit_method_call(
         "rsplit" if arguments.len() == 1 => Err(compile_error(
             "portable `.rsplit()` requires a receiver known to be `String` or `str`",
         )),
+        "rsplit_once"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "((value: string, delimiter: string): [string, string] | {absent} => {{ const index = value.lastIndexOf(delimiter); return index === -1 ? {absent} : [value.slice(0, index), value.slice(index + delimiter.length)]; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "rsplit_once" if arguments.len() == 1 => Err(compile_error(
+            "portable `.rsplit_once()` requires a receiver known to be `String` or `str`",
+        )),
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
         "saturating_add" if arguments.len() == 1 => {
             Ok(format!(
                 "Math.min(0x7FFFFFFF, {receiver} + {})",
+                arguments[0]
+            ))
+        }
+        "saturating_mul" if arguments.len() == 1 => {
+            Ok(format!(
+                "Math.min(0x7FFFFFFF, {receiver} * {})",
                 arguments[0]
             ))
         }
@@ -11835,6 +11860,10 @@ fn emit_method_call(
             ))
         }
         "tan" if arguments.is_empty() => Ok(format!("Math.tan({receiver})")),
+        "then" if arguments.len() == 1 => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!("({receiver} ? ({})() : {absent})", arguments[0]))
+        }
         "then_some" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!("({receiver} ? {} : {absent})", arguments[0]))
@@ -13876,6 +13905,15 @@ fn emit_statement(
             write_indent(out, indent);
             writeln!(out, "[{a}, {b}] = [{b}, {a}];").expect("writing to a String cannot fail");
         }
+        Stmt::Expr(Expr::Binary(binary), _)
+            if binary_is_assignment(&binary.op)
+                && emit_entry_or_default_assign(out, binary, entities, indent)? =>
+        {
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if emit_entry_or_default_method(out, call, entities, indent)? =>
+        {
+        }
         Stmt::Expr(expression, _) => {
             write_indent(out, indent);
             writeln!(out, "{};", emit_expression(expression, entities)?)
@@ -14693,6 +14731,89 @@ fn emit_unary_operator(operator: &UnOp) -> Result<&'static str, CompileError> {
 // (Rust ownership forbids that aliasing, the emitted signature does not). A non-reusable receiver and
 // argument are each evaluated once, in that Rust order, into block-scoped temporaries. Every binding
 // avoids the identifiers the operands use.
+fn entry_or_default_parts<'a>(
+    call: &'a syn::ExprMethodCall,
+    entities: &HashSet<String>,
+) -> Option<(&'a Expr, &'a Expr)> {
+    if call.method != "or_default" || !call.args.is_empty() {
+        return None;
+    }
+    let Expr::MethodCall(entry) = call.receiver.as_ref() else {
+        return None;
+    };
+    if entry.method != "entry" || entry.args.len() != 1 {
+        return None;
+    }
+    if expression_hash_collection(&entry.receiver, entities).is_none() {
+        return None;
+    }
+    return Some((&entry.receiver, &entry.args[0]));
+}
+
+fn emit_entry_or_default_assign(
+    out: &mut String,
+    binary: &syn::ExprBinary,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<bool, CompileError> {
+    if !binary_is_assignment(&binary.op) {
+        return Ok(false);
+    }
+    let Expr::Unary(unary) = binary.left.as_ref() else {
+        return Ok(false);
+    };
+    if !matches!(unary.op, syn::UnOp::Deref(_)) {
+        return Ok(false);
+    }
+    let Expr::MethodCall(call) = unary.expr.as_ref() else {
+        return Ok(false);
+    };
+    let Some((map_expr, key_expr)) = entry_or_default_parts(call, entities) else {
+        return Ok(false);
+    };
+    let map = emit_expression(map_expr, entities)?;
+    let key = emit_expression(key_expr, entities)?;
+    let rhs = emit_expression(&binary.right, entities)?;
+    let op = emit_binary_operator(&binary.op)?;
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "{map}.set({key}, ({map}.get({key}) ?? 0) {op} {rhs});",
+    )
+    .expect("writing to a String cannot fail");
+    return Ok(true);
+}
+
+fn emit_entry_or_default_method(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<bool, CompileError> {
+    let Expr::MethodCall(or_default) = call.receiver.as_ref() else {
+        return Ok(false);
+    };
+    let Some((map_expr, key_expr)) = entry_or_default_parts(or_default, entities) else {
+        return Ok(false);
+    };
+    let map = emit_expression(map_expr, entities)?;
+    let key = emit_expression(key_expr, entities)?;
+    let method = call.method.to_string();
+    let arguments = call
+        .args
+        .iter()
+        .map(|argument| emit_expression(argument, entities))
+        .collect::<Result<Vec<_>, _>>()?;
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "if (!{map}.has({key})) {{ {map}.set({key}, []); }} {map}.get({key})!.{method}({});",
+        arguments.join(", ")
+    )
+    .expect("writing to a String cannot fail");
+    return Ok(true);
+}
+
 fn emit_vec_extend_statement(
     out: &mut String,
     call: &syn::ExprMethodCall,

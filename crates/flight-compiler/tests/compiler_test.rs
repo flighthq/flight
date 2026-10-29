@@ -4351,6 +4351,114 @@ pub fn negate(value: u32) -> u32 {
     }
 
     #[test]
+    fn lowers_entry_or_default_counter_increment() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn count_words(words: &[&str]) -> HashMap<String, usize> {
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for word in words {
+        *counts.entry(word.to_string()).or_default() += 1;
+    }
+    return counts;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".get(") && output.contains(".set(") && output.contains("?? 0"),
+            "or_default counter should use get/set with ?? 0: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_entry_or_default_vec_push() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn group_items(items: &[(String, i32)]) -> HashMap<String, Vec<i32>> {
+    let mut groups: HashMap<String, Vec<i32>> = HashMap::new();
+    for (key, value) in items {
+        groups.entry(key.clone()).or_default().push(*value);
+    }
+    return groups;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".has(") && output.contains(".set(") && output.contains("[]"),
+            "or_default push should use has/set with []: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_log_with_base() {
+        let source = r#"
+pub fn log_base(value: f64, base: f64) -> f64 {
+    return value.log(base);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("Math.log(value) / Math.log(base)"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_rsplit_once_with_string_provenance() {
+        let source = r#"
+pub fn last_split(text: &str, delimiter: &str) -> Option<(String, String)> {
+    return text.rsplit_once(delimiter).map(|(a, b)| (a.to_string(), b.to_string()));
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("lastIndexOf(delimiter)"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_saturating_mul() {
+        let source = r#"
+pub fn safe_mul(a: u32, b: u32) -> u32 {
+    return a.saturating_mul(b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("Math.min(0x7FFFFFFF, a * b)"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_then_on_bool() {
+        let source = r#"
+pub fn conditional(flag: bool, value: i32) -> Option<i32> {
+    return flag.then(|| value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("flag ?") && output.contains("undefined"),
+            "then should produce ternary: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {
