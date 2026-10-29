@@ -1,139 +1,250 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { FlowStack, FlowState, EntityConstruction } from '@flighthq/types/contract';
+// Generated from crates/flight-flow/src/flow.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { reportFlowGuard } from './flowGuards.ts';
+import { runFlowTransition } from './flowTransitions.ts';
+import type { FlowCallback, FlowStackRaw, FlowState } from './flowTypes.ts';
 import type { FlowGuardState } from './types.ts';
 
-// Empty the stack, exiting every state top-to-bottom (`onExit` on the active top first, down to the
-// bottom) so each unwinds in reverse of the order it entered. No `onPause`/`onResume` fire — the
-// whole stack is being torn down, not layered. After this the stack has depth 0.
-export function clearFlowStack(stack: FlowStack): void {
-  const states = stack.states;
-  for (let i = states.length - 1; i >= 0; i--) {
-    states[i].onExit?.();
+/**
+ * Shared caller-owned flow-guard state.
+ */
+export type FlowGuardStateRef = FlowGuardState;
+
+function noFlowCallback(): void {}
+
+function noFlowUpdateCallback(deltaTime: number): void {
+  if (Number.isNaN(deltaTime)) {
+    return;
   }
-  states.length = 0;
 }
 
-export function createFlowStack(): FlowStack {
-  const out = allocateEntity<FlowStack>();
+function getFlowStateOnPause(state: FlowState | null): FlowCallback {
+  if (state !== null) {
+    const previous = state;
+    return previous!.onPause ?? noFlowCallback;
+  }
+  return noFlowCallback;
+}
+
+/**
+ * Empty the stack, exiting every state top-to-bottom. Callbacks run after the stack write lock is
+ * released, so they may re-enter other flow operations.
+ */
+export function clearFlowStack(stack: Readonly<FlowStackRaw>): void {
+  let index = stack!.states.length;
+  while (index > 0) {
+    index -= 1;
+    const maybeOnExit = (() => {
+      const current = stack!;
+      return index < current.states.length ? current.states[index]!.onExit : null;
+    })();
+    const callback = maybeOnExit ?? noFlowCallback;
+    callback();
+  }
+  stack!.states.length = 0;
+}
+
+export function createFlowStack(): FlowStackRaw {
+  let out: FlowStackRaw = Object.assign(allocateEntity<FlowStackRaw>(), { states: [] });
   initializeFlowStack(out);
-  return finishEntity(out);
+  return out;
 }
 
-// The active top of the stack — the state currently receiving `onUpdate` — or `null` if the stack is
-// empty.
-export function getActiveFlowState(stack: Readonly<FlowStack>): FlowState | null {
-  const states = stack.states;
-  return states.length > 0 ? states[states.length - 1] : null;
+/**
+ * The active top of the stack, or None when the stack is empty.
+ */
+export function getActiveFlowState(stack: Readonly<FlowStackRaw>): FlowState | null {
+  const current = stack!;
+  if (current.states.length === 0) {
+    return null;
+  }
+  return current.states[current.states.length - 1];
 }
 
-// The number of states on the stack.
-export function getFlowStackDepth(stack: Readonly<FlowStack>): number {
-  return stack.states.length;
+/**
+ * The number of states on the stack.
+ */
+export function getFlowStackDepth(stack: Readonly<FlowStackRaw>): number {
+  return stack!.states.length;
 }
 
-// Fill `out` (cleared first) with the render-visible states in draw order, bottom-to-top: the active
-// top plus the contiguous run of states beneath it reachable through `renderBelow`. Walking down from
-// the top, each state that sets `renderBelow` keeps the one beneath it visible; the walk stops at the
-// first opaque state (no `renderBelow`), which is itself visible but hides everything below it. The
-// caller draws `out` front-to-back (index 0 first) so higher states paint over lower ones. `out` is
-// empty for an empty stack.
-export function getFlowStackVisibleStates(stack: Readonly<FlowStack>, out: FlowState[]): void {
+/**
+ * Fill `out` (cleared first) with the render-visible states bottom-to-top.
+ */
+export function getFlowStackVisibleStates(out: FlowState[], stack: Readonly<FlowStackRaw>): void {
   out.length = 0;
-  const states = stack.states;
-  const top = states.length - 1;
+  const states = stack!;
+  const top = (states.states.length | 0) - 1;
   if (top < 0) {
     return;
   }
   let lowest = top;
-  while (lowest > 0 && states[lowest].renderBelow) {
-    lowest--;
+  while (lowest > 0 && (states.states[lowest]!.renderBelow ?? false)) {
+    lowest -= 1;
   }
-  for (let i = lowest; i <= top; i++) {
-    out.push(states[i]);
+  for (let index = lowest; index <= top; index += 1) {
+    out.push(states.states[index]);
   }
 }
 
-// Allocate an empty flow-state stack. The only allocating function; every other stack function reads
-// or mutates an existing stack in place. Push states onto it to drive the enter/pause lifecycle.
-export function initializeFlowStack(out: EntityConstruction<FlowStack>): void {
-  out.states = [];
+/**
+ * Initialize a flow stack to its empty state, keeping the allocated runtime slot.
+ */
+export function initializeFlowStack(out: FlowStackRaw): void {
+  out.states = [] as never[];
 }
 
-// Pop the active top off the stack, exiting it (`onExit`) and resuming the state it uncovers
-// (`onResume`) — the mirror of `pushFlowState`. Returns the popped state, or `null` if the stack was
-// empty (a sentinel, not a throw — popping an empty stack is an expected no-op query).
-export function popFlowState(stack: FlowStack): FlowState | null {
-  const states = stack.states;
-  if (states.length === 0) {
+/**
+ * Pop the active top, exiting it and resuming the revealed state. None on an empty stack.
+ */
+export function popFlowState(stack: Readonly<FlowStackRaw>): FlowState | null {
+  let popped: FlowState;
+  const maybePopped = takeTopFlowState(stack);
+  if (maybePopped !== null) {
+    const value = maybePopped;
+    popped = value;
+  } else {
     return null;
   }
-  const popped = states.pop() as FlowState;
-  popped.onExit?.();
-  const revealed = states.length > 0 ? states[states.length - 1] : null;
-  revealed?.onResume?.();
+  const maybeOnExit = popped!.onExit;
+  const exitCallback = maybeOnExit ?? noFlowCallback;
+  exitCallback();
+  const maybeRevealed = (() => {
+    const current = stack!;
+    return current.states.length === 0 ? null : current.states[current.states.length - 1];
+  })();
+  if (maybeRevealed !== null) {
+    const revealedState = maybeRevealed;
+    const maybeOnResume = revealedState!.onResume;
+    const resumeCallback = maybeOnResume ?? noFlowCallback;
+    resumeCallback();
+  }
   return popped;
 }
 
-// Push `state` onto the stack, making it the active top. The previous top (if any) is paused first
-// (`onPause`), then `state` is pushed and entered (`onEnter`) — pause-then-enter, so the outgoing
-// state is suspended before the incoming one starts. `guards` is the caller-owned guard state shared
-// by every transition on this timeline; it tracks re-entrant transitions even when reporting is off.
-export function pushFlowState(stack: FlowStack, state: Readonly<FlowState>, guards: FlowGuardState): void {
-  if (guards.transitionDepth > 0) reportFlowGuard(guards, 'transition-during-transition');
-  if (stack.states.includes(state as FlowState)) reportFlowGuard(guards, 'duplicate-state-push');
-  const states = stack.states;
-  const previousTop = states.length > 0 ? states[states.length - 1] : null;
-  guards.transitionDepth++;
-  try {
-    previousTop?.onPause?.();
-    states.push(state);
-    state.onEnter?.();
-  } finally {
-    guards.transitionDepth--;
+function takeTopFlowState(stack: Readonly<FlowStackRaw>): FlowState | null {
+  let current = stack!;
+  if (current.states.length === 0) {
+    return null;
   }
-}
-
-// Swap the active top for `state` in place, keeping the stack depth the same. The current top (if
-// any) exits (`onExit`) and `state` enters (`onEnter`); the state beneath is NOT paused or resumed,
-// because it stays covered throughout — replace swaps the top layer, it does not uncover the one
-// below. On an empty stack this is just a push-and-enter. `guards` is shared as in pushFlowState.
-export function replaceFlowState(stack: FlowStack, state: Readonly<FlowState>, guards: FlowGuardState): void {
-  if (guards.transitionDepth > 0) reportFlowGuard(guards, 'transition-during-transition');
-  const states = stack.states;
-  if (states.length > 0) {
-    const previousTop = states.pop() as FlowState;
-    guards.transitionDepth++;
-    try {
-      previousTop.onExit?.();
-    } finally {
-      guards.transitionDepth--;
+  const top = current.states.length - 1;
+  let previous: FlowState[] = [] as never[];
+  for (const state of current.states) {
+    previous.push(state);
+  }
+  const popped = previous[top];
+  current.states.length = 0;
+  for (const item of previous) {
+    if (current.states.length >= top) {
+      break;
     }
+    current.states.push(item);
   }
-  states.push(state);
-  guards.transitionDepth++;
-  try {
-    state.onEnter?.();
-  } finally {
-    guards.transitionDepth--;
-  }
+  return popped;
 }
 
-// Tick the stack for one frame (deltaTime is in milliseconds). The active top always updates (`onUpdate(deltaTime)`); then, walking
-// downward, each visited state that sets `updateBelow` also ticks the state immediately beneath it,
-// continuing the chain until a visited state does not set `updateBelow`. So a run of transparent
-// overlays all tick their underlying states, but an opaque overlay (no `updateBelow`) freezes
-// everything below it. A no-op on an empty stack.
-export function updateFlowStack(stack: Readonly<FlowStack>, deltaTime: number): void {
-  const states = stack.states;
-  let index = states.length - 1;
+/**
+ * Portable push behavior: pause the previous top, push, then enter. Target-native wrappers own the
+ * balanced unwind scope and pass the depth they observed.
+ */
+export function pushFlowState(
+  stack: Readonly<FlowStackRaw>,
+  state: FlowState,
+  guards: Readonly<FlowGuardStateRef>,
+): void {
+  const transitionStack = stack;
+  const transitionGuards = guards;
+  runFlowTransition(guards, (depth) => {
+    pushFlowStateCore(transitionStack, state, transitionGuards, depth);
+  });
+}
+
+function pushFlowStateCore(
+  stack: Readonly<FlowStackRaw>,
+  state: FlowState,
+  guards: Readonly<FlowGuardStateRef>,
+  depth: number,
+): void {
+  if (depth > 0) {
+    reportFlowGuard(guards, 'transition-during-transition');
+  }
+  const duplicate = stack!.states.some((existing) => existing === state);
+  if (duplicate) {
+    reportFlowGuard(guards, 'duplicate-state-push');
+  }
+  const previousTop = (() => {
+    const current = stack!;
+    return current.states.length === 0 ? null : current.states[current.states.length - 1];
+  })();
+  const previousOnPause = getFlowStateOnPause(previousTop);
+  const maybeOnEnter = state!.onEnter;
+  previousOnPause();
+  stack!.states.push(state);
+  const enterCallback = maybeOnEnter ?? noFlowCallback;
+  enterCallback();
+}
+
+/**
+ * Portable replace behavior: swap the active top in place without touching the state beneath.
+ */
+export function replaceFlowState(
+  stack: Readonly<FlowStackRaw>,
+  state: FlowState,
+  guards: Readonly<FlowGuardStateRef>,
+): void {
+  const transitionStack = stack;
+  const transitionGuards = guards;
+  runFlowTransition(guards, (depth) => {
+    replaceFlowStateCore(transitionStack, state, transitionGuards, depth);
+  });
+}
+
+function replaceFlowStateCore(
+  stack: Readonly<FlowStackRaw>,
+  state: FlowState,
+  guards: Readonly<FlowGuardStateRef>,
+  depth: number,
+): void {
+  if (depth > 0) {
+    reportFlowGuard(guards, 'transition-during-transition');
+  }
+  const maybePreviousTop = takeTopFlowState(stack);
+  if (maybePreviousTop !== null) {
+    const previousState = maybePreviousTop;
+    const maybeOnExit = previousState!.onExit;
+    const exitCallback = maybeOnExit ?? noFlowCallback;
+    exitCallback();
+  }
+  const maybeOnEnter = state!.onEnter;
+  stack!.states.push(state);
+  const enterCallback = maybeOnEnter ?? noFlowCallback;
+  enterCallback();
+}
+
+/**
+ * Tick one frame: the active top updates; each visited state with `updateBelow` also ticks the
+ * state beneath it. Callbacks run with no lock held.
+ */
+export function updateFlowStack(stack: Readonly<FlowStackRaw>, deltaTime: number): void {
+  const states = stack!.states;
+  let index = (states.length | 0) - 1;
   if (index < 0) {
     return;
   }
-  states[index].onUpdate?.(deltaTime);
-  while (index > 0 && states[index].updateBelow) {
-    index--;
-    states[index].onUpdate?.(deltaTime);
+  for (;;) {
+    const state = states[index];
+    const [maybeOnUpdate, updateBelow] = (() => {
+      const borrowed = state!;
+      return [borrowed.onUpdate, borrowed.updateBelow ?? false];
+    })();
+    const callback = maybeOnUpdate ?? noFlowUpdateCallback;
+    callback(deltaTime);
+    if (index <= 0 || !updateBelow) {
+      break;
+    }
+    index -= 1;
   }
 }

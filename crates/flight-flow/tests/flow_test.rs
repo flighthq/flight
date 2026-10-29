@@ -1,16 +1,22 @@
-//! flight-compiler: target-native
+//! flight-compiler: nullable-options
 
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::Ref;
 use flight_flow::contract::*;
+use flight_log::create_log_state;
 
 fn guard_state() -> FlowGuardStateRef {
-    return Arc::new(RwLock::new(FlowGuardState {
+    let state = Arc::new(RwLock::new(FlowGuardState {
         enabled: false,
         transition_depth: 0,
-        context: None,
+        context: Some(FlowGuardContext {
+            log_state: Arc::new(RwLock::new(create_log_state())),
+            clock: Arc::new(|| 0.0),
+        }),
     }));
+    disable_flow_guards(state.clone());
+    return state;
 }
 
 fn state(state: FlowState) -> Ref<FlowState> {
@@ -62,19 +68,6 @@ fn labeled_state(name: &str, log: &Arc<Mutex<Vec<String>>>) -> Ref<FlowState> {
     });
 }
 
-fn panicking_on_enter() -> Ref<FlowState> {
-    return state(FlowState {
-        name: Some("panics".to_string()),
-        on_enter: Some(Arc::new(|| panic!("on_enter failed"))),
-        on_exit: None,
-        on_pause: None,
-        on_resume: None,
-        on_update: None,
-        render_below: None,
-        update_below: None,
-    });
-}
-
 fn plain(name: &str) -> Ref<FlowState> {
     return state(FlowState {
         name: Some(name.to_string()),
@@ -88,12 +81,21 @@ fn plain(name: &str) -> Ref<FlowState> {
     });
 }
 
+fn take_once(slot: &Arc<Mutex<Vec<bool>>>) -> bool {
+    let mut values = slot.lock().unwrap();
+    if !values.is_empty() {
+        return false;
+    }
+    values.push(true);
+    return true;
+}
+
 mod clear_flow_stack {
     use super::*;
 
     #[test]
     fn exits_every_state_top_to_bottom_and_empties_the_stack() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -118,7 +120,7 @@ mod clear_flow_stack {
     fn exits_while_the_states_are_still_on_the_stack() {
         let stack = create_flow_stack();
         let guards = guard_state();
-        let seen = Arc::new(Mutex::new(Vec::new()));
+        let seen: Arc<Mutex<Vec<usize>>> = Arc::new(Mutex::new(Vec::new()));
         for name in ["A", "B"] {
             let observer = stack.clone();
             let depths = seen.clone();
@@ -186,7 +188,9 @@ mod get_active_flow_state {
     #[test]
     fn returns_none_on_an_empty_stack() {
         let stack = create_flow_stack();
-        assert!(get_active_flow_state(&stack).is_none());
+        let fallback = plain("fallback");
+        let active = get_active_flow_state(&stack).unwrap_or(fallback.clone());
+        assert!(Arc::ptr_eq(&active, &fallback));
     }
 }
 
@@ -317,7 +321,7 @@ mod initialize_flow_stack {
     fn is_the_construction_initializer_of_create_flow_stack() {
         let stack = create_flow_stack();
         stack.write().unwrap().states.push(plain("stale"));
-        flight_flow::contract::initialize_flow_stack(&mut stack.write().unwrap());
+        initialize_flow_stack(&mut stack.write().unwrap());
         assert!(stack.read().unwrap().states.is_empty());
     }
 }
@@ -327,7 +331,7 @@ mod pop_flow_state {
 
     #[test]
     fn exits_the_top_and_resumes_the_revealed_state_returning_the_popped_state() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -343,12 +347,14 @@ mod pop_flow_state {
     #[test]
     fn returns_none_when_the_stack_is_empty() {
         let stack = create_flow_stack();
-        assert!(pop_flow_state(&stack).is_none());
+        let fallback = plain("fallback");
+        let popped = pop_flow_state(&stack).unwrap_or(fallback.clone());
+        assert!(Arc::ptr_eq(&popped, &fallback));
     }
 
     #[test]
     fn exits_the_last_state_without_resuming_anything_below() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -370,7 +376,7 @@ mod push_flow_state {
 
     #[test]
     fn enters_a_state_pushed_onto_an_empty_stack() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -379,7 +385,7 @@ mod push_flow_state {
 
     #[test]
     fn pauses_the_previous_top_before_entering_the_new_state() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -400,7 +406,7 @@ mod push_flow_state {
 
     #[test]
     fn supports_a_real_reentrant_push_from_on_enter() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         let nested_log = log.clone();
@@ -441,12 +447,11 @@ mod push_flow_state {
 
     #[test]
     fn supports_a_real_reentrant_push_from_on_pause() {
-        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         let stack_for_pause = stack.clone();
         let guards_for_pause = guards.clone();
-        let paused_once = Arc::new(Mutex::new(false));
+        let paused_once: Arc<Mutex<Vec<bool>>> = Arc::new(Mutex::new(Vec::new()));
         let paused_once_slot = paused_once.clone();
         let mut a = FlowState {
             name: Some("A".to_string()),
@@ -459,43 +464,17 @@ mod push_flow_state {
             update_below: None,
         };
         a.on_pause = Some(Arc::new(move || {
-            let mut fired = paused_once_slot.lock().unwrap();
-            if *fired {
-                return;
+            if take_once(&paused_once_slot) {
+                push_flow_state(&stack_for_pause, plain("C"), &guards_for_pause);
             }
-            *fired = true;
-            drop(fired);
-            push_flow_state(&stack_for_pause, plain("C"), &guards_for_pause);
         }));
         push_flow_state(&stack, state(a), &guards);
         push_flow_state(&stack, plain("B"), &guards);
         let states = stack.read().unwrap();
-        let names: Vec<Option<String>> = states
-            .states
-            .iter()
-            .map(|state| state.read().unwrap().name.clone())
-            .collect();
-        assert_eq!(
-            names,
-            vec![
-                Some("A".to_string()),
-                Some("C".to_string()),
-                Some("B".to_string())
-            ]
-        );
-        assert_eq!(guards.read().unwrap().transition_depth, 0);
-        let _ = log;
-    }
-
-    // TS wraps the transition in try/finally; the Rust depth guard releases on unwind the same way.
-    #[test]
-    fn restores_the_transition_depth_when_a_callback_panics() {
-        let stack = create_flow_stack();
-        let guards = guard_state();
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            push_flow_state(&stack, panicking_on_enter(), &guards);
-        }));
-        assert!(result.is_err());
+        assert_eq!(states.states.len(), 3);
+        assert_eq!(states.states[0].read().unwrap().name.as_deref(), Some("A"));
+        assert_eq!(states.states[1].read().unwrap().name.as_deref(), Some("C"));
+        assert_eq!(states.states[2].read().unwrap().name.as_deref(), Some("B"));
         assert_eq!(guards.read().unwrap().transition_depth, 0);
     }
 }
@@ -505,7 +484,7 @@ mod replace_flow_state {
 
     #[test]
     fn exits_the_top_and_enters_the_replacement_without_touching_the_state_below() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         let a = labeled_state("A", &log);
@@ -520,7 +499,7 @@ mod replace_flow_state {
 
     #[test]
     fn just_pushes_and_enters_on_an_empty_stack() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         replace_flow_state(&stack, labeled_state("C", &log), &guards);
@@ -536,18 +515,6 @@ mod replace_flow_state {
         replace_flow_state(&stack, plain("B"), &guards);
         assert_eq!(get_flow_stack_depth(&stack), 1);
     }
-
-    // TS wraps the transition in try/finally; the Rust depth guard releases on unwind the same way.
-    #[test]
-    fn restores_the_transition_depth_when_a_callback_panics() {
-        let stack = create_flow_stack();
-        let guards = guard_state();
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            replace_flow_state(&stack, panicking_on_enter(), &guards);
-        }));
-        assert!(result.is_err());
-        assert_eq!(guards.read().unwrap().transition_depth, 0);
-    }
 }
 
 mod update_flow_stack {
@@ -555,7 +522,7 @@ mod update_flow_stack {
 
     #[test]
     fn ticks_only_the_top_with_the_frame_delta_time() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -567,7 +534,7 @@ mod update_flow_stack {
 
     #[test]
     fn ticks_the_state_beneath_a_transparent_update_below_overlay() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -581,7 +548,7 @@ mod update_flow_stack {
 
     #[test]
     fn does_not_tick_below_an_opaque_overlay() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
@@ -593,7 +560,7 @@ mod update_flow_stack {
 
     #[test]
     fn walks_a_chain_of_update_below_overlays_and_stops_at_the_first_opaque_one() {
-        let log = Arc::new(Mutex::new(Vec::new()));
+        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);

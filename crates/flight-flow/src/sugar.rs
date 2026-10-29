@@ -7,6 +7,7 @@ use flight_entity::Ref;
 
 use crate::flow::*;
 use crate::flow_guards::{disable_flow_guards, enable_flow_guards};
+use crate::flow_types::{FlowStack, FlowState};
 
 #[cfg(test)]
 mod flow_guard_state_sugar_tests {
@@ -32,7 +33,7 @@ mod flow_guard_state_sugar_tests {
         let via_free = guard_state();
         let state = log_state();
         via_method.enable_guards(&state, Arc::new(|| 0.0));
-        enable_flow_guards(&via_free, &state, Arc::new(|| 0.0));
+        enable_flow_guards(via_free.clone(), state.clone(), Arc::new(|| 0.0));
         assert_eq!(
             via_method.read().unwrap().enabled,
             via_free.read().unwrap().enabled
@@ -44,10 +45,10 @@ mod flow_guard_state_sugar_tests {
         let via_method = guard_state();
         let via_free = guard_state();
         let state = log_state();
-        enable_flow_guards(&via_method, &state, Arc::new(|| 0.0));
-        enable_flow_guards(&via_free, &state, Arc::new(|| 0.0));
+        enable_flow_guards(via_method.clone(), state.clone(), Arc::new(|| 0.0));
+        enable_flow_guards(via_free.clone(), state.clone(), Arc::new(|| 0.0));
         via_method.disable_guards();
-        disable_flow_guards(&via_free);
+        disable_flow_guards(via_free.clone());
         assert_eq!(
             via_method.read().unwrap().enabled,
             via_free.read().unwrap().enabled
@@ -214,7 +215,7 @@ pub trait FlowGuardStateMethods {
 
 impl FlowGuardStateMethods for FlowGuardStateRef {
     fn disable_guards(&self) {
-        disable_flow_guards(self);
+        disable_flow_guards(self.clone());
     }
 
     // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
@@ -223,7 +224,7 @@ impl FlowGuardStateMethods for FlowGuardStateRef {
         log_state: &flight_log::LogStateRef,
         clock: Arc<dyn Fn() -> f64 + Send + Sync>,
     ) {
-        enable_flow_guards(self, log_state, clock);
+        enable_flow_guards(self.clone(), log_state.clone(), clock);
     }
 }
 

@@ -17,4 +17,6 @@ export {
   updateFlowStack,
 } from './contract.ts';
 
-export type { FlowGuardContext, FlowGuardKind, FlowGuardState } from './contract.ts';
+export type { FlowGuardContext, FlowGuardKind, FlowGuardState, FlowState } from './contract.ts';
+
+export type { FlowStack } from './flowStackCompat.ts';

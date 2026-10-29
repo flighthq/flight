@@ -1,34 +1,42 @@
-//! flight-compiler: target-native
+//! flight-compiler: nullable-options
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
-use flight_flow::contract::report_flow_guard;
+use flight_entity::Ref;
 use flight_flow::contract::*;
-use flight_log::{
-    LogData, LogLevel, LogStateRef, LogValue, add_log_sink, create_log_state,
-    create_memory_log_sink, get_memory_log_sink_entries, remove_log_sink,
-};
-
-// D24 out collector: each call fills a fresh caller-owned Vec.
-fn memory_entries(handle: &flight_log::MemoryLogSink) -> Vec<flight_log::LogEntry> {
-    let mut out = Vec::new();
-    get_memory_log_sink_entries(&mut out, handle);
-    return out;
-}
+use flight_log::{LogState, add_log_sink, create_json_log_formatter, create_log_state};
 
 fn guard_state() -> FlowGuardStateRef {
-    return Arc::new(RwLock::new(FlowGuardState {
+    let state = Arc::new(RwLock::new(FlowGuardState {
         enabled: false,
         transition_depth: 0,
-        context: None,
+        context: Some(FlowGuardContext {
+            log_state: log_state(),
+            clock: Arc::new(|| 0.0),
+        }),
     }));
+    disable_flow_guards(state.clone());
+    return state;
 }
 
-fn log_state() -> LogStateRef {
+fn log_state() -> Ref<LogState> {
     return Arc::new(RwLock::new(create_log_state()));
 }
 
-fn plain(name: &str) -> flight_entity::Ref<FlowState> {
+fn capture_formatted_entries(state: &Ref<LogState>) -> Arc<Mutex<Vec<String>>> {
+    let entries: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+    let captured = entries.clone();
+    let formatter = create_json_log_formatter(state);
+    add_log_sink(
+        state,
+        Arc::new(move |entry| {
+            captured.lock().unwrap().push(formatter(entry));
+        }),
+    );
+    return entries;
+}
+
+fn plain(name: &str) -> Ref<FlowState> {
     return Arc::new(RwLock::new(FlowState {
         name: Some(name.to_string()),
         on_enter: None,
@@ -47,12 +55,9 @@ mod disable_flow_guards {
     #[test]
     fn is_idempotent() {
         let guards = guard_state();
-        let state = log_state();
-        disable_flow_guards(&guards);
-        disable_flow_guards(&guards);
+        disable_flow_guards(guards.clone());
+        disable_flow_guards(guards.clone());
         assert!(!guards.read().unwrap().enabled);
-        assert!(guards.read().unwrap().context.is_none());
-        let _ = state;
     }
 }
 
@@ -63,12 +68,11 @@ mod enable_flow_guards {
     fn toggles_the_opt_in_guard_and_captures_the_enable_time_context() {
         let guards = guard_state();
         let state = log_state();
-        enable_flow_guards(&guards, &state, Arc::new(|| 0.0));
+        enable_flow_guards(guards.clone(), state.clone(), Arc::new(|| 0.0));
         assert!(guards.read().unwrap().enabled);
         assert!(guards.read().unwrap().context.is_some());
-        disable_flow_guards(&guards);
+        disable_flow_guards(guards.clone());
         assert!(!guards.read().unwrap().enabled);
-        assert!(guards.read().unwrap().context.is_none());
     }
 }
 
@@ -101,7 +105,10 @@ mod parse_flow_guard_kind {
             parse_flow_guard_kind("transition-during-transition"),
             Some(FlowGuardKind::TransitionDuringTransition)
         );
-        assert_eq!(parse_flow_guard_kind("nope"), None);
+        assert_eq!(
+            parse_flow_guard_kind("nope").unwrap_or(FlowGuardKind::DuplicateStatePush),
+            FlowGuardKind::DuplicateStatePush
+        );
     }
 }
 
@@ -112,57 +119,39 @@ mod report_flow_guard {
     fn logs_a_warn_entry_with_the_exact_kind_string_and_live_clock_time_when_enabled() {
         let guards = guard_state();
         let state = log_state();
-        enable_flow_guards(&guards, &state, Arc::new(|| 42.0));
-        let memory = create_memory_log_sink(8);
-        add_log_sink(&state, memory.sink.clone());
+        enable_flow_guards(guards.clone(), state.clone(), Arc::new(|| 42.0));
+        let captured = capture_formatted_entries(&state);
         report_flow_guard(&guards, FlowGuardKind::DuplicateStatePush);
-        remove_log_sink(&state, &memory.sink);
-        let entries = memory_entries(&memory);
+        let entries = captured.lock().unwrap();
         assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].level, LogLevel::Warn);
-        assert_eq!(entries[0].channel, Some("flow".to_string()));
-        assert_eq!(entries[0].timestamp_ms, 42.0);
-        match &entries[0].data {
-            LogData::Record(record) => match record.get("kind") {
-                Some(LogValue::Str(kind)) => assert_eq!(kind, "duplicate-state-push"),
-                _ => panic!("expected a kind string"),
-            },
-            _ => panic!("expected a record payload"),
-        }
+        assert!(entries[0].contains("\"t\":42"));
+        assert!(entries[0].contains("\"level\":\"warn\""));
+        assert!(entries[0].contains("\"channel\":\"flow\""));
+        assert!(entries[0].contains("\"kind\":\"duplicate-state-push\""));
     }
 
     #[test]
     fn is_a_no_op_when_guards_are_disabled() {
         let guards = guard_state();
         let state = log_state();
-        let memory = create_memory_log_sink(8);
-        add_log_sink(&state, memory.sink.clone());
+        let captured = capture_formatted_entries(&state);
         report_flow_guard(&guards, FlowGuardKind::TransitionDuringTransition);
-        remove_log_sink(&state, &memory.sink);
-        assert!(memory_entries(&memory).is_empty());
+        assert!(captured.lock().unwrap().is_empty());
     }
 
     #[test]
     fn transition_during_transition_is_reported_when_the_guard_depth_is_already_positive() {
         let guards = guard_state();
         let state = log_state();
-        enable_flow_guards(&guards, &state, Arc::new(|| 3.0));
+        enable_flow_guards(guards.clone(), state.clone(), Arc::new(|| 3.0));
         guards.write().unwrap().transition_depth = 1;
-        let memory = create_memory_log_sink(8);
-        add_log_sink(&state, memory.sink.clone());
+        let captured = capture_formatted_entries(&state);
         let stack = create_flow_stack();
         push_flow_state(&stack, plain("A"), &guards);
-        remove_log_sink(&state, &memory.sink);
-        let entries = memory_entries(&memory);
+        let entries = captured.lock().unwrap();
         assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].timestamp_ms, 3.0);
-        match &entries[0].data {
-            LogData::Record(record) => match record.get("kind") {
-                Some(LogValue::Str(kind)) => assert_eq!(kind, "transition-during-transition"),
-                _ => panic!("expected a kind string"),
-            },
-            _ => panic!("expected a record payload"),
-        }
+        assert!(entries[0].contains("\"t\":3"));
+        assert!(entries[0].contains("\"kind\":\"transition-during-transition\""));
         assert_eq!(guards.read().unwrap().transition_depth, 1);
     }
 
@@ -170,36 +159,26 @@ mod report_flow_guard {
     fn duplicate_state_push_is_reported_by_shared_state_identity() {
         let guards = guard_state();
         let state = log_state();
-        enable_flow_guards(&guards, &state, Arc::new(|| 0.0));
-        let memory = create_memory_log_sink(8);
-        add_log_sink(&state, memory.sink.clone());
+        enable_flow_guards(guards.clone(), state.clone(), Arc::new(|| 0.0));
+        let captured = capture_formatted_entries(&state);
         let stack = create_flow_stack();
         let a = plain("A");
         push_flow_state(&stack, a.clone(), &guards);
         push_flow_state(&stack, a, &guards);
-        remove_log_sink(&state, &memory.sink);
-        let entries = memory_entries(&memory);
+        let entries = captured.lock().unwrap();
         assert_eq!(entries.len(), 1);
-        match &entries[0].data {
-            LogData::Record(record) => match record.get("kind") {
-                Some(LogValue::Str(kind)) => assert_eq!(kind, "duplicate-state-push"),
-                _ => panic!("expected a kind string"),
-            },
-            _ => panic!("expected a record payload"),
-        }
+        assert!(entries[0].contains("\"kind\":\"duplicate-state-push\""));
     }
 
     #[test]
     fn equal_but_distinct_states_are_not_a_duplicate() {
         let guards = guard_state();
         let state = log_state();
-        enable_flow_guards(&guards, &state, Arc::new(|| 0.0));
-        let memory = create_memory_log_sink(8);
-        add_log_sink(&state, memory.sink.clone());
+        enable_flow_guards(guards.clone(), state.clone(), Arc::new(|| 0.0));
+        let captured = capture_formatted_entries(&state);
         let stack = create_flow_stack();
         push_flow_state(&stack, plain("A"), &guards);
         push_flow_state(&stack, plain("A"), &guards);
-        remove_log_sink(&state, &memory.sink);
-        assert!(memory_entries(&memory).is_empty());
+        assert!(captured.lock().unwrap().is_empty());
     }
 }

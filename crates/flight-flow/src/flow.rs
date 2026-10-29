@@ -1,82 +1,46 @@
-//! flight-compiler: target-native
+//! flight-compiler: nullable-options
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use flight_entity::{EntityRuntimeSlot, Ref, allocate_entity};
+use flight_entity::{Ref, allocate_entity};
 
 use crate::flow_guards::report_flow_guard;
+use crate::flow_transitions::run_flow_transition;
+use crate::flow_types::{FlowCallback, FlowStack, FlowState};
 use crate::types::{FlowGuardKind, FlowGuardState};
 
 /// Shared caller-owned flow-guard state.
 pub type FlowGuardStateRef = Ref<FlowGuardState>;
 
-/// A lifecycle callback stored on a flow state (D9 stored capturing form).
-pub type FlowCallback = Arc<dyn Fn() + Send + Sync>;
+fn no_flow_callback() {}
 
-/// A per-frame update callback stored on a flow state.
-pub type FlowUpdateCallback = Arc<dyn Fn(f32) + Send + Sync>;
-
-/// A single application state in a flow stack. Plain data: callers construct it with a literal
-/// (TS `FlowState` does not extend Entity). The stack stores it behind `Ref`, matching TS object
-/// identity and enabling real re-entrant transitions.
-#[derive(Clone)]
-pub struct FlowState {
-    pub name: Option<String>,
-    pub on_enter: Option<FlowCallback>,
-    pub on_exit: Option<FlowCallback>,
-    pub on_pause: Option<FlowCallback>,
-    pub on_resume: Option<FlowCallback>,
-    pub on_update: Option<FlowUpdateCallback>,
-    pub render_below: Option<bool>,
-    pub update_below: Option<bool>,
-}
-
-/// The flow-state stack (TS `FlowStack` extends Entity). `states` is ordered bottom-to-top, so the
-/// last element is the active top; each state is a shared `Ref`, so duplicate detection is
-/// `Arc::ptr_eq` exactly as TS compares object references.
-#[derive(Clone)]
-pub struct FlowStack {
-    pub states: Vec<Ref<FlowState>>,
-    runtime: EntityRuntimeSlot,
-}
-
-flight_entity::impl_entity!(FlowStack);
-
-impl Default for FlowStack {
-    fn default() -> Self {
-        return FlowStack {
-            states: Vec::new(),
-            runtime: EntityRuntimeSlot::default(),
-        };
+fn no_flow_update_callback(delta_time: f32) {
+    if delta_time.is_nan() {
+        return;
     }
 }
 
-// Holds one level of `transition_depth` for the length of a push or replace. Releasing it in `Drop`
-// is what keeps the depth balanced when a lifecycle callback panics: the unwind still runs the
-// decrement, so later transitions are not reported as nested (the TS source's try/finally).
-struct FlowTransition<'a> {
-    depth: u32,
-    guards: &'a FlowGuardStateRef,
+fn get_flow_state_on_pause(state: Option<Ref<FlowState>>) -> FlowCallback {
+    if let Some(previous) = state {
+        return previous
+            .read()
+            .unwrap()
+            .on_pause
+            .clone()
+            .unwrap_or(Arc::new(no_flow_callback));
+    }
+    return Arc::new(no_flow_callback);
 }
 
 pub fn create_flow_stack() -> Ref<FlowStack> {
     let mut out: FlowStack = allocate_entity();
     initialize_flow_stack(&mut out);
-    return Ref::new(std::sync::RwLock::new(out));
+    return Arc::new(RwLock::new(out));
 }
 
 /// Initialize a flow stack to its empty state, keeping the allocated runtime slot.
 pub fn initialize_flow_stack(out: &mut FlowStack) {
     out.states = Vec::new();
-}
-
-// Opens one transition level on `guards` and returns the depth it found, held until the returned
-// value drops.
-fn begin_flow_transition(guards: &FlowGuardStateRef) -> FlowTransition<'_> {
-    let mut guard_state = guards.write().unwrap();
-    let depth = guard_state.transition_depth;
-    guard_state.transition_depth += 1;
-    return FlowTransition { depth, guards };
 }
 
 /// Empty the stack, exiting every state top-to-bottom. Callbacks run after the stack write lock is
@@ -88,7 +52,7 @@ pub fn clear_flow_stack(stack: &Ref<FlowStack>) {
     let mut index = stack.read().unwrap().states.len();
     while index > 0 {
         index -= 1;
-        let on_exit = {
+        let maybe_on_exit = {
             let current = stack.read().unwrap();
             if index < current.states.len() {
                 current.states[index].read().unwrap().on_exit.clone()
@@ -96,25 +60,19 @@ pub fn clear_flow_stack(stack: &Ref<FlowStack>) {
                 None
             }
         };
-        if let Some(on_exit) = on_exit {
-            on_exit();
-        }
+        let callback = maybe_on_exit.unwrap_or(Arc::new(no_flow_callback));
+        callback();
     }
     stack.write().unwrap().states.clear();
 }
 
-// Closes one transition level. Runs from `Drop`, so it also runs while a callback panic unwinds; a
-// poisoned lock is still released rather than abandoning the depth.
-fn end_flow_transition(guards: &FlowGuardStateRef) {
-    let mut guard_state = guards
-        .write()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
-    guard_state.transition_depth -= 1;
-}
-
 /// The active top of the stack, or None when the stack is empty.
 pub fn get_active_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
-    return stack.read().unwrap().states.last().cloned();
+    let current = stack.read().unwrap();
+    if current.states.is_empty() {
+        return None;
+    }
+    return Some(current.states[current.states.len() - 1].clone());
 }
 
 /// The number of states on the stack.
@@ -148,35 +106,77 @@ pub fn get_flow_stack_visible_states(out: &mut Vec<Ref<FlowState>>, stack: &Ref<
 }
 
 /// Pop the active top, exiting it and resuming the revealed state. None on an empty stack.
-#[allow(clippy::question_mark)] // let-else is portable to the generated TypeScript; `?` is not
 pub fn pop_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
-    let popped = {
-        let mut current = stack.write().unwrap();
-        current.states.pop()
-    };
-    let Some(popped) = popped else {
+    let popped: Ref<FlowState>;
+    let maybe_popped = take_top_flow_state(stack);
+    if let Some(value) = maybe_popped {
+        popped = value;
+    } else {
         return None;
-    };
-    let on_exit = popped.read().unwrap().on_exit.clone();
-    if let Some(on_exit) = on_exit {
-        on_exit();
     }
-    let revealed = stack.read().unwrap().states.last().cloned();
-    if let Some(revealed) = revealed {
-        let on_resume = revealed.read().unwrap().on_resume.clone();
-        if let Some(on_resume) = on_resume {
-            on_resume();
+    let maybe_on_exit = popped.read().unwrap().on_exit.clone();
+    let exit_callback = maybe_on_exit.unwrap_or(Arc::new(no_flow_callback));
+    exit_callback();
+    let maybe_revealed = {
+        let current = stack.read().unwrap();
+        if current.states.is_empty() {
+            None
+        } else {
+            Some(current.states[current.states.len() - 1].clone())
         }
+    };
+    if let Some(revealed_state) = maybe_revealed {
+        let maybe_on_resume = revealed_state.read().unwrap().on_resume.clone();
+        let resume_callback = maybe_on_resume.unwrap_or(Arc::new(no_flow_callback));
+        resume_callback();
     }
     return Some(popped);
 }
 
-/// Push a shared state onto the stack: pause the previous top, push, then enter. Lifecycle callbacks
-/// run with no stack or guard lock held, so a callback may re-enter push/replace on the same stack.
+// Removes and returns the last state while retaining the identity of the caller-owned `states`
+// vector/array. Rebuilding through clear/push is portable to both targets; direct Vec::pop has no
+// compiler lowering.
+fn take_top_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
+    let mut current = stack.write().unwrap();
+    if current.states.is_empty() {
+        return None;
+    }
+    let top = current.states.len() - 1;
+    let mut previous: Vec<Ref<FlowState>> = Vec::new();
+    for state in current.states.iter() {
+        previous.push(state.clone());
+    }
+    let popped = previous[top].clone();
+    current.states.clear();
+    for item in previous.iter() {
+        if current.states.len() >= top {
+            break;
+        }
+        current.states.push(item.clone());
+    }
+    return Some(popped);
+}
+
+/// Portable push behavior: pause the previous top, push, then enter. Target-native wrappers own the
+/// balanced unwind scope and pass the depth they observed.
 // flight-lint: allow(conform-params) D5: callback state is the shared FlowGuardState; the source stack remains the first argument
 pub fn push_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &FlowGuardStateRef) {
-    let transition = begin_flow_transition(guards);
-    let depth = transition.depth;
+    let transition_stack = stack.clone();
+    let transition_guards = guards.clone();
+    run_flow_transition(
+        guards,
+        Arc::new(move |depth| {
+            push_flow_state_core(&transition_stack, state.clone(), &transition_guards, depth);
+        }),
+    );
+}
+
+fn push_flow_state_core(
+    stack: &Ref<FlowStack>,
+    state: Ref<FlowState>,
+    guards: &FlowGuardStateRef,
+    depth: u32,
+) {
     if depth > 0 {
         report_flow_guard(guards, FlowGuardKind::TransitionDuringTransition);
     }
@@ -189,53 +189,58 @@ pub fn push_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &F
     if duplicate {
         report_flow_guard(guards, FlowGuardKind::DuplicateStatePush);
     }
-    let previous_top = stack.read().unwrap().states.last().cloned();
-    let previous_on_pause =
-        previous_top.and_then(|previous| previous.read().unwrap().on_pause.clone());
-    let on_enter = state.read().unwrap().on_enter.clone();
-    if let Some(on_pause) = previous_on_pause {
-        on_pause();
-    }
+    let previous_top = {
+        let current = stack.read().unwrap();
+        if current.states.is_empty() {
+            None
+        } else {
+            Some(current.states[current.states.len() - 1].clone())
+        }
+    };
+    let previous_on_pause = get_flow_state_on_pause(previous_top);
+    let maybe_on_enter = state.read().unwrap().on_enter.clone();
+    previous_on_pause();
     stack.write().unwrap().states.push(state);
-    if let Some(on_enter) = on_enter {
-        on_enter();
-    }
-    drop(transition);
+    let enter_callback = maybe_on_enter.unwrap_or(Arc::new(no_flow_callback));
+    enter_callback();
 }
 
-/// Swap the active top for a shared state in place; the state beneath is untouched and callbacks run
-/// with no lock held.
+/// Portable replace behavior: swap the active top in place without touching the state beneath.
 // flight-lint: allow(conform-params) D5: callback state is the shared FlowGuardState; the source stack remains the first argument
 pub fn replace_flow_state(
     stack: &Ref<FlowStack>,
     state: Ref<FlowState>,
     guards: &FlowGuardStateRef,
 ) {
-    let transition = begin_flow_transition(guards);
-    let depth = transition.depth;
+    let transition_stack = stack.clone();
+    let transition_guards = guards.clone();
+    run_flow_transition(
+        guards,
+        Arc::new(move |depth| {
+            replace_flow_state_core(&transition_stack, state.clone(), &transition_guards, depth);
+        }),
+    );
+}
+
+fn replace_flow_state_core(
+    stack: &Ref<FlowStack>,
+    state: Ref<FlowState>,
+    guards: &FlowGuardStateRef,
+    depth: u32,
+) {
     if depth > 0 {
         report_flow_guard(guards, FlowGuardKind::TransitionDuringTransition);
     }
-    let previous_top = {
-        let mut current = stack.write().unwrap();
-        if current.states.is_empty() {
-            None
-        } else {
-            current.states.pop()
-        }
-    };
-    if let Some(previous_top) = previous_top {
-        let on_exit = previous_top.read().unwrap().on_exit.clone();
-        if let Some(on_exit) = on_exit {
-            on_exit();
-        }
+    let maybe_previous_top = take_top_flow_state(stack);
+    if let Some(previous_state) = maybe_previous_top {
+        let maybe_on_exit = previous_state.read().unwrap().on_exit.clone();
+        let exit_callback = maybe_on_exit.unwrap_or(Arc::new(no_flow_callback));
+        exit_callback();
     }
-    let on_enter = state.read().unwrap().on_enter.clone();
+    let maybe_on_enter = state.read().unwrap().on_enter.clone();
     stack.write().unwrap().states.push(state);
-    if let Some(on_enter) = on_enter {
-        on_enter();
-    }
-    drop(transition);
+    let enter_callback = maybe_on_enter.unwrap_or(Arc::new(no_flow_callback));
+    enter_callback();
 }
 
 /// Tick one frame: the active top updates; each visited state with `update_below` also ticks the
@@ -248,25 +253,18 @@ pub fn update_flow_stack(stack: &Ref<FlowStack>, delta_time: f32) {
     }
     loop {
         let state = &states[index as usize];
-        let (on_update, update_below) = {
+        let (maybe_on_update, update_below) = {
             let borrowed = state.read().unwrap();
             (
                 borrowed.on_update.clone(),
                 borrowed.update_below.unwrap_or(false),
             )
         };
-        if let Some(on_update) = on_update {
-            on_update(delta_time);
-        }
+        let callback = maybe_on_update.unwrap_or(Arc::new(no_flow_update_callback));
+        callback(delta_time);
         if index <= 0 || !update_below {
             break;
         }
         index -= 1;
-    }
-}
-
-impl Drop for FlowTransition<'_> {
-    fn drop(&mut self) {
-        end_flow_transition(self.guards);
     }
 }

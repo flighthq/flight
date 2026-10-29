@@ -7,7 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".app-types", ".geometry-types", ".host-types", ".menu-types", ".velocity-types", ""],
+    "moduleSuffixes": [
+      ".app-types",
+      ".flow-types",
+      ".geometry-types",
+      ".host-types",
+      ".menu-types",
+      ".velocity-types",
+      ""
+    ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -31,6 +39,9 @@
     },
     {
       "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../flow/tsconfig.contract.json"
     },
     {
       "path": "../haptics"

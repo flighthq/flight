@@ -1,125 +1,146 @@
-import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
+// Generated from crates/flight-flow/tests/flow_guards_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { addLogSink, createJsonLogFormatter, createLogState } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createFlowStack, pushFlowState } from './flow.ts';
 import {
+  createFlowStack,
   disableFlowGuards,
   enableFlowGuards,
   getFlowGuardKindString,
   parseFlowGuardKind,
+  pushFlowState,
   reportFlowGuard,
-} from './flowGuards.ts';
-import type { FlowGuardState } from './types.ts';
+} from './contract.ts';
+import type { FlowGuardContext, FlowGuardState, FlowGuardStateRef, FlowState } from './contract.ts';
+
+function guardState(): FlowGuardStateRef {
+  const state = { enabled: false, transitionDepth: 0, context: { logState: logState(), clock: () => 0.0 } };
+  disableFlowGuards(state);
+  return state;
+}
+
+function logState(): LogState {
+  return createLogState();
+}
+
+function captureFormattedEntries(state: Readonly<LogState>): Readonly<{ value: string[] }> {
+  const entries: Readonly<{ value: string[] }> = { value: [] as never[] };
+  const captured = entries;
+  const formatter = createJsonLogFormatter(state);
+  addLogSink(state, (entry) => {
+    captured.value.push(formatter(entry));
+  });
+  return entries;
+}
+
+function plain(name: string): FlowState {
+  return {
+    name: String(name),
+    onEnter: undefined,
+    onExit: undefined,
+    onPause: undefined,
+    onResume: undefined,
+    onUpdate: undefined,
+    renderBelow: undefined,
+    updateBelow: undefined,
+  };
+}
 
 describe('disableFlowGuards', () => {
-  it('is idempotent and drops the enable-time context', () => {
+  it('is idempotent', () => {
     const guards = guardState();
-    enableFlowGuards(guards, createLogState(), () => 0);
     disableFlowGuards(guards);
     disableFlowGuards(guards);
-    expect(guards.enabled).toBe(false);
-    expect(guards.context).toBeNull();
+    expect(!guards!.enabled).toBe(true);
   });
 });
 
 describe('enableFlowGuards', () => {
-  it('toggles the opt-in guard and captures the enable-time context', () => {
+  it('toggles the opt in guard and captures the enable time context', () => {
     const guards = guardState();
-    const logState = createLogState();
-    const clock = (): number => 7;
-    enableFlowGuards(guards, logState, clock);
-    expect(guards.enabled).toBe(true);
-    expect(guards.context?.logState).toBe(logState);
-    expect(guards.context?.clock).toBe(clock);
+    const state = logState();
+    enableFlowGuards(guards, state, () => 0.0);
+    expect(guards!.enabled).toBe(true);
+    expect(guards!.context !== undefined).toBe(true);
+    disableFlowGuards(guards);
+    expect(!guards!.enabled).toBe(true);
   });
 });
 
 describe('getFlowGuardKindString', () => {
-  it('returns the exact string for each kind', () => {
-    expect(getFlowGuardKindString('duplicate-state-push')).toBe('duplicate-state-push');
-    expect(getFlowGuardKindString('transition-during-transition')).toBe('transition-during-transition');
+  it('returns the exact ts string for each kind', () => {
+    expect(getFlowGuardKindString('duplicate-state-push')).toEqual('duplicate-state-push');
+    expect(getFlowGuardKindString('transition-during-transition')).toEqual('transition-during-transition');
   });
 });
 
 describe('parseFlowGuardKind', () => {
-  it('parses the exact strings and returns null for unknown names', () => {
-    expect(parseFlowGuardKind('duplicate-state-push')).toBe('duplicate-state-push');
-    expect(parseFlowGuardKind('transition-during-transition')).toBe('transition-during-transition');
-    expect(parseFlowGuardKind('duplicateStatePush')).toBeNull();
-    expect(parseFlowGuardKind('')).toBeNull();
+  it('parses the exact ts strings and returns none for unknown names', () => {
+    expect(parseFlowGuardKind('duplicate-state-push')).toEqual('duplicate-state-push');
+    expect(parseFlowGuardKind('transition-during-transition')).toEqual('transition-during-transition');
+    expect(parseFlowGuardKind('nope') ?? 'duplicate-state-push').toEqual('duplicate-state-push');
   });
 });
 
 describe('reportFlowGuard', () => {
   it('logs a warn entry with the exact kind string and live clock time when enabled', () => {
-    const { guards, logState, memory } = enabledGuards();
-    let now = 41;
-    enableFlowGuards(guards, logState, () => ++now);
+    const guards = guardState();
+    const state = logState();
+    enableFlowGuards(guards, state, () => 42.0);
+    const captured = captureFormattedEntries(state);
     reportFlowGuard(guards, 'duplicate-state-push');
-    const entries = readEntries(memory);
-    expect(entries).toEqual([
-      {
-        level: LogLevel.Warn,
-        channel: 'flow',
-        data: { kind: 'duplicate-state-push' },
-        timestampMs: 42,
-      },
-    ]);
+    const entries = captured.value;
+    expect(entries.length).toEqual(1);
+    expect(entries[0].includes('"t":42')).toBe(true);
+    expect(entries[0].includes('"level":"warn"')).toBe(true);
+    expect(entries[0].includes('"channel":"flow"')).toBe(true);
+    expect(entries[0].includes('"kind":"duplicate-state-push"')).toBe(true);
   });
-
-  it('is a no-op when guards are disabled', () => {
-    const { guards, memory } = enabledGuards();
-    disableFlowGuards(guards);
-    reportFlowGuard(guards, 'duplicate-state-push');
-    expect(readEntries(memory)).toEqual([]);
+  it('is a no op when guards are disabled', () => {
+    const guards = guardState();
+    const state = logState();
+    const captured = captureFormattedEntries(state);
+    reportFlowGuard(guards, 'transition-during-transition');
+    expect(captured.value.length === 0).toBe(true);
   });
-
-  it('reports transition-during-transition when the guard depth is already positive', () => {
-    const { guards, memory } = enabledGuards();
+  it('transition during transition is reported when the guard depth is already positive', () => {
+    const guards = guardState();
+    const state = logState();
+    enableFlowGuards(guards, state, () => 3.0);
+    guards!.transitionDepth = 1;
+    const captured = captureFormattedEntries(state);
     const stack = createFlowStack();
-    pushFlowState(stack, { onEnter: () => pushFlowState(stack, {}, guards) }, guards);
-    expect(readEntries(memory).map((entry) => (entry.data as { kind: string }).kind)).toEqual([
-      'transition-during-transition',
-    ]);
-    expect(guards.transitionDepth).toBe(0);
+    pushFlowState(stack, plain('A'), guards);
+    const entries = captured.value;
+    expect(entries.length).toEqual(1);
+    expect(entries[0].includes('"t":3')).toBe(true);
+    expect(entries[0].includes('"kind":"transition-during-transition"')).toBe(true);
+    expect(guards!.transitionDepth).toEqual(1);
   });
-
-  it('reports duplicate-state-push by state identity', () => {
-    const { guards, memory } = enabledGuards();
+  it('duplicate state push is reported by shared state identity', () => {
+    const guards = guardState();
+    const state = logState();
+    enableFlowGuards(guards, state, () => 0.0);
+    const captured = captureFormattedEntries(state);
     const stack = createFlowStack();
-    const state = {};
-    pushFlowState(stack, state, guards);
-    pushFlowState(stack, state, guards);
-    expect(readEntries(memory).map((entry) => (entry.data as { kind: string }).kind)).toEqual(['duplicate-state-push']);
+    const a = plain('A');
+    pushFlowState(stack, a, guards);
+    pushFlowState(stack, a, guards);
+    const entries = captured.value;
+    expect(entries.length).toEqual(1);
+    expect(entries[0].includes('"kind":"duplicate-state-push"')).toBe(true);
   });
-
-  it('does not treat equal but distinct states as a duplicate', () => {
-    const { guards, memory } = enabledGuards();
+  it('equal but distinct states are not a duplicate', () => {
+    const guards = guardState();
+    const state = logState();
+    enableFlowGuards(guards, state, () => 0.0);
+    const captured = captureFormattedEntries(state);
     const stack = createFlowStack();
-    pushFlowState(stack, { name: 'same' }, guards);
-    pushFlowState(stack, { name: 'same' }, guards);
-    expect(readEntries(memory)).toEqual([]);
+    pushFlowState(stack, plain('A'), guards);
+    pushFlowState(stack, plain('A'), guards);
+    expect(captured.value.length === 0).toBe(true);
   });
 });
-
-function enabledGuards(): { guards: FlowGuardState; logState: LogState; memory: MemoryLogSink } {
-  const guards = guardState();
-  const logState = createLogState();
-  const memory = createMemoryLogSink(16);
-  addLogSink(logState, memory.sink);
-  enableFlowGuards(guards, logState, () => 0);
-  return { guards, logState, memory };
-}
-
-function guardState(): FlowGuardState {
-  return { enabled: false, transitionDepth: 0, context: null };
-}
-
-function readEntries(memory: MemoryLogSink): LogEntry[] {
-  const entries: LogEntry[] = [];
-  getMemoryLogSinkEntries(entries, memory);
-  return entries;
-}

@@ -1,35 +1,95 @@
+// Generated from crates/flight-flow/src/flow_guards.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
-import type { FlowGuardKind, FlowGuardState } from './types.ts';
+import type { FlowGuardStateRef } from './flow.ts';
+import type { FlowGuardKind } from './types.ts';
 
-// Turns the guards off on `state` and drops the log context it held.
-export function disableFlowGuards(state: FlowGuardState): void {
-  state.enabled = false;
-  state.context = null;
+type FlowGuardLogData = FlowGuardLogRecord;
+
+type FlowGuardLogLevel = 2;
+
+interface FlowGuardLogRecord {
+  kind: string;
 }
 
-// Turns the opt-in guards on for `state`, reporting through the caller-owned `logState` with a live
-// `clock` read at report time.
-export function enableFlowGuards(state: FlowGuardState, logState: LogState, clock: () => number): void {
-  state.enabled = true;
-  state.context = { logState, clock };
-}
-
-// The canonical string for a guard kind (the guard kind union is already that string).
-export function getFlowGuardKindString(value: FlowGuardKind): string {
+function normalizeFlowGuardLogData(value: FlowGuardLogData): FlowGuardLogData {
   return value;
 }
 
-// Parses a guard kind string back to a FlowGuardKind; null for unknown names.
-export function parseFlowGuardKind(value: string): FlowGuardKind | null {
-  return value === 'duplicate-state-push' || value === 'transition-during-transition' ? value : null;
+function normalizeFlowGuardLogLevel(value: FlowGuardLogLevel): FlowGuardLogLevel {
+  return value;
 }
 
-// Reports a guard violation once per kind when the guards on `state` are enabled.
-export function reportFlowGuard(state: Readonly<FlowGuardState>, kind: FlowGuardKind): void {
-  const context = state.context;
-  if (!state.enabled || context === null) return;
-  logOnce(context.logState, context.clock(), `flow:${kind}`, LogLevel.Warn, { kind }, 'flow');
+export function disableFlowGuards(state: FlowGuardStateRef): void {
+  let guardState = state!;
+  guardState.enabled = false;
+  guardState.context = null;
+}
+
+/**
+ * Install the opt-in guards with the approved enable-time context: a caller-owned log state and a
+ * live clock invoked at operation time.
+ */
+export function enableFlowGuards(state: FlowGuardStateRef, logState: LogState, clock: () => number): void {
+  let guardState = state!;
+  guardState.enabled = true;
+  guardState.context = { logState: logState, clock: clock };
+}
+
+/**
+ * The canonical TS string for a guard kind (D9e).
+ */
+export function getFlowGuardKindString(value: FlowGuardKind): string {
+  return (() => {
+    const matchValue = value;
+    switch (matchValue) {
+      case 'duplicate-state-push':
+        return 'duplicate-state-push';
+      case 'transition-during-transition':
+        return 'transition-during-transition';
+    }
+  })();
+}
+
+/**
+ * Parses a guard kind string back to the enum (D9e); None for unknown names.
+ */
+export function parseFlowGuardKind(value: string): FlowGuardKind | null {
+  return (() => {
+    const matchValue = value;
+    switch (matchValue) {
+      case 'duplicate-state-push':
+        return 'duplicate-state-push';
+      case 'transition-during-transition':
+        return 'transition-during-transition';
+      default:
+        return null;
+    }
+  })();
+}
+
+/**
+ * Reports a flow guard violation when enabled, with the exact TS key/channel/payload. The clock is
+ * invoked at call time; no hidden state or frozen timestamp is involved.
+ */
+export function reportFlowGuard(state: Readonly<FlowGuardStateRef>, kind: FlowGuardKind): void {
+  const [maybeContext, enabled] = (() => {
+    const guardState = state!;
+    return [guardState.context, guardState.enabled];
+  })();
+  if (!enabled) {
+    return;
+  }
+  if (maybeContext === null) {
+    return;
+  }
+  const activeContext = maybeContext!;
+  const kindString = getFlowGuardKindString(kind);
+  const key = `flow:${kindString}`;
+  const data = normalizeFlowGuardLogData({ kind: String(kindString) });
+  const level = normalizeFlowGuardLogLevel(2);
+  logOnce(activeContext.logState, activeContext.clock(), key, level, data, 'flow');
 }

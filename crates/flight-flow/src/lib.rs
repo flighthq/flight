@@ -1,5 +1,8 @@
 mod flow;
 mod flow_guards;
+mod flow_stack_compat;
+mod flow_transitions;
+mod flow_types;
 mod sugar;
 mod types;
 
@@ -22,5 +25,7 @@ pub use contract::update_flow_stack;
 pub use contract::FlowGuardContext;
 pub use contract::FlowGuardKind;
 pub use contract::FlowGuardState;
+pub use contract::FlowStack;
+pub use contract::FlowState;
 pub use contract::get_flow_guard_kind_string;
 pub use contract::parse_flow_guard_kind;
