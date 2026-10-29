@@ -19,7 +19,7 @@ import type {
   KeyboardEventData,
   PointerEventData,
 } from '@flighthq/types/contract';
-import { DisplayObjectKind, EntityRuntimeKey } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds } from './hitTests.ts';
 import { registerHitTest } from './hitTests.ts';
@@ -1238,7 +1238,6 @@ function dispatchClick(
 
 function createInputSource(): InputSignals {
   return {
-    [EntityRuntimeKey]: undefined,
     onGamepadAxisMove: createSignal(),
     onGamepadButtonDown: createSignal(),
     onGamepadButtonUp: createSignal(),
