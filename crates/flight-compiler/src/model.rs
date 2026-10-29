@@ -110,8 +110,9 @@ fn collect_standard_constant(
 
 // The members of each `const-group`, in source order: every constant whose name starts with the
 // group's prefix, as `(rust_name, owner, member)`. A group must match at least one constant, every
-// member must be public, share one type, and leave a TypeScript identifier after the prefix, and no
-// constant may belong to two groups.
+// member must be public, share one type, leave a TypeScript identifier after the prefix, and be
+// initialized with an independent literal (a member computed from another would read the object it
+// is initializing), and no constant may belong to two groups.
 // flight-lint: allow(hashmap-iteration) constants are a Vec slice in Rust source order
 pub(crate) fn const_group_members(
     groups: &BTreeMap<String, String>,
@@ -141,6 +142,11 @@ pub(crate) fn const_group_members(
         if !is_public(&constant.vis) {
             return Err(compile_error(format!(
                 "`const-group {owner}` member `{rust_name}` must be public"
+            )));
+        }
+        if !is_independent_literal(&constant.expr) {
+            return Err(compile_error(format!(
+                "`const-group {owner}` member `{rust_name}` must be initialized with an independent literal"
             )));
         }
         members.push((rust_name, (*owner).clone(), member, constant));
@@ -202,6 +208,19 @@ fn has_rust_only_directive(attributes: &[Attribute]) -> bool {
     });
 }
 
+// A literal, optionally negated or parenthesized: a value that reads no other item.
+fn is_independent_literal(expression: &syn::Expr) -> bool {
+    return match expression {
+        syn::Expr::Group(group) => is_independent_literal(&group.expr),
+        syn::Expr::Lit(_) => true,
+        syn::Expr::Paren(paren) => is_independent_literal(&paren.expr),
+        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
+            matches!(unary.expr.as_ref(), syn::Expr::Lit(_))
+        }
+        _ => false,
+    };
+}
+
 fn is_typescript_identifier(name: &str) -> bool {
     let mut characters = name.chars();
     return characters
@@ -212,8 +231,6 @@ fn is_typescript_identifier(name: &str) -> bool {
         });
 }
 
-// `//! flight-compiler: const-group <TypeScriptName> <PREFIX>`: the public constants named `<PREFIX>*`
-// become one exported TypeScript const object.
 fn parse_const_groups(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
     let mut groups = BTreeMap::new();
     for attribute in attributes {
@@ -549,13 +566,24 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         &string_unions,
     )?;
     validate_frozen_objects(&frozen_objects, &constants)?;
-    for (rust_name, owner, _) in const_group_members(&const_groups, &constants)? {
-        if frozen_objects.contains_key(&rust_name) || export_names.contains_key(&rust_name) {
+    let group_members = const_group_members(&const_groups, &constants)?;
+    for (rust_name, owner, _) in &group_members {
+        if frozen_objects.contains_key(rust_name) || export_names.contains_key(rust_name) {
             return Err(compile_error(format!(
                 "`const-group {owner}` member `{rust_name}` is also named by another directive"
             )));
         }
     }
+    validate_const_group_owners(
+        &const_groups,
+        &group_members,
+        &enums,
+        &functions,
+        &constants,
+        &statics,
+        &export_names,
+        &frozen_objects,
+    )?;
     validate_export_names(
         &export_names,
         &frozen_objects,
@@ -929,6 +957,65 @@ fn is_struct_literal(expression: &syn::Expr) -> bool {
         syn::Expr::Struct(_) => true,
         _ => false,
     };
+}
+
+// `//! flight-compiler: const-group <TypeScriptName> <PREFIX>`: the public constants named `<PREFIX>*`
+// become one exported TypeScript const object.
+// A `const-group` owner becomes an exported TypeScript value, so it may share its name only with a
+// type (an alias or interface), never with another emitted value: an enum, a function, a constant, a
+// static, or an `export-name` / `frozen-object` target.
+// flight-lint: allow(hashmap-iteration) items are Vecs in Rust source order and directives are BTreeMaps
+fn validate_const_group_owners(
+    groups: &BTreeMap<String, String>,
+    members: &[(String, String, String)],
+    enums: &[ItemEnum],
+    functions: &[ItemFn],
+    constants: &[ItemConst],
+    statics: &[ItemStatic],
+    export_names: &BTreeMap<String, String>,
+    frozen_objects: &BTreeMap<String, String>,
+) -> Result<(), CompileError> {
+    let named = |rust_name: String, default: String| {
+        return export_names
+            .get(&rust_name)
+            .or_else(|| frozen_objects.get(&rust_name))
+            .cloned()
+            .unwrap_or(default);
+    };
+    let mut values = enums
+        .iter()
+        .map(|item| (item.ident.to_string(), "enum"))
+        .collect::<Vec<_>>();
+    values.extend(functions.iter().map(|function| {
+        let rust_name = function.sig.ident.to_string();
+        let default = crate::typescript::snake_to_lower_camel(&rust_name);
+        return (named(rust_name, default), "function");
+    }));
+    values.extend(
+        constants
+            .iter()
+            .filter(|constant| {
+                !members
+                    .iter()
+                    .any(|(rust_name, _, _)| constant.ident == rust_name.as_str())
+            })
+            .map(|constant| {
+                let rust_name = constant.ident.to_string();
+                return (named(rust_name.clone(), rust_name), "constant");
+            }),
+    );
+    values.extend(statics.iter().map(|rust_static| {
+        let rust_name = rust_static.ident.to_string();
+        return (named(rust_name.clone(), rust_name), "static");
+    }));
+    for owner in groups.keys() {
+        if let Some((_, kind)) = values.iter().find(|(name, _)| name == owner) {
+            return Err(compile_error(format!(
+                "`const-group {owner}` collides with an emitted {kind} named `{owner}`"
+            )));
+        }
+    }
+    return Ok(());
 }
 
 // flight-lint: allow(hashmap-iteration) directives are BTreeMaps and items retain Rust source order in Vecs

@@ -42,6 +42,45 @@ pub const KEY_CODE_A: i32 = 0x61;
 pub type KeyCode = i32;
 `;
 
+// Valid Rust that the directive must reject rather than emit invalid TypeScript for: an owner that
+// collides with an emitted enum, a member computed from another member, and a qualified member path.
+const OWNER_COLLISION_FIXTURE = `//! flight-compiler: const-group Status CODE_
+
+pub const CODE_A: i32 = 1;
+
+pub enum Status {
+    Ready,
+}
+`;
+
+const SELF_REFERENCE_FIXTURE = `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+pub const CODE_B: i32 = CODE_A + 1;
+
+pub type Code = i32;
+`;
+
+const QUALIFIED_REFERENCE_FIXTURE = `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = 1;
+pub type Code = i32;
+
+pub fn is_a(value: Code) -> bool {
+    return value == crate::CODE_A;
+}
+`;
+
+const LITERAL_FORMS_FIXTURE = `//! flight-compiler: const-group Code CODE_
+
+pub const CODE_A: i32 = -1;
+pub const CODE_B: i32 = (0x2);
+
+pub struct Code {
+    pub x: i32,
+}
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -65,6 +104,29 @@ function compileRust(name: string, rust: string, extra: readonly string[] = []):
   });
   if (result.status !== 0) return { error: result.stderr.trim(), typescript: '' };
   return { error: '', typescript: readFileSync(out, 'utf8') };
+}
+
+// Builds one crate with rustc, throwing if it is not valid Rust.
+function buildRustSource(name: string, rust: string): void {
+  const source = join(workDirectory, `${name}.rs`);
+  writeFileSync(source, rust);
+  execFileSync(
+    'rustc',
+    [
+      '--edition',
+      '2024',
+      '--crate-type',
+      'lib',
+      '--crate-name',
+      name,
+      '--out-dir',
+      workDirectory,
+      '-A',
+      'warnings',
+      source,
+    ],
+    { stdio: 'pipe' },
+  );
 }
 
 function strictDiagnostics(typescript: string): string[] {
@@ -118,6 +180,40 @@ describe('flight-compile const-group lowering', () => {
     expect(exports.isA(0x61)).toBe(true);
     expect(exports.isA(0x30)).toBe(true);
     expect(exports.isA(0x62)).toBe(false);
+  });
+
+  it('keeps negated and parenthesized literals beside a same-named interface', () => {
+    const { error, typescript } = compileRust('literal-forms', LITERAL_FORMS_FIXTURE);
+    expect(error).toBe('');
+    expect(strictDiagnostics(`${typescript}export const record: Code = { x: Code.A + Code.B };\n`)).toEqual([]);
+    const exports = loadModule(typescript) as unknown as { Code: Record<string, number> };
+    expect(Object.entries(exports.Code)).toEqual([
+      ['A', -1],
+      ['B', 2],
+    ]);
+  });
+
+  it('fails closed on valid Rust whose group would emit invalid TypeScript', () => {
+    for (const [name, rust, message] of [
+      [
+        'owner_collision',
+        OWNER_COLLISION_FIXTURE,
+        'error: `const-group Status` collides with an emitted enum named `Status`',
+      ],
+      [
+        'self_reference',
+        SELF_REFERENCE_FIXTURE,
+        'error: `const-group Code` member `CODE_B` must be initialized with an independent literal',
+      ],
+      [
+        'qualified_reference',
+        QUALIFIED_REFERENCE_FIXTURE,
+        'error: qualified `const-group` member path `crate::CODE_A` has no portable lowering; reference the member by its bare name',
+      ],
+    ] as const) {
+      buildRustSource(name, rust);
+      expect(compileRust(name, rust).error).toBe(message);
+    }
   });
 
   it('fails closed when a package imports a member by its Rust name', () => {

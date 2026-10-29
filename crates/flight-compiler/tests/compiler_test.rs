@@ -607,6 +607,38 @@ export function isA(code: KeyCode): boolean {
         );
         for (source, expected) in [
             (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\npub const CODE_B: i32 = CODE_A + 1;\n",
+                "`const-group Code` member `CODE_B` must be initialized with an independent literal",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\npub fn is_a(value: i32) -> bool {\n    return value == crate::CODE_A;\n}\n",
+                "qualified `const-group` member path `crate::CODE_A` has no portable lowering; reference the member by its bare name",
+            ),
+            (
+                "//! flight-compiler: const-group Status CODE_\npub const CODE_A: i32 = 1;\npub enum Status {\n    Ready,\n}\n",
+                "`const-group Status` collides with an emitted enum named `Status`",
+            ),
+            (
+                "//! flight-compiler: const-group code CODE_\npub const CODE_A: i32 = 1;\npub fn code() -> i32 {\n    return 1;\n}\n",
+                "`const-group code` collides with an emitted function named `code`",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\n//! flight-compiler: export-name make_code Code\npub const CODE_A: i32 = 1;\npub fn make_code() -> i32 {\n    return 1;\n}\n",
+                "`const-group Code` collides with an emitted function named `Code`",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_upper_case_globals)]\npub const Code: i32 = 2;\n",
+                "`const-group Code` collides with an emitted constant named `Code`",
+            ),
+            (
+                "//! flight-compiler: const-group Preset CODE_\n//! flight-compiler: frozen-object DEFAULT_PRESET Preset\npub struct PresetValue {\n    pub x: i32,\n}\npub const CODE_A: i32 = 1;\npub const DEFAULT_PRESET: PresetValue = PresetValue { x: 1 };\n",
+                "`const-group Preset` collides with an emitted constant named `Preset`",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_upper_case_globals)]\npub static Code: i32 = 2;\n",
+                "`const-group Code` collides with an emitted static named `Code`",
+            ),
+            (
                 "//! flight-compiler: const-group KeyCode KEY_\npub const KEY_0: i32 = 1;\n",
                 "`const-group KeyCode` member `KEY_0` leaves `0`, which is not a TypeScript identifier",
             ),
@@ -642,6 +674,20 @@ export function isA(code: KeyCode): boolean {
             let error = compile_typescript(source, None).unwrap_err();
             assert_eq!(error.to_string(), expected, "{source}");
         }
+    }
+
+    #[test]
+    fn lowers_const_groups_beside_types_with_negated_and_parenthesized_literals() {
+        let source = "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = -1;\npub const CODE_B: i32 = (0x2);\npub struct Code {\n    pub x: i32,\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("export interface Code {\n  x: number;\n}"),
+            "{output}"
+        );
+        assert!(
+            output.contains("export const Code = {\n  A: -1,\n  B: (0x2),\n};"),
+            "{output}"
+        );
     }
 
     #[test]

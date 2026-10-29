@@ -6321,6 +6321,17 @@ pub(crate) fn emit_expression(
             {
                 return Ok(name.to_string());
             }
+            if (path.path.leading_colon.is_some() || path.path.segments.len() > 1)
+                && let Some(last) = path.path.segments.last()
+                && const_group_member_reference(entities, &last.ident.to_string()).is_some()
+            {
+                return Err(compile_error(format!(
+                    "qualified `const-group` member path `{}` has no portable lowering; reference the member by its bare name",
+                    quote::ToTokens::to_token_stream(&path.path)
+                        .to_string()
+                        .replace(' ', "")
+                )));
+            }
             if path.qself.is_none()
                 && path.path.leading_colon.is_none()
                 && path.path.segments.len() == 1
