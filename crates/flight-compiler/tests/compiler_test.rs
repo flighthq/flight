@@ -3363,6 +3363,29 @@ pub fn sample(random: &dyn Fn() -> f32, mean: Option<f32>) -> Option<f32> {
     }
 
     #[test]
+    fn preserves_a_mutex_guard_cell_across_an_atomic_clone_and_clear() {
+        let source = r#"
+use std::sync::{Arc, Mutex};
+
+fn take_pending<T: Clone>(pending: &Arc<Mutex<Option<T>>>) -> Option<T> {
+    let mut guard = pending.lock().unwrap();
+    let value = (*guard).clone();
+    *guard = None;
+    return value;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("function takePending<T>(pending: { value: T | undefined })"));
+        assert!(output.contains("let guard = pending;"));
+        assert!(output.contains("const value = (guard.value);"), "{output}");
+        assert!(output.contains("guard.value = undefined;"));
+        assert!(!output.contains("pending.value;"));
+        assert!(!output.contains("Readonly<{ value:"));
+    }
+
+    #[test]
     fn lowers_easing_contract_shapes_without_package_postprocessing() {
         let source = r#"
 //! flight-compiler: callable-parameters EasingFunction t

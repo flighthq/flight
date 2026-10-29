@@ -76,6 +76,9 @@ const ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER: &str = "@entity-definitely-ini
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
+// A local bound to a `MutexGuard`. `Mutex<T>` is a `{ value: T }` cell in TypeScript, so the local
+// must retain that cell identity while dereferences read or replace its `value`.
+const MUTEX_GUARD_LOCAL_MARKER: &str = "@mutex-guard-local:";
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
@@ -5186,6 +5189,35 @@ pub(crate) fn function_expression_context(
     function: &ItemFn,
     base: &HashSet<String>,
 ) -> HashSet<String> {
+    #[derive(Default)]
+    struct MutexGuardCollector {
+        dereferenced: HashSet<String>,
+        guards: HashSet<String>,
+    }
+
+    impl<'ast> syn::visit::Visit<'ast> for MutexGuardCollector {
+        fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
+            if matches!(unary.op, UnOp::Deref(_))
+                && let Some(name) = referenced_path_identifier(&unary.expr)
+            {
+                self.dereferenced.insert(name);
+            }
+            syn::visit::visit_expr_unary(self, unary);
+        }
+
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            if local
+                .init
+                .as_ref()
+                .is_some_and(|initializer| mutex_guard_receiver(&initializer.expr).is_some())
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.guards.insert(name);
+            }
+            syn::visit::visit_local(self, local);
+        }
+    }
+
     struct CallbackUseCollector<'a> {
         context: &'a mut HashSet<String>,
     }
@@ -5356,6 +5388,14 @@ pub(crate) fn function_expression_context(
             context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
         }
     }
+    let mut mutex_guards = MutexGuardCollector::default();
+    syn::visit::Visit::visit_block(&mut mutex_guards, &function.block);
+    context.extend(
+        mutex_guards
+            .guards
+            .intersection(&mutex_guards.dereferenced)
+            .map(|name| format!("{MUTEX_GUARD_LOCAL_MARKER}{name}")),
+    );
     syn::visit::Visit::visit_block(
         &mut CallbackUseCollector {
             context: &mut context,
@@ -9858,7 +9898,13 @@ pub(crate) fn emit_local_with_shadow_and_else(
         .as_deref()
         .map(|name| closure_parameter_types(entities, name))
         .unwrap_or_default();
-    let mut value = if expression_is_path_call(&initializer.expr, "allocate_entity") {
+    let mut value = if local_name
+        .as_ref()
+        .is_some_and(|name| entities.contains(&format!("{MUTEX_GUARD_LOCAL_MARKER}{name}")))
+        && let Some(receiver) = mutex_guard_receiver(&initializer.expr)
+    {
+        emit_expression(receiver, entities)?
+    } else if expression_is_path_call(&initializer.expr, "allocate_entity") {
         let Some(typescript_type) = &typescript_type else {
             return Err(compile_error(
                 "allocate_entity local needs an explicit Rust type",
@@ -13744,8 +13790,16 @@ pub(crate) fn emit_type(
                 )),
                 "AtomicU32" => Ok("{ value: number }".to_string()),
                 "Arc" => {
+                    let interior_mutable = match &segment.arguments {
+                        PathArguments::AngleBracketed(arguments) => arguments.args.iter().any(
+                            |argument| {
+                                matches!(argument, GenericArgument::Type(inner) if rust_type_has_interior_mutability(inner))
+                            },
+                        ),
+                        _ => false,
+                    };
                     let inner = emit_single_generic_type(segment, entities)?;
-                    if is_primitive_typescript_type(&inner) {
+                    if is_primitive_typescript_type(&inner) || interior_mutable {
                         Ok(inner)
                     } else {
                         Ok(format!("Readonly<{inner}>"))
@@ -13786,7 +13840,10 @@ pub(crate) fn emit_type(
         }
         Type::Reference(reference) => {
             let inner = emit_type(&reference.elem, entities)?;
-            if reference.mutability.is_some() || is_primitive_typescript_type(&inner) {
+            if reference.mutability.is_some()
+                || is_primitive_typescript_type(&inner)
+                || rust_type_has_interior_mutability(&reference.elem)
+            {
                 Ok(inner)
             } else {
                 Ok(format!("Readonly<{inner}>"))
@@ -13983,6 +14040,12 @@ fn emit_unary_expression(
 ) -> Result<String, CompileError> {
     let operator = emit_unary_operator(&unary.op)?;
     let operand = emit_expression(&unary.expr, entities)?;
+    if matches!(unary.op, UnOp::Deref(_))
+        && referenced_path_identifier(&unary.expr)
+            .is_some_and(|name| entities.contains(&format!("{MUTEX_GUARD_LOCAL_MARKER}{name}")))
+    {
+        return Ok(format!("{operand}.value"));
+    }
     if matches!(unary.op, UnOp::Not(_))
         && let Expr::MethodCall(method) = unary.expr.as_ref()
         && method.method == "is_empty"
@@ -13996,6 +14059,50 @@ fn emit_unary_expression(
         return Ok(format!("{operator}({operand})"));
     }
     return Ok(format!("{operator}{operand}"));
+}
+
+// The cell whose guard is produced by an exact `cell.lock().unwrap()` expression.
+fn mutex_guard_receiver(expression: &Expr) -> Option<&Expr> {
+    let Expr::MethodCall(unwrap) = expression else {
+        return None;
+    };
+    if unwrap.method != "unwrap" || !unwrap.args.is_empty() {
+        return None;
+    }
+    let Expr::MethodCall(lock) = unwrap.receiver.as_ref() else {
+        return None;
+    };
+    return (lock.method == "lock" && lock.args.is_empty()).then_some(lock.receiver.as_ref());
+}
+
+// Shared locks retain interior mutability through immutable Rust references. Wrapping those cells in
+// TypeScript `Readonly` would reject the writes that the lock specifically authorizes.
+fn rust_type_has_interior_mutability(rust_type: &Type) -> bool {
+    let path = match rust_type {
+        Type::Group(group) => return rust_type_has_interior_mutability(&group.elem),
+        Type::Paren(paren) => return rust_type_has_interior_mutability(&paren.elem),
+        Type::Reference(reference) => return rust_type_has_interior_mutability(&reference.elem),
+        Type::Path(path) => path,
+        _ => return false,
+    };
+    let Some(segment) = path.path.segments.last() else {
+        return false;
+    };
+    if matches!(
+        segment.ident.to_string().as_str(),
+        "Mutex" | "RwLock" | "Ref"
+    ) {
+        return true;
+    }
+    if segment.ident != "Arc" {
+        return false;
+    }
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return false;
+    };
+    return arguments.args.iter().any(|argument| {
+        matches!(argument, GenericArgument::Type(inner) if rust_type_has_interior_mutability(inner))
+    });
 }
 
 fn emit_unary_operator(operator: &UnOp) -> Result<&'static str, CompileError> {
