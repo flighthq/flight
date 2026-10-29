@@ -13,6 +13,13 @@ export interface Matrix extends EntityRaw {
 
 export type MatrixLike = EntityWithoutRuntime<Matrix>;
 
+export interface Matrix3 extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly m: Float32Array;
+}
+
+export type Matrix3Like = EntityWithoutRuntime<Matrix3>;
+
 export interface Rectangle extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
   height: number;

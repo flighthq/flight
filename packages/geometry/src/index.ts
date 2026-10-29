@@ -389,4 +389,13 @@ export {
   VECTOR4_Z_AXIS,
 } from './vector4.ts';
 export * from './vector4Pool.ts';
-export type { Matrix, MatrixLike, Rectangle, RectangleLike, Vector2, Vector2Like } from './types.ts';
+export type {
+  Matrix,
+  Matrix3,
+  Matrix3Like,
+  MatrixLike,
+  Rectangle,
+  RectangleLike,
+  Vector2,
+  Vector2Like,
+} from './types.ts';
