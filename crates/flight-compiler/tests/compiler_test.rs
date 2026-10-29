@@ -1861,13 +1861,13 @@ pub fn widened(value: Option<f32>) -> f32 {
         );
         assert!(output.contains("return (((w) => w === null ? null : w + 1.0)(value) ?? 0.0);"));
 
+        let source = "pub fn inferred(value: f32) -> f32 { let local = Some(value); return local.and_then(|v| Some(v)).unwrap_or(0.0); }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("(((v) => v === undefined ? undefined : v)(local) ?? 0.0)"));
+
         for (source, expected) in [
             (
                 "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n",
-                "portable `.and_then()` requires a receiver declared as Rust `Option`",
-            ),
-            (
-                "pub fn inferred(value: f32) -> f32 { let local = Some(value); return local.and_then(|v| Some(v)).unwrap_or(0.0); }\n",
                 "portable `.and_then()` requires a receiver declared as Rust `Option`",
             ),
             (
@@ -2772,7 +2772,6 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
             ),
             "pub fn relet(items: Vec<i32>, extra: Vec<i32>) -> usize {\n    let mut items = items.len();\n    items.extend(extra);\n    return items;\n}\n".to_string(),
             "pub fn closure(items: Vec<i32>, extra: Vec<i32>) -> usize {\n    let f = |items: usize| {\n        items.extend(extra);\n        items\n    };\n    return f(items.len());\n}\n".to_string(),
-            "pub fn looped(items: Vec<i32>, extra: Vec<i32>, all: &Vec<Vec<i32>>) {\n    for items in all {\n        items.extend(extra);\n    }\n}\n".to_string(),
             "//! flight-compiler: data-union Id\npub enum Id {\n    Number(i32),\n    Text(String),\n}\npub fn matched(items: Vec<i32>, extra: Vec<i32>, id: Id) {\n    match id {\n        Id::Number(items) => {\n            items.extend(extra);\n        }\n        Id::Text(_) => {}\n    }\n}\n".to_string(),
             "pub fn guarded(items: Vec<i32>, extra: Vec<i32>, maybe: Option<usize>) {\n    if let Some(items) = maybe {\n        items.extend(extra);\n    }\n}\n".to_string(),
             "pub fn tupled(items: Vec<i32>, extra: Vec<i32>, pair: (usize, usize)) {\n    let (items, other) = pair;\n    items.extend(extra);\n}\n".to_string(),
@@ -2801,6 +2800,10 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
             ),
             (
                 "pub fn looped(mut items: Vec<i32>, extra: Vec<i32>, all: &Vec<usize>) {\n    for items in all {\n        let unused = items;\n    }\n    items.extend(extra);\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "pub fn looped_nested(items: Vec<i32>, extra: Vec<i32>, all: &Vec<Vec<i32>>) {\n    for items in all {\n        items.extend(extra);\n    }\n}\n".to_string(),
                 "items",
             ),
             (
@@ -3898,6 +3901,277 @@ pub fn vec_default(value: Option<Vec<i32>>) -> Vec<i32> {
         assert!(
             output.contains("?? []"),
             "Vec default should be empty array: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_clone_from_to_object_assign() {
+        let source = r#"
+pub struct Point { pub x: f32, pub y: f32 }
+pub fn copy(target: &mut Point, source: &Point) {
+    target.clone_from(source);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("Object.assign(target, source)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_chunks_exact_mut_on_sequences() {
+        let source = r#"
+pub fn pairs(values: &mut Vec<i32>) -> Vec<Vec<i32>> {
+    return values.chunks_exact_mut(2).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("i + size <= items.length"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_div_ceil() {
+        let source = r#"
+pub fn pages(total: usize, per_page: usize) -> usize {
+    return total.div_ceil(per_page);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("Math.ceil(total / perPage)"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_get_or_init_to_lazy_initialization() {
+        let source = r#"
+pub fn lazy(cell: &mut Option<i32>, init: fn() -> i32) -> i32 {
+    return *cell.get_or_init(init);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("(cell = cell ?? (init)())"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_is_ascii_alphanumeric_and_is_whitespace() {
+        let source = r#"
+pub fn classify(ch: char) -> (bool, bool, bool) {
+    return (ch.is_ascii_alphanumeric(), ch.is_ascii_alphabetic(), ch.is_whitespace());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("(/^[a-zA-Z0-9]$/).test(ch)"),
+            "is_ascii_alphanumeric: {output}"
+        );
+        assert!(
+            output.contains("(/^[a-zA-Z]$/).test(ch)"),
+            "is_ascii_alphabetic: {output}"
+        );
+        assert!(
+            output.contains(r"(/^\s$/).test(ch)"),
+            "is_whitespace: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_last_mut_on_sequences() {
+        let source = r#"
+pub fn tail(values: &mut Vec<i32>) -> i32 {
+    return *values.last_mut().unwrap();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("values.at(-1)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_parse_with_turbofish() {
+        let source = r#"
+pub fn parse_float(text: &str) -> Option<f64> {
+    return text.parse::<f64>().ok();
+}
+
+pub fn parse_int(text: &str) -> Option<i32> {
+    return text.parse::<i32>().ok();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("parseFloat(text)"),
+            "f64 parse: {output}"
+        );
+        assert!(
+            output.contains("parseInt(text, 10)"),
+            "i32 parse: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_sort_unstable_to_sort() {
+        let source = r#"
+pub fn ordered(values: &mut Vec<i32>) {
+    values.sort_unstable();
+}
+
+pub fn ordered_by(values: &mut Vec<i32>, cmp: fn(&i32, &i32) -> std::cmp::Ordering) {
+    values.sort_unstable_by(cmp);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".sort((a, b) => a - b)"),
+            "sort_unstable: {output}"
+        );
+        assert!(
+            output.contains(".sort(cmp)"),
+            "sort_unstable_by: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_step_by_in_for_loops() {
+        let source = r#"
+pub fn every_fourth(data: &[u8]) -> Vec<u8> {
+    let mut result: Vec<u8> = Vec::new();
+    for i in (0..data.len()).step_by(4) {
+        result.push(data[i]);
+    }
+    return result;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("i += 4"),
+            "step_by should change increment: {output}"
+        );
+        assert!(
+            output.contains("let i = 0; i < data.length; i += 4"),
+            "full for header: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_to_le_bytes_with_numeric_provenance() {
+        let source = r#"
+pub fn bytes_u32(value: u32) -> Vec<u8> {
+    return value.to_le_bytes().to_vec();
+}
+
+pub fn bytes_f64(value: f64) -> Vec<u8> {
+    return value.to_be_bytes().to_vec();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("setUint32(0, value, true)"),
+            "u32 to_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("new Uint8Array(4)"),
+            "u32 byte count: {output}"
+        );
+        assert!(
+            output.contains("setFloat64(0, value, false)"),
+            "f64 to_be_bytes: {output}"
+        );
+        assert!(
+            output.contains("new Uint8Array(8)"),
+            "f64 byte count: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_to_bits_with_float_provenance() {
+        let source = r#"
+pub fn bits(value: f32) -> u32 {
+    return value.to_bits();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("setFloat32(0, value, true)"),
+            "{output}"
+        );
+        assert!(
+            output.contains("getUint32(0, true)"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_unwrap_or_default_with_primitive_payload() {
+        let source = r#"
+pub fn int_default(value: Option<i32>) -> i32 {
+    return value.unwrap_or_default();
+}
+
+pub fn bool_default(value: Option<bool>) -> bool {
+    return value.unwrap_or_default();
+}
+
+pub fn string_default(value: Option<String>) -> String {
+    return value.unwrap_or_default();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("?? 0"),
+            "i32 default should be 0: {output}"
+        );
+        assert!(
+            output.contains("?? false"),
+            "bool default should be false: {output}"
+        );
+        assert!(
+            output.contains(r#"?? """#),
+            "String default should be empty string: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_wrapping_shl() {
+        let source = r#"
+pub fn shift(value: u32, n: u32) -> u32 {
+    return value.wrapping_shl(n);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("((value) << n) >>> 0"),
+            "{output}"
         );
     }
 

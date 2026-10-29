@@ -2099,6 +2099,44 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
+fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    let name = match expression {
+        Expr::Group(group) => return expression_numeric_type(&group.expr, entities),
+        Expr::Paren(paren) => return expression_numeric_type(&paren.expr, entities),
+        Expr::Reference(reference) => return expression_numeric_type(&reference.expr, entities),
+        Expr::Cast(cast) => return named_type(&cast.ty).filter(|name| {
+            matches!(
+                name.as_str(),
+                "f32" | "f64"
+                    | "i8"
+                    | "i16"
+                    | "i32"
+                    | "i64"
+                    | "i128"
+                    | "isize"
+                    | "u8"
+                    | "u16"
+                    | "u32"
+                    | "u64"
+                    | "u128"
+                    | "usize"
+            )
+        }),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            path.path.segments[0].ident.to_string()
+        }
+        _ => return None,
+    };
+    match lexical_fact(entities, &name)? {
+        BindingFact::Structure(identity) => match identity.as_str() {
+            "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16"
+            | "u32" | "u64" | "u128" | "usize" => Some(identity),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 // Whether an `if let` / `while let` scrutinee can be read twice with one result: a binding or a
 // field chain over one, through the identity adapters `.as_ref()`, `.as_mut()` and `.as_deref()`.
 pub(crate) fn option_scrutinee_is_rereadable(condition: &Expr) -> bool {
@@ -4786,6 +4824,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         .collect(),
                 );
             }
+            if let Some(name) = primitive_type_identity(rust_type) {
+                return BindingFact::Structure(name);
+            }
             return context_type_identity(self.context, rust_type)
                 .map_or(BindingFact::Unknown, BindingFact::Structure);
         }
@@ -6934,6 +6975,9 @@ pub(super) fn binding_fact_for_type(
                 .collect(),
         );
     }
+    if let Some(name) = primitive_type_identity(rust_type) {
+        return BindingFact::Structure(name);
+    }
     let identity = match from {
         Some(from) => resolved_type_identity(entities, from, rust_type),
         None => context_type_identity(entities, rust_type),
@@ -8774,7 +8818,16 @@ pub(crate) fn emit_for_header(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     let pattern = emit_pattern(pattern)?;
-    if let Expr::Range(range) = expression {
+    let (range_expr, step_override) = if let Expr::MethodCall(call) = expression {
+        if call.method == "step_by" && call.args.len() == 1 {
+            (call.receiver.as_ref(), Some(&call.args[0]))
+        } else {
+            (expression, None)
+        }
+    } else {
+        (expression, None)
+    };
+    if let Expr::Range(range) = peel_reference_and_paren(range_expr) {
         let Some(start) = &range.start else {
             return Err(compile_error("portable Rust range needs a start"));
         };
@@ -8787,8 +8840,13 @@ pub(crate) fn emit_for_header(
             syn::RangeLimits::HalfOpen(_) => "<",
             syn::RangeLimits::Closed(_) => "<=",
         };
+        let step = if let Some(step_expr) = step_override {
+            emit_expression(step_expr, entities)?
+        } else {
+            "1".to_string()
+        };
         return Ok(format!(
-            "let {pattern} = {start}; {pattern} {comparison} {end}; {pattern} += 1"
+            "let {pattern} = {start}; {pattern} {comparison} {end}; {pattern} += {step}"
         ));
     }
     let mut iterable = emit_expression(expression, entities)?;
@@ -11059,6 +11117,17 @@ fn emit_method_call(
         "chunks_exact" if arguments.len() == 1 => Err(compile_error(
             "portable `.chunks_exact()` requires a receiver with proven sequence provenance",
         )),
+        "chunks_exact_mut"
+            if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i + size <= items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "chunks_exact_mut" if arguments.len() == 1 => Err(compile_error(
+            "portable `.chunks_exact_mut()` requires a receiver with proven sequence provenance",
+        )),
         "clamp" if arguments.len() == 2 => Ok(format!(
             "Math.min({}, Math.max({}, {receiver}))",
             arguments[1], arguments[0]
@@ -11123,6 +11192,10 @@ fn emit_method_call(
             Ok(emit_entity_clone(&receiver, &owner, entities))
         }
         "clone" if arguments.is_empty() => Ok(receiver),
+        "clone_from" if arguments.len() == 1 => Ok(format!(
+            "Object.assign({receiver}, {})",
+            arguments[0]
+        )),
         "cloned" | "copied"
             if arguments.is_empty()
                 && option_expression_payload(&call.receiver, entities).is_some() =>
@@ -11155,6 +11228,10 @@ fn emit_method_call(
                 "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read += 1) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write += 1; }} }} items.length = Math.min(write, items.length); }})({receiver})"
             ))
         }
+        "div_ceil" if arguments.len() == 1 => Ok(format!(
+            "Math.ceil({receiver} / {})",
+            arguments[0]
+        )),
         "drain" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             let Some(Expr::Range(range)) = call.args.first() else {
                 return Err(compile_error(
@@ -11317,6 +11394,21 @@ fn emit_method_call(
                 "(/^[a-zA-Z]$/).test({receiver})"
             ))
         }
+        "is_ascii_alphabetic" if arguments.is_empty() => {
+            Ok(format!(
+                "(/^[a-zA-Z]$/).test({receiver})"
+            ))
+        }
+        "is_ascii_alphanumeric" if arguments.is_empty() => {
+            Ok(format!(
+                "(/^[a-zA-Z0-9]$/).test({receiver})"
+            ))
+        }
+        "is_whitespace" if arguments.is_empty() => {
+            Ok(format!(
+                "(/^\\s$/).test({receiver})"
+            ))
+        }
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_ref" if arguments.is_empty() => Ok(receiver),
@@ -11334,7 +11426,9 @@ fn emit_method_call(
         "as_str" | "to_str" if arguments.is_empty() => Ok(receiver),
         "borrow" | "borrow_mut" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
-        "last" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
+        "last" | "last_mut"
+            if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) =>
+        {
             Ok(format!("{receiver}.at(-1)"))
         }
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),
@@ -11342,6 +11436,9 @@ fn emit_method_call(
             Ok(format!("({receiver} = {receiver} ?? {})", arguments[0]))
         }
         "get_or_insert_with" if arguments.len() == 1 => {
+            Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
+        }
+        "get_or_init" if arguments.len() == 1 => {
             Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
         }
         "lines"
@@ -11382,6 +11479,31 @@ fn emit_method_call(
         "ok_or_else" if arguments.len() == 1 => Ok(receiver),
         "or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
         "or_else" if arguments.len() == 1 => Ok(format!("({receiver} ?? ({})())", arguments[0])),
+        "parse" if arguments.is_empty() => {
+            let target_type = call.turbofish.as_ref().and_then(|arguments| {
+                arguments
+                    .args
+                    .iter()
+                    .filter_map(|arg| match arg {
+                        GenericArgument::Type(rust_type) => named_type(rust_type),
+                        _ => None,
+                    })
+                    .next()
+            });
+            match target_type.as_deref() {
+                Some("f32" | "f64") => Ok(format!("parseFloat({receiver})")),
+                Some(
+                    "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32"
+                    | "u64" | "u128" | "usize",
+                ) => Ok(format!("parseInt({receiver}, 10)")),
+                Some(other) => Err(compile_error(format!(
+                    "portable `.parse::<{other}>()` has no portable lowering",
+                ))),
+                None => Err(compile_error(
+                    "portable `.parse()` requires a turbofish type annotation (e.g., `.parse::<f32>()`)",
+                )),
+            }
+        }
         "next"
             if arguments.is_empty()
                 && matches!(call.receiver.as_ref(), Expr::MethodCall(chars)
@@ -11615,8 +11737,12 @@ fn emit_method_call(
         "retain" => Err(compile_error(
             "portable `.retain()` requires a receiver declared as Rust `Vec` and one predicate",
         )),
-        "sort_by" if arguments.len() == 1 => Ok(format!("{receiver}.sort({})", arguments[0])),
-        "sort" if arguments.is_empty() => Ok(format!("{receiver}.sort((a, b) => a - b)")),
+        "sort_by" | "sort_unstable_by" if arguments.len() == 1 => {
+            Ok(format!("{receiver}.sort({})", arguments[0]))
+        }
+        "sort" | "sort_unstable" if arguments.is_empty() => {
+            Ok(format!("{receiver}.sort((a, b) => a - b)"))
+        }
         "swap" if arguments.len() == 2 => Ok(format!(
             "([{receiver}[{}], {receiver}[{}]] = [{receiver}[{}], {receiver}[{}]])",
             arguments[0], arguments[1], arguments[1], arguments[0]
@@ -11654,6 +11780,81 @@ fn emit_method_call(
         "to_ascii_uppercase" if arguments.is_empty() => Err(compile_error(
             "portable `.to_ascii_uppercase()` requires a receiver known to be `String` or `str`",
         )),
+        "to_be_bytes" if arguments.is_empty() => {
+            let Some(numeric_type) = expression_numeric_type(&call.receiver, entities) else {
+                return Err(compile_error(
+                    "portable `.to_be_bytes()` requires a receiver with known numeric type provenance (declare the variable with a Rust numeric type annotation)",
+                ));
+            };
+            let Some((dv_type, byte_count)) = numeric_dataview_info(&numeric_type) else {
+                return Err(compile_error(format!(
+                    "portable `.to_be_bytes()` does not support `{numeric_type}`",
+                )));
+            };
+            if byte_count == 1 {
+                Ok(format!("new Uint8Array([{receiver}])"))
+            } else {
+                Ok(format!(
+                    "(() => {{ const __b = new Uint8Array({byte_count}); new DataView(__b.buffer).set{dv_type}(0, {receiver}, false); return __b; }})()"
+                ))
+            }
+        }
+        "to_bits" if arguments.is_empty() => {
+            let Some(numeric_type) = expression_numeric_type(&call.receiver, entities) else {
+                return Err(compile_error(
+                    "portable `.to_bits()` requires a receiver with known numeric type provenance (declare the variable with a Rust numeric type annotation)",
+                ));
+            };
+            match numeric_type.as_str() {
+                "f32" => Ok(format!(
+                    "(() => {{ const __b = new DataView(new ArrayBuffer(4)); __b.setFloat32(0, {receiver}, true); return __b.getUint32(0, true); }})()"
+                )),
+                "f64" => Ok(format!(
+                    "(() => {{ const __b = new DataView(new ArrayBuffer(8)); __b.setFloat64(0, {receiver}, true); return __b.getBigUint64(0, true); }})()"
+                )),
+                _ => Err(compile_error(format!(
+                    "portable `.to_bits()` is only supported on `f32` and `f64`, not `{numeric_type}`",
+                ))),
+            }
+        }
+        "to_le_bytes" if arguments.is_empty() => {
+            let Some(numeric_type) = expression_numeric_type(&call.receiver, entities) else {
+                return Err(compile_error(
+                    "portable `.to_le_bytes()` requires a receiver with known numeric type provenance (declare the variable with a Rust numeric type annotation)",
+                ));
+            };
+            let Some((dv_type, byte_count)) = numeric_dataview_info(&numeric_type) else {
+                return Err(compile_error(format!(
+                    "portable `.to_le_bytes()` does not support `{numeric_type}`",
+                )));
+            };
+            if byte_count == 1 {
+                Ok(format!("new Uint8Array([{receiver}])"))
+            } else {
+                Ok(format!(
+                    "(() => {{ const __b = new Uint8Array({byte_count}); new DataView(__b.buffer).set{dv_type}(0, {receiver}, true); return __b; }})()"
+                ))
+            }
+        }
+        "to_ne_bytes" if arguments.is_empty() => {
+            let Some(numeric_type) = expression_numeric_type(&call.receiver, entities) else {
+                return Err(compile_error(
+                    "portable `.to_ne_bytes()` requires a receiver with known numeric type provenance (declare the variable with a Rust numeric type annotation)",
+                ));
+            };
+            let Some((dv_type, byte_count)) = numeric_dataview_info(&numeric_type) else {
+                return Err(compile_error(format!(
+                    "portable `.to_ne_bytes()` does not support `{numeric_type}`",
+                )));
+            };
+            if byte_count == 1 {
+                Ok(format!("new Uint8Array([{receiver}])"))
+            } else {
+                Ok(format!(
+                    "(() => {{ const __b = new Uint8Array({byte_count}); new DataView(__b.buffer).set{dv_type}(0, {receiver}, true); return __b; }})()"
+                ))
+            }
+        }
         "to_lowercase"
             if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
         {
@@ -11709,6 +11910,9 @@ fn emit_method_call(
         }
         "wrapping_mul" if arguments.len() == 1 => {
             Ok(format!("Math.imul(({receiver}), {}) >>> 0", arguments[0]))
+        }
+        "wrapping_shl" if arguments.len() == 1 => {
+            Ok(format!("(({receiver}) << {}) >>> 0", arguments[0]))
         }
         "wrapping_shr" if arguments.len() == 1 => Ok(format!("({receiver}) >>> {}", arguments[0])),
         "wrapping_sub" if arguments.len() == 1 => {
@@ -15296,6 +15500,9 @@ fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {
         BindingFact::Sequence(_) => Some("[]"),
         BindingFact::Structure(name) => match name.as_str() {
             "String" | "str" => Some("\"\""),
+            "bool" => Some("false"),
+            "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16"
+            | "u32" | "u64" | "u128" | "usize" => Some("0"),
             _ => None,
         },
         BindingFact::TypedArray(array_type) => match array_type.as_str() {
@@ -15313,6 +15520,39 @@ fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {
         BindingFact::Option(_) => None,
         BindingFact::Tuple(_) => None,
         BindingFact::UnresolvedPattern => None,
+    };
+}
+
+fn numeric_dataview_info(rust_type: &str) -> Option<(&'static str, u8)> {
+    return match rust_type {
+        "f32" => Some(("Float32", 4)),
+        "f64" => Some(("Float64", 8)),
+        "i8" => Some(("Int8", 1)),
+        "i16" => Some(("Int16", 2)),
+        "i32" | "isize" => Some(("Int32", 4)),
+        "i64" => Some(("BigInt64", 8)),
+        "u8" => Some(("Uint8", 1)),
+        "u16" => Some(("Uint16", 2)),
+        "u32" | "usize" => Some(("Uint32", 4)),
+        "u64" => Some(("BigUint64", 8)),
+        _ => None,
+    };
+}
+
+fn primitive_type_identity(rust_type: &Type) -> Option<String> {
+    let name = match rust_type {
+        Type::Group(group) => return primitive_type_identity(&group.elem),
+        Type::Paren(paren) => return primitive_type_identity(&paren.elem),
+        Type::Reference(reference) => return primitive_type_identity(&reference.elem),
+        Type::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            path.path.segments[0].ident.to_string()
+        }
+        _ => return None,
+    };
+    return match name.as_str() {
+        "bool" | "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "str"
+        | "String" | "u8" | "u16" | "u32" | "u64" | "u128" | "usize" => Some(name),
+        _ => None,
     };
 }
 
