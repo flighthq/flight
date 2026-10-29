@@ -1,4 +1,5 @@
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import { createPath } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -7,10 +8,6 @@ import { readOpenTypeGlyphCount, readOpenTypeLocaFormat } from './openTypeMetric
 import { createSyntheticFont, emptySyntheticGlyph, squareSyntheticGlyph } from './openTypeTestHelper.ts';
 import type { SyntheticGlyph } from './openTypeTestHelper.ts';
 import { readSfntTableDirectory } from './sfntTableDirectory.ts';
-
-function createPath(): Path {
-  return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
-}
 
 // Reads a glyph out of a synthetic font through the same steps the source does, so these tests exercise
 // the real `loca`/`glyf` pair rather than a hand-built range array.
@@ -23,7 +20,7 @@ function readGlyph(glyphs: readonly SyntheticGlyph[], glyphIndex: number): { ok:
     readOpenTypeGlyphCount(font, directory),
     readOpenTypeLocaFormat(font, directory),
   )!;
-  const path = createPath();
+  const path = createPath('evenOdd');
   return { ok: readOpenTypeGlyphOutline(path, font, directory, ranges, glyphIndex), path };
 }
 
@@ -33,7 +30,7 @@ describe('readOpenTypeGlyphOutline', () => {
     // test that built one would pass whether or not this reader writes the field — and a caller
     // reusing a scratch path across glyphs is exactly the case that keeps a stale value and renders
     // a counter as a solid blob.
-    const path: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
+    const path: Path = createPath('evenOdd');
     const font = createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] });
     const directory = readSfntTableDirectory(font)!;
     const ranges = readOpenTypeGlyphRanges(
@@ -141,7 +138,7 @@ describe('readOpenTypeGlyphOutline', () => {
     const font = createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] });
     const directory = readSfntTableDirectory(font)!;
     const ranges = readOpenTypeGlyphRanges(font, directory, readOpenTypeGlyphCount(font, directory), 1)!;
-    const path = createPath();
+    const path = createPath('evenOdd');
     readOpenTypeGlyphOutline(path, font, directory, ranges, 1);
     const first = path.commands.length;
     readOpenTypeGlyphOutline(path, font, directory, ranges, 1);

@@ -1,5 +1,6 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import { createPath } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -53,7 +54,7 @@ function ringAreas(reverseCounter: boolean, flipBoth = false): number[] {
     glyphs: [emptySyntheticGlyph(), ringSyntheticGlyph(reverseCounter, flipBoth)],
   });
   const source = createGlyphOutlineSourceFromOpenTypeFont(font, sdkHostDecompressDeflate)!;
-  const path: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'nonZero' };
+  const path: Path = createPath('nonZero');
   expect(source.getGlyphOutline(path, 1)).toBe(true);
   return signedContourAreas(path);
 }

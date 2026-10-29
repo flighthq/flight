@@ -1,12 +1,9 @@
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import { createPath } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { cffSubroutineBias, runCffCharstring } from './cffCharstring.ts';
-
-function createPath(): Path {
-  return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
-}
 
 // Charstrings are assembled as raw operator/operand bytes. One-byte operands cover -107..107, which is
 // the whole range these fixtures need, so `n(v)` is the encoding rather than a helper hiding one.
@@ -16,7 +13,7 @@ function n(value: number): number {
 
 function run(...bytes: number[]): { ok: boolean; path: Path } {
   const buffer = new Uint8Array(bytes);
-  const path = createPath();
+  const path = createPath('evenOdd');
   return { ok: runCffCharstring(path, buffer, { end: buffer.length, start: 0 }, [], []), path };
 }
 
@@ -134,7 +131,7 @@ describe('runCffCharstring', () => {
     const bytes = new Uint8Array(main.length + subr.length);
     bytes.set(main);
     bytes.set(subr, main.length);
-    const path = createPath();
+    const path = createPath('evenOdd');
     const ok = runCffCharstring(
       path,
       bytes,
@@ -162,7 +159,7 @@ describe('runCffCharstring', () => {
 
   it('replaces the previous contents of out rather than appending', () => {
     const buffer = new Uint8Array([n(0), n(0), 21, n(10), n(0), 5, 14]);
-    const path = createPath();
+    const path = createPath('evenOdd');
     runCffCharstring(path, buffer, { end: buffer.length, start: 0 }, [], []);
     const first = path.commands.length;
     runCffCharstring(path, buffer, { end: buffer.length, start: 0 }, [], []);

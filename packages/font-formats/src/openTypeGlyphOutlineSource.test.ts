@@ -1,5 +1,6 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import { createPath } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -48,10 +49,6 @@ function malformedUnitsPerEmFont(): Uint8Array {
   return font;
 }
 
-function createPath(): Path {
-  return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
-}
-
 describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
   it('produces a source from a well-formed TrueType font', () => {
     expect(createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont(), sdkHostDecompressDeflate)).not.toBeNull();
@@ -83,7 +80,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
       createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] }),
       sdkHostDecompressDeflate,
     );
-    const path = createPath();
+    const path = createPath('evenOdd');
     expect(source?.getGlyphOutline(path, 1)).toBe(true);
     expect(path.commands).toEqual([
       PathCommand.MOVE_TO,
@@ -101,7 +98,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
       createSyntheticFont({ glyphs: [emptySyntheticGlyph()] }),
       sdkHostDecompressDeflate,
     );
-    const path = createPath();
+    const path = createPath('evenOdd');
     // True, not false: a space still has to advance, so its absence of ink must stay observable.
     expect(source?.getGlyphOutline(path, 0)).toBe(true);
     expect(path.commands).toEqual([]);
@@ -109,8 +106,8 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
 
   it('returns false for a glyph index the font does not have', () => {
     const source = createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont(), sdkHostDecompressDeflate);
-    expect(source?.getGlyphOutline(createPath(), 99)).toBe(false);
-    expect(source?.getGlyphOutline(createPath(), -1)).toBe(false);
+    expect(source?.getGlyphOutline(createPath('evenOdd'), 99)).toBe(false);
+    expect(source?.getGlyphOutline(createPath('evenOdd'), -1)).toBe(false);
   });
 
   it('reports each glyph its own advance', () => {
@@ -159,7 +156,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
     const charstring = new Uint8Array([139, 139, 21, 149, 139, 149, 149, 139, 149, 8, 14]);
     const font = createSyntheticFont({ flavor: 'opentype', charstrings: [new Uint8Array([14]), charstring] });
     const source = createGlyphOutlineSourceFromOpenTypeFont(font, sdkHostDecompressDeflate)!;
-    const path = createPath();
+    const path = createPath('evenOdd');
     expect(source.getGlyphOutline(path, 1)).toBe(true);
     expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO, PathCommand.CLOSE]);
   });
@@ -179,8 +176,8 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
       flavor: 'opentype',
     });
     const source = createGlyphOutlineSourceFromOpenTypeFont(font, sdkHostDecompressDeflate)!;
-    const first = createPath();
-    const second = createPath();
+    const first = createPath('evenOdd');
+    const second = createPath('evenOdd');
     expect(source.getGlyphOutline(first, 0)).toBe(true);
     expect(source.getGlyphOutline(second, 1)).toBe(true);
     expect(first.data).not.toEqual(second.data);
@@ -197,7 +194,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
     );
     const source = createGlyphOutlineSourceFromOpenTypeFont(woff, sdkHostDecompressDeflate)!;
     expect(source).not.toBeNull();
-    const path = createPath();
+    const path = createPath('evenOdd');
     expect(source.getGlyphOutline(path, 1)).toBe(true);
     expect(path.data).toEqual([0, -0, 100, -0, 100, -100, 0, -100]);
   });
