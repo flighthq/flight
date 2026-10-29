@@ -47,11 +47,12 @@
     "@flighthq/host": "*",
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
     "@flighthq/signals": "*",
     "@flighthq/textformat": "*",
-    "@flighthq/velocity": "*",
-    "@flighthq/useragent": "*"
+    "@flighthq/useragent": "*",
+    "@flighthq/velocity": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

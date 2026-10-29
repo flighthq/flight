@@ -1,77 +1,139 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Requirement, RequirementFacet, RequirementSet } from '@flighthq/types/contract';
+// Generated from crates/flight-requirement/src/requirement_set.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-export function createRequirementSet(
-  covers: readonly RequirementFacet[],
-  requirements: readonly Readonly<Requirement>[],
-): RequirementSet {
-  const out = allocateEntity<RequirementSet>();
-  initializeRequirementSet(out, covers, requirements);
-  return finishEntity(out);
+import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
+
+import type { Requirement, RequirementFacet } from './types.ts';
+import { getRequirementFacetString } from './types.ts';
+
+/**
+ * A canonical set of producer facts and the facets for which missing facts prove absence.
+ */
+export interface RequirementSetRaw extends EntityRaw {
+  readonly covers: RequirementFacet[];
+  readonly requirements: Requirement[];
 }
 
-// A difference can claim completeness only where both operands inspected the facet. Requirements from
-// an unshared facet are therefore unknown, not absent, and do not enter the result.
+export function createRequirementSet(
+  covers: Readonly<RequirementFacet[]>,
+  requirements: Readonly<Requirement[]>,
+): RequirementSetRaw {
+  let out: RequirementSetRaw = Object.assign(allocateEntity<RequirementSetRaw>(), { covers: [], requirements: [] });
+  initializeRequirementSet(out, covers, requirements);
+  return out;
+}
+
+/**
+ * Subtracts facts only for facets that both operands inspected.
+ */
 export function diffRequirementSets(
-  requirements: Readonly<RequirementSet>,
-  baseline: Readonly<RequirementSet>,
-): RequirementSet {
+  requirements: Readonly<RequirementSetRaw>,
+  baseline: Readonly<RequirementSetRaw>,
+): RequirementSetRaw {
   const covers = intersectSorted(requirements.covers, baseline.covers);
-  const baselineKeys = new Set(
-    baseline.requirements.map((requirement) => requirementIdentity(requirement.facet, requirement.key)),
-  );
-  return createRequirementSet(
-    covers,
-    requirements.requirements.filter(
-      (requirement) =>
-        covers.includes(requirement.facet) &&
-        !baselineKeys.has(requirementIdentity(requirement.facet, requirement.key)),
-    ),
-  );
+  let difference: Requirement[] = [] as never[];
+  for (const requirement of requirements.requirements) {
+    if (covers.includes(requirement.facet) && findRequirement(baseline.requirements, requirement) === undefined) {
+      difference.push(requirement);
+    }
+  }
+  return createRequirementSet(covers, difference);
 }
 
 export function initializeRequirementSet(
-  out: EntityConstruction<RequirementSet>,
-  covers: readonly RequirementFacet[],
-  requirements: readonly Readonly<Requirement>[],
+  out: EntityConstruction<RequirementSetRaw>,
+  covers: Readonly<RequirementFacet[]>,
+  requirements: Readonly<Requirement[]>,
 ): void {
   out.covers = distinctSorted(covers);
   out.requirements = distinctSortedRequirements(requirements);
 }
 
-// A merged set is complete for a facet only when every input inspected it. Requirements themselves are
-// unioned, because a partial producer can still contribute a positive fact without proving negatives.
-export function mergeRequirementSets(requirementSets: readonly Readonly<RequirementSet>[]): RequirementSet {
-  if (requirementSets.length === 0) return createRequirementSet([], []);
-  let covers = distinctSorted(requirementSets[0].covers);
-  const requirements: Readonly<Requirement>[] = [];
+function distinctSorted(values: Readonly<RequirementFacet[]>): RequirementFacet[] {
+  let ordered: RequirementFacet[] = [] as never[];
+  for (const value of values) {
+    if (!ordered.includes(value)) {
+      ordered.push(value);
+    }
+  }
+  ordered.sort((a, b) => {
+    const left: string = getRequirementFacetString(a);
+    const right: string = getRequirementFacetString(b);
+    return left < right ? -1 : left > right ? 1 : 0;
+  });
+  return ordered;
+}
+
+function distinctSortedRequirements(requirements: Readonly<Requirement[]>): Requirement[] {
+  let ordered: Requirement[] = [] as never[];
+  for (const requirement of requirements) {
+    let replaced = false;
+    let index: number = 0;
+    while (index < ordered.length) {
+      if (ordered[index].facet === requirement.facet && ordered[index].key === requirement.key) {
+        ordered[index] = requirement;
+        replaced = true;
+        break;
+      }
+      index += 1;
+    }
+    if (!replaced) {
+      ordered.push(requirement);
+    }
+  }
+  ordered.sort((a, b) => {
+    const left: string = getRequirementFacetString(a.facet);
+    const right: string = getRequirementFacetString(b.facet);
+    if (left !== right) {
+      return left < right ? -1 : left > right ? 1 : 0;
+    }
+    const leftKey: string = a.key;
+    const rightKey: string = b.key;
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+  });
+  return ordered;
+}
+
+function findRequirement(requirements: Readonly<Requirement[]>, probe: Readonly<Requirement>): number | undefined {
+  let index: number = 0;
+  while (index < requirements.length) {
+    if (requirements[index].facet === probe.facet && requirements[index].key === probe.key) {
+      return index;
+    }
+    index += 1;
+  }
+  return undefined;
+}
+
+function intersectSorted(
+  first: Readonly<RequirementFacet[]>,
+  second: Readonly<RequirementFacet[]>,
+): RequirementFacet[] {
+  let intersection: RequirementFacet[] = [] as never[];
+  for (const value of first) {
+    if (second.includes(value)) {
+      intersection.push(value);
+    }
+  }
+  return distinctSorted(intersection);
+}
+
+/**
+ * Unions known facts while retaining completeness only for facets every input inspected.
+ */
+export function mergeRequirementSets(requirementSets: Readonly<Readonly<RequirementSetRaw>[]>): RequirementSetRaw {
+  const first = requirementSets[0];
+  if (first === undefined) {
+    return createRequirementSet([], []);
+  }
+  let covers = distinctSorted(first.covers);
+  let requirements: Requirement[] = [] as never[];
   for (const requirementSet of requirementSets) {
     covers = intersectSorted(covers, requirementSet.covers);
-    requirements.push(...requirementSet.requirements);
+    for (const requirement of requirementSet.requirements) {
+      requirements.push(requirement);
+    }
   }
   return createRequirementSet(covers, requirements);
-}
-
-function distinctSorted(values: readonly RequirementFacet[]): RequirementFacet[] {
-  return [...new Set(values)].sort();
-}
-
-function distinctSortedRequirements(requirements: readonly Readonly<Requirement>[]): Requirement[] {
-  const byIdentity = new Map<string, Requirement>();
-  for (const requirement of requirements) {
-    byIdentity.set(requirementIdentity(requirement.facet, requirement.key), {
-      facet: requirement.facet,
-      key: requirement.key,
-    });
-  }
-  return [...byIdentity.values()].sort((a, b) => a.facet.localeCompare(b.facet) || a.key.localeCompare(b.key));
-}
-
-function intersectSorted(first: readonly RequirementFacet[], second: readonly RequirementFacet[]): RequirementFacet[] {
-  const secondValues = new Set(second);
-  return distinctSorted(first.filter((value) => secondValues.has(value)));
-}
-
-function requirementIdentity(facet: RequirementFacet, key: string): string {
-  return `${facet}\0${key}`;
 }

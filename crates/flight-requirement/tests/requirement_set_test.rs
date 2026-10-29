@@ -52,20 +52,19 @@ mod diff_requirement_sets {
 
     #[test]
     fn subtracts_facts_only_for_facets_both_operands_cover() {
-        let requirements = create_requirement_set(
-            &[
-                RequirementFacet::SceneBlendMode,
-                RequirementFacet::SceneNodeKind,
-            ],
-            &[
-                requirement(RequirementFacet::SceneBlendMode, "Multiply"),
-                requirement(RequirementFacet::SceneNodeKind, "Shape"),
-            ],
-        );
-        let baseline = create_requirement_set(
-            &[RequirementFacet::SceneNodeKind],
-            &[requirement(RequirementFacet::SceneNodeKind, "Sprite")],
-        );
+        let requirements_covers: Vec<RequirementFacet> = vec![
+            RequirementFacet::SceneBlendMode,
+            RequirementFacet::SceneNodeKind,
+        ];
+        let requirements_facts: Vec<Requirement> = vec![
+            requirement(RequirementFacet::SceneBlendMode, "Multiply"),
+            requirement(RequirementFacet::SceneNodeKind, "Shape"),
+        ];
+        let requirements = create_requirement_set(&requirements_covers, &requirements_facts);
+        let baseline_covers: Vec<RequirementFacet> = vec![RequirementFacet::SceneNodeKind];
+        let baseline_facts: Vec<Requirement> =
+            vec![requirement(RequirementFacet::SceneNodeKind, "Sprite")];
+        let baseline = create_requirement_set(&baseline_covers, &baseline_facts);
         let result = diff_requirement_sets(&requirements, &baseline);
         assert_eq!(result.covers, vec![RequirementFacet::SceneNodeKind]);
         assert_eq!(
@@ -76,10 +75,18 @@ mod diff_requirement_sets {
 
     #[test]
     fn removes_an_identical_fact_within_shared_coverage() {
-        let fact = requirement(RequirementFacet::DocumentFormat, "application/x-test");
-        let requirements =
-            create_requirement_set(&[RequirementFacet::DocumentFormat], &[fact.clone()]);
-        let baseline = create_requirement_set(&[RequirementFacet::DocumentFormat], &[fact]);
+        let requirements_covers: Vec<RequirementFacet> = vec![RequirementFacet::DocumentFormat];
+        let requirements_facts: Vec<Requirement> = vec![requirement(
+            RequirementFacet::DocumentFormat,
+            "application/x-test",
+        )];
+        let requirements = create_requirement_set(&requirements_covers, &requirements_facts);
+        let baseline_covers: Vec<RequirementFacet> = vec![RequirementFacet::DocumentFormat];
+        let baseline_facts: Vec<Requirement> = vec![requirement(
+            RequirementFacet::DocumentFormat,
+            "application/x-test",
+        )];
+        let baseline = create_requirement_set(&baseline_covers, &baseline_facts);
         let result = diff_requirement_sets(&requirements, &baseline);
         assert!(result.requirements.is_empty());
     }
@@ -92,11 +99,9 @@ mod initialize_requirement_set {
     fn replaces_canonical_data_without_replacing_the_entity_runtime() {
         let mut out = create_requirement_set(&[], &[]);
         flight_entity::set_entity_uid(&mut out, "requirement-set".to_string());
-        initialize_requirement_set(
-            &mut out,
-            &[RequirementFacet::SceneNodeKind],
-            &[requirement(RequirementFacet::SceneNodeKind, "Shape")],
-        );
+        let covers: Vec<RequirementFacet> = vec![RequirementFacet::SceneNodeKind];
+        let facts: Vec<Requirement> = vec![requirement(RequirementFacet::SceneNodeKind, "Shape")];
+        initialize_requirement_set(&mut out, &covers, &facts);
         assert_eq!(flight_entity::get_entity_uid(&mut out), "requirement-set");
         assert_eq!(out.covers, vec![RequirementFacet::SceneNodeKind]);
         assert_eq!(
@@ -118,20 +123,19 @@ mod merge_requirement_sets {
 
     #[test]
     fn unions_facts_while_intersecting_completeness() {
-        let first = create_requirement_set(
-            &[
-                RequirementFacet::SceneBlendMode,
-                RequirementFacet::SceneNodeKind,
-            ],
-            &[requirement(RequirementFacet::SceneNodeKind, "Shape")],
-        );
-        let second = create_requirement_set(
-            &[RequirementFacet::SceneNodeKind],
-            &[
-                requirement(RequirementFacet::SceneNodeKind, "Sprite"),
-                requirement(RequirementFacet::SceneNodeKind, "Shape"),
-            ],
-        );
+        let first_covers: Vec<RequirementFacet> = vec![
+            RequirementFacet::SceneBlendMode,
+            RequirementFacet::SceneNodeKind,
+        ];
+        let first_facts: Vec<Requirement> =
+            vec![requirement(RequirementFacet::SceneNodeKind, "Shape")];
+        let first = create_requirement_set(&first_covers, &first_facts);
+        let second_covers: Vec<RequirementFacet> = vec![RequirementFacet::SceneNodeKind];
+        let second_facts: Vec<Requirement> = vec![
+            requirement(RequirementFacet::SceneNodeKind, "Sprite"),
+            requirement(RequirementFacet::SceneNodeKind, "Shape"),
+        ];
+        let second = create_requirement_set(&second_covers, &second_facts);
         let result = merge_requirement_sets(&[&first, &second]);
         assert_eq!(result.covers, vec![RequirementFacet::SceneNodeKind]);
         assert_eq!(

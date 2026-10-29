@@ -1,4 +1,4 @@
-//! flight-compiler: readonly-fields Requirement RequirementSet
+//! flight-compiler: readonly-fields Requirement
 //! flight-compiler: string-union RequirementFacet=exact
 //! flight-compiler: string-union-value RequirementFacet CompressionKind "compression.kind"
 //! flight-compiler: string-union-value RequirementFacet DocumentFormat "document.format"
@@ -10,8 +10,6 @@
 //! flight-compiler: string-union-value RequirementFacet SceneResourceMimeType "scene.resource-mime-type"
 //! flight-compiler: string-union-value RequirementFacet SceneShapeCommand "scene.shape-command"
 //! flight-compiler: string-union-value RequirementFacet SceneTextureSourceKind "scene.texture-source-kind"
-
-use flight_entity::EntityRuntimeSlot;
 
 /// The exact requirement facet string union from pinned TypeScript.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -34,14 +32,6 @@ pub enum RequirementFacet {
 pub struct Requirement {
     pub facet: RequirementFacet,
     pub key: String,
-}
-
-/// A canonical set of producer facts and the facets for which missing facts prove absence.
-#[derive(Clone, Debug, PartialEq)]
-pub struct RequirementSet {
-    pub covers: Vec<RequirementFacet>,
-    pub requirements: Vec<Requirement>,
-    runtime: EntityRuntimeSlot,
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS RequirementFacet const and string union
@@ -76,15 +66,3 @@ pub fn parse_requirement_facet(value: &str) -> Option<RequirementFacet> {
         _ => None,
     };
 }
-
-impl Default for RequirementSet {
-    fn default() -> Self {
-        return RequirementSet {
-            covers: Vec::new(),
-            requirements: Vec::new(),
-            runtime: EntityRuntimeSlot::default(),
-        };
-    }
-}
-
-flight_entity::impl_entity!(RequirementSet);

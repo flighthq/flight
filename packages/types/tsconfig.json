@@ -45,6 +45,9 @@
       "path": "../menu/tsconfig.contract.json"
     },
     {
+      "path": "../requirement"
+    },
+    {
       "path": "../resource"
     },
     {

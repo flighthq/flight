@@ -1,5 +1,6 @@
-use crate::requirement_set::create_requirement_set;
-use crate::types::{Requirement, RequirementFacet, RequirementSet};
+//! flight-compiler: export-name collect_scene2d_requirements collectScene2DRequirements
+use crate::requirement_set::{RequirementSet, create_requirement_set};
+use crate::types::{Requirement, RequirementFacet};
 
 /// Engages requirement recording for one Scene2D import. This is only a borrowed callback and
 /// optional array-sink seam; it has no dependency on a Scene2D engine.

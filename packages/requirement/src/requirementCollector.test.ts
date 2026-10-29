@@ -1,36 +1,37 @@
-import type { Requirement } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+// Generated from crates/flight-requirement/tests/requirement_collector_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { collectScene2DRequirements, reportRequirement } from './requirementCollector.ts';
+import { describe, expect, it } from 'vitest';
+
+import { collectScene2DRequirements, reportRequirement } from './contract.ts';
+import type { Requirement } from './contract.ts';
 
 describe('collectScene2DRequirements', () => {
-  it('returns deterministic distinct requirements and the facets inspected by the collector', () => {
-    const result = collectScene2DRequirements((sink) => {
-      reportRequirement(sink, RequirementFacet.SceneNodeKind, 'Shape');
-      reportRequirement(sink, RequirementFacet.SceneBlendMode, 'Multiply');
-      reportRequirement(sink, RequirementFacet.SceneNodeKind, 'Shape');
-    });
-
-    expect(result).toMatchObject({
-      covers: [
-        RequirementFacet.SceneBlendMode,
-        RequirementFacet.SceneMaterialKind,
-        RequirementFacet.SceneNodeKind,
-        RequirementFacet.SceneShapeCommand,
-      ],
-      requirements: [
-        { facet: RequirementFacet.SceneBlendMode, key: 'Multiply' },
-        { facet: RequirementFacet.SceneNodeKind, key: 'Shape' },
-      ],
-    });
+  function reportSceneFacts(sink: Requirement[]): void {
+    reportRequirement(sink, 'scene.node-kind', 'Shape');
+    reportRequirement(sink, 'scene.blend-mode', 'Multiply');
+    reportRequirement(sink, 'scene.node-kind', 'Shape');
+  }
+  it('returns distinct sorted facts and the exact inspected facets', () => {
+    const result = collectScene2DRequirements(reportSceneFacts);
+    expect(result.covers).toEqual([
+      'scene.blend-mode',
+      'scene.material-kind',
+      'scene.node-kind',
+      'scene.shape-command',
+    ]);
+    expect(result.requirements).toEqual([
+      { facet: 'scene.blend-mode', key: 'Multiply' },
+      { facet: 'scene.node-kind', key: 'Shape' },
+    ]);
   });
 });
 
 describe('reportRequirement', () => {
   it('records only when a collector is engaged', () => {
-    const sink: Requirement[] = [];
-    reportRequirement(undefined, RequirementFacet.SceneNodeKind, 'Shape');
-    reportRequirement(sink, RequirementFacet.SceneNodeKind, 'Shape');
-    expect(sink).toEqual([{ facet: RequirementFacet.SceneNodeKind, key: 'Shape' }]);
+    let sink: Requirement[] = [] as never[];
+    reportRequirement(undefined, 'scene.node-kind', 'Ignored');
+    reportRequirement(sink, 'scene.node-kind', 'Shape');
+    expect(sink).toEqual([{ facet: 'scene.node-kind', key: 'Shape' }]);
   });
 });

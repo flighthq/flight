@@ -1,22 +1,29 @@
-import type { Kind, Requirement, RequirementFacet, RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet as Facet } from '@flighthq/types/contract';
+// Generated from crates/flight-requirement/src/requirement_collector.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
+import type { RequirementSetRaw } from './requirementSet.ts';
 import { createRequirementSet } from './requirementSet.ts';
+import type { Requirement, RequirementFacet } from './types.ts';
 
-// Engages requirement recording for one Scene2D import. Parsers receive the same optional-array sink
-// shape as import diagnostics; an unengaged parse receives `undefined` and allocates no requirement.
-export function collectScene2DRequirements(run: (sink: Requirement[]) => void): RequirementSet {
-  const requirements: Requirement[] = [];
+/**
+ * Engages requirement recording for one Scene2D import. This is only a borrowed callback and
+ * optional array-sink seam; it has no dependency on a Scene2D engine.
+ */
+export function collectScene2DRequirements(run: (arg0: Requirement[]) => void): RequirementSetRaw {
+  let requirements: Requirement[] = [] as never[];
   run(requirements);
   return createRequirementSet(
-    [Facet.SceneBlendMode, Facet.SceneMaterialKind, Facet.SceneNodeKind, Facet.SceneShapeCommand],
+    ['scene.blend-mode', 'scene.material-kind', 'scene.node-kind', 'scene.shape-command'],
     requirements,
   );
 }
 
-// The colocated importer seam. Call it only where a parser has established the content fact; when no
-// collector is engaged the default parse pays one undefined check and records nothing.
-export function reportRequirement(sink: Requirement[] | undefined, facet: RequirementFacet, key: Kind): void {
-  if (sink === undefined) return;
-  sink.push({ facet, key });
+/**
+ * Records one content fact when a collector is engaged; the default `undefined` path is a no-op.
+ */
+export function reportRequirement(sink: Requirement[] | undefined, facet: RequirementFacet, key: string): void {
+  if (sink === undefined) {
+    return;
+  }
+  sink.push({ facet: facet, key: String(key) });
 }

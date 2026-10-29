@@ -3,17 +3,19 @@ use flight_requirement::*;
 mod collect_scene2d_requirements {
     use super::*;
 
+    fn report_scene_facts(sink: &mut Vec<Requirement>) {
+        report_requirement(Some(&mut *sink), RequirementFacet::SceneNodeKind, "Shape");
+        report_requirement(
+            Some(&mut *sink),
+            RequirementFacet::SceneBlendMode,
+            "Multiply",
+        );
+        report_requirement(Some(&mut *sink), RequirementFacet::SceneNodeKind, "Shape");
+    }
+
     #[test]
     fn returns_distinct_sorted_facts_and_the_exact_inspected_facets() {
-        let result = collect_scene2d_requirements(&|sink| {
-            report_requirement(Some(&mut *sink), RequirementFacet::SceneNodeKind, "Shape");
-            report_requirement(
-                Some(&mut *sink),
-                RequirementFacet::SceneBlendMode,
-                "Multiply",
-            );
-            report_requirement(Some(&mut *sink), RequirementFacet::SceneNodeKind, "Shape");
-        });
+        let result = collect_scene2d_requirements(&report_scene_facts);
         assert_eq!(
             result.covers,
             vec![

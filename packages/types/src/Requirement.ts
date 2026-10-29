@@ -1,17 +1,7 @@
-import type { Entity } from './Entity.ts';
-import type { Kind } from './Entity.ts';
-import type { RequirementFacet } from './RequirementFacet.ts';
+// Requirement types are owned by `@flighthq/requirement`. These deprecated aliases keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-// One producer fact. It names content in the producer's vocabulary and deliberately carries no backend,
-// registry, or registrar identity; only the consumer can map the requirement to an implementation.
-export interface Requirement {
-  readonly facet: RequirementFacet;
-  readonly key: Kind;
-}
-
-// `covers` makes completeness explicit. A missing requirement is evidence of absence only for facets the
-// producer says it inspected.
-export interface RequirementSet extends Entity {
-  readonly covers: readonly RequirementFacet[];
-  readonly requirements: readonly Readonly<Requirement>[];
-}
+/** @deprecated Import `Requirement` from `@flighthq/requirement`. */
+export type { Requirement } from '@flighthq/requirement/contract';
+/** @deprecated Import `RequirementSetRaw` from `@flighthq/requirement`. */
+export type { RequirementSetRaw as RequirementSet } from '@flighthq/requirement/contract';
