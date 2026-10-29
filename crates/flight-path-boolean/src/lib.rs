@@ -2,6 +2,8 @@ mod boolean_paths;
 mod explain_path_boolean;
 mod martinez_kernel;
 mod offset_path;
+mod path_boolean;
+mod path_boolean_compat;
 mod resolve_path_regions;
 mod simplify_path;
 mod union_all_paths;

@@ -4,9 +4,9 @@
 import { flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 
-import type { PathBooleanOptions } from './booleanPaths.ts';
 import { getPathBooleanFillRuleForWinding } from './booleanPaths.ts';
 import type { PathBooleanKernelRaw } from './martinezKernel.ts';
+import type { PathBooleanOptions } from './pathBoolean.ts';
 import { resolvePathRegions } from './resolvePathRegions.ts';
 
 const DEFAULT_FLATTEN_TOLERANCE: number = 0.25;

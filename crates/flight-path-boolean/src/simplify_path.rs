@@ -1,7 +1,8 @@
 use flight_path::{Path, PathWinding, flatten_path};
 
-use crate::boolean_paths::{PathBooleanOptions, get_path_boolean_fill_rule_for_winding};
+use crate::boolean_paths::get_path_boolean_fill_rule_for_winding;
 use crate::martinez_kernel::PathBooleanKernel;
+use crate::path_boolean::PathBooleanOptions;
 use crate::resolve_path_regions::resolve_path_regions;
 
 #[cfg(test)]

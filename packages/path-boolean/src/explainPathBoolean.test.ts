@@ -4,15 +4,7 @@
 import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  createMartinezPathBooleanKernel,
-  explainOffsetPath,
-  explainSimplifyPath,
-  getPathBooleanExplanationOperationString,
-  getPathBooleanExplanationReasonString,
-  parsePathBooleanExplanationOperation,
-  parsePathBooleanExplanationReason,
-} from './contract.ts';
+import { createMartinezPathBooleanKernel, explainOffsetPath, explainSimplifyPath } from './contract.ts';
 
 describe('explainOffsetPath', () => {
   it('distinguishes empty invalid collapsed and viable results', () => {
@@ -52,43 +44,5 @@ describe('explainSimplifyPath', () => {
     appendPathClose(triangle);
     const viable = explainSimplifyPath(kernel, triangle, undefined);
     expect(viable === undefined).toBe(true);
-  });
-});
-
-describe('getPathBooleanExplanationOperationString', () => {
-  it('returns the exact ts strings', () => {
-    expect(getPathBooleanExplanationOperationString('offset')).toEqual('offset');
-    expect(getPathBooleanExplanationOperationString('simplify')).toEqual('simplify');
-  });
-});
-
-describe('getPathBooleanExplanationReasonString', () => {
-  it('returns the exact ts strings', () => {
-    expect(getPathBooleanExplanationReasonString('collapsed-or-degenerate')).toEqual('collapsed-or-degenerate');
-    expect(getPathBooleanExplanationReasonString('empty-input')).toEqual('empty-input');
-    expect(getPathBooleanExplanationReasonString('non-finite-delta')).toEqual('non-finite-delta');
-  });
-});
-
-describe('parsePathBooleanExplanationOperation', () => {
-  it('parses the exact ts strings', () => {
-    expect(parsePathBooleanExplanationOperation('offset')).toEqual('offset');
-    expect(parsePathBooleanExplanationOperation('simplify')).toEqual('simplify');
-  });
-  it('rejects other text and wrong casing', () => {
-    expect(parsePathBooleanExplanationOperation('OFFSET')).toEqual(undefined);
-    expect(parsePathBooleanExplanationOperation('')).toEqual(undefined);
-  });
-});
-
-describe('parsePathBooleanExplanationReason', () => {
-  it('parses the exact ts strings', () => {
-    expect(parsePathBooleanExplanationReason('collapsed-or-degenerate')).toEqual('collapsed-or-degenerate');
-    expect(parsePathBooleanExplanationReason('empty-input')).toEqual('empty-input');
-    expect(parsePathBooleanExplanationReason('non-finite-delta')).toEqual('non-finite-delta');
-  });
-  it('rejects other text and wrong casing', () => {
-    expect(parsePathBooleanExplanationReason('COLLAPSED-OR-DEGENERATE')).toEqual(undefined);
-    expect(parsePathBooleanExplanationReason('')).toEqual(undefined);
   });
 });

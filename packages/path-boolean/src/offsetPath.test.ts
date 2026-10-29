@@ -12,15 +12,7 @@ import {
 import type { Path } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  createMartinezPathBooleanKernel,
-  getPathOffsetEndString,
-  getPathOffsetJoinString,
-  offsetPath,
-  parsePathOffsetEnd,
-  parsePathOffsetJoin,
-  simplifyPath,
-} from './contract.ts';
+import { createMartinezPathBooleanKernel, offsetPath, simplifyPath } from './contract.ts';
 import type { PathBooleanOptions, PathOffsetOptions } from './contract.ts';
 
 const UNIT_SQUARE: Float64Array = new Float64Array([0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0]);
@@ -100,23 +92,6 @@ function _pathVertexCount(path: Readonly<Path>): number {
 function ringCount(path: Readonly<Path>): number {
   return flattenedPath(path, 0.25).length;
 }
-
-describe('getPathOffsetEndString', () => {
-  it('returns the exact ts strings', () => {
-    expect(getPathOffsetEndString('butt')).toEqual('butt');
-    expect(getPathOffsetEndString('round')).toEqual('round');
-    expect(getPathOffsetEndString('square')).toEqual('square');
-  });
-});
-
-describe('getPathOffsetJoinString', () => {
-  it('returns the exact ts strings', () => {
-    expect(getPathOffsetJoinString('bevel')).toEqual('bevel');
-    expect(getPathOffsetJoinString('miter')).toEqual('miter');
-    expect(getPathOffsetJoinString('round')).toEqual('round');
-    expect(getPathOffsetJoinString('square')).toEqual('square');
-  });
-});
 
 describe('offsetPath', () => {
   it('writes into an existing output using a distinct source snapshot', () => {
@@ -368,30 +343,5 @@ describe('offsetPath', () => {
     expect(ringCount(large)).toEqual(ringCount(mid));
     expect(Math.abs(pathArea(small) / 1e-6 - pathArea(mid)) < 0.1).toBe(true);
     expect(Math.abs(pathArea(large) / 1e12 - pathArea(mid)) < 0.1).toBe(true);
-  });
-});
-
-describe('parsePathOffsetEnd', () => {
-  it('parses the exact ts strings', () => {
-    expect(parsePathOffsetEnd('butt')).toEqual('butt');
-    expect(parsePathOffsetEnd('round')).toEqual('round');
-    expect(parsePathOffsetEnd('square')).toEqual('square');
-  });
-  it('rejects other text and wrong casing', () => {
-    expect(parsePathOffsetEnd('BUTT')).toEqual(undefined);
-    expect(parsePathOffsetEnd('')).toEqual(undefined);
-  });
-});
-
-describe('parsePathOffsetJoin', () => {
-  it('parses the exact ts strings', () => {
-    expect(parsePathOffsetJoin('bevel')).toEqual('bevel');
-    expect(parsePathOffsetJoin('miter')).toEqual('miter');
-    expect(parsePathOffsetJoin('round')).toEqual('round');
-    expect(parsePathOffsetJoin('square')).toEqual('square');
-  });
-  it('rejects other text and wrong casing', () => {
-    expect(parsePathOffsetJoin('BEVEL')).toEqual(undefined);
-    expect(parsePathOffsetJoin('')).toEqual(undefined);
   });
 });

@@ -6,6 +6,10 @@ pub use super::boolean_paths::*;
 pub use super::explain_path_boolean::*;
 pub use super::martinez_kernel::*;
 pub use super::offset_path::*;
+pub use super::path_boolean::*;
+// The TypeScript-only `PathBooleanKernel` alias; the generator derives the contract lane from this re-export.
+#[allow(unused_imports)]
+pub use super::path_boolean_compat::*;
 pub use super::resolve_path_regions::*;
 pub use super::simplify_path::*;
 pub use super::union_all_paths::*;

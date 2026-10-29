@@ -37,10 +37,11 @@ export type {
   PathBooleanExplanationOperation,
   PathBooleanExplanationReason,
   PathBooleanFillRule,
-  PathBooleanKernelRaw,
   PathBooleanOperation,
   PathBooleanOptions,
   PathOffsetEnd,
   PathOffsetJoin,
   PathOffsetOptions,
 } from './contract.ts';
+
+export type { PathBooleanKernel } from './pathBooleanCompat.ts';

@@ -1,8 +1,7 @@
-//! flight-compiler: string-union PathOffsetEnd PathOffsetJoin
-
 use flight_path::{Path, flatten_path};
 
 use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel};
+use crate::path_boolean::{PathOffsetEnd, PathOffsetJoin, PathOffsetOptions};
 use crate::resolve_path_regions::resolve_path_regions;
 
 #[cfg(test)]
@@ -68,34 +67,6 @@ const POINT_EPS_RELATIVE: f64 = 1e-9;
 const PARALLEL_EPS: f64 = 1e-12;
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const TWO_PI: f64 = std::f64::consts::PI * 2.0;
-
-/// Join style for the convex side of offset path corners.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PathOffsetJoin {
-    Bevel,
-    Miter,
-    Round,
-    Square,
-}
-
-/// End cap style for open path terminals.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PathOffsetEnd {
-    Butt,
-    Round,
-    Square,
-}
-
-// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
-/// Options controlling the offset path operation.
-#[derive(Debug, Clone)]
-pub struct PathOffsetOptions {
-    pub join: Option<PathOffsetJoin>,
-    pub end: Option<PathOffsetEnd>,
-    pub miter_limit: Option<f64>,
-    pub tolerance: Option<f64>,
-    pub arc_tolerance: Option<f64>,
-}
 
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn build_offset_ring(
@@ -367,25 +338,6 @@ fn get_open_contour_loop(vertices: &[f64]) -> Vec<f64> {
     return result;
 }
 
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
-pub fn get_path_offset_end_string(value: PathOffsetEnd) -> &'static str {
-    return match value {
-        PathOffsetEnd::Butt => "butt",
-        PathOffsetEnd::Round => "round",
-        PathOffsetEnd::Square => "square",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
-pub fn get_path_offset_join_string(value: PathOffsetJoin) -> &'static str {
-    return match value {
-        PathOffsetJoin::Bevel => "bevel",
-        PathOffsetJoin::Miter => "miter",
-        PathOffsetJoin::Round => "round",
-        PathOffsetJoin::Square => "square",
-    };
-}
-
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn get_ring_orientation_sign(vertices: &[f64]) -> i32 {
     let sign = get_ring_signed_area(vertices);
@@ -534,27 +486,6 @@ pub fn offset_path(
     );
 }
 
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
-pub fn parse_path_offset_end(value: &str) -> Option<PathOffsetEnd> {
-    return match value {
-        "butt" => Some(PathOffsetEnd::Butt),
-        "round" => Some(PathOffsetEnd::Round),
-        "square" => Some(PathOffsetEnd::Square),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
-pub fn parse_path_offset_join(value: &str) -> Option<PathOffsetJoin> {
-    return match value {
-        "bevel" => Some(PathOffsetJoin::Bevel),
-        "miter" => Some(PathOffsetJoin::Miter),
-        "round" => Some(PathOffsetJoin::Round),
-        "square" => Some(PathOffsetJoin::Square),
-        _ => None,
-    };
-}
-
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn push_offset_arc(
     ring: &mut Vec<f64>,
@@ -590,18 +521,6 @@ fn reverse_vertex_loop(vertices: &[f64]) -> Vec<f64> {
         out[2 * k + 1] = vertices[2 * source + 1];
     }
     return out;
-}
-
-impl Default for PathOffsetOptions {
-    fn default() -> Self {
-        return PathOffsetOptions {
-            join: None,
-            end: None,
-            miter_limit: None,
-            tolerance: None,
-            arc_tolerance: None,
-        };
-    }
 }
 
 impl PathBooleanKernel {

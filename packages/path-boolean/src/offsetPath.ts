@@ -5,28 +5,8 @@ import { flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 
 import type { PathBooleanKernelRaw } from './martinezKernel.ts';
+import type { PathOffsetEnd, PathOffsetJoin, PathOffsetOptions } from './pathBoolean.ts';
 import { resolvePathRegions } from './resolvePathRegions.ts';
-
-/**
- * Join style for the convex side of offset path corners.
- */
-export type PathOffsetJoin = 'bevel' | 'miter' | 'round' | 'square';
-
-/**
- * End cap style for open path terminals.
- */
-export type PathOffsetEnd = 'butt' | 'round' | 'square';
-
-/**
- * Options controlling the offset path operation.
- */
-export interface PathOffsetOptions {
-  join?: PathOffsetJoin;
-  end?: PathOffsetEnd;
-  miterLimit?: number;
-  tolerance?: number;
-  arcTolerance?: number;
-}
 
 const DEFAULT_ARC_TOLERANCE: number = 0.25;
 
@@ -288,36 +268,6 @@ function getOpenContourLoop(vertices: Readonly<number[]>): number[] {
   return result;
 }
 
-export function getPathOffsetEndString(value: PathOffsetEnd): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'butt':
-        return 'butt';
-      case 'round':
-        return 'round';
-      case 'square':
-        return 'square';
-    }
-  })();
-}
-
-export function getPathOffsetJoinString(value: PathOffsetJoin): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'bevel':
-        return 'bevel';
-      case 'miter':
-        return 'miter';
-      case 'round':
-        return 'round';
-      case 'square':
-        return 'square';
-    }
-  })();
-}
-
 function getRingOrientationSign(vertices: Readonly<number[]>): number {
   const sign = getRingSignedArea(vertices);
   if (sign > 0.0) {
@@ -428,40 +378,6 @@ export function offsetPath(
     }
   }
   resolvePathRegions(out, pathBooleanKernel, rawRings, 'positive');
-}
-
-export function parsePathOffsetEnd(value: string): PathOffsetEnd | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'butt':
-        return 'butt';
-      case 'round':
-        return 'round';
-      case 'square':
-        return 'square';
-      default:
-        return undefined;
-    }
-  })();
-}
-
-export function parsePathOffsetJoin(value: string): PathOffsetJoin | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'bevel':
-        return 'bevel';
-      case 'miter':
-        return 'miter';
-      case 'round':
-        return 'round';
-      case 'square':
-        return 'square';
-      default:
-        return undefined;
-    }
-  })();
 }
 
 function pushOffsetArc(

@@ -8,6 +8,8 @@ mod flight_path_boolean_fuzz_invariants_test;
 mod flight_path_boolean_martinez_kernel_test;
 #[path = "offset_path_test.rs"]
 mod flight_path_boolean_offset_path_test;
+#[path = "path_boolean_test.rs"]
+mod flight_path_boolean_path_boolean_test;
 #[path = "resolve_path_regions_test.rs"]
 mod flight_path_boolean_resolve_path_regions_test;
 #[path = "simplify_path_test.rs"]

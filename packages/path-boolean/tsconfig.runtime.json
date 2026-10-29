@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../path/tsconfig.runtime.json" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/contract.path-boolean-types.ts",
+    "src/martinezKernel.ts",
+    "src/pathBoolean.ts",
+    "src/pathBooleanCompat.ts"
+  ]
+}

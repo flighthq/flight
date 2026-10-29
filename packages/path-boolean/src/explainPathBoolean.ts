@@ -4,30 +4,10 @@
 import { createPath, flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 
-import type { PathBooleanOptions } from './booleanPaths.ts';
 import type { PathBooleanKernelRaw } from './martinezKernel.ts';
-import type { PathOffsetOptions } from './offsetPath.ts';
 import { offsetPath } from './offsetPath.ts';
+import type { PathBooleanExplanation, PathBooleanOptions, PathOffsetOptions } from './pathBoolean.ts';
 import { simplifyPath } from './simplifyPath.ts';
-
-/**
- * The kind of boolean operation that was attempted.
- */
-export type PathBooleanExplanationOperation = 'offset' | 'simplify';
-
-/**
- * The reason the operation produced a degenerate or empty result.
- */
-export type PathBooleanExplanationReason = 'collapsed-or-degenerate' | 'empty-input' | 'non-finite-delta';
-
-/**
- * Explains why a boolean path operation (offset or simplify) produced a
- * degenerate or empty result. `undefined` means the operation succeeded normally.
- */
-export interface PathBooleanExplanation {
-  operation: PathBooleanExplanationOperation;
-  reason: PathBooleanExplanationReason;
-}
 
 const DEFAULT_FLATTEN_TOLERANCE: number = 0.25;
 
@@ -79,60 +59,4 @@ export function explainSimplifyPath(
     return { operation: 'simplify', reason: 'collapsed-or-degenerate' };
   }
   return undefined;
-}
-
-export function getPathBooleanExplanationOperationString(value: PathBooleanExplanationOperation): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'offset':
-        return 'offset';
-      case 'simplify':
-        return 'simplify';
-    }
-  })();
-}
-
-export function getPathBooleanExplanationReasonString(value: PathBooleanExplanationReason): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'collapsed-or-degenerate':
-        return 'collapsed-or-degenerate';
-      case 'empty-input':
-        return 'empty-input';
-      case 'non-finite-delta':
-        return 'non-finite-delta';
-    }
-  })();
-}
-
-export function parsePathBooleanExplanationOperation(value: string): PathBooleanExplanationOperation | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'offset':
-        return 'offset';
-      case 'simplify':
-        return 'simplify';
-      default:
-        return undefined;
-    }
-  })();
-}
-
-export function parsePathBooleanExplanationReason(value: string): PathBooleanExplanationReason | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'collapsed-or-degenerate':
-        return 'collapsed-or-degenerate';
-      case 'empty-input':
-        return 'empty-input';
-      case 'non-finite-delta':
-        return 'non-finite-delta';
-      default:
-        return undefined;
-    }
-  })();
 }

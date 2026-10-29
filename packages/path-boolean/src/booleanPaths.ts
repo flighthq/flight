@@ -5,17 +5,8 @@ import { flattenPath } from '@flighthq/path/contract';
 import type { Path, PathWinding } from '@flighthq/path/contract';
 
 import type { PathBooleanFillRule, PathBooleanKernelRaw, PathBooleanOperation } from './martinezKernel.ts';
+import type { PathBooleanOptions } from './pathBoolean.ts';
 import { writePathBooleanContours } from './writePathBooleanContours.ts';
-
-/**
- * Options controlling the boolean path operations (TS `PathBooleanOptions`). `fillRule` is a
- * `PathWinding`, exactly TS (`fillRule?: PathWinding`): only even-odd and non-zero are public
- * options. The positive/negative rules of `PathBooleanFillRule` stay kernel/offset conventions.
- */
-export interface PathBooleanOptions {
-  fillRule?: PathWinding;
-  tolerance?: number;
-}
 
 const DEFAULT_FLATTEN_TOLERANCE: number = 0.25;
 
