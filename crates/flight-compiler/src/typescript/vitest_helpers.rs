@@ -63,7 +63,6 @@ pub(super) fn inferred_vitest_option_initializer_type(
         _ => None,
     };
 }
-
 pub(super) fn inferred_vitest_struct_literal_name(
     expression: &Expr,
     entities: &HashSet<String>,

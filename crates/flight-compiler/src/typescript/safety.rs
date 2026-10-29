@@ -35,7 +35,6 @@ fn normalize_source_path(path: &str) -> String {
     }
     return segments.join("/");
 }
-
 // Whether `op` is binary arithmetic (`+ - * / %`), which Rust dispatches through `Add` and its kin.
 fn is_eager_arithmetic(op: &BinOp) -> bool {
     return matches!(
@@ -2467,4 +2466,3 @@ pub(super) fn reject_unsupported_array_like_uses(
     }
     return Ok(());
 }
-
