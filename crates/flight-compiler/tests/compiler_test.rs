@@ -2957,6 +2957,75 @@ mod required {
     }
 
     #[test]
+    fn lowers_option_presence_checks_by_the_owning_source_mode() {
+        let nullable_production = r#"
+//! flight-compiler: nullable-options
+
+pub struct NullableSample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_nullable_sample() -> NullableSample {
+    return NullableSample { previous: None };
+}
+"#;
+        let optional_production = r#"
+pub struct OptionalSample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_optional_sample() -> OptionalSample {
+    return OptionalSample { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod option_presence {
+    use super::*;
+
+    #[test]
+    fn follows_each_fields_source_mode() {
+        let nullable = create_nullable_sample();
+        assert!(nullable.previous.is_none());
+        nullable.previous = Some(1);
+        assert!(nullable.previous.is_some());
+
+        let optional = create_optional_sample();
+        assert!(optional.previous.is_none());
+        optional.previous = Some(1);
+        assert!(optional.previous.is_some());
+    }
+}
+"#;
+
+        let output = compile_vitest_with_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[nullable_production, optional_production],
+        )
+        .unwrap();
+
+        assert!(output.contains("expect(nullable.previous === null).toBe(true);"));
+        assert!(output.contains("expect(nullable.previous !== null).toBe(true);"));
+        assert!(output.contains("expect(optional.previous === undefined).toBe(true);"));
+        assert!(output.contains("expect(optional.previous !== undefined).toBe(true);"));
+    }
+
+    #[test]
+    fn lowers_real_velocity_nullable_field_checks_to_null() {
+        let production = include_str!("../../flight-velocity/src/velocity_sample.rs");
+        let tests = include_str!("../../flight-velocity/tests/velocity_sample_test.rs");
+
+        let output =
+            compile_vitest_with_alias_sources(tests, "@flighthq/velocity/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("expect(sample.previousWorldTransform === null).toBe(true);"));
+        assert!(!output.contains("sample.previousWorldTransform === undefined"));
+    }
+
+    #[test]
     fn contextualizes_declared_struct_literal_bindings() {
         let source = r#"
 use std::sync::Arc;

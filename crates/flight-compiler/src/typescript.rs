@@ -27,6 +27,7 @@ const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
+const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
 // Locals and parameters known to hold a Rust integer or string, the operand types `.cmp()` lowers
 // to a JavaScript relational comparison.
@@ -43,6 +44,7 @@ const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
 const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
+const VITEST_STRUCT_RETURN_MARKER: &str = "@vitest-struct-return:";
 const VITEST_STRUCT_VEC_CALLBACK_MARKER: &str = "@vitest-struct-vec-callback:";
 const VITEST_STRUCT_TYPE_MARKER: &str = "@vitest-struct-type:";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
@@ -696,6 +698,11 @@ fn generation_context_with_types(
                 .map(|structure| structure.ident.to_string())
         })
         .collect::<HashSet<_>>();
+    let struct_types = programs
+        .iter()
+        .flat_map(|program| &program.structs)
+        .map(|structure| structure.ident.to_string())
+        .collect::<HashSet<_>>();
     let record_vec_fields = programs
         .iter()
         .flat_map(|program| &program.structs)
@@ -725,6 +732,20 @@ fn generation_context_with_types(
                 }),
         );
         insert_string_union_context(&mut context, program.string_unions.keys());
+        if program.nullable_options {
+            for structure in &program.structs {
+                for field in &structure.fields {
+                    if option_inner_type(&field.ty).is_some()
+                        && let Some(field_name) = &field.ident
+                    {
+                        context.insert(format!(
+                            "{NULLABLE_OPTION_FIELD_MARKER}{}:{field_name}",
+                            structure.ident
+                        ));
+                    }
+                }
+            }
+        }
         for structure in &program.structs {
             let entity = structure.ident.to_string();
             if !entity_types.contains(&entity) {
@@ -764,6 +785,14 @@ fn generation_context_with_types(
         }
         for function in &program.functions {
             let function_name = function.sig.ident.to_string();
+            if let ReturnType::Type(_, rust_type) = &function.sig.output
+                && let Some(structure) = named_type(rust_type)
+                && struct_types.contains(&structure)
+            {
+                context.insert(format!(
+                    "{VITEST_STRUCT_RETURN_MARKER}{function_name}:{structure}"
+                ));
+            }
             if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if rust_type_is_string(rust_type))
             {
                 context.insert(format!("{STRING_RETURN_MARKER}{function_name}"));
@@ -2291,8 +2320,25 @@ fn inferred_vitest_struct_literal_name(
         {
             inferred_vitest_struct_literal_name(&call.args[0], entities)
         }
+        Expr::Call(call) => {
+            let Expr::Path(path) = call.func.as_ref() else {
+                return None;
+            };
+            let function = path.path.segments.last()?.ident.to_string();
+            let prefix = format!("{VITEST_STRUCT_RETURN_MARKER}{function}:");
+            entities
+                .iter()
+                .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string))
+        }
         Expr::Group(group) => inferred_vitest_struct_literal_name(&group.expr, entities),
         Expr::Paren(paren) => inferred_vitest_struct_literal_name(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let local = path.path.segments.first()?.ident.to_string();
+            let prefix = format!("{VITEST_STRUCT_LOCAL_MARKER}{local}:");
+            entities
+                .iter()
+                .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string))
+        }
         Expr::Reference(reference) => {
             inferred_vitest_struct_literal_name(&reference.expr, entities)
         }
@@ -4060,19 +4106,11 @@ fn emit_method_call(
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
         "is_none" if arguments.is_empty() => Ok(format!(
             "{receiver} === {}",
-            if entities.contains(NULLABLE_OPTIONS_MARKER) {
-                "null"
-            } else {
-                "undefined"
-            }
+            option_absent_value(&call.receiver, entities)
         )),
         "is_some" if arguments.is_empty() => Ok(format!(
             "{receiver} !== {}",
-            if entities.contains(NULLABLE_OPTIONS_MARKER) {
-                "null"
-            } else {
-                "undefined"
-            }
+            option_absent_value(&call.receiver, entities)
         )),
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
         "into" if arguments.is_empty() => Ok(receiver),
@@ -4268,12 +4306,28 @@ fn expression_is_reusable(expression: &Expr) -> bool {
 
 fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
     if entities.contains(NULLABLE_OPTIONS_MARKER)
+        || expression_is_nullable_option_field(expression, entities)
         || referenced_path_identifier(expression)
             .is_some_and(|name| entities.contains(&format!("@nullable:{name}")))
     {
         return "null";
     }
     return "undefined";
+}
+
+fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<String>) -> bool {
+    let Expr::Field(field) = expression else {
+        return false;
+    };
+    let syn::Member::Named(field_name) = &field.member else {
+        return false;
+    };
+    let Some(structure) = inferred_vitest_struct_literal_name(&field.base, entities) else {
+        return false;
+    };
+    return entities.contains(&format!(
+        "{NULLABLE_OPTION_FIELD_MARKER}{structure}:{field_name}"
+    ));
 }
 
 fn emit_receiver_preserving_optional_call(
