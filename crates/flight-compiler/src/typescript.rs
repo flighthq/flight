@@ -498,6 +498,23 @@ fn leading_mutable_entity_parameter(
     return Some((name.ident.to_string(), entity));
 }
 
+// Whether the function is an entity initializer whose leading mutable parameter needs a writable
+// construction view. The source-local entity and readonly facts are both required so an ordinary
+// mutable parameter retains its existing public type when any part of the proof is absent.
+fn initializes_readonly_entity(
+    function: &ItemFn,
+    entity_type_names: &HashSet<String>,
+    readonly_structs: &HashSet<String>,
+) -> bool {
+    if !function.sig.ident.to_string().starts_with("initialize_") {
+        return false;
+    }
+    let Some((_, entity)) = leading_mutable_entity_parameter(function, entity_type_names) else {
+        return false;
+    };
+    return readonly_structs.contains(&entity);
+}
+
 fn nullable_type(inner: String) -> String {
     if inner.contains("=>") {
         return format!("({inner}) | null");
@@ -5616,6 +5633,7 @@ fn emit_function(
     entities: &HashSet<String>,
     aliases: &PreferredAliases,
     nullable_static_names: &HashSet<String>,
+    entity_construction_parameter: bool,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &function.attrs, 0);
     let export = if is_public(&function.vis) {
@@ -5653,6 +5671,7 @@ fn emit_function(
                     && !nullable_options,
                 argument_is_nullable_guard(function, argument)
                     || (nullable_options && argument_is_option(argument)),
+                entity_construction_parameter && index == 0,
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -8008,7 +8027,14 @@ pub(crate) fn emit_parameter(
     argument: &FnArg,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    return emit_parameter_with_aliases(argument, entities, &PreferredAliases::new(), false, false);
+    return emit_parameter_with_aliases(
+        argument,
+        entities,
+        &PreferredAliases::new(),
+        false,
+        false,
+        false,
+    );
 }
 
 fn emit_parameter_with_aliases(
@@ -8017,6 +8043,7 @@ fn emit_parameter_with_aliases(
     aliases: &PreferredAliases,
     optional: bool,
     nullable: bool,
+    entity_construction: bool,
 ) -> Result<String, CompileError> {
     let FnArg::Typed(argument) = argument else {
         return Err(compile_error(
@@ -8029,6 +8056,12 @@ fn emit_parameter_with_aliases(
         ));
     };
     let name = snake_to_lower_camel(&pattern.ident.to_string());
+    if entity_construction {
+        return Ok(format!(
+            "{name}: EntityConstruction<{}>",
+            emit_preferred_type(&argument.ty, entities, aliases)?
+        ));
+    }
     if optional {
         let Some(inner) = option_inner_type(&argument.ty) else {
             return Err(compile_error(
@@ -8752,6 +8785,9 @@ pub(crate) fn emit_program(
         .functions
         .iter()
         .any(|function| expression_contains_path(&function.block, "allocate_entity"));
+    let uses_entity_construction = program.functions.iter().any(|function| {
+        initializes_readonly_entity(function, &program.entities, &program.readonly_structs)
+    });
     let aliases = preferred_aliases(program, alias_programs)?;
     let external_identity_aliases = external_identity_aliases(external_alias_programs)?;
     let used_identity_aliases = used_identity_aliases(program, &external_identity_aliases);
@@ -8830,6 +8866,16 @@ pub(crate) fn emit_program(
             )
             .or_default()
             .insert("EntityRaw".to_string());
+    }
+    if uses_entity_construction {
+        type_imports
+            .entry(
+                entity_module
+                    .expect("entity module was required")
+                    .to_string(),
+            )
+            .or_default()
+            .insert("EntityConstruction".to_string());
     }
     for name in used_identity_aliases {
         let alias = external_identity_aliases
@@ -8921,12 +8967,15 @@ pub(crate) fn emit_program(
         out.push('\n');
     }
     for (index, function) in program.functions.iter().enumerate() {
+        let entity_construction_parameter =
+            initializes_readonly_entity(function, &program.entities, &program.readonly_structs);
         emit_function(
             &mut out,
             function,
             &source_context,
             &aliases,
             &nullable_static_names,
+            entity_construction_parameter,
         )?;
         if index + 1 < program.functions.len() {
             out.push('\n');

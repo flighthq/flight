@@ -1469,6 +1469,136 @@ pub fn required(value: Result<i32, i32>) -> i32 {
     }
 
     #[test]
+    fn emits_readonly_entity_initializers_with_a_writable_construction_view() {
+        let source = r#"
+//! flight-compiler: readonly-fields Requirement RequirementSet
+//! flight-compiler: string-union RequirementFacet
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+pub enum RequirementFacet {
+    SceneNodeKind,
+}
+
+pub struct Requirement {
+    pub facet: RequirementFacet,
+    pub key: String,
+}
+
+pub struct RequirementSet {
+    pub covers: Vec<RequirementFacet>,
+    pub requirements: Vec<Requirement>,
+    runtime: EntityRuntimeSlot,
+}
+
+pub fn create_requirement_set(
+    covers: Vec<RequirementFacet>,
+    requirements: Vec<Requirement>,
+) -> RequirementSet {
+    let mut out: RequirementSet = allocate_entity();
+    initialize_requirement_set(&mut out, covers, requirements);
+    return out;
+}
+
+pub fn initialize_requirement_set(
+    out: &mut RequirementSet,
+    covers: Vec<RequirementFacet>,
+    requirements: Vec<Requirement>,
+) {
+    out.covers = covers;
+    out.requirements = requirements;
+}
+
+flight_entity::impl_entity!(RequirementSet);
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert_eq!(
+            output,
+            r#"import { allocateEntity } from "@flighthq/entity/contract";
+import type { EntityConstruction, EntityRaw } from "@flighthq/entity/contract";
+
+export type RequirementFacet = "sceneNodeKind";
+
+export interface Requirement {
+  readonly facet: RequirementFacet;
+  readonly key: string;
+}
+
+export interface RequirementSetRaw extends EntityRaw {
+  readonly covers: RequirementFacet[];
+  readonly requirements: Requirement[];
+}
+
+export function createRequirementSet(covers: RequirementFacet[], requirements: Requirement[]): RequirementSetRaw {
+  let out: RequirementSetRaw = Object.assign(allocateEntity<RequirementSetRaw>(), { covers: [], requirements: [] });
+  initializeRequirementSet(out, covers, requirements);
+  return out;
+}
+
+export function initializeRequirementSet(out: EntityConstruction<RequirementSetRaw>, covers: RequirementFacet[], requirements: Requirement[]): void {
+  out.covers = covers;
+  out.requirements = requirements;
+}
+"#
+        );
+    }
+
+    #[test]
+    fn retains_parameter_types_without_the_complete_readonly_entity_initializer_proof() {
+        let source = r#"
+//! flight-compiler: readonly-fields ReadonlyEntity ReadonlyRecord
+
+pub struct ReadonlyEntity {
+    runtime: EntityRuntimeSlot,
+    pub value: u32,
+}
+
+pub struct MutableEntity {
+    runtime: EntityRuntimeSlot,
+    pub value: u32,
+}
+
+pub struct ReadonlyRecord {
+    pub value: u32,
+}
+
+pub fn initialize_nonleading(flag: bool, out: &mut ReadonlyEntity) {}
+
+pub fn initialize_shared(out: &ReadonlyEntity) {}
+
+pub fn initialize_record(out: &mut ReadonlyRecord) {}
+
+pub fn update_readonly_entity(out: &mut ReadonlyEntity) {}
+
+pub fn initialize_mutable_entity(out: &mut MutableEntity) {}
+
+flight_entity::impl_entity!(ReadonlyEntity);
+flight_entity::impl_entity!(MutableEntity);
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains(
+            "export function initializeNonleading(flag: boolean, out: ReadonlyEntityRaw): void"
+        ));
+        assert!(
+            output.contains(
+                "export function initializeShared(out: Readonly<ReadonlyEntityRaw>): void"
+            )
+        );
+        assert!(output.contains("export function initializeRecord(out: ReadonlyRecord): void"));
+        assert!(
+            output.contains("export function updateReadonlyEntity(out: ReadonlyEntityRaw): void")
+        );
+        assert!(
+            output.contains("export function initializeMutableEntity(out: MutableEntityRaw): void")
+        );
+        assert!(!output.contains("EntityConstruction"));
+    }
+
+    #[test]
     fn emits_private_fields_on_module_private_plain_data_structs() {
         let source = r#"
 struct DecoderState {
