@@ -45,6 +45,21 @@ pub fn advance_input_key_repeat_timer(timer: &Ref<InputKeyRepeatTimer>, now_ms: 
     }
 }
 
+// Arms the cycle under the timer's lock; the caller invokes the callback after the lock is released.
+// flight-lint: allow(f64) D1: the injected clock is a millisecond duration
+fn begin_input_key_repeat_cycle(
+    timer: &Ref<InputKeyRepeatTimer>,
+    callback: InputRepeatCallback,
+    now_ms: f64,
+) {
+    let mut locked = timer.write().unwrap();
+    let cycle = get_input_key_repeat_timer_cycle(&mut locked);
+    cycle.callback = Some(callback);
+    cycle.next_fire_ms = now_ms + cycle.delay_ms;
+    cycle.repeating = false;
+    cycle.started = true;
+}
+
 // The designated runtime state of `timer`, reached through a typed entity reference.
 fn get_input_key_repeat_timer_cycle(
     timer: &mut InputKeyRepeatTimer,
@@ -61,14 +76,7 @@ pub fn start_input_key_repeat_timer(
     callback: InputRepeatCallback,
     now_ms: f64,
 ) {
-    {
-        let mut locked = timer.write().unwrap();
-        let cycle = get_input_key_repeat_timer_cycle(&mut locked);
-        cycle.callback = Some(callback.clone());
-        cycle.next_fire_ms = now_ms + cycle.delay_ms;
-        cycle.repeating = false;
-        cycle.started = true;
-    }
+    begin_input_key_repeat_cycle(timer, callback.clone(), now_ms);
     callback();
 }
 

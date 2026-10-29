@@ -128,11 +128,8 @@ pub fn connect_input_state_to_input_manager(
     let on_pointer_cancel: SignalSlot<InputPointerData> = Arc::new({
         let state = state.clone();
         move |data: &InputPointerData| {
-            state
-                .write()
-                .unwrap()
-                .pointer_buttons_down
-                .remove(&data.pointer_id);
+            let locked: &mut InputState = &mut state.write().unwrap();
+            locked.pointer_buttons_down.remove(&data.pointer_id);
         }
     });
     let on_gamepad_button_down: SignalSlot<InputGamepadButtonData> = Arc::new({
@@ -227,20 +224,17 @@ pub fn end_input_state_frame(state: &Ref<InputState>) {
 
 /// Returns the current gamepad axis value, or 0 when not recorded (TS `getInputGamepadAxis`).
 pub fn get_input_gamepad_axis(state: &Ref<InputState>, gamepad: i32, axis: i32) -> f32 {
-    return state
-        .read()
-        .unwrap()
+    let locked: &InputState = &state.read().unwrap();
+    return *locked
         .axis_values
         .get(&(gamepad * MAX_GAMEPAD_AXES + axis))
-        .copied()
-        .unwrap_or(0.0);
+        .unwrap_or(&0.0);
 }
 
 /// Returns whether the gamepad button is held (TS `isInputGamepadButtonDown`).
 pub fn is_input_gamepad_button_down(state: &Ref<InputState>, gamepad: i32, button: i32) -> bool {
-    return state
-        .read()
-        .unwrap()
+    let locked: &InputState = &state.read().unwrap();
+    return locked
         .gamepad_buttons_down
         .contains(&(gamepad * MAX_GAMEPAD_BUTTONS + button));
 }
@@ -271,9 +265,8 @@ pub fn was_input_gamepad_button_pressed(
     gamepad: i32,
     button: i32,
 ) -> bool {
-    return state
-        .read()
-        .unwrap()
+    let locked: &InputState = &state.read().unwrap();
+    return locked
         .just_pressed_gamepad_buttons
         .contains(&(gamepad * MAX_GAMEPAD_BUTTONS + button));
 }
@@ -285,9 +278,8 @@ pub fn was_input_gamepad_button_released(
     gamepad: i32,
     button: i32,
 ) -> bool {
-    return state
-        .read()
-        .unwrap()
+    let locked: &InputState = &state.read().unwrap();
+    return locked
         .just_released_gamepad_buttons
         .contains(&(gamepad * MAX_GAMEPAD_BUTTONS + button));
 }
