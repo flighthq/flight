@@ -1,8 +1,14 @@
-import { createTextMetrics, setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
+import { createTextLayoutResult, createTextMetrics, setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 
 import { createRichText, setRichTextString } from './richText.ts';
 import { createTextLabel, setTextLabelString } from './textLabel.ts';
-import { ensureTextLayout, getTextLayout, getTextLayoutMetrics, setTextLabelGuard } from './textLabelLayout.ts';
+import {
+  ensureTextLayout,
+  getTextLayout,
+  getTextLayoutMetrics,
+  setTextLabelGuard,
+  setTextLayoutResult,
+} from './textLabelLayout.ts';
 
 // A fake fixed-advance measure (7px per char) — exercises the ensure path without a renderer.
 const measure = (text: string) => text.length * 7;
@@ -129,5 +135,25 @@ describe('setTextLabelGuard', () => {
     ensureTextLayout(label);
 
     expect(called).toBe(false);
+  });
+});
+
+describe('setTextLayoutResult', () => {
+  it('installs a precomputed layout that stays current without a measure provider', () => {
+    const richText = createRichText();
+    setRichTextString(richText, 'hello');
+    const layout = createTextLayoutResult();
+    setTextLayoutResult(richText, layout);
+    expect(getTextLayout(richText)).toBe(layout);
+  });
+
+  it('is recomputed once the content changes after it was installed', () => {
+    setTextLayoutMeasureProvider(measure);
+    const richText = createRichText();
+    setRichTextString(richText, 'hello');
+    setTextLayoutResult(richText, createTextLayoutResult());
+    expect(getTextLayout(richText)!.textWidth).toBe(0);
+    setRichTextString(richText, 'changed');
+    expect(getTextLayout(richText)!.textWidth).toBeGreaterThan(0);
   });
 });
