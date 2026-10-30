@@ -241,7 +241,7 @@ pub fn get_wgpu_classic_module_source_for_key(
     color_adjustment_feature: Option<&WgpuColorAdjustmentMaterialFeature>,
 ) -> String {
     let skinned = skinned.unwrap_or(false);
-    let mut source =
+    let mut source: String =
         assemble_wgpu_classic_module_source(key, skinned, skinning, &get_classic_wgsl_body());
     let color_matrix = key.has_color_matrix == Some(true);
     if (key.has_color_adjustment == Some(true) || color_matrix)
@@ -252,7 +252,9 @@ pub fn get_wgpu_classic_module_source_for_key(
         } else {
             "applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)"
         };
-        source = splice_wgpu_color_adjustment_prelude(&source, feature, Some(color_matrix)).replacen(
+        let spliced: String =
+            splice_wgpu_color_adjustment_prelude(&source, feature, Some(color_matrix));
+        source = spliced.replacen(
             "  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(diffuse.a, in.objectAlpha, draw.params.y)));",
             &format!(
                 "  var flightColor = vec4f(radiance, diffuse.a);\n  flightColor = {};\n  flightColor.a = flightMeshCoverage(flightColor.a, in.objectAlpha, draw.params.y);\n  return flightPremultipliedOutput(flightColor);",
@@ -272,7 +274,8 @@ pub fn get_wgpu_classic_shared_sampler_module_source_for_key(
     skinned: Option<bool>,
     skinning: Option<&WgpuSkinningAdapter>,
 ) -> String {
-    let body = get_classic_wgsl_body()
+    let classic_body: String = get_classic_wgsl_body();
+    let body = classic_body
         .replacen(
             "@group(2) @binding(1) var diffuseSampler : sampler;\n@group(2) @binding(2) var specularSampler : sampler;\n@group(2) @binding(3) var normalSampler : sampler;\n@group(2) @binding(4) var alphaSampler : sampler;\n@group(2) @binding(5) var diffuseTexture : texture_2d<f32>;\n@group(2) @binding(6) var specularTexture : texture_2d<f32>;\n@group(2) @binding(7) var normalTexture : texture_2d<f32>;\n@group(2) @binding(8) var alphaTexture : texture_2d<f32>;",
             "@group(2) @binding(1) var materialSampler : sampler;\n@group(2) @binding(2) var diffuseTexture : texture_2d<f32>;\n@group(2) @binding(3) var specularTexture : texture_2d<f32>;\n@group(2) @binding(4) var normalTexture : texture_2d<f32>;\n@group(2) @binding(5) var alphaTexture : texture_2d<f32>;",

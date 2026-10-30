@@ -67,9 +67,11 @@ pub fn prepare_wgpu_scene3d_forward_lights(
     let mut prepared = get_wgpu_scene3d_runtime(state)
         .forward_lights
         .take()
-        .unwrap_or_default();
+        .unwrap_or(WgpuScene3DForwardLightPrepared::default());
     prepared.block_count = 0;
-    out.mesh_light_blocks.clear();
+    let out_mesh_light_blocks: &mut Vec<flight_entity::Ref<Scene3DLightBlock>> =
+        &mut out.mesh_light_blocks;
+    out_mesh_light_blocks.clear();
     out.mesh_count = scene_render_list.mesh_count;
     let mut bounds = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     let mut sphere = create_bounding_sphere(0.0, 0.0, 0.0, 0.0);

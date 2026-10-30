@@ -179,7 +179,7 @@ fn assemble_wgpu_shaded_module_source(
         has_specular_map: flags.has_specular_map,
         lighting_model: WgpuClassicLightingModel::BlinnPhong,
     };
-    let mut source =
+    let mut source: String =
         get_wgpu_classic_shared_sampler_module_source_for_key(&define_key, Some(skinned), skinning);
 
     source = source.replacen(
@@ -281,7 +281,9 @@ fn assemble_wgpu_shaded_module_source(
         } else {
             "applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)"
         };
-        source = splice_wgpu_color_adjustment_prelude(&source, feature, Some(color_matrix)).replacen(
+        let spliced: String =
+            splice_wgpu_color_adjustment_prelude(&source, feature, Some(color_matrix));
+        source = spliced.replacen(
             output,
             &format!(
                 "  var flightColor = vec4f(radiance, diffuse.a);\n  flightColor = {};\n  flightColor.a = flightMeshCoverage(flightColor.a, in.objectAlpha, draw.params.y);\n  return flightPremultipliedOutput(flightColor);",

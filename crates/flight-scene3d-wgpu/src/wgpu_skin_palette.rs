@@ -122,8 +122,12 @@ fn begin_wgpu_skin_arena_frame(state: &mut WgpuRenderState) {
     scene.skin_normal_palette_arena_cursor = 0;
     scene.skin_palette_arena_bases = Some(HashMap::new());
     scene.skin_normal_palette_arena_bases = Some(HashMap::new());
-    scene.skin_palette_arena_replays.clear();
-    scene.skin_normal_palette_arena_replays.clear();
+    let scene_skin_palette_arena_replays: &mut Vec<(Ref<Box<Float32Array>>, u32)> =
+        &mut scene.skin_palette_arena_replays;
+    scene_skin_palette_arena_replays.clear();
+    let scene_skin_normal_palette_arena_replays: &mut Vec<(Ref<Box<Float32Array>>, u32)> =
+        &mut scene.skin_normal_palette_arena_replays;
+    scene_skin_normal_palette_arena_replays.clear();
 }
 
 // The bind-pose positions and normals spliced into a copy of the interleaved vertices.
