@@ -28,7 +28,7 @@ pub fn create_audio_resource_from_samples(
     let length = channels
         .first()
         .map(|channel| channel.read().unwrap().len())
-        .unwrap_or_default();
+        .unwrap_or(0);
     if number_of_channels == 0 || length == 0 {
         return create_audio_resource(None);
     }
@@ -145,7 +145,7 @@ pub async fn load_audio_resource_from_bytes(
     else {
         let suffix = mime_type
             .map(|mime_type| format!(": {mime_type}"))
-            .unwrap_or_default();
+            .unwrap_or(String::new());
         std::panic::panic_any(FlightError {
             kind: FlightErrorKind::Error,
             message: format!("Failed to decode audio{suffix}"),

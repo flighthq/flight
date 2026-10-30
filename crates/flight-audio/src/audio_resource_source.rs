@@ -106,7 +106,7 @@ pub(crate) fn select_audio_resource_source<'a>(
             .type_
             .clone()
             .or_else(|| infer_audio_mime_type(&source.url))
-            .unwrap_or_default();
+            .unwrap_or(String::new());
         let supplied = !type_.is_empty() && has_decoder(&get_audio_mime_type_essence(&type_));
         if supplied || can_play_audio_type(host_audio_codec, &type_) {
             return Some(source);
