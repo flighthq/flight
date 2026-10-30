@@ -14,6 +14,7 @@ use crate::types::{
 #[cfg(test)]
 mod source_tests {
     use super::*;
+    use crate::types::TextSegmentRange;
     use std::cell::Cell;
 
     // flight-lint: allow(hidden-state) Test-only thread-local spy observes calls to the actual bundled backend without changing production capabilities or sharing counters between parallel tests
@@ -38,6 +39,30 @@ mod source_tests {
             7
         );
         SEGMENT_CALLS.with(|calls| assert_eq!(calls.get(), 0));
+    }
+
+    #[test]
+    fn routes_a_copied_bundled_capability_through_the_bundled_iterator() {
+        let copied = *WEB_TEXT_SEGMENTER_BACKEND;
+        let wrapped = HostTextSegmenterCapability {
+            segment: WEB_TEXT_SEGMENTER_BACKEND.segment,
+        };
+        for backend in [copied, wrapped] {
+            SEGMENT_CALLS.with(|calls| calls.set(0));
+            assert_eq!(
+                crate::get_next_sentence_boundary(&backend, "First. Second!", 0, None),
+                7
+            );
+            assert_eq!(
+                crate::get_previous_sentence_boundary(&backend, "First. Second!", 10, None),
+                7
+            );
+            assert_eq!(
+                crate::get_word_range_at(&backend, "foo bar", 1, None),
+                Some(TextSegmentRange { start: 0, end: 3 })
+            );
+            SEGMENT_CALLS.with(|calls| assert_eq!(calls.get(), 0));
+        }
     }
 }
 

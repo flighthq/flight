@@ -52,6 +52,14 @@ describe('getNextSentenceBoundary', () => {
     expect(segment).not.toHaveBeenCalled();
     segment.mockRestore();
   });
+
+  it('routes a copied bundled capability through the bundled iterator', () => {
+    const segment = vi.spyOn(webTextSegmenterBackend, 'segment');
+    const copied = { ...webTextSegmenterBackend };
+    expect(getNextSentenceBoundary(copied, 'First. Second!', 0)).toBe(7);
+    expect(segment).not.toHaveBeenCalled();
+    segment.mockRestore();
+  });
 });
 
 describe('getNextWordBoundary', () => {
@@ -88,6 +96,14 @@ describe('getPreviousSentenceBoundary', () => {
   it('clamps at zero', () => {
     expect(getPreviousSentenceBoundary(backend, 'First.', -1)).toBe(0);
   });
+
+  it('routes a copied bundled capability through the bundled iterator', () => {
+    const segment = vi.spyOn(webTextSegmenterBackend, 'segment');
+    const copied = { ...webTextSegmenterBackend };
+    expect(getPreviousSentenceBoundary(copied, 'First. Second!', 10)).toBe(7);
+    expect(segment).not.toHaveBeenCalled();
+    segment.mockRestore();
+  });
 });
 
 describe('getPreviousWordBoundary', () => {
@@ -121,6 +137,14 @@ describe('getWordRangeAt', () => {
 
   it('returns null for empty text', () => {
     expect(getWordRangeAt(backend, '', 0)).toBeNull();
+  });
+
+  it('routes a copied bundled capability through the bundled iterator', () => {
+    const segment = vi.spyOn(webTextSegmenterBackend, 'segment');
+    const copied = { ...webTextSegmenterBackend };
+    expect(getWordRangeAt(copied, 'foo bar', 1)).toEqual({ start: 0, end: 3 });
+    expect(segment).not.toHaveBeenCalled();
+    segment.mockRestore();
   });
 
   it('threads the locale to the active backend', () => {

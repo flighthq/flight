@@ -67,7 +67,7 @@ export function getWordRangeAt(
   // At the trailing boundary there is no segment starting at text.length; resolve against the last
   // character so a double-click at the end still selects the final word.
   const lookup = clamped === text.length ? text.length - 1 : clamped;
-  if (textSegmenter === webTextSegmenterBackend) {
+  if (isWebBackend(textSegmenter)) {
     const segmenter = getBoundarySegmenter(locale, 'word');
     if (segmenter === null) return null;
     for (const segment of segmenter.segment(text)) {
@@ -113,7 +113,7 @@ function getNextTextSegmentBoundary(
 ): number {
   const from = clampIndex(index, text.length);
   if (from >= text.length) return text.length;
-  if (textSegmenter !== webTextSegmenterBackend) {
+  if (!isWebBackend(textSegmenter)) {
     return nextSegmentBoundary(textSegmenter.segment(text, granularity, locale), from, text.length);
   }
   const segmenter = getBoundarySegmenter(locale, granularity);
@@ -133,7 +133,7 @@ function getPreviousTextSegmentBoundary(
 ): number {
   const from = clampIndex(index, text.length);
   if (from <= 0) return 0;
-  if (textSegmenter !== webTextSegmenterBackend)
+  if (!isWebBackend(textSegmenter))
     return previousSegmentBoundary(textSegmenter.segment(text, granularity, locale), from);
   const segmenter = getBoundarySegmenter(locale, granularity);
   if (segmenter === null) return 0;
@@ -149,6 +149,11 @@ function clampIndex(index: number, length: number): number {
   if (index < 0) return 0;
   if (index > length) return length;
   return index;
+}
+
+// Backend identity is segment-function identity, as in Rust HostTextSegmenterCapability equality.
+function isWebBackend(textSegmenter: Readonly<HostTextSegmenterCapability>): boolean {
+  return textSegmenter.segment === webTextSegmenterBackend.segment;
 }
 
 function nextSegmentBoundary(segments: readonly TextSegment[], index: number, length: number): number {
