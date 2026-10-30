@@ -1,6 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary) D17 pooled render textures retain native callback and Result ownership contracts
 
 use std::any::Any;
+use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::rc::Rc;
 
@@ -38,8 +39,10 @@ pub fn initialize_gl_render_texture_pool(out: &mut GlRenderTexturePool) {
     out.context_id = None;
     out.destroyed = false;
     out.effect_targets = create_gl_texture_render_target_pool();
-    out.free.clear();
-    out.leased.clear();
+    let out_free: &mut Vec<flight_render::RenderTexture> = &mut out.free;
+    out_free.clear();
+    let out_leased: &mut HashSet<u64> = &mut out.leased;
+    out_leased.clear();
 }
 
 pub fn acquire_gl_render_texture(
