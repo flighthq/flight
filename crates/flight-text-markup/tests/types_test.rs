@@ -2,6 +2,16 @@ mod create_text_markup_guard_state {
     use super::*;
 
     #[test]
+    fn allocates_a_distinct_entity_per_guard_slot() {
+        let mut first = create_text_markup_guard_state();
+        let mut second = create_text_markup_guard_state();
+        assert_ne!(
+            flight_entity::get_entity_uid(&mut first),
+            flight_entity::get_entity_uid(&mut second)
+        );
+    }
+
+    #[test]
     fn creates_an_empty_guard_slot() {
         let state = create_text_markup_guard_state();
         assert!(state.guard.is_none());

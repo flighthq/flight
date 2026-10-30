@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use flight_entity::{Record, Ref};
+use flight_entity::{EntityRuntimeSlot, Record, Ref, allocate_entity};
 use flight_textformat::TextFormat;
 
 /// A tag handler: maps this tag's parsed attributes and enclosing format to its contribution. Handlers
@@ -82,11 +82,15 @@ pub struct TextMarkupExplanation {
 /// The parser's optional diagnostic seam (TS `TextMarkupGuard`).
 pub type TextMarkupGuard = Arc<dyn Fn(&TextMarkupIssue) + Send + Sync>;
 
-/// Caller-owned guard slot (D5; source module-global `_guard`).
+/// Caller-owned guard slot (D5; source module-global `_guard`), allocated as an entity so the
+/// slot has a stable identity a guard install and its later reads share.
 #[derive(Default)]
 pub struct TextMarkupGuardState {
     pub guard: Option<TextMarkupGuard>,
+    runtime: EntityRuntimeSlot,
 }
+
+flight_entity::impl_entity!(TextMarkupGuardState);
 
 // flight-lint: allow(f64) D1: guard log timestamps are millisecond JS numbers
 /// Caller-supplied time source for guard logging (D5; the SDK never samples a clock).
@@ -95,7 +99,7 @@ pub type TextMarkupClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 /// Creates the caller-owned guard slot (Rust initializer for the D5 explicit state).
 // flight-lint: allow(conform-extra) D5 Rust constructor for the caller-owned guard state
 pub fn create_text_markup_guard_state() -> TextMarkupGuardState {
-    return TextMarkupGuardState { guard: None };
+    return allocate_entity();
 }
 
 // flight-lint: allow(conform-extra) D9 string table for the closed TextMarkupIssueKind union

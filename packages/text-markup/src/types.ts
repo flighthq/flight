@@ -1,3 +1,5 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityRaw } from '@flighthq/entity/contract';
 import type {
   MarkupClassResolver as SharedMarkupClassResolver,
   MarkupColorResolver as SharedMarkupColorResolver,
@@ -39,12 +41,15 @@ export interface MarkupResolverSeams {
 
 export type TextMarkupClock = () => number;
 
-export interface TextMarkupGuardState {
+// Allocated as an entity so the caller-owned slot has a stable identity that a guard install and its
+// later reads share.
+export interface TextMarkupGuardState extends EntityRaw {
   guard?: TextMarkupGuard;
 }
 
 export function createTextMarkupGuardState(): TextMarkupGuardState {
-  return {};
+  const out = allocateEntity<TextMarkupGuardState>();
+  return finishEntity(out);
 }
 
 export function getTextMarkupIssueKindString(value: TextMarkupIssueKind): string {
