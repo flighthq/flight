@@ -57,20 +57,13 @@ export function clipRegionContainsClipRegion(a: ClipRegion, b: ClipRegion): bool
   return enclosesRectangle(aRect, bRect);
 }
 
-function callClipRegionContoursGuard(
-  explanation: ClipRegionContoursExplanation | null,
-  guard: ClipRegionContoursGuard | null,
-  contours: Readonly<number[][]>,
-): void {
-  const issue = explanation;
-  if (issue === null) {
-    return;
-  }
-  const installedGuard = guard;
-  if (installedGuard === null) {
-    return;
-  }
-  installedGuard(issue, contours);
+function createEmptyClipRegion(): ClipRegion {
+  let out: ClipRegion = allocateEntity<ClipRegion>();
+  out.rect = createRectangle(0.0, 0.0, 0.0, 0.0);
+  out.contours = null;
+  out.winding = 'nonZero';
+  out.version = 0;
+  return out;
 }
 
 export function clipRegionContainsPoint(clip: ClipRegion, x: number, y: number): boolean {
@@ -99,25 +92,20 @@ export function clipRegionIntersectsClipRegion(a: ClipRegion, b: ClipRegion): bo
   return intersectsRectangle(aRect, bRect);
 }
 
-function createEmptyClipRegion(): ClipRegion {
-  let out: ClipRegion = allocateEntity<ClipRegion>();
-  out.rect = createRectangle(0.0, 0.0, 0.0, 0.0);
-  out.contours = null;
-  out.winding = 'nonZero';
-  out.version = 0;
-  return out;
-}
-
-function resetClipRegion(region: ClipRegion): void {
-  region = region!;
-  const mutableRegion: EntityConstruction<ClipRegion> = region;
-  mutableRegion.rect.x = 0.0;
-  mutableRegion.rect.y = 0.0;
-  mutableRegion.rect.width = 0.0;
-  mutableRegion.rect.height = 0.0;
-  mutableRegion.contours = null;
-  mutableRegion.winding = 'nonZero';
-  mutableRegion.version = 0;
+function callClipRegionContoursGuard(
+  explanation: ClipRegionContoursExplanation | null,
+  guard: ClipRegionContoursGuard | null,
+  contours: Readonly<number[][]>,
+): void {
+  const issue = explanation;
+  if (issue === null) {
+    return;
+  }
+  const installedGuard = guard;
+  if (installedGuard === null) {
+    return;
+  }
+  installedGuard(issue, contours);
 }
 
 export function clipRegionIntersectsRectangle(clip: ClipRegion, rectangle: Readonly<RectangleLike>): boolean {
@@ -178,32 +166,18 @@ export function equalsClipRegion(a: ClipRegion, b: ClipRegion): boolean {
   );
 }
 
-export function explainClipRegion(clip: ClipRegion): ClipRegionExplanation {
-  const conservative = clip!.contours !== null;
-  const released = isClipRegionReleased(clip);
-  return { conservative: conservative, status: released ? 'released' : 'active' };
-}
-
-export function explainClipRegionContours(contours: Readonly<number[][]>): ClipRegionContoursExplanation | null {
-  for (let contourIndex = 0; contourIndex < contours.length; contourIndex += 1) {
-    const contour = contours[contourIndex];
-    const coordinateCount = contour.length;
-    if ((coordinateCount & 1) !== 0) {
-      return { contourIndex: contourIndex, coordinateCount: coordinateCount, reason: 'odd-coordinate-count' };
-    }
-    if (coordinateCount < 6) {
-      return { contourIndex: contourIndex, coordinateCount: coordinateCount, reason: 'too-few-points' };
-    }
-  }
-  return null;
-}
-
 function cloneClipRegionContours(contours: Readonly<number[][] | null>): number[][] | null {
   if (contours !== null) {
     const sourceContours = contours;
     return copyClipRegionContours(sourceContours);
   }
   return null;
+}
+
+export function explainClipRegion(clip: ClipRegion): ClipRegionExplanation {
+  const conservative = clip!.contours !== null;
+  const released = isClipRegionReleased(clip);
+  return { conservative: conservative, status: released ? 'released' : 'active' };
 }
 
 function copyClipRegionContours(contours: Readonly<number[][]>): number[][] {
@@ -243,6 +217,20 @@ function equalClipRegionContours(a: Readonly<number[][] | null>, b: Readonly<num
 
 function equalClipRegionRectangles(a: Readonly<Rectangle>, b: Readonly<Rectangle>): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
+export function explainClipRegionContours(contours: Readonly<number[][]>): ClipRegionContoursExplanation | null {
+  for (let contourIndex = 0; contourIndex < contours.length; contourIndex += 1) {
+    const contour = contours[contourIndex];
+    const coordinateCount = contour.length;
+    if ((coordinateCount & 1) !== 0) {
+      return { contourIndex: contourIndex, coordinateCount: coordinateCount, reason: 'odd-coordinate-count' };
+    }
+    if (coordinateCount < 6) {
+      return { contourIndex: contourIndex, coordinateCount: coordinateCount, reason: 'too-few-points' };
+    }
+  }
+  return null;
 }
 
 export function getClipRegionBounds(out: RectangleLike, clip: ClipRegion): void {
@@ -340,6 +328,29 @@ export function isClipRegionRectangular(clip: ClipRegion): boolean {
   return clip!.contours === null;
 }
 
+export function normalizeClipRegion(out: ClipRegion, clip: ClipRegion): void {
+  guardClipRegionUse(out);
+  guardClipRegionUse(clip);
+  const [rect, contours, winding] = snapshotClipRegion(clip);
+  const normalized = normalizedClipRegionBounds(contours);
+  out = out!;
+  const mutableOut: EntityConstruction<ClipRegion> = out;
+  if (normalized !== null) {
+    const bounds = normalized;
+    mutableOut.rect.x = bounds[0];
+    mutableOut.rect.y = bounds[1];
+    mutableOut.rect.width = bounds[2] - bounds[0];
+    mutableOut.rect.height = bounds[3] - bounds[1];
+    mutableOut.contours = null;
+    mutableOut.winding = 'nonZero';
+  } else {
+    copyRectangle(mutableOut.rect, rect);
+    mutableOut.contours = contours;
+    mutableOut.winding = winding;
+  }
+  mutableOut.version = (mutableOut.version + 1) >>> 0;
+}
+
 function normalizedClipRegionBounds(contours: Readonly<number[][] | null>): number[] | null {
   const sourceContours = contours;
   if (sourceContours === null) {
@@ -380,29 +391,6 @@ function normalizedClipRegionBounds(contours: Readonly<number[][] | null>): numb
     return [minX, minY, maxX, maxY];
   }
   return null;
-}
-
-export function normalizeClipRegion(out: ClipRegion, clip: ClipRegion): void {
-  guardClipRegionUse(out);
-  guardClipRegionUse(clip);
-  const [rect, contours, winding] = snapshotClipRegion(clip);
-  const normalized = normalizedClipRegionBounds(contours);
-  out = out!;
-  const mutableOut: EntityConstruction<ClipRegion> = out;
-  if (normalized !== null) {
-    const bounds = normalized;
-    mutableOut.rect.x = bounds[0];
-    mutableOut.rect.y = bounds[1];
-    mutableOut.rect.width = bounds[2] - bounds[0];
-    mutableOut.rect.height = bounds[3] - bounds[1];
-    mutableOut.contours = null;
-    mutableOut.winding = 'nonZero';
-  } else {
-    copyRectangle(mutableOut.rect, rect);
-    mutableOut.contours = contours;
-    mutableOut.winding = winding;
-  }
-  mutableOut.version = (mutableOut.version + 1) >>> 0;
 }
 
 function pointInContours(contours: Readonly<number[][]>, winding: PathWinding, px: number, py: number): boolean {
@@ -446,6 +434,18 @@ export function releaseClipRegion(clip: ClipRegion): void {
     installedGuard(clip);
   }
   releaseClipRegionToPool(clip);
+}
+
+function resetClipRegion(region: ClipRegion): void {
+  region = region!;
+  const mutableRegion: EntityConstruction<ClipRegion> = region;
+  mutableRegion.rect.x = 0.0;
+  mutableRegion.rect.y = 0.0;
+  mutableRegion.rect.width = 0.0;
+  mutableRegion.rect.height = 0.0;
+  mutableRegion.contours = null;
+  mutableRegion.winding = 'nonZero';
+  mutableRegion.version = 0;
 }
 
 function selectContours(

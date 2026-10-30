@@ -27,16 +27,6 @@ export function acquireClipRegionFromPool(): ClipRegion | null {
   return runtime.pool[runtime.poolSize];
 }
 
-function getClipRegionRuntime(state: ClipRegionStateRaw): ClipRegionRuntime {
-  return clipRegionStateStateStore.get(state)!;
-}
-
-function getBoundClipRegionRuntime(): ClipRegionRuntime {
-  const binding: ClipRegionStateRaw = getClipRegionStateBinding();
-  const state = binding!;
-  return getClipRegionRuntime(state);
-}
-
 export function createClipRegionState(): ClipRegionStateRaw {
   let out: ClipRegionStateRaw = allocateEntity<ClipRegionStateRaw>();
   clipRegionStateStateStore.set(out, {
@@ -49,10 +39,29 @@ export function createClipRegionState(): ClipRegionStateRaw {
   return out;
 }
 
+function clipRegionRuntimeContains(runtime: Readonly<ClipRegionRuntime>, clip: ClipRegion): boolean {
+  for (let index = 0; index < runtime.poolSize; index += 1) {
+    if (runtime.pool[index] === clip) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getBoundClipRegionRuntime(): ClipRegionRuntime {
+  const binding: ClipRegionStateRaw = getClipRegionStateBinding();
+  const state = binding!;
+  return getClipRegionRuntime(state);
+}
+
 export function getClipRegionContoursGuard(): ClipRegionContoursGuard | null {
   let runtime = getBoundClipRegionRuntime();
   runtime = runtime!;
   return runtime.contoursGuard;
+}
+
+function getClipRegionRuntime(state: ClipRegionStateRaw): ClipRegionRuntime {
+  return clipRegionStateStateStore.get(state)!;
 }
 
 export function isClipRegionReleased(clip: ClipRegion): boolean {
@@ -101,15 +110,6 @@ export function snapshotClipRegionUseGuard(clip: ClipRegion): readonly [ClipRegi
   let runtime = getBoundClipRegionRuntime();
   runtime = runtime!;
   return [runtime.useGuard, clipRegionRuntimeContains(runtime, clip)];
-}
-
-function clipRegionRuntimeContains(runtime: Readonly<ClipRegionRuntime>, clip: ClipRegion): boolean {
-  for (let index = 0; index < runtime.poolSize; index += 1) {
-    if (runtime.pool[index] === clip) {
-      return true;
-    }
-  }
-  return false;
 }
 
 // Crate-private `ClipRegionState.state`, keyed by entity identity and reachable only from this package's modules.
