@@ -9575,7 +9575,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
     }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
-        Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => {
+        Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) | Pat::Slice(_) => {
             (emit_pattern(&local.pat)?, None, false)
         }
         Pat::Type(typed) => {
@@ -10529,8 +10529,85 @@ fn emit_let_else_local(
             return Ok(());
         }
     }
+    if let Pat::Tuple(tuple) = &local.pat {
+        let Expr::Tuple(init_tuple) = initializer.expr.as_ref() else {
+            return Err(compile_error(
+                "portable `let-else` tuple pattern requires a tuple initializer",
+            ));
+        };
+        if tuple.elems.len() != init_tuple.elems.len() {
+            return Err(compile_error(
+                "portable `let-else` tuple pattern length must match initializer",
+            ));
+        }
+        let mut temps = Vec::new();
+        let mut names = Vec::new();
+        let mut conditions = Vec::new();
+        for (i, elem) in tuple.elems.iter().enumerate() {
+            let value = emit_expression(&init_tuple.elems[i], entities)?;
+            match elem {
+                Pat::TupleStruct(ts)
+                    if (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
+                        && ts.elems.len() == 1 =>
+                {
+                    let Pat::Ident(ident) = &ts.elems[0] else {
+                        return Err(compile_error(
+                            "portable `let-else` tuple option element must bind an identifier",
+                        ));
+                    };
+                    let name = snake_to_lower_camel(&ident.ident.to_string());
+                    let temp = format!("$t{i}");
+                    let absent = option_absent_value(&init_tuple.elems[i], entities);
+                    write_indent(out, indent);
+                    writeln!(out, "const {temp} = {value};")
+                        .expect("writing to a String cannot fail");
+                    conditions.push(format!("{temp} === {absent}"));
+                    temps.push(Some(temp));
+                    names.push(name);
+                }
+                Pat::Wild(_) => {
+                    temps.push(None);
+                    names.push("_".to_string());
+                }
+                Pat::Ident(ident) => {
+                    let name = snake_to_lower_camel(&ident.ident.to_string());
+                    write_indent(out, indent);
+                    writeln!(out, "const {name} = {value};")
+                        .expect("writing to a String cannot fail");
+                    temps.push(None);
+                    names.push(name);
+                }
+                _ => {
+                    return Err(compile_error(
+                        "portable `let-else` tuple element must be `Some(name)`, an identifier, or `_`",
+                    ));
+                }
+            }
+        }
+        if conditions.is_empty() {
+            return Err(compile_error(
+                "portable `let-else` tuple needs at least one testable pattern",
+            ));
+        }
+        write_indent(out, indent);
+        writeln!(out, "if ({}) {{", conditions.join(" || "))
+            .expect("writing to a String cannot fail");
+        emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+        write_indent(out, indent);
+        out.push_str("}\n");
+        for (i, name) in names.iter().enumerate() {
+            if name == "_" {
+                continue;
+            }
+            if let Some(temp) = &temps[i] {
+                write_indent(out, indent);
+                writeln!(out, "const {name} = {temp};").expect("writing to a String cannot fail");
+            }
+        }
+        return Ok(());
+    }
     return Err(compile_error(
-        "portable `let-else` supports only a `Some(name)` pattern",
+        "portable `let-else` supports only a `Some(name)` or tuple pattern",
     ));
 }
 
@@ -14059,6 +14136,20 @@ pub(crate) fn emit_pattern(pattern: &Pat) -> Result<String, CompileError> {
         Pat::Reference(reference) => emit_pattern(&reference.pat),
         Pat::Tuple(tuple) => {
             let elements = tuple
+                .elems
+                .iter()
+                .map(|element| {
+                    if matches!(element, Pat::Wild(_)) {
+                        Ok(String::new())
+                    } else {
+                        emit_pattern(element)
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(format!("[{}]", elements.join(", ")))
+        }
+        Pat::Slice(slice) => {
+            let elements = slice
                 .elems
                 .iter()
                 .map(|element| {
