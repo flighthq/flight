@@ -49,7 +49,7 @@ fn collect_debug_channels(
     subsystems: &[DebugSubsystemHooks],
     extra: Option<&[String]>,
 ) -> Vec<String> {
-    let mut channels = Vec::new();
+    let mut channels: Vec<String> = Vec::new();
     for hooks in subsystems {
         if let Some(own) = &hooks.channels {
             channels.extend(own.iter().cloned());
@@ -75,7 +75,11 @@ pub fn disable_debug(state: &DebugStateRef, log_state: &LogStateRef) {
             disable_guards();
         }
     }
-    state.write().unwrap().enabled_subsystems.clear();
+    {
+        let mut data = state.write().unwrap();
+        let enabled_subsystems: &mut Vec<DebugSubsystemHooks> = &mut data.enabled_subsystems;
+        enabled_subsystems.clear();
+    }
     remove_debug_sink(state, log_state);
     restore_debug_levels(state, log_state);
     state.write().unwrap().enabled = false;
