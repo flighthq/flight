@@ -43,7 +43,9 @@ pub fn clear_flow_stack(stack: &Ref<FlowStack>) {
         let callback = maybe_on_exit.unwrap_or(Arc::new(no_flow_callback));
         callback();
     }
-    stack.write().unwrap().states.clear();
+    let mut s = stack.write().unwrap();
+    let states: &mut Vec<Ref<FlowState>> = &mut s.states;
+    states.clear();
 }
 
 /// The active top of the stack, or None when the stack is empty.
@@ -233,7 +235,8 @@ fn take_top_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
         previous.push(state.clone());
     }
     let popped = previous[top].clone();
-    current.states.clear();
+    let current_states: &mut Vec<Ref<FlowState>> = &mut current.states;
+    current_states.clear();
     for item in previous.iter() {
         if current.states.len() >= top {
             break;
