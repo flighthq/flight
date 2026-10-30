@@ -93,22 +93,6 @@ struct CubicContour {
     y: f64,
 }
 
-// Allocates the morph entity a complete preparation describes.
-pub(crate) fn allocate_path_morph(
-    preparation: PathMorphPreparation,
-    winding: PathWinding,
-) -> PathMorph {
-    let mut morph: PathMorph = allocate_entity();
-    initialize_path_morph(
-        &mut morph,
-        preparation.commands,
-        preparation.end_data,
-        preparation.start_data,
-        winding,
-    );
-    return morph;
-}
-
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn create_cubic_contour(x: f64, y: f64) -> CubicContour {
     return CubicContour {
@@ -177,6 +161,22 @@ fn align_closed_cubic_contour(start: &CubicContour, end: &mut CubicContour) {
     end.segments = rotated;
     end.x = end.segments[0].x0;
     end.y = end.segments[0].y0;
+}
+
+// Allocates the morph entity a complete preparation describes.
+pub(crate) fn allocate_path_morph(
+    preparation: PathMorphPreparation,
+    winding: PathWinding,
+) -> PathMorph {
+    let mut morph: PathMorph = allocate_entity();
+    initialize_path_morph(
+        &mut morph,
+        preparation.commands,
+        preparation.end_data,
+        preparation.start_data,
+        winding,
+    );
+    return morph;
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
