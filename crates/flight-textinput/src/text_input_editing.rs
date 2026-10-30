@@ -29,6 +29,16 @@ use crate::types::{HandleTextInputKeyboardOptions, ReplaceTextInputOptions};
 
 const DESIRED_CARET_X_UNSET: f32 = -1.0;
 
+fn create_text_selection_rectangle() -> TextSelectionRectangle {
+    return TextSelectionRectangle {
+        height: 0.0,
+        line_index: 0,
+        width: 0.0,
+        x: 0.0,
+        y: 0.0,
+    };
+}
+
 fn add_signed(value: usize, offset: isize) -> usize {
     return if offset < 0 {
         value.saturating_sub((-offset) as usize)
@@ -265,16 +275,6 @@ fn get_caret_line_index(source: &Ref<RichText>, layout: &TextLayoutResult) -> us
     let mut out = create_text_selection_rectangle();
     get_text_input_caret_rectangle(&mut out, source, layout);
     return out.line_index;
-}
-
-fn create_text_selection_rectangle() -> TextSelectionRectangle {
-    return TextSelectionRectangle {
-        height: 0.0,
-        line_index: 0,
-        width: 0.0,
-        x: 0.0,
-        y: 0.0,
-    };
 }
 
 fn get_fallback_line_height(layout: &TextLayoutResult) -> f32 {
