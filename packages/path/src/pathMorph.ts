@@ -2,15 +2,18 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import type { PathMorphRaw, PathRaw } from './path.ts';
-import { buildPathMorph } from './pathMorphGeometry.ts';
+import { allocatePathMorph, preparePathMorph } from './pathMorphGeometry.ts';
 
 /**
  * Allocates a prepared interpolation between two paths. Returns `undefined` when the paths
  * are incompatible (different winding, contour count, closedness, or orientation).
  */
 export function createPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphRaw | null {
-  const result = buildPathMorph(start, end);
-  return result.morph ?? null;
+  const preparation = preparePathMorph(start, end);
+  if (preparation.issue !== 'ok') {
+    return null;
+  }
+  return allocatePathMorph(preparation, start.winding);
 }
 
 /**

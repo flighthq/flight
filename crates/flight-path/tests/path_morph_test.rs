@@ -4,6 +4,27 @@ mod create_path_morph {
     use super::*;
 
     #[test]
+    fn allocates_a_distinct_entity_matching_the_build_result_morph() {
+        let mut start = create_path(Some(PathWinding::NonZero));
+        append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
+        let mut end = create_path(Some(PathWinding::NonZero));
+        append_path_rectangle(&mut end, 50.0, 50.0, 200.0, 200.0);
+
+        let mut first = create_path_morph(&start, &end).unwrap();
+        let mut second = create_path_morph(&start, &end).unwrap();
+        let built = build_path_morph(&start, &end).morph.unwrap();
+
+        assert_eq!(first.commands, built.commands);
+        assert_eq!(first.start_data, built.start_data);
+        assert_eq!(first.end_data, built.end_data);
+        assert_eq!(first.winding, built.winding);
+        assert_ne!(
+            flight_entity::get_entity_uid(&mut first),
+            flight_entity::get_entity_uid(&mut second)
+        );
+    }
+
+    #[test]
     fn normalizes_different_line_and_quadratic_verbs_to_cubic() {
         let mut start = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut start, 0.0, 0.0);

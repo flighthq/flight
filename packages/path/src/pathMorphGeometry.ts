@@ -14,6 +14,18 @@ export interface PathMorphBuildResult {
   morph?: PathMorphRaw;
 }
 
+/**
+ * A validated, aligned morph before allocation: the interleaved commands and per-endpoint data, or
+ * the first incompatibility with empty vectors.
+ */
+interface PathMorphPreparation {
+  commands: number[];
+  contour?: number;
+  endData: number[];
+  issue: PathMorphCreationReason;
+  startData: number[];
+}
+
 interface CubicSegment {
   controlX1: number;
   controlY1: number;
@@ -47,6 +59,12 @@ export const PathMorphIssueContourClosednessMismatch: number = 3;
 
 export const PathMorphIssueContourOrientationMismatch: number = 4;
 
+function allocatePathMorph(preparation: PathMorphPreparation, winding: PathWinding): PathMorphRaw {
+  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), { commands: [], endData: [], startData: [] });
+  initializePathMorph(morph, preparation.commands, preparation.endData, preparation.startData, winding);
+  return morph;
+}
+
 function createCubicContour(x: number, y: number): CubicContour {
   return { closed: false, currentX: x, currentY: y, segments: [], x: x, y: y };
 }
@@ -55,41 +73,11 @@ function createCubicContour(x: number, y: number): CubicContour {
  * Shared preparation used by the production constructor and its diagnostic.
  */
 export function buildPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphBuildResult {
-  if (start.winding !== end.winding) {
-    return { contour: undefined, issue: 'winding-mismatch', morph: undefined };
+  const preparation = preparePathMorph(start, end);
+  if (preparation.issue !== 'ok') {
+    return { contour: preparation.contour, issue: preparation.issue, morph: undefined };
   }
-  const startContours = decodeCubicContours(start);
-  let endContours = decodeCubicContours(end);
-  if (startContours.length !== endContours.length) {
-    return { contour: undefined, issue: 'contour-count-mismatch', morph: undefined };
-  }
-  for (let i = 0; i < startContours.length; i += 1) {
-    if (startContours[i].closed !== endContours[i].closed) {
-      return { contour: i, issue: 'contour-closedness-mismatch', morph: undefined };
-    }
-  }
-  const orientationMismatch = normalizeCubicContourOrientations(startContours, endContours, start.winding);
-  if (orientationMismatch !== undefined) {
-    const idx = orientationMismatch;
-    return { contour: idx, issue: 'contour-orientation-mismatch', morph: undefined };
-  }
-  for (let i = 0; i < startContours.length; i += 1) {
-    equalizeCubicContourSegments(startContours.slice()[i], endContours[i]);
-  }
-  let startContoursMut = startContours;
-  for (let i = 0; i < startContoursMut.length; i += 1) {
-    equalizeCubicContourSegments(startContoursMut[i], endContours[i]);
-    alignClosedCubicContour(startContoursMut[i], endContours[i]);
-  }
-  let commands: number[] = [] as never[];
-  let startData: number[] = [] as never[];
-  let endData: number[] = [] as never[];
-  for (let i = 0; i < startContoursMut.length; i += 1) {
-    appendCubicContourPair(commands, startData, endData, startContoursMut[i], endContours[i]);
-  }
-  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), { commands: [], endData: [], startData: [] });
-  initializePathMorph(morph, commands, endData, startData, start.winding);
-  return { contour: undefined, issue: 'ok', morph: morph };
+  return { contour: undefined, issue: 'ok', morph: allocatePathMorph(preparation, start.winding) };
 }
 
 function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContour): void {
@@ -420,6 +408,42 @@ function pointDistance(x0: number, y0: number, x1: number, y1: number): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function preparePathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphPreparation {
+  if (start.winding !== end.winding) {
+    return { commands: [], contour: undefined, endData: [], issue: 'winding-mismatch', startData: [] };
+  }
+  const startContours = decodeCubicContours(start);
+  let endContours = decodeCubicContours(end);
+  if (startContours.length !== endContours.length) {
+    return { commands: [], contour: undefined, endData: [], issue: 'contour-count-mismatch', startData: [] };
+  }
+  for (let i = 0; i < startContours.length; i += 1) {
+    if (startContours[i].closed !== endContours[i].closed) {
+      return { commands: [], contour: i, endData: [], issue: 'contour-closedness-mismatch', startData: [] };
+    }
+  }
+  const orientationMismatch = normalizeCubicContourOrientations(startContours, endContours, start.winding);
+  if (orientationMismatch !== undefined) {
+    const idx = orientationMismatch;
+    return { commands: [], contour: idx, endData: [], issue: 'contour-orientation-mismatch', startData: [] };
+  }
+  for (let i = 0; i < startContours.length; i += 1) {
+    equalizeCubicContourSegments(startContours.slice()[i], endContours[i]);
+  }
+  let startContoursMut = startContours;
+  for (let i = 0; i < startContoursMut.length; i += 1) {
+    equalizeCubicContourSegments(startContoursMut[i], endContours[i]);
+    alignClosedCubicContour(startContoursMut[i], endContours[i]);
+  }
+  let commands: number[] = [] as never[];
+  let startData: number[] = [] as never[];
+  let endData: number[] = [] as never[];
+  for (let i = 0; i < startContoursMut.length; i += 1) {
+    appendCubicContourPair(commands, startData, endData, startContoursMut[i], endContours[i]);
+  }
+  return { commands: commands, contour: undefined, endData: endData, issue: 'ok', startData: startData };
+}
+
 function reverseClosedCubicContour(contour: CubicContour): void {
   let reversed: CubicSegment[] = [] as never[];
   let i = contour.segments.length;
@@ -542,3 +566,5 @@ function subdivideCubicSegments(
   }
   return segments;
 }
+
+export { allocatePathMorph, preparePathMorph };

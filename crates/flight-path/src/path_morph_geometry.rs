@@ -59,6 +59,16 @@ pub struct PathMorphBuildResult {
     pub morph: Option<PathMorph>,
 }
 
+/// A validated, aligned morph before allocation: the interleaved commands and per-endpoint data, or
+/// the first incompatibility with empty vectors.
+pub(crate) struct PathMorphPreparation {
+    pub(crate) commands: Vec<u8>,
+    pub(crate) contour: Option<usize>,
+    pub(crate) end_data: Vec<f64>,
+    pub(crate) issue: PathMorphCreationReason,
+    pub(crate) start_data: Vec<f64>,
+}
+
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[derive(Clone)]
 struct CubicSegment {
@@ -81,6 +91,22 @@ struct CubicContour {
     segments: Vec<CubicSegment>,
     x: f64,
     y: f64,
+}
+
+// Allocates the morph entity a complete preparation describes.
+pub(crate) fn allocate_path_morph(
+    preparation: PathMorphPreparation,
+    winding: PathWinding,
+) -> PathMorph {
+    let mut morph: PathMorph = allocate_entity();
+    initialize_path_morph(
+        &mut morph,
+        preparation.commands,
+        preparation.end_data,
+        preparation.start_data,
+        winding,
+    );
+    return morph;
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
@@ -245,74 +271,18 @@ fn append_quadratic_as_cubic(contour: &mut CubicContour, cx: f64, cy: f64, x: f6
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Shared preparation used by the production constructor and its diagnostic.
 pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
-    if start.winding != end.winding {
+    let preparation = prepare_path_morph(start, end);
+    if preparation.issue != PathMorphCreationReason::Ok {
         return PathMorphBuildResult {
-            contour: None,
-            issue: PathMorphCreationReason::WindingMismatch,
+            contour: preparation.contour,
+            issue: preparation.issue,
             morph: None,
         };
     }
-
-    let start_contours = decode_cubic_contours(start);
-    let mut end_contours = decode_cubic_contours(end);
-    if start_contours.len() != end_contours.len() {
-        return PathMorphBuildResult {
-            contour: None,
-            issue: PathMorphCreationReason::ContourCountMismatch,
-            morph: None,
-        };
-    }
-
-    for i in 0..start_contours.len() {
-        if start_contours[i].closed != end_contours[i].closed {
-            return PathMorphBuildResult {
-                contour: Some(i),
-                issue: PathMorphCreationReason::ContourClosednessMismatch,
-                morph: None,
-            };
-        }
-    }
-
-    let orientation_mismatch =
-        normalize_cubic_contour_orientations(&start_contours, &mut end_contours, start.winding);
-    if let Some(idx) = orientation_mismatch {
-        return PathMorphBuildResult {
-            contour: Some(idx),
-            issue: PathMorphCreationReason::ContourOrientationMismatch,
-            morph: None,
-        };
-    }
-
-    for i in 0..start_contours.len() {
-        equalize_cubic_contour_segments(&mut start_contours.clone()[i], &mut end_contours[i]);
-    }
-
-    // Need mutable start_contours for equalize
-    let mut start_contours_mut = start_contours;
-    for i in 0..start_contours_mut.len() {
-        equalize_cubic_contour_segments(&mut start_contours_mut[i], &mut end_contours[i]);
-        align_closed_cubic_contour(&start_contours_mut[i], &mut end_contours[i]);
-    }
-
-    let mut commands: Vec<u8> = Vec::new();
-    let mut start_data: Vec<f64> = Vec::new();
-    let mut end_data: Vec<f64> = Vec::new();
-    for i in 0..start_contours_mut.len() {
-        append_cubic_contour_pair(
-            &mut commands,
-            &mut start_data,
-            &mut end_data,
-            &start_contours_mut[i],
-            &end_contours[i],
-        );
-    }
-
-    let mut morph: PathMorph = allocate_entity();
-    initialize_path_morph(&mut morph, commands, end_data, start_data, start.winding);
     return PathMorphBuildResult {
         contour: None,
         issue: PathMorphCreationReason::Ok,
-        morph: Some(morph),
+        morph: Some(allocate_path_morph(preparation, start.winding)),
     };
 }
 
@@ -537,6 +507,88 @@ fn point_distance(x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
     return (dx * dx + dy * dy).sqrt();
+}
+
+// Validates and aligns two paths into the morph's interleaved commands and endpoint data without
+// allocating; `issue` is `Ok` exactly when the vectors are complete.
+pub(crate) fn prepare_path_morph(start: &Path, end: &Path) -> PathMorphPreparation {
+    if start.winding != end.winding {
+        return PathMorphPreparation {
+            commands: Vec::new(),
+            contour: None,
+            end_data: Vec::new(),
+            issue: PathMorphCreationReason::WindingMismatch,
+            start_data: Vec::new(),
+        };
+    }
+
+    let start_contours = decode_cubic_contours(start);
+    let mut end_contours = decode_cubic_contours(end);
+    if start_contours.len() != end_contours.len() {
+        return PathMorphPreparation {
+            commands: Vec::new(),
+            contour: None,
+            end_data: Vec::new(),
+            issue: PathMorphCreationReason::ContourCountMismatch,
+            start_data: Vec::new(),
+        };
+    }
+
+    for i in 0..start_contours.len() {
+        if start_contours[i].closed != end_contours[i].closed {
+            return PathMorphPreparation {
+                commands: Vec::new(),
+                contour: Some(i),
+                end_data: Vec::new(),
+                issue: PathMorphCreationReason::ContourClosednessMismatch,
+                start_data: Vec::new(),
+            };
+        }
+    }
+
+    let orientation_mismatch =
+        normalize_cubic_contour_orientations(&start_contours, &mut end_contours, start.winding);
+    if let Some(idx) = orientation_mismatch {
+        return PathMorphPreparation {
+            commands: Vec::new(),
+            contour: Some(idx),
+            end_data: Vec::new(),
+            issue: PathMorphCreationReason::ContourOrientationMismatch,
+            start_data: Vec::new(),
+        };
+    }
+
+    for i in 0..start_contours.len() {
+        equalize_cubic_contour_segments(&mut start_contours.clone()[i], &mut end_contours[i]);
+    }
+
+    // Need mutable start_contours for equalize
+    let mut start_contours_mut = start_contours;
+    for i in 0..start_contours_mut.len() {
+        equalize_cubic_contour_segments(&mut start_contours_mut[i], &mut end_contours[i]);
+        align_closed_cubic_contour(&start_contours_mut[i], &mut end_contours[i]);
+    }
+
+    let mut commands: Vec<u8> = Vec::new();
+    let mut start_data: Vec<f64> = Vec::new();
+    let mut end_data: Vec<f64> = Vec::new();
+    for i in 0..start_contours_mut.len() {
+        append_cubic_contour_pair(
+            &mut commands,
+            &mut start_data,
+            &mut end_data,
+            &start_contours_mut[i],
+            &end_contours[i],
+        );
+    }
+
+    return PathMorphPreparation {
+        commands,
+        contour: None,
+        end_data,
+        issue: PathMorphCreationReason::Ok,
+        start_data,
+    };
 }
 
 fn reverse_closed_cubic_contour(contour: &mut CubicContour) {

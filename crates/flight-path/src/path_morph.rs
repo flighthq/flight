@@ -1,7 +1,7 @@
 //! flight-compiler: nullable-option create_path_morph
 
-use crate::path::{Path, PathMorph};
-use crate::path_morph_geometry::build_path_morph;
+use crate::path::{Path, PathMorph, PathMorphCreationReason};
+use crate::path_morph_geometry::{allocate_path_morph, prepare_path_morph};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -54,8 +54,11 @@ mod sugar_tests {
 /// Allocates a prepared interpolation between two paths. Returns `None` when the paths
 /// are incompatible (different winding, contour count, closedness, or orientation).
 pub fn create_path_morph(start: &Path, end: &Path) -> Option<PathMorph> {
-    let result = build_path_morph(start, end);
-    return result.morph;
+    let preparation = prepare_path_morph(start, end);
+    if preparation.issue != PathMorphCreationReason::Ok {
+        return None;
+    }
+    return Some(allocate_path_morph(preparation, start.winding));
 }
 
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured

@@ -1,6 +1,7 @@
 // Generated from crates/flight-path/tests/path_morph_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import * as flightEntity from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -12,12 +13,27 @@ import {
   appendPathMoveTo,
   appendPathQuadraticCurveTo,
   appendPathRectangle,
+  buildPathMorph,
   createPath,
   createPathMorph,
   samplePathMorph,
 } from './contract.ts';
 
 describe('createPathMorph', () => {
+  it('allocates a distinct entity matching the build result morph', () => {
+    let start = createPath('nonZero');
+    appendPathRectangle(start, 0.0, 0.0, 100.0, 100.0);
+    let end = createPath('nonZero');
+    appendPathRectangle(end, 50.0, 50.0, 200.0, 200.0);
+    let first = createPathMorph(start, end)!;
+    let second = createPathMorph(start, end)!;
+    const built = buildPathMorph(start, end).morph!;
+    expect(first.commands).toEqual(built.commands);
+    expect(first.startData).toEqual(built.startData);
+    expect(first.endData).toEqual(built.endData);
+    expect(first.winding).toEqual(built.winding);
+    expect(flightEntity.getEntityUid(first)).not.toEqual(flightEntity.getEntityUid(second));
+  });
   it('normalizes different line and quadratic verbs to cubic', () => {
     let start = createPath('nonZero');
     appendPathMoveTo(start, 0.0, 0.0);
