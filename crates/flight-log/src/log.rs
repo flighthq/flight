@@ -8,6 +8,43 @@ use std::sync::{Arc, Mutex};
 use flight_entity::{EntityRuntimeSlot, Ref, unknown_to_js_string};
 use flight_signals::{Signal, create_signal, emit_signal};
 
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    fn message_of(value: LogDataOrProvider) -> Option<String> {
+        return match value {
+            LogDataOrProvider::Data(LogData::Message(message)) => Some(message),
+            _ => None,
+        };
+    }
+
+    #[test]
+    fn from_log_data_wraps_each_variant_unchanged() {
+        let message: LogDataOrProvider = LogData::Message("ready".to_string()).into();
+        assert_eq!(message_of(message), Some("ready".to_string()));
+
+        let mut fields = HashMap::new();
+        fields.insert("count".to_string(), LogValue::Number(2.0));
+        let record: LogDataOrProvider = LogData::Record(fields).into();
+        let LogDataOrProvider::Data(LogData::Record(fields)) = record else {
+            panic!("a record must stay a record");
+        };
+        assert_eq!(fields.len(), 1);
+        assert!(matches!(fields.get("count"), Some(LogValue::Number(count)) if *count == 2.0));
+    }
+
+    #[test]
+    fn from_str_and_from_string_wrap_the_same_message_data() {
+        let borrowed: LogDataOrProvider = "hello".into();
+        let owned: LogDataOrProvider = "hello".to_string().into();
+        assert_eq!(message_of(borrowed), Some("hello".to_string()));
+        assert_eq!(message_of(owned), Some("hello".to_string()));
+        let empty: LogDataOrProvider = "".into();
+        assert_eq!(message_of(empty), Some(String::new()));
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -973,6 +1010,18 @@ pub fn log_assert(
     );
 }
 
+// The `From` conversions into `LogDataOrProvider` are Rust call-site sugar; TypeScript passes the
+// payload union directly, so these stay Rust-only.
+/// flight-compiler: rust-only
+fn log_data_or_provider_from_data(data: LogData) -> LogDataOrProvider {
+    return LogDataOrProvider::Data(data);
+}
+
+/// flight-compiler: rust-only
+fn log_data_or_provider_from_message(message: String) -> LogDataOrProvider {
+    return LogDataOrProvider::Data(LogData::Message(message));
+}
+
 /// Emits at Debug level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
 pub fn log_debug(
@@ -1470,19 +1519,19 @@ impl Default for RateLimitedLogSink {
 
 impl From<LogData> for LogDataOrProvider {
     fn from(data: LogData) -> Self {
-        return LogDataOrProvider::Data(data);
+        return log_data_or_provider_from_data(data);
     }
 }
 
 impl From<&str> for LogDataOrProvider {
     fn from(s: &str) -> Self {
-        return LogDataOrProvider::Data(LogData::Message(s.to_string()));
+        return log_data_or_provider_from_message(s.to_string());
     }
 }
 
 impl From<String> for LogDataOrProvider {
     fn from(s: String) -> Self {
-        return LogDataOrProvider::Data(LogData::Message(s));
+        return log_data_or_provider_from_message(s);
     }
 }
 
