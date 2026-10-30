@@ -15995,16 +15995,36 @@ pub(crate) fn emit_type(
                 if matches!(name.as_str(), "Ref" | "Arc" | "Box") {
                     // Transparent wrappers fall through to the name match below.
                 } else {
-                    if !matches!(segment.arguments, PathArguments::None) {
-                        return Err(compile_error(format!(
-                            "foreign Rust type `{name}` cannot use generic arguments in a portable test"
-                        )));
-                    }
-                    return Ok(format!(
-                        "{}.{}",
-                        snake_to_lower_camel(&first.ident.to_string()),
-                        name
-                    ));
+                    let module = snake_to_lower_camel(&first.ident.to_string());
+                    return match &segment.arguments {
+                        PathArguments::None => Ok(format!("{module}.{name}")),
+                        PathArguments::AngleBracketed(arguments) => {
+                            let type_args = arguments
+                                .args
+                                .iter()
+                                .filter_map(|argument| match argument {
+                                    GenericArgument::Type(rust_type) => {
+                                        Some(emit_type(rust_type, entities))
+                                    }
+                                    GenericArgument::Lifetime(_) => None,
+                                    _ => Some(Err(compile_error(format!(
+                                        "foreign Rust type `{name}` has an unsupported generic argument"
+                                    )))),
+                                })
+                                .collect::<Result<Vec<_>, _>>()?;
+                            if type_args.is_empty() {
+                                Ok(format!("{module}.{name}"))
+                            } else {
+                                Ok(format!(
+                                    "{module}.{name}<{}>",
+                                    type_args.join(", ")
+                                ))
+                            }
+                        }
+                        PathArguments::Parenthesized(_) => Err(compile_error(format!(
+                            "foreign Rust type `{name}` cannot use parenthesized arguments"
+                        ))),
+                    };
                 }
             }
             if let Some(tag) = identity_alias_tag(entities, &name) {
@@ -16172,6 +16192,7 @@ pub(crate) fn emit_type(
         Type::BareFn(function) => emit_bare_function_type(function, entities, None),
         Type::ImplTrait(impl_trait) => emit_function_trait_type(&impl_trait.bounds, entities),
         Type::Infer(_) => Ok("unknown".to_string()),
+        Type::Never(_) => Ok("never".to_string()),
         Type::TraitObject(object) => emit_function_trait_type(&object.bounds, entities),
         _ => Err(compile_error(format!(
             "unsupported Rust type `{}`",
