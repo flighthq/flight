@@ -90,11 +90,14 @@ fn compare_ray_hits(a: &Physics2DRayHit, b: &Physics2DRayHit) -> std::cmp::Order
             .partial_cmp(&b.fraction)
             .unwrap_or(std::cmp::Ordering::Equal);
     }
-    let (body_a, body_b) = (a.body.read().unwrap().index, b.body.read().unwrap().index);
+    let body_a: i32 = a.body.read().unwrap().index;
+    let body_b: i32 = b.body.read().unwrap().index;
     if body_a != body_b {
         return body_a.cmp(&body_b);
     }
-    return a.collider_index.cmp(&b.collider_index);
+    let collider_a: usize = a.collider_index;
+    let collider_b: usize = b.collider_index;
+    return collider_a.cmp(&collider_b);
 }
 
 fn is_valid_region(region: &SpatialAabb2D) -> bool {
