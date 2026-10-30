@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -74,11 +75,12 @@ execFileSync('cargo', ['build', '--quiet', '--package', 'flight-compiler'], {
   stdio: 'inherit',
 });
 
-// Stage under packages/<name>/src so the repository orderer applies the same package-source rules
-// as it does to the destination. A system-temp staging path is outside order.ts's repository walk,
-// which made its --fix pass a silent no-op and let generated imports diverge from the order gate.
-const stagingRoot = mkdtempSync(join(repositoryRoot, 'packages', '.flight-generate-'));
-const stagingSourceRoot = join(stagingRoot, 'src');
+// Stage in system temp, outside every scanned repository root, so concurrent package scanners and
+// working-tree checks never observe a transient directory. Staged sources sit at packages/<name>/src
+// relative to the staging root, and order.ts walks that root through `--root`, so the orderer applies
+// the same package-source rules as it does to the destination.
+const stagingRoot = mkdtempSync(join(tmpdir(), 'flight-generate-'));
+const stagingSourceRoot = join(stagingRoot, 'packages', options.packageName, 'src');
 const rawRoot = join(stagingRoot, 'raw');
 mkdirSync(stagingSourceRoot, { recursive: true });
 mkdirSync(rawRoot, { recursive: true });
@@ -173,18 +175,16 @@ try {
   );
   generatedFiles.push('contract.ts', 'index.ts');
 
-  execFileSync(formatterPath(), ['--write', stagingSourceRoot], {
-    cwd: repositoryRoot,
-    stdio: 'inherit',
-  });
-  execFileSync(tsxPath(), [join(repositoryRoot, 'scripts', 'order.ts'), '--fix', stagingSourceRoot], {
-    cwd: repositoryRoot,
-    stdio: 'inherit',
-  });
-  execFileSync(formatterPath(), ['--write', stagingSourceRoot], {
-    cwd: repositoryRoot,
-    stdio: 'inherit',
-  });
+  formatStagedSources();
+  execFileSync(
+    tsxPath(),
+    [join(repositoryRoot, 'scripts', 'order.ts'), '--fix', `--root=${stagingRoot}`, stagingSourceRoot],
+    {
+      cwd: repositoryRoot,
+      stdio: 'inherit',
+    },
+  );
+  formatStagedSources();
 
   finishGeneration(generatedFiles);
 } finally {
@@ -471,6 +471,15 @@ function collectContractTypeScriptSymbols(
 
   visit(path);
   return symbols;
+}
+
+// The staged tree lives outside the repository, so the formatter is pointed at the repository's
+// configuration explicitly rather than discovering it from the staged path.
+function formatStagedSources(): void {
+  execFileSync(formatterPath(), ['--write', '--config', join(repositoryRoot, '.oxfmtrc.json'), stagingSourceRoot], {
+    cwd: repositoryRoot,
+    stdio: 'inherit',
+  });
 }
 
 function formatterPath(): string {
