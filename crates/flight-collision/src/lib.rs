@@ -95,6 +95,7 @@ pub use contract::clear_collision_manifold2d;
 pub use contract::clear_collision_manifold3d;
 pub use contract::clear_collision_pair_tests3d;
 pub use contract::clear_collision_supports3d;
+pub use contract::clone_collision_collider_shape3d;
 pub use contract::collide_aabb_aabb_contact_manifold2d;
 pub use contract::collide_aabb_obb_contact_manifold2d;
 pub use contract::collide_aabb_polygon_contact_manifold2d;

@@ -41,6 +41,66 @@ fn create_floor_mesh() -> CollisionTriangleMesh3D {
     )
 }
 
+mod clone_collision_collider_shape3d {
+    use std::sync::{Arc, RwLock};
+
+    use super::*;
+
+    #[test]
+    fn copies_a_built_in_shape_by_value() {
+        let source =
+            CollisionColliderShape3D::BuiltIn(CollisionShape3D::Convex(CollisionConvex3D {
+                points: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            }));
+        let CollisionColliderShape3D::BuiltIn(copy) = clone_collision_collider_shape3d(&source)
+        else {
+            panic!("built-in payload");
+        };
+        assert_eq!(
+            copy,
+            CollisionShape3D::Convex(CollisionConvex3D {
+                points: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            })
+        );
+    }
+
+    #[test]
+    fn copies_a_heightfield_into_an_independent_entity() {
+        let source = Arc::new(RwLock::new(create_collision_heightfield3d(
+            2,
+            2,
+            vec![0.0, 1.0, 2.0, 3.0],
+            1.5,
+            2.5,
+        )));
+        let CollisionColliderShape3D::Heightfield(copy) = clone_collision_collider_shape3d(
+            &CollisionColliderShape3D::Heightfield(Arc::clone(&source)),
+        ) else {
+            panic!("heightfield payload");
+        };
+        assert!(!Arc::ptr_eq(&copy, &source));
+        assert_eq!(*copy.read().unwrap(), *source.read().unwrap());
+        copy.write().unwrap().heights[0] = 9.0;
+        assert_eq!(source.read().unwrap().heights, vec![0.0, 1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn copies_a_triangle_mesh_into_an_independent_entity() {
+        let source = Arc::new(RwLock::new(create_floor_mesh()));
+        let CollisionColliderShape3D::TriangleMesh(copy) = clone_collision_collider_shape3d(
+            &CollisionColliderShape3D::TriangleMesh(Arc::clone(&source)),
+        ) else {
+            panic!("triangle mesh payload");
+        };
+        assert!(!Arc::ptr_eq(&copy, &source));
+        assert_eq!(*copy.read().unwrap(), *source.read().unwrap());
+        copy.write().unwrap().points[0] = 99.0;
+        copy.write().unwrap().indices.push(1);
+        assert_eq!(source.read().unwrap().points[0], -5.0);
+        assert_eq!(source.read().unwrap().indices, vec![0, 2, 1, 0, 3, 2]);
+    }
+}
+
 mod collide_collision_heightfield3d {
     use super::*;
 

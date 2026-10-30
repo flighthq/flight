@@ -62,18 +62,33 @@ mod collision_collider_shape3d {
             1.0,
             1.0,
         )));
-        let triangle = CollisionColliderShape3D::TriangleMesh(Arc::clone(&mesh));
-        let height = CollisionColliderShape3D::Heightfield(Arc::clone(&heightfield));
-        let triangle_clone = triangle.clone();
-        let height_clone = height.clone();
-        let CollisionColliderShape3D::TriangleMesh(triangle_handle) = triangle_clone else {
+        // Two aggregates built over the same entities share them: the payload is the canonical handle,
+        // never a copy of its buffers. A deep copy is `clone_collision_collider_shape3d`.
+        let triangles = [
+            CollisionColliderShape3D::TriangleMesh(Arc::clone(&mesh)),
+            CollisionColliderShape3D::TriangleMesh(Arc::clone(&mesh)),
+        ];
+        let heights = [
+            CollisionColliderShape3D::Heightfield(Arc::clone(&heightfield)),
+            CollisionColliderShape3D::Heightfield(Arc::clone(&heightfield)),
+        ];
+        for triangle in &triangles {
+            let CollisionColliderShape3D::TriangleMesh(handle) = triangle else {
+                panic!("triangle payload");
+            };
+            assert!(Arc::ptr_eq(handle, &mesh));
+        }
+        for height in &heights {
+            let CollisionColliderShape3D::Heightfield(handle) = height else {
+                panic!("heightfield payload");
+            };
+            assert!(Arc::ptr_eq(handle, &heightfield));
+        }
+        mesh.write().unwrap().points[0] = 7.0;
+        let CollisionColliderShape3D::TriangleMesh(first) = &triangles[0] else {
             panic!("triangle payload");
         };
-        let CollisionColliderShape3D::Heightfield(height_handle) = height_clone else {
-            panic!("heightfield payload");
-        };
-        assert!(Arc::ptr_eq(&triangle_handle, &mesh));
-        assert!(Arc::ptr_eq(&height_handle, &heightfield));
+        assert_eq!(first.read().unwrap().points[0], 7.0);
     }
 }
 

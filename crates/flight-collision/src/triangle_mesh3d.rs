@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use crate::types::*;
 
 const BVH_LEAF_SIZE: usize = 4;
@@ -291,6 +293,25 @@ fn build_mesh_bvh(mesh: &CollisionTriangleMesh3D) -> Option<BvhNode> {
         });
     }
     return build_bvh(&mut aabbs);
+}
+
+/// Deep-copies a collider shape descriptor (TS `cloneCollisionColliderShape3D`). A built-in shape is
+/// copied by value; a triangle mesh or heightfield becomes a new, independent entity with its own
+/// copied buffers, so the copy never moves with the source.
+pub fn clone_collision_collider_shape3d(
+    shape: &CollisionColliderShape3D,
+) -> CollisionColliderShape3D {
+    return match shape {
+        CollisionColliderShape3D::BuiltIn(shape) => {
+            CollisionColliderShape3D::BuiltIn(shape.clone())
+        }
+        CollisionColliderShape3D::TriangleMesh(shape) => CollisionColliderShape3D::TriangleMesh(
+            Arc::new(RwLock::new(shape.read().unwrap().clone())),
+        ),
+        CollisionColliderShape3D::Heightfield(shape) => CollisionColliderShape3D::Heightfield(
+            Arc::new(RwLock::new(shape.read().unwrap().clone())),
+        ),
+    };
 }
 
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
