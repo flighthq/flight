@@ -62,8 +62,8 @@ mod collision_collider_shape3d {
             1.0,
             1.0,
         )));
-        let triangle = CollisionColliderShape3D::TriangleMesh(mesh.clone());
-        let height = CollisionColliderShape3D::Heightfield(heightfield.clone());
+        let triangle = CollisionColliderShape3D::TriangleMesh(Arc::clone(&mesh));
+        let height = CollisionColliderShape3D::Heightfield(Arc::clone(&heightfield));
         let triangle_clone = triangle.clone();
         let height_clone = height.clone();
         let CollisionColliderShape3D::TriangleMesh(triangle_handle) = triangle_clone else {
