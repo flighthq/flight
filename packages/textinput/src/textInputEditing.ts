@@ -49,6 +49,10 @@ enum KeyboardCommand {
 
 const DESIRED_CARET_X_UNSET: number = -1.0;
 
+function createTextSelectionRectangle(): TextSelectionRectangle {
+  return { height: 0.0, lineIndex: 0, width: 0.0, x: 0.0, y: 0.0 };
+}
+
 function addSigned(value: number, offset: number): number {
   return offset < 0 ? Math.max(0, (value - -offset) >>> 0) : value + (offset >>> 0);
 }
@@ -296,10 +300,6 @@ function getCaretLineIndex(source: RichText, layout: Readonly<TextLayoutResult>)
   let out = createTextSelectionRectangle();
   getTextInputCaretRectangle(out, source, layout);
   return out.lineIndex;
-}
-
-function createTextSelectionRectangle(): TextSelectionRectangle {
-  return { height: 0.0, lineIndex: 0, width: 0.0, x: 0.0, y: 0.0 };
 }
 
 function getFallbackLineHeight(layout: Readonly<TextLayoutResult>): number {
