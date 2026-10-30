@@ -89,10 +89,8 @@ mod sugar_tests {
 
 pub fn explain_net_response(response: &NetResponse) -> Option<NetResponseExplanation> {
     let reason = if response.status == 0 {
-        let status_text = response
-            .status_text
-            .trim_matches(is_javascript_whitespace)
-            .to_lowercase();
+        let trimmed_status_text: &str = response.status_text.trim_matches(is_javascript_whitespace);
+        let status_text = trimmed_status_text.to_lowercase();
         match status_text.as_str() {
             "aborted" => NetResponseExplanationReason::Aborted,
             "timeout" => NetResponseExplanationReason::Timeout,
