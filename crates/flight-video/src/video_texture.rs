@@ -179,7 +179,9 @@ pub fn create_video_texture(
         Some(image) => image.read().unwrap().version,
         None => INITIAL_VIDEO_VERSION,
     };
-    let mut common = opts.cloned().unwrap_or_default();
+    let mut common = opts
+        .cloned()
+        .unwrap_or(CreateTextureCommonOptions::default());
     common.version = Some(version);
     let mut texture = create_texture_2d();
     if let Some(value) = common.color_space {
