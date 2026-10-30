@@ -176,7 +176,7 @@ fn config_to_document(
         image_count: existing.map(|document| document.image_count).unwrap_or(1.0),
         image_path: existing
             .map(|document| document.image_path.clone())
-            .unwrap_or_default(),
+            .unwrap_or(String::new()),
         life: LibgdxRangeValue {
             high_max: config.lifetime_max * 1000.0,
             high_min: config.lifetime_max * 1000.0,
@@ -196,7 +196,7 @@ fn config_to_document(
             .unwrap_or(0.0),
         name: existing
             .map(|document| document.name.clone())
-            .unwrap_or_default(),
+            .unwrap_or(String::new()),
         premultiplied_alpha: existing
             .map(|document| document.premultiplied_alpha)
             .unwrap_or(false),
