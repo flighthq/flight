@@ -18040,3 +18040,33 @@ pub fn combine(a: Option<f32>, b: Option<f32>) -> f32 {
         "body should use both bindings: {output}"
     );
 }
+
+#[test]
+fn lowers_option_match_with_return_in_none_arm() {
+    let source = r#"
+pub fn extract_or_bail(value: Option<i32>) -> i32 {
+    let x = match value {
+        Some(v) => v,
+        None => return -1,
+    };
+    return x * 2;
+}
+
+pub fn extract_with_body(value: Option<f32>) -> f32 {
+    let result = match value {
+        Some(v) => v + 1.0,
+        None => return 0.0,
+    };
+    return result;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("return -1"),
+        "None arm return should be emitted as early return: {output}"
+    );
+    assert!(
+        !output.contains("(() =>"),
+        "should not use IIFE for option match with return: {output}"
+    );
+}

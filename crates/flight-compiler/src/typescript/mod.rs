@@ -9501,6 +9501,21 @@ pub(crate) fn emit_local_with_shadow_and_else(
     {
         return emit_try_local(out, local, try_expr, entities, indent);
     }
+    if let Some(initializer) = &local.init
+        && let Expr::Match(match_expr) = initializer.expr.as_ref()
+    {
+        if let Some(result) = emit_option_match_with_return_local(
+            out,
+            local,
+            match_expr,
+            entities,
+            indent,
+            shadowed,
+            rebound,
+        )? {
+            return Ok(result);
+        }
+    }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => {
@@ -9731,6 +9746,105 @@ fn emit_try_local(
     write_indent(out, indent);
     writeln!(out, "}}").expect("writing to a String cannot fail");
     return Ok(());
+}
+
+/// Detects `let x = match scrutinee { Some(v) => v, None => return val }` and emits it as an
+/// early-return guard followed by the binding. Returns `Ok(Some(()))` if handled, `Ok(None)` if
+/// the pattern doesn't match, or `Err` on a real error.
+fn emit_option_match_with_return_local(
+    out: &mut String,
+    local: &syn::Local,
+    match_expr: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+    shadowed: bool,
+    rebound: bool,
+) -> Result<Option<()>, CompileError> {
+    let arms = match analyze_option_match(&match_expr.arms) {
+        Some(arms) => arms,
+        None => return Ok(None),
+    };
+    if match_expr.arms.len() != 2 {
+        return Ok(None);
+    }
+    if match_expr.arms.iter().any(|arm| arm.guard.is_some()) {
+        return Ok(None);
+    }
+    let (some_index, none_index) = if arms[0].present && !arms[1].present {
+        (0, 1)
+    } else if !arms[0].present && arms[1].present {
+        (1, 0)
+    } else {
+        return Ok(None);
+    };
+    let Expr::Return(return_expr) = match_expr.arms[none_index].body.as_ref() else {
+        return Ok(None);
+    };
+    let mutable = pattern_is_mutable(&local.pat);
+    let local_name = local_pattern_name(&local.pat);
+    let absent = option_absent_value(&match_expr.expr, entities);
+    let scrutinee = emit_expression(&match_expr.expr, entities)?;
+    let some_binding = arms[some_index].binding.as_deref();
+    let some_body = &match_expr.arms[some_index].body;
+    write_indent(out, indent);
+    writeln!(out, "if ({scrutinee} === {absent}) {{").expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    if let Some(value) = &return_expr.expr {
+        writeln!(out, "return {};", emit_expression(value, entities)?)
+            .expect("writing to a String cannot fail");
+    } else {
+        writeln!(out, "return;").expect("writing to a String cannot fail");
+    }
+    write_indent(out, indent);
+    out.push_str("}\n");
+    if let Some(binding) = some_binding {
+        let declaration = if mutable || rebound { "let" } else { "const" };
+        write_indent(out, indent);
+        writeln!(out, "{declaration} {binding} = {scrutinee};")
+            .expect("writing to a String cannot fail");
+    }
+    if let Some(name) = local_name {
+        let ts_name = snake_to_lower_camel(&name);
+        let body_is_identity = some_binding.is_some_and(|b| {
+            if let Expr::Path(path) = some_body.as_ref() {
+                path.qself.is_none()
+                    && path.path.segments.len() == 1
+                    && snake_to_lower_camel(&path.path.segments[0].ident.to_string()) == b
+            } else {
+                false
+            }
+        });
+        if body_is_identity {
+            if some_binding.as_deref() != Some(&ts_name) {
+                let declaration = if mutable || rebound { "let" } else { "const" };
+                write_indent(out, indent);
+                writeln!(
+                    out,
+                    "{declaration} {ts_name} = {};",
+                    some_binding.unwrap_or(&scrutinee)
+                )
+                .expect("writing to a String cannot fail");
+            }
+        } else {
+            let arm_context = if let Some(binding) = some_binding {
+                let mut context = entities.clone();
+                context.insert(binding.to_string());
+                context
+            } else {
+                entities.clone()
+            };
+            let body_value = emit_expression(some_body, &arm_context)?;
+            let declaration = if shadowed || mutable || rebound {
+                "let"
+            } else {
+                "const"
+            };
+            write_indent(out, indent);
+            writeln!(out, "{declaration} {ts_name} = {body_value};")
+                .expect("writing to a String cannot fail");
+        }
+    }
+    return Ok(Some(()));
 }
 
 fn emit_let_else_local(
