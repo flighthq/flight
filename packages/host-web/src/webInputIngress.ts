@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { InputIngressSource } from '@flighthq/host/contract';
 import type { HostInputIngressCapability } from '@flighthq/input/contract';
 import type {
@@ -14,9 +15,12 @@ import { KeyCode, KeyModifier } from '@flighthq/types/contract';
 /**
  * Wraps a Web event target as a host-neutral input source. The source carries the provider token of
  * `webHostInputIngress`, and Input keys every attachment by the `handle` identity, so two sources wrapping the
- * same target attach as one.
+ * same target attach as one. The source is a plain `{ provider, handle }` host-capability descriptor: it owns
+ * no state and no identity of its own, so it stays outside the Entity population.
  */
-export function createWebInputIngressSource(target: EventTarget): InputIngressSource {
+export function createWebInputIngressSource(
+  target: EventTarget,
+): NonEntityCreateResult<InputIngressSource, 'descriptor'> {
   return { provider: webHostInputIngress.provider, handle: target };
 }
 
