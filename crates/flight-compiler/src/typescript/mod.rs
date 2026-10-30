@@ -15942,16 +15942,20 @@ pub(crate) fn emit_type(
                 && !marker_suffixes(entities, VITEST_LOCAL_CRATE_MARKER)
                     .contains(&first.ident.to_string())
             {
-                if !matches!(segment.arguments, PathArguments::None) {
-                    return Err(compile_error(format!(
-                        "foreign Rust type `{name}` cannot use generic arguments in a portable test"
-                    )));
+                if matches!(name.as_str(), "Ref" | "Arc" | "Box") {
+                    // Transparent wrappers fall through to the name match below.
+                } else {
+                    if !matches!(segment.arguments, PathArguments::None) {
+                        return Err(compile_error(format!(
+                            "foreign Rust type `{name}` cannot use generic arguments in a portable test"
+                        )));
+                    }
+                    return Ok(format!(
+                        "{}.{}",
+                        snake_to_lower_camel(&first.ident.to_string()),
+                        name
+                    ));
                 }
-                return Ok(format!(
-                    "{}.{}",
-                    snake_to_lower_camel(&first.ident.to_string()),
-                    name
-                ));
             }
             if let Some(tag) = identity_alias_tag(entities, &name) {
                 let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
