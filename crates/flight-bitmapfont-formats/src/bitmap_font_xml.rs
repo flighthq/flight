@@ -46,7 +46,7 @@ fn parse_bitmap_font_xml_record(
             if let Some(id) = get_xml_element_attribute_number(&page, "id") {
                 pages.push(BitmapFontPageRecord {
                     file: get_xml_element_attribute(&page, "file")
-                        .unwrap_or_default()
+                        .unwrap_or("")
                         .to_string(),
                     id: id as i32,
                 });
