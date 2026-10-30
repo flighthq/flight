@@ -18017,3 +18017,26 @@ pub fn maybe_process(delta_time: f32, value: Option<f32>) -> f32 {
         "option binding should appear: {output}"
     );
 }
+
+#[test]
+fn lowers_double_let_chain() {
+    let source = r#"
+pub fn combine(a: Option<f32>, b: Option<f32>) -> f32 {
+    if let Some(x) = a
+        && let Some(y) = b
+    {
+        return x + y;
+    }
+    return 0.0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("!== undefined"),
+        "both option bindings should emit: {output}"
+    );
+    assert!(
+        output.contains("x + y"),
+        "body should use both bindings: {output}"
+    );
+}

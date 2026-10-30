@@ -14237,8 +14237,14 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
             let let_chain = split_let_chain(&if_expression.cond);
-            let then_context = if let Some((binding, _, _)) = &let_chain {
-                lexical_pattern_context(entities, &binding.pat)
+            let then_context = if let Some((binding, _, post_guards)) = &let_chain {
+                let mut context = lexical_pattern_context(entities, &binding.pat);
+                for guard in post_guards {
+                    if let Expr::Let(let_guard) = guard {
+                        context = lexical_pattern_context(&context, &let_guard.pat);
+                    }
+                }
+                context
             } else if let Expr::Let(binding) = if_expression.cond.as_ref() {
                 lexical_pattern_context(entities, &binding.pat)
             } else {
@@ -14325,21 +14331,48 @@ fn emit_statement(
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
             if let Some(post_guards) = &let_chain_post_guards {
-                let guard_parts: Vec<String> = post_guards
+                let mut body_indent = indent + 1;
+                let mut extra_closes: usize = 0;
+                let (expr_guards, let_guards): (Vec<&&Expr>, Vec<&&Expr>) = post_guards
                     .iter()
-                    .map(|guard| emit_expression(guard, &then_context))
-                    .collect::<Result<Vec<_>, _>>()?;
-                write_indent(out, indent + 1);
-                writeln!(out, "if ({}) {{", guard_parts.join(" && "))
-                    .expect("writing to a String cannot fail");
+                    .partition(|guard| !matches!(guard, Expr::Let(_)));
+                if !expr_guards.is_empty() {
+                    let guard_parts: Vec<String> = expr_guards
+                        .iter()
+                        .map(|guard| emit_expression(guard, &then_context))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    write_indent(out, body_indent);
+                    writeln!(out, "if ({}) {{", guard_parts.join(" && "))
+                        .expect("writing to a String cannot fail");
+                    body_indent += 1;
+                    extra_closes += 1;
+                }
+                for let_guard in &let_guards {
+                    if let Some(binding) =
+                        emit_option_binding(let_guard, &then_context)?
+                    {
+                        let (name, scrutinee, absent) = binding;
+                        write_indent(out, body_indent);
+                        writeln!(out, "if ({scrutinee} !== {absent}) {{")
+                            .expect("writing to a String cannot fail");
+                        body_indent += 1;
+                        write_indent(out, body_indent);
+                        writeln!(out, "const {name} = {scrutinee};")
+                            .expect("writing to a String cannot fail");
+                        extra_closes += 1;
+                    }
+                }
                 emit_block(
                     out,
                     &if_expression.then_branch.stmts,
                     &then_context,
-                    indent + 2,
+                    body_indent,
                 )?;
-                write_indent(out, indent + 1);
-                out.push_str("}\n");
+                for _ in 0..extra_closes {
+                    body_indent -= 1;
+                    write_indent(out, body_indent);
+                    out.push_str("}\n");
+                }
             } else {
                 emit_block(
                     out,
