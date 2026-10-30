@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionAabb3D,
   CollisionBuiltInShape3D,
+  CollisionColliderShape3D,
   CollisionContactManifold3D,
   CollisionHeightfield3D,
   CollisionRaycastHit3D,
@@ -19,6 +20,21 @@ import { createCollisionTimeOfImpact3D, sweepCollisionShape3D } from './sweepCol
 
 // Tests one convex shape against a static heightfield through the heightfield's retained triangle-mesh
 // acceleration. The normal always pushes the convex first argument out of the surface.
+// Deep-copies a collider shape descriptor. A built-in shape is copied by value; a triangle mesh or
+// heightfield becomes a new object with its own copied buffers, so the copy never moves with the source.
+export function cloneCollisionColliderShape3D(shape: Readonly<CollisionColliderShape3D>): CollisionColliderShape3D {
+  if (shape.kind === 'convex') return { kind: 'convex', points: shape.points.slice() };
+  if (shape.kind === 'triangle-mesh') {
+    return {
+      ...shape,
+      points: shape.points.slice(),
+      indices: shape.indices.slice(),
+    };
+  }
+  if (shape.kind === 'heightfield') return { ...shape, heights: shape.heights.slice() };
+  return { ...shape };
+}
+
 export function collideCollisionHeightfield3D(
   convex: Readonly<CollisionShape3D>,
   heightfield: Readonly<CollisionHeightfield3D>,

@@ -34,6 +34,7 @@ export { createCollisionTimeOfImpact3D, sweepCollisionShape3D } from './sweepCol
 export * from './testCollision2D.ts';
 export * from './testCollision3D.ts';
 export {
+  cloneCollisionColliderShape3D,
   collideCollisionHeightfield3D,
   collideCollisionTriangleMesh3D,
   createCollisionHeightfield3D,

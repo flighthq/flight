@@ -1,4 +1,4 @@
-import type { CollisionShape3D } from '@flighthq/types/contract';
+import type { CollisionColliderShape3D, CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionFaceQueries3D } from './collisionFace3D.ts';
@@ -7,6 +7,7 @@ import { createCollisionContactManifold3D } from './contactManifold3D.ts';
 import { createCollisionRaycastHit3D } from './raycastCollisionShape3D.ts';
 import { createCollisionTimeOfImpact3D } from './sweepCollisionShape3D.ts';
 import {
+  cloneCollisionColliderShape3D,
   collideCollisionHeightfield3D,
   collideCollisionTriangleMesh3D,
   createCollisionHeightfield3D,
@@ -28,6 +29,42 @@ import {
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();
   registerBuiltInCollisionFaceQueries3D();
+});
+
+describe('cloneCollisionColliderShape3D', () => {
+  it('copies a built-in shape by value', () => {
+    const source: CollisionColliderShape3D = { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0] };
+    const copy = cloneCollisionColliderShape3D(source);
+    expect(copy).toEqual(source);
+    expect(copy).not.toBe(source);
+    if (copy.kind !== 'convex' || source.kind !== 'convex') throw new Error('convex payload');
+    copy.points[0] = 9;
+    expect(source.points[0]).toBe(0);
+  });
+
+  it('copies a heightfield into an independent descriptor with its own heights', () => {
+    const source = createCollisionHeightfield3D(2, 2, [0, 1, 2, 3]);
+    const copy = cloneCollisionColliderShape3D(source);
+    expect(copy).not.toBe(source);
+    if (copy.kind !== 'heightfield') throw new Error('heightfield payload');
+    expect(copy.heights).toEqual([0, 1, 2, 3]);
+    expect(copy.heights).not.toBe(source.heights);
+    copy.heights[0] = 9;
+    expect(source.heights[0]).toBe(0);
+  });
+
+  it('copies a triangle mesh into an independent descriptor with its own buffers', () => {
+    const source = createCollisionTriangleMesh3D([0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
+    const copy = cloneCollisionColliderShape3D(source);
+    expect(copy).not.toBe(source);
+    if (copy.kind !== 'triangle-mesh') throw new Error('triangle mesh payload');
+    expect(copy.points).toEqual(source.points);
+    expect(copy.indices).toEqual(source.indices);
+    copy.points[0] = 9;
+    copy.indices.push(1);
+    expect(source.points[0]).toBe(0);
+    expect(source.indices).toEqual([0, 1, 2]);
+  });
 });
 
 describe('collideCollisionHeightfield3D', () => {
