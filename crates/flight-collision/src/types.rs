@@ -449,6 +449,20 @@ pub struct CollisionHeightfield3D {
     runtime: EntityRuntimeSlot,
 }
 
+fn create_derived_cache() -> DerivedCache {
+    return DerivedCache(Mutex::new(None));
+}
+
+// A derived cache is recomputable state, never part of a descriptor's value: any two caches compare equal
+// so the owning descriptor's equality depends only on its authored fields.
+fn are_derived_caches_equal(_cache: &DerivedCache, _other: &DerivedCache) -> bool {
+    return true;
+}
+
+fn clear_derived_cache(cache: &DerivedCache) {
+    *cache.0.lock().unwrap() = None;
+}
+
 // flight-lint: allow(conform-extra) Rust accessor for the TS discriminated-union kind field; TS reads `shape.kind` directly
 pub fn get_collision_shape2d_kind(shape: &CollisionShape2D) -> CollisionShapeKind2D {
     return match shape {
@@ -497,6 +511,21 @@ pub(crate) fn get_collision_shape3d_kind_key(shape: &CollisionShape3D) -> &'stat
         CollisionShape3D::Cone(_) => "cone",
         CollisionShape3D::Convex(_) => "convex",
     };
+}
+
+// Returns a copy of the cached value when one of type `T` is present.
+fn get_derived_cache_value<T: 'static + Send + Clone>(cache: &DerivedCache) -> Option<T> {
+    return cache
+        .0
+        .lock()
+        .unwrap()
+        .as_ref()
+        .and_then(|b| b.downcast_ref::<T>())
+        .cloned();
+}
+
+fn set_derived_cache_value<T: 'static + Send>(cache: &DerivedCache, value: T) {
+    *cache.0.lock().unwrap() = Some(Box::new(value));
 }
 
 impl CollisionShape2D {
@@ -604,25 +633,19 @@ impl Default for CollisionHeightfield3D {
 
 impl DerivedCache {
     pub(crate) fn new() -> Self {
-        return DerivedCache(Mutex::new(None));
+        return create_derived_cache();
     }
 
     pub(crate) fn clear(&self) {
-        *self.0.lock().unwrap() = None;
+        clear_derived_cache(self);
     }
 
     pub(crate) fn get<T: 'static + Send + Clone>(&self) -> Option<T> {
-        return self
-            .0
-            .lock()
-            .unwrap()
-            .as_ref()
-            .and_then(|b| b.downcast_ref::<T>())
-            .cloned();
+        return get_derived_cache_value(self);
     }
 
     pub(crate) fn set<T: 'static + Send>(&self, value: T) {
-        *self.0.lock().unwrap() = Some(Box::new(value));
+        set_derived_cache_value(self, value);
     }
 }
 
@@ -639,8 +662,8 @@ impl std::fmt::Debug for DerivedCache {
 }
 
 impl PartialEq for DerivedCache {
-    fn eq(&self, _other: &Self) -> bool {
-        return true;
+    fn eq(&self, other: &Self) -> bool {
+        return are_derived_caches_equal(self, other);
     }
 }
 
