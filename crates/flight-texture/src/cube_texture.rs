@@ -5,7 +5,7 @@ use crate::types::*;
 
 // flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored cube fields after canonical construction
 pub fn create_cube_texture() -> CubeTexture {
-    let mut out = flight_entity::allocate_entity();
+    let mut out: CubeTexture = flight_entity::allocate_entity();
     initialize_cube_texture(&mut out);
     return out;
 }
