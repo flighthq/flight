@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseSync } from 'oxc-parser';
@@ -32,7 +32,10 @@ interface Node {
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+// `--root=<dir>` walks and classifies another tree laid out like the repository (`packages/<name>/src/`),
+// so a generator can order staged output outside every scanned repository root under the same rules.
+const rootOption = process.argv.find((argument) => argument.startsWith('--root='));
+const root = rootOption === undefined ? join(__dirname, '..') : resolve(rootOption.slice('--root='.length));
 const checkMode = process.argv.includes('--check');
 const fixMode = process.argv.includes('--fix');
 const jsonMode = process.argv.includes('--json');
