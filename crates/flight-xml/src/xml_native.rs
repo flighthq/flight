@@ -13,6 +13,151 @@ use flight_entity::Ref;
 
 use crate::types::{XmlContent, XmlElement};
 
+/// Rust-only `XmlRecord` map-sugar parity tests.
+#[cfg(test)]
+mod xml_record_sugar_tests {
+    use super::*;
+
+    fn record(entries: &[(&str, &str)]) -> XmlRecord<String, String> {
+        let mut out = create_xml_record();
+        for (key, value) in entries {
+            set_xml_record_value(&mut out, key.to_string(), value.to_string());
+        }
+        return out;
+    }
+
+    fn hash_map(entries: &[(&str, &str)]) -> RustHashMap<String, String> {
+        return entries
+            .iter()
+            .map(|(key, value)| (key.to_string(), value.to_string()))
+            .collect();
+    }
+
+    #[test]
+    fn contains_key_reports_present_and_missing_keys_and_tracks_insertion() {
+        let mut attributes = record(&[("a", "1")]);
+        assert!(attributes.contains_key("a"));
+        assert!(!attributes.contains_key("b"));
+        attributes.insert("b".to_string(), "2".to_string());
+        assert!(attributes.contains_key("b"));
+    }
+
+    #[test]
+    fn get_returns_the_current_value_and_none_for_a_missing_key() {
+        let mut attributes = record(&[("a", "1"), ("b", "2")]);
+        assert_eq!(attributes.get("a"), Some(&"1".to_string()));
+        assert_eq!(attributes.get("b"), Some(&"2".to_string()));
+        assert_eq!(attributes.get("missing"), None);
+        attributes.insert("a".to_string(), "updated".to_string());
+        assert_eq!(attributes.get("a"), Some(&"updated".to_string()));
+    }
+
+    #[test]
+    fn index_returns_the_value_for_a_present_key() {
+        let attributes = record(&[("a", "1"), ("b", "2")]);
+        assert_eq!(attributes["a"], "1");
+        assert_eq!(attributes["b"], "2");
+    }
+
+    #[test]
+    #[should_panic(expected = "XML attribute key is absent")]
+    fn index_panics_for_a_missing_key() {
+        let attributes = record(&[("a", "1")]);
+        let _ = &attributes["missing"];
+    }
+
+    #[test]
+    fn insert_appends_a_new_key_and_replaces_an_existing_value_in_place() {
+        let mut attributes = create_xml_record();
+        assert_eq!(
+            attributes.insert("z".to_string(), "first".to_string()),
+            None
+        );
+        assert_eq!(
+            attributes.insert("a".to_string(), "second".to_string()),
+            None
+        );
+        assert_eq!(
+            attributes.insert("z".to_string(), "updated".to_string()),
+            Some("first".to_string())
+        );
+        assert_eq!(attributes.len(), 2);
+        let keys: Vec<&String> = attributes.keys().collect();
+        assert_eq!(keys, vec![&"z".to_string(), &"a".to_string()]);
+        assert_eq!(attributes["z"], "updated");
+    }
+
+    #[test]
+    fn is_empty_and_len_track_new_keys_but_not_overwrites() {
+        let mut attributes = create_xml_record();
+        assert!(attributes.is_empty());
+        assert_eq!(attributes.len(), 0);
+        attributes.insert("a".to_string(), "1".to_string());
+        assert!(!attributes.is_empty());
+        assert_eq!(attributes.len(), 1);
+        attributes.insert("a".to_string(), "2".to_string());
+        assert_eq!(attributes.len(), 1);
+        attributes.insert("b".to_string(), "3".to_string());
+        assert_eq!(attributes.len(), 2);
+    }
+
+    #[test]
+    fn keys_enumerate_in_first_insertion_order() {
+        let empty = create_xml_record();
+        assert_eq!(empty.keys().count(), 0);
+        let attributes = record(&[("z", "1"), ("a", "2"), ("m", "3"), ("a", "4")]);
+        let keys: Vec<&String> = attributes.keys().collect();
+        assert_eq!(
+            keys,
+            vec![&"z".to_string(), &"a".to_string(), &"m".to_string()]
+        );
+    }
+
+    #[test]
+    fn record_equality_ignores_insertion_order_and_compares_every_entry() {
+        let attributes = record(&[("a", "1"), ("b", "2")]);
+        assert!(attributes == record(&[("b", "2"), ("a", "1")]));
+        assert!(record(&[]) == record(&[]));
+        assert!(attributes != record(&[("a", "1"), ("b", "other")]));
+        assert!(attributes != record(&[("a", "1"), ("c", "2")]));
+        assert!(attributes != record(&[("a", "1")]));
+        assert!(attributes != record(&[("a", "1"), ("b", "2"), ("c", "3")]));
+    }
+
+    #[test]
+    fn record_equality_follows_mutation() {
+        let mut attributes = record(&[("a", "1")]);
+        let other = record(&[("a", "2")]);
+        assert!(attributes != other);
+        attributes.insert("a".to_string(), "2".to_string());
+        assert!(attributes == other);
+        attributes.insert("b".to_string(), "3".to_string());
+        assert!(attributes != other);
+    }
+
+    #[test]
+    fn record_equals_hash_map_with_the_same_entries_only() {
+        let attributes = record(&[("a", "1"), ("b", "2")]);
+        assert!(attributes == hash_map(&[("b", "2"), ("a", "1")]));
+        assert!(record(&[]) == hash_map(&[]));
+        assert!(attributes != hash_map(&[("a", "1"), ("b", "other")]));
+        assert!(attributes != hash_map(&[("a", "1"), ("c", "2")]));
+        assert!(attributes != hash_map(&[("a", "1")]));
+        assert!(attributes != hash_map(&[("a", "1"), ("b", "2"), ("c", "3")]));
+    }
+
+    #[test]
+    fn record_equality_with_a_hash_map_follows_mutation() {
+        let mut attributes = record(&[("a", "1")]);
+        let other = hash_map(&[("a", "1"), ("b", "2")]);
+        assert!(attributes != other);
+        attributes.insert("b".to_string(), "2".to_string());
+        assert!(attributes == other);
+        attributes.insert("b".to_string(), "changed".to_string());
+        assert!(attributes != other);
+    }
+}
+
 const MAX_XML_ENTITY_PASSES: usize = 8;
 const MAX_XML_ENTITY_GROWTH: usize = 16;
 const MAX_XML_ENTITY_BUDGET: usize = 65536;
