@@ -15,7 +15,7 @@ pub(crate) fn frame_from_region(
     let source_height = region.original_height.unwrap_or(height);
     let mut frame = create_spritesheet_frame_data();
     frame.height = height;
-    frame.name = region.name.clone().unwrap_or_default();
+    frame.name = region.name.clone().unwrap_or(String::new());
     frame.offset_x = region.source_x;
     frame.offset_y = region.source_y;
     frame.pivot_x = region.pivot_x.map(|value| {

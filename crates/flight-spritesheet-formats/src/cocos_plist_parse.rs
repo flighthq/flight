@@ -251,7 +251,7 @@ fn z_j_empty_cocos_document() -> CocosPlistDocument {
 }
 
 fn z_k_parse_float(value: Option<&str>) -> f32 {
-    return value.and_then(|value| value.parse().ok()).unwrap_or(0.0);
+    return value.and_then(|value| value.parse::<f32>().ok()).unwrap_or(0.0);
 }
 
 fn z_l_parse_integer_prefix(value: &str) -> Option<i32> {
@@ -259,7 +259,7 @@ fn z_l_parse_integer_prefix(value: &str) -> Option<i32> {
     return expression
         .captures(value)
         .and_then(|captures| captures.get(1))
-        .and_then(|value| value.as_str().parse().ok());
+        .and_then(|value| value.as_str().parse::<i32>().ok());
 }
 
 fn z_m_parse_plist_pair(value: &str) -> (f32, f32) {
