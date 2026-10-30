@@ -92,13 +92,6 @@ pub fn pack_color(r: f32, g: f32, b: f32, a: f32) -> u32 {
     return (ri << 24) | (gi << 16) | (bi << 8) | ai;
 }
 
-/// Packs a linear-space RGBA float color to a `0xRRGGBBAA` integer (the inverse of
-/// `unpack_color_to_linear`). RGB channels are gamma-encoded to sRGB; alpha passes through
-/// unchanged (alpha is linear coverage, never gamma-encoded). Channels are clamped to [0, 1].
-pub fn pack_linear_to_color(color: &LinearColor) -> u32 {
-    return pack_linear_channels_to_color(color.r, color.g, color.b, color.a);
-}
-
 /// Packs scalar linear-space RGBA channels to a `0xRRGGBBAA` integer without allocating a
 /// `LinearColor` entity. RGB channels are gamma-encoded to sRGB; alpha passes through unchanged.
 #[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation
@@ -108,6 +101,13 @@ pub fn pack_linear_channels_to_color(r: f32, g: f32, b: f32, a: f32) -> u32 {
     let bi = (linear_channel_to_srgb(b).max(0.0).min(1.0) * 255.0).round() as u32;
     let ai = (a.max(0.0).min(1.0) * 255.0).round() as u32;
     return (ri << 24) | (gi << 16) | (bi << 8) | ai;
+}
+
+/// Packs a linear-space RGBA float color to a `0xRRGGBBAA` integer (the inverse of
+/// `unpack_color_to_linear`). RGB channels are gamma-encoded to sRGB; alpha passes through
+/// unchanged (alpha is linear coverage, never gamma-encoded). Channels are clamped to [0, 1].
+pub fn pack_linear_to_color(color: &LinearColor) -> u32 {
+    return pack_linear_channels_to_color(color.r, color.g, color.b, color.a);
 }
 
 /// Widens a 24-bit RGB color (`0xRRGGBB` -- a CSS hex literal, a Flash/AwayJS source color, a
