@@ -35,9 +35,9 @@ export type {
   SignalSlot,
   SignalThrottleOptions,
   SignalTimer,
-  SignalTimerState,
+  SignalTimerStateRaw,
   SignalTrackedConnectOptions,
   SlotId,
   TimerId,
 } from './types.ts';
-export type { Signal, SignalScope } from './signalTypes.ts';
+export type { Signal, SignalScope, SignalTimerState } from './signalTypes.ts';

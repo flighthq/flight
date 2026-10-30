@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use flight_entity::Ref;
+use flight_entity::{Ref, allocate_entity};
 
 use crate::slot::{connect_signal, disconnect_signal};
 use crate::types::{
@@ -9,11 +9,7 @@ use crate::types::{
 
 // flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
 pub fn create_signal_timer_state() -> SignalTimerState {
-    let mut out = SignalTimerState {
-        now_ms: 0.0,
-        timers: Vec::new(),
-        next_id: 1,
-    };
+    let mut out: SignalTimerState = allocate_entity();
     initialize_signal_timer_state(&mut out);
     return out;
 }

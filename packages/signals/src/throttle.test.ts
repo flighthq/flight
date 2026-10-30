@@ -1,6 +1,7 @@
 // Generated from crates/flight-signals/tests/throttle_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import * as flightEntity from '@flighthq/entity/contract';
 import { initializeSignalTimerState } from '@flighthq/signals/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -15,9 +16,9 @@ import {
   emitSignal,
   setSignalTimeout,
 } from './contract.ts';
-import type { FrameTick, SignalRaw, SignalThrottleOptions, SignalTimerState } from './contract.ts';
+import type { FrameTick, SignalRaw, SignalThrottleOptions, SignalTimerStateRaw } from './contract.ts';
 
-type TimerRef = SignalTimerState;
+type TimerRef = SignalTimerStateRaw;
 
 interface PairEvent {
   x: number;
@@ -243,6 +244,22 @@ describe('connectSignalThrottled', () => {
 });
 
 describe('createSignalTimerState', () => {
+  it('allocates a distinct entity that still schedules timers', () => {
+    let first = createSignalTimerState();
+    let second = createSignalTimerState();
+    expect(flightEntity.getEntityUid(first)).not.toEqual(flightEntity.getEntityUid(second));
+    const fired = { value: 0 };
+    const state = first;
+    const counter = fired;
+    setSignalTimeout(state, 10.0, () => {
+      counter.value += 1;
+    });
+    advanceSignalTimers(state, 9.0);
+    expect(fired.value).toEqual(0);
+    advanceSignalTimers(state, 10.0);
+    expect(fired.value).toEqual(1);
+    expect(state!.timers.length === 0).toBe(true);
+  });
   it('starts at time zero with no timers', () => {
     const state = createSignalTimerState();
     expect(state.nowMs).toEqual(0.0);

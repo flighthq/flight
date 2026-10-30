@@ -32,9 +32,8 @@ export type {
   SignalConnection,
   SignalData,
   SignalThrottleOptions,
-  SignalTimerState,
   SignalTrackedConnectOptions,
   TimerId,
 } from './contract.ts';
 
-export type { Signal, SignalScope } from './signalTypes.ts';
+export type { Signal, SignalScope, SignalTimerState } from './signalTypes.ts';

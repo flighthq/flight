@@ -120,6 +120,7 @@ pub struct SignalTimerState {
     pub now_ms: f64,
     pub timers: Vec<SignalTimer>,
     pub next_id: u64,
+    runtime: EntityRuntimeSlot,
 }
 
 impl Default for SignalTimerState {
@@ -128,6 +129,7 @@ impl Default for SignalTimerState {
             now_ms: 0.0,
             timers: Vec::new(),
             next_id: 1,
+            runtime: EntityRuntimeSlot::default(),
         };
     }
 }
@@ -143,6 +145,7 @@ impl<T> flight_entity::Entity for Signal<T> {
 }
 
 flight_entity::impl_entity!(SignalScope);
+flight_entity::impl_entity!(SignalTimerState);
 
 impl<T> std::fmt::Debug for Signal<T> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

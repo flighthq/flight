@@ -360,6 +360,32 @@ mod create_signal_timer_state {
     use super::*;
 
     #[test]
+    fn allocates_a_distinct_entity_that_still_schedules_timers() {
+        let mut first = create_signal_timer_state();
+        let mut second = create_signal_timer_state();
+        assert_ne!(
+            flight_entity::get_entity_uid(&mut first),
+            flight_entity::get_entity_uid(&mut second)
+        );
+
+        let fired = Arc::new(Mutex::new(0));
+        let state = Arc::new(RwLock::new(first));
+        let counter = fired.clone();
+        set_signal_timeout(
+            &state,
+            10.0,
+            Arc::new(move || {
+                *counter.lock().unwrap() += 1;
+            }),
+        );
+        advance_signal_timers(&state, 9.0);
+        assert_eq!(*fired.lock().unwrap(), 0);
+        advance_signal_timers(&state, 10.0);
+        assert_eq!(*fired.lock().unwrap(), 1);
+        assert!(state.read().unwrap().timers.is_empty());
+    }
+
+    #[test]
     fn starts_at_time_zero_with_no_timers() {
         let state = create_signal_timer_state();
         assert_eq!(state.now_ms, 0.0);

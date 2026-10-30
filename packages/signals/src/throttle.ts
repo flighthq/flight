@@ -1,6 +1,8 @@
 // Generated from crates/flight-signals/src/throttle.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import { allocateEntity } from '@flighthq/entity/contract';
+
 import { connectSignal, disconnectSignal } from './slot.ts';
 import type {
   FrameTick,
@@ -8,7 +10,7 @@ import type {
   SignalSlot,
   SignalThrottleOptions,
   SignalTimer,
-  SignalTimerState,
+  SignalTimerStateRaw,
   TimerId,
 } from './types.ts';
 
@@ -21,7 +23,7 @@ interface PendingSignalArgs<T> {
  * the caller injects time; the contract never reads a clock). Callbacks run without the state
  * lock held, so they may schedule or clear timers re-entrantly.
  */
-export function advanceSignalTimers(state: SignalTimerState, nowMs: number): void {
+export function advanceSignalTimers(state: SignalTimerStateRaw, nowMs: number): void {
   for (;;) {
     const callback = takeDueSignalTimer(state, nowMs);
     {
@@ -36,7 +38,7 @@ export function advanceSignalTimers(state: SignalTimerState, nowMs: number): voi
   }
 }
 
-export function clearSignalTimeout(state: SignalTimerState, id: TimerId): void {
+export function clearSignalTimeout(state: SignalTimerStateRaw, id: TimerId): void {
   let timerState = state!;
   const timers: SignalTimer[] = timerState.timers;
   (<T>(items: T[], keep: (item: T) => boolean): void => {
@@ -97,7 +99,7 @@ export function connectSignalAtFrameRate(
   return () => disconnectSignal(cleanupSource, slotId);
 }
 
-function takeDueSignalTimer(state: SignalTimerState, nowMs: number): (() => void) | undefined {
+function takeDueSignalTimer(state: SignalTimerStateRaw, nowMs: number): (() => void) | undefined {
   let timerState = state!;
   let earliest: number | undefined = undefined;
   for (let index = 0; index < timerState.timers.length; index += 1) {
@@ -141,7 +143,7 @@ export function connectSignalDebounced<T>(
   delayMs: number,
   slot: SignalSlot<T>,
   options: Readonly<SignalThrottleOptions> | undefined,
-  state: SignalTimerState,
+  state: SignalTimerStateRaw,
 ): () => void {
   const leading = options?.leading ?? false;
   const trailing = options?.trailing ?? true;
@@ -216,7 +218,7 @@ export function connectSignalThrottled<T>(
   intervalMs: number,
   slot: SignalSlot<T>,
   options: Readonly<SignalThrottleOptions> | undefined,
-  state: SignalTimerState,
+  state: SignalTimerStateRaw,
 ): () => void {
   const leading = options?.leading ?? true;
   const trailing = options?.trailing ?? true;
@@ -332,19 +334,23 @@ function takePendingSignalArgs<T>(pending: { value: T | undefined }): T | undefi
   return args;
 }
 
-export function createSignalTimerState(): SignalTimerState {
-  let out: SignalTimerState = { nowMs: 0.0, timers: [], nextId: 1 };
+export function createSignalTimerState(): SignalTimerStateRaw {
+  let out: SignalTimerStateRaw = Object.assign(allocateEntity<SignalTimerStateRaw>(), {
+    nextId: 0,
+    nowMs: 0,
+    timers: [],
+  });
   initializeSignalTimerState(out);
   return out;
 }
 
-export function initializeSignalTimerState(out: SignalTimerState): void {
+export function initializeSignalTimerState(out: SignalTimerStateRaw): void {
   out.nowMs = 0.0;
   out.timers.length = 0;
   out.nextId = 1;
 }
 
-export function setSignalTimeout(state: SignalTimerState, delayMs: number, callback: () => void): TimerId {
+export function setSignalTimeout(state: SignalTimerStateRaw, delayMs: number, callback: () => void): TimerId {
   let timerState = state!;
   const id: TimerId = { value: timerState.nextId };
   timerState.nextId += 1;

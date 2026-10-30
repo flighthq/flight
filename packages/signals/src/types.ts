@@ -126,7 +126,7 @@ export interface SignalTimer {
  * Explicit timer state for debounced and throttled connections (D5): the caller creates it,
  * injects time through `advanceSignalTimers`, and no clock is read inside the contract.
  */
-export interface SignalTimerState {
+export interface SignalTimerStateRaw extends EntityRaw {
   nowMs: number;
   timers: SignalTimer[];
   nextId: number;
