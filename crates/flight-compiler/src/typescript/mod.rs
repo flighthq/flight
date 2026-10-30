@@ -10835,6 +10835,31 @@ fn emit_matches_literal_predicate(
             )?;
             Ok(Some(format!("{subject} === {emitted}")))
         }
+        Pat::Range(range) => {
+            let lo = range
+                .start
+                .as_ref()
+                .map(|expr| emit_expression(expr, entities))
+                .transpose()?;
+            let hi = range
+                .end
+                .as_ref()
+                .map(|expr| emit_expression(expr, entities))
+                .transpose()?;
+            let inclusive = matches!(range.limits, syn::RangeLimits::Closed(_));
+            match (lo, hi) {
+                (Some(lo), Some(hi)) => {
+                    let op = if inclusive { "<=" } else { "<" };
+                    Ok(Some(format!("{subject} >= {lo} && {subject} {op} {hi}")))
+                }
+                (Some(lo), None) => Ok(Some(format!("{subject} >= {lo}"))),
+                (None, Some(hi)) => {
+                    let op = if inclusive { "<=" } else { "<" };
+                    Ok(Some(format!("{subject} {op} {hi}")))
+                }
+                (None, None) => Ok(Some("true".to_string())),
+            }
+        }
         Pat::TupleStruct(tuple)
             if (tuple.path.is_ident("Some") || tuple.path.is_ident("Ok"))
                 && tuple.elems.len() == 1 =>
@@ -10844,10 +10869,15 @@ fn emit_matches_literal_predicate(
             } else {
                 "undefined"
             };
-            let Pat::Wild(_) = &tuple.elems[0] else {
-                return Ok(None);
-            };
-            Ok(Some(format!("{subject} !== {absent}")))
+            if let Pat::Wild(_) = &tuple.elems[0] {
+                return Ok(Some(format!("{subject} !== {absent}")));
+            }
+            if let Some(inner) =
+                emit_matches_literal_predicate(&tuple.elems[0], subject, entities)?
+            {
+                return Ok(Some(format!("{subject} !== {absent} && ({inner})")));
+            }
+            Ok(None)
         }
         _ => Ok(None),
     };
