@@ -335,8 +335,10 @@ pub fn compact_stroke_path(
         Some(dash) => dash,
         None => &empty_dash,
     };
-    out.commands.clear();
-    out.data.clear();
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
     let subpaths = decode_subpaths(path, tolerance);
     let dash = if dash_pattern.is_empty() {
         None

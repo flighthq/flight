@@ -16,7 +16,8 @@ pub fn create_shape_bounds_state() -> ShapeBoundsStateRef {
 // flight-lint: allow(conform-params) D5: the caller-owned registry is an explicit parameter
 pub fn clear_shape_bounds_commands(state: &ShapeBoundsStateRef) {
     let mut guard = state.write().unwrap();
-    guard.commands.clear();
+    let guard_commands: &mut Vec<(String, ShapeBoundsCommand)> = &mut guard.commands;
+    guard_commands.clear();
     guard.revision = guard.revision.wrapping_add(1);
 }
 
