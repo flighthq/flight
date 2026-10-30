@@ -2389,6 +2389,38 @@ pub struct Capability {
     }
 
     #[test]
+    fn lowers_json_macro_to_object_and_array_literals() {
+        assert_eq!(
+            compile_typescript(
+                "use serde_json::json;\npub fn f() -> serde_json::Value {\n    return json!({ \"x\": 1, \"y\": true, \"z\": [2, 3] });\n}\n",
+                None
+            )
+            .unwrap(),
+            "export function f(): Value {\n  return { \"x\": 1, \"y\": true, \"z\": [2, 3] };\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "use serde_json::json;\npub fn f() -> serde_json::Value {\n    return json!(null);\n}\n",
+                None
+            )
+            .unwrap(),
+            "export function f(): Value {\n  return null;\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_local_function_declarations() {
+        assert_eq!(
+            compile_typescript(
+                "pub fn outer(x: f64) -> f64 {\n    fn inner(y: f64) -> f64 {\n        return y * 2.0;\n    }\n    return inner(x) + 1.0;\n}\n",
+                None
+            )
+            .unwrap(),
+            "export function outer(x: number): number {\n  function inner(y: number): number {\n    return y * 2.0;\n  }\n  return inner(x) + 1.0;\n}\n"
+        );
+    }
+
+    #[test]
     fn lowers_hash_collections_through_extern_crate_and_no_std_bindings() {
         for source in [
             "extern crate std as standard;\npub fn a(s: &mut standard::collections::HashSet<i32>) -> bool {\n    return s.insert(1);\n}\n",

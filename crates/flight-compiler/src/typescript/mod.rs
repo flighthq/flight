@@ -9329,6 +9329,57 @@ fn emit_function(
     return Ok(());
 }
 
+fn emit_local_function(
+    out: &mut String,
+    function: &ItemFn,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let rust_name = function.sig.ident.to_string();
+    let name = snake_to_lower_camel(&rust_name);
+    let type_parameters = emit_type_parameters(&function.sig.generics);
+    let mut signature_context = entities.clone();
+    insert_type_parameter_context(&mut signature_context, &function.sig.generics);
+    let parameters = function
+        .sig
+        .inputs
+        .iter()
+        .map(|argument| emit_parameter(argument, &signature_context))
+        .collect::<Result<Vec<_>, _>>()?;
+    let return_type = match &function.sig.output {
+        ReturnType::Default => "void".to_string(),
+        ReturnType::Type(_, rust_type) => emit_type(rust_type, &signature_context)?,
+    };
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "function {name}{type_parameters}({}): {return_type} {{",
+        parameters.join(", ")
+    )
+    .expect("writing to a String cannot fail");
+    let mut function_context = function_expression_context(function, &signature_context);
+    function_context.insert(format!("{RETURN_TYPE_MARKER}{return_type}"));
+    if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if type_is_named(rust_type, "u32"))
+    {
+        function_context.insert(RETURNS_U32_MARKER.to_string());
+    }
+    if let ReturnType::Type(_, rust_type) = &function.sig.output
+        && let Type::Array(array) = rust_type.as_ref()
+        && let Some(array_type) = typed_array_for_type(&array.elem)
+    {
+        function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
+    }
+    emit_block(
+        out,
+        &function.block.stmts,
+        &function_context,
+        indent + 1,
+    )?;
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
 fn emit_function_trait_type(
     bounds: &syn::punctuated::Punctuated<syn::TypeParamBound, syn::token::Plus>,
     entities: &HashSet<String>,
@@ -10799,6 +10850,9 @@ fn emit_macro_expression(
             "(() => { throw new Error(\"not implemented\"); })()".to_string(),
         );
     }
+    if name.ident == "json" {
+        return emit_json_macro_value(&mut rust_macro.tokens.clone().into_iter().peekable(), entities);
+    }
     if name.ident != "format" {
         return Err(compile_error(format!(
             "unsupported Rust macro expression `{}!`",
@@ -10820,6 +10874,115 @@ fn emit_macro_expression(
     };
     let values = arguments.iter().skip(1).collect::<Vec<_>>();
     return emit_format_template(&template.value(), &values, entities, "portable `format!`");
+}
+
+fn emit_json_macro_value(
+    tokens: &mut std::iter::Peekable<proc_macro2::token_stream::IntoIter>,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    use proc_macro2::{Delimiter, TokenTree};
+    let Some(first) = tokens.peek() else {
+        return Ok("null".to_string());
+    };
+    match first {
+        TokenTree::Group(group) if group.delimiter() == Delimiter::Brace => {
+            let inner = group.stream();
+            let group_clone = group.clone();
+            tokens.next();
+            let mut items = inner.into_iter().peekable();
+            let mut entries = Vec::new();
+            loop {
+                if items.peek().is_none() {
+                    break;
+                }
+                let key = match items.next() {
+                    Some(TokenTree::Literal(lit)) => {
+                        let text = lit.to_string();
+                        if text.starts_with('"') {
+                            text
+                        } else {
+                            return Err(compile_error(format!(
+                                "portable `json!` object key must be a string literal, got `{text}`"
+                            )));
+                        }
+                    }
+                    Some(other) => {
+                        return Err(compile_error(format!(
+                            "portable `json!` object key must be a string literal, got `{other}`"
+                        )));
+                    }
+                    None => break,
+                };
+                match items.next() {
+                    Some(TokenTree::Punct(p)) if p.as_char() == ':' => {}
+                    _ => {
+                        return Err(compile_error(
+                            "portable `json!` object entry must have `:` after key",
+                        ));
+                    }
+                }
+                let value = emit_json_macro_value(&mut items, entities)?;
+                entries.push(format!("{key}: {value}"));
+                if let Some(TokenTree::Punct(p)) = items.peek() {
+                    if p.as_char() == ',' {
+                        items.next();
+                    }
+                }
+            }
+            let _ = &group_clone;
+            if entries.is_empty() {
+                Ok("{}".to_string())
+            } else {
+                Ok(format!("{{ {} }}", entries.join(", ")))
+            }
+        }
+        TokenTree::Group(group) if group.delimiter() == Delimiter::Bracket => {
+            let inner = group.stream();
+            tokens.next();
+            let mut items = inner.into_iter().peekable();
+            let mut elements = Vec::new();
+            while items.peek().is_some() {
+                elements.push(emit_json_macro_value(&mut items, entities)?);
+                if let Some(TokenTree::Punct(p)) = items.peek() {
+                    if p.as_char() == ',' {
+                        items.next();
+                    }
+                }
+            }
+            Ok(format!("[{}]", elements.join(", ")))
+        }
+        TokenTree::Ident(ident) if *ident == "null" => {
+            tokens.next();
+            Ok("null".to_string())
+        }
+        TokenTree::Ident(ident) if *ident == "true" => {
+            tokens.next();
+            Ok("true".to_string())
+        }
+        TokenTree::Ident(ident) if *ident == "false" => {
+            tokens.next();
+            Ok("false".to_string())
+        }
+        TokenTree::Literal(_) => {
+            let lit = tokens.next().unwrap();
+            let text = lit.to_string();
+            Ok(text)
+        }
+        _ => {
+            let mut expr_tokens = proc_macro2::TokenStream::new();
+            while let Some(token) = tokens.peek() {
+                match token {
+                    TokenTree::Punct(p) if p.as_char() == ',' || p.as_char() == ':' => break,
+                    _ => {
+                        expr_tokens.extend(std::iter::once(tokens.next().unwrap()));
+                    }
+                }
+            }
+            let expression: Expr = syn::parse2(expr_tokens)
+                .map_err(|error| compile_error(format!("failed to parse `json!` value: {error}")))?;
+            emit_expression(&expression, entities)
+        }
+    }
 }
 
 fn emit_matches_macro(
@@ -13653,16 +13816,12 @@ pub(crate) fn emit_option_binding(
         }
     };
     let Pat::TupleStruct(pattern) = &*binding.pat else {
-        return Err(compile_error(
-            "portable `if let` supports only a `Some(name)` pattern",
-        ));
+        return Ok(None);
     };
     if !(pattern.path.is_ident("Some") || pattern.path.is_ident("Ok"))
         || pattern.elems.len() != 1
     {
-        return Err(compile_error(
-            "portable `if let` supports only a `Some(name)` pattern",
-        ));
+        return Ok(None);
     }
     if let Pat::Tuple(tuple) = &pattern.elems[0] {
         let mut names = Vec::new();
@@ -15448,6 +15607,36 @@ fn emit_statement(
             } else {
                 indent
             };
+            let data_union_if_let = if option_binding.is_none() && tuple_binding.is_none() {
+                let cond = if let Some((let_expr, _, _)) = &let_chain {
+                    Some(&let_expr.pat)
+                } else if let Expr::Let(binding) = &*if_expression.cond {
+                    Some(&binding.pat)
+                } else {
+                    None
+                };
+                if let Some(pattern) = cond {
+                    let let_expr = if let Some((let_expr, _, _)) = &let_chain {
+                        let_expr
+                    } else if let Expr::Let(binding) = &*if_expression.cond {
+                        binding
+                    } else {
+                        unreachable!()
+                    };
+                    if let Some(test) = data_union_pattern_test(pattern, "$ifLet", entities)? {
+                        Some((
+                            emit_expression(&let_expr.expr, entities)?,
+                            test,
+                        ))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
             let outer_indent = indent;
             let (indent, wrapped) = if let Some(binding) = &option_binding {
                 begin_option_if(
@@ -15456,6 +15645,22 @@ fn emit_statement(
                     binding,
                     option_scrutinee_is_rereadable(&if_expression.cond),
                 )
+            } else if let Some((value_expr, ref test)) = data_union_if_let {
+                write_indent(out, indent);
+                out.push_str("{\n");
+                write_indent(out, indent + 1);
+                writeln!(out, "const $ifLet = {value_expr};")
+                    .expect("writing to a String cannot fail");
+                let predicate = test.predicate.as_deref().unwrap_or("true");
+                write_indent(out, indent + 1);
+                writeln!(out, "if ({predicate}) {{").expect("writing to a String cannot fail");
+                for (binding, expression) in &test.bindings {
+                    let name = snake_to_lower_camel(binding);
+                    write_indent(out, indent + 2);
+                    writeln!(out, "const {name} = {expression};")
+                        .expect("writing to a String cannot fail");
+                }
+                (indent + 1, true)
             } else {
                 write_indent(out, indent);
                 if let Some((condition, _)) = &tuple_binding {
@@ -15736,6 +15941,9 @@ fn emit_statement(
             let value = emit_expression(&item_const.expr, entities)?;
             write_indent(out, indent);
             writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
+        }
+        Stmt::Item(syn::Item::Fn(item_fn)) => {
+            emit_local_function(out, item_fn, entities, indent)?;
         }
         Stmt::Item(_) => {
             return Err(compile_error(
