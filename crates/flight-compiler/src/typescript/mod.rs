@@ -655,14 +655,26 @@ pub(crate) fn begin_option_if(
     rereadable: bool,
 ) -> (usize, bool) {
     let (name, value, absent) = binding;
+    let is_destructure = name.starts_with('[');
     let (if_indent, test) = if rereadable {
         (indent, value.clone())
     } else {
         write_indent(out, indent);
         out.push_str("{\n");
         write_indent(out, indent + 1);
-        writeln!(out, "const ${name} = {value};").expect("writing to a String cannot fail");
-        (indent + 1, format!("${name}"))
+        if is_destructure {
+            writeln!(out, "const $opt = {value};").expect("writing to a String cannot fail");
+        } else {
+            writeln!(out, "const ${name} = {value};").expect("writing to a String cannot fail");
+        }
+        (
+            indent + 1,
+            if is_destructure {
+                "$opt".to_string()
+            } else {
+                format!("${name}")
+            },
+        )
     };
     write_indent(out, if_indent);
     writeln!(out, "if ({test} !== {absent}) {{").expect("writing to a String cannot fail");
@@ -683,6 +695,7 @@ pub(crate) fn begin_option_while(
     rereadable: bool,
 ) {
     let (name, value, absent) = binding;
+    let is_destructure = name.starts_with('[');
     write_indent(out, indent);
     if rereadable {
         writeln!(out, "while ({value} !== {absent}) {{").expect("writing to a String cannot fail");
@@ -692,17 +705,18 @@ pub(crate) fn begin_option_while(
         }
         return;
     }
+    let temp = if is_destructure { "$opt" } else { &format!("${name}") };
     out.push_str("for (;;) {\n");
     write_indent(out, indent + 1);
-    writeln!(out, "const ${name} = {value};").expect("writing to a String cannot fail");
+    writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
     write_indent(out, indent + 1);
-    writeln!(out, "if (${name} === {absent}) {{").expect("writing to a String cannot fail");
+    writeln!(out, "if ({temp} === {absent}) {{").expect("writing to a String cannot fail");
     write_indent(out, indent + 2);
     out.push_str("break;\n");
     write_indent(out, indent + 1);
     out.push_str("}\n");
     write_indent(out, indent + 1);
-    writeln!(out, "const {name} = ${name};").expect("writing to a String cannot fail");
+    writeln!(out, "const {name} = {temp};").expect("writing to a String cannot fail");
 }
 
 // Whether the function a call names declares an identity-bearing return type (see
@@ -13433,9 +13447,25 @@ pub(crate) fn emit_option_binding(
             "portable `if let` supports only a `Some(name)` pattern",
         ));
     }
+    if let Pat::Tuple(tuple) = &pattern.elems[0] {
+        let mut names = Vec::new();
+        for elem in &tuple.elems {
+            let Pat::Ident(ident) = elem else {
+                return Err(compile_error(
+                    "portable `if let Some((..))` tuple elements must be identifiers",
+                ));
+            };
+            names.push(snake_to_lower_camel(&ident.ident.to_string()));
+        }
+        return Ok(Some((
+            format!("[{}]", names.join(", ")),
+            emit_expression(&binding.expr, entities)?,
+            option_absent_value(&binding.expr, entities),
+        )));
+    }
     let Pat::Ident(identifier) = &pattern.elems[0] else {
         return Err(compile_error(
-            "portable `if let Some` binding needs an identifier",
+            "portable `if let Some` binding needs an identifier or tuple",
         ));
     };
     return Ok(Some((
