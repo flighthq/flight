@@ -33,14 +33,6 @@ fn is_tag_name_end(unit: u16) -> bool {
     return xml_is_whitespace(unit) || unit == 62 || unit == 47;
 }
 
-fn skip_whitespace(scanner: &XmlScanner, mut position: usize) -> usize {
-    let len = xml_scanner_length(scanner);
-    while position < len && xml_is_whitespace(xml_scanner_unit_at(scanner, position)) {
-        position += 1;
-    }
-    return position;
-}
-
 fn parse_element(source: &str, scanner: &XmlScanner, state: &mut ParseState) -> Option<XmlElement> {
     if state.depth >= MAX_XML_ELEMENT_DEPTH {
         state.depth_exceeded = true;
@@ -193,4 +185,12 @@ pub fn parse_xml_document(xml: &str) -> Option<XmlElement> {
         pos: 0,
     };
     return parse_element(&expanded, &scanner, &mut state);
+}
+
+fn skip_whitespace(scanner: &XmlScanner, mut position: usize) -> usize {
+    let len = xml_scanner_length(scanner);
+    while position < len && xml_is_whitespace(xml_scanner_unit_at(scanner, position)) {
+        position += 1;
+    }
+    return position;
 }
