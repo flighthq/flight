@@ -118,7 +118,7 @@ pub fn decode_tiled_csv_layer(text: &str) -> Box<[u32]> {
         if trimmed.is_empty() {
             continue;
         }
-        let n: f64 = trimmed.parse().unwrap_or(f64::NAN);
+        let n: f64 = trimmed.parse::<f64>().unwrap_or(f64::NAN);
         if n.is_finite() {
             out.push(n as u32);
         } else {
