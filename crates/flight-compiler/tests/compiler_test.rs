@@ -1559,8 +1559,8 @@ mod foreign_macro_arguments {
 
     #[test]
     fn rejects_function_exits_inside_value_blocks_and_match_values() {
-        for (source, expected) in [
-            (
+        {
+            let output = compile_typescript(
                 r#"pub struct Gate {
     pub enabled: bool,
     pub value: i32,
@@ -1576,20 +1576,20 @@ pub fn read(gate: &Gate) -> i32 {
     return value * 2;
 }
 "#,
-                "portable value block cannot use `return` to leave the enclosing function; bind the value first and exit with a statement",
-            ),
-            (
-                r#"pub fn pick(flag: bool, value: i32) -> i32 {
-    let picked = match flag {
-        true => value,
-        false => return 0,
-    };
-    return picked + 1;
-}
-"#,
-                "portable `match` used as a value cannot use `return` to leave the enclosing function; bind the value first and exit with a statement",
-            ),
-            (
+                None,
+            )
+            .unwrap();
+            assert!(
+                output.contains("return -1"),
+                "value block with return should hoist: {output}"
+            );
+            assert!(
+                output.contains("const value = gate.value"),
+                "should bind the final expression: {output}"
+            );
+        }
+        {
+            let output = compile_typescript(
                 r#"pub fn parse(value: Option<i32>) -> Option<i32> {
     let doubled = {
         let inner = value?;
@@ -1598,15 +1598,34 @@ pub fn read(gate: &Gate) -> i32 {
     return Some(doubled);
 }
 "#,
-                "portable value block cannot use `?` to leave the enclosing function; bind the value first and exit with a statement",
-            ),
-        ] {
-            assert_eq!(
-                compile_typescript(source, None).unwrap_err().to_string(),
-                expected,
-                "{source}"
+                None,
+            )
+            .unwrap();
+            assert!(
+                output.contains("if (inner === undefined)"),
+                "value block with ? should hoist and lower try: {output}"
+            );
+            assert!(
+                output.contains("const doubled = inner * 2"),
+                "should bind the final expression: {output}"
             );
         }
+        assert_eq!(
+            compile_typescript(
+                r#"pub fn pick(flag: bool, value: i32) -> i32 {
+    let picked = match flag {
+        true => value,
+        false => return 0,
+    };
+    return picked + 1;
+}
+"#,
+                None,
+            )
+            .unwrap_err()
+            .to_string(),
+            "portable `match` used as a value cannot use `return` to leave the enclosing function; bind the value first and exit with a statement",
+        );
         let output = compile_typescript(
             r#"pub fn apply(values: Vec<i32>) -> Vec<i32> {
     let mapped = {
@@ -18068,5 +18087,51 @@ pub fn extract_with_body(value: Option<f32>) -> f32 {
     assert!(
         !output.contains("(() =>"),
         "should not use IIFE for option match with return: {output}"
+    );
+}
+
+#[test]
+fn lowers_value_block_with_return_by_hoisting() {
+    let source = r#"
+pub fn get_index(depth: i32, index: usize) -> bool {
+    let start = {
+        if depth == 0 {
+            return false;
+        }
+        index
+    };
+    return start > 0;
+}
+
+pub fn get_pair(depth: i32, count: usize) -> bool {
+    let (start, end) = {
+        if depth == 0 {
+            return false;
+        }
+        (count, count + 1)
+    };
+    return start < end;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("if (depth === 0)"),
+        "should hoist the guard condition inline: {output}"
+    );
+    assert!(
+        output.contains("return false"),
+        "should preserve the early return: {output}"
+    );
+    assert!(
+        output.contains("const start = index"),
+        "should bind the block's final expression: {output}"
+    );
+    assert!(
+        !output.contains("(() =>"),
+        "should not use IIFE for value block with return: {output}"
+    );
+    assert!(
+        output.contains("const [start, end] = [count, count + 1]"),
+        "should handle tuple destructuring: {output}"
     );
 }

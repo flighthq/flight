@@ -17,9 +17,9 @@ use crate::model::{ExternalNullableOptionProgram, Program, StringUnionStyle, Tes
 use crate::{CompileError, compile_error};
 
 use safety::{
-    reject_entity_runtime_state_store_collisions, reject_function_exits_in_value_position,
-    reject_unresolved_pattern_field, reject_unsafe_lazy_lock_initializers,
-    reject_unsupported_array_like_uses,
+    block_contains_function_exits, reject_entity_runtime_state_store_collisions,
+    reject_function_exits_in_value_position, reject_unresolved_pattern_field,
+    reject_unsafe_lazy_lock_initializers, reject_unsupported_array_like_uses,
 };
 #[allow(unused_imports)]
 pub(crate) use vitest_helpers::*;
@@ -9516,6 +9516,18 @@ pub(crate) fn emit_local_with_shadow_and_else(
             return Ok(result);
         }
     }
+    if let Some(initializer) = &local.init
+        && let Expr::Block(block) = initializer.expr.as_ref()
+        && block_contains_function_exits(&block.block)
+    {
+        return emit_hoisted_value_block_local(out, local, &block.block, entities, indent, shadowed, rebound);
+    }
+    if let Some(initializer) = &local.init
+        && let Expr::Unsafe(unsafe_block) = initializer.expr.as_ref()
+        && block_contains_function_exits(&unsafe_block.block)
+    {
+        return emit_hoisted_value_block_local(out, local, &unsafe_block.block, entities, indent, shadowed, rebound);
+    }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => {
@@ -9845,6 +9857,53 @@ fn emit_option_match_with_return_local(
         }
     }
     return Ok(Some(()));
+}
+
+fn emit_hoisted_value_block_local(
+    out: &mut String,
+    local: &syn::Local,
+    block: &syn::Block,
+    entities: &HashSet<String>,
+    indent: usize,
+    shadowed: bool,
+    rebound: bool,
+) -> Result<(), CompileError> {
+    let Some((last, preceding)) = block.stmts.split_last() else {
+        return Err(compile_error("hoisted value block cannot be empty"));
+    };
+    let Stmt::Expr(value, None) = last else {
+        return Err(compile_error(
+            "hoisted value block must end with an expression",
+        ));
+    };
+    let block_context = emit_block_with_context(out, preceding, entities, indent)?;
+    let mutable = pattern_is_mutable(&local.pat);
+    let (pattern, rust_type) = match &local.pat {
+        Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => (emit_pattern(&local.pat)?, None),
+        Pat::Type(typed) => {
+            let pattern = emit_pattern(&typed.pat)?;
+            (pattern, Some(typed.ty.as_ref()))
+        }
+        Pat::Wild(_) => ("_".to_string(), None),
+        _ => {
+            return Err(compile_error(
+                "unsupported destructuring in hoisted value block binding",
+            ));
+        }
+    };
+    let declaration = if shadowed || mutable || rebound {
+        "let"
+    } else {
+        "const"
+    };
+    let value_str = if let Some(rust_type) = rust_type {
+        emit_expression_for_type(value, rust_type, &block_context)?
+    } else {
+        emit_expression(value, &block_context)?
+    };
+    write_indent(out, indent);
+    writeln!(out, "{declaration} {pattern} = {value_str};").expect("writing to a String cannot fail");
+    return Ok(());
 }
 
 fn emit_let_else_local(
