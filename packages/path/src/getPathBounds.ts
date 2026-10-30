@@ -61,6 +61,21 @@ function evalQuadratic(p0: number, p1: number, p2: number, t: number): number {
   return mt * mt * p0 + 2.0 * mt * t * p1 + t * t * p2;
 }
 
+function expandBounds(bounds: BoundsAccumulator, px: number, py: number): void {
+  if (px < bounds.minX) {
+    bounds.minX = px;
+  }
+  if (px > bounds.maxX) {
+    bounds.maxX = px;
+  }
+  if (py < bounds.minY) {
+    bounds.minY = py;
+  }
+  if (py > bounds.maxY) {
+    bounds.maxY = py;
+  }
+}
+
 function expandCubicBounds(
   x0: number,
   y0: number,
@@ -80,21 +95,6 @@ function expandCubicBounds(
   const yRoots = cubicExtremumRoots(y0, c1y, c2y, y3);
   for (const t of yRoots) {
     expandBounds(bounds, evalCubic(x0, c1x, c2x, x3, t), evalCubic(y0, c1y, c2y, y3, t));
-  }
-}
-
-function expandBounds(bounds: BoundsAccumulator, px: number, py: number): void {
-  if (px < bounds.minX) {
-    bounds.minX = px;
-  }
-  if (px > bounds.maxX) {
-    bounds.maxX = px;
-  }
-  if (py < bounds.minY) {
-    bounds.minY = py;
-  }
-  if (py > bounds.maxY) {
-    bounds.maxY = py;
   }
 }
 
