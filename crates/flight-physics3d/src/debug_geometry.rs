@@ -22,7 +22,7 @@ const BOX_EDGES: [(usize, usize); 12] = [
 ];
 
 pub fn create_physics_3d_debug_geometry() -> Physics3DDebugGeometry {
-    let mut out = allocate_entity();
+    let mut out: Physics3DDebugGeometry = allocate_entity();
     initialize_physics_3d_debug_geometry(&mut out);
     out
 }

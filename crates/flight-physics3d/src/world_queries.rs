@@ -18,19 +18,19 @@ pub fn create_physics_3d_query_filter() -> Physics3DQueryFilter {
 }
 
 pub fn create_physics_3d_query_result() -> Physics3DQueryResult {
-    let mut out = allocate_entity();
+    let mut out: Physics3DQueryResult = allocate_entity();
     initialize_physics_3d_query_result(&mut out);
     out
 }
 
 pub fn create_physics_3d_ray_result() -> Physics3DRayResult {
-    let mut out = allocate_entity();
+    let mut out: Physics3DRayResult = allocate_entity();
     initialize_physics_3d_ray_result(&mut out);
     out
 }
 
 pub fn create_physics_3d_shape_cast_result() -> Physics3DShapeCastResult {
-    let mut out = allocate_entity();
+    let mut out: Physics3DShapeCastResult = allocate_entity();
     initialize_physics_3d_shape_cast_result(&mut out);
     out
 }

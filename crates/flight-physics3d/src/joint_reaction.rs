@@ -4,7 +4,7 @@ use flight_entity::allocate_entity;
 use crate::*;
 
 pub fn create_physics_3d_joint_reaction() -> Physics3DJointReaction {
-    let mut out = allocate_entity();
+    let mut out: Physics3DJointReaction = allocate_entity();
     initialize_physics_3d_joint_reaction(&mut out);
     out
 }

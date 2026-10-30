@@ -16,13 +16,13 @@ use crate::{
 const AXIS_SELECTION_THRESHOLD: f32 = 0.5773502691896258;
 
 pub fn create_physics_3d_contact_constraint() -> Physics3DContactConstraint {
-    let mut out = allocate_entity();
+    let mut out: Physics3DContactConstraint = allocate_entity();
     initialize_physics_3d_contact_constraint(&mut out);
     return out;
 }
 
 pub fn create_physics_3d_contact_constraint_point() -> Physics3DContactConstraintPoint {
-    let mut out = allocate_entity();
+    let mut out: Physics3DContactConstraintPoint = allocate_entity();
     initialize_physics_3d_contact_constraint_point(&mut out);
     return out;
 }

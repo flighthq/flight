@@ -6,13 +6,13 @@ use crate::{Physics3DContact, Physics3DContactPoint};
 
 // flight-lint: allow(conform-params) D23: canonical Entity create is zero-argument; callers assign the contact pair after creation
 pub fn create_physics_3d_contact() -> Ref<Physics3DContact> {
-    let mut out = allocate_entity();
+    let mut out: Physics3DContact = allocate_entity();
     initialize_physics_3d_contact(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
 pub fn create_physics_3d_contact_point() -> Physics3DContactPoint {
-    let mut out = allocate_entity();
+    let mut out: Physics3DContactPoint = allocate_entity();
     initialize_physics_3d_contact_point(&mut out);
     return out;
 }

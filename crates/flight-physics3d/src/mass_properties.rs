@@ -9,7 +9,7 @@ use crate::symmetric_tensor::{
 use crate::{Physics3DBodyType, Physics3DCollider, Physics3DMassData, RigidBody3D};
 
 pub fn create_physics_3d_mass_data() -> Physics3DMassData {
-    let mut out = allocate_entity();
+    let mut out: Physics3DMassData = allocate_entity();
     initialize_physics_3d_mass_data(&mut out);
     return out;
 }
