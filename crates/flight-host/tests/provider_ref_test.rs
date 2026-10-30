@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use flight_host::contract::*;
 
-
 type Callback = Arc<dyn Fn() + Send + Sync>;
 
 struct CapabilityFacet {

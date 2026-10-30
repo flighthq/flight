@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use flight_host::contract::*;
 
-
 #[test]
 fn input_ingress_sources_are_told_apart_by_handle_identity_not_by_provider() {
     let provider: ProviderRef = identity();
