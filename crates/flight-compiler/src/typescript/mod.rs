@@ -10877,6 +10877,10 @@ fn emit_matches_literal_predicate(
             {
                 return Ok(Some(format!("{subject} !== {absent} && ({inner})")));
             }
+            if let Some(test) = data_union_pattern_test(&tuple.elems[0], subject, entities)? {
+                let inner = test.predicate.unwrap_or_else(|| "true".to_string());
+                return Ok(Some(format!("{subject} !== {absent} && ({inner})")));
+            }
             Ok(None)
         }
         _ => Ok(None),
