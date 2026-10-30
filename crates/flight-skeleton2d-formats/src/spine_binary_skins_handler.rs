@@ -56,7 +56,7 @@ fn parse_skins(context: &mut SpineBinarySectionContext<'_>, retain: bool) {
             break;
         }
         let name = read_spine_binary_string_reference(&mut context.reader, &context.strings)
-            .unwrap_or_default();
+            .unwrap_or(String::new());
         for _ in 0..SPINE_BINARY_SKIN_REQUIREMENT_LISTS {
             let required = read_spine_binary_varint(&mut context.reader) as usize;
             for _ in 0..required {
@@ -254,7 +254,7 @@ fn read_vertices(
         );
     }
     let mut bone_counts = vec![0_u16; vertex_count];
-    let mut influences = Vec::new();
+    let mut influences: Vec<f32> = Vec::new();
     for count in &mut bone_counts {
         if is_spine_binary_reader_overrun(reader) {
             break;
@@ -288,7 +288,7 @@ fn reject_mesh(
     let mut detail = HashMap::new();
     detail.insert(
         "attachment".to_string(),
-        ImportDiagnosticDetailValue::String(name.clone().unwrap_or_default()),
+        ImportDiagnosticDetailValue::String(name.clone().unwrap_or(String::new())),
     );
     detail.insert(
         "declared".to_string(),

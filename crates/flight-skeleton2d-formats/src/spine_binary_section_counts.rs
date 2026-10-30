@@ -12,7 +12,7 @@ use crate::spine_binary_version::get_spine_binary_version;
 use crate::types::*;
 
 pub fn collect_spine_binary_section_counts(source: &Uint8Array) -> Option<HashMap<String, usize>> {
-    let version = get_spine_binary_version(source)?;
+    let version: String = get_spine_binary_version(source)?;
     if !version.starts_with("4.1.") && version != "4.1" {
         return None;
     }

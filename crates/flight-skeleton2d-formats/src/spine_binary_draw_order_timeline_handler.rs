@@ -19,7 +19,7 @@ fn consume_draw_order(context: &mut SpineBinaryTimelineContext<'_, '_>, retain: 
     }
     let frame_count = read_spine_binary_varint(&mut context.section.reader) as usize;
     let mut times = Vec::new();
-    let mut orderings = Vec::new();
+    let mut orderings: Vec<f32> = Vec::new();
     for _ in 0..frame_count {
         if is_spine_binary_reader_overrun(&context.section.reader) {
             break;
@@ -35,7 +35,7 @@ fn consume_draw_order(context: &mut SpineBinaryTimelineContext<'_, '_>, retain: 
         if !retain {
             continue;
         }
-        let mut ordering = Vec::new();
+        let mut ordering: Vec<f32> = Vec::new();
         if resolve_spine_draw_ordering(&mut ordering, &moves, context.section.slots.len() as i32) {
             times.push(time);
             orderings.extend(ordering);

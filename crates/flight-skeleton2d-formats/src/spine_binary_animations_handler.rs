@@ -21,7 +21,7 @@ fn consume_animations(context: &mut SpineBinarySectionContext<'_>, retain: bool)
         if is_spine_binary_reader_overrun(&context.reader) {
             break;
         }
-        let name = read_spine_binary_string(&mut context.reader).unwrap_or_default();
+        let name = read_spine_binary_string(&mut context.reader).unwrap_or(String::new());
         read_spine_binary_varint(&mut context.reader);
         let mut timeline = SpineBinaryTimelineContext {
             channels: Vec::new(),

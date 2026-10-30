@@ -32,7 +32,7 @@ fn parse_spine_binary_bones(context: &mut SpineBinarySectionContext<'_>, retain:
             let mut detail = HashMap::new();
             detail.insert(
                 "bone".to_string(),
-                ImportDiagnosticDetailValue::String(name.unwrap_or_default()),
+                ImportDiagnosticDetailValue::String(name.unwrap_or(String::new())),
             );
             detail.insert(
                 "declared".to_string(),
