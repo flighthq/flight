@@ -14,7 +14,7 @@ use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_geometry::{Rectangle, create_rectangle};
 pub use flight_path::PathWinding;
 
-pub type LogState = flight_log::LogStateRef;
+pub(crate) type LogState = flight_log::LogStateRef;
 
 // flight-lint: allow(f64) clip contours preserve the source Path.data coordinates and flattened path precision
 #[derive(Debug)]
