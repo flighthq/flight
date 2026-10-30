@@ -220,7 +220,7 @@ pub fn create_protocol_handler() -> ProtocolHandler {
 pub fn create_protocol_url(parts: &ProtocolUrlParts) -> String {
     let scheme = parts.scheme.as_deref().unwrap_or("unknown");
     let host = parts.host.as_deref().unwrap_or("");
-    let path = parts.path.as_deref().unwrap_or("");
+    let path: &str = parts.path.as_deref().unwrap_or("");
     let authority = if host.is_empty() {
         String::new()
     } else {
@@ -340,7 +340,8 @@ pub fn get_registered_protocol_schemes(
     host_protocol_registration: &HostProtocolRegistrationCapability,
 ) {
     out.clear();
-    out.extend((host_protocol_registration.get_registered_schemes)());
+    let schemes: Vec<String> = (host_protocol_registration.get_registered_schemes)();
+    out.extend(schemes);
 }
 
 pub fn is_protocol_scheme_default(
