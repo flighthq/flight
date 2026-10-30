@@ -10,7 +10,8 @@ pub fn collada_child(element: Option<&Ref<XmlElement>>, name: &str) -> Option<Re
         .iter()
         .find(|child| {
             let child = child.read().unwrap();
-            return child.name == name || child.name.ends_with(&format!(":{name}"));
+            let child_name: &str = &child.name;
+            return child_name == name || child_name.ends_with(&format!(":{name}"));
         })
         .cloned();
 }
@@ -29,7 +30,8 @@ pub fn collada_children(
     for child in &element.children {
         let matches = {
             let child = child.read().unwrap();
-            child.name == name || child.name.ends_with(&format!(":{name}"))
+            let child_name: &str = &child.name;
+            child_name == name || child_name.ends_with(&format!(":{name}"))
         };
         if matches {
             out.push(child.clone());
@@ -43,7 +45,8 @@ pub fn collada_descendants(out: &mut Vec<Ref<XmlElement>>, element: &Ref<XmlElem
     walk_collada_element(element, &mut |entry| {
         let matches = {
             let entry = entry.read().unwrap();
-            entry.name == name || entry.name.ends_with(&format!(":{name}"))
+            let entry_name: &str = &entry.name;
+            entry_name == name || entry_name.ends_with(&format!(":{name}"))
         };
         if matches {
             out.push(entry.clone());

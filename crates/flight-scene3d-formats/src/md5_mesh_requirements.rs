@@ -7,7 +7,7 @@ pub fn parse_md5_mesh_requirements(source: &str) -> RequirementSet {
     let mut features = Vec::new();
     collect_md5_mesh_features(&mut features, source);
     features.sort();
-    let mut requirements = Vec::new();
+    let mut requirements: Vec<Requirement> = Vec::new();
     for feature in features {
         requirements.push(Requirement {
             facet: RequirementFacet::DocumentFormat,

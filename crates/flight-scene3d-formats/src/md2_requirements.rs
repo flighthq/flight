@@ -5,7 +5,7 @@ use flight_entity::Uint8Array;
 use flight_requirement::{Requirement, RequirementFacet, RequirementSet, create_requirement_set};
 
 pub fn parse_md2_requirements(source: &Uint8Array) -> RequirementSet {
-    let mut requirements = Vec::new();
+    let mut requirements: Vec<Requirement> = Vec::new();
     let mut features = Vec::new();
     if collect_md2_features(&mut features, source) {
         features.sort();

@@ -49,8 +49,9 @@ pub fn build_binary_stl(facets: &[StlFixtureFacet], header: Option<&str>) -> Box
     let header = encode_utf8(header.unwrap_or("binary stl fixture"));
     let length = header.len().min(BINARY_STL_COUNT_OFFSET);
     bytes[..length].copy_from_slice(&header[..length]);
+    let facet_count: u32 = facets.len() as u32;
     bytes[BINARY_STL_COUNT_OFFSET..BINARY_STL_HEADER_SIZE]
-        .copy_from_slice(&(facets.len() as u32).to_le_bytes());
+        .copy_from_slice(&facet_count.to_le_bytes());
     for (triangle, facet) in facets.iter().enumerate() {
         let base = BINARY_STL_HEADER_SIZE + triangle * BINARY_STL_TRIANGLE_SIZE;
         for (vector, triple) in std::iter::once(&facet.normal)
@@ -59,10 +60,12 @@ pub fn build_binary_stl(facets: &[StlFixtureFacet], header: Option<&str>) -> Box
         {
             for component in 0..3 {
                 let offset = base + vector * 12 + component * 4;
-                bytes[offset..offset + 4].copy_from_slice(&triple[component].to_le_bytes());
+                let value: f32 = triple[component];
+                bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
             }
         }
-        bytes[base + 48..base + 50].copy_from_slice(&0_u16.to_le_bytes());
+        let attribute_byte_count: u16 = 0;
+        bytes[base + 48..base + 50].copy_from_slice(&attribute_byte_count.to_le_bytes());
     }
     return bytes;
 }

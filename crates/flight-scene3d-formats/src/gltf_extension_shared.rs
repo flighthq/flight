@@ -7,7 +7,7 @@ pub(crate) fn gltf_extension_materials(
     context: &Ref<GltfExtensionContext>,
 ) -> Vec<Ref<GltfMaterial>> {
     let source = context.read().unwrap().source.clone();
-    return source.read().unwrap().materials.clone().unwrap_or_default();
+    return source.read().unwrap().materials.clone().unwrap_or(Vec::new());
 }
 
 pub(crate) fn resolve_gltf_extension_texture(

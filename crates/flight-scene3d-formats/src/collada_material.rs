@@ -45,7 +45,7 @@ pub fn append_collada_materials(
                         (
                             "effect".to_string(),
                             ImportDiagnosticDetailValue::String(
-                                attribute(effect, "id").unwrap_or_default(),
+                                attribute(effect, "id").unwrap_or(String::new()),
                             ),
                         ),
                         (
@@ -61,7 +61,7 @@ pub fn append_collada_materials(
     descendants(&mut sources, root, "material");
     for source in sources {
         let id = attribute(&source, "id")
-            .unwrap_or_default()
+            .unwrap_or(String::new())
             .trim_matches(is_obj_whitespace)
             .to_string();
         let instance = child(Some(&source), "instance_effect");
@@ -194,7 +194,7 @@ fn convert_effect(
                     (
                         "effect".to_string(),
                         ImportDiagnosticDetailValue::String(
-                            attribute(effect, "id").unwrap_or_default(),
+                            attribute(effect, "id").unwrap_or(String::new()),
                         ),
                     ),
                     (
@@ -328,7 +328,7 @@ fn index_elements(root: &Ref<XmlElement>, name: &str) -> Vec<(String, Ref<XmlEle
     let mut indexed: Vec<(String, Ref<XmlElement>)> = Vec::new();
     for element in matches {
         let id = attribute(&element, "id")
-            .unwrap_or_default()
+            .unwrap_or(String::new())
             .trim_matches(is_obj_whitespace)
             .to_string();
         if !id.is_empty() && !indexed.iter().any(|entry| entry.0 == id) {
@@ -493,7 +493,7 @@ fn resolve_texture(
     if sampler_id.is_empty() {
         return None;
     }
-    let owner = attribute(effect, "id").unwrap_or_default();
+    let owner = attribute(effect, "id").unwrap_or(String::new());
     let Some(sampler) = lookup(parameters, sampler_id) else {
         missing_reference(
             diagnostics,
@@ -513,7 +513,7 @@ fn resolve_texture(
                 .trim_matches(is_obj_whitespace)
                 .to_string()
         })
-        .unwrap_or_default();
+        .unwrap_or(String::new());
     let Some(surface) = lookup(parameters, &surface_id) else {
         missing_reference(
             diagnostics,

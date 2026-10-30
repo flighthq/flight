@@ -262,7 +262,7 @@ fn build_gltf_document(
         .unwrap()
         .extensions_required
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     for extension in required {
         if !supported_gltf_extension(&extension, options) {
             tally_gltf_values(
@@ -283,7 +283,7 @@ fn build_gltf_document(
         .unwrap()
         .buffers
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let buffers = buffer_sources
         .iter()
         .map(|buffer| decode_gltf_buffer(buffer, binary, options, drops.as_ref()))
@@ -300,7 +300,7 @@ fn build_gltf_document(
         .unwrap()
         .images
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let images = source_images
         .iter()
         .enumerate()
@@ -317,7 +317,7 @@ fn build_gltf_document(
         .unwrap()
         .materials
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let materials = source_materials
         .iter()
         .map(|material| {
@@ -331,7 +331,7 @@ fn build_gltf_document(
         .unwrap()
         .meshes
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let mut meshes = Vec::new();
     let mut mesh_indices = Vec::new();
     for mesh in &source_meshes {
@@ -372,7 +372,7 @@ fn build_gltf_document(
         .unwrap()
         .nodes
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let mut nodes = Vec::new();
     let mut node_indices = Vec::new();
     let mut primitive_node_indices = Vec::new();
@@ -388,7 +388,7 @@ fn build_gltf_document(
         let expanded = mesh
             .and_then(|index| mesh_indices.read().unwrap().get(index).cloned())
             .map(|indices| indices.read().unwrap().clone())
-            .unwrap_or_default();
+            .unwrap_or(Vec::new());
         let index = nodes.len() as i32;
         node_indices.push(index);
         let mut primitive_nodes = Vec::new();
@@ -425,7 +425,7 @@ fn build_gltf_document(
         primitive_node_indices.push(Arc::new(RwLock::new(primitive_nodes)));
     }
     for (index, node) in source_nodes.iter().enumerate() {
-        let children = node.read().unwrap().children.clone().unwrap_or_default();
+        let children = node.read().unwrap().children.clone().unwrap_or(Vec::new());
         for (position, current) in children.into_iter().enumerate() {
             let child = gltf_array_index(&reader.metadata, node, "children", position, current)
                 .and_then(|index| node_indices.get(index))
@@ -441,7 +441,7 @@ fn build_gltf_document(
             .map(|scene| {
                 let (name, roots) = {
                     let row = scene.read().unwrap();
-                    (row.name.clone(), row.nodes.clone().unwrap_or_default())
+                    (row.name.clone(), row.nodes.clone().unwrap_or(Vec::new()))
                 };
                 let root_nodes = roots
                     .into_iter()
@@ -649,7 +649,7 @@ fn top_level_gltf_nodes(
             .unwrap()
             .children
             .clone()
-            .unwrap_or_default()
+            .unwrap_or(Vec::new())
             .into_iter()
             .enumerate()
         {

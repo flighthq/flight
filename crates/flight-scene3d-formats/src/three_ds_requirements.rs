@@ -5,7 +5,7 @@ use flight_entity::Uint8Array;
 use flight_requirement::{Requirement, RequirementFacet, RequirementSet, create_requirement_set};
 
 pub fn parse_three_ds_requirements(source: &Uint8Array) -> RequirementSet {
-    let mut requirements = Vec::new();
+    let mut requirements: Vec<Requirement> = Vec::new();
     let mut counts = Vec::new();
     if collect_three_ds_chunk_counts(&mut counts, source) {
         for row in counts {

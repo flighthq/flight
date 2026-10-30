@@ -36,6 +36,7 @@ pub(crate) fn decode_gltf_buffer(
         );
         return gltf_owned_byte_view(Box::new([]));
     };
+    let uri: &str = &uri;
     if uri.starts_with("data:") {
         if let Some(comma) = uri.find(',') {
             return gltf_owned_byte_view(decode_gltf_base64(&uri[comma + 1..]));
@@ -51,7 +52,7 @@ pub(crate) fn decode_gltf_buffer(
         drops,
         "external-missing",
         &[
-            ("firstUri", ImportDiagnosticDetailValue::String(uri)),
+            ("firstUri", ImportDiagnosticDetailValue::String(uri.to_string())),
             (
                 "reason",
                 ImportDiagnosticDetailValue::String("external-not-supplied".to_string()),

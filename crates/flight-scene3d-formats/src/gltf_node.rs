@@ -22,7 +22,7 @@ pub(crate) fn build_gltf_node_world_transforms(
     out.clear();
     let mut parents = vec![-1_i32; nodes.len()];
     for (parent, node) in nodes.iter().enumerate() {
-        let children = node.read().unwrap().children.clone().unwrap_or_default();
+        let children = node.read().unwrap().children.clone().unwrap_or(Vec::new());
         for (position, current) in children.into_iter().enumerate() {
             let child = gltf_original_array_number(metadata, node, "children", position, current);
             if child < 0.0 || child >= nodes.len() as f64 {
@@ -70,7 +70,7 @@ pub(crate) fn build_gltf_node_world_transforms(
         .collect();
     let mut world_matrices: Vec<_> = nodes.iter().map(|_| create_matrix4()).collect();
     let mut state = vec![0_u8; nodes.len()];
-    let mut stack = Vec::new();
+    let mut stack: Vec<usize> = Vec::new();
     for start in 0..nodes.len() {
         while state[start] != 2 {
             stack.clear();

@@ -7,7 +7,7 @@ use flight_requirement::{Requirement, RequirementFacet, RequirementSet, create_r
 
 fn build_gltf_requirement_set(features: &mut [String]) -> RequirementSet {
     features.sort();
-    let mut requirements = Vec::new();
+    let mut requirements: Vec<Requirement> = Vec::new();
     for feature in features {
         requirements.push(Requirement {
             facet: RequirementFacet::DocumentFormat,
