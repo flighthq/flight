@@ -124,7 +124,8 @@ pub fn dispose_list_controller(controller: &ListController) {
     dispose_gui_controller(controller, &|| {
         let mut s = r.write().unwrap();
         s.fields.content = None;
-        s.fields.items.clear();
+        let items: &mut Vec<Node2DRef> = &mut s.fields.items;
+        items.clear();
         s.fields.scroll_bar = None;
         s.fields.viewport = None;
     });

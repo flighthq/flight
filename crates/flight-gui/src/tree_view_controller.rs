@@ -141,10 +141,14 @@ pub fn dispose_tree_view_controller(controller: &TreeViewController) {
     let r = get_gui_controller_runtime(controller);
     dispose_gui_controller(controller, &|| {
         let mut s = r.write().unwrap();
-        s.fields.expanded.clear();
-        s.fields.items.clear();
-        s.fields.parents.clear();
-        s.fields.roots.clear();
+        let expanded: &mut Vec<Ref<TreeViewControllerItem>> = &mut s.fields.expanded;
+        expanded.clear();
+        let items: &mut Vec<Ref<TreeViewControllerItem>> = &mut s.fields.items;
+        items.clear();
+        let parents: &mut Vec<TreeViewParent> = &mut s.fields.parents;
+        parents.clear();
+        let roots: &mut Vec<Ref<TreeViewControllerItem>> = &mut s.fields.roots;
+        roots.clear();
         s.fields.selected_item = None;
     });
 }

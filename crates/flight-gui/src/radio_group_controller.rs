@@ -76,7 +76,9 @@ pub fn initialize_radio_group_controller(
 pub fn dispose_radio_group_controller(controller: &RadioGroupController) {
     let runtime = get_gui_controller_runtime(controller);
     dispose_gui_controller(controller, &|| {
-        runtime.write().unwrap().fields.toggles.clear()
+        let mut s = runtime.write().unwrap();
+        let toggles: &mut Vec<Ref<ToggleController>> = &mut s.fields.toggles;
+        toggles.clear();
     });
 }
 pub fn get_radio_group_controller_selected_index(controller: &RadioGroupController) -> i32 {
