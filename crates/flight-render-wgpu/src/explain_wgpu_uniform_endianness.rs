@@ -20,7 +20,8 @@ pub fn explain_wgpu_uniform_endianness() -> WgpuUniformEndiannessExplanation {
 }
 
 fn probe_endianness() -> PlatformEndianness {
-    let bytes = 0x0102_u16.to_ne_bytes();
+    let probe: u16 = 0x0102;
+    let bytes = probe.to_ne_bytes();
     if bytes[0] == 0x01 {
         return PlatformEndianness::Big;
     }
