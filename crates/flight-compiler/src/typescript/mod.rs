@@ -7904,6 +7904,10 @@ fn emit_expression_value(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
+        Expr::Async(async_block) => emit_async_block_expression(&async_block.block, entities),
+        Expr::Await(await_expr) => {
+            Ok(format!("await {}", emit_expression(&await_expr.base, entities)?))
+        }
         Expr::Assign(assign) => {
             if let Expr::Field(field) = assign.left.as_ref()
                 && let Some(store) = entity_runtime_state_access(field, entities)?
@@ -8095,6 +8099,12 @@ fn emit_expression_value(
             // `Ref<T>` is `Arc<RwLock<T>>` and lowers to `T`, so its constructor lowers to its argument.
             if (expression_is_associated_path(&call.func, "Arc", "new")
                 || expression_is_associated_path(&call.func, "Ref", "new"))
+                && call.args.len() == 1
+            {
+                return emit_expression(&call.args[0], entities);
+            }
+            if (expression_is_associated_path(&call.func, "Box", "new")
+                || expression_is_associated_path(&call.func, "Box", "pin"))
                 && call.args.len() == 1
             {
                 return emit_expression(&call.args[0], entities);
@@ -8764,6 +8774,46 @@ fn emit_block_expression(
             return Err(compile_error(
                 "portable value block must end with an expression",
             ));
+        }
+    }
+}
+
+fn emit_async_block_expression(
+    block: &syn::Block,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let Some((last, preceding)) = block.stmts.split_last() else {
+        return Ok("(async () => undefined)()".to_string());
+    };
+    match last {
+        Stmt::Expr(value, None) if preceding.is_empty() => {
+            let body = concise_arrow_body(emit_expression(value, entities)?);
+            Ok(format!("(async () => {body})()"))
+        }
+        Stmt::Expr(value, None) => {
+            let mut out = "(async () => {\n".to_string();
+            let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
+            write_indent(&mut out, 1);
+            writeln!(out, "return {};", emit_expression(value, &block_context)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("})()");
+            Ok(out)
+        }
+        Stmt::Expr(value, Some(_)) if expression_is_diverging(value) => {
+            let mut out = "(async () => {\n".to_string();
+            let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
+            write_indent(&mut out, 1);
+            writeln!(out, "{}", emit_diverging_statement(value, &block_context)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("})()");
+            Ok(out)
+        }
+        _ => {
+            let mut out = "(async () => {\n".to_string();
+            let block_context = emit_block_with_context(&mut out, &block.stmts, entities, 1)?;
+            let _ = &block_context;
+            out.push_str("})()");
+            Ok(out)
         }
     }
 }

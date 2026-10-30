@@ -2308,10 +2308,6 @@ pub struct Capability {
                 "portable `async fn f` has no portable lowering",
             ),
             (
-                "pub fn f(x: u32) -> u32 { let y = x.await; return y; }\n",
-                "unsupported Rust expression `await expression`",
-            ),
-            (
                 "use std::pin::Pin;\npub type P = Pin<Box<u32>>;\n",
                 "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
             ),
@@ -2350,6 +2346,46 @@ pub struct Capability {
                 "{source}"
             );
         }
+    }
+
+    #[test]
+    fn lowers_async_blocks_and_await_expressions() {
+        assert_eq!(
+            compile_typescript(
+                "pub fn f() -> u32 {\n    let x = async { 42_u32 };\n    return 0;\n}\n",
+                None
+            )
+            .unwrap(),
+            "export function f(): number {\n  const x = (async () => 42)();\n  return (0) >>> 0;\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub struct Out {\n    pub ok: bool,\n}\npub fn f() -> u32 {\n    let x = async { Out { ok: true } };\n    return 0;\n}\n",
+                None
+            )
+            .unwrap(),
+            "export interface Out {\n  ok: boolean;\n}\n\nexport function f(): number {\n  const x = (async () => ({ ok: true }))();\n  return (0) >>> 0;\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub fn f(x: u32) -> u32 { let y = x.await; return y; }\n",
+                None
+            )
+            .unwrap(),
+            "export function f(x: number): number {\n  const y = await x;\n  return (y) >>> 0;\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_box_new_and_box_pin_as_transparent_wrappers() {
+        assert_eq!(
+            compile_typescript(
+                "pub fn f(x: u32) -> u32 {\n    let y = Box::new(x);\n    return y;\n}\n",
+                None
+            )
+            .unwrap(),
+            "export function f(x: number): number {\n  const y = x;\n  return (y) >>> 0;\n}\n"
+        );
     }
 
     #[test]
