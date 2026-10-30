@@ -44,12 +44,9 @@ pub fn can_share_files(
 // flight-lint: allow(conform-params) D5: explicit owning state replaces source module-global ordered Set
 pub fn detach_share_signals(state: &ShareState, signals: &Ref<ShareSignals>) {
     let uid = get_entity_uid(&mut *signals.write().unwrap());
-    state
-        .data
-        .write()
-        .unwrap()
-        .attachments
-        .retain(|entry| entry.uid != uid);
+    let mut data = state.data.write().unwrap();
+    let attachments: &mut Vec<ShareAttachment> = &mut data.attachments;
+    attachments.retain(|entry| entry.uid != uid);
 }
 
 // flight-lint: allow(conform-params) D5: explicit owning state replaces source module-global ordered Set
