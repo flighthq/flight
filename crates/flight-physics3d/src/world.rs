@@ -3,6 +3,7 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, RwLock};
 
 use flight_collision::CollisionColliderShape3D;
+use flight_collision::contract::clone_collision_collider_shape3d;
 use flight_entity::allocate_entity;
 
 use crate::collider_transform::create_physics_3d_collider_world_shape;
@@ -63,7 +64,7 @@ pub fn initialize_physics_3d_collider(
     local: &CollisionColliderShape3D,
 ) {
     out.filter = Default::default();
-    out.local = clone_physics_3d_collider_shape(local);
+    out.local = clone_collision_collider_shape3d(local);
     out.material = Default::default();
     out.sensor = false;
     out.world = create_physics_3d_collider_world_shape(&out.local);
@@ -452,20 +453,6 @@ fn clear_physics_3d_solve_workspace(world: &mut Physics3DWorld) {
     world.solve_island_contact_indices.clear();
     world.solve_island_joint_indices.clear();
     world.solve_island_cursors.clear();
-}
-
-fn clone_physics_3d_collider_shape(shape: &CollisionColliderShape3D) -> CollisionColliderShape3D {
-    return match shape {
-        CollisionColliderShape3D::BuiltIn(shape) => {
-            CollisionColliderShape3D::BuiltIn(shape.clone())
-        }
-        CollisionColliderShape3D::TriangleMesh(shape) => CollisionColliderShape3D::TriangleMesh(
-            Arc::new(RwLock::new(shape.read().unwrap().clone())),
-        ),
-        CollisionColliderShape3D::Heightfield(shape) => CollisionColliderShape3D::Heightfield(
-            Arc::new(RwLock::new(shape.read().unwrap().clone())),
-        ),
-    };
 }
 
 pub fn find_physics_3d_body(world: &Physics3DWorld, index: i32) -> Option<RigidBody3DRef> {

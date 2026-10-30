@@ -1,3 +1,4 @@
+import { cloneCollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
@@ -778,21 +779,6 @@ export function writeRigidBody3DWorldCenter(body: Readonly<RigidBody3D>, out: nu
 // The serializable-shape version of `Physics3DWorld`. Bumped when a field a format layer would have
 // written changes meaning, so a reconstructed world can be recognized as older and upgraded.
 export const Physics3DWorldVersion = 4;
-
-// Copies an authored shape so a collider owns its own geometry. The point list is copied too — sharing
-// the array would let two colliders that look independent move together.
-function cloneCollisionColliderShape3D(shape: Readonly<CollisionColliderShape3D>): CollisionColliderShape3D {
-  if (shape.kind === 'convex') return { kind: 'convex', points: shape.points.slice() };
-  if (shape.kind === 'triangle-mesh') {
-    return {
-      ...shape,
-      points: shape.points.slice(),
-      indices: shape.indices.slice(),
-    };
-  }
-  if (shape.kind === 'heightfield') return { ...shape, heights: shape.heights.slice() };
-  return { ...shape };
-}
 
 function isPhysics3DStaticSurfaceCollider(collider: Readonly<Physics3DCollider>): boolean {
   return collider.local.kind === 'triangle-mesh' || collider.local.kind === 'heightfield';
