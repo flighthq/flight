@@ -1692,8 +1692,8 @@ pub fn read(gate: &Gate) -> i32 {
                 "should bind the final expression: {output}"
             );
         }
-        assert_eq!(
-            compile_typescript(
+        {
+            let output = compile_typescript(
                 r#"pub fn pick(flag: bool, value: i32) -> i32 {
     let picked = match flag {
         true => value,
@@ -1704,10 +1704,16 @@ pub fn read(gate: &Gate) -> i32 {
 "#,
                 None,
             )
-            .unwrap_err()
-            .to_string(),
-            "portable `match` used as a value cannot use `return` to leave the enclosing function; bind the value first and exit with a statement",
-        );
+            .unwrap();
+            assert!(
+                output.contains("picked = value"),
+                "match-value with return should hoist and assign: {output}"
+            );
+            assert!(
+                output.contains("return 0"),
+                "return arm should emit return: {output}"
+            );
+        }
         let output = compile_typescript(
             r#"pub fn apply(values: Vec<i32>) -> Vec<i32> {
     let mapped = {

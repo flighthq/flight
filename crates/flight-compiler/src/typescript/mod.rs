@@ -9526,6 +9526,20 @@ pub(crate) fn emit_local_with_shadow_and_else(
         )? {
             return Ok(result);
         }
+        if reject_function_exits_in_value_position(
+            |visitor| {
+                for arm in &match_expr.arms {
+                    visitor.visit_arm(arm);
+                }
+            },
+            "",
+        )
+        .is_err()
+        {
+            return emit_hoisted_match_value_local(
+                out, local, match_expr, entities, indent, shadowed, rebound,
+            );
+        }
     }
     if let Some(initializer) = &local.init
         && let Expr::Block(block) = initializer.expr.as_ref()
@@ -9874,6 +9888,288 @@ fn emit_option_match_with_return_local(
         }
     }
     return Ok(Some(()));
+}
+
+fn arm_body_contains_function_exit(body: &Expr) -> bool {
+    return match body {
+        Expr::Return(_) => true,
+        Expr::Block(block) => block_contains_function_exits(&block.block),
+        _ => false,
+    };
+}
+
+enum HoistedMatchAction<'a> {
+    Assign(&'a str),
+    Return,
+}
+
+fn emit_hoisted_match_arm_value(
+    out: &mut String,
+    value_str: &str,
+    action: &HoistedMatchAction<'_>,
+    indent: usize,
+) {
+    write_indent(out, indent);
+    match action {
+        HoistedMatchAction::Assign(target) => {
+            writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
+        }
+        HoistedMatchAction::Return => {
+            writeln!(out, "return {value_str};").expect("writing to a String cannot fail");
+        }
+    }
+}
+
+fn emit_hoisted_match_arm_body(
+    out: &mut String,
+    body: &Expr,
+    action: &HoistedMatchAction<'_>,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    if let Expr::Return(_) = body {
+        return emit_statement(out, &Stmt::Expr(body.clone(), None), entities, indent);
+    }
+    if let Expr::Block(block) = body {
+        let Some((last, preceding)) = block.block.stmts.split_last() else {
+            return Err(compile_error(
+                "hoisted match-value arm block cannot be empty",
+            ));
+        };
+        let block_context = emit_block_with_context(out, preceding, entities, indent)?;
+        if let Stmt::Expr(value, None) = last {
+            let value_str = emit_expression(value, &block_context)?;
+            emit_hoisted_match_arm_value(out, &value_str, action, indent);
+        } else {
+            emit_statement(out, last, &block_context, indent)?;
+        }
+        return Ok(());
+    }
+    let value_str = emit_expression(body, entities)?;
+    emit_hoisted_match_arm_value(out, &value_str, action, indent);
+    return Ok(());
+}
+
+fn emit_hoisted_match_value_local(
+    out: &mut String,
+    local: &syn::Local,
+    match_expr: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+    _shadowed: bool,
+    _rebound: bool,
+) -> Result<(), CompileError> {
+    let (pattern, _rust_type) = match &local.pat {
+        Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => (emit_pattern(&local.pat)?, None),
+        Pat::Type(typed) => {
+            let pattern = emit_pattern(&typed.pat)?;
+            (pattern, Some(typed.ty.as_ref()))
+        }
+        Pat::Wild(_) => ("_".to_string(), None),
+        _ => {
+            return Err(compile_error(
+                "unsupported destructuring in hoisted match-value binding",
+            ));
+        }
+    };
+    write_indent(out, indent);
+    writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
+    emit_match_statement_with_target(out, match_expr, entities, indent, &pattern)?;
+    return Ok(());
+}
+
+fn emit_return_match_with_exits(
+    out: &mut String,
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    return emit_match_statement_with_action(out, expression, entities, indent, &HoistedMatchAction::Return);
+}
+
+fn emit_match_statement_with_target(
+    out: &mut String,
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+    target: &str,
+) -> Result<(), CompileError> {
+    return emit_match_statement_with_action(out, expression, entities, indent, &HoistedMatchAction::Assign(target));
+}
+
+fn emit_match_statement_with_action(
+    out: &mut String,
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+    action: &HoistedMatchAction<'_>,
+) -> Result<(), CompileError> {
+    if let Some(arms) = analyze_option_match(&expression.arms) {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        let absent = option_absent_value(&expression.expr, entities);
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            write_indent(out, indent + 1);
+            let prefix = if index == 0 { "if" } else { "else if" };
+            let operator = if info.present { "!==" } else { "===" };
+            writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
+                .expect("writing to a String cannot fail");
+            if let Some(binding) = info.binding {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
+    if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            write_indent(out, indent + 1);
+            if info.otherwise {
+                if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(
+                    out,
+                    "{prefix} ({}) {{",
+                    tagged_data_union_predicate(&info.variants, "matchValue")
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some(binding) = info.catch_all_binding {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            for (binding, value) in tagged_data_union_bindings(&info.variants, "matchValue") {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = {value};")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
+    if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            write_indent(out, indent + 1);
+            if info.catch_all {
+                if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(
+                    out,
+                    "{prefix} ({}) {{",
+                    if info.reserved_key_variants.is_empty() {
+                        runtime_categories_predicate(&info.categories, "matchValue")
+                    } else {
+                        reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
+                    }
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some(binding) = info.binding {
+                write_indent(out, indent + 2);
+                let value = info.binding_type.map_or_else(
+                    || "matchValue".to_string(),
+                    |rust_type| format!("matchValue as {rust_type}"),
+                );
+                writeln!(out, "const {binding} = {value};")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "switch ({}) {{",
+        emit_switch_scrutinee(expression, entities)?
+    )
+    .expect("writing to a String cannot fail");
+    for arm in &expression.arms {
+        if arm.guard.is_some() {
+            return Err(compile_error("portable Rust match arms cannot use guards"));
+        }
+        for pattern in emit_match_patterns(&arm.pat, entities)? {
+            write_indent(out, indent + 1);
+            if pattern == "default" {
+                out.push_str("default:\n");
+            } else {
+                writeln!(out, "case {pattern}:").expect("writing to a String cannot fail");
+            }
+        }
+        let arm_context = lexical_pattern_context(entities, &arm.pat);
+        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+        if matches!(action, HoistedMatchAction::Assign(_))
+            && !arm_body_contains_function_exit(&arm.body)
+        {
+            write_indent(out, indent + 2);
+            out.push_str("break;\n");
+        }
+    }
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
 }
 
 fn emit_hoisted_value_block_local(
@@ -14861,6 +15157,27 @@ fn emit_statement(
         Stmt::Expr(Expr::Continue(_), _) => {
             write_indent(out, indent);
             out.push_str("continue;\n");
+        }
+        Stmt::Expr(Expr::Return(return_expression), _)
+            if return_expression.expr.as_deref().is_some_and(|v| {
+                matches!(v, Expr::Match(_))
+                    && reject_function_exits_in_value_position(
+                        |visitor| {
+                            if let Expr::Match(m) = v {
+                                for arm in &m.arms {
+                                    visitor.visit_arm(arm);
+                                }
+                            }
+                        },
+                        "",
+                    )
+                    .is_err()
+            }) =>
+        {
+            let Expr::Match(match_expr) = return_expression.expr.as_deref().unwrap() else {
+                unreachable!()
+            };
+            emit_return_match_with_exits(out, match_expr, entities, indent)?;
         }
         Stmt::Expr(Expr::Return(return_expression), _) => {
             write_indent(out, indent);
