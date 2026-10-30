@@ -17971,3 +17971,26 @@ fn vec_retain_unwind_reference() {
     assert_eq!(retain_even_until(&[1, 2, 3], 1), vec![1, 2, 3]);
     assert_eq!(retain_even_until(&[1, 2, 3, 4], 99), vec![2, 4]);
 }
+
+#[test]
+fn lowers_let_chain_if_expression() {
+    let source = r#"
+pub fn first_long_line(text: &str, min_length: usize) -> Option<String> {
+    for line in text.lines() {
+        if let Some(trimmed) = line.strip_prefix(' ') && trimmed.len() > min_length {
+            return Some(trimmed.to_owned());
+        }
+    }
+    return None;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(".length > minLength"),
+        "let chain guard condition should emit as nested if: {output}"
+    );
+    assert!(
+        !output.contains("&&") || !output.contains("!== absent"),
+        "guard should be a nested if inside the !== absent check, not inlined: {output}"
+    );
+}

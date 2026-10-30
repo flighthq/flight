@@ -12524,12 +12524,30 @@ fn emit_method_call(
     };
 }
 
+fn split_let_chain(condition: &Expr) -> Option<(&syn::ExprLet, Vec<&Expr>)> {
+    return match condition {
+        Expr::Let(binding) => Some((binding, Vec::new())),
+        Expr::Binary(binary) if matches!(binary.op, BinOp::And(_)) => {
+            if let Some((binding, mut guards)) = split_let_chain(&binary.left) {
+                guards.push(&binary.right);
+                Some((binding, guards))
+            } else {
+                None
+            }
+        }
+        _ => None,
+    };
+}
+
 pub(crate) fn emit_option_binding(
     condition: &Expr,
     entities: &HashSet<String>,
 ) -> Result<Option<(String, String, &'static str)>, CompileError> {
-    let Expr::Let(binding) = condition else {
-        return Ok(None);
+    let binding = match condition {
+        Expr::Let(binding) => binding,
+        _ => {
+            return Ok(None);
+        }
     };
     let Pat::TupleStruct(pattern) = &*binding.pat else {
         return Err(compile_error(
@@ -14214,14 +14232,29 @@ fn emit_statement(
             .expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
-            let then_context = if let Expr::Let(binding) = if_expression.cond.as_ref() {
+            let let_chain = split_let_chain(&if_expression.cond);
+            let then_context = if let Some((binding, _)) = &let_chain {
+                lexical_pattern_context(entities, &binding.pat)
+            } else if let Expr::Let(binding) = if_expression.cond.as_ref() {
                 lexical_pattern_context(entities, &binding.pat)
             } else {
                 entities.clone()
             };
             let tuple_binding = emit_data_union_tuple_binding(&if_expression.cond, entities)?;
+            let let_chain_guards = if let Some((_, ref guards)) = let_chain {
+                if !guards.is_empty() {
+                    Some(guards.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
             let option_binding = if tuple_binding.is_some() {
                 None
+            } else if let Some((let_expr, _)) = &let_chain {
+                let synthetic = Expr::Let((*let_expr).clone());
+                emit_option_binding(&synthetic, entities)?
             } else {
                 emit_option_binding(&if_expression.cond, entities)?
             };
@@ -14265,12 +14298,30 @@ fn emit_statement(
                 write_indent(out, indent + 1);
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
-            emit_block(
-                out,
-                &if_expression.then_branch.stmts,
-                &then_context,
-                indent + 1,
-            )?;
+            if let Some(guards) = &let_chain_guards {
+                let guard_parts: Vec<String> = guards
+                    .iter()
+                    .map(|guard| emit_expression(guard, &then_context))
+                    .collect::<Result<Vec<_>, _>>()?;
+                write_indent(out, indent + 1);
+                writeln!(out, "if ({}) {{", guard_parts.join(" && "))
+                    .expect("writing to a String cannot fail");
+                emit_block(
+                    out,
+                    &if_expression.then_branch.stmts,
+                    &then_context,
+                    indent + 2,
+                )?;
+                write_indent(out, indent + 1);
+                out.push_str("}\n");
+            } else {
+                emit_block(
+                    out,
+                    &if_expression.then_branch.stmts,
+                    &then_context,
+                    indent + 1,
+                )?;
+            }
             write_indent(out, indent);
             if let Some((_, otherwise)) = &if_expression.else_branch {
                 out.push_str("} else {");
