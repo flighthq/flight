@@ -17994,3 +17994,26 @@ pub fn first_long_line(text: &str, min_length: usize) -> Option<String> {
         "guard should be a nested if inside the !== absent check, not inlined: {output}"
     );
 }
+
+#[test]
+fn lowers_let_chain_condition_before_let() {
+    let source = r#"
+pub fn maybe_process(delta_time: f32, value: Option<f32>) -> f32 {
+    if delta_time > 0.0
+        && let Some(v) = value
+    {
+        return v * delta_time;
+    }
+    return 0.0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("deltaTime > 0"),
+        "pre-guard condition should appear: {output}"
+    );
+    assert!(
+        output.contains("!== undefined"),
+        "option binding should appear: {output}"
+    );
+}

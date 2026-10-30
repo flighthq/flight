@@ -12524,13 +12524,17 @@ fn emit_method_call(
     };
 }
 
-fn split_let_chain(condition: &Expr) -> Option<(&syn::ExprLet, Vec<&Expr>)> {
+/// Splits a let-chain condition into the let-binding, pre-guards (conditions
+/// before the let), and post-guards (conditions after the let).
+fn split_let_chain(condition: &Expr) -> Option<(&syn::ExprLet, Vec<&Expr>, Vec<&Expr>)> {
     return match condition {
-        Expr::Let(binding) => Some((binding, Vec::new())),
+        Expr::Let(binding) => Some((binding, Vec::new(), Vec::new())),
         Expr::Binary(binary) if matches!(binary.op, BinOp::And(_)) => {
-            if let Some((binding, mut guards)) = split_let_chain(&binary.left) {
-                guards.push(&binary.right);
-                Some((binding, guards))
+            if let Some((binding, pre_guards, mut post_guards)) = split_let_chain(&binary.left) {
+                post_guards.push(&binary.right);
+                Some((binding, pre_guards, post_guards))
+            } else if let Expr::Let(binding) = binary.right.as_ref() {
+                Some((binding, vec![&binary.left], Vec::new()))
             } else {
                 None
             }
@@ -14233,7 +14237,7 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
             let let_chain = split_let_chain(&if_expression.cond);
-            let then_context = if let Some((binding, _)) = &let_chain {
+            let then_context = if let Some((binding, _, _)) = &let_chain {
                 lexical_pattern_context(entities, &binding.pat)
             } else if let Expr::Let(binding) = if_expression.cond.as_ref() {
                 lexical_pattern_context(entities, &binding.pat)
@@ -14241,9 +14245,18 @@ fn emit_statement(
                 entities.clone()
             };
             let tuple_binding = emit_data_union_tuple_binding(&if_expression.cond, entities)?;
-            let let_chain_guards = if let Some((_, ref guards)) = let_chain {
-                if !guards.is_empty() {
-                    Some(guards.clone())
+            let let_chain_pre_guards = if let Some((_, ref pre, _)) = let_chain {
+                if !pre.is_empty() {
+                    Some(pre.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            let let_chain_post_guards = if let Some((_, _, ref post)) = let_chain {
+                if !post.is_empty() {
+                    Some(post.clone())
                 } else {
                     None
                 }
@@ -14252,7 +14265,7 @@ fn emit_statement(
             };
             let option_binding = if tuple_binding.is_some() {
                 None
-            } else if let Some((let_expr, _)) = &let_chain {
+            } else if let Some((let_expr, _, _)) = &let_chain {
                 let synthetic = Expr::Let((*let_expr).clone());
                 emit_option_binding(&synthetic, entities)?
             } else {
@@ -14269,6 +14282,19 @@ fn emit_statement(
             {
                 return Ok(());
             }
+            let pre_guard_indent = indent;
+            let indent = if let Some(pre_guards) = &let_chain_pre_guards {
+                let guard_parts: Vec<String> = pre_guards
+                    .iter()
+                    .map(|guard| emit_expression(guard, entities))
+                    .collect::<Result<Vec<_>, _>>()?;
+                write_indent(out, indent);
+                writeln!(out, "if ({}) {{", guard_parts.join(" && "))
+                    .expect("writing to a String cannot fail");
+                indent + 1
+            } else {
+                indent
+            };
             let outer_indent = indent;
             let (indent, wrapped) = if let Some(binding) = &option_binding {
                 begin_option_if(
@@ -14298,8 +14324,8 @@ fn emit_statement(
                 write_indent(out, indent + 1);
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
-            if let Some(guards) = &let_chain_guards {
-                let guard_parts: Vec<String> = guards
+            if let Some(post_guards) = &let_chain_post_guards {
+                let guard_parts: Vec<String> = post_guards
                     .iter()
                     .map(|guard| emit_expression(guard, &then_context))
                     .collect::<Result<Vec<_>, _>>()?;
@@ -14349,6 +14375,10 @@ fn emit_statement(
             }
             if wrapped {
                 write_indent(out, outer_indent);
+                out.push_str("}\n");
+            }
+            if let_chain_pre_guards.is_some() {
+                write_indent(out, pre_guard_indent);
                 out.push_str("}\n");
             }
         }
