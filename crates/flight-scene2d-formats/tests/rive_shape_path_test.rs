@@ -152,7 +152,10 @@ mod create_rive_path {
         );
         assert_eq!(
             path.commands,
-            [PathCommand::MOVE_TO as u8, PathCommand::CUBIC_CURVE_TO as u8],
+            [
+                PathCommand::MOVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8
+            ],
         );
         assert_points(
             &path.data[2..6],
