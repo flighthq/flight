@@ -298,7 +298,7 @@ pub fn is_platform_web(host_platform: &HostPlatformCapability) -> bool {
 /// digit run is converted as a correctly rounded f64, as JS converts it.
 // flight-lint: allow(f64) JS parseInt yields an IEEE double; segments beyond 2^53 must round and compare exactly as the source does
 fn parse_js_int(segment: &str) -> Option<f64> {
-    let trimmed = segment.trim_start_matches(|c: char| c.is_whitespace() || c == '\u{FEFF}');
+    let trimmed: &str = segment.trim_start_matches(|c: char| c.is_whitespace() || c == '\u{FEFF}');
     let (negative, rest) = match trimmed.as_bytes().first() {
         Some(b'-') => (true, &trimmed[1..]),
         Some(b'+') => (false, &trimmed[1..]),
