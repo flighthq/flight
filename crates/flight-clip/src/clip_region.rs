@@ -35,18 +35,13 @@ pub fn create_clip_region_from_rectangle(rectangle: &RectangleLike) -> Ref<ClipR
     return Arc::new(RwLock::new(out));
 }
 
-fn call_clip_region_contours_guard(
-    explanation: Option<ClipRegionContoursExplanation>,
-    guard: Option<ClipRegionContoursGuard>,
-    contours: &[Vec<f64>],
-) {
-    let Some(issue) = explanation else {
-        return;
-    };
-    let Some(installed_guard) = guard else {
-        return;
-    };
-    installed_guard(&issue, contours);
+fn create_empty_clip_region() -> Ref<ClipRegion> {
+    let mut out: ClipRegion = allocate_entity();
+    out.rect = create_rectangle(0.0, 0.0, 0.0, 0.0);
+    out.contours = None;
+    out.winding = PathWinding::NonZero;
+    out.version = 0;
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(f64) clip contours preserve the source Path.data coordinate precision
@@ -81,25 +76,18 @@ pub fn acquire_clip_region() -> Ref<ClipRegion> {
     return create_empty_clip_region();
 }
 
-fn create_empty_clip_region() -> Ref<ClipRegion> {
-    let mut out: ClipRegion = allocate_entity();
-    out.rect = create_rectangle(0.0, 0.0, 0.0, 0.0);
-    out.contours = None;
-    out.winding = PathWinding::NonZero;
-    out.version = 0;
-    return Arc::new(RwLock::new(out));
-}
-
-fn reset_clip_region(region: &Ref<ClipRegion>) {
-    let mut region = region.write().unwrap();
-    let mutable_region: &mut EntityConstruction<ClipRegion> = &mut region;
-    mutable_region.rect.x = 0.0;
-    mutable_region.rect.y = 0.0;
-    mutable_region.rect.width = 0.0;
-    mutable_region.rect.height = 0.0;
-    mutable_region.contours = None;
-    mutable_region.winding = PathWinding::NonZero;
-    mutable_region.version = 0;
+fn call_clip_region_contours_guard(
+    explanation: Option<ClipRegionContoursExplanation>,
+    guard: Option<ClipRegionContoursGuard>,
+    contours: &[Vec<f64>],
+) {
+    let Some(issue) = explanation else {
+        return;
+    };
+    let Some(installed_guard) = guard else {
+        return;
+    };
+    installed_guard(&issue, contours);
 }
 
 pub fn clip_region_contains_clip_region(a: &Ref<ClipRegion>, b: &Ref<ClipRegion>) -> bool {
@@ -152,6 +140,14 @@ pub fn clone_clip_region(clip: &Ref<ClipRegion>) -> Ref<ClipRegion> {
     return Arc::new(RwLock::new(out));
 }
 
+// flight-lint: allow(f64) clip contours preserve exact Path.data coordinates
+fn clone_clip_region_contours(contours: &Option<Vec<Vec<f64>>>) -> Option<Vec<Vec<f64>>> {
+    if let Some(source_contours) = contours.as_ref() {
+        return Some(copy_clip_region_contours(source_contours));
+    }
+    return None;
+}
+
 pub fn copy_clip_region(out: &Ref<ClipRegion>, source: &Ref<ClipRegion>) {
     guard_clip_region_use(out);
     guard_clip_region_use(source);
@@ -165,27 +161,6 @@ pub fn copy_clip_region(out: &Ref<ClipRegion>, source: &Ref<ClipRegion>) {
     mutable_out.contours = contours;
     mutable_out.winding = winding;
     mutable_out.version = mutable_out.version.wrapping_add(1);
-}
-
-pub fn equals_clip_region(a: &Ref<ClipRegion>, b: &Ref<ClipRegion>) -> bool {
-    guard_clip_region_use(a);
-    guard_clip_region_use(b);
-    if Arc::ptr_eq(a, b) {
-        return true;
-    }
-    let a = a.read().unwrap();
-    let b = b.read().unwrap();
-    return a.winding == b.winding
-        && equal_clip_region_rectangles(&a.rect, &b.rect)
-        && equal_clip_region_contours(&a.contours, &b.contours);
-}
-
-// flight-lint: allow(f64) clip contours preserve exact Path.data coordinates
-fn clone_clip_region_contours(contours: &Option<Vec<Vec<f64>>>) -> Option<Vec<Vec<f64>>> {
-    if let Some(source_contours) = contours.as_ref() {
-        return Some(copy_clip_region_contours(source_contours));
-    }
-    return None;
 }
 
 // flight-lint: allow(f64) clip contours preserve exact Path.data coordinates
@@ -225,6 +200,19 @@ fn equal_clip_region_contours(a: &Option<Vec<Vec<f64>>>, b: &Option<Vec<Vec<f64>
 
 fn equal_clip_region_rectangles(a: &Rectangle, b: &Rectangle) -> bool {
     return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+}
+
+pub fn equals_clip_region(a: &Ref<ClipRegion>, b: &Ref<ClipRegion>) -> bool {
+    guard_clip_region_use(a);
+    guard_clip_region_use(b);
+    if Arc::ptr_eq(a, b) {
+        return true;
+    }
+    let a = a.read().unwrap();
+    let b = b.read().unwrap();
+    return a.winding == b.winding
+        && equal_clip_region_rectangles(&a.rect, &b.rect)
+        && equal_clip_region_contours(&a.contours, &b.contours);
 }
 
 pub fn explain_clip_region(clip: &Ref<ClipRegion>) -> ClipRegionExplanation {
@@ -338,6 +326,29 @@ pub fn is_clip_region_rectangular(clip: &Ref<ClipRegion>) -> bool {
 }
 
 // flight-lint: allow(f64) normalization compares the original f64 Path.data contour coordinates
+pub fn normalize_clip_region(out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>) {
+    guard_clip_region_use(out);
+    guard_clip_region_use(clip);
+    let (rect, contours, winding) = snapshot_clip_region(clip);
+    let normalized = normalized_clip_region_bounds(&contours);
+    let mut out = out.write().unwrap();
+    let mutable_out: &mut EntityConstruction<ClipRegion> = &mut out;
+    if let Some(bounds) = normalized {
+        mutable_out.rect.x = bounds[0] as f32;
+        mutable_out.rect.y = bounds[1] as f32;
+        mutable_out.rect.width = (bounds[2] - bounds[0]) as f32;
+        mutable_out.rect.height = (bounds[3] - bounds[1]) as f32;
+        mutable_out.contours = None;
+        mutable_out.winding = PathWinding::NonZero;
+    } else {
+        copy_rectangle(&mut mutable_out.rect, &rect);
+        mutable_out.contours = contours;
+        mutable_out.winding = winding;
+    }
+    mutable_out.version = mutable_out.version.wrapping_add(1);
+}
+
+// flight-lint: allow(f64) normalization compares the original f64 Path.data contour coordinates
 #[allow(clippy::question_mark)] // explicit Option control flow remains portable to generated TypeScript
 fn normalized_clip_region_bounds(contours: &Option<Vec<Vec<f64>>>) -> Option<Vec<f64>> {
     let Some(source_contours) = contours.as_ref() else {
@@ -375,29 +386,6 @@ fn normalized_clip_region_bounds(contours: &Option<Vec<Vec<f64>>>) -> Option<Vec
         return Some(vec![min_x, min_y, max_x, max_y]);
     }
     return None;
-}
-
-// flight-lint: allow(f64) normalization compares the original f64 Path.data contour coordinates
-pub fn normalize_clip_region(out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>) {
-    guard_clip_region_use(out);
-    guard_clip_region_use(clip);
-    let (rect, contours, winding) = snapshot_clip_region(clip);
-    let normalized = normalized_clip_region_bounds(&contours);
-    let mut out = out.write().unwrap();
-    let mutable_out: &mut EntityConstruction<ClipRegion> = &mut out;
-    if let Some(bounds) = normalized {
-        mutable_out.rect.x = bounds[0] as f32;
-        mutable_out.rect.y = bounds[1] as f32;
-        mutable_out.rect.width = (bounds[2] - bounds[0]) as f32;
-        mutable_out.rect.height = (bounds[3] - bounds[1]) as f32;
-        mutable_out.contours = None;
-        mutable_out.winding = PathWinding::NonZero;
-    } else {
-        copy_rectangle(&mut mutable_out.rect, &rect);
-        mutable_out.contours = contours;
-        mutable_out.winding = winding;
-    }
-    mutable_out.version = mutable_out.version.wrapping_add(1);
 }
 
 // flight-lint: allow(f64) winding ray casts operate on exact f64 Path.data contour coordinates
@@ -439,6 +427,18 @@ pub fn release_clip_region(clip: &Ref<ClipRegion>) {
         installed_guard(clip);
     }
     release_clip_region_to_pool(clip);
+}
+
+fn reset_clip_region(region: &Ref<ClipRegion>) {
+    let mut region = region.write().unwrap();
+    let mutable_region: &mut EntityConstruction<ClipRegion> = &mut region;
+    mutable_region.rect.x = 0.0;
+    mutable_region.rect.y = 0.0;
+    mutable_region.rect.width = 0.0;
+    mutable_region.rect.height = 0.0;
+    mutable_region.contours = None;
+    mutable_region.winding = PathWinding::NonZero;
+    mutable_region.version = 0;
 }
 
 // flight-lint: allow(f64) selection preserves exact f64 Path.data contour arrays

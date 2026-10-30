@@ -23,23 +23,6 @@ pub(crate) struct ClipRegionRuntime {
     pub use_guard: Option<ClipRegionUseGuard>,
 }
 
-impl Default for ClipRegionState {
-    fn default() -> Self {
-        return ClipRegionState {
-            runtime: EntityRuntimeSlot::default(),
-            state: Arc::new(RwLock::new(ClipRegionRuntime {
-                pool: Vec::new(),
-                pool_size: 0,
-                contours_guard: None,
-                release_guard: None,
-                use_guard: None,
-            })),
-        };
-    }
-}
-
-flight_entity::impl_entity!(ClipRegionState);
-
 pub fn create_clip_region_state() -> Ref<ClipRegionState> {
     let mut out: ClipRegionState = allocate_entity();
     out.state = Arc::new(RwLock::new(ClipRegionRuntime {
@@ -52,16 +35,6 @@ pub fn create_clip_region_state() -> Ref<ClipRegionState> {
     return Arc::new(RwLock::new(out));
 }
 
-fn get_clip_region_runtime(state: &ClipRegionState) -> Ref<ClipRegionRuntime> {
-    return state.state.clone();
-}
-
-fn get_bound_clip_region_runtime() -> Ref<ClipRegionRuntime> {
-    let binding: Ref<ClipRegionState> = get_clip_region_state_binding();
-    let state = binding.read().unwrap();
-    return get_clip_region_runtime(&state);
-}
-
 pub fn acquire_clip_region_from_pool() -> Option<Ref<ClipRegion>> {
     let runtime = get_bound_clip_region_runtime();
     let mut runtime = runtime.write().unwrap();
@@ -72,10 +45,29 @@ pub fn acquire_clip_region_from_pool() -> Option<Ref<ClipRegion>> {
     return Some(runtime.pool[runtime.pool_size].clone());
 }
 
+fn clip_region_runtime_contains(runtime: &ClipRegionRuntime, clip: &Ref<ClipRegion>) -> bool {
+    for index in 0..runtime.pool_size {
+        if Arc::ptr_eq(&runtime.pool[index], clip) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn get_bound_clip_region_runtime() -> Ref<ClipRegionRuntime> {
+    let binding: Ref<ClipRegionState> = get_clip_region_state_binding();
+    let state = binding.read().unwrap();
+    return get_clip_region_runtime(&state);
+}
+
 pub fn get_clip_region_contours_guard() -> Option<ClipRegionContoursGuard> {
     let runtime = get_bound_clip_region_runtime();
     let runtime = runtime.read().unwrap();
     return runtime.contours_guard.clone();
+}
+
+fn get_clip_region_runtime(state: &ClipRegionState) -> Ref<ClipRegionRuntime> {
+    return state.state.clone();
 }
 
 pub fn is_clip_region_released(clip: &Ref<ClipRegion>) -> bool {
@@ -136,11 +128,19 @@ pub fn snapshot_clip_region_use_guard(
     );
 }
 
-fn clip_region_runtime_contains(runtime: &ClipRegionRuntime, clip: &Ref<ClipRegion>) -> bool {
-    for index in 0..runtime.pool_size {
-        if Arc::ptr_eq(&runtime.pool[index], clip) {
-            return true;
-        }
+impl Default for ClipRegionState {
+    fn default() -> Self {
+        return ClipRegionState {
+            runtime: EntityRuntimeSlot::default(),
+            state: Arc::new(RwLock::new(ClipRegionRuntime {
+                pool: Vec::new(),
+                pool_size: 0,
+                contours_guard: None,
+                release_guard: None,
+                use_guard: None,
+            })),
+        };
     }
-    return false;
 }
+
+flight_entity::impl_entity!(ClipRegionState);

@@ -34,6 +34,44 @@ pub trait ClipRegionMethods {
     fn union_from(&self, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>);
 }
 
+#[cfg(test)]
+mod tests {
+    use flight_geometry::{create_matrix, create_rectangle};
+    use flight_path::PathWinding;
+
+    use super::*;
+
+    fn triangle() -> Vec<Vec<f64>> {
+        return vec![vec![0.0, 0.0, 10.0, 0.0, 5.0, 10.0]];
+    }
+
+    #[test]
+    fn query_sugar_matches_free_functions() {
+        let clip = ClipRegion::new_from_contours(&triangle(), PathWinding::EvenOdd);
+        let mut method = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        let mut function = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        clip.bounds(&mut method);
+        get_clip_region_bounds(&mut function, &clip);
+        assert_eq!(method, function);
+        assert_eq!(
+            clip.contains_point(5.0, 5.0),
+            clip_region_contains_point(&clip, 5.0, 5.0)
+        );
+        assert!(clip.equals_region(&clip.clone_region()));
+    }
+
+    #[test]
+    fn mutation_sugar_matches_free_functions() {
+        let source = ClipRegion::new_from_rectangle(&create_rectangle(1.0, 2.0, 3.0, 4.0));
+        let method = ClipRegion::new_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
+        let function = ClipRegion::new_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
+        let matrix = create_matrix(2.0, 0.0, 0.0, 3.0, 4.0, 5.0);
+        method.transform_from(&source, &matrix);
+        transform_clip_region(&function, &source, &matrix);
+        assert!(equals_clip_region(&method, &function));
+    }
+}
+
 impl ClipRegionMethods for Ref<ClipRegion> {
     fn bounds(&self, out: &mut Rectangle) {
         get_clip_region_bounds(out, self);
@@ -150,43 +188,5 @@ impl ClipRegion {
         tolerance: Option<f64>,
     ) -> Ref<ClipRegion> {
         return create_clip_region_from_rounded_rectangle(rectangle, radius, tolerance);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use flight_geometry::{create_matrix, create_rectangle};
-    use flight_path::PathWinding;
-
-    use super::*;
-
-    fn triangle() -> Vec<Vec<f64>> {
-        return vec![vec![0.0, 0.0, 10.0, 0.0, 5.0, 10.0]];
-    }
-
-    #[test]
-    fn query_sugar_matches_free_functions() {
-        let clip = ClipRegion::new_from_contours(&triangle(), PathWinding::EvenOdd);
-        let mut method = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        let mut function = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        clip.bounds(&mut method);
-        get_clip_region_bounds(&mut function, &clip);
-        assert_eq!(method, function);
-        assert_eq!(
-            clip.contains_point(5.0, 5.0),
-            clip_region_contains_point(&clip, 5.0, 5.0)
-        );
-        assert!(clip.equals_region(&clip.clone_region()));
-    }
-
-    #[test]
-    fn mutation_sugar_matches_free_functions() {
-        let source = ClipRegion::new_from_rectangle(&create_rectangle(1.0, 2.0, 3.0, 4.0));
-        let method = ClipRegion::new_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
-        let function = ClipRegion::new_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
-        let matrix = create_matrix(2.0, 0.0, 0.0, 3.0, 4.0, 5.0);
-        method.transform_from(&source, &matrix);
-        transform_clip_region(&function, &source, &matrix);
-        assert!(equals_clip_region(&method, &function));
     }
 }
