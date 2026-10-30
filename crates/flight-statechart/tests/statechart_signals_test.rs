@@ -194,7 +194,7 @@ mod initialize_statechart_signals_tests {
     #[test]
     fn is_the_construction_initializer_of_create_statechart_signals() {
         // Verify the function exists and is callable
-        let mut out = StatechartSignals::default();
+        let mut out: StatechartSignals = flight_entity::allocate_entity();
         flight_statechart::contract::initialize_statechart_signals(&mut out);
         assert!(out.on_state_change.data.read().unwrap().is_none());
     }
