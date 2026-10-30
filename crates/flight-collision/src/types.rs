@@ -6,48 +6,6 @@ use flight_entity::{EntityRuntimeSlot, Ref};
 
 pub(crate) struct DerivedCache(Mutex<Option<Box<dyn Any + Send>>>);
 
-impl DerivedCache {
-    pub(crate) fn new() -> Self {
-        return DerivedCache(Mutex::new(None));
-    }
-
-    pub(crate) fn clear(&self) {
-        *self.0.lock().unwrap() = None;
-    }
-
-    pub(crate) fn get<T: 'static + Send + Clone>(&self) -> Option<T> {
-        return self
-            .0
-            .lock()
-            .unwrap()
-            .as_ref()
-            .and_then(|b| b.downcast_ref::<T>())
-            .cloned();
-    }
-
-    pub(crate) fn set<T: 'static + Send>(&self, value: T) {
-        *self.0.lock().unwrap() = Some(Box::new(value));
-    }
-}
-
-impl Clone for DerivedCache {
-    fn clone(&self) -> Self {
-        return DerivedCache::new();
-    }
-}
-
-impl std::fmt::Debug for DerivedCache {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return f.write_str("DerivedCache(..)");
-    }
-}
-
-impl PartialEq for DerivedCache {
-    fn eq(&self, _other: &Self) -> bool {
-        return true;
-    }
-}
-
 // Shape kind enums
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -641,6 +599,48 @@ impl Default for CollisionHeightfield3D {
             bvh_cache: DerivedCache::new(),
             runtime: EntityRuntimeSlot::default(),
         }
+    }
+}
+
+impl DerivedCache {
+    pub(crate) fn new() -> Self {
+        return DerivedCache(Mutex::new(None));
+    }
+
+    pub(crate) fn clear(&self) {
+        *self.0.lock().unwrap() = None;
+    }
+
+    pub(crate) fn get<T: 'static + Send + Clone>(&self) -> Option<T> {
+        return self
+            .0
+            .lock()
+            .unwrap()
+            .as_ref()
+            .and_then(|b| b.downcast_ref::<T>())
+            .cloned();
+    }
+
+    pub(crate) fn set<T: 'static + Send>(&self, value: T) {
+        *self.0.lock().unwrap() = Some(Box::new(value));
+    }
+}
+
+impl Clone for DerivedCache {
+    fn clone(&self) -> Self {
+        return DerivedCache::new();
+    }
+}
+
+impl std::fmt::Debug for DerivedCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f.write_str("DerivedCache(..)");
+    }
+}
+
+impl PartialEq for DerivedCache {
+    fn eq(&self, _other: &Self) -> bool {
+        return true;
     }
 }
 
