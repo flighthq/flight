@@ -90,7 +90,6 @@ pub use contract::HostBitmapReadbackCapability;
 pub use contract::ImageChannel;
 pub use contract::ImageFormat;
 pub use contract::PixelOrder;
-pub use contract::RectangleLike;
 pub use contract::ThresholdOperation;
 pub use contract::apply_bitmap_color_scale_bias;
 pub use contract::apply_bitmap_curve;
