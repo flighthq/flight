@@ -45,9 +45,12 @@ pub fn select_scene_3d_forward_lights(
     let selected_points = select_strongest_point_lights(&lights.point, bounds, receiver_layer_mask);
     let selected_spots = select_strongest_spot_lights(&lights.spot, bounds, receiver_layer_mask);
 
-    out.indices.clear();
-    out.point.clear();
-    out.spot.clear();
+    let out_indices: &mut Vec<i32> = &mut out.indices;
+    out_indices.clear();
+    let out_point: &mut Vec<Ref<PointLight>> = &mut out.point;
+    out_point.clear();
+    let out_spot: &mut Vec<Ref<SpotLight>> = &mut out.spot;
+    out_spot.clear();
     for selected in selected_points {
         out.indices.push(selected.index as i32);
         out.point.push(selected.light);
