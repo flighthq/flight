@@ -13,22 +13,6 @@ import type { FlowGuardState } from './types.ts';
  */
 export type FlowGuardStateRef = FlowGuardState;
 
-function noFlowCallback(): void {}
-
-function noFlowUpdateCallback(deltaTime: number): void {
-  if (Number.isNaN(deltaTime)) {
-    return;
-  }
-}
-
-function getFlowStateOnPause(state: FlowState | null): FlowCallback {
-  if (state !== null) {
-    const previous = state;
-    return previous!.onPause ?? noFlowCallback;
-  }
-  return noFlowCallback;
-}
-
 /**
  * Empty the stack, exiting every state top-to-bottom. Callbacks run after the stack write lock is
  * released, so they may re-enter other flow operations.
@@ -97,6 +81,22 @@ export function initializeFlowStack(out: FlowStackRaw): void {
   out.states = [] as never[];
 }
 
+function getFlowStateOnPause(state: FlowState | null): FlowCallback {
+  if (state !== null) {
+    const previous = state;
+    return previous!.onPause ?? noFlowCallback;
+  }
+  return noFlowCallback;
+}
+
+function noFlowCallback(): void {}
+
+function noFlowUpdateCallback(deltaTime: number): void {
+  if (Number.isNaN(deltaTime)) {
+    return;
+  }
+}
+
 /**
  * Pop the active top, exiting it and resuming the revealed state. None on an empty stack.
  */
@@ -121,27 +121,6 @@ export function popFlowState(stack: FlowStackRaw): FlowState | null {
     const maybeOnResume = revealedState!.onResume;
     const resumeCallback = maybeOnResume ?? noFlowCallback;
     resumeCallback();
-  }
-  return popped;
-}
-
-function takeTopFlowState(stack: FlowStackRaw): FlowState | null {
-  let current = stack!;
-  if (current.states.length === 0) {
-    return null;
-  }
-  const top = current.states.length - 1;
-  let previous: FlowState[] = [] as never[];
-  for (const state of current.states) {
-    previous.push(state);
-  }
-  const popped = previous[top];
-  current.states.length = 0;
-  for (const item of previous) {
-    if (current.states.length >= top) {
-      break;
-    }
-    current.states.push(item);
   }
   return popped;
 }
@@ -214,6 +193,27 @@ function replaceFlowStateCore(
   stack!.states.push(state);
   const enterCallback = maybeOnEnter ?? noFlowCallback;
   enterCallback();
+}
+
+function takeTopFlowState(stack: FlowStackRaw): FlowState | null {
+  let current = stack!;
+  if (current.states.length === 0) {
+    return null;
+  }
+  const top = current.states.length - 1;
+  let previous: FlowState[] = [] as never[];
+  for (const state of current.states) {
+    previous.push(state);
+  }
+  const popped = previous[top];
+  current.states.length = 0;
+  for (const item of previous) {
+    if (current.states.length >= top) {
+      break;
+    }
+    current.states.push(item);
+  }
+  return popped;
 }
 
 /**

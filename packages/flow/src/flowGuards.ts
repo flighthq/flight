@@ -15,14 +15,6 @@ interface FlowGuardLogRecord {
   kind: string;
 }
 
-function getFlowGuardLogKind(value: Readonly<FlowGuardLogData>): string {
-  return value.kind;
-}
-
-function normalizeFlowGuardLogLevel(value: FlowGuardLogLevel): FlowGuardLogLevel {
-  return value;
-}
-
 export function disableFlowGuards(state: FlowGuardStateRef): void {
   let guardState = state!;
   guardState.enabled = false;
@@ -52,6 +44,14 @@ export function getFlowGuardKindString(value: FlowGuardKind): string {
         return 'transition-during-transition';
     }
   })();
+}
+
+function getFlowGuardLogKind(value: Readonly<FlowGuardLogData>): string {
+  return value.kind;
+}
+
+function normalizeFlowGuardLogLevel(value: FlowGuardLogLevel): FlowGuardLogLevel {
+  return value;
 }
 
 /**
