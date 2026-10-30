@@ -2304,10 +2304,6 @@ pub struct Capability {
 
         for (source, expected) in [
             (
-                "pub async fn f() -> u32 { return 1; }\n",
-                "portable `async fn f` has no portable lowering",
-            ),
-            (
                 "use std::pin::Pin;\npub type P = Pin<Box<u32>>;\n",
                 "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
             ),
@@ -2346,6 +2342,34 @@ pub struct Capability {
                 "{source}"
             );
         }
+    }
+
+    #[test]
+    fn lowers_async_fn_to_async_function_with_promise_return() {
+        assert_eq!(
+            compile_typescript("pub async fn f() -> u32 { return 1; }\n", None).unwrap(),
+            "export async function f(): Promise<number> {\n  return (1) >>> 0;\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub async fn fetch_name(id: u32) -> String { return String::new(); }\n",
+                None
+            )
+            .unwrap(),
+            "export async function fetchName(id: number): Promise<string> {\n  return '';\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub async fn process() -> Option<u32> { return None; }\n",
+                None
+            )
+            .unwrap(),
+            "export async function process(): Promise<number | undefined> {\n  return undefined;\n}\n"
+        );
+        assert_eq!(
+            compile_typescript("pub async fn run() { }\n", None).unwrap(),
+            "export async function run(): Promise<void> {\n}\n"
+        );
     }
 
     #[test]

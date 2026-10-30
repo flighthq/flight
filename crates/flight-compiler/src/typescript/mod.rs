@@ -2517,18 +2517,6 @@ fn program_value_bindings(program: &Program, context: &HashSet<String>) -> BTree
     return bindings;
 }
 
-// `async fn` bodies have no portable lowering; a synchronous emission would silently drop the
-// asynchrony, so they fail closed.
-fn reject_async_function(function: &ItemFn) -> Result<(), CompileError> {
-    if function.sig.asyncness.is_some() {
-        return Err(compile_error(format!(
-            "portable `async fn {}` has no portable lowering",
-            function.sig.ident
-        )));
-    }
-    return Ok(());
-}
-
 // `flight_*` crates imported with a wildcard anywhere in a use tree (`use flight_codec::*;`,
 // `use {flight_codec::*, ...};`, `use flight_codec::{*, Name};`), as contract modules.
 // A wildcard import of a dependency module that declares a `const-group` would bring its members in
@@ -9200,8 +9188,8 @@ fn emit_function(
     nullable_static_names: &HashSet<String>,
     entity_construction_parameter: bool,
 ) -> Result<(), CompileError> {
-    reject_async_function(function)?;
     emit_documentation(out, &function.attrs, 0);
+    let is_async = function.sig.asyncness.is_some();
     // A crate-visible function is exported only through the crate-internal `export { … }` list, which
     // keeps it off the public lanes, as for crate-visible structs, enums and constants.
     let export = if is_public(&function.vis) {
@@ -9209,6 +9197,7 @@ fn emit_function(
     } else {
         ""
     };
+    let async_keyword = if is_async { "async " } else { "" };
     let rust_name = function.sig.ident.to_string();
     let name = export_name(entities, &rust_name)
         .map_or_else(|| snake_to_lower_camel(&rust_name), str::to_string);
@@ -9254,7 +9243,7 @@ fn emit_function(
             function.sig.ident
         ))
     }) && !entities.contains(NULLABLE_OPTIONS_MARKER);
-    let return_type = match &function.sig.output {
+    let inner_return_type = match &function.sig.output {
         ReturnType::Default => "void".to_string(),
         ReturnType::Type(_, rust_type) if nullable_return => nullable_type(emit_preferred_type(
             option_inner_type(rust_type).expect("nullable-option returns were validated"),
@@ -9265,9 +9254,14 @@ fn emit_function(
             emit_preferred_type(rust_type, &signature_context, aliases)?
         }
     };
+    let return_type = if is_async {
+        format!("Promise<{inner_return_type}>")
+    } else {
+        inner_return_type.clone()
+    };
     writeln!(
         out,
-        "{export}function {name}{type_parameters}({}): {return_type} {{",
+        "{export}{async_keyword}function {name}{type_parameters}({}): {return_type} {{",
         parameters.join(", ")
     )
     .expect("writing to a String cannot fail");
@@ -9310,7 +9304,7 @@ fn emit_function(
         function_context.insert(format!("{NULLABLE_BINDING_MARKER}{name}"));
     }
     let mut function_context = function_expression_context(function, &function_context);
-    function_context.insert(format!("{RETURN_TYPE_MARKER}{return_type}"));
+    function_context.insert(format!("{RETURN_TYPE_MARKER}{inner_return_type}"));
     if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if type_is_named(rust_type, "u32"))
     {
         function_context.insert(RETURNS_U32_MARKER.to_string());
@@ -15665,6 +15659,12 @@ fn emit_statement(
                 write_indent(out, indent);
                 if let Some((condition, _)) = &tuple_binding {
                     writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
+                } else if matches!(&*if_expression.cond, Expr::Let(_))
+                    || let_chain.is_some()
+                {
+                    return Err(compile_error(
+                        "portable `if let` requires a recognized Option or data union pattern",
+                    ));
                 } else {
                     writeln!(
                         out,
