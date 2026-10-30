@@ -213,8 +213,10 @@ pub fn fit_path_curves(
 ) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
     let contours = flatten_path(source, Some(flatten_tolerance));
-    out.commands.clear();
-    out.data.clear();
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
     out.winding = source.winding;
 
     let tolerance_sq = tolerance * tolerance;

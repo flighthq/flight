@@ -149,8 +149,10 @@ pub fn dash_path(
     }
 
     let contours = flatten_path(source, Some(tolerance));
-    out.commands.clear();
-    out.data.clear();
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
     out.winding = source.winding;
 
     for contour in &contours {

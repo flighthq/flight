@@ -52,13 +52,15 @@ pub fn copy_path(out: &mut Path, source: &Path) {
     let commands: Vec<u8> = source.commands.clone();
     let data: Vec<f64> = source.data.clone();
     let winding = source.winding;
-    out.commands.clear();
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
     for i in 0..commands.len() {
-        out.commands.push(commands[i]);
+        out_commands.push(commands[i]);
     }
-    out.data.clear();
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
     for i in 0..data.len() {
-        out.data.push(data[i]);
+        out_data.push(data[i]);
     }
     out.winding = winding;
 }

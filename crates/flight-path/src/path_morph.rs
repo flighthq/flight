@@ -67,14 +67,16 @@ pub fn create_path_morph(start: &Path, end: &Path) -> Option<PathMorph> {
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn sample_path_morph(out: &mut Path, morph: &PathMorph, progress: f64) {
     let commands = &morph.commands;
-    out.commands.clear();
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
     for i in 0..commands.len() {
         out.commands.push(commands[i]);
     }
 
     let start_data = &morph.start_data;
     let end_data = &morph.end_data;
-    out.data.clear();
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
     for _ in 0..start_data.len() {
         out.data.push(0.0);
     }

@@ -181,8 +181,10 @@ pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh {
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f64>) {
     let tolerance = tolerance.unwrap_or(0.25);
-    out.vertices.clear();
-    out.indices.clear();
+    let out_vertices: &mut Vec<f64> = &mut out.vertices;
+    out_vertices.clear();
+    let out_indices: &mut Vec<u32> = &mut out.indices;
+    out_indices.clear();
     let contours = flatten_path(path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut out.vertices, &mut out.indices);
