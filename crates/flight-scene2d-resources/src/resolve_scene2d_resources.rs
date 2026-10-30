@@ -1,4 +1,5 @@
 use flight_entity::Ref;
+use flight_scene2d::Scene2DSlotReference;
 
 use crate::scene2d_resource_diagnostics::report_scene2d_resource_failure;
 use crate::scene2d_slot_reference::set_scene2d_slot_reference_content;
@@ -16,9 +17,11 @@ pub fn resolve_scene2d_resources(
         (document.root.clone(), document.slots.clone())
     };
     out.document = document.clone();
-    out.resolved.clear();
+    let out_resolved: &mut Vec<Scene2DSlotResolution> = &mut out.resolved;
+    out_resolved.clear();
     out.root = root;
-    out.unresolved.clear();
+    let out_unresolved: &mut Vec<Ref<Scene2DSlotReference>> = &mut out.unresolved;
+    out_unresolved.clear();
     let mut required_total = 0;
     let mut required_unresolved = 0;
     for reference in slots {
