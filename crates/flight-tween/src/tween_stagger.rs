@@ -28,7 +28,7 @@ pub fn create_tween_stagger<T: ?Sized + Send + Sync + 'static>(
     let mut tweens: Vec<Tween<T>> = Vec::new();
     for i in 0..count {
         let stagger_offset = compute_stagger_delay(i, count, each, &from, stagger_ease);
-        let mut opts = options.cloned().unwrap_or_default();
+        let mut opts = options.cloned().unwrap_or(TweenOptions::default());
         opts.delay = Some(base_delay + stagger_offset);
         let tween = create_tween(manager, &targets[i], duration, props, Some(&opts));
         tweens.push(tween);
