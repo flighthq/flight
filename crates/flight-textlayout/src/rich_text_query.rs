@@ -108,6 +108,14 @@ pub fn compute_rich_text_line_metrics(
     });
 }
 
+fn get_f32(values: &[f32], index: usize, fallback: f32) -> f32 {
+    return if index < values.len() {
+        values[index]
+    } else {
+        fallback
+    };
+}
+
 pub fn get_rich_text_char_boundaries(
     out: &mut Rectangle,
     layout: &TextLayoutResult,
@@ -306,12 +314,4 @@ fn rich_text_get_line_offset_y(layout: &TextLayoutResult, line_index: usize) -> 
         y += get_f32(&layout.line_heights, index, 0.0);
     }
     return y;
-}
-
-fn get_f32(values: &[f32], index: usize, fallback: f32) -> f32 {
-    return if index < values.len() {
-        values[index]
-    } else {
-        fallback
-    };
 }
