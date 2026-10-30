@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     BaseRenderState, ColorAdjustmentUnsupportedGuard, RenderProxies2D, RenderState,
     RenderStateFields, RenderStateRuntime, Scene3DGraphSyncPolicy,
@@ -51,8 +53,10 @@ pub fn destroy_render_state<S: RenderState>(state: &mut S, proxies: &mut RenderP
             destroy(state, data);
         }
     }
-    proxies.by_uid.clear();
-    proxies.temp_stack.clear();
+    let proxies_by_uid: &mut HashMap<u64, usize> = &mut proxies.by_uid;
+    proxies_by_uid.clear();
+    let proxies_temp_stack: &mut Vec<flight_node::NodeRef> = &mut proxies.temp_stack;
+    proxies_temp_stack.clear();
     let runtime = state.render_runtime_mut();
     if let Some(signals) = runtime.registry_signals.take() {
         flight_signals::clear_signal(&signals.on_registry_miss);

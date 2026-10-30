@@ -13,7 +13,8 @@ pub fn create_render_queue() -> RenderQueue {
 }
 
 pub fn initialize_render_queue(out: &mut RenderQueue) {
-    out.entries.clear();
+    let out_entries: &mut Vec<RenderQueueEntry> = &mut out.entries;
+    out_entries.clear();
     out.entry_count = 0;
 }
 
