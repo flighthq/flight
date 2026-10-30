@@ -27,10 +27,12 @@ protected:
   - file: src/swfImageTexture.ts
   - file: src/swfNode.ts
   - file: src/swfPrimitive.ts
+  - file: src/swfReader.ts
   - file: src/swfTimelineParse.ts
 
   # Fixture builders for this package's own tests and its siblings'. Never app API.
   - file: src/swfFrameActionTestHelper.ts
+  - file: src/swfShapeTestHelper.ts
   - file: src/swfTagStreamTestHelper.ts
 
   # Dispatch infrastructure. An application names handlers in `SwfParseOptions.tags` and the importer
