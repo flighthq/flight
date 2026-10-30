@@ -131,7 +131,7 @@ fn assemble_synthetic_sfnt(
     ordered_tables: &[SyntheticTable],
 ) -> Box<Uint8Array> {
     let mut sorted: Vec<&SyntheticTable> = ordered_tables.iter().collect();
-    sorted.sort_by(|a, b| a.tag.cmp(&b.tag));
+    sorted.sort_by(|a: &&SyntheticTable, b: &&SyntheticTable| a.tag.cmp(&b.tag));
     let header_bytes = 12 + sorted.len() * 16;
     let total = header_bytes
         + sorted
