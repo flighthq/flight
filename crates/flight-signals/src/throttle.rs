@@ -163,7 +163,8 @@ pub fn create_signal_timer_state() -> SignalTimerState {
 // flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
 pub fn initialize_signal_timer_state(out: &mut SignalTimerState) {
     out.now_ms = 0.0;
-    out.timers.clear();
+    let out_timers: &mut Vec<SignalTimer> = &mut out.timers;
+    out_timers.clear();
     out.next_id = 1;
 }
 
