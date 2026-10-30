@@ -16120,6 +16120,8 @@ pub(crate) fn emit_type(
             Ok(format!("readonly [{}]", elements.join(", ")))
         }
         Type::BareFn(function) => emit_bare_function_type(function, entities, None),
+        Type::ImplTrait(impl_trait) => emit_function_trait_type(&impl_trait.bounds, entities),
+        Type::Infer(_) => Ok("unknown".to_string()),
         Type::TraitObject(object) => emit_function_trait_type(&object.bounds, entities),
         _ => Err(compile_error(format!(
             "unsupported Rust type `{}`",
