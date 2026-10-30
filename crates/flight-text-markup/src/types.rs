@@ -90,8 +90,6 @@ pub struct TextMarkupGuardState {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(TextMarkupGuardState);
-
 // flight-lint: allow(f64) D1: guard log timestamps are millisecond JS numbers
 /// Caller-supplied time source for guard logging (D5; the SDK never samples a clock).
 pub type TextMarkupClock = Arc<dyn Fn() -> f64 + Send + Sync>;
@@ -120,3 +118,5 @@ pub fn parse_text_markup_issue_kind(value: &str) -> Option<TextMarkupIssueKind> 
         _ => None,
     };
 }
+
+flight_entity::impl_entity!(TextMarkupGuardState);
