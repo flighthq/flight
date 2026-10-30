@@ -62,6 +62,17 @@ export function clearSignalTimeout(state: SignalTimerStateRaw, id: TimerId): voi
   })(timers, (timer) => timer.id.value !== id.value);
 }
 
+function advanceFrameElapsed(elapsed: { value: number }, deltaTime: number, period: number): number | undefined {
+  let guard = elapsed;
+  guard.value += deltaTime;
+  if (guard.value >= period) {
+    const total = guard.value;
+    guard.value %= period;
+    return total;
+  }
+  return undefined;
+}
+
 /**
  * Connects a frame-tick signal to a slot at a reduced frame rate (TS
  * `connectSignalAtFrameRate`). The slot receives the accumulated delta time since the last
@@ -97,41 +108,6 @@ export function connectSignalAtFrameRate(
     },
   );
   return () => disconnectSignal(cleanupSource, slotId);
-}
-
-function takeDueSignalTimer(state: SignalTimerStateRaw, nowMs: number): (() => void) | undefined {
-  let timerState = state!;
-  let earliest: number | undefined = undefined;
-  for (let index = 0; index < timerState.timers.length; index += 1) {
-    if (timerState.timers[index].fireAtMs <= nowMs) {
-      {
-        const matchValue = earliest;
-        if (matchValue !== undefined) {
-          const current = matchValue;
-          const candidate = [timerState.timers[index].fireAtMs, timerState.timers[index].id.value] as const;
-          const existing = [timerState.timers[current].fireAtMs, timerState.timers[current].id.value] as const;
-          if (candidate[0] < existing[0] || (candidate[0] === existing[0] && candidate[1] < existing[1])) {
-            earliest = index;
-          }
-        } else if (matchValue === undefined) {
-          earliest = index;
-        }
-      }
-    }
-  }
-  if (earliest !== undefined) {
-    const index = earliest;
-    timerState.nowMs = timerState.timers[index].fireAtMs;
-    const timers: SignalTimer[] = timerState.timers;
-    return (<T>(items: T[], index: number): T => {
-      if (index >= items.length) {
-        throw new RangeError('Vec removal index out of bounds');
-      }
-      return items.splice(index, 1)[0];
-    })(timers, index).callback;
-  }
-  timerState.nowMs = nowMs;
-  return undefined;
 }
 
 /**
@@ -316,24 +292,6 @@ export function connectSignalThrottled<T>(
   };
 }
 
-function advanceFrameElapsed(elapsed: { value: number }, deltaTime: number, period: number): number | undefined {
-  let guard = elapsed;
-  guard.value += deltaTime;
-  if (guard.value >= period) {
-    const total = guard.value;
-    guard.value %= period;
-    return total;
-  }
-  return undefined;
-}
-
-function takePendingSignalArgs<T>(pending: { value: T | undefined }): T | undefined {
-  let guard = pending;
-  const args = guard.value;
-  guard.value = undefined;
-  return args;
-}
-
 export function createSignalTimerState(): SignalTimerStateRaw {
   let out: SignalTimerStateRaw = Object.assign(allocateEntity<SignalTimerStateRaw>(), {
     nextId: 0,
@@ -371,4 +329,46 @@ export function setSignalTimeout(state: SignalTimerStateRaw, delayMs: number, ca
     items.splice(index, 0, value);
   })(timers, index, { id: id, fireAtMs: fireAtMs, callback: callback });
   return id;
+}
+
+function takeDueSignalTimer(state: SignalTimerStateRaw, nowMs: number): (() => void) | undefined {
+  let timerState = state!;
+  let earliest: number | undefined = undefined;
+  for (let index = 0; index < timerState.timers.length; index += 1) {
+    if (timerState.timers[index].fireAtMs <= nowMs) {
+      {
+        const matchValue = earliest;
+        if (matchValue !== undefined) {
+          const current = matchValue;
+          const candidate = [timerState.timers[index].fireAtMs, timerState.timers[index].id.value] as const;
+          const existing = [timerState.timers[current].fireAtMs, timerState.timers[current].id.value] as const;
+          if (candidate[0] < existing[0] || (candidate[0] === existing[0] && candidate[1] < existing[1])) {
+            earliest = index;
+          }
+        } else if (matchValue === undefined) {
+          earliest = index;
+        }
+      }
+    }
+  }
+  if (earliest !== undefined) {
+    const index = earliest;
+    timerState.nowMs = timerState.timers[index].fireAtMs;
+    const timers: SignalTimer[] = timerState.timers;
+    return (<T>(items: T[], index: number): T => {
+      if (index >= items.length) {
+        throw new RangeError('Vec removal index out of bounds');
+      }
+      return items.splice(index, 1)[0];
+    })(timers, index).callback;
+  }
+  timerState.nowMs = nowMs;
+  return undefined;
+}
+
+function takePendingSignalArgs<T>(pending: { value: T | undefined }): T | undefined {
+  let guard = pending;
+  const args = guard.value;
+  guard.value = undefined;
+  return args;
 }

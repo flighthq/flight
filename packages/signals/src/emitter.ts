@@ -4,6 +4,17 @@
 import { compactSignalData } from './slot.ts';
 import type { SignalData, SignalRaw, SignalSlot } from './types.ts';
 
+function beginSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
+  let state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  signalData.cancelled = false;
+  signalData.depth += 1;
+  return true;
+}
+
 export function cancelSignal<T>(signal: SignalRaw<T>): void {
   let state = signal.data!;
   if (state !== undefined) {
@@ -47,24 +58,12 @@ function dispatchSignalData<T>(signal: SignalRaw<T>, args: T): boolean {
   return false;
 }
 
-function signalDataCancelled<T>(data: SignalData<T> | undefined): boolean {
-  const state = data!;
-  const signalData = state;
-  if (signalData === undefined) {
-    return false;
-  }
-  return signalData.cancelled;
-}
-
-function beginSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
-  let state = data!;
-  const signalData = state;
-  if (signalData === undefined) {
-    return false;
-  }
-  signalData.cancelled = false;
-  signalData.depth += 1;
-  return true;
+/**
+ * Calls the source-required emitter, including custom callbacks and spread wrappers.
+ */
+export function emitSignal<T>(signal: SignalRaw<T>, args: T): void {
+  const emit = signal.emit!;
+  emit(args);
 }
 
 function endSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
@@ -75,15 +74,6 @@ function endSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
   }
   signalData.depth -= 1;
   return signalData.depth === 0;
-}
-
-function signalDispatchHasIndex<T>(data: SignalData<T> | undefined, index: number): boolean {
-  const state = data!;
-  const signalData = state;
-  if (signalData === undefined) {
-    return false;
-  }
-  return index < signalData.slots.length;
 }
 
 function getSignalDispatchSlot<T>(data: SignalData<T> | undefined, index: number): SignalSlot<T> | undefined {
@@ -98,12 +88,22 @@ function getSignalDispatchSlot<T>(data: SignalData<T> | undefined, index: number
   return signalData.slots[index];
 }
 
-/**
- * Calls the source-required emitter, including custom callbacks and spread wrappers.
- */
-export function emitSignal<T>(signal: SignalRaw<T>, args: T): void {
-  const emit = signal.emit!;
-  emit(args);
+function signalDataCancelled<T>(data: SignalData<T> | undefined): boolean {
+  const state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  return signalData.cancelled;
+}
+
+function signalDispatchHasIndex<T>(data: SignalData<T> | undefined, index: number): boolean {
+  const state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  return index < signalData.slots.length;
 }
 
 export { dispatchSignalData, signalDataCancelled };

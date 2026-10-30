@@ -42,6 +42,16 @@ export function emitSignalSafe<T>(signal: SignalRaw<T>, args: T): void {
   }
 }
 
+function endSafeSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
+  let state = data!;
+  const signalData = state;
+  if (signalData === undefined) {
+    return false;
+  }
+  signalData.depth -= 1;
+  return signalData.depth === 0;
+}
+
 function takeSafeSignalSnapshot<T>(
   data: SignalData<T> | undefined,
 ): readonly [(SignalSlot<T> | undefined)[], SlotId[], boolean[], boolean[]] | undefined {
@@ -69,16 +79,6 @@ function takeSafeSignalSnapshot<T>(
   signalData.cancelled = false;
   signalData.depth += 1;
   return [slots, ids, repeat, paused];
-}
-
-function endSafeSignalDispatch<T>(data: SignalData<T> | undefined): boolean {
-  let state = data!;
-  const signalData = state;
-  if (signalData === undefined) {
-    return false;
-  }
-  signalData.depth -= 1;
-  return signalData.depth === 0;
 }
 
 function tombstoneOnceSlot<T>(data: SignalData<T> | undefined, id: SlotId): void {
