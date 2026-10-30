@@ -190,9 +190,6 @@ pub struct StatechartInstanceRaw {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(StatechartInstanceRaw);
-flight_entity::impl_entity!(StatechartSignals);
-
 // ============================================================================
 // Exact TS string tables (D9e)
 // ============================================================================
@@ -377,3 +374,6 @@ impl Default for StatechartInstanceRaw {
         };
     }
 }
+
+flight_entity::impl_entity!(StatechartInstanceRaw);
+flight_entity::impl_entity!(StatechartSignals);

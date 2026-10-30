@@ -291,6 +291,48 @@ mod sugar_tests {
     }
 }
 
+pub fn create_statechart_instance(chart: &Ref<StatechartRaw>) -> Ref<StatechartInstanceRaw> {
+    let mut out: StatechartInstanceRaw = allocate_entity();
+    initialize_statechart_instance_portable(&mut out, chart);
+    return Ref::new(RwLock::new(out));
+}
+
+pub fn initialize_statechart_instance_portable(
+    out: &mut StatechartInstanceRaw,
+    chart: &Ref<StatechartRaw>,
+) {
+    validate_statechart(&chart.read().unwrap());
+    let chart_input_count = chart.read().unwrap().inputs.len();
+    let chart_region_count = chart.read().unwrap().regions.len();
+    let mut input_values = create_statechart_float64_array(chart_input_count);
+    for input_index in 0..chart_input_count {
+        let chart_guard = chart.read().unwrap();
+        let input = &chart_guard.inputs[input_index];
+        input_values[input_index] = if input.kind == StatechartInputKind::Boolean {
+            if input.initial_value == 0.0 { 0.0 } else { 1.0 }
+        } else {
+            input.initial_value
+        };
+    }
+    let region_count = chart_region_count;
+    let mut region_states = create_statechart_int32_array(region_count, 0);
+    for region_index in 0..region_count {
+        region_states[region_index] =
+            chart.read().unwrap().regions[region_index].initial_state_index;
+    }
+
+    initialize_statechart_instance_fields(
+        out,
+        chart,
+        input_values,
+        create_statechart_float32_array(region_count),
+        create_statechart_float64_array(region_count),
+        create_statechart_float64_array(region_count),
+        region_states,
+        create_statechart_int32_array(region_count, -1),
+    );
+}
+
 // Advance every concurrent region, returning how many reached a new state. Triggers are cleared
 // before signals are emitted, and every lock is released before signal callbacks so listeners may
 // mutate the instance (fire triggers, set durations) during emission, as in the TS source.
@@ -343,10 +385,109 @@ pub fn advance_statechart_instance(instance: &Ref<StatechartInstanceRaw>, delta_
     return changed_count;
 }
 
-pub fn create_statechart_instance(chart: &Ref<StatechartRaw>) -> Ref<StatechartInstanceRaw> {
-    let mut out: StatechartInstanceRaw = allocate_entity();
-    initialize_statechart_instance_portable(&mut out, chart);
-    return Ref::new(RwLock::new(out));
+// ============================================================================
+// Private helpers
+// ============================================================================
+
+fn advance_statechart_region(
+    instance: &Ref<StatechartInstanceRaw>,
+    chart: &Ref<StatechartRaw>,
+    region_index: i32,
+    delta_time_ms: f64,
+) -> bool {
+    let ri = region_index as usize;
+    let source_state_index = instance.read().unwrap().region_states[ri];
+    let mut transition_index = instance.read().unwrap().region_transitions[ri];
+    let source_transition_count =
+        get_statechart_transition_count(chart, region_index, source_state_index);
+    instance.write().unwrap().region_elapsed[ri] += delta_time_ms;
+    if transition_index >= 0 {
+        if transition_index as usize >= source_transition_count {
+            throw_range_error(&format!(
+                "Statechart region {} has an invalid active transition",
+                region_index
+            ));
+        }
+    } else {
+        transition_index = get_ready_transition_index(instance, chart, region_index);
+        if transition_index < 0 {
+            return false;
+        }
+        let mut current = instance.write().unwrap();
+        current.region_transitions[ri] = transition_index;
+        current.region_blend[ri] = 0.0;
+    }
+
+    let duration_ms = chart.read().unwrap().regions[ri].states[source_state_index as usize]
+        .transitions[transition_index as usize]
+        .duration_ms;
+    let target = chart.read().unwrap().regions[ri].states[source_state_index as usize].transitions
+        [transition_index as usize]
+        .target_state_index;
+    let duration_ms = if duration_ms.is_finite() && duration_ms > 0.0 {
+        duration_ms
+    } else {
+        0.0
+    };
+    let blend = if duration_ms == 0.0 {
+        1.0
+    } else {
+        (instance.read().unwrap().region_blend[ri] + (delta_time_ms / duration_ms) as f32).min(1.0)
+    };
+    instance.write().unwrap().region_blend[ri] = blend;
+    if blend < 1.0 {
+        return false;
+    }
+    let mut current = instance.write().unwrap();
+    current.region_states[ri] = target;
+    current.region_transitions[ri] = -1;
+    current.region_blend[ri] = 0.0;
+    current.region_duration[ri] = 0.0;
+    current.region_elapsed[ri] = 0.0;
+    return true;
+}
+
+fn assert_statechart_input_kind(
+    instance: &Ref<StatechartInstanceRaw>,
+    input_index: i32,
+    expected_kind: StatechartInputKind,
+) {
+    let chart = instance.read().unwrap().chart.clone();
+    let input_count = chart.read().unwrap().inputs.len();
+    if !is_statechart_integer(input_index) || input_index < 0 || input_index as usize >= input_count
+    {
+        throw_range_error(&format!(
+            "Statechart input index {} is out of range",
+            input_index
+        ));
+    }
+    let kind = chart.read().unwrap().inputs[input_index as usize].kind;
+    if kind != expected_kind {
+        throw_statechart_input_kind_type_error(input_index, kind, expected_kind);
+    }
+}
+
+fn clear_statechart_triggers(instance: &Ref<StatechartInstanceRaw>, chart: &Ref<StatechartRaw>) {
+    let chart = chart.read().unwrap();
+    let mut current = instance.write().unwrap();
+    let mut input_index = 0;
+    while input_index < chart.inputs.len() {
+        if chart.inputs[input_index].kind == StatechartInputKind::Trigger {
+            current.input_values[input_index] = 0.0;
+        }
+        input_index += 1;
+    }
+}
+
+fn compare_statechart_condition(value: f64, condition: &StatechartCondition) -> bool {
+    return match condition.comparison {
+        StatechartComparison::Equal => value == condition.value,
+        StatechartComparison::GreaterThan => value > condition.value,
+        StatechartComparison::GreaterThanOrEqual => value >= condition.value,
+        StatechartComparison::LessThan => value < condition.value,
+        StatechartComparison::LessThanOrEqual => value <= condition.value,
+        StatechartComparison::NotEqual => value != condition.value,
+    };
 }
 
 pub fn explain_statechart_transition(
@@ -458,238 +599,6 @@ pub fn fire_statechart_trigger(instance: &Ref<StatechartInstanceRaw>, input_inde
     current.input_values[input_index as usize] = 1.0;
 }
 
-pub fn get_statechart_input_index(chart: &StatechartRaw, name: &str) -> i32 {
-    for input_index in 0..chart.inputs.len() {
-        if chart.inputs[input_index].name.as_deref() == Some(name) {
-            return input_index as i32;
-        }
-    }
-    return -1;
-}
-
-pub fn get_statechart_region_blend(
-    instance: &Ref<StatechartInstanceRaw>,
-    region_index: i32,
-) -> f32 {
-    let current = instance.read().unwrap();
-    if is_statechart_integer(region_index)
-        && region_index >= 0
-        && (region_index as usize) < current.region_blend.len()
-    {
-        return current.region_blend[region_index as usize];
-    }
-    return -1.0;
-}
-
-pub fn get_statechart_region_state(
-    instance: &Ref<StatechartInstanceRaw>,
-    region_index: i32,
-) -> i32 {
-    let current = instance.read().unwrap();
-    if is_statechart_integer(region_index)
-        && region_index >= 0
-        && (region_index as usize) < current.region_states.len()
-    {
-        return current.region_states[region_index as usize];
-    }
-    return -1;
-}
-
-pub fn initialize_statechart_instance_portable(
-    out: &mut StatechartInstanceRaw,
-    chart: &Ref<StatechartRaw>,
-) {
-    validate_statechart(&chart.read().unwrap());
-    let chart_input_count = chart.read().unwrap().inputs.len();
-    let chart_region_count = chart.read().unwrap().regions.len();
-    let mut input_values = create_statechart_float64_array(chart_input_count);
-    for input_index in 0..chart_input_count {
-        let chart_guard = chart.read().unwrap();
-        let input = &chart_guard.inputs[input_index];
-        input_values[input_index] = if input.kind == StatechartInputKind::Boolean {
-            if input.initial_value == 0.0 { 0.0 } else { 1.0 }
-        } else {
-            input.initial_value
-        };
-    }
-    let region_count = chart_region_count;
-    let mut region_states = create_statechart_int32_array(region_count, 0);
-    for region_index in 0..region_count {
-        region_states[region_index] =
-            chart.read().unwrap().regions[region_index].initial_state_index;
-    }
-
-    initialize_statechart_instance_fields(
-        out,
-        chart,
-        input_values,
-        create_statechart_float32_array(region_count),
-        create_statechart_float64_array(region_count),
-        create_statechart_float64_array(region_count),
-        region_states,
-        create_statechart_int32_array(region_count, -1),
-    );
-}
-
-pub fn set_statechart_boolean_input(
-    instance: &Ref<StatechartInstanceRaw>,
-    input_index: i32,
-    value: bool,
-) {
-    assert_statechart_input_kind(instance, input_index, StatechartInputKind::Boolean);
-    let mut current = instance.write().unwrap();
-    current.input_values[input_index as usize] = if value { 1.0 } else { 0.0 };
-}
-
-pub fn set_statechart_number_input(
-    instance: &Ref<StatechartInstanceRaw>,
-    input_index: i32,
-    value: f64,
-) {
-    assert_statechart_input_kind(instance, input_index, StatechartInputKind::Number);
-    let mut current = instance.write().unwrap();
-    current.input_values[input_index as usize] = value;
-}
-
-pub fn set_statechart_region_duration(
-    instance: &Ref<StatechartInstanceRaw>,
-    region_index: i32,
-    duration: f64,
-) {
-    let len = instance.read().unwrap().region_duration.len();
-    if !is_statechart_integer(region_index) || region_index < 0 || region_index as usize >= len {
-        throw_range_error(&format!(
-            "Statechart region index {} is out of range",
-            region_index
-        ));
-    }
-    if !duration.is_finite() || duration < 0.0 {
-        throw_range_error("Statechart region duration must be finite and non-negative");
-    }
-    instance.write().unwrap().region_duration[region_index as usize] = duration;
-}
-
-// ============================================================================
-// Private helpers
-// ============================================================================
-
-fn advance_statechart_region(
-    instance: &Ref<StatechartInstanceRaw>,
-    chart: &Ref<StatechartRaw>,
-    region_index: i32,
-    delta_time_ms: f64,
-) -> bool {
-    let ri = region_index as usize;
-    let source_state_index = instance.read().unwrap().region_states[ri];
-    let mut transition_index = instance.read().unwrap().region_transitions[ri];
-    let source_transition_count =
-        get_statechart_transition_count(chart, region_index, source_state_index);
-    instance.write().unwrap().region_elapsed[ri] += delta_time_ms;
-    if transition_index >= 0 {
-        if transition_index as usize >= source_transition_count {
-            throw_range_error(&format!(
-                "Statechart region {} has an invalid active transition",
-                region_index
-            ));
-        }
-    } else {
-        transition_index = get_ready_transition_index(instance, chart, region_index);
-        if transition_index < 0 {
-            return false;
-        }
-        let mut current = instance.write().unwrap();
-        current.region_transitions[ri] = transition_index;
-        current.region_blend[ri] = 0.0;
-    }
-
-    let duration_ms = chart.read().unwrap().regions[ri].states[source_state_index as usize]
-        .transitions[transition_index as usize]
-        .duration_ms;
-    let target = chart.read().unwrap().regions[ri].states[source_state_index as usize].transitions
-        [transition_index as usize]
-        .target_state_index;
-    let duration_ms = if duration_ms.is_finite() && duration_ms > 0.0 {
-        duration_ms
-    } else {
-        0.0
-    };
-    let blend = if duration_ms == 0.0 {
-        1.0
-    } else {
-        (instance.read().unwrap().region_blend[ri] + (delta_time_ms / duration_ms) as f32).min(1.0)
-    };
-    instance.write().unwrap().region_blend[ri] = blend;
-    if blend < 1.0 {
-        return false;
-    }
-    let mut current = instance.write().unwrap();
-    current.region_states[ri] = target;
-    current.region_transitions[ri] = -1;
-    current.region_blend[ri] = 0.0;
-    current.region_duration[ri] = 0.0;
-    current.region_elapsed[ri] = 0.0;
-    return true;
-}
-
-fn assert_statechart_input_kind(
-    instance: &Ref<StatechartInstanceRaw>,
-    input_index: i32,
-    expected_kind: StatechartInputKind,
-) {
-    let chart = instance.read().unwrap().chart.clone();
-    let input_count = chart.read().unwrap().inputs.len();
-    if !is_statechart_integer(input_index) || input_index < 0 || input_index as usize >= input_count
-    {
-        throw_range_error(&format!(
-            "Statechart input index {} is out of range",
-            input_index
-        ));
-    }
-    let kind = chart.read().unwrap().inputs[input_index as usize].kind;
-    if kind != expected_kind {
-        throw_statechart_input_kind_type_error(input_index, kind, expected_kind);
-    }
-}
-
-fn compare_statechart_condition(value: f64, condition: &StatechartCondition) -> bool {
-    return match condition.comparison {
-        StatechartComparison::Equal => value == condition.value,
-        StatechartComparison::GreaterThan => value > condition.value,
-        StatechartComparison::GreaterThanOrEqual => value >= condition.value,
-        StatechartComparison::LessThan => value < condition.value,
-        StatechartComparison::LessThanOrEqual => value <= condition.value,
-        StatechartComparison::NotEqual => value != condition.value,
-    };
-}
-
-fn clear_statechart_triggers(instance: &Ref<StatechartInstanceRaw>, chart: &Ref<StatechartRaw>) {
-    let chart = chart.read().unwrap();
-    let mut current = instance.write().unwrap();
-    let mut input_index = 0;
-    while input_index < chart.inputs.len() {
-        if chart.inputs[input_index].kind == StatechartInputKind::Trigger {
-            current.input_values[input_index] = 0.0;
-        }
-        input_index += 1;
-    }
-}
-
-fn get_statechart_transition_count(
-    chart: &Ref<StatechartRaw>,
-    region_index: i32,
-    source_state_index: i32,
-) -> usize {
-    let chart = chart.read().unwrap();
-    let region = &chart.regions[region_index as usize];
-    if source_state_index < 0 || source_state_index as usize >= region.states.len() {
-        throw_range_error(&format!(
-            "Statechart region {} has an invalid active state",
-            region_index
-        ));
-    }
-    return region.states[source_state_index as usize].transitions.len();
-}
-
 fn get_first_unmet_condition(
     instance: &Ref<StatechartInstanceRaw>,
     chart: &StatechartRaw,
@@ -774,6 +683,59 @@ fn get_statechart_exit_status(
     };
 }
 
+pub fn get_statechart_input_index(chart: &StatechartRaw, name: &str) -> i32 {
+    for input_index in 0..chart.inputs.len() {
+        if chart.inputs[input_index].name.as_deref() == Some(name) {
+            return input_index as i32;
+        }
+    }
+    return -1;
+}
+
+pub fn get_statechart_region_blend(
+    instance: &Ref<StatechartInstanceRaw>,
+    region_index: i32,
+) -> f32 {
+    let current = instance.read().unwrap();
+    if is_statechart_integer(region_index)
+        && region_index >= 0
+        && (region_index as usize) < current.region_blend.len()
+    {
+        return current.region_blend[region_index as usize];
+    }
+    return -1.0;
+}
+
+pub fn get_statechart_region_state(
+    instance: &Ref<StatechartInstanceRaw>,
+    region_index: i32,
+) -> i32 {
+    let current = instance.read().unwrap();
+    if is_statechart_integer(region_index)
+        && region_index >= 0
+        && (region_index as usize) < current.region_states.len()
+    {
+        return current.region_states[region_index as usize];
+    }
+    return -1;
+}
+
+fn get_statechart_transition_count(
+    chart: &Ref<StatechartRaw>,
+    region_index: i32,
+    source_state_index: i32,
+) -> usize {
+    let chart = chart.read().unwrap();
+    let region = &chart.regions[region_index as usize];
+    if source_state_index < 0 || source_state_index as usize >= region.states.len() {
+        throw_range_error(&format!(
+            "Statechart region {} has an invalid active state",
+            region_index
+        ));
+    }
+    return region.states[source_state_index as usize].transitions.len();
+}
+
 fn invalid_region_explanation(region_index: i32) -> StatechartTransitionExplanation {
     return StatechartTransitionExplanation {
         blend: -1.0,
@@ -784,6 +746,44 @@ fn invalid_region_explanation(region_index: i32) -> StatechartTransitionExplanat
         target_state_index: -1,
         transition_index: -1,
     };
+}
+
+pub fn set_statechart_boolean_input(
+    instance: &Ref<StatechartInstanceRaw>,
+    input_index: i32,
+    value: bool,
+) {
+    assert_statechart_input_kind(instance, input_index, StatechartInputKind::Boolean);
+    let mut current = instance.write().unwrap();
+    current.input_values[input_index as usize] = if value { 1.0 } else { 0.0 };
+}
+
+pub fn set_statechart_number_input(
+    instance: &Ref<StatechartInstanceRaw>,
+    input_index: i32,
+    value: f64,
+) {
+    assert_statechart_input_kind(instance, input_index, StatechartInputKind::Number);
+    let mut current = instance.write().unwrap();
+    current.input_values[input_index as usize] = value;
+}
+
+pub fn set_statechart_region_duration(
+    instance: &Ref<StatechartInstanceRaw>,
+    region_index: i32,
+    duration: f64,
+) {
+    let len = instance.read().unwrap().region_duration.len();
+    if !is_statechart_integer(region_index) || region_index < 0 || region_index as usize >= len {
+        throw_range_error(&format!(
+            "Statechart region index {} is out of range",
+            region_index
+        ));
+    }
+    if !duration.is_finite() || duration < 0.0 {
+        throw_range_error("Statechart region duration must be finite and non-negative");
+    }
+    instance.write().unwrap().region_duration[region_index as usize] = duration;
 }
 
 fn validate_statechart(chart: &StatechartRaw) {
