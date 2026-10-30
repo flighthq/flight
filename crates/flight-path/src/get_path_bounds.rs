@@ -86,6 +86,22 @@ fn eval_quadratic(p0: f64, p1: f64, p2: f64, t: f64) -> f64 {
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
+fn expand_bounds(bounds: &mut BoundsAccumulator, px: f64, py: f64) {
+    if px < bounds.min_x {
+        bounds.min_x = px;
+    }
+    if px > bounds.max_x {
+        bounds.max_x = px;
+    }
+    if py < bounds.min_y {
+        bounds.min_y = py;
+    }
+    if py > bounds.max_y {
+        bounds.max_y = py;
+    }
+}
+
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_cubic_bounds(
     x0: f64,
     y0: f64,
@@ -113,22 +129,6 @@ fn expand_cubic_bounds(
             eval_cubic(x0, c1x, c2x, x3, t),
             eval_cubic(y0, c1y, c2y, y3, t),
         );
-    }
-}
-
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
-fn expand_bounds(bounds: &mut BoundsAccumulator, px: f64, py: f64) {
-    if px < bounds.min_x {
-        bounds.min_x = px;
-    }
-    if px > bounds.max_x {
-        bounds.max_x = px;
-    }
-    if py < bounds.min_y {
-        bounds.min_y = py;
-    }
-    if py > bounds.max_y {
-        bounds.max_y = py;
     }
 }
 
