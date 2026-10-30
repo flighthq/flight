@@ -12,6 +12,10 @@ struct FlowTransition<'a> {
     guards: &'a FlowGuardStateRef,
 }
 
+fn end_flow_transition(guards: &FlowGuardStateRef) {
+    guards.write().unwrap().transition_depth -= 1;
+}
+
 pub(crate) fn run_flow_transition(guards: &FlowGuardStateRef, operation: FlowTransitionOperation) {
     let depth = {
         let mut guard_state = guards.write().unwrap();
@@ -25,6 +29,6 @@ pub(crate) fn run_flow_transition(guards: &FlowGuardStateRef, operation: FlowTra
 
 impl Drop for FlowTransition<'_> {
     fn drop(&mut self) {
-        self.guards.write().unwrap().transition_depth -= 1;
+        end_flow_transition(self.guards);
     }
 }
