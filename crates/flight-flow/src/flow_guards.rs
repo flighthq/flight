@@ -1,13 +1,13 @@
 //! flight-compiler: nullable-options
 //! flight-compiler: numeric-union FlowGuardLogLevel
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use flight_entity::Ref;
-use flight_log::{LogData, LogDataOrProvider, LogLevel, LogState, LogValue, log_once};
+use flight_log::{LogDataOrProvider, LogLevel, LogState, log_once};
 
 use crate::flow::FlowGuardStateRef;
+use crate::flow_guard_log::{create_flow_guard_log_data, get_flow_guard_log_level};
 use crate::types::{FlowGuardContext, FlowGuardKind};
 
 struct FlowGuardLogRecord {
@@ -18,7 +18,7 @@ type FlowGuardLogData = FlowGuardLogRecord;
 
 #[derive(Clone, Copy)]
 #[repr(u8)]
-enum FlowGuardLogLevel {
+pub(crate) enum FlowGuardLogLevel {
     Warn = 2,
 }
 
@@ -104,18 +104,12 @@ pub fn report_flow_guard(state: &FlowGuardStateRef, kind: FlowGuardKind) {
 
 impl From<FlowGuardLogRecord> for LogDataOrProvider {
     fn from(record: FlowGuardLogRecord) -> Self {
-        return LogData::Record(HashMap::from([(
-            "kind".to_string(),
-            LogValue::Str(record.kind),
-        )]))
-        .into();
+        return create_flow_guard_log_data(record.kind);
     }
 }
 
 impl From<FlowGuardLogLevel> for LogLevel {
     fn from(value: FlowGuardLogLevel) -> Self {
-        return match value {
-            FlowGuardLogLevel::Warn => LogLevel::Warn,
-        };
+        return get_flow_guard_log_level(value);
     }
 }

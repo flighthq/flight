@@ -1,4 +1,5 @@
 mod flow;
+mod flow_guard_log;
 mod flow_guards;
 mod flow_stack_compat;
 mod flow_transitions;
