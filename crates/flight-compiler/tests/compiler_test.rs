@@ -3944,6 +3944,27 @@ pub fn normalize(s: &str) -> String {
     }
 
     #[test]
+    fn lowers_for_loop_string_iterator_provenance() {
+        let source = r#"
+pub fn has_indented_line(text: &str) -> bool {
+    for line in text.lines() {
+        if line.starts_with(' ') {
+            return true;
+        }
+    }
+    return false;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("startsWith("),
+            "for-loop variable from .lines() should be known string: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_wrapping_sub() {
         let source = r#"
 pub fn wrap_sub(a: u32, b: u32) -> u32 {

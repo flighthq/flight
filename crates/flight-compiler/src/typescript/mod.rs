@@ -2147,6 +2147,22 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
+fn for_loop_iterates_strings(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::MethodCall(call) => matches!(
+            call.method.to_string().as_str(),
+            "lines"
+                | "split"
+                | "split_ascii_whitespace"
+                | "split_terminator"
+                | "split_whitespace"
+                | "splitn"
+        ) && expression_is_known_string(&call.receiver, entities),
+        Expr::Reference(reference) => for_loop_iterates_strings(&reference.expr, entities),
+        _ => false,
+    };
+}
+
 fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
     let name = match expression {
         Expr::Group(group) => return expression_numeric_type(&group.expr, entities),
@@ -14202,7 +14218,12 @@ fn emit_statement(
             emit_copy_from_slice_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
-            let loop_context = lexical_pattern_context(entities, &loop_expression.pat);
+            let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
+            if for_loop_iterates_strings(&loop_expression.expr, entities) {
+                if let Some(name) = local_pattern_name(&loop_expression.pat) {
+                    loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
+                }
+            }
             write_indent(out, indent);
             writeln!(
                 out,
