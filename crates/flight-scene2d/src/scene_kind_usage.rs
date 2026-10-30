@@ -1,8 +1,8 @@
 //! What a scene uses that some consumer must be registered for (TS `sceneKindUsage.ts`): one walk,
 //! no registry, no backend.
 
-use flight_entity::allocate_entity;
-use flight_materials::BLEND_MODE_NORMAL;
+use flight_entity::{Kind, allocate_entity};
+use flight_materials::{BLEND_MODE_NORMAL, BlendMode};
 use flight_node::{Node, NodeRef, for_each_node_descendant};
 
 use crate::display_object::as_node2d;
@@ -38,10 +38,14 @@ fn add_scene2d_used_kind(kinds: &mut Vec<String>, kind: &str) {
 /// blend modes, material kinds and recorded shape command keys, each deduped and sorted (TS
 /// `getScene2DKindUsage`). Reports what is in the scene, never whether anything can draw it.
 pub fn get_scene2d_kind_usage(out: &mut Scene2DKindUsage, scene: &Scene2D) {
-    out.blend_modes.clear();
-    out.material_kinds.clear();
-    out.node_kinds.clear();
-    out.shape_command_keys.clear();
+    let out_blend_modes: &mut Vec<BlendMode> = &mut out.blend_modes;
+    out_blend_modes.clear();
+    let out_material_kinds: &mut Vec<Kind> = &mut out.material_kinds;
+    out_material_kinds.clear();
+    let out_node_kinds: &mut Vec<Kind> = &mut out.node_kinds;
+    out_node_kinds.clear();
+    let out_shape_command_keys: &mut Vec<String> = &mut out.shape_command_keys;
+    out_shape_command_keys.clear();
     let root: NodeRef = scene.root.clone();
     visit_scene2d_kind_usage(out, &*root.read().unwrap());
     for_each_node_descendant(&root, &mut |node| {
