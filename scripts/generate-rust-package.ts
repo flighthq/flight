@@ -331,11 +331,13 @@ function dependencySources(command: string): DependencySource[] {
 }
 
 function entityArguments(command: string): string[] {
-  if (command !== 'generate') return [];
+  if (command !== 'generate' && command !== 'generate-tests') return [];
   const specifier = options.packageName === 'entity' ? './types.ts' : '@flighthq/entity/contract';
+  // Tests take the entity source only as an alias source, so they read its identity aliases
+  // (`NonEntityCreateResult<T>` is `T`) when resolving the record a factory returns.
+  const entityModule = command === 'generate' ? ['--entity-module', specifier] : [];
   return [
-    '--entity-module',
-    specifier,
+    ...entityModule,
     '--external-alias-source',
     join(repositoryRoot, 'crates', 'flight-entity', 'src', 'types.rs'),
     '--external-alias-module',
