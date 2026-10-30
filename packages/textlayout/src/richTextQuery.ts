@@ -92,6 +92,10 @@ export function computeRichTextLineMetrics(
   };
 }
 
+function getF32(values: Readonly<number[]>, index: number, fallback: number): number {
+  return index < values.length ? values[index] : fallback;
+}
+
 export function getRichTextCharBoundaries(
   out: Rectangle,
   layout: Readonly<TextLayoutResult>,
@@ -272,8 +276,4 @@ function richTextGetLineOffsetY(layout: Readonly<TextLayoutResult>, lineIndex: n
     y += getF32(layout.lineHeights, index, 0.0);
   }
   return y;
-}
-
-function getF32(values: Readonly<number[]>, index: number, fallback: number): number {
-  return index < values.length ? values[index] : fallback;
 }
