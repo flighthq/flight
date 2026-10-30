@@ -4642,7 +4642,10 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     ),
                 )),
                 Expr::Call(call) => {
-                    if expression_is_path(&call.func, "Some") && call.args.len() == 1 {
+                    if (expression_is_path(&call.func, "Some")
+                        || expression_is_path(&call.func, "Ok"))
+                        && call.args.len() == 1
+                    {
                         let payload = self.initializer_fact(&call.args[0]);
                         return if payload.has_source_structure() {
                             BindingFact::Option(Box::new(payload))
@@ -8069,7 +8072,10 @@ fn emit_expression_value(
                 }
                 return emit_expression(&call.args[0], entities);
             }
-            if expression_is_path(&call.func, "Some") && call.args.len() == 1 {
+            if (expression_is_path(&call.func, "Some")
+                || expression_is_path(&call.func, "Ok"))
+                && call.args.len() == 1
+            {
                 return emit_expression(&call.args[0], entities);
             }
             // `Ref<T>` is `Arc<RwLock<T>>` and lowers to `T`, so its constructor lowers to its argument.
@@ -8989,7 +8995,11 @@ fn contextual_field_closure(expression: &Expr) -> Option<&syn::ExprClosure> {
         {
             contextual_field_closure(&call.args[0])
         }
-        Expr::Call(call) if call.args.len() == 1 && expression_is_path(&call.func, "Some") => {
+        Expr::Call(call)
+            if call.args.len() == 1
+                && (expression_is_path(&call.func, "Some")
+                    || expression_is_path(&call.func, "Ok")) =>
+        {
             contextual_field_closure(&call.args[0])
         }
         Expr::Closure(closure) => Some(closure),
@@ -10016,21 +10026,6 @@ fn emit_let_else_local(
     rebound: bool,
     emit_else_block: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
 ) -> Result<(), CompileError> {
-    let Pat::TupleStruct(pattern) = &local.pat else {
-        return Err(compile_error(
-            "portable `let-else` supports only a `Some(name)` pattern",
-        ));
-    };
-    if !pattern.path.is_ident("Some") || pattern.elems.len() != 1 {
-        return Err(compile_error(
-            "portable `let-else` supports only a `Some(name)` pattern",
-        ));
-    }
-    let Pat::Ident(identifier) = &pattern.elems[0] else {
-        return Err(compile_error(
-            "portable `let Some` binding needs an identifier",
-        ));
-    };
     let initializer = local
         .init
         .as_ref()
@@ -10044,36 +10039,78 @@ fn emit_let_else_local(
             "portable `let-else` divergence must use a block",
         ));
     };
-    let rust_name = identifier.ident.to_string();
-    let name = snake_to_lower_camel(&rust_name);
-    let same_binding = referenced_path_identifier(&initializer.expr).as_deref() == Some(&rust_name);
-    if !same_binding {
-        let value = emit_expression(&initializer.expr, entities)?;
-        let rebind = shadowed || expression_contains_identifier(&initializer.expr, &rust_name);
-        write_indent(out, indent);
-        if rebind {
-            write!(out, "{name}").expect("writing to a String cannot fail");
-        } else {
-            let declaration = if identifier.mutability.is_some() || rebound {
-                "let"
+    if let Pat::TupleStruct(pattern) = &local.pat
+        && (pattern.path.is_ident("Some") || pattern.path.is_ident("Ok"))
+        && pattern.elems.len() == 1
+    {
+        let Pat::Ident(identifier) = &pattern.elems[0] else {
+            return Err(compile_error(
+                "portable `let Some` binding needs an identifier",
+            ));
+        };
+        let rust_name = identifier.ident.to_string();
+        let name = snake_to_lower_camel(&rust_name);
+        let same_binding =
+            referenced_path_identifier(&initializer.expr).as_deref() == Some(&rust_name);
+        if !same_binding {
+            let value = emit_expression(&initializer.expr, entities)?;
+            let rebind = shadowed || expression_contains_identifier(&initializer.expr, &rust_name);
+            write_indent(out, indent);
+            if rebind {
+                write!(out, "{name}").expect("writing to a String cannot fail");
             } else {
-                "const"
-            };
-            write!(out, "{declaration} {name}").expect("writing to a String cannot fail");
+                let declaration = if identifier.mutability.is_some() || rebound {
+                    "let"
+                } else {
+                    "const"
+                };
+                write!(out, "{declaration} {name}").expect("writing to a String cannot fail");
+            }
+            writeln!(out, " = {value};").expect("writing to a String cannot fail");
         }
-        writeln!(out, " = {value};").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(
+            out,
+            "if ({name} === {}) {{",
+            option_absent_value(&initializer.expr, entities)
+        )
+        .expect("writing to a String cannot fail");
+        emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
     }
-    write_indent(out, indent);
-    writeln!(
-        out,
-        "if ({name} === {}) {{",
-        option_absent_value(&initializer.expr, entities)
-    )
-    .expect("writing to a String cannot fail");
-    emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
-    write_indent(out, indent);
-    out.push_str("}\n");
-    return Ok(());
+    if let Pat::TupleStruct(_) | Pat::Struct(_) = &local.pat {
+        let value_expr = emit_expression(&initializer.expr, entities)?;
+        let temp = format!("$letElse");
+        if let Some(test) = data_union_pattern_test(&local.pat, &temp, entities)? {
+            write_indent(out, indent);
+            writeln!(out, "const {temp} = {value_expr};").expect("writing to a String cannot fail");
+            let negated = match &test.predicate {
+                Some(predicate) => format!("!({predicate})"),
+                None => {
+                    return Err(compile_error(
+                        "portable `let-else` data union pattern cannot be a catch-all",
+                    ));
+                }
+            };
+            write_indent(out, indent);
+            writeln!(out, "if ({negated}) {{").expect("writing to a String cannot fail");
+            emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+            write_indent(out, indent);
+            out.push_str("}\n");
+            for (binding, expression) in &test.bindings {
+                let name = snake_to_lower_camel(binding);
+                write_indent(out, indent);
+                writeln!(out, "const {name} = {expression};")
+                    .expect("writing to a String cannot fail");
+            }
+            return Ok(());
+        }
+    }
+    return Err(compile_error(
+        "portable `let-else` supports only a `Some(name)` pattern",
+    ));
 }
 
 pub(crate) fn emit_format_template(
@@ -10249,16 +10286,70 @@ fn emit_matches_macro(
     let text = emit_expression(&value, entities)?;
     let reusable = expression_is_reusable(&value);
     let subject = if reusable { text.as_str() } else { "value" };
-    let Some(test) = data_union_pattern_test(&pattern, subject, entities)? else {
-        return Err(compile_error(
-            "portable `matches!` supports only data union variant patterns",
-        ));
-    };
-    let predicate = test.predicate.unwrap_or_else(|| "true".to_string());
-    if reusable {
-        return Ok(predicate);
+    if let Some(test) = data_union_pattern_test(&pattern, subject, entities)? {
+        let predicate = test.predicate.unwrap_or_else(|| "true".to_string());
+        if reusable {
+            return Ok(predicate);
+        }
+        return Ok(format!("((value) => {predicate})({text})"));
     }
-    return Ok(format!("((value) => {predicate})({text})"));
+    if let Some(predicate) = emit_matches_literal_predicate(&pattern, subject, entities)? {
+        if reusable {
+            return Ok(predicate);
+        }
+        return Ok(format!("((value) => {predicate})({text})"));
+    }
+    return Err(compile_error(
+        "portable `matches!` supports only data union variant patterns",
+    ));
+}
+
+fn emit_matches_literal_predicate(
+    pattern: &Pat,
+    subject: &str,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    return match pattern {
+        Pat::Lit(literal) => {
+            let value = emit_literal(&literal.lit)?;
+            Ok(Some(format!("{subject} === {value}")))
+        }
+        Pat::Or(or_pattern) => {
+            let mut parts = Vec::new();
+            for case in &or_pattern.cases {
+                let Some(predicate) = emit_matches_literal_predicate(case, subject, entities)?
+                else {
+                    return Ok(None);
+                };
+                parts.push(predicate);
+            }
+            Ok(Some(parts.join(" || ")))
+        }
+        Pat::Wild(_) => Ok(Some("true".to_string())),
+        Pat::Path(path) => {
+            let emitted = emit_expression(
+                &Expr::Path(syn::ExprPath {
+                    attrs: Vec::new(),
+                    qself: path.qself.clone(),
+                    path: path.path.clone(),
+                }),
+                entities,
+            )?;
+            Ok(Some(format!("{subject} === {emitted}")))
+        }
+        Pat::TupleStruct(tuple) if tuple.path.is_ident("Some") && tuple.elems.len() == 1 => {
+            let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            };
+            let Pat::Wild(_) = &tuple.elems[0] else {
+                return Ok(None);
+            };
+            Ok(Some(format!("{subject} !== {absent}")))
+        }
+        _ => Ok(None),
+    };
 }
 
 fn emit_unreachable_message(
@@ -13483,7 +13574,7 @@ fn ordinary_option_value(expression: &Expr, emitted: String) -> String {
         return "undefined".to_string();
     }
     if let Expr::Call(call) = expression
-        && expression_is_path(&call.func, "Some")
+        && (expression_is_path(&call.func, "Some") || expression_is_path(&call.func, "Ok"))
     {
         return emitted;
     }
@@ -13500,7 +13591,7 @@ fn nullable_option_value(expression: &Expr, emitted: String) -> String {
         return "null".to_string();
     }
     if let Expr::Call(call) = expression
-        && expression_is_path(&call.func, "Some")
+        && (expression_is_path(&call.func, "Some") || expression_is_path(&call.func, "Ok"))
     {
         return emitted;
     }
@@ -16271,7 +16362,11 @@ fn expression_requires_string_union_const_assertion(
         {
             expression
         }
-        Expr::Call(call) if call.args.len() == 1 && expression_is_path(&call.func, "Some") => {
+        Expr::Call(call)
+            if call.args.len() == 1
+                && (expression_is_path(&call.func, "Some")
+                    || expression_is_path(&call.func, "Ok")) =>
+        {
             return expression_requires_string_union_const_assertion(&call.args[0], context);
         }
         Expr::Group(group) => {

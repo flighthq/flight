@@ -1912,21 +1912,20 @@ pub fn is_closed(segment: &Segment) -> bool {
         );
         assert!(output.contains("return segment.kind === \"close\";"));
 
-        for (body, expected) in [
-            (
-                "matches!(id, Id::Number(n) if n > 0)",
-                "portable `matches!` cannot use a guard",
-            ),
-            (
-                "matches!(value, Some(_))",
-                "portable `matches!` supports only data union variant patterns",
-            ),
-        ] {
-            let source = format!(
-                "//! flight-compiler: data-union Id\npub enum Id {{ Number(i32), Text(String) }}\npub fn check(id: &Id, value: Option<i32>) -> bool {{ return {body}; }}\n"
+        {
+            let source =
+                "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(id, Id::Number(n) if n > 0); }\n";
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(
+                error.to_string(),
+                "portable `matches!` cannot use a guard"
             );
-            let error = compile_typescript(&source, None).unwrap_err();
-            assert_eq!(error.to_string(), expected);
+        }
+        {
+            let source =
+                "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(value, Some(_)); }\n";
+            let output = compile_typescript(source, None).unwrap();
+            assert!(output.contains("value !== undefined"));
         }
     }
 
@@ -5427,7 +5426,7 @@ pub fn required(value: Option<i32>) -> i32 {
     }
 
     #[test]
-    fn rejects_non_option_let_else_patterns_deterministically() {
+    fn lowers_let_else_ok_pattern() {
         let source = r#"
 pub fn required(value: Result<i32, i32>) -> i32 {
     let Ok(value) = value else {
@@ -5437,12 +5436,10 @@ pub fn required(value: Result<i32, i32>) -> i32 {
 }
 "#;
 
-        let error = compile_typescript(source, None).unwrap_err();
+        let output = compile_typescript(source, None).unwrap();
 
-        assert_eq!(
-            error.to_string(),
-            "portable `let-else` supports only a `Some(name)` pattern"
-        );
+        assert!(output.contains("if (value === undefined)"));
+        assert!(output.contains("return -1;"));
     }
 
     #[test]
