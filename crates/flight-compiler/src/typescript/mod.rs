@@ -10005,6 +10005,7 @@ fn emit_match_statement_with_action(
     action: &HoistedMatchAction<'_>,
 ) -> Result<(), CompileError> {
     if let Some(arms) = analyze_option_match(&expression.arms) {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
         write_indent(out, indent + 1);
@@ -10014,23 +10015,47 @@ fn emit_match_statement_with_action(
             emit_expression(&expression.expr, entities)?
         )
         .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
         let absent = option_absent_value(&expression.expr, entities);
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            if arm.guard.is_some() {
-                return Err(compile_error("portable Rust match arms cannot use guards"));
-            }
             write_indent(out, indent + 1);
-            let prefix = if index == 0 { "if" } else { "else if" };
             let operator = if info.present { "!==" } else { "===" };
-            writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
-                .expect("writing to a String cannot fail");
+            if has_guards {
+                writeln!(out, "if (!$matched && matchValue {operator} {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            }
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
                 writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
-            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
+            }
             write_indent(out, indent + 1);
             out.push_str("}\n");
         }
@@ -10039,6 +10064,7 @@ fn emit_match_statement_with_action(
         return Ok(());
     }
     if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
         write_indent(out, indent + 1);
@@ -10048,25 +10074,30 @@ fn emit_match_statement_with_action(
             emit_expression(&expression.expr, entities)?
         )
         .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            if arm.guard.is_some() {
-                return Err(compile_error("portable Rust match arms cannot use guards"));
-            }
             write_indent(out, indent + 1);
             if info.otherwise {
-                if index == 0 {
+                if has_guards {
+                    out.push_str("if (!$matched) {\n");
+                } else if index == 0 {
                     out.push_str("{\n");
                 } else {
                     out.push_str("else {\n");
                 }
             } else {
-                let prefix = if index == 0 { "if" } else { "else if" };
-                writeln!(
-                    out,
-                    "{prefix} ({}) {{",
-                    tagged_data_union_predicate(&info.variants, "matchValue")
-                )
-                .expect("writing to a String cannot fail");
+                let predicate = tagged_data_union_predicate(&info.variants, "matchValue");
+                if has_guards {
+                    writeln!(out, "if (!$matched && {predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
             }
             if let Some(binding) = info.catch_all_binding {
                 write_indent(out, indent + 2);
@@ -10079,7 +10110,25 @@ fn emit_match_statement_with_action(
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
-            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
+            }
             write_indent(out, indent + 1);
             out.push_str("}\n");
         }
@@ -10088,6 +10137,7 @@ fn emit_match_statement_with_action(
         return Ok(());
     }
     if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
         write_indent(out, indent + 1);
@@ -10097,29 +10147,34 @@ fn emit_match_statement_with_action(
             emit_expression(&expression.expr, entities)?
         )
         .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            if arm.guard.is_some() {
-                return Err(compile_error("portable Rust match arms cannot use guards"));
-            }
             write_indent(out, indent + 1);
             if info.catch_all {
-                if index == 0 {
+                if has_guards {
+                    out.push_str("if (!$matched) {\n");
+                } else if index == 0 {
                     out.push_str("{\n");
                 } else {
                     out.push_str("else {\n");
                 }
             } else {
-                let prefix = if index == 0 { "if" } else { "else if" };
-                writeln!(
-                    out,
-                    "{prefix} ({}) {{",
-                    if info.reserved_key_variants.is_empty() {
-                        runtime_categories_predicate(&info.categories, "matchValue")
-                    } else {
-                        reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
-                    }
-                )
-                .expect("writing to a String cannot fail");
+                let predicate = if info.reserved_key_variants.is_empty() {
+                    runtime_categories_predicate(&info.categories, "matchValue")
+                } else {
+                    reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
+                };
+                if has_guards {
+                    writeln!(out, "if (!$matched && {predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
             }
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
@@ -10131,7 +10186,25 @@ fn emit_match_statement_with_action(
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
-            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
+            }
             write_indent(out, indent + 1);
             out.push_str("}\n");
         }
@@ -10147,9 +10220,6 @@ fn emit_match_statement_with_action(
     )
     .expect("writing to a String cannot fail");
     for arm in &expression.arms {
-        if arm.guard.is_some() {
-            return Err(compile_error("portable Rust match arms cannot use guards"));
-        }
         for pattern in emit_match_patterns(&arm.pat, entities)? {
             write_indent(out, indent + 1);
             if pattern == "default" {
@@ -10159,8 +10229,25 @@ fn emit_match_statement_with_action(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
-        if matches!(action, HoistedMatchAction::Assign(_))
+        let body_indent = if let Some((_, guard)) = &arm.guard {
+            let guard_expr = emit_expression(guard, &arm_context)?;
+            write_indent(out, indent + 2);
+            writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+            indent + 3
+        } else {
+            indent + 2
+        };
+        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+        if arm.guard.is_some() {
+            if matches!(action, HoistedMatchAction::Assign(_))
+                && !arm_body_contains_function_exit(&arm.body)
+            {
+                write_indent(out, body_indent);
+                out.push_str("break;\n");
+            }
+            write_indent(out, indent + 2);
+            out.push_str("}\n");
+        } else if matches!(action, HoistedMatchAction::Assign(_))
             && !arm_body_contains_function_exit(&arm.body)
         {
             write_indent(out, indent + 2);
@@ -10339,9 +10426,33 @@ fn emit_let_else_local(
         && (pattern.path.is_ident("Some") || pattern.path.is_ident("Ok"))
         && pattern.elems.len() == 1
     {
+        if let Pat::Tuple(tuple) = &pattern.elems[0] {
+            let mut names = Vec::new();
+            for elem in &tuple.elems {
+                let Pat::Ident(ident) = elem else {
+                    return Err(compile_error(
+                        "portable `let Some((..))` tuple elements must be identifiers",
+                    ));
+                };
+                names.push(snake_to_lower_camel(&ident.ident.to_string()));
+            }
+            let value = emit_expression(&initializer.expr, entities)?;
+            let absent = option_absent_value(&initializer.expr, entities);
+            write_indent(out, indent);
+            writeln!(out, "const $opt = {value};").expect("writing to a String cannot fail");
+            write_indent(out, indent);
+            writeln!(out, "if ($opt === {absent}) {{").expect("writing to a String cannot fail");
+            emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+            write_indent(out, indent);
+            out.push_str("}\n");
+            write_indent(out, indent);
+            writeln!(out, "const [{}] = $opt;", names.join(", "))
+                .expect("writing to a String cannot fail");
+            return Ok(());
+        }
         let Pat::Ident(identifier) = &pattern.elems[0] else {
             return Err(compile_error(
-                "portable `let Some` binding needs an identifier",
+                "portable `let Some` binding needs an identifier or tuple",
             ));
         };
         let rust_name = identifier.ident.to_string();
@@ -11859,6 +11970,7 @@ pub(crate) fn emit_match_statement(
     indent: usize,
 ) -> Result<(), CompileError> {
     if let Some(arms) = analyze_option_match(&expression.arms) {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
         write_indent(out, indent + 1);
@@ -11868,32 +11980,56 @@ pub(crate) fn emit_match_statement(
             emit_expression(&expression.expr, entities)?
         )
         .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
         let absent = option_absent_value(&expression.expr, entities);
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            if arm.guard.is_some() {
-                return Err(compile_error("portable Rust match arms cannot use guards"));
-            }
             write_indent(out, indent + 1);
-            let prefix = if index == 0 { "if" } else { "else if" };
             let operator = if info.present { "!==" } else { "===" };
-            writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
-                .expect("writing to a String cannot fail");
+            if has_guards {
+                writeln!(out, "if (!$matched && matchValue {operator} {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
+                    .expect("writing to a String cannot fail");
+            }
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
                 writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
             match arm.body.as_ref() {
                 Expr::Block(block) => {
-                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
+                    emit_block(out, &block.block.stmts, &arm_context, body_indent)?
                 }
                 expression => emit_statement(
                     out,
                     &Stmt::Expr(expression.clone(), None),
                     &arm_context,
-                    indent + 2,
+                    body_indent,
                 )?,
+            }
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
             }
             write_indent(out, indent + 1);
             out.push_str("}\n");
@@ -11903,6 +12039,7 @@ pub(crate) fn emit_match_statement(
         return Ok(());
     }
     if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
         write_indent(out, indent + 1);
@@ -11912,25 +12049,30 @@ pub(crate) fn emit_match_statement(
             emit_expression(&expression.expr, entities)?
         )
         .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            if arm.guard.is_some() {
-                return Err(compile_error("portable Rust match arms cannot use guards"));
-            }
             write_indent(out, indent + 1);
             if info.otherwise {
-                if index == 0 {
+                if has_guards {
+                    out.push_str("if (!$matched) {\n");
+                } else if index == 0 {
                     out.push_str("{\n");
                 } else {
                     out.push_str("else {\n");
                 }
             } else {
-                let prefix = if index == 0 { "if" } else { "else if" };
-                writeln!(
-                    out,
-                    "{prefix} ({}) {{",
-                    tagged_data_union_predicate(&info.variants, "matchValue")
-                )
-                .expect("writing to a String cannot fail");
+                let predicate = tagged_data_union_predicate(&info.variants, "matchValue");
+                if has_guards {
+                    writeln!(out, "if (!$matched && {predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
             }
             if let Some(binding) = info.catch_all_binding {
                 write_indent(out, indent + 2);
@@ -11943,16 +12085,34 @@ pub(crate) fn emit_match_statement(
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
             match arm.body.as_ref() {
                 Expr::Block(block) => {
-                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
+                    emit_block(out, &block.block.stmts, &arm_context, body_indent)?
                 }
                 expression => emit_statement(
                     out,
                     &Stmt::Expr(expression.clone(), None),
                     &arm_context,
-                    indent + 2,
+                    body_indent,
                 )?,
+            }
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
             }
             write_indent(out, indent + 1);
             out.push_str("}\n");
@@ -11962,6 +12122,7 @@ pub(crate) fn emit_match_statement(
         return Ok(());
     }
     if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
         write_indent(out, indent + 1);
@@ -11971,29 +12132,34 @@ pub(crate) fn emit_match_statement(
             emit_expression(&expression.expr, entities)?
         )
         .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            if arm.guard.is_some() {
-                return Err(compile_error("portable Rust match arms cannot use guards"));
-            }
             write_indent(out, indent + 1);
             if info.catch_all {
-                if index == 0 {
+                if has_guards {
+                    out.push_str("if (!$matched) {\n");
+                } else if index == 0 {
                     out.push_str("{\n");
                 } else {
                     out.push_str("else {\n");
                 }
             } else {
-                let prefix = if index == 0 { "if" } else { "else if" };
-                writeln!(
-                    out,
-                    "{prefix} ({}) {{",
-                    if info.reserved_key_variants.is_empty() {
-                        runtime_categories_predicate(&info.categories, "matchValue")
-                    } else {
-                        reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
-                    }
-                )
-                .expect("writing to a String cannot fail");
+                let predicate = if info.reserved_key_variants.is_empty() {
+                    runtime_categories_predicate(&info.categories, "matchValue")
+                } else {
+                    reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
+                };
+                if has_guards {
+                    writeln!(out, "if (!$matched && {predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
             }
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
@@ -12005,16 +12171,34 @@ pub(crate) fn emit_match_statement(
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
             match arm.body.as_ref() {
                 Expr::Block(block) => {
-                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
+                    emit_block(out, &block.block.stmts, &arm_context, body_indent)?
                 }
                 expression => emit_statement(
                     out,
                     &Stmt::Expr(expression.clone(), None),
                     &arm_context,
-                    indent + 2,
+                    body_indent,
                 )?,
+            }
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
             }
             write_indent(out, indent + 1);
             out.push_str("}\n");
@@ -12031,9 +12215,6 @@ pub(crate) fn emit_match_statement(
     )
     .expect("writing to a String cannot fail");
     for arm in &expression.arms {
-        if arm.guard.is_some() {
-            return Err(compile_error("portable Rust match arms cannot use guards"));
-        }
         for pattern in emit_match_patterns(&arm.pat, entities)? {
             write_indent(out, indent + 1);
             if pattern == "default" {
@@ -12043,17 +12224,40 @@ pub(crate) fn emit_match_statement(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        match arm.body.as_ref() {
-            Expr::Block(block) => emit_block(out, &block.block.stmts, &arm_context, indent + 2)?,
-            expression => emit_statement(
-                out,
-                &Stmt::Expr(expression.clone(), None),
-                &arm_context,
-                indent + 2,
-            )?,
+        if let Some((_, guard)) = &arm.guard {
+            let guard_expr = emit_expression(guard, &arm_context)?;
+            write_indent(out, indent + 2);
+            writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+            match arm.body.as_ref() {
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, indent + 3)?
+                }
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    &arm_context,
+                    indent + 3,
+                )?,
+            }
+            write_indent(out, indent + 3);
+            out.push_str("break;\n");
+            write_indent(out, indent + 2);
+            out.push_str("}\n");
+        } else {
+            match arm.body.as_ref() {
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
+                }
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    &arm_context,
+                    indent + 2,
+                )?,
+            }
+            write_indent(out, indent + 2);
+            out.push_str("break;\n");
         }
-        write_indent(out, indent + 2);
-        out.push_str("break;\n");
     }
     write_indent(out, indent);
     out.push_str("}\n");
@@ -14126,17 +14330,33 @@ fn emit_data_union_tuple_binding(
             ));
         }
         let text = emit_expression(value, entities)?;
-        let Some(test) = data_union_pattern_test(pattern, &text, entities)? else {
+        if let Some(test) = data_union_pattern_test(pattern, &text, entities)? {
+            predicates.extend(test.predicate);
+            bindings.extend(test.bindings);
+        } else if let Pat::TupleStruct(tuple_struct) = pattern
+            && (tuple_struct.path.is_ident("Some") || tuple_struct.path.is_ident("Ok"))
+            && tuple_struct.elems.len() == 1
+        {
+            let Pat::Ident(ident) = &tuple_struct.elems[0] else {
+                return Err(compile_error(
+                    "portable tuple `if let Some` binding needs an identifier",
+                ));
+            };
+            let name = snake_to_lower_camel(&ident.ident.to_string());
+            let absent = option_absent_value(value, entities);
+            predicates.push(format!("{text} !== {absent}"));
+            bindings.push((name, text));
+        } else if matches!(pattern, Pat::Wild(_)) {
+            continue;
+        } else {
             return Err(compile_error(
-                "portable tuple `if let` supports only data union variant patterns, bindings, and `_`",
+                "portable tuple `if let` supports only data union variant patterns, option patterns, bindings, and `_`",
             ));
-        };
-        predicates.extend(test.predicate);
-        bindings.extend(test.bindings);
+        }
     }
     if predicates.is_empty() {
         return Err(compile_error(
-            "portable tuple `if let` needs at least one data union variant pattern",
+            "portable tuple `if let` needs at least one testable pattern",
         ));
     }
     return Ok(Some((predicates.join(" && "), bindings)));

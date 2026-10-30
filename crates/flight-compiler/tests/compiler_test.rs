@@ -2248,18 +2248,21 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
             "  if (a.kind === \"move\" && b.kind === \"move\") {\n    const ax = a.x;\n    const bx = b.x;\n"
         ));
 
+        {
+            let source =
+                "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn pick(id: &Id) -> Id { return id.clone(); }\npub fn check(a: &Id, b: &Id, value: Option<i32>) -> bool { if let (Some(n), _) = (value, b) { return true; } return false; }\n";
+            let output = compile_typescript(source, None).unwrap();
+            assert!(output.contains("value !== undefined"));
+        }
+
         for (condition, expected) in [
             (
                 "let (Id::Number(n), _) = (pick(a), b)",
                 "portable tuple `if let` elements must be locals, fields, or literals",
             ),
             (
-                "let (Some(n), _) = (value, b)",
-                "portable tuple `if let` supports only data union variant patterns, bindings, and `_`",
-            ),
-            (
                 "let (x, _) = (a, b)",
-                "portable tuple `if let` needs at least one data union variant pattern",
+                "portable tuple `if let` needs at least one testable pattern",
             ),
         ] {
             let source = format!(
