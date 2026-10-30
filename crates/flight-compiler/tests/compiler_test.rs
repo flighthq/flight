@@ -3920,6 +3920,30 @@ pub fn clean(s: &str) -> &str {
     }
 
     #[test]
+    fn lowers_string_method_chain_provenance_through_trim_and_replace() {
+        let source = r#"
+pub fn detect(text: &str) -> bool {
+    return text.trim_start().starts_with('{');
+}
+
+pub fn normalize(s: &str) -> String {
+    return s.to_lowercase().replace('-', "_");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("trimStart()") && output.contains("startsWith("),
+            "trim_start chain should propagate string provenance: {output}"
+        );
+        assert!(
+            output.contains("toLowerCase()") && output.contains("replaceAll("),
+            "to_lowercase chain should propagate string provenance: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_wrapping_sub() {
         let source = r#"
 pub fn wrap_sub(a: u32, b: u32) -> u32 {

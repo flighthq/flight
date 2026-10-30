@@ -2111,6 +2111,19 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
             .is_some_and(|segment| segment.ident == "format"),
         Expr::MethodCall(call) => {
             call.method == "to_string"
+                || matches!(
+                    call.method.to_string().as_str(),
+                    "repeat"
+                        | "replace"
+                        | "replacen"
+                        | "to_ascii_lowercase"
+                        | "to_ascii_uppercase"
+                        | "to_lowercase"
+                        | "to_uppercase"
+                        | "trim"
+                        | "trim_end"
+                        | "trim_start"
+                )
                 || (call.method == "clone" && expression_is_known_string(&call.receiver, entities))
         }
         Expr::Field(field) => {
