@@ -30,7 +30,7 @@ struct SvgTextRun {
 fn create_svg_text_format(style: &SvgStyle, opacity: f32) -> Ref<TextFormat> {
     let color =
         resolve_svg_color(&style.fill, &style.color).unwrap_or(SvgColor { alpha: 0.0, rgb: 0 });
-    let mut font = style.font_family.clone();
+    let mut font: String = style.font_family.clone();
     if font.starts_with(['\'', '"']) {
         font.remove(0);
     }

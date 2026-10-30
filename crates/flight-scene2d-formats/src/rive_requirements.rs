@@ -19,7 +19,7 @@ pub fn parse_rive_requirements(
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> RequirementSet {
     let mut counts = HashMap::new();
-    let mut requirements = Vec::new();
+    let mut requirements: Vec<Requirement> = Vec::new();
     if collect_rive_core_type_counts(&mut counts, source, diagnostics) {
         let roots = rive_family_root_keys();
         let mut families = counts

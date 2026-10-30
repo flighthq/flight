@@ -146,7 +146,7 @@ fn append_svg_shape_paint(
         append_shape_path(shape, &path.commands, &path.data, Some(path.winding));
         return;
     }
-    let mut dash = parse_svg_number_list(&style.stroke_dasharray)
+    let mut dash: Vec<f64> = parse_svg_number_list(&style.stroke_dasharray)
         .into_iter()
         .filter(|value| *value >= 0.0)
         .map(f64::from)
