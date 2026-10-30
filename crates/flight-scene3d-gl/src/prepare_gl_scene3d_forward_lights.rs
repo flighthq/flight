@@ -50,9 +50,10 @@ pub fn prepare_gl_scene3d_forward_lights(
     let mut prepared = get_gl_scene3d_runtime(state)
         .prepared_forward_lights
         .take()
-        .unwrap_or_default();
+        .unwrap_or(PreparedGlScene3DForwardLights::default());
     prepared.block_count = 0;
-    out.mesh_light_blocks.clear();
+    let out_mesh_light_blocks: &mut Vec<Rc<Scene3DLightBlock>> = &mut out.mesh_light_blocks;
+    out_mesh_light_blocks.clear();
     out.mesh_count = scene_render_list.mesh_count;
     let mut world_sphere = create_bounding_sphere(0.0, 0.0, 0.0, 0.0);
     let mut selected_lights = create_scene_3d_lights();
