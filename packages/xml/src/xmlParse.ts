@@ -37,14 +37,6 @@ function isTagNameEnd(unit: number): boolean {
   return xmlIsWhitespace(unit) || unit === 62 || unit === 47;
 }
 
-function skipWhitespace(scanner: Readonly<XmlScanner>, position: number): number {
-  const len = xmlScannerLength(scanner);
-  while (position < len && xmlIsWhitespace(xmlScannerUnitAt(scanner, position))) {
-    position += 1;
-  }
-  return position;
-}
-
 function parseElement(source: string, scanner: Readonly<XmlScanner>, state: ParseState): XmlElement | null {
   if (state.depth >= MAX_XML_ELEMENT_DEPTH) {
     state.depthExceeded = true;
@@ -183,4 +175,12 @@ export function parseXmlDocument(xml: string): XmlElement | null {
   const scanner = createXmlScanner(expanded);
   let state = { depth: 0, depthExceeded: false, pos: 0 };
   return parseElement(expanded, scanner, state);
+}
+
+function skipWhitespace(scanner: Readonly<XmlScanner>, position: number): number {
+  const len = xmlScannerLength(scanner);
+  while (position < len && xmlIsWhitespace(xmlScannerUnitAt(scanner, position))) {
+    position += 1;
+  }
+  return position;
 }
