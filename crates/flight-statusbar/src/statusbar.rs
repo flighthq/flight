@@ -347,7 +347,8 @@ pub fn initialize_status_bar_info(out: &mut StatusBarInfo) {
 // flight-lint: allow(conform-extra) D5: explicit caller-owned style-stack state replaces the source module WeakMap and handle counter
 pub fn initialize_status_bar_style_stacks(out: &mut StatusBarStyleStacks) {
     out.next_handle = 1;
-    out.stacks.clear();
+    let out_stacks: &mut Vec<StatusBarStyleStack> = &mut out.stacks;
+    out_stacks.clear();
 }
 
 /// Merges the stack top-down (per field, the last pushed set value wins; absent fields fall through
