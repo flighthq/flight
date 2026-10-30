@@ -19,27 +19,6 @@ thread_local! {
     static INSTANCES: RefCell<Vec<Option<Physics3DAbi>>> = RefCell::new(Vec::new());
 }
 
-fn with_abi<R>(handle: u32, f: impl FnOnce(&Physics3DAbi) -> R) -> R {
-    INSTANCES.with(|cell| {
-        let instances = cell.borrow();
-        let abi = instances
-            .get(handle as usize)
-            .and_then(|slot| slot.as_ref())
-            .expect("invalid ABI handle");
-        f(abi)
-    })
-}
-
-#[wasm_bindgen]
-pub fn abi_version() -> u32 {
-    PHYSICS3D_ABI_VERSION
-}
-
-#[wasm_bindgen]
-pub fn abi_capabilities() -> u32 {
-    with_abi(0, |abi| abi.capabilities)
-}
-
 #[wasm_bindgen]
 pub fn create_abi() -> u32 {
     let abi = create_physics3d_abi();
@@ -60,6 +39,28 @@ pub fn create_abi() -> u32 {
 #[wasm_bindgen]
 pub fn create_world(abi: u32) -> u32 {
     with_abi(abi, |a| (a.create_world)())
+}
+
+#[wasm_bindgen]
+pub fn abi_capabilities() -> u32 {
+    with_abi(0, |abi| abi.capabilities)
+}
+
+#[wasm_bindgen]
+pub fn abi_version() -> u32 {
+    PHYSICS3D_ABI_VERSION
+}
+
+fn copy_f64_to_js(target: &js_sys::Float64Array, source: &[f64], count: usize) {
+    for i in 0..count {
+        target.set_index(i as u32, source[i]);
+    }
+}
+
+fn copy_u32_to_js(target: &js_sys::Uint32Array, source: &[u32], count: usize) {
+    for i in 0..count {
+        target.set_index(i as u32, source[i]);
+    }
 }
 
 #[wasm_bindgen]
@@ -105,6 +106,22 @@ pub fn execute(
         result.set_index(3, exec_result.command_kind);
         success
     })
+}
+
+fn execution_status_code(status: Physics3DAbiExecutionStatus) -> u32 {
+    match status {
+        Physics3DAbiExecutionStatus::Complete => 0,
+        Physics3DAbiExecutionStatus::BusyWorld => 1,
+        Physics3DAbiExecutionStatus::InvalidBuffer => 2,
+        Physics3DAbiExecutionStatus::InvalidCommand => 3,
+        Physics3DAbiExecutionStatus::MissingBody => 4,
+        Physics3DAbiExecutionStatus::MissingCollider => 5,
+        Physics3DAbiExecutionStatus::MissingJoint => 6,
+        Physics3DAbiExecutionStatus::RejectedMutation => 7,
+        Physics3DAbiExecutionStatus::StaleWorld => 8,
+        Physics3DAbiExecutionStatus::UnsupportedJoint => 9,
+        Physics3DAbiExecutionStatus::UnsupportedShape => 10,
+    }
 }
 
 #[wasm_bindgen]
@@ -209,30 +226,6 @@ pub fn step(abi: u32, world: u32, dt: f32, _has_hooks: bool) -> u32 {
     })
 }
 
-#[wasm_bindgen]
-pub fn world_status(abi: u32, world: u32) -> u32 {
-    with_abi(abi, |a| {
-        let status = get_physics3d_abi_world_status(a, world);
-        world_status_code(status)
-    })
-}
-
-fn execution_status_code(status: Physics3DAbiExecutionStatus) -> u32 {
-    match status {
-        Physics3DAbiExecutionStatus::Complete => 0,
-        Physics3DAbiExecutionStatus::BusyWorld => 1,
-        Physics3DAbiExecutionStatus::InvalidBuffer => 2,
-        Physics3DAbiExecutionStatus::InvalidCommand => 3,
-        Physics3DAbiExecutionStatus::MissingBody => 4,
-        Physics3DAbiExecutionStatus::MissingCollider => 5,
-        Physics3DAbiExecutionStatus::MissingJoint => 6,
-        Physics3DAbiExecutionStatus::RejectedMutation => 7,
-        Physics3DAbiExecutionStatus::StaleWorld => 8,
-        Physics3DAbiExecutionStatus::UnsupportedJoint => 9,
-        Physics3DAbiExecutionStatus::UnsupportedShape => 10,
-    }
-}
-
 fn step_status_code(status: Physics3DAbiStepStatus) -> u32 {
     match status {
         Physics3DAbiStepStatus::Complete => 0,
@@ -243,22 +236,29 @@ fn step_status_code(status: Physics3DAbiStepStatus) -> u32 {
     }
 }
 
+fn with_abi<R>(handle: u32, f: impl FnOnce(&Physics3DAbi) -> R) -> R {
+    INSTANCES.with(|cell| {
+        let instances = cell.borrow();
+        let abi = instances
+            .get(handle as usize)
+            .and_then(|slot| slot.as_ref())
+            .expect("invalid ABI handle");
+        f(abi)
+    })
+}
+
+#[wasm_bindgen]
+pub fn world_status(abi: u32, world: u32) -> u32 {
+    with_abi(abi, |a| {
+        let status = get_physics3d_abi_world_status(a, world);
+        world_status_code(status)
+    })
+}
+
 fn world_status_code(status: Physics3DAbiWorldStatus) -> u32 {
     match status {
         Physics3DAbiWorldStatus::Stale => 0,
         Physics3DAbiWorldStatus::Ready => 1,
         Physics3DAbiWorldStatus::Busy => 2,
-    }
-}
-
-fn copy_u32_to_js(target: &js_sys::Uint32Array, source: &[u32], count: usize) {
-    for i in 0..count {
-        target.set_index(i as u32, source[i]);
-    }
-}
-
-fn copy_f64_to_js(target: &js_sys::Float64Array, source: &[f64], count: usize) {
-    for i in 0..count {
-        target.set_index(i as u32, source[i]);
     }
 }
