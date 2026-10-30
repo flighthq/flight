@@ -51,7 +51,7 @@ describe('explainTextSegmenterBackend', () => {
 
   it('identifies a capability with a distinct segment function as custom even when it delegates to the bundled one', () => {
     const delegating = {} as HostTextSegmenterCapability;
-    delegating.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): TextSegment[] =>
+    delegating.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] =>
       webTextSegmenterBackend.segment(text, granularity, locale);
     expect(explainTextSegmenterBackend(delegating)).toEqual({
       available: true,
