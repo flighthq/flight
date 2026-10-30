@@ -261,6 +261,14 @@ fn collect_xml_entity_declarations_native(doctype: &str, out: &mut XmlRecord<Str
     }
 }
 
+fn contains_xml_record_key<K, V, Q>(record: &XmlRecord<K, V>, key: &Q) -> bool
+where
+    K: Borrow<Q> + Eq + Hash,
+    Q: Eq + Hash + ?Sized,
+{
+    return record.index.contains_key(key);
+}
+
 pub fn decode_xml_entities_native(source: &str) -> String {
     let scanner = create_xml_scanner(source);
     let len = xml_scanner_length(&scanner);
@@ -333,6 +341,36 @@ pub fn decode_xml_entities_native(source: &str) -> String {
     return result;
 }
 
+fn equals_xml_record_and_hash_map<V>(
+    record: &XmlRecord<String, V>,
+    other: &RustHashMap<String, V>,
+) -> bool
+where
+    V: PartialEq,
+{
+    if record.len() != other.len() {
+        return false;
+    }
+    return record
+        .storage
+        .iter()
+        .all(|(key, value)| other.get(key) == Some(value));
+}
+
+fn equals_xml_records<K, V>(record: &XmlRecord<K, V>, other: &XmlRecord<K, V>) -> bool
+where
+    K: Clone + Eq + Hash,
+    V: PartialEq,
+{
+    if record.len() != other.len() {
+        return false;
+    }
+    return record
+        .storage
+        .iter()
+        .all(|(key, value)| other.get(key) == Some(value));
+}
+
 pub fn expand_xml_entities_native(source: &str, entities: &XmlRecord<String, String>) -> String {
     if xml_record_is_empty(entities) {
         return source.to_string();
@@ -352,11 +390,41 @@ pub fn expand_xml_entities_native(source: &str, entities: &XmlRecord<String, Str
     return output;
 }
 
+fn find_xml_record_value<'a, K, V, Q>(record: &'a XmlRecord<K, V>, key: &Q) -> Option<&'a V>
+where
+    K: Borrow<Q> + Eq + Hash,
+    Q: Eq + Hash + ?Sized,
+{
+    let position = *record.index.get(key)?;
+    return record.storage.get(position).map(|(_, value)| value);
+}
+
+fn get_xml_record_keys<K, V>(record: &XmlRecord<K, V>) -> impl Iterator<Item = &K> {
+    return record.storage.iter().map(|(key, _)| key);
+}
+
+fn get_xml_record_length<K, V>(record: &XmlRecord<K, V>) -> usize {
+    return record.storage.len();
+}
+
 pub fn get_xml_record_value<'a>(
     record: &'a XmlRecord<String, String>,
     key: &str,
 ) -> Option<&'a str> {
     return record.get(key).map(String::as_str);
+}
+
+fn insert_xml_record_value<K, V>(record: &mut XmlRecord<K, V>, key: K, value: V) -> Option<V>
+where
+    K: Clone + Eq + Hash,
+{
+    if let Some(position) = record.index.get(&key).copied() {
+        return Some(std::mem::replace(&mut record.storage[position].1, value));
+    }
+    let position = record.storage.len();
+    record.index.insert(key.clone(), position);
+    record.storage.push((key, value));
+    return None;
 }
 
 #[allow(clippy::manual_range_contains)]
@@ -749,7 +817,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash + ?Sized,
     {
-        return self.index.contains_key(key);
+        return contains_xml_record_key(self, key);
     }
 
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
@@ -757,30 +825,23 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash + ?Sized,
     {
-        let position = *self.index.get(key)?;
-        return self.storage.get(position).map(|(_, value)| value);
+        return find_xml_record_value(self, key);
     }
 
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
-        if let Some(position) = self.index.get(&key).copied() {
-            return Some(std::mem::replace(&mut self.storage[position].1, value));
-        }
-        let position = self.storage.len();
-        self.index.insert(key.clone(), position);
-        self.storage.push((key, value));
-        return None;
+        return insert_xml_record_value(self, key, value);
     }
 
     pub fn is_empty(&self) -> bool {
-        return self.storage.is_empty();
+        return get_xml_record_length(self) == 0;
     }
 
     pub fn keys(&self) -> impl Iterator<Item = &K> {
-        return self.storage.iter().map(|(key, _)| key);
+        return get_xml_record_keys(self);
     }
 
     pub fn len(&self) -> usize {
-        return self.storage.len();
+        return get_xml_record_length(self);
     }
 }
 
@@ -797,7 +858,7 @@ impl<V> Index<&str> for XmlRecord<String, V> {
     type Output = V;
 
     fn index(&self, key: &str) -> &Self::Output {
-        return self.get(key).expect("XML attribute key is absent");
+        return find_xml_record_value(self, key).expect("XML attribute key is absent");
     }
 }
 
@@ -807,13 +868,7 @@ where
     V: PartialEq,
 {
     fn eq(&self, other: &Self) -> bool {
-        if self.len() != other.len() {
-            return false;
-        }
-        return self
-            .storage
-            .iter()
-            .all(|(key, value)| other.get(key) == Some(value));
+        return equals_xml_records(self, other);
     }
 }
 
@@ -822,12 +877,6 @@ where
     V: PartialEq,
 {
     fn eq(&self, other: &RustHashMap<String, V>) -> bool {
-        if self.len() != other.len() {
-            return false;
-        }
-        return self
-            .storage
-            .iter()
-            .all(|(key, value)| other.get(key) == Some(value));
+        return equals_xml_record_and_hash_map(self, other);
     }
 }
