@@ -11,6 +11,10 @@ impl DerivedCache {
         return DerivedCache(Mutex::new(None));
     }
 
+    pub(crate) fn clear(&self) {
+        *self.0.lock().unwrap() = None;
+    }
+
     pub(crate) fn get<T: 'static + Send + Clone>(&self) -> Option<T> {
         return self
             .0
@@ -23,10 +27,6 @@ impl DerivedCache {
 
     pub(crate) fn set<T: 'static + Send>(&self, value: T) {
         *self.0.lock().unwrap() = Some(Box::new(value));
-    }
-
-    pub(crate) fn clear(&self) {
-        *self.0.lock().unwrap() = None;
     }
 }
 
