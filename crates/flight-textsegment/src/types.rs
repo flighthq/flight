@@ -64,6 +64,13 @@ pub struct TextSegmenterExplanation {
 /// Guard callback type for text segmenter warnings.
 pub type TextSegmentGuard = Arc<dyn Fn() + Send + Sync>;
 
+fn are_host_text_segmenter_capabilities_equal(
+    capability: &HostTextSegmenterCapability,
+    other: &HostTextSegmenterCapability,
+) -> bool {
+    return std::ptr::fn_addr_eq(capability.segment, other.segment);
+}
+
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmentGranularity string union; the TS type package exports the union only
 pub fn get_text_segment_granularity_string(value: TextSegmentGranularity) -> &'static str {
     return match value {
@@ -102,7 +109,7 @@ pub fn parse_text_segmenter_kind(value: &str) -> Option<TextSegmenterKind> {
 
 impl PartialEq for HostTextSegmenterCapability {
     fn eq(&self, other: &Self) -> bool {
-        return std::ptr::fn_addr_eq(self.segment, other.segment);
+        return are_host_text_segmenter_capabilities_equal(self, other);
     }
 }
 
