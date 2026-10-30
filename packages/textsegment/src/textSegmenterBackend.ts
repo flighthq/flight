@@ -26,7 +26,9 @@ function createWebTextSegmenterBackend(): HostTextSegmenterCapability {
 export function explainTextSegmenterBackend(
   textSegmenter: Readonly<HostTextSegmenterCapability>,
 ): TextSegmenterExplanation {
-  const web = textSegmenter === webTextSegmenterBackend;
+  // Backend identity is segment-function identity, as in Rust HostTextSegmenterCapability equality,
+  // so a copied or wrapping capability object that keeps the bundled function is still the web backend.
+  const web = textSegmenter.segment === webTextSegmenterBackend.segment;
   const intlSegmenterAvailable = hasIntlSegmenter();
   return {
     available: !web || intlSegmenterAvailable,

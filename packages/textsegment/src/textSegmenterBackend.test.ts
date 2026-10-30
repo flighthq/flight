@@ -33,6 +33,33 @@ describe('explainTextSegmenterBackend', () => {
     });
   });
 
+  it('classifies a copied bundled capability by its segment function', () => {
+    const copied = { ...webTextSegmenterBackend };
+    const wrapped = {} as HostTextSegmenterCapability;
+    wrapped.segment = webTextSegmenterBackend.segment;
+    expect(explainTextSegmenterBackend(copied)).toEqual({
+      available: true,
+      backend: 'web-intl',
+      intlSegmenterAvailable: true,
+    });
+    expect(explainTextSegmenterBackend(wrapped)).toEqual({
+      available: true,
+      backend: 'web-intl',
+      intlSegmenterAvailable: true,
+    });
+  });
+
+  it('identifies a capability with a distinct segment function as custom even when it delegates to the bundled one', () => {
+    const delegating = {} as HostTextSegmenterCapability;
+    delegating.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): TextSegment[] =>
+      webTextSegmenterBackend.segment(text, granularity, locale);
+    expect(explainTextSegmenterBackend(delegating)).toEqual({
+      available: true,
+      backend: 'custom',
+      intlSegmenterAvailable: true,
+    });
+  });
+
   it('identifies a custom capability independently of Intl availability', () => {
     expect(explainTextSegmenterBackend(recordingBackend())).toEqual({
       available: true,
@@ -44,6 +71,15 @@ describe('explainTextSegmenterBackend', () => {
   it('reports the bundled capability unavailable when the runtime primitive is absent', () => {
     vi.stubGlobal('Intl', { Segmenter: undefined });
     expect(explainTextSegmenterBackend(webTextSegmenterBackend)).toEqual({
+      available: false,
+      backend: 'web-intl',
+      intlSegmenterAvailable: false,
+    });
+  });
+
+  it('reports a copied bundled capability unavailable when the runtime primitive is absent', () => {
+    vi.stubGlobal('Intl', { Segmenter: undefined });
+    expect(explainTextSegmenterBackend({ ...webTextSegmenterBackend })).toEqual({
       available: false,
       backend: 'web-intl',
       intlSegmenterAvailable: false,

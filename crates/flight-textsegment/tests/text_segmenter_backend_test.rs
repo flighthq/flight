@@ -17,6 +17,14 @@ fn custom_backend_segment(
     }]
 }
 
+fn delegating_backend_segment(
+    text: &str,
+    granularity: TextSegmentGranularity,
+    locale: Option<&str>,
+) -> Vec<TextSegment> {
+    return (WEB_TEXT_SEGMENTER_BACKEND.segment)(text, granularity, locale);
+}
+
 fn create_recording_backend() -> HostTextSegmenterCapability {
     HostTextSegmenterCapability {
         segment: custom_backend_segment,
@@ -34,6 +42,37 @@ mod explain_text_segmenter_backend {
             TextSegmenterExplanation {
                 available: true,
                 backend: TextSegmenterKind::WebIntl,
+                intl_segmenter_available: true,
+            }
+        );
+    }
+
+    #[test]
+    fn classifies_a_copied_bundled_capability_by_its_segment_function() {
+        let copied = *WEB_TEXT_SEGMENTER_BACKEND;
+        let wrapped = HostTextSegmenterCapability {
+            segment: WEB_TEXT_SEGMENTER_BACKEND.segment,
+        };
+        let expected = TextSegmenterExplanation {
+            available: true,
+            backend: TextSegmenterKind::WebIntl,
+            intl_segmenter_available: true,
+        };
+        assert_eq!(explain_text_segmenter_backend(&copied), expected);
+        assert_eq!(explain_text_segmenter_backend(&wrapped), expected);
+    }
+
+    #[test]
+    fn identifies_a_capability_with_a_distinct_segment_function_as_custom_even_when_it_delegates_to_the_bundled_one()
+     {
+        let delegating = HostTextSegmenterCapability {
+            segment: delegating_backend_segment,
+        };
+        assert_eq!(
+            explain_text_segmenter_backend(&delegating),
+            TextSegmenterExplanation {
+                available: true,
+                backend: TextSegmenterKind::Custom,
                 intl_segmenter_available: true,
             }
         );
