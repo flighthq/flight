@@ -59,12 +59,6 @@ export const PathMorphIssueContourClosednessMismatch: number = 3;
 
 export const PathMorphIssueContourOrientationMismatch: number = 4;
 
-function allocatePathMorph(preparation: PathMorphPreparation, winding: PathWinding): PathMorphRaw {
-  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), { commands: [], endData: [], startData: [] });
-  initializePathMorph(morph, preparation.commands, preparation.endData, preparation.startData, winding);
-  return morph;
-}
-
 function createCubicContour(x: number, y: number): CubicContour {
   return { closed: false, currentX: x, currentY: y, segments: [], x: x, y: y };
 }
@@ -121,6 +115,12 @@ function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContou
   end.segments = rotated;
   end.x = end.segments[0].x0;
   end.y = end.segments[0].y0;
+}
+
+function allocatePathMorph(preparation: PathMorphPreparation, winding: PathWinding): PathMorphRaw {
+  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), { commands: [], endData: [], startData: [] });
+  initializePathMorph(morph, preparation.commands, preparation.endData, preparation.startData, winding);
+  return morph;
 }
 
 function appendCubicContourPair(
