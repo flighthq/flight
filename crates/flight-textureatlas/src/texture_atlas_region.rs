@@ -139,7 +139,8 @@ pub fn build_texture_atlas_region_index(
 
 /// Removes every region, leaving the atlas reusable and its texture untouched.
 pub fn clear_texture_atlas_regions(target: &mut TextureAtlas) {
-    target.regions.clear();
+    let target_regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut target.regions;
+    target_regions.clear();
 }
 
 /// Why `get_texture_atlas_region_texture` can or cannot mint the requested view. A page with a

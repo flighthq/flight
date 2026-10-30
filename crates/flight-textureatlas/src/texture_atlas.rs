@@ -20,7 +20,8 @@ pub fn initialize_texture_atlas(out: &mut TextureAtlas) {
     out.image_height = 0.0;
     out.image_name = None;
     out.image_width = 0.0;
-    out.regions.clear();
+    let out_regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut out.regions;
+    out_regions.clear();
     out.scale = 1.0;
     out.texture = None;
 }
@@ -29,7 +30,8 @@ pub fn initialize_texture_atlas(out: &mut TextureAtlas) {
 /// itself is not destroyed (the caller supplied it and may still use it); afterwards the atlas is
 /// empty and reusable, not invalid.
 pub fn dispose_texture_atlas(atlas: &mut TextureAtlas) {
-    atlas.regions.clear();
+    let atlas_regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+    atlas_regions.clear();
     atlas.texture = None;
 }
 
