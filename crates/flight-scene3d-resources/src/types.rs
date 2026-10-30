@@ -14,7 +14,7 @@ use flight_scene3d_formats::{GltfCoreFeatureHandler, GltfExtensionHandler};
 use flight_signals::{Signal, SlotId};
 use flight_stream::{AbortController, AbortSignal, SharedFuture};
 use flight_texture::{Texture, TextureSourceRef};
-use flight_tween::EasingFunction;
+use flight_tween::contract::EasingFunction;
 
 /// Appends one material's non-null textures to `out` without clearing it.
 // flight-lint: allow(contract-vocabulary) D9d stored lister callback reads the open Material family by reference

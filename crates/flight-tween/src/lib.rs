@@ -17,7 +17,6 @@ mod sugar;
 
 // types
 pub use contract::ColorComponents;
-pub use contract::EasingFunction;
 pub use contract::StaggerFrom;
 pub use contract::StopTweenOptions;
 pub use contract::TimerTarget;
