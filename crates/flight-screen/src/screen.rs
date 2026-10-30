@@ -463,7 +463,8 @@ pub fn initialize_screen_permission_change(out: &mut ScreenPermissionChange) {
 
 // flight-lint: allow(conform-extra) D5: explicit caller-owned scratch replaces the source module `_scratchScreens` array
 pub fn initialize_screen_query_scratch(out: &mut ScreenQueryScratch) {
-    out.screens.clear();
+    let out_screens: &mut Vec<ScreenInfo> = &mut out.screens;
+    out_screens.clear();
 }
 
 pub fn initialize_screen_signals(out: &mut ScreenSignals) {
