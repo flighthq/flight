@@ -7,6 +7,152 @@ use crate::types::{
     FrameTick, Signal, SignalSlot, SignalThrottleOptions, SignalTimer, SignalTimerState, TimerId,
 };
 
+#[cfg(test)]
+mod atomic_pending_tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, Mutex, RwLock, mpsc};
+    use std::thread;
+
+    use super::*;
+    use crate::{create_signal, emit_signal};
+
+    struct CloneGate {
+        clones: AtomicUsize,
+        release: Mutex<mpsc::Receiver<()>>,
+        timer_read: mpsc::SyncSender<()>,
+    }
+
+    struct RacePayload {
+        gate: Option<Arc<CloneGate>>,
+        value: i32,
+    }
+
+    impl Clone for RacePayload {
+        fn clone(&self) -> Self {
+            if let Some(gate) = &self.gate
+                && gate.clones.fetch_add(1, Ordering::SeqCst) == 1
+            {
+                gate.timer_read.send(()).unwrap();
+                gate.release.lock().unwrap().recv().unwrap();
+            }
+            return RacePayload {
+                gate: self.gate.clone(),
+                value: self.value,
+            };
+        }
+    }
+
+    fn gated_payload(value: i32) -> (RacePayload, mpsc::Receiver<()>, mpsc::SyncSender<()>) {
+        let (timer_read_tx, timer_read_rx) = mpsc::sync_channel(0);
+        let (release_tx, release_rx) = mpsc::sync_channel(0);
+        let gate = Arc::new(CloneGate {
+            clones: AtomicUsize::new(0),
+            release: Mutex::new(release_rx),
+            timer_read: timer_read_tx,
+        });
+        return (
+            RacePayload {
+                gate: Some(gate),
+                value,
+            },
+            timer_read_rx,
+            release_tx,
+        );
+    }
+
+    fn race_due_callback_with_emission(
+        source: &Signal<RacePayload>,
+        state: &Ref<SignalTimerState>,
+        timer_read: mpsc::Receiver<()>,
+        release: mpsc::SyncSender<()>,
+        value: i32,
+    ) {
+        let timer_state = state.clone();
+        let timer = thread::spawn(move || advance_signal_timers(&timer_state, 100.0));
+        timer_read.recv().unwrap();
+
+        let (emission_started_tx, emission_started_rx) = mpsc::sync_channel(0);
+        let emission_source = source.clone();
+        let emission = thread::spawn(move || {
+            emission_started_tx.send(()).unwrap();
+            emit_signal(&emission_source, &RacePayload { gate: None, value });
+        });
+        emission_started_rx.recv().unwrap();
+        release.send(()).unwrap();
+
+        timer.join().unwrap();
+        emission.join().unwrap();
+    }
+
+    fn recorded_values() -> (Arc<Mutex<Vec<i32>>>, SignalSlot<RacePayload>) {
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired_slot = fired.clone();
+        let slot = Arc::new(move |payload: &RacePayload| {
+            fired_slot.lock().unwrap().push(payload.value);
+        });
+        return (fired, slot);
+    }
+
+    #[test]
+    fn concurrent_emission_survives_a_due_debounce_callback() {
+        let source: Signal<RacePayload> = create_signal();
+        let state = Arc::new(RwLock::new(create_signal_timer_state()));
+        let (fired, slot) = recorded_values();
+        connect_signal_debounced(&source, 100.0, slot, None, &state);
+
+        let (payload, timer_read, release) = gated_payload(1);
+        emit_signal(&source, &payload);
+        race_due_callback_with_emission(&source, &state, timer_read, release, 2);
+        advance_signal_timers(&state, 200.0);
+        assert_eq!(*fired.lock().unwrap(), vec![1, 2]);
+    }
+
+    #[test]
+    fn concurrent_emission_survives_the_leading_disabled_throttle_callback() {
+        let source: Signal<RacePayload> = create_signal();
+        let state = Arc::new(RwLock::new(create_signal_timer_state()));
+        let (fired, slot) = recorded_values();
+        let options = SignalThrottleOptions {
+            leading: Some(false),
+            trailing: Some(true),
+        };
+        connect_signal_throttled(&source, 100.0, slot, Some(&options), &state);
+
+        let (payload, timer_read, release) = gated_payload(1);
+        emit_signal(&source, &payload);
+        race_due_callback_with_emission(&source, &state, timer_read, release, 2);
+        advance_signal_timers(&state, 200.0);
+        assert_eq!(*fired.lock().unwrap(), vec![1, 2]);
+    }
+
+    #[test]
+    fn concurrent_emission_survives_the_cooldown_throttle_callback() {
+        let source: Signal<RacePayload> = create_signal();
+        let state = Arc::new(RwLock::new(create_signal_timer_state()));
+        let (fired, slot) = recorded_values();
+        connect_signal_throttled(&source, 100.0, slot, None, &state);
+        emit_signal(
+            &source,
+            &RacePayload {
+                gate: None,
+                value: 1,
+            },
+        );
+        advance_signal_timers(&state, 50.0);
+
+        let (payload, timer_read, release) = gated_payload(2);
+        emit_signal(&source, &payload);
+        race_due_callback_with_emission(&source, &state, timer_read, release, 3);
+        advance_signal_timers(&state, 200.0);
+        assert_eq!(*fired.lock().unwrap(), vec![1, 2, 3]);
+    }
+}
+
+#[derive(Clone)]
+struct PendingSignalArgs<T> {
+    value: T,
+}
+
 // flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
 pub fn create_signal_timer_state() -> SignalTimerState {
     let mut out: SignalTimerState = allocate_entity();
@@ -19,6 +165,18 @@ pub fn initialize_signal_timer_state(out: &mut SignalTimerState) {
     out.now_ms = 0.0;
     out.timers.clear();
     out.next_id = 1;
+}
+
+// flight-lint: allow(f64) D1: frame rate and accumulated milliseconds use f64 precision
+fn advance_frame_elapsed(elapsed: &Arc<Mutex<f64>>, delta_time: f64, period: f64) -> Option<f64> {
+    let mut guard = elapsed.lock().unwrap();
+    *guard += delta_time;
+    if *guard >= period {
+        let total = *guard;
+        *guard %= period;
+        return Some(total);
+    }
+    return None;
 }
 
 /// Advances explicit timer state to `now_ms`, running every due callback in fire-time order (D5:
@@ -34,43 +192,6 @@ pub fn advance_signal_timers(state: &Ref<SignalTimerState>, now_ms: f64) {
             None => break,
         }
     }
-}
-
-fn take_due_signal_timer(
-    state: &Ref<SignalTimerState>,
-    now_ms: f64,
-) -> Option<Arc<dyn Fn() + Send + Sync>> {
-    let mut timer_state = state.write().unwrap();
-    let mut earliest: Option<usize> = None;
-    for index in 0..timer_state.timers.len() {
-        if timer_state.timers[index].fire_at_ms <= now_ms {
-            match earliest {
-                Some(current) => {
-                    let candidate = (
-                        timer_state.timers[index].fire_at_ms,
-                        timer_state.timers[index].id.value,
-                    );
-                    let existing = (
-                        timer_state.timers[current].fire_at_ms,
-                        timer_state.timers[current].id.value,
-                    );
-                    if candidate.0 < existing.0
-                        || (candidate.0 == existing.0 && candidate.1 < existing.1)
-                    {
-                        earliest = Some(index);
-                    }
-                }
-                None => earliest = Some(index),
-            }
-        }
-    }
-    if let Some(index) = earliest {
-        timer_state.now_ms = timer_state.timers[index].fire_at_ms;
-        let timers: &mut Vec<SignalTimer> = &mut timer_state.timers;
-        return Some(timers.remove(index).callback);
-    }
-    timer_state.now_ms = now_ms;
-    return None;
 }
 
 // flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
@@ -103,33 +224,6 @@ pub fn connect_signal_at_frame_rate(
     let slot_id = connect_signal(source, handler, None);
     let cleanup_source = source.clone();
     return Arc::new(move || disconnect_signal(&cleanup_source, slot_id));
-}
-
-// flight-lint: allow(f64) D1: frame rate and accumulated milliseconds use f64 precision
-fn advance_frame_elapsed(elapsed: &Arc<Mutex<f64>>, delta_time: f64, period: f64) -> Option<f64> {
-    let mut guard = elapsed.lock().unwrap();
-    *guard += delta_time;
-    if *guard >= period {
-        let total = *guard;
-        *guard %= period;
-        return Some(total);
-    }
-    return None;
-}
-
-// Clone and clear one pending payload while retaining the same guard. Splitting these operations
-// across two lock acquisitions lets a concurrent emission install a newer payload in between and
-// then has the due timer erase that newer value.
-fn take_pending_signal_args<T: Clone>(pending: &Arc<Mutex<Option<T>>>) -> Option<T> {
-    let mut guard = pending.lock().unwrap();
-    let args = (*guard).clone();
-    *guard = None;
-    return args;
-}
-
-#[derive(Clone)]
-struct PendingSignalArgs<T> {
-    value: T,
 }
 
 /// Connects a slot with debounce semantics (TS `connectSignalDebounced`). Timer state and the
@@ -342,143 +436,49 @@ pub fn set_signal_timeout(
     return id;
 }
 
-#[cfg(test)]
-mod atomic_pending_tests {
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::{Arc, Mutex, RwLock, mpsc};
-    use std::thread;
-
-    use super::*;
-    use crate::{create_signal, emit_signal};
-
-    struct CloneGate {
-        clones: AtomicUsize,
-        release: Mutex<mpsc::Receiver<()>>,
-        timer_read: mpsc::SyncSender<()>,
-    }
-
-    struct RacePayload {
-        gate: Option<Arc<CloneGate>>,
-        value: i32,
-    }
-
-    impl Clone for RacePayload {
-        fn clone(&self) -> Self {
-            if let Some(gate) = &self.gate
-                && gate.clones.fetch_add(1, Ordering::SeqCst) == 1
-            {
-                gate.timer_read.send(()).unwrap();
-                gate.release.lock().unwrap().recv().unwrap();
+fn take_due_signal_timer(
+    state: &Ref<SignalTimerState>,
+    now_ms: f64,
+) -> Option<Arc<dyn Fn() + Send + Sync>> {
+    let mut timer_state = state.write().unwrap();
+    let mut earliest: Option<usize> = None;
+    for index in 0..timer_state.timers.len() {
+        if timer_state.timers[index].fire_at_ms <= now_ms {
+            match earliest {
+                Some(current) => {
+                    let candidate = (
+                        timer_state.timers[index].fire_at_ms,
+                        timer_state.timers[index].id.value,
+                    );
+                    let existing = (
+                        timer_state.timers[current].fire_at_ms,
+                        timer_state.timers[current].id.value,
+                    );
+                    if candidate.0 < existing.0
+                        || (candidate.0 == existing.0 && candidate.1 < existing.1)
+                    {
+                        earliest = Some(index);
+                    }
+                }
+                None => earliest = Some(index),
             }
-            return RacePayload {
-                gate: self.gate.clone(),
-                value: self.value,
-            };
         }
     }
-
-    fn gated_payload(value: i32) -> (RacePayload, mpsc::Receiver<()>, mpsc::SyncSender<()>) {
-        let (timer_read_tx, timer_read_rx) = mpsc::sync_channel(0);
-        let (release_tx, release_rx) = mpsc::sync_channel(0);
-        let gate = Arc::new(CloneGate {
-            clones: AtomicUsize::new(0),
-            release: Mutex::new(release_rx),
-            timer_read: timer_read_tx,
-        });
-        return (
-            RacePayload {
-                gate: Some(gate),
-                value,
-            },
-            timer_read_rx,
-            release_tx,
-        );
+    if let Some(index) = earliest {
+        timer_state.now_ms = timer_state.timers[index].fire_at_ms;
+        let timers: &mut Vec<SignalTimer> = &mut timer_state.timers;
+        return Some(timers.remove(index).callback);
     }
+    timer_state.now_ms = now_ms;
+    return None;
+}
 
-    fn race_due_callback_with_emission(
-        source: &Signal<RacePayload>,
-        state: &Ref<SignalTimerState>,
-        timer_read: mpsc::Receiver<()>,
-        release: mpsc::SyncSender<()>,
-        value: i32,
-    ) {
-        let timer_state = state.clone();
-        let timer = thread::spawn(move || advance_signal_timers(&timer_state, 100.0));
-        timer_read.recv().unwrap();
-
-        let (emission_started_tx, emission_started_rx) = mpsc::sync_channel(0);
-        let emission_source = source.clone();
-        let emission = thread::spawn(move || {
-            emission_started_tx.send(()).unwrap();
-            emit_signal(&emission_source, &RacePayload { gate: None, value });
-        });
-        emission_started_rx.recv().unwrap();
-        release.send(()).unwrap();
-
-        timer.join().unwrap();
-        emission.join().unwrap();
-    }
-
-    fn recorded_values() -> (Arc<Mutex<Vec<i32>>>, SignalSlot<RacePayload>) {
-        let fired = Arc::new(Mutex::new(Vec::new()));
-        let fired_slot = fired.clone();
-        let slot = Arc::new(move |payload: &RacePayload| {
-            fired_slot.lock().unwrap().push(payload.value);
-        });
-        return (fired, slot);
-    }
-
-    #[test]
-    fn concurrent_emission_survives_a_due_debounce_callback() {
-        let source: Signal<RacePayload> = create_signal();
-        let state = Arc::new(RwLock::new(create_signal_timer_state()));
-        let (fired, slot) = recorded_values();
-        connect_signal_debounced(&source, 100.0, slot, None, &state);
-
-        let (payload, timer_read, release) = gated_payload(1);
-        emit_signal(&source, &payload);
-        race_due_callback_with_emission(&source, &state, timer_read, release, 2);
-        advance_signal_timers(&state, 200.0);
-        assert_eq!(*fired.lock().unwrap(), vec![1, 2]);
-    }
-
-    #[test]
-    fn concurrent_emission_survives_the_leading_disabled_throttle_callback() {
-        let source: Signal<RacePayload> = create_signal();
-        let state = Arc::new(RwLock::new(create_signal_timer_state()));
-        let (fired, slot) = recorded_values();
-        let options = SignalThrottleOptions {
-            leading: Some(false),
-            trailing: Some(true),
-        };
-        connect_signal_throttled(&source, 100.0, slot, Some(&options), &state);
-
-        let (payload, timer_read, release) = gated_payload(1);
-        emit_signal(&source, &payload);
-        race_due_callback_with_emission(&source, &state, timer_read, release, 2);
-        advance_signal_timers(&state, 200.0);
-        assert_eq!(*fired.lock().unwrap(), vec![1, 2]);
-    }
-
-    #[test]
-    fn concurrent_emission_survives_the_cooldown_throttle_callback() {
-        let source: Signal<RacePayload> = create_signal();
-        let state = Arc::new(RwLock::new(create_signal_timer_state()));
-        let (fired, slot) = recorded_values();
-        connect_signal_throttled(&source, 100.0, slot, None, &state);
-        emit_signal(
-            &source,
-            &RacePayload {
-                gate: None,
-                value: 1,
-            },
-        );
-        advance_signal_timers(&state, 50.0);
-
-        let (payload, timer_read, release) = gated_payload(2);
-        emit_signal(&source, &payload);
-        race_due_callback_with_emission(&source, &state, timer_read, release, 3);
-        advance_signal_timers(&state, 200.0);
-        assert_eq!(*fired.lock().unwrap(), vec![1, 2, 3]);
-    }
+// Clone and clear one pending payload while retaining the same guard. Splitting these operations
+// across two lock acquisitions lets a concurrent emission install a newer payload in between and
+// then has the due timer erase that newer value.
+fn take_pending_signal_args<T: Clone>(pending: &Arc<Mutex<Option<T>>>) -> Option<T> {
+    let mut guard = pending.lock().unwrap();
+    let args = (*guard).clone();
+    *guard = None;
+    return args;
 }

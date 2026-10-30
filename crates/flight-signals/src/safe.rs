@@ -36,6 +36,15 @@ pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T) {
     }
 }
 
+fn end_safe_signal_dispatch<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return false;
+    };
+    signal_data.depth -= 1;
+    return signal_data.depth == 0;
+}
+
 fn take_safe_signal_snapshot<T>(
     data: &Ref<Option<SignalData<T>>>,
 ) -> Option<(
@@ -67,15 +76,6 @@ fn take_safe_signal_snapshot<T>(
     signal_data.cancelled = false;
     signal_data.depth += 1;
     return Some((slots, ids, repeat, paused));
-}
-
-fn end_safe_signal_dispatch<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
-    let mut state = data.write().unwrap();
-    let Some(signal_data) = state.as_mut() else {
-        return false;
-    };
-    signal_data.depth -= 1;
-    return signal_data.depth == 0;
 }
 
 fn tombstone_once_slot<T>(data: &Ref<Option<SignalData<T>>>, id: SlotId) {
