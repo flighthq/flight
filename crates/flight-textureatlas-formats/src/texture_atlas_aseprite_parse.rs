@@ -1,3 +1,5 @@
+use flight_entity::Ref;
+use flight_textureatlas::TextureAtlasRegion;
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
     set_texture_atlas_region,
@@ -13,7 +15,8 @@ pub fn parse_texture_atlas_aseprite_document(
     atlas: &mut TextureAtlas,
     doc: &TextureAtlasAsepriteDocument,
 ) {
-    atlas.regions.clear();
+    let regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+    regions.clear();
     match doc {
         TextureAtlasAsepriteDocument::Array(doc) => {
             texture_atlas_aseprite_apply_declared_meta(atlas, &doc.value.meta);
@@ -52,7 +55,8 @@ pub fn parse_texture_atlas_aseprite_json(atlas: &mut TextureAtlas, json: &str) {
     let Ok(doc) = serde_json::from_str::<RawAtlasDocument>(json) else {
         return;
     };
-    atlas.regions.clear();
+    let regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+    regions.clear();
     texture_atlas_aseprite_apply_raw_meta(atlas, doc.meta.as_ref());
     match doc.frames {
         RawFrames::Array(frames) => {

@@ -1,3 +1,5 @@
+use flight_entity::Ref;
+use flight_textureatlas::TextureAtlasRegion;
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
     set_texture_atlas_region,
@@ -9,7 +11,8 @@ use crate::texture_atlas_page_meta::{reset_texture_atlas_page_meta, texture_atla
 /// Parses Starling/Sparrow XML. The format carries a page name but no page dimensions or scale.
 // flight-lint: allow(conform-params) D9: mutable output is first and the source chaining return is unit
 pub fn parse_texture_atlas_starling_xml(atlas: &mut TextureAtlas, xml: &str) {
-    atlas.regions.clear();
+    let regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+    regions.clear();
     reset_texture_atlas_page_meta(atlas);
     let Some(root) = parse_xml_document(xml) else {
         return;

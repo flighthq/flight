@@ -1,3 +1,5 @@
+use flight_entity::Ref;
+use flight_textureatlas::TextureAtlasRegion;
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
     set_texture_atlas_region,
@@ -8,7 +10,8 @@ use crate::texture_atlas_page_meta::{reset_texture_atlas_page_meta, texture_atla
 /// Parses the libGDX/Spine line grammar, concatenating regions from every page in source order.
 // flight-lint: allow(conform-params) D9: mutable output is first and the source chaining return is unit
 pub fn parse_texture_atlas_libgdx_atlas(atlas: &mut TextureAtlas, text: &str) {
-    atlas.regions.clear();
+    let regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+    regions.clear();
     reset_texture_atlas_page_meta(atlas);
     let lines: Vec<&str> = text.lines().collect();
     let mut index = 0;

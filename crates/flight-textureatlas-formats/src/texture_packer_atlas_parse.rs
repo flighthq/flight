@@ -1,3 +1,5 @@
+use flight_entity::Ref;
+use flight_textureatlas::TextureAtlasRegion;
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
     set_texture_atlas_region,
@@ -16,7 +18,8 @@ pub fn parse_texture_packer_atlas_document(
 ) {
     let defaults = TexturePackerAtlasParseOptions::default();
     let options = options.unwrap_or(&defaults);
-    atlas.regions.clear();
+    let regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+    regions.clear();
     match doc {
         TexturePackerAtlasDocument::Array(doc) => {
             texture_packer_atlas_apply_declared_meta(atlas, &doc.value.meta);
@@ -65,7 +68,8 @@ pub fn parse_texture_packer_atlas_json(
     };
     let defaults = TexturePackerAtlasParseOptions::default();
     let options = options.unwrap_or(&defaults);
-    atlas.regions.clear();
+    let regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+    regions.clear();
     texture_packer_atlas_apply_raw_meta(atlas, doc.meta.as_ref());
     match doc.frames {
         RawFrames::Array(frames) => {
