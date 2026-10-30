@@ -133,6 +133,16 @@ interface CandidateIntersection {
   node: TypeNode;
 }
 
+// The two halves of the post-privatization Entity proof. An SDK domain type declares itself by
+// extending the entity-owned `EntityRaw` (an `object` alias, so assignability alone proves nothing), and a
+// factory proves it built one through the entity allocators. Both are matched by declaration identity,
+// never by a name or a `Raw` suffix.
+interface EntityConstructionProof {
+  readonly allocatorKeys: ReadonlySet<string>;
+  readonly constructed: Map<string, boolean>;
+  readonly entityRawKeys: ReadonlySet<string>;
+}
+
 interface ExportedSurface {
   declaration: FunctionDeclaration | VariableDeclaration;
   names: Set<string>;
@@ -273,6 +283,7 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
     entityType,
     entityRuntimeType,
     nonEntityCreateResults,
+    createEntityConstructionProof(scope.sourceFiles),
     scope.root,
   );
   issues.push(...exportedCreateCensus.candidates, ...exportedCreateCensus.issues);
@@ -505,6 +516,7 @@ function collectExportedCreateCensus(
   entityType: Type,
   entityRuntimeType: Type,
   nonEntityCreateResults: readonly TypeAliasDeclaration[],
+  constructionProof: EntityConstructionProof,
   root: string,
 ): ExportedCreateCensus {
   const census: ExportedCreateCensus = {
@@ -570,7 +582,9 @@ function collectExportedCreateCensus(
           markerKinds.add(marker.kind);
           continue;
         }
-        const category = entityCategory(resultType, entityType, entityRuntimeType);
+        const category =
+          entityCategory(resultType, entityType, entityRuntimeType) ??
+          constructedEntityCategory(resultType, signature, constructionProof);
         if (category === null) {
           hasInvalidObjectResult = true;
           invalidReturnTypes.add(returnType);
@@ -835,6 +849,35 @@ function isExcludedSurfaceDeclaration(declaration: FunctionDeclaration | Variabl
   return TEST_SOURCE.test(path) || TEST_HELPER_SOURCE.test(path) || /\/packages\/tool-[^/]+\//.test(path);
 }
 
+// A result is an Entity after runtime-storage privatization only when both proofs hold: its declared type
+// inherits the canonical `EntityRaw`, and every value the factory can return was built by the entity
+// allocators. A type that merely extends `EntityRaw` but is returned from a literal fails the second proof.
+function constructedEntityCategory(type: Type, signature: Signature, proof: EntityConstructionProof): 'entity' | null {
+  if (!inheritsCanonicalEntityRaw(type, proof.entityRawKeys)) return null;
+  const declaration = signature.getDeclaration();
+  if (!Node.isFunctionDeclaration(declaration)) return null;
+  return isEntityConstructedFunction(declaration, proof) ? 'entity' : null;
+}
+
+function createEntityConstructionProof(sourceFiles: readonly SourceFile[]): EntityConstructionProof {
+  const allocatorKeys = new Set<string>();
+  const entityRawKeys = new Set<string>();
+  for (const source of sourceFiles) {
+    const path = normalizePath(source.getFilePath());
+    if (path.endsWith('/entity/src/entity.ts')) {
+      for (const name of ['allocateEntity', 'finishEntity']) {
+        const allocator = source.getFunction(name);
+        if (allocator !== undefined) allocatorKeys.add(nodeKey(allocator));
+      }
+    }
+    if (path.endsWith('/entity/src/types.ts')) {
+      const entityRaw = source.getTypeAlias('EntityRaw');
+      if (entityRaw !== undefined) entityRawKeys.add(nodeKey(entityRaw));
+    }
+  }
+  return { allocatorKeys, constructed: new Map(), entityRawKeys };
+}
+
 function entityCategory(type: Type, entityType: Type, entityRuntimeType: Type): 'entity' | 'runtime' | null {
   if (type.isAny() || type.isUnknown()) return null;
   if (isDefinitelyAssignableTo(type, entityType)) return 'entity';
@@ -843,6 +886,101 @@ function entityCategory(type: Type, entityType: Type, entityRuntimeType: Type): 
   // factory-name allowlist, and actual return expressions must still resolve to EntityRuntime.
   if (isDefinitelyAssignableTo(type, entityRuntimeType)) return 'runtime';
   return null;
+}
+
+// Whether every non-sentinel value an expression can produce was built by an entity allocator: a direct
+// allocator call, `Object.assign` onto such a value, a call to a function whose returns all are, or a local
+// binding whose initializer and every reassignment are.
+function isEntityConstructedExpression(
+  expression: Node,
+  proof: EntityConstructionProof,
+  scope: FunctionDeclaration,
+): boolean {
+  if (
+    Node.isParenthesizedExpression(expression) ||
+    Node.isAsExpression(expression) ||
+    Node.isNonNullExpression(expression) ||
+    Node.isSatisfiesExpression(expression)
+  ) {
+    return isEntityConstructedExpression(expression.getExpression(), proof, scope);
+  }
+  if (isSentinelExpression(expression)) return true;
+  if (Node.isConditionalExpression(expression)) {
+    return (
+      isEntityConstructedExpression(expression.getWhenTrue(), proof, scope) &&
+      isEntityConstructedExpression(expression.getWhenFalse(), proof, scope)
+    );
+  }
+  if (
+    Node.isBinaryExpression(expression) &&
+    expression.getOperatorToken().getKind() === SyntaxKind.QuestionQuestionToken
+  ) {
+    return (
+      isEntityConstructedExpression(expression.getLeft(), proof, scope) &&
+      isEntityConstructedExpression(expression.getRight(), proof, scope)
+    );
+  }
+  if (Node.isCallExpression(expression)) {
+    const callee = expression.getExpression();
+    if (
+      Node.isPropertyAccessExpression(callee) &&
+      callee.getName() === 'assign' &&
+      callee.getExpression().getText() === 'Object'
+    ) {
+      const target = expression.getArguments()[0];
+      return target !== undefined && isEntityConstructedExpression(target, proof, scope);
+    }
+    const symbol = callee.getSymbol();
+    const declarations = (symbol?.getAliasedSymbol() ?? symbol)?.getDeclarations() ?? [];
+    return (
+      declarations.length > 0 &&
+      declarations.every(
+        (declaration) =>
+          proof.allocatorKeys.has(nodeKey(declaration)) ||
+          (Node.isFunctionDeclaration(declaration) && isEntityConstructedFunction(declaration, proof)),
+      )
+    );
+  }
+  if (Node.isIdentifier(expression)) {
+    const declarations = expression.getSymbol()?.getDeclarations() ?? [];
+    const [variable] = declarations;
+    if (declarations.length !== 1 || !Node.isVariableDeclaration(variable)) return false;
+    if (variable.getFirstAncestorByKind(SyntaxKind.FunctionDeclaration) !== scope) return false;
+    const initializer = variable.getInitializer();
+    if (initializer === undefined || !isEntityConstructedExpression(initializer, proof, scope)) return false;
+    const variableKey = nodeKey(variable);
+    return scope.getDescendantsOfKind(SyntaxKind.BinaryExpression).every((assignment) => {
+      if (assignment.getOperatorToken().getKind() !== SyntaxKind.EqualsToken) return true;
+      const left = assignment.getLeft();
+      if (!Node.isIdentifier(left)) return true;
+      const assigned = left.getSymbol()?.getDeclarations() ?? [];
+      if (!assigned.some((declaration) => nodeKey(declaration) === variableKey)) return true;
+      return isEntityConstructedExpression(assignment.getRight(), proof, scope);
+    });
+  }
+  return false;
+}
+
+// Memoized per declaration; a recursive cycle reads as unproven while it is being decided.
+function isEntityConstructedFunction(declaration: FunctionDeclaration, proof: EntityConstructionProof): boolean {
+  const key = nodeKey(declaration);
+  const known = proof.constructed.get(key);
+  if (known !== undefined) return known;
+  proof.constructed.set(key, false);
+  const body = declaration.getBody();
+  const returns =
+    body === undefined
+      ? []
+      : body
+          .getDescendantsOfKind(SyntaxKind.ReturnStatement)
+          .filter((statement) => statement.getFirstAncestorByKind(SyntaxKind.FunctionDeclaration) === declaration);
+  const values = returns.map((statement) => statement.getExpression());
+  const constructed =
+    values.length > 0 &&
+    values.every((value) => value !== undefined && isEntityConstructedExpression(value, proof, declaration)) &&
+    values.some((value) => value !== undefined && !isSentinelExpression(value));
+  proof.constructed.set(key, constructed);
+  return constructed;
 }
 
 function exportedCreateResultTypes(type: Type, seen = new Set<Type>()): Type[] {
@@ -979,6 +1117,33 @@ function implementationAliasesInType(type: Type, root: string, seen = new Set<Ty
   const nested = [...type.getTypeArguments(), ...type.getUnionTypes(), ...type.getIntersectionTypes()];
   for (const child of nested) aliases.push(...implementationAliasesInType(child, root, seen));
   return [...new Map(aliases.map((alias) => [nodeKey(alias), alias])).values()];
+}
+
+// Walks the declared heritage of a result's interface or class, following import and re-export aliases,
+// until it reaches a canonical `EntityRaw` declaration. A same-named alias declared anywhere else is not it.
+function inheritsCanonicalEntityRaw(type: Type, entityRawKeys: ReadonlySet<string>): boolean {
+  if (entityRawKeys.size === 0) return false;
+  const pending = [...(type.getSymbol()?.getDeclarations() ?? [])];
+  const seen = new Set<string>();
+  while (pending.length > 0) {
+    const declaration = pending.pop()!;
+    const key = nodeKey(declaration);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const heritage = Node.isInterfaceDeclaration(declaration)
+      ? declaration.getExtends()
+      : Node.isClassDeclaration(declaration)
+        ? [declaration.getExtends(), ...declaration.getImplements()].filter((clause) => clause !== undefined)
+        : [];
+    for (const clause of heritage) {
+      const symbol = clause.getExpression().getSymbol();
+      for (const base of (symbol?.getAliasedSymbol() ?? symbol)?.getDeclarations() ?? []) {
+        if (entityRawKeys.has(nodeKey(base))) return true;
+        pending.push(base);
+      }
+    }
+  }
+  return false;
 }
 
 function isDefinitelyAssignableTo(type: Type, target: Type): boolean {
@@ -1137,6 +1302,14 @@ function displaySymbolName(symbol: MorphSymbol): string {
     return `\`${declaration.getName()}\``;
   }
   return `\`${symbol.getName()}\``;
+}
+
+function isSentinelExpression(expression: Node): boolean {
+  return (
+    Node.isNullLiteral(expression) ||
+    expression.getKind() === SyntaxKind.FalseKeyword ||
+    (Node.isIdentifier(expression) && expression.getText() === 'undefined')
+  );
 }
 
 function nodeKey(node: Node): string {

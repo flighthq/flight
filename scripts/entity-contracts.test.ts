@@ -434,6 +434,85 @@ describe('checkEntityContracts', () => {
     expect(report.advisories).toEqual([]);
   });
 
+  it('accepts canonical EntityRaw results proven built by the entity allocators', () => {
+    const report = checkFixture({
+      ...entityAllocationFixture,
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import { allocateEntity, finishEntity } from '../../entity/src/entity';",
+        "import type { EntityRaw } from '../../entity/src/types';",
+        'export interface ShapeRaw extends EntityRaw { value: number }',
+        'export interface LabelRaw extends ShapeRaw { text: string }',
+        'export function createShape(): ShapeRaw {',
+        '  let out: ShapeRaw = Object.assign(allocateEntity<ShapeRaw>(), { value: 0 });',
+        '  return out;',
+        '}',
+        'export function createLabel(): LabelRaw {',
+        '  const out = allocateEntity<LabelRaw>();',
+        '  return finishEntity(out);',
+        '}',
+        'export function createChildShape(empty: boolean): ShapeRaw | null {',
+        '  if (empty) return null;',
+        '  const child = createShape();',
+        '  return child as ShapeRaw;',
+        '}',
+      ].join('\n'),
+    });
+
+    expect(report.issues).toEqual([]);
+    expect(report.exportedCreateFunctions).toBe(3);
+  });
+
+  it('rejects an identically named EntityRaw that is not the entity-owned declaration', () => {
+    const report = checkFixture({
+      ...entityAllocationFixture,
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/fakeEntity.ts': 'export type EntityRaw = object;',
+      'packages/example/src/example.ts': [
+        "import { allocateEntity } from '../../entity/src/entity';",
+        "import type { EntityRaw } from './fakeEntity';",
+        'export interface ImpostorRaw extends EntityRaw { value: number }',
+        'export function createImpostor(): ImpostorRaw {',
+        '  const out = allocateEntity<ImpostorRaw>();',
+        '  return out;',
+        '}',
+      ].join('\n'),
+    });
+
+    expect(report.issues).toEqual([
+      expect.objectContaining({ name: '@flighthq/example createImpostor', rule: 'exported-create-return' }),
+    ]);
+  });
+
+  it('rejects a canonical EntityRaw result that the factory did not build by entity allocation', () => {
+    const report = checkFixture({
+      ...entityAllocationFixture,
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import { allocateEntity } from '../../entity/src/entity';",
+        "import type { EntityRaw } from '../../entity/src/types';",
+        'export interface StateRaw extends EntityRaw { value: number }',
+        'export function createLiteralState(): StateRaw {',
+        '  return { value: 0 };',
+        '}',
+        'export function createReassignedState(): StateRaw {',
+        '  let out: StateRaw = allocateEntity<StateRaw>();',
+        '  out = { value: 1 };',
+        '  return out;',
+        '}',
+        'export function createReadState(source: { state: StateRaw }): StateRaw {',
+        '  return source.state;',
+        '}',
+      ].join('\n'),
+    });
+
+    expect(report.issues.map((entry) => entry.name).sort()).toEqual([
+      '@flighthq/example createLiteralState',
+      '@flighthq/example createReadState',
+      '@flighthq/example createReassignedState',
+    ]);
+  });
+
   it('rejects optional and writable inline redeclarations of stronger base properties', () => {
     const report = checkFixture({
       'packages/example/src/example.ts': [
@@ -531,6 +610,19 @@ describe('formatEntityContractReport', () => {
     expect(text).toContain('[redundant-optional-property]');
   });
 });
+
+// The entity-owned `EntityRaw` alias and allocators, at the paths the gate treats as canonical.
+const entityAllocationFixture = {
+  'packages/entity/src/entity.ts': [
+    'export function allocateEntity<Type extends object>(): Type {',
+    '  return {} as Type;',
+    '}',
+    'export function finishEntity<Type extends object>(out: Type): Type {',
+    '  return out;',
+    '}',
+  ].join('\n'),
+  'packages/entity/src/types.ts': 'export type EntityRaw = object;',
+};
 
 function checkFixture(files: Readonly<Record<string, string>>) {
   const project = new Project({
