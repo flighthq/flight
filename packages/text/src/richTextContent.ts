@@ -58,21 +58,6 @@ function appendText(
   writeFormatRange(out.formatRanges, format, start, end);
 }
 
-function stringEndsWith(value: string, suffix: string): boolean {
-  return value.endsWith(suffix);
-}
-
-function stringStartsWith(value: string, prefix: string): boolean {
-  return value.startsWith(prefix);
-}
-
-function saturatingSub(value: number, amount: number): number {
-  if (amount >= value) {
-    return 0;
-  }
-  return value - amount;
-}
-
 function applyTextFormatRanges(out: RichTextContent, overrides: Readonly<TextFormatRangeRaw[]>): void {
   if (overrides.length === 0 || out.text.length === 0) {
     return;
@@ -115,6 +100,10 @@ function applyTextFormatRanges(out: RichTextContent, overrides: Readonly<TextFor
   }
 }
 
+function characterUtf16Len(character: string): number {
+  return utf16Len(String(character));
+}
+
 function clampRanges(ranges: TextFormatRangeRaw[], length: number): void {
   for (const range of ranges) {
     range.end = Math.min(range.end, length);
@@ -138,10 +127,6 @@ function clampRanges(ranges: TextFormatRangeRaw[], length: number): void {
       items.length = kept + length - index;
     }
   })(ranges, (range) => range.start < length);
-}
-
-function characterUtf16Len(character: string): number {
-  return utf16Len(String(character));
 }
 
 export function clearRichTextContent(runtime: RichTextRuntime): void {
@@ -285,24 +270,12 @@ function firstCharacter(value: string): string | undefined {
   return [...value][0];
 }
 
-function repeatString(value: string, count: number): string {
-  let out = '';
-  for (let _ = 0; _ < count; _ += 1) {
-    out = `${out}${value}`;
-  }
-  return out;
-}
-
 function getRenderableSource(data: Readonly<RichTextData>, passwordCharacter?: string): string {
   if (passwordCharacter === undefined) {
     return data.text;
   }
   const mask = String(firstCharacter(passwordCharacter) ?? '•');
   return repeatString(mask, utf16Len(data.text));
-}
-
-function utf16Len(value: string): number {
-  return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index)).length;
 }
 
 export function getRichTextContent(runtime: RichTextRuntime): RichTextContent {
@@ -323,6 +296,29 @@ function isCondensedWhitespace(character: string): boolean {
   );
 }
 
+function repeatString(value: string, count: number): string {
+  let out = '';
+  for (let _ = 0; _ < count; _ += 1) {
+    out = `${out}${value}`;
+  }
+  return out;
+}
+
+function saturatingSub(value: number, amount: number): number {
+  if (amount >= value) {
+    return 0;
+  }
+  return value - amount;
+}
+
+function stringEndsWith(value: string, suffix: string): boolean {
+  return value.endsWith(suffix);
+}
+
+function stringStartsWith(value: string, prefix: string): boolean {
+  return value.startsWith(prefix);
+}
+
 function takeUtf16Prefix(value: string, limit: number): string {
   let units = 0;
   let out = '';
@@ -335,6 +331,10 @@ function takeUtf16Prefix(value: string, limit: number): string {
     out = `${out}${character}`;
   }
   return out;
+}
+
+function utf16Len(value: string): number {
+  return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index)).length;
 }
 
 function writeFormatRange(
