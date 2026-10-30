@@ -56,21 +56,6 @@ fn append_text(
     write_format_range(&mut out.format_ranges, format, start, end);
 }
 
-fn string_ends_with(value: &str, suffix: char) -> bool {
-    return value.ends_with(suffix);
-}
-
-fn string_starts_with(value: &str, prefix: &str) -> bool {
-    return value.starts_with(prefix);
-}
-
-fn saturating_sub(value: usize, amount: usize) -> usize {
-    if amount >= value {
-        return 0;
-    }
-    return value - amount;
-}
-
 fn apply_text_format_ranges(out: &mut RichTextContent, overrides: &[TextFormatRange]) {
     if overrides.is_empty() || out.text.is_empty() {
         return;
@@ -118,15 +103,15 @@ fn apply_text_format_ranges(out: &mut RichTextContent, overrides: &[TextFormatRa
     }
 }
 
+fn character_utf16_len(character: char) -> usize {
+    return utf16_len(&character.to_string());
+}
+
 fn clamp_ranges(ranges: &mut Vec<TextFormatRange>, length: usize) {
     for range in ranges.iter_mut() {
         range.end = range.end.min(length);
     }
     ranges.retain(|range| range.start < length);
-}
-
-fn character_utf16_len(character: char) -> usize {
-    return utf16_len(&character.to_string());
 }
 
 // flight-lint: allow(conform-extra) D8 moved from textlayout to the approved text owner
@@ -238,14 +223,6 @@ fn first_character(value: &str) -> Option<char> {
     return value.chars().next();
 }
 
-fn repeat_string(value: &str, count: usize) -> String {
-    let mut out = String::new();
-    for _ in 0..count {
-        out = format!("{}{}", out, value);
-    }
-    return out;
-}
-
 fn get_renderable_source(data: &RichTextData, password_character: Option<&str>) -> String {
     let Some(password_character) = password_character else {
         return data.text.clone();
@@ -254,10 +231,6 @@ fn get_renderable_source(data: &RichTextData, password_character: Option<&str>) 
         .unwrap_or('\u{2022}')
         .to_string();
     return repeat_string(&mask, utf16_len(&data.text));
-}
-
-fn utf16_len(value: &str) -> usize {
-    return value.encode_utf16().count();
 }
 
 // flight-lint: allow(conform-extra) D8 moved from textlayout to the approved text owner
@@ -277,6 +250,29 @@ fn is_condensed_whitespace(character: char) -> bool {
         || character == '\u{000b}';
 }
 
+fn repeat_string(value: &str, count: usize) -> String {
+    let mut out = String::new();
+    for _ in 0..count {
+        out = format!("{}{}", out, value);
+    }
+    return out;
+}
+
+fn saturating_sub(value: usize, amount: usize) -> usize {
+    if amount >= value {
+        return 0;
+    }
+    return value - amount;
+}
+
+fn string_ends_with(value: &str, suffix: char) -> bool {
+    return value.ends_with(suffix);
+}
+
+fn string_starts_with(value: &str, prefix: &str) -> bool {
+    return value.starts_with(prefix);
+}
+
 fn take_utf16_prefix(value: &str, limit: usize) -> String {
     let mut units = 0;
     let mut out = String::new();
@@ -289,6 +285,10 @@ fn take_utf16_prefix(value: &str, limit: usize) -> String {
         out = format!("{}{}", out, character);
     }
     return out;
+}
+
+fn utf16_len(value: &str) -> usize {
+    return value.encode_utf16().count();
 }
 
 fn write_format_range(

@@ -73,18 +73,6 @@ pub fn get_text_layout(source: &NodeRef) -> Option<Ref<TextLayoutResult>> {
     return get_text_layout_for_node(&*source);
 }
 
-pub fn set_text_layout_result(source: &NodeRef, layout: Ref<TextLayoutResult>) {
-    let source = source.read().unwrap();
-    let content_id = get_node_local_content_revision(&*source);
-    let Some((runtime, text)) = text_runtime_and_string(&*source) else {
-        return;
-    };
-    let mut runtime = runtime.write().unwrap();
-    runtime.text_layout = Some(layout);
-    runtime.text_layout_using_content_id = content_id as i32;
-    runtime.text_layout_using_text = Some(text);
-}
-
 pub(crate) fn get_text_layout_for_node(source: &dyn Node) -> Option<Ref<TextLayoutResult>> {
     ensure_text_layout_for_node(source);
     let (runtime, _) = text_runtime_and_string(source)?;
@@ -105,6 +93,18 @@ pub fn get_text_layout_metrics(out: &mut TextMetrics, source: &NodeRef) {
 // flight-lint: allow(conform-params) D5 explicit caller-owned context replaces the source module guard slot
 pub fn set_text_label_guard(context: &Ref<TextLayoutContext>, guard: Option<TextLabelGuard>) {
     context.write().unwrap().guard = guard;
+}
+
+pub fn set_text_layout_result(source: &NodeRef, layout: Ref<TextLayoutResult>) {
+    let source = source.read().unwrap();
+    let content_id = get_node_local_content_revision(&*source);
+    let Some((runtime, text)) = text_runtime_and_string(&*source) else {
+        return;
+    };
+    let mut runtime = runtime.write().unwrap();
+    runtime.text_layout = Some(layout);
+    runtime.text_layout_using_content_id = content_id as i32;
+    runtime.text_layout_using_text = Some(text);
 }
 
 pub(crate) fn text_runtime_and_string(
