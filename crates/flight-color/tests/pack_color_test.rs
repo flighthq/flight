@@ -106,6 +106,23 @@ mod pack_color {
     }
 }
 
+mod pack_linear_channels_to_color {
+    use super::*;
+
+    #[test]
+    fn matches_the_entity_pack_path_without_allocating() {
+        let mut color = allocate_linear_color();
+        color.r = 0.25;
+        color.g = 0.5;
+        color.b = 0.75;
+        color.a = 0.875;
+        assert_eq!(
+            pack_linear_channels_to_color(color.r, color.g, color.b, color.a),
+            pack_linear_to_color(&color)
+        );
+    }
+}
+
 mod pack_linear_to_color {
     use super::*;
 
@@ -158,23 +175,6 @@ mod pack_linear_to_color {
         assert_eq!(
             pack_linear_to_color(&color),
             pack_linear_channels_to_color(color.r, color.g, color.b, color.a)
-        );
-    }
-}
-
-mod pack_linear_channels_to_color {
-    use super::*;
-
-    #[test]
-    fn matches_the_entity_pack_path_without_allocating() {
-        let mut color = allocate_linear_color();
-        color.r = 0.25;
-        color.g = 0.5;
-        color.b = 0.75;
-        color.a = 0.875;
-        assert_eq!(
-            pack_linear_channels_to_color(color.r, color.g, color.b, color.a),
-            pack_linear_to_color(&color)
         );
     }
 }

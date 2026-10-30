@@ -244,17 +244,6 @@ mod create_clip_region_from_rounded_rectangle {
     }
 }
 
-mod module_clip_region_state {
-    use super::*;
-
-    #[test]
-    fn all_operations_share_the_module_pool_binding() {
-        let region = acquire_clip_region();
-        release_clip_region(&region);
-        assert!(Arc::ptr_eq(&acquire_clip_region(), &region));
-    }
-}
-
 mod equals_clip_region {
     use super::*;
 
@@ -431,6 +420,17 @@ mod is_clip_region_rectangular {
     }
 }
 
+mod module_clip_region_state {
+    use super::*;
+
+    #[test]
+    fn all_operations_share_the_module_pool_binding() {
+        let region = acquire_clip_region();
+        release_clip_region(&region);
+        assert!(Arc::ptr_eq(&acquire_clip_region(), &region));
+    }
+}
+
 mod normalize_clip_region {
     use super::*;
 
@@ -463,6 +463,42 @@ mod release_clip_region {
     }
 }
 
+mod set_clip_region_contours_guard {
+    use super::*;
+
+    #[test]
+    fn replaces_the_module_callback_slot() {
+        let calls = guard_calls();
+        let recorded = calls.clone();
+        set_clip_region_contours_guard(Some(Arc::new(move |_, _| {
+            recorded.lock().unwrap().values.push(1);
+        })));
+        let _ = create_clip_region_from_contours(&[vec![0.0, 0.0, 1.0]], PathWinding::NonZero);
+        assert_eq!(calls.lock().unwrap().values.len(), 1);
+        set_clip_region_contours_guard(None);
+    }
+}
+
+mod set_clip_region_release_guard {
+    use super::*;
+
+    #[test]
+    fn replaces_the_module_callback_slot() {
+        let calls = guard_calls();
+        let recorded = calls.clone();
+        set_clip_region_release_guard(Some(Arc::new(move |_| {
+            recorded.lock().unwrap().values.push(1);
+        })));
+        let clip = acquire_clip_region();
+        release_clip_region(&clip);
+        release_clip_region(&clip);
+        assert_eq!(calls.lock().unwrap().values.len(), 1);
+        let _ = acquire_clip_region();
+        let _ = acquire_clip_region();
+        set_clip_region_release_guard(None);
+    }
+}
+
 mod set_clip_region_to_contours {
     use super::*;
 
@@ -491,6 +527,25 @@ mod set_clip_region_to_rectangle {
         assert_eq!(out.rect, create_rectangle(5.0, 6.0, 7.0, 8.0));
         assert_eq!(out.winding, PathWinding::NonZero);
         assert_eq!(out.version, 1);
+    }
+}
+
+mod set_clip_region_use_guard {
+    use super::*;
+
+    #[test]
+    fn replaces_the_module_callback_slot() {
+        let calls = guard_calls();
+        let recorded = calls.clone();
+        set_clip_region_use_guard(Some(Arc::new(move |_| {
+            recorded.lock().unwrap().values.push(1);
+        })));
+        let clip = acquire_clip_region();
+        release_clip_region(&clip);
+        let _ = clip_region_contains_point(&clip, 0.0, 0.0);
+        assert_eq!(calls.lock().unwrap().values.len(), 1);
+        let _ = acquire_clip_region();
+        set_clip_region_use_guard(None);
     }
 }
 
@@ -547,60 +602,5 @@ mod union_clip_regions {
         assert_eq!(b.contours, Some(triangle()));
         assert_eq!(b.winding, PathWinding::EvenOdd);
         assert_eq!(b.version, 1);
-    }
-}
-
-mod set_clip_region_contours_guard {
-    use super::*;
-
-    #[test]
-    fn replaces_the_module_callback_slot() {
-        let calls = guard_calls();
-        let recorded = calls.clone();
-        set_clip_region_contours_guard(Some(Arc::new(move |_, _| {
-            recorded.lock().unwrap().values.push(1);
-        })));
-        let _ = create_clip_region_from_contours(&[vec![0.0, 0.0, 1.0]], PathWinding::NonZero);
-        assert_eq!(calls.lock().unwrap().values.len(), 1);
-        set_clip_region_contours_guard(None);
-    }
-}
-
-mod set_clip_region_release_guard {
-    use super::*;
-
-    #[test]
-    fn replaces_the_module_callback_slot() {
-        let calls = guard_calls();
-        let recorded = calls.clone();
-        set_clip_region_release_guard(Some(Arc::new(move |_| {
-            recorded.lock().unwrap().values.push(1);
-        })));
-        let clip = acquire_clip_region();
-        release_clip_region(&clip);
-        release_clip_region(&clip);
-        assert_eq!(calls.lock().unwrap().values.len(), 1);
-        let _ = acquire_clip_region();
-        let _ = acquire_clip_region();
-        set_clip_region_release_guard(None);
-    }
-}
-
-mod set_clip_region_use_guard {
-    use super::*;
-
-    #[test]
-    fn replaces_the_module_callback_slot() {
-        let calls = guard_calls();
-        let recorded = calls.clone();
-        set_clip_region_use_guard(Some(Arc::new(move |_| {
-            recorded.lock().unwrap().values.push(1);
-        })));
-        let clip = acquire_clip_region();
-        release_clip_region(&clip);
-        let _ = clip_region_contains_point(&clip, 0.0, 0.0);
-        assert_eq!(calls.lock().unwrap().values.len(), 1);
-        let _ = acquire_clip_region();
-        set_clip_region_use_guard(None);
     }
 }
