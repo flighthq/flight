@@ -1519,6 +1519,88 @@ mod foreign_macro_arguments {
     }
 
     #[test]
+    fn omits_private_rust_only_free_functions_and_emits_unannotated_private_functions() {
+        let annotated = r#"
+pub struct Holder<T> {
+    pub value: Option<T>,
+}
+
+/// flight-compiler: rust-only
+fn holder_slot<T>(holder: &Holder<T>) -> &Option<T> {
+    return &holder.value;
+}
+
+fn holder_count() -> i32 {
+    return 1;
+}
+
+pub fn count_holders() -> i32 {
+    return holder_count();
+}
+"#;
+        let output = compile_typescript(annotated, None).unwrap();
+        assert!(!output.contains("holderSlot"), "{output}");
+        assert!(output.contains("function holderCount(): number"), "{output}");
+        assert!(output.contains("export function countHolders(): number"), "{output}");
+
+        let unannotated = annotated.replace("/// flight-compiler: rust-only\n", "");
+        let output = compile_typescript(&unannotated, None).unwrap();
+        assert!(output.contains("function holderSlot<T>("), "{output}");
+    }
+
+    #[test]
+    fn rejects_rust_only_on_visible_functions_and_other_production_items() {
+        for (source, expected) in [
+            (
+                "/// flight-compiler: rust-only\npub fn exported() -> i32 {\n    return 1;\n}\n",
+                "item-level `flight-compiler: rust-only` requires a private function, but `exported` is visible outside its module",
+            ),
+            (
+                "/// flight-compiler: rust-only\npub(crate) fn shared() -> i32 {\n    return 1;\n}\n",
+                "item-level `flight-compiler: rust-only` requires a private function, but `shared` is visible outside its module",
+            ),
+            (
+                "/// flight-compiler: rust-only\npub struct Slot {\n    pub value: i32,\n}\n",
+                "not on struct `Slot`",
+            ),
+            (
+                "/// flight-compiler: rust-only\npub const LIMIT: i32 = 1;\n",
+                "not on const `LIMIT`",
+            ),
+            (
+                "pub struct Slot {\n    pub value: i32,\n}\n\n/// flight-compiler: rust-only\nimpl Slot {\n    fn read(&self) -> i32 {\n        return self.value;\n    }\n}\n",
+                "not on impl `Slot`",
+            ),
+            (
+                "pub struct Slot {\n    pub value: i32,\n}\n\nimpl Slot {\n    /// flight-compiler: rust-only\n    fn read(&self) -> i32 {\n        return self.value;\n    }\n}\n",
+                "not on impl method `Slot::read`",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err().to_string();
+            assert!(error.contains(expected), "{error}");
+        }
+    }
+
+    #[test]
+    fn rejects_emitted_functions_that_call_rust_only_functions() {
+        let source = r#"
+/// flight-compiler: rust-only
+fn hidden_value() -> i32 {
+    return 1;
+}
+
+pub fn read_value() -> i32 {
+    return hidden_value();
+}
+"#;
+        let error = compile_typescript(source, None).unwrap_err().to_string();
+        assert_eq!(
+            error,
+            "`read_value` calls `hidden_value`, which is `flight-compiler: rust-only` and has no TypeScript output"
+        );
+    }
+
+    #[test]
     fn exports_crate_visible_items_that_target_native_siblings_reference() {
         let owner = "pub(crate) fn create_count_core() -> i32 {\n    return 0;\n}\n\npub(crate) fn unused_core() -> i32 {\n    return 1;\n}\n";
         let wrapper = "//! flight-compiler: target-native\n\nuse crate::owner::create_count_core;\n\npub fn create_count() -> i32 {\n    return create_count_core();\n}\n";

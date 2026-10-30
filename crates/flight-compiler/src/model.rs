@@ -1580,11 +1580,16 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         }
     }
 
+    let mut rust_only_functions = BTreeSet::new();
     for item in file.items {
         if let Item::Use(item_use) = &item {
             collect_standard_constant(&item_use.tree, &mut Vec::new(), &mut standard_constants);
         }
+        validate_rust_only_item(&item)?;
         match item {
+            Item::Fn(function) if has_rust_only_directive(&function.attrs) => {
+                rust_only_functions.insert(function.sig.ident.to_string());
+            }
             Item::Const(item) => constants.push(item),
             Item::Enum(item) => {
                 validate_enum(&item, data_unions.contains(&item.ident.to_string()))?;
@@ -1614,6 +1619,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             _ => {}
         }
     }
+    validate_rust_only_references(&rust_only_functions, &functions)?;
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
     validate_callable_field_parameters(&callable_field_parameters, &structs)?;
@@ -2135,6 +2141,99 @@ fn type_name(rust_type: &Type) -> Option<String> {
         .segments
         .last()
         .map(|segment| segment.ident.to_string());
+}
+
+// An item-level `flight-compiler: rust-only` omits a private production free function from the
+// TypeScript output: Rust-only plumbing, such as the field access behind a generic `impl Entity`, that
+// has no TypeScript counterpart. Anything else carrying the directive is rejected rather than silently
+// dropped, because a public or crate-visible item, or a type, constant, or impl, is part of the
+// TypeScript surface.
+fn validate_rust_only_item(item: &Item) -> Result<(), CompileError> {
+    let rejected = |kind: &str, name: String| {
+        return Err(compile_error(format!(
+            "item-level `flight-compiler: rust-only` is supported only on private free functions and tests, not on {kind} `{name}`"
+        )));
+    };
+    match item {
+        Item::Fn(function) if has_rust_only_directive(&function.attrs) => {
+            if !matches!(function.vis, syn::Visibility::Inherited) {
+                return Err(compile_error(format!(
+                    "item-level `flight-compiler: rust-only` requires a private function, but `{}` is visible outside its module; a visible function is part of the TypeScript surface",
+                    function.sig.ident
+                )));
+            }
+        }
+        Item::Const(item) if has_rust_only_directive(&item.attrs) => {
+            return rejected("const", item.ident.to_string());
+        }
+        Item::Enum(item) if has_rust_only_directive(&item.attrs) => {
+            return rejected("enum", item.ident.to_string());
+        }
+        Item::Static(item) if has_rust_only_directive(&item.attrs) => {
+            return rejected("static", item.ident.to_string());
+        }
+        Item::Struct(item) if has_rust_only_directive(&item.attrs) => {
+            return rejected("struct", item.ident.to_string());
+        }
+        Item::Type(item) if has_rust_only_directive(&item.attrs) => {
+            return rejected("type alias", item.ident.to_string());
+        }
+        Item::Impl(item) => {
+            let name = quote::ToTokens::to_token_stream(&item.self_ty).to_string();
+            if has_rust_only_directive(&item.attrs) {
+                return rejected("impl", name);
+            }
+            for impl_item in &item.items {
+                if let syn::ImplItem::Fn(method) = impl_item
+                    && has_rust_only_directive(&method.attrs)
+                {
+                    return rejected("impl method", format!("{name}::{}", method.sig.ident));
+                }
+            }
+        }
+        _ => {}
+    }
+    return Ok(());
+}
+
+// An omitted function must not be reachable from emitted code, or the TypeScript output would call a
+// function it never declares.
+fn validate_rust_only_references(
+    rust_only_functions: &BTreeSet<String>,
+    functions: &[ItemFn],
+) -> Result<(), CompileError> {
+    struct References<'a> {
+        found: Option<String>,
+        names: &'a BTreeSet<String>,
+    }
+    impl<'ast> syn::visit::Visit<'ast> for References<'_> {
+        fn visit_path(&mut self, path: &'ast syn::Path) {
+            if self.found.is_none()
+                && let Some(segment) = path.segments.last()
+                && self.names.contains(&segment.ident.to_string())
+            {
+                self.found = Some(segment.ident.to_string());
+            }
+            syn::visit::visit_path(self, path);
+        }
+    }
+    if rust_only_functions.is_empty() {
+        return Ok(());
+    }
+    for function in functions {
+        let mut references = References {
+            found: None,
+            names: rust_only_functions,
+        };
+        syn::visit::Visit::visit_item_fn(&mut references, function);
+        if let Some(name) = references.found {
+            return Err(compile_error(format!(
+                "`{}` calls `{name}`, which is `flight-compiler: rust-only` and has no TypeScript output",
+                function.sig.ident
+            )));
+        }
+    }
+    return Ok(());
 }
 
 fn unsupported_public(kind: &str, name: &str) -> CompileError {
