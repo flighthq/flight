@@ -84,6 +84,39 @@ mod clone_collision_collider_shape3d {
         assert_eq!(source.read().unwrap().heights, vec![0.0, 1.0, 2.0, 3.0]);
     }
 
+    // The source's BVH is built and cached by a collision query; the copy starts with an empty derived
+    // cache. Derived caches never take part in equality, so the two descriptors still compare equal.
+    #[test]
+    fn compares_equal_to_a_source_whose_derived_cache_is_populated() {
+        let source = Arc::new(RwLock::new(create_floor_mesh()));
+        let box_shape = CollisionShape3D::Box(CollisionBox3D {
+            x: 0.0,
+            y: 0.4,
+            z: 0.0,
+            half_x: 0.5,
+            half_y: 0.5,
+            half_z: 0.5,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
+        });
+        let registry = collision_registry3d_with_supports_and_faces();
+        let mut manifold = create_collision_contact_manifold3d();
+        assert!(flight_collision::collide_collision_triangle_mesh3d(
+            &mut manifold,
+            &registry,
+            &box_shape,
+            &source.read().unwrap(),
+        ));
+        let CollisionColliderShape3D::TriangleMesh(copy) = clone_collision_collider_shape3d(
+            &CollisionColliderShape3D::TriangleMesh(Arc::clone(&source)),
+        ) else {
+            panic!("triangle mesh payload");
+        };
+        assert_eq!(*copy.read().unwrap(), *source.read().unwrap());
+    }
+
     #[test]
     fn copies_a_triangle_mesh_into_an_independent_entity() {
         let source = Arc::new(RwLock::new(create_floor_mesh()));
