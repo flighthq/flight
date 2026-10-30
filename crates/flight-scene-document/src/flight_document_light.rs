@@ -25,7 +25,9 @@ use crate::types::*;
 // The JS Number of a canonical f32 field: its shortest round-trip f32 decimal (Principal 68e645eb
 // C3), so 0.4f32 is the document number 0.4.
 pub(crate) fn canonical_number(value: f32) -> f64 {
-    return format!("{value:e}").parse().unwrap_or(f64::from(value));
+    return format!("{value:e}")
+        .parse::<f64>()
+        .unwrap_or(f64::from(value));
 }
 
 fn decode_built_in_descriptor(descriptor: &FlightDocumentLightDescriptor) -> Option<LightRef> {
