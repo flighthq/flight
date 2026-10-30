@@ -595,7 +595,10 @@ mod append_shape_path {
         let shape = shape();
         append_shape_path(
             &shape,
-            &[PathCommand::MOVE_TO as u8, PathCommand::CUBIC_CURVE_TO as u8],
+            &[
+                PathCommand::MOVE_TO as u8,
+                PathCommand::CUBIC_CURVE_TO as u8,
+            ],
             &[0.0, 0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
             None,
         );

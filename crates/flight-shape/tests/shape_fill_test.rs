@@ -80,8 +80,14 @@ mod fill_source_parity {
 
     #[test]
     fn operand_count_reports_width_per_verb() {
-        assert_eq!(get_path_command_operand_count(PathCommand::MOVE_TO as u8), 2);
-        assert_eq!(get_path_command_operand_count(PathCommand::LINE_TO as u8), 2);
+        assert_eq!(
+            get_path_command_operand_count(PathCommand::MOVE_TO as u8),
+            2
+        );
+        assert_eq!(
+            get_path_command_operand_count(PathCommand::LINE_TO as u8),
+            2
+        );
         assert_eq!(
             get_path_command_operand_count(PathCommand::QUADRATIC_CURVE_TO as u8),
             4

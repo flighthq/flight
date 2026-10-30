@@ -348,9 +348,7 @@ pub fn compact_stroke_path(
             continue;
         }
         let segments = match dash {
-            Some(pattern) => {
-                apply_dash(&subpath.points, subpath.closed, pattern, dash_offset)
-            }
+            Some(pattern) => apply_dash(&subpath.points, subpath.closed, pattern, dash_offset),
             None => vec![DashSegment {
                 closed: subpath.closed,
                 points: subpath.points.clone(),

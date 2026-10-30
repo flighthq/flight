@@ -99,9 +99,9 @@ pub fn get_shape_stroke_outline_regions(
                     miter_limit: Some(number_at(commands, argument_index + 7)),
                     width: Some(thickness),
                 });
-                centerline = Some(flight_path::contract::create_path(
-                    Some(flight_path::PathWinding::NonZero),
-                ));
+                centerline = Some(flight_path::contract::create_path(Some(
+                    flight_path::PathWinding::NonZero,
+                )));
             } else {
                 style = None;
                 centerline = None;
