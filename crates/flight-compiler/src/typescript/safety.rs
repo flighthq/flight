@@ -169,6 +169,14 @@ pub(super) fn block_contains_function_exits(block: &syn::Block) -> bool {
     .is_err();
 }
 
+pub(super) fn if_expression_contains_function_exits(expression: &syn::ExprIf) -> bool {
+    return reject_function_exits_in_value_position(
+        |visitor| visitor.visit_expr_if(expression),
+        "",
+    )
+    .is_err();
+}
+
 pub(super) fn reject_unresolved_pattern_field(
     expression: &Expr,
     entities: &HashSet<String>,

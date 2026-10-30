@@ -18135,3 +18135,41 @@ pub fn get_pair(depth: i32, count: usize) -> bool {
         "should handle tuple destructuring: {output}"
     );
 }
+
+#[test]
+fn lowers_if_value_with_return_by_hoisting() {
+    let source = r#"
+pub fn read_length(data: &[u8], pos: usize, short: usize, marker: usize) -> Option<usize> {
+    let length = if short == marker {
+        if pos + 4 > data.len() {
+            return None;
+        }
+        data[pos] as usize
+    } else {
+        short
+    };
+    return Some(length);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("let length;"),
+        "should forward-declare the variable: {output}"
+    );
+    assert!(
+        output.contains("return undefined"),
+        "should preserve the early return: {output}"
+    );
+    assert!(
+        output.contains("length = (data[pos])"),
+        "should assign in the then branch: {output}"
+    );
+    assert!(
+        output.contains("length = short"),
+        "should assign in the else branch: {output}"
+    );
+    assert!(
+        !output.contains("(() =>"),
+        "should not use IIFE for if-value with return: {output}"
+    );
+}

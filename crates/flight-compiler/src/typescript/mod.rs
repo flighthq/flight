@@ -17,9 +17,10 @@ use crate::model::{ExternalNullableOptionProgram, Program, StringUnionStyle, Tes
 use crate::{CompileError, compile_error};
 
 use safety::{
-    block_contains_function_exits, reject_entity_runtime_state_store_collisions,
-    reject_function_exits_in_value_position, reject_unresolved_pattern_field,
-    reject_unsafe_lazy_lock_initializers, reject_unsupported_array_like_uses,
+    block_contains_function_exits, if_expression_contains_function_exits,
+    reject_entity_runtime_state_store_collisions, reject_function_exits_in_value_position,
+    reject_unresolved_pattern_field, reject_unsafe_lazy_lock_initializers,
+    reject_unsupported_array_like_uses,
 };
 #[allow(unused_imports)]
 pub(crate) use vitest_helpers::*;
@@ -9528,6 +9529,12 @@ pub(crate) fn emit_local_with_shadow_and_else(
     {
         return emit_hoisted_value_block_local(out, local, &unsafe_block.block, entities, indent, shadowed, rebound);
     }
+    if let Some(initializer) = &local.init
+        && let Expr::If(if_expr) = initializer.expr.as_ref()
+        && if_expression_contains_function_exits(if_expr)
+    {
+        return emit_hoisted_if_value_local(out, local, if_expr, entities, indent, shadowed, rebound);
+    }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => {
@@ -9903,6 +9910,100 @@ fn emit_hoisted_value_block_local(
     };
     write_indent(out, indent);
     writeln!(out, "{declaration} {pattern} = {value_str};").expect("writing to a String cannot fail");
+    return Ok(());
+}
+
+fn emit_hoisted_if_value_local(
+    out: &mut String,
+    local: &syn::Local,
+    if_expr: &syn::ExprIf,
+    entities: &HashSet<String>,
+    indent: usize,
+    _shadowed: bool,
+    _rebound: bool,
+) -> Result<(), CompileError> {
+    let (pattern, _rust_type) = match &local.pat {
+        Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => (emit_pattern(&local.pat)?, None),
+        Pat::Type(typed) => {
+            let pattern = emit_pattern(&typed.pat)?;
+            (pattern, Some(typed.ty.as_ref()))
+        }
+        Pat::Wild(_) => ("_".to_string(), None),
+        _ => {
+            return Err(compile_error(
+                "unsupported destructuring in hoisted if-value binding",
+            ));
+        }
+    };
+    write_indent(out, indent);
+    writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
+    emit_hoisted_if_value_branches(out, if_expr, &pattern, entities, indent)?;
+    return Ok(());
+}
+
+fn emit_hoisted_if_value_branch_block(
+    out: &mut String,
+    block: &syn::Block,
+    target: &str,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let Some((last, preceding)) = block.stmts.split_last() else {
+        return Err(compile_error("hoisted if-value branch cannot be empty"));
+    };
+    let block_context = emit_block_with_context(out, preceding, entities, indent)?;
+    if let Stmt::Expr(value, None) = last {
+        let value_str = emit_expression(value, &block_context)?;
+        write_indent(out, indent);
+        writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
+    } else {
+        emit_statement(out, last, &block_context, indent)?;
+    }
+    return Ok(());
+}
+
+fn emit_hoisted_if_value_branches(
+    out: &mut String,
+    if_expr: &syn::ExprIf,
+    target: &str,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let condition = emit_expression(&if_expr.cond, entities)?;
+    write_indent(out, indent);
+    writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
+    emit_hoisted_if_value_branch_block(out, &if_expr.then_branch, target, entities, indent + 1)?;
+    write_indent(out, indent);
+    if let Some((_, otherwise)) = &if_expr.else_branch {
+        match otherwise.as_ref() {
+            Expr::If(nested) => {
+                out.push_str("} else ");
+                emit_hoisted_if_value_branches(out, nested, target, entities, indent)?;
+            }
+            Expr::Block(block) => {
+                out.push_str("} else {\n");
+                emit_hoisted_if_value_branch_block(
+                    out,
+                    &block.block,
+                    target,
+                    entities,
+                    indent + 1,
+                )?;
+                write_indent(out, indent);
+                out.push_str("}\n");
+            }
+            _ => {
+                out.push_str("} else {\n");
+                write_indent(out, indent + 1);
+                let value = emit_expression(otherwise, entities)?;
+                writeln!(out, "{target} = {value};").expect("writing to a String cannot fail");
+                write_indent(out, indent);
+                out.push_str("}\n");
+            }
+        }
+    } else {
+        out.push_str("}\n");
+    }
     return Ok(());
 }
 
