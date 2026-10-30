@@ -61,6 +61,7 @@ function getSourceValueExportInventory(source: string, filePath: string): Source
     } else if (
       statement.type === 'ClassDeclaration' ||
       statement.type === 'FunctionDeclaration' ||
+      statement.type === 'TSEnumDeclaration' ||
       statement.type === 'VariableDeclaration'
     ) {
       addLocalValues(statement, localValues);
@@ -122,6 +123,9 @@ function addBindingNames(pattern: BindingPattern, names: Set<string>): void {
 function addLocalValues(declaration: Declaration, names: Set<string>): void {
   if (declaration.type === 'ClassDeclaration' || declaration.type === 'FunctionDeclaration') {
     if (declaration.id !== null) names.add(declaration.id.name);
+  } else if (declaration.type === 'TSEnumDeclaration') {
+    // An enum emits a runtime object; only an ambient `declare enum` has no value to publish.
+    if (!declaration.declare) names.add(declaration.id.name);
   } else if (declaration.type === 'VariableDeclaration' && declaration.kind !== 'var') {
     for (const variable of declaration.declarations) addBindingNames(variable.id, names);
   }

@@ -26,6 +26,24 @@ describe('getGeneratedExportLane', () => {
 });
 
 describe('getSourceValueExports', () => {
+  it('owns exported enums as runtime values and ignores ambient enums', () => {
+    const source = `
+export enum PathCommand {
+  Move = 1,
+}
+enum LocalKind {
+  Line = 2,
+}
+export { LocalKind };
+export declare enum AmbientKind {
+  Close = 7,
+}
+`;
+
+    expect(getSourceValueExports(source)).toEqual(['PathCommand', 'LocalKind']);
+    expect(getSourcePublishedValueExports(source)).toEqual(['PathCommand', 'LocalKind']);
+  });
+
   it('owns exported classes as runtime values', () => {
     const source = `
 export class Entity {}
