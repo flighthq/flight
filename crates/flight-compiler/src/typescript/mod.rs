@@ -10337,7 +10337,10 @@ fn emit_matches_literal_predicate(
             )?;
             Ok(Some(format!("{subject} === {emitted}")))
         }
-        Pat::TupleStruct(tuple) if tuple.path.is_ident("Some") && tuple.elems.len() == 1 => {
+        Pat::TupleStruct(tuple)
+            if (tuple.path.is_ident("Some") || tuple.path.is_ident("Ok"))
+                && tuple.elems.len() == 1 =>
+        {
             let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
                 "null"
             } else {
@@ -12923,7 +12926,9 @@ pub(crate) fn emit_option_binding(
             "portable `if let` supports only a `Some(name)` pattern",
         ));
     };
-    if !pattern.path.is_ident("Some") || pattern.elems.len() != 1 {
+    if !(pattern.path.is_ident("Some") || pattern.path.is_ident("Ok"))
+        || pattern.elems.len() != 1
+    {
         return Err(compile_error(
             "portable `if let` supports only a `Some(name)` pattern",
         ));
@@ -16598,7 +16603,10 @@ pub(super) fn lexical_fact(entities: &HashSet<String>, name: &str) -> Option<Bin
 pub(super) fn local_pattern_name(pattern: &Pat) -> Option<String> {
     return match pattern {
         Pat::Ident(identifier) => Some(identifier.ident.to_string()),
-        Pat::TupleStruct(tuple) if tuple.path.is_ident("Some") && tuple.elems.len() == 1 => {
+        Pat::TupleStruct(tuple)
+            if (tuple.path.is_ident("Some") || tuple.path.is_ident("Ok"))
+                && tuple.elems.len() == 1 =>
+        {
             let Pat::Ident(identifier) = &tuple.elems[0] else {
                 return None;
             };
