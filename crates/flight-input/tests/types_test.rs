@@ -57,14 +57,8 @@ mod get_gamepad_mapping_string {
             get_gamepad_mapping_string(GamepadMapping::Standard),
             "standard"
         );
-        assert_eq!(
-            get_gamepad_mapping_string(GamepadMapping::Raw),
-            "raw"
-        );
-        assert_eq!(
-            get_gamepad_mapping_string(GamepadMapping::Unspecified),
-            ""
-        );
+        assert_eq!(get_gamepad_mapping_string(GamepadMapping::Raw), "raw");
+        assert_eq!(get_gamepad_mapping_string(GamepadMapping::Unspecified), "");
     }
 }
 
@@ -221,14 +215,8 @@ mod parse_gamepad_mapping {
             parse_gamepad_mapping("standard"),
             Some(GamepadMapping::Standard)
         );
-        assert_eq!(
-            parse_gamepad_mapping("raw"),
-            Some(GamepadMapping::Raw)
-        );
-        assert_eq!(
-            parse_gamepad_mapping(""),
-            Some(GamepadMapping::Unspecified)
-        );
+        assert_eq!(parse_gamepad_mapping("raw"), Some(GamepadMapping::Raw));
+        assert_eq!(parse_gamepad_mapping(""), Some(GamepadMapping::Unspecified));
         assert_eq!(parse_gamepad_mapping("other"), None);
     }
 }

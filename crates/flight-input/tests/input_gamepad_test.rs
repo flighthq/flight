@@ -93,10 +93,7 @@ mod get_gamepad_axis_name {
     #[test]
     fn returns_none_for_non_standard_mapping() {
         assert_eq!(get_gamepad_axis_name(GamepadMapping::Raw, 0), None);
-        assert_eq!(
-            get_gamepad_axis_name(GamepadMapping::Unspecified, 0),
-            None
-        );
+        assert_eq!(get_gamepad_axis_name(GamepadMapping::Unspecified, 0), None);
     }
 }
 
@@ -126,13 +123,7 @@ mod get_gamepad_button_name {
             get_gamepad_button_name(GamepadMapping::Unspecified, 0),
             None
         );
-        assert_eq!(
-            get_gamepad_button_name(GamepadMapping::Standard, 99),
-            None
-        );
-        assert_eq!(
-            get_gamepad_button_name(GamepadMapping::Standard, -1),
-            None
-        );
+        assert_eq!(get_gamepad_button_name(GamepadMapping::Standard, 99), None);
+        assert_eq!(get_gamepad_button_name(GamepadMapping::Standard, -1), None);
     }
 }

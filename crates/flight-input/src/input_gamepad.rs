@@ -73,10 +73,7 @@ pub fn get_gamepad_axis_name(mapping: GamepadMapping, index: i32) -> Option<Game
 }
 
 /// Returns the semantic button name for a standard-mapping index (TS `getGamepadButtonName`).
-pub fn get_gamepad_button_name(
-    mapping: GamepadMapping,
-    index: i32,
-) -> Option<GamepadButtonKind> {
+pub fn get_gamepad_button_name(mapping: GamepadMapping, index: i32) -> Option<GamepadButtonKind> {
     if mapping != GamepadMapping::Standard {
         return None;
     }
