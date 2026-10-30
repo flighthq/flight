@@ -2147,6 +2147,64 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
+fn emit_diverging_statement(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    return match expression {
+        Expr::Call(call) if expression_is_associated_path(&call.func, "panic", "panic_any") => {
+            Ok(format!(
+                "throw {};",
+                emit_expression(&call.args[0], entities)?
+            ))
+        }
+        Expr::Call(call) if expression_path_ends_with(&call.func, "throw_error") => Ok(format!(
+            "throw new Error({});",
+            emit_expression(&call.args[0], entities)?
+        )),
+        Expr::Call(call) if expression_path_ends_with(&call.func, "throw_range_error") => {
+            Ok(format!(
+                "throw new RangeError({});",
+                emit_expression(&call.args[0], entities)?
+            ))
+        }
+        Expr::Macro(_) => {
+            let emitted = emit_expression(expression, entities)?;
+            let unwrapped = emitted
+                .strip_prefix("(() => { ")
+                .and_then(|rest| rest.strip_suffix(" })()"))
+                .unwrap_or(&emitted);
+            Ok(unwrapped.to_string())
+        }
+        _ => Ok(format!("{};", emit_expression(expression, entities)?)),
+    };
+}
+
+fn expression_is_diverging(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Call(call) => {
+            expression_is_associated_path(&call.func, "panic", "panic_any")
+                || expression_path_ends_with(&call.func, "throw_error")
+                || expression_path_ends_with(&call.func, "throw_range_error")
+                || expression_is_associated_path(&call.func, "process", "exit")
+        }
+        Expr::Macro(mac) => macro_is_diverging(&mac.mac),
+        _ => false,
+    };
+}
+
+fn macro_is_diverging(mac: &syn::Macro) -> bool {
+    return mac.path.segments.last().is_some_and(|segment| {
+        segment.ident == "panic"
+            || segment.ident == "unreachable"
+            || segment.ident == "todo"
+    });
+}
+
+fn statement_macro_is_diverging(statement: &syn::StmtMacro) -> bool {
+    return macro_is_diverging(&statement.mac);
+}
+
 fn for_loop_iterates_strings(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
         Expr::MethodCall(call) => matches!(
@@ -8185,6 +8243,14 @@ fn emit_expression_value(
                     emit_expression(&call.args[0], entities)?
                 ));
             }
+            if expression_is_associated_path(&call.func, "panic", "panic_any")
+                && call.args.len() == 1
+            {
+                return Ok(format!(
+                    "(() => {{ throw {}; }})()",
+                    emit_expression(&call.args[0], entities)?
+                ));
+            }
             let function = if let Expr::Path(path) = call.func.as_ref()
                 && path.qself.is_none()
                 && path.path.segments.len() > 1
@@ -8641,18 +8707,44 @@ fn emit_block_expression(
         |visitor| visitor.visit_block(block),
         "portable value block",
     )?;
-    let Stmt::Expr(value, None) = last else {
-        return Err(compile_error(
-            "portable value block must end with an expression",
-        ));
-    };
-    let mut out = "(() => {\n".to_string();
-    let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
-    write_indent(&mut out, 1);
-    writeln!(out, "return {};", emit_expression(value, &block_context)?)
-        .expect("writing to a String cannot fail");
-    out.push_str("})()");
-    return Ok(out);
+    match last {
+        Stmt::Expr(value, None) => {
+            let mut out = "(() => {\n".to_string();
+            let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
+            write_indent(&mut out, 1);
+            writeln!(out, "return {};", emit_expression(value, &block_context)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("})()");
+            return Ok(out);
+        }
+        Stmt::Expr(value, Some(_)) if expression_is_diverging(value) => {
+            let mut out = "(() => {\n".to_string();
+            let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
+            write_indent(&mut out, 1);
+            writeln!(out, "{}", emit_diverging_statement(value, &block_context)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("})()");
+            return Ok(out);
+        }
+        Stmt::Macro(statement) if statement_macro_is_diverging(statement) => {
+            let macro_expr = Expr::Macro(syn::ExprMacro {
+                attrs: statement.attrs.clone(),
+                mac: statement.mac.clone(),
+            });
+            let mut out = "(() => {\n".to_string();
+            let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
+            write_indent(&mut out, 1);
+            writeln!(out, "{}", emit_diverging_statement(&macro_expr, &block_context)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("})()");
+            return Ok(out);
+        }
+        _ => {
+            return Err(compile_error(
+                "portable value block must end with an expression",
+            ));
+        }
+    }
 }
 
 pub(crate) fn emit_expression_for_type(

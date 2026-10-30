@@ -11469,6 +11469,34 @@ pub fn panic_in_match(code: i32) -> i32 {
     }
 
     #[test]
+    fn lowers_panic_any_and_diverging_value_block() {
+        let source = r#"
+pub fn resolve_or_panic(value: Option<String>) -> String {
+    return value.unwrap_or_else(|| {
+        std::panic::panic_any("missing value");
+    });
+}
+
+pub fn must_get(value: Option<String>) -> String {
+    return value.unwrap_or_else(|| {
+        panic!("value was missing");
+    });
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("throw \"missing value\""),
+            "std::panic::panic_any should emit throw: {output}"
+        );
+        assert!(
+            output.contains("throw new Error(`value was missing`)"),
+            "panic! macro diverging block should emit throw: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_assert_to_conditional_throw() {
         let source = r#"
 pub fn check_bounds(index: usize, length: usize) {
