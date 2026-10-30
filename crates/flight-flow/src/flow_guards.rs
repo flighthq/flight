@@ -22,32 +22,6 @@ enum FlowGuardLogLevel {
     Warn = 2,
 }
 
-impl From<FlowGuardLogRecord> for LogDataOrProvider {
-    fn from(record: FlowGuardLogRecord) -> Self {
-        return LogData::Record(HashMap::from([(
-            "kind".to_string(),
-            LogValue::Str(record.kind),
-        )]))
-        .into();
-    }
-}
-
-impl From<FlowGuardLogLevel> for LogLevel {
-    fn from(value: FlowGuardLogLevel) -> Self {
-        return match value {
-            FlowGuardLogLevel::Warn => LogLevel::Warn,
-        };
-    }
-}
-
-fn get_flow_guard_log_kind(value: &FlowGuardLogData) -> &str {
-    return &value.kind;
-}
-
-fn normalize_flow_guard_log_level(value: FlowGuardLogLevel) -> FlowGuardLogLevel {
-    return value;
-}
-
 // flight-lint: allow(conform-params) D5: caller-owned guard state replaces the hidden module flag
 pub fn disable_flow_guards(state: FlowGuardStateRef) {
     let mut guard_state = state.write().unwrap();
@@ -76,6 +50,14 @@ pub fn get_flow_guard_kind_string(value: FlowGuardKind) -> &'static str {
         FlowGuardKind::DuplicateStatePush => "duplicate-state-push",
         FlowGuardKind::TransitionDuringTransition => "transition-during-transition",
     };
+}
+
+fn get_flow_guard_log_kind(value: &FlowGuardLogData) -> &str {
+    return &value.kind;
+}
+
+fn normalize_flow_guard_log_level(value: FlowGuardLogLevel) -> FlowGuardLogLevel {
+    return value;
 }
 
 /// Parses a guard kind string back to the enum (D9e); None for unknown names.
@@ -118,4 +100,22 @@ pub fn report_flow_guard(state: &FlowGuardStateRef, kind: FlowGuardKind) {
         log_data,
         Some("flow".to_string()),
     );
+}
+
+impl From<FlowGuardLogRecord> for LogDataOrProvider {
+    fn from(record: FlowGuardLogRecord) -> Self {
+        return LogData::Record(HashMap::from([(
+            "kind".to_string(),
+            LogValue::Str(record.kind),
+        )]))
+        .into();
+    }
+}
+
+impl From<FlowGuardLogLevel> for LogLevel {
+    fn from(value: FlowGuardLogLevel) -> Self {
+        return match value {
+            FlowGuardLogLevel::Warn => LogLevel::Warn,
+        };
+    }
 }

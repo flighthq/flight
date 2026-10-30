@@ -12,26 +12,6 @@ use crate::types::{FlowGuardKind, FlowGuardState};
 /// Shared caller-owned flow-guard state.
 pub type FlowGuardStateRef = Ref<FlowGuardState>;
 
-fn no_flow_callback() {}
-
-fn no_flow_update_callback(delta_time: f32) {
-    if delta_time.is_nan() {
-        return;
-    }
-}
-
-fn get_flow_state_on_pause(state: Option<Ref<FlowState>>) -> FlowCallback {
-    if let Some(previous) = state {
-        return previous
-            .read()
-            .unwrap()
-            .on_pause
-            .clone()
-            .unwrap_or(Arc::new(no_flow_callback));
-    }
-    return Arc::new(no_flow_callback);
-}
-
 pub fn create_flow_stack() -> Ref<FlowStack> {
     let mut out: FlowStack = allocate_entity();
     initialize_flow_stack(&mut out);
@@ -105,6 +85,26 @@ pub fn get_flow_stack_visible_states(out: &mut Vec<Ref<FlowState>>, stack: &Ref<
     }
 }
 
+fn get_flow_state_on_pause(state: Option<Ref<FlowState>>) -> FlowCallback {
+    if let Some(previous) = state {
+        return previous
+            .read()
+            .unwrap()
+            .on_pause
+            .clone()
+            .unwrap_or(Arc::new(no_flow_callback));
+    }
+    return Arc::new(no_flow_callback);
+}
+
+fn no_flow_callback() {}
+
+fn no_flow_update_callback(delta_time: f32) {
+    if delta_time.is_nan() {
+        return;
+    }
+}
+
 /// Pop the active top, exiting it and resuming the revealed state. None on an empty stack.
 pub fn pop_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
     let popped: Ref<FlowState>;
@@ -129,30 +129,6 @@ pub fn pop_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
         let maybe_on_resume = revealed_state.read().unwrap().on_resume.clone();
         let resume_callback = maybe_on_resume.unwrap_or(Arc::new(no_flow_callback));
         resume_callback();
-    }
-    return Some(popped);
-}
-
-// Removes and returns the last state while retaining the identity of the caller-owned `states`
-// vector/array. Rebuilding through clear/push is portable to both targets; direct Vec::pop has no
-// compiler lowering.
-fn take_top_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
-    let mut current = stack.write().unwrap();
-    if current.states.is_empty() {
-        return None;
-    }
-    let top = current.states.len() - 1;
-    let mut previous: Vec<Ref<FlowState>> = Vec::new();
-    for state in current.states.iter() {
-        previous.push(state.clone());
-    }
-    let popped = previous[top].clone();
-    current.states.clear();
-    for item in previous.iter() {
-        if current.states.len() >= top {
-            break;
-        }
-        current.states.push(item.clone());
     }
     return Some(popped);
 }
@@ -241,6 +217,30 @@ fn replace_flow_state_core(
     stack.write().unwrap().states.push(state);
     let enter_callback = maybe_on_enter.unwrap_or(Arc::new(no_flow_callback));
     enter_callback();
+}
+
+// Removes and returns the last state while retaining the identity of the caller-owned `states`
+// vector/array. Rebuilding through clear/push is portable to both targets; direct Vec::pop has no
+// compiler lowering.
+fn take_top_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
+    let mut current = stack.write().unwrap();
+    if current.states.is_empty() {
+        return None;
+    }
+    let top = current.states.len() - 1;
+    let mut previous: Vec<Ref<FlowState>> = Vec::new();
+    for state in current.states.iter() {
+        previous.push(state.clone());
+    }
+    let popped = previous[top].clone();
+    current.states.clear();
+    for item in previous.iter() {
+        if current.states.len() >= top {
+            break;
+        }
+        current.states.push(item.clone());
+    }
+    return Some(popped);
 }
 
 /// Tick one frame: the active top updates; each visited state with `update_below` also ticks the
