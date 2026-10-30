@@ -42,7 +42,7 @@ fn is_finite_curve(curve: Option<&[f32]>) -> bool {
 pub fn normalize_particle_emitter_config(
     config: Option<&ParticleEmitterConfig>,
 ) -> ParticleEmitterConfig {
-    let mut out = config.cloned().unwrap_or_default();
+    let mut out = config.cloned().unwrap_or(ParticleEmitterConfig::default());
     let defaults = ParticleEmitterConfig::default();
 
     // Replace any non-finite numeric field with its canonical default.
