@@ -439,10 +439,22 @@ fn compile_vitest_with_contract_alias_sources_internal(
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
-    let alias_programs = alias_sources
+    let mut alias_programs = alias_sources
         .iter()
         .map(|alias_source| model::parse_program(alias_source.source))
         .collect::<Result<Vec<_>, _>>()?;
+    // A test reads a factory's result as the record it is: an identity alias such as
+    // `NonEntityCreateResult<T>` classifies the production signature and is `T` for every value a test
+    // binds. Tests emit no production signatures, so the alias peels here, before return provenance.
+    let mut identity_aliases = std::collections::BTreeSet::new();
+    for external in external_alias_sources {
+        identity_aliases.extend(model::parse_identity_alias_metadata(external.source)?.into_keys());
+    }
+    for alias_program in &mut alias_programs {
+        for function in &mut alias_program.functions {
+            peel_identity_alias_return(&mut function.sig.output, &identity_aliases);
+        }
+    }
     let external_record_structs = external_alias_sources
         .iter()
         .map(|external| model::parse_public_record_structs(external.source))
@@ -663,6 +675,36 @@ pub fn compile_vitest_with_visibility_sources(
         external_alias_sources,
         visibility_sources,
     );
+}
+
+// Rewrites `-> Alias<T>` to `-> T` while `Alias` is a declared identity alias, so return provenance reads
+// the record the alias wraps.
+fn peel_identity_alias_return(
+    output: &mut syn::ReturnType,
+    identity_aliases: &std::collections::BTreeSet<String>,
+) {
+    let syn::ReturnType::Type(_, rust_type) = output else {
+        return;
+    };
+    loop {
+        let syn::Type::Path(path) = rust_type.as_ref() else {
+            return;
+        };
+        let Some(segment) = path.path.segments.last() else {
+            return;
+        };
+        if path.qself.is_some() || !identity_aliases.contains(&segment.ident.to_string()) {
+            return;
+        }
+        let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+            return;
+        };
+        let [syn::GenericArgument::Type(inner)] = arguments.args.iter().collect::<Vec<_>>()[..]
+        else {
+            return;
+        };
+        **rust_type = inner.clone();
+    }
 }
 
 fn crate_root_module_identity(path: &str, crate_roots: &[CrateRootSource<'_>]) -> Option<String> {

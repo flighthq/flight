@@ -12785,6 +12785,54 @@ mod optional_value {
     }
 
     #[test]
+    fn reads_identity_alias_factory_results_as_their_record_in_portable_tests() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+use flight_entity::NonEntityCreateResult;
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> NonEntityCreateResult<Sample> {
+    return Sample { previous: None };
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod create_sample {
+    use super::*;
+
+    #[test]
+    fn starts_without_a_previous_value() {
+        let sample = create_sample();
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+        let entity = [ExternalAliasSource {
+            source: include_str!("../../flight-entity/src/types.rs"),
+            module: "@flighthq/entity/contract",
+        }];
+
+        let output = compile_vitest_with_external_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            None,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+            &entity,
+        )
+        .unwrap();
+
+        assert!(output.contains("sample.previous === null"), "{output}");
+    }
+
+    #[test]
     fn honors_target_native_nullable_options_in_portable_tests() {
         let nullable_wrapper = r#"
 //! flight-compiler: target-native
