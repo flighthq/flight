@@ -177,94 +177,6 @@ export function explainStatechartTransition(
   return firstBlocked!;
 }
 
-export function fireStatechartTrigger(instance: StatechartInstanceRaw, inputIndex: number): void {
-  assertStatechartInputKind(instance, inputIndex, 'Trigger');
-  let current = instance!;
-  current.inputValues[inputIndex >>> 0] = 1.0;
-}
-
-export function getStatechartInputIndex(chart: Readonly<StatechartRaw>, name: string): number {
-  for (let inputIndex = 0; inputIndex < chart.inputs.length; inputIndex += 1) {
-    if (chart.inputs[inputIndex].name === name) {
-      return inputIndex | 0;
-    }
-  }
-  return -1;
-}
-
-export function getStatechartRegionBlend(instance: StatechartInstanceRaw, regionIndex: number): number {
-  const current = instance!;
-  if (isStatechartInteger(regionIndex) && regionIndex >= 0 && regionIndex >>> 0 < current.regionBlend.length) {
-    return current.regionBlend[regionIndex >>> 0];
-  }
-  return -1.0;
-}
-
-export function getStatechartRegionState(instance: StatechartInstanceRaw, regionIndex: number): number {
-  const current = instance!;
-  if (isStatechartInteger(regionIndex) && regionIndex >= 0 && regionIndex >>> 0 < current.regionStates.length) {
-    return current.regionStates[regionIndex >>> 0];
-  }
-  return -1;
-}
-
-export function initializeStatechartInstancePortable(
-  out: EntityConstruction<StatechartInstanceRaw>,
-  chart: StatechartRaw,
-): void {
-  validateStatechart(chart!);
-  const chartInputCount = chart!.inputs.length;
-  const chartRegionCount = chart!.regions.length;
-  let inputValues = createStatechartFloat64Array(chartInputCount);
-  for (let inputIndex = 0; inputIndex < chartInputCount; inputIndex += 1) {
-    const chartGuard = chart!;
-    const input = chartGuard.inputs[inputIndex];
-    inputValues[inputIndex] = input.kind === 'Boolean' ? (input.initialValue === 0.0 ? 0.0 : 1.0) : input.initialValue;
-  }
-  const regionCount = chartRegionCount;
-  let regionStates = createStatechartInt32Array(regionCount, 0);
-  for (let regionIndex = 0; regionIndex < regionCount; regionIndex += 1) {
-    regionStates[regionIndex] = chart!.regions[regionIndex].initialStateIndex;
-  }
-  initializeStatechartInstanceFields(
-    out,
-    chart,
-    inputValues,
-    createStatechartFloat32Array(regionCount),
-    createStatechartFloat64Array(regionCount),
-    createStatechartFloat64Array(regionCount),
-    regionStates,
-    createStatechartInt32Array(regionCount, -1),
-  );
-}
-
-export function setStatechartBooleanInput(instance: StatechartInstanceRaw, inputIndex: number, value: boolean): void {
-  assertStatechartInputKind(instance, inputIndex, 'Boolean');
-  let current = instance!;
-  current.inputValues[inputIndex >>> 0] = value ? 1.0 : 0.0;
-}
-
-export function setStatechartNumberInput(instance: StatechartInstanceRaw, inputIndex: number, value: number): void {
-  assertStatechartInputKind(instance, inputIndex, 'Number');
-  let current = instance!;
-  current.inputValues[inputIndex >>> 0] = value;
-}
-
-export function setStatechartRegionDuration(
-  instance: StatechartInstanceRaw,
-  regionIndex: number,
-  duration: number,
-): void {
-  const len = instance!.regionDuration.length;
-  if (!isStatechartInteger(regionIndex) || regionIndex < 0 || regionIndex >>> 0 >= len) {
-    throw new RangeError(`Statechart region index ${regionIndex} is out of range`);
-  }
-  if (!Number.isFinite(duration) || duration < 0.0) {
-    throw new RangeError('Statechart region duration must be finite and non-negative');
-  }
-  instance!.regionDuration[regionIndex >>> 0] = duration;
-}
-
 function advanceStatechartRegion(
   instance: StatechartInstanceRaw,
   chart: StatechartRaw,
@@ -322,6 +234,18 @@ function assertStatechartInputKind(
   }
 }
 
+function clearStatechartTriggers(instance: StatechartInstanceRaw, chart: StatechartRaw): void {
+  chart = chart!;
+  let current = instance!;
+  let inputIndex = 0;
+  while (inputIndex < chart.inputs.length) {
+    if (chart.inputs[inputIndex].kind === 'Trigger') {
+      current.inputValues[inputIndex] = 0.0;
+    }
+    inputIndex += 1;
+  }
+}
+
 function compareStatechartCondition(value: number, condition: Readonly<StatechartCondition>): boolean {
   return (() => {
     const matchValue = condition.comparison;
@@ -342,25 +266,19 @@ function compareStatechartCondition(value: number, condition: Readonly<Statechar
   })();
 }
 
-function clearStatechartTriggers(instance: StatechartInstanceRaw, chart: StatechartRaw): void {
-  chart = chart!;
+export function fireStatechartTrigger(instance: StatechartInstanceRaw, inputIndex: number): void {
+  assertStatechartInputKind(instance, inputIndex, 'Trigger');
   let current = instance!;
-  let inputIndex = 0;
-  while (inputIndex < chart.inputs.length) {
-    if (chart.inputs[inputIndex].kind === 'Trigger') {
-      current.inputValues[inputIndex] = 0.0;
-    }
-    inputIndex += 1;
-  }
+  current.inputValues[inputIndex >>> 0] = 1.0;
 }
 
-function getStatechartTransitionCount(chart: StatechartRaw, regionIndex: number, sourceStateIndex: number): number {
-  chart = chart!;
-  const region = chart.regions[regionIndex >>> 0];
-  if (sourceStateIndex < 0 || sourceStateIndex >>> 0 >= region.states.length) {
-    throw new RangeError(`Statechart region ${regionIndex} has an invalid active state`);
+export function getStatechartInputIndex(chart: Readonly<StatechartRaw>, name: string): number {
+  for (let inputIndex = 0; inputIndex < chart.inputs.length; inputIndex += 1) {
+    if (chart.inputs[inputIndex].name === name) {
+      return inputIndex | 0;
+    }
   }
-  return region.states[sourceStateIndex >>> 0].transitions.length;
+  return -1;
 }
 
 function getFirstUnmetCondition(
@@ -432,6 +350,61 @@ function getStatechartExitStatus(
   return current.regionElapsed[regionIndex] / duration >= transition.exitTimeRatio ? 'Ready' : 'ExitTimePending';
 }
 
+export function getStatechartRegionBlend(instance: StatechartInstanceRaw, regionIndex: number): number {
+  const current = instance!;
+  if (isStatechartInteger(regionIndex) && regionIndex >= 0 && regionIndex >>> 0 < current.regionBlend.length) {
+    return current.regionBlend[regionIndex >>> 0];
+  }
+  return -1.0;
+}
+
+export function getStatechartRegionState(instance: StatechartInstanceRaw, regionIndex: number): number {
+  const current = instance!;
+  if (isStatechartInteger(regionIndex) && regionIndex >= 0 && regionIndex >>> 0 < current.regionStates.length) {
+    return current.regionStates[regionIndex >>> 0];
+  }
+  return -1;
+}
+
+export function initializeStatechartInstancePortable(
+  out: EntityConstruction<StatechartInstanceRaw>,
+  chart: StatechartRaw,
+): void {
+  validateStatechart(chart!);
+  const chartInputCount = chart!.inputs.length;
+  const chartRegionCount = chart!.regions.length;
+  let inputValues = createStatechartFloat64Array(chartInputCount);
+  for (let inputIndex = 0; inputIndex < chartInputCount; inputIndex += 1) {
+    const chartGuard = chart!;
+    const input = chartGuard.inputs[inputIndex];
+    inputValues[inputIndex] = input.kind === 'Boolean' ? (input.initialValue === 0.0 ? 0.0 : 1.0) : input.initialValue;
+  }
+  const regionCount = chartRegionCount;
+  let regionStates = createStatechartInt32Array(regionCount, 0);
+  for (let regionIndex = 0; regionIndex < regionCount; regionIndex += 1) {
+    regionStates[regionIndex] = chart!.regions[regionIndex].initialStateIndex;
+  }
+  initializeStatechartInstanceFields(
+    out,
+    chart,
+    inputValues,
+    createStatechartFloat32Array(regionCount),
+    createStatechartFloat64Array(regionCount),
+    createStatechartFloat64Array(regionCount),
+    regionStates,
+    createStatechartInt32Array(regionCount, -1),
+  );
+}
+
+function getStatechartTransitionCount(chart: StatechartRaw, regionIndex: number, sourceStateIndex: number): number {
+  chart = chart!;
+  const region = chart.regions[regionIndex >>> 0];
+  if (sourceStateIndex < 0 || sourceStateIndex >>> 0 >= region.states.length) {
+    throw new RangeError(`Statechart region ${regionIndex} has an invalid active state`);
+  }
+  return region.states[sourceStateIndex >>> 0].transitions.length;
+}
+
 function invalidRegionExplanation(regionIndex: number): StatechartTransitionExplanation {
   return {
     blend: -1.0,
@@ -442,6 +415,33 @@ function invalidRegionExplanation(regionIndex: number): StatechartTransitionExpl
     targetStateIndex: -1,
     transitionIndex: -1,
   };
+}
+
+export function setStatechartBooleanInput(instance: StatechartInstanceRaw, inputIndex: number, value: boolean): void {
+  assertStatechartInputKind(instance, inputIndex, 'Boolean');
+  let current = instance!;
+  current.inputValues[inputIndex >>> 0] = value ? 1.0 : 0.0;
+}
+
+export function setStatechartNumberInput(instance: StatechartInstanceRaw, inputIndex: number, value: number): void {
+  assertStatechartInputKind(instance, inputIndex, 'Number');
+  let current = instance!;
+  current.inputValues[inputIndex >>> 0] = value;
+}
+
+export function setStatechartRegionDuration(
+  instance: StatechartInstanceRaw,
+  regionIndex: number,
+  duration: number,
+): void {
+  const len = instance!.regionDuration.length;
+  if (!isStatechartInteger(regionIndex) || regionIndex < 0 || regionIndex >>> 0 >= len) {
+    throw new RangeError(`Statechart region index ${regionIndex} is out of range`);
+  }
+  if (!Number.isFinite(duration) || duration < 0.0) {
+    throw new RangeError('Statechart region duration must be finite and non-negative');
+  }
+  instance!.regionDuration[regionIndex >>> 0] = duration;
 }
 
 function validateStatechart(chart: Readonly<StatechartRaw>): void {
