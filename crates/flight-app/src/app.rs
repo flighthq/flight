@@ -741,7 +741,8 @@ pub fn get_app_preferred_system_languages(
     host_app_locale: &HostAppLocaleCapability,
 ) {
     out.clear();
-    out.extend((host_app_locale.get_preferred_system_languages)());
+    let languages: Vec<String> = (host_app_locale.get_preferred_system_languages)();
+    out.extend(languages);
 }
 
 /// The OS locale.
