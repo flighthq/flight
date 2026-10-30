@@ -123,6 +123,18 @@ pub struct SignalTimerState {
     runtime: EntityRuntimeSlot,
 }
 
+// The private runtime slot behind `impl Entity for Signal<T>`, which `impl_entity!` cannot name for a
+// generic type. TypeScript has no runtime-slot field, so these stay Rust-only.
+/// flight-compiler: rust-only
+fn signal_entity_runtime<T>(signal: &Signal<T>) -> &EntityRuntimeSlot {
+    return &signal.runtime;
+}
+
+/// flight-compiler: rust-only
+fn signal_entity_runtime_mut<T>(signal: &mut Signal<T>) -> &mut EntityRuntimeSlot {
+    return &mut signal.runtime;
+}
+
 impl Default for SignalTimerState {
     fn default() -> Self {
         return SignalTimerState {
@@ -136,11 +148,11 @@ impl Default for SignalTimerState {
 
 impl<T> flight_entity::Entity for Signal<T> {
     fn entity_runtime(&self) -> &EntityRuntimeSlot {
-        return &self.runtime;
+        return signal_entity_runtime(self);
     }
 
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
-        return &mut self.runtime;
+        return signal_entity_runtime_mut(self);
     }
 }
 
