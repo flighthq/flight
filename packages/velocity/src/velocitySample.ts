@@ -1,6 +1,7 @@
 // Generated from crates/flight-velocity/src/velocity_sample.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 
 import type { Velocity2D } from './velocity2d.ts';
@@ -21,7 +22,7 @@ export interface VelocitySample {
  * The default sample a store creates for a source it has not seen: zero
  * velocity, no previous transform, and `-1` (never touched) frame ids.
  */
-export function createVelocitySample(): VelocitySample {
+export function createVelocitySample(): NonEntityCreateResult<VelocitySample, 'descriptor'> {
   return { previousWorldTransform: null, velocity: { x: 0.0, y: 0.0 }, lastFrameId: -1, explicitFrameId: -1 };
 }
 

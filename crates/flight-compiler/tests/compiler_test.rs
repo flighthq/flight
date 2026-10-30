@@ -5232,10 +5232,26 @@ pub fn ascii_shout(text: String) -> String {
     #[test]
     fn lowers_real_velocity_sources_with_nullable_option_semantics() {
         let sample_source = include_str!("../../flight-velocity/src/velocity_sample.rs");
-        let sample_output = compile_typescript(sample_source, None).unwrap();
+        let entity = [ExternalAliasSource {
+            source: include_str!("../../flight-entity/src/types.rs"),
+            module: "@flighthq/entity/contract",
+        }];
+        let sample_output = compile_typescript_with_external_alias_sources(
+            sample_source,
+            Some("@flighthq/entity/contract"),
+            &[],
+            &entity,
+        )
+        .unwrap();
         assert!(
-            sample_output
-                .starts_with("import type { Matrix } from \"@flighthq/geometry/contract\";\n\n")
+            sample_output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";\n"),
+            "{sample_output}"
+        );
+        assert!(
+            sample_output.contains(
+                "export function createVelocitySample(): NonEntityCreateResult<VelocitySample, \"descriptor\">"
+            ),
+            "{sample_output}"
         );
         assert!(sample_output.contains("previousWorldTransform: Matrix | null;"));
         assert!(sample_output.contains("sample: Readonly<VelocitySample> | null, frameId: number"));
@@ -15062,14 +15078,20 @@ mod sample {
         let contract = include_str!("../../flight-velocity/src/contract.rs");
         let tests = include_str!("../../flight-velocity/tests/velocity_sample_test.rs");
 
-        let output = compile_vitest_with_contract_alias_sources(
+        let entity = [ExternalAliasSource {
+            source: include_str!("../../flight-entity/src/types.rs"),
+            module: "@flighthq/entity/contract",
+        }];
+
+        let output = compile_vitest_with_external_alias_sources(
             tests,
             "@flighthq/velocity/contract",
-            contract,
+            Some(contract),
             &[VitestAliasSource {
                 source: production,
                 module: "src/velocity_sample.rs",
             }],
+            &entity,
         )
         .unwrap();
 
@@ -15099,14 +15121,19 @@ mod sample {
                 module: "crates/flight-velocity/src/velocity_sample.rs",
             },
         ];
+        let entity = [ExternalAliasSource {
+            source: include_str!("../../flight-entity/src/types.rs"),
+            module: "@flighthq/entity/contract",
+        }];
         let mut expected = None;
 
         for _ in 0..16 {
-            let output = compile_vitest_with_contract_alias_sources(
+            let output = compile_vitest_with_external_alias_sources(
                 tests,
                 "@flighthq/velocity/contract",
-                contract,
+                Some(contract),
                 &aliases,
+                &entity,
             )
             .unwrap();
             assert!(output.contains("sample.previousWorldTransform === null"));

@@ -3,6 +3,7 @@
 use crate::Velocity2D;
 use crate::VelocityExplanation;
 use crate::VelocityReason;
+use flight_entity::NonEntityCreateResult;
 use flight_geometry::Matrix;
 
 /// Per-source velocity sample, storing the current velocity and the previous
@@ -18,7 +19,7 @@ pub struct VelocitySample {
 /// The default sample a store creates for a source it has not seen: zero
 /// velocity, no previous transform, and `-1` (never touched) frame ids.
 // flight-lint: allow(conform-extra) approved velocity native-store split: portable sample rule, contract-only until the generated TS velocitySample carries it
-pub fn create_velocity_sample() -> VelocitySample {
+pub fn create_velocity_sample() -> NonEntityCreateResult<VelocitySample> {
     return VelocitySample {
         previous_world_transform: None,
         velocity: Velocity2D { x: 0.0, y: 0.0 },
