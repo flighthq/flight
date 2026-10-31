@@ -1960,6 +1960,29 @@ pub fn apply(mode: u32, a: f64, b: f64) -> f64 {
         assert!(output.contains("default:"));
     }
 
+    #[test]
+    fn lowers_match_with_integer_range_patterns_to_expanded_cases() {
+        let source = r#"
+pub fn f(x: u8) -> &'static str {
+    return match x {
+        0..=2 => "low",
+        3..=5 => "mid",
+        _ => "high",
+    };
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("case 0:") && output.contains("case 1:") && output.contains("case 2:"),
+            "range 0..=2 expanded: {output}"
+        );
+        assert!(
+            output.contains("case 3:") && output.contains("case 4:") && output.contains("case 5:"),
+            "range 3..=5 expanded: {output}"
+        );
+        assert!(output.contains("default:"), "wildcard arm: {output}");
+    }
+
     // Option `.and_then()` and `.map()` lower only over receivers declared as Rust `Option`: a field
     // projection becomes optional chaining, any other body tests the once-evaluated receiver against
     // the absent value, and `.unwrap_or()` stays `??` so falsy payloads survive.

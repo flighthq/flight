@@ -13208,6 +13208,80 @@ fn emit_match_patterns(
             }),
             entities,
         )?]),
+        Pat::Range(range) => {
+            let start = range
+                .start
+                .as_ref()
+                .and_then(|expr| match expr.as_ref() {
+                    Expr::Lit(syn::ExprLit {
+                        lit: Lit::Int(int), ..
+                    }) => int.base10_parse::<i64>().ok(),
+                    Expr::Unary(unary)
+                        if matches!(unary.op, UnOp::Neg(_))
+                            && matches!(
+                                unary.expr.as_ref(),
+                                Expr::Lit(syn::ExprLit {
+                                    lit: Lit::Int(_),
+                                    ..
+                                })
+                            ) =>
+                    {
+                        if let Expr::Lit(syn::ExprLit {
+                            lit: Lit::Int(int), ..
+                        }) = unary.expr.as_ref()
+                        {
+                            int.base10_parse::<i64>().ok().map(|v| -v)
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                });
+            let end = range.end.as_ref().and_then(|expr| match expr.as_ref() {
+                Expr::Lit(syn::ExprLit {
+                    lit: Lit::Int(int), ..
+                }) => int.base10_parse::<i64>().ok(),
+                Expr::Unary(unary)
+                    if matches!(unary.op, UnOp::Neg(_))
+                        && matches!(
+                            unary.expr.as_ref(),
+                            Expr::Lit(syn::ExprLit {
+                                lit: Lit::Int(_),
+                                ..
+                            })
+                        ) =>
+                {
+                    if let Expr::Lit(syn::ExprLit {
+                        lit: Lit::Int(int), ..
+                    }) = unary.expr.as_ref()
+                    {
+                        int.base10_parse::<i64>().ok().map(|v| -v)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            });
+            let (Some(start), Some(end)) = (start, end) else {
+                return Err(compile_error(
+                    "unsupported portable Rust match pattern",
+                ));
+            };
+            let inclusive_end = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                end
+            } else {
+                end - 1
+            };
+            let count = inclusive_end - start + 1;
+            if count < 1 || count > 256 {
+                return Err(compile_error(
+                    "unsupported portable Rust match pattern",
+                ));
+            }
+            Ok((start..=inclusive_end)
+                .map(|v| v.to_string())
+                .collect())
+        }
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
             let name = identifier.ident.to_string();
             if name == "_" {
