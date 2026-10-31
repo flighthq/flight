@@ -6948,6 +6948,16 @@ fn generation_context_with_types(
                 &function.sig.ident.to_string(),
                 source_access_for_visibility(&function.vis),
             ));
+            for stmt in &function.block.stmts {
+                if let Stmt::Item(Item::Fn(inner)) = stmt {
+                    context.insert(owner_marker(
+                        FUNCTION_OWNER_MARKER,
+                        module,
+                        &inner.sig.ident.to_string(),
+                        SourceAccess::Local,
+                    ));
+                }
+            }
         }
         for alias in program
             .type_aliases
@@ -7119,6 +7129,37 @@ fn generation_context_with_types(
                 owned_facts.push(format!(
                     "{SHARED_IDENTITY_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
                 ));
+            }
+        }
+        for function in &program.functions {
+            for stmt in &function.block.stmts {
+                let Stmt::Item(Item::Fn(inner)) = stmt else {
+                    continue;
+                };
+                let ReturnType::Type(_, rust_type) = &inner.sig.output else {
+                    continue;
+                };
+                let inner_name = inner.sig.ident.to_string();
+                let return_fact = hash_collection_type(rust_type, &type_path_context)
+                    .unwrap_or_else(|| binding_fact_for_type(&context, Some(module), rust_type));
+                owned_facts.push(format!(
+                    "{RETURN_BINDING_FACT_MARKER}{module}{PROVENANCE_SEPARATOR}{inner_name}{PROVENANCE_SEPARATOR}{}",
+                    binding_fact_marker(&return_fact)
+                ));
+                if rust_type_is_sequence(rust_type) {
+                    owned_facts.push(format!(
+                        "{SEQUENCE_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{inner_name}{PROVENANCE_SEPARATOR}"
+                    ));
+                } else if let Some(inner_type) = option_inner_type(rust_type) {
+                    owned_facts.push(format!(
+                        "{OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{inner_name}{PROVENANCE_SEPARATOR}{}",
+                        resolved_type_identity(&context, module, inner_type).unwrap_or_default()
+                    ));
+                } else if let Some(identity) = resolved_type_identity(&context, module, rust_type) {
+                    owned_facts.push(format!(
+                        "{STRUCT_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{inner_name}{PROVENANCE_SEPARATOR}{identity}"
+                    ));
+                }
             }
         }
         context.extend(owned_facts);

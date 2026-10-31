@@ -6254,6 +6254,27 @@ pub fn use_config(config: &Config) -> Vec<u8> {
     }
 
     #[test]
+    fn tracks_nested_function_return_type_for_extend() {
+        let source = r#"
+pub fn build(input: &[u8]) -> Vec<u8> {
+    fn encode(chunk: &[u8]) -> Vec<u8> {
+        return chunk.to_vec();
+    }
+    let mut output: Vec<u8> = Vec::new();
+    for chunk in input.chunks(4) {
+        output.extend(encode(chunk));
+    }
+    return output;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("encodeChunk") || output.contains("encode"));
+        assert!(output.contains(".push("));
+    }
+
+    #[test]
     fn emits_step_by_as_index_filter() {
         let source = r#"
 pub fn every_other(items: &[i32]) -> usize {
