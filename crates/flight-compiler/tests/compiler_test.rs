@@ -6297,6 +6297,44 @@ pub fn build(input: &[u8]) -> Vec<u8> {
     }
 
     #[test]
+    fn extends_from_sequence_struct_field() {
+        let source = r#"
+pub struct TestProperty {
+    pub key: u64,
+    pub raw: Vec<u8>,
+}
+
+pub fn build(objects: Vec<TestProperty>) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::new();
+    for property in objects {
+        out.extend(property.raw);
+    }
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".push("));
+    }
+
+    #[test]
+    fn recognizes_array_repeat_as_sequence_for_extend() {
+        let source = r#"
+pub fn padded(data: &[u8]) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::new();
+    out.extend([0; 4]);
+    out.extend(data.to_vec());
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".push("));
+    }
+
+    #[test]
     fn emits_step_by_as_index_filter() {
         let source = r#"
 pub fn every_other(items: &[i32]) -> usize {

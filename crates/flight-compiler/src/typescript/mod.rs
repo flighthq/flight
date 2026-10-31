@@ -330,6 +330,7 @@ const RETURNS_U32_MARKER: &str = "@returns-u32";
 const HASH_COLLECTION_FIELD_MARKER: &str = "@hash-collection-field:";
 
 const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
+const SEQUENCE_FIELD_ELEMENT_MARKER: &str = "@sequence-field-element:";
 // `{function}:{index}:{kind}` for each typed parameter: `slice` (`&[f64]`) or `mut-slice` (`&mut [f64]`)
 // over a typed-array primitive, otherwise `other`. A fixed typed array (`Float64Array`) coerces to such a
 // slice in Rust but not to its `number[]` in TypeScript, so a call converts or rejects it.
@@ -4683,7 +4684,17 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                                     .contains(&format!(
                                         "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{name}"
                                     ))
-                                    .then(|| BindingFact::Sequence(Box::new(BindingFact::Unknown)))
+                                    .then(|| {
+                                        let element = unique_marker_suffix(
+                                            self.context,
+                                            &format!(
+                                                "{SEQUENCE_FIELD_ELEMENT_MARKER}{identity}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}"
+                                            ),
+                                        )
+                                        .map(|fact| binding_fact_from_marker(&fact))
+                                        .unwrap_or(BindingFact::Unknown);
+                                        BindingFact::Sequence(Box::new(element))
+                                    })
                             })
                             .unwrap_or(BindingFact::UnresolvedPattern);
                         self.bind_pattern(&field.pat, field_fact);
@@ -5078,6 +5089,27 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                             return None;
                         };
                         let owner = self.expression_structure_identity(&field.base)?;
+                        if let Some(array_type) = unique_marker_suffix(
+                            self.context,
+                            &format!(
+                                "{TYPED_ARRAY_SEQUENCE_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                            ),
+                        ) {
+                            return Some(BindingFact::TypedArray(array_type));
+                        }
+                        if self.context.contains(&format!(
+                            "{SEQUENCE_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}"
+                        )) {
+                            let element = unique_marker_suffix(
+                                self.context,
+                                &format!(
+                                    "{SEQUENCE_FIELD_ELEMENT_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                                ),
+                            )
+                            .map(|fact| binding_fact_from_marker(&fact))
+                            .unwrap_or(BindingFact::Unknown);
+                            return Some(BindingFact::Sequence(Box::new(element)));
+                        }
                         let numeric = unique_marker_suffix(
                             self.context,
                             &format!(
@@ -7085,6 +7117,18 @@ fn generation_context_with_types(
                     owned_facts.push(format!(
                         "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
+                    if let Some(inner) = sequence_inner_type(&field.ty) {
+                        let element_fact =
+                            binding_fact_for_type(&context, Some(module), inner);
+                        if element_fact.has_source_structure()
+                            || matches!(element_fact, BindingFact::TypedArray(_))
+                        {
+                            owned_facts.push(format!(
+                                "{SEQUENCE_FIELD_ELEMENT_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                                binding_fact_marker(&element_fact)
+                            ));
+                        }
+                    }
                 }
                 if let Some(array_type) = fixed_typed_array_type(&field.ty) {
                     owned_facts.push(format!(
@@ -15309,7 +15353,7 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         return true;
     }
     return match expression {
-        Expr::Array(_) => true,
+        Expr::Array(_) | Expr::Repeat(_) => true,
         Expr::Call(call) => match call.func.as_ref() {
             Expr::Path(path) if path.qself.is_none() => {
                 call_fact(entities, SEQUENCE_RETURN_MARKER, &path.path).is_some()
@@ -15346,6 +15390,7 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             })
         }
         Expr::Group(group) => expression_is_sequence(&group.expr, entities),
+        Expr::Lit(literal) => matches!(&literal.lit, Lit::ByteStr(_)),
         Expr::If(if_expr) => {
             let then_is_seq = if_expr.then_branch.stmts.last().is_some_and(|stmt| match stmt {
                 syn::Stmt::Expr(expr, None) => expression_is_sequence(expr, entities),
@@ -15401,7 +15446,7 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         }
         Expr::MethodCall(call)
             if call.args.is_empty()
-                && call.method == "chars"
+                && matches!(call.method.to_string().as_str(), "bytes" | "chars")
                 && expression_is_known_string(&call.receiver, entities) =>
         {
             true
