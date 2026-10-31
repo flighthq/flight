@@ -4598,6 +4598,25 @@ pub fn bytes_f64(value: f64) -> Vec<u8> {
     }
 
     #[test]
+    fn lowers_to_bytes_on_suffixed_literals() {
+        let source = r#"
+pub fn f(bytes: &mut [u8]) {
+    bytes[0..2].copy_from_slice(&1u16.to_be_bytes());
+    bytes[2..6].copy_from_slice(&42u32.to_le_bytes());
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint16(0, 1, false)"),
+            "u16 literal to_be_bytes: {output}"
+        );
+        assert!(
+            output.contains("setUint32(0, 42, true)"),
+            "u32 literal to_le_bytes: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {

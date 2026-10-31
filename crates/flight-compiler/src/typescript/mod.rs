@@ -2259,6 +2259,7 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                     | "usize"
             )
         }),
+        Expr::Lit(literal) => return literal_numeric_suffix(literal),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             path.path.segments[0].ident.to_string()
         }
@@ -2272,6 +2273,19 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
         },
         _ => None,
     }
+}
+
+fn literal_numeric_suffix(literal: &syn::ExprLit) -> Option<String> {
+    let suffix = match &literal.lit {
+        Lit::Int(int_lit) => int_lit.suffix(),
+        Lit::Float(float_lit) => float_lit.suffix(),
+        _ => return None,
+    };
+    return match suffix {
+        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16"
+        | "u32" | "u64" | "u128" | "usize" => Some(suffix.to_string()),
+        _ => None,
+    };
 }
 
 // Whether an `if let` / `while let` scrutinee can be read twice with one result: a binding or a
