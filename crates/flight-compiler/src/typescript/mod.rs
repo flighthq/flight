@@ -4662,11 +4662,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         );
                         let field_fact = unique_marker_suffix(self.context, &option_prefix)
                             .map(|payload| {
-                                BindingFact::Option(Box::new(if payload.is_empty() {
-                                    BindingFact::Unknown
-                                } else {
-                                    BindingFact::Structure(payload)
-                                }))
+                                BindingFact::Option(Box::new(
+                                    binding_fact_from_marker(&payload),
+                                ))
                             })
                             .or_else(|| {
                                 self.context
@@ -5431,11 +5429,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         return None;
                     };
                     let payload = call_fact(self.context, OPTION_RETURN_MARKER, &path.path)?;
-                    Some(BindingFact::Option(Box::new(if payload.is_empty() {
-                        BindingFact::Unknown
-                    } else {
-                        BindingFact::Structure(payload)
-                    })))
+                    Some(BindingFact::Option(Box::new(
+                        binding_fact_from_marker(&payload),
+                    )))
                 }
                 Expr::Field(field) => {
                     let syn::Member::Named(field_name) = &field.member else {
@@ -5451,11 +5447,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                             "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
                         ),
                     )?;
-                    Some(BindingFact::Option(Box::new(if payload.is_empty() {
-                        BindingFact::Unknown
-                    } else {
-                        BindingFact::Structure(payload)
-                    })))
+                    Some(BindingFact::Option(Box::new(
+                        binding_fact_from_marker(&payload),
+                    )))
                 }
                 Expr::Group(group) => self.option_fact(&group.expr),
                 Expr::MethodCall(call)
@@ -6474,9 +6468,10 @@ pub(crate) fn insert_external_nullable_option_context(
                 else {
                     continue;
                 };
+                let inner_fact = binding_fact_for_type(&context, None, inner);
                 context.insert(format!(
                     "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
-                    named_type(inner).unwrap_or_default()
+                    binding_fact_marker(&inner_fact)
                 ));
                 if program.nullable_options
                     || program
@@ -7045,9 +7040,10 @@ fn generation_context_with_types(
                     continue;
                 };
                 if let Some(inner) = option_inner_type(&field.ty) {
+                    let inner_fact = binding_fact_for_type(&context, Some(module), inner);
                     owned_facts.push(format!(
                         "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
-                        resolved_type_identity(&context, module, inner).unwrap_or_default()
+                        binding_fact_marker(&inner_fact)
                     ));
                 }
                 if rust_type_is_sequence(&field.ty) {

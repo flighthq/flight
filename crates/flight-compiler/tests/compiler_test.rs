@@ -6231,6 +6231,29 @@ pub fn ascending_pairs(items: &[i32]) -> usize {
     }
 
     #[test]
+    fn propagates_numeric_type_through_option_tuple_destructure() {
+        let source = r#"
+pub struct Config {
+    pub pair: Option<(u16, u32)>,
+}
+
+pub fn use_config(config: &Config) -> Vec<u8> {
+    let mut data = vec![0; 6];
+    if let Some((a, b)) = config.pair {
+        data[0..2].copy_from_slice(&a.to_le_bytes());
+        data[2..6].copy_from_slice(&b.to_le_bytes());
+    }
+    return data;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("setUint16"));
+        assert!(output.contains("setUint32"));
+    }
+
+    #[test]
     fn emits_step_by_as_index_filter() {
         let source = r#"
 pub fn every_other(items: &[i32]) -> usize {
