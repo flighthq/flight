@@ -12484,19 +12484,35 @@ pub fn lowercase(value: &[u8]) -> Vec<u8> {
     }
 
     #[test]
-    fn rejects_non_string_repeat_receivers() {
+    fn lowers_slice_repeat_to_flat_array() {
         let source = r#"
 pub fn repeat(values: &[u8], count: usize) -> Vec<u8> {
     return values.repeat(count);
 }
 "#;
 
-        let error = compile_typescript(source, None).unwrap_err();
+        let output = compile_typescript(source, None).unwrap();
 
-        assert_eq!(
-            error.to_string(),
-            "portable `.repeat()` requires a receiver known to be `String` or `str`"
-        );
+        assert!(output.contains(
+            "Array.from({ length: count }, () => [...values]).flat()"
+        ));
+    }
+
+    #[test]
+    fn lowers_fixed_array_const_repeat_to_flat_array() {
+        let source = r#"
+const PIXEL: [u8; 4] = [200, 100, 50, 128];
+
+pub fn repeat_pixels(count: usize) -> Vec<u8> {
+    return PIXEL.repeat(count);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "Array.from({ length: count }, () => [...PIXEL]).flat()"
+        ));
     }
 
     #[test]

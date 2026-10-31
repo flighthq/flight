@@ -14737,8 +14737,18 @@ fn emit_method_call(
         {
             Ok(format!("{receiver}.repeat({})", arguments[0]))
         }
+        "repeat"
+            if arguments.len() == 1
+                && (expression_is_sequence(&call.receiver, entities)
+                    || expression_typed_array(&call.receiver, entities).is_some()) =>
+        {
+            Ok(format!(
+                "Array.from({{ length: {} }}, () => [...{receiver}]).flat()",
+                arguments[0]
+            ))
+        }
         "repeat" if arguments.len() == 1 => Err(compile_error(
-            "portable `.repeat()` requires a receiver known to be `String` or `str`",
+            "portable `.repeat()` requires a receiver known to be `String`, `str`, `Vec`, slice, or a fixed-size array",
         )),
         "rem_euclid" if arguments.len() == 1 => {
             Ok(format!(
