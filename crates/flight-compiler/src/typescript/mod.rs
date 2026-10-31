@@ -15327,6 +15327,26 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             true
         }
         Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "lines" | "split_ascii_whitespace" | "split_whitespace"
+                )
+                && expression_is_known_string(&call.receiver, entities) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
+            if call.args.len() == 1
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "split" | "split_terminator" | "splitn" | "rsplitn"
+                )
+                && expression_is_known_string(&call.receiver, entities) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
             if (call.args.is_empty()
                 && matches!(
                     call.method.to_string().as_str(),

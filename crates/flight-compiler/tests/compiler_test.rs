@@ -6164,6 +6164,19 @@ pub fn count_both(a: &[i32], b: &[i32]) -> usize {
     }
 
     #[test]
+    fn tracks_sequence_provenance_through_string_split() {
+        let source = r#"
+pub fn split_count(input: &str) -> usize {
+    return input.split('/').count();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(r#"input.split("/").length"#));
+    }
+
+    #[test]
     fn tracks_string_provenance_through_trim_matches() {
         let source = r##"
 pub fn check(input: &str) -> bool {
