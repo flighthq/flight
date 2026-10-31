@@ -1861,6 +1861,16 @@ export function sameSource(a: Readonly<Source>, b: Readonly<Source>): boolean {
     }
 
     #[test]
+    fn lowers_wildcard_function_parameter() {
+        let source = "pub fn callback(_: &f32) -> f32 {\n    return 1.0;\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("export function callback(_unused: number): number {"),
+            "wildcard parameter should emit as _unused: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment
@@ -4827,6 +4837,21 @@ pub fn to_bytes(x: f32) -> [u8; 4] {
         assert!(
             output.contains("setFloat32(0, compute(x), true)"),
             "function call returning f32 should propagate numeric type: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_to_bytes_through_checked_arithmetic_unwrap() {
+        let source = r#"
+pub fn safe_add(a: u32, b: u32) -> Vec<u8> {
+    let sum = a.checked_add(b).unwrap();
+    return sum.to_le_bytes().to_vec();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, sum, true)"),
+            "checked_add().unwrap() should propagate u32 type: {output}"
         );
     }
 

@@ -2101,6 +2101,39 @@ fn inferred_fixed_buffer_type(entities: &HashSet<String>, local: &str) -> Option
         .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string));
 }
 
+fn unwrap_option_payload_is_string(receiver: &Expr, entities: &HashSet<String>) -> bool {
+    match receiver {
+        Expr::Call(call) => {
+            if let Expr::Path(path) = call.func.as_ref() {
+                if path.qself.is_none() {
+                    return call_fact(entities, OPTION_RETURN_MARKER, &path.path)
+                        .is_some_and(|payload| payload == "String" || payload == "str");
+                }
+            }
+            false
+        }
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            matches!(
+                lexical_fact(entities, &path.path.segments[0].ident.to_string()),
+                Some(BindingFact::Option(inner)) if matches!(inner.as_ref(), BindingFact::Structure(s) if s == "String" || s == "str")
+            )
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "as_ref" | "as_mut" | "clone" | "cloned" | "copied"
+                ) =>
+        {
+            unwrap_option_payload_is_string(&call.receiver, entities)
+        }
+        Expr::Reference(reference) => unwrap_option_payload_is_string(&reference.expr, entities),
+        Expr::Paren(paren) => unwrap_option_payload_is_string(&paren.expr, entities),
+        Expr::Group(group) => unwrap_option_payload_is_string(&group.expr, entities),
+        _ => false,
+    }
+}
+
 fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
         Expr::Block(block) => block.block.stmts.last().is_some_and(|stmt| match stmt {
@@ -2162,7 +2195,13 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
                         | "trim_end"
                         | "trim_start"
                 )
-                || (call.method == "clone" && expression_is_known_string(&call.receiver, entities))
+                || (call.method == "clone"
+                    && expression_is_known_string(&call.receiver, entities))
+                || (matches!(
+                    call.method.to_string().as_str(),
+                    "unwrap" | "expect" | "unwrap_or" | "unwrap_or_else" | "unwrap_or_default"
+                ) && (expression_is_known_string(&call.receiver, entities)
+                    || unwrap_option_payload_is_string(&call.receiver, entities)))
         }
         Expr::Field(field) => {
             let syn::Member::Named(field_name) = &field.member else {
@@ -2399,7 +2438,12 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             || call.method == "checked_rem"
             || call.method == "unsigned_abs"
             || call.method == "clamp"
-            || call.method == "div_euclid" =>
+            || call.method == "div_euclid"
+            || call.method == "unwrap"
+            || call.method == "expect"
+            || call.method == "unwrap_or"
+            || call.method == "unwrap_or_default"
+            || call.method == "unwrap_or_else" =>
         {
             return expression_numeric_type(&call.receiver, entities);
         }
@@ -5114,6 +5158,30 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         ) =>
                 {
                     BindingFact::Structure("usize".to_string())
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "unwrap" | "expect"
+                        ) =>
+                {
+                    match self.initializer_fact(&call.receiver) {
+                        BindingFact::Option(payload) => *payload,
+                        other => other,
+                    }
+                }
+                Expr::MethodCall(call)
+                    if call.args.len() == 1
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "unwrap_or" | "unwrap_or_else"
+                        ) =>
+                {
+                    match self.initializer_fact(&call.receiver) {
+                        BindingFact::Option(payload) => *payload,
+                        other => other,
+                    }
                 }
                 Expr::Index(index) => {
                     match self.initializer_fact(&index.expr) {
@@ -14774,7 +14842,20 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             }
         }),
         Expr::MethodCall(call)
-            if call.args.is_empty() && (call.method == "clone" || call.method == "to_vec") =>
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "clone" | "to_vec" | "unwrap" | "expect" | "unwrap_or_default"
+                ) =>
+        {
+            expression_is_sequence(&call.receiver, entities)
+        }
+        Expr::MethodCall(call)
+            if call.args.len() == 1
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "unwrap_or" | "unwrap_or_else"
+                ) =>
         {
             expression_is_sequence(&call.receiver, entities)
         }
@@ -15027,12 +15108,15 @@ fn emit_parameter_with_aliases(
             "free-function contract cannot contain a self receiver",
         ));
     };
-    let Pat::Ident(pattern) = argument.pat.as_ref() else {
-        return Err(compile_error(
-            "unsupported destructuring in function parameter",
-        ));
+    let name = match argument.pat.as_ref() {
+        Pat::Ident(pattern) => snake_to_lower_camel(&pattern.ident.to_string()),
+        Pat::Wild(_) => "_unused".to_string(),
+        _ => {
+            return Err(compile_error(
+                "unsupported destructuring in function parameter",
+            ));
+        }
     };
-    let name = snake_to_lower_camel(&pattern.ident.to_string());
     if entity_construction {
         return Ok(format!(
             "{name}: EntityConstruction<{}>",
