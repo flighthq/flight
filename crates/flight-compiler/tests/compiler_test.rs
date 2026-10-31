@@ -3231,6 +3231,26 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         );
     }
 
+    #[test]
+    fn lowers_vec_extend_on_cloned_vec_receiver() {
+        let source = "pub fn f(items: Vec<i32>, extra: Vec<i32>) -> Vec<i32> { let mut values = items.clone(); values.extend(extra); return values; }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("values.push("),
+            ".clone() receiver should preserve sequence fact: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_vec_extend_on_to_vec_receiver() {
+        let source = "pub fn f(items: &[i32], extra: Vec<i32>) -> Vec<i32> { let mut values = items.to_vec(); values.extend(extra); return values; }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("values.push("),
+            ".to_vec() receiver should be recognized as sequence: {output}"
+        );
+    }
+
     // Value bindings resolve lexically: a binding takes effect after its declaration, shadows within its
     // scope only, and the outer binding (or a same-named function's facts) applies again once the scope
     // ends. A local value of a function's name always shadows that function, so its return facts never

@@ -5214,6 +5214,75 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     if call.args.is_empty()
                         && matches!(
                             call.method.to_string().as_str(),
+                            "clone" | "cloned" | "copied"
+                        ) =>
+                {
+                    self.initializer_fact(&call.receiver)
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "to_string" | "to_owned"
+                        ) =>
+                {
+                    BindingFact::Structure("String".to_string())
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty() && call.method == "to_vec" =>
+                {
+                    match self.initializer_fact(&call.receiver) {
+                        BindingFact::Sequence(element) => BindingFact::Sequence(element),
+                        _ => BindingFact::Sequence(Box::new(BindingFact::Unknown)),
+                    }
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "iter" | "into_iter"
+                        ) =>
+                {
+                    self.initializer_fact(&call.receiver)
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "collect"
+                        ) =>
+                {
+                    let receiver_fact = self.initializer_fact(&call.receiver);
+                    if matches!(receiver_fact, BindingFact::Sequence(_)) {
+                        receiver_fact
+                    } else {
+                        BindingFact::Unknown
+                    }
+                }
+                Expr::MethodCall(call)
+                    if call.args.len() == 1
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "filter" | "map" | "flat_map" | "filter_map" | "skip" | "take"
+                                | "skip_while" | "take_while"
+                        ) =>
+                {
+                    self.initializer_fact(&call.receiver)
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "flatten" | "rev" | "enumerate" | "peekable"
+                                | "sorted" | "dedup" | "keys" | "values"
+                        ) =>
+                {
+                    self.initializer_fact(&call.receiver)
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
                             "count" | "len"
                         ) =>
                 {
