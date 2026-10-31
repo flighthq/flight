@@ -6125,6 +6125,45 @@ pub fn check(input: Option<HashMap<String, i32>>) -> bool {
     }
 
     #[test]
+    fn tracks_sequence_provenance_through_flatten() {
+        let source = r#"
+pub fn count_present(items: Vec<Option<i32>>) -> usize {
+    return items.iter().flatten().count();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".flat().length"));
+    }
+
+    #[test]
+    fn tracks_sequence_provenance_through_rev() {
+        let source = r#"
+pub fn count_reversed(items: Vec<i32>) -> usize {
+    return items.iter().rev().count();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".length"));
+    }
+
+    #[test]
+    fn tracks_sequence_provenance_through_chain() {
+        let source = r#"
+pub fn count_both(a: &[i32], b: &[i32]) -> usize {
+    return a.iter().chain(b.iter()).count();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".length"));
+    }
+
+    #[test]
     fn emits_readonly_entity_initializers_with_a_writable_construction_view() {
         let source = r#"
 //! flight-compiler: readonly-fields Requirement RequirementSet

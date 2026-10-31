@@ -15328,9 +15328,17 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
                 && matches!(
                     call.method.to_string().as_str(),
                     "collect" | "iter" | "into_iter"
+                        | "flatten" | "rev" | "enumerate" | "peekable"
+                        | "sorted" | "dedup" | "cloned" | "copied"
+                        | "keys" | "values"
                 ))
                 || (call.args.len() == 1
-                    && matches!(call.method.to_string().as_str(), "filter" | "map" | "skip")) =>
+                    && matches!(
+                        call.method.to_string().as_str(),
+                        "filter" | "map" | "flat_map" | "filter_map"
+                            | "skip" | "take" | "skip_while" | "take_while"
+                            | "chain"
+                    )) =>
         {
             expression_is_sequence(&call.receiver, entities)
         }
