@@ -2289,6 +2289,26 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
         {
             return expression_numeric_type(&call.receiver, entities);
         }
+        Expr::Index(index) => {
+            if let Expr::Path(path) = index.expr.as_ref() {
+                if path.qself.is_none() && path.path.segments.len() == 1 {
+                    let name = path.path.segments[0].ident.to_string();
+                    if let Some(BindingFact::Sequence(element)) =
+                        lexical_fact(entities, &name)
+                    {
+                        if let BindingFact::Structure(identity) = element.as_ref() {
+                            return match identity.as_str() {
+                                "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128"
+                                | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
+                                | "usize" => Some(identity.clone()),
+                                _ => None,
+                            };
+                        }
+                    }
+                }
+            }
+            return None;
+        }
         Expr::Field(field) => {
             if let syn::Member::Unnamed(index) = &field.member {
                 if let Expr::Path(path) = field.base.as_ref() {
@@ -4966,6 +4986,27 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         ) =>
                 {
                     BindingFact::Structure("usize".to_string())
+                }
+                Expr::Index(index) => {
+                    match self.initializer_fact(&index.expr) {
+                        BindingFact::Sequence(element) => *element,
+                        BindingFact::Tuple(elements) => {
+                            if let Expr::Lit(syn::ExprLit {
+                                lit: Lit::Int(int_lit),
+                                ..
+                            }) = index.index.as_ref()
+                            {
+                                int_lit
+                                    .base10_parse::<usize>()
+                                    .ok()
+                                    .and_then(|i| elements.into_iter().nth(i))
+                                    .unwrap_or(BindingFact::Unknown)
+                            } else {
+                                BindingFact::Unknown
+                            }
+                        }
+                        _ => BindingFact::Unknown,
+                    }
                 }
                 Expr::Unary(unary) => self.initializer_fact(&unary.expr),
                 expression => single_path_identifier(expression)

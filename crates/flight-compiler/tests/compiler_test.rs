@@ -4712,6 +4712,20 @@ pub fn g(pair: &(i16, i16), bytes: &mut [u8]) {
     }
 
     #[test]
+    fn lowers_to_bytes_on_sequence_index_with_element_type() {
+        let source = r#"
+pub fn f(values: &[u32], i: usize) -> [u8; 4] {
+    return values[i].to_le_bytes();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, values[i], true)"),
+            "sequence index u32 to_le_bytes: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {
