@@ -5026,7 +5026,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     .unwrap_or(BindingFact::Unknown),
                 Expr::Macro(invocation) if invocation.mac.path.is_ident("vec") => {
                     if invocation.mac.tokens.is_empty() {
-                        return BindingFact::Unknown;
+                        return BindingFact::Sequence(Box::new(BindingFact::Unknown));
                     }
                     let element = if let Ok((value, _)) = parse_vec_repeat(&invocation.mac) {
                         self.initializer_fact(&value)

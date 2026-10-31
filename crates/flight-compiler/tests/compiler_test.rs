@@ -3143,10 +3143,6 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
                 receiver_error,
             ),
             (
-                "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = vec![]; values.extend(extra); return values; }\n",
-                receiver_error,
-            ),
-            (
                 "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) -> usize { let n = { a.extend(b) }; return a.len(); }\n",
                 "portable `.extend()` is supported only as a statement",
             ),
@@ -3186,6 +3182,16 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         assert!(
             output.contains("values.push("),
             "Vec::with_capacity() receiver should be recognized as sequence: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_vec_extend_on_empty_vec_macro_receiver() {
+        let source = "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = vec![]; values.extend(extra); return values; }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("values.push("),
+            "vec![] receiver should be recognized as sequence: {output}"
         );
     }
 
