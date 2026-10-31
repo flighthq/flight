@@ -6231,6 +6231,20 @@ pub fn ascending_pairs(items: &[i32]) -> usize {
     }
 
     #[test]
+    fn emits_step_by_as_index_filter() {
+        let source = r#"
+pub fn every_other(items: &[i32]) -> usize {
+    return items.iter().step_by(2).count();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("filter((_, index) => index % 2 === 0)"));
+        assert!(output.contains(".length"));
+    }
+
+    #[test]
     fn tracks_sequence_provenance_through_chunks() {
         let source = r#"
 pub fn chunk_count(items: &[i32]) -> usize {

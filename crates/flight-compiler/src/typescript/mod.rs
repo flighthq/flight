@@ -14617,6 +14617,10 @@ fn emit_method_call(
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
         "skip" if arguments.len() == 1 => Ok(format!("{receiver}.slice({})", arguments[0])),
+        "step_by" if arguments.len() == 1 => Ok(format!(
+            "{receiver}.filter((_, index) => index % {} === 0)",
+            arguments[0]
+        )),
         "sort_by_key" | "sort_unstable_by_key" if arguments.len() == 1 => Ok(format!(
             "(<T>(items: T[], key: (item: T) => number): void => {{ items.sort((a, b) => key(a) - key(b)); }})({receiver}, {})",
             arguments[0]
@@ -15365,7 +15369,7 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
                         call.method.to_string().as_str(),
                         "chunks" | "chunks_exact" | "chunks_exact_mut" | "chunks_mut"
                             | "filter" | "map" | "flat_map" | "filter_map"
-                            | "skip" | "take" | "skip_while" | "take_while"
+                            | "skip" | "step_by" | "take" | "skip_while" | "take_while"
                             | "chain" | "windows"
                     )) =>
         {
@@ -15402,8 +15406,8 @@ fn expression_is_iterator_chain(expression: &Expr) -> bool {
                 && matches!(
                     call.method.to_string().as_str(),
                     "chunks" | "chunks_exact" | "chunks_exact_mut" | "chunks_mut"
-                        | "filter" | "map" | "skip" | "take" | "flat_map" | "filter_map"
-                        | "windows"
+                        | "filter" | "map" | "skip" | "step_by" | "take"
+                        | "flat_map" | "filter_map" | "windows"
                 ) =>
         {
             true
