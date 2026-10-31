@@ -4661,6 +4661,30 @@ pub fn g(values: &[i16]) -> Vec<[u8; 2]> {
     }
 
     #[test]
+    fn lowers_to_bytes_on_binding_from_binary_and_if_expressions() {
+        let source = r#"
+pub fn f(a: u32, b: u32, bytes: &mut [u8]) {
+    let sum = a + b;
+    bytes[0..4].copy_from_slice(&sum.to_le_bytes());
+}
+
+pub fn g(big: bool, a: u32, b: u32, bytes: &mut [u8]) {
+    let value: u32 = if big { a } else { b };
+    bytes[0..4].copy_from_slice(&value.to_be_bytes());
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, sum, true)"),
+            "binary binding u32 to_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("setUint32(0, value, false)"),
+            "if-expression binding u32 to_be_bytes: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {

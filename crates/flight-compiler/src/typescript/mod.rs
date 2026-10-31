@@ -4854,12 +4854,35 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         .map(|element| self.initializer_fact(element))
                         .collect(),
                 ),
+                Expr::Binary(binary) => {
+                    let left = self.initializer_fact(&binary.left);
+                    let right = self.initializer_fact(&binary.right);
+                    self.merged_facts([left, right].into_iter())
+                }
                 Expr::Cast(cast) => primitive_type_identity(&cast.ty)
                     .map(BindingFact::Structure)
                     .unwrap_or(BindingFact::Unknown),
+                Expr::If(if_expr) => {
+                    let then_fact = if_expr
+                        .then_branch
+                        .stmts
+                        .last()
+                        .and_then(|stmt| match stmt {
+                            syn::Stmt::Expr(expr, None) => Some(self.initializer_fact(expr)),
+                            _ => None,
+                        })
+                        .unwrap_or(BindingFact::Unknown);
+                    if let Some((_, else_expr)) = &if_expr.else_branch {
+                        let else_fact = self.initializer_fact(else_expr);
+                        self.merged_facts([then_fact, else_fact].into_iter())
+                    } else {
+                        then_fact
+                    }
+                }
                 Expr::Lit(literal) => literal_numeric_suffix(literal)
                     .map(BindingFact::Structure)
                     .unwrap_or(BindingFact::Unknown),
+                Expr::Unary(unary) => self.initializer_fact(&unary.expr),
                 expression => single_path_identifier(expression)
                     .and_then(|name| self.fact_of(&name))
                     .unwrap_or(BindingFact::Unknown),
