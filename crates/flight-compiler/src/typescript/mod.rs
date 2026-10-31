@@ -3864,6 +3864,15 @@ fn expression_hash_collection(
         {
             expression_hash_collection(&call.receiver, entities)
         }
+        Expr::MethodCall(call)
+            if call.args.len() == 1
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "unwrap_or" | "unwrap_or_else"
+                ) =>
+        {
+            expression_hash_collection(&call.receiver, entities)
+        }
         Expr::Paren(paren) => expression_hash_collection(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             lexical_fact(entities, &path.path.segments[0].ident.to_string())
