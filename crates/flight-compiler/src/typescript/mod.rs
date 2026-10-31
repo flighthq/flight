@@ -2477,17 +2477,22 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             if let Expr::Path(path) = index.expr.as_ref() {
                 if path.qself.is_none() && path.path.segments.len() == 1 {
                     let name = path.path.segments[0].ident.to_string();
-                    if let Some(BindingFact::Sequence(element)) =
-                        lexical_fact(entities, &name)
-                    {
-                        if let BindingFact::Structure(identity) = element.as_ref() {
-                            return match identity.as_str() {
-                                "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128"
-                                | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
-                                | "usize" => Some(identity.clone()),
-                                _ => None,
-                            };
+                    match lexical_fact(entities, &name) {
+                        Some(BindingFact::Sequence(element)) => {
+                            if let BindingFact::Structure(identity) = element.as_ref() {
+                                return match identity.as_str() {
+                                    "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128"
+                                    | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
+                                    | "usize" => Some(identity.clone()),
+                                    _ => None,
+                                };
+                            }
                         }
+                        Some(BindingFact::TypedArray(ref array_name)) => {
+                            return typed_array_element_primitive(array_name)
+                                .map(|p| p.to_string());
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -5152,7 +5157,13 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         BindingFact::Sequence(element) if call.method != "map" => {
                             BindingFact::Sequence(element)
                         }
-                        BindingFact::Sequence(_) | BindingFact::TypedArray(_) => {
+                        BindingFact::TypedArray(ref name) => {
+                            let element = typed_array_element_primitive(name)
+                                .map(|p| BindingFact::Structure(p.to_string()))
+                                .unwrap_or(BindingFact::Unknown);
+                            BindingFact::Sequence(Box::new(element))
+                        }
+                        BindingFact::Sequence(_) => {
                             BindingFact::Sequence(Box::new(BindingFact::Unknown))
                         }
                         _ => BindingFact::Unknown,
@@ -5333,6 +5344,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 {
                     match self.initializer_fact(&call.receiver) {
                         BindingFact::Sequence(element) => BindingFact::Sequence(element),
+                        BindingFact::TypedArray(ref name) => {
+                            let element = typed_array_element_primitive(name)
+                                .map(|p| BindingFact::Structure(p.to_string()))
+                                .unwrap_or(BindingFact::Unknown);
+                            BindingFact::Sequence(Box::new(element))
+                        }
                         _ => BindingFact::Sequence(Box::new(BindingFact::Unknown)),
                     }
                 }
@@ -5353,7 +5370,10 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         ) =>
                 {
                     let receiver_fact = self.initializer_fact(&call.receiver);
-                    if matches!(receiver_fact, BindingFact::Sequence(_)) {
+                    if matches!(
+                        receiver_fact,
+                        BindingFact::Sequence(_) | BindingFact::TypedArray(_)
+                    ) {
                         receiver_fact
                     } else {
                         BindingFact::Unknown
@@ -5363,8 +5383,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     if call.args.len() == 1
                         && matches!(
                             call.method.to_string().as_str(),
-                            "filter" | "map" | "flat_map" | "filter_map" | "skip" | "take"
-                                | "skip_while" | "take_while"
+                            "chain" | "filter" | "map" | "flat_map" | "filter_map" | "skip"
+                                | "take" | "skip_while" | "take_while"
                         ) =>
                 {
                     self.initializer_fact(&call.receiver)
@@ -5440,6 +5460,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 Expr::Index(index) => {
                     match self.initializer_fact(&index.expr) {
                         BindingFact::Sequence(element) => *element,
+                        BindingFact::TypedArray(ref name) => typed_array_element_primitive(name)
+                            .map(|p| BindingFact::Structure(p.to_string()))
+                            .unwrap_or(BindingFact::Unknown),
                         BindingFact::Tuple(elements) => {
                             if let Expr::Lit(syn::ExprLit {
                                 lit: Lit::Int(int_lit),

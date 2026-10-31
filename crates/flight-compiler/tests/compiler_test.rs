@@ -6397,6 +6397,46 @@ pub fn sum_f32(values: &[f32; 4]) -> f32 {
     }
 
     #[test]
+    fn propagates_numeric_type_through_typed_array_index() {
+        let source = r#"
+pub fn first_byte(pivot: [f32; 3]) -> Vec<u8> {
+    let value = pivot[0];
+    return value.to_le_bytes().to_vec();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("setFloat32"));
+    }
+
+    #[test]
+    fn propagates_numeric_type_through_typed_array_flat_map_closure() {
+        let source = r#"
+pub fn to_bytes(pivot: [f32; 3]) -> Vec<u8> {
+    return pivot.iter().flat_map(|value| value.to_le_bytes()).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("setFloat32"));
+    }
+
+    #[test]
+    fn propagates_numeric_type_through_chained_typed_array_flat_map() {
+        let source = r#"
+pub fn to_bytes(times: [f32; 2], values: [f32; 6]) -> Vec<u8> {
+    return times.iter().chain(values.iter()).flat_map(|v| v.to_le_bytes()).collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("setFloat32"));
+    }
+
+    #[test]
     fn resolves_unwrap_or_default_through_clone_on_option_variable() {
         let source = r#"
 pub fn get_name(name: Option<String>) -> String {
