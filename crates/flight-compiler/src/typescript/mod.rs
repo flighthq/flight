@@ -18238,6 +18238,15 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
 
 fn option_binding_fact_default(expression: &Expr, entities: &HashSet<String>) -> Option<&'static str> {
     let fact = match expression {
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "as_mut" | "as_ref" | "cloned" | "copied"
+                ) =>
+        {
+            return option_binding_fact_default(&call.receiver, entities);
+        }
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             lexical_fact(entities, &path.path.segments[0].ident.to_string())
         }
