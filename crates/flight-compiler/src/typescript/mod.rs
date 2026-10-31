@@ -4823,12 +4823,38 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     if call.args.is_empty()
                         && matches!(
                             call.method.to_string().as_str(),
-                            "as_mut" | "as_ref" | "clone" | "cloned" | "copied"
+                            "abs" | "as_mut"
+                                | "as_ref"
+                                | "clone"
+                                | "cloned"
+                                | "copied"
+                                | "unsigned_abs"
                         ) =>
                 {
                     if let Some(fact) = self.option_fact(expression) {
                         return fact;
                     }
+                    self.initializer_fact(&call.receiver)
+                }
+                Expr::MethodCall(call)
+                    if call.args.len() == 1
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "checked_add"
+                                | "checked_div"
+                                | "checked_mul"
+                                | "checked_sub"
+                                | "max"
+                                | "min"
+                                | "pow"
+                                | "saturating_add"
+                                | "saturating_mul"
+                                | "saturating_sub"
+                                | "wrapping_add"
+                                | "wrapping_mul"
+                                | "wrapping_sub"
+                        ) =>
+                {
                     self.initializer_fact(&call.receiver)
                 }
                 Expr::Struct(structure) if structure.qself.is_none() => {
