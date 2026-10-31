@@ -4920,6 +4920,43 @@ pub fn log_base(value: f64, base: f64) -> f64 {
     }
 
     #[test]
+    fn lowers_loop_as_expression_via_iife() {
+        let source = r#"
+pub fn rejection_sample(random: impl Fn() -> f64) -> (f64, f64, f64) {
+    let (u, v, s2) = loop {
+        let u = random() * 2.0 - 1.0;
+        let v = random() * 2.0 - 1.0;
+        let s2 = u * u + v * v;
+        if s2 < 1.0 && s2 != 0.0 {
+            break (u, v, s2);
+        }
+    };
+    let f = 2.0 * (1.0 - s2).sqrt();
+    return (u * f, v * f, 1.0 - 2.0 * s2);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("(() => {"),
+            "loop-as-expression should be wrapped in IIFE: {output}"
+        );
+        assert!(
+            output.contains("for (;;)"),
+            "loop should lower to for(;;): {output}"
+        );
+        assert!(
+            output.contains("return [u, v, s2]"),
+            "break with value should become return: {output}"
+        );
+        assert!(
+            !output.contains("break"),
+            "break should not appear in IIFE output: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_rsplit_once_with_string_provenance() {
         let source = r#"
 pub fn last_split(text: &str, delimiter: &str) -> Option<(String, String)> {

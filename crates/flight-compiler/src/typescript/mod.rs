@@ -8484,6 +8484,7 @@ fn emit_expression_value(
             ))
         }
         Expr::If(expression) => emit_if_expression(expression, entities),
+        Expr::Loop(loop_expr) => emit_loop_value_expression(loop_expr, entities),
         Expr::Lit(literal) => emit_literal(&literal.lit),
         Expr::Macro(expression) => emit_macro_expression(&expression.mac, entities),
         Expr::Match(expression) => emit_match_expression(expression, entities),
@@ -9642,6 +9643,18 @@ fn emit_if_let_data_union_value_expression(
         }
     };
     writeln!(out, "    return {else_value};").expect("writing to a String cannot fail");
+    out.push_str("  }\n})()");
+    return Ok(out);
+}
+
+fn emit_loop_value_expression(
+    loop_expr: &syn::ExprLoop,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let mut body = String::new();
+    emit_block(&mut body, &loop_expr.body.stmts, entities, 2)?;
+    let mut out = "(() => {\n  for (;;) {\n".to_string();
+    out.push_str(&body);
     out.push_str("  }\n})()");
     return Ok(out);
 }
@@ -16006,9 +16019,14 @@ fn emit_statement(
         Stmt::Expr(Expr::Unsafe(unsafe_block), _) => {
             emit_block(out, &unsafe_block.block.stmts, entities, indent)?;
         }
-        Stmt::Expr(Expr::Break(_), _) => {
+        Stmt::Expr(Expr::Break(break_expr), _) => {
             write_indent(out, indent);
-            out.push_str("break;\n");
+            if let Some(value) = &break_expr.expr {
+                writeln!(out, "return {};", emit_expression(value, entities)?)
+                    .expect("writing to a String cannot fail");
+            } else {
+                out.push_str("break;\n");
+            }
         }
         Stmt::Expr(Expr::Continue(_), _) => {
             write_indent(out, indent);
