@@ -5108,7 +5108,14 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 Expr::Binary(binary) => {
                     let left = self.initializer_fact(&binary.left);
                     let right = self.initializer_fact(&binary.right);
-                    self.merged_facts([left, right].into_iter())
+                    if left == right {
+                        return left;
+                    }
+                    match (&left, &right) {
+                        (BindingFact::Structure(_), BindingFact::Unknown) => left,
+                        (BindingFact::Unknown, BindingFact::Structure(_)) => right,
+                        _ => self.merged_facts([left, right].into_iter()),
+                    }
                 }
                 Expr::Block(block) => block
                     .block

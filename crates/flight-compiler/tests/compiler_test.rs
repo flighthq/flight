@@ -4901,6 +4901,21 @@ pub fn bits(value: f32) -> u32 {
     }
 
     #[test]
+    fn lowers_to_bytes_through_binary_expression_with_unsuffixed_operand() {
+        let source = r#"
+pub fn adler(first: u32, second: u32) -> Vec<u8> {
+    let combined = second << 16 | first;
+    return combined.to_be_bytes().to_vec();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, combined, false)"),
+            "binary expression with one typed operand should propagate u32: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bytes_through_numeric_associated_function() {
         let source = r#"
 pub fn i16_round_trip(bytes: &[u8]) -> Vec<u8> {
