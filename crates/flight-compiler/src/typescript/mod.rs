@@ -10719,11 +10719,17 @@ pub(crate) fn emit_format_template(
     let mut value_index = 0;
     let mut rendered = String::new();
     while let Some(start) = template.find('{') {
+        if template[start + 1..].starts_with('{') {
+            rendered.push_str(&template[..start].replace("}}", "}"));
+            rendered.push('{');
+            template = template[start + 2..].to_string();
+            continue;
+        }
         let Some(relative_end) = template[start + 1..].find('}') else {
             break;
         };
         let end = start + 1 + relative_end;
-        rendered.push_str(&template[..start]);
+        rendered.push_str(&template[..start].replace("}}", "}"));
         let placeholder = &template[start + 1..end];
         let (name, specifier) = placeholder.split_once(':').unwrap_or((placeholder, ""));
         let value = if name.is_empty() {
@@ -10788,7 +10794,7 @@ pub(crate) fn emit_format_template(
         rendered.push('}');
         template = template[end + 1..].to_string();
     }
-    rendered.push_str(&template);
+    rendered.push_str(&template.replace("}}", "}"));
     if value_index != values.len() {
         return Err(compile_error(format!(
             "{error_prefix} has unused formatting values"
@@ -16017,6 +16023,74 @@ fn emit_statement(
         {
             write_indent(out, indent);
             writeln!(out, "throw new Error(\"not implemented\");")
+                .expect("writing to a String cannot fail");
+        }
+        Stmt::Macro(statement)
+            if statement
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|name| {
+                    name.ident == "println"
+                        || name.ident == "eprintln"
+                        || name.ident == "print"
+                        || name.ident == "eprint"
+                }) =>
+        {
+            let name = &statement.mac.path.segments.last().unwrap().ident;
+            let console_method = if name == "eprintln" || name == "eprint" {
+                "error"
+            } else {
+                "log"
+            };
+            let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
+                .parse2(statement.mac.tokens.clone())
+                .map_err(|error| {
+                    compile_error(format!("failed to parse `{name}!` arguments: {error}"))
+                })?;
+            if arguments.is_empty() {
+                write_indent(out, indent);
+                writeln!(out, "console.{console_method}();")
+                    .expect("writing to a String cannot fail");
+            } else if let Some(Expr::Lit(template)) = arguments.first()
+                && let Lit::Str(template) = &template.lit
+            {
+                let values = arguments.iter().skip(1).collect::<Vec<_>>();
+                let formatted =
+                    emit_format_template(&template.value(), &values, entities, &format!("portable `{name}!`"))?;
+                write_indent(out, indent);
+                writeln!(out, "console.{console_method}({formatted});")
+                    .expect("writing to a String cannot fail");
+            } else {
+                let values = arguments
+                    .iter()
+                    .map(|value| emit_expression(value, entities))
+                    .collect::<Result<Vec<_>, _>>()?;
+                write_indent(out, indent);
+                writeln!(out, "console.{console_method}({});", values.join(", "))
+                    .expect("writing to a String cannot fail");
+            }
+        }
+        Stmt::Macro(statement)
+            if statement
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|name| name.ident == "dbg") =>
+        {
+            let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
+                .parse2(statement.mac.tokens.clone())
+                .map_err(|error| {
+                    compile_error(format!("failed to parse `dbg!` arguments: {error}"))
+                })?;
+            let values = arguments
+                .iter()
+                .map(|value| emit_expression(value, entities))
+                .collect::<Result<Vec<_>, _>>()?;
+            write_indent(out, indent);
+            writeln!(out, "console.log({});", values.join(", "))
                 .expect("writing to a String cannot fail");
         }
         Stmt::Macro(_) => {

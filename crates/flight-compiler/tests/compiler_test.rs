@@ -11825,6 +11825,33 @@ pub fn scientific_precision(value: f64) -> String {
     }
 
     #[test]
+    fn lowers_format_with_escaped_braces() {
+        assert_eq!(
+            compile_typescript(
+                r#"pub fn f(name: &str, value: i32) -> String {
+    return format!("{{\"{name}\": {value}}}");
+}
+"#,
+                None
+            )
+            .unwrap(),
+            "export function f(name: string, value: number): string {\n  return `{\"${name}\": ${value}}`;\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_println_eprintln_to_console_log() {
+        assert_eq!(
+            compile_typescript(
+                "pub fn f(x: i32) {\n    println!(\"value: {}\", x);\n    eprintln!(\"error: {x}\");\n    println!();\n}\n",
+                None
+            )
+            .unwrap(),
+            "export function f(x: number): void {\n  console.log(`value: ${x}`);\n  console.error(`error: ${x}`);\n  console.log();\n}\n"
+        );
+    }
+
+    #[test]
     fn lowers_assert_eq_to_conditional_throw() {
         let source = r#"
 pub fn check_equal(a: i32, b: i32) {
