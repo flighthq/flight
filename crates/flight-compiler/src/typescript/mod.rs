@@ -5069,10 +5069,23 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     )
                 }
                 Expr::Group(group) => self.initializer_fact(&group.expr),
-                Expr::Field(_) => self
+                Expr::Field(field) => self
                     .expression_structure_identity(expression)
                     .map(BindingFact::Structure)
                     .or_else(|| self.option_fact(expression))
+                    .or_else(|| {
+                        let syn::Member::Named(field_name) = &field.member else {
+                            return None;
+                        };
+                        let owner = self.expression_structure_identity(&field.base)?;
+                        let numeric = unique_marker_suffix(
+                            self.context,
+                            &format!(
+                                "{NUMERIC_FIELD_TYPE_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                            ),
+                        )?;
+                        Some(BindingFact::Structure(numeric))
+                    })
                     .unwrap_or(BindingFact::Unknown),
                 Expr::Macro(invocation) if invocation.mac.path.is_ident("vec") => {
                     if invocation.mac.tokens.is_empty() {
