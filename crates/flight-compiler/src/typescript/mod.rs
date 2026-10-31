@@ -14861,6 +14861,15 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         }
         Expr::MethodCall(call)
             if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "to_le_bytes" | "to_be_bytes" | "to_ne_bytes"
+                ) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
                 && call.method == "encode_utf16"
                 && expression_is_known_string(&call.receiver, entities) =>
         {

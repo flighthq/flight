@@ -3177,6 +3177,16 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         assert!(output.contains("out.push(source[index])"), "extend should emit for-loop: {output}");
     }
 
+    #[test]
+    fn lowers_vec_extend_with_to_bytes_argument() {
+        let source = "pub fn append_bytes(out: &mut Vec<u8>, value: u32) {\n    out.extend(value.to_le_bytes());\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("out.push(source[index])"),
+            "to_le_bytes() should be recognized as a sequence argument: {output}"
+        );
+    }
+
     // Value bindings resolve lexically: a binding takes effect after its declaration, shadows within its
     // scope only, and the outer binding (or a same-named function's facts) applies again once the scope
     // ends. A local value of a function's name always shadows that function, so its return facts never
