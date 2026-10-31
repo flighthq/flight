@@ -4926,14 +4926,23 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 return self.initializer_fact(receiver);
             }
             return match expression {
-                Expr::Array(array) => BindingFact::Sequence(Box::new(
-                    self.merged_facts(
-                        array
-                            .elems
-                            .iter()
-                            .map(|element| self.initializer_fact(element)),
-                    ),
-                )),
+                Expr::Array(array) => {
+                    let element_facts: Vec<_> = array
+                        .elems
+                        .iter()
+                        .map(|element| self.initializer_fact(element))
+                        .collect();
+                    let merged = self.merged_facts(element_facts.iter().cloned());
+                    let element_fact = if matches!(merged, BindingFact::Unknown) {
+                        element_facts
+                            .into_iter()
+                            .find(|f| matches!(f, BindingFact::Structure(_)))
+                            .unwrap_or(BindingFact::Unknown)
+                    } else {
+                        merged
+                    };
+                    BindingFact::Sequence(Box::new(element_fact))
+                }
                 Expr::Call(call) => {
                     if (expression_is_path(&call.func, "Some")
                         || expression_is_path(&call.func, "Ok"))
