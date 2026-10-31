@@ -4694,7 +4694,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         .path
                         .segments
                         .last()
-                        .is_some_and(|segment| segment.ident == "Some")
+                        .is_some_and(|segment| {
+                            segment.ident == "Some" || segment.ident == "Ok"
+                        })
                         && tuple.elems.len() == 1 =>
                 {
                     let BindingFact::Option(payload) = fact else {
@@ -5523,6 +5525,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             }
             if let Some(inner) = option_inner_type(rust_type) {
                 return BindingFact::Option(Box::new(self.typed_fact(inner)));
+            }
+            if let Some(ok_type) = result_ok_type(rust_type) {
+                return BindingFact::Option(Box::new(self.typed_fact(ok_type)));
             }
             if let Some(array_type) = fixed_typed_array_type(rust_type) {
                 return BindingFact::TypedArray(array_type.to_string());
@@ -19315,6 +19320,28 @@ pub(super) fn option_inner_type(rust_type: &Type) -> Option<&Type> {
     });
     let inner = types.next()?;
     return types.next().is_none().then_some(inner);
+}
+
+fn result_ok_type(rust_type: &Type) -> Option<&Type> {
+    let Type::Path(path) = rust_type else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    if segment.ident != "Result" {
+        return None;
+    }
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    let mut types = arguments.args.iter().filter_map(|argument| match argument {
+        GenericArgument::Type(rust_type) => Some(rust_type),
+        _ => None,
+    });
+    let ok_type = types.next()?;
+    if types.next().is_none() {
+        return None;
+    }
+    return Some(ok_type);
 }
 
 pub(super) fn named_type(rust_type: &Type) -> Option<String> {
