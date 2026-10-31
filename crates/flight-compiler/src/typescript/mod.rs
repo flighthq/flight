@@ -2250,6 +2250,9 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
             })
         }
         Expr::Reference(reference) => expression_is_known_string(&reference.expr, entities),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            expression_is_known_string(&unary.expr, entities)
+        }
         _ => false,
     };
 }
