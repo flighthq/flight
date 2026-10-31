@@ -4961,6 +4961,30 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     if let Some(numeric) = numeric_associated_call_type(&call.func) {
                         return BindingFact::Structure(numeric);
                     }
+                    if path.qself.is_none() && path.path.segments.len() == 2 {
+                        let owner = path.path.segments[0].ident.to_string();
+                        let method = path.path.segments[1].ident.to_string();
+                        if (owner == "Vec" || owner == "BTreeSet")
+                            && matches!(method.as_str(), "new" | "with_capacity")
+                        {
+                            return BindingFact::Sequence(Box::new(BindingFact::Unknown));
+                        }
+                        if owner == "String"
+                            && matches!(method.as_str(), "new" | "with_capacity" | "from")
+                        {
+                            return BindingFact::Structure("String".to_string());
+                        }
+                        if (owner == "HashMap" || owner == "BTreeMap")
+                            && matches!(method.as_str(), "new" | "with_capacity")
+                        {
+                            return BindingFact::HashMap;
+                        }
+                        if owner == "HashSet"
+                            && matches!(method.as_str(), "new" | "with_capacity")
+                        {
+                            return BindingFact::HashSet;
+                        }
+                    }
                     if path.qself.is_some() {
                         return BindingFact::Unknown;
                     }

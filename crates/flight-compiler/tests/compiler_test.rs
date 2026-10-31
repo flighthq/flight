@@ -3143,14 +3143,6 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
                 receiver_error,
             ),
             (
-                "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::new(); values.extend(extra); return values; }\n",
-                receiver_error,
-            ),
-            (
-                "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::with_capacity(extra.len()); values.extend(extra); return values; }\n",
-                receiver_error,
-            ),
-            (
                 "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = vec![]; values.extend(extra); return values; }\n",
                 receiver_error,
             ),
@@ -3175,6 +3167,26 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         let output = compile_typescript(source, None).unwrap();
         assert!(output.contains("names.map((row) => String(row[1]))"), "iterator chain argument should be accepted: {output}");
         assert!(output.contains("out.push(source[index])"), "extend should emit for-loop: {output}");
+    }
+
+    #[test]
+    fn lowers_vec_extend_on_vec_new_receiver() {
+        let source = "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::new(); values.extend(extra); return values; }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("values.push("),
+            "Vec::new() receiver should be recognized as sequence: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_vec_extend_on_vec_with_capacity_receiver() {
+        let source = "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::with_capacity(extra.len()); values.extend(extra); return values; }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("values.push("),
+            "Vec::with_capacity() receiver should be recognized as sequence: {output}"
+        );
     }
 
     #[test]
