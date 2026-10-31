@@ -2289,6 +2289,31 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
         {
             return expression_numeric_type(&call.receiver, entities);
         }
+        Expr::Field(field) => {
+            if let syn::Member::Unnamed(index) = &field.member {
+                if let Expr::Path(path) = field.base.as_ref() {
+                    if path.qself.is_none() && path.path.segments.len() == 1 {
+                        let name = path.path.segments[0].ident.to_string();
+                        if let Some(BindingFact::Tuple(elements)) =
+                            lexical_fact(entities, &name)
+                        {
+                            let i = index.index as usize;
+                            if i < elements.len() {
+                                if let BindingFact::Structure(identity) = &elements[i] {
+                                    return match identity.as_str() {
+                                        "f32" | "f64" | "i8" | "i16" | "i32" | "i64"
+                                        | "i128" | "isize" | "u8" | "u16" | "u32" | "u64"
+                                        | "u128" | "usize" => Some(identity.clone()),
+                                        _ => None,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return None;
+        }
         Expr::Unary(unary) => return expression_numeric_type(&unary.expr, entities),
         Expr::Lit(literal) => return literal_numeric_suffix(literal),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
@@ -5104,6 +5129,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         BindingFact::Unknown
                     },
                 ));
+            }
+            if let Type::Reference(reference) = rust_type {
+                return self.typed_fact(&reference.elem);
             }
             if let Type::Tuple(tuple) = rust_type {
                 return BindingFact::Tuple(

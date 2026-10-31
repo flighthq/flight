@@ -4685,6 +4685,33 @@ pub fn g(big: bool, a: u32, b: u32, bytes: &mut [u8]) {
     }
 
     #[test]
+    fn lowers_to_bytes_on_tuple_field_with_known_element_type() {
+        let source = r#"
+pub fn f(pair: (u32, u32)) -> [u8; 4] {
+    return pair.0.to_le_bytes();
+}
+
+pub fn g(pair: &(i16, i16), bytes: &mut [u8]) {
+    bytes[0..2].copy_from_slice(&pair.0.to_le_bytes());
+    bytes[2..4].copy_from_slice(&pair.1.to_be_bytes());
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, pair[0], true)"),
+            "tuple u32 to_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("setInt16(0, pair[0], true)"),
+            "ref tuple i16 to_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("setInt16(0, pair[1], false)"),
+            "ref tuple i16 to_be_bytes: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {
