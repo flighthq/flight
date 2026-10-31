@@ -2268,6 +2268,11 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                 _ => None,
             };
         }
+        Expr::MethodCall(call) if call.args.is_empty()
+            && matches!(call.method.to_string().as_str(), "len" | "count") =>
+        {
+            return Some("usize".to_string());
+        }
         Expr::MethodCall(call) if call.method == "abs"
             || call.method == "min"
             || call.method == "max"
