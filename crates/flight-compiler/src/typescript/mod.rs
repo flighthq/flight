@@ -4910,6 +4910,15 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     let right = self.initializer_fact(&binary.right);
                     self.merged_facts([left, right].into_iter())
                 }
+                Expr::Block(block) => block
+                    .block
+                    .stmts
+                    .last()
+                    .and_then(|stmt| match stmt {
+                        syn::Stmt::Expr(expr, None) => Some(self.initializer_fact(expr)),
+                        _ => None,
+                    })
+                    .unwrap_or(BindingFact::Unknown),
                 Expr::Cast(cast) => primitive_type_identity(&cast.ty)
                     .map(BindingFact::Structure)
                     .unwrap_or(BindingFact::Unknown),
@@ -4933,6 +4942,22 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 Expr::Lit(literal) => literal_numeric_suffix(literal)
                     .map(BindingFact::Structure)
                     .unwrap_or(BindingFact::Unknown),
+                Expr::Match(match_expr) => {
+                    let arm_facts = match_expr.arms.iter().filter_map(|arm| {
+                        match arm.body.as_ref() {
+                            Expr::Block(block) => block.block.stmts.last().and_then(|stmt| {
+                                match stmt {
+                                    syn::Stmt::Expr(expr, None) => {
+                                        Some(self.initializer_fact(expr))
+                                    }
+                                    _ => None,
+                                }
+                            }),
+                            expr => Some(self.initializer_fact(expr)),
+                        }
+                    });
+                    self.merged_facts(arm_facts)
+                }
                 Expr::MethodCall(call)
                     if call.args.is_empty()
                         && matches!(
