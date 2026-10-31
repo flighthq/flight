@@ -19682,3 +19682,50 @@ mod create_state {
         "should resolve .clear() on a Vec field from module-identified alias source: {output2}"
     );
 }
+
+#[test]
+fn lowers_result_match_ok_err_to_option_null_check() {
+    let source = r#"
+pub fn try_parse(input: &str) -> Option<f64> {
+    let result: Result<f64, String> = parse_number(input);
+    return match result {
+        Ok(value) => Some(value),
+        Err(_) => None,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("matchValue !== undefined"),
+        "should emit undefined check for Ok arm: {output}"
+    );
+    assert!(
+        !output.contains("Err"),
+        "should not emit Err in output: {output}"
+    );
+}
+
+#[test]
+fn lowers_result_match_ok_err_in_statement_position() {
+    let source = r#"
+pub fn handle_result(result: Result<f64, String>, out: &mut f64) {
+    match result {
+        Ok(value) => {
+            *out = value;
+        }
+        Err(_) => {
+            *out = 0.0;
+        }
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("matchValue !== undefined"),
+        "should emit undefined check for Ok arm: {output}"
+    );
+    assert!(
+        output.contains("out"),
+        "should emit assignment in Ok arm: {output}"
+    );
+}

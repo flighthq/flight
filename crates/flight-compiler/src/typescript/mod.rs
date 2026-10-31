@@ -13559,7 +13559,8 @@ fn analyze_option_match(arms: &[syn::Arm]) -> Option<Vec<OptionMatchArm>> {
     for arm in arms {
         let info = match &arm.pat {
             Pat::TupleStruct(pattern)
-                if pattern.path.is_ident("Some") && pattern.elems.len() == 1 =>
+                if (pattern.path.is_ident("Some") || pattern.path.is_ident("Ok"))
+                    && pattern.elems.len() == 1 =>
             {
                 let binding = match &pattern.elems[0] {
                     Pat::Ident(identifier) if identifier.subpat.is_none() => {
@@ -13572,6 +13573,14 @@ fn analyze_option_match(arms: &[syn::Arm]) -> Option<Vec<OptionMatchArm>> {
                 OptionMatchArm {
                     binding,
                     present: true,
+                }
+            }
+            Pat::TupleStruct(pattern)
+                if pattern.path.is_ident("Err") && pattern.elems.len() == 1 =>
+            {
+                OptionMatchArm {
+                    binding: None,
+                    present: false,
                 }
             }
             Pat::Path(path) if path.path.is_ident("None") => OptionMatchArm {
@@ -13607,6 +13616,9 @@ fn analyze_tuple_option_element(pattern: &Pat) -> Option<TupleOptionElement> {
                 Pat::Wild(_) => Some(TupleOptionElement::SomeWild),
                 _ => None,
             }
+        }
+        Pat::TupleStruct(ts) if ts.path.is_ident("Err") && ts.elems.len() == 1 => {
+            Some(TupleOptionElement::None)
         }
         Pat::Path(path) if path.path.is_ident("None") => Some(TupleOptionElement::None),
         Pat::Ident(identifier) if identifier.ident == "None" && identifier.subpat.is_none() => {
