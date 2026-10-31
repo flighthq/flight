@@ -4967,15 +4967,51 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn merged_facts(&self, facts: impl Iterator<Item = BindingFact>) -> BindingFact {
-            let mut facts = facts;
-            let Some(first) = facts.next() else {
+            let collected: Vec<_> = facts.collect();
+            if collected.is_empty() {
                 return BindingFact::Unknown;
-            };
-            return if facts.all(|fact| fact == first) {
-                first
-            } else {
-                BindingFact::Unknown
-            };
+            }
+            if collected.iter().all(|f| f == &collected[0]) {
+                return collected.into_iter().next().unwrap();
+            }
+            if let Some(len) = collected.iter().find_map(|f| {
+                if let BindingFact::Tuple(elems) = f {
+                    Some(elems.len())
+                } else {
+                    None
+                }
+            }) {
+                if collected
+                    .iter()
+                    .all(|f| matches!(f, BindingFact::Tuple(e) if e.len() == len))
+                {
+                    let tuples: Vec<_> = collected
+                        .iter()
+                        .map(|f| match f {
+                            BindingFact::Tuple(e) => e.as_slice(),
+                            _ => unreachable!(),
+                        })
+                        .collect();
+                    let merged: Vec<_> = (0..len)
+                        .map(|i| {
+                            let known: Vec<_> = tuples
+                                .iter()
+                                .map(|t| &t[i])
+                                .filter(|f| !matches!(f, BindingFact::Unknown))
+                                .collect();
+                            if known.is_empty() {
+                                BindingFact::Unknown
+                            } else if known.iter().all(|f| *f == known[0]) {
+                                known[0].clone()
+                            } else {
+                                BindingFact::Unknown
+                            }
+                        })
+                        .collect();
+                    return BindingFact::Tuple(merged);
+                }
+            }
+            return BindingFact::Unknown;
         }
 
         fn typed_fact(&self, rust_type: &Type) -> BindingFact {
