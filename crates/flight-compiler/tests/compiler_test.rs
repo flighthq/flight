@@ -6164,6 +6164,19 @@ pub fn count_both(a: &[i32], b: &[i32]) -> usize {
     }
 
     #[test]
+    fn tracks_string_provenance_through_as_str() {
+        let source = r#"
+pub fn check(input: String) -> bool {
+    return input.as_str().starts_with("hello");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("input.startsWith("));
+    }
+
+    #[test]
     fn tracks_sequence_provenance_through_string_split() {
         let source = r#"
 pub fn split_count(input: &str) -> usize {

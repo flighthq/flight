@@ -2210,8 +2210,10 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
                         | "trim_start"
                         | "trim_start_matches"
                 )
-                || (call.method == "clone"
-                    && expression_is_known_string(&call.receiver, entities))
+                || (matches!(
+                    call.method.to_string().as_str(),
+                    "as_str" | "clone" | "to_str"
+                ) && expression_is_known_string(&call.receiver, entities))
                 || (matches!(
                     call.method.to_string().as_str(),
                     "unwrap" | "expect" | "unwrap_or" | "unwrap_or_else" | "unwrap_or_default"
