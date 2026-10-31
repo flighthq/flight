@@ -4849,6 +4849,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         .map(|element| self.initializer_fact(element))
                         .collect(),
                 ),
+                Expr::Cast(cast) => primitive_type_identity(&cast.ty)
+                    .map(BindingFact::Structure)
+                    .unwrap_or(BindingFact::Unknown),
+                Expr::Lit(literal) => literal_numeric_suffix(literal)
+                    .map(BindingFact::Structure)
+                    .unwrap_or(BindingFact::Unknown),
                 expression => single_path_identifier(expression)
                     .and_then(|name| self.fact_of(&name))
                     .unwrap_or(BindingFact::Unknown),
