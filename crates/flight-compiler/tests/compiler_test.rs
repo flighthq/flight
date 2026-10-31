@@ -6164,6 +6164,20 @@ pub fn count_both(a: &[i32], b: &[i32]) -> usize {
     }
 
     #[test]
+    fn tracks_string_provenance_through_trim_matches() {
+        let source = r##"
+pub fn check(input: &str) -> bool {
+    let trimmed = input.trim_matches(' ');
+    return trimmed.starts_with("#");
+}
+"##;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("trimmed.startsWith("));
+    }
+
+    #[test]
     fn emits_readonly_entity_initializers_with_a_writable_construction_view() {
         let source = r#"
 //! flight-compiler: readonly-fields Requirement RequirementSet

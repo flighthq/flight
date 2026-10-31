@@ -2205,7 +2205,10 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
                         | "to_uppercase"
                         | "trim"
                         | "trim_end"
+                        | "trim_end_matches"
+                        | "trim_matches"
                         | "trim_start"
+                        | "trim_start_matches"
                 )
                 || (call.method == "clone"
                     && expression_is_known_string(&call.receiver, entities))
