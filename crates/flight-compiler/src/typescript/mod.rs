@@ -513,6 +513,7 @@ enum DataUnionPatternAnalysis {
 struct InferredTaggedDataUnionMatchArm {
     binding: Option<String>,
     catch_all: bool,
+    field_bindings: Vec<(String, String)>,
     variants: Vec<String>,
 }
 
@@ -11456,6 +11457,11 @@ fn emit_match_statement_with_action(
                 writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
+            for (binding_name, source_field) in &info.field_bindings {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding_name} = matchValue.{source_field};")
+                    .expect("writing to a String cannot fail");
+            }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             let body_indent = if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
@@ -13253,7 +13259,7 @@ fn analyze_inferred_tagged_data_union_match(
     let mut has_payload = false;
     for arm in arms {
         match inferred_tagged_data_union_pattern(&arm.pat) {
-            InferredPattern::Variants(variants, binding, payload) => {
+            InferredPattern::Variants(variants, binding, field_bindings, payload) => {
                 for (variant_owner, _) in &variants {
                     if let Some(expected) = &owner {
                         if expected != variant_owner {
@@ -13276,6 +13282,7 @@ fn analyze_inferred_tagged_data_union_match(
                 output.push(InferredTaggedDataUnionMatchArm {
                     binding,
                     catch_all: false,
+                    field_bindings,
                     variants: variants.into_iter().map(|(_, v)| v).collect(),
                 });
             }
@@ -13283,6 +13290,7 @@ fn analyze_inferred_tagged_data_union_match(
                 output.push(InferredTaggedDataUnionMatchArm {
                     binding,
                     catch_all: true,
+                    field_bindings: Vec::new(),
                     variants: Vec::new(),
                 });
             }
@@ -13298,7 +13306,7 @@ fn analyze_inferred_tagged_data_union_match(
 enum InferredPattern {
     CatchAll(Option<String>),
     NotEnum,
-    Variants(Vec<(String, String)>, Option<String>, bool),
+    Variants(Vec<(String, String)>, Option<String>, Vec<(String, String)>, bool),
 }
 
 fn inferred_tagged_data_union_pattern(pattern: &Pat) -> InferredPattern {
@@ -13325,23 +13333,52 @@ fn inferred_tagged_data_union_pattern(pattern: &Pat) -> InferredPattern {
             } else {
                 return InferredPattern::NotEnum;
             };
-            InferredPattern::Variants(vec![(owner, variant)], binding, true)
+            InferredPattern::Variants(vec![(owner, variant)], binding, Vec::new(), true)
+        }
+        Pat::Struct(s) => {
+            let Some((owner, variant)) = path_owner_and_member(&s.path) else {
+                return InferredPattern::NotEnum;
+            };
+            let mut fields = Vec::new();
+            for field in &s.fields {
+                let source = emit_member(&field.member);
+                let binding_name = match field.pat.as_ref() {
+                    Pat::Ident(id) if id.subpat.is_none() => {
+                        snake_to_lower_camel(&id.ident.to_string())
+                    }
+                    Pat::Wild(_) => continue,
+                    Pat::Reference(r) => match r.pat.as_ref() {
+                        Pat::Ident(id) if id.subpat.is_none() => {
+                            snake_to_lower_camel(&id.ident.to_string())
+                        }
+                        Pat::Wild(_) => continue,
+                        _ => return InferredPattern::NotEnum,
+                    },
+                    _ => return InferredPattern::NotEnum,
+                };
+                fields.push((binding_name, snake_to_lower_camel(&source)));
+            }
+            InferredPattern::Variants(vec![(owner, variant)], None, fields, true)
         }
         Pat::Path(path) => {
             let Some((owner, variant)) = path_owner_and_member(&path.path) else {
                 return InferredPattern::NotEnum;
             };
-            InferredPattern::Variants(vec![(owner, variant)], None, false)
+            InferredPattern::Variants(vec![(owner, variant)], None, Vec::new(), false)
         }
         Pat::Or(or) => {
             let mut all_variants = Vec::new();
             let mut binding = None;
+            let mut field_bindings = Vec::new();
             let mut any_payload = false;
             for case in &or.cases {
                 match inferred_tagged_data_union_pattern(case) {
-                    InferredPattern::Variants(variants, b, payload) => {
+                    InferredPattern::Variants(variants, b, fb, payload) => {
                         if binding.is_none() {
                             binding = b;
+                        }
+                        if field_bindings.is_empty() && !fb.is_empty() {
+                            field_bindings = fb;
                         }
                         if payload {
                             any_payload = true;
@@ -13353,7 +13390,7 @@ fn inferred_tagged_data_union_pattern(pattern: &Pat) -> InferredPattern {
                     }
                 }
             }
-            InferredPattern::Variants(all_variants, binding, any_payload)
+            InferredPattern::Variants(all_variants, binding, field_bindings, any_payload)
         }
         Pat::Ident(id) if id.subpat.is_none() => {
             InferredPattern::CatchAll(Some(snake_to_lower_camel(&id.ident.to_string())))
@@ -13838,6 +13875,10 @@ fn emit_match_expression(
                 writeln!(out, "    const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
+            for (binding_name, source_field) in &info.field_bindings {
+                writeln!(out, "    const {binding_name} = matchValue.{source_field};")
+                    .expect("writing to a String cannot fail");
+            }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
@@ -14201,6 +14242,11 @@ pub(crate) fn emit_match_statement(
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
                 writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            for (binding_name, source_field) in &info.field_bindings {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding_name} = matchValue.{source_field};")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);

@@ -13778,6 +13778,56 @@ pub fn classify_shape(shape: &CollisionShape2D) -> &str {
     }
 
     #[test]
+    fn infers_tagged_data_union_struct_variant_match_without_entity_markers() {
+        let source = r#"
+use crate::ParticleForce;
+
+pub fn apply_force(force: &ParticleForce, vx: f64, vy: f64, vz: f64, out: &mut [f64; 3]) {
+    match force {
+        ParticleForce::WindForce { x, y, z } => {
+            out[0] += x;
+            out[1] += y;
+            out[2] += z;
+        }
+        ParticleForce::DragForce { strength } => {
+            out[0] -= strength * vx;
+            out[1] -= strength * vy;
+            out[2] -= strength * vz;
+        }
+        _ => {}
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("matchValue.kind === \"windForce\""),
+            "should emit kind check for WindForce: {output}"
+        );
+        assert!(
+            output.contains("matchValue.kind === \"dragForce\""),
+            "should emit kind check for DragForce: {output}"
+        );
+        assert!(
+            output.contains("const x = matchValue.x;"),
+            "should emit field binding for x: {output}"
+        );
+        assert!(
+            output.contains("const y = matchValue.y;"),
+            "should emit field binding for y: {output}"
+        );
+        assert!(
+            output.contains("const z = matchValue.z;"),
+            "should emit field binding for z: {output}"
+        );
+        assert!(
+            output.contains("const strength = matchValue.strength;"),
+            "should emit field binding for strength: {output}"
+        );
+    }
+
+    #[test]
     fn erases_transparent_data_union_constructors_and_matches_runtime_categories() {
         let source = r#"
 //! flight-compiler: data-union LogData LogValue LogDataOrProvider RectangleId
