@@ -17526,28 +17526,45 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         )?;
         body.push('\n');
     }
+    let skip_unsupported = std::env::var("FLIGHT_COMPILE_SKIP_UNSUPPORTED").is_ok();
     for rust_static in &program.statics {
-        emit_static(
+        let static_start = body.len();
+        let result = emit_static(
             &mut body,
             rust_static,
             &source_context,
             &aliases,
             &nullable_types,
-        )?;
-        body.push('\n');
+        );
+        match result {
+            Ok(()) => body.push('\n'),
+            Err(_) if skip_unsupported => {
+                body.truncate(static_start);
+            }
+            Err(error) => return Err(error),
+        }
     }
     for (index, function) in program.functions.iter().enumerate() {
         let entity_construction_parameter = entity_construction_parameters[index];
-        emit_function(
+        let function_start = body.len();
+        let result = emit_function(
             &mut body,
             function,
             &source_context,
             &aliases,
             &nullable_static_names,
             entity_construction_parameter,
-        )?;
-        if index + 1 < program.functions.len() {
-            body.push('\n');
+        );
+        match result {
+            Ok(()) => {
+                if index + 1 < program.functions.len() {
+                    body.push('\n');
+                }
+            }
+            Err(_) if skip_unsupported => {
+                body.truncate(function_start);
+            }
+            Err(error) => return Err(error),
         }
     }
     emit_entity_runtime_state_stores(&mut body, program, &source_context)?;
