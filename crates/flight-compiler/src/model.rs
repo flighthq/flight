@@ -1515,7 +1515,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let callable_field_parameters = parse_callable_field_parameters(&file.attrs)?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let data_union_metadata = parse_data_unions(&file.attrs)?;
-    let data_unions = data_union_metadata.names;
+    let mut data_unions = data_union_metadata.names;
     let reserved_key_data_unions = data_union_metadata.reserved_key;
     let entity_clone_shared_fields = parse_entity_clone_shared_fields(&file.attrs)?;
     let entity_runtime_states = parse_entity_runtime_states(&file.attrs)?;
@@ -1592,7 +1592,13 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             }
             Item::Const(item) => constants.push(item),
             Item::Enum(item) => {
-                validate_enum(&item, data_unions.contains(&item.ident.to_string()))?;
+                let name = item.ident.to_string();
+                let is_data_union = data_unions.contains(&name)
+                    || item
+                        .variants
+                        .iter()
+                        .any(|v| !matches!(v.fields, Fields::Unit));
+                validate_enum(&item, is_data_union)?;
                 enums.push(item);
             }
             Item::Fn(function) => functions.push(function),
@@ -1617,6 +1623,17 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             Item::ExternCrate(item) => extern_crates.push(item),
             Item::ForeignMod(_) | Item::Impl(_) | Item::Macro(_) | Item::Mod(_) => {}
             _ => {}
+        }
+    }
+    for rust_enum in &enums {
+        let name = rust_enum.ident.to_string();
+        if !data_unions.contains(&name)
+            && rust_enum
+                .variants
+                .iter()
+                .any(|v| !matches!(v.fields, Fields::Unit))
+        {
+            data_unions.insert(name);
         }
     }
     validate_rust_only_references(&rust_only_functions, &functions)?;

@@ -7783,7 +7783,7 @@ pub fn default_facet() -> Facet {
             ),
             (
                 "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward(f32) }\n",
-                "unsupported enum variant `Direction::Forward`; only unit variants are portable",
+                "enum `Direction` cannot combine `flight-compiler: numeric-union` with another union directive",
             ),
             (
                 "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward = 1 + 1 }\n",
@@ -14068,11 +14068,10 @@ pub enum Axis {
 }
 "#;
 
-        let error = compile_typescript(source, None).unwrap_err();
-
-        assert_eq!(
-            error.to_string(),
-            "unsupported enum variant `Axis::Named`; only unit variants are portable"
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("kind: \"named\""),
+            "auto-inferred data union should produce a tagged variant: {output}"
         );
     }
 }
