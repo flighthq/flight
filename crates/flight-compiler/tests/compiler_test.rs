@@ -13725,6 +13725,59 @@ pub fn terminal_x(segment: PathSegment) -> f64 {
     }
 
     #[test]
+    fn infers_tagged_data_union_match_without_entity_markers() {
+        let source = r#"
+use crate::CollisionShape2D;
+
+pub fn describe_shape(shape: CollisionShape2D) -> f64 {
+    return match shape {
+        CollisionShape2D::Circle(c) => c.radius,
+        CollisionShape2D::Aabb(a) => a.width * a.height,
+        CollisionShape2D::Obb(o) => o.width * o.height * o.rotation,
+    };
+}
+
+pub fn classify_shape(shape: &CollisionShape2D) -> &str {
+    match shape {
+        CollisionShape2D::Circle(_) => "circle",
+        CollisionShape2D::Aabb(_) | CollisionShape2D::Obb(_) => "box",
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("matchValue.kind === \"circle\""),
+            "should emit kind check for Circle: {output}"
+        );
+        assert!(
+            output.contains("matchValue.kind === \"aabb\""),
+            "should emit kind check for Aabb: {output}"
+        );
+        assert!(
+            output.contains("matchValue.kind === \"obb\""),
+            "should emit kind check for Obb: {output}"
+        );
+        assert!(
+            output.contains("const c = matchValue;"),
+            "should bind payload for Circle: {output}"
+        );
+        assert!(
+            output.contains("c.radius"),
+            "should access radius through binding: {output}"
+        );
+        assert!(
+            output.contains("matchValue.kind === \"aabb\" || matchValue.kind === \"obb\""),
+            "should emit Or pattern for box arms: {output}"
+        );
+        assert!(
+            !output.contains("CollisionShape2D.Circle"),
+            "should not emit Rust enum syntax: {output}"
+        );
+    }
+
+    #[test]
     fn erases_transparent_data_union_constructors_and_matches_runtime_categories() {
         let source = r#"
 //! flight-compiler: data-union LogData LogValue LogDataOrProvider RectangleId
@@ -19493,5 +19546,64 @@ pub fn read_length(data: &[u8], pos: usize, short: usize, marker: usize) -> Opti
     assert!(
         !output.contains("(() =>"),
         "should not use IIFE for if-value with return: {output}"
+    );
+}
+
+#[test]
+fn resolves_cross_file_vec_field_clear() {
+    let production = r#"
+pub struct State {
+    pub listeners: Vec<String>,
+}
+
+pub fn create_state() -> State {
+    return State {
+        listeners: Vec::new(),
+    };
+}
+"#;
+
+    let test_source = r#"
+use crate::State;
+use crate::create_state;
+
+mod create_state {
+    use super::*;
+
+    #[test]
+    fn clears_listeners() {
+        let mut st = create_state();
+        st.listeners.clear();
+        assert!(st.listeners.is_empty());
+    }
+}
+"#;
+
+    let output = compile_vitest_with_alias_sources(
+        test_source,
+        "@flighthq/example/contract",
+        &[production],
+    )
+    .unwrap();
+    assert!(
+        output.contains(".length = 0"),
+        "should resolve .clear() on a Vec field from alias source (plain): {output}"
+    );
+
+    // Now test with VitestAliasSource (module-identified), which is what the build pipeline uses
+    let alias = VitestAliasSource {
+        source: production,
+        module: "crates/flight-example/src/sample.rs",
+    };
+    let output2 = compile_vitest_with_contract_alias_sources(
+        test_source,
+        "@flighthq/example/contract",
+        "pub use crate::sample::State;\npub use crate::sample::create_state;\n",
+        &[alias],
+    )
+    .unwrap();
+    assert!(
+        output2.contains(".length = 0"),
+        "should resolve .clear() on a Vec field from module-identified alias source: {output2}"
     );
 }

@@ -510,6 +510,12 @@ enum DataUnionPatternAnalysis {
     Variants(Vec<DataUnionPattern>),
 }
 
+struct InferredTaggedDataUnionMatchArm {
+    binding: Option<String>,
+    catch_all: bool,
+    variants: Vec<String>,
+}
+
 struct OptionMatchArm {
     binding: Option<String>,
     present: bool,
@@ -11397,6 +11403,86 @@ fn emit_match_statement_with_action(
             return Ok(());
         }
     }
+    if let Some(inferred_arms) =
+        analyze_inferred_tagged_data_union_match(&expression.arms, entities)
+    {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
+        for (index, (arm, info)) in expression.arms.iter().zip(inferred_arms).enumerate() {
+            write_indent(out, indent + 1);
+            if info.catch_all {
+                if has_guards {
+                    out.push_str("if (!$matched) {\n");
+                } else if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let predicate = info
+                    .variants
+                    .iter()
+                    .map(|variant| {
+                        format!(
+                            "matchValue.kind === {:?}",
+                            lower_camel_from_upper_camel(variant)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" || ");
+                if has_guards {
+                    writeln!(out, "if (!$matched && ({predicate})) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+            }
+            if let Some(binding) = info.binding {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
+            }
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
     write_indent(out, indent);
     writeln!(
         out,
@@ -13157,6 +13243,128 @@ fn analyze_data_union_match(
     return Ok(Some(output));
 }
 
+fn analyze_inferred_tagged_data_union_match(
+    arms: &[syn::Arm],
+    entities: &HashSet<String>,
+) -> Option<Vec<InferredTaggedDataUnionMatchArm>> {
+    let mut output = Vec::new();
+    let mut owner: Option<String> = None;
+    let mut has_variant = false;
+    let mut has_payload = false;
+    for arm in arms {
+        match inferred_tagged_data_union_pattern(&arm.pat) {
+            InferredPattern::Variants(variants, binding, payload) => {
+                for (variant_owner, _) in &variants {
+                    if let Some(expected) = &owner {
+                        if expected != variant_owner {
+                            return None;
+                        }
+                    } else {
+                        owner = Some(variant_owner.clone());
+                    }
+                }
+                if variants.iter().any(|(vo, vn)| {
+                    is_data_union_variant(entities, vo, vn)
+                        || is_tagged_data_union_variant(entities, vo, vn)
+                }) {
+                    return None;
+                }
+                has_variant = true;
+                if payload {
+                    has_payload = true;
+                }
+                output.push(InferredTaggedDataUnionMatchArm {
+                    binding,
+                    catch_all: false,
+                    variants: variants.into_iter().map(|(_, v)| v).collect(),
+                });
+            }
+            InferredPattern::CatchAll(binding) => {
+                output.push(InferredTaggedDataUnionMatchArm {
+                    binding,
+                    catch_all: true,
+                    variants: Vec::new(),
+                });
+            }
+            InferredPattern::NotEnum => return None,
+        }
+    }
+    if !has_variant || !has_payload {
+        return None;
+    }
+    return Some(output);
+}
+
+enum InferredPattern {
+    CatchAll(Option<String>),
+    NotEnum,
+    Variants(Vec<(String, String)>, Option<String>, bool),
+}
+
+fn inferred_tagged_data_union_pattern(pattern: &Pat) -> InferredPattern {
+    match pattern {
+        Pat::TupleStruct(ts) => {
+            let Some((owner, variant)) = path_owner_and_member(&ts.path) else {
+                return InferredPattern::NotEnum;
+            };
+            let binding = if ts.elems.len() == 1 {
+                match &ts.elems[0] {
+                    Pat::Ident(id) if id.subpat.is_none() => {
+                        Some(snake_to_lower_camel(&id.ident.to_string()))
+                    }
+                    Pat::Wild(_) => None,
+                    Pat::Reference(r) => match r.pat.as_ref() {
+                        Pat::Ident(id) if id.subpat.is_none() => {
+                            Some(snake_to_lower_camel(&id.ident.to_string()))
+                        }
+                        Pat::Wild(_) => None,
+                        _ => return InferredPattern::NotEnum,
+                    },
+                    _ => return InferredPattern::NotEnum,
+                }
+            } else {
+                return InferredPattern::NotEnum;
+            };
+            InferredPattern::Variants(vec![(owner, variant)], binding, true)
+        }
+        Pat::Path(path) => {
+            let Some((owner, variant)) = path_owner_and_member(&path.path) else {
+                return InferredPattern::NotEnum;
+            };
+            InferredPattern::Variants(vec![(owner, variant)], None, false)
+        }
+        Pat::Or(or) => {
+            let mut all_variants = Vec::new();
+            let mut binding = None;
+            let mut any_payload = false;
+            for case in &or.cases {
+                match inferred_tagged_data_union_pattern(case) {
+                    InferredPattern::Variants(variants, b, payload) => {
+                        if binding.is_none() {
+                            binding = b;
+                        }
+                        if payload {
+                            any_payload = true;
+                        }
+                        all_variants.extend(variants);
+                    }
+                    InferredPattern::CatchAll(_) | InferredPattern::NotEnum => {
+                        return InferredPattern::NotEnum
+                    }
+                }
+            }
+            InferredPattern::Variants(all_variants, binding, any_payload)
+        }
+        Pat::Ident(id) if id.subpat.is_none() => {
+            InferredPattern::CatchAll(Some(snake_to_lower_camel(&id.ident.to_string())))
+        }
+        Pat::Reference(r) => inferred_tagged_data_union_pattern(&r.pat),
+        Pat::Paren(p) => inferred_tagged_data_union_pattern(&p.pat),
+        Pat::Wild(_) => InferredPattern::CatchAll(None),
+        _ => InferredPattern::NotEnum,
+    }
+}
+
 // `Ordering` lowers to a signed number, which a `switch` cannot match exhaustively; callers compare
 // against a variant with `==`, which lowers to a sign comparison.
 fn emit_switch_scrutinee(
@@ -13588,6 +13796,73 @@ fn emit_match_expression(
             return Ok(out);
         }
     }
+    if let Some(inferred_arms) =
+        analyze_inferred_tagged_data_union_match(&expression.arms, entities)
+    {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
+        let mut out = String::new();
+        out.push_str("(() => {\n  const matchValue = ");
+        out.push_str(&emit_expression(&expression.expr, entities)?);
+        out.push_str(";\n");
+        for (index, (arm, info)) in expression.arms.iter().zip(inferred_arms).enumerate() {
+            if info.catch_all {
+                if has_guards {
+                    out.push_str("  {\n");
+                } else if index == 0 {
+                    out.push_str("  {\n");
+                } else {
+                    out.push_str("  else {\n");
+                }
+            } else {
+                let predicate = info
+                    .variants
+                    .iter()
+                    .map(|variant| {
+                        format!(
+                            "matchValue.kind === {:?}",
+                            lower_camel_from_upper_camel(variant)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" || ");
+                if has_guards {
+                    writeln!(out, "  if ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "  {prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+            }
+            if let Some(binding) = info.binding {
+                writeln!(out, "    const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                writeln!(out, "    if ({guard_expr}) {{")
+                    .expect("writing to a String cannot fail");
+                writeln!(
+                    out,
+                    "      return {};",
+                    emit_expression(&arm.body, &arm_context)?
+                )
+                .expect("writing to a String cannot fail");
+                out.push_str("    }\n");
+            } else {
+                writeln!(
+                    out,
+                    "    return {};",
+                    emit_expression(&arm.body, &arm_context)?
+                )
+                .expect("writing to a String cannot fail");
+            }
+            out.push_str("  }\n");
+        }
+        out.push_str("})()");
+        return Ok(out);
+    }
     let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
     let mut out = String::new();
     out.push_str("(() => {\n  const matchValue = ");
@@ -13836,6 +14111,96 @@ pub(crate) fn emit_match_statement(
                     |rust_type| format!("matchValue as {rust_type}"),
                 );
                 writeln!(out, "const {binding} = {value};")
+                    .expect("writing to a String cannot fail");
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let body_indent = if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                write_indent(out, indent + 2);
+                writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                write_indent(out, indent + 3);
+                out.push_str("$matched = true;\n");
+                indent + 3
+            } else {
+                if has_guards {
+                    write_indent(out, indent + 2);
+                    out.push_str("$matched = true;\n");
+                }
+                indent + 2
+            };
+            match arm.body.as_ref() {
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, body_indent)?
+                }
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    &arm_context,
+                    body_indent,
+                )?,
+            }
+            if arm.guard.is_some() {
+                write_indent(out, indent + 2);
+                out.push_str("}\n");
+            }
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
+    if let Some(inferred_arms) =
+        analyze_inferred_tagged_data_union_match(&expression.arms, entities)
+    {
+        let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        if has_guards {
+            write_indent(out, indent + 1);
+            out.push_str("let $matched = false;\n");
+        }
+        for (index, (arm, info)) in expression.arms.iter().zip(inferred_arms).enumerate() {
+            write_indent(out, indent + 1);
+            if info.catch_all {
+                if has_guards {
+                    out.push_str("if (!$matched) {\n");
+                } else if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let predicate = info
+                    .variants
+                    .iter()
+                    .map(|variant| {
+                        format!(
+                            "matchValue.kind === {:?}",
+                            lower_camel_from_upper_camel(variant)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" || ");
+                if has_guards {
+                    writeln!(out, "if (!$matched && ({predicate})) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+            }
+            if let Some(binding) = info.binding {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
