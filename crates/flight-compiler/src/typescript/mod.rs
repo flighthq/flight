@@ -15820,9 +15820,7 @@ pub(crate) fn emit_option_binding(
         )));
     }
     let Pat::Ident(identifier) = &pattern.elems[0] else {
-        return Err(compile_error(
-            "portable `if let Some` binding needs an identifier or tuple",
-        ));
+        return Ok(None);
     };
     return Ok(Some((
         snake_to_lower_camel(&identifier.ident.to_string()),
