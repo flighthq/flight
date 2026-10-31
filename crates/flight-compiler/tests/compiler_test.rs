@@ -6217,6 +6217,33 @@ pub fn check(input: &str) -> bool {
     }
 
     #[test]
+    fn tracks_sequence_provenance_through_windows() {
+        let source = r#"
+pub fn ascending_pairs(items: &[i32]) -> usize {
+    return items.windows(2).filter(|w| w[0] < w[1]).count();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".filter("));
+        assert!(output.contains(".length"));
+    }
+
+    #[test]
+    fn tracks_sequence_provenance_through_chunks() {
+        let source = r#"
+pub fn chunk_count(items: &[i32]) -> usize {
+    return items.chunks(3).count();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".length"));
+    }
+
+    #[test]
     fn emits_readonly_entity_initializers_with_a_writable_construction_view() {
         let source = r#"
 //! flight-compiler: readonly-fields Requirement RequirementSet

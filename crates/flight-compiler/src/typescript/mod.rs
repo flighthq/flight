@@ -15363,9 +15363,10 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
                 || (call.args.len() == 1
                     && matches!(
                         call.method.to_string().as_str(),
-                        "filter" | "map" | "flat_map" | "filter_map"
+                        "chunks" | "chunks_exact" | "chunks_exact_mut" | "chunks_mut"
+                            | "filter" | "map" | "flat_map" | "filter_map"
                             | "skip" | "take" | "skip_while" | "take_while"
-                            | "chain"
+                            | "chain" | "windows"
                     )) =>
         {
             expression_is_sequence(&call.receiver, entities)
@@ -15400,7 +15401,9 @@ fn expression_is_iterator_chain(expression: &Expr) -> bool {
             if call.args.len() == 1
                 && matches!(
                     call.method.to_string().as_str(),
-                    "filter" | "map" | "skip" | "take" | "flat_map" | "filter_map"
+                    "chunks" | "chunks_exact" | "chunks_exact_mut" | "chunks_mut"
+                        | "filter" | "map" | "skip" | "take" | "flat_map" | "filter_map"
+                        | "windows"
                 ) =>
         {
             true
