@@ -4908,6 +4908,15 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 Expr::Lit(literal) => literal_numeric_suffix(literal)
                     .map(BindingFact::Structure)
                     .unwrap_or(BindingFact::Unknown),
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "count" | "len"
+                        ) =>
+                {
+                    BindingFact::Structure("usize".to_string())
+                }
                 Expr::Unary(unary) => self.initializer_fact(&unary.expr),
                 expression => single_path_identifier(expression)
                     .and_then(|name| self.fact_of(&name))
