@@ -5130,6 +5130,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     },
                 ));
             }
+            if let Type::Group(group) = rust_type {
+                return self.typed_fact(&group.elem);
+            }
+            if let Type::Paren(paren) = rust_type {
+                return self.typed_fact(&paren.elem);
+            }
             if let Type::Reference(reference) = rust_type {
                 return self.typed_fact(&reference.elem);
             }
