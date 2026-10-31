@@ -4827,6 +4827,20 @@ pub fn string_default(value: Option<String>) -> String {
     }
 
     #[test]
+    fn lowers_unwrap_or_default_on_checked_arithmetic() {
+        let source = r#"
+pub fn f(a: u32, b: u32) -> u32 {
+    return a.checked_add(b).unwrap_or_default();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("?? 0"),
+            "checked_add().unwrap_or_default() should resolve to ?? 0: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_wrapping_shl() {
         let source = r#"
 pub fn shift(value: u32, n: u32) -> u32 {

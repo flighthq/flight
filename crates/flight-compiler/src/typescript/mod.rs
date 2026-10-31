@@ -18540,6 +18540,33 @@ fn option_binding_fact_default(expression: &Expr, entities: &HashSet<String>) ->
         {
             return option_binding_fact_default(&call.receiver, entities);
         }
+        Expr::MethodCall(call)
+            if call.args.len() == 1
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "checked_add"
+                        | "checked_div"
+                        | "checked_mul"
+                        | "checked_sub"
+                        | "checked_rem"
+                        | "checked_neg"
+                        | "checked_shl"
+                        | "checked_shr"
+                ) =>
+        {
+            let numeric_type = expression_numeric_type(&call.receiver, entities)?;
+            return binding_fact_default(&BindingFact::Structure(numeric_type));
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "checked_neg" | "checked_abs"
+                ) =>
+        {
+            let numeric_type = expression_numeric_type(&call.receiver, entities)?;
+            return binding_fact_default(&BindingFact::Structure(numeric_type));
+        }
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             lexical_fact(entities, &path.path.segments[0].ident.to_string())
         }
