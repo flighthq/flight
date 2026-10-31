@@ -512,6 +512,18 @@ struct OptionMatchArm {
     present: bool,
 }
 
+enum TupleOptionElement {
+    SomeBinding(String),
+    SomeWild,
+    None,
+    Wild,
+}
+
+struct TupleOptionMatchArm {
+    elements: Vec<TupleOptionElement>,
+    catch_all: bool,
+}
+
 struct ExternalIdentityAlias {
     module: String,
     tag: String,
@@ -11037,6 +11049,68 @@ fn emit_match_statement_with_action(
         out.push_str("}\n");
         return Ok(());
     }
+    if let Expr::Tuple(scrutinee) = expression.expr.as_ref() {
+        if let Some(infos) = analyze_tuple_option_match(scrutinee, &expression.arms) {
+            write_indent(out, indent);
+            out.push_str("{\n");
+            let mut temps = Vec::new();
+            for (i, elem) in scrutinee.elems.iter().enumerate() {
+                let value = emit_expression(elem, entities)?;
+                let temp = format!("$m{i}");
+                write_indent(out, indent + 1);
+                writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
+                temps.push(temp);
+            }
+            for (index, (arm, info)) in expression.arms.iter().zip(&infos).enumerate() {
+                write_indent(out, indent + 1);
+                if info.catch_all {
+                    if index == 0 {
+                        out.push_str("{\n");
+                    } else {
+                        out.push_str("else {\n");
+                    }
+                } else {
+                    let mut conditions = Vec::new();
+                    for (i, element) in info.elements.iter().enumerate() {
+                        let absent = option_absent_value(&scrutinee.elems[i], entities);
+                        match element {
+                            TupleOptionElement::SomeBinding(_) | TupleOptionElement::SomeWild => {
+                                conditions.push(format!("{} !== {absent}", temps[i]));
+                            }
+                            TupleOptionElement::None => {
+                                conditions.push(format!("{} === {absent}", temps[i]));
+                            }
+                            TupleOptionElement::Wild => {}
+                        }
+                    }
+                    let predicate = if conditions.is_empty() {
+                        "true".to_string()
+                    } else {
+                        conditions.join(" && ")
+                    };
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+                for (i, element) in info.elements.iter().enumerate() {
+                    if let TupleOptionElement::SomeBinding(name) = element {
+                        let binding = snake_to_lower_camel(name);
+                        write_indent(out, indent + 2);
+                        writeln!(out, "const {binding} = {};", temps[i])
+                            .expect("writing to a String cannot fail");
+                    }
+                }
+                let arm_context = lexical_pattern_context(entities, &arm.pat);
+                let body_indent = indent + 2;
+                emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+                write_indent(out, indent + 1);
+                out.push_str("}\n");
+            }
+            write_indent(out, indent);
+            out.push_str("}\n");
+            return Ok(());
+        }
+    }
     write_indent(out, indent);
     writeln!(
         out,
@@ -12847,6 +12921,77 @@ fn analyze_option_match(arms: &[syn::Arm]) -> Option<Vec<OptionMatchArm>> {
     return has_some.then_some(analyzed);
 }
 
+fn analyze_tuple_option_element(pattern: &Pat) -> Option<TupleOptionElement> {
+    return match pattern {
+        Pat::TupleStruct(ts)
+            if (ts.path.is_ident("Some") || ts.path.is_ident("Ok")) && ts.elems.len() == 1 =>
+        {
+            match &ts.elems[0] {
+                Pat::Ident(identifier) if identifier.subpat.is_none() => Some(
+                    TupleOptionElement::SomeBinding(identifier.ident.to_string()),
+                ),
+                Pat::Wild(_) => Some(TupleOptionElement::SomeWild),
+                _ => None,
+            }
+        }
+        Pat::Path(path) if path.path.is_ident("None") => Some(TupleOptionElement::None),
+        Pat::Ident(identifier) if identifier.ident == "None" && identifier.subpat.is_none() => {
+            Some(TupleOptionElement::None)
+        }
+        Pat::Wild(_) => Some(TupleOptionElement::Wild),
+        _ => None,
+    };
+}
+
+fn analyze_tuple_option_match(
+    scrutinee: &syn::ExprTuple,
+    arms: &[syn::Arm],
+) -> Option<Vec<TupleOptionMatchArm>> {
+    let arity = scrutinee.elems.len();
+    if arity < 2 {
+        return None;
+    }
+    let mut has_option_test = false;
+    let mut analyzed = Vec::new();
+    for arm in arms {
+        match &arm.pat {
+            Pat::Tuple(tuple) if tuple.elems.len() == arity => {
+                let mut elements = Vec::new();
+                for elem in &tuple.elems {
+                    let element = analyze_tuple_option_element(elem)?;
+                    if matches!(
+                        element,
+                        TupleOptionElement::SomeBinding(_)
+                            | TupleOptionElement::SomeWild
+                            | TupleOptionElement::None
+                    ) {
+                        has_option_test = true;
+                    }
+                    elements.push(element);
+                }
+                analyzed.push(TupleOptionMatchArm {
+                    elements,
+                    catch_all: false,
+                });
+            }
+            Pat::Wild(_) => {
+                analyzed.push(TupleOptionMatchArm {
+                    elements: Vec::new(),
+                    catch_all: true,
+                });
+            }
+            Pat::Ident(identifier) if identifier.subpat.is_none() && identifier.ident == "_" => {
+                analyzed.push(TupleOptionMatchArm {
+                    elements: Vec::new(),
+                    catch_all: true,
+                });
+            }
+            _ => return None,
+        }
+    }
+    return has_option_test.then_some(analyzed);
+}
+
 fn emit_match_expression(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
@@ -13029,6 +13174,88 @@ fn emit_match_expression(
         }
         out.push_str("})()");
         return Ok(out);
+    }
+    if let Expr::Tuple(scrutinee) = expression.expr.as_ref() {
+        if let Some(infos) = analyze_tuple_option_match(scrutinee, &expression.arms) {
+            let mut out = String::new();
+            out.push_str("(() => {\n");
+            let mut temps = Vec::new();
+            for (i, elem) in scrutinee.elems.iter().enumerate() {
+                let value = emit_expression(elem, entities)?;
+                let temp = format!("$m{i}");
+                writeln!(out, "  const {temp} = {value};").expect("writing to a String cannot fail");
+                temps.push(temp);
+            }
+            let last = expression.arms.len() - 1;
+            for (index, (arm, info)) in expression.arms.iter().zip(&infos).enumerate() {
+                if info.catch_all {
+                    if index == 0 {
+                        out.push_str("  {\n");
+                    } else {
+                        out.push_str("  else {\n");
+                    }
+                } else {
+                    let mut conditions = Vec::new();
+                    for (i, element) in info.elements.iter().enumerate() {
+                        let absent =
+                            option_absent_value(&scrutinee.elems[i], entities);
+                        match element {
+                            TupleOptionElement::SomeBinding(_) | TupleOptionElement::SomeWild => {
+                                conditions.push(format!("{} !== {absent}", temps[i]));
+                            }
+                            TupleOptionElement::None => {
+                                conditions.push(format!("{} === {absent}", temps[i]));
+                            }
+                            TupleOptionElement::Wild => {}
+                        }
+                    }
+                    let predicate = if conditions.is_empty() {
+                        "true".to_string()
+                    } else {
+                        conditions.join(" && ")
+                    };
+                    if index == 0 {
+                        writeln!(out, "  if ({predicate}) {{")
+                            .expect("writing to a String cannot fail");
+                    } else if !info.catch_all && index == last && infos[..index].iter().all(|i| !i.catch_all) {
+                        out.push_str("  else {\n");
+                    } else {
+                        writeln!(out, "  else if ({predicate}) {{")
+                            .expect("writing to a String cannot fail");
+                    }
+                }
+                for (i, element) in info.elements.iter().enumerate() {
+                    if let TupleOptionElement::SomeBinding(name) = element {
+                        let binding = snake_to_lower_camel(name);
+                        writeln!(out, "    const {binding} = {};", temps[i])
+                            .expect("writing to a String cannot fail");
+                    }
+                }
+                let arm_context = lexical_pattern_context(entities, &arm.pat);
+                if let Some((_, guard)) = &arm.guard {
+                    let guard_expr = emit_expression(guard, &arm_context)?;
+                    writeln!(out, "    if ({guard_expr}) {{")
+                        .expect("writing to a String cannot fail");
+                    writeln!(
+                        out,
+                        "      return {};",
+                        emit_expression(&arm.body, &arm_context)?
+                    )
+                    .expect("writing to a String cannot fail");
+                    out.push_str("    }\n");
+                } else {
+                    writeln!(
+                        out,
+                        "    return {};",
+                        emit_expression(&arm.body, &arm_context)?
+                    )
+                    .expect("writing to a String cannot fail");
+                }
+                out.push_str("  }\n");
+            }
+            out.push_str("})()");
+            return Ok(out);
+        }
     }
     let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
     let mut out = String::new();
@@ -13316,6 +13543,78 @@ pub(crate) fn emit_match_statement(
         write_indent(out, indent);
         out.push_str("}\n");
         return Ok(());
+    }
+    if let Expr::Tuple(scrutinee) = expression.expr.as_ref() {
+        if let Some(infos) = analyze_tuple_option_match(scrutinee, &expression.arms) {
+            write_indent(out, indent);
+            out.push_str("{\n");
+            let mut temps = Vec::new();
+            for (i, elem) in scrutinee.elems.iter().enumerate() {
+                let value = emit_expression(elem, entities)?;
+                let temp = format!("$m{i}");
+                write_indent(out, indent + 1);
+                writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
+                temps.push(temp);
+            }
+            for (index, (arm, info)) in expression.arms.iter().zip(&infos).enumerate() {
+                write_indent(out, indent + 1);
+                if info.catch_all {
+                    if index == 0 {
+                        out.push_str("{\n");
+                    } else {
+                        out.push_str("else {\n");
+                    }
+                } else {
+                    let mut conditions = Vec::new();
+                    for (i, element) in info.elements.iter().enumerate() {
+                        let absent = option_absent_value(&scrutinee.elems[i], entities);
+                        match element {
+                            TupleOptionElement::SomeBinding(_) | TupleOptionElement::SomeWild => {
+                                conditions.push(format!("{} !== {absent}", temps[i]));
+                            }
+                            TupleOptionElement::None => {
+                                conditions.push(format!("{} === {absent}", temps[i]));
+                            }
+                            TupleOptionElement::Wild => {}
+                        }
+                    }
+                    let predicate = if conditions.is_empty() {
+                        "true".to_string()
+                    } else {
+                        conditions.join(" && ")
+                    };
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+                for (i, element) in info.elements.iter().enumerate() {
+                    if let TupleOptionElement::SomeBinding(name) = element {
+                        let binding = snake_to_lower_camel(name);
+                        write_indent(out, indent + 2);
+                        writeln!(out, "const {binding} = {};", temps[i])
+                            .expect("writing to a String cannot fail");
+                    }
+                }
+                let arm_context = lexical_pattern_context(entities, &arm.pat);
+                let body_indent = indent + 2;
+                match arm.body.as_ref() {
+                    Expr::Block(block) => {
+                        emit_block(out, &block.block.stmts, &arm_context, body_indent)?
+                    }
+                    expression => emit_statement(
+                        out,
+                        &Stmt::Expr(expression.clone(), None),
+                        &arm_context,
+                        body_indent,
+                    )?,
+                }
+                write_indent(out, indent + 1);
+                out.push_str("}\n");
+            }
+            write_indent(out, indent);
+            out.push_str("}\n");
+            return Ok(());
+        }
     }
     write_indent(out, indent);
     writeln!(

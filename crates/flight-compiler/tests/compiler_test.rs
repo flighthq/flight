@@ -1993,6 +1993,32 @@ pub fn f(x: u8) -> &'static str {
         assert!(output.contains("default:"), "wildcard arm: {output}");
     }
 
+    #[test]
+    fn lowers_match_on_tuple_of_options_to_null_checked_if_else() {
+        let source = r#"
+pub struct Rect {
+    pub x: f32,
+    pub y: f32,
+}
+
+pub fn equals_rect(a: Option<&Rect>, b: Option<&Rect>) -> bool {
+    return match (a, b) {
+        (Some(a), Some(b)) => a.x == b.x && a.y == b.y,
+        _ => false,
+    };
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("$m0 !== undefined && $m1 !== undefined"),
+            "generates null checks for tuple elements: {output}"
+        );
+        assert!(
+            output.contains("const a = $m0;") && output.contains("const b = $m1;"),
+            "binds unwrapped values: {output}"
+        );
+    }
+
     // Option `.and_then()` and `.map()` lower only over receivers declared as Rust `Option`: a field
     // projection becomes optional chaining, any other body tests the once-evaluated receiver against
     // the absent value, and `.unwrap_or()` stays `??` so falsy payloads survive.
