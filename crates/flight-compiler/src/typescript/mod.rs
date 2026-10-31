@@ -2116,6 +2116,15 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
                 entities.contains(&format!("{STRING_RETURN_MARKER}{}", function.ident))
                     || ((function.ident == "new" || function.ident == "with_capacity")
                         && segments.next().is_some_and(|owner| owner.ident == "String"))
+                    || (path.qself.is_none()
+                        && call_fact(entities, RETURN_BINDING_FACT_MARKER, &path.path)
+                            .as_ref()
+                            .is_some_and(|fact| {
+                                matches!(
+                                    binding_fact_from_marker(fact),
+                                    BindingFact::Structure(s) if s == "String" || s == "str"
+                                )
+                            }))
             }
             _ => false,
         },
@@ -14712,6 +14721,14 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         Expr::Call(call) => match call.func.as_ref() {
             Expr::Path(path) if path.qself.is_none() => {
                 call_fact(entities, SEQUENCE_RETURN_MARKER, &path.path).is_some()
+                    || call_fact(entities, RETURN_BINDING_FACT_MARKER, &path.path)
+                        .as_ref()
+                        .is_some_and(|fact| {
+                            matches!(
+                                binding_fact_from_marker(fact),
+                                BindingFact::Sequence(_) | BindingFact::TypedArray(_)
+                            )
+                        })
             }
             _ => false,
         },
