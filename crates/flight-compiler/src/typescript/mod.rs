@@ -12981,7 +12981,12 @@ fn data_union_pattern_test(
                 .collect(),
             predicate: None,
         })),
-        DataUnionPatternAnalysis::Ordinary => Ok(None),
+        DataUnionPatternAnalysis::Ordinary => {
+            if let Some(test) = inferred_data_union_pattern_test(pattern, value, entities) {
+                return Ok(Some(test));
+            }
+            Ok(None)
+        }
         DataUnionPatternAnalysis::Variants(patterns) => {
             let binding = patterns[0].binding.clone();
             if patterns.iter().any(|pattern| pattern.binding != binding) {
@@ -13006,6 +13011,99 @@ fn data_union_pattern_test(
             }))
         }
     };
+}
+
+fn inferred_data_union_pattern_test(
+    pattern: &Pat,
+    value: &str,
+    entities: &HashSet<String>,
+) -> Option<DataUnionPatternTest> {
+    match pattern {
+        Pat::TupleStruct(ts) => {
+            let (owner, variant) = path_owner_and_member(&ts.path)?;
+            if is_data_union_variant(entities, &owner, &variant)
+                || is_tagged_data_union_variant(entities, &owner, &variant)
+            {
+                return None;
+            }
+            if ts.elems.len() != 1 {
+                return None;
+            }
+            let binding = match &ts.elems[0] {
+                Pat::Ident(id) if id.subpat.is_none() => {
+                    Some(snake_to_lower_camel(&id.ident.to_string()))
+                }
+                Pat::Wild(_) => None,
+                Pat::Reference(r) => match r.pat.as_ref() {
+                    Pat::Ident(id) if id.subpat.is_none() => {
+                        Some(snake_to_lower_camel(&id.ident.to_string()))
+                    }
+                    Pat::Wild(_) => None,
+                    _ => return None,
+                },
+                _ => return None,
+            };
+            let kind = lower_camel_from_upper_camel(&variant);
+            Some(DataUnionPatternTest {
+                bindings: binding
+                    .map(|b| (b, value.to_string()))
+                    .into_iter()
+                    .collect(),
+                predicate: Some(format!("{value}.kind === {kind:?}")),
+            })
+        }
+        Pat::Struct(s) => {
+            let (owner, variant) = path_owner_and_member(&s.path)?;
+            if is_data_union_variant(entities, &owner, &variant)
+                || is_tagged_data_union_variant(entities, &owner, &variant)
+            {
+                return None;
+            }
+            let mut bindings = Vec::new();
+            for field in &s.fields {
+                let source = snake_to_lower_camel(&emit_member(&field.member));
+                let binding_name = match field.pat.as_ref() {
+                    Pat::Ident(id) if id.subpat.is_none() => {
+                        snake_to_lower_camel(&id.ident.to_string())
+                    }
+                    Pat::Wild(_) => continue,
+                    Pat::Reference(r) => match r.pat.as_ref() {
+                        Pat::Ident(id) if id.subpat.is_none() => {
+                            snake_to_lower_camel(&id.ident.to_string())
+                        }
+                        Pat::Wild(_) => continue,
+                        _ => return None,
+                    },
+                    _ => return None,
+                };
+                bindings.push((binding_name, format!("{value}.{source}")));
+            }
+            let kind = lower_camel_from_upper_camel(&variant);
+            Some(DataUnionPatternTest {
+                bindings,
+                predicate: Some(format!("{value}.kind === {kind:?}")),
+            })
+        }
+        Pat::Or(or) => {
+            let mut all_bindings = Vec::new();
+            let mut predicates = Vec::new();
+            for case in &or.cases {
+                let test = inferred_data_union_pattern_test(case, value, entities)?;
+                all_bindings = test.bindings;
+                if let Some(predicate) = test.predicate {
+                    predicates.push(predicate);
+                }
+            }
+            if predicates.is_empty() {
+                return None;
+            }
+            Some(DataUnionPatternTest {
+                bindings: all_bindings,
+                predicate: Some(predicates.join(" || ")),
+            })
+        }
+        _ => None,
+    }
 }
 
 fn tagged_data_union_predicate(patterns: &[TaggedDataUnionPattern], value: &str) -> String {

@@ -13828,6 +13828,31 @@ pub fn apply_force(force: &ParticleForce, vx: f64, vy: f64, vz: f64, out: &mut [
     }
 
     #[test]
+    fn infers_tagged_data_union_let_else_without_entity_markers() {
+        let source = r#"
+use crate::CollisionShape2D;
+
+pub fn get_circle_radius(shape: &CollisionShape2D) -> f64 {
+    let CollisionShape2D::Circle(c) = shape else {
+        return 0.0;
+    };
+    return c.radius;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".kind === \"circle\""),
+            "should emit kind check for Circle let-else: {output}"
+        );
+        assert!(
+            output.contains("c.radius"),
+            "should access radius through binding: {output}"
+        );
+    }
+
+    #[test]
     fn erases_transparent_data_union_constructors_and_matches_runtime_categories() {
         let source = r#"
 //! flight-compiler: data-union LogData LogValue LogDataOrProvider RectangleId
