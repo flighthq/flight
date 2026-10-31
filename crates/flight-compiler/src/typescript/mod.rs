@@ -5159,6 +5159,19 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     }
                 }
                 Expr::MethodCall(call)
+                    if call.args.is_empty() && call.method == "enumerate" =>
+                {
+                    match self.initializer_fact(&call.receiver) {
+                        BindingFact::Sequence(element) => BindingFact::Sequence(Box::new(
+                            BindingFact::Tuple(vec![
+                                BindingFact::Structure("usize".to_string()),
+                                *element,
+                            ]),
+                        )),
+                        _ => BindingFact::Unknown,
+                    }
+                }
+                Expr::MethodCall(call)
                     if call.args.is_empty()
                         && matches!(
                             call.method.to_string().as_str(),

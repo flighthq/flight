@@ -6335,6 +6335,38 @@ pub fn padded(data: &[u8]) -> Vec<u8> {
     }
 
     #[test]
+    fn propagates_string_fact_through_enumerate_tuple_destructure() {
+        let source = r#"
+pub fn tag_bytes(records: &[(&str, u32)]) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::new();
+    for (_index, (tag, _offset)) in records.iter().enumerate() {
+        out.extend(tag.as_bytes());
+    }
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("TextEncoder"));
+    }
+
+    #[test]
+    fn recognizes_byte_string_literal_as_sequence_for_extend() {
+        let source = r#"
+pub fn header() -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::new();
+    out.extend(b"RIFF");
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".push("));
+    }
+
+    #[test]
     fn emits_step_by_as_index_filter() {
         let source = r#"
 pub fn every_other(items: &[i32]) -> usize {
