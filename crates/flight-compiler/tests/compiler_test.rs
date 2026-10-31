@@ -4866,6 +4866,21 @@ pub fn safe_add(a: u32, b: u32) -> Vec<u8> {
     }
 
     #[test]
+    fn lowers_to_bytes_through_qualified_associated_function() {
+        let source = r#"
+pub fn round_trip(bytes: &[u8]) -> Vec<u8> {
+    let value = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+    return value.to_le_bytes().to_vec();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, value, true)"),
+            "u32::from_le_bytes should propagate u32 type: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {
@@ -4882,6 +4897,21 @@ pub fn bits(value: f32) -> u32 {
         assert!(
             output.contains("getUint32(0, true)"),
             "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_to_bytes_through_numeric_associated_function() {
+        let source = r#"
+pub fn i16_round_trip(bytes: &[u8]) -> Vec<u8> {
+    let value = i16::from_le_bytes([bytes[0], bytes[1]]);
+    return value.to_le_bytes().to_vec();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setInt16(0, value, true)"),
+            "i16::from_le_bytes should propagate i16 type: {output}"
         );
     }
 

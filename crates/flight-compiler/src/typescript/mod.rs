@@ -2351,6 +2351,9 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             };
         }
         Expr::Call(call) => {
+            if let Some(numeric) = numeric_associated_call_type(&call.func) {
+                return Some(numeric);
+            }
             if let Expr::Path(function) = call.func.as_ref() {
                 if function.qself.is_none() {
                     if let Some(fact) =
@@ -4946,9 +4949,14 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     let Expr::Path(path) = call.func.as_ref() else {
                         return BindingFact::Unknown;
                     };
-                    if path.qself.is_some()
-                        || single_path_identifier(&call.func)
-                            .is_some_and(|name| self.fact_of(&name).is_some())
+                    if let Some(numeric) = numeric_associated_call_type(&call.func) {
+                        return BindingFact::Structure(numeric);
+                    }
+                    if path.qself.is_some() {
+                        return BindingFact::Unknown;
+                    }
+                    if single_path_identifier(&call.func)
+                        .is_some_and(|name| self.fact_of(&name).is_some())
                     {
                         return BindingFact::Unknown;
                     }
@@ -18320,6 +18328,35 @@ fn expression_contains_path(block: &syn::Block, expected: &str) -> bool {
     };
     syn::visit::Visit::visit_block(&mut finder, block);
     return finder.found;
+}
+
+fn numeric_associated_call_type(func: &Expr) -> Option<String> {
+    let Expr::Path(path) = func else {
+        return None;
+    };
+    if let Some(qself) = path.qself.as_ref() {
+        let Type::Path(type_path) = qself.ty.as_ref() else {
+            return None;
+        };
+        if type_path.qself.is_some() || type_path.path.segments.len() != 1 {
+            return None;
+        }
+        let type_name = type_path.path.segments[0].ident.to_string();
+        return match type_name.as_str() {
+            "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16"
+            | "u32" | "u64" | "u128" | "usize" => Some(type_name),
+            _ => None,
+        };
+    }
+    if path.path.segments.len() == 2 {
+        let type_name = path.path.segments[0].ident.to_string();
+        return match type_name.as_str() {
+            "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16"
+            | "u32" | "u64" | "u128" | "usize" => Some(type_name),
+            _ => None,
+        };
+    }
+    return None;
 }
 
 pub(super) fn expression_is_associated_path(expression: &Expr, owner: &str, member: &str) -> bool {
