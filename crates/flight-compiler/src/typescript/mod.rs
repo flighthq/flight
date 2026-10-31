@@ -10370,9 +10370,7 @@ fn emit_function_trait_type_with_parameter_names(
         };
         return Ok(format!("({}) => {output}", parameters.join(", ")));
     }
-    return Err(compile_error(
-        "unsupported Rust trait object; only callable traits are portable",
-    ));
+    return Ok("object".to_string());
 }
 
 fn emit_if_expression(

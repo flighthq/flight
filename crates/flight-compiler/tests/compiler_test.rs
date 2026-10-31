@@ -1837,10 +1837,10 @@ export function sameSource(a: Readonly<Source>, b: Readonly<Source>): boolean {
             "use std::sync::Arc;\npub type Unimported = Arc<dyn Any>;\n",
             "use std::any::Any;\nuse std::sync::Arc;\ntrait Extra {}\npub type Mixed = Arc<dyn Any + Extra>;\n",
         ] {
-            assert_eq!(
-                compile_typescript(source, None).unwrap_err().to_string(),
-                "unsupported Rust trait object; only callable traits are portable",
-                "{source}"
+            let output = compile_typescript(source, None).unwrap();
+            assert!(
+                output.contains("object"),
+                "non-standard trait objects should lower to object: {output}"
             );
         }
     }
@@ -2393,14 +2393,19 @@ pub struct Capability {
                 "use std::future::Future;\nuse std::pin::Pin;\npub type P = Pin<Box<dyn Future<Output = u32> + Unpin>>;\n",
                 "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
             ),
-            (
-                "use std::future::Future;\npub type P = Box<dyn Future<Output = u32> + Send>;\n",
-                "unsupported Rust trait object; only callable traits are portable",
-            ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
             assert_eq!(error.to_string(), expected, "{source}");
         }
+        let output = compile_typescript(
+            "use std::future::Future;\npub type P = Box<dyn Future<Output = u32> + Send>;\n",
+            None,
+        )
+        .unwrap();
+        assert!(
+            output.contains("object"),
+            "bare Box<dyn Future> (without Pin) falls back to object: {output}"
+        );
     }
 
     #[test]
