@@ -2841,6 +2841,80 @@ export function local(seed: number): number {
     }
 
     #[test]
+    fn lowers_std_mem_size_of_for_known_numeric_types() {
+        for (rust_type, expected_size) in [
+            ("u8", "1"),
+            ("i8", "1"),
+            ("bool", "1"),
+            ("u16", "2"),
+            ("i16", "2"),
+            ("u32", "4"),
+            ("i32", "4"),
+            ("f32", "4"),
+            ("u64", "8"),
+            ("i64", "8"),
+            ("f64", "8"),
+            ("usize", "4"),
+        ] {
+            let source = format!(
+                "pub fn f() -> usize {{ return std::mem::size_of::<{rust_type}>(); }}\n"
+            );
+            assert_eq!(
+                compile_typescript(&source, None).unwrap(),
+                format!("export function f(): number {{\n  return {expected_size};\n}}\n"),
+                "size_of::<{rust_type}>()"
+            );
+        }
+
+        for source in [
+            "pub fn f() -> usize { return std::mem::size_of::<String>(); }\n",
+            "pub fn f() -> usize { return std::mem::size_of::<Vec<u8>>(); }\n",
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                "portable `std::mem::size_of` requires a turbofish with a known numeric type",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
+    fn lowers_std_mem_take_over_caller_visible_places() {
+        let source = r#"
+pub struct Slot {
+    pub items: Vec<u32>,
+}
+
+pub fn drain(slot: &mut Slot) -> Vec<u32> {
+    return std::mem::take(&mut slot.items);
+}
+
+pub fn drain_local() -> Vec<u32> {
+    let mut values = vec![1, 2, 3];
+    let taken = std::mem::take(&mut values);
+    return taken;
+}
+"#;
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"export interface Slot {
+  items: number[];
+}
+
+export function drain(slot: Slot): number[] {
+  return (() => { const __tmp = slot.items; slot.items = undefined as any; return __tmp; })();
+}
+
+export function drainLocal(): number[] {
+  let values = [1, 2, 3];
+  const taken = (() => { const __tmp = values; values = undefined as any; return __tmp; })();
+  return taken;
+}
+"#
+        );
+    }
+
+    #[test]
     fn lowers_vec_truncate_without_growing_shorter_arrays() {
         let source = "pub fn keep_prefix(values: &mut Vec<u32>, length: usize) { values.truncate(length); }\n";
         assert_eq!(

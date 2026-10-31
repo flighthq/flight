@@ -3825,6 +3825,46 @@ fn std_mem_imported_function(context: &HashSet<String>, local: &str) -> Option<S
     return None;
 }
 
+fn turbofish_type(expression: &Expr) -> Option<String> {
+    let Expr::Path(path) = expression else {
+        return None;
+    };
+    let last = path.path.segments.last()?;
+    let syn::PathArguments::AngleBracketed(args) = &last.arguments else {
+        return None;
+    };
+    if args.args.len() != 1 {
+        return None;
+    }
+    let syn::GenericArgument::Type(rust_type) = args.args.first()? else {
+        return None;
+    };
+    let Type::Path(type_path) = rust_type else {
+        return None;
+    };
+    return Some(
+        type_path
+            .path
+            .segments
+            .iter()
+            .map(|segment| segment.ident.to_string())
+            .collect::<Vec<_>>()
+            .join("::"),
+    );
+}
+
+fn size_of_rust_type(name: &str) -> Option<usize> {
+    return match name {
+        "u8" | "i8" | "bool" => Some(1),
+        "u16" | "i16" => Some(2),
+        "u32" | "i32" | "f32" => Some(4),
+        "u64" | "i64" | "f64" => Some(8),
+        "u128" | "i128" => Some(16),
+        "usize" | "isize" => Some(4),
+        _ => None,
+    };
+}
+
 fn transparent_data_union(rust_enum: &syn::ItemEnum) -> bool {
     return !rust_enum
         .variants
@@ -8063,6 +8103,23 @@ fn emit_expression_value(
                         let replacement = emit_expression(&call.args[1], entities)?;
                         Ok(format!(
                             "(() => {{ const __tmp = {target}; {target} = {replacement}; return __tmp; }})()"
+                        ))
+                    }
+                    "size_of" if call.args.is_empty() => {
+                        if let Some(turbofish) = turbofish_type(&call.func)
+                            && let Some(size) = size_of_rust_type(&turbofish)
+                        {
+                            Ok(size.to_string())
+                        } else {
+                            Err(compile_error(
+                                "portable `std::mem::size_of` requires a turbofish with a known numeric type",
+                            ))
+                        }
+                    }
+                    "take" if call.args.len() == 1 && swap_operand_is_place(&call.args[0]) => {
+                        let target = emit_expression(&call.args[0], entities)?;
+                        Ok(format!(
+                            "(() => {{ const __tmp = {target}; {target} = undefined as any; return __tmp; }})()"
                         ))
                     }
                     _ => Err(compile_error(format!(
