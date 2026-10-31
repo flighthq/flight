@@ -6254,6 +6254,28 @@ pub fn use_config(config: &Config) -> Vec<u8> {
     }
 
     #[test]
+    fn resolves_numeric_type_from_struct_field() {
+        let source = r#"
+pub struct Header {
+    pub width: u16,
+    pub height: u32,
+}
+
+pub fn encode_header(header: &Header) -> Vec<u8> {
+    let mut data = vec![0; 6];
+    data[0..2].copy_from_slice(&header.width.to_le_bytes());
+    data[2..6].copy_from_slice(&header.height.to_le_bytes());
+    return data;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("setUint16"));
+        assert!(output.contains("setUint32"));
+    }
+
+    #[test]
     fn tracks_nested_function_return_type_for_extend() {
         let source = r#"
 pub fn build(input: &[u8]) -> Vec<u8> {

@@ -372,6 +372,8 @@ pub(super) const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 // `{struct identity}␟{field}␟{field struct identity}` for each field whose declared type is a struct of
 // a source, so a nested field read resolves its owner through the declarations.
 pub(super) const STRUCT_FIELD_TYPE_MARKER: &str = "@struct-field-type:";
+// `{struct identity}␟{field}␟{numeric_type}` for each field declared as a Rust numeric primitive.
+const NUMERIC_FIELD_TYPE_MARKER: &str = "@numeric-field-type:";
 // `{struct identity}␟{field}` for each field whose declared type lowers to an identity-bearing
 // TypeScript object that is not a source struct (see `rust_type_is_shared_identity`).
 pub(super) const SHARED_IDENTITY_FIELD_MARKER: &str = "@shared-identity-field:";
@@ -2511,6 +2513,16 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                             }
                         }
                     }
+                }
+            }
+            if let syn::Member::Named(field_name) = &field.member {
+                if let Some(owner) = expression_struct_name(&field.base, entities) {
+                    return unique_marker_suffix(
+                        entities,
+                        &format!(
+                            "{NUMERIC_FIELD_TYPE_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                        ),
+                    );
                 }
             }
             return None;
@@ -7198,6 +7210,15 @@ fn generation_context_with_types(
                 } else if shared_identity_type_at_depth(&context, Some(module), &field.ty, 0) {
                     context.insert(format!(
                         "{SHARED_IDENTITY_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
+                        structure.ident
+                    ));
+                }
+                if let Some(numeric) = named_type(&field.ty).filter(|n| matches!(n.as_str(),
+                    "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize"
+                    | "u8" | "u16" | "u32" | "u64" | "u128" | "usize"))
+                {
+                    context.insert(format!(
+                        "{NUMERIC_FIELD_TYPE_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{numeric}",
                         structure.ident
                     ));
                 }
