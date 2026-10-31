@@ -2259,6 +2259,32 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                     | "usize"
             )
         }),
+        Expr::Binary(binary) => {
+            let left = expression_numeric_type(&binary.left, entities);
+            let right = expression_numeric_type(&binary.right, entities);
+            return match (left, right) {
+                (Some(l), Some(r)) if l == r => Some(l),
+                (Some(t), None) | (None, Some(t)) => Some(t),
+                _ => None,
+            };
+        }
+        Expr::MethodCall(call) if call.method == "abs"
+            || call.method == "min"
+            || call.method == "max"
+            || call.method == "pow"
+            || call.method == "wrapping_add"
+            || call.method == "wrapping_sub"
+            || call.method == "wrapping_mul"
+            || call.method == "saturating_add"
+            || call.method == "saturating_sub"
+            || call.method == "saturating_mul"
+            || call.method == "checked_add"
+            || call.method == "checked_sub"
+            || call.method == "checked_mul" =>
+        {
+            return expression_numeric_type(&call.receiver, entities);
+        }
+        Expr::Unary(unary) => return expression_numeric_type(&unary.expr, entities),
         Expr::Lit(literal) => return literal_numeric_suffix(literal),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             path.path.segments[0].ident.to_string()

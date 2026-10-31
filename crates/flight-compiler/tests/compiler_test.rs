@@ -4617,6 +4617,28 @@ pub fn f(bytes: &mut [u8]) {
     }
 
     #[test]
+    fn lowers_to_bytes_on_binary_and_unary_expressions() {
+        let source = r#"
+pub fn f(a: u32, b: u32) -> [u8; 4] {
+    return (a + b).to_le_bytes();
+}
+
+pub fn g(value: i16) -> [u8; 2] {
+    return (-value).to_be_bytes();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, (a + b), true)"),
+            "binary u32 to_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("setInt16(0, (-value), false)"),
+            "unary i16 to_be_bytes: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {
