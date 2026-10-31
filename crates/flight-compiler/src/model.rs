@@ -1614,14 +1614,12 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             }
             Item::Type(item) => type_aliases.push(item),
             Item::Use(item) => uses.push(item),
-            Item::Trait(item) if is_public(&item.vis) => {
-                return Err(unsupported_public("trait", &item.ident.to_string()));
-            }
             Item::Union(item) if is_public(&item.vis) => {
                 return Err(unsupported_public("union", &item.ident.to_string()));
             }
             Item::ExternCrate(item) => extern_crates.push(item),
-            Item::ForeignMod(_) | Item::Impl(_) | Item::Macro(_) | Item::Mod(_) => {}
+            Item::ForeignMod(_) | Item::Impl(_) | Item::Macro(_) | Item::Mod(_)
+            | Item::Trait(_) => {}
             _ => {}
         }
     }

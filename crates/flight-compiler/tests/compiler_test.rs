@@ -14061,7 +14061,7 @@ pub enum Value {
     }
 
     #[test]
-    fn refuses_unsupported_public_contract_items() {
+    fn infers_data_union_from_enum_with_non_unit_variants() {
         let source = r#"
 pub enum Axis {
     Named { value: i32 },
@@ -14072,6 +14072,25 @@ pub enum Axis {
         assert!(
             output.contains("kind: \"named\""),
             "auto-inferred data union should produce a tagged variant: {output}"
+        );
+    }
+
+    #[test]
+    fn skips_public_trait_definitions() {
+        let source = r#"
+pub trait Renderable {
+    fn render(&self);
+}
+
+pub fn get_scale() -> f64 {
+    return 1.0;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("getScale"),
+            "functions should still compile when a trait is present: {output}"
         );
     }
 }
