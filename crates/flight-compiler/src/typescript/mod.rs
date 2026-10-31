@@ -14601,6 +14601,25 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             })
         }
         Expr::Group(group) => expression_is_sequence(&group.expr, entities),
+        Expr::If(if_expr) => {
+            let then_is_seq = if_expr.then_branch.stmts.last().is_some_and(|stmt| match stmt {
+                syn::Stmt::Expr(expr, None) => expression_is_sequence(expr, entities),
+                _ => false,
+            });
+            let else_is_seq = if_expr.else_branch.as_ref().is_some_and(|(_, expr)| {
+                expression_is_sequence(expr, entities)
+            });
+            then_is_seq || else_is_seq
+        }
+        Expr::Match(match_expr) => match_expr.arms.iter().any(|arm| {
+            match arm.body.as_ref() {
+                Expr::Block(block) => block.block.stmts.last().is_some_and(|stmt| match stmt {
+                    syn::Stmt::Expr(expr, None) => expression_is_sequence(expr, entities),
+                    _ => false,
+                }),
+                expr => expression_is_sequence(expr, entities),
+            }
+        }),
         Expr::MethodCall(call)
             if call.args.is_empty() && (call.method == "clone" || call.method == "to_vec") =>
         {
