@@ -14863,7 +14863,7 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             if call.args.is_empty()
                 && matches!(
                     call.method.to_string().as_str(),
-                    "to_le_bytes" | "to_be_bytes" | "to_ne_bytes"
+                    "as_bytes" | "to_le_bytes" | "to_be_bytes" | "to_ne_bytes"
                 ) =>
         {
             true
