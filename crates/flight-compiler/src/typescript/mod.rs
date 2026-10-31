@@ -2302,6 +2302,26 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                 _ => None,
             };
         }
+        Expr::Call(call) => {
+            if let Expr::Path(function) = call.func.as_ref() {
+                if function.qself.is_none() {
+                    if let Some(fact) =
+                        call_fact(entities, RETURN_BINDING_FACT_MARKER, &function.path)
+                    {
+                        let binding = binding_fact_from_marker(&fact);
+                        if let BindingFact::Structure(identity) = binding {
+                            return match identity.as_str() {
+                                "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128"
+                                | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
+                                | "usize" => Some(identity),
+                                _ => None,
+                            };
+                        }
+                    }
+                }
+            }
+            return None;
+        }
         Expr::Block(block) => {
             return block.block.stmts.last().and_then(|stmt| match stmt {
                 syn::Stmt::Expr(expr, None) => expression_numeric_type(expr, entities),

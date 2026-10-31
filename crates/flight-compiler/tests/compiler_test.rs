@@ -4813,6 +4813,24 @@ pub fn match_expr(mode: u8, a: i32, b: i32, c: i32) -> [u8; 4] {
     }
 
     #[test]
+    fn lowers_to_bytes_on_function_call_with_numeric_return_type() {
+        let source = r#"
+pub fn compute(x: f32) -> f32 {
+    return x * 2.0;
+}
+
+pub fn to_bytes(x: f32) -> [u8; 4] {
+    return compute(x).to_le_bytes();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setFloat32(0, compute(x), true)"),
+            "function call returning f32 should propagate numeric type: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {
