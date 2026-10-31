@@ -11614,12 +11614,19 @@ fn emit_let_else_local(
         if let Pat::Tuple(tuple) = &pattern.elems[0] {
             let mut names = Vec::new();
             for elem in &tuple.elems {
-                let Pat::Ident(ident) = elem else {
-                    return Err(compile_error(
-                        "portable `let Some((..))` tuple elements must be identifiers",
-                    ));
-                };
-                names.push(snake_to_lower_camel(&ident.ident.to_string()));
+                match elem {
+                    Pat::Ident(ident) => {
+                        names.push(snake_to_lower_camel(&ident.ident.to_string()));
+                    }
+                    Pat::Wild(_) => {
+                        names.push("_".to_string());
+                    }
+                    _ => {
+                        return Err(compile_error(
+                            "portable `let Some((..))` tuple elements must be identifiers",
+                        ));
+                    }
+                }
             }
             let value = emit_expression(&initializer.expr, entities)?;
             let absent = option_absent_value(&initializer.expr, entities);
@@ -15217,12 +15224,19 @@ pub(crate) fn emit_option_binding(
     if let Pat::Tuple(tuple) = &pattern.elems[0] {
         let mut names = Vec::new();
         for elem in &tuple.elems {
-            let Pat::Ident(ident) = elem else {
-                return Err(compile_error(
-                    "portable `if let Some((..))` tuple elements must be identifiers",
-                ));
-            };
-            names.push(snake_to_lower_camel(&ident.ident.to_string()));
+            match elem {
+                Pat::Ident(ident) => {
+                    names.push(snake_to_lower_camel(&ident.ident.to_string()));
+                }
+                Pat::Wild(_) => {
+                    names.push("_".to_string());
+                }
+                _ => {
+                    return Err(compile_error(
+                        "portable `if let Some((..))` tuple elements must be identifiers",
+                    ));
+                }
+            }
         }
         return Ok(Some((
             format!("[{}]", names.join(", ")),

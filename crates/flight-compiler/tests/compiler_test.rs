@@ -6078,6 +6078,22 @@ pub fn process(input: Option<Vec<i32>>, extra: Vec<i32>) {
     }
 
     #[test]
+    fn lowers_let_else_some_tuple_with_wildcard() {
+        let source = r#"
+pub fn find_value(items: &[(i32, String)]) -> Option<String> {
+    let Some((_, value)) = items.iter().find(|(k, _)| *k == 42) else {
+        return None;
+    };
+    return Some(value.clone());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("const [_, value] = $opt;"));
+    }
+
+    #[test]
     fn propagates_binding_facts_through_result_ok_pattern() {
         let source = r#"
 pub fn check(input: Result<String, i32>) -> bool {
