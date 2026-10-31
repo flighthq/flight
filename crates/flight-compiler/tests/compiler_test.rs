@@ -4726,6 +4726,32 @@ pub fn f(values: &[u32], i: usize) -> [u8; 4] {
     }
 
     #[test]
+    fn lowers_to_bytes_on_if_and_match_expression_receivers() {
+        let source = r#"
+pub fn if_expr(big: bool, a: u32, b: u32) -> [u8; 4] {
+    return (if big { a } else { b }).to_le_bytes();
+}
+
+pub fn match_expr(mode: u8, a: i32, b: i32, c: i32) -> [u8; 4] {
+    return (match mode {
+        0 => a,
+        1 => b,
+        _ => c,
+    }).to_le_bytes();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0,"),
+            "if-expression u32 to_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("setInt32(0,"),
+            "match-expression i32 to_le_bytes: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {

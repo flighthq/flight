@@ -2268,6 +2268,46 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                 _ => None,
             };
         }
+        Expr::Block(block) => {
+            return block.block.stmts.last().and_then(|stmt| match stmt {
+                syn::Stmt::Expr(expr, None) => expression_numeric_type(expr, entities),
+                _ => None,
+            });
+        }
+        Expr::If(if_expr) => {
+            let then_type = if_expr.then_branch.stmts.last().and_then(|stmt| match stmt {
+                syn::Stmt::Expr(expr, None) => expression_numeric_type(expr, entities),
+                _ => None,
+            });
+            let else_type = if_expr
+                .else_branch
+                .as_ref()
+                .and_then(|(_, expr)| expression_numeric_type(expr, entities));
+            return match (then_type, else_type) {
+                (Some(t), Some(e)) if t == e => Some(t),
+                (Some(t), None) | (None, Some(t)) => Some(t),
+                _ => None,
+            };
+        }
+        Expr::Match(match_expr) => {
+            let mut result: Option<String> = None;
+            for arm in &match_expr.arms {
+                let arm_type = match arm.body.as_ref() {
+                    Expr::Block(block) => block.block.stmts.last().and_then(|stmt| match stmt {
+                        syn::Stmt::Expr(expr, None) => expression_numeric_type(expr, entities),
+                        _ => None,
+                    }),
+                    expr => expression_numeric_type(expr, entities),
+                };
+                match (&result, &arm_type) {
+                    (None, Some(_)) => result = arm_type,
+                    (Some(prev), Some(cur)) if prev == cur => {}
+                    (Some(_), Some(_)) => return None,
+                    _ => {}
+                }
+            }
+            return result;
+        }
         Expr::MethodCall(call) if call.args.is_empty()
             && matches!(call.method.to_string().as_str(), "len" | "count") =>
         {
@@ -2285,7 +2325,9 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             || call.method == "saturating_mul"
             || call.method == "checked_add"
             || call.method == "checked_sub"
-            || call.method == "checked_mul" =>
+            || call.method == "checked_mul"
+            || call.method == "checked_div"
+            || call.method == "unsigned_abs" =>
         {
             return expression_numeric_type(&call.receiver, entities);
         }
