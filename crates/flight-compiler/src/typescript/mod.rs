@@ -13437,6 +13437,8 @@ fn emit_match_patterns(
                 Ok(vec![emit_path_segment(&name)])
             }
         }
+        Pat::Paren(paren) => emit_match_patterns(&paren.pat, entities),
+        Pat::Reference(reference) => emit_match_patterns(&reference.pat, entities),
         Pat::Wild(_) => Ok(vec!["default".to_string()]),
         _ => Err(compile_error("unsupported portable Rust match pattern")),
     };
