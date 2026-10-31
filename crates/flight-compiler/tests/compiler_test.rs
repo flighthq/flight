@@ -6397,6 +6397,23 @@ pub fn sum_f32(values: &[f32; 4]) -> f32 {
     }
 
     #[test]
+    fn propagates_string_fact_through_split_into_map_closure() {
+        let source = r#"
+pub fn split_parts(source: &str) -> Vec<String> {
+    return source
+        .split(',')
+        .map(|part| part.trim().to_string())
+        .collect();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(".split("));
+        assert!(output.contains(".trim()"));
+    }
+
+    #[test]
     fn emits_step_by_as_index_filter() {
         let source = r#"
 pub fn every_other(items: &[i32]) -> usize {

@@ -5380,6 +5380,31 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     self.initializer_fact(&call.receiver)
                 }
                 Expr::MethodCall(call)
+                    if matches!(
+                        call.method.to_string().as_str(),
+                        "split" | "splitn" | "rsplitn" | "split_terminator"
+                            | "split_whitespace" | "split_ascii_whitespace" | "lines"
+                    ) && matches!(
+                        self.initializer_fact(&call.receiver),
+                        BindingFact::Structure(ref s) if s == "String" || s == "str"
+                    ) =>
+                {
+                    BindingFact::Sequence(Box::new(BindingFact::Structure("str".to_string())))
+                }
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(
+                            call.method.to_string().as_str(),
+                            "chars" | "bytes"
+                        )
+                        && matches!(
+                            self.initializer_fact(&call.receiver),
+                            BindingFact::Structure(ref s) if s == "String" || s == "str"
+                        ) =>
+                {
+                    BindingFact::Sequence(Box::new(BindingFact::Unknown))
+                }
+                Expr::MethodCall(call)
                     if call.args.is_empty()
                         && matches!(
                             call.method.to_string().as_str(),
