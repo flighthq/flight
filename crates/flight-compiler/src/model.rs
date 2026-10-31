@@ -1593,11 +1593,16 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             Item::Const(item) => constants.push(item),
             Item::Enum(item) => {
                 let name = item.ident.to_string();
+                let has_named_variants = item
+                    .variants
+                    .iter()
+                    .any(|v| matches!(v.fields, Fields::Named(_)));
+                let all_named_or_unit = item
+                    .variants
+                    .iter()
+                    .all(|v| matches!(v.fields, Fields::Named(_) | Fields::Unit));
                 let is_data_union = data_unions.contains(&name)
-                    || item
-                        .variants
-                        .iter()
-                        .any(|v| !matches!(v.fields, Fields::Unit));
+                    || (has_named_variants && all_named_or_unit);
                 validate_enum(&item, is_data_union)?;
                 enums.push(item);
             }
@@ -1629,7 +1634,11 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             && rust_enum
                 .variants
                 .iter()
-                .any(|v| !matches!(v.fields, Fields::Unit))
+                .any(|v| matches!(v.fields, Fields::Named(_)))
+            && rust_enum
+                .variants
+                .iter()
+                .all(|v| matches!(v.fields, Fields::Named(_) | Fields::Unit))
         {
             data_unions.insert(name);
         }

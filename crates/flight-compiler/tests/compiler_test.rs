@@ -7788,7 +7788,7 @@ pub fn default_facet() -> Facet {
             ),
             (
                 "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward(f32) }\n",
-                "enum `Direction` cannot combine `flight-compiler: numeric-union` with another union directive",
+                "unsupported enum variant `Direction::Forward`; only unit variants are portable",
             ),
             (
                 "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward = 1 + 1 }\n",
