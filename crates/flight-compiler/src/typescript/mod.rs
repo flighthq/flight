@@ -9520,6 +9520,9 @@ fn emit_if_expression(
     expression: &syn::ExprIf,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if let Some(iife) = emit_if_let_value_expression(expression, entities)? {
+        return Ok(iife);
+    }
     let condition = emit_expression(&expression.cond, entities)?;
     let then_value = emit_value_block(&expression.then_branch, entities)?;
     let Some((_, otherwise)) = &expression.else_branch else {
@@ -9537,6 +9540,96 @@ fn emit_if_expression(
         }
     };
     return Ok(format!("{condition} ? {then_value} : {otherwise}"));
+}
+
+fn emit_if_let_value_expression(
+    expression: &syn::ExprIf,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    let option_binding = emit_option_binding(&expression.cond, entities)?;
+    let tuple_binding = emit_data_union_tuple_binding(&expression.cond, entities)?;
+    if option_binding.is_none() && tuple_binding.is_none() {
+        if let Expr::Let(binding) = expression.cond.as_ref() {
+            if let Some(test) = data_union_pattern_test(&binding.pat, "$ifLet", entities)? {
+                return emit_if_let_data_union_value_expression(expression, binding, &test, entities)
+                    .map(Some);
+            }
+        }
+        return Ok(None);
+    }
+    let Some((_, otherwise)) = &expression.else_branch else {
+        return Err(compile_error(
+            "Rust `if let` expression used as a value needs an else branch",
+        ));
+    };
+    let then_context = if let Expr::Let(binding) = expression.cond.as_ref() {
+        lexical_pattern_context(entities, &binding.pat)
+    } else {
+        entities.clone()
+    };
+    let mut out = "(() => {\n".to_string();
+    if let Some((name, scrutinee, absent)) = &option_binding {
+        writeln!(out, "  if ({scrutinee} !== {absent}) {{").expect("writing to a String cannot fail");
+        writeln!(out, "    const {name} = {scrutinee};").expect("writing to a String cannot fail");
+    } else if let Some((condition, bindings)) = &tuple_binding {
+        writeln!(out, "  if ({condition}) {{").expect("writing to a String cannot fail");
+        for (name, value) in bindings {
+            writeln!(out, "    const {name} = {value};").expect("writing to a String cannot fail");
+        }
+    }
+    let then_value = emit_value_block(&expression.then_branch, &then_context)?;
+    writeln!(out, "    return {then_value};").expect("writing to a String cannot fail");
+    out.push_str("  } else {\n");
+    let else_value = match otherwise.as_ref() {
+        Expr::Block(block) => emit_value_block(&block.block, entities)?,
+        Expr::If(nested) => emit_if_expression(nested, entities)?,
+        _ => {
+            return Err(compile_error(
+                "unsupported non-block else branch in Rust if-let expression",
+            ));
+        }
+    };
+    writeln!(out, "    return {else_value};").expect("writing to a String cannot fail");
+    out.push_str("  }\n})()");
+    return Ok(Some(out));
+}
+
+fn emit_if_let_data_union_value_expression(
+    expression: &syn::ExprIf,
+    binding: &syn::ExprLet,
+    test: &DataUnionPatternTest,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let Some((_, otherwise)) = &expression.else_branch else {
+        return Err(compile_error(
+            "Rust `if let` expression used as a value needs an else branch",
+        ));
+    };
+    let then_context = lexical_pattern_context(entities, &binding.pat);
+    let scrutinee = emit_expression(&binding.expr, entities)?;
+    let predicate = test.predicate.as_deref().unwrap_or("true");
+    let mut out = "(() => {\n".to_string();
+    writeln!(out, "  const $ifLet = {scrutinee};").expect("writing to a String cannot fail");
+    writeln!(out, "  if ({predicate}) {{").expect("writing to a String cannot fail");
+    for (name, expr) in &test.bindings {
+        let camel = snake_to_lower_camel(name);
+        writeln!(out, "    const {camel} = {expr};").expect("writing to a String cannot fail");
+    }
+    let then_value = emit_value_block(&expression.then_branch, &then_context)?;
+    writeln!(out, "    return {then_value};").expect("writing to a String cannot fail");
+    out.push_str("  } else {\n");
+    let else_value = match otherwise.as_ref() {
+        Expr::Block(block) => emit_value_block(&block.block, entities)?,
+        Expr::If(nested) => emit_if_expression(nested, entities)?,
+        _ => {
+            return Err(compile_error(
+                "unsupported non-block else branch in Rust if-let expression",
+            ));
+        }
+    };
+    writeln!(out, "    return {else_value};").expect("writing to a String cannot fail");
+    out.push_str("  }\n})()");
+    return Ok(out);
 }
 
 fn emit_inclusive_comparison(

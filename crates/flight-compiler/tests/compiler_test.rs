@@ -18342,6 +18342,93 @@ pub fn combine(a: Option<f32>, b: Option<f32>) -> f32 {
 }
 
 #[test]
+fn lowers_if_let_option_in_value_position() {
+    let source = r#"
+pub fn f(value: Option<u32>) -> u32 {
+    let result = if let Some(x) = value {
+        x + 1
+    } else {
+        0
+    };
+    return result;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("(() =>"),
+        "if-let in value position emits an IIFE: {output}"
+    );
+    assert!(
+        output.contains("!== undefined"),
+        "option binding should check !== undefined: {output}"
+    );
+    assert!(
+        output.contains("return x + 1"),
+        "then branch should return the value: {output}"
+    );
+    assert!(
+        output.contains("return 0"),
+        "else branch should return the default: {output}"
+    );
+}
+
+#[test]
+fn lowers_if_let_tuple_option_in_value_position() {
+    let source = r#"
+pub fn f(a: Option<u32>, b: Option<u32>) -> u32 {
+    let sum = if let (Some(x), Some(y)) = (a, b) {
+        x + y
+    } else {
+        0
+    };
+    return sum;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("(() =>"),
+        "tuple if-let in value position emits an IIFE: {output}"
+    );
+    assert!(
+        output.contains("!== undefined"),
+        "option binding should check !== undefined: {output}"
+    );
+    assert!(
+        output.contains("return x + y"),
+        "then branch should return the sum: {output}"
+    );
+}
+
+#[test]
+fn lowers_chained_if_let_option_in_value_position() {
+    let source = r#"
+pub fn f(a: Option<u32>, b: Option<u32>) -> u32 {
+    let result = if let Some(x) = a {
+        x + 1
+    } else if let Some(y) = b {
+        y + 2
+    } else {
+        0
+    };
+    return result;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("(() =>"),
+        "chained if-let in value position emits IIFEs: {output}"
+    );
+    assert!(
+        output.contains("return x + 1"),
+        "first branch value should be returned: {output}"
+    );
+    assert!(
+        output.contains("return y + 2"),
+        "second branch value should be returned: {output}"
+    );
+}
+
+#[test]
 fn lowers_option_match_with_return_in_none_arm() {
     let source = r#"
 pub fn extract_or_bail(value: Option<i32>) -> i32 {
