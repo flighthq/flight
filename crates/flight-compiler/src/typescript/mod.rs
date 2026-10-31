@@ -12074,18 +12074,28 @@ fn emit_matches_macro(
 ) -> Result<String, CompileError> {
     let (value, pattern, guard) = parse_matches_arguments(rust_macro)
         .map_err(|error| compile_error(format!("failed to parse `matches!` arguments: {error}")))?;
-    if guard.is_some() {
-        return Err(compile_error("portable `matches!` cannot use a guard"));
-    }
     let text = emit_expression(&value, entities)?;
     let reusable = expression_is_reusable(&value);
     let subject = if reusable { text.as_str() } else { "value" };
     if let Some(test) = data_union_pattern_test(&pattern, subject, entities)? {
         let predicate = test.predicate.unwrap_or_else(|| "true".to_string());
+        let full_predicate = if let Some(guard_expr) = &guard {
+            let guard_text = emit_matches_guard(guard_expr, &test.bindings, entities)?;
+            if guard_text == "true" {
+                predicate
+            } else {
+                format!("{predicate} && {guard_text}")
+            }
+        } else {
+            predicate
+        };
         if reusable {
-            return Ok(predicate);
+            return Ok(full_predicate);
         }
-        return Ok(format!("((value) => {predicate})({text})"));
+        return Ok(format!("((value) => {full_predicate})({text})"));
+    }
+    if guard.is_some() {
+        return Err(compile_error("portable `matches!` guard requires a data union variant pattern"));
     }
     if let Some(predicate) = emit_matches_literal_predicate(&pattern, subject, entities)? {
         if reusable {
@@ -12096,6 +12106,34 @@ fn emit_matches_macro(
     return Err(compile_error(
         "portable `matches!` supports only data union variant patterns",
     ));
+}
+
+fn emit_matches_guard(
+    guard: &Expr,
+    bindings: &[(String, String)],
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    if bindings.is_empty() {
+        return emit_expression(guard, entities);
+    }
+    let mut guard_entities = entities.clone();
+    for (rust_name, _) in bindings {
+        let ts_name = snake_to_lower_camel(rust_name);
+        let id = format!("{BINDING_MARKER}{ts_name}");
+        guard_entities.insert(id);
+    }
+    let guard_text = emit_expression(guard, &guard_entities)?;
+    let params = bindings
+        .iter()
+        .map(|(name, _)| snake_to_lower_camel(name))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let args = bindings
+        .iter()
+        .map(|(_, expr)| expr.clone())
+        .collect::<Vec<_>>()
+        .join(", ");
+    Ok(format!("(({params}) => {guard_text})({args})"))
 }
 
 fn emit_matches_literal_predicate(

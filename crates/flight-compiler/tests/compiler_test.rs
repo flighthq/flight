@@ -1931,10 +1931,10 @@ pub fn is_closed(segment: &Segment) -> bool {
         {
             let source =
                 "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(id, Id::Number(n) if n > 0); }\n";
-            let error = compile_typescript(source, None).unwrap_err();
-            assert_eq!(
-                error.to_string(),
-                "portable `matches!` cannot use a guard"
+            let output = compile_typescript(source, None).unwrap();
+            assert!(
+                output.contains("typeof id === \"number\" && ((n) => n > 0)(id)"),
+                "matches! with guard should emit predicate with IIFE guard: {output}"
             );
         }
         {
@@ -1943,6 +1943,29 @@ pub fn is_closed(segment: &Segment) -> bool {
             let output = compile_typescript(source, None).unwrap();
             assert!(output.contains("value !== undefined"));
         }
+    }
+
+    #[test]
+    fn lowers_matches_with_guard_on_data_union_variant() {
+        let source = r#"
+//! flight-compiler: data-union Token
+
+pub enum Token {
+    Text(String),
+    Number(f64),
+}
+
+pub fn has_text(tokens: &[Token], expected: &str) -> bool {
+    return tokens.iter().any(|token| matches!(token, Token::Text(value) if value == expected));
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("typeof token === \"string\" && ((value) => value === expected)(token)"),
+            "matches! with guard should combine predicate and IIFE guard: {output}"
+        );
     }
 
     #[test]
