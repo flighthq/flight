@@ -6367,6 +6367,36 @@ pub fn header() -> Vec<u8> {
     }
 
     #[test]
+    fn propagates_numeric_type_through_fixed_array_iteration() {
+        let source = r#"
+pub fn test_array_iter(transform: &[f64; 12]) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::new();
+    for value in transform {
+        out.extend_from_slice(&value.to_le_bytes());
+    }
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("setFloat64"));
+    }
+
+    #[test]
+    fn propagates_numeric_type_through_typed_array_iterator_adapter() {
+        let source = r#"
+pub fn sum_f32(values: &[f32; 4]) -> f32 {
+    return values.iter().map(|v| v * 2.0).fold(0.0_f32, |acc, v| acc + v);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("Float32Array"));
+    }
+
+    #[test]
     fn emits_step_by_as_index_filter() {
         let source = r#"
 pub fn every_other(items: &[i32]) -> usize {
