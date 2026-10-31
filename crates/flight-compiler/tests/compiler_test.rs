@@ -19787,3 +19787,31 @@ pub fn classify_byte(byte: u8) -> i32 {
         "should emit case 97 for b'a': {output}"
     );
 }
+
+#[test]
+fn lowers_let_else_some_data_union_variant() {
+    let source = r#"
+//! flight-compiler: data-union EffectValue
+
+pub enum EffectValue {
+    Number(f64),
+    Text(String),
+}
+
+pub fn get_number(defaults: Option<EffectValue>) -> f64 {
+    let Some(EffectValue::Number(value)) = defaults else {
+        return 0.0;
+    };
+    return value;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("=== undefined"),
+        "should check for undefined (Option absent): {output}"
+    );
+    assert!(
+        output.contains("\"number\""),
+        "should check data union kind: {output}"
+    );
+}

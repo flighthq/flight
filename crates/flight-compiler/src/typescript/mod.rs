@@ -11734,6 +11734,37 @@ fn emit_let_else_local(
                 .expect("writing to a String cannot fail");
             return Ok(());
         }
+        if let Pat::TupleStruct(_) | Pat::Struct(_) = &pattern.elems[0] {
+            let value = emit_expression(&initializer.expr, entities)?;
+            let absent = option_absent_value(&initializer.expr, entities);
+            let temp = "$opt";
+            write_indent(out, indent);
+            writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
+            write_indent(out, indent);
+            writeln!(out, "if ({temp} === {absent}) {{").expect("writing to a String cannot fail");
+            emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+            write_indent(out, indent);
+            out.push_str("}\n");
+            if let Some(test) = data_union_pattern_test(&pattern.elems[0], temp, entities)? {
+                if let Some(predicate) = &test.predicate {
+                    write_indent(out, indent);
+                    writeln!(out, "if (!({predicate})) {{").expect("writing to a String cannot fail");
+                    emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+                    write_indent(out, indent);
+                    out.push_str("}\n");
+                }
+                for (binding, expression) in &test.bindings {
+                    let name = snake_to_lower_camel(binding);
+                    write_indent(out, indent);
+                    writeln!(out, "const {name} = {expression};")
+                        .expect("writing to a String cannot fail");
+                }
+                return Ok(());
+            }
+            return Err(compile_error(
+                "portable `let Some` binding needs an identifier, tuple, or data union variant",
+            ));
+        }
         let Pat::Ident(identifier) = &pattern.elems[0] else {
             return Err(compile_error(
                 "portable `let Some` binding needs an identifier or tuple",
