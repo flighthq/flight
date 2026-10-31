@@ -3855,6 +3855,15 @@ fn expression_hash_collection(
             .filter(|fact| matches!(fact, BindingFact::HashMap | BindingFact::HashSet))
         }
         Expr::Group(group) => expression_hash_collection(&group.expr, entities),
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "clone" | "unwrap" | "expect" | "unwrap_or_default"
+                ) =>
+        {
+            expression_hash_collection(&call.receiver, entities)
+        }
         Expr::Paren(paren) => expression_hash_collection(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             lexical_fact(entities, &path.path.segments[0].ident.to_string())
@@ -5718,8 +5727,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 if let Some((_, diverge)) = &initializer.diverge {
                     self.visit_expr(diverge);
                 }
+                fact = self.initializer_fact(&initializer.expr);
                 if initializer.diverge.is_none() {
-                    fact = self.initializer_fact(&initializer.expr);
                     retains_nullable_option = matches!(&fact, BindingFact::Option(_))
                         && self.initializer_retains_nullable_option(&initializer.expr);
                 }

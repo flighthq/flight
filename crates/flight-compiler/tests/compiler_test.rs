@@ -6046,6 +6046,54 @@ pub fn required(value: Result<i32, i32>) -> i32 {
     }
 
     #[test]
+    fn propagates_binding_facts_through_let_else_some_pattern() {
+        let source = r#"
+pub fn check(input: Option<String>) -> bool {
+    let Some(value) = input else {
+        return false;
+    };
+    return value.starts_with("hello");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("value.startsWith(\"hello\")"));
+    }
+
+    #[test]
+    fn propagates_sequence_fact_through_let_else_some_pattern() {
+        let source = r#"
+pub fn process(input: Option<Vec<i32>>, extra: Vec<i32>) {
+    let Some(mut items) = input else {
+        return;
+    };
+    items.extend(extra);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("items.push(extra[index])"));
+    }
+
+    #[test]
+    fn resolves_hash_collection_through_unwrap() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn check(input: Option<HashMap<String, i32>>) -> bool {
+    let map = input.unwrap();
+    return map.contains_key("key");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("map.has(\"key\")"));
+    }
+
+    #[test]
     fn emits_readonly_entity_initializers_with_a_writable_construction_view() {
         let source = r#"
 //! flight-compiler: readonly-fields Requirement RequirementSet
