@@ -5080,6 +5080,62 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             self.scopes.pop();
         }
 
+        fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+            self.visit_expr(&call.receiver);
+            let method = call.method.to_string();
+            let is_iterator_adapter = matches!(
+                method.as_str(),
+                "map" | "flat_map"
+                    | "filter"
+                    | "filter_map"
+                    | "for_each"
+                    | "find"
+                    | "find_map"
+                    | "any"
+                    | "all"
+                    | "position"
+                    | "inspect"
+                    | "take_while"
+                    | "skip_while"
+                    | "partition"
+                    | "fold"
+                    | "reduce"
+                    | "scan"
+                    | "try_fold"
+                    | "try_for_each"
+            );
+            if is_iterator_adapter {
+                if let Some(Expr::Closure(closure)) = call.args.first() {
+                    let element_fact = match self.initializer_fact(&call.receiver) {
+                        BindingFact::Sequence(element) => *element,
+                        _ => BindingFact::Unknown,
+                    };
+                    self.scopes.push(BTreeMap::new());
+                    let mut inputs = closure.inputs.iter();
+                    if method == "fold" || method == "try_fold" || method == "scan" {
+                        if let Some(first) = inputs.next() {
+                            self.bind_pattern(first, BindingFact::Unknown);
+                        }
+                    }
+                    if let Some(element_param) = inputs.next() {
+                        self.bind_pattern(element_param, element_fact);
+                    }
+                    for remaining in inputs {
+                        self.bind_pattern(remaining, BindingFact::Unknown);
+                    }
+                    self.visit_expr(&closure.body);
+                    self.scopes.pop();
+                    for arg in call.args.iter().skip(1) {
+                        self.visit_expr(arg);
+                    }
+                    return;
+                }
+            }
+            for arg in &call.args {
+                self.visit_expr(arg);
+            }
+        }
+
         fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
             self.visit_expr(&expression.expr);
             let fact = match self.initializer_fact(&expression.expr) {

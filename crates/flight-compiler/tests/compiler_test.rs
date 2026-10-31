@@ -4639,6 +4639,28 @@ pub fn g(value: i16) -> [u8; 2] {
     }
 
     #[test]
+    fn lowers_to_bytes_in_closure_with_iterator_element_type() {
+        let source = r#"
+pub fn f(values: &[u32]) -> Vec<u8> {
+    return values.iter().flat_map(|v| v.to_le_bytes()).collect();
+}
+
+pub fn g(values: &[i16]) -> Vec<[u8; 2]> {
+    return values.iter().map(|v| v.to_be_bytes()).collect();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("setUint32(0, v, true)"),
+            "flat_map closure u32 to_le_bytes: {output}"
+        );
+        assert!(
+            output.contains("setInt16(0, v, false)"),
+            "map closure i16 to_be_bytes: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_to_bits_with_float_provenance() {
         let source = r#"
 pub fn bits(value: f32) -> u32 {
