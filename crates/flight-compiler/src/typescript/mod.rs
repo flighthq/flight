@@ -2178,6 +2178,10 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             path.path.segments.first().is_some_and(|segment| {
                 entities.contains(&format!("{STRING_EXPRESSION_MARKER}{}", segment.ident))
+                    || matches!(
+                        lexical_fact(entities, &segment.ident.to_string()),
+                        Some(BindingFact::Structure(s)) if s == "String" || s == "str"
+                    )
             })
         }
         Expr::Reference(reference) => expression_is_known_string(&reference.expr, entities),
@@ -2254,6 +2258,13 @@ fn for_loop_iterates_strings(expression: &Expr, entities: &HashSet<String>) -> b
                 | "split_whitespace"
                 | "splitn"
         ) && expression_is_known_string(&call.receiver, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            matches!(
+                lexical_fact(entities, &path.path.segments[0].ident.to_string()),
+                Some(BindingFact::Sequence(element))
+                    if matches!(element.as_ref(), BindingFact::Structure(s) if s == "String" || s == "str")
+            )
+        }
         Expr::Reference(reference) => for_loop_iterates_strings(&reference.expr, entities),
         _ => false,
     };
@@ -6435,6 +6446,14 @@ fn generation_context_with_types(
     );
     for (module, program) in programs {
         insert_typed_array_constant_context(&mut context, &program.constants);
+        for constant in &program.constants {
+            if rust_type_is_string(&constant.ty) {
+                context.insert(format!(
+                    "{STRING_EXPRESSION_MARKER}{}",
+                    constant.ident
+                ));
+            }
+        }
         if program.nullable_options {
             context.insert(format!("{NULLABLE_OPTIONS_SOURCE_MARKER}{module}"));
         }

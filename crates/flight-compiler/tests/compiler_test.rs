@@ -4263,6 +4263,44 @@ pub fn has_indented_line(text: &str) -> bool {
     }
 
     #[test]
+    fn lowers_constant_string_as_bytes_with_provenance() {
+        let source = r#"
+const GREETING: &str = "hello";
+
+pub fn greeting_bytes() -> Vec<u8> {
+    return GREETING.as_bytes().to_vec();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("TextEncoder"),
+            "const &str should be known string for .as_bytes(): {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_for_loop_string_slice_iteration_provenance() {
+        let source = r#"
+pub fn concat_bytes(parts: &[&str]) -> Vec<u8> {
+    let mut result = Vec::new();
+    for part in parts {
+        result.extend_from_slice(part.as_bytes());
+    }
+    return result;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("TextEncoder"),
+            "for-loop variable from &[&str] should be known string for .as_bytes(): {output}"
+        );
+    }
+
+    #[test]
     fn lowers_wrapping_sub() {
         let source = r#"
 pub fn wrap_sub(a: u32, b: u32) -> u32 {
