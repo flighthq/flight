@@ -19729,3 +19729,61 @@ pub fn handle_result(result: Result<f64, String>, out: &mut f64) {
         "should emit assignment in Ok arm: {output}"
     );
 }
+
+#[test]
+fn lowers_some_literal_match_to_switch_case() {
+    let source = r#"
+pub fn topology_name(mode: Option<i32>) -> &'static str {
+    return match mode {
+        Some(0) => "points",
+        Some(1) => "lines",
+        Some(4) => "triangles",
+        _ => "unknown",
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("case 0:"),
+        "should emit case 0 for Some(0): {output}"
+    );
+    assert!(
+        output.contains("case 1:"),
+        "should emit case 1 for Some(1): {output}"
+    );
+    assert!(
+        output.contains("case 4:"),
+        "should emit case 4 for Some(4): {output}"
+    );
+    assert!(
+        output.contains("default:"),
+        "should emit default for wildcard: {output}"
+    );
+}
+
+#[test]
+fn lowers_byte_range_match_to_switch_cases() {
+    let source = r#"
+pub fn classify_byte(byte: u8) -> i32 {
+    return match byte {
+        b'A'..=b'Z' => 1,
+        b'a'..=b'z' => 2,
+        b'0'..=b'9' => 3,
+        _ => 0,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("case 65:"),
+        "should emit case 65 for b'A': {output}"
+    );
+    assert!(
+        output.contains("case 90:"),
+        "should emit case 90 for b'Z': {output}"
+    );
+    assert!(
+        output.contains("case 97:"),
+        "should emit case 97 for b'a': {output}"
+    );
+}

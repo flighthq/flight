@@ -14554,6 +14554,10 @@ fn emit_match_patterns(
                     Expr::Lit(syn::ExprLit {
                         lit: Lit::Int(int), ..
                     }) => int.base10_parse::<i64>().ok(),
+                    Expr::Lit(syn::ExprLit {
+                        lit: Lit::Byte(byte),
+                        ..
+                    }) => Some(byte.value() as i64),
                     Expr::Unary(unary)
                         if matches!(unary.op, UnOp::Neg(_))
                             && matches!(
@@ -14579,6 +14583,10 @@ fn emit_match_patterns(
                 Expr::Lit(syn::ExprLit {
                     lit: Lit::Int(int), ..
                 }) => int.base10_parse::<i64>().ok(),
+                Expr::Lit(syn::ExprLit {
+                    lit: Lit::Byte(byte),
+                    ..
+                }) => Some(byte.value() as i64),
                 Expr::Unary(unary)
                     if matches!(unary.op, UnOp::Neg(_))
                         && matches!(
@@ -14627,6 +14635,14 @@ fn emit_match_patterns(
             } else {
                 Ok(vec![emit_path_segment(&name)])
             }
+        }
+        Pat::TupleStruct(ts)
+            if (ts.path.is_ident("Some") || ts.path.is_ident("Ok")) && ts.elems.len() == 1 =>
+        {
+            emit_match_patterns(&ts.elems[0], entities)
+        }
+        Pat::TupleStruct(ts) if ts.path.is_ident("Err") && ts.elems.len() == 1 => {
+            Ok(vec!["default".to_string()])
         }
         Pat::Paren(paren) => emit_match_patterns(&paren.pat, entities),
         Pat::Reference(reference) => emit_match_patterns(&reference.pat, entities),
