@@ -2340,17 +2340,26 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             || call.method == "min"
             || call.method == "max"
             || call.method == "pow"
+            || call.method == "rem_euclid"
+            || call.method == "signum"
             || call.method == "wrapping_add"
             || call.method == "wrapping_sub"
             || call.method == "wrapping_mul"
+            || call.method == "wrapping_neg"
+            || call.method == "wrapping_abs"
             || call.method == "saturating_add"
             || call.method == "saturating_sub"
             || call.method == "saturating_mul"
+            || call.method == "saturating_neg"
+            || call.method == "saturating_abs"
             || call.method == "checked_add"
             || call.method == "checked_sub"
             || call.method == "checked_mul"
             || call.method == "checked_div"
-            || call.method == "unsigned_abs" =>
+            || call.method == "checked_rem"
+            || call.method == "unsigned_abs"
+            || call.method == "clamp"
+            || call.method == "div_euclid" =>
         {
             return expression_numeric_type(&call.receiver, entities);
         }
@@ -4938,7 +4947,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                                 | "clone"
                                 | "cloned"
                                 | "copied"
+                                | "signum"
                                 | "unsigned_abs"
+                                | "wrapping_neg"
+                                | "wrapping_abs"
+                                | "saturating_neg"
+                                | "saturating_abs"
                         ) =>
                 {
                     if let Some(fact) = self.option_fact(expression) {
@@ -4953,10 +4967,13 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                             "checked_add"
                                 | "checked_div"
                                 | "checked_mul"
+                                | "checked_rem"
                                 | "checked_sub"
+                                | "div_euclid"
                                 | "max"
                                 | "min"
                                 | "pow"
+                                | "rem_euclid"
                                 | "saturating_add"
                                 | "saturating_mul"
                                 | "saturating_sub"
@@ -4964,6 +4981,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                                 | "wrapping_mul"
                                 | "wrapping_sub"
                         ) =>
+                {
+                    self.initializer_fact(&call.receiver)
+                }
+                Expr::MethodCall(call)
+                    if call.args.len() == 2
+                        && call.method == "clamp" =>
                 {
                     self.initializer_fact(&call.receiver)
                 }
