@@ -6397,6 +6397,42 @@ pub fn sum_f32(values: &[f32; 4]) -> f32 {
     }
 
     #[test]
+    fn resolves_unwrap_or_default_through_clone_on_option_variable() {
+        let source = r#"
+pub fn get_name(name: Option<String>) -> String {
+    return name.clone().unwrap_or_default();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(r#"?? """#));
+    }
+
+    #[test]
+    fn resolves_unwrap_or_default_through_struct_field_access() {
+        let source = r#"
+pub struct Region {
+    pub name: Option<String>,
+    pub count: Option<u32>,
+}
+
+pub fn get_name(region: &Region) -> String {
+    return region.name.clone().unwrap_or_default();
+}
+
+pub fn get_count(region: &Region) -> u32 {
+    return region.count.unwrap_or_default();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("region.name ?? \"\""));
+        assert!(output.contains("region.count ?? 0"));
+    }
+
+    #[test]
     fn propagates_string_fact_through_split_into_map_closure() {
         let source = r#"
 pub fn split_parts(source: &str) -> Vec<String> {

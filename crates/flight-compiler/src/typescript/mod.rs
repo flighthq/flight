@@ -19398,7 +19398,7 @@ fn option_binding_fact_default(expression: &Expr, entities: &HashSet<String>) ->
             if call.args.is_empty()
                 && matches!(
                     call.method.to_string().as_str(),
-                    "as_mut" | "as_ref" | "cloned" | "copied"
+                    "as_mut" | "as_ref" | "clone" | "cloned" | "copied"
                 ) =>
         {
             return option_binding_fact_default(&call.receiver, entities);
@@ -19429,6 +19429,22 @@ fn option_binding_fact_default(expression: &Expr, entities: &HashSet<String>) ->
         {
             let numeric_type = expression_numeric_type(&call.receiver, entities)?;
             return binding_fact_default(&BindingFact::Structure(numeric_type));
+        }
+        Expr::Field(field) => {
+            if let syn::Member::Named(field_name) = &field.member {
+                if let Some(owner) = expression_struct_name(&field.base, entities) {
+                    let payload = unique_marker_suffix(
+                        entities,
+                        &format!(
+                            "{OPTION_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+                        ),
+                    );
+                    if let Some(payload) = payload {
+                        return binding_fact_default(&binding_fact_from_marker(&payload));
+                    }
+                }
+            }
+            None
         }
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             lexical_fact(entities, &path.path.segments[0].ident.to_string())
