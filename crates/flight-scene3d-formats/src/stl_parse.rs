@@ -166,8 +166,8 @@ fn read_ascii_stl_facets(text: &str) -> Vec<StlFacet> {
         let normal = triple(index + 2);
         let mut cursor = index + 7;
         let mut vertices = [[0.0; 3]; 3];
-        for vertex in &mut vertices {
-            *vertex = triple(cursor + 1);
+        for vertex_index in 0..vertices.len() {
+            vertices[vertex_index] = triple(cursor + 1);
             cursor += 4;
         }
         facets.push(StlFacet { normal, vertices });
