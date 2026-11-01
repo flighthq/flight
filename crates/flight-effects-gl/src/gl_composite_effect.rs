@@ -74,7 +74,9 @@ pub fn apply_composite_effect_to_gl(
 ) -> Result<(), String> {
     // The per-state backdrop registry shared with BlendEffect (TS `getGlBlendEffectBackdrop`).
     let backdrop = effect.backdrop_key.as_ref().and_then(|key| {
-        with_gl_effect_state_runtime(state, |runtime| runtime.blend_backdrops.get(key).copied())
+        return with_gl_effect_state_runtime(state, |runtime| {
+            runtime.blend_backdrops.get(key).copied()
+        });
     });
     let program = get_gl_effect_program(state, "composite.porterduff", COMPOSITE_FRAGMENT_SRC)?;
     let operator_index = get_composite_effect_operator_index(&effect.operator);

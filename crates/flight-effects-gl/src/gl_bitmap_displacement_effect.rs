@@ -92,18 +92,19 @@ pub fn apply_bitmap_displacement_effect_to_gl(
         );
     };
     let map_is_render_target = effect.map.as_ref().is_some_and(|map| {
-        map.read()
+        return map
+            .read()
             .unwrap_or_else(PoisonError::into_inner)
             .source
             .as_ref()
             .is_some_and(|source| {
-                source
+                return source
                     .read()
                     .unwrap_or_else(PoisonError::into_inner)
                     .texture_source_fields()
                     .kind
-                    == RENDER_TARGET_TEXTURE_SOURCE_KIND
-            })
+                    == RENDER_TARGET_TEXTURE_SOURCE_KIND;
+            });
     });
 
     let program = get_gl_effect_program(

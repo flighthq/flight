@@ -95,7 +95,7 @@ pub fn apply_gl_effects_to_render_texture(
                 return runner(&mut context, &*effect);
             })?;
             current = get_gl_render_texture_target(state, output).ok_or_else(|| {
-                "applyGlEffectsToRenderTexture: written target is not ready".to_string()
+                return "applyGlEffectsToRenderTexture: written target is not ready".to_string();
             })?;
         }
         return Ok(true);

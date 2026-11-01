@@ -103,7 +103,8 @@ pub fn begin_gl_effect_pass(
             };
             let target =
                 create_gl_texture_render_target(state, &descriptor, None)?.ok_or_else(|| {
-                    "beginGlEffectPass: preferred scene target allocation was refused".to_string()
+                    return "beginGlEffectPass: preferred scene target allocation was refused"
+                        .to_string();
                 })?;
             pipeline.scene_target = Some(target);
         }
@@ -287,14 +288,16 @@ fn ensure_gl_effect_scratch(
     if scratch_a.is_none() {
         *scratch_a = Some(
             acquire_gl_texture_render_target(state, pool, descriptor, None)?.ok_or_else(|| {
-                "endGlEffectPass: preferred scratch target allocation was refused".to_string()
+                return "endGlEffectPass: preferred scratch target allocation was refused"
+                    .to_string();
             })?,
         );
     }
     if scratch_b.is_none() {
         *scratch_b = Some(
             acquire_gl_texture_render_target(state, pool, descriptor, None)?.ok_or_else(|| {
-                "endGlEffectPass: preferred scratch target allocation was refused".to_string()
+                return "endGlEffectPass: preferred scratch target allocation was refused"
+                    .to_string();
             })?,
         );
     }
@@ -356,27 +359,27 @@ fn flush_gl_effect_adjustments(
 fn linearize_clear(clear: &RenderTargetClear) -> RenderTargetClear {
     return RenderTargetClear {
         color: clear.color.map(|[r, g, b, a]| {
-            [
+            return [
                 srgb_channel_to_linear(r),
                 srgb_channel_to_linear(g),
                 srgb_channel_to_linear(b),
                 a,
-            ]
+            ];
         }),
         colors: clear.colors.as_ref().map(|colors| {
-            colors
+            return colors
                 .iter()
                 .map(|color| {
-                    color.map(|[r, g, b, a]| {
-                        [
+                    return color.map(|[r, g, b, a]| {
+                        return [
                             srgb_channel_to_linear(r),
                             srgb_channel_to_linear(g),
                             srgb_channel_to_linear(b),
                             a,
-                        ]
-                    })
+                        ];
+                    });
                 })
-                .collect()
+                .collect();
         }),
         depth: clear.depth,
         stencil: clear.stencil,

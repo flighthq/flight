@@ -53,7 +53,7 @@ pub(crate) fn acquire_gl_effect_target(
         color_space: None,
     };
     return acquire_gl_texture_render_target(state, pool, &descriptor, None)?.ok_or_else(|| {
-        "acquireGlTextureRenderTarget: preferred target allocation was refused".to_string()
+        return "acquireGlTextureRenderTarget: preferred target allocation was refused".to_string();
     });
 }
 

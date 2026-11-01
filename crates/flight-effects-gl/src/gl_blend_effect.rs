@@ -164,7 +164,7 @@ pub fn get_gl_blend_effect_backdrop(
 ) -> Option<NativeTexture> {
     let backdrop_key = backdrop_key?;
     return with_gl_effect_state_runtime(state, |runtime| {
-        runtime.blend_backdrops.get(backdrop_key).copied()
+        return runtime.blend_backdrops.get(backdrop_key).copied();
     });
 }
 
@@ -196,6 +196,6 @@ pub fn register_gl_blend_effect_backdrop(
 
 pub fn unregister_gl_blend_effect_backdrop(state: &GlRenderState, backdrop_key: &str) -> bool {
     return with_gl_effect_state_runtime(state, |runtime| {
-        runtime.blend_backdrops.remove(backdrop_key).is_some()
+        return runtime.blend_backdrops.remove(backdrop_key).is_some();
     });
 }

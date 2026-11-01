@@ -147,7 +147,7 @@ pub fn register_gl_custom_shader_source(
         && previous_source != fragment_source
     {
         let guard = with_gl_effect_state_runtime(state, |runtime| {
-            runtime.custom_shader_source_guard.clone()
+            return runtime.custom_shader_source_guard.clone();
         });
         if let Some(guard) = guard {
             guard(state, shader_key, &previous_source, fragment_source);
