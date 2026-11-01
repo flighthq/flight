@@ -533,7 +533,7 @@ pub fn get_file_base_name(path: &str) -> String {
     return split_path(path)
         .last()
         .map(|segment| segment.to_string())
-        .unwrap_or_default();
+        .unwrap_or(String::new());
 }
 
 /// Every segment before the last, joined by `/` (a leading root is not kept, as in the source); `""`
