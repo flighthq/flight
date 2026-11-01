@@ -16290,29 +16290,51 @@ fn emit_method_call(
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "into_owned" if arguments.is_empty() => Ok(receiver),
         "into_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
-        "is_ascii_digit" if arguments.is_empty() => Ok(format!(
-            "((ch: string): boolean => ch >= '0' && ch <= '9')({receiver})"
-        )),
-        "is_ascii_lowercase" if arguments.is_empty() => Ok(format!(
-            "((ch: string): boolean => ch >= 'a' && ch <= 'z')({receiver})"
-        )),
-        "is_ascii_uppercase" if arguments.is_empty() => Ok(format!(
-            "((ch: string): boolean => ch >= 'A' && ch <= 'Z')({receiver})"
-        )),
-        "is_alphabetic" if arguments.is_empty() => Ok(format!("(/^[a-zA-Z]$/).test({receiver})")),
+        "is_ascii_digit" if arguments.is_empty() => {
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? v >= 48 && v <= 57 : v >= '0' && v <= '9')({receiver})"
+            ))
+        }
+        "is_ascii_lowercase" if arguments.is_empty() => {
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? v >= 97 && v <= 122 : v >= 'a' && v <= 'z')({receiver})"
+            ))
+        }
+        "is_ascii_uppercase" if arguments.is_empty() => {
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? v >= 65 && v <= 90 : v >= 'A' && v <= 'Z')({receiver})"
+            ))
+        }
+        "is_alphabetic" if arguments.is_empty() => {
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))({receiver})"
+            ))
+        }
         "is_ascii_alphabetic" if arguments.is_empty() => {
-            Ok(format!("(/^[a-zA-Z]$/).test({receiver})"))
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))({receiver})"
+            ))
         }
         "is_ascii_alphanumeric" if arguments.is_empty() => {
-            Ok(format!("(/^[a-zA-Z0-9]$/).test({receiver})"))
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z0-9]$/).test(v))({receiver})"
+            ))
         }
         "is_ascii_hexdigit" if arguments.is_empty() => {
-            Ok(format!("(/^[0-9a-fA-F]$/).test({receiver})"))
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 70) || (v >= 97 && v <= 102) : (/^[0-9a-fA-F]$/).test(v))({receiver})"
+            ))
         }
-        "is_ascii_whitespace" if arguments.is_empty() => Ok(format!(
-            "({receiver} === ' ' || {receiver} === '\\t' || {receiver} === '\\n' || {receiver} === '\\r' || {receiver} === '\\x0C')"
-        )),
-        "is_whitespace" if arguments.is_empty() => Ok(format!("(/^\\s$/).test({receiver})")),
+        "is_ascii_whitespace" if arguments.is_empty() => {
+            Ok(format!(
+                "((v: string | number): boolean => typeof v === 'number' ? v === 32 || v === 9 || v === 10 || v === 13 || v === 12 : v === ' ' || v === '\\t' || v === '\\n' || v === '\\r' || v === '\\x0C')({receiver})"
+            ))
+        }
+        "is_whitespace" if arguments.is_empty() => {
+            Ok(format!(
+                "(/^\\s$/).test({receiver})"
+            ))
+        }
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_ref" if arguments.is_empty() => Ok(receiver),

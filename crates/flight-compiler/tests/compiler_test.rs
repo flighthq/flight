@@ -4262,15 +4262,19 @@ pub fn check_upper(ch: char) -> bool {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("ch >= '0' && ch <= '9'"),
-            "is_ascii_digit should check char range: {output}"
+            output.contains("v >= '0' && v <= '9'"),
+            "is_ascii_digit should check char range for strings: {output}"
         );
         assert!(
-            output.contains("ch >= 'a' && ch <= 'z'"),
+            output.contains("v >= 48 && v <= 57"),
+            "is_ascii_digit should check numeric range for bytes: {output}"
+        );
+        assert!(
+            output.contains("v >= 'a' && v <= 'z'"),
             "is_ascii_lowercase should check char range: {output}"
         );
         assert!(
-            output.contains("ch >= 'A' && ch <= 'Z'"),
+            output.contains("v >= 'A' && v <= 'Z'"),
             "is_ascii_uppercase should check char range: {output}"
         );
     }
@@ -4786,12 +4790,12 @@ pub fn classify(ch: char) -> (bool, bool, bool) {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("(/^[a-zA-Z0-9]$/).test(ch)"),
-            "is_ascii_alphanumeric: {output}"
+            output.contains("(/^[a-zA-Z0-9]$/).test(v)"),
+            "is_ascii_alphanumeric string branch: {output}"
         );
         assert!(
-            output.contains("(/^[a-zA-Z]$/).test(ch)"),
-            "is_ascii_alphabetic: {output}"
+            output.contains("(/^[a-zA-Z]$/).test(v)"),
+            "is_ascii_alphabetic string branch: {output}"
         );
         assert!(
             output.contains(r"(/^\s$/).test(ch)"),
