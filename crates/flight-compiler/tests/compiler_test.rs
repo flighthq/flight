@@ -20780,6 +20780,27 @@ pub fn scale(values: &mut [f64], factor: f64) {
 }
 
 #[test]
+fn skips_redundant_tuple_option_binding_to_avoid_tdz() {
+    let source = r#"
+pub fn process(rx: Option<f64>, ry: Option<f64>) -> f64 {
+    if let (Some(rx), Some(ry)) = (rx, ry) {
+        return rx + ry;
+    }
+    return 0.0;
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        !result.contains("const rx = rx"),
+        "should not emit self-referential const: {result}"
+    );
+    assert!(
+        result.contains("rx + ry"),
+        "should use narrowed bindings directly: {result}"
+    );
+}
+
+#[test]
 fn emits_const_for_immutable_loop_variable() {
     let source = r#"
 pub fn sum(items: &[u32]) -> u32 {

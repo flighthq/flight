@@ -10978,11 +10978,17 @@ fn emit_if_let_value_expression(
     if let Some((name, scrutinee, absent)) = &option_binding {
         writeln!(out, "  if ({scrutinee} !== {absent}) {{")
             .expect("writing to a String cannot fail");
-        writeln!(out, "    const {name} = {scrutinee};").expect("writing to a String cannot fail");
+        if name != scrutinee {
+            writeln!(out, "    const {name} = {scrutinee};")
+                .expect("writing to a String cannot fail");
+        }
     } else if let Some((condition, bindings)) = &tuple_binding {
         writeln!(out, "  if ({condition}) {{").expect("writing to a String cannot fail");
         for (name, value) in bindings {
-            writeln!(out, "    const {name} = {value};").expect("writing to a String cannot fail");
+            if name != value {
+                writeln!(out, "    const {name} = {value};")
+                    .expect("writing to a String cannot fail");
+            }
         }
     }
     let then_value = emit_value_block(&expression.then_branch, &then_context)?;
@@ -19305,6 +19311,9 @@ fn emit_statement(
                 .map(|(_, bindings)| bindings)
                 .unwrap_or_default()
             {
+                if name == value {
+                    continue;
+                }
                 write_indent(out, indent + 1);
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
