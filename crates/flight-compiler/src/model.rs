@@ -1649,11 +1649,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
             && rust_enum
                 .variants
                 .iter()
-                .any(|v| matches!(v.fields, Fields::Named(_)))
-            && rust_enum
-                .variants
-                .iter()
-                .all(|v| matches!(v.fields, Fields::Named(_) | Fields::Unit))
+                .any(|v| !matches!(v.fields, Fields::Unit))
         {
             data_unions.insert(name);
         }
