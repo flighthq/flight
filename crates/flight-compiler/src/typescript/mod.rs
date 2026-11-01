@@ -11435,85 +11435,87 @@ fn emit_match_statement_with_action(
             out.push_str("}\n");
             return Ok(());
         }
-        if let Some(arms_info) = analyze_general_tuple_match(scrutinee, &expression.arms) {
-            write_indent(out, indent);
-            out.push_str("{\n");
-            let mut temps = Vec::new();
-            for (i, elem) in scrutinee.elems.iter().enumerate() {
-                let value = emit_expression(elem, entities)?;
-                let temp = format!("$m{i}");
-                write_indent(out, indent + 1);
-                writeln!(out, "const {temp} = {value};")
-                    .expect("writing to a String cannot fail");
-                temps.push(temp);
-            }
-            for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
-                write_indent(out, indent + 1);
-                if info.catch_all {
-                    if index == 0 {
-                        out.push_str("{\n");
-                    } else {
-                        out.push_str("else {\n");
-                    }
-                } else {
-                    let mut alt_predicates = Vec::new();
-                    for alt in &info.alternatives {
-                        let mut conditions = Vec::new();
-                        for (i, element) in alt.elements.iter().enumerate() {
-                            if let Some(cond) =
-                                emit_general_tuple_element_condition(element, &temps[i])
-                            {
-                                conditions.push(cond);
-                            }
-                        }
-                        let alt_pred = if conditions.is_empty() {
-                            "true".to_string()
-                        } else {
-                            conditions.join(" && ")
-                        };
-                        alt_predicates.push(alt_pred);
-                    }
-                    let predicate = if alt_predicates.len() == 1 {
-                        alt_predicates.into_iter().next().unwrap()
-                    } else {
-                        alt_predicates
-                            .into_iter()
-                            .map(|p| format!("({p})"))
-                            .collect::<Vec<_>>()
-                            .join(" || ")
-                    };
-                    let prefix = if index == 0 { "if" } else { "else if" };
-                    writeln!(out, "{prefix} ({predicate}) {{")
-                        .expect("writing to a String cannot fail");
-                }
-                if let Some(alt) = info.alternatives.first() {
-                    for (i, element) in alt.elements.iter().enumerate() {
-                        if let Some(binding) = &element.binding {
-                            write_indent(out, indent + 2);
-                            writeln!(out, "const {binding} = {};", temps[i])
-                                .expect("writing to a String cannot fail");
-                        }
-                        for (binding_name, source_field) in &element.field_bindings {
-                            write_indent(out, indent + 2);
-                            writeln!(
-                                out,
-                                "const {binding_name} = {}.{source_field};",
-                                temps[i]
-                            )
-                            .expect("writing to a String cannot fail");
-                        }
-                    }
-                }
-                let arm_context = lexical_pattern_context(entities, &arm.pat);
-                let body_indent = indent + 2;
-                emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
-                write_indent(out, indent + 1);
-                out.push_str("}\n");
-            }
-            write_indent(out, indent);
-            out.push_str("}\n");
-            return Ok(());
+    }
+    if let Some(elems) = scrutinee_elements(&expression.expr)
+        && let Some(arms_info) =
+            analyze_general_compound_match(&expression.expr, &expression.arms)
+    {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        let mut temps = Vec::new();
+        for (i, elem) in elems.iter().enumerate() {
+            let value = emit_expression(elem, entities)?;
+            let temp = format!("$m{i}");
+            write_indent(out, indent + 1);
+            writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
+            temps.push(temp);
         }
+        for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
+            write_indent(out, indent + 1);
+            if info.catch_all {
+                if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let mut alt_predicates = Vec::new();
+                for alt in &info.alternatives {
+                    let mut conditions = Vec::new();
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(cond) =
+                            emit_general_tuple_element_condition(element, &temps[i])
+                        {
+                            conditions.push(cond);
+                        }
+                    }
+                    let alt_pred = if conditions.is_empty() {
+                        "true".to_string()
+                    } else {
+                        conditions.join(" && ")
+                    };
+                    alt_predicates.push(alt_pred);
+                }
+                let predicate = if alt_predicates.len() == 1 {
+                    alt_predicates.into_iter().next().unwrap()
+                } else {
+                    alt_predicates
+                        .into_iter()
+                        .map(|p| format!("({p})"))
+                        .collect::<Vec<_>>()
+                        .join(" || ")
+                };
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(out, "{prefix} ({predicate}) {{")
+                    .expect("writing to a String cannot fail");
+            }
+            if let Some(alt) = info.alternatives.first() {
+                for (i, element) in alt.elements.iter().enumerate() {
+                    if let Some(binding) = &element.binding {
+                        write_indent(out, indent + 2);
+                        writeln!(out, "const {binding} = {};", temps[i])
+                            .expect("writing to a String cannot fail");
+                    }
+                    for (binding_name, source_field) in &element.field_bindings {
+                        write_indent(out, indent + 2);
+                        writeln!(
+                            out,
+                            "const {binding_name} = {}.{source_field};",
+                            temps[i]
+                        )
+                        .expect("writing to a String cannot fail");
+                    }
+                }
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let body_indent = indent + 2;
+            emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
     }
     if let Some(inferred_arms) =
         analyze_inferred_tagged_data_union_match(&expression.arms, entities)
@@ -13984,33 +13986,40 @@ fn analyze_general_tuple_element(pattern: &Pat) -> Option<GeneralTupleElement> {
     };
 }
 
+fn pattern_elements(pattern: &Pat, arity: usize) -> Option<&Punctuated<Pat, syn::token::Comma>> {
+    return match pattern {
+        Pat::Tuple(tuple) if tuple.elems.len() == arity => Some(&tuple.elems),
+        Pat::Slice(slice) if slice.elems.len() == arity => Some(&slice.elems),
+        _ => None,
+    };
+}
+
 fn analyze_general_tuple_pattern(
     pattern: &Pat,
     arity: usize,
 ) -> Option<GeneralTupleMatchArm> {
-    return match pattern {
-        Pat::Tuple(tuple) if tuple.elems.len() == arity => {
-            let mut elements = Vec::new();
-            for elem in &tuple.elems {
-                elements.push(analyze_general_tuple_element(elem)?);
-            }
-            Some(GeneralTupleMatchArm {
-                catch_all: false,
-                alternatives: vec![GeneralTupleAlternative { elements }],
-            })
+    if let Some(elems) = pattern_elements(pattern, arity) {
+        let mut elements = Vec::new();
+        for elem in elems {
+            elements.push(analyze_general_tuple_element(elem)?);
         }
+        return Some(GeneralTupleMatchArm {
+            catch_all: false,
+            alternatives: vec![GeneralTupleAlternative { elements }],
+        });
+    }
+    return match pattern {
         Pat::Or(or) => {
             let mut alternatives = Vec::new();
             for case in &or.cases {
-                match case {
-                    Pat::Tuple(tuple) if tuple.elems.len() == arity => {
-                        let mut elements = Vec::new();
-                        for elem in &tuple.elems {
-                            elements.push(analyze_general_tuple_element(elem)?);
-                        }
-                        alternatives.push(GeneralTupleAlternative { elements });
+                if let Some(elems) = pattern_elements(case, arity) {
+                    let mut elements = Vec::new();
+                    for elem in elems {
+                        elements.push(analyze_general_tuple_element(elem)?);
                     }
-                    _ => return None,
+                    alternatives.push(GeneralTupleAlternative { elements });
+                } else {
+                    return None;
                 }
             }
             Some(GeneralTupleMatchArm {
@@ -14030,14 +14039,20 @@ fn analyze_general_tuple_pattern(
     };
 }
 
-fn analyze_general_tuple_match(
-    scrutinee: &syn::ExprTuple,
+fn scrutinee_elements(expression: &Expr) -> Option<&Punctuated<Expr, syn::token::Comma>> {
+    return match expression {
+        Expr::Tuple(tuple) if tuple.elems.len() >= 2 => Some(&tuple.elems),
+        Expr::Array(array) if array.elems.len() >= 2 => Some(&array.elems),
+        _ => None,
+    };
+}
+
+fn analyze_general_compound_match(
+    scrutinee: &Expr,
     arms: &[syn::Arm],
 ) -> Option<Vec<GeneralTupleMatchArm>> {
-    let arity = scrutinee.elems.len();
-    if arity < 2 {
-        return None;
-    }
+    let elems = scrutinee_elements(scrutinee)?;
+    let arity = elems.len();
     let mut has_condition = false;
     let mut analyzed = Vec::new();
     for arm in arms {
@@ -14332,83 +14347,85 @@ fn emit_match_expression(
             out.push_str("})()");
             return Ok(out);
         }
-        if let Some(arms_info) = analyze_general_tuple_match(scrutinee, &expression.arms) {
-            let mut out = String::new();
-            out.push_str("(() => {\n");
-            let mut temps = Vec::new();
-            for (i, elem) in scrutinee.elems.iter().enumerate() {
-                let value = emit_expression(elem, entities)?;
-                let temp = format!("$m{i}");
-                writeln!(out, "  const {temp} = {value};")
-                    .expect("writing to a String cannot fail");
-                temps.push(temp);
-            }
-            for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
-                if info.catch_all {
-                    if index == 0 {
-                        out.push_str("  {\n");
-                    } else {
-                        out.push_str("  else {\n");
-                    }
-                } else {
-                    let mut alt_predicates = Vec::new();
-                    for alt in &info.alternatives {
-                        let mut conditions = Vec::new();
-                        for (i, element) in alt.elements.iter().enumerate() {
-                            if let Some(cond) =
-                                emit_general_tuple_element_condition(element, &temps[i])
-                            {
-                                conditions.push(cond);
-                            }
-                        }
-                        let alt_pred = if conditions.is_empty() {
-                            "true".to_string()
-                        } else {
-                            conditions.join(" && ")
-                        };
-                        alt_predicates.push(alt_pred);
-                    }
-                    let predicate = if alt_predicates.len() == 1 {
-                        alt_predicates.into_iter().next().unwrap()
-                    } else {
-                        alt_predicates
-                            .into_iter()
-                            .map(|p| format!("({p})"))
-                            .collect::<Vec<_>>()
-                            .join(" || ")
-                    };
-                    let prefix = if index == 0 { "if" } else { "else if" };
-                    writeln!(out, "  {prefix} ({predicate}) {{")
-                        .expect("writing to a String cannot fail");
-                }
-                if let Some(alt) = info.alternatives.first() {
-                    for (i, element) in alt.elements.iter().enumerate() {
-                        if let Some(binding) = &element.binding {
-                            writeln!(out, "    const {binding} = {};", temps[i])
-                                .expect("writing to a String cannot fail");
-                        }
-                        for (binding_name, source_field) in &element.field_bindings {
-                            writeln!(
-                                out,
-                                "    const {binding_name} = {}.{source_field};",
-                                temps[i]
-                            )
-                            .expect("writing to a String cannot fail");
-                        }
-                    }
-                }
-                let arm_context = lexical_pattern_context(entities, &arm.pat);
-                writeln!(
-                    out,
-                    "    return {};",
-                    emit_expression(&arm.body, &arm_context)?
-                )
-                .expect("writing to a String cannot fail");
-                out.push_str("  }\n");
-            }
-            out.push_str("})()");
-            return Ok(out);
+    }
+    if let Some(elems) = scrutinee_elements(&expression.expr)
+        && let Some(arms_info) =
+            analyze_general_compound_match(&expression.expr, &expression.arms)
+    {
+        let mut out = String::new();
+        out.push_str("(() => {\n");
+        let mut temps = Vec::new();
+        for (i, elem) in elems.iter().enumerate() {
+            let value = emit_expression(elem, entities)?;
+            let temp = format!("$m{i}");
+            writeln!(out, "  const {temp} = {value};").expect("writing to a String cannot fail");
+            temps.push(temp);
         }
+        for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
+            if info.catch_all {
+                if index == 0 {
+                    out.push_str("  {\n");
+                } else {
+                    out.push_str("  else {\n");
+                }
+            } else {
+                let mut alt_predicates = Vec::new();
+                for alt in &info.alternatives {
+                    let mut conditions = Vec::new();
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(cond) =
+                            emit_general_tuple_element_condition(element, &temps[i])
+                        {
+                            conditions.push(cond);
+                        }
+                    }
+                    let alt_pred = if conditions.is_empty() {
+                        "true".to_string()
+                    } else {
+                        conditions.join(" && ")
+                    };
+                    alt_predicates.push(alt_pred);
+                }
+                let predicate = if alt_predicates.len() == 1 {
+                    alt_predicates.into_iter().next().unwrap()
+                } else {
+                    alt_predicates
+                        .into_iter()
+                        .map(|p| format!("({p})"))
+                        .collect::<Vec<_>>()
+                        .join(" || ")
+                };
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(out, "  {prefix} ({predicate}) {{")
+                    .expect("writing to a String cannot fail");
+            }
+            if let Some(alt) = info.alternatives.first() {
+                for (i, element) in alt.elements.iter().enumerate() {
+                    if let Some(binding) = &element.binding {
+                        writeln!(out, "    const {binding} = {};", temps[i])
+                            .expect("writing to a String cannot fail");
+                    }
+                    for (binding_name, source_field) in &element.field_bindings {
+                        writeln!(
+                            out,
+                            "    const {binding_name} = {}.{source_field};",
+                            temps[i]
+                        )
+                        .expect("writing to a String cannot fail");
+                    }
+                }
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            writeln!(
+                out,
+                "    return {};",
+                emit_expression(&arm.body, &arm_context)?
+            )
+            .expect("writing to a String cannot fail");
+            out.push_str("  }\n");
+        }
+        out.push_str("})()");
+        return Ok(out);
     }
     if let Some(inferred_arms) =
         analyze_inferred_tagged_data_union_match(&expression.arms, entities)
@@ -14934,95 +14951,97 @@ pub(crate) fn emit_match_statement(
             out.push_str("}\n");
             return Ok(());
         }
-        if let Some(arms_info) = analyze_general_tuple_match(scrutinee, &expression.arms) {
-            write_indent(out, indent);
-            out.push_str("{\n");
-            let mut temps = Vec::new();
-            for (i, elem) in scrutinee.elems.iter().enumerate() {
-                let value = emit_expression(elem, entities)?;
-                let temp = format!("$m{i}");
-                write_indent(out, indent + 1);
-                writeln!(out, "const {temp} = {value};")
-                    .expect("writing to a String cannot fail");
-                temps.push(temp);
-            }
-            for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
-                write_indent(out, indent + 1);
-                if info.catch_all {
-                    if index == 0 {
-                        out.push_str("{\n");
-                    } else {
-                        out.push_str("else {\n");
-                    }
-                } else {
-                    let mut alt_predicates = Vec::new();
-                    for alt in &info.alternatives {
-                        let mut conditions = Vec::new();
-                        for (i, element) in alt.elements.iter().enumerate() {
-                            if let Some(cond) =
-                                emit_general_tuple_element_condition(element, &temps[i])
-                            {
-                                conditions.push(cond);
-                            }
-                        }
-                        let alt_pred = if conditions.is_empty() {
-                            "true".to_string()
-                        } else {
-                            conditions.join(" && ")
-                        };
-                        alt_predicates.push(alt_pred);
-                    }
-                    let predicate = if alt_predicates.len() == 1 {
-                        alt_predicates.into_iter().next().unwrap()
-                    } else {
-                        alt_predicates
-                            .into_iter()
-                            .map(|p| format!("({p})"))
-                            .collect::<Vec<_>>()
-                            .join(" || ")
-                    };
-                    let prefix = if index == 0 { "if" } else { "else if" };
-                    writeln!(out, "{prefix} ({predicate}) {{")
-                        .expect("writing to a String cannot fail");
-                }
-                if let Some(alt) = info.alternatives.first() {
-                    for (i, element) in alt.elements.iter().enumerate() {
-                        if let Some(binding) = &element.binding {
-                            write_indent(out, indent + 2);
-                            writeln!(out, "const {binding} = {};", temps[i])
-                                .expect("writing to a String cannot fail");
-                        }
-                        for (binding_name, source_field) in &element.field_bindings {
-                            write_indent(out, indent + 2);
-                            writeln!(
-                                out,
-                                "const {binding_name} = {}.{source_field};",
-                                temps[i]
-                            )
-                            .expect("writing to a String cannot fail");
-                        }
-                    }
-                }
-                let arm_context = lexical_pattern_context(entities, &arm.pat);
-                let body_indent = indent + 2;
-                match arm.body.as_ref() {
-                    Expr::Block(block) => {
-                        emit_block(out, &block.block.stmts, &arm_context, body_indent)?
-                    }
-                    expression => emit_statement(
-                        out,
-                        &Stmt::Expr(expression.clone(), None),
-                        &arm_context,
-                        body_indent,
-                    )?,
-                }
-                write_indent(out, indent + 1);
-                out.push_str("}\n");
-            }
-            write_indent(out, indent);
-            out.push_str("}\n");
-            return Ok(());
+    }
+    if let Some(elems) = scrutinee_elements(&expression.expr)
+        && let Some(arms_info) =
+            analyze_general_compound_match(&expression.expr, &expression.arms)
+    {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        let mut temps = Vec::new();
+        for (i, elem) in elems.iter().enumerate() {
+            let value = emit_expression(elem, entities)?;
+            let temp = format!("$m{i}");
+            write_indent(out, indent + 1);
+            writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
+            temps.push(temp);
         }
+        for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
+            write_indent(out, indent + 1);
+            if info.catch_all {
+                if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let mut alt_predicates = Vec::new();
+                for alt in &info.alternatives {
+                    let mut conditions = Vec::new();
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(cond) =
+                            emit_general_tuple_element_condition(element, &temps[i])
+                        {
+                            conditions.push(cond);
+                        }
+                    }
+                    let alt_pred = if conditions.is_empty() {
+                        "true".to_string()
+                    } else {
+                        conditions.join(" && ")
+                    };
+                    alt_predicates.push(alt_pred);
+                }
+                let predicate = if alt_predicates.len() == 1 {
+                    alt_predicates.into_iter().next().unwrap()
+                } else {
+                    alt_predicates
+                        .into_iter()
+                        .map(|p| format!("({p})"))
+                        .collect::<Vec<_>>()
+                        .join(" || ")
+                };
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(out, "{prefix} ({predicate}) {{")
+                    .expect("writing to a String cannot fail");
+            }
+            if let Some(alt) = info.alternatives.first() {
+                for (i, element) in alt.elements.iter().enumerate() {
+                    if let Some(binding) = &element.binding {
+                        write_indent(out, indent + 2);
+                        writeln!(out, "const {binding} = {};", temps[i])
+                            .expect("writing to a String cannot fail");
+                    }
+                    for (binding_name, source_field) in &element.field_bindings {
+                        write_indent(out, indent + 2);
+                        writeln!(
+                            out,
+                            "const {binding_name} = {}.{source_field};",
+                            temps[i]
+                        )
+                        .expect("writing to a String cannot fail");
+                    }
+                }
+            }
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let body_indent = indent + 2;
+            match arm.body.as_ref() {
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, body_indent)?
+                }
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    &arm_context,
+                    body_indent,
+                )?,
+            }
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
     }
     write_indent(out, indent);
     writeln!(
