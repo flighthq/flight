@@ -99,12 +99,12 @@ mod sugar_tests {
         let capability = HostMidiAccessCapability {
             provider: Arc::new("access".to_string()),
             request_access: Arc::new(|| {
-                Box::pin(async {
+                return Box::pin(async {
                     Ok(MidiAccessRequestOutcome {
                         access: None,
                         reason: MidiAccessRequestReason::Unsupported,
                     })
-                })
+                });
             }),
         };
         assert_eq!(
@@ -117,12 +117,12 @@ mod sugar_tests {
     fn host_midi_permission_get_permission_matches_free_function() {
         let capability = HostMidiPermissionCapability {
             get_permission: Arc::new(|| {
-                Box::pin(async {
+                return Box::pin(async {
                     Ok(PermissionQueryOutcome {
                         reason: PermissionQueryReason::Ok,
                         state: Some(PermissionState::Granted),
                     })
-                })
+                });
             }),
             provider: Arc::new("permission".to_string()),
         };
@@ -208,16 +208,16 @@ mod sugar_tests {
     #[test]
     fn midi_event_attachment_release_matches_free_function() {
         let create = || {
-            create_midi_event_attachment(
+            return create_midi_event_attachment(
                 Arc::new("attachment".to_string()),
                 Arc::new(|| {
-                    Box::pin(async {
+                    return Box::pin(async {
                         Ok(MidiEventReleaseOutcome {
                             reason: MidiEventReleaseReason::Ok,
                         })
-                    })
+                    });
                 }),
-            )
+            );
         };
         assert_eq!(
             block_on(create().release()).unwrap(),
@@ -313,10 +313,10 @@ mod sugar_tests {
     #[test]
     fn midi_port_close_matches_free_function() {
         let create = || {
-            MidiPort::Input(create_midi_input_port_resource(
+            return MidiPort::Input(create_midi_input_port_resource(
                 &metadata("input"),
                 input_operations(),
-            ))
+            ));
         };
         assert_eq!(
             block_on(create().close()),
@@ -327,10 +327,10 @@ mod sugar_tests {
     #[test]
     fn midi_port_connection_matches_free_function() {
         let create = || {
-            MidiPort::Input(create_midi_input_port_resource(
+            return MidiPort::Input(create_midi_input_port_resource(
                 &metadata("input"),
                 input_operations(),
-            ))
+            ));
         };
         assert_eq!(create().connection(), get_midi_port_connection(&create()));
     }
@@ -338,10 +338,10 @@ mod sugar_tests {
     #[test]
     fn midi_port_dispose_matches_free_function() {
         let create = || {
-            MidiPort::Input(create_midi_input_port_resource(
+            return MidiPort::Input(create_midi_input_port_resource(
                 &metadata("input"),
                 input_operations(),
-            ))
+            ));
         };
         assert_eq!(
             block_on(create().dispose()),
@@ -352,10 +352,10 @@ mod sugar_tests {
     #[test]
     fn midi_port_open_matches_free_function() {
         let create = || {
-            MidiPort::Input(create_midi_input_port_resource(
+            return MidiPort::Input(create_midi_input_port_resource(
                 &metadata("input"),
                 input_operations(),
-            ))
+            ));
         };
         assert_eq!(
             block_on(create().open()),
@@ -366,10 +366,10 @@ mod sugar_tests {
     #[test]
     fn midi_port_state_matches_free_function() {
         let create = || {
-            MidiPort::Input(create_midi_input_port_resource(
+            return MidiPort::Input(create_midi_input_port_resource(
                 &metadata("input"),
                 input_operations(),
-            ))
+            ));
         };
         assert_eq!(create().state(), get_midi_port_state(&create()));
     }
