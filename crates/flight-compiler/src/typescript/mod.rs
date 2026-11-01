@@ -16390,13 +16390,13 @@ fn emit_method_call(
             });
             match target_type.as_deref() {
                 Some("f32" | "f64") => Ok(format!(
-                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && !Number.isNaN(v) ? v : null; }})({receiver})"
+                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && !Number.isNaN(v) ? v : undefined; }})({receiver})"
                 )),
                 Some(
                     "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32"
                     | "u64" | "u128" | "usize",
                 ) => Ok(format!(
-                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && Number.isInteger(v) ? v : null; }})({receiver})"
+                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && Number.isInteger(v) ? v : undefined; }})({receiver})"
                 )),
                 Some(other) => Err(compile_error(format!(
                     "portable `.parse::<{other}>()` has no portable lowering",

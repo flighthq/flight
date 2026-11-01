@@ -20398,3 +20398,21 @@ pub fn bad(x: &dyn std::any::Any) -> bool {
         "lenient should emit a stub for the bad function: {lenient}"
     );
 }
+
+#[test]
+fn parse_ok_returns_undefined_not_null() {
+    let source = r#"
+pub fn try_parse(s: &str) -> Option<f32> {
+    return s.parse::<f32>().ok();
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("undefined"),
+        "parse helper should return undefined for Option consistency: {output}"
+    );
+    assert!(
+        !output.contains("null"),
+        "parse helper should not return null: {output}"
+    );
+}
