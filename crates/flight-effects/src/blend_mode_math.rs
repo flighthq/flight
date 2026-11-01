@@ -147,13 +147,10 @@ pub fn get_separable_blend_channel(mode: &str, cb: f32, cs: f32) -> f32 {
 }
 
 pub fn is_non_separable_blend_mode(mode: &str) -> bool {
-    return matches!(
-        mode,
-        ADVANCED_BLEND_MODE_HUE
-            | ADVANCED_BLEND_MODE_SATURATION
-            | ADVANCED_BLEND_MODE_COLOR
-            | ADVANCED_BLEND_MODE_LUMINOSITY
-    );
+    return mode == ADVANCED_BLEND_MODE_HUE
+        || mode == ADVANCED_BLEND_MODE_SATURATION
+        || mode == ADVANCED_BLEND_MODE_COLOR
+        || mode == ADVANCED_BLEND_MODE_LUMINOSITY;
 }
 
 fn set_blend_luminosity(r: f32, g: f32, b: f32, target: f32) -> (f32, f32, f32) {

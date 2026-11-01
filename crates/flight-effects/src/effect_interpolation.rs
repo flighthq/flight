@@ -143,10 +143,10 @@ fn is_packed_color(roles: &EffectFieldRoles, kind: &str, key: &str) -> bool {
         .iter()
         .find(|entry| entry.kind == kind)
         .is_some_and(|entry| {
-            entry
+            return entry
                 .fields
                 .iter()
-                .any(|(field, role)| *field == key && *role == EffectFieldRole::PackedColor)
+                .any(|(field, role)| *field == key && *role == EffectFieldRole::PackedColor);
         });
 }
 
