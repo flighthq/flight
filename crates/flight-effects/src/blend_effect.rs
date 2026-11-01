@@ -14,7 +14,7 @@ crate::impl_effect!(BlendEffect, "mode" => mode, "backdropKey" => backdrop_key, 
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field arguments
 pub fn create_blend_effect() -> Ref<BlendEffect> {
-    let mut out = allocate_entity();
+    let mut out: BlendEffect = allocate_entity();
     initialize_blend_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

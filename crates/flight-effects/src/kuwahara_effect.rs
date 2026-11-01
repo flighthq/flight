@@ -12,7 +12,7 @@ crate::impl_effect!(KuwaharaEffect, "radius" => radius);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_kuwahara_effect() -> Ref<KuwaharaEffect> {
-    let mut out = allocate_entity();
+    let mut out: KuwaharaEffect = allocate_entity();
     initialize_kuwahara_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

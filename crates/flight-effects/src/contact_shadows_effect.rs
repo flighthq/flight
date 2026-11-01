@@ -18,7 +18,7 @@ crate::impl_effect!(ContactShadowsEffect, "distance" => distance, "opacity" => o
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_contact_shadows_effect() -> Ref<ContactShadowsEffect> {
-    let mut out = allocate_entity();
+    let mut out: ContactShadowsEffect = allocate_entity();
     initialize_contact_shadows_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

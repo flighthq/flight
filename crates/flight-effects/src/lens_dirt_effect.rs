@@ -14,7 +14,7 @@ crate::impl_effect!(LensDirtEffect, "intensity" => intensity, "threshold" => thr
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_lens_dirt_effect() -> Ref<LensDirtEffect> {
-    let mut out = allocate_entity();
+    let mut out: LensDirtEffect = allocate_entity();
     initialize_lens_dirt_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -15,7 +15,7 @@ crate::impl_effect!(ScreenSpaceFogEffect, "color" => color, "near" => near, "far
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_screen_space_fog_effect() -> Ref<ScreenSpaceFogEffect> {
-    let mut out = allocate_entity();
+    let mut out: ScreenSpaceFogEffect = allocate_entity();
     initialize_screen_space_fog_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

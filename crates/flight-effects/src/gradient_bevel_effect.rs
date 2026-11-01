@@ -28,7 +28,7 @@ crate::impl_effect!(GradientBevelEffect, "alphas" => alphas, "angle" => angle, "
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_gradient_bevel_effect() -> Ref<GradientBevelEffect> {
-    let mut out = allocate_entity();
+    let mut out: GradientBevelEffect = allocate_entity();
     initialize_gradient_bevel_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -15,7 +15,7 @@ crate::impl_effect!(VignetteEffect, "intensity" => intensity, "radius" => radius
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_vignette_effect() -> Ref<VignetteEffect> {
-    let mut out = allocate_entity();
+    let mut out: VignetteEffect = allocate_entity();
     initialize_vignette_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

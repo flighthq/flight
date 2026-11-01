@@ -17,7 +17,7 @@ crate::impl_effect!(DisplacementEffect, "intensity" => intensity, "frequency" =>
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_displacement_effect() -> Ref<DisplacementEffect> {
-    let mut out = allocate_entity();
+    let mut out: DisplacementEffect = allocate_entity();
     initialize_displacement_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

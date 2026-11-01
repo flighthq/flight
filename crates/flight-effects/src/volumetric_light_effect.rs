@@ -17,7 +17,7 @@ crate::impl_effect!(VolumetricLightEffect, "density" => density, "lightColor" =>
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_volumetric_light_effect() -> Ref<VolumetricLightEffect> {
-    let mut out = allocate_entity();
+    let mut out: VolumetricLightEffect = allocate_entity();
     initialize_volumetric_light_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -14,7 +14,7 @@ crate::impl_effect!(CustomShaderEffect, "shaderKey" => shader_key, "uniforms" =>
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field arguments
 pub fn create_custom_shader_effect() -> Ref<CustomShaderEffect> {
-    let mut out = allocate_entity();
+    let mut out: CustomShaderEffect = allocate_entity();
     initialize_custom_shader_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

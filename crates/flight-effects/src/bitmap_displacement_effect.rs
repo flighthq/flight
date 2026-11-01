@@ -24,7 +24,7 @@ crate::impl_effect!(BitmapDisplacementEffect, "map" => map, "componentX" => comp
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field arguments
 pub fn create_bitmap_displacement_effect() -> Ref<BitmapDisplacementEffect> {
-    let mut out = allocate_entity();
+    let mut out: BitmapDisplacementEffect = allocate_entity();
     initialize_bitmap_displacement_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

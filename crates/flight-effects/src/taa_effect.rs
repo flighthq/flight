@@ -12,7 +12,7 @@ crate::impl_effect!(TaaEffect, "feedback" => feedback);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_taa_effect() -> Ref<TaaEffect> {
-    let mut out = allocate_entity();
+    let mut out: TaaEffect = allocate_entity();
     initialize_taa_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

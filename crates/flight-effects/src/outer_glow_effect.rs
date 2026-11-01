@@ -24,7 +24,7 @@ crate::impl_effect!(OuterGlowEffect, "alpha" => alpha, "blurX" => blur_x, "blurY
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_outer_glow_effect() -> Ref<OuterGlowEffect> {
-    let mut out = allocate_entity();
+    let mut out: OuterGlowEffect = allocate_entity();
     initialize_outer_glow_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

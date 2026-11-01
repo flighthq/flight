@@ -29,7 +29,7 @@ crate::impl_effect!(BevelEffect, "angle" => angle, "bevelType" => bevel_type, "b
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_bevel_effect() -> Ref<BevelEffect> {
-    let mut out = allocate_entity();
+    let mut out: BevelEffect = allocate_entity();
     initialize_bevel_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

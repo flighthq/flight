@@ -13,7 +13,7 @@ crate::impl_effect!(PanniniProjectionEffect, "compression" => compression, "crop
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_pannini_projection_effect() -> Ref<PanniniProjectionEffect> {
-    let mut out = allocate_entity();
+    let mut out: PanniniProjectionEffect = allocate_entity();
     initialize_pannini_projection_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

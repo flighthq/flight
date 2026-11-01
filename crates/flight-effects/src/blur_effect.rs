@@ -18,7 +18,7 @@ crate::impl_effect!(BlurEffect, "blurX" => blur_x, "blurY" => blur_y);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_blur_effect() -> Ref<BlurEffect> {
-    let mut out = allocate_entity();
+    let mut out: BlurEffect = allocate_entity();
     initialize_blur_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

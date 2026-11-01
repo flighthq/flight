@@ -25,7 +25,7 @@ crate::impl_effect!(GradientGlowEffect, "alphas" => alphas, "blurX" => blur_x, "
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_gradient_glow_effect() -> Ref<GradientGlowEffect> {
-    let mut out = allocate_entity();
+    let mut out: GradientGlowEffect = allocate_entity();
     initialize_gradient_glow_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

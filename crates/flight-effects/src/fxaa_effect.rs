@@ -13,7 +13,7 @@ crate::impl_effect!(FxaaEffect, "edgeThreshold" => edge_threshold, "subpixel" =>
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_fxaa_effect() -> Ref<FxaaEffect> {
-    let mut out = allocate_entity();
+    let mut out: FxaaEffect = allocate_entity();
     initialize_fxaa_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -13,7 +13,7 @@ crate::impl_effect!(WhiteBalanceEffect, "temperature" => temperature, "tint" => 
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_white_balance_effect() -> Ref<WhiteBalanceEffect> {
-    let mut out = allocate_entity();
+    let mut out: WhiteBalanceEffect = allocate_entity();
     initialize_white_balance_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -14,7 +14,7 @@ crate::impl_effect!(ToneMapEffect, "operator" => operator, "exposure" => exposur
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_tone_map_effect() -> Ref<ToneMapEffect> {
-    let mut out = allocate_entity();
+    let mut out: ToneMapEffect = allocate_entity();
     initialize_tone_map_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

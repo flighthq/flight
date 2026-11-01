@@ -17,7 +17,7 @@ crate::impl_effect!(BokehDepthOfFieldEffect, "focusDistance" => focus_distance, 
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_bokeh_depth_of_field_effect() -> Ref<BokehDepthOfFieldEffect> {
-    let mut out = allocate_entity();
+    let mut out: BokehDepthOfFieldEffect = allocate_entity();
     initialize_bokeh_depth_of_field_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

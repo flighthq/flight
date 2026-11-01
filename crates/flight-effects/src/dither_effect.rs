@@ -12,7 +12,7 @@ crate::impl_effect!(DitherEffect, "levels" => levels);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_dither_effect() -> Ref<DitherEffect> {
-    let mut out = allocate_entity();
+    let mut out: DitherEffect = allocate_entity();
     initialize_dither_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

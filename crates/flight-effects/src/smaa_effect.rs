@@ -12,7 +12,7 @@ crate::impl_effect!(SmaaEffect, "threshold" => threshold);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_smaa_effect() -> Ref<SmaaEffect> {
-    let mut out = allocate_entity();
+    let mut out: SmaaEffect = allocate_entity();
     initialize_smaa_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -15,7 +15,7 @@ crate::impl_effect!(SsaoEffect, "radius" => radius, "intensity" => intensity, "b
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_ssao_effect() -> Ref<SsaoEffect> {
-    let mut out = allocate_entity();
+    let mut out: SsaoEffect = allocate_entity();
     initialize_ssao_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

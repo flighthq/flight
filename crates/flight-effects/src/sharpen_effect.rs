@@ -12,7 +12,7 @@ crate::impl_effect!(SharpenEffect, "amount" => amount);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_sharpen_effect() -> Ref<SharpenEffect> {
-    let mut out = allocate_entity();
+    let mut out: SharpenEffect = allocate_entity();
     initialize_sharpen_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

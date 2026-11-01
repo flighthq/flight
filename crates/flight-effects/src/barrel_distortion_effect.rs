@@ -13,7 +13,7 @@ crate::impl_effect!(BarrelDistortionEffect, "amount" => amount, "scale" => scale
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_barrel_distortion_effect() -> Ref<BarrelDistortionEffect> {
-    let mut out = allocate_entity();
+    let mut out: BarrelDistortionEffect = allocate_entity();
     initialize_barrel_distortion_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

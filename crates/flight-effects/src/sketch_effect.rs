@@ -12,7 +12,7 @@ crate::impl_effect!(SketchEffect, "strength" => strength);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_sketch_effect() -> Ref<SketchEffect> {
-    let mut out = allocate_entity();
+    let mut out: SketchEffect = allocate_entity();
     initialize_sketch_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

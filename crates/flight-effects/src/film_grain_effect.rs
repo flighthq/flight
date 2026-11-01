@@ -14,7 +14,7 @@ crate::impl_effect!(FilmGrainEffect, "intensity" => intensity, "size" => size, "
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_film_grain_effect() -> Ref<FilmGrainEffect> {
-    let mut out = allocate_entity();
+    let mut out: FilmGrainEffect = allocate_entity();
     initialize_film_grain_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

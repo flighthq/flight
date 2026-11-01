@@ -15,7 +15,7 @@ crate::impl_effect!(AutoExposureEffect, "adaptationSpeed" => adaptation_speed, "
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_auto_exposure_effect() -> Ref<AutoExposureEffect> {
-    let mut out = allocate_entity();
+    let mut out: AutoExposureEffect = allocate_entity();
     initialize_auto_exposure_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

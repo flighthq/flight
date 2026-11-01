@@ -14,7 +14,7 @@ crate::impl_effect!(SsrEffect, "maxDistance" => max_distance, "resolution" => re
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_ssr_effect() -> Ref<SsrEffect> {
-    let mut out = allocate_entity();
+    let mut out: SsrEffect = allocate_entity();
     initialize_ssr_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -13,7 +13,7 @@ crate::impl_effect!(ChromaticAberrationEffect, "intensity" => intensity, "radial
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_chromatic_aberration_effect() -> Ref<ChromaticAberrationEffect> {
-    let mut out = allocate_entity();
+    let mut out: ChromaticAberrationEffect = allocate_entity();
     initialize_chromatic_aberration_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

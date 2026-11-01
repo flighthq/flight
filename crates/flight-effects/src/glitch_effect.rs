@@ -18,7 +18,7 @@ crate::impl_effect!(GlitchEffect, "intensity" => intensity, "blockSize" => block
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_glitch_effect() -> Ref<GlitchEffect> {
-    let mut out = allocate_entity();
+    let mut out: GlitchEffect = allocate_entity();
     initialize_glitch_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

@@ -18,7 +18,7 @@ crate::impl_effect!(GodRaysEffect, "centerX" => center_x, "centerY" => center_y,
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_god_rays_effect() -> Ref<GodRaysEffect> {
-    let mut out = allocate_entity();
+    let mut out: GodRaysEffect = allocate_entity();
     initialize_god_rays_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

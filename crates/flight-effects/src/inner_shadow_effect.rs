@@ -26,7 +26,7 @@ crate::impl_effect!(InnerShadowEffect, "alpha" => alpha, "angle" => angle, "blur
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_inner_shadow_effect() -> Ref<InnerShadowEffect> {
-    let mut out = allocate_entity();
+    let mut out: InnerShadowEffect = allocate_entity();
     initialize_inner_shadow_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

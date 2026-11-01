@@ -13,7 +13,7 @@ crate::impl_effect!(HalftoneEffect, "scale" => scale, "angle" => angle);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_halftone_effect() -> Ref<HalftoneEffect> {
-    let mut out = allocate_entity();
+    let mut out: HalftoneEffect = allocate_entity();
     initialize_halftone_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

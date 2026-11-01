@@ -17,7 +17,7 @@ crate::impl_effect!(TiltShiftEffect, "center" => center, "width" => width, "blur
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_tilt_shift_effect() -> Ref<TiltShiftEffect> {
-    let mut out = allocate_entity();
+    let mut out: TiltShiftEffect = allocate_entity();
     initialize_tilt_shift_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

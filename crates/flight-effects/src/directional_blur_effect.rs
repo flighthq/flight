@@ -17,7 +17,7 @@ crate::impl_effect!(DirectionalBlurEffect, "angle" => angle, "length" => length,
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_directional_blur_effect() -> Ref<DirectionalBlurEffect> {
-    let mut out = allocate_entity();
+    let mut out: DirectionalBlurEffect = allocate_entity();
     initialize_directional_blur_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

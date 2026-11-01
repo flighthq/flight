@@ -15,7 +15,7 @@ crate::impl_effect!(MedianEffect, "radius" => radius);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_median_effect() -> Ref<MedianEffect> {
-    let mut out = allocate_entity();
+    let mut out: MedianEffect = allocate_entity();
     initialize_median_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

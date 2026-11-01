@@ -13,7 +13,7 @@ crate::impl_effect!(LensDistortionEffect, "amount" => amount, "scale" => scale);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_lens_distortion_effect() -> Ref<LensDistortionEffect> {
-    let mut out = allocate_entity();
+    let mut out: LensDistortionEffect = allocate_entity();
     initialize_lens_distortion_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

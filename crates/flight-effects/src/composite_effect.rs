@@ -13,7 +13,7 @@ crate::impl_effect!(CompositeEffect, "operator" => operator, "backdropKey" => ba
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field arguments
 pub fn create_composite_effect() -> Ref<CompositeEffect> {
-    let mut out = allocate_entity();
+    let mut out: CompositeEffect = allocate_entity();
     initialize_composite_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

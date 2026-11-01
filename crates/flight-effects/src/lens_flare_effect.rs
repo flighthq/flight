@@ -15,7 +15,7 @@ crate::impl_effect!(LensFlareEffect, "threshold" => threshold, "intensity" => in
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_lens_flare_effect() -> Ref<LensFlareEffect> {
-    let mut out = allocate_entity();
+    let mut out: LensFlareEffect = allocate_entity();
     initialize_lens_flare_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

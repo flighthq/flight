@@ -24,7 +24,7 @@ crate::impl_effect!(InnerGlowEffect, "alpha" => alpha, "blurX" => blur_x, "blurY
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_inner_glow_effect() -> Ref<InnerGlowEffect> {
-    let mut out = allocate_entity();
+    let mut out: InnerGlowEffect = allocate_entity();
     initialize_inner_glow_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

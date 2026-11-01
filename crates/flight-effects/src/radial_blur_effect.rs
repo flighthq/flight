@@ -15,7 +15,7 @@ crate::impl_effect!(RadialBlurEffect, "centerX" => center_x, "centerY" => center
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_radial_blur_effect() -> Ref<RadialBlurEffect> {
-    let mut out = allocate_entity();
+    let mut out: RadialBlurEffect = allocate_entity();
     initialize_radial_blur_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

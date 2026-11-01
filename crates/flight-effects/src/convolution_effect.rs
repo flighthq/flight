@@ -22,7 +22,7 @@ crate::impl_effect!(ConvolutionEffect, "matrix" => matrix, "matrixX" => matrix_x
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_convolution_effect() -> Ref<ConvolutionEffect> {
-    let mut out = allocate_entity();
+    let mut out: ConvolutionEffect = allocate_entity();
     initialize_convolution_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

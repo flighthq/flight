@@ -15,7 +15,7 @@ crate::impl_effect!(CrtEffect, "curvature" => curvature, "scanlineIntensity" => 
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_crt_effect() -> Ref<CrtEffect> {
-    let mut out = allocate_entity();
+    let mut out: CrtEffect = allocate_entity();
     initialize_crt_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

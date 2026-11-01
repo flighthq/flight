@@ -26,7 +26,7 @@ crate::impl_effect!(DropShadowEffect, "alpha" => alpha, "angle" => angle, "blurX
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_drop_shadow_effect() -> Ref<DropShadowEffect> {
-    let mut out = allocate_entity();
+    let mut out: DropShadowEffect = allocate_entity();
     initialize_drop_shadow_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

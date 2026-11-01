@@ -17,7 +17,7 @@ crate::impl_effect!(OutlineEffect, "threshold" => threshold, "thickness" => thic
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_outline_effect() -> Ref<OutlineEffect> {
-    let mut out = allocate_entity();
+    let mut out: OutlineEffect = allocate_entity();
     initialize_outline_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

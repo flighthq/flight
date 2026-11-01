@@ -12,7 +12,7 @@ crate::impl_effect!(PosterizeEffect, "levels" => levels);
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_posterize_effect() -> Ref<PosterizeEffect> {
-    let mut out = allocate_entity();
+    let mut out: PosterizeEffect = allocate_entity();
     initialize_posterize_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }

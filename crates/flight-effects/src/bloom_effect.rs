@@ -20,7 +20,7 @@ crate::impl_effect!(BloomEffect, "threshold" => threshold, "intensity" => intens
 
 // flight-lint: allow(conform-params) D23 entity construction takes no field/options arguments
 pub fn create_bloom_effect() -> Ref<BloomEffect> {
-    let mut out = allocate_entity();
+    let mut out: BloomEffect = allocate_entity();
     initialize_bloom_effect(&mut out);
     return Arc::new(RwLock::new(out));
 }
