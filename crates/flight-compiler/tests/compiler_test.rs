@@ -5500,6 +5500,49 @@ pub fn constants() -> [f32; 8] {
     }
 
     #[test]
+    fn lowers_serde_json_value_get_and_type_checks() {
+        let source = r#"
+use serde_json::Value;
+
+pub fn read_field(value: &Value) -> bool {
+    let child = value.get("name");
+    return !value.is_null();
+}
+
+pub fn read_nested(value: &Value) -> bool {
+    return value.get("a").is_null();
+}
+
+pub fn as_str_check(value: &Value) -> Option<&str> {
+    return value.as_str();
+}
+
+pub fn as_number_check(value: &Value) -> Option<f64> {
+    return value.as_f64();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(r#"value["name"]"#),
+            "get(string): {output}"
+        );
+        assert!(
+            output.contains("value === null"),
+            "is_null on param: {output}"
+        );
+        assert!(
+            output.contains("typeof v === \"string\""),
+            "as_str: {output}"
+        );
+        assert!(
+            output.contains("typeof v === \"number\""),
+            "as_f64: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_split_next_to_array_index() {
         let source = r#"
 pub fn strip_query(url: &str) -> &str {

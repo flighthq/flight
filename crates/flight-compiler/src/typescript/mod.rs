@@ -129,6 +129,8 @@ const STD_MEM_SHADOWED_MARKER: &str = "@std-mem-shadowed:";
 // `insert_std_float_consts_context`).
 const FLOAT_CONST_MARKER: &str = "@float-const:";
 
+const JSON_VALUE_MARKER: &str = "@json-value:";
+
 // Type-namespace provenance recorded from `use` items and local declarations (see
 // `insert_type_path_context`): a local name, the full path it imports, a glob's module path, and a
 // locally declared type-namespace name.
@@ -2364,6 +2366,29 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
+fn expression_is_json_value(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            path.path.segments.first().is_some_and(|segment| {
+                entities.contains(&format!("{JSON_VALUE_MARKER}{}", segment.ident))
+            })
+        }
+        Expr::Index(index) => expression_is_json_value(&index.expr, entities),
+        Expr::Reference(reference) => expression_is_json_value(&reference.expr, entities),
+        Expr::Paren(paren) => expression_is_json_value(&paren.expr, entities),
+        Expr::Group(group) => expression_is_json_value(&group.expr, entities),
+        Expr::MethodCall(call)
+            if call.method == "get"
+                && call.args.len() == 1
+                && expression_is_json_value(&call.receiver, entities) =>
+        {
+            true
+        }
+        Expr::Field(field) => expression_is_json_value(&field.base, entities),
+        _ => false,
+    };
+}
+
 fn emit_diverging_statement(
     expression: &Expr,
     entities: &HashSet<String>,
@@ -3337,6 +3362,23 @@ fn sequence_inner_type(rust_type: &Type) -> Option<&Type> {
 
 fn rust_type_is_string(rust_type: &Type) -> bool {
     return matches!(named_type(rust_type).as_deref(), Some("String" | "str"));
+}
+
+fn rust_type_is_json_value(rust_type: &Type, context: &HashSet<String>) -> bool {
+    let inner = match rust_type {
+        Type::Group(group) => return rust_type_is_json_value(&group.elem, context),
+        Type::Paren(paren) => return rust_type_is_json_value(&paren.elem, context),
+        Type::Reference(reference) => return rust_type_is_json_value(&reference.elem, context),
+        Type::Path(path) if path.qself.is_none() => path,
+        _ => return false,
+    };
+    let Some(resolved) = resolve_type_path(&inner.path, context) else {
+        return false;
+    };
+    return matches!(
+        resolved.iter().map(String::as_str).collect::<Vec<_>>().as_slice(),
+        ["serde_json", "Value"] | ["serde_json", "value", "Value"]
+    );
 }
 
 // `Ref<T>` and the spelling it aliases (`Arc<RwLock<T>>`) both lower to the payload rather than a
@@ -7751,6 +7793,10 @@ pub(crate) fn function_expression_context(
                     self.context
                         .insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
                 }
+                if rust_type_is_json_value(&typed.ty, self.context) {
+                    self.context
+                        .insert(format!("{JSON_VALUE_MARKER}{}", pattern.ident));
+                }
                 if rust_type_is_ordered_primitive(&typed.ty) {
                     self.context
                         .insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
@@ -7778,6 +7824,13 @@ pub(crate) fn function_expression_context(
             {
                 self.context
                     .insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
+            }
+            if let Some(initializer) = &local.init
+                && expression_is_json_value(&initializer.expr, self.context)
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.context
+                    .insert(format!("{JSON_VALUE_MARKER}{name}"));
             }
             if let Some(initializer) = &local.init
                 && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
@@ -7878,6 +7931,9 @@ pub(crate) fn function_expression_context(
         }
         if rust_type_is_string(&argument.ty) {
             context.insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
+        }
+        if rust_type_is_json_value(&argument.ty, &context) {
+            context.insert(format!("{JSON_VALUE_MARKER}{}", pattern.ident));
         }
         if rust_type_is_ordered_primitive(&argument.ty) {
             context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
@@ -15831,6 +15887,83 @@ fn emit_method_call(
         }
         "get" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!("{receiver}[{}]", arguments[0]))
+        }
+        "get" if arguments.len() == 1 && expression_is_json_value(&call.receiver, entities) => {
+            Ok(format!("{receiver}[{}]", arguments[0]))
+        }
+        "as_str"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((v: unknown): string | undefined => typeof v === \"string\" ? v : undefined)({receiver})"
+            ))
+        }
+        "as_f64"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((v: unknown): number | undefined => typeof v === \"number\" ? v : undefined)({receiver})"
+            ))
+        }
+        "as_i64" | "as_u64"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((v: unknown): number | undefined => typeof v === \"number\" && Number.isInteger(v) ? v : undefined)({receiver})"
+            ))
+        }
+        "as_bool"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((v: unknown): boolean | undefined => typeof v === \"boolean\" ? v : undefined)({receiver})"
+            ))
+        }
+        "as_array"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((v: unknown): unknown[] | undefined => Array.isArray(v) ? v : undefined)({receiver})"
+            ))
+        }
+        "as_object"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((v: unknown): Record<string, unknown> | undefined => typeof v === \"object\" && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : undefined)({receiver})"
+            ))
+        }
+        "is_string"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!("(typeof {receiver} === \"string\")"))
+        }
+        "is_number" | "is_f64" | "is_i64" | "is_u64"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!("(typeof {receiver} === \"number\")"))
+        }
+        "is_boolean"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!("(typeof {receiver} === \"boolean\")"))
+        }
+        "is_array"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!("Array.isArray({receiver})"))
+        }
+        "is_object"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "(typeof {receiver} === \"object\" && {receiver} !== null && !Array.isArray({receiver}))"
+            ))
+        }
+        "is_null"
+            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
+        {
+            Ok(format!("({receiver} === null)"))
         }
         "hypot" if arguments.len() == 1 => Ok(format!("Math.hypot({receiver}, {})", arguments[0])),
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
