@@ -18,7 +18,7 @@ const compilerPath = join(
   process.platform === 'win32' ? 'flight-compile.exe' : 'flight-compile',
 );
 
-const REJECTED = [
+const HOISTED = [
   [
     'value_block_return',
     `pub struct Gate {
@@ -36,7 +36,11 @@ pub fn read(gate: &Gate) -> i32 {
     return value * 2;
 }
 `,
-    'error: portable value block cannot use `return` to leave the enclosing function; bind the value first and exit with a statement',
+    (module: Record<string, (...args: never[]) => unknown>) => {
+      const read = module.read as unknown as (gate: { enabled: boolean; value: number }) => number;
+      expect(read({ enabled: false, value: 3 })).toBe(-1);
+      expect(read({ enabled: true, value: 3 })).toBe(6);
+    },
   ],
   [
     'match_value_return',
@@ -48,7 +52,11 @@ pub fn read(gate: &Gate) -> i32 {
     return picked + 1;
 }
 `,
-    'error: portable `match` used as a value cannot use `return` to leave the enclosing function; bind the value first and exit with a statement',
+    (module: Record<string, (...args: never[]) => unknown>) => {
+      const pick = module.pick as unknown as (flag: boolean, value: number) => number;
+      expect(pick(false, 5)).toBe(0);
+      expect(pick(true, 5)).toBe(6);
+    },
   ],
   [
     'value_block_try',
@@ -60,7 +68,11 @@ pub fn read(gate: &Gate) -> i32 {
     return Some(doubled);
 }
 `,
-    'error: portable value block cannot use `?` to leave the enclosing function; bind the value first and exit with a statement',
+    (module: Record<string, (...args: never[]) => unknown>) => {
+      const parse = module.parse as unknown as (value?: number) => number | undefined;
+      expect(parse(undefined)).toBeUndefined();
+      expect(parse(4)).toBe(8);
+    },
   ],
 ] as const;
 
@@ -127,8 +139,8 @@ function loadModule(typescript: string): Record<string, (...args: never[]) => un
 }
 
 describe('flight-compile function exits in value position', () => {
-  it('fails closed on valid Rust that returns or uses ? from a value block or match value', () => {
-    for (const [name, rust, message] of REJECTED) {
+  it('hoists return and ? out of a value block or match value, typechecks and runs', () => {
+    for (const [name, rust, check] of HOISTED) {
       const source = join(workDirectory, `${name}.rs`);
       writeFileSync(source, rust);
       execFileSync(
@@ -150,7 +162,10 @@ describe('flight-compile function exits in value position', () => {
           stdio: 'pipe',
         },
       );
-      expect(compileRust(name, rust).error).toBe(message);
+      const { error, typescript } = compileRust(name, rust);
+      expect(error).toBe('');
+      expect(strictDiagnostics(typescript)).toEqual([]);
+      check(loadModule(typescript));
     }
   });
 

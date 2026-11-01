@@ -122,9 +122,10 @@ describe('flight-compile opaque Any trait objects', () => {
     expect(strictDiagnostics(typescript)).toEqual(["Type 'undefined' is not assignable to type 'object'."]);
   });
 
-  it('fails closed on a local Any trait', () => {
-    expect(compileRust('local', LOCAL_ANY_FIXTURE).error).toBe(
-      'error: unsupported Rust trait object; only callable traits are portable',
-    );
+  it('lowers a local non-callable Any trait object to an opaque object', () => {
+    expect(compileRust('local', LOCAL_ANY_FIXTURE)).toEqual({
+      error: '',
+      typescript: 'export type Local = object;\n\n',
+    });
   });
 });

@@ -315,9 +315,17 @@ describe('flight-compile pinned future lowering', () => {
     }
   });
 
-  it('fails closed for async bodies, await, and other Pin shapes', () => {
+  it('lowers an async fn to an async function returning a Promise', () => {
+    const lowered = compileRust('async', 'pub async fn f() -> u32 { return 1; }\n');
+    expect(lowered).toEqual({
+      error: '',
+      typescript: 'export async function f(): Promise<number> {\n  return (1) >>> 0;\n}\n',
+    });
+    expect(strictDiagnostics('async', lowered.typescript)).toEqual([]);
+  });
+
+  it('fails closed for await outside async and other Pin shapes', () => {
     for (const [rust, expected] of [
-      ['pub async fn f() -> u32 { return 1; }\n', 'error: portable `async fn f` has no portable lowering'],
       [
         'pub fn f(x: u32) -> u32 { let y = x.await; return y; }\n',
         'error: unsupported Rust expression `await expression`',
