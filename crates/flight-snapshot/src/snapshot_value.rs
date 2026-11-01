@@ -135,7 +135,7 @@ pub(crate) fn freeze_snapshot_deep(value: &SnapshotValue) {
 pub(crate) fn get_array_index(key: &str) -> Option<usize> {
     if key.is_empty()
         || (key.len() > 1 && key.starts_with('0'))
-        || !key.bytes().all(|c| c.is_ascii_digit())
+        || !key.bytes().all(|c| c >= b'0' && c <= b'9')
     {
         return None;
     }
