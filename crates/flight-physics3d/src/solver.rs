@@ -93,8 +93,8 @@ fn apply_body_position_correction(body: &mut RigidBody3D, r: [f32; 3], c: [f32; 
     if length == 0.0 {
         return;
     }
-    for value in &mut next {
-        *value /= length;
+    for component in 0..next.len() {
+        next[component] /= length;
     }
     [
         body.orientation_x,

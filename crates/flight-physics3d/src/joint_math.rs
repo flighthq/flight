@@ -369,8 +369,8 @@ pub fn write_physics_3d_joint_relative_rotation(
 ) {
     *out = multiply([-ax, -ay, -az, aw], [bx, by, bz, bw]);
     if out[3] < 0.0 {
-        for value in out.iter_mut() {
-            *value = -*value;
+        for component in 0..out.len() {
+            out[component] = -out[component];
         }
     }
 }
