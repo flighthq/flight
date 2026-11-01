@@ -71,7 +71,8 @@ pub fn clear_spatial_index_3d(index: &mut SpatialIndex3D) {
         .as_mut()
         .expect("initialized spatial index");
     (state.backend.clear_spatial_index)();
-    state.pairs.clear();
+    let state_pairs: &mut Vec<SpatialPair> = &mut state.pairs;
+    state_pairs.clear();
     state.frustum_seen.clear();
     state.frustum_slice.clear();
 }
@@ -133,7 +134,8 @@ pub fn query_spatial_frustum_3d(
         .index_runtime
         .as_mut()
         .expect("initialized spatial index");
-    state.frustum_seen.clear();
+    let state_frustum_seen: &mut HashSet<i32> = &mut state.frustum_seen;
+    state_frustum_seen.clear();
 
     for slice in 0..steps {
         let near_t = slice as f32 / steps as f32;
