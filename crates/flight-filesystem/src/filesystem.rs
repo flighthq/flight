@@ -660,13 +660,17 @@ pub fn is_absolute_file_path(path: &str) -> bool {
     if bytes[0] == b'/' {
         return true;
     }
-    return bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':';
+    return bytes.len() >= 2
+        && ((bytes[0] >= b'A' && bytes[0] <= b'Z') || (bytes[0] >= b'a' && bytes[0] <= b'z'))
+        && bytes[1] == b':';
 }
 
 /// Joins segments and resolves the result exactly as `normalize_file_path` resolves the same segments
 /// spelled as one string, so a path has one spelling whichever entry point built it.
 pub fn join_file_path(segments: &[&str]) -> String {
-    let absolute = segments.first().is_some_and(|first| first.starts_with('/'));
+    let absolute = segments
+        .first()
+        .is_some_and(|first: &&str| first.starts_with('/'));
     return format_resolved_path(
         &resolve_path_segments(&segments.join("/"), absolute),
         absolute,
