@@ -291,7 +291,7 @@ pub fn create_resource_loader(
     options: Option<&Ref<ResourceLoaderOptions>>,
     context: &ResourceLoaderContext,
 ) -> Ref<ResourceLoader> {
-    let mut out = allocate_entity();
+    let mut out: ResourceLoader = allocate_entity();
     initialize_resource_loader(&mut out, options, context);
     return Arc::new(RwLock::new(out));
 }
