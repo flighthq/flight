@@ -15723,10 +15723,16 @@ fn emit_method_call(
                     ))
                 }
                 ("or_insert_with", 1) => {
-                    let init = emit_expression(&call.args[0], entities)?;
-                    Ok(format!(
-                        "(<K, V>(entries: Map<K, V>, key: K, init: () => V): V => {{ if (!entries.has(key)) {{ entries.set(key, init()); }} return entries.get(key)!; }})({map}, {key}, {init})"
-                    ))
+                    if let Some(default) = constructor_path_default_value(&call.args[0]) {
+                        Ok(format!(
+                            "(<K, V>(entries: Map<K, V>, key: K, value: V): V => {{ if (!entries.has(key)) {{ entries.set(key, value); }} return entries.get(key)!; }})({map}, {key}, {default})"
+                        ))
+                    } else {
+                        let init = emit_expression(&call.args[0], entities)?;
+                        Ok(format!(
+                            "(<K, V>(entries: Map<K, V>, key: K, init: () => V): V => {{ if (!entries.has(key)) {{ entries.set(key, init()); }} return entries.get(key)!; }})({map}, {key}, {init})"
+                        ))
+                    }
                 }
                 ("or_default", 0) => Err(compile_error(
                     "portable `HashMap::entry().or_default()` as an expression is not supported; use `.or_insert(value)` or `.or_insert_with(|| value)` instead, or use `*map.entry(key).or_default() += value` or `map.entry(key).or_default().push(value)` as statements"
@@ -16320,10 +16326,18 @@ fn emit_method_call(
             Ok(format!("({receiver} = {receiver} ?? {})", arguments[0]))
         }
         "get_or_insert_with" if arguments.len() == 1 => {
-            Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
+            if let Some(default) = constructor_path_default_value(&call.args[0]) {
+                Ok(format!("({receiver} = {receiver} ?? {default})"))
+            } else {
+                Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
+            }
         }
         "get_or_init" if arguments.len() == 1 => {
-            Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
+            if let Some(default) = constructor_path_default_value(&call.args[0]) {
+                Ok(format!("({receiver} = {receiver} ?? {default})"))
+            } else {
+                Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
+            }
         }
         "lines"
             if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
@@ -16357,10 +16371,23 @@ fn emit_method_call(
         }
         "map_or_else" if arguments.len() == 2 => {
             let absent = option_absent_value(&call.receiver, entities);
+            let fallback_default = constructor_path_default_value(&call.args[0]);
             if option_expression_payload(&call.receiver, entities).is_some() {
+                if let Some(default) = fallback_default {
+                    Ok(format!(
+                        "(<T, U>(value: T | {absent}, fallback: U, map: (value: T) => U): U => value === {absent} ? fallback : map(value))({receiver}, {default}, {})",
+                        arguments[1]
+                    ))
+                } else {
+                    Ok(format!(
+                        "(<T, U>(value: T | {absent}, fallback: () => U, map: (value: T) => U): U => value === {absent} ? fallback() : map(value))({receiver}, {}, {})",
+                        arguments[0], arguments[1]
+                    ))
+                }
+            } else if let Some(default) = fallback_default {
                 Ok(format!(
-                    "(<T, U>(value: T | {absent}, fallback: () => U, map: (value: T) => U): U => value === {absent} ? fallback() : map(value))({receiver}, {}, {})",
-                    arguments[0], arguments[1]
+                    "({receiver} !== {absent} ? ({})({receiver}) : {default})",
+                    arguments[1]
                 ))
             } else {
                 Ok(format!(
@@ -16376,7 +16403,13 @@ fn emit_method_call(
         "ok_or" if arguments.len() == 1 => Ok(receiver),
         "ok_or_else" if arguments.len() == 1 => Ok(receiver),
         "or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
-        "or_else" if arguments.len() == 1 => Ok(format!("({receiver} ?? ({})())", arguments[0])),
+        "or_else" if arguments.len() == 1 => {
+            if let Some(default) = constructor_path_default_value(&call.args[0]) {
+                Ok(format!("({receiver} ?? {default})"))
+            } else {
+                Ok(format!("({receiver} ?? ({})())", arguments[0]))
+            }
+        }
         "parse" if arguments.is_empty() => {
             let target_type = call.turbofish.as_ref().and_then(|arguments| {
                 arguments
@@ -16919,6 +16952,8 @@ fn emit_method_call(
                 } else {
                     Ok(format!("({receiver} ?? ({})())", arguments[0]))
                 }
+            } else if let Some(default) = constructor_path_default_value(&call.args[0]) {
+                Ok(format!("({receiver} ?? {default})"))
             } else {
                 Ok(format!("({receiver} ?? ({})())", arguments[0]))
             }
@@ -20849,6 +20884,24 @@ fn pattern_identifiers(pattern: &Pat) -> Vec<&syn::Ident> {
     };
     collector.visit_pat(pattern);
     return collector.identifiers;
+}
+
+fn constructor_path_default_value(expression: &Expr) -> Option<&'static str> {
+    let expression = peel_reference_and_paren(expression);
+    let Expr::Path(path) = expression else {
+        return None;
+    };
+    if path.qself.is_some() {
+        return None;
+    }
+    let segments: Vec<_> = path.path.segments.iter().map(|s| s.ident.to_string()).collect();
+    match segments.iter().map(|s| s.as_str()).collect::<Vec<_>>().as_slice() {
+        ["String", "new"] => Some("''"),
+        ["Vec", "new"] => Some("[]"),
+        ["HashMap", "new"] | ["BTreeMap", "new"] => Some("new Map()"),
+        ["HashSet", "new"] | ["BTreeSet", "new"] => Some("new Set()"),
+        _ => None,
+    }
 }
 
 pub(super) fn peel_reference_and_paren(expression: &Expr) -> &Expr {

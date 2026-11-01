@@ -20416,3 +20416,33 @@ pub fn try_parse(s: &str) -> Option<f32> {
         "parse helper should not return null: {output}"
     );
 }
+
+#[test]
+fn constructor_path_in_unwrap_or_else_emits_value_not_method_call() {
+    let source = r#"
+pub fn string_default(opt: Option<String>) -> String {
+    return opt.unwrap_or_else(String::new);
+}
+
+pub fn vec_default(opt: Option<Vec<f32>>) -> Vec<f32> {
+    return opt.unwrap_or_else(Vec::new);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("?? ''"),
+        "String::new should lower to empty string: {output}"
+    );
+    assert!(
+        output.contains("?? []"),
+        "Vec::new should lower to empty array: {output}"
+    );
+    assert!(
+        !output.contains("String.new"),
+        "should not emit String.new: {output}"
+    );
+    assert!(
+        !output.contains("Vec.new"),
+        "should not emit Vec.new: {output}"
+    );
+}
