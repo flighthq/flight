@@ -204,7 +204,8 @@ pub fn read_swf_font_glyph_outline_source(
         Arc::new(move |out, glyph_index| {
             let out_commands: &mut Vec<u8> = &mut out.commands;
             out_commands.clear();
-            out.data.clear();
+            let out_data: &mut Vec<f64> = &mut out.data;
+            out_data.clear();
             out.winding = PathWinding::NonZero;
             let Some(outline) = usize::try_from(glyph_index)
                 .ok()

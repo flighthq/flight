@@ -452,7 +452,9 @@ pub fn initialize_swf_document_import(out: &mut SwfDocumentImport, document: Ref
     let out_appearances: &mut Vec<SwfNodeAppearance> = &mut out.appearances;
     out_appearances.clear();
     out.document = document;
-    out.jpeg_alpha_payloads.clear();
+    let out_jpeg_alpha_payloads: &mut Vec<crate::SwfJpegAlphaPayload> =
+        &mut out.jpeg_alpha_payloads;
+    out_jpeg_alpha_payloads.clear();
 }
 
 fn attach_swf_frame_actions(clip: &Ref<MovieClip>, actions: &SwfFrameActions, total_frames: i32) {
