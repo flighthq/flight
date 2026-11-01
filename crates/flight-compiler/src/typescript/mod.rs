@@ -15945,7 +15945,9 @@ fn emit_method_call(
                 Ok(format!("{receiver}[0]"))
             }
         }
-        "get" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+        "get" | "get_mut"
+            if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
+        {
             Ok(format!("{receiver}[{}]", arguments[0]))
         }
         "get" if arguments.len() == 1 && expression_is_json_value(&call.receiver, entities) => {

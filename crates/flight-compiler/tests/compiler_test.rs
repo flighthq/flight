@@ -4107,6 +4107,22 @@ pub fn modify(map: &mut HashMap<String, i32>, key: &str) -> Option<&mut i32> {
     }
 
     #[test]
+    fn lowers_vec_get_mut_to_index_access() {
+        let source = r#"
+pub fn modify(values: &mut Vec<i32>, index: usize) -> Option<&mut i32> {
+    return values.get_mut(index);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("values[index]"),
+            "get_mut on a sequence should lower to index access: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_is_ascii_checks() {
         let source = r#"
 pub fn check_digit(ch: char) -> bool {
