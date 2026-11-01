@@ -28,8 +28,16 @@ pub fn create_tween_stagger<T: ?Sized + Send + Sync + 'static>(
     let mut tweens: Vec<Tween<T>> = Vec::new();
     for i in 0..count {
         let stagger_offset = compute_stagger_delay(i, count, each, &from, stagger_ease);
-        let mut opts = options.cloned().unwrap_or(TweenOptions::default());
-        opts.delay = Some(base_delay + stagger_offset);
+        let opts = TweenOptions {
+            delay: Some(base_delay + stagger_offset),
+            ease: options.and_then(|o| o.ease),
+            overwrite: options.and_then(|o| o.overwrite),
+            reflect: options.and_then(|o| o.reflect),
+            repeat: options.and_then(|o| o.repeat),
+            reverse: options.and_then(|o| o.reverse),
+            smart_rotation: options.and_then(|o| o.smart_rotation),
+            snapping: options.and_then(|o| o.snapping),
+        };
         let tween = create_tween(manager, &targets[i], duration, props, Some(&opts));
         tweens.push(tween);
     }
