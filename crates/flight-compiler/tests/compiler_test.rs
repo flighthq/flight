@@ -2497,11 +2497,20 @@ pub struct Capability {
         );
         assert_eq!(
             compile_typescript(
-                "pub fn f(x: u32) -> u32 { let y = x.await; return y; }\n",
+                "pub async fn f() -> u32 {\n    let y = async { 1_u32 }.await;\n    return y;\n}\n",
                 None
             )
             .unwrap(),
-            "export function f(x: number): number {\n  const y = await x;\n  return (y) >>> 0;\n}\n"
+            "export async function f(): Promise<number> {\n  const y = await (async () => 1)();\n  return (y) >>> 0;\n}\n"
+        );
+        assert_eq!(
+            compile_typescript(
+                "pub fn f(x: u32) -> u32 { let y = x.await; return y; }\n",
+                None
+            )
+            .unwrap_err()
+            .to_string(),
+            "unsupported Rust expression `await expression`"
         );
     }
 

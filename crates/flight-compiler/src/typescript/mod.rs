@@ -18,9 +18,9 @@ use crate::{CompileError, compile_error};
 
 use safety::{
     block_contains_function_exits, if_expression_contains_function_exits,
-    reject_entity_runtime_state_store_collisions, reject_function_exits_in_value_position,
-    reject_unresolved_pattern_field, reject_unsafe_lazy_lock_initializers,
-    reject_unsupported_array_like_uses,
+    reject_await_outside_async, reject_entity_runtime_state_store_collisions,
+    reject_function_exits_in_value_position, reject_unresolved_pattern_field,
+    reject_unsafe_lazy_lock_initializers, reject_unsupported_array_like_uses,
 };
 #[allow(unused_imports)]
 pub(crate) use vitest_helpers::*;
@@ -10572,6 +10572,7 @@ fn emit_function(
     nullable_static_names: &HashSet<String>,
     entity_construction_parameter: bool,
 ) -> Result<(), CompileError> {
+    reject_await_outside_async(function)?;
     emit_documentation(out, &function.attrs, 0);
     let is_async = function.sig.asyncness.is_some();
     // A crate-visible function is exported only through the crate-internal `export { … }` list, which

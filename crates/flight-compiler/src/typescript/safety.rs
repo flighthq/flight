@@ -161,6 +161,41 @@ pub(super) fn reject_function_exits_in_value_position<'ast>(
     };
 }
 
+// `.await` lowers to TypeScript `await`, which is a syntax error outside an `async` function, so an
+// `.await` that no `async fn`, `async` block or `async` closure encloses fails closed.
+pub(super) fn reject_await_outside_async(function: &ItemFn) -> Result<(), CompileError> {
+    struct AwaitFinder {
+        found: bool,
+    }
+    impl<'ast> Visit<'ast> for AwaitFinder {
+        fn visit_expr_async(&mut self, _expression: &'ast syn::ExprAsync) {}
+
+        fn visit_expr_await(&mut self, expression: &'ast syn::ExprAwait) {
+            self.found = true;
+            syn::visit::visit_expr_await(self, expression);
+        }
+
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            if closure.asyncness.is_none() {
+                syn::visit::visit_expr_closure(self, closure);
+            }
+        }
+
+        fn visit_item(&mut self, _item: &'ast syn::Item) {}
+    }
+    if function.sig.asyncness.is_some() {
+        return Ok(());
+    }
+    let mut finder = AwaitFinder { found: false };
+    finder.visit_block(&function.block);
+    if finder.found {
+        return Err(compile_error(
+            "unsupported Rust expression `await expression`",
+        ));
+    }
+    return Ok(());
+}
+
 pub(super) fn block_contains_function_exits(block: &syn::Block) -> bool {
     return reject_function_exits_in_value_position(|visitor| visitor.visit_block(block), "")
         .is_err();
