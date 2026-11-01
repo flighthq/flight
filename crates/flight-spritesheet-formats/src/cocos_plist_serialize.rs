@@ -25,7 +25,7 @@ pub fn serialize_cocos_plist_spritesheet(
                 z_e_js_number(data.image_height)
             ),
             texture_file_name: if data.image_file.is_empty() {
-                existing.map_or_else(String::new, |document| {
+                existing.map_or(String::new(), |document| {
                     document.metadata.texture_file_name.clone()
                 })
             } else {

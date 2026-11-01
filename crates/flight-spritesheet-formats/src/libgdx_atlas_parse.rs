@@ -48,7 +48,7 @@ pub fn parse_libgdx_atlas_spritesheet(
     let mut data = create_spritesheet_data();
     data.animations = infer_animations(&frame_names, frame_duration);
     data.frames = frames;
-    data.image_file = first_page.map_or_else(String::new, |page| page.filename.clone());
+    data.image_file = first_page.map_or(String::new(), |page| page.filename.clone());
     data.image_height = first_page.map_or(0.0, |page| page.height);
     data.image_width = first_page.map_or(0.0, |page| page.width);
     data.scale = 1.0;

@@ -155,7 +155,7 @@ fn z_b_texture_packer_meta_json(
         (
             "image",
             string(if data.image_file.is_empty() {
-                existing.map_or_else(String::new, |meta| meta.image.clone())
+                existing.map_or(String::new(), |meta| meta.image.clone())
             } else {
                 data.image_file.clone()
             }),

@@ -232,7 +232,7 @@ fn z_g_integer_value(element: Option<&XmlElement>) -> i32 {
 }
 
 fn z_h_text_value(element: Option<&XmlElement>) -> String {
-    return element.map_or_else(String::new, |element| element.text.clone());
+    return element.map_or(String::new(), |element| element.text.clone());
 }
 
 fn z_i_default_cocos_metadata() -> CocosPlistMetadata {

@@ -135,7 +135,7 @@ fn z_b_aseprite_meta_json(data: &SpritesheetData, existing: Option<&AsepriteMeta
         (
             "image",
             string(if data.image_file.is_empty() {
-                existing.map_or_else(String::new, |meta| meta.image.clone())
+                existing.map_or(String::new(), |meta| meta.image.clone())
             } else {
                 data.image_file.clone()
             }),

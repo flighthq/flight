@@ -8,7 +8,7 @@ pub fn serialize_starling_spritesheet(
 ) -> String {
     let document = StarlingDocument {
         image_path: if data.image_file.is_empty() {
-            existing.map_or_else(String::new, |document| document.image_path.clone())
+            existing.map_or(String::new(), |document| document.image_path.clone())
         } else {
             data.image_file.clone()
         },
