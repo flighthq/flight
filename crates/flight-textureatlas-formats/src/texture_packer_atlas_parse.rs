@@ -74,7 +74,7 @@ pub fn parse_texture_packer_atlas_json(
     match doc.frames {
         RawFrames::Array(frames) => {
             for entry in frames.values {
-                let name = entry.filename.clone().unwrap_or_default();
+                let name = entry.filename.clone().unwrap_or(String::new());
                 texture_packer_atlas_apply_raw_frame(atlas, &name, &entry, options);
             }
         }

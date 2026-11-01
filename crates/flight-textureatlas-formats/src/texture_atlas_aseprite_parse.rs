@@ -61,7 +61,7 @@ pub fn parse_texture_atlas_aseprite_json(atlas: &mut TextureAtlas, json: &str) {
     match doc.frames {
         RawFrames::Array(frames) => {
             for entry in frames.values {
-                let name = entry.filename.clone().unwrap_or_default();
+                let name = entry.filename.clone().unwrap_or(String::new());
                 texture_atlas_aseprite_apply_raw_frame(atlas, &name, &entry);
             }
         }
