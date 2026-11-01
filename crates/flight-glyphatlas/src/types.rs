@@ -234,9 +234,9 @@ pub(crate) fn create_glyph_rasterize_options(
         font_size: options.font_size,
         font_style: options.font_style.clone(),
         font_weight: options.font_weight.as_ref().map(|value| {
-            GlyphRasterizeFontWeight::String(GlyphRasterizeFontWeightString {
+            return GlyphRasterizeFontWeight::String(GlyphRasterizeFontWeightString {
                 value: value.clone(),
-            })
+            });
         }),
     });
 }

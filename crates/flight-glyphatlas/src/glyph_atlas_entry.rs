@@ -306,7 +306,8 @@ fn repack_glyph_atlas(runtime: &mut GlyphAtlasRuntime) {
         GlyphAtlasEntryGuardReason::Repack,
         runtime.entries.len() as u32,
     );
-    runtime.shelves.clear();
+    let shelves: &mut Vec<GlyphAtlasShelf> = &mut runtime.shelves;
+    shelves.clear();
     runtime.pack_bottom = runtime.padding;
     runtime.bitmap.write().unwrap().data.fill(0);
 

@@ -60,13 +60,18 @@ pub fn derive_glyph_metrics_from_font_size(font_size: f32) -> GlyphMetrics {
 pub fn dispose_glyph_atlas(atlas: &Ref<GlyphAtlas>) {
     let runtime = get_glyph_atlas_runtime(atlas);
     let mut runtime = runtime.write().unwrap();
-    runtime.entries.clear();
-    runtime.entry_order.clear();
-    runtime.bitmaps.clear();
+    let entries: &mut HashMap<u32, Ref<GlyphEntry>> = &mut runtime.entries;
+    entries.clear();
+    let entry_order: &mut Vec<u32> = &mut runtime.entry_order;
+    entry_order.clear();
+    let bitmaps: &mut HashMap<u32, GlyphRasterizedBitmap> = &mut runtime.bitmaps;
+    bitmaps.clear();
     runtime.occupied_area = 0;
     runtime.retained_bytes = 0;
-    runtime.lru.clear();
-    runtime.shelves.clear();
+    let lru: &mut Vec<u32> = &mut runtime.lru;
+    lru.clear();
+    let shelves: &mut Vec<GlyphAtlasShelf> = &mut runtime.shelves;
+    shelves.clear();
     runtime.pack_bottom = runtime.padding;
     runtime.dirty = false;
     runtime.layout_version += 1;

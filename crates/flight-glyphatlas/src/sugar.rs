@@ -118,7 +118,7 @@ mod sugar_tests {
         set_glyph_atlas_entry_guard(
             &function,
             Some(Arc::new(move |_notice| {
-                *function_record.lock().unwrap() += 1
+                return *function_record.lock().unwrap() += 1;
             })),
         );
         method.disable_guards();
