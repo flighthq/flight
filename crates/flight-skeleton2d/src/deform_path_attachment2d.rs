@@ -19,8 +19,9 @@ pub fn deform_skeleton_2d_path_attachment(
     deform: Option<&[f32]>,
     guards: &Skeleton2DGuardState,
 ) {
-    out.commands.clear();
-    out.commands.extend_from_slice(&attachment.commands);
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
+    out_commands.extend_from_slice(&attachment.commands);
     out.winding = attachment.winding;
     let mut points = vec![0.0f32; attachment.point_count * 2];
     skin_skeleton_2d_attachment_points(
@@ -33,6 +34,7 @@ pub fn deform_skeleton_2d_path_attachment(
         "PathAttachment2D",
         guards,
     );
-    out.data.clear();
-    out.data.extend(points.iter().map(|value| *value as f64));
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
+    out_data.extend(points.iter().map(|value| *value as f64));
 }
