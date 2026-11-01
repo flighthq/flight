@@ -140,10 +140,10 @@ fn active_range(range: &LibgdxActiveRangeValue) -> LibgdxRangeValue {
     };
 }
 
-fn bool_key(section: &LibgdxSection, key: &str, default: bool) -> bool {
+fn bool_key(section: &LibgdxSection, key: &str, fallback: bool) -> bool {
     return match section.get(key) {
         Some(value) => value == "true",
-        None => default,
+        None => fallback,
     };
 }
 
@@ -366,12 +366,12 @@ fn hex_to_rgb(hex: &str) -> (f32, f32, f32) {
     return (channel(0), channel(2), channel(4));
 }
 
-fn num_key(section: &LibgdxSection, key: &str, default: f32) -> f32 {
+fn num_key(section: &LibgdxSection, key: &str, fallback: f32) -> f32 {
     return match section.get(key) {
         Some(value) => parse_js_float(value)
             .filter(|parsed| parsed.is_finite())
-            .unwrap_or(default),
-        None => default,
+            .unwrap_or(fallback),
+        None => fallback,
     };
 }
 
@@ -474,16 +474,24 @@ fn read_range(section: &LibgdxSection, defaults: Option<&LibgdxRangeValue>) -> L
         scaling.push(num_key(section, &format!("scaling{}", index), 1.0));
     }
     for index in 0..timeline_count {
-        let default = if index == 0 { 0.0 } else { 1.0 };
-        timeline.push(num_key(section, &format!("timeline{}", index), default));
+        let fallback = if index == 0 { 0.0 } else { 1.0 };
+        timeline.push(num_key(section, &format!("timeline{}", index), fallback));
     }
-    let default = defaults.cloned().unwrap_or(LibgdxRangeValue::default());
+    let fallback = defaults.cloned().unwrap_or(LibgdxRangeValue {
+        low_min: 0.0,
+        low_max: 0.0,
+        high_min: 0.0,
+        high_max: 0.0,
+        relative: false,
+        scaling: Vec::new(),
+        timeline: Vec::new(),
+    });
     return LibgdxRangeValue {
-        high_max: num_key(section, "highMax", default.high_max),
-        high_min: num_key(section, "highMin", default.high_min),
-        low_max: num_key(section, "lowMax", default.low_max),
-        low_min: num_key(section, "lowMin", default.low_min),
-        relative: bool_key(section, "relative", default.relative),
+        high_max: num_key(section, "highMax", fallback.high_max),
+        high_min: num_key(section, "highMin", fallback.high_min),
+        low_max: num_key(section, "lowMax", fallback.low_max),
+        low_min: num_key(section, "lowMin", fallback.low_min),
+        relative: bool_key(section, "relative", fallback.relative),
         scaling,
         timeline,
     };
@@ -525,11 +533,11 @@ fn sections_to_document(sections: &LibgdxSections) -> LibgdxParticleDocument {
     };
     let mut tint_timeline: Vec<f32> = Vec::new();
     for index in 0..tint_timeline_count {
-        let default = if index == 0 { 0.0 } else { 1.0 };
+        let fallback = if index == 0 { 0.0 } else { 1.0 };
         tint_timeline.push(num_key(
             &tint_section,
             &format!("timeline{}", index),
-            default,
+            fallback,
         ));
     }
     let spawn_shape_section = sections.section("Spawn Shape");
