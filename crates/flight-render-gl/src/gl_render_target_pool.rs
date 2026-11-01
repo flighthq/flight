@@ -60,7 +60,8 @@ pub fn destroy_gl_texture_render_target_pool(pool: &mut GlTextureRenderTargetPoo
     for target in &mut pool.free {
         destroy_gl_texture_render_target(target);
     }
-    pool.free.clear();
+    let pool_free: &mut Vec<GlTextureRenderTarget> = &mut pool.free;
+    pool_free.clear();
 }
 
 fn matches_gl_render_target_axes(target: &GlTextureRenderTarget, axes: &RenderTargetAxes) -> bool {
