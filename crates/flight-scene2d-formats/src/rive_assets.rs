@@ -129,7 +129,8 @@ pub fn register_rive_asset_handlers(registry: &mut RiveImportRegistry) {
         RIVE_FILE_ASSET,
         Arc::new(RiveCoreObjectHandler {
             apply_document: Some(Arc::new(|context| {
-                context.assets.extend(create_rive_file_assets(
+                let context_assets: &mut Vec<RiveFileAsset> = &mut context.assets;
+                context_assets.extend(create_rive_file_assets(
                     context.objects,
                     context.diagnostics.as_deref_mut(),
                 ));

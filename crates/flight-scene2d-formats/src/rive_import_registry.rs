@@ -73,7 +73,8 @@ pub fn initialize_rive_artboard_import_context<'a>(
     font_names: &'a [String],
     diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,
 ) {
-    out.advanced_blends.clear();
+    let out_advanced_blends: &mut Vec<RiveAdvancedBlend> = &mut out.advanced_blends;
+    out_advanced_blends.clear();
     out.animation_artboard = Arc::new(std::sync::RwLock::new(artboard.clone()));
     out.animations.clear();
     out.artboard = artboard;
@@ -97,7 +98,8 @@ pub fn initialize_rive_document_import_context<'a>(
     objects: &'a [RiveCoreObject],
     diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,
 ) {
-    out.assets.clear();
+    let out_assets: &mut Vec<RiveFileAsset> = &mut out.assets;
+    out_assets.clear();
     out.diagnostics = diagnostics;
     out.objects = objects;
     out.registry = registry;

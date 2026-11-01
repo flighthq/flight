@@ -962,7 +962,8 @@ pub fn register_rive_layout_handlers(registry: &mut RiveImportRegistry) {
                     &context.nodes,
                     context.diagnostics.as_deref_mut(),
                 );
-                context.layouts.extend(layouts);
+                let context_layouts: &mut Vec<RiveLayoutImport> = &mut context.layouts;
+                context_layouts.extend(layouts);
             })),
             apply_document: None,
             import_component: Some(Arc::new(import_rive_layout_component)),

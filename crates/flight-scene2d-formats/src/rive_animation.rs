@@ -648,7 +648,8 @@ pub fn register_rive_animation_handlers(registry: &mut RiveImportRegistry) {
                     context.skeleton.as_ref(),
                     context.diagnostics.as_deref_mut(),
                 );
-                context.animations.extend(clips);
+                let context_animations: &mut Vec<RiveAnimationClip> = &mut context.animations;
+                context_animations.extend(clips);
             })),
             apply_document: None,
             import_component: None,
