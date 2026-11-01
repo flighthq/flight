@@ -298,6 +298,14 @@ fn create_reference_world(
     };
 }
 
+// The authored mass block is applied as mass data and then the dynamic state is written field by
+// field, gated by what the body type and fixed rotation allow (TS `writeBodyDynamicValues`).
+fn create_typed_rigid_body_3d(body_type: Physics3DBodyType) -> RigidBody3DRef {
+    let body = create_rigid_body_3d();
+    body.write().unwrap().body_type = body_type;
+    return body;
+}
+
 /// Installs a fresh reference backend into `out` (TS `initializeReferencePhysics3DAbi`): its own
 /// collision registry, world table and handle counter, captured by every callback.
 pub fn initialize_reference_physics3d_abi(out: &mut Physics3DAbi) {
@@ -830,8 +838,6 @@ fn execute_destroy_joint(
     return Physics3DAbiExecutionStatus::Complete;
 }
 
-// The authored mass block is applied as mass data and then the dynamic state is written field by
-// field, gated by what the body type and fixed rotation allow (TS `writeBodyDynamicValues`).
 fn execute_set_body(
     state: &mut ReferenceWorld,
     command: &CommandRecord,
@@ -864,11 +870,7 @@ fn execute_set_body(
 
     let existing = state.body_by_id.get(&command.object_id).cloned();
     let added = existing.is_none();
-    let body = existing.unwrap_or_else(|| {
-        let body = create_rigid_body_3d();
-        body.write().unwrap().body_type = body_type;
-        return body;
-    });
+    let body = existing.unwrap_or_else(|| create_typed_rigid_body_3d(body_type));
     let v = |i: usize| values[i] as f32;
     let world = &mut state.world;
     if !set_physics_3d_body_type(world, &body, body_type)
