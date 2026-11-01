@@ -499,7 +499,7 @@ fn draw_gl_shape_meshes_color_scale_bias(
         // SAFETY: the uniform locations belong to the bound tinted mesh program on this GL thread.
         unsafe {
             if let Some(matrix) = color_matrix {
-                let locations = shader.color_matrix_locations.clone().unwrap_or_default();
+                let locations = shader.color_matrix_locations.clone().unwrap_or(Vec::new());
                 for row in 0..4 {
                     let source = row * 5;
                     gl.uniform_4_f32(
@@ -974,7 +974,7 @@ fn promote_gl_color_scale_bias_to_matrix(
     let affine = runtime
         .quad_batch_writer_color_scale_bias_data
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     runtime.quad_batch_writer_color_scale_bias_mode = Some(CT_MODE_MATRIX);
     for index in 0..instance_count {
         let base = index * COLOR_SCALE_BIAS_FLOATS;
@@ -989,7 +989,7 @@ fn promote_gl_packed_tint_to_color_matrix(
     let packed = runtime
         .quad_batch_writer_color_tint_data
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     runtime.quad_batch_writer_color_scale_bias_mode = Some(CT_MODE_MATRIX);
     for index in 0..instance_count {
         write_gl_native_packed_tint_as_color_matrix(
@@ -1008,7 +1008,7 @@ fn promote_gl_packed_tint_to_color_scale_bias(
     let packed = runtime
         .quad_batch_writer_color_tint_data
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     for index in 0..instance_count {
         write_gl_native_packed_tint_as_color_scale_bias(
             runtime,
