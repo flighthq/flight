@@ -15,7 +15,7 @@ pub fn explain_host_connectivity_capabilities(
     out: &mut HostExplanation,
     connectivity: &HostConnectivityCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if connectivity.change.is_some() {
         slots.push("change".to_string());
     }

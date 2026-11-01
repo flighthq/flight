@@ -15,7 +15,7 @@ pub fn explain_host_accessibility_capabilities(
     out: &mut HostExplanation,
     accessibility: &HostAccessibilityCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if accessibility.tree.is_some() {
         slots.push("tree".to_string());
     }

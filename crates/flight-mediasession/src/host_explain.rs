@@ -15,7 +15,7 @@ pub fn explain_host_media_session_capabilities(
     out: &mut HostExplanation,
     media_session: &HostMediaSessionCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if media_session.action.is_some() {
         slots.push("action".to_string());
     }

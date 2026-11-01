@@ -18,7 +18,7 @@ pub fn explain_host_haptics_capabilities(
     out: &mut HostExplanation,
     haptics: &HostHapticsCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if haptics.engine.is_some() {
         slots.push("engine".to_string());
     }

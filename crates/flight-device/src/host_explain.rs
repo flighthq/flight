@@ -15,7 +15,7 @@ pub fn explain_host_device_capabilities(
     out: &mut HostExplanation,
     device: &HostDeviceCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if device.info.is_some() {
         slots.push("info".to_string());
     }

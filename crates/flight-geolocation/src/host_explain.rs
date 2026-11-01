@@ -16,7 +16,7 @@ pub fn explain_host_geolocation_capabilities(
     out: &mut HostExplanation,
     geolocation: &HostGeolocationCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if geolocation.position.is_some() {
         slots.push("position".to_string());
     }

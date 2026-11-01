@@ -16,7 +16,7 @@ pub fn explain_host_lifecycle_capabilities(
     out: &mut HostExplanation,
     lifecycle: &HostLifecycleCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if lifecycle.state.is_some() {
         slots.push("state".to_string());
     }

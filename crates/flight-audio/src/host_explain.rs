@@ -15,7 +15,7 @@ pub fn explain_host_audio_decode_capabilities(
     out: &mut HostExplanation,
     audio_decode: &HostAudioDecodeCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if audio_decode.aac.is_some() {
         slots.push("aac".to_string());
     }

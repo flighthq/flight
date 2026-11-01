@@ -25,7 +25,7 @@ pub fn enable_host_input_guards(state: &LogStateRef, now_ms: f64, input: &HostIn
 /// host provider composes its host's explanation by calling each group's explainer in group order.
 // flight-lint: allow(conform-extra) D26: the input group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_input_capabilities(out: &mut HostExplanation, input: &HostInputCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if input.drop_file.is_some() {
         slots.push("dropFile".to_string());
     }

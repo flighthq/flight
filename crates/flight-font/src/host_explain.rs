@@ -12,7 +12,7 @@ use crate::{HostFontCapabilities, HostGlyphCapabilities};
 /// host provider composes its host's explanation by calling each group's explainer in group order.
 // flight-lint: allow(conform-extra) D26: the font group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_font_capabilities(out: &mut HostExplanation, font: &HostFontCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if font.loader.is_some() {
         slots.push("loader".to_string());
     }
@@ -34,7 +34,7 @@ pub fn explain_host_font_capabilities(out: &mut HostExplanation, font: &HostFont
 /// order.
 // flight-lint: allow(conform-extra) D26: the glyph group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_glyph_capabilities(out: &mut HostExplanation, glyph: &HostGlyphCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if glyph.rasterizer.is_some() {
         slots.push("rasterizer".to_string());
     }

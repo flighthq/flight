@@ -43,7 +43,7 @@ pub fn explain_host_image(image: &HostImageCapabilities) -> HostCapabilityExplan
 /// host provider composes its host's explanation by calling each group's explainer in group order.
 // flight-lint: allow(conform-extra) D26: the image group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_image_capabilities(out: &mut HostExplanation, image: &HostImageCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if image.loader.is_some() {
         slots.push("loader".to_string());
     }

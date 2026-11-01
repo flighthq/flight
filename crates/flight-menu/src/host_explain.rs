@@ -12,7 +12,7 @@ use crate::HostMenuCapabilities;
 /// by calling each group's explainer in group order.
 // flight-lint: allow(conform-extra) D26: the menu group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_menu_capabilities(out: &mut HostExplanation, menu: &HostMenuCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if menu.app.is_some() {
         slots.push("app".to_string());
     }

@@ -16,7 +16,7 @@ pub fn explain_host_soft_keyboard_capabilities(
     out: &mut HostExplanation,
     soft_keyboard: &HostSoftKeyboardCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if soft_keyboard.accessory_bar.is_some() {
         slots.push("accessoryBar".to_string());
     }

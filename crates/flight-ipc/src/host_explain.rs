@@ -12,7 +12,7 @@ use crate::HostIpcCapabilities;
 /// by calling each group's explainer in group order.
 // flight-lint: allow(conform-extra) D26: the ipc group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_ipc_capabilities(out: &mut HostExplanation, ipc: &HostIpcCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if ipc.handle.is_some() {
         slots.push("handle".to_string());
     }

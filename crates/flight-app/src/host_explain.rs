@@ -12,7 +12,7 @@ use crate::{HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilit
 /// by calling each group's explainer in group order.
 // flight-lint: allow(conform-extra) D26: the app group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_app_capabilities(out: &mut HostExplanation, app: &HostAppCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if app.activate.is_some() {
         slots.push("activate".to_string());
     }
@@ -102,7 +102,7 @@ pub fn explain_host_fullscreen_capabilities(
     out: &mut HostExplanation,
     fullscreen: &HostFullscreenCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if fullscreen.element.is_some() {
         slots.push("element".to_string());
     }
@@ -120,7 +120,7 @@ pub fn explain_host_window_capabilities(
     out: &mut HostExplanation,
     window: &HostWindowCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if window.appearance.is_some() {
         slots.push("appearance".to_string());
     }

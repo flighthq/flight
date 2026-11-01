@@ -15,7 +15,7 @@ pub fn explain_host_dialog_capabilities(
     out: &mut HostExplanation,
     dialog: &HostDialogCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if dialog.directory_open.is_some() {
         slots.push("directoryOpen".to_string());
     }

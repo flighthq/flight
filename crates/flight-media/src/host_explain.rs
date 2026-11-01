@@ -26,7 +26,7 @@ pub fn enable_host_audio_guards(state: &LogStateRef, now_ms: f64, audio: &HostAu
 /// in group order.
 // flight-lint: allow(conform-extra) D26: the audio group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_audio_capabilities(out: &mut HostExplanation, audio: &HostAudioCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if audio.codec.is_some() {
         slots.push("codec".to_string());
     }

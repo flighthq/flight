@@ -16,7 +16,7 @@ pub fn explain_host_bitmap_capabilities(
     out: &mut HostExplanation,
     bitmap: &HostBitmapCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if bitmap.encode.is_some() {
         slots.push("encode".to_string());
     }

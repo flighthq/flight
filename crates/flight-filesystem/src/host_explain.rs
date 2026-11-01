@@ -16,7 +16,7 @@ pub fn explain_host_file_system_capabilities(
     out: &mut HostExplanation,
     file_system: &HostFileSystemCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if file_system.access.is_some() {
         slots.push("access".to_string());
     }

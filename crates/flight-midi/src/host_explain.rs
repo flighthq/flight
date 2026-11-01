@@ -12,7 +12,7 @@ use crate::HostMidiCapabilities;
 /// by calling each group's explainer in group order.
 // flight-lint: allow(conform-extra) D26: the midi group's share of the former aggregate explainHost, owned by its feature
 pub fn explain_host_midi_capabilities(out: &mut HostExplanation, midi: &HostMidiCapabilities) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if midi.access.is_some() {
         slots.push("access".to_string());
     }

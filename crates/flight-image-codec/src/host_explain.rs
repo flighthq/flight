@@ -15,7 +15,7 @@ pub fn explain_host_image_decode_capabilities(
     out: &mut HostExplanation,
     image_decode: &HostImageDecodeCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if image_decode.avif.is_some() {
         slots.push("avif".to_string());
     }
@@ -48,7 +48,7 @@ pub fn explain_host_image_encode_capabilities(
     out: &mut HostExplanation,
     image_encode: &HostImageEncodeCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if image_encode.jpeg.is_some() {
         slots.push("jpeg".to_string());
     }

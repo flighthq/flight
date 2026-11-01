@@ -15,7 +15,7 @@ pub fn explain_host_compress_capabilities(
     out: &mut HostExplanation,
     compress: &HostCompressCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if compress.deflate.is_some() {
         slots.push("deflate".to_string());
     }
@@ -36,7 +36,7 @@ pub fn explain_host_decompress_capabilities(
     out: &mut HostExplanation,
     decompress: &HostDecompressCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if decompress.brotli.is_some() {
         slots.push("brotli".to_string());
     }

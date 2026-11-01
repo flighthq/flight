@@ -16,7 +16,7 @@ pub fn explain_host_clipboard_capabilities(
     out: &mut HostExplanation,
     clipboard: &HostClipboardCapabilities,
 ) {
-    let mut slots = Vec::new();
+    let mut slots: Vec<String> = Vec::new();
     if clipboard.bookmark.is_some() {
         slots.push("bookmark".to_string());
     }
