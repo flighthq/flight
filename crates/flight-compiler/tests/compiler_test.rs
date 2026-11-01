@@ -5500,6 +5500,38 @@ pub fn constants() -> [f32; 8] {
     }
 
     #[test]
+    fn lowers_split_next_to_array_index() {
+        let source = r#"
+pub fn strip_query(url: &str) -> &str {
+    return url.split('?').next().unwrap_or("");
+}
+
+pub fn file_extension(path: &str) -> &str {
+    return path.rsplit('.').next().unwrap_or("");
+}
+
+pub fn first_token(line: &str) -> &str {
+    return line.split_whitespace().next().unwrap_or("");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(r#"split("?")[0]"#),
+            "split().next(): {output}"
+        );
+        assert!(
+            output.contains(r#"split(".").reverse()[0]"#),
+            "rsplit().next(): {output}"
+        );
+        assert!(
+            output.contains("filter((s) => s.length > 0)[0]"),
+            "split_whitespace().next(): {output}"
+        );
+    }
+
+    #[test]
     fn lowers_string_from_utf8_and_from_utf8_lossy() {
         let source = r#"
 pub fn decode(bytes: Vec<u8>) -> String {

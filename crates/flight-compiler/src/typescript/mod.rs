@@ -2234,6 +2234,18 @@ fn unwrap_option_payload_is_string(receiver: &Expr, entities: &HashSet<String>) 
         {
             unwrap_option_payload_is_string(&call.receiver, entities)
         }
+        Expr::MethodCall(call)
+            if call.method == "next"
+                && call.args.is_empty()
+                && matches!(call.receiver.as_ref(), Expr::MethodCall(inner)
+                    if matches!(inner.method.to_string().as_str(),
+                        "chars" | "split" | "splitn" | "rsplit" | "rsplitn"
+                        | "split_whitespace" | "split_ascii_whitespace"
+                        | "lines" | "split_terminator")
+                        && expression_is_known_string(&inner.receiver, entities)) =>
+        {
+            true
+        }
         Expr::Reference(reference) => unwrap_option_payload_is_string(&reference.expr, entities),
         Expr::Paren(paren) => unwrap_option_payload_is_string(&paren.expr, entities),
         Expr::Group(group) => unwrap_option_payload_is_string(&group.expr, entities),
@@ -16034,6 +16046,17 @@ fn emit_method_call(
                     if chars.method == "chars"
                         && chars.args.is_empty()
                         && expression_is_known_string(&chars.receiver, entities)) =>
+        {
+            Ok(format!("{receiver}[0]"))
+        }
+        "next"
+            if arguments.is_empty()
+                && matches!(call.receiver.as_ref(), Expr::MethodCall(split)
+                    if (split.method == "split" || split.method == "splitn"
+                        || split.method == "rsplit" || split.method == "rsplitn"
+                        || split.method == "split_whitespace" || split.method == "split_ascii_whitespace"
+                        || split.method == "lines" || split.method == "split_terminator")
+                        && expression_is_known_string(&split.receiver, entities)) =>
         {
             Ok(format!("{receiver}[0]"))
         }
