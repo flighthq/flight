@@ -34,12 +34,21 @@ fn flex_layout_resolver(
 ) -> Option<LayoutResolutionFailureKind> {
     let container = match &tree.nodes[parent_index].container_style {
         ContainerStyle::None => None,
-        ContainerStyle::Flex(c) if is_valid_flex_container(c) => Some(c),
+        ContainerStyle::Flex(c) => Some(c),
         _ => return Some(LayoutResolutionFailureKind::InvalidContainerStyle),
     };
+    if let Some(c) = container {
+        if !is_valid_flex_container(c) {
+            return Some(LayoutResolutionFailureKind::InvalidContainerStyle);
+        }
+    }
     match &tree.nodes[child_index].item_style {
         ItemStyle::None => {}
-        ItemStyle::Flex(s) if is_valid_flex_item(s) => {}
+        ItemStyle::Flex(s) => {
+            if !is_valid_flex_item(s) {
+                return Some(LayoutResolutionFailureKind::InvalidItemStyle);
+            }
+        }
         _ => return Some(LayoutResolutionFailureKind::InvalidItemStyle),
     }
 
@@ -200,11 +209,14 @@ fn flex_layout_resolver(
         ItemStyle::Flex(s) => Some(s),
         _ => None,
     };
-    let align = match item.and_then(|s| s.align_self.clone()) {
-        None | Some(FlexAlignSelf::Auto) => container
+    let align_self: FlexAlignSelf = item
+        .and_then(|s| s.align_self.clone())
+        .unwrap_or(FlexAlignSelf::Auto);
+    let align = match align_self {
+        FlexAlignSelf::Align(a) => a,
+        FlexAlignSelf::Auto => container
             .and_then(|c| c.align)
             .unwrap_or(FlexLayoutAlign::Stretch),
-        Some(FlexAlignSelf::Align(a)) => a,
     };
     let mut target_cross_size = get_flex_cross(intrinsic_sizes, child_index, row);
     if align == FlexLayoutAlign::Stretch {
@@ -377,9 +389,11 @@ fn is_valid_flex_container(c: &FlexLayoutContainerStyle) -> bool {
 }
 
 fn is_valid_flex_item(s: &FlexLayoutItemStyle) -> bool {
-    if let Some(FlexBasis::Fixed(v)) = s.basis {
-        if !v.is_finite() || v < 0.0 {
-            return false;
+    if let Some(basis) = s.basis {
+        if let FlexBasis::Fixed(v) = basis {
+            if !v.is_finite() || v < 0.0 {
+                return false;
+            }
         }
     }
     return is_non_negative_optional(s.grow) && is_non_negative_optional(s.shrink);
