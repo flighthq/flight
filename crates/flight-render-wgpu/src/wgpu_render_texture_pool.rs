@@ -50,7 +50,7 @@ pub fn acquire_wgpu_render_texture(
 ) -> Ref<RenderTexture> {
     assert_usable_pool(state, pool);
     let render_texture = pool.free.pop().unwrap_or_else(|| {
-        return Arc::new(RwLock::new(create_render_texture(
+        Arc::new(RwLock::new(create_render_texture(
             &CreateRenderTextureOptions {
                 color_space: None,
                 color_attachments: descriptor.color_attachments,
@@ -62,7 +62,7 @@ pub fn acquire_wgpu_render_texture(
                 width: descriptor.width.ceil().max(0.0) as u32,
                 ..CreateRenderTextureOptions::default()
             },
-        )));
+        )))
     });
     {
         let mut texture = render_texture.write().unwrap();
