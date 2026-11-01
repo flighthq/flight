@@ -2384,6 +2384,15 @@ fn expression_is_json_value(expression: &Expr, entities: &HashSet<String>) -> bo
         {
             true
         }
+        Expr::MethodCall(call)
+            if call.method == "and_then"
+                && call.args.len() == 1
+                && expression_is_json_value(&call.receiver, entities) =>
+        {
+            matches!(call.args.first(), Some(Expr::Closure(closure))
+                if matches!(closure.body.as_ref(), Expr::MethodCall(inner)
+                    if inner.method == "get" && inner.args.len() == 1))
+        }
         Expr::Field(field) => expression_is_json_value(&field.base, entities),
         _ => false,
     };

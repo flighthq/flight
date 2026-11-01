@@ -5611,6 +5611,28 @@ pub fn is_active(data: &Value) -> bool {
     }
 
     #[test]
+    fn lowers_serde_json_value_nested_traversal() {
+        let source = r#"
+use serde_json::Value;
+
+pub fn get_nested(data: &Value) -> Option<&str> {
+    return data.get("user").and_then(|v| v.get("name")).and_then(|v| v.as_str());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("v[\"name\"]"),
+            "nested get: {output}"
+        );
+        assert!(
+            output.contains("typeof v === \"string\" ? v : undefined"),
+            "nested as_str: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_split_next_to_array_index() {
         let source = r#"
 pub fn strip_query(url: &str) -> &str {
