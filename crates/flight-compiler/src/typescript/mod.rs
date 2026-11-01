@@ -12551,6 +12551,20 @@ fn emit_macro_expression(
     if name.ident == "json" {
         return emit_json_macro_value(&mut rust_macro.tokens.clone().into_iter().peekable(), entities);
     }
+    if name.ident == "assert" || name.ident == "debug_assert" {
+        let mut body = String::new();
+        emit_assert_statement(&mut body, rust_macro, entities, 1)?;
+        return Ok(format!("(() => {{\n{body}}})()",));
+    }
+    if name.ident == "assert_eq"
+        || name.ident == "assert_ne"
+        || name.ident == "debug_assert_eq"
+        || name.ident == "debug_assert_ne"
+    {
+        let mut body = String::new();
+        emit_assert_comparison_statement(&mut body, rust_macro, entities, 1)?;
+        return Ok(format!("(() => {{\n{body}}})()",));
+    }
     if name.ident != "format" {
         return Err(compile_error(format!(
             "unsupported Rust macro expression `{}!`",

@@ -20353,3 +20353,24 @@ fn lowers_total_cmp_to_ordering_comparison() {
         "total_cmp should produce ordering comparison: {output}"
     );
 }
+
+#[test]
+fn lowers_assert_macros_in_expression_position() {
+    let source = r#"pub fn f(data: u32) {
+    match data {
+        0 => assert_eq!(data, 0),
+        1 => assert_ne!(data, 0),
+        _ => assert!(data > 1),
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("(() =>"),
+        "assert macros in expression position should wrap in IIFE: {output}"
+    );
+    assert!(
+        output.contains("throw new Error"),
+        "assert macros should emit throw: {output}"
+    );
+}
