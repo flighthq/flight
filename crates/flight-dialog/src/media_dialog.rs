@@ -27,11 +27,11 @@ mod sugar_tests {
         let host = HostImageOpenDialogCapability {
             provider: Arc::new(()),
             open: Arc::new(|options: Option<&OpenImageDialogOptions>| {
-                ok(if options.is_some() {
+                return ok(if options.is_some() {
                     ImageOpenDialogResult::ImageOpenFailed
                 } else {
                     ImageOpenDialogResult::Cancelled
-                })
+                });
             }),
         };
         let options = OpenImageDialogOptions::default();
@@ -51,11 +51,11 @@ mod sugar_tests {
         let host = HostPhotoCaptureDialogCapability {
             provider: Arc::new(()),
             capture: Arc::new(|options: Option<&CapturePhotoDialogOptions>| {
-                ok(if options.is_some() {
+                return ok(if options.is_some() {
                     PhotoCaptureDialogResult::SecurityDenied
                 } else {
                     PhotoCaptureDialogResult::Cancelled
-                })
+                });
             }),
         };
         let options = CapturePhotoDialogOptions::default();
@@ -75,11 +75,11 @@ mod sugar_tests {
         let host = HostVideoCaptureDialogCapability {
             provider: Arc::new(()),
             capture: Arc::new(|options: Option<&CaptureVideoDialogOptions>| {
-                ok(if options.is_some() {
+                return ok(if options.is_some() {
                     VideoCaptureDialogResult::RuntimeUnavailable
                 } else {
                     VideoCaptureDialogResult::Cancelled
-                })
+                });
             }),
         };
         let options = CaptureVideoDialogOptions::default();
