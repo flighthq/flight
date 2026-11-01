@@ -24,10 +24,10 @@ pub fn warn_missing_host_capability(
         .backends
         .iter()
         .map(|backend| {
-            LogValue::Str(format!(
+            return LogValue::Str(format!(
                 "{} ({})",
                 backend.entry_point, backend.package_name
-            ))
+            ));
         })
         .collect();
     let mut data = HashMap::new();

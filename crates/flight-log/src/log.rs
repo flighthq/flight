@@ -546,7 +546,8 @@ pub fn initialize_rate_limited_log_sink(
             let now = entry.timestamp_ms;
             match s.window_start_ms {
                 Some(start) if now - start >= s.interval_ms => {
-                    s.counts.clear();
+                    let counts: &mut HashMap<Option<String>, usize> = &mut s.counts;
+                    counts.clear();
                     s.window_start_ms = Some(now);
                 }
                 None => s.window_start_ms = Some(now),
@@ -719,7 +720,8 @@ pub fn clear_log_sinks(state: &LogStateRef) {
 /// Clears all captured entries from a memory sink.
 pub fn clear_memory_log_sink(handle: &MemoryLogSink) {
     let mut s = handle.state.lock().unwrap();
-    s.buf.clear();
+    let buf: &mut Vec<LogEntry> = &mut s.buf;
+    buf.clear();
     s.head = 0;
 }
 
