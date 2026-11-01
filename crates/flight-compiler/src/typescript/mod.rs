@@ -3330,7 +3330,9 @@ pub(super) fn rust_default_expression(rust_type: &Type) -> Option<String> {
                 "String" => Some(r#""""#.to_string()),
                 "Option" => Some("undefined".to_string()),
                 "Vec" => Some("[]".to_string()),
-                "Arc" | "Ref" => {
+                "HashMap" | "BTreeMap" => Some("new Map()".to_string()),
+                "HashSet" | "BTreeSet" => Some("new Set()".to_string()),
+                "Arc" | "Box" | "Rc" | "Ref" => {
                     let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
                         return None;
                     };
@@ -3338,6 +3340,16 @@ pub(super) fn rust_default_expression(rust_type: &Type) -> Option<String> {
                         GenericArgument::Type(rust_type) => rust_default_expression(rust_type),
                         _ => None,
                     })
+                }
+                "Mutex" => {
+                    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                        return None;
+                    };
+                    let inner = arguments.args.iter().find_map(|argument| match argument {
+                        GenericArgument::Type(rust_type) => rust_default_expression(rust_type),
+                        _ => None,
+                    })?;
+                    Some(format!("{{ value: {inner} }}"))
                 }
                 _ => None,
             }
