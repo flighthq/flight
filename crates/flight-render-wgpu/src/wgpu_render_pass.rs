@@ -241,11 +241,11 @@ fn record_wgpu_render_pass_encoder(
 fn resolve_wgpu_clear_color(clear: Option<&RenderTargetClear>) -> wgpu::Color {
     // TS `clear?.colors?.[0] ?? clear?.color`: an omitted first entry falls back to the broadcast color.
     let rgba = clear.and_then(|clear| {
-        clear
+        return clear
             .colors
             .as_ref()
             .and_then(|colors| colors.first().copied().flatten())
-            .or(clear.color)
+            .or(clear.color);
     });
     let Some(rgba) = rgba else {
         return wgpu::Color {

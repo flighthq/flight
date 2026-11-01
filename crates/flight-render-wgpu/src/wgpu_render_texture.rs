@@ -168,7 +168,7 @@ fn explain_wgpu_render_texture_variant(
         .map(|source| {
             let source = source.read().unwrap();
             let fields = source.texture_source_fields();
-            (fields.width, fields.height)
+            return (fields.width, fields.height);
         })
         .unwrap_or((0, 0));
     return WgpuRenderTextureExplanation {

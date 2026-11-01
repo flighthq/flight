@@ -254,7 +254,8 @@ pub fn bind_wgpu_texture(
     let entry = new_wgpu_texture_entry(texture, view, mip_level_count);
     let mut context = state.runtime.context.write().unwrap();
     context.texture_cache.retain(|(source, _)| {
-        source.strong_count() > 0 && !std::ptr::eq(source.as_ptr(), Arc::as_ptr(image_source))
+        return source.strong_count() > 0
+            && !std::ptr::eq(source.as_ptr(), Arc::as_ptr(image_source));
     });
     context
         .texture_cache
