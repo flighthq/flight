@@ -9,8 +9,8 @@ use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
 use syn::{
-    Attribute, BinOp, Expr, FnArg, GenericArgument, Item, ItemFn, ItemStruct, ItemUse, Lit, Pat,
-    PathArguments, ReturnType, Stmt, Token, Type, UnOp, UseTree, Visibility,
+    Attribute, BinOp, Expr, FnArg, GenericArgument, Item, ItemFn, ItemStruct, ItemUse, Lit,
+    Member, Pat, PathArguments, ReturnType, Stmt, Token, Type, UnOp, UseTree, Visibility,
 };
 
 use crate::model::{ExternalNullableOptionProgram, Program, StringUnionStyle, TestProgram};
@@ -2477,9 +2477,16 @@ fn emit_diverging_statement(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     return match expression {
-        Expr::Call(call) if expression_is_associated_path(&call.func, "panic", "panic_any") => Ok(
-            format!("throw {};", emit_expression(&call.args[0], entities)?),
-        ),
+        Expr::Call(call) if expression_is_associated_path(&call.func, "panic", "panic_any") => {
+            if let Some((constructor, message)) = flight_error_throw(&call.args[0]) {
+                Ok(format!(
+                    "throw new {constructor}({});",
+                    emit_expression(message, entities)?
+                ))
+            } else {
+                Ok(format!("throw {};", emit_expression(&call.args[0], entities)?))
+            }
+        }
         Expr::Call(call) if expression_path_ends_with(&call.func, "throw_error") => Ok(format!(
             "throw new Error({});",
             emit_expression(&call.args[0], entities)?
@@ -2487,6 +2494,18 @@ fn emit_diverging_statement(
         Expr::Call(call) if expression_path_ends_with(&call.func, "throw_range_error") => {
             Ok(format!(
                 "throw new RangeError({});",
+                emit_expression(&call.args[0], entities)?
+            ))
+        }
+        Expr::Call(call) if expression_path_ends_with(&call.func, "throw_type_error") => {
+            Ok(format!(
+                "throw new TypeError({});",
+                emit_expression(&call.args[0], entities)?
+            ))
+        }
+        Expr::Call(call) if expression_path_ends_with(&call.func, "throw_syntax_error") => {
+            Ok(format!(
+                "throw new SyntaxError({});",
                 emit_expression(&call.args[0], entities)?
             ))
         }
@@ -2508,6 +2527,8 @@ fn expression_is_diverging(expression: &Expr) -> bool {
             expression_is_associated_path(&call.func, "panic", "panic_any")
                 || expression_path_ends_with(&call.func, "throw_error")
                 || expression_path_ends_with(&call.func, "throw_range_error")
+                || expression_path_ends_with(&call.func, "throw_type_error")
+                || expression_path_ends_with(&call.func, "throw_syntax_error")
                 || expression_is_associated_path(&call.func, "process", "exit")
         }
         Expr::Macro(mac) => macro_is_diverging(&mac.mac),
@@ -8652,6 +8673,26 @@ fn emit_function_block(
     }
 }
 
+fn insert_parameter_scope_declared(
+    inputs: &syn::punctuated::Punctuated<FnArg, Token![,]>,
+    context: &mut HashSet<String>,
+) {
+    for argument in inputs {
+        let FnArg::Typed(argument) = argument else {
+            continue;
+        };
+        let Pat::Ident(pattern) = argument.pat.as_ref() else {
+            continue;
+        };
+        let rust_name = pattern.ident.to_string();
+        let camel = snake_to_lower_camel(&rust_name);
+        context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+        if camel != rust_name {
+            context.insert(format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+        }
+    }
+}
+
 // Emits a lexical block and returns the context after its statements. Most callers discard the
 // result because Rust block bindings do not escape, but a value block still needs the advanced
 // context while emitting its final expression.
@@ -8844,6 +8885,15 @@ fn emit_closure_with_parameter_types(
         ReturnType::Default => String::new(),
         ReturnType::Type(_, rust_type) => format!(": {}", emit_type(rust_type, entities)?),
     };
+    for pattern in &closure.inputs {
+        if let Some(name) = closure_parameter_identifier(pattern) {
+            let camel = snake_to_lower_camel(&name);
+            closure_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+            if camel != name {
+                closure_context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
+            }
+        }
+    }
     let body = match closure.body.as_ref() {
         Expr::Block(block) => {
             let stmts = &block.block.stmts;
@@ -9757,6 +9807,46 @@ fn emit_expression_value(
                     _ => {}
                 }
             }
+            if expression_path_ends_with(&call.func, "get_record_value")
+                && call.args.len() == 2
+            {
+                let record = emit_expression(&call.args[0], entities)?;
+                let key = emit_expression(&call.args[1], entities)?;
+                return Ok(format!("{record}[{key}]"));
+            }
+            if expression_path_ends_with(&call.func, "set_record_value")
+                && call.args.len() == 3
+            {
+                let record = emit_expression(&call.args[0], entities)?;
+                let key = emit_expression(&call.args[1], entities)?;
+                let value = emit_expression(&call.args[2], entities)?;
+                return Ok(format!("({record}[{key}] = {value})"));
+            }
+            if expression_path_ends_with(&call.func, "has_record_key")
+                && call.args.len() == 2
+            {
+                let record = emit_expression(&call.args[0], entities)?;
+                let key = emit_expression(&call.args[1], entities)?;
+                return Ok(format!("({key} in {record})"));
+            }
+            if expression_path_ends_with(&call.func, "delete_record_value")
+                && call.args.len() == 2
+            {
+                let record = emit_expression(&call.args[0], entities)?;
+                let key = emit_expression(&call.args[1], entities)?;
+                return Ok(format!("(delete {record}[{key}])"));
+            }
+            if expression_path_ends_with(&call.func, "get_record_keys")
+                && call.args.len() == 2
+            {
+                let record = emit_expression(&call.args[1], entities)?;
+                return Ok(format!("Object.keys({record})"));
+            }
+            if expression_is_associated_path(&call.func, "Record", "default")
+                && call.args.is_empty()
+            {
+                return Ok("{}".to_string());
+            }
             if expression_path_ends_with(&call.func, "throw_range_error") && call.args.len() == 1 {
                 return Ok(format!(
                     "(() => {{ throw new RangeError({}); }})()",
@@ -9769,9 +9859,28 @@ fn emit_expression_value(
                     emit_expression(&call.args[0], entities)?
                 ));
             }
+            if expression_path_ends_with(&call.func, "throw_type_error") && call.args.len() == 1 {
+                return Ok(format!(
+                    "(() => {{ throw new TypeError({}); }})()",
+                    emit_expression(&call.args[0], entities)?
+                ));
+            }
+            if expression_path_ends_with(&call.func, "throw_syntax_error") && call.args.len() == 1
+            {
+                return Ok(format!(
+                    "(() => {{ throw new SyntaxError({}); }})()",
+                    emit_expression(&call.args[0], entities)?
+                ));
+            }
             if expression_is_associated_path(&call.func, "panic", "panic_any")
                 && call.args.len() == 1
             {
+                if let Some((constructor, message)) = flight_error_throw(&call.args[0]) {
+                    return Ok(format!(
+                        "(() => {{ throw new {constructor}({}); }})()",
+                        emit_expression(message, entities)?
+                    ));
+                }
                 return Ok(format!(
                     "(() => {{ throw {}; }})()",
                     emit_expression(&call.args[0], entities)?
@@ -11067,6 +11176,7 @@ fn emit_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
+    insert_parameter_scope_declared(&function.sig.inputs, &mut function_context);
     emit_function_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
@@ -11112,6 +11222,7 @@ fn emit_local_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
+    insert_parameter_scope_declared(&function.sig.inputs, &mut function_context);
     emit_function_block(out, &function.block.stmts, &function_context, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
@@ -11770,27 +11881,26 @@ fn emit_try_local(
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
     let inner_value = emit_expression(&try_expr.expr, entities)?;
-    let rebind = shadowed
-        || match &local.pat {
+    let self_referential = match &local.pat {
+        Pat::Ident(identifier) => {
+            expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
+        }
+        Pat::Type(typed) => match typed.pat.as_ref() {
             Pat::Ident(identifier) => {
                 expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
             }
-            Pat::Type(typed) => match typed.pat.as_ref() {
-                Pat::Ident(identifier) => {
-                    expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
-                }
-                _ => false,
-            },
             _ => false,
-        };
-    if pattern == inner_value && rebind {
+        },
+        _ => false,
+    };
+    if pattern == inner_value && shadowed {
         write_indent(out, indent);
         writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
-    } else if pattern == inner_value {
+    } else if pattern == inner_value || (!shadowed && self_referential) {
         let temp = format!("{pattern}_q");
         write_indent(out, indent);
         writeln!(out, "const {temp} = {inner_value};").expect("writing to a String cannot fail");
@@ -11802,8 +11912,9 @@ fn emit_try_local(
         writeln!(out, "}}").expect("writing to a String cannot fail");
         let keyword = if mutable { "let" } else { "const" };
         write_indent(out, indent);
-        writeln!(out, "{keyword} {pattern} = {temp};").expect("writing to a String cannot fail");
-    } else if rebind {
+        writeln!(out, "{keyword} {pattern} = {temp};")
+            .expect("writing to a String cannot fail");
+    } else if shadowed {
         write_indent(out, indent);
         writeln!(out, "{pattern} = {inner_value};").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -18657,9 +18768,12 @@ pub(crate) fn is_lowered_cross_crate_type(name: &str) -> bool {
         "EntityRuntimeSlot"
             | "Float32Array"
             | "Float64Array"
+            | "FlightError"
+            | "FlightErrorKind"
             | "Int8Array"
             | "Int16Array"
             | "Int32Array"
+            | "Record"
             | "Ref"
             | "Uint8Array"
             | "Uint16Array"
@@ -18671,7 +18785,23 @@ pub(crate) fn is_lowered_cross_crate_type(name: &str) -> bool {
 pub(crate) fn is_lowered_cross_crate_value(name: &str) -> bool {
     return matches!(
         name,
-        "allocate_entity" | "AtomicU32" | "Ordering" | "Ref" | "throw_error" | "throw_range_error"
+        "allocate_entity"
+            | "AtomicU32"
+            | "delete_record_value"
+            | "entries"
+            | "FlightError"
+            | "FlightErrorKind"
+            | "get_record_keys"
+            | "get_record_value"
+            | "has_record_key"
+            | "Ordering"
+            | "Record"
+            | "Ref"
+            | "set_record_value"
+            | "throw_error"
+            | "throw_range_error"
+            | "throw_type_error"
+            | "throw_syntax_error"
     );
 }
 
@@ -19510,6 +19640,28 @@ fn emit_statement(
             emit_local(out, local, &try_context, indent)?;
         }
         Stmt::Local(local) => emit_local(out, local, entities, indent)?,
+        Stmt::Expr(Expr::Call(call), _)
+            if expression_path_ends_with(&call.func, "set_record_value")
+                && call.args.len() == 3 =>
+        {
+            let record = emit_expression(&call.args[0], entities)?;
+            let key = emit_expression(&call.args[1], entities)?;
+            let value = emit_expression(&call.args[2], entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{record}[{key}] = {value};").expect("writing to a String cannot fail");
+        }
+        Stmt::Expr(Expr::Call(call), _)
+            if expression_path_ends_with(&call.func, "get_record_keys")
+                && call.args.len() == 2 =>
+        {
+            let target = emit_expression(&call.args[0], entities)?;
+            let record = emit_expression(&call.args[1], entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{target}.length = 0;").expect("writing to a String cannot fail");
+            write_indent(out, indent);
+            writeln!(out, "{target}.push(...Object.keys({record}));")
+                .expect("writing to a String cannot fail");
+        }
         Stmt::Expr(Expr::Call(call), _) if throw_call(call).is_some() => {
             let (constructor, message) = throw_call(call).expect("guarded by the match condition");
             write_indent(out, indent);
@@ -19814,6 +19966,13 @@ fn emit_statement(
                 if for_loop_iterates_strings(&loop_expression.expr, entities) {
                     if let Some(name) = local_pattern_name(&loop_expression.pat) {
                         loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
+                    }
+                }
+                if let Some(name) = local_pattern_name(&loop_expression.pat) {
+                    let camel = snake_to_lower_camel(&name);
+                    loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                    if camel != name {
+                        loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
                     }
                 }
                 write_indent(out, indent);
@@ -20446,6 +20605,17 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Vec" => Ok(array_type(emit_single_generic_type(segment, entities)?)),
+                "Record"
+                    if matches!(
+                        segment.arguments,
+                        PathArguments::AngleBracketed(_)
+                    ) =>
+                {
+                    Ok(format!(
+                        "Record<string, {}>",
+                        emit_single_generic_type(segment, entities)?
+                    ))
+                }
                 "HashSet" | "HashMap" if resolve_type_path(&path.path, entities).is_none() => {
                     Err(compile_error(format!(
                         "cannot resolve the provenance of `{name}`; import it from `std::collections` to lower it to a JavaScript collection"
@@ -22717,10 +22887,48 @@ fn throw_call(call: &syn::ExprCall) -> Option<(&'static str, &Expr)> {
         "RangeError"
     } else if expression_path_ends_with(&call.func, "throw_error") {
         "Error"
+    } else if expression_path_ends_with(&call.func, "throw_type_error") {
+        "TypeError"
+    } else if expression_path_ends_with(&call.func, "throw_syntax_error") {
+        "SyntaxError"
     } else {
         return None;
     };
     return Some((constructor, &call.args[0]));
+}
+
+fn flight_error_throw(expr: &Expr) -> Option<(&'static str, &Expr)> {
+    let Expr::Struct(s) = expr else {
+        return None;
+    };
+    let last_segment = s.path.segments.last()?;
+    if last_segment.ident != "FlightError" {
+        return None;
+    }
+    let mut kind_str: Option<&'static str> = None;
+    let mut message_expr: Option<&Expr> = None;
+    for field in &s.fields {
+        let Member::Named(name) = &field.member else {
+            continue;
+        };
+        if name == "kind" {
+            if let Expr::Path(path) = &field.expr {
+                let variant = path.path.segments.last().map(|s| s.ident.to_string());
+                kind_str = match variant.as_deref() {
+                    Some("Error") => Some("Error"),
+                    Some("RangeError") => Some("RangeError"),
+                    Some("TypeError") => Some("TypeError"),
+                    Some("SyntaxError") => Some("SyntaxError"),
+                    Some("NotReadableError") => Some("DOMException"),
+                    Some("NotSupportedError") => Some("DOMException"),
+                    _ => None,
+                };
+            }
+        } else if name == "message" {
+            message_expr = Some(&field.expr);
+        }
+    }
+    return Some((kind_str?, message_expr?));
 }
 
 fn type_is_named(rust_type: &Type, expected: &str) -> bool {
