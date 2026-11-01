@@ -76,7 +76,8 @@ pub fn initialize_rive_artboard_import_context<'a>(
     let out_advanced_blends: &mut Vec<RiveAdvancedBlend> = &mut out.advanced_blends;
     out_advanced_blends.clear();
     out.animation_artboard = Arc::new(std::sync::RwLock::new(artboard.clone()));
-    out.animations.clear();
+    let out_animations: &mut Vec<RiveAnimationClip> = &mut out.animations;
+    out_animations.clear();
     out.artboard = artboard;
     out.diagnostics = diagnostics;
     out.font_names = font_names;
