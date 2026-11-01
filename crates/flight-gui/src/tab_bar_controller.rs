@@ -73,7 +73,11 @@ pub fn initialize_tab_bar_controller(
 }
 pub fn dispose_tab_bar_controller(controller: &TabBarController) {
     let runtime = get_gui_controller_runtime(controller);
-    dispose_gui_controller(controller, &|| runtime.write().unwrap().fields.tabs.clear());
+    dispose_gui_controller(controller, &|| {
+        let mut guard = runtime.write().unwrap();
+        let tabs: &mut Vec<Ref<TabBarControllerItem>> = &mut guard.fields.tabs;
+        tabs.clear();
+    });
 }
 pub fn get_tab_bar_controller_selected_index(controller: &TabBarController) -> i32 {
     return get_gui_controller_runtime(controller)

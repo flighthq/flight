@@ -73,7 +73,7 @@ pub fn initialize_text_input_controller(
         None,
     );
     runtime.write().unwrap().cleanups.push(Arc::new(move || {
-        disconnect_signal(&text_signals.read().unwrap().on_text_field_change, id)
+        return disconnect_signal(&text_signals.read().unwrap().on_text_field_change, id);
     }));
     let target: Node2DRef = options.text_field.clone();
     let r = runtime.clone();
@@ -164,7 +164,7 @@ pub fn initialize_text_input_controller(
         );
         let input = input.clone();
         runtime.write().unwrap().cleanups.push(Arc::new(move || {
-            disconnect_signal(&input.read().unwrap().on_key_down, id)
+            return disconnect_signal(&input.read().unwrap().on_key_down, id);
         }));
         let input = options.input.as_ref().unwrap();
         let r = runtime.clone();
@@ -177,7 +177,7 @@ pub fn initialize_text_input_controller(
         );
         let input = input.clone();
         runtime.write().unwrap().cleanups.push(Arc::new(move || {
-            disconnect_signal(&input.read().unwrap().on_text_input, id)
+            return disconnect_signal(&input.read().unwrap().on_text_input, id);
         }));
     }
     let caret = runtime.read().unwrap().fields.caret.clone();

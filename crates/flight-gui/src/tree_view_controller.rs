@@ -207,10 +207,11 @@ fn handle_key(r: &Ref<GuiControllerRuntime<TreeViewControllerFields>>, key: &str
         let parent = selected
             .as_ref()
             .and_then(|item| {
-                s.fields
+                return s
+                    .fields
                     .parents
                     .iter()
-                    .find(|row| Arc::ptr_eq(&row.item, item))
+                    .find(|row| Arc::ptr_eq(&row.item, item));
             })
             .and_then(|row| row.parent.clone());
         (selected, visible, index, expanded, parent)
@@ -339,10 +340,11 @@ fn set_selected_runtime(
     let next = {
         let mut s = r.write().unwrap();
         let next = item.filter(|item| {
-            s.fields
+            return s
+                .fields
                 .parents
                 .iter()
-                .any(|row| Arc::ptr_eq(&row.item, item))
+                .any(|row| Arc::ptr_eq(&row.item, item));
         });
         let same = match (&s.fields.selected_item, &next) {
             (Some(a), Some(b)) => Arc::ptr_eq(a, b),

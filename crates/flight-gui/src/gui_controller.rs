@@ -182,7 +182,7 @@ pub fn connect_gui_signal<F, T: 'static>(
     let id = connect_signal(&signal.read().unwrap(), slot, None);
     let signal = signal.clone();
     runtime.write().unwrap().cleanups.push(Arc::new(move || {
-        disconnect_signal(&signal.read().unwrap(), id)
+        return disconnect_signal(&signal.read().unwrap(), id);
     }));
 }
 
