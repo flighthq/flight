@@ -54,7 +54,8 @@ pub fn clear_command_history(history: &Ref<CommandHistory>) {
         if guard.entries.is_empty() && guard.index == 0 {
             return;
         }
-        guard.entries.clear();
+        let entries: &mut Vec<CommandRef> = &mut guard.entries;
+        entries.clear();
         guard.index = 0;
         guard.transaction_depth = 0;
         guard.transaction_index = 0;

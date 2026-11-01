@@ -64,7 +64,7 @@ pub fn register_command_property_access(
         .entries
         .iter()
         .position(|(entry_kind, entry_property, _)| {
-            entry_kind == kind && entry_property == property
+            return entry_kind == kind && entry_property == property;
         });
     match existing {
         Some(position) => guard.entries[position].2 = accessor,
