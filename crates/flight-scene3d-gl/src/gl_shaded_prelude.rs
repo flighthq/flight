@@ -350,7 +350,7 @@ fn get_gl_modifier_define_key(
         let signature = snippet
             .and_then(|snippet| snippet.get_define_signature)
             .map_or(String::new(), |get_define_signature| {
-                get_define_signature(&*modifier)
+                return get_define_signature(&*modifier);
             });
         let token = if signature.is_empty() {
             kind.clone()

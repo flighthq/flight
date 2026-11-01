@@ -162,7 +162,7 @@ pub fn build_gl_pbr_standard_define_key(
 ) -> GlPbrDefineKey {
     let base_color_map = standard.and_then(|standard| standard.base_color_map.as_ref());
     let alpha_mode = surface.map_or(MaterialAlphaMode::Opaque, |surface| {
-        surface.material3d_fields().alpha_mode
+        return surface.material3d_fields().alpha_mode;
     });
     let has_base_color_map = is_gl_texture_ready(state, base_color_map);
     return GlPbrDefineKey {
@@ -206,6 +206,6 @@ pub fn build_gl_pbr_standard_define_key(
 // same thing in both places.
 pub fn is_gl_texture_ready(state: &mut GlRenderState, texture: Option<&Ref<Texture>>) -> bool {
     return texture.is_some_and(|texture| {
-        resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some()
+        return resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some();
     });
 }

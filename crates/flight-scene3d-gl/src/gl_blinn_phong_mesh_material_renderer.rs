@@ -162,8 +162,8 @@ fn define_key_for_material(
         // never disagree. Gated off 'opaque' — an opaque material ignores coverage (Material3D
         // contract), so it must not sample the alpha map.
         has_alpha_map: material.is_some_and(|material| {
-            material.alpha_mode != MaterialAlphaMode::Opaque
-                && is_gl_texture_ready(state, material.alpha_map.as_ref())
+            return material.alpha_mode != MaterialAlphaMode::Opaque
+                && is_gl_texture_ready(state, material.alpha_map.as_ref());
         }),
         has_color_adjustment: None,
         has_color_matrix: None,

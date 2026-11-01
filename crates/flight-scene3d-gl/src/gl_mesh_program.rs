@@ -484,7 +484,7 @@ pub fn has_gl_uv_transform(texture: Option<&dyn TextureVariant>) -> bool {
 // Whether a draw's fragment alpha is COVERAGE the compositor should honor: only alphaMode 'blend'.
 fn is_gl_mesh_alpha_coverage(material: Option<&dyn Material3D>) -> bool {
     return material.is_some_and(|material| {
-        material.material3d_fields().alpha_mode == MaterialAlphaMode::Blend
+        return material.material3d_fields().alpha_mode == MaterialAlphaMode::Blend;
     });
 }
 

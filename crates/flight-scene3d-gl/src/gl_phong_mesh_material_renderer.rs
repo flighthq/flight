@@ -144,7 +144,7 @@ fn define_key_for_material(
 ) -> GlClassicDefineKey {
     let mut resolves = |slot: Option<&TextureSlot>| -> bool {
         return slot.and_then(|slot| slot.as_ref()).is_some_and(|texture| {
-            resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some()
+            return resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some();
         });
     };
     let has_diffuse_map = resolves(material.map(|material| &material.diffuse_map));

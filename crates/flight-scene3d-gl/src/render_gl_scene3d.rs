@@ -78,7 +78,7 @@ fn acquire_sort_key(
     let mk = *material_keys.entry(material_id).or_insert_with(|| {
         let value = *counter;
         *counter += 1;
-        value
+        return value;
     });
     return rk * 65536 + mk;
 }
@@ -462,9 +462,10 @@ pub fn render_gl_scene3d(
     // Pass 2: blended subsets back-to-front (descending projected depth), blending enabled.
     if !blended_draw_list.is_empty() {
         blended_draw_list.sort_by(|a, b| {
-            b.depth
+            return b
+                .depth
                 .partial_cmp(&a.depth)
-                .unwrap_or(std::cmp::Ordering::Equal)
+                .unwrap_or(std::cmp::Ordering::Equal);
         });
         get_gl_scene3d_runtime(state).active_blended_run = true;
         // SAFETY: fixed-function state changes run on the owning GL thread.

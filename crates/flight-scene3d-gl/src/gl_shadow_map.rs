@@ -285,23 +285,23 @@ pub fn render_gl_scene3d_shadow_map(
         let program = if instanced {
             instanced_program
                 .get_or_insert_with(|| {
-                    ensure_gl_scene3d_program(
+                    return ensure_gl_scene3d_program(
                         state,
                         "shadow:depth:instanced",
                         compile_shadow_depth_instanced_program,
-                    )
+                    );
                 })
                 .clone()
         } else if skinned {
             let feature = skin_feature.expect("skinned implies a skin feature");
             skinned_program
                 .get_or_insert_with(|| {
-                    ensure_gl_scene3d_program(state, "shadow:depth:skin", |gl| {
+                    return ensure_gl_scene3d_program(state, "shadow:depth:skin", |gl| {
                         return compile_shadow_depth_skinned_program(
                             gl,
                             feature.vertex_declarations_glsl,
                         );
-                    })
+                    });
                 })
                 .clone()
         } else {

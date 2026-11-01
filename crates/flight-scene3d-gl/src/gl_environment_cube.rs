@@ -137,9 +137,9 @@ pub fn ensure_gl_environment_source_cube(
     runtime.environment_source_cube_face_sources = sources
         .iter()
         .map(|source| {
-            source
+            return source
                 .as_ref()
-                .map_or(0, |image| get_entity_id(&*image.read().unwrap()))
+                .map_or(0, |image| get_entity_id(&*image.read().unwrap()));
         })
         .collect();
     runtime.environment_source_revision = runtime.environment_source_revision.wrapping_add(1);
@@ -161,9 +161,9 @@ fn get_gl_environment_source_cube_face_versions(cube: &CubeTexture) -> Vec<i64> 
         .sources
         .iter()
         .map(|source| {
-            source.as_ref().map_or(-1, |image| {
-                i64::from(image.read().unwrap().texture_source_fields().version)
-            })
+            return source.as_ref().map_or(-1, |image| {
+                return i64::from(image.read().unwrap().texture_source_fields().version);
+            });
         })
         .collect();
 }

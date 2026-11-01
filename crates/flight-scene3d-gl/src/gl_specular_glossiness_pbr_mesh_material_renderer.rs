@@ -62,9 +62,9 @@ fn bind_gl_specular_glossiness_pbr_mesh_material(
     camera: &Camera3D,
 ) {
     let spec_gloss = material.and_then(|material| {
-        material
+        return material
             .as_any()
-            .downcast_ref::<SpecularGlossinessPbrMaterial>()
+            .downcast_ref::<SpecularGlossinessPbrMaterial>();
     });
     let standard = spec_gloss.map(convert_specular_glossiness_to_standard);
     let surface = spec_gloss.map(|spec_gloss| spec_gloss as &dyn Material3D);
@@ -82,7 +82,7 @@ fn bind_gl_specular_glossiness_pbr_mesh_material(
     bind_gl_mesh_light_block(state, &program.lit, lights);
     bind_gl_pbr_standard_block(state, &program, standard.as_ref());
     let alpha_cutoff = spec_gloss.map_or(0.5, |spec_gloss| {
-        spec_gloss.material3d_fields().alpha_cutoff
+        return spec_gloss.material3d_fields().alpha_cutoff;
     });
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
