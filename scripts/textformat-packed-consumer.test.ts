@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
@@ -113,13 +113,15 @@ describe('packed Types Textformat compatibility', { timeout: TIMEOUT_MS }, () =>
   });
 
   it('keeps workspace consumers off deprecated Types compatibility aliases', () => {
-    const files = execFileSync('rg', ['--files', 'packages', '-g', '*.ts', '-g', '*.tsx'], {
-      cwd: ROOT,
-      encoding: 'utf8',
-    })
+    // `git ls-files` rather than ripgrep: CI runners do not ship `rg`, and both honor `.gitignore`.
+    const files = execFileSync(
+      'git',
+      ['ls-files', '--cached', '--others', '--exclude-standard', '--', 'packages/*.ts', 'packages/*.tsx'],
+      { cwd: ROOT, encoding: 'utf8' },
+    )
       .trim()
       .split('\n')
-      .filter(Boolean);
+      .filter((file) => file !== '' && existsSync(resolve(ROOT, file)));
     const sources = new Map<string, ts.SourceFile>();
     for (const file of files) {
       sources.set(
