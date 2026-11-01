@@ -28,7 +28,8 @@ pub fn create_physics_3d_debug_geometry() -> Physics3DDebugGeometry {
 }
 
 pub fn initialize_physics_3d_debug_geometry(out: &mut Physics3DDebugGeometry) {
-    out.lines.clear();
+    let out_lines: &mut Vec<Physics3DDebugLine> = &mut out.lines;
+    out_lines.clear();
     out.line_count = 0;
     out.spheres.clear();
     out.sphere_count = 0;

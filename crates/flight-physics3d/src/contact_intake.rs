@@ -2,6 +2,7 @@
 use flight_collision::{
     CollisionContactManifold3D, CollisionRegistry3D, create_collision_contact_manifold3d,
 };
+use flight_entity::Ref;
 use flight_spatial::SpatialPair;
 
 use crate::collider_collision::collide_physics_3d_collider_shapes;
@@ -11,7 +12,7 @@ use crate::contacts::{
 use crate::joint_collision_suppression::is_physics_3d_pair_joint_suppressed;
 use crate::material::{mix_physics_3d_friction, mix_physics_3d_restitution};
 use crate::world::write_rigid_body_3d_world_center;
-use crate::{Physics3DCollider, Physics3DWorld};
+use crate::{Physics3DCollider, Physics3DContact, Physics3DWorld};
 
 pub fn build_physics_3d_contacts(world: &mut Physics3DWorld, registry: &CollisionRegistry3D) {
     rebuild_physics_3d_contacts(world, registry, true, false);
@@ -137,7 +138,8 @@ fn rebuild_physics_3d_contacts(
     let mut pairs: Vec<SpatialPair> = Vec::new();
     (world.index.query_spatial_pairs)(&mut pairs);
     if clear_events {
-        world.events.began.clear();
+        let world_events_began: &mut Vec<Ref<Physics3DContact>> = &mut world.events.began;
+        world_events_began.clear();
         world.events.ended.clear();
     }
     for contact in &world.contacts {

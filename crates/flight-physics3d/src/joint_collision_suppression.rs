@@ -19,7 +19,9 @@ pub fn is_physics_3d_pair_joint_suppressed(
 }
 
 pub fn rebuild_physics_3d_joint_collision_suppressions(world: &mut Physics3DWorld) {
-    world.joint_collision_suppressions.clear();
+    let world_joint_collision_suppressions: &mut HashMap<i32, HashMap<i32, usize>> =
+        &mut world.joint_collision_suppressions;
+    world_joint_collision_suppressions.clear();
     for joint in &world.joints {
         let joint = joint.read().unwrap();
         let f = joint.fields();

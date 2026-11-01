@@ -1,17 +1,19 @@
 // flight-lint: allow-file(conform-params) D5 makes owner-world state explicit; Rust also names the source's `type` parameters `body_type`
+use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, RwLock};
 
 use flight_collision::CollisionColliderShape3D;
 use flight_collision::contract::clone_collision_collider_shape3d;
-use flight_entity::allocate_entity;
+use flight_entity::{Ref, allocate_entity};
 
 use crate::collider_transform::create_physics_3d_collider_world_shape;
 use crate::integrate::refresh_rigid_body_3d_world_inertia;
 use crate::mass_properties::update_rigid_body_3d_mass_data;
 use crate::symmetric_tensor::apply_symmetric_tensor;
 use crate::{
-    Physics3DBodyType, Physics3DCollider, Physics3DColliderRef, Physics3DSequentialImpulseConfig,
+    Physics3DBodyType, Physics3DCollider, Physics3DColliderRef, Physics3DContact,
+    Physics3DContactConstraint, Physics3DSequentialImpulseConfig,
     Physics3DSequentialImpulseConfigOptions, Physics3DSolverConfig, Physics3DSolverConfigOptions,
     Physics3DWorld, RigidBody3D, RigidBody3DRef,
 };
@@ -441,7 +443,8 @@ pub fn assert_physics_3d_world_not_stepping(world: &Physics3DWorld) {
 }
 
 fn clear_physics_3d_solve_workspace(world: &mut Physics3DWorld) {
-    world.solve_island_by_root.clear();
+    let world_solve_island_by_root: &mut HashMap<i32, usize> = &mut world.solve_island_by_root;
+    world_solve_island_by_root.clear();
     world.solve_island_roots.clear();
     world.solve_island_body_starts.clear();
     world.solve_island_body_counts.clear();
@@ -471,7 +474,9 @@ pub fn hydrate_physics_3d_world(world: &mut Physics3DWorld) -> bool {
     if world.version == PHYSICS_3D_WORLD_VERSION {
         return true;
     }
-    world.solver.constraints.clear();
+    let world_solver_constraints: &mut Vec<Physics3DContactConstraint> =
+        &mut world.solver.constraints;
+    world_solver_constraints.clear();
     world.solver.constraint_by_contact.clear();
     if world.config.max_ccd_rotation_substeps == 0 {
         world.config.max_ccd_rotation_substeps = 64;
@@ -529,7 +534,8 @@ fn invalidate_physics_3d_body_constraints(world: &mut Physics3DWorld, body_index
 
 fn invalidate_physics_3d_body_contacts(world: &mut Physics3DWorld, body_index: i32) {
     let mut wake = Vec::new();
-    world.contacts.retain(|contact| {
+    let world_contacts: &mut Vec<Ref<Physics3DContact>> = &mut world.contacts;
+    world_contacts.retain(|contact| {
         let contact = contact.read().unwrap();
         let remove = contact.body_a == body_index || contact.body_b == body_index;
         if remove && contact.enabled && !contact.sensor {

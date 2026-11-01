@@ -30,7 +30,8 @@ fn body_is_still(body: &RigidBody3D, linear: f32, angular: f32) -> bool {
 }
 
 pub fn build_physics_3d_solve_islands(world: &mut Physics3DWorld) {
-    world.solve_island_roots.clear();
+    let world_solve_island_roots: &mut Vec<i32> = &mut world.solve_island_roots;
+    world_solve_island_roots.clear();
     world.solve_island_by_root.clear();
     world.solve_island_body_counts.clear();
     world.solve_island_contact_counts.clear();
@@ -250,7 +251,8 @@ fn union_pair_owned(world: &mut Physics3DWorld, a: i32, b: i32) {
 }
 
 pub fn update_physics_3d_sleep(world: &mut Physics3DWorld, dt: f32) {
-    world.island_parents.clear();
+    let world_island_parents: &mut HashMap<i32, i32> = &mut world.island_parents;
+    world_island_parents.clear();
     world.island_sleep_timers.clear();
     // Build directly into the world-owned graph without retaining contact locks.
     let contact_pairs: Vec<(i32, i32)> = world
