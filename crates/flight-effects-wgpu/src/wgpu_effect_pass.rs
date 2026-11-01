@@ -59,7 +59,7 @@ pub fn create_wgpu_dual_source_effect_pipeline(
 ) -> WgpuDualSourceEffectPipeline {
     // A pipeline entity cannot be allocated before its first `wgpu::RenderPipeline` exists, so
     // creation compiles directly; `initialize_*` recompiles into an existing value.
-    return build_wgpu_effect_pipeline(state, fragment_wgsl, blend.unwrap_or_default(), 2);
+    return build_wgpu_effect_pipeline(state, fragment_wgsl, blend.unwrap_or(WgpuEffectBlendMode::Premul), 2);
 }
 
 /// Compiles a single-source effect pipeline (TS `createWgpuEffectPipeline`): the fragment half is
@@ -69,7 +69,7 @@ pub fn create_wgpu_effect_pipeline(
     fragment_wgsl: &str,
     blend: Option<WgpuEffectBlendMode>,
 ) -> WgpuEffectPipeline {
-    return build_wgpu_effect_pipeline(state, fragment_wgsl, blend.unwrap_or_default(), 1);
+    return build_wgpu_effect_pipeline(state, fragment_wgsl, blend.unwrap_or(WgpuEffectBlendMode::Premul), 1);
 }
 
 /// Compiles a dual-source pipeline into `out` (TS `initializeWgpuDualSourceEffectPipeline`):
@@ -80,7 +80,7 @@ pub fn initialize_wgpu_dual_source_effect_pipeline(
     fragment_wgsl: &str,
     blend: Option<WgpuEffectBlendMode>,
 ) {
-    let built = build_wgpu_effect_pipeline(state, fragment_wgsl, blend.unwrap_or_default(), 2);
+    let built = build_wgpu_effect_pipeline(state, fragment_wgsl, blend.unwrap_or(WgpuEffectBlendMode::Premul), 2);
     out.pipeline = built.pipeline;
     out.blend_mode = built.blend_mode;
     out.compile_for_format = built.compile_for_format;

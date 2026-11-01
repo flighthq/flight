@@ -81,7 +81,7 @@ pub fn create_wgpu_effect_state(
     state: &WgpuRenderState,
     options: Option<&EffectStateOptions>,
 ) -> WgpuEffectState {
-    let options = options.copied().unwrap_or_default();
+    let options = options.copied().unwrap_or(EffectStateOptions::default());
     let requested_sample_count = options.sample_count.unwrap_or(1.0);
     let applied_sample_count = if requested_sample_count > 1.0 {
         4.0
