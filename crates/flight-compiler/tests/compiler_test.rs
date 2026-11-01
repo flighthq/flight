@@ -20238,3 +20238,118 @@ pub fn get_number(defaults: Option<EffectValue>) -> f64 {
         "should check data union kind: {output}"
     );
 }
+
+#[test]
+fn lowers_checked_neg_to_overflow_checked_negation() {
+    let source = "pub fn f(value: i32) -> Option<i32> { return value.checked_neg(); }\n";
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("const neg = -n") && output.contains("0x7FFFFFFF"),
+        "checked_neg should produce overflow-checking negation: {output}"
+    );
+}
+
+#[test]
+fn lowers_copy_within_with_range_arguments() {
+    let source = r#"
+pub fn f(data: &mut [f32], src: usize, end: usize, dest: usize) {
+    data.copy_within(src..end, dest);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(".copyWithin(dest, src, end)"),
+        "copy_within should produce JS copyWithin: {output}"
+    );
+}
+
+#[test]
+fn lowers_is_ascii_hexdigit_and_whitespace() {
+    let source = r#"
+pub fn hex(ch: char) -> bool { return ch.is_ascii_hexdigit(); }
+pub fn ws(ch: char) -> bool { return ch.is_ascii_whitespace(); }
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("[0-9a-fA-F]"),
+        "is_ascii_hexdigit should produce hex regex: {output}"
+    );
+    assert!(
+        output.contains("=== ' '") || output.contains("=== '\\t'"),
+        "is_ascii_whitespace should produce char comparisons: {output}"
+    );
+}
+
+#[test]
+fn lowers_into_vec_to_spread() {
+    let source = "pub fn f(data: Box<[i32]>) -> Vec<i32> { return data.into_vec(); }\n";
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("[...data]"),
+        "into_vec should spread: {output}"
+    );
+}
+
+#[test]
+fn lowers_pow_to_math_pow() {
+    let source = "pub fn f(base: u32, exp: u32) -> u32 { return base.pow(exp); }\n";
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("Math.pow(base, exp)"),
+        "pow should produce Math.pow: {output}"
+    );
+}
+
+#[test]
+fn lowers_reserve_to_noop() {
+    let source = "pub fn f(data: &mut Vec<i32>) { data.reserve(100); }\n";
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("reserve"),
+        "reserve should be a no-op: {output}"
+    );
+}
+
+#[test]
+fn lowers_resize_with_to_push_loop() {
+    let source = "pub fn f(data: &mut Vec<Option<i32>>) { data.resize_with(10, || None); }\n";
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("items.push(factory())") && output.contains("items.length = length"),
+        "resize_with should produce push-loop + truncate: {output}"
+    );
+}
+
+#[test]
+fn lowers_split_ascii_whitespace() {
+    let source = "pub fn f(text: &str) -> Vec<&str> { return text.split_ascii_whitespace().collect(); }\n";
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("split(/\\s+/)") && output.contains("filter"),
+        "split_ascii_whitespace should split on whitespace regex: {output}"
+    );
+}
+
+#[test]
+fn lowers_split_at_mut_to_paired_slices() {
+    let source = r#"
+pub fn f(data: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
+    return data.split_at_mut(mid);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(".slice(0,") && output.contains(".slice(mid)"),
+        "split_at_mut should produce paired slices: {output}"
+    );
+}
+
+#[test]
+fn lowers_total_cmp_to_ordering_comparison() {
+    let source = "pub fn f(a: f64, b: f64) -> std::cmp::Ordering { return a.total_cmp(&b); }\n";
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("a < b ? -1 : a > b ? 1 : 0"),
+        "total_cmp should produce ordering comparison: {output}"
+    );
+}

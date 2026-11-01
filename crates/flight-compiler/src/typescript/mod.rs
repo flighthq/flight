@@ -2631,6 +2631,7 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             || call.method == "saturating_neg"
             || call.method == "saturating_abs"
             || call.method == "checked_add"
+            || call.method == "checked_neg"
             || call.method == "checked_sub"
             || call.method == "checked_mul"
             || call.method == "checked_div"
@@ -15809,6 +15810,9 @@ fn emit_method_call(
             "((a: number, b: number): number | undefined => {{ const diff = a - b; return diff > 0x7FFFFFFF || diff < -0x80000000 ? undefined : diff }})({receiver}, {})",
             arguments[0]
         )),
+        "checked_neg" if arguments.is_empty() => Ok(format!(
+            "((n: number): number | undefined => {{ const neg = -n; return neg > 0x7FFFFFFF || neg < -0x80000000 ? undefined : neg }})({receiver})"
+        )),
         "chunks"
             if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
         {
@@ -15846,6 +15850,29 @@ fn emit_method_call(
             "Math.min({}, Math.max({}, {receiver}))",
             arguments[1], arguments[0]
         )),
+        "copy_within" if arguments.len() == 2 => {
+            let Some(Expr::Range(range)) = call.args.first() else {
+                return Err(compile_error(
+                    "portable `.copy_within()` requires a range as first argument",
+                ));
+            };
+            let (Some(start), Some(end)) = (&range.start, &range.end) else {
+                return Err(compile_error(
+                    "portable `.copy_within()` requires a half-open range with start and end",
+                ));
+            };
+            if !matches!(range.limits, syn::RangeLimits::HalfOpen(_)) {
+                return Err(compile_error(
+                    "portable `.copy_within()` requires a half-open range (not inclusive)",
+                ));
+            }
+            Ok(format!(
+                "{receiver}.copyWithin({}, {}, {})",
+                arguments[1],
+                emit_expression(start, entities)?,
+                emit_expression(end, entities)?
+            ))
+        }
         "cos" if arguments.is_empty() => Ok(format!("Math.cos({receiver})")),
         "clone"
             if arguments.is_empty()
@@ -16202,6 +16229,7 @@ fn emit_method_call(
         "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "into_owned" if arguments.is_empty() => Ok(receiver),
+        "into_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
         "is_ascii_digit" if arguments.is_empty() => {
             Ok(format!(
                 "((ch: string): boolean => ch >= '0' && ch <= '9')({receiver})"
@@ -16230,6 +16258,16 @@ fn emit_method_call(
         "is_ascii_alphanumeric" if arguments.is_empty() => {
             Ok(format!(
                 "(/^[a-zA-Z0-9]$/).test({receiver})"
+            ))
+        }
+        "is_ascii_hexdigit" if arguments.is_empty() => {
+            Ok(format!(
+                "(/^[0-9a-fA-F]$/).test({receiver})"
+            ))
+        }
+        "is_ascii_whitespace" if arguments.is_empty() => {
+            Ok(format!(
+                "({receiver} === ' ' || {receiver} === '\\t' || {receiver} === '\\n' || {receiver} === '\\r' || {receiver} === '\\x0C')"
             ))
         }
         "is_whitespace" if arguments.is_empty() => {
@@ -16373,6 +16411,7 @@ fn emit_method_call(
         {
             Ok(format!("{receiver}[0]"))
         }
+        "pow" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "powf" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "powi" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "cmp" if arguments.len() == 1 => emit_ordered_comparison(
@@ -16458,9 +16497,18 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
+        "reserve" | "reserve_exact" if arguments.len() == 1 => {
+            Ok(String::new())
+        }
         "resize" if arguments.len() == 2 => {
             Ok(format!(
                 "(<T>(items: T[], length: number, value: T): void => {{ while (items.length < length) {{ items.push(value); }} items.length = length; }})({receiver}, {}, {})",
+                arguments[0], arguments[1]
+            ))
+        }
+        "resize_with" if arguments.len() == 2 => {
+            Ok(format!(
+                "(<T>(items: T[], length: number, factory: () => T): void => {{ while (items.length < length) {{ items.push(factory()); }} items.length = length; }})({receiver}, {}, {})",
                 arguments[0], arguments[1]
             ))
         }
@@ -16535,7 +16583,7 @@ fn emit_method_call(
         "split" if arguments.len() == 1 => Err(compile_error(
             "portable `.split()` requires a receiver known to be `String` or `str`",
         )),
-        "split_at" if arguments.len() == 1 => {
+        "split_at" | "split_at_mut" if arguments.len() == 1 => {
             Ok(format!(
                 "[{receiver}.slice(0, {0}), {receiver}.slice({0})]",
                 arguments[0]
@@ -16554,7 +16602,7 @@ fn emit_method_call(
                 arguments[0], arguments[1]
             ))
         }
-        "split_whitespace" if arguments.is_empty() => {
+        "split_whitespace" | "split_ascii_whitespace" if arguments.is_empty() => {
             Ok(format!(
                 "{receiver}.split(/\\s+/).filter((s) => s.length > 0)"
             ))
@@ -16786,6 +16834,10 @@ fn emit_method_call(
         }
         "take_while" if arguments.len() == 1 => Ok(format!(
             "(<T>(items: readonly T[], predicate: (item: T) => boolean): T[] => {{ const result: T[] = []; for (const item of items) {{ if (!predicate(item)) break; result.push(item); }} return result; }})({receiver}, {})",
+            arguments[0]
+        )),
+        "total_cmp" if arguments.len() == 1 => Ok(format!(
+            "((a: number, b: number): number => a < b ? -1 : a > b ? 1 : 0)({receiver}, {})",
             arguments[0]
         )),
         "try_into" if arguments.is_empty() => Ok(receiver),
