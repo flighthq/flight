@@ -445,7 +445,8 @@ pub fn assert_physics_3d_world_not_stepping(world: &Physics3DWorld) {
 fn clear_physics_3d_solve_workspace(world: &mut Physics3DWorld) {
     let world_solve_island_by_root: &mut HashMap<i32, usize> = &mut world.solve_island_by_root;
     world_solve_island_by_root.clear();
-    world.solve_island_roots.clear();
+    let world_solve_island_roots: &mut Vec<i32> = &mut world.solve_island_roots;
+    world_solve_island_roots.clear();
     world.solve_island_body_starts.clear();
     world.solve_island_body_counts.clear();
     world.solve_island_contact_starts.clear();
@@ -477,7 +478,9 @@ pub fn hydrate_physics_3d_world(world: &mut Physics3DWorld) -> bool {
     let world_solver_constraints: &mut Vec<Physics3DContactConstraint> =
         &mut world.solver.constraints;
     world_solver_constraints.clear();
-    world.solver.constraint_by_contact.clear();
+    let world_solver_constraint_by_contact: &mut HashMap<usize, usize> =
+        &mut world.solver.constraint_by_contact;
+    world_solver_constraint_by_contact.clear();
     if world.config.max_ccd_rotation_substeps == 0 {
         world.config.max_ccd_rotation_substeps = 64;
     }

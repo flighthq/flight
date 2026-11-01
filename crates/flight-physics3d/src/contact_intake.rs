@@ -140,7 +140,8 @@ fn rebuild_physics_3d_contacts(
     if clear_events {
         let world_events_began: &mut Vec<Ref<Physics3DContact>> = &mut world.events.began;
         world_events_began.clear();
-        world.events.ended.clear();
+        let world_events_ended: &mut Vec<Ref<Physics3DContact>> = &mut world.events.ended;
+        world_events_ended.clear();
     }
     for contact in &world.contacts {
         contact.write().unwrap().touching = false;
