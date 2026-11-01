@@ -32,9 +32,9 @@ pub fn get_cube_capture_face_camera_3d(out: &mut Camera3D, position: &Vector3, f
     }
     let projection = create_perspective_projection();
     {
-        let mut projection = projection.write().unwrap();
-        projection.aspect = 1.0;
-        projection.fov_y = std::f32::consts::FRAC_PI_2;
+        let mut projection_fields = projection.write().unwrap();
+        projection_fields.aspect = 1.0;
+        projection_fields.fov_y = std::f32::consts::PI / 2.0;
     }
     out.projection = Projection::Perspective(projection);
 }

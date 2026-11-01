@@ -46,9 +46,9 @@ pub fn configure_directional_shadow_camera_3d(
     camera.far = radius * 3.0;
     let projection = create_orthographic_projection();
     {
-        let mut projection = projection.write().unwrap();
-        projection.half_height = radius;
-        projection.half_width = radius;
+        let mut projection_fields = projection.write().unwrap();
+        projection_fields.half_height = radius;
+        projection_fields.half_width = radius;
     }
     camera.projection = Projection::Orthographic(projection);
 }
@@ -177,9 +177,9 @@ pub fn configure_directional_shadow_camera_3d_tight_fit(
     }
     let projection = create_orthographic_projection();
     {
-        let mut projection = projection.write().unwrap();
-        projection.half_height = fit_half_height;
-        projection.half_width = fit_half_width;
+        let mut projection_fields = projection.write().unwrap();
+        projection_fields.half_height = fit_half_height;
+        projection_fields.half_width = fit_half_width;
     }
     camera.projection = Projection::Orthographic(projection);
 }
