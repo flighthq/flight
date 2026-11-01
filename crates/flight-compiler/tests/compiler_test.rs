@@ -3038,6 +3038,18 @@ export function drainLocal(): number[] {
     }
 
     #[test]
+    fn lowers_reverse_on_arrays() {
+        let source = "pub fn flip(values: &mut Vec<i32>) { values.reverse(); }\n";
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("values.reverse()"),
+            "reverse should pass through: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_sequence_optional_access_and_search() {
         let source = r#"
 pub fn get_or(values: &[i32], index: usize) -> i32 {

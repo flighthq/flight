@@ -16300,6 +16300,7 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
+        "reverse" if arguments.is_empty() => Ok(format!("{receiver}.reverse()")),
         "replace" if arguments.len() == 2 => Ok(format!(
             "{receiver}.replaceAll({}, {})",
             arguments[0], arguments[1]
