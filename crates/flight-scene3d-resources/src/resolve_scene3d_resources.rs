@@ -28,6 +28,17 @@ use crate::types::*;
 
 type Scene3DResourceWorkingMap = Vec<(ImageResourceReference, Vec<Ref<Texture>>)>;
 
+fn create_missing_source_image_resource_failure() -> Ref<ImageResourceFailure> {
+    let mut out: ImageResourceFailure = allocate_entity();
+    initialize_image_resource_failure(
+        &mut out,
+        ImageResourceFailureKind::Unavailable,
+        "Image resource resolution returned no source".to_string(),
+        None,
+    );
+    return Arc::new(RwLock::new(out));
+}
+
 pub fn initialize_image_resource_failure(
     out: &mut ImageResourceFailure,
     kind: ImageResourceFailureKind,
@@ -175,16 +186,8 @@ fn finish_scene3d_resource_resolution(
     }
     let subscribers = entry.read().unwrap().subscribers.clone();
     let Some(source) = source else {
-        let failure = get_image_resource_reference_failure(reference).unwrap_or_else(|| {
-            let mut out: ImageResourceFailure = allocate_entity();
-            initialize_image_resource_failure(
-                &mut out,
-                ImageResourceFailureKind::Unavailable,
-                "Image resource resolution returned no source".to_string(),
-                None,
-            );
-            return Arc::new(RwLock::new(out));
-        });
+        let failure = get_image_resource_reference_failure(reference)
+            .unwrap_or_else(create_missing_source_image_resource_failure);
         set_image_resource_reference_resolution(
             reference,
             Some(failure),
