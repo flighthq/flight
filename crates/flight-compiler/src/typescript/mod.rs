@@ -16516,6 +16516,9 @@ fn emit_method_call(
                 "(() => {{ const __tmp = {receiver}; {receiver} = {absent}; return __tmp; }})()"
             ))
         }
+        "take" if arguments.len() == 1 => {
+            Ok(format!("{receiver}.slice(0, {})", arguments[0]))
+        }
         "tan" if arguments.is_empty() => Ok(format!("Math.tan({receiver})")),
         "then" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);

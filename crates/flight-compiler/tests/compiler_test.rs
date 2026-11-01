@@ -3979,6 +3979,26 @@ pub fn chunk_exact(values: &Vec<i32>) -> Vec<Vec<i32>> {
     }
 
     #[test]
+    fn lowers_iterator_take_to_slice() {
+        let source = r#"
+pub fn sum_first(values: &[f32], count: usize) -> f32 {
+    let mut sum = 0.0;
+    for value in values.iter().take(count) {
+        sum += *value;
+    }
+    return sum;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("values.slice(0, count)"),
+            "iterator .take(n) should lower to .slice(0, n): {output}"
+        );
+    }
+
+    #[test]
     fn lowers_copy_from_slice_with_range_indexing() {
         let source = r#"
 pub fn copy_range(dest: &mut Vec<f32>, source: &Vec<f32>, count: usize) {
