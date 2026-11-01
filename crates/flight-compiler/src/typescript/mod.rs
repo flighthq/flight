@@ -8531,6 +8531,63 @@ fn tail_expression_needs_return(expression: &Expr) -> bool {
     );
 }
 
+fn inject_tail_returns(statements: &[Stmt]) -> Vec<Stmt> {
+    let mut owned = statements.to_vec();
+    let Some(last) = owned.last_mut() else {
+        return owned;
+    };
+    match last {
+        Stmt::Expr(Expr::Return(_), _) => {}
+        Stmt::Expr(Expr::If(if_expr), semi) if semi.is_none() => {
+            inject_returns_into_if(if_expr);
+        }
+        Stmt::Expr(Expr::Block(block), semi) if semi.is_none() => {
+            let transformed = inject_tail_returns(&block.block.stmts);
+            block.block.stmts = transformed;
+        }
+        Stmt::Expr(Expr::Unsafe(unsafe_block), semi) if semi.is_none() => {
+            let transformed = inject_tail_returns(&unsafe_block.block.stmts);
+            unsafe_block.block.stmts = transformed;
+        }
+        Stmt::Expr(expr, semi) if semi.is_none() && tail_expression_needs_return(expr) => {
+            let taken = std::mem::replace(expr, Expr::Verbatim(proc_macro2::TokenStream::new()));
+            *last = Stmt::Expr(
+                Expr::Return(syn::ExprReturn {
+                    attrs: Vec::new(),
+                    return_token: syn::token::Return::default(),
+                    expr: Some(Box::new(taken)),
+                }),
+                None,
+            );
+        }
+        _ => {}
+    }
+    return owned;
+}
+
+fn inject_returns_into_if(if_expr: &mut syn::ExprIf) {
+    let transformed = inject_tail_returns(&if_expr.then_branch.stmts);
+    if_expr.then_branch.stmts = transformed;
+    if let Some((_, else_branch)) = &mut if_expr.else_branch {
+        match else_branch.as_mut() {
+            Expr::If(nested_if) => inject_returns_into_if(nested_if),
+            Expr::Block(block) => {
+                let transformed = inject_tail_returns(&block.block.stmts);
+                block.block.stmts = transformed;
+            }
+            other => {
+                let taken =
+                    std::mem::replace(other, Expr::Verbatim(proc_macro2::TokenStream::new()));
+                *else_branch = Box::new(Expr::Return(syn::ExprReturn {
+                    attrs: Vec::new(),
+                    return_token: syn::token::Return::default(),
+                    expr: Some(Box::new(taken)),
+                }));
+            }
+        }
+    }
+}
+
 fn emit_function_block(
     out: &mut String,
     statements: &[Stmt],
@@ -8547,18 +8604,18 @@ fn emit_function_block(
         emit_return_match_with_exits(out, match_expr, entities, indent)
     } else if has_return_type
         && let Some(Stmt::Expr(expr, None)) = statements.last()
+        && matches!(
+            expr,
+            Expr::If(_) | Expr::Block(_) | Expr::Unsafe(_)
+        )
+    {
+        let owned = inject_tail_returns(statements);
+        emit_block(out, &owned, entities, indent)
+    } else if has_return_type
+        && let Some(Stmt::Expr(expr, None)) = statements.last()
         && tail_expression_needs_return(expr)
     {
-        let mut owned = statements.to_vec();
-        let last = owned.len() - 1;
-        owned[last] = Stmt::Expr(
-            Expr::Return(syn::ExprReturn {
-                attrs: Vec::new(),
-                return_token: syn::token::Return::default(),
-                expr: Some(Box::new(expr.clone())),
-            }),
-            None,
-        );
+        let owned = inject_tail_returns(statements);
         emit_block(out, &owned, entities, indent)
     } else {
         emit_block(out, statements, entities, indent)

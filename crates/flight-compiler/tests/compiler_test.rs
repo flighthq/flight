@@ -4804,6 +4804,36 @@ pub fn classify(ch: char) -> (bool, bool, bool) {
     }
 
     #[test]
+    fn tail_if_expression_gets_return_in_branches() {
+        let source = r#"
+pub fn sign(x: i32) -> &'static str {
+    if x > 0 {
+        "positive"
+    } else if x < 0 {
+        "negative"
+    } else {
+        "zero"
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("return \"positive\""),
+            "then branch should return: {output}"
+        );
+        assert!(
+            output.contains("return \"negative\""),
+            "else-if branch should return: {output}"
+        );
+        assert!(
+            output.contains("return \"zero\""),
+            "else branch should return: {output}"
+        );
+    }
+
+    #[test]
     fn tail_match_expression_gets_return_in_arms() {
         let source = r#"
 pub fn classify(x: i32) -> &'static str {
