@@ -89,11 +89,14 @@ fn compare_ray_hits(a: &Physics3DRayHit, b: &Physics3DRayHit) -> std::cmp::Order
 }
 
 fn passes_body_filter(body: &RigidBody3D, filter: Option<&Physics3DQueryFilter>) -> bool {
-    return filter.is_none_or(|filter| match body.body_type {
-        Physics3DBodyType::Dynamic => return filter.include_dynamic,
-        Physics3DBodyType::Kinematic => return filter.include_kinematic,
-        Physics3DBodyType::Static => return filter.include_static,
-    });
+    let Some(filter) = filter else {
+        return true;
+    };
+    return match body.body_type {
+        Physics3DBodyType::Dynamic => filter.include_dynamic,
+        Physics3DBodyType::Kinematic => filter.include_kinematic,
+        Physics3DBodyType::Static => filter.include_static,
+    };
 }
 
 fn passes_collider_filter(
