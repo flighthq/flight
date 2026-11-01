@@ -95,7 +95,7 @@ pub fn set_capture_baseline_field(
 ) {
     let mut entry = get_record_value(baseline, column)
         .cloned()
-        .unwrap_or(CaptureColumnBaseline::default());
+        .unwrap_or_default();
     match field {
         CaptureBaselineField::Fingerprint => entry.fingerprint = Some(String::from(value)),
         CaptureBaselineField::Sha256 => entry.sha256 = Some(String::from(value)),
@@ -113,7 +113,7 @@ pub fn set_capture_baseline_provenance(
 ) {
     let mut entry = get_record_value(baseline, column)
         .cloned()
-        .unwrap_or(CaptureColumnBaseline::default());
+        .unwrap_or_default();
     match field {
         CaptureBaselineProvenanceField::Fingerprint => {
             entry.fingerprint_provenance = Some(provenance.clone());
