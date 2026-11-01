@@ -105,7 +105,8 @@ fn find_catalog_registration<'a>(
     kind: &Kind,
     registry: RenderRegistryTable,
 ) -> Option<&'a CatalogRegistration> {
-    for entry in catalog? {
+    let registered = catalog?;
+    for entry in registered {
         if &entry.kind == kind && entry.registry == registry {
             return entry.registrations.first();
         }
