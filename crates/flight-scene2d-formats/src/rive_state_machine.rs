@@ -175,7 +175,9 @@ pub fn register_rive_state_machine_handlers(registry: &mut RiveImportRegistry) {
                     &range,
                     context.diagnostics.as_deref_mut(),
                 );
-                context.state_machines.extend(machines);
+                let context_state_machines: &mut Vec<RiveStateMachineDescriptor> =
+                    &mut context.state_machines;
+                context_state_machines.extend(machines);
             })),
             apply_document: None,
             import_component: None,

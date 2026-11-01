@@ -158,7 +158,8 @@ fn resolve_rive_parent_indices(
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) {
     let count = artboard.objects.len();
-    artboard.parent_indices.clear();
+    let artboard_parent_indices: &mut Vec<i32> = &mut artboard.parent_indices;
+    artboard_parent_indices.clear();
     artboard.parent_indices.reserve(count);
     for (index, object) in artboard.objects.iter().enumerate() {
         let parent = if index == 0 {
