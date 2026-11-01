@@ -57,7 +57,9 @@ async fn load_gltf_external_buffers(
     }
     let loads = uris.iter().map(|uri| {
         let url = resolve_gltf_buffer_url(uri, base_path);
-        async move { load_scene3d_document_bytes_from_url(host_net, &url, options, net_state).await }
+        return async move {
+            return load_scene3d_document_bytes_from_url(host_net, &url, options, net_state).await;
+        };
     });
     let bytes: Vec<Option<ArrayBufferView>> = join_all(loads).await;
     let mut external_buffers = Record::default();
@@ -82,7 +84,7 @@ pub async fn load_scene3d_document_from_glb_url_with_core_feature_handlers(
     let load = get_scene3d_document_load_options(options);
     let bytes =
         load_scene3d_document_bytes_from_url(host_net, url, load.as_ref(), net_state).await?;
-    let import = GltfImportOptions {
+    let import_options = GltfImportOptions {
         base_path: get_scene3d_document_base_path_from_url(url),
         draco_registry: None,
         extension_handlers: options.and_then(|options| options.extension_handlers.clone()),
@@ -92,7 +94,7 @@ pub async fn load_scene3d_document_from_glb_url_with_core_feature_handlers(
         &bytes,
         core_feature_handlers,
         options.and_then(|options| options.diagnostics.as_ref()),
-        Some(&import),
+        Some(&import_options),
     ));
 }
 
@@ -121,7 +123,7 @@ pub async fn load_scene3d_document_from_gltf_url_with_core_feature_handlers(
         net_state,
     )
     .await?;
-    let import = GltfImportOptions {
+    let import_options = GltfImportOptions {
         base_path,
         draco_registry: None,
         extension_handlers: options.and_then(|options| options.extension_handlers.clone()),
@@ -131,7 +133,7 @@ pub async fn load_scene3d_document_from_gltf_url_with_core_feature_handlers(
         &GltfSource::Json(GltfJsonSource { source: &source }),
         core_feature_handlers,
         options.and_then(|options| options.diagnostics.as_ref()),
-        Some(&import),
+        Some(&import_options),
     ));
 }
 

@@ -48,7 +48,7 @@ fn add_scene3d_resource_subscriber(
     let key = get_image_resource_reference_identity(reference);
     let slot = *index.entry(key).or_insert_with(|| {
         working.push((reference.clone(), Vec::new()));
-        working.len() - 1
+        return working.len() - 1;
     });
     working[slot].1.push(texture.clone());
 }
@@ -183,7 +183,7 @@ fn finish_scene3d_resource_resolution(
                 "Image resource resolution returned no source".to_string(),
                 None,
             );
-            Arc::new(RwLock::new(out))
+            return Arc::new(RwLock::new(out));
         });
         set_image_resource_reference_resolution(
             reference,
@@ -498,14 +498,14 @@ fn start_scene3d_resource_resolution(
                 let resolver = load_resolver.clone();
                 let reference = load_reference.clone();
                 let signal = signal.clone();
-                Box::pin(async move {
+                return Box::pin(async move {
                     let result = AssertUnwindSafe(resolve_one_scene3d_resource_texture(
                         &resolver, &reference, &signal,
                     ))
                     .catch_unwind()
                     .await;
                     return result.map_err(unknown_from_panic);
-                })
+                });
             }),
             on_bytes_progress: None,
             priority: Some(priority),

@@ -74,7 +74,7 @@ fn collect_pending_texture_owners(
                             pending: Vec::new(),
                         }));
                         reveal.owners.push(owner.clone());
-                        owner
+                        return owner;
                     })
                     .clone();
                 {

@@ -90,7 +90,9 @@ pub fn enable_scene3d_resource_failure_guards(
             explained
                 .as_ref()
                 .map(|failure| {
-                    LogValue::Str(get_image_resource_failure_kind_string(failure.kind).to_string())
+                    return LogValue::Str(
+                        get_image_resource_failure_kind_string(failure.kind).to_string(),
+                    );
                 })
                 .unwrap_or(LogValue::Null),
         );

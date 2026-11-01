@@ -206,7 +206,7 @@ pub(crate) type Scene3DResourceFailureIdentity = Option<Ref<ImageResourceFailure
 impl Default for Scene3DResourceResolver {
     fn default() -> Self {
         return Self {
-            fetch: Arc::new(|_, _| Box::pin(async { None })),
+            fetch: Arc::new(|_, _| Box::pin(async { return None })),
             image_decode: None,
             registry: Scene3DMaterialTextureRegistry::default(),
             state: flight_entity::Ref::default(),

@@ -11,7 +11,7 @@ pub fn create_web_image_resource_fetch(host_image: &HostImageCapability) -> Imag
     let host_image = host_image.clone();
     return Arc::new(move |reference, signal| {
         let host_image = host_image.clone();
-        Box::pin(async move {
+        return Box::pin(async move {
             let url = {
                 let reference = reference.read().unwrap();
                 resolve_image_resource_uri(&reference.uri, reference.base_path.as_deref())
@@ -33,7 +33,7 @@ pub fn create_web_image_resource_fetch(host_image: &HostImageCapability) -> Imag
                     None
                 }
             };
-        })
+        });
     });
 }
 
