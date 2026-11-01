@@ -130,6 +130,7 @@ const STD_MEM_SHADOWED_MARKER: &str = "@std-mem-shadowed:";
 const FLOAT_CONST_MARKER: &str = "@float-const:";
 
 const JSON_VALUE_MARKER: &str = "@json-value:";
+const JSON_VALUE_OPTION_MARKER: &str = "@json-value-option:";
 
 // Type-namespace provenance recorded from `use` items and local declarations (see
 // `insert_type_path_context`): a local name, the full path it imports, a glob's module path, and a
@@ -2366,6 +2367,39 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
+fn expression_is_option_of_json_value(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            path.path.segments.first().is_some_and(|segment| {
+                entities.contains(&format!("{JSON_VALUE_OPTION_MARKER}{}", segment.ident))
+            })
+        }
+        Expr::MethodCall(call)
+            if call.method == "get"
+                && call.args.len() == 1
+                && expression_is_json_value(&call.receiver, entities) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
+            if call.method == "and_then"
+                && call.args.len() == 1
+                && (expression_is_json_value(&call.receiver, entities)
+                    || expression_is_option_of_json_value(&call.receiver, entities)) =>
+        {
+            matches!(call.args.first(), Some(Expr::Closure(closure))
+                if matches!(closure.body.as_ref(), Expr::MethodCall(inner)
+                    if inner.method == "get" && inner.args.len() == 1))
+        }
+        Expr::Reference(reference) => {
+            expression_is_option_of_json_value(&reference.expr, entities)
+        }
+        Expr::Paren(paren) => expression_is_option_of_json_value(&paren.expr, entities),
+        Expr::Group(group) => expression_is_option_of_json_value(&group.expr, entities),
+        _ => false,
+    };
+}
+
 fn expression_is_json_value(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
@@ -2387,7 +2421,8 @@ fn expression_is_json_value(expression: &Expr, entities: &HashSet<String>) -> bo
         Expr::MethodCall(call)
             if call.method == "and_then"
                 && call.args.len() == 1
-                && expression_is_json_value(&call.receiver, entities) =>
+                && (expression_is_json_value(&call.receiver, entities)
+                    || expression_is_option_of_json_value(&call.receiver, entities)) =>
         {
             matches!(call.args.first(), Some(Expr::Closure(closure))
                 if matches!(closure.body.as_ref(), Expr::MethodCall(inner)
@@ -7805,6 +7840,11 @@ pub(crate) fn function_expression_context(
                 if rust_type_is_json_value(&typed.ty, self.context) {
                     self.context
                         .insert(format!("{JSON_VALUE_MARKER}{}", pattern.ident));
+                } else if let Some(inner) = option_inner_type(&typed.ty)
+                    && rust_type_is_json_value(inner, self.context)
+                {
+                    self.context
+                        .insert(format!("{JSON_VALUE_OPTION_MARKER}{}", pattern.ident));
                 }
                 if rust_type_is_ordered_primitive(&typed.ty) {
                     self.context
@@ -7840,6 +7880,13 @@ pub(crate) fn function_expression_context(
             {
                 self.context
                     .insert(format!("{JSON_VALUE_MARKER}{name}"));
+            }
+            if let Some(initializer) = &local.init
+                && expression_is_option_of_json_value(&initializer.expr, self.context)
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.context
+                    .insert(format!("{JSON_VALUE_OPTION_MARKER}{name}"));
             }
             if let Some(initializer) = &local.init
                 && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
@@ -7943,6 +7990,10 @@ pub(crate) fn function_expression_context(
         }
         if rust_type_is_json_value(&argument.ty, &context) {
             context.insert(format!("{JSON_VALUE_MARKER}{}", pattern.ident));
+        } else if let Some(inner) = option_inner_type(&argument.ty)
+            && rust_type_is_json_value(inner, &context)
+        {
+            context.insert(format!("{JSON_VALUE_OPTION_MARKER}{}", pattern.ident));
         }
         if rust_type_is_ordered_primitive(&argument.ty) {
             context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
@@ -16851,7 +16902,9 @@ fn emit_option_combinator(
         };
         closure_context.insert(format!("{prefix}{}", binding_fact_marker(&fact)));
     }
-    if expression_is_json_value(&call.receiver, entities) {
+    if expression_is_json_value(&call.receiver, entities)
+        || expression_is_option_of_json_value(&call.receiver, entities)
+    {
         if let Some(parameter) = parameter {
             closure_context.insert(format!("{JSON_VALUE_MARKER}{parameter}"));
         }

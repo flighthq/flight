@@ -5633,6 +5633,32 @@ pub fn get_nested(data: &Value) -> Option<&str> {
     }
 
     #[test]
+    fn lowers_serde_json_value_option_parameter() {
+        let source = r#"
+use serde_json::Value;
+
+fn field<'a>(value: Option<&'a Value>, key: &str) -> Option<&'a Value> {
+    return value.and_then(|value| value.get(key));
+}
+
+fn rn(value: Option<&Value>, default: f32) -> f32 {
+    return value.and_then(|v| v.as_f64()).map(|n| n as f32).unwrap_or(default);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("value[key]"),
+            "option value get: {output}"
+        );
+        assert!(
+            output.contains("typeof v === \"number\" ? v : undefined"),
+            "option value as_f64: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_split_next_to_array_index() {
         let source = r#"
 pub fn strip_query(url: &str) -> &str {
