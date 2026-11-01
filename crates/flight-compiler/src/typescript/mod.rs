@@ -11555,15 +11555,16 @@ pub(crate) fn emit_local_with_shadow_and_else(
     if let Some(initializer) = &local.init
         && let Expr::Try(try_expr) = initializer.expr.as_ref()
     {
-        return emit_try_local(out, local, try_expr, entities, indent, shadowed);
+        emit_try_local(out, local, try_expr, entities, indent, shadowed)?;
+        return Ok(());
     }
     if let Some(initializer) = &local.init
         && let Expr::Match(match_expr) = initializer.expr.as_ref()
     {
-        if let Some(result) = emit_option_match_with_return_local(
+        if let Some(_result) = emit_option_match_with_return_local(
             out, local, match_expr, entities, indent, shadowed, rebound,
         )? {
-            return Ok(result);
+            return Ok(());
         }
         if reject_function_exits_in_value_position(
             |visitor| {
