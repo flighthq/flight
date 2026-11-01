@@ -27,7 +27,7 @@ pub fn update_render_proxy_2d_transform<S: RenderState>(
         get_node_local_transform_revision(&*source)
     };
     let parent_dirty = parent_data.is_some_and(|parent| {
-        parent.transform_frame_id == state.render_runtime().current_frame_id as i64
+        return parent.transform_frame_id == state.render_runtime().current_frame_id as i64;
     });
     let local_dirty = state.render_state().scene_graph_sync_policy
         == Scene3DGraphSyncPolicy::RefreshDerivedState

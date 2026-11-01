@@ -83,13 +83,13 @@ fn resolve_inherited_color_scale_bias(
     local: Option<&ColorScaleBias>,
 ) -> Option<ColorScaleBias> {
     match (parent, local) {
-        (None, None) => None,
-        (Some(parent), None) => Some(parent.clone()),
-        (None, Some(local)) => Some(local.clone()),
+        (None, None) => return None,
+        (Some(parent), None) => return Some(parent.clone()),
+        (None, Some(local)) => return Some(local.clone()),
         (Some(parent), Some(local)) => {
             let mut out = create_color_scale_bias();
             concat_color_scale_bias(&mut out, parent, local);
-            Some(out)
+            return Some(out);
         }
     }
 }

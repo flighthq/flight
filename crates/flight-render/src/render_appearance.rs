@@ -62,7 +62,7 @@ pub fn update_render_proxy_appearance<S: RenderState>(
         get_node_appearance_revision(&*source)
     };
     let parent_dirty = parent_data.is_some_and(|parent| {
-        parent.appearance_frame_id == state.render_runtime().current_frame_id as i64
+        return parent.appearance_frame_id == state.render_runtime().current_frame_id as i64;
     });
     if parent_dirty || data.last_appearance_id != appearance_id as i64 {
         recalculate_appearance(state, data, parent_data);

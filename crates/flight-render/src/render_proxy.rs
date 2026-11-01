@@ -233,13 +233,13 @@ pub fn is_render_proxy_dirty<S: RenderState>(
 ) -> bool {
     let current_frame_id = state.render_runtime().current_frame_id as i64;
     let parent_dirty = parent_data.is_some_and(|parent| {
-        parent.transform_frame_id == current_frame_id
-            || parent.appearance_frame_id == current_frame_id
+        return parent.transform_frame_id == current_frame_id
+            || parent.appearance_frame_id == current_frame_id;
     });
     let renderer_dirty = data.renderer.is_some_and(|renderer| {
-        renderer
+        return renderer
             .is_dirty
-            .is_some_and(|is_dirty| is_dirty(state, source, data.renderer_data.as_ref()))
+            .is_some_and(|is_dirty| is_dirty(state, source, data.renderer_data.as_ref()));
     });
     let (children, parent_reference, local_transform, appearance, local_content) = {
         let source = source.read().unwrap();
