@@ -4861,9 +4861,9 @@ fn insert_data_union_context(
                         ) {
                             Ok(categories) => categories,
                             Err(error) => {
-                                let is_auto = programs.iter().any(|program| {
-                                    program.auto_data_unions.contains(&owner)
-                                });
+                                let is_auto = programs
+                                    .iter()
+                                    .any(|program| program.auto_data_unions.contains(&owner));
                                 if is_auto {
                                     skip_enum = true;
                                     break;
@@ -8632,17 +8632,12 @@ fn emit_function_block(
     let has_return_type = entities
         .iter()
         .any(|marker| marker.starts_with(RETURN_TYPE_MARKER) && !marker.ends_with("void"));
-    if has_return_type
-        && let Some(Stmt::Expr(Expr::Match(match_expr), None)) = statements.last()
-    {
+    if has_return_type && let Some(Stmt::Expr(Expr::Match(match_expr), None)) = statements.last() {
         emit_block(out, &statements[..statements.len() - 1], entities, indent)?;
         emit_return_match_with_exits(out, match_expr, entities, indent)
     } else if has_return_type
         && let Some(Stmt::Expr(expr, None)) = statements.last()
-        && matches!(
-            expr,
-            Expr::If(_) | Expr::Block(_) | Expr::Unsafe(_)
-        )
+        && matches!(expr, Expr::If(_) | Expr::Block(_) | Expr::Unsafe(_))
     {
         let owned = inject_tail_returns(statements);
         emit_block(out, &owned, entities, indent)
@@ -8704,14 +8699,7 @@ fn emit_block_with_context(
             } else {
                 local_context
             };
-            emit_local_with_shadow(
-                out,
-                local,
-                &effective_context,
-                indent,
-                shadowed,
-                rebound,
-            )?;
+            emit_local_with_shadow(out, local, &effective_context, indent, shadowed, rebound)?;
             if let Some(counter) = effective_context
                 .iter()
                 .find(|m| m.starts_with(TRY_COUNTER_MARKER))
@@ -9941,9 +9929,7 @@ fn emit_expression_value(
         Expr::MethodCall(call) => emit_method_call(call, entities),
         Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
         Expr::Path(path) => {
-            if path.qself.is_none()
-                && path.path.segments.len() == 1
-            {
+            if path.qself.is_none() && path.path.segments.len() == 1 {
                 let name = path.path.segments[0].ident.to_string();
                 if let Some(bound) = lexical_binding(entities, &name) {
                     let prefix = format!("{ITER_MUT_ALIAS_MARKER}{bound}=");
@@ -10848,7 +10834,12 @@ fn emit_iter_mut_loop(
         }
         let index_name = emit_pattern(&tuple.elems[0])?;
         let element_name = emit_pattern(&tuple.elems[1])?;
-        add_alias(&mut loop_context, &element_name, &collection_expr, &index_name);
+        add_alias(
+            &mut loop_context,
+            &element_name,
+            &collection_expr,
+            &index_name,
+        );
         write_indent(out, indent);
         writeln!(
             out,
@@ -10862,7 +10853,12 @@ fn emit_iter_mut_loop(
     }
 
     let element_name = emit_pattern(&loop_expression.pat)?;
-    add_alias(&mut loop_context, &element_name, &collection_expr, index_var);
+    add_alias(
+        &mut loop_context,
+        &element_name,
+        &collection_expr,
+        index_var,
+    );
     write_indent(out, indent);
     writeln!(
         out,
@@ -11789,8 +11785,7 @@ fn emit_try_local(
         };
     if pattern == inner_value && rebind {
         write_indent(out, indent);
-        writeln!(out, "if ({pattern} === undefined) {{")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -11798,26 +11793,21 @@ fn emit_try_local(
     } else if pattern == inner_value {
         let temp = format!("{pattern}_q");
         write_indent(out, indent);
-        writeln!(out, "const {temp} = {inner_value};")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "const {temp} = {inner_value};").expect("writing to a String cannot fail");
         write_indent(out, indent);
-        writeln!(out, "if ({temp} === undefined) {{")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "if ({temp} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
         let keyword = if mutable { "let" } else { "const" };
         write_indent(out, indent);
-        writeln!(out, "{keyword} {pattern} = {temp};")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "{keyword} {pattern} = {temp};").expect("writing to a String cannot fail");
     } else if rebind {
         write_indent(out, indent);
-        writeln!(out, "{pattern} = {inner_value};")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "{pattern} = {inner_value};").expect("writing to a String cannot fail");
         write_indent(out, indent);
-        writeln!(out, "if ({pattern} === undefined) {{")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -11828,8 +11818,7 @@ fn emit_try_local(
         writeln!(out, "{keyword} {pattern} = {inner_value};")
             .expect("writing to a String cannot fail");
         write_indent(out, indent);
-        writeln!(out, "if ({pattern} === undefined) {{")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -16786,51 +16775,31 @@ fn emit_method_call(
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "into_owned" if arguments.is_empty() => Ok(receiver),
         "into_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
-        "is_ascii_digit" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? v >= 48 && v <= 57 : v >= '0' && v <= '9')({receiver})"
-            ))
-        }
-        "is_ascii_lowercase" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? v >= 97 && v <= 122 : v >= 'a' && v <= 'z')({receiver})"
-            ))
-        }
-        "is_ascii_uppercase" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? v >= 65 && v <= 90 : v >= 'A' && v <= 'Z')({receiver})"
-            ))
-        }
-        "is_alphabetic" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))({receiver})"
-            ))
-        }
-        "is_ascii_alphabetic" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))({receiver})"
-            ))
-        }
-        "is_ascii_alphanumeric" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z0-9]$/).test(v))({receiver})"
-            ))
-        }
-        "is_ascii_hexdigit" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 70) || (v >= 97 && v <= 102) : (/^[0-9a-fA-F]$/).test(v))({receiver})"
-            ))
-        }
-        "is_ascii_whitespace" if arguments.is_empty() => {
-            Ok(format!(
-                "((v: string | number): boolean => typeof v === 'number' ? v === 32 || v === 9 || v === 10 || v === 13 || v === 12 : v === ' ' || v === '\\t' || v === '\\n' || v === '\\r' || v === '\\x0C')({receiver})"
-            ))
-        }
-        "is_whitespace" if arguments.is_empty() => {
-            Ok(format!(
-                "(/^\\s$/).test({receiver})"
-            ))
-        }
+        "is_ascii_digit" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? v >= 48 && v <= 57 : v >= '0' && v <= '9')({receiver})"
+        )),
+        "is_ascii_lowercase" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? v >= 97 && v <= 122 : v >= 'a' && v <= 'z')({receiver})"
+        )),
+        "is_ascii_uppercase" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? v >= 65 && v <= 90 : v >= 'A' && v <= 'Z')({receiver})"
+        )),
+        "is_alphabetic" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))({receiver})"
+        )),
+        "is_ascii_alphabetic" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))({receiver})"
+        )),
+        "is_ascii_alphanumeric" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z0-9]$/).test(v))({receiver})"
+        )),
+        "is_ascii_hexdigit" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 70) || (v >= 97 && v <= 102) : (/^[0-9a-fA-F]$/).test(v))({receiver})"
+        )),
+        "is_ascii_whitespace" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? v === 32 || v === 9 || v === 10 || v === 13 || v === 12 : v === ' ' || v === '\\t' || v === '\\n' || v === '\\r' || v === '\\x0C')({receiver})"
+        )),
+        "is_whitespace" if arguments.is_empty() => Ok(format!("(/^\\s$/).test({receiver})")),
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_ref" if arguments.is_empty() => Ok(receiver),
@@ -19281,8 +19250,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                 .get(&rust_enum.ident.to_string()),
             program.numeric_unions.get(&rust_enum.ident.to_string()),
             program.data_unions.contains(&rust_enum.ident.to_string())
-                && !source_context
-                    .contains(&format!("@data-union-skip:{}", rust_enum.ident)),
+                && !source_context.contains(&format!("@data-union-skip:{}", rust_enum.ident)),
             &source_context,
         );
         match result {
@@ -19538,8 +19506,7 @@ fn emit_statement(
             }) =>
         {
             let init = local.init.as_ref().unwrap();
-            let try_context =
-                emit_try_pre_extractions(out, &init.expr, entities, indent)?;
+            let try_context = emit_try_pre_extractions(out, &init.expr, entities, indent)?;
             emit_local(out, local, &try_context, indent)?;
         }
         Stmt::Local(local) => emit_local(out, local, entities, indent)?,
@@ -19769,11 +19736,9 @@ fn emit_statement(
                         if let Expr::Let(let_binding) = let_guard {
                             if let Some(rust_name) = local_pattern_name(&let_binding.pat) {
                                 let camel = snake_to_lower_camel(&rust_name);
-                                then_context
-                                    .insert(format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+                                then_context.insert(format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
                                 if camel != rust_name {
-                                    then_context
-                                        .insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                                    then_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
                                 }
                             }
                         }
@@ -19845,8 +19810,7 @@ fn emit_statement(
             if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {
                 emit_iter_mut_loop(out, loop_expression, collection, chain, entities, indent)?;
             } else {
-                let mut loop_context =
-                    lexical_pattern_context(entities, &loop_expression.pat);
+                let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
                 if for_loop_iterates_strings(&loop_expression.expr, entities) {
                     if let Some(name) = local_pattern_name(&loop_expression.pat) {
                         loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
@@ -19856,19 +19820,10 @@ fn emit_statement(
                 writeln!(
                     out,
                     "for ({}) {{",
-                    emit_for_header(
-                        &loop_expression.pat,
-                        &loop_expression.expr,
-                        entities
-                    )?
+                    emit_for_header(&loop_expression.pat, &loop_expression.expr, entities)?
                 )
                 .expect("writing to a String cannot fail");
-                emit_block(
-                    out,
-                    &loop_expression.body.stmts,
-                    &loop_context,
-                    indent + 1,
-                )?;
+                emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
                 write_indent(out, indent);
                 out.push_str("}\n");
             }
@@ -20034,9 +19989,7 @@ fn emit_statement(
             write_indent(out, indent);
             writeln!(out, "}}").expect("writing to a String cannot fail");
         }
-        Stmt::Expr(Expr::Assign(assign), _)
-            if matches!(assign.right.as_ref(), Expr::Try(_)) =>
-        {
+        Stmt::Expr(Expr::Assign(assign), _) if matches!(assign.right.as_ref(), Expr::Try(_)) => {
             let Expr::Try(try_expr) = assign.right.as_ref() else {
                 unreachable!()
             };
@@ -20058,8 +20011,7 @@ fn emit_statement(
         Stmt::Expr(Expr::MethodCall(call), _)
             if emit_entry_or_default_method(out, call, entities, indent)? => {}
         Stmt::Expr(expression, _) if expression_contains_unconditional_try(expression) => {
-            let try_context =
-                emit_try_pre_extractions(out, expression, entities, indent)?;
+            let try_context = emit_try_pre_extractions(out, expression, entities, indent)?;
             write_indent(out, indent);
             writeln!(out, "{};", emit_expression(expression, &try_context)?)
                 .expect("writing to a String cannot fail");

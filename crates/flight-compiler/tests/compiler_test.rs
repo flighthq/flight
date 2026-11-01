@@ -20803,10 +20803,7 @@ pub fn process(kind: u32, output: &mut [f64]) {
         "case arms should be braced: {result}"
     );
     let index_count = result.matches("const index").count();
-    assert_eq!(
-        index_count, 2,
-        "both arms should declare index: {result}"
-    );
+    assert_eq!(index_count, 2, "both arms should declare index: {result}");
 }
 
 #[test]

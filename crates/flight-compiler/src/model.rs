@@ -1629,8 +1629,8 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
                     auto_data_unions.insert(name.clone());
                     data_unions.insert(name.clone());
                 }
-                let is_data_union = data_unions.contains(&name)
-                    || (has_named_variants && all_named_or_unit);
+                let is_data_union =
+                    data_unions.contains(&name) || (has_named_variants && all_named_or_unit);
                 if !lenient {
                     validate_enum(&item, is_data_union)?;
                 }
