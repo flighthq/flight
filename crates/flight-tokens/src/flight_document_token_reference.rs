@@ -42,7 +42,7 @@ fn is_token_key(key: &str) -> bool {
 /// must have established that the value IS a reference; a plain string never reaches here. A dotted
 /// key is one flat name, not a path.
 pub fn read_flight_document_token_reference_key(value: &str) -> Option<String> {
-    let key = value.get(REFERENCE_SIGIL.len()..).unwrap_or("");
+    let key = value.get(REFERENCE_SIGIL.len()..value.len()).unwrap_or("");
     return if is_token_key(key) {
         Some(key.to_string())
     } else {
