@@ -539,7 +539,7 @@ fn invalidate_physics_3d_body_contacts(world: &mut Physics3DWorld, body_index: i
                 contact.body_a
             });
         }
-        !remove
+        return !remove;
     });
     for index in wake {
         if let Some(body) = world.body_by_index.get(&index) {
@@ -548,11 +548,11 @@ fn invalidate_physics_3d_body_contacts(world: &mut Physics3DWorld, body_index: i
     }
     world.events.began.retain(|contact| {
         let contact = contact.read().unwrap();
-        contact.body_a != body_index && contact.body_b != body_index
+        return contact.body_a != body_index && contact.body_b != body_index;
     });
     world.events.ended.retain(|contact| {
         let contact = contact.read().unwrap();
-        contact.body_a != body_index && contact.body_b != body_index
+        return contact.body_a != body_index && contact.body_b != body_index;
     });
     world.solver.constraints.clear();
     world.solver.constraint_by_contact.clear();
@@ -669,9 +669,9 @@ pub fn remove_physics_3d_body(world: &mut Physics3DWorld, body: &RigidBody3DRef)
                 }
             }
             removed_joints.push(joint_ref.clone());
-            false
+            return false;
         } else {
-            true
+            return true;
         }
     });
     for joint in removed_joints {

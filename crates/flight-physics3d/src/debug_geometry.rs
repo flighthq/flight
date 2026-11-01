@@ -24,7 +24,7 @@ const BOX_EDGES: [(usize, usize); 12] = [
 pub fn create_physics_3d_debug_geometry() -> Physics3DDebugGeometry {
     let mut out: Physics3DDebugGeometry = allocate_entity();
     initialize_physics_3d_debug_geometry(&mut out);
-    out
+    return out;
 }
 
 pub fn initialize_physics_3d_debug_geometry(out: &mut Physics3DDebugGeometry) {
@@ -44,15 +44,15 @@ fn body_point(body: &RigidBody3D, p: [f32; 3]) -> [f32; 3] {
         ],
         p,
     );
-    [body.x + p[0], body.y + p[1], body.z + p[2]]
+    return [body.x + p[0], body.y + p[1], body.z + p[2]];
 }
 
 fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [
+    return [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0],
-    ]
+    ];
 }
 
 fn rotate(q: [f32; 4], p: [f32; 3]) -> [f32; 3] {
@@ -61,11 +61,11 @@ fn rotate(q: [f32; 4], p: [f32; 3]) -> [f32; 3] {
         2.0 * (q[2] * p[0] - q[0] * p[2]),
         2.0 * (q[0] * p[1] - q[1] * p[0]),
     ];
-    [
+    return [
         p[0] + q[3] * t[0] + q[1] * t[2] - q[2] * t[1],
         p[1] + q[3] * t[1] + q[2] * t[0] - q[0] * t[2],
         p[2] + q[3] * t[2] + q[0] * t[1] - q[1] * t[0],
-    ]
+    ];
 }
 
 fn surface_point(
@@ -75,7 +75,7 @@ fn surface_point(
     point: [f32; 3],
 ) -> [f32; 3] {
     let p = rotate(rotation, point);
-    body_point(body, [offset[0] + p[0], offset[1] + p[1], offset[2] + p[2]])
+    return body_point(body, [offset[0] + p[0], offset[1] + p[1], offset[2] + p[2]]);
 }
 
 fn write_box(
@@ -257,7 +257,7 @@ fn write_collider(
                 for col in 0..h.columns {
                     let i = row * h.columns + col;
                     let p = |c: usize, r: usize| {
-                        surface_point(
+                        return surface_point(
                             body,
                             [h.x, h.y, h.z],
                             [h.rotation_x, h.rotation_y, h.rotation_z, h.rotation_w],
@@ -266,7 +266,7 @@ fn write_collider(
                                 h.heights[r * h.columns + c],
                                 r as f32 * h.cell_size_z,
                             ],
-                        )
+                        );
                     };
                     if col + 1 < h.columns {
                         write_line(

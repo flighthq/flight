@@ -158,22 +158,22 @@ fn disc_extent(x: f32, y: f32, z: f32, r: f32) -> [f32; 3] {
     }
     let inv = 1.0 / l.sqrt();
     let (nx, ny, nz) = (x * inv, y * inv, z * inv);
-    [
+    return [
         r * (1.0 - nx * nx).max(0.0).sqrt(),
         r * (1.0 - ny * ny).max(0.0).sqrt(),
         r * (1.0 - nz * nz).max(0.0).sqrt(),
-    ]
+    ];
 }
 
 fn rotate_point(qx: f32, qy: f32, qz: f32, qw: f32, x: f32, y: f32, z: f32) -> [f32; 3] {
     let tx = 2.0 * (qy * z - qz * y);
     let ty = 2.0 * (qz * x - qx * z);
     let tz = 2.0 * (qx * y - qy * x);
-    [
+    return [
         x + qw * tx + qy * tz - qz * ty,
         y + qw * ty + qz * tx - qx * tz,
         z + qw * tz + qx * ty - qy * tx,
-    ]
+    ];
 }
 
 fn transform_cone(

@@ -74,7 +74,7 @@ fn angular_mass_term(body: &RigidBody3D, r: [f32; 3], normal: [f32; 3]) -> f32 {
     let tensor = world_inverse_inertia(body);
     let mut transformed = [0.0; 3];
     apply_symmetric_tensor(&mut transformed, &tensor, cross[0], cross[1], cross[2]);
-    cross[0] * transformed[0] + cross[1] * transformed[1] + cross[2] * transformed[2]
+    return cross[0] * transformed[0] + cross[1] * transformed[1] + cross[2] * transformed[2];
 }
 
 fn apply_impact_impulse(
@@ -101,13 +101,13 @@ fn apply_impact_impulse(
 }
 
 fn body_moving(body: &RigidBody3D) -> bool {
-    body.body_type != Physics3DBodyType::Static && !body.sleeping
+    return body.body_type != Physics3DBodyType::Static && !body.sleeping;
 }
 
 fn ccd_pair_active(a: &RigidBody3D, b: &RigidBody3D) -> bool {
     let bullet_a = a.body_type == Physics3DBodyType::Dynamic && a.bullet && !a.sleeping;
     let bullet_b = b.body_type == Physics3DBodyType::Dynamic && b.bullet && !b.sleeping;
-    (bullet_a || bullet_b) && (a.inverse_mass > 0.0 || b.inverse_mass > 0.0)
+    return (bullet_a || bullet_b) && (a.inverse_mass > 0.0 || b.inverse_mass > 0.0);
 }
 
 fn centers_at_fraction(
@@ -125,15 +125,15 @@ fn centers_at_fraction(
     write_rigid_body_3d_world_center(body_b, &mut center_b);
     restore_pose(body_a, &pose_a);
     restore_pose(body_b, &pose_b);
-    (center_a, center_b)
+    return (center_a, center_b);
 }
 
 fn collider_pair_enabled(a: &Physics3DCollider, b: &Physics3DCollider) -> bool {
     if a.filter.group_index != 0 && a.filter.group_index == b.filter.group_index {
         return a.filter.group_index > 0;
     }
-    (a.filter.mask_bits & b.filter.category_bits) != 0
-        && (b.filter.mask_bits & a.filter.category_bits) != 0
+    return (a.filter.mask_bits & b.filter.category_bits) != 0
+        && (b.filter.mask_bits & a.filter.category_bits) != 0;
 }
 
 fn effective_mass(
@@ -148,9 +148,9 @@ fn effective_mass(
         + angular_mass_term(a, r_a, normal)
         + angular_mass_term(b, r_b, normal);
     if denominator > 0.0 {
-        1.0 / denominator
+        return 1.0 / denominator;
     } else {
-        0.0
+        return 0.0;
     }
 }
 
@@ -273,7 +273,7 @@ fn find_collider_impact(
     {
         selected = Some(candidate);
     }
-    selected
+    return selected;
 }
 
 fn find_earliest_impact(
@@ -368,19 +368,20 @@ fn find_earliest_impact(
         .as_ref()
         .map_or(f32::INFINITY, |impact| impact.fraction);
     sensors.sort_by(|a, b| {
-        a.fraction
+        return a
+            .fraction
             .total_cmp(&b.fraction)
             .then(a.body_a.cmp(&b.body_a))
             .then(a.body_b.cmp(&b.body_b))
             .then(a.collider_a.cmp(&b.collider_a))
-            .then(a.collider_b.cmp(&b.collider_b))
+            .then(a.collider_b.cmp(&b.collider_b));
     });
     for sensor in sensors {
         if sensor.fraction <= boundary && !has_contact_transition(world, &sensor) {
             report_sensor_impact(world, sensor, dt);
         }
     }
-    earliest
+    return earliest;
 }
 
 fn find_rotational_impact(
@@ -451,7 +452,7 @@ fn find_rotational_impact(
             center_b,
         });
     }
-    None
+    return None;
 }
 
 fn friction_basis(normal: [f32; 3]) -> ([f32; 3], [f32; 3]) {
@@ -479,24 +480,24 @@ fn friction_basis(normal: [f32; 3]) -> ([f32; 3], [f32; 3]) {
         normal[2] * tangent0[0] - normal[0] * tangent0[2],
         normal[0] * tangent0[1] - normal[1] * tangent0[0],
     ];
-    (tangent0, tangent1)
+    return (tangent0, tangent1);
 }
 
 pub fn has_active_physics_3d_bullet(world: &Physics3DWorld) -> bool {
-    world.bodies.iter().any(|body| {
+    return world.bodies.iter().any(|body| {
         let body = body.read().unwrap();
-        body.body_type == Physics3DBodyType::Dynamic && body.bullet && !body.sleeping
-    })
+        return body.body_type == Physics3DBodyType::Dynamic && body.bullet && !body.sleeping;
+    });
 }
 
 fn has_contact_transition(world: &Physics3DWorld, impact: &Impact) -> bool {
-    world.events.began.iter().any(|contact| {
+    return world.events.began.iter().any(|contact| {
         let contact = contact.read().unwrap();
-        contact.body_a == impact.body_a
+        return contact.body_a == impact.body_a
             && contact.body_b == impact.body_b
             && contact.collider_a == impact.collider_a
-            && contact.collider_b == impact.collider_b
-    })
+            && contact.collider_b == impact.collider_b;
+    });
 }
 
 pub fn integrate_physics_3d_continuous(
@@ -575,9 +576,9 @@ fn overlap_at_fraction(
     update_physics_3d_collider_world_shape(collider_a, body_a);
     update_physics_3d_collider_world_shape(collider_b, body_b);
     if overlapping {
-        Some((manifold, center_a, center_b))
+        return Some((manifold, center_a, center_b));
     } else {
-        None
+        return None;
     }
 }
 
@@ -598,9 +599,9 @@ fn point_normal_velocity(
         b.velocity_y + b.angular_velocity_z * r_b[0] - b.angular_velocity_x * r_b[2],
         b.velocity_z + b.angular_velocity_x * r_b[1] - b.angular_velocity_y * r_b[0],
     ];
-    (point_a[0] - point_b[0]) * normal[0]
+    return (point_a[0] - point_b[0]) * normal[0]
         + (point_a[1] - point_b[1]) * normal[1]
-        + (point_a[2] - point_b[2]) * normal[2]
+        + (point_a[2] - point_b[2]) * normal[2];
 }
 
 fn relative_normal_velocity(
@@ -610,9 +611,9 @@ fn relative_normal_velocity(
     normal_y: f32,
     normal_z: f32,
 ) -> f32 {
-    (a.velocity_x - b.velocity_x) * normal_x
+    return (a.velocity_x - b.velocity_x) * normal_x
         + (a.velocity_y - b.velocity_y) * normal_y
-        + (a.velocity_z - b.velocity_z) * normal_z
+        + (a.velocity_z - b.velocity_z) * normal_z;
 }
 
 fn report_sensor_impact(world: &mut Physics3DWorld, impact: Impact, dt: f32) {
@@ -866,9 +867,10 @@ fn restore_pose(body: &mut RigidBody3D, pose: &[f32; 7]) {
 
 fn rotation_sample_count(angular_travel: f32, max_substeps: usize) -> usize {
     if angular_travel <= 0.0 || max_substeps == 0 {
-        0
+        return 0;
     } else {
-        max_substeps.min((angular_travel / CCD_ROTATION_INCREMENT).ceil().max(1.0) as usize)
+        return max_substeps
+            .min((angular_travel / CCD_ROTATION_INCREMENT).ceil().max(1.0) as usize);
     }
 }
 
@@ -878,8 +880,8 @@ fn rotational_impact_approaching(
     candidate: &ImpactCandidate,
 ) -> bool {
     let normal = [candidate.normal_x, candidate.normal_y, candidate.normal_z];
-    candidate.points.iter().any(|point| {
-        point_normal_velocity(
+    return candidate.points.iter().any(|point| {
+        return point_normal_velocity(
             a,
             b,
             [
@@ -893,8 +895,8 @@ fn rotational_impact_approaching(
                 point.z - candidate.center_b[2],
             ],
             normal,
-        ) < -APPROACH_EPSILON
-    })
+        ) < -APPROACH_EPSILON;
+    });
 }
 
 fn run_impact_pre_solve_hook(world: &mut Physics3DWorld, contact: &Physics3DContactRef) {
@@ -927,7 +929,7 @@ fn run_impact_pre_solve_hook(world: &mut Physics3DWorld, contact: &Physics3DCont
 }
 
 fn save_pose(body: &RigidBody3D) -> [f32; 7] {
-    [
+    return [
         body.x,
         body.y,
         body.z,
@@ -935,7 +937,7 @@ fn save_pose(body: &RigidBody3D) -> [f32; 7] {
         body.orientation_y,
         body.orientation_z,
         body.orientation_w,
-    ]
+    ];
 }
 
 fn wake_impact_body(body: &RigidBody3DRef) {
@@ -947,14 +949,14 @@ fn wake_impact_body(body: &RigidBody3DRef) {
 }
 
 fn world_inverse_inertia(body: &RigidBody3D) -> [f32; 6] {
-    [
+    return [
         body.inverse_inertia_world_xx,
         body.inverse_inertia_world_yy,
         body.inverse_inertia_world_zz,
         body.inverse_inertia_world_xy,
         body.inverse_inertia_world_xz,
         body.inverse_inertia_world_yz,
-    ]
+    ];
 }
 
 fn write_impact_contact(
@@ -965,10 +967,10 @@ fn write_impact_contact(
 ) -> (Physics3DContactRef, bool) {
     let existing = world.contacts.iter().find(|contact| {
         let contact = contact.read().unwrap();
-        contact.body_a == impact.body_a
+        return contact.body_a == impact.body_a
             && contact.body_b == impact.body_b
             && contact.collider_a == impact.collider_a
-            && contact.collider_b == impact.collider_b
+            && contact.collider_b == impact.collider_b;
     });
     let created = existing.is_none();
     let contact = existing.cloned().unwrap_or_else(|| {
@@ -980,7 +982,7 @@ fn write_impact_contact(
             impact.collider_a,
             impact.collider_b,
         );
-        contact
+        return contact;
     });
     let (mut center_a, mut center_b) = ([0.0; 3], [0.0; 3]);
     write_rigid_body_3d_world_center(&a.read().unwrap(), &mut center_a);
@@ -1017,7 +1019,7 @@ fn write_impact_contact(
         world.contacts.push(contact.clone());
         world.events.began.push(contact.clone());
     }
-    (contact, created)
+    return (contact, created);
 }
 
 pub fn write_physics_3d_rotational_ccd_envelope(
@@ -1060,5 +1062,5 @@ pub fn write_physics_3d_rotational_ccd_envelope(
     };
     out.target_increment_met =
         angular_travel == 0.0 || max_angular_increment <= CCD_ROTATION_INCREMENT;
-    true
+    return true;
 }

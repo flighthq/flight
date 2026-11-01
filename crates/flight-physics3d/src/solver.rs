@@ -603,14 +603,14 @@ pub fn warm_start_physics_3d_contacts(world: &mut Physics3DWorld) {
 }
 
 fn world_inertia(body: &RigidBody3D) -> [f32; 6] {
-    [
+    return [
         body.inverse_inertia_world_xx,
         body.inverse_inertia_world_yy,
         body.inverse_inertia_world_zz,
         body.inverse_inertia_world_xy,
         body.inverse_inertia_world_xz,
         body.inverse_inertia_world_yz,
-    ]
+    ];
 }
 
 fn write_friction_basis(nx: f32, ny: f32, nz: f32, out: &mut Physics3DContactConstraint) {

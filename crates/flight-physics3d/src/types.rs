@@ -778,14 +778,14 @@ fn default_collider_shape() -> CollisionColliderShape3D {
 
 impl Default for Physics3DDebugGeometryOptions {
     fn default() -> Self {
-        Self {
+        return Self {
             draw_centers_of_mass: true,
             draw_colliders: true,
             draw_contacts: true,
             draw_joints: true,
             center_of_mass_radius: 0.08,
             contact_normal_length: 0.5,
-        }
+        };
     }
 }
 

@@ -258,7 +258,7 @@ pub fn update_physics_3d_sleep(world: &mut Physics3DWorld, dt: f32) {
         .iter()
         .filter_map(|c| {
             let c = c.read().unwrap();
-            (c.enabled && !c.sensor).then_some((c.body_a, c.body_b))
+            return (c.enabled && !c.sensor).then_some((c.body_a, c.body_b));
         })
         .collect();
     for (a, b) in contact_pairs {
@@ -271,7 +271,8 @@ pub fn update_physics_3d_sleep(world: &mut Physics3DWorld, dt: f32) {
             let joint = joint.read().unwrap();
             let f = joint.fields();
             let solver = world.joint_solvers.get(&f.kind)?;
-            (!f.broken && solver.uses_body_a != Some(false)).then_some((f.body_a, f.body_b))
+            return (!f.broken && solver.uses_body_a != Some(false))
+                .then_some((f.body_a, f.body_b));
         })
         .collect();
     for (a, b) in joint_pairs {

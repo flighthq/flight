@@ -34,5 +34,5 @@ pub fn evaluate_physics_3d_joint_breakage(world: &mut Physics3DWorld, dt: f32) {
 }
 
 pub fn is_physics_3d_joint_breakable(joint: &dyn Physics3DJoint) -> bool {
-    joint.fields().break_force.is_finite() || joint.fields().break_torque.is_finite()
+    return joint.fields().break_force.is_finite() || joint.fields().break_torque.is_finite();
 }

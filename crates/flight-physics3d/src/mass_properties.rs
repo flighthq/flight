@@ -144,10 +144,15 @@ pub fn compute_physics_3d_collider_mass_data(
             }
             CollisionShape3D::Capsule(s) => {
                 let axis = [s.x1 - s.x0, s.y1 - s.y0, s.z1 - s.z0];
-                let length = length(axis);
-                compute_physics_3d_capsule_mass_data(s.radius, length / 2.0, density, out);
-                if length > 0.0 {
-                    align_axis_to_y(out, axis[0] / length, axis[1] / length, axis[2] / length);
+                let axis_length = length(axis);
+                compute_physics_3d_capsule_mass_data(s.radius, axis_length / 2.0, density, out);
+                if axis_length > 0.0 {
+                    align_axis_to_y(
+                        out,
+                        axis[0] / axis_length,
+                        axis[1] / axis_length,
+                        axis[2] / axis_length,
+                    );
                 }
                 [out.center_x, out.center_y, out.center_z] = [
                     (s.x0 + s.x1) / 2.0,
@@ -157,10 +162,15 @@ pub fn compute_physics_3d_collider_mass_data(
             }
             CollisionShape3D::Cylinder(s) => {
                 let axis = [s.x1 - s.x0, s.y1 - s.y0, s.z1 - s.z0];
-                let length = length(axis);
-                compute_physics_3d_cylinder_mass_data(s.radius, length / 2.0, density, out);
-                if length > 0.0 {
-                    align_axis_to_y(out, axis[0] / length, axis[1] / length, axis[2] / length);
+                let axis_length = length(axis);
+                compute_physics_3d_cylinder_mass_data(s.radius, axis_length / 2.0, density, out);
+                if axis_length > 0.0 {
+                    align_axis_to_y(
+                        out,
+                        axis[0] / axis_length,
+                        axis[1] / axis_length,
+                        axis[2] / axis_length,
+                    );
                 }
                 [out.center_x, out.center_y, out.center_z] = [
                     (s.x0 + s.x1) / 2.0,
@@ -170,10 +180,15 @@ pub fn compute_physics_3d_collider_mass_data(
             }
             CollisionShape3D::Cone(s) => {
                 let axis = [s.x1 - s.x0, s.y1 - s.y0, s.z1 - s.z0];
-                let length = length(axis);
-                compute_physics_3d_cone_mass_data(s.radius, length, density, out);
-                if length > 0.0 {
-                    align_axis_to_y(out, axis[0] / length, axis[1] / length, axis[2] / length);
+                let axis_length = length(axis);
+                compute_physics_3d_cone_mass_data(s.radius, axis_length, density, out);
+                if axis_length > 0.0 {
+                    align_axis_to_y(
+                        out,
+                        axis[0] / axis_length,
+                        axis[1] / axis_length,
+                        axis[2] / axis_length,
+                    );
                 }
                 out.center_x = s.x0 + axis[0] * 0.75;
                 out.center_y = s.y0 + axis[1] * 0.75;
@@ -282,18 +297,18 @@ pub fn compute_physics_3d_sphere_mass_data(radius: f32, density: f32, out: &mut 
 }
 
 fn length(v: [f32; 3]) -> f32 {
-    (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt()
+    return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
 }
 
 fn read_tensor(d: &Physics3DMassData) -> [f32; 6] {
-    [
+    return [
         d.inertia_xx,
         d.inertia_yy,
         d.inertia_zz,
         d.inertia_xy,
         d.inertia_xz,
         d.inertia_yz,
-    ]
+    ];
 }
 
 pub fn set_rigid_body_3d_mass_data(body: &mut RigidBody3D, data: &Physics3DMassData) {

@@ -37,12 +37,12 @@ pub fn explain_physics_3d_collision(
 
 fn shape_kind(shape: &CollisionShape3D) -> &'static str {
     match shape {
-        CollisionShape3D::Sphere(_) => "sphere",
-        CollisionShape3D::Aabb(_) => "aabb",
-        CollisionShape3D::Box(_) => "box",
-        CollisionShape3D::Capsule(_) => "capsule",
-        CollisionShape3D::Cylinder(_) => "cylinder",
-        CollisionShape3D::Cone(_) => "cone",
-        CollisionShape3D::Convex(_) => "convex",
+        CollisionShape3D::Sphere(_) => return "sphere",
+        CollisionShape3D::Aabb(_) => return "aabb",
+        CollisionShape3D::Box(_) => return "box",
+        CollisionShape3D::Capsule(_) => return "capsule",
+        CollisionShape3D::Cylinder(_) => return "cylinder",
+        CollisionShape3D::Cone(_) => return "cone",
+        CollisionShape3D::Convex(_) => return "convex",
     }
 }

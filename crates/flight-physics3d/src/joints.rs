@@ -105,7 +105,7 @@ const DISTANCE_UPPER_IMPULSE: usize = DISTANCE_LOWER_IMPULSE + 1;
 const DISTANCE_LENGTH: usize = DISTANCE_UPPER_IMPULSE + 1;
 
 fn cone_twist_solver() -> Physics3DJointSolver {
-    Physics3DJointSolver {
+    return Physics3DJointSolver {
         prepare: Arc::new(|world, joint, dt| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
                 clear_joint_solve(&mut *joint.write().unwrap());
@@ -297,7 +297,7 @@ fn cone_twist_solver() -> Physics3DJointSolver {
                     (cone.lower_twist_impulse - cone.upper_twist_impulse) * inverse_dt,
                 );
             }
-            true
+            return true;
         })),
         warm_start: Some(Arc::new(|world, joint| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
@@ -358,11 +358,11 @@ fn cone_twist_solver() -> Physics3DJointSolver {
                 cone.upper_twist_impulse = 0.0;
             }
         })),
-    }
+    };
 }
 
 fn distance_solver() -> Physics3DJointSolver {
-    Physics3DJointSolver {
+    return Physics3DJointSolver {
         prepare: Arc::new(|world, joint, dt| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
                 clear_joint_solve(&mut *joint.write().unwrap());
@@ -506,7 +506,7 @@ fn distance_solver() -> Physics3DJointSolver {
                 DISTANCE_ROW,
                 impulse * inverse_dt,
             );
-            true
+            return true;
         })),
         warm_start: Some(Arc::new(|world, joint| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
@@ -551,17 +551,17 @@ fn distance_solver() -> Physics3DJointSolver {
                 distance.upper_limit_impulse = 0.0;
             }
         })),
-    }
+    };
 }
 
 fn dot3(a: &[f32], a_offset: usize, b: &[f32], b_offset: usize) -> f32 {
-    a[a_offset] * b[b_offset]
+    return a[a_offset] * b[b_offset]
         + a[a_offset + 1] * b[b_offset + 1]
-        + a[a_offset + 2] * b[b_offset + 2]
+        + a[a_offset + 2] * b[b_offset + 2];
 }
 
 fn generic_6_dof_solver() -> Physics3DJointSolver {
-    Physics3DJointSolver {
+    return Physics3DJointSolver {
         prepare: Arc::new(|world, joint, dt| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
                 clear_joint_solve(&mut *joint.write().unwrap());
@@ -757,7 +757,7 @@ fn generic_6_dof_solver() -> Physics3DJointSolver {
                     impulse * inverse_dt,
                 );
             }
-            true
+            return true;
         })),
         warm_start: Some(Arc::new(|world, joint| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
@@ -814,7 +814,7 @@ fn generic_6_dof_solver() -> Physics3DJointSolver {
                 dof.impulse5 = 0.0;
             }
         })),
-    }
+    };
 }
 
 fn get_cone_swing_limit(
@@ -833,7 +833,7 @@ fn get_cone_swing_limit(
     }
     let unit_y = toward_y / tilt / cone.swing_limit_y;
     let unit_z = toward_z / tilt / cone.swing_limit_z;
-    1.0 / (unit_y * unit_y + unit_z * unit_z).sqrt()
+    return 1.0 / (unit_y * unit_y + unit_z * unit_z).sqrt();
 }
 
 fn get_signed_axis_angle(basis_a: &[f32; 9], basis_b: &[f32; 9]) -> f32 {
@@ -841,11 +841,11 @@ fn get_signed_axis_angle(basis_a: &[f32; 9], basis_b: &[f32; 9]) -> f32 {
     let cross_y = basis_a[5] * basis_b[3] - basis_a[3] * basis_b[5];
     let cross_z = basis_a[3] * basis_b[4] - basis_a[4] * basis_b[3];
     let sine = cross_x * basis_a[0] + cross_y * basis_a[1] + cross_z * basis_a[2];
-    sine.atan2(dot3(basis_a, 3, basis_b, 3))
+    return sine.atan2(dot3(basis_a, 3, basis_b, 3));
 }
 
 fn hinge_solver() -> Physics3DJointSolver {
-    Physics3DJointSolver {
+    return Physics3DJointSolver {
         prepare: Arc::new(|world, joint, dt| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
                 clear_joint_solve(&mut *joint.write().unwrap());
@@ -1054,7 +1054,7 @@ fn hinge_solver() -> Physics3DJointSolver {
                 HINGE_AXIS_ROW,
                 axial * inverse_dt,
             );
-            true
+            return true;
         })),
         warm_start: Some(Arc::new(|world, joint| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
@@ -1113,7 +1113,7 @@ fn hinge_solver() -> Physics3DJointSolver {
                 hinge.upper_limit_impulse = 0.0;
             }
         })),
-    }
+    };
 }
 
 fn joint_bodies(
@@ -1124,27 +1124,28 @@ fn joint_bodies(
     let f = value.fields();
     let body_a = world.body_by_index.get(&f.body_a)?.clone();
     let body_b = world.body_by_index.get(&f.body_b)?.clone();
-    (!Arc::ptr_eq(&body_a, &body_b)).then_some((body_a, body_b))
+    return (!Arc::ptr_eq(&body_a, &body_b)).then_some((body_a, body_b));
 }
 
 fn joint_frames(joint: &dyn Physics3DJoint) -> Option<Physics3DJointFrames> {
     let any = joint.as_any();
     if let Some(v) = any.downcast_ref::<Physics3DFixedJoint>() {
-        Some(v.frames)
+        return Some(v.frames);
     } else if let Some(v) = any.downcast_ref::<Physics3DHingeJoint>() {
-        Some(v.frames)
+        return Some(v.frames);
     } else if let Some(v) = any.downcast_ref::<Physics3DSliderJoint>() {
-        Some(v.frames)
+        return Some(v.frames);
     } else if let Some(v) = any.downcast_ref::<Physics3DConeTwistJoint>() {
-        Some(v.frames)
+        return Some(v.frames);
     } else {
-        any.downcast_ref::<Physics3DGeneric6DofJoint>()
-            .map(|v| v.frames)
+        return any
+            .downcast_ref::<Physics3DGeneric6DofJoint>()
+            .map(|v| v.frames);
     }
 }
 
 fn point_solver(lock_rotation: bool) -> Physics3DJointSolver {
-    Physics3DJointSolver {
+    return Physics3DJointSolver {
         prepare: Arc::new(move |world, joint, dt| {
             let (body_a, body_b) = match joint_bodies(world, joint) {
                 Some(pair) => pair,
@@ -1225,7 +1226,7 @@ fn point_solver(lock_rotation: bool) -> Physics3DJointSolver {
                 out.torque_y = f.impulse4 * inverse_dt;
                 out.torque_z = f.impulse5 * inverse_dt;
             }
-            true
+            return true;
         })),
         warm_start: Some(Arc::new(move |world, joint| {
             let Some((body_a, body_b)) = joint_bodies(world, joint) else {
@@ -1251,11 +1252,11 @@ fn point_solver(lock_rotation: bool) -> Physics3DJointSolver {
                 f.impulse5 = 0.0;
             }
         })),
-    }
+    };
 }
 
 fn read_dof_bounds(dof: &Physics3DGeneric6DofJoint) -> ([f32; 6], [f32; 6]) {
-    (
+    return (
         [
             dof.lower_linear_x,
             dof.lower_linear_y,
@@ -1272,11 +1273,11 @@ fn read_dof_bounds(dof: &Physics3DGeneric6DofJoint) -> ([f32; 6], [f32; 6]) {
             dof.upper_angular_y,
             dof.upper_angular_z,
         ],
-    )
+    );
 }
 
 fn slider_solver() -> Physics3DJointSolver {
-    Physics3DJointSolver {
+    return Physics3DJointSolver {
         prepare: Arc::new(|world, joint, dt| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
                 clear_joint_solve(&mut *joint.write().unwrap());
@@ -1494,7 +1495,7 @@ fn slider_solver() -> Physics3DJointSolver {
             out.torque_x = slider.impulse3 * inverse_dt;
             out.torque_y = slider.impulse4 * inverse_dt;
             out.torque_z = slider.impulse5 * inverse_dt;
-            true
+            return true;
         })),
         warm_start: Some(Arc::new(|world, joint| {
             let Some((ar, br)) = joint_bodies(world, joint) else {
@@ -1553,7 +1554,7 @@ fn slider_solver() -> Physics3DJointSolver {
                 slider.upper_limit_impulse = 0.0;
             }
         })),
-    }
+    };
 }
 
 fn swap_frame_joint(joint: &Physics3DJointRef) -> bool {
@@ -1562,7 +1563,7 @@ fn swap_frame_joint(joint: &Physics3DJointRef) -> bool {
     if let Some(v) = any.downcast_mut::<Physics3DFixedJoint>() {
         swap_physics_3d_joint_frames(&mut v.frames);
     }
-    true
+    return true;
 }
 
 fn swap_hinge_joint(joint: &Physics3DJointRef) -> bool {
@@ -1580,7 +1581,7 @@ fn swap_hinge_joint(joint: &Physics3DJointRef) -> bool {
         &mut hinge.lower_limit_impulse,
         &mut hinge.upper_limit_impulse,
     );
-    true
+    return true;
 }
 
 fn swap_slider_joint(joint: &Physics3DJointRef) -> bool {
@@ -1598,7 +1599,7 @@ fn swap_slider_joint(joint: &Physics3DJointRef) -> bool {
         &mut slider.lower_limit_impulse,
         &mut slider.upper_limit_impulse,
     );
-    true
+    return true;
 }
 
 fn write_limit_row_parameters(

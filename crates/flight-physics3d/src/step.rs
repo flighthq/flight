@@ -232,12 +232,12 @@ fn step_validated_physics_3d(
     if world.config.continuous_collision && has_active_physics_3d_bullet(world) {
         world.contacts.sort_by_key(|contact| {
             let contact = contact.read().unwrap();
-            (
+            return (
                 contact.body_a,
                 contact.body_b,
                 contact.collider_a,
                 contact.collider_b,
-            )
+            );
         });
     }
     world.previous_timestep = substep_dt;

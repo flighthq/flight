@@ -10,85 +10,101 @@ use flight_spatial::SpatialAabb3D;
 use crate::*;
 
 pub fn create_physics_3d_query_filter() -> Physics3DQueryFilter {
-    Physics3DQueryFilter {
+    return Physics3DQueryFilter {
         category_bits: u32::MAX,
         mask_bits: u32::MAX,
-        ..Physics3DQueryFilter::default()
-    }
+        include_sensors: true,
+        include_dynamic: true,
+        include_kinematic: true,
+        include_static: true,
+    };
 }
 
 pub fn create_physics_3d_query_result() -> Physics3DQueryResult {
     let mut out: Physics3DQueryResult = allocate_entity();
     initialize_physics_3d_query_result(&mut out);
-    out
+    return out;
 }
 
 pub fn create_physics_3d_ray_result() -> Physics3DRayResult {
     let mut out: Physics3DRayResult = allocate_entity();
     initialize_physics_3d_ray_result(&mut out);
-    out
+    return out;
 }
 
 pub fn create_physics_3d_shape_cast_result() -> Physics3DShapeCastResult {
     let mut out: Physics3DShapeCastResult = allocate_entity();
     initialize_physics_3d_shape_cast_result(&mut out);
-    out
+    return out;
 }
 
 pub fn initialize_physics_3d_query_result(out: &mut Physics3DQueryResult) {
-    out.hits.clear();
+    let out_hits: &mut Vec<Physics3DQueryHit> = &mut out.hits;
+    out_hits.clear();
     out.hit_count = 0;
 }
 
 pub fn initialize_physics_3d_ray_result(out: &mut Physics3DRayResult) {
-    out.hits.clear();
+    let out_hits: &mut Vec<Physics3DRayHit> = &mut out.hits;
+    out_hits.clear();
     out.hit_count = 0;
 }
 
 pub fn initialize_physics_3d_shape_cast_result(out: &mut Physics3DShapeCastResult) {
-    *out = Physics3DShapeCastResult::default();
+    out.body = None;
+    out.collider = None;
     out.collider_index = -1;
+    out.fraction = 0.0;
+    out.hit = false;
+    out.normal_x = 0.0;
+    out.normal_y = 0.0;
+    out.normal_z = 0.0;
+    out.x = 0.0;
+    out.y = 0.0;
+    out.z = 0.0;
 }
 
 fn bounds_overlap(a: &SpatialAabb3D, b: &SpatialAabb3D) -> bool {
-    a.min_x <= b.max_x
+    return a.min_x <= b.max_x
         && a.max_x >= b.min_x
         && a.min_y <= b.max_y
         && a.max_y >= b.min_y
         && a.min_z <= b.max_z
-        && a.max_z >= b.min_z
+        && a.max_z >= b.min_z;
 }
 
 fn compare_ray_hits(a: &Physics3DRayHit, b: &Physics3DRayHit) -> std::cmp::Ordering {
-    a.fraction
+    return a
+        .fraction
         .total_cmp(&b.fraction)
         .then_with(|| {
-            a.body
+            return a
+                .body
                 .read()
                 .unwrap()
                 .index
-                .cmp(&b.body.read().unwrap().index)
+                .cmp(&b.body.read().unwrap().index);
         })
-        .then(a.collider_index.cmp(&b.collider_index))
+        .then(a.collider_index.cmp(&b.collider_index));
 }
 
 fn passes_body_filter(body: &RigidBody3D, filter: Option<&Physics3DQueryFilter>) -> bool {
-    filter.is_none_or(|filter| match body.body_type {
-        Physics3DBodyType::Dynamic => filter.include_dynamic,
-        Physics3DBodyType::Kinematic => filter.include_kinematic,
-        Physics3DBodyType::Static => filter.include_static,
-    })
+    return filter.is_none_or(|filter| match body.body_type {
+        Physics3DBodyType::Dynamic => return filter.include_dynamic,
+        Physics3DBodyType::Kinematic => return filter.include_kinematic,
+        Physics3DBodyType::Static => return filter.include_static,
+    });
 }
 
 fn passes_collider_filter(
     collider: &Physics3DCollider,
     filter: Option<&Physics3DQueryFilter>,
 ) -> bool {
-    filter.is_none_or(|filter| {
-        (filter.include_sensors || !collider.sensor)
+    return filter.is_none_or(|filter| {
+        return (filter.include_sensors || !collider.sensor)
             && collider.filter.category_bits & filter.category_bits != 0
-            && collider.filter.mask_bits & filter.mask_bits != 0
-    })
+            && collider.filter.mask_bits & filter.mask_bits != 0;
+    });
 }
 
 pub fn query_physics_3d_point(
@@ -396,7 +412,7 @@ fn query_ray_internal(
 }
 
 fn valid_region(region: &SpatialAabb3D) -> bool {
-    [
+    return [
         region.min_x,
         region.min_y,
         region.min_z,
@@ -408,7 +424,7 @@ fn valid_region(region: &SpatialAabb3D) -> bool {
     .all(|value| value.is_finite())
         && region.min_x <= region.max_x
         && region.min_y <= region.max_y
-        && region.min_z <= region.max_z
+        && region.min_z <= region.max_z;
 }
 
 fn write_query_hit(

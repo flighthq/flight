@@ -8,7 +8,7 @@ use flight_collision::{
 use crate::*;
 
 fn all_finite(values: &[f32]) -> bool {
-    values.iter().all(|value| value.is_finite())
+    return values.iter().all(|value| value.is_finite());
 }
 
 fn built_in_joint_fields_are_finite(joint: &dyn Physics3DJoint) -> bool {
@@ -92,19 +92,21 @@ fn built_in_joint_fields_are_finite(joint: &dyn Physics3DJoint) -> bool {
             && all_finite(&joint.lower_limit_impulses)
             && all_finite(&joint.upper_limit_impulses);
     }
-    true
+    return true;
 }
 
 fn collider_shape_valid(shape: &CollisionColliderShape3D) -> bool {
     match shape {
         CollisionColliderShape3D::BuiltIn(shape) => {
-            get_collision_shape_validation_status3d(shape).is_none()
+            return get_collision_shape_validation_status3d(shape).is_none();
         }
         CollisionColliderShape3D::TriangleMesh(mesh) => {
-            get_collision_triangle_mesh_validation_status3d(&mesh.read().unwrap()).is_none()
+            return get_collision_triangle_mesh_validation_status3d(&mesh.read().unwrap())
+                .is_none();
         }
         CollisionColliderShape3D::Heightfield(heightfield) => {
-            get_collision_heightfield_validation_status3d(&heightfield.read().unwrap()).is_none()
+            return get_collision_heightfield_validation_status3d(&heightfield.read().unwrap())
+                .is_none();
         }
     }
 }
@@ -114,20 +116,20 @@ fn collider_world_shape_compatible(collider: &Physics3DCollider) -> bool {
         (
             CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(_)),
             CollisionColliderShape3D::BuiltIn(CollisionShape3D::Box(_)),
-        ) => true,
+        ) => return true,
         (CollisionColliderShape3D::BuiltIn(a), CollisionColliderShape3D::BuiltIn(b)) => {
-            std::mem::discriminant(a) == std::mem::discriminant(b)
+            return std::mem::discriminant(a) == std::mem::discriminant(b);
         }
         (CollisionColliderShape3D::TriangleMesh(_), CollisionColliderShape3D::TriangleMesh(_))
         | (CollisionColliderShape3D::Heightfield(_), CollisionColliderShape3D::Heightfield(_)) => {
-            true
+            return true;
         }
-        _ => false,
+        _ => return false,
     }
 }
 
 fn frames_are_finite(frames: &Physics3DJointFrames) -> bool {
-    all_finite(&[
+    return all_finite(&[
         frames.local_rotation_ax,
         frames.local_rotation_ay,
         frames.local_rotation_az,
@@ -136,43 +138,44 @@ fn frames_are_finite(frames: &Physics3DJointFrames) -> bool {
         frames.local_rotation_by,
         frames.local_rotation_bz,
         frames.local_rotation_bw,
-    ])
+    ]);
 }
 
 pub fn is_physics_3d_body_state_valid(world: &Physics3DWorld) -> bool {
     if world.next_body_index < 0 {
         return false;
     }
-    world.bodies.iter().all(|body_ref| {
+    return world.bodies.iter().all(|body_ref| {
         let body = body_ref.read().unwrap();
-        is_rigid_body_3d_state_valid(&body)
+        return is_rigid_body_3d_state_valid(&body)
             && (body.body_type == Physics3DBodyType::Static
                 || !body.colliders.iter().any(|collider| {
-                    matches!(
+                    return matches!(
                         collider.read().unwrap().local,
                         CollisionColliderShape3D::TriangleMesh(_)
                             | CollisionColliderShape3D::Heightfield(_)
-                    )
+                    );
                 }))
             && world
                 .body_by_index
                 .get(&body.index)
-                .is_some_and(|mapped| Arc::ptr_eq(mapped, body_ref))
-    })
+                .is_some_and(|mapped| Arc::ptr_eq(mapped, body_ref));
+    });
 }
 
 pub fn is_physics_3d_collider_state_valid(world: &Physics3DWorld) -> bool {
-    world.bodies.iter().all(|body| {
-        body.read()
+    return world.bodies.iter().all(|body| {
+        return body
+            .read()
             .unwrap()
             .colliders
             .iter()
-            .all(|collider| is_physics_3d_collider_valid(&collider.read().unwrap()))
-    })
+            .all(|collider| is_physics_3d_collider_valid(&collider.read().unwrap()));
+    });
 }
 
 fn is_physics_3d_collider_valid(collider: &Physics3DCollider) -> bool {
-    collider_shape_valid(&collider.local)
+    return collider_shape_valid(&collider.local)
         && collider_shape_valid(&collider.world)
         && collider_world_shape_compatible(collider)
         && collider.material.density.is_finite()
@@ -180,14 +183,14 @@ fn is_physics_3d_collider_valid(collider: &Physics3DCollider) -> bool {
         && collider.material.friction.is_finite()
         && collider.material.friction >= 0.0
         && collider.material.restitution.is_finite()
-        && collider.material.restitution >= 0.0
+        && collider.material.restitution >= 0.0;
 }
 
 pub fn is_physics_3d_contact_state_valid(world: &Physics3DWorld) -> bool {
-    world
+    return world
         .contacts
         .iter()
-        .all(|contact| is_physics_3d_contact_valid(&contact.read().unwrap()))
+        .all(|contact| is_physics_3d_contact_valid(&contact.read().unwrap()));
 }
 
 pub fn is_physics_3d_contact_valid(contact: &Physics3DContact) -> bool {
@@ -200,8 +203,8 @@ pub fn is_physics_3d_contact_valid(contact: &Physics3DContact) -> bool {
     {
         return false;
     }
-    contact.points[..contact.point_count].iter().all(|point| {
-        all_finite(&[
+    return contact.points[..contact.point_count].iter().all(|point| {
+        return all_finite(&[
             point.x,
             point.y,
             point.z,
@@ -212,24 +215,24 @@ pub fn is_physics_3d_contact_valid(contact: &Physics3DContact) -> bool {
             point.r_bx,
             point.r_by,
             point.r_bz,
-        ])
-    })
+        ]);
+    });
 }
 
 pub fn is_physics_3d_gravity_valid(world: &Physics3DWorld) -> bool {
-    all_finite(&[world.gravity_x, world.gravity_y, world.gravity_z])
+    return all_finite(&[world.gravity_x, world.gravity_y, world.gravity_z]);
 }
 
 pub fn is_physics_3d_joint_state_valid(world: &Physics3DWorld) -> bool {
-    world.joints.iter().all(|joint| {
+    return world.joints.iter().all(|joint| {
         let joint = joint.read().unwrap();
-        is_physics_3d_joint_valid(&*joint)
-    })
+        return is_physics_3d_joint_valid(&*joint);
+    });
 }
 
 fn is_physics_3d_joint_valid(joint: &dyn Physics3DJoint) -> bool {
     let f = joint.fields();
-    !f.kind.is_empty()
+    return !f.kind.is_empty()
         && all_finite(&[
             f.local_anchor_ax,
             f.local_anchor_ay,
@@ -251,16 +254,16 @@ fn is_physics_3d_joint_valid(joint: &dyn Physics3DJoint) -> bool {
             f.r_bz,
         ])
         && joint.kind_fields_are_finite()
-        && built_in_joint_fields_are_finite(joint)
+        && built_in_joint_fields_are_finite(joint);
 }
 
 pub fn is_physics_3d_position_iterations_valid(_config: &Physics3DSolverConfig) -> bool {
-    true
+    return true;
 }
 
 pub fn is_physics_3d_solver_config_valid(config: &Physics3DSolverConfig) -> bool {
     let sequential = &config.sequential_impulse;
-    all_finite(&[
+    return all_finite(&[
         config.sleep_linear_threshold,
         config.sleep_angular_threshold,
         config.time_to_sleep,
@@ -272,19 +275,19 @@ pub fn is_physics_3d_solver_config_valid(config: &Physics3DSolverConfig) -> bool
         && config.time_to_sleep >= 0.0
         && sequential.penetration_slop >= 0.0
         && (0.0..=1.0).contains(&sequential.position_correction)
-        && sequential.restitution_threshold >= 0.0
+        && sequential.restitution_threshold >= 0.0;
 }
 
 pub fn is_physics_3d_substeps_valid(config: &Physics3DSolverConfig) -> bool {
-    config.substeps >= 1
+    return config.substeps >= 1;
 }
 
 pub fn is_physics_3d_timestep_valid(dt: f32) -> bool {
-    dt.is_finite() && dt > 0.0
+    return dt.is_finite() && dt > 0.0;
 }
 
 pub fn is_physics_3d_velocity_iterations_valid(_config: &Physics3DSolverConfig) -> bool {
-    true
+    return true;
 }
 
 fn is_rigid_body_3d_state_valid(body: &RigidBody3D) -> bool {
@@ -310,7 +313,7 @@ fn is_rigid_body_3d_state_valid(body: &RigidBody3D) -> bool {
     if !orientation_length_squared.is_finite() || (orientation_length_squared - 1.0).abs() > 1e-6 {
         return false;
     }
-    all_finite(&[
+    return all_finite(&[
         body.x,
         body.y,
         body.z,
@@ -351,5 +354,5 @@ fn is_rigid_body_3d_state_valid(body: &RigidBody3D) -> bool {
         body.inverse_inertia_world_xy,
         body.inverse_inertia_world_xz,
         body.inverse_inertia_world_yz,
-    ])
+    ]);
 }

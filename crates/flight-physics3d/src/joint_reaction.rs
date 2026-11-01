@@ -6,7 +6,7 @@ use crate::*;
 pub fn create_physics_3d_joint_reaction() -> Physics3DJointReaction {
     let mut out: Physics3DJointReaction = allocate_entity();
     initialize_physics_3d_joint_reaction(&mut out);
-    out
+    return out;
 }
 
 pub fn initialize_physics_3d_joint_reaction(out: &mut Physics3DJointReaction) {
@@ -48,17 +48,17 @@ pub fn clear_physics_3d_joint_reaction(out: &mut Physics3DJointReaction) {
 }
 
 pub fn get_physics_3d_joint_reaction_force(reaction: &Physics3DJointReaction) -> f32 {
-    (reaction.force_x * reaction.force_x
+    return (reaction.force_x * reaction.force_x
         + reaction.force_y * reaction.force_y
         + reaction.force_z * reaction.force_z)
-        .sqrt()
+        .sqrt();
 }
 
 pub fn get_physics_3d_joint_reaction_torque(reaction: &Physics3DJointReaction) -> f32 {
-    (reaction.torque_x * reaction.torque_x
+    return (reaction.torque_x * reaction.torque_x
         + reaction.torque_y * reaction.torque_y
         + reaction.torque_z * reaction.torque_z)
-        .sqrt()
+        .sqrt();
 }
 
 pub fn write_physics_3d_joint_reaction(
@@ -79,5 +79,5 @@ pub fn write_physics_3d_joint_reaction(
     else {
         return false;
     };
-    write(joint, 1.0 / dt, out)
+    return write(joint, 1.0 / dt, out);
 }

@@ -51,10 +51,10 @@ fn merge_contact(
         .iter()
         .find(|contact| {
             let c = contact.read().unwrap();
-            c.body_a == body_a
+            return c.body_a == body_a
                 && c.body_b == body_b
                 && c.collider_a == collider_a
-                && c.collider_b == collider_b
+                && c.collider_b == collider_b;
         })
         .cloned();
     let is_existing = existing.is_some();
@@ -69,7 +69,7 @@ fn merge_contact(
         );
         world.contacts.push(c.clone());
         world.events.began.push(c.clone());
-        c
+        return c;
     });
     let center_a = world
         .body_by_index
@@ -78,7 +78,7 @@ fn merge_contact(
             let body = body.read().unwrap();
             let mut center = [0.0; 3];
             write_rigid_body_3d_world_center(&body, &mut center);
-            center
+            return center;
         })
         .unwrap_or([0.0; 3]);
     let center_b = world
@@ -88,7 +88,7 @@ fn merge_contact(
             let body = body.read().unwrap();
             let mut center = [0.0; 3];
             write_rigid_body_3d_world_center(&body, &mut center);
-            center
+            return center;
         })
         .unwrap_or([0.0; 3]);
     let mut contact = contact.write().unwrap();
@@ -219,12 +219,12 @@ fn rebuild_physics_3d_contacts(
     world.contacts.sort_by(|a, b| {
         let a = a.read().unwrap();
         let b = b.read().unwrap();
-        (a.body_a, a.body_b, a.collider_a, a.collider_b).cmp(&(
+        return (a.body_a, a.body_b, a.collider_a, a.collider_b).cmp(&(
             b.body_a,
             b.body_b,
             b.collider_a,
             b.collider_b,
-        ))
+        ));
     });
 }
 

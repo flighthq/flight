@@ -341,13 +341,13 @@ mod sugar_tests {
 
 impl Physics3DBallAndSocketJoint {
     pub fn new() -> Ref<Physics3DBallAndSocketJoint> {
-        create_physics_3d_ball_and_socket_joint()
+        return create_physics_3d_ball_and_socket_joint();
     }
 }
 
 impl Physics3DCollider {
     pub fn new(local: &CollisionColliderShape3D) -> Physics3DColliderRef {
-        create_physics_3d_collider(local)
+        return create_physics_3d_collider(local);
     }
 
     pub fn update_world_shape(&mut self, body: &RigidBody3D) {
@@ -357,19 +357,19 @@ impl Physics3DCollider {
 
 impl Physics3DConeTwistJoint {
     pub fn new() -> Ref<Physics3DConeTwistJoint> {
-        create_physics_3d_cone_twist_joint()
+        return create_physics_3d_cone_twist_joint();
     }
 }
 
 impl Physics3DContact {
     pub fn is_valid(&self) -> bool {
-        is_physics_3d_contact_valid(self)
+        return is_physics_3d_contact_valid(self);
     }
 }
 
 impl Physics3DDebugGeometry {
     pub fn new() -> Physics3DDebugGeometry {
-        create_physics_3d_debug_geometry()
+        return create_physics_3d_debug_geometry();
     }
 
     pub fn write(
@@ -383,25 +383,25 @@ impl Physics3DDebugGeometry {
 
 impl Physics3DDistanceJoint {
     pub fn new() -> Ref<Physics3DDistanceJoint> {
-        create_physics_3d_distance_joint()
+        return create_physics_3d_distance_joint();
     }
 }
 
 impl Physics3DFixedJoint {
     pub fn new() -> Ref<Physics3DFixedJoint> {
-        create_physics_3d_fixed_joint()
+        return create_physics_3d_fixed_joint();
     }
 }
 
 impl Physics3DGeneric6DofJoint {
     pub fn new() -> Ref<Physics3DGeneric6DofJoint> {
-        create_physics_3d_generic_6_dof_joint()
+        return create_physics_3d_generic_6_dof_joint();
     }
 }
 
 impl Physics3DGuardState {
     pub fn are_enabled(&self) -> bool {
-        are_physics_3d_guards_enabled(self)
+        return are_physics_3d_guards_enabled(self);
     }
 
     pub fn disable(&mut self) {
@@ -415,13 +415,13 @@ impl Physics3DGuardState {
 
 impl Physics3DHingeJoint {
     pub fn new() -> Ref<Physics3DHingeJoint> {
-        create_physics_3d_hinge_joint()
+        return create_physics_3d_hinge_joint();
     }
 }
 
 impl Physics3DJointReaction {
     pub fn new() -> Physics3DJointReaction {
-        create_physics_3d_joint_reaction()
+        return create_physics_3d_joint_reaction();
     }
 
     pub fn clear(&mut self) {
@@ -429,21 +429,21 @@ impl Physics3DJointReaction {
     }
 
     pub fn force(&self) -> f32 {
-        get_physics_3d_joint_reaction_force(self)
+        return get_physics_3d_joint_reaction_force(self);
     }
 
     pub fn torque(&self) -> f32 {
-        get_physics_3d_joint_reaction_torque(self)
+        return get_physics_3d_joint_reaction_torque(self);
     }
 
     pub fn write(&mut self, world: &Physics3DWorld, joint: &Physics3DJointRef, dt: f32) -> bool {
-        write_physics_3d_joint_reaction(self, world, joint, dt)
+        return write_physics_3d_joint_reaction(self, world, joint, dt);
     }
 }
 
 impl Physics3DMassData {
     pub fn new() -> Physics3DMassData {
-        create_physics_3d_mass_data()
+        return create_physics_3d_mass_data();
     }
 
     pub fn combine(&mut self, addend: &Physics3DMassData) {
@@ -457,13 +457,13 @@ impl Physics3DMassData {
 
 impl Physics3DQueryFilter {
     pub fn new() -> Physics3DQueryFilter {
-        create_physics_3d_query_filter()
+        return create_physics_3d_query_filter();
     }
 }
 
 impl Physics3DQueryResult {
     pub fn new() -> Physics3DQueryResult {
-        create_physics_3d_query_result()
+        return create_physics_3d_query_result();
     }
 
     pub fn query_point(
@@ -489,7 +489,7 @@ impl Physics3DQueryResult {
 
 impl Physics3DRayResult {
     pub fn new() -> Physics3DRayResult {
-        create_physics_3d_ray_result()
+        return create_physics_3d_ray_result();
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -549,7 +549,7 @@ impl Physics3DRayResult {
 
 impl Physics3DShapeCastResult {
     pub fn new() -> Physics3DShapeCastResult {
-        create_physics_3d_shape_cast_result()
+        return create_physics_3d_shape_cast_result();
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -580,27 +580,27 @@ impl Physics3DShapeCastResult {
 
 impl Physics3DSliderJoint {
     pub fn new() -> Ref<Physics3DSliderJoint> {
-        create_physics_3d_slider_joint()
+        return create_physics_3d_slider_joint();
     }
 }
 
 impl Physics3DSolverConfig {
     pub fn new(options: Option<&Physics3DSolverConfigOptions>) -> Physics3DSolverConfig {
-        create_physics_3d_solver_config(options)
+        return create_physics_3d_solver_config(options);
     }
 
     pub fn is_valid(&self) -> bool {
-        is_physics_3d_solver_config_valid(self)
+        return is_physics_3d_solver_config_valid(self);
     }
 }
 
 impl Physics3DWorld {
     pub fn new() -> Physics3DWorld {
-        create_physics_3d_world()
+        return create_physics_3d_world();
     }
 
     pub fn add_body(&mut self, body: &RigidBody3DRef) -> i32 {
-        add_physics_3d_body(self, body)
+        return add_physics_3d_body(self, body);
     }
 
     pub fn add_collider(&mut self, body: &RigidBody3DRef, collider: &Physics3DColliderRef) {
@@ -625,31 +625,31 @@ impl Physics3DWorld {
     ) -> Physics3DCollisionExplanation {
         let mut out = Physics3DCollisionExplanation::default();
         explain_physics_3d_collision(&mut out, self, registry);
-        out
+        return out;
     }
 
     pub fn explain_joints(&self) -> Vec<Physics3DJointExplanation> {
         let mut out = Vec::new();
         explain_physics_3d_joints(&mut out, self);
-        out
+        return out;
     }
 
     pub fn explain_step(&self, dt: f32) -> Physics3DStepExplanation {
         let mut out = Physics3DStepExplanation::default();
         explain_physics_3d_step(&mut out, self, dt);
-        out
+        return out;
     }
 
     pub fn find_body(&self, index: i32) -> Option<RigidBody3DRef> {
-        find_physics_3d_body(self, index)
+        return find_physics_3d_body(self, index);
     }
 
     pub fn get_joint_solver(&self, kind: &str) -> Option<&Physics3DJointSolver> {
-        get_physics_3d_joint_solver(self, kind)
+        return get_physics_3d_joint_solver(self, kind);
     }
 
     pub fn hydrate(&mut self) -> bool {
-        hydrate_physics_3d_world(self)
+        return hydrate_physics_3d_world(self);
     }
 
     pub fn invalidate_collider(
@@ -657,35 +657,35 @@ impl Physics3DWorld {
         body: &RigidBody3DRef,
         collider: &Physics3DColliderRef,
     ) -> bool {
-        invalidate_physics_3d_collider(self, body, collider)
+        return invalidate_physics_3d_collider(self, body, collider);
     }
 
     pub fn invalidate_joint(&mut self, joint: &Physics3DJointRef) -> bool {
-        invalidate_physics_3d_joint(self, joint)
+        return invalidate_physics_3d_joint(self, joint);
     }
 
     pub fn is_body_state_valid(&self) -> bool {
-        is_physics_3d_body_state_valid(self)
+        return is_physics_3d_body_state_valid(self);
     }
 
     pub fn is_collider_state_valid(&self) -> bool {
-        is_physics_3d_collider_state_valid(self)
+        return is_physics_3d_collider_state_valid(self);
     }
 
     pub fn is_contact_state_valid(&self) -> bool {
-        is_physics_3d_contact_state_valid(self)
+        return is_physics_3d_contact_state_valid(self);
     }
 
     pub fn is_gravity_valid(&self) -> bool {
-        is_physics_3d_gravity_valid(self)
+        return is_physics_3d_gravity_valid(self);
     }
 
     pub fn is_joint_state_valid(&self) -> bool {
-        is_physics_3d_joint_state_valid(self)
+        return is_physics_3d_joint_state_valid(self);
     }
 
     pub fn is_pair_joint_suppressed(&self, body_a: i32, body_b: i32) -> bool {
-        is_physics_3d_pair_joint_suppressed(self, body_a, body_b)
+        return is_physics_3d_pair_joint_suppressed(self, body_a, body_b);
     }
 
     pub fn rebuild_joint_collision_suppressions(&mut self) {
@@ -701,7 +701,7 @@ impl Physics3DWorld {
     }
 
     pub fn remove_body(&mut self, body: &RigidBody3DRef) -> bool {
-        remove_physics_3d_body(self, body)
+        return remove_physics_3d_body(self, body);
     }
 
     pub fn remove_collider(
@@ -709,23 +709,23 @@ impl Physics3DWorld {
         body: &RigidBody3DRef,
         collider: &Physics3DColliderRef,
     ) -> bool {
-        remove_physics_3d_collider(self, body, collider)
+        return remove_physics_3d_collider(self, body, collider);
     }
 
     pub fn remove_joint(&mut self, joint: &Physics3DJointRef) -> bool {
-        remove_physics_3d_joint(self, joint)
+        return remove_physics_3d_joint(self, joint);
     }
 
     pub fn set_body_bullet(&mut self, body: &RigidBody3DRef, bullet: bool) -> bool {
-        set_physics_3d_body_bullet(body, bullet)
+        return set_physics_3d_body_bullet(body, bullet);
     }
 
     pub fn set_body_fixed_rotation(&mut self, body: &RigidBody3DRef, fixed_rotation: bool) -> bool {
-        set_physics_3d_body_fixed_rotation(self, body, fixed_rotation)
+        return set_physics_3d_body_fixed_rotation(self, body, fixed_rotation);
     }
 
     pub fn set_body_sleep_enabled(&mut self, body: &RigidBody3DRef, sleep_enabled: bool) -> bool {
-        set_physics_3d_body_sleep_enabled(body, sleep_enabled)
+        return set_physics_3d_body_sleep_enabled(body, sleep_enabled);
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -740,7 +740,7 @@ impl Physics3DWorld {
         orientation_z: f32,
         orientation_w: f32,
     ) -> bool {
-        set_physics_3d_body_transform(
+        return set_physics_3d_body_transform(
             self,
             body,
             x,
@@ -750,11 +750,11 @@ impl Physics3DWorld {
             orientation_y,
             orientation_z,
             orientation_w,
-        )
+        );
     }
 
     pub fn set_body_type(&mut self, body: &RigidBody3DRef, body_type: Physics3DBodyType) -> bool {
-        set_physics_3d_body_type(self, body, body_type)
+        return set_physics_3d_body_type(self, body, body_type);
     }
 
     pub fn step(
@@ -781,7 +781,7 @@ impl Physics3DWorld {
 
 impl RigidBody3D {
     pub fn new() -> RigidBody3DRef {
-        create_rigid_body_3d()
+        return create_rigid_body_3d();
     }
 
     pub fn assert_not_stepping(&self) {
@@ -801,7 +801,7 @@ impl RigidBody3D {
     }
 
     pub fn is_pair_awake(&self, other: &RigidBody3D) -> bool {
-        is_rigid_body_3d_pair_awake(self, other)
+        return is_rigid_body_3d_pair_awake(self, other);
     }
 
     pub fn refresh_world_inertia(&mut self) {

@@ -12,7 +12,7 @@ pub type Physics3DGuardClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 
 // flight-lint: allow(conform-params) D5: guard state is explicit caller-owned state
 pub fn are_physics_3d_guards_enabled(guards: &Physics3DGuardState) -> bool {
-    guards.enabled
+    return guards.enabled;
 }
 
 // flight-lint: allow(conform-params) D5: guard state is explicit caller-owned state
@@ -50,9 +50,9 @@ pub fn enable_physics_3d_guards(
 
 fn physics_3d_joint_status_string(status: Physics3DJointStatus) -> &'static str {
     match status {
-        Physics3DJointStatus::InvalidBodies => "invalid-bodies",
-        Physics3DJointStatus::Solvable => "solvable",
-        Physics3DJointStatus::UnregisteredKind => "unregistered-kind",
+        Physics3DJointStatus::InvalidBodies => return "invalid-bodies",
+        Physics3DJointStatus::Solvable => return "solvable",
+        Physics3DJointStatus::UnregisteredKind => return "unregistered-kind",
     }
 }
 
@@ -131,12 +131,12 @@ fn warn_joints(log: &LogStateRef, now: f64, world: &Physics3DWorld) {
     let key = joints
         .iter()
         .map(|joint| {
-            format!(
+            return format!(
                 "{}:{}:{}",
                 joint.index,
                 joint.kind,
                 physics_3d_joint_status_string(joint.status)
-            )
+            );
         })
         .collect::<Vec<_>>()
         .join(",");
@@ -153,7 +153,7 @@ fn warn_joints(log: &LogStateRef, now: f64, world: &Physics3DWorld) {
                 "status".to_string(),
                 LogValue::Str(physics_3d_joint_status_string(joint.status).to_string()),
             );
-            LogValue::Record(record)
+            return LogValue::Record(record);
         })
         .collect();
     warn(

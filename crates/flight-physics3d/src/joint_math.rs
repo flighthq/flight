@@ -132,9 +132,9 @@ pub fn get_physics_3d_joint_row_mass(
     apply_symmetric_tensor(&mut v, &inertia(b), abx, aby, abz);
     denominator += abx * v[0] + aby * v[1] + abz * v[2];
     if denominator > 0.0 {
-        1.0 / denominator
+        return 1.0 / denominator;
     } else {
-        0.0
+        return 0.0;
     }
 }
 
@@ -152,7 +152,7 @@ pub fn get_physics_3d_joint_row_velocity(
     aby: f32,
     abz: f32,
 ) -> f32 {
-    (b.velocity_x - a.velocity_x) * dx
+    return (b.velocity_x - a.velocity_x) * dx
         + (b.velocity_y - a.velocity_y) * dy
         + (b.velocity_z - a.velocity_z) * dz
         + b.angular_velocity_x * abx
@@ -160,27 +160,27 @@ pub fn get_physics_3d_joint_row_velocity(
         + b.angular_velocity_z * abz
         - a.angular_velocity_x * aax
         - a.angular_velocity_y * aay
-        - a.angular_velocity_z * aaz
+        - a.angular_velocity_z * aaz;
 }
 
 fn inertia(b: &RigidBody3D) -> [f32; 6] {
-    [
+    return [
         b.inverse_inertia_world_xx,
         b.inverse_inertia_world_yy,
         b.inverse_inertia_world_zz,
         b.inverse_inertia_world_xy,
         b.inverse_inertia_world_xz,
         b.inverse_inertia_world_yz,
-    ]
+    ];
 }
 
 fn multiply(a: [f32; 4], b: [f32; 4]) -> [f32; 4] {
-    [
+    return [
         a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
         a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
         a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
         a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
-    ]
+    ];
 }
 
 fn rotate(q: [f32; 4], v: [f32; 3]) -> [f32; 3] {
@@ -189,11 +189,11 @@ fn rotate(q: [f32; 4], v: [f32; 3]) -> [f32; 3] {
         q[2] * v[0] - q[0] * v[2] + q[3] * v[1],
         q[0] * v[1] - q[1] * v[0] + q[3] * v[2],
     ];
-    [
+    return [
         v[0] + 2.0 * (q[1] * t[2] - q[2] * t[1]),
         v[1] + 2.0 * (q[2] * t[0] - q[0] * t[2]),
         v[2] + 2.0 * (q[0] * t[1] - q[1] * t[0]),
-    ]
+    ];
 }
 
 pub fn swap_physics_3d_joint_frames(frames: &mut Physics3DJointFrames) {
@@ -213,7 +213,7 @@ fn world_center(b: &RigidBody3D) -> [f32; 3] {
         ],
         [b.center_x, b.center_y, b.center_z],
     );
-    [b.x + c[0], b.y + c[1], b.z + c[2]]
+    return [b.x + c[0], b.y + c[1], b.z + c[2]];
 }
 
 pub fn write_physics_3d_joint_anchor_velocity(

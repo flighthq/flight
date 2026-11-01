@@ -38,7 +38,7 @@ pub fn begin_joint_solve(joint: &mut dyn Physics3DJoint, length: usize) -> &mut 
     let f = joint.fields_mut();
     let state = f.solve_state.get_or_insert_with(Vec::new);
     state.resize(length, 0.0);
-    state
+    return state;
 }
 
 pub fn clear_joint_solve(joint: &mut dyn Physics3DJoint) {
@@ -46,11 +46,11 @@ pub fn clear_joint_solve(joint: &mut dyn Physics3DJoint) {
 }
 
 pub fn get_joint_solve_state(joint: &dyn Physics3DJoint) -> Option<&[f32]> {
-    joint.fields().solve_state.as_deref()
+    return joint.fields().solve_state.as_deref();
 }
 
 pub fn get_row_mass(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset: usize) -> f32 {
-    get_physics_3d_joint_row_mass(
+    return get_physics_3d_joint_row_mass(
         a,
         b,
         state[offset],
@@ -62,11 +62,11 @@ pub fn get_row_mass(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset: usi
         state[offset + 6],
         state[offset + 7],
         state[offset + 8],
-    )
+    );
 }
 
 pub fn get_row_velocity(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset: usize) -> f32 {
-    get_physics_3d_joint_row_velocity(
+    return get_physics_3d_joint_row_velocity(
         a,
         b,
         state[offset],
@@ -78,7 +78,7 @@ pub fn get_row_velocity(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset:
         state[offset + 6],
         state[offset + 7],
         state[offset + 8],
-    )
+    );
 }
 
 pub fn prepare_angular_block(
@@ -191,12 +191,12 @@ pub fn read_frame_rotations(
 pub fn read_joint_impulse(joint: &dyn Physics3DJoint, slot: usize) -> f32 {
     let f = joint.fields();
     match slot {
-        0 => f.impulse0,
-        1 => f.impulse1,
-        2 => f.impulse2,
-        3 => f.impulse3,
-        4 => f.impulse4,
-        _ => f.impulse5,
+        0 => return f.impulse0,
+        1 => return f.impulse1,
+        2 => return f.impulse2,
+        3 => return f.impulse3,
+        4 => return f.impulse4,
+        _ => return f.impulse5,
     }
 }
 
@@ -280,7 +280,7 @@ pub fn solve_motor_row(
     let total = (previous - mass * (get_row_velocity(a, b, state, offset) - speed))
         .clamp(-max_impulse, max_impulse);
     apply_row(a, b, state, offset, total - previous);
-    total
+    return total;
 }
 
 pub fn solve_point_block(

@@ -14,49 +14,49 @@ pub const PHYSICS_3D_SLIDER_JOINT_KIND: &str = "Slider";
 pub fn create_physics_3d_ball_and_socket_joint() -> Ref<Physics3DBallAndSocketJoint> {
     let mut out: Physics3DBallAndSocketJoint = allocate_entity();
     initialize_physics_3d_ball_and_socket_joint(&mut out);
-    Arc::new(RwLock::new(out))
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity create is zero-argument; callers assign joint fields after creation
 pub fn create_physics_3d_cone_twist_joint() -> Ref<Physics3DConeTwistJoint> {
     let mut out: Physics3DConeTwistJoint = allocate_entity();
     initialize_physics_3d_cone_twist_joint(&mut out);
-    Arc::new(RwLock::new(out))
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity create is zero-argument; callers assign joint fields after creation
 pub fn create_physics_3d_distance_joint() -> Ref<Physics3DDistanceJoint> {
     let mut out: Physics3DDistanceJoint = allocate_entity();
     initialize_physics_3d_distance_joint(&mut out);
-    Arc::new(RwLock::new(out))
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity create is zero-argument; callers assign joint fields after creation
 pub fn create_physics_3d_fixed_joint() -> Ref<Physics3DFixedJoint> {
     let mut out: Physics3DFixedJoint = allocate_entity();
     initialize_physics_3d_fixed_joint(&mut out);
-    Arc::new(RwLock::new(out))
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity create is zero-argument; callers assign joint fields after creation
 pub fn create_physics_3d_generic_6_dof_joint() -> Ref<Physics3DGeneric6DofJoint> {
     let mut out: Physics3DGeneric6DofJoint = allocate_entity();
     initialize_physics_3d_generic_6_dof_joint(&mut out);
-    Arc::new(RwLock::new(out))
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity create is zero-argument; callers assign joint fields after creation
 pub fn create_physics_3d_hinge_joint() -> Ref<Physics3DHingeJoint> {
     let mut out: Physics3DHingeJoint = allocate_entity();
     initialize_physics_3d_hinge_joint(&mut out);
-    Arc::new(RwLock::new(out))
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity create is zero-argument; callers assign joint fields after creation
 pub fn create_physics_3d_slider_joint() -> Ref<Physics3DSliderJoint> {
     let mut out: Physics3DSliderJoint = allocate_entity();
     initialize_physics_3d_slider_joint(&mut out);
-    Arc::new(RwLock::new(out))
+    return Arc::new(RwLock::new(out));
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity initialize mirrors zero-argument creation; callers assign joint fields afterward
