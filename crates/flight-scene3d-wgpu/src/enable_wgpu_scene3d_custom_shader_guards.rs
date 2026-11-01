@@ -89,7 +89,7 @@ fn has_binding(source: &str, group: u32, binding: u32) -> bool {
 
 // Matches `@name\s*(\s*value\s*)` at `start`, returning the index just past the closing paren.
 fn match_attribute(source: &str, start: usize, name: &str, value: u32) -> Option<usize> {
-    let rest = source.get(start..)?;
+    let rest = source.get(start..source.len())?;
     let rest = rest.strip_prefix('@')?.strip_prefix(name)?;
     let rest_trimmed = rest.trim_start();
     let rest_trimmed = rest_trimmed.strip_prefix('(')?.trim_start();
