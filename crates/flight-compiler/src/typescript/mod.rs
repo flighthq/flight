@@ -10976,10 +10976,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
             },
             _ => false,
         };
-    if rebind && !discard && value == pattern {
-        // A shadowing rebind whose initializer erases to the binding itself (`let x = x.clone();` over
-        // a shared handle) would be the self-assignment `x = x`: the rebound binding already holds the
-        // value, so nothing is emitted.
+    if rebind && !discard && (value == pattern || value == format!("{pattern}!") || value == format!("{pattern}.value")) {
         return Ok(());
     }
     write_indent(out, indent);
