@@ -721,10 +721,10 @@ fn dispatch_pointer_rollover_change(
 
     let old_chain = old_target
         .map(|t| get_interaction_chain(t, &manager.root))
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let new_chain = target
         .map(|t| get_interaction_chain(t, &manager.root))
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
 
     for node in &old_chain {
         if !chain_contains(&new_chain, node) {
