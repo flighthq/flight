@@ -308,7 +308,7 @@ fn z_texture_atlas_format_read_json_kind(content: &str) -> Option<TextureAtlasFo
         .meta
         .as_ref()
         .and_then(|meta| meta.app.as_ref())
-        .map_or_else(String::new, |app| app.to_lowercase());
+        .map_or(String::new(), |app: &String| app.to_lowercase());
     if app.contains("aseprite") {
         return Some(TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE.to_string());
     }
