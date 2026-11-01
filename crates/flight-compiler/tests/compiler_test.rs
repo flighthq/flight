@@ -20463,3 +20463,26 @@ pub fn test_map(items: &[f32]) -> Vec<f32> {
         "block closure tail should get a return statement: {output}"
     );
 }
+
+#[test]
+fn js_reserved_words_are_escaped_in_locals_and_parameters() {
+    let source = r#"
+pub fn test_reserved(default: f32) -> f32 {
+    let new: f32 = default + 1.0;
+    return new;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("default_"),
+        "reserved word parameter should be escaped: {output}"
+    );
+    assert!(
+        output.contains("new_"),
+        "reserved word local should be escaped: {output}"
+    );
+    assert!(
+        !output.contains("(default:") && !output.contains("const new:"),
+        "bare reserved words should not appear as identifiers: {output}"
+    );
+}

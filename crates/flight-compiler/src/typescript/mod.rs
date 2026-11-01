@@ -21874,7 +21874,81 @@ pub(crate) fn snake_to_lower_camel(name: &str) -> String {
         }
     }
     apply_acronym_casing(&mut out);
+    if is_js_reserved_word(&out) {
+        out.push('_');
+    }
     return out;
+}
+
+fn is_js_reserved_word(name: &str) -> bool {
+    matches!(
+        name,
+        "abstract"
+            | "arguments"
+            | "await"
+            | "boolean"
+            | "break"
+            | "byte"
+            | "case"
+            | "catch"
+            | "char"
+            | "class"
+            | "const"
+            | "continue"
+            | "debugger"
+            | "default"
+            | "delete"
+            | "do"
+            | "double"
+            | "else"
+            | "enum"
+            | "eval"
+            | "export"
+            | "extends"
+            | "false"
+            | "final"
+            | "finally"
+            | "float"
+            | "for"
+            | "function"
+            | "goto"
+            | "if"
+            | "implements"
+            | "import"
+            | "in"
+            | "instanceof"
+            | "int"
+            | "interface"
+            | "let"
+            | "long"
+            | "native"
+            | "new"
+            | "null"
+            | "package"
+            | "private"
+            | "protected"
+            | "public"
+            | "return"
+            | "short"
+            | "static"
+            | "super"
+            | "switch"
+            | "synchronized"
+            | "this"
+            | "throw"
+            | "throws"
+            | "transient"
+            | "true"
+            | "try"
+            | "typeof"
+            | "undefined"
+            | "var"
+            | "void"
+            | "volatile"
+            | "while"
+            | "with"
+            | "yield"
+    )
 }
 
 fn apply_acronym_casing(name: &mut String) {
