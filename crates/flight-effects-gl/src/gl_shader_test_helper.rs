@@ -37,8 +37,8 @@ struct GlslScalarParser<'a> {
     position: usize,
 }
 
-fn apply_glsl_scalar_builtin(name: &str, arguments: &[f32]) -> Option<f32> {
-    let argument = |index: usize| arguments.get(index).copied().unwrap_or(f32::NAN);
+fn apply_glsl_scalar_builtin(name: &str, operands: &[f32]) -> Option<f32> {
+    let argument = |index: usize| operands.get(index).copied().unwrap_or(f32::NAN);
     return Some(match name {
         "abs" => argument(0).abs(),
         "ceil" => argument(0).ceil(),
@@ -48,8 +48,8 @@ fn apply_glsl_scalar_builtin(name: &str, arguments: &[f32]) -> Option<f32> {
         "floor" => argument(0).floor(),
         "fract" => argument(0) - argument(0).floor(),
         "log" => argument(0).ln(),
-        "max" => arguments.iter().copied().fold(f32::NEG_INFINITY, f32::max),
-        "min" => arguments.iter().copied().fold(f32::INFINITY, f32::min),
+        "max" => operands.iter().copied().fold(f32::NEG_INFINITY, f32::max),
+        "min" => operands.iter().copied().fold(f32::INFINITY, f32::min),
         "mix" => argument(0) + (argument(1) - argument(0)) * argument(2),
         "pow" => argument(0).powf(argument(1)),
         "sign" => {
@@ -146,21 +146,38 @@ pub fn extract_glsl_expression(source: &str, pattern: &Ref<RegExp>) -> String {
     return expression.trim().to_string();
 }
 
+// Byte-class tests spelled as code-unit ranges so they lower to numeric comparisons in TS.
+fn is_glsl_ascii_alphabetic(byte: u8) -> bool {
+    return (byte >= b'A' && byte <= b'Z') || (byte >= b'a' && byte <= b'z');
+}
+
+fn is_glsl_ascii_alphanumeric(byte: u8) -> bool {
+    return is_glsl_ascii_alphabetic(byte) || is_glsl_ascii_digit(byte);
+}
+
+fn is_glsl_ascii_digit(byte: u8) -> bool {
+    return byte >= b'0' && byte <= b'9';
+}
+
+fn is_glsl_ascii_whitespace(byte: u8) -> bool {
+    return byte == b' ' || byte == b'\t' || byte == b'\n' || byte == b'\x0C' || byte == b'\r';
+}
+
 fn parse_glsl_scalar_call(parser: &mut GlslScalarParser<'_>, name: &str) -> Option<f32> {
-    let mut arguments = Vec::new();
+    let mut operands = Vec::new();
     skip_glsl_whitespace(parser);
     if peek_glsl_byte(parser) == Some(b')') {
         parser.position += 1;
-        return apply_glsl_scalar_builtin(name, &arguments);
+        return apply_glsl_scalar_builtin(name, &operands);
     }
     loop {
-        arguments.push(parse_glsl_scalar_sum(parser)?);
+        operands.push(parse_glsl_scalar_sum(parser)?);
         skip_glsl_whitespace(parser);
         match peek_glsl_byte(parser) {
             Some(b',') => parser.position += 1,
             Some(b')') => {
                 parser.position += 1;
-                return apply_glsl_scalar_builtin(name, &arguments);
+                return apply_glsl_scalar_builtin(name, &operands);
             }
             _ => return None,
         }
@@ -180,10 +197,10 @@ fn parse_glsl_scalar_primary(parser: &mut GlslScalarParser<'_>) -> Option<f32> {
         parser.position += 1;
         return Some(value);
     }
-    if byte.is_ascii_digit() || byte == b'.' {
+    if is_glsl_ascii_digit(byte) || byte == b'.' {
         let start = parser.position;
         while let Some(next) = peek_glsl_byte(parser) {
-            if next.is_ascii_digit() || next == b'.' {
+            if is_glsl_ascii_digit(next) || next == b'.' {
                 parser.position += 1;
             } else {
                 break;
@@ -192,10 +209,10 @@ fn parse_glsl_scalar_primary(parser: &mut GlslScalarParser<'_>) -> Option<f32> {
         let text = std::str::from_utf8(&parser.bytes[start..parser.position]).ok()?;
         return text.parse::<f32>().ok();
     }
-    if byte.is_ascii_alphabetic() || byte == b'_' {
+    if is_glsl_ascii_alphabetic(byte) || byte == b'_' {
         let start = parser.position;
         while let Some(next) = peek_glsl_byte(parser) {
-            if next.is_ascii_alphanumeric() || next == b'_' {
+            if is_glsl_ascii_alphanumeric(next) || next == b'_' {
                 parser.position += 1;
             } else {
                 break;
@@ -276,11 +293,11 @@ fn scan_glsl_identifiers(text: &str) -> Vec<String> {
     let mut index = 0;
     while index < bytes.len() {
         let byte = bytes[index];
-        if byte.is_ascii_alphabetic() || byte == b'_' {
+        if is_glsl_ascii_alphabetic(byte) || byte == b'_' {
             let start = index;
             index += 1;
             while index < bytes.len()
-                && (bytes[index].is_ascii_alphanumeric()
+                && (is_glsl_ascii_alphanumeric(bytes[index])
                     || bytes[index] == b'_'
                     || bytes[index] == b'.')
             {
@@ -296,7 +313,7 @@ fn scan_glsl_identifiers(text: &str) -> Vec<String> {
 
 fn skip_glsl_whitespace(parser: &mut GlslScalarParser<'_>) {
     while let Some(byte) = peek_glsl_byte(parser) {
-        if byte.is_ascii_whitespace() {
+        if is_glsl_ascii_whitespace(byte) {
             parser.position += 1;
         } else {
             break;
