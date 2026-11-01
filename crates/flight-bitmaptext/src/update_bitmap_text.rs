@@ -9,7 +9,7 @@ use flight_glyphatlas::contract::GlyphMetrics;
 use flight_glyphatlas::{GlyphEntry, GlyphSource};
 use flight_node::Node;
 use flight_texture::{create_texture_2d, set_texture_source};
-use flight_textureatlas::{add_texture_atlas_region, create_texture_atlas};
+use flight_textureatlas::{TextureAtlasRegion, add_texture_atlas_region, create_texture_atlas};
 
 use crate::bitmap_text::is_bitmap_text_glyph_layout_stale;
 use crate::types::*;
@@ -302,8 +302,8 @@ fn layout_bitmap_text_lines(
         };
         for token in tokens {
             let wraps = data.wrap_width.is_some_and(|wrap_width| {
-                !current.words.is_empty()
-                    && current.width + token.gap + token.word.width > wrap_width
+                return !current.words.is_empty()
+                    && current.width + token.gap + token.word.width > wrap_width;
             });
             if wraps {
                 if data
@@ -332,7 +332,7 @@ fn layout_bitmap_text_lines(
             }
         }
         if data.max_lines.is_some_and(|max_lines| {
-            lines.len() + 1 >= max_lines && paragraph_index < paragraphs.len() - 1
+            return lines.len() + 1 >= max_lines && paragraph_index < paragraphs.len() - 1;
         }) {
             truncated = true;
             current.paragraph_end = true;
@@ -366,7 +366,9 @@ fn layout_bitmap_text_pages(bitmap_text: &mut BitmapText, guard_state: &BitmapTe
     while clear_page_index < runtime.pages.len() {
         let page = &mut runtime.pages[clear_page_index];
         page.instance_count = 0;
-        page.atlas.write().unwrap().regions.clear();
+        let mut atlas = page.atlas.write().unwrap();
+        let regions: &mut Vec<Ref<TextureAtlasRegion>> = &mut atlas.regions;
+        regions.clear();
         clear_page_index += 1;
     }
 
