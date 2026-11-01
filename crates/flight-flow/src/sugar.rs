@@ -177,7 +177,7 @@ mod flow_stack_sugar_tests {
         };
         let update_log = log.clone();
         state.on_update = Some(Arc::new(move |_dt: f32| {
-            update_log.lock().unwrap().push("tick".to_string())
+            return update_log.lock().unwrap().push("tick".to_string());
         }));
         let state = Arc::new(RwLock::new(state));
         stack.push_state(state.clone(), &guards);
