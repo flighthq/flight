@@ -13500,6 +13500,31 @@ pub fn method_try(items: &[u32]) -> Option<u32> {
     }
 
     #[test]
+    fn lowers_try_operator_avoids_self_referential_const() {
+        let source = r#"
+pub fn f(decompress: Option<u32>) -> Option<u32> {
+    let decompress = decompress?;
+    return Some(decompress);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains("const decompress = decompress;"),
+            "should not emit self-referential const: {output}"
+        );
+        assert!(
+            output.contains("const decompress_q = decompress;"),
+            "should use temp variable: {output}"
+        );
+        assert!(
+            output.contains("const decompress = decompress_q;"),
+            "should assign from temp: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_try_operator_in_statement_position() {
         let source = r#"
 pub fn check(value: Option<f32>) -> Option<f32> {
