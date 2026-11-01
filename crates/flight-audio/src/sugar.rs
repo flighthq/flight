@@ -73,7 +73,7 @@ mod sugar_tests {
             let buffer = buffer.clone();
             move |_, _, _| {
                 let resource = create_audio_resource(Some(buffer.clone()));
-                Box::pin(async move { Some(resource) })
+                return Box::pin(async move { Some(resource) });
             }
         });
         return HashMap::from([("audio/mpeg".to_string(), decoder)]);
@@ -140,7 +140,7 @@ mod sugar_tests {
                     ))),
                     url: "u.mp3".to_string(),
                 }));
-                Box::pin(async move { Ok(response) })
+                return Box::pin(async move { Ok(response) });
             }),
         };
         let state = NetState::default();
@@ -435,7 +435,7 @@ mod sugar_tests {
             1,
             None,
             Some(Arc::new(|| {
-                Box::pin(async { Ok(create_array_buffer_from_bytes(Box::new([1]))) })
+                return Box::pin(async { Ok(create_array_buffer_from_bytes(Box::new([1]))) });
             })),
         );
         let capabilities = empty_slots();

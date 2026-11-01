@@ -196,10 +196,10 @@ async fn load_audio_resource_from_url_with_mime_type(
         redirect: None,
     }));
     let options = signal.map(|signal| {
-        Arc::new(RwLock::new(NetRequestOptions {
+        return Arc::new(RwLock::new(NetRequestOptions {
             progress: None,
             signal: Some(signal.clone()),
-        }))
+        }));
     });
     let response = match send_net_request(host_net, &request, options.as_ref(), net_state).await {
         Ok(response) => response,
@@ -248,7 +248,7 @@ pub async fn load_audio_resource_from_urls(
     net_state: &NetState,
 ) -> Ref<AudioResource> {
     let selected = select_audio_resource_source(host_audio_codec, sources, |mime_type| {
-        decoders.is_some_and(|decoders| decoders.contains_key(mime_type))
+        return decoders.is_some_and(|decoders| decoders.contains_key(mime_type));
     });
     let Some(selected) = selected else {
         return create_audio_resource(None);
@@ -275,7 +275,7 @@ pub fn select_audio_resource_url(
     decoders: Option<&AudioDecoderRegistry>,
 ) -> Option<String> {
     return select_audio_resource_source(host_audio_codec, sources, |mime_type| {
-        decoders.is_some_and(|decoders| decoders.contains_key(mime_type))
+        return decoders.is_some_and(|decoders| decoders.contains_key(mime_type));
     })
     .map(|source| source.url.clone());
 }

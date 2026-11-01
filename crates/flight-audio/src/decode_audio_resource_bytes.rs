@@ -17,7 +17,8 @@ pub async fn decode_audio_resource_bytes(
     decoders: Option<&AudioDecoderRegistry>,
 ) -> Option<Ref<AudioResource>> {
     throw_if_aborted(signal);
-    if let (Some(mime_type), Some(decoders)) = (mime_type, decoders)
+    if let Some(mime_type) = mime_type
+        && let Some(decoders) = decoders
         && let Some(decoder) = decoders.get(&get_audio_mime_type_essence(mime_type))
     {
         let resource = decoder(bytes.clone(), mime_type.to_string(), signal.clone()).await;
@@ -40,11 +41,14 @@ fn resolve_audio_decode_slot<'a>(
     {
         return Some(declared);
     }
-    let detected = {
+    let detected_mime_type = {
         let bytes = bytes.read().unwrap();
         detect_audio_mime_type(AudioMimeTypeData::Uint8Array(AudioMimeTypeUint8Array {
             data: bytes.as_ref(),
         }))
-    }?;
+    };
+    let Some(detected) = detected_mime_type else {
+        return None;
+    };
     return get_audio_decode_slot(audio_decode, &detected);
 }

@@ -33,7 +33,7 @@ mod tests {
         let decoders = HashSet::from(["audio/vnd.acme.custom".to_string()]);
         let sources = [source("sound.custom", Some("audio/vnd.acme.custom"))];
         let selected = select_audio_resource_source(&host(|_| false), &sources, |mime_type| {
-            decoders.contains(mime_type)
+            return decoders.contains(mime_type);
         })
         .unwrap();
         assert_eq!(selected.url, "sound.custom");
@@ -71,7 +71,7 @@ mod tests {
             Some("audio/vnd.acme.custom; rate=22050"),
         )];
         let selected = select_audio_resource_source(&host(|_| false), &sources, |mime_type| {
-            decoders.contains(mime_type)
+            return decoders.contains(mime_type);
         })
         .unwrap();
         assert_eq!(selected.url, "sound.custom");

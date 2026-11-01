@@ -25,7 +25,7 @@ pub fn create_audio_buffer(
     let channels: Vec<Ref<Box<Float32Array>>> = (0..number_of_channels)
         .map(|_| {
             let samples: Box<Float32Array> = std::iter::repeat_n(0.0, length).collect();
-            Arc::new(RwLock::new(samples))
+            return Arc::new(RwLock::new(samples));
         })
         .collect();
     return Arc::new(RwLock::new(AudioBuffer {

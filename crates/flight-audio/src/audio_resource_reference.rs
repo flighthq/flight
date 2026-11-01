@@ -112,7 +112,7 @@ pub fn explain_audio_resource_reference_resolution(
         out.kind = failure.kind;
         out.message = failure.message.clone();
         out.name = failure.name.clone();
-        Arc::new(RwLock::new(out))
+        return Arc::new(RwLock::new(out));
     });
     return AudioResourceReferenceResolutionExplanation {
         failure,
