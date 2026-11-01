@@ -21121,7 +21121,30 @@ pub(crate) fn snake_to_lower_camel(name: &str) -> String {
             }
         }
     }
+    apply_acronym_casing(&mut out);
     return out;
+}
+
+fn apply_acronym_casing(name: &mut String) {
+    let bytes = name.as_bytes().to_vec();
+    let len = bytes.len();
+    let mut result = Vec::with_capacity(len);
+    let mut i = 0;
+    while i < len {
+        if bytes[i].is_ascii_digit()
+            && i + 1 < len
+            && bytes[i + 1] == b'd'
+            && (i + 2 >= len || bytes[i + 2].is_ascii_uppercase() || !bytes[i + 2].is_ascii_alphabetic())
+        {
+            result.push(bytes[i]);
+            result.push(b'D');
+            i += 2;
+        } else {
+            result.push(bytes[i]);
+            i += 1;
+        }
+    }
+    *name = String::from_utf8(result).expect("ASCII transform preserves UTF-8");
 }
 
 fn throw_call(call: &syn::ExprCall) -> Option<(&'static str, &Expr)> {

@@ -1,4 +1,3 @@
-//! flight-compiler: export-name collect_scene2d_requirements collectScene2DRequirements
 use crate::requirement_set_raw::{RequirementSet, create_requirement_set};
 use crate::types::{Requirement, RequirementFacet};
 
