@@ -12,7 +12,8 @@ use crate::world::find_physics2d_body;
 pub fn build_physics2d_solve_islands(world: &mut Physics2DWorld) {
     let world_solve_island_roots: &mut Vec<i32> = &mut world.solve_island_roots;
     world_solve_island_roots.clear();
-    world.solve_island_by_root.clear();
+    let world_solve_island_by_root: &mut HashMap<i32, usize> = &mut world.solve_island_by_root;
+    world_solve_island_by_root.clear();
     world.solve_island_body_counts.clear();
     world.solve_island_contact_counts.clear();
     world.solve_island_joint_counts.clear();
@@ -277,7 +278,8 @@ pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f64) {
     let config = world.config;
     let world_island_parents: &mut HashMap<i32, i32> = &mut world.island_parents;
     world_island_parents.clear();
-    world.island_sleep_timers.clear();
+    let world_island_sleep_timers: &mut HashMap<i32, f64> = &mut world.island_sleep_timers;
+    world_island_sleep_timers.clear();
 
     for contact in world.contacts.clone() {
         let (body_a, body_b, live) = contact_ends(&contact);
