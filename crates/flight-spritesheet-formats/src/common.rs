@@ -78,7 +78,7 @@ pub(crate) fn infer_animations(
 fn split_numeric_suffix(value: &str) -> Option<(&str, i32)> {
     let bytes = value.as_bytes();
     let mut start = bytes.len();
-    while start > 0 && bytes[start - 1].is_ascii_digit() {
+    while start > 0 && bytes[start - 1] >= b'0' && bytes[start - 1] <= b'9' {
         start -= 1;
     }
     if start == bytes.len() {
