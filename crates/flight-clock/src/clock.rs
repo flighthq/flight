@@ -116,7 +116,8 @@ pub fn dispose_clock(clock: &Ref<Clock>) {
     let (children, on_tick) = {
         let mut current = clock.write().unwrap();
         let children = current.children.to_vec();
-        current.children.clear();
+        let current_children: &mut Vec<Ref<Clock>> = &mut current.children;
+        current_children.clear();
         (children, current.on_tick.clone())
     };
     for child in &children {
