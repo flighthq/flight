@@ -136,11 +136,11 @@ fn find_catalog_registration<'a>(
     kind: &str,
     registry: RenderRegistryTable,
 ) -> Option<&'a CatalogRegistration> {
-    return catalog?
+    let registered = catalog?;
+    let entry = registered
         .iter()
-        .find(|entry| entry.kind == kind && entry.registry == registry)?
-        .registrations
-        .first();
+        .find(|entry| entry.kind == kind && entry.registry == registry)?;
+    return entry.registrations.first();
 }
 
 // Whether this state can serve everything `usage` names, GL specifics included. Stops at the first
