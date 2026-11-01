@@ -40,9 +40,9 @@ mod sugar_tests {
                 reason: MediaSessionSetMetadataReason::InvalidArtworkSource,
             }),
             set_playback_state: Arc::new(|_s: MediaSessionPlaybackState| {
-                MediaSessionOperationOutcome {
+                return MediaSessionOperationOutcome {
                     reason: MediaSessionSetPlaybackStateReason::MediaSessionUnavailable,
-                }
+                };
             }),
             set_position_state: Arc::new(move |_s: &MediaSessionPositionState| {
                 *position_calls.lock().unwrap() += 1;
