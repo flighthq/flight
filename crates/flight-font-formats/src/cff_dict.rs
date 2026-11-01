@@ -95,11 +95,11 @@ fn read_cff_real_operand(bytes: &Uint8Array, start: usize, end: usize) -> Option
                 12 => text.push_str("E-"),
                 14 => text.push('-'),
                 15 => {
-                    let value = if text.is_empty() {
-                        0.0
-                    } else {
-                        text.parse::<f32>().ok()?
-                    };
+                    let mut value = 0.0;
+                    if !text.is_empty() {
+                        let parsed = text.parse::<f32>().ok()?;
+                        value = parsed;
+                    }
                     return if value.is_finite() {
                         Some(CffRealOperand { cursor, value })
                     } else {

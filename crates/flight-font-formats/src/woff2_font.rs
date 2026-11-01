@@ -59,14 +59,14 @@ pub fn read_woff2_font(
     reverse_transform: Option<&Woff2TransformReverser>,
 ) -> Option<Box<Uint8Array>> {
     let directory = read_woff2_table_directory(bytes)?;
-    let decompress = decompress?;
+    let decompressor = decompress?;
     let flavor = unsigned32(bytes, 4);
     let total_compressed_size = unsigned32(bytes, 20) as usize;
     let stream_end = directory.stream_start + total_compressed_size;
     if stream_end > bytes.len() {
         return None;
     }
-    let stream = decompress(
+    let stream = decompressor(
         &bytes[directory.stream_start..stream_end],
         directory.total_uncompressed_length,
         CompressionFraming::Raw,
@@ -101,11 +101,12 @@ pub fn read_woff2_font(
     for entry in &directory.entries {
         let stored = raw.get(&entry.tag)?;
         assert_uint8_view(stored);
-        let data = if entry.transformed {
-            (reverse_transform?)(&entry.tag, stored, &raw)?
-        } else {
-            stored.clone()
-        };
+        let mut data = stored.clone();
+        if entry.transformed {
+            let transform = reverse_transform?;
+            let transformed_data = transform(&entry.tag, stored, &raw)?;
+            data = transformed_data;
+        }
         assert_uint8_view(&data);
         retained_tables.push((data, pack_sfnt_tag(&entry.tag)));
     }
@@ -167,11 +168,11 @@ pub fn read_woff2_table_directory(bytes: &Uint8Array) -> Option<Woff2TableDirect
         } else {
             transform_version != 0
         };
-        let transform_length = if transformed {
-            read_woff2_base128(bytes, &mut cursor, bytes.len())?
-        } else {
-            original_length
-        };
+        let mut transform_length = original_length;
+        if transformed {
+            let stored_length = read_woff2_base128(bytes, &mut cursor, bytes.len())?;
+            transform_length = stored_length;
+        }
         total_uncompressed_length += if transformed {
             transform_length
         } else {
