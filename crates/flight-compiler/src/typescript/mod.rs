@@ -8678,9 +8678,28 @@ fn emit_closure_with_parameter_types(
     };
     let body = match closure.body.as_ref() {
         Expr::Block(block) => {
+            let stmts = &block.block.stmts;
+            let needs_tail_return = matches!(stmts.last(), Some(Stmt::Expr(expr, None)) if tail_expression_needs_return(expr));
+            let stmts = if needs_tail_return {
+                let mut owned = stmts.to_vec();
+                let last = owned.len() - 1;
+                if let Stmt::Expr(expr, None) = &owned[last] {
+                    owned[last] = Stmt::Expr(
+                        Expr::Return(syn::ExprReturn {
+                            attrs: Vec::new(),
+                            return_token: syn::token::Return::default(),
+                            expr: Some(Box::new(expr.clone())),
+                        }),
+                        None,
+                    );
+                }
+                std::borrow::Cow::Owned(owned)
+            } else {
+                std::borrow::Cow::Borrowed(stmts.as_slice())
+            };
             let mut body = String::new();
             body.push_str("{\n");
-            emit_block(&mut body, &block.block.stmts, &closure_context, 1)?;
+            emit_block(&mut body, &stmts, &closure_context, 1)?;
             body.push('}');
             body
         }

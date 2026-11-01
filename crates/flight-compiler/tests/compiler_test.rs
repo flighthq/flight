@@ -20446,3 +20446,20 @@ pub fn vec_default(opt: Option<Vec<f32>>) -> Vec<f32> {
         "should not emit Vec.new: {output}"
     );
 }
+
+#[test]
+fn block_closure_tail_expression_gets_return() {
+    let source = r#"
+pub fn test_map(items: &[f32]) -> Vec<f32> {
+    return items.iter().map(|x| {
+        let doubled = x * 2.0;
+        doubled + 1.0
+    }).collect();
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("return doubled + 1.0;"),
+        "block closure tail should get a return statement: {output}"
+    );
+}
