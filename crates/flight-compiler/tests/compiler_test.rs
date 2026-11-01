@@ -20733,7 +20733,7 @@ fn read_u16(bytes: &[u8], offset: usize) -> Option<u16> {
 }
 
 #[test]
-fn emits_bare_assignment_for_try_parameter_shadow() {
+fn emits_fresh_binding_for_try_parameter_shadow() {
     let source = r#"
 pub fn read_char(raw: &[u8]) -> Option<u32> {
     let raw = raw.get(0)?;
@@ -20742,21 +20742,21 @@ pub fn read_char(raw: &[u8]) -> Option<u32> {
 "#;
     let result = compile_typescript(source, None).unwrap();
     assert!(
-        !result.contains("const raw"),
-        "should not redeclare parameter with const: {result}"
+        result.contains("const raw_1 = raw[0]"),
+        "parameter try shadow should use fresh binding: {result}"
     );
     assert!(
-        result.contains("\n  raw = raw[0];\n"),
-        "should use bare assignment for parameter shadow: {result}"
+        result.contains("if (raw_1 === undefined)"),
+        "should check renamed binding for undefined: {result}"
     );
     assert!(
-        result.contains("if (raw === undefined)"),
-        "should check for undefined after assignment: {result}"
+        result.contains("return (raw_1)"),
+        "subsequent uses should reference renamed binding: {result}"
     );
 }
 
 #[test]
-fn emits_bare_assignment_for_try_same_block_shadow() {
+fn emits_chained_fresh_bindings_for_try_same_block_shadow() {
     let source = r#"
 pub fn read_double(data: &[u8]) -> Option<u32> {
     let data = data.get(0)?;
@@ -20765,14 +20765,17 @@ pub fn read_double(data: &[u8]) -> Option<u32> {
 }
 "#;
     let result = compile_typescript(source, None).unwrap();
-    let const_count = result.matches("const data").count();
-    assert_eq!(
-        const_count, 0,
-        "should not declare data with const (parameter shadow): {result}"
+    assert!(
+        result.contains("const data_1 = data[0]"),
+        "first try shadow should use fresh binding data_1: {result}"
     );
     assert!(
-        result.contains("if (data === undefined)"),
-        "should check for undefined: {result}"
+        result.contains("const data_2 ="),
+        "second try shadow should use fresh binding data_2: {result}"
+    );
+    assert!(
+        result.contains("if (data_2 === undefined)"),
+        "should check second renamed binding for undefined: {result}"
     );
 }
 

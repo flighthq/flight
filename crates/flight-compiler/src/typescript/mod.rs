@@ -8693,12 +8693,7 @@ fn emit_block_with_context(
             *declaration_counts.entry(name).or_insert(0_usize) += 1;
         }
     }
-    let mut declared: HashSet<String> = entities
-        .iter()
-        .filter_map(|m| m.strip_prefix(SCOPE_DECLARED_MARKER))
-        .map(|s| s.to_string())
-        .collect();
-    block_context.retain(|m| !m.starts_with(SCOPE_DECLARED_MARKER));
+    let mut declared: HashSet<String> = HashSet::new();
     for (index, statement) in statements.iter().enumerate() {
         if let Stmt::Local(local) = statement
             && let Some(name) = local_pattern_name(&local.pat)
@@ -8730,6 +8725,8 @@ fn emit_block_with_context(
                 shadowed,
                 rebound,
             )? {
+                let rename_prefix = format!("{RENAME_MARKER}{old_name}=");
+                block_context.retain(|m| !m.starts_with(&rename_prefix));
                 block_context.insert(format!("{RENAME_MARKER}{old_name}={new_name}"));
             }
             if let Some(counter) = effective_context
@@ -11944,8 +11941,8 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "{keyword} {pattern} = {temp};")
             .expect("writing to a String cannot fail");
-    } else if rebind && !shadowed {
-        let fresh = format!("{pattern}_1");
+    } else if rebind {
+        let fresh = next_try_rename(entities, &pattern);
         let keyword = if mutable { "let" } else { "const" };
         write_indent(out, indent);
         writeln!(out, "{keyword} {fresh} = {inner_value};")
@@ -11958,18 +11955,6 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
         return Ok(Some((pattern, fresh)));
-    } else if rebind {
-        let effective = try_rename_lookup(entities, &pattern);
-        write_indent(out, indent);
-        writeln!(out, "{effective} = {inner_value};")
-            .expect("writing to a String cannot fail");
-        write_indent(out, indent);
-        writeln!(out, "if ({effective} === undefined) {{")
-            .expect("writing to a String cannot fail");
-        write_indent(out, indent + 1);
-        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
-        write_indent(out, indent);
-        writeln!(out, "}}").expect("writing to a String cannot fail");
     } else {
         let keyword = if mutable { "let" } else { "const" };
         write_indent(out, indent);
@@ -21567,12 +21552,17 @@ fn entity_runtime_state_store_imports(
     return Ok(imports);
 }
 
-fn try_rename_lookup(entities: &HashSet<String>, js_name: &str) -> String {
+fn next_try_rename(entities: &HashSet<String>, js_name: &str) -> String {
     let prefix = format!("{RENAME_MARKER}{js_name}=");
-    return entities
-        .iter()
-        .find(|m| m.starts_with(&prefix))
-        .map_or_else(|| js_name.to_string(), |m| m[prefix.len()..].to_string());
+    if let Some(marker) = entities.iter().find(|m| m.starts_with(&prefix)) {
+        let current = &marker[prefix.len()..];
+        if let Some(num_str) = current.rsplit('_').next() {
+            if let Ok(n) = num_str.parse::<usize>() {
+                return format!("{js_name}_{}", n + 1);
+            }
+        }
+    }
+    return format!("{js_name}_1");
 }
 
 fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
