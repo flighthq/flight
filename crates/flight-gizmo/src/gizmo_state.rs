@@ -325,12 +325,12 @@ fn connect_gizmo_handle(
         None,
     );
     let end_slot = |runtime: Ref<GizmoRuntime>| {
-        Arc::new(move |data: &PointerEventData| {
+        return Arc::new(move |data: &PointerEventData| {
             let emission = end_gizmo_transform(&mut runtime.write().unwrap(), data.pointer_id);
             if let Some(emission) = emission {
                 emit_gizmo(emission);
             }
-        }) as Arc<dyn Fn(&PointerEventData) + Send + Sync>
+        }) as Arc<dyn Fn(&PointerEventData) + Send + Sync>;
     };
     let on_pointer_up = connect_signal(
         &signals.read().unwrap().on_pointer_up,
@@ -863,11 +863,11 @@ fn start_gizmo_transform(
     let active = get_active_node(&selection.read().unwrap());
     let axis_rotation = if runtime.space == GizmoSpace::Local {
         active.map_or(0.0, |active| {
-            (runtime
+            return (runtime
                 .features
                 .as_ref()
                 .expect("live gizmo features")
-                .get_world_rotation)(&active)
+                .get_world_rotation)(&active);
         })
     } else {
         runtime
