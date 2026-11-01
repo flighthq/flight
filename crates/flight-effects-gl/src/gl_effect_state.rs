@@ -47,7 +47,7 @@ pub fn create_gl_effect_state(
     options: Option<&EffectStateOptions>,
 ) -> GlEffectState {
     return GlEffectState {
-        options: options.cloned().unwrap_or_default(),
+        options: options.cloned().unwrap_or(EffectStateOptions::default()),
         scene_target: None,
         pool: create_gl_texture_render_target_pool(),
         lut_cache: create_color_lut_cache(),
