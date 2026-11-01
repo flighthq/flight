@@ -8188,6 +8188,49 @@ fn emit_block(
     return Ok(());
 }
 
+fn tail_expression_needs_return(expression: &Expr) -> bool {
+    return !matches!(
+        expression,
+        Expr::Return(_)
+            | Expr::If(_)
+            | Expr::Match(_)
+            | Expr::Loop(_)
+            | Expr::While(_)
+            | Expr::ForLoop(_)
+            | Expr::Block(_)
+            | Expr::Unsafe(_)
+    );
+}
+
+fn emit_function_block(
+    out: &mut String,
+    statements: &[Stmt],
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let has_return_type = entities
+        .iter()
+        .any(|marker| marker.starts_with(RETURN_TYPE_MARKER) && !marker.ends_with("void"));
+    if has_return_type
+        && let Some(Stmt::Expr(expr, None)) = statements.last()
+        && tail_expression_needs_return(expr)
+    {
+        let mut owned = statements.to_vec();
+        let last = owned.len() - 1;
+        owned[last] = Stmt::Expr(
+            Expr::Return(syn::ExprReturn {
+                attrs: Vec::new(),
+                return_token: syn::token::Return::default(),
+                expr: Some(Box::new(expr.clone())),
+            }),
+            None,
+        );
+        emit_block(out, &owned, entities, indent)
+    } else {
+        emit_block(out, statements, entities, indent)
+    }
+}
+
 // Emits a lexical block and returns the context after its statements. Most callers discard the
 // result because Rust block bindings do not escape, but a value block still needs the advanced
 // context while emitting its final expression.
@@ -10301,7 +10344,7 @@ fn emit_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
-    emit_block(out, &function.block.stmts, &function_context, 1)?;
+    emit_function_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
 }
@@ -10346,7 +10389,7 @@ fn emit_local_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
-    emit_block(
+    emit_function_block(
         out,
         &function.block.stmts,
         &function_context,
