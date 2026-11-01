@@ -20682,7 +20682,7 @@ pub fn test_reserved(default: f32) -> f32 {
 }
 
 #[test]
-fn try_operator_in_expression_position_is_rejected() {
+fn extracts_expression_position_try_into_temp() {
     let source = r#"
 fn helper(x: f32) -> Option<f32> { return Some(x); }
 
@@ -20692,12 +20692,18 @@ pub fn test_try(x: f32) -> Option<f32> {
     return out.first().copied();
 }
 "#;
-    let result = compile_typescript(source, None);
-    assert!(result.is_err(), "expression-position ? should be rejected");
-    let error = result.unwrap_err().to_string();
+    let result = compile_typescript(source, None).unwrap();
     assert!(
-        error.contains("bind the result first"),
-        "error should suggest let binding: {error}"
+        result.contains("const __try0 = helper(x)"),
+        "should extract try into temp: {result}"
+    );
+    assert!(
+        result.contains("if (__try0 === undefined)"),
+        "should check temp for undefined: {result}"
+    );
+    assert!(
+        result.contains("out.push(__try0)"),
+        "should use temp in place of try expression: {result}"
     );
 }
 

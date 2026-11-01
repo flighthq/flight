@@ -233,6 +233,8 @@ const REF_ALIAS_RECEIVER_CAPTURE_MARKER: &str = "@ref-alias-receiver-capture:";
 
 const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:";
 
+const TRY_SUBSTITUTION_MARKER: &str = "@try-sub:";
+
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
 
@@ -8674,7 +8676,23 @@ fn emit_block_with_context(
                 statements.get(index + 1),
             );
             let shadowed = !declared.insert(name);
-            emit_local_with_shadow(out, local, &local_context, indent, shadowed, rebound)?;
+            let effective_context = if local.init.as_ref().is_some_and(|init| {
+                !matches!(init.expr.as_ref(), Expr::Try(_))
+                    && expression_contains_try(&init.expr)
+            }) {
+                let init = local.init.as_ref().unwrap();
+                emit_try_pre_extractions(out, &init.expr, &local_context, indent)?
+            } else {
+                local_context
+            };
+            emit_local_with_shadow(
+                out,
+                local,
+                &effective_context,
+                indent,
+                shadowed,
+                rebound,
+            )?;
             update_vitest_struct_local_context(local, &mut block_context);
             update_vitest_local_function_context(local, &mut block_context);
         } else if let Stmt::Local(local) = statement {
@@ -10166,9 +10184,18 @@ fn emit_expression_value(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
-        Expr::Try(_) => Err(compile_error(
-            "portable `?` in expression position has no lowering; bind the result first with `let x = expr?;`",
-        )),
+        Expr::Try(try_expr) => {
+            let key = try_expr.to_token_stream().to_string();
+            let prefix = format!("{TRY_SUBSTITUTION_MARKER}{key}=");
+            if let Some(marker) = entities.iter().find(|m| m.starts_with(&prefix)) {
+                let temp = marker[prefix.len()..].to_string();
+                Ok(temp)
+            } else {
+                Err(compile_error(
+                    "portable `?` in expression position has no lowering; bind the result first with `let x = expr?;`",
+                ))
+            }
+        }
         Expr::Unary(unary) => emit_unary_expression(unary, entities),
         _ => Err(compile_error(format!(
             "unsupported Rust expression `{}`",
@@ -19402,6 +19429,17 @@ fn emit_statement(
     indent: usize,
 ) -> Result<(), CompileError> {
     match statement {
+        Stmt::Local(local)
+            if local.init.as_ref().is_some_and(|init| {
+                !matches!(init.expr.as_ref(), Expr::Try(_))
+                    && expression_contains_try(&init.expr)
+            }) =>
+        {
+            let init = local.init.as_ref().unwrap();
+            let try_context =
+                emit_try_pre_extractions(out, &init.expr, entities, indent)?;
+            emit_local(out, local, &try_context, indent)?;
+        }
         Stmt::Local(local) => emit_local(out, local, entities, indent)?,
         Stmt::Expr(Expr::Call(call), _) if throw_call(call).is_some() => {
             let (constructor, message) = throw_call(call).expect("guarded by the match condition");
@@ -19847,6 +19885,13 @@ fn emit_statement(
                 && emit_entry_or_default_assign(out, binary, entities, indent)? => {}
         Stmt::Expr(Expr::MethodCall(call), _)
             if emit_entry_or_default_method(out, call, entities, indent)? => {}
+        Stmt::Expr(expression, _) if expression_contains_try(expression) => {
+            let try_context =
+                emit_try_pre_extractions(out, expression, entities, indent)?;
+            write_indent(out, indent);
+            writeln!(out, "{};", emit_expression(expression, &try_context)?)
+                .expect("writing to a String cannot fail");
+        }
         Stmt::Expr(expression, _) => {
             write_indent(out, indent);
             writeln!(out, "{};", emit_expression(expression, entities)?)
@@ -21359,6 +21404,67 @@ fn expression_contains_method(expression: &Expr, expected: &str) -> bool {
     };
     syn::visit::Visit::visit_expr(&mut finder, expression);
     return finder.found;
+}
+
+fn expression_contains_try(expression: &Expr) -> bool {
+    struct TryFinder {
+        found: bool,
+    }
+
+    impl<'ast> syn::visit::Visit<'ast> for TryFinder {
+        fn visit_expr_try(&mut self, _: &'ast syn::ExprTry) {
+            self.found = true;
+        }
+    }
+
+    let mut finder = TryFinder { found: false };
+    syn::visit::Visit::visit_expr(&mut finder, expression);
+    return finder.found;
+}
+
+fn collect_try_expressions<'a>(expression: &'a Expr) -> Vec<&'a syn::ExprTry> {
+    struct TryCollector<'b> {
+        nodes: Vec<&'b syn::ExprTry>,
+    }
+
+    impl<'ast> syn::visit::Visit<'ast> for TryCollector<'ast> {
+        fn visit_expr_try(&mut self, node: &'ast syn::ExprTry) {
+            self.nodes.push(node);
+            syn::visit::visit_expr_try(self, node);
+        }
+    }
+
+    let mut collector = TryCollector { nodes: vec![] };
+    syn::visit::Visit::visit_expr(&mut collector, expression);
+    return collector.nodes;
+}
+
+fn emit_try_pre_extractions(
+    out: &mut String,
+    expression: &Expr,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<HashSet<String>, CompileError> {
+    let try_nodes = collect_try_expressions(expression);
+    if try_nodes.is_empty() {
+        return Ok(entities.clone());
+    }
+    let mut context = entities.clone();
+    for (index, try_node) in try_nodes.iter().enumerate() {
+        let inner = emit_expression(&try_node.expr, entities)?;
+        let key = try_node.to_token_stream().to_string();
+        let temp = format!("__try{index}");
+        write_indent(out, indent);
+        writeln!(out, "const {temp} = {inner};").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(out, "if ({temp} === undefined) {{").expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(out, "}}").expect("writing to a String cannot fail");
+        context.insert(format!("{TRY_SUBSTITUTION_MARKER}{key}={temp}"));
+    }
+    return Ok(context);
 }
 
 fn expression_contains_string_union_variant(expression: &Expr, context: &HashSet<String>) -> bool {
