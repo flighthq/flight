@@ -208,8 +208,10 @@ fn encode_reversed_subpath(subpath: &Subpath, out: &mut Path) {
 /// Alias-safe: `out` may be the same object as `source`.
 pub fn reverse_path(source: &Path, out: &mut Path) {
     let subpaths = decode_subpaths(source);
-    out.commands.clear();
-    out.data.clear();
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
     out.winding = source.winding;
     for subpath in &subpaths {
         encode_reversed_subpath(subpath, out);
