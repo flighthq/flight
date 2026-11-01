@@ -419,6 +419,7 @@ fn draw_wgpu_scene3d_prepared(
 fn flatten_instanced_mesh_matrices(state: &mut WgpuRenderState, mesh: &InstancedMesh) -> Vec<f32> {
     let count = mesh.instance_count.max(0) as usize;
     let scratch = &mut get_wgpu_scene3d_runtime(state).instance_scratch;
+    let scratch: &mut Vec<f32> = scratch;
     scratch.clear();
     scratch.resize(count * INSTANCE_RECORD_FLOATS, 0.0);
     let mut color = allocate_linear_color();
