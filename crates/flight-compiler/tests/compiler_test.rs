@@ -13500,6 +13500,49 @@ pub fn method_try(items: &[u32]) -> Option<u32> {
     }
 
     #[test]
+    fn lowers_try_operator_in_statement_position() {
+        let source = r#"
+pub fn check(value: Option<f32>) -> Option<f32> {
+    value?;
+    return Some(1.0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("if (value === undefined) {"),
+            "statement try should emit undefined guard: {output}"
+        );
+        assert!(
+            output.contains("return undefined;"),
+            "statement try should return undefined: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_try_operator_in_assignment_position() {
+        let source = r#"
+pub fn advance(input: Option<u32>) -> Option<u32> {
+    let mut offset: u32 = 0;
+    offset = input?;
+    return Some(offset);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("offset = input;"),
+            "assignment try should assign first: {output}"
+        );
+        assert!(
+            output.contains("if (offset === undefined) {"),
+            "assignment try should guard the target: {output}"
+        );
+    }
+
+    #[test]
     fn preserves_receivers_for_optional_member_calls() {
         let source = r#"
 use std::sync::Arc;

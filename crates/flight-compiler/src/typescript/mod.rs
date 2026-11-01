@@ -19510,6 +19510,34 @@ fn emit_statement(
             write_indent(out, indent);
             writeln!(out, "[{a}, {b}] = [{b}, {a}];").expect("writing to a String cannot fail");
         }
+        Stmt::Expr(Expr::Try(try_expr), _) => {
+            let inner = emit_expression(&try_expr.expr, entities)?;
+            write_indent(out, indent);
+            writeln!(out, "if ({inner} === undefined) {{")
+                .expect("writing to a String cannot fail");
+            write_indent(out, indent + 1);
+            writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+            write_indent(out, indent);
+            writeln!(out, "}}").expect("writing to a String cannot fail");
+        }
+        Stmt::Expr(Expr::Assign(assign), _)
+            if matches!(assign.right.as_ref(), Expr::Try(_)) =>
+        {
+            let Expr::Try(try_expr) = assign.right.as_ref() else {
+                unreachable!()
+            };
+            let inner = emit_expression(&try_expr.expr, entities)?;
+            let target = emit_expression(&assign.left, entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{target} = {inner};").expect("writing to a String cannot fail");
+            write_indent(out, indent);
+            writeln!(out, "if ({target} === undefined) {{")
+                .expect("writing to a String cannot fail");
+            write_indent(out, indent + 1);
+            writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+            write_indent(out, indent);
+            writeln!(out, "}}").expect("writing to a String cannot fail");
+        }
         Stmt::Expr(Expr::Binary(binary), _)
             if binary_is_assignment(&binary.op)
                 && emit_entry_or_default_assign(out, binary, entities, indent)? => {}
