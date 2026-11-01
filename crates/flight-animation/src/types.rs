@@ -1,3 +1,5 @@
+//! flight-compiler: data-union StateRef
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{EntityRuntimeSlot, Ref, Unknown};

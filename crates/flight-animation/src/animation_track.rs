@@ -1,3 +1,5 @@
+//! flight-compiler: data-union AnimationTrackSamplePosition
+
 use crate::types::*;
 use flight_entity::Ref;
 
