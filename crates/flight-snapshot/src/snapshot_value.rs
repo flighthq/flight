@@ -139,7 +139,7 @@ pub(crate) fn get_array_index(key: &str) -> Option<usize> {
     {
         return None;
     }
-    let index: u64 = key.parse().ok()?;
+    let index: u64 = key.parse::<u64>().ok()?;
     return if index < 4_294_967_295 {
         Some(index as usize)
     } else {
