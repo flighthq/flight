@@ -78,7 +78,11 @@ fn z_b_starling_document_to_data(
     options: Option<&StarlingParseOptions>,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> SpritesheetData {
-    let options = options.copied().unwrap_or(StarlingParseOptions::default());
+    let options = options.copied().unwrap_or(StarlingParseOptions {
+        frame_duration: None,
+        image_height: None,
+        image_width: None,
+    });
     let frame_duration = options.frame_duration.unwrap_or(100.0);
     let image_width = options.image_width.unwrap_or(0.0);
     let image_height = options.image_height.unwrap_or(0.0);
