@@ -31,14 +31,14 @@ pub(crate) fn parse_js_float(text: &str) -> Option<f32> {
     }
     let signed = index > 0;
     let digits_start = index;
-    while index < bytes.len() && bytes[index].is_ascii_digit() {
+    while index < bytes.len() && bytes[index] >= b'0' && bytes[index] <= b'9' {
         index += 1;
     }
     let mut has_digits = index > digits_start;
     if index < bytes.len() && bytes[index] == b'.' {
         index += 1;
         let fraction_start = index;
-        while index < bytes.len() && bytes[index].is_ascii_digit() {
+        while index < bytes.len() && bytes[index] >= b'0' && bytes[index] <= b'9' {
             index += 1;
         }
         has_digits = has_digits || index > fraction_start;
@@ -51,7 +51,10 @@ pub(crate) fn parse_js_float(text: &str) -> Option<f32> {
             exponent_index += 1;
         }
         let exponent_start = exponent_index;
-        while exponent_index < bytes.len() && bytes[exponent_index].is_ascii_digit() {
+        while exponent_index < bytes.len()
+            && bytes[exponent_index] >= b'0'
+            && bytes[exponent_index] <= b'9'
+        {
             exponent_index += 1;
         }
         if exponent_index > exponent_start {
@@ -81,7 +84,7 @@ pub(crate) fn parse_js_int(text: &str) -> Option<i64> {
         index += 1;
     }
     let digits_start = index;
-    while index < bytes.len() && bytes[index].is_ascii_digit() {
+    while index < bytes.len() && bytes[index] >= b'0' && bytes[index] <= b'9' {
         index += 1;
     }
     if index == digits_start {
