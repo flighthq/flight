@@ -160,7 +160,7 @@ pub fn enable_debug(
             }));
         }
         let _ = catch_unwind(AssertUnwindSafe(|| {
-            set_log_level(log_state, saved_global_level)
+            return set_log_level(log_state, saved_global_level);
         }));
         resume_unwind(error);
     }
