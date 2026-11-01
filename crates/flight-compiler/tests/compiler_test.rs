@@ -13544,12 +13544,12 @@ pub fn f(decompress: Option<u32>) -> Option<u32> {
             "should not emit self-referential const: {output}"
         );
         assert!(
-            output.contains("const decompress_q = decompress;"),
-            "should use temp variable: {output}"
+            !output.contains("const decompress"),
+            "should not redeclare parameter: {output}"
         );
         assert!(
-            output.contains("const decompress = decompress_q;"),
-            "should assign from temp: {output}"
+            output.contains("if (decompress === undefined)"),
+            "should emit inline undefined check: {output}"
         );
     }
 
@@ -20729,6 +20729,50 @@ fn read_u16(bytes: &[u8], offset: usize) -> Option<u16> {
     assert!(
         result.contains("return"),
         "should still emit return: {result}"
+    );
+}
+
+#[test]
+fn emits_bare_assignment_for_try_parameter_shadow() {
+    let source = r#"
+pub fn read_char(raw: &[u8]) -> Option<u32> {
+    let raw = raw.get(0)?;
+    return Some(*raw as u32);
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        !result.contains("const raw"),
+        "should not redeclare parameter with const: {result}"
+    );
+    assert!(
+        result.contains("\n  raw = raw[0];\n"),
+        "should use bare assignment for parameter shadow: {result}"
+    );
+    assert!(
+        result.contains("if (raw === undefined)"),
+        "should check for undefined after assignment: {result}"
+    );
+}
+
+#[test]
+fn emits_bare_assignment_for_try_same_block_shadow() {
+    let source = r#"
+pub fn read_double(data: &[u8]) -> Option<u32> {
+    let data = data.get(0)?;
+    let data = data.checked_add(1)?;
+    return Some(data as u32);
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    let const_count = result.matches("const data").count();
+    assert_eq!(
+        const_count, 0,
+        "should not declare data with const (parameter shadow): {result}"
+    );
+    assert!(
+        result.contains("if (data === undefined)"),
+        "should check for undefined: {result}"
     );
 }
 

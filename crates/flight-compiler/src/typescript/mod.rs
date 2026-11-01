@@ -11448,7 +11448,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
     if let Some(initializer) = &local.init
         && let Expr::Try(try_expr) = initializer.expr.as_ref()
     {
-        return emit_try_local(out, local, try_expr, entities, indent);
+        return emit_try_local(out, local, try_expr, entities, indent, shadowed);
     }
     if let Some(initializer) = &local.init
         && let Expr::Match(match_expr) = initializer.expr.as_ref()
@@ -11738,12 +11738,33 @@ fn emit_try_local(
     try_expr: &syn::ExprTry,
     entities: &HashSet<String>,
     indent: usize,
+    shadowed: bool,
 ) -> Result<(), CompileError> {
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
     let inner_value = emit_expression(&try_expr.expr, entities)?;
-    let keyword = if mutable { "let" } else { "const" };
-    if pattern == inner_value {
+    let rebind = shadowed
+        || match &local.pat {
+            Pat::Ident(identifier) => {
+                expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
+            }
+            Pat::Type(typed) => match typed.pat.as_ref() {
+                Pat::Ident(identifier) => {
+                    expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
+                }
+                _ => false,
+            },
+            _ => false,
+        };
+    if pattern == inner_value && rebind {
+        write_indent(out, indent);
+        writeln!(out, "if ({pattern} === undefined) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(out, "}}").expect("writing to a String cannot fail");
+    } else if pattern == inner_value {
         let temp = format!("{pattern}_q");
         write_indent(out, indent);
         writeln!(out, "const {temp} = {inner_value};")
@@ -11755,10 +11776,23 @@ fn emit_try_local(
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
+        let keyword = if mutable { "let" } else { "const" };
         write_indent(out, indent);
         writeln!(out, "{keyword} {pattern} = {temp};")
             .expect("writing to a String cannot fail");
+    } else if rebind {
+        write_indent(out, indent);
+        writeln!(out, "{pattern} = {inner_value};")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(out, "if ({pattern} === undefined) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(out, "}}").expect("writing to a String cannot fail");
     } else {
+        let keyword = if mutable { "let" } else { "const" };
         write_indent(out, indent);
         writeln!(out, "{keyword} {pattern} = {inner_value};")
             .expect("writing to a String cannot fail");
