@@ -35,6 +35,27 @@ fn has_sensor(body: &crate::RigidBody3D) -> bool {
 }
 
 #[allow(clippy::too_many_arguments)]
+// Creates the pair's contact and records it as both live and newly begun.
+fn insert_physics_3d_contact(
+    world: &mut Physics3DWorld,
+    body_a: i32,
+    body_b: i32,
+    collider_a: usize,
+    collider_b: usize,
+) -> Ref<Physics3DContact> {
+    let contact = create_physics_3d_contact();
+    set_physics_3d_contact_pair(
+        &mut contact.write().unwrap(),
+        body_a,
+        body_b,
+        collider_a,
+        collider_b,
+    );
+    world.contacts.push(contact.clone());
+    world.events.began.push(contact.clone());
+    return contact;
+}
+
 fn merge_contact(
     world: &mut Physics3DWorld,
     body_a: i32,
@@ -59,40 +80,13 @@ fn merge_contact(
         })
         .cloned();
     let is_existing = existing.is_some();
-    let contact = existing.unwrap_or_else(|| {
-        let c = create_physics_3d_contact();
-        set_physics_3d_contact_pair(
-            &mut c.write().unwrap(),
-            body_a,
-            body_b,
-            collider_a,
-            collider_b,
-        );
-        world.contacts.push(c.clone());
-        world.events.began.push(c.clone());
-        return c;
-    });
-    let center_a = world
-        .body_by_index
-        .get(&body_a)
-        .map(|body| {
-            let body = body.read().unwrap();
-            let mut center = [0.0; 3];
-            write_rigid_body_3d_world_center(&body, &mut center);
-            return center;
-        })
-        .unwrap_or([0.0; 3]);
-    let center_b = world
-        .body_by_index
-        .get(&body_b)
-        .map(|body| {
-            let body = body.read().unwrap();
-            let mut center = [0.0; 3];
-            write_rigid_body_3d_world_center(&body, &mut center);
-            return center;
-        })
-        .unwrap_or([0.0; 3]);
-    let mut contact = contact.write().unwrap();
+    let contact_ref = match existing {
+        Some(found) => found,
+        None => insert_physics_3d_contact(world, body_a, body_b, collider_a, collider_b),
+    };
+    let center_a = read_physics_3d_body_world_center(world, body_a);
+    let center_b = read_physics_3d_body_world_center(world, body_b);
+    let mut contact = contact_ref.write().unwrap();
     contact.normal_x = manifold.normal_x;
     contact.normal_y = manifold.normal_y;
     contact.normal_z = manifold.normal_z;
@@ -126,6 +120,16 @@ fn merge_contact(
         target.r_bz = source.z - center_b[2];
     }
     contact.point_count = manifold.point_count;
+}
+
+// A missing body reads as the origin.
+fn read_physics_3d_body_world_center(world: &Physics3DWorld, body_index: i32) -> [f32; 3] {
+    let mut center = [0.0; 3];
+    let Some(body) = world.body_by_index.get(&body_index) else {
+        return center;
+    };
+    write_rigid_body_3d_world_center(&body.read().unwrap(), &mut center);
+    return center;
 }
 
 fn rebuild_physics_3d_contacts(

@@ -54,6 +54,18 @@ struct ImpactCandidate {
     center_b: [f32; 3],
 }
 
+fn create_impact_contact(impact: &Impact) -> Physics3DContactRef {
+    let contact = create_physics_3d_contact();
+    set_physics_3d_contact_pair(
+        &mut contact.write().unwrap(),
+        impact.body_a,
+        impact.body_b,
+        impact.collider_a,
+        impact.collider_b,
+    );
+    return contact;
+}
+
 fn advance_awake_bodies(world: &mut Physics3DWorld, dt: f32) {
     for body in &world.bodies {
         let mut body = body.write().unwrap();
@@ -973,17 +985,10 @@ fn write_impact_contact(
             && contact.collider_b == impact.collider_b;
     });
     let created = existing.is_none();
-    let contact = existing.cloned().unwrap_or_else(|| {
-        let contact = create_physics_3d_contact();
-        set_physics_3d_contact_pair(
-            &mut contact.write().unwrap(),
-            impact.body_a,
-            impact.body_b,
-            impact.collider_a,
-            impact.collider_b,
-        );
-        return contact;
-    });
+    let contact = match existing {
+        Some(found) => found.clone(),
+        None => create_impact_contact(impact),
+    };
     let (mut center_a, mut center_b) = ([0.0; 3], [0.0; 3]);
     write_rigid_body_3d_world_center(&a.read().unwrap(), &mut center_a);
     write_rigid_body_3d_world_center(&b.read().unwrap(), &mut center_b);
@@ -1001,7 +1006,9 @@ fn write_impact_contact(
             value.points.push(create_physics_3d_contact_point());
         }
         value.point_count = impact.points.len();
-        for (point, source) in value.points.iter_mut().zip(&impact.points) {
+        for index in 0..impact.points.len() {
+            let point = &mut value.points[index];
+            let source = &impact.points[index];
             point.x = source.x;
             point.y = source.y;
             point.z = source.z;
