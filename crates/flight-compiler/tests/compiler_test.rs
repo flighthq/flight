@@ -661,8 +661,8 @@ export function reader(node: Readonly<Node>): () => number {
 }
 
 export function offset(node: Readonly<Readonly<Node>>, delta: number): number {
-  delta = delta + 1;
-  return node.value + delta;
+  const delta_1 = delta + 1;
+  return node.value + delta_1;
 }
 "#
         );

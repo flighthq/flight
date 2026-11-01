@@ -11876,6 +11876,15 @@ pub(crate) fn emit_local_with_shadow_and_else(
         writeln!(out, "{value};").expect("writing to a String cannot fail");
         return Ok(None);
     }
+    let scope_declared = local_name.as_deref().is_some_and(|name| {
+        entities.contains(&format!("{SCOPE_DECLARED_MARKER}{name}"))
+    });
+    if scope_declared {
+        let fresh = next_try_rename(entities, &pattern);
+        let keyword = if mutable || rebound { "let" } else { "const" };
+        writeln!(out, "{keyword} {fresh} = {value};").expect("writing to a String cannot fail");
+        return Ok(Some((pattern, fresh)));
+    }
     if rebind {
         write!(out, "{pattern}").expect("writing to a String cannot fail");
     } else {
