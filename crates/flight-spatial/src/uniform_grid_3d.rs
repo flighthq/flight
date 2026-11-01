@@ -67,7 +67,7 @@ pub const DEFAULT_SPATIAL_CELL_SIZE_3D: f32 = 128.0;
 // ---------------------------------------------------------------------------
 
 pub fn create_uniform_grid_spatial_backend_3d(cell_size: f32) -> SpatialIndexBackend3D {
-    let mut out = allocate_entity();
+    let mut out: SpatialIndexBackend3D = allocate_entity();
     initialize_uniform_grid_spatial_backend_3d(&mut out, cell_size);
     return out;
 }

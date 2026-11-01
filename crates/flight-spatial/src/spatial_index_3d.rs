@@ -46,7 +46,7 @@ pub struct SpatialIndex3D {
 const DEFAULT_FRUSTUM_SLICES: u32 = 8;
 
 pub fn create_spatial_index_3d(backend: Option<SpatialIndexBackend3D>) -> SpatialIndex3D {
-    let mut out = allocate_entity();
+    let mut out: SpatialIndex3D = allocate_entity();
     initialize_spatial_index_3d(&mut out, backend);
     return out;
 }

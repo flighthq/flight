@@ -66,7 +66,7 @@ pub(crate) fn create_bvh_3d(margin: f32) -> Bvh3D {
 }
 
 pub fn create_bvh_spatial_backend_3d(margin: Option<f32>) -> SpatialIndexBackend3D {
-    let mut out = allocate_entity();
+    let mut out: SpatialIndexBackend3D = allocate_entity();
     initialize_bvh_spatial_backend_3d(&mut out, margin);
     return out;
 }

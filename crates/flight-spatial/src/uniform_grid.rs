@@ -57,7 +57,7 @@ pub const MAX_INDEXED_CELLS_PER_OBJECT: u32 = 1024;
 
 /// Creates an entity-backed uniform-grid callback record.
 pub fn create_uniform_grid_spatial_backend_2d(cell_size: f32) -> SpatialIndexBackend2D {
-    let mut out = allocate_entity();
+    let mut out: SpatialIndexBackend2D = allocate_entity();
     let grid = UniformGrid2D {
         cell_size,
         ..UniformGrid2D::default()

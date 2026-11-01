@@ -46,7 +46,7 @@ pub struct SpatialIndex2D {
 pub const DEFAULT_SPATIAL_CELL_SIZE: f32 = 128.0;
 
 pub fn create_spatial_index_2d(backend: Option<SpatialIndexBackend2D>) -> SpatialIndex2D {
-    let mut out = allocate_entity();
+    let mut out: SpatialIndex2D = allocate_entity();
     initialize_spatial_index_2d(&mut out, backend);
     return out;
 }
