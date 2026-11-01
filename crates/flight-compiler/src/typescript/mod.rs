@@ -13568,6 +13568,33 @@ fn inferred_tagged_data_union_pattern(pattern: &Pat) -> InferredPattern {
                         Pat::Wild(_) => None,
                         _ => return InferredPattern::NotEnum,
                     },
+                    Pat::Struct(inner_struct) => {
+                        let mut fields = Vec::new();
+                        for field in &inner_struct.fields {
+                            let source = emit_member(&field.member);
+                            let binding_name = match field.pat.as_ref() {
+                                Pat::Ident(id) if id.subpat.is_none() => {
+                                    snake_to_lower_camel(&id.ident.to_string())
+                                }
+                                Pat::Wild(_) => continue,
+                                Pat::Reference(r) => match r.pat.as_ref() {
+                                    Pat::Ident(id) if id.subpat.is_none() => {
+                                        snake_to_lower_camel(&id.ident.to_string())
+                                    }
+                                    Pat::Wild(_) => continue,
+                                    _ => return InferredPattern::NotEnum,
+                                },
+                                _ => return InferredPattern::NotEnum,
+                            };
+                            fields.push((binding_name, snake_to_lower_camel(&source)));
+                        }
+                        return InferredPattern::Variants(
+                            vec![(owner, variant)],
+                            None,
+                            fields,
+                            true,
+                        );
+                    }
                     _ => return InferredPattern::NotEnum,
                 }
             } else {
