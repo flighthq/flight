@@ -375,7 +375,7 @@ fn has_gl_stack_index_suffix(line: &str) -> bool {
             continue;
         }
         let mut end = start + 1;
-        while end < bytes.len() && bytes[end].is_ascii_digit() {
+        while end < bytes.len() && bytes[end] >= b'0' && bytes[end] <= b'9' {
             end += 1;
         }
         let at_boundary =
