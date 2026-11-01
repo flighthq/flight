@@ -36,7 +36,8 @@ pub fn create_gl_render_view_resources(
     });
     descriptor.width = width;
     descriptor.height = height;
-    let render_target = create_gl_texture_render_target(&render_state, &descriptor, None)?
+    let created_target = create_gl_texture_render_target(&render_state, &descriptor, None)?;
+    let render_target = created_target
         .ok_or_else(|| "createGlRenderViewResources: target allocation was refused".to_string())?;
     let mut viewport = create_viewport();
     viewport.width = width;
