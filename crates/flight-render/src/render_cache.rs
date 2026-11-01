@@ -57,7 +57,8 @@ fn adapt_render_cache<S: RenderState>(
     if let Some(signals) = &adapter.signals {
         emit_signal(&signals.on_prepare, &());
     }
-    let cache = adapter.cache.as_ref()?.read().unwrap();
+    let cache_ref = adapter.cache.as_ref()?;
+    let cache = cache_ref.read().unwrap();
     node.kind = RENDER_CACHE_KIND.to_string();
     let current = node.transform_2d.clone();
     multiply_matrix(&mut node.transform_2d, &current, &cache.transform);
