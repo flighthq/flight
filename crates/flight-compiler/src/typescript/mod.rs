@@ -12879,7 +12879,8 @@ fn emit_let_else_local(
             for (binding, expression) in &test.bindings {
                 let name = snake_to_lower_camel(binding);
                 let binding_shadowed = shadowed
-                    || expression_contains_identifier(&initializer.expr, binding);
+                    || expression_contains_identifier(&initializer.expr, binding)
+                    || entities.contains(&format!("{SCOPE_DECLARED_MARKER}{binding}"));
                 write_indent(out, indent);
                 if binding_shadowed {
                     writeln!(out, "{name} = {expression};")
@@ -19725,7 +19726,11 @@ fn emit_statement(
                 };
                 if let Some(pat) = pat {
                     if let Some(name) = local_pattern_name(pat) {
+                        let camel = snake_to_lower_camel(&name);
                         then_context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
+                        if camel != name {
+                            then_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                        }
                     }
                 }
             }
@@ -19763,8 +19768,13 @@ fn emit_statement(
                             .expect("writing to a String cannot fail");
                         if let Expr::Let(let_binding) = let_guard {
                             if let Some(rust_name) = local_pattern_name(&let_binding.pat) {
+                                let camel = snake_to_lower_camel(&rust_name);
                                 then_context
                                     .insert(format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+                                if camel != rust_name {
+                                    then_context
+                                        .insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                                }
                             }
                         }
                         extra_closes += 1;
