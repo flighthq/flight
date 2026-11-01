@@ -28,7 +28,8 @@ pub fn clear_shaped_run(run: &mut ShapedRun) {
     run.direction = TextDirection::LeftToRight;
     run.font = None;
     run.glyph_count = 0;
-    run.glyphs.clear();
+    let run_glyphs: &mut Vec<ShapedGlyph> = &mut run.glyphs;
+    run_glyphs.clear();
     run.script = String::new();
 }
 
@@ -200,7 +201,8 @@ pub fn shape_text_run_into(
     out.font = result.font.clone();
     out.glyph_count = result.glyph_count;
     out.script = result.script.clone();
-    out.glyphs.clear();
+    let out_glyphs: &mut Vec<ShapedGlyph> = &mut out.glyphs;
+    out_glyphs.clear();
     out.glyphs.extend_from_slice(&result.glyphs);
     return true;
 }
