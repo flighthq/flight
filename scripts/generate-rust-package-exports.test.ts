@@ -47,6 +47,22 @@ describe('collectCrateExportSymbols', () => {
     ]);
     expect([...collectExportSymbols(modules).keys()]).toEqual(['publicValue']);
   });
+
+  it('collects async function exports as values', () => {
+    const modules = [
+      {
+        fileName: 'owner.ts',
+        mode: 'generate' as const,
+        typescript: 'export async function readValue(): Promise<number> {}\n',
+      },
+    ];
+    expect([...collectExportSymbols(modules)]).toEqual([
+      ['readValue', { fileName: 'owner.ts', hasType: false, hasValue: true, isClass: false }],
+    ]);
+    expect([...collectTypeScriptExportSymbols('export async function readValue(): Promise<number> {}\n')]).toEqual([
+      ['readValue', { hasType: false, hasValue: true, isClass: false }],
+    ]);
+  });
 });
 
 describe('dependency contract exports', () => {

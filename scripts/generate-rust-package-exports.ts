@@ -171,7 +171,7 @@ export function collectExportSymbols(modules: readonly ExportModule[]): Map<stri
   const symbols = new Map<string, ExportSymbolOwner>();
   for (const module of modules) {
     if (module.typescript === undefined) continue;
-    const pattern = /^export (class|function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm;
+    const pattern = /^export (?:async )?(class|function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm;
     for (const match of module.typescript.matchAll(pattern)) {
       const owner = symbols.get(match[2]) ?? {
         fileName: module.fileName,
@@ -206,7 +206,9 @@ export function collectTypeScriptExportSymbols(typescript: string): Map<string, 
     symbols.set(name, owner);
   }
 
-  for (const match of typescript.matchAll(/^export (class|function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm)) {
+  for (const match of typescript.matchAll(
+    /^export (?:async )?(class|function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm,
+  )) {
     const kind = match[1];
     add(
       match[2],
