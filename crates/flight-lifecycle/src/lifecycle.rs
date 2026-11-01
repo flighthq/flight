@@ -232,7 +232,7 @@ pub fn attach_app_lifecycle(host_lifecycle: &HostLifecycleCapability, app: &mut 
                 let on_memory_warning = app.on_memory_warning.clone();
                 let memory_listener: LifecycleMemoryWarningListener =
                     Arc::new(move |level: AppMemoryPressure| {
-                        emit_signal(&on_memory_warning, &level)
+                        return emit_signal(&on_memory_warning, &level);
                     });
                 return subscribe_memory_warning(memory_listener);
             });
