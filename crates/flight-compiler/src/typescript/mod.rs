@@ -534,6 +534,28 @@ struct TupleOptionMatchArm {
     catch_all: bool,
 }
 
+enum GeneralTupleElementCondition {
+    Literal(String),
+    EnumVariant(String),
+    DataUnionKind(String),
+    Wild,
+}
+
+struct GeneralTupleElement {
+    condition: GeneralTupleElementCondition,
+    binding: Option<String>,
+    field_bindings: Vec<(String, String)>,
+}
+
+struct GeneralTupleAlternative {
+    elements: Vec<GeneralTupleElement>,
+}
+
+struct GeneralTupleMatchArm {
+    catch_all: bool,
+    alternatives: Vec<GeneralTupleAlternative>,
+}
+
 struct ExternalIdentityAlias {
     module: String,
     tag: String,
@@ -11401,6 +11423,85 @@ fn emit_match_statement_with_action(
             out.push_str("}\n");
             return Ok(());
         }
+        if let Some(arms_info) = analyze_general_tuple_match(scrutinee, &expression.arms) {
+            write_indent(out, indent);
+            out.push_str("{\n");
+            let mut temps = Vec::new();
+            for (i, elem) in scrutinee.elems.iter().enumerate() {
+                let value = emit_expression(elem, entities)?;
+                let temp = format!("$m{i}");
+                write_indent(out, indent + 1);
+                writeln!(out, "const {temp} = {value};")
+                    .expect("writing to a String cannot fail");
+                temps.push(temp);
+            }
+            for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
+                write_indent(out, indent + 1);
+                if info.catch_all {
+                    if index == 0 {
+                        out.push_str("{\n");
+                    } else {
+                        out.push_str("else {\n");
+                    }
+                } else {
+                    let mut alt_predicates = Vec::new();
+                    for alt in &info.alternatives {
+                        let mut conditions = Vec::new();
+                        for (i, element) in alt.elements.iter().enumerate() {
+                            if let Some(cond) =
+                                emit_general_tuple_element_condition(element, &temps[i])
+                            {
+                                conditions.push(cond);
+                            }
+                        }
+                        let alt_pred = if conditions.is_empty() {
+                            "true".to_string()
+                        } else {
+                            conditions.join(" && ")
+                        };
+                        alt_predicates.push(alt_pred);
+                    }
+                    let predicate = if alt_predicates.len() == 1 {
+                        alt_predicates.into_iter().next().unwrap()
+                    } else {
+                        alt_predicates
+                            .into_iter()
+                            .map(|p| format!("({p})"))
+                            .collect::<Vec<_>>()
+                            .join(" || ")
+                    };
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+                if let Some(alt) = info.alternatives.first() {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(binding) = &element.binding {
+                            write_indent(out, indent + 2);
+                            writeln!(out, "const {binding} = {};", temps[i])
+                                .expect("writing to a String cannot fail");
+                        }
+                        for (binding_name, source_field) in &element.field_bindings {
+                            write_indent(out, indent + 2);
+                            writeln!(
+                                out,
+                                "const {binding_name} = {}.{source_field};",
+                                temps[i]
+                            )
+                            .expect("writing to a String cannot fail");
+                        }
+                    }
+                }
+                let arm_context = lexical_pattern_context(entities, &arm.pat);
+                let body_indent = indent + 2;
+                emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+                write_indent(out, indent + 1);
+                out.push_str("}\n");
+            }
+            write_indent(out, indent);
+            out.push_str("}\n");
+            return Ok(());
+        }
     }
     if let Some(inferred_arms) =
         analyze_inferred_tagged_data_union_match(&expression.arms, entities)
@@ -13707,6 +13808,201 @@ fn analyze_tuple_option_match(
     return has_option_test.then_some(analyzed);
 }
 
+fn analyze_general_tuple_element(pattern: &Pat) -> Option<GeneralTupleElement> {
+    return match pattern {
+        Pat::Lit(lit) => {
+            let value = match &lit.lit {
+                Lit::Str(s) => format!("\"{}\"", s.value()),
+                Lit::Int(i) => i.base10_digits().to_string(),
+                Lit::Byte(b) => (b.value() as i64).to_string(),
+                Lit::Bool(b) => b.value.to_string(),
+                _ => return None,
+            };
+            Some(GeneralTupleElement {
+                condition: GeneralTupleElementCondition::Literal(value),
+                binding: None,
+                field_bindings: Vec::new(),
+            })
+        }
+        Pat::Path(path) => {
+            let (_owner, variant) = path_owner_and_member(&path.path)?;
+            Some(GeneralTupleElement {
+                condition: GeneralTupleElementCondition::EnumVariant(
+                    lower_camel_from_upper_camel(&variant),
+                ),
+                binding: None,
+                field_bindings: Vec::new(),
+            })
+        }
+        Pat::TupleStruct(ts) => {
+            let (_, variant) = path_owner_and_member(&ts.path)?;
+            let binding = if ts.elems.len() == 1 {
+                match &ts.elems[0] {
+                    Pat::Ident(id) if id.subpat.is_none() && id.ident != "_" => {
+                        Some(snake_to_lower_camel(&id.ident.to_string()))
+                    }
+                    Pat::Wild(_) => None,
+                    Pat::Reference(r) => match r.pat.as_ref() {
+                        Pat::Ident(id) if id.subpat.is_none() && id.ident != "_" => {
+                            Some(snake_to_lower_camel(&id.ident.to_string()))
+                        }
+                        Pat::Wild(_) => None,
+                        _ => return None,
+                    },
+                    _ => return None,
+                }
+            } else if ts.elems.is_empty() {
+                None
+            } else {
+                return None;
+            };
+            Some(GeneralTupleElement {
+                condition: GeneralTupleElementCondition::DataUnionKind(
+                    lower_camel_from_upper_camel(&variant),
+                ),
+                binding,
+                field_bindings: Vec::new(),
+            })
+        }
+        Pat::Struct(s) => {
+            let (_, variant) = path_owner_and_member(&s.path)?;
+            let mut field_bindings = Vec::new();
+            for field in &s.fields {
+                let source = emit_member(&field.member);
+                let binding_name = match field.pat.as_ref() {
+                    Pat::Ident(id) if id.subpat.is_none() => {
+                        snake_to_lower_camel(&id.ident.to_string())
+                    }
+                    Pat::Wild(_) => continue,
+                    Pat::Reference(r) => match r.pat.as_ref() {
+                        Pat::Ident(id) if id.subpat.is_none() => {
+                            snake_to_lower_camel(&id.ident.to_string())
+                        }
+                        Pat::Wild(_) => continue,
+                        _ => return None,
+                    },
+                    _ => return None,
+                };
+                field_bindings.push((binding_name, source));
+            }
+            Some(GeneralTupleElement {
+                condition: GeneralTupleElementCondition::DataUnionKind(
+                    lower_camel_from_upper_camel(&variant),
+                ),
+                binding: None,
+                field_bindings,
+            })
+        }
+        Pat::Wild(_) => Some(GeneralTupleElement {
+            condition: GeneralTupleElementCondition::Wild,
+            binding: None,
+            field_bindings: Vec::new(),
+        }),
+        Pat::Ident(id) if id.subpat.is_none() => {
+            if id.ident == "_" {
+                Some(GeneralTupleElement {
+                    condition: GeneralTupleElementCondition::Wild,
+                    binding: None,
+                    field_bindings: Vec::new(),
+                })
+            } else {
+                Some(GeneralTupleElement {
+                    condition: GeneralTupleElementCondition::Wild,
+                    binding: Some(snake_to_lower_camel(&id.ident.to_string())),
+                    field_bindings: Vec::new(),
+                })
+            }
+        }
+        Pat::Reference(reference) => analyze_general_tuple_element(&reference.pat),
+        Pat::Paren(paren) => analyze_general_tuple_element(&paren.pat),
+        _ => None,
+    };
+}
+
+fn analyze_general_tuple_pattern(
+    pattern: &Pat,
+    arity: usize,
+) -> Option<GeneralTupleMatchArm> {
+    return match pattern {
+        Pat::Tuple(tuple) if tuple.elems.len() == arity => {
+            let mut elements = Vec::new();
+            for elem in &tuple.elems {
+                elements.push(analyze_general_tuple_element(elem)?);
+            }
+            Some(GeneralTupleMatchArm {
+                catch_all: false,
+                alternatives: vec![GeneralTupleAlternative { elements }],
+            })
+        }
+        Pat::Or(or) => {
+            let mut alternatives = Vec::new();
+            for case in &or.cases {
+                match case {
+                    Pat::Tuple(tuple) if tuple.elems.len() == arity => {
+                        let mut elements = Vec::new();
+                        for elem in &tuple.elems {
+                            elements.push(analyze_general_tuple_element(elem)?);
+                        }
+                        alternatives.push(GeneralTupleAlternative { elements });
+                    }
+                    _ => return None,
+                }
+            }
+            Some(GeneralTupleMatchArm {
+                catch_all: false,
+                alternatives,
+            })
+        }
+        Pat::Wild(_) => Some(GeneralTupleMatchArm {
+            catch_all: true,
+            alternatives: Vec::new(),
+        }),
+        Pat::Ident(id) if id.subpat.is_none() && id.ident == "_" => Some(GeneralTupleMatchArm {
+            catch_all: true,
+            alternatives: Vec::new(),
+        }),
+        _ => None,
+    };
+}
+
+fn analyze_general_tuple_match(
+    scrutinee: &syn::ExprTuple,
+    arms: &[syn::Arm],
+) -> Option<Vec<GeneralTupleMatchArm>> {
+    let arity = scrutinee.elems.len();
+    if arity < 2 {
+        return None;
+    }
+    let mut has_condition = false;
+    let mut analyzed = Vec::new();
+    for arm in arms {
+        let info = analyze_general_tuple_pattern(&arm.pat, arity)?;
+        if !info.catch_all {
+            has_condition = true;
+        }
+        analyzed.push(info);
+    }
+    return has_condition.then_some(analyzed);
+}
+
+fn emit_general_tuple_element_condition(
+    element: &GeneralTupleElement,
+    temp: &str,
+) -> Option<String> {
+    return match &element.condition {
+        GeneralTupleElementCondition::Literal(value) => {
+            Some(format!("{temp} === {value}"))
+        }
+        GeneralTupleElementCondition::EnumVariant(variant) => {
+            Some(format!("{temp} === \"{variant}\""))
+        }
+        GeneralTupleElementCondition::DataUnionKind(kind) => {
+            Some(format!("{temp}.kind === \"{kind}\""))
+        }
+        GeneralTupleElementCondition::Wild => None,
+    };
+}
+
 fn emit_match_expression(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
@@ -13966,6 +14262,83 @@ fn emit_match_expression(
                     )
                     .expect("writing to a String cannot fail");
                 }
+                out.push_str("  }\n");
+            }
+            out.push_str("})()");
+            return Ok(out);
+        }
+        if let Some(arms_info) = analyze_general_tuple_match(scrutinee, &expression.arms) {
+            let mut out = String::new();
+            out.push_str("(() => {\n");
+            let mut temps = Vec::new();
+            for (i, elem) in scrutinee.elems.iter().enumerate() {
+                let value = emit_expression(elem, entities)?;
+                let temp = format!("$m{i}");
+                writeln!(out, "  const {temp} = {value};")
+                    .expect("writing to a String cannot fail");
+                temps.push(temp);
+            }
+            for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
+                if info.catch_all {
+                    if index == 0 {
+                        out.push_str("  {\n");
+                    } else {
+                        out.push_str("  else {\n");
+                    }
+                } else {
+                    let mut alt_predicates = Vec::new();
+                    for alt in &info.alternatives {
+                        let mut conditions = Vec::new();
+                        for (i, element) in alt.elements.iter().enumerate() {
+                            if let Some(cond) =
+                                emit_general_tuple_element_condition(element, &temps[i])
+                            {
+                                conditions.push(cond);
+                            }
+                        }
+                        let alt_pred = if conditions.is_empty() {
+                            "true".to_string()
+                        } else {
+                            conditions.join(" && ")
+                        };
+                        alt_predicates.push(alt_pred);
+                    }
+                    let predicate = if alt_predicates.len() == 1 {
+                        alt_predicates.into_iter().next().unwrap()
+                    } else {
+                        alt_predicates
+                            .into_iter()
+                            .map(|p| format!("({p})"))
+                            .collect::<Vec<_>>()
+                            .join(" || ")
+                    };
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "  {prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+                if let Some(alt) = info.alternatives.first() {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(binding) = &element.binding {
+                            writeln!(out, "    const {binding} = {};", temps[i])
+                                .expect("writing to a String cannot fail");
+                        }
+                        for (binding_name, source_field) in &element.field_bindings {
+                            writeln!(
+                                out,
+                                "    const {binding_name} = {}.{source_field};",
+                                temps[i]
+                            )
+                            .expect("writing to a String cannot fail");
+                        }
+                    }
+                }
+                let arm_context = lexical_pattern_context(entities, &arm.pat);
+                writeln!(
+                    out,
+                    "    return {};",
+                    emit_expression(&arm.body, &arm_context)?
+                )
+                .expect("writing to a String cannot fail");
                 out.push_str("  }\n");
             }
             out.push_str("})()");
@@ -14474,6 +14847,95 @@ pub(crate) fn emit_match_statement(
                         write_indent(out, indent + 2);
                         writeln!(out, "const {binding} = {};", temps[i])
                             .expect("writing to a String cannot fail");
+                    }
+                }
+                let arm_context = lexical_pattern_context(entities, &arm.pat);
+                let body_indent = indent + 2;
+                match arm.body.as_ref() {
+                    Expr::Block(block) => {
+                        emit_block(out, &block.block.stmts, &arm_context, body_indent)?
+                    }
+                    expression => emit_statement(
+                        out,
+                        &Stmt::Expr(expression.clone(), None),
+                        &arm_context,
+                        body_indent,
+                    )?,
+                }
+                write_indent(out, indent + 1);
+                out.push_str("}\n");
+            }
+            write_indent(out, indent);
+            out.push_str("}\n");
+            return Ok(());
+        }
+        if let Some(arms_info) = analyze_general_tuple_match(scrutinee, &expression.arms) {
+            write_indent(out, indent);
+            out.push_str("{\n");
+            let mut temps = Vec::new();
+            for (i, elem) in scrutinee.elems.iter().enumerate() {
+                let value = emit_expression(elem, entities)?;
+                let temp = format!("$m{i}");
+                write_indent(out, indent + 1);
+                writeln!(out, "const {temp} = {value};")
+                    .expect("writing to a String cannot fail");
+                temps.push(temp);
+            }
+            for (index, (arm, info)) in expression.arms.iter().zip(&arms_info).enumerate() {
+                write_indent(out, indent + 1);
+                if info.catch_all {
+                    if index == 0 {
+                        out.push_str("{\n");
+                    } else {
+                        out.push_str("else {\n");
+                    }
+                } else {
+                    let mut alt_predicates = Vec::new();
+                    for alt in &info.alternatives {
+                        let mut conditions = Vec::new();
+                        for (i, element) in alt.elements.iter().enumerate() {
+                            if let Some(cond) =
+                                emit_general_tuple_element_condition(element, &temps[i])
+                            {
+                                conditions.push(cond);
+                            }
+                        }
+                        let alt_pred = if conditions.is_empty() {
+                            "true".to_string()
+                        } else {
+                            conditions.join(" && ")
+                        };
+                        alt_predicates.push(alt_pred);
+                    }
+                    let predicate = if alt_predicates.len() == 1 {
+                        alt_predicates.into_iter().next().unwrap()
+                    } else {
+                        alt_predicates
+                            .into_iter()
+                            .map(|p| format!("({p})"))
+                            .collect::<Vec<_>>()
+                            .join(" || ")
+                    };
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+                if let Some(alt) = info.alternatives.first() {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(binding) = &element.binding {
+                            write_indent(out, indent + 2);
+                            writeln!(out, "const {binding} = {};", temps[i])
+                                .expect("writing to a String cannot fail");
+                        }
+                        for (binding_name, source_field) in &element.field_bindings {
+                            write_indent(out, indent + 2);
+                            writeln!(
+                                out,
+                                "const {binding_name} = {}.{source_field};",
+                                temps[i]
+                            )
+                            .expect("writing to a String cannot fail");
+                        }
                     }
                 }
                 let arm_context = lexical_pattern_context(entities, &arm.pat);
