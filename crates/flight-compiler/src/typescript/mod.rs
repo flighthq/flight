@@ -8673,26 +8673,6 @@ fn emit_function_block(
     }
 }
 
-fn insert_parameter_scope_declared(
-    inputs: &syn::punctuated::Punctuated<FnArg, Token![,]>,
-    context: &mut HashSet<String>,
-) {
-    for argument in inputs {
-        let FnArg::Typed(argument) = argument else {
-            continue;
-        };
-        let Pat::Ident(pattern) = argument.pat.as_ref() else {
-            continue;
-        };
-        let rust_name = pattern.ident.to_string();
-        let camel = snake_to_lower_camel(&rust_name);
-        context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
-        if camel != rust_name {
-            context.insert(format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
-        }
-    }
-}
-
 // Emits a lexical block and returns the context after its statements. Most callers discard the
 // result because Rust block bindings do not escape, but a value block still needs the advanced
 // context while emitting its final expression.
@@ -8885,15 +8865,6 @@ fn emit_closure_with_parameter_types(
         ReturnType::Default => String::new(),
         ReturnType::Type(_, rust_type) => format!(": {}", emit_type(rust_type, entities)?),
     };
-    for pattern in &closure.inputs {
-        if let Some(name) = closure_parameter_identifier(pattern) {
-            let camel = snake_to_lower_camel(&name);
-            closure_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
-            if camel != name {
-                closure_context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
-            }
-        }
-    }
     let body = match closure.body.as_ref() {
         Expr::Block(block) => {
             let stmts = &block.block.stmts;
@@ -11176,7 +11147,6 @@ fn emit_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
-    insert_parameter_scope_declared(&function.sig.inputs, &mut function_context);
     emit_function_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
@@ -11222,7 +11192,6 @@ fn emit_local_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
-    insert_parameter_scope_declared(&function.sig.inputs, &mut function_context);
     emit_function_block(out, &function.block.stmts, &function_context, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
@@ -11881,26 +11850,27 @@ fn emit_try_local(
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
     let inner_value = emit_expression(&try_expr.expr, entities)?;
-    let self_referential = match &local.pat {
-        Pat::Ident(identifier) => {
-            expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
-        }
-        Pat::Type(typed) => match typed.pat.as_ref() {
+    let rebind = shadowed
+        || match &local.pat {
             Pat::Ident(identifier) => {
                 expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
             }
+            Pat::Type(typed) => match typed.pat.as_ref() {
+                Pat::Ident(identifier) => {
+                    expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
+                }
+                _ => false,
+            },
             _ => false,
-        },
-        _ => false,
-    };
-    if pattern == inner_value && shadowed {
+        };
+    if pattern == inner_value && rebind {
         write_indent(out, indent);
         writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
-    } else if pattern == inner_value || (!shadowed && self_referential) {
+    } else if pattern == inner_value {
         let temp = format!("{pattern}_q");
         write_indent(out, indent);
         writeln!(out, "const {temp} = {inner_value};").expect("writing to a String cannot fail");
@@ -11914,7 +11884,7 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "{keyword} {pattern} = {temp};")
             .expect("writing to a String cannot fail");
-    } else if shadowed {
+    } else if rebind {
         write_indent(out, indent);
         writeln!(out, "{pattern} = {inner_value};").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -19966,13 +19936,6 @@ fn emit_statement(
                 if for_loop_iterates_strings(&loop_expression.expr, entities) {
                     if let Some(name) = local_pattern_name(&loop_expression.pat) {
                         loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
-                    }
-                }
-                if let Some(name) = local_pattern_name(&loop_expression.pat) {
-                    let camel = snake_to_lower_camel(&name);
-                    loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
-                    if camel != name {
-                        loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
                     }
                 }
                 write_indent(out, indent);
