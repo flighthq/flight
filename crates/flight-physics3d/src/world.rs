@@ -447,7 +447,8 @@ fn clear_physics_3d_solve_workspace(world: &mut Physics3DWorld) {
     world_solve_island_by_root.clear();
     let world_solve_island_roots: &mut Vec<i32> = &mut world.solve_island_roots;
     world_solve_island_roots.clear();
-    world.solve_island_body_starts.clear();
+    let world_solve_island_body_starts: &mut Vec<usize> = &mut world.solve_island_body_starts;
+    world_solve_island_body_starts.clear();
     world.solve_island_body_counts.clear();
     world.solve_island_contact_starts.clear();
     world.solve_island_contact_counts.clear();

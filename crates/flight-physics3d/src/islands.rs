@@ -34,7 +34,8 @@ pub fn build_physics_3d_solve_islands(world: &mut Physics3DWorld) {
     world_solve_island_roots.clear();
     let world_solve_island_by_root: &mut HashMap<i32, usize> = &mut world.solve_island_by_root;
     world_solve_island_by_root.clear();
-    world.solve_island_body_counts.clear();
+    let world_solve_island_body_counts: &mut Vec<usize> = &mut world.solve_island_body_counts;
+    world_solve_island_body_counts.clear();
     world.solve_island_contact_counts.clear();
     world.solve_island_joint_counts.clear();
     for body_ref in &world.bodies {
