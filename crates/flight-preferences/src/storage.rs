@@ -217,7 +217,7 @@ pub fn get_namespaced_storage_keys(
         StorageValueOutcome::Ok(StorageValueOk { value }) => {
             let filtered: Vec<String> = value
                 .iter()
-                .filter(|key| key.starts_with(&prefix))
+                .filter(|key: &&String| key.starts_with(&prefix))
                 .map(|key| key[prefix.len()..].to_string())
                 .collect();
             return StorageValueOutcome::Ok(StorageValueOk { value: filtered });
@@ -305,8 +305,9 @@ fn get_storage_byte_size_for_prefix(
     };
     let mut total: usize = 0;
     for key in &key_list {
+        let key_text: &str = key;
         if let Some(p) = prefix {
-            if !key.starts_with(p) {
+            if !key_text.starts_with(p) {
                 continue;
             }
         }
@@ -347,8 +348,9 @@ fn get_storage_entries_for_prefix(
     };
     let mut entries: Vec<(String, String)> = Vec::new();
     for key in &key_list {
+        let key_text: &str = key;
         if let Some(p) = prefix {
-            if !key.starts_with(p) {
+            if !key_text.starts_with(p) {
                 continue;
             }
         }
