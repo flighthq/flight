@@ -5864,20 +5864,27 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn typed_fact(&self, rust_type: &Type) -> BindingFact {
+            self.typed_fact_at_depth(rust_type, 0)
+        }
+
+        fn typed_fact_at_depth(&self, rust_type: &Type, depth: usize) -> BindingFact {
+            if depth > 16 {
+                return BindingFact::Unknown;
+            }
             if let Some(kind) = hash_collection_type(rust_type, self.context) {
                 return kind;
             }
             if let Some(inner) = option_inner_type(rust_type) {
-                return BindingFact::Option(Box::new(self.typed_fact(inner)));
+                return BindingFact::Option(Box::new(self.typed_fact_at_depth(inner, depth)));
             }
             if let Some(ok_type) = result_ok_type(rust_type) {
-                return BindingFact::Option(Box::new(self.typed_fact(ok_type)));
+                return BindingFact::Option(Box::new(self.typed_fact_at_depth(ok_type, depth)));
             }
             if let Some(array_type) = fixed_typed_array_type(rust_type) {
                 return BindingFact::TypedArray(array_type.to_string());
             }
             if let Some(inner) = sequence_inner_type(rust_type) {
-                let element = self.typed_fact(inner);
+                let element = self.typed_fact_at_depth(inner, depth);
                 return BindingFact::Sequence(Box::new(
                     if element.has_source_structure()
                         || matches!(element, BindingFact::TypedArray(_))
@@ -5889,28 +5896,50 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 ));
             }
             if let Type::Group(group) = rust_type {
-                return self.typed_fact(&group.elem);
+                return self.typed_fact_at_depth(&group.elem, depth);
             }
             if let Type::Paren(paren) = rust_type {
-                return self.typed_fact(&paren.elem);
+                return self.typed_fact_at_depth(&paren.elem, depth);
             }
             if let Type::Reference(reference) = rust_type {
-                return self.typed_fact(&reference.elem);
+                return self.typed_fact_at_depth(&reference.elem, depth);
             }
             if let Type::Tuple(tuple) = rust_type {
                 return BindingFact::Tuple(
                     tuple
                         .elems
                         .iter()
-                        .map(|element| self.typed_fact(element))
+                        .map(|element| self.typed_fact_at_depth(element, depth))
                         .collect(),
                 );
             }
             if let Some(name) = primitive_type_identity(rust_type) {
                 return BindingFact::Structure(name);
             }
+            if let Type::Path(path) = rust_type
+                && path.qself.is_none()
+            {
+                if let Some(resolved) = self.resolve_type_alias_definition(&path.path) {
+                    if !matches!(&resolved, Type::Path(_)) {
+                        return self.typed_fact_at_depth(&resolved, depth + 1);
+                    }
+                }
+            }
             return context_type_identity(self.context, rust_type)
                 .map_or(BindingFact::Unknown, BindingFact::Structure);
+        }
+
+        fn resolve_type_alias_definition(&self, path: &syn::Path) -> Option<Type> {
+            let from = current_source(self.context)?;
+            let (owner, alias) =
+                resolve_path_owner(self.context, TYPE_ALIAS_OWNER_MARKER, &from, path)?;
+            let definition = unique_marker_suffix(
+                self.context,
+                &format!(
+                    "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+                ),
+            )?;
+            syn::parse_str::<Type>(&definition).ok()
         }
     }
 

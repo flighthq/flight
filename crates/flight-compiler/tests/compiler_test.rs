@@ -3113,6 +3113,32 @@ pub fn utf16_units_to_string(values: &[u16]) -> String {
     }
 
     #[test]
+    fn lowers_type_alias_sequence_provenance() {
+        let source = r#"
+type Uint8Array = [u8];
+
+pub fn get_byte(data: &Uint8Array, index: usize) -> Option<u8> {
+    return data.get(index).copied();
+}
+
+pub fn byte_count(data: &Uint8Array) -> usize {
+    return data.len();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("data[index]"),
+            "type alias should resolve for sequence provenance: {output}"
+        );
+        assert!(
+            output.contains("data.length"),
+            "type alias length: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_vec_extend_over_declared_sequences() {
         let source = r#"
 //! flight-compiler: data-union Id
