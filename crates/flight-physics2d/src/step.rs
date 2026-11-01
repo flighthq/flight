@@ -560,7 +560,7 @@ fn integrate_physics2d_continuous(
 
 fn is_physics2d_ccd_pair_active(p: &mut Physics2DBodyPair<'_>) -> bool {
     let is_bullet = |body: &RigidBody2D| {
-        body.body_type == Physics2DBodyType::Dynamic && body.bullet && !body.sleeping
+        return body.body_type == Physics2DBodyType::Dynamic && body.bullet && !body.sleeping;
     };
     let (bullet_a, inverse_a) = (is_bullet(p.a()), p.a().inverse_mass);
     let (bullet_b, inverse_b) = (is_bullet(p.b()), p.b().inverse_mass);
