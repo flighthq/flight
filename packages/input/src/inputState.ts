@@ -228,7 +228,16 @@ export function connectInputStateToInputManager(state: InputStateRaw, manager: I
  * Allocates an empty held-state snapshot (TS `createInputState`).
  */
 export function createInputState(): InputStateRaw {
-  let out: InputStateRaw = allocateEntity<InputStateRaw>();
+  let out: InputStateRaw = Object.assign(allocateEntity<InputStateRaw>(), {
+    axisValues: new Map(),
+    gamepadButtonsDown: new Set(),
+    justPressedGamepadButtons: new Set(),
+    justPressedKeys: new Set(),
+    justReleasedGamepadButtons: new Set(),
+    justReleasedKeys: new Set(),
+    keysDown: new Set(),
+    pointerButtonsDown: new Map(),
+  });
   initializeInputState(out);
   return out;
 }
@@ -254,10 +263,14 @@ function clearGamepadState(state: InputStateRaw, gamepad: number): void {
  */
 export function endInputStateFrame(state: InputStateRaw): void {
   const locked: InputStateRaw = state!;
-  locked.justPressedKeys.clear();
-  locked.justReleasedKeys.clear();
-  locked.justPressedGamepadButtons.clear();
-  locked.justReleasedGamepadButtons.clear();
+  const justPressedKeys: Set<number> = locked.justPressedKeys;
+  justPressedKeys.clear();
+  const justReleasedKeys: Set<number> = locked.justReleasedKeys;
+  justReleasedKeys.clear();
+  const justPressedGamepadButtons: Set<number> = locked.justPressedGamepadButtons;
+  justPressedGamepadButtons.clear();
+  const justReleasedGamepadButtons: Set<number> = locked.justReleasedGamepadButtons;
+  justReleasedGamepadButtons.clear();
 }
 
 /**
