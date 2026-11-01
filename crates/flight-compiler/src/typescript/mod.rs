@@ -8263,6 +8263,30 @@ pub(super) fn binding_fact_for_type(
     if let Some(name) = primitive_type_identity(rust_type) {
         return BindingFact::Structure(name);
     }
+    if let Type::Path(path) = rust_type
+        && path.qself.is_none()
+    {
+        let source = from
+            .map(String::from)
+            .or_else(|| current_source(entities));
+        if let Some(source) = &source {
+            if let Some((owner, alias)) =
+                resolve_path_owner(entities, TYPE_ALIAS_OWNER_MARKER, source, &path.path)
+            {
+                let definition = unique_marker_suffix(
+                    entities,
+                    &format!(
+                        "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+                    ),
+                );
+                if let Some(Ok(resolved)) = definition.map(|d| syn::parse_str::<Type>(&d)) {
+                    if !matches!(&resolved, Type::Path(_)) {
+                        return binding_fact_for_type(entities, from, &resolved);
+                    }
+                }
+            }
+        }
+    }
     let identity = match from {
         Some(from) => resolved_type_identity(entities, from, rust_type),
         None => context_type_identity(entities, rust_type),
