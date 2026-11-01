@@ -150,7 +150,8 @@ pub(crate) struct ParsedInternal {
 
 fn copy_parsed(source: &ParsedInternal, out: &mut ParsedAccelerator) {
     out.key = get_shortcut_key_name_string(source.key).to_string();
-    out.modifiers.clear();
+    let out_modifiers: &mut Vec<ShortcutModifier> = &mut out.modifiers;
+    out_modifiers.clear();
     out.modifiers.extend(source.modifiers.iter().copied());
 }
 
