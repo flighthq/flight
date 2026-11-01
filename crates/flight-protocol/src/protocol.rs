@@ -419,7 +419,7 @@ pub fn parse_protocol_url(url: &str) -> Option<ParsedProtocolUrl> {
 
     let query_index = rest.find('?');
     let path = query_index.map_or(rest, |index| &rest[..index]);
-    let query_string = query_index.map_or("", |index| &rest[index + 1..]);
+    let query_string: &str = query_index.map_or("", |index| &rest[index + 1..]);
     let mut query: Record<String> = Record::default();
     if !query_string.is_empty() {
         for pair in query_string.split('&') {
