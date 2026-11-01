@@ -5478,6 +5478,28 @@ pub fn max_index() -> usize {
     }
 
     #[test]
+    fn lowers_std_float_consts_to_math_constants() {
+        let source = r#"
+use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, FRAC_1_SQRT_2, SQRT_2, E, LN_2, FRAC_PI_3, FRAC_1_PI};
+
+pub fn constants() -> [f32; 8] {
+    return [FRAC_PI_2, FRAC_PI_4, FRAC_1_SQRT_2, SQRT_2, E, LN_2, FRAC_PI_3, FRAC_1_PI];
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("(Math.PI / 2)"), "FRAC_PI_2: {output}");
+        assert!(output.contains("(Math.PI / 4)"), "FRAC_PI_4: {output}");
+        assert!(output.contains("Math.SQRT1_2"), "FRAC_1_SQRT_2: {output}");
+        assert!(output.contains("Math.SQRT2"), "SQRT_2: {output}");
+        assert!(output.contains("Math.E"), "E: {output}");
+        assert!(output.contains("Math.LN2"), "LN_2: {output}");
+        assert!(output.contains("(Math.PI / 3)"), "FRAC_PI_3: {output}");
+        assert!(output.contains("(1 / Math.PI)"), "FRAC_1_PI: {output}");
+    }
+
+    #[test]
     fn lowers_string_from_utf8_and_from_utf8_lossy() {
         let source = r#"
 pub fn decode(bytes: Vec<u8>) -> String {

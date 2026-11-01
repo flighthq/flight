@@ -564,6 +564,13 @@ fn compile_vitest_with_contract_alias_sources_internal(
             .iter()
             .map(|helper| helper.sig.ident.to_string()),
     );
+    typescript::insert_std_float_consts_context(
+        &mut context,
+        program
+            .uses
+            .iter()
+            .chain(program.suites.iter().flat_map(|suite| &suite.uses)),
+    );
     typescript::insert_type_path_context(
         &mut context,
         program

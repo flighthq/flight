@@ -125,6 +125,10 @@ const STD_MEM_MODULE_MARKER: &str = "@std-mem-module:";
 
 const STD_MEM_SHADOWED_MARKER: &str = "@std-mem-shadowed:";
 
+// Bare float constant names imported from `std::f32::consts` / `std::f64::consts` (see
+// `insert_std_float_consts_context`).
+const FLOAT_CONST_MARKER: &str = "@float-const:";
+
 // Type-namespace provenance recorded from `use` items and local declarations (see
 // `insert_type_path_context`): a local name, the full path it imports, a glob's module path, and a
 // locally declared type-namespace name.
@@ -1803,6 +1807,63 @@ pub(crate) fn insert_std_mem_import_context<'a>(
         context.insert(format!("{STD_MEM_SHADOWED_MARKER}{name}"));
     }
 }
+
+// Records bare names imported from `std::f32::consts` / `std::f64::consts` (or the `core` variants)
+// so that `emit_expression` can map `FRAC_PI_2` → `(Math.PI / 2)` when the name was brought into
+// scope by a `use` import rather than a fully qualified path.
+pub(crate) fn insert_std_float_consts_context<'a>(
+    context: &mut HashSet<String>,
+    uses: impl Iterator<Item = &'a syn::ItemUse>,
+) {
+    fn is_float_consts(prefix: &[String]) -> bool {
+        (prefix.len() == 3
+            && (prefix[0] == "std" || prefix[0] == "core")
+            && (prefix[1] == "f32" || prefix[1] == "f64")
+            && prefix[2] == "consts")
+            || (prefix.len() == 2
+                && (prefix[0] == "f32" || prefix[0] == "f64")
+                && prefix[1] == "consts")
+    }
+
+    fn collect(tree: &syn::UseTree, prefix: &mut Vec<String>, context: &mut HashSet<String>) {
+        match tree {
+            syn::UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(&path.tree, prefix, context);
+                prefix.pop();
+            }
+            syn::UseTree::Group(group) => {
+                for item in &group.items {
+                    collect(item, prefix, context);
+                }
+            }
+            syn::UseTree::Name(name) if is_float_consts(prefix) => {
+                let local = name.ident.to_string();
+                context.insert(format!("{FLOAT_CONST_MARKER}{local}"));
+            }
+            syn::UseTree::Rename(rename) if is_float_consts(prefix) => {
+                let local = rename.rename.to_string();
+                context.insert(format!("{FLOAT_CONST_MARKER}{local}"));
+            }
+            syn::UseTree::Glob(_) if is_float_consts(prefix) => {
+                for name in FLOAT_CONST_NAMES {
+                    context.insert(format!("{FLOAT_CONST_MARKER}{name}"));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    for item_use in uses {
+        collect(&item_use.tree, &mut Vec::new(), context);
+    }
+}
+
+const FLOAT_CONST_NAMES: &[&str] = &[
+    "E", "FRAC_1_PI", "FRAC_1_SQRT_2", "FRAC_2_PI", "FRAC_2_SQRT_PI", "FRAC_PI_2", "FRAC_PI_3",
+    "FRAC_PI_4", "FRAC_PI_6", "FRAC_PI_8", "LN_2", "LN_10", "LOG2_E", "LOG2_10", "LOG10_E",
+    "LOG10_2", "PI", "SQRT_2", "TAU",
+];
 
 // Records what each `use` item brings into the type namespace (a named or renamed path, `self` of a
 // module, or a glob's module) and the names the source declares there itself.
@@ -9542,11 +9603,11 @@ fn emit_expression_value(
                     Ok("Number.EPSILON".to_string())
                 };
             }
-            if path_is_float_constant(&path.path, "TAU") {
-                return Ok("Math.PI * 2".to_string());
-            }
-            if path_is_float_constant(&path.path, "PI") {
-                return Ok("Math.PI".to_string());
+            if float_constant_type(&path.path).is_some()
+                && let Some(name) = path.path.segments.last().map(|s| s.ident.to_string())
+                && let Some(value) = float_const_js_value(&name)
+            {
+                return Ok(value.to_string());
             }
             if path_is_float_constant(&path.path, "MAX") {
                 return Ok("Number.MAX_VALUE".to_string());
@@ -9590,8 +9651,16 @@ fn emit_expression_value(
             if path_is_float_constant(&path.path, "NEG_INFINITY") {
                 return Ok("Number.NEGATIVE_INFINITY".to_string());
             }
-            if path_is_float_constant(&path.path, "FRAC_1_SQRT_2") {
-                return Ok("Math.SQRT1_2".to_string());
+            if path.qself.is_none()
+                && path.path.leading_colon.is_none()
+                && path.path.segments.len() == 1
+            {
+                let name = path.path.segments[0].ident.to_string();
+                if entities.contains(&format!("{FLOAT_CONST_MARKER}{name}"))
+                    && let Some(value) = float_const_js_value(&name)
+                {
+                    return Ok(value.to_string());
+                }
             }
             let last = path.path.segments.len() - 1;
             let rendered = path
@@ -18032,6 +18101,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             .iter()
             .map(|function| function.sig.ident.to_string()),
     );
+    insert_std_float_consts_context(&mut expression_context, program.uses.iter());
     insert_program_type_path_context(&mut expression_context, program);
     let (mut value_imports, mut type_imports) = cross_crate_imports(program, &expression_context);
     let entity_construction_parameters = program
@@ -21007,6 +21077,31 @@ fn path_is_float_constant(path: &syn::Path, constant: &str) -> bool {
             .segments
             .last()
             .is_some_and(|segment| segment.ident == constant);
+}
+
+fn float_const_js_value(name: &str) -> Option<&'static str> {
+    return match name {
+        "E" => Some("Math.E"),
+        "FRAC_1_PI" => Some("(1 / Math.PI)"),
+        "FRAC_1_SQRT_2" => Some("Math.SQRT1_2"),
+        "FRAC_2_PI" => Some("(2 / Math.PI)"),
+        "FRAC_2_SQRT_PI" => Some("(2 / Math.sqrt(Math.PI))"),
+        "FRAC_PI_2" => Some("(Math.PI / 2)"),
+        "FRAC_PI_3" => Some("(Math.PI / 3)"),
+        "FRAC_PI_4" => Some("(Math.PI / 4)"),
+        "FRAC_PI_6" => Some("(Math.PI / 6)"),
+        "FRAC_PI_8" => Some("(Math.PI / 8)"),
+        "LN_2" => Some("Math.LN2"),
+        "LN_10" => Some("Math.LN10"),
+        "LOG2_E" => Some("Math.LOG2E"),
+        "LOG2_10" => Some("(Math.LN10 / Math.LN2)"),
+        "LOG10_E" => Some("Math.LOG10E"),
+        "LOG10_2" => Some("(Math.LN2 / Math.LN10)"),
+        "PI" => Some("Math.PI"),
+        "SQRT_2" => Some("Math.SQRT2"),
+        "TAU" => Some("(Math.PI * 2)"),
+        _ => None,
+    };
 }
 
 fn pattern_is_mutable(pattern: &Pat) -> bool {
