@@ -862,7 +862,7 @@ pub fn start_app_loop(
 /// options are self-contained, so deterministic headless callers need not start a loop.
 // flight-lint: allow(f64) D1: frame deltas are JS-number milliseconds
 pub fn step_app_loop(app: &Ref<AppLoop>, delta_time: f64, options: Option<&AppStepOptions>) {
-    let options = options.cloned().unwrap_or_default();
+    let options = options.cloned().unwrap_or(AppStepOptions::default());
     let existing = app.read().unwrap().loop_state.clone();
     let fixed_time_step = options.fixed_time_step.unwrap_or(DEFAULT_FIXED_TIMESTEP);
     let max_delta_time = options
