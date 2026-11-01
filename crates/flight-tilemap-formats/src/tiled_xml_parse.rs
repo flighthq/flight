@@ -101,7 +101,7 @@ fn attr_number(element: &XmlElement, name: &str, fallback: f64) -> f64 {
     if value.trim().is_empty() {
         return fallback;
     }
-    let n: f64 = value.parse().unwrap_or(f64::NAN);
+    let n: f64 = value.parse::<f64>().unwrap_or(f64::NAN);
     if n.is_finite() {
         return n;
     }
@@ -490,7 +490,7 @@ fn parse_property_value(prop_type: &TiledPropertyType, raw: &str) -> TiledProper
     return match prop_type {
         TiledPropertyType::Bool => TiledPropertyValue::Bool(raw == "true"),
         TiledPropertyType::Int | TiledPropertyType::Float => {
-            let n: f64 = raw.parse().unwrap_or(f64::NAN);
+            let n: f64 = raw.parse::<f64>().unwrap_or(f64::NAN);
             TiledPropertyValue::Number(if n.is_finite() { n } else { 0.0 })
         }
         _ => TiledPropertyValue::String(raw.to_string()),
@@ -504,8 +504,14 @@ fn parse_tiled_points(text: &str) -> Vec<flight_geometry::Vector2> {
             continue;
         }
         let parts: Vec<&str> = pair.split(',').collect();
-        let x: f32 = parts.first().and_then(|s| s.parse().ok()).unwrap_or(0.0);
-        let y: f32 = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+        let x: f32 = parts
+            .first()
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(0.0);
+        let y: f32 = parts
+            .get(1)
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(0.0);
         points.push(flight_geometry::create_vector2(x, y));
     }
     return points;
