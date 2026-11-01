@@ -16,6 +16,7 @@ pub(crate) struct Program {
     // `const-group` directives: TypeScript const-object name to the Rust constant-name prefix whose
     // public constants become its members, in source order (`KEY_CODE_A` -> `KeyCode.A`).
     pub(crate) const_groups: BTreeMap<String, String>,
+    pub(crate) auto_data_unions: HashSet<String>,
     pub(crate) data_unions: HashSet<String>,
     pub(crate) entities: HashSet<String>,
     // Entity fields whose `Ref` cells remain shared when Rust clones the entity. TypeScript lowers
@@ -1588,6 +1589,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         }
     }
 
+    let mut auto_data_unions = HashSet::new();
     let mut rust_only_functions = BTreeSet::new();
     for item in file.items {
         if let Item::Use(item_use) = &item {
@@ -1609,8 +1611,20 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
                     .variants
                     .iter()
                     .all(|v| matches!(v.fields, Fields::Named(_) | Fields::Unit));
-                let is_data_union =
-                    data_unions.contains(&name) || (has_named_variants && all_named_or_unit);
+                let has_non_unit = item
+                    .variants
+                    .iter()
+                    .any(|v| !matches!(v.fields, Fields::Unit));
+                if has_non_unit
+                    && !data_unions.contains(&name)
+                    && !string_unions.contains_key(&name)
+                    && !numeric_union_names.contains(&name)
+                {
+                    auto_data_unions.insert(name.clone());
+                    data_unions.insert(name.clone());
+                }
+                let is_data_union = data_unions.contains(&name)
+                    || (has_named_variants && all_named_or_unit);
                 if !lenient {
                     validate_enum(&item, is_data_union)?;
                 }
@@ -1643,17 +1657,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
             _ => {}
         }
     }
-    for rust_enum in &enums {
-        let name = rust_enum.ident.to_string();
-        if !data_unions.contains(&name)
-            && rust_enum
-                .variants
-                .iter()
-                .any(|v| !matches!(v.fields, Fields::Unit))
-        {
-            data_unions.insert(name);
-        }
-    }
+    // auto_data_unions already populated during enum collection above.
     validate_rust_only_references(&rust_only_functions, &functions)?;
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
@@ -1711,6 +1715,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         callable_parameters,
         constants,
         const_groups,
+        auto_data_unions,
         data_unions,
         entities,
         entity_clone_shared_fields,

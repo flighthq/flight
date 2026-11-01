@@ -14488,6 +14488,23 @@ pub enum Value {
     }
 
     #[test]
+    fn auto_detected_data_union_with_unresolvable_payload_falls_back_to_string_enum() {
+        let source = r#"
+pub enum Value {
+    Opaque(ExternalThing),
+    Empty,
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("export enum Value {"),
+            "should fall back to string enum, got: {output}"
+        );
+    }
+
+    #[test]
     fn rejects_ambiguous_data_union_shapes() {
         let cases = [
             (

@@ -4832,14 +4832,29 @@ fn insert_data_union_context(
                 }
                 continue;
             }
+            let mut skip_enum = false;
             for variant in &rust_enum.variants {
                 let categories = match &variant.fields {
                     syn::Fields::Unit => BTreeSet::from([RuntimeCategory::Null]),
-                    syn::Fields::Unnamed(fields) => runtime_categories_for_type(
-                        &fields.unnamed[0].ty,
-                        programs,
-                        &mut BTreeSet::new(),
-                    )?,
+                    syn::Fields::Unnamed(fields) => {
+                        match runtime_categories_for_type(
+                            &fields.unnamed[0].ty,
+                            programs,
+                            &mut BTreeSet::new(),
+                        ) {
+                            Ok(categories) => categories,
+                            Err(error) => {
+                                let is_auto = programs.iter().any(|program| {
+                                    program.auto_data_unions.contains(&owner)
+                                });
+                                if is_auto {
+                                    skip_enum = true;
+                                    break;
+                                }
+                                return Err(error);
+                            }
+                        }
+                    }
                     syn::Fields::Named(_) => {
                         unreachable!("transparent data union changed after directive validation")
                     }
@@ -4853,6 +4868,9 @@ fn insert_data_union_context(
                 if matches!(variant.fields, syn::Fields::Unit) {
                     context.insert(format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant_name}"));
                 }
+            }
+            if skip_enum {
+                context.insert(format!("@data-union-skip:{owner}"));
             }
         }
     }
@@ -18846,7 +18864,9 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                 .string_union_values
                 .get(&rust_enum.ident.to_string()),
             program.numeric_unions.get(&rust_enum.ident.to_string()),
-            program.data_unions.contains(&rust_enum.ident.to_string()),
+            program.data_unions.contains(&rust_enum.ident.to_string())
+                && !source_context
+                    .contains(&format!("@data-union-skip:{}", rust_enum.ident)),
             &source_context,
         );
         match result {
