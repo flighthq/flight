@@ -104,7 +104,8 @@ pub fn dispose_node_order_list(list: &mut NodeOrderList) {
     list.entry_count = 0;
     let list_nodes: &mut Vec<NodeRef> = &mut list.nodes;
     list_nodes.clear();
-    list.sort_keys.clear();
+    let list_sort_keys: &mut Vec<f64> = &mut list.sort_keys;
+    list_sort_keys.clear();
 }
 
 /// Scans backwards so a node entered more than once reports the entry that wins at apply time.
