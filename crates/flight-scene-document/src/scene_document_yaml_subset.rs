@@ -857,18 +857,19 @@ fn parser_create_token_refusal(
 }
 
 fn parser_get_refusal(parser: &mut Parser) -> SceneDocumentYamlSubsetRefusal {
-    return parser.refusal.take().unwrap_or_else(|| {
-        return create_refusal(
-            FlightDocumentRefusalReason::InvalidDocument,
-            Position {
-                offset: 0,
-                line: 1,
-                column: 1,
-            },
-            None,
-            None,
-        );
-    });
+    if let Some(refusal) = parser.refusal.take() {
+        return refusal;
+    }
+    return create_refusal(
+        FlightDocumentRefusalReason::InvalidDocument,
+        Position {
+            offset: 0,
+            line: 1,
+            column: 1,
+        },
+        None,
+        None,
+    );
 }
 
 fn parser_parse(mut parser: Parser) -> SceneDocumentYamlSubsetResult {
