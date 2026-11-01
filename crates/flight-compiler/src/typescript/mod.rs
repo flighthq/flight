@@ -13183,6 +13183,32 @@ fn inferred_data_union_pattern_test(
                     Pat::Wild(_) => None,
                     _ => return None,
                 },
+                Pat::Struct(inner_struct) => {
+                    let mut bindings = Vec::new();
+                    for field in &inner_struct.fields {
+                        let source = snake_to_lower_camel(&emit_member(&field.member));
+                        let binding_name = match field.pat.as_ref() {
+                            Pat::Ident(id) if id.subpat.is_none() => {
+                                snake_to_lower_camel(&id.ident.to_string())
+                            }
+                            Pat::Wild(_) => continue,
+                            Pat::Reference(r) => match r.pat.as_ref() {
+                                Pat::Ident(id) if id.subpat.is_none() => {
+                                    snake_to_lower_camel(&id.ident.to_string())
+                                }
+                                Pat::Wild(_) => continue,
+                                _ => return None,
+                            },
+                            _ => return None,
+                        };
+                        bindings.push((binding_name, format!("{value}.{source}")));
+                    }
+                    let kind = lower_camel_from_upper_camel(&variant);
+                    return Some(DataUnionPatternTest {
+                        bindings,
+                        predicate: Some(format!("{value}.kind === {kind:?}")),
+                    });
+                }
                 _ => return None,
             };
             let kind = lower_camel_from_upper_camel(&variant);
