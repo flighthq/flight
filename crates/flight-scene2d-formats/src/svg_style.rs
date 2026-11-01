@@ -84,8 +84,8 @@ pub fn collect_css_rules(out: &mut Vec<SvgCssRule>, root: &XmlElement) {
                 let selector = selector_text.trim();
                 if selector.is_empty()
                     || selector.chars().any(|character| {
-                        character.is_whitespace()
-                            || matches!(character, '>' | '+' | '~' | ':' | '[' | ']')
+                        return character.is_whitespace()
+                            || matches!(character, '>' | '+' | '~' | ':' | '[' | ']');
                     })
                 {
                     continue;
@@ -116,21 +116,22 @@ fn css_rule_expression() -> &'static Regex {
 fn css_selector_class_expression() -> &'static Regex {
     static EXPRESSION: OnceLock<Regex> = OnceLock::new();
     return EXPRESSION.get_or_init(|| {
-        Regex::new(r"\.[A-Za-z0-9_-]+").expect("static CSS selector class expression")
+        return Regex::new(r"\.[A-Za-z0-9_-]+").expect("static CSS selector class expression");
     });
 }
 
 fn css_selector_id_expression() -> &'static Regex {
     static EXPRESSION: OnceLock<Regex> = OnceLock::new();
     return EXPRESSION.get_or_init(|| {
-        Regex::new(r"#[A-Za-z0-9_-]+").expect("static CSS selector ID expression")
+        return Regex::new(r"#[A-Za-z0-9_-]+").expect("static CSS selector ID expression");
     });
 }
 
 fn css_selector_type_expression() -> &'static Regex {
     static EXPRESSION: OnceLock<Regex> = OnceLock::new();
     return EXPRESSION.get_or_init(|| {
-        Regex::new(r"^[a-zA-Z_][A-Za-z0-9_-]*").expect("static CSS selector type expression")
+        return Regex::new(r"^[a-zA-Z_][A-Za-z0-9_-]*")
+            .expect("static CSS selector type expression");
     });
 }
 
@@ -144,7 +145,7 @@ fn get_css_selector_specificity(selector: &str) -> usize {
 fn important_expression() -> &'static Regex {
     static EXPRESSION: OnceLock<Regex> = OnceLock::new();
     return EXPRESSION.get_or_init(|| {
-        Regex::new(r"\s*!important\s*$").expect("static CSS important expression")
+        return Regex::new(r"\s*!important\s*$").expect("static CSS important expression");
     });
 }
 
@@ -158,17 +159,18 @@ fn matches_css_selector(element: &XmlElement, selector: &str) -> bool {
             .split_whitespace()
             .any(|class| class == class_name);
     }
-    let (tag, class_name) = selector
-        .split_once('.')
-        .map_or((selector, None), |(tag, class_name)| {
-            (tag, Some(class_name))
-        });
+    let (tag, class_name) =
+        selector
+            .split_once('.')
+            .map_or((selector, None), |(tag, class_name)| {
+                return (tag, Some(class_name));
+            });
     return svg_local_name(&element.name) == tag
         && class_name.is_none_or(|class_name| {
-            svg_attribute(element, "class")
+            return svg_attribute(element, "class")
                 .unwrap_or("")
                 .split_whitespace()
-                .any(|class| class == class_name)
+                .any(|class| class == class_name);
         });
 }
 

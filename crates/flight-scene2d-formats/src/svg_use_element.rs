@@ -62,18 +62,18 @@ fn create_svg_use_node(context: &mut SvgElementContext<'_, '_>) -> Option<Node2D
     let href = svg_attribute(&context.element.read().unwrap(), "href").map(str::to_string);
     let id = href.as_deref().and_then(|href| href.strip_prefix('#'));
     let recursive = id.is_some_and(|id| {
-        context
+        return context
             .import
             .resolving_uses
             .iter()
-            .any(|candidate| candidate == id)
+            .any(|candidate| candidate == id);
     });
     let Some(id) = id.filter(|_| !recursive) else {
         let detail = id.map(|id| {
-            HashMap::from([(
+            return HashMap::from([(
                 "id".to_string(),
                 ImportDiagnosticDetailValue::String(id.to_string()),
-            )])
+            )]);
         });
         report_import_diagnostic(
             context.import.diagnostics.as_deref_mut(),

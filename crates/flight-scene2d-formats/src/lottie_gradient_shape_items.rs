@@ -147,33 +147,32 @@ fn handle_lottie_gradient_item(context: &mut LottieShapeItemContext<'_, '_>, str
         initial_lottie_value(context.item.get("e")).as_ref(),
         2,
     )));
-    let opacity =
-        Arc::new(RwLock::new(vec![context.item.get("o").map_or(
-            100.0,
-            |property| {
-                lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)[0]
-            },
-        )]));
-    let width =
-        Arc::new(RwLock::new(vec![context.item.get("w").map_or(
-            1.0,
-            |property| {
-                lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)[0]
-            },
-        )]));
+    let opacity = Arc::new(RwLock::new(vec![context.item.get("o").map_or(
+        100.0,
+        |property| {
+            return lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)[0];
+        },
+    )]));
+    let width = Arc::new(RwLock::new(vec![context.item.get("w").map_or(
+        1.0,
+        |property| {
+            return lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)[0];
+        },
+    )]));
     let miter_limit = Arc::new(RwLock::new(vec![
         context
             .item
             .get("ml2")
             .map(|property| {
-                lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)[0]
+                return lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)
+                    [0];
             })
             .unwrap_or_else(|| {
-                context
+                return context
                     .item
                     .get("ml")
                     .and_then(Value::as_f64)
-                    .unwrap_or(4.0) as f32
+                    .unwrap_or(4.0) as f32;
             }),
     ]));
     let dash_entries = context
@@ -192,10 +191,10 @@ fn handle_lottie_gradient_item(context: &mut LottieShapeItemContext<'_, '_>, str
             .iter()
             .filter(|entry| entry.get("n").and_then(Value::as_str) != Some("o"))
             .map(|entry| {
-                f64::from(
+                return f64::from(
                     lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0]
                         .max(0.0),
-                )
+                );
             })
             .collect::<Vec<_>>()
     };
@@ -211,9 +210,9 @@ fn handle_lottie_gradient_item(context: &mut LottieShapeItemContext<'_, '_>, str
             .iter()
             .find(|entry| entry.get("n").and_then(Value::as_str) == Some("o"))
             .map(|entry| {
-                f64::from(
+                return f64::from(
                     lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0],
-                )
+                );
             })
             .unwrap_or(0.0)
     };

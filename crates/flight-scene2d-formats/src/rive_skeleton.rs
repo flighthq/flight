@@ -59,9 +59,9 @@ pub fn create_rive_skeleton_2d(artboard: &RiveArtboardGraph) -> Option<RiveSkele
         .iter()
         .enumerate()
         .filter_map(|(index, object)| {
-            i32::try_from(object.type_key)
+            return i32::try_from(object.type_key)
                 .is_ok_and(|key| is_rive_core_type_derived_from(key, RIVE_BONE))
-                .then_some(index)
+                .then_some(index);
         })
         .collect::<Vec<_>>();
     if components.is_empty() {

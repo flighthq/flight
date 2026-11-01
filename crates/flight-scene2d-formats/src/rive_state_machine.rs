@@ -62,8 +62,8 @@ pub fn create_rive_state_machines(
         let type_key = i32::try_from(object.type_key).ok();
         if machines.is_empty() {
             if type_key.is_some_and(|key| {
-                is_rive_core_type_derived_from(key, RIVE_STATE_MACHINE_COMPONENT)
-                    || is_rive_core_type_derived_from(key, RIVE_STATE_MACHINE_LAYER_COMPONENT)
+                return is_rive_core_type_derived_from(key, RIVE_STATE_MACHINE_COMPONENT)
+                    || is_rive_core_type_derived_from(key, RIVE_STATE_MACHINE_LAYER_COMPONENT);
             }) {
                 report_import_diagnostic(
                     diagnostics.as_deref_mut(),

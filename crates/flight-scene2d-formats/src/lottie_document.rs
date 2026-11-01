@@ -121,7 +121,7 @@ fn create_lottie_position_sampler(
             .flatten()
             .filter_map(|track| {
                 let track = track.read().unwrap();
-                Some((*track.times.first()?, *track.times.last()?))
+                return Some((*track.times.first()?, *track.times.last()?));
             })
             .collect::<Vec<_>>();
         let first_time = populated
@@ -308,9 +308,9 @@ pub fn create_lottie_track(
             continue;
         }
         let source = keyframe.get("s").or_else(|| {
-            index
+            return index
                 .checked_sub(1)
-                .and_then(|index| keyframes[index].get("e"))
+                .and_then(|index| keyframes[index].get("e"));
         });
         times.push(time);
         samples.push(value_of(source, index));
@@ -401,7 +401,7 @@ pub fn create_scene2d_from_lottie_document_with_registry(
         .filter_map(|value| {
             let asset = value_to_lottie_record(value)?;
             let id = asset.get("id")?.as_str()?.to_string();
-            Some((id, asset))
+            return Some((id, asset));
         })
         .collect();
     let mut context = LottieImportContext {
@@ -436,13 +436,13 @@ pub fn create_scene2d_from_lottie_document_with_registry(
                 0.0,
                 duration,
             );
-            Some({
+            return Some({
                 let mut event = create_animation_clip_event();
                 event.time = time;
                 event.name = (name).to_string();
                 event.payload = 0;
                 event
-            })
+            });
         })
         .collect::<Vec<_>>();
     let advanced_blends = std::mem::take(&mut context.advanced_blends);
@@ -753,9 +753,9 @@ fn apply_lottie_layer_visibility(
         .iter()
         .map(|time| {
             if *time >= start && *time < end {
-                1.0
+                return 1.0;
             } else {
-                0.0
+                return 0.0;
             }
         })
         .collect();
@@ -1023,7 +1023,7 @@ fn handle_varies(value: Option<&Value>, components: usize) -> bool {
     }
     let first = value_f32(values.first(), 0.0);
     return (1..components).any(|component| {
-        value_f32(values.get(component).or_else(|| values.first()), 0.0) != first
+        return value_f32(values.get(component).or_else(|| values.first()), 0.0) != first;
     });
 }
 
@@ -1046,9 +1046,9 @@ pub fn has_component_specific_lottie_easing(keyframes: &[Value], components: usi
 
 fn has_spatial_tangents(keyframes: &[Value]) -> bool {
     return keyframes.iter().enumerate().any(|(index, keyframe)| {
-        index < keyframes.len().saturating_sub(1)
+        return index < keyframes.len().saturating_sub(1)
             && keyframe.get("to").is_some_and(Value::is_array)
-            && keyframe.get("ti").is_some_and(Value::is_array)
+            && keyframe.get("ti").is_some_and(Value::is_array);
     });
 }
 
@@ -1283,10 +1283,10 @@ fn sample_lottie_spatial_bezier(
         .iter()
         .enumerate()
         .map(|(component, value)| {
-            inverse.powi(3) * value
+            return inverse.powi(3) * value
                 + 3.0 * inverse.powi(2) * time * (value + outgoing[component])
                 + 3.0 * inverse * time.powi(2) * (end[component] + incoming[component])
-                + time.powi(3) * end[component]
+                + time.powi(3) * end[component];
         })
         .collect();
 }
@@ -1347,9 +1347,9 @@ fn unknown_number_array(value: &Unknown) -> Vec<Option<f32>> {
             .iter()
             .map(|value| {
                 if value.is_null() {
-                    None
+                    return None;
                 } else {
-                    Some(number_from_json(value))
+                    return Some(number_from_json(value));
                 }
             })
             .collect();

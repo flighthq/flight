@@ -40,10 +40,10 @@ fn find_binding<'a>(
     node: &Node2DRef,
 ) -> Option<&'a RiveAssetBinding> {
     return bindings.iter().find(|binding| {
-        binding
+        return binding
             .node
             .upgrade()
-            .is_some_and(|candidate| Arc::ptr_eq(&candidate, node))
+            .is_some_and(|candidate| Arc::ptr_eq(&candidate, node));
     });
 }
 
@@ -52,10 +52,10 @@ fn find_binding_mut<'a>(
     node: &Node2DRef,
 ) -> Option<&'a mut RiveAssetBinding> {
     return bindings.iter_mut().find(|binding| {
-        binding
+        return binding
             .node
             .upgrade()
-            .is_some_and(|candidate| Arc::ptr_eq(&candidate, node))
+            .is_some_and(|candidate| Arc::ptr_eq(&candidate, node));
     });
 }
 

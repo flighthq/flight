@@ -557,10 +557,10 @@ fn read_rive_double(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
         .iter()
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
-            RiveValue::Uint(value) => value as f64,
-            RiveValue::Double(value) => f64::from(value),
-            RiveValue::Color(value) => f64::from(value),
-            _ => fallback,
+            RiveValue::Uint(value) => return value as f64,
+            RiveValue::Double(value) => return f64::from(value),
+            RiveValue::Color(value) => return f64::from(value),
+            _ => return fallback,
         });
 }
 
@@ -570,10 +570,10 @@ fn read_rive_flag(source: &RiveCoreObject, key: u64, fallback: bool) -> bool {
         .iter()
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
-            RiveValue::Uint(value) => value != 0,
-            RiveValue::Double(value) => value != 0.0,
-            RiveValue::Color(value) => value != 0,
-            _ => fallback,
+            RiveValue::Uint(value) => return value != 0,
+            RiveValue::Double(value) => return value != 0.0,
+            RiveValue::Color(value) => return value != 0,
+            _ => return fallback,
         });
 }
 

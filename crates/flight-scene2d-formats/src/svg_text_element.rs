@@ -284,13 +284,13 @@ fn has_flattened_svg_text_position(
     first_tspan: Option<&Ref<XmlElement>>,
 ) -> bool {
     return tspans.iter().any(|tspan| {
-        ["x", "y", "dx", "dy", "rotate", "transform"]
+        return ["x", "y", "dx", "dy", "rotate", "transform"]
             .iter()
             .any(|name| {
-                svg_attribute(&tspan.read().unwrap(), name).is_some()
+                return svg_attribute(&tspan.read().unwrap(), name).is_some()
                     && (first_tspan.is_none_or(|first| !Arc::ptr_eq(tspan, first))
-                        || matches!(*name, "rotate" | "transform"))
-            })
+                        || matches!(*name, "rotate" | "transform"));
+            });
     });
 }
 

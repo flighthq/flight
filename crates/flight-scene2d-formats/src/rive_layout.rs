@@ -326,7 +326,7 @@ pub fn create_rive_layout_imports(
         let object = &artboard.objects[index];
         let type_key = i32::try_from(object.type_key).ok();
         if type_key.is_some_and(|key| {
-            is_rive_core_type_derived_from(key, RIVE_LAYOUT_PARTICIPANT_TYPE_KEY)
+            return is_rive_core_type_derived_from(key, RIVE_LAYOUT_PARTICIPANT_TYPE_KEY);
         }) {
             if let Some(target_index) = artboard
                 .parent_indices
@@ -348,7 +348,7 @@ pub fn create_rive_layout_imports(
             continue;
         }
         if type_key.is_some_and(|key| {
-            is_rive_core_type_derived_from(key, RIVE_NESTED_ARTBOARD_LAYOUT_TYPE_KEY)
+            return is_rive_core_type_derived_from(key, RIVE_NESTED_ARTBOARD_LAYOUT_TYPE_KEY);
         }) {
             if nodes.get(index).is_some_and(Option::is_some) {
                 providers.insert(
@@ -364,7 +364,7 @@ pub fn create_rive_layout_imports(
             continue;
         }
         if type_key.is_some_and(|key| {
-            is_rive_core_type_derived_from(key, RIVE_GRID_ITEM_PLACEMENT_TYPE_KEY)
+            return is_rive_core_type_derived_from(key, RIVE_GRID_ITEM_PLACEMENT_TYPE_KEY);
         }) {
             if let Some(owner) = artboard
                 .parent_indices
@@ -404,11 +404,11 @@ pub fn create_rive_layout_imports(
     let roots = component_providers
         .values()
         .filter(|provider| {
-            provider_parents
+            return provider_parents
                 .get(&provider.source_index)
                 .copied()
                 .unwrap_or(RIVE_NO_PARENT)
-                < 0
+                < 0;
         })
         .collect::<Vec<_>>();
     let mut imports = Vec::new();
@@ -462,22 +462,22 @@ fn append_rive_layout_provider(
         .get(&provider.source_index)
         .map_or(&[][..], Vec::as_slice);
     let context = (provider.r#type == RiveLayoutProviderType::Component).then(|| {
-        create_rive_layout_context(
+        return create_rive_layout_context(
             provider.source_index,
             style,
             parent_context.is_some_and(|parent| parent.rtl),
             children.len(),
-        )
+        );
     });
     let item_style = parent_context.map_or(ItemStyle::None, |parent| {
-        create_rive_item_style(
+        return create_rive_item_style(
             artboard,
             provider,
             source,
             style,
             parent,
             placements.get(&provider.source_index).copied(),
-        )
+        );
     });
     let kind = if context
         .as_ref()
@@ -489,19 +489,19 @@ fn append_rive_layout_provider(
     };
     let container_style = context.as_ref().map_or(ContainerStyle::None, |context| {
         if context.layout_type == RIVE_LAYOUT_TYPE_FLEX {
-            ContainerStyle::Flex(create_rive_flex_container_style(
+            return ContainerStyle::Flex(create_rive_flex_container_style(
                 style,
                 context,
                 diagnostics.as_deref_mut(),
-            ))
+            ));
         } else {
-            ContainerStyle::Grid(create_rive_grid_container_style(
+            return ContainerStyle::Grid(create_rive_grid_container_style(
                 artboard,
                 provider.source_index,
                 style,
                 context,
                 diagnostics.as_deref_mut(),
-            ))
+            ));
         }
     });
     let node_index = nodes.len();
@@ -582,9 +582,9 @@ fn find_rive_layout_components(
             .ok()
             .and_then(|style| artboard.objects.get(style));
         if style.is_none_or(|style| {
-            i32::try_from(style.type_key).ok().is_none_or(|key| {
-                !is_rive_core_type_derived_from(key, RIVE_LAYOUT_COMPONENT_STYLE_TYPE_KEY)
-            })
+            return i32::try_from(style.type_key).ok().is_none_or(|key| {
+                return !is_rive_core_type_derived_from(key, RIVE_LAYOUT_COMPONENT_STYLE_TYPE_KEY);
+            });
         }) || nodes.get(index).is_none_or(Option::is_none)
         {
             report_import_diagnostic(
@@ -864,8 +864,8 @@ fn read_rive_layout_name(source: &RiveCoreObject) -> String {
         .iter()
         .find(|candidate| candidate.key == RIVE_NAME)
         .and_then(|property| match &property.value {
-            RiveValue::String(value) => Some(value.clone()),
-            _ => None,
+            RiveValue::String(value) => return Some(value.clone()),
+            _ => return None,
         })
         .unwrap_or_default();
 }
@@ -876,7 +876,7 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         .iter()
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| {
-            read_rive_property_number(property, fallback)
+            return read_rive_property_number(property, fallback);
         });
 }
 

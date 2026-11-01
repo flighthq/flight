@@ -306,13 +306,13 @@ fn create_rive_channel(
         interpolators,
         1,
         &|keyframe| {
-            (keyframe.type_key == RIVE_KEYFRAME_DOUBLE).then(|| {
-                vec![convert(read_rive_number(
+            return (keyframe.type_key == RIVE_KEYFRAME_DOUBLE).then(|| {
+                return vec![convert(read_rive_number(
                     keyframe,
                     RIVE_KEYFRAME_DOUBLE_VALUE,
                     0.0,
-                ))]
-            })
+                ))];
+            });
         },
         target_ref,
         diagnostics,

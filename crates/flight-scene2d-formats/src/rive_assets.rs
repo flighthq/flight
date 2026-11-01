@@ -91,8 +91,8 @@ fn read_rive_bytes(source: &RiveCoreObject, key: u64) -> Option<Box<[u8]>> {
         .iter()
         .find(|candidate| candidate.key == key)
         .and_then(|property| match &property.value {
-            RiveValue::Bytes(value) => Some(value.clone()),
-            _ => None,
+            RiveValue::Bytes(value) => return Some(value.clone()),
+            _ => return None,
         });
 }
 
@@ -102,10 +102,10 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         .iter()
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
-            RiveValue::Uint(value) => value as f32,
-            RiveValue::Double(value) => value,
-            RiveValue::Color(value) => value as f32,
-            _ => fallback,
+            RiveValue::Uint(value) => return value as f32,
+            RiveValue::Double(value) => return value,
+            RiveValue::Color(value) => return value as f32,
+            _ => return fallback,
         });
 }
 
@@ -117,8 +117,8 @@ fn read_rive_text(source: &RiveCoreObject, key: u64, fallback: &str) -> String {
         .map_or_else(
             || fallback.to_string(),
             |property| match &property.value {
-                RiveValue::String(value) => value.clone(),
-                _ => fallback.to_string(),
+                RiveValue::String(value) => return value.clone(),
+                _ => return fallback.to_string(),
             },
         );
 }

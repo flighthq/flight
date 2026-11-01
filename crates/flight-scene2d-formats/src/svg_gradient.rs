@@ -27,16 +27,16 @@ pub fn create_svg_gradient_matrix(gradient: &SvgGradient, path: &Path) -> Matrix
     get_path_bounds(path, &mut bounds);
     let map_x = |value: f32| -> f32 {
         if gradient.units == SvgGradientUnits::ObjectBoundingBox {
-            bounds.x + value * bounds.width
+            return bounds.x + value * bounds.width;
         } else {
-            value
+            return value;
         }
     };
     let map_y = |value: f32| -> f32 {
         if gradient.units == SvgGradientUnits::ObjectBoundingBox {
-            bounds.y + value * bounds.height
+            return bounds.y + value * bounds.height;
         } else {
-            value
+            return value;
         }
     };
     let mut matrix = if gradient.kind == SvgGradientKind::Linear {
@@ -138,10 +138,10 @@ pub fn parse_svg_gradient(
         if inherited.is_none() && !context.resolving_gradients.contains(id) {
             let inherited_element = context.elements_by_id.get(id).cloned();
             let is_gradient = inherited_element.as_ref().is_some_and(|element| {
-                matches!(
+                return matches!(
                     svg_local_name(&element.read().unwrap().name),
                     "linearGradient" | "radialGradient"
-                )
+                );
             });
             if is_gradient {
                 context.resolving_gradients.push(id.clone());
@@ -228,9 +228,10 @@ pub fn parse_svg_gradient(
         return None;
     }
     resolved_stops.sort_by(|left, right| {
-        left.offset
+        return left
+            .offset
             .partial_cmp(&right.offset)
-            .unwrap_or(Ordering::Equal)
+            .unwrap_or(Ordering::Equal);
     });
 
     let (cx, cy, fx, fy, radius, spread_method, units, x1, x2, y1, y2) = {
@@ -335,9 +336,9 @@ fn resolve_svg_gradient_transform(
         )
     };
     let transform = parse_svg_transform(authored_transform.as_deref()).or_else(|| {
-        inherited
+        return inherited
             .and_then(|gradient| gradient.transform.as_ref())
-            .map(clone_matrix)
+            .map(clone_matrix);
     })?;
     let mut scratch = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     if inverse_matrix(&mut scratch, &transform) {

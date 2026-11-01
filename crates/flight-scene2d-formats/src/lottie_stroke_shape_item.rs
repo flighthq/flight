@@ -31,14 +31,15 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
             .item
             .get("ml2")
             .map(|property| {
-                lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)[0]
+                return lottie_numeric_json_value(initial_lottie_value(Some(property)).as_ref(), 1)
+                    [0];
             })
             .unwrap_or_else(|| {
-                context
+                return context
                     .item
                     .get("ml")
                     .and_then(Value::as_f64)
-                    .unwrap_or(4.0) as f32
+                    .unwrap_or(4.0) as f32;
             }),
     ]));
     let dash_entries = context
@@ -57,10 +58,10 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
             .iter()
             .filter(|entry| entry.get("n").and_then(Value::as_str) != Some("o"))
             .map(|entry| {
-                f64::from(
+                return f64::from(
                     lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0]
                         .max(0.0),
-                )
+                );
             })
             .collect::<Vec<_>>()
     };
@@ -76,9 +77,9 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
             .iter()
             .find(|entry| entry.get("n").and_then(Value::as_str) == Some("o"))
             .map(|entry| {
-                f64::from(
+                return f64::from(
                     lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0],
-                )
+                );
             })
             .unwrap_or(0.0)
     };

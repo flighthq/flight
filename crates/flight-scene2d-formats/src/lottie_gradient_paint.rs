@@ -55,9 +55,10 @@ pub fn parse_lottie_gradient(values: &[f32], count: usize, opacity: f32) -> Lott
         });
     }
     opacity_stops.sort_by(|left, right| {
-        left.offset
+        return left
+            .offset
             .partial_cmp(&right.offset)
-            .unwrap_or(Ordering::Equal)
+            .unwrap_or(Ordering::Equal);
     });
     let mut out = LottieGradientPaint::default();
     for index in 0..count {

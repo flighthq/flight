@@ -27,8 +27,8 @@ pub fn create_rive_rich_text(
     let source = &artboard.objects[index];
     let runs = (index + 1..artboard.objects.len())
         .filter(|child| {
-            artboard.parent_indices.get(*child).copied() == Some(index as i32)
-                && artboard.objects[*child].type_key == RIVE_TEXT_VALUE_RUN as u64
+            return artboard.parent_indices.get(*child).copied() == Some(index as i32)
+                && artboard.objects[*child].type_key == RIVE_TEXT_VALUE_RUN as u64;
         })
         .collect::<Vec<_>>();
     let align = read_rive_number(source, RIVE_TEXT_ALIGN, RIVE_ALIGN_LEFT);
@@ -74,7 +74,7 @@ pub fn create_rive_rich_text(
         text.push_str(&value);
     }
     let base_style = runs.first().map_or(-1, |run| {
-        read_rive_number(&artboard.objects[*run], RIVE_RUN_STYLE_ID, -1.0) as i32
+        return read_rive_number(&artboard.objects[*run], RIVE_RUN_STYLE_ID, -1.0) as i32;
     });
     let format = create_rive_text_format(
         artboard,
@@ -196,10 +196,10 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         .iter()
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
-            RiveValue::Uint(value) => value as f32,
-            RiveValue::Double(value) => value,
-            RiveValue::Color(value) => value as f32,
-            _ => fallback,
+            RiveValue::Uint(value) => return value as f32,
+            RiveValue::Double(value) => return value,
+            RiveValue::Color(value) => return value as f32,
+            _ => return fallback,
         });
 }
 
@@ -209,8 +209,8 @@ fn read_rive_style_axes(artboard: &RiveArtboardGraph, style_index: i32) -> Vec<F
     };
     return (style_index + 1..artboard.objects.len())
         .filter(|index| {
-            artboard.objects[*index].type_key == RIVE_TEXT_STYLE_AXIS as u64
-                && artboard.parent_indices.get(*index).copied() == Some(style_index as i32)
+            return artboard.objects[*index].type_key == RIVE_TEXT_STYLE_AXIS as u64
+                && artboard.parent_indices.get(*index).copied() == Some(style_index as i32);
         })
         .map(|index| FontVariation {
             axis: to_rive_open_type_tag(read_rive_u32(&artboard.objects[index], RIVE_AXIS_TAG, 0)),
@@ -247,8 +247,8 @@ fn read_rive_text(source: &RiveCoreObject, key: u64, fallback: &str) -> String {
         .iter()
         .find(|candidate| candidate.key == key)
         .and_then(|property| match &property.value {
-            RiveValue::String(value) => Some(value.clone()),
-            _ => None,
+            RiveValue::String(value) => return Some(value.clone()),
+            _ => return None,
         })
         .unwrap_or_else(|| fallback.to_string());
 }
@@ -263,10 +263,10 @@ fn read_rive_u32(source: &RiveCoreObject, key: u64, fallback: u32) -> u32 {
         .iter()
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
-            RiveValue::Uint(value) => value as u32,
-            RiveValue::Double(value) => value as u32,
-            RiveValue::Color(value) => value,
-            _ => fallback,
+            RiveValue::Uint(value) => return value as u32,
+            RiveValue::Double(value) => return value as u32,
+            RiveValue::Color(value) => return value,
+            _ => return fallback,
         });
 }
 

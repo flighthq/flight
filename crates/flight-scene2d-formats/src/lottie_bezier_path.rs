@@ -76,10 +76,10 @@ pub(crate) fn lottie_shape_path_from_json(value: Option<&Value>) -> Option<Lotti
             .flatten()
             .filter_map(|point| {
                 let point = point.as_array()?;
-                Some(vec![
+                return Some(vec![
                     point.first().and_then(Value::as_f64).unwrap_or(0.0) as f32,
                     point.get(1).and_then(Value::as_f64).unwrap_or(0.0) as f32,
-                ])
+                ]);
             })
             .collect();
     };
@@ -116,10 +116,10 @@ pub fn unflatten_lottie_shape_path(template: &LottieShapePath, values: &[f32]) -
     let read_points = |offset: usize| -> Vec<Vec<f32>> {
         return (0..count)
             .map(|index| {
-                vec![
+                return vec![
                     values.get(offset + index * 2).copied().unwrap_or(0.0),
                     values.get(offset + index * 2 + 1).copied().unwrap_or(0.0),
-                ]
+                ];
             })
             .collect();
     };

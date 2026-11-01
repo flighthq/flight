@@ -127,8 +127,8 @@ fn collect_rive_tendon_bones(
 
 fn find_rive_skin(artboard: &RiveArtboardGraph, skinnable_index: usize) -> Option<usize> {
     return (skinnable_index + 1..artboard.objects.len()).find(|index| {
-        artboard.objects[*index].type_key == RIVE_SKIN
-            && artboard.parent_indices[*index] == skinnable_index as i32
+        return artboard.objects[*index].type_key == RIVE_SKIN
+            && artboard.parent_indices[*index] == skinnable_index as i32;
     });
 }
 

@@ -212,6 +212,6 @@ pub fn parse_svg_transform(value: Option<&str>) -> Option<Matrix> {
 fn svg_transform_expression() -> &'static Regex {
     static EXPRESSION: OnceLock<Regex> = OnceLock::new();
     return EXPRESSION.get_or_init(|| {
-        Regex::new(r"([a-zA-Z]+)\s*\(([^)]*)\)").expect("static SVG transform regex")
+        return Regex::new(r"([a-zA-Z]+)\s*\(([^)]*)\)").expect("static SVG transform regex");
     });
 }

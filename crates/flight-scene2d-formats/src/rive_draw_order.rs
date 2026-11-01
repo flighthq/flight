@@ -86,7 +86,7 @@ pub fn apply_rive_draw_order(
                 let mut list = create_node_order_list();
                 set_node_order_list_from_node_children(&mut list, &parent);
                 lists.push((parent.clone(), list));
-                lists.len() - 1
+                return lists.len() - 1;
             });
         let list = &mut lists[list_index].1;
         if target.is_above {

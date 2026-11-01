@@ -21,10 +21,10 @@ pub fn lottie_trim_path_shape_item_handler(context: &mut LottieShapeItemContext<
         }
     }
     if ["s", "e", "o"].into_iter().any(|key| {
-        context
+        return context
             .item
             .get(key)
-            .is_some_and(is_animated_lottie_property)
+            .is_some_and(is_animated_lottie_property);
     }) {
         report_lottie_skip(
             context.import,

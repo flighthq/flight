@@ -76,8 +76,8 @@ fn read_rive_shape_name(source: &RiveCoreObject) -> String {
         .iter()
         .find(|candidate| candidate.key == RIVE_NAME)
         .and_then(|property| match &property.value {
-            RiveValue::String(value) => Some(value.clone()),
-            _ => None,
+            RiveValue::String(value) => return Some(value.clone()),
+            _ => return None,
         })
         .unwrap_or_default();
 }

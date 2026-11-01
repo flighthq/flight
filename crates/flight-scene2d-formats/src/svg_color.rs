@@ -173,7 +173,7 @@ pub fn parse_svg_color(value: &str) -> Option<SvgColor> {
     if let Some((name, arguments)) = parse_color_function(&normalized) {
         let components = arguments
             .split(|character: char| {
-                character.is_ascii_whitespace() || character == ',' || character == '/'
+                return character.is_ascii_whitespace() || character == ',' || character == '/';
             })
             .filter(|component| !component.is_empty())
             .collect::<Vec<_>>();

@@ -79,8 +79,8 @@ pub fn svg_number_attribute(element: &XmlElement, name: &str, fallback: f32) -> 
 fn svg_number_expression() -> &'static Regex {
     static EXPRESSION: OnceLock<Regex> = OnceLock::new();
     return EXPRESSION.get_or_init(|| {
-        Regex::new(r"(?i)[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:e[+-]?[0-9]+)?")
-            .expect("static SVG number regex")
+        return Regex::new(r"(?i)[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:e[+-]?[0-9]+)?")
+            .expect("static SVG number regex");
     });
 }
 
@@ -91,8 +91,8 @@ pub fn svg_optional_number_attribute(element: &XmlElement, name: &str) -> Option
 fn svg_url_reference_expression() -> &'static Regex {
     static EXPRESSION: OnceLock<Regex> = OnceLock::new();
     return EXPRESSION.get_or_init(|| {
-        Regex::new(r#"^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$"#)
-            .expect("static SVG URL reference regex")
+        return Regex::new(r#"^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$"#)
+            .expect("static SVG URL reference regex");
     });
 }
 
