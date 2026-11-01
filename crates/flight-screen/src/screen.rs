@@ -566,7 +566,8 @@ fn enumerate_into_scratch(
     scratch: &mut ScreenQueryScratch,
     host_screen_query: &HostScreenQueryCapability,
 ) {
-    scratch.screens.clear();
+    let scratch_screens: &mut Vec<ScreenInfo> = &mut scratch.screens;
+    scratch_screens.clear();
     get_screens(&mut scratch.screens, host_screen_query);
 }
 
