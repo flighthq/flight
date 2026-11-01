@@ -587,7 +587,7 @@ fn parse_key_alias(value: &str) -> Option<ShortcutKeyName> {
     if lower.len() == 1 && lower.as_bytes()[0].is_ascii_alphabetic() {
         return parse_shortcut_key_name(&lower.to_ascii_uppercase());
     }
-    if lower.len() == 1 && lower.as_bytes()[0].is_ascii_digit() {
+    if lower.len() == 1 && lower.as_bytes()[0] >= b'0' && lower.as_bytes()[0] <= b'9' {
         return parse_shortcut_key_name(&lower);
     }
     if let Some(number) = lower.strip_prefix('f')
