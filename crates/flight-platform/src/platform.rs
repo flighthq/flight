@@ -304,7 +304,10 @@ fn parse_js_int(segment: &str) -> Option<f64> {
         Some(b'+') => (false, &trimmed[1..]),
         _ => (false, trimmed),
     };
-    let digits_len = rest.bytes().take_while(|b| b.is_ascii_digit()).count();
+    let digits_len = rest
+        .bytes()
+        .take_while(|b| *b >= b'0' && *b <= b'9')
+        .count();
     if digits_len == 0 {
         return None;
     }
