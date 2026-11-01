@@ -70,7 +70,7 @@ pub fn format_relative_time(
             .as_ref(),
     );
     let formatter = get_cached(cache, &key, || {
-        host.open_relative_time_format(locale, values)
+        return host.open_relative_time_format(locale, values);
     });
     return format_intl_relative_time(&formatter, value, unit);
 }
