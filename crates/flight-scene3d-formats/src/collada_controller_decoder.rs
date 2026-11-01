@@ -486,7 +486,7 @@ fn morph_source(morph: &Ref<XmlElement>, source: Option<&str>, name: &str) -> Ve
         .cloned();
     return array
         .map(|array| tokens(&array.read().unwrap().text))
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
 }
 
 fn resolve_skins(context: &Ref<ColladaBuildContext>) {

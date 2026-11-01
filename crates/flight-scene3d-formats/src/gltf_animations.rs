@@ -116,7 +116,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
         .unwrap()
         .animations
         .clone()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let mut built = Vec::new();
     for (animation_index, animation) in animations.iter().enumerate() {
         let (source_channels, samplers, name) = {
@@ -222,7 +222,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
                     .and_then(gltf_core_index)
                     .and_then(|node| primitive_node_indices.read().unwrap().get(node).cloned())
                     .map(|indices| indices.read().unwrap().clone())
-                    .unwrap_or_default();
+                    .unwrap_or(Vec::new());
                 let mesh_nodes = if expanded.is_empty() {
                     vec![mapped]
                 } else {

@@ -97,7 +97,7 @@ fn decode_gltf_animation(source: &Value, metadata: &mut GltfJsonMetadata) -> Ref
                     .map(|value| decode_gltf_animation_channel(value, metadata))
                     .collect()
             })
-            .unwrap_or_default(),
+            .unwrap_or(Vec::new()),
         samplers: source
             .get("samplers")
             .and_then(Value::as_array)
@@ -106,7 +106,7 @@ fn decode_gltf_animation(source: &Value, metadata: &mut GltfJsonMetadata) -> Ref
                     .map(|value| decode_gltf_animation_sampler(value, metadata))
                     .collect()
             })
-            .unwrap_or_default(),
+            .unwrap_or(Vec::new()),
     }));
     retain_json_scalars(metadata, &record, source);
     return record;
@@ -721,7 +721,7 @@ fn decode_gltf_mesh(source: &Value, metadata: &mut GltfJsonMetadata) -> Ref<Gltf
                     .map(|value| decode_gltf_primitive(value, metadata))
                     .collect()
             })
-            .unwrap_or_default(),
+            .unwrap_or(Vec::new()),
         weights: source
             .get("weights")
             .and_then(Value::as_array)
@@ -1005,7 +1005,7 @@ fn decode_gltf_punctual_lights(
                     .map(|value| decode_gltf_punctual_light(value, metadata))
                     .collect()
             })
-            .unwrap_or_default(),
+            .unwrap_or(Vec::new()),
     }));
     retain_json_scalars(metadata, &record, source);
     return record;
@@ -1048,7 +1048,7 @@ fn decode_gltf_skin(source: &Value, metadata: &mut GltfJsonMetadata) -> Ref<Gltf
             .get("joints")
             .and_then(Value::as_array)
             .map(|rows| rows.iter().map(json_number).collect())
-            .unwrap_or_default(),
+            .unwrap_or(Vec::new()),
         skeleton: source.get("skeleton").map(json_number),
     }));
     retain_json_scalars(metadata, &record, source);

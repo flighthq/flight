@@ -25,7 +25,7 @@ fn apply_gltf_skins(context: &Ref<GltfCoreFeatureContext>) {
             context.report_accessor_fault.clone(),
         )
     };
-    let skins = source.read().unwrap().skins.clone().unwrap_or_default();
+    let skins = source.read().unwrap().skins.clone().unwrap_or(Vec::new());
     let mut built = Vec::new();
     for skin in skins {
         let (source_joints, inverse_bind_index) = {
@@ -106,7 +106,7 @@ fn bind_gltf_skins(context: &Ref<GltfCoreFeatureContext>) {
             context.mesh_indices.clone(),
         )
     };
-    let nodes = source.read().unwrap().nodes.clone().unwrap_or_default();
+    let nodes = source.read().unwrap().nodes.clone().unwrap_or(Vec::new());
     for node in nodes {
         let (skin, mesh) = {
             let node = node.read().unwrap();

@@ -36,8 +36,8 @@ fn apply_gltf_punctual_lights(context: &Ref<GltfExtensionContext>) {
     let definitions = extensions
         .and_then(|extensions| extensions.read().unwrap().khr_lights_punctual.clone())
         .map(|lights| lights.read().unwrap().lights.clone())
-        .unwrap_or_default();
-    let nodes = source.read().unwrap().nodes.clone().unwrap_or_default();
+        .unwrap_or(Vec::new());
+    let nodes = source.read().unwrap().nodes.clone().unwrap_or(Vec::new());
     let mut light_drops = context
         .read()
         .unwrap()

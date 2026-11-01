@@ -139,17 +139,17 @@ fn decode_animations_from_root(
             .iter()
             .find(|entry| entry.key == input)
             .map(|entry| entry.numbers.clone())
-            .unwrap_or_default();
+            .unwrap_or(Vec::new());
         let values = sources
             .iter()
             .find(|entry| entry.key == output)
             .map(|entry| entry.numbers.clone())
-            .unwrap_or_default();
+            .unwrap_or(Vec::new());
         let interpolation = sources
             .iter()
             .find(|entry| entry.key == interpolation)
             .map(|entry| entry.names.clone())
-            .unwrap_or_default();
+            .unwrap_or(Vec::new());
         for mode in &interpolation {
             if !matches!(mode.as_str(), "LINEAR" | "STEP" | "BEZIER") {
                 animation_diagnostic(
@@ -183,7 +183,7 @@ fn decode_animations_from_root(
             .attributes
             .get("target")
             .cloned()
-            .unwrap_or_default();
+            .unwrap_or(String::new());
         out.push(Arc::new(RwLock::new(ColladaDecodedAnimationChannel {
             target,
             times,

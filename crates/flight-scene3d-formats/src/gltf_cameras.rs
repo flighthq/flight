@@ -27,8 +27,8 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
     let (definitions, nodes) = {
         let source = source.read().unwrap();
         (
-            source.cameras.clone().unwrap_or_default(),
-            source.nodes.clone().unwrap_or_default(),
+            source.cameras.clone().unwrap_or(Vec::new()),
+            source.nodes.clone().unwrap_or(Vec::new()),
         )
     };
     let mut cameras = Vec::new();
