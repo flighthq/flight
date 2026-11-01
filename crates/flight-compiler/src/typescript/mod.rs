@@ -11263,13 +11263,24 @@ pub(crate) fn emit_local_with_shadow_and_else(
         }
     };
     let Some(initializer) = &local.init else {
-        write_indent(out, indent);
-        write!(out, "let {pattern}").expect("writing to a String cannot fail");
-        if let Some(rust_type) = rust_type {
-            write!(out, ": {}", emit_type(rust_type, entities)?)
-                .expect("writing to a String cannot fail");
+        if let Pat::Tuple(tuple) = &local.pat {
+            for element in &tuple.elems {
+                if matches!(element, Pat::Wild(_)) {
+                    continue;
+                }
+                let name = emit_pattern(element)?;
+                write_indent(out, indent);
+                writeln!(out, "let {name};").expect("writing to a String cannot fail");
+            }
+        } else {
+            write_indent(out, indent);
+            write!(out, "let {pattern}").expect("writing to a String cannot fail");
+            if let Some(rust_type) = rust_type {
+                write!(out, ": {}", emit_type(rust_type, entities)?)
+                    .expect("writing to a String cannot fail");
+            }
+            out.push_str(";\n");
         }
-        out.push_str(";\n");
         return Ok(());
     };
     let local_name = local_pattern_name(&local.pat);
@@ -12174,13 +12185,15 @@ fn emit_match_statement_with_action(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
+        write_indent(out, indent + 2);
+        out.push_str("{\n");
         let body_indent = if let Some((_, guard)) = &arm.guard {
             let guard_expr = emit_expression(guard, &arm_context)?;
-            write_indent(out, indent + 2);
+            write_indent(out, indent + 3);
             writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
-            indent + 3
+            indent + 4
         } else {
-            indent + 2
+            indent + 3
         };
         emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
         if arm.guard.is_some() {
@@ -12190,14 +12203,16 @@ fn emit_match_statement_with_action(
                 write_indent(out, body_indent);
                 out.push_str("break;\n");
             }
-            write_indent(out, indent + 2);
+            write_indent(out, indent + 3);
             out.push_str("}\n");
         } else if matches!(action, HoistedMatchAction::Assign(_))
             && !arm_body_contains_function_exit(&arm.body)
         {
-            write_indent(out, indent + 2);
+            write_indent(out, indent + 3);
             out.push_str("break;\n");
         }
+        write_indent(out, indent + 2);
+        out.push_str("}\n");
     }
     write_indent(out, indent);
     out.push_str("}\n");
@@ -15688,10 +15703,28 @@ pub(crate) fn emit_match_statement(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
+        write_indent(out, indent + 2);
+        out.push_str("{\n");
         if let Some((_, guard)) = &arm.guard {
             let guard_expr = emit_expression(guard, &arm_context)?;
-            write_indent(out, indent + 2);
+            write_indent(out, indent + 3);
             writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+            match arm.body.as_ref() {
+                Expr::Block(block) => {
+                    emit_block(out, &block.block.stmts, &arm_context, indent + 4)?
+                }
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    &arm_context,
+                    indent + 4,
+                )?,
+            }
+            write_indent(out, indent + 4);
+            out.push_str("break;\n");
+            write_indent(out, indent + 3);
+            out.push_str("}\n");
+        } else {
             match arm.body.as_ref() {
                 Expr::Block(block) => {
                     emit_block(out, &block.block.stmts, &arm_context, indent + 3)?
@@ -15705,23 +15738,9 @@ pub(crate) fn emit_match_statement(
             }
             write_indent(out, indent + 3);
             out.push_str("break;\n");
-            write_indent(out, indent + 2);
-            out.push_str("}\n");
-        } else {
-            match arm.body.as_ref() {
-                Expr::Block(block) => {
-                    emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
-                }
-                expression => emit_statement(
-                    out,
-                    &Stmt::Expr(expression.clone(), None),
-                    &arm_context,
-                    indent + 2,
-                )?,
-            }
-            write_indent(out, indent + 2);
-            out.push_str("break;\n");
         }
+        write_indent(out, indent + 2);
+        out.push_str("}\n");
     }
     write_indent(out, indent);
     out.push_str("}\n");

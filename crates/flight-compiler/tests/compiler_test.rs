@@ -20700,3 +20700,61 @@ pub fn test_try(x: f32) -> Option<f32> {
         "error should suggest let binding: {error}"
     );
 }
+
+#[test]
+fn emits_braced_switch_case_arms_to_avoid_redeclaration() {
+    let source = r#"
+pub fn process(kind: u32, output: &mut [f64]) {
+    match kind {
+        0 => {
+            let index = 0;
+            output[index] = 1.0;
+        }
+        1 => {
+            let index = 10;
+            output[index] = 2.0;
+        }
+        _ => {}
+    }
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("case 0:\n      {"),
+        "case arms should be braced: {result}"
+    );
+    assert!(
+        result.contains("case 1:\n      {"),
+        "case arms should be braced: {result}"
+    );
+    let index_count = result.matches("const index").count();
+    assert_eq!(
+        index_count, 2,
+        "both arms should declare index: {result}"
+    );
+}
+
+#[test]
+fn emits_separate_declarations_for_deferred_tuple_binding() {
+    let source = r#"
+pub fn swap(input: &[f64]) -> (f64, f64) {
+    let (a, b);
+    a = input[1];
+    b = input[0];
+    return (a, b);
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("let a;"),
+        "tuple elements should be separate let declarations: {result}"
+    );
+    assert!(
+        result.contains("let b;"),
+        "tuple elements should be separate let declarations: {result}"
+    );
+    assert!(
+        !result.contains("let [a, b]"),
+        "should not emit destructuring without initializer: {result}"
+    );
+}
