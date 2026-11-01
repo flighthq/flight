@@ -168,11 +168,11 @@ fn handle_lottie_gradient_item(context: &mut LottieShapeItemContext<'_, '_>, str
                     [0];
             })
             .unwrap_or_else(|| {
-                return context
+                context
                     .item
                     .get("ml")
                     .and_then(Value::as_f64)
-                    .unwrap_or(4.0) as f32;
+                    .unwrap_or(4.0) as f32
             }),
     ]));
     let dash_entries = context

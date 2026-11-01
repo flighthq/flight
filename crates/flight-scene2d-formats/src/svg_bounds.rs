@@ -35,10 +35,7 @@ pub fn create_svg_node2d_bounds(
         }
         recorded.unwrap_or(shape_bounds)
     } else {
-        recorded.unwrap_or_else(|| {
-            let target: NodeRef = target.clone();
-            return get_node_local_bounds_rectangle(&target);
-        })
+        recorded.unwrap_or_else(|| get_svg_node2d_local_bounds(target))
     };
     let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
     let mut has_bounds = merge_non_empty_svg_bounds(&mut out, &own_bounds, false);
@@ -61,6 +58,11 @@ pub fn create_svg_node2d_bounds(
         has_bounds = merge_non_empty_svg_bounds(&mut out, &bounds, has_bounds);
     }
     return (has_bounds && !has_unresolved_child_bounds).then_some(out);
+}
+
+fn get_svg_node2d_local_bounds(target: &Node2DRef) -> Rectangle {
+    let target: NodeRef = target.clone();
+    return get_node_local_bounds_rectangle(&target);
 }
 
 pub fn has_unmeasurable_svg_text(target: &Node2DRef) -> bool {

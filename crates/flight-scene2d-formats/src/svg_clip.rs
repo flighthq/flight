@@ -279,7 +279,7 @@ fn collect_svg_clip_geometry_element(
         if parse_url_reference(svg_attribute(&element.read().unwrap(), "clip-path")).is_some() {
             for geometry in &mut out[start..] {
                 let base = geometry.region.clone().unwrap_or_else(|| {
-                    return create_clip_region_from_path(geometry.path.as_ref().unwrap(), None);
+                    create_clip_region_from_path(geometry.path.as_ref().unwrap(), None)
                 });
                 let region =
                     intersect_svg_clip_reference(&base, element, transform.as_ref(), context);

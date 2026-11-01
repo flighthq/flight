@@ -82,12 +82,7 @@ pub fn apply_rive_draw_order(
         let list_index = lists
             .iter()
             .position(|(candidate, _)| Arc::ptr_eq(candidate, &parent))
-            .unwrap_or_else(|| {
-                let mut list = create_node_order_list();
-                set_node_order_list_from_node_children(&mut list, &parent);
-                lists.push((parent.clone(), list));
-                return lists.len() - 1;
-            });
+            .unwrap_or_else(|| push_rive_node_order_list(&mut lists, &parent));
         let list = &mut lists[list_index].1;
         if target.is_above {
             set_node_order_list_entry_above(list, &governed_node, &target_node);
@@ -106,6 +101,14 @@ pub fn apply_rive_draw_order(
         apply_node_order_list(target, &list);
         dispose_node_order_list(&mut list);
     }
+}
+
+// Appends the parent's current child order and returns its list index.
+fn push_rive_node_order_list(lists: &mut Vec<(NodeRef, NodeOrderList)>, parent: &NodeRef) -> usize {
+    let mut list = create_node_order_list();
+    set_node_order_list_from_node_children(&mut list, parent);
+    lists.push((parent.clone(), list));
+    return lists.len() - 1;
 }
 
 fn read_rive_draw_id(object: &RiveCoreObject, key: u64) -> Option<usize> {

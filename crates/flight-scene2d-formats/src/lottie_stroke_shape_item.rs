@@ -35,11 +35,11 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
                     [0];
             })
             .unwrap_or_else(|| {
-                return context
+                context
                     .item
                     .get("ml")
                     .and_then(Value::as_f64)
-                    .unwrap_or(4.0) as f32;
+                    .unwrap_or(4.0) as f32
             }),
     ]));
     let dash_entries = context
