@@ -103,9 +103,10 @@ pub fn has_share_content_fields(content: &ShareContent) -> bool {
 }
 
 pub fn is_share_file_valid(file: &ShareFile) -> bool {
+    let data_url: &str = &file.data_url;
     return file.name != ""
         && file.mime_type != ""
-        && file.data_url.starts_with("data:")
+        && data_url.starts_with("data:")
         && file.data_url.contains(',');
 }
 
