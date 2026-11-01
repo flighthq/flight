@@ -196,12 +196,21 @@ function declarationProgram(): {
   const publicPath = resolve(DIST_ROOT, 'index.d.ts');
   const contractPath = resolve(DIST_ROOT, 'contract.d.ts');
   const entityPath = resolve(ROOT, 'packages/types/dist/Entity.d.ts');
+  // The package builds against the menu contract-types project (tsconfig `moduleSuffixes`), which emits
+  // only `contract.menu-types.d.ts`, so resolve `@flighthq/menu/contract` to that declaration as the build
+  // does. Every import must resolve: an unresolved one reads as `any`, which is assignable to `Entity`.
   const program = ts.createProgram([publicPath, contractPath, entityPath], {
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
+    paths: { '@flighthq/menu/contract': [resolve(ROOT, 'packages/menu/dist/contract.menu-types.d.ts')] },
     skipLibCheck: true,
     target: ts.ScriptTarget.ESNext,
   });
+  const unresolved = ts
+    .getPreEmitDiagnostics(program)
+    .filter((diagnostic) => diagnostic.code === 2307)
+    .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '));
+  expect(unresolved).toEqual([]);
   return {
     checker: program.getTypeChecker(),
     contractSource: program.getSourceFile(contractPath)!,
