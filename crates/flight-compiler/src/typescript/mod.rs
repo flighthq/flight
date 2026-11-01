@@ -21449,6 +21449,7 @@ fn collect_try_expressions<'a>(expression: &'a Expr) -> Vec<&'a syn::ExprTry> {
 
     let mut collector = TryCollector { nodes: vec![] };
     syn::visit::Visit::visit_expr(&mut collector, expression);
+    collector.nodes.reverse();
     return collector.nodes;
 }
 
@@ -21464,7 +21465,7 @@ fn emit_try_pre_extractions(
     }
     let mut context = entities.clone();
     for (index, try_node) in try_nodes.iter().enumerate() {
-        let inner = emit_expression(&try_node.expr, entities)?;
+        let inner = emit_expression(&try_node.expr, &context)?;
         let key = try_node.to_token_stream().to_string();
         let temp = format!("__try{index}");
         write_indent(out, indent);
