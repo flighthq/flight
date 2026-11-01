@@ -1,15 +1,18 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::types::*;
 
 // flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn clear_collision_pair_tests3d(registry: &mut CollisionRegistry3D) {
-    registry.pair_tests.clear();
+    let pair_tests: &mut HashMap<String, CollisionPairTest3D> = &mut registry.pair_tests;
+    pair_tests.clear();
 }
 
 // flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn clear_collision_supports3d(registry: &mut CollisionRegistry3D) {
-    registry.supports.clear();
+    let supports: &mut HashMap<String, CollisionSupport3D> = &mut registry.supports;
+    supports.clear();
 }
 
 // flight-lint: allow(conform-params) registry passed explicitly (D5)

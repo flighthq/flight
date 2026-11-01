@@ -83,7 +83,8 @@ pub fn create_collision_triangle_mesh3d() -> CollisionTriangleMesh3D {
 pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D) {
     out.columns = 0;
     out.rows = 0;
-    out.heights.clear();
+    let heights: &mut Vec<f32> = &mut out.heights;
+    heights.clear();
     out.cell_size_x = 1.0;
     out.cell_size_z = 1.0;
     out.version = 0;
@@ -99,8 +100,10 @@ pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D) {
 
 // flight-lint: allow(conform-params) Principal D23 B: construction initialization owns only canonical zero-field defaults
 pub fn initialize_collision_triangle_mesh3d(out: &mut CollisionTriangleMesh3D) {
-    out.points.clear();
-    out.indices.clear();
+    let points: &mut Vec<f32> = &mut out.points;
+    points.clear();
+    let indices: &mut Vec<usize> = &mut out.indices;
+    indices.clear();
     out.version = 0;
     out.x = 0.0;
     out.y = 0.0;

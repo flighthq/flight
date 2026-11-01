@@ -301,17 +301,19 @@ pub fn sweep_collision_shape2d(
                 out.normal_y = -out.normal_y;
             }
         }
-    } else if let (Some(vertices_a), Some(vertices_b)) =
-        (write_shape_vertices(shape_a), write_shape_vertices(shape_b))
-    {
-        hit = sweep_polygon_polygon(
-            &vertices_a,
-            &vertices_b,
-            relative_x,
-            relative_y,
-            max_fraction,
-            out,
-        );
+    } else {
+        let polygon_a = write_shape_vertices(shape_a);
+        let polygon_b = write_shape_vertices(shape_b);
+        if let (Some(vertices_a), Some(vertices_b)) = (polygon_a, polygon_b) {
+            hit = sweep_polygon_polygon(
+                &vertices_a,
+                &vertices_b,
+                relative_x,
+                relative_y,
+                max_fraction,
+                out,
+            );
+        }
     }
 
     if !hit || out.fraction < 0.0 || out.fraction > max_fraction {

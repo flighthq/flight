@@ -536,7 +536,7 @@ fn write_collision_convex_face3d_f64(
             let dz = f64::from(convex.points[idx * 3 + 2]) - cz;
             let u = dx * tan_x + dy * tan_y + dz * tan_z;
             let v = dx * bitan_x + dy * bitan_y + dz * bitan_z;
-            (v.atan2(u), idx)
+            return (v.atan2(u), idx);
         })
         .collect();
     angles.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
