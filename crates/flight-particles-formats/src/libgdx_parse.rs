@@ -509,10 +509,7 @@ fn sections_to_document(sections: &LibgdxSections) -> LibgdxParticleDocument {
         .unwrap_or(&empty);
     let tint_section = sections.section("Tint");
     let mut tint_colors: Vec<String> = Vec::new();
-    let raw_colors = tint_section
-        .get("colors")
-        .cloned()
-        .unwrap_or_else(String::new);
+    let raw_colors = tint_section.get("colors").cloned().unwrap_or(String::new());
     for color in raw_colors.split(',') {
         let trimmed = color.trim();
         if !trimmed.is_empty() {
@@ -618,7 +615,7 @@ fn sections_to_document(sections: &LibgdxSections) -> LibgdxParticleDocument {
         emission: read_range(&sections.section("Emission"), Some(&emission_default)),
         gravity: read_active_range(&sections.section("Gravity"), false),
         image_count: num_key(root, "imageCount", 1.0),
-        image_path: root.get("imagePath").cloned().unwrap_or_else(String::new),
+        image_path: root.get("imagePath").cloned().unwrap_or(String::new()),
         life: read_range(&sections.section("Life"), Some(&life_default)),
         life_offset: read_active_range(&sections.section("Life Offset"), false),
         max_particle_count: num_key(root, "maxParticleCount", 100.0),
