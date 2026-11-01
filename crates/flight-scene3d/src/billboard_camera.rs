@@ -161,8 +161,8 @@ fn write_billboard_facing_matrix(
                     len = 1.0;
                 }
             }
-            for v in &mut n {
-                *v /= len;
+            for component in 0..n.len() {
+                n[component] /= len;
             }
             let mut r = [
                 b.up[1] * n[2] - b.up[2] * n[1],
@@ -183,8 +183,8 @@ fn write_billboard_facing_matrix(
                     rl = 1.0;
                 }
             }
-            for v in &mut r {
-                *v /= rl;
+            for component in 0..r.len() {
+                r[component] /= rl;
             }
             let u = [
                 n[1] * r[2] - n[2] * r[1],
