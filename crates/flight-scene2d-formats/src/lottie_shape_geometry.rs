@@ -11,9 +11,9 @@ pub fn apply_lottie_shape_direction(path: Ref<Path>, direction: Option<i32>) -> 
     }
     let mut reversed = {
         let source = path.read().unwrap();
-        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
-        path.winding = source.winding;
-        path
+        let mut created = create_path(Some(flight_path::PathWinding::NonZero));
+        created.winding = source.winding;
+        created
     };
     reverse_path(&path.read().unwrap(), &mut reversed);
     return Arc::new(RwLock::new(reversed));

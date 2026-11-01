@@ -215,11 +215,8 @@ pub fn svg_geometry_element_handler(context: &mut SvgElementContext<'_, '_>) -> 
     );
     let path = create_svg_geometry_path(&context.element.read().unwrap(), style.fill_rule)?;
     let shape = create_shape();
-    let bounds_state = get_shape_runtime(&*shape.read().unwrap())?
-        .read()
-        .unwrap()
-        .bounds_state
-        .clone();
+    let shape_runtime = get_shape_runtime(&*shape.read().unwrap())?;
+    let bounds_state = shape_runtime.read().unwrap().bounds_state.clone();
     register_default_shape_bounds_commands(&bounds_state);
     let node: Node2DRef = shape.clone();
     apply_svg_element_appearance(
