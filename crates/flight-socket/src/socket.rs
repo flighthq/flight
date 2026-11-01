@@ -347,7 +347,8 @@ pub fn open_tcp_socket(
     options: &TcpSocketOptions,
 ) -> Option<TcpSocketConnection> {
     let host = host_socket?;
-    let open_tcp_socket = host.open_tcp_socket.as_ref()?.clone();
+    let open_tcp_socket_ref = host.open_tcp_socket.as_ref()?;
+    let open_tcp_socket = open_tcp_socket_ref.clone();
     return open_tcp_socket(options);
 }
 
