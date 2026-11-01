@@ -6148,6 +6148,14 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         && self.initializer_retains_nullable_option(&initializer.expr);
                 }
             }
+            if matches!(fact, BindingFact::Unknown)
+                && let Pat::Type(typed) = &local.pat
+            {
+                let typed_fallback = self.typed_fact(&typed.ty);
+                if !matches!(typed_fallback, BindingFact::Unknown) {
+                    fact = typed_fallback;
+                }
+            }
             let shared_identity = match &local.pat {
                 Pat::Type(typed) => rust_type_is_shared_identity(self.context, &typed.ty),
                 _ => local.init.as_ref().is_some_and(|initializer| {

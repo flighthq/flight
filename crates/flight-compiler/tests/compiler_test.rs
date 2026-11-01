@@ -3139,6 +3139,23 @@ pub fn byte_count(data: &Uint8Array) -> usize {
     }
 
     #[test]
+    fn lowers_local_variable_provenance_from_type_annotation() {
+        let source = r#"
+pub fn vec_from_unknown(source: &[i32]) -> Option<i32> {
+    let data: Vec<i32> = source.to_vec();
+    return data.last().copied();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("data.at(-1)"),
+            "type-annotated local should get sequence provenance: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_vec_extend_over_declared_sequences() {
         let source = r#"
 //! flight-compiler: data-union Id
