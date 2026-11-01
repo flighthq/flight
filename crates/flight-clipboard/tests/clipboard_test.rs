@@ -87,22 +87,33 @@ fn formats_of(state: &State) -> Vec<String> {
 }
 
 fn listener_count(state: &Arc<Mutex<State>>) -> usize {
-    return state.lock().unwrap().listeners.iter().flatten().count();
+    let guard = state.lock().unwrap();
+    let listeners: &Vec<Option<ClipboardUnsubscribe>> = &guard.listeners;
+    return listeners
+        .iter()
+        .filter(|listener| listener.is_some())
+        .count();
 }
 
 fn read_format_of(state: &State, format: &str) -> String {
-    return match format {
-        CLIPBOARD_FORMAT_TEXT => state.text.clone(),
-        CLIPBOARD_FORMAT_HTML => state.html.clone(),
-        CLIPBOARD_FORMAT_IMAGE => state.image.clone(),
-        CLIPBOARD_FORMAT_RTF => state.rtf.clone(),
-        _ => state
-            .custom
-            .iter()
-            .find(|(candidate, _)| candidate == format)
-            .map(|(_, data)| data.clone())
-            .unwrap_or_default(),
-    };
+    if format == CLIPBOARD_FORMAT_TEXT {
+        return state.text.clone();
+    }
+    if format == CLIPBOARD_FORMAT_HTML {
+        return state.html.clone();
+    }
+    if format == CLIPBOARD_FORMAT_IMAGE {
+        return state.image.clone();
+    }
+    if format == CLIPBOARD_FORMAT_RTF {
+        return state.rtf.clone();
+    }
+    let custom: &Vec<(String, String)> = &state.custom;
+    return custom
+        .iter()
+        .find(|(candidate, _)| candidate == format)
+        .map(|(_, data)| data.clone())
+        .unwrap_or(String::new());
 }
 
 fn rejected_error() -> FlightError {
@@ -117,20 +128,29 @@ fn rejecting_backend() -> FakeBackend {
 }
 
 fn write_format_into(state: &mut State, format: &str, data: &str) {
-    match format {
-        CLIPBOARD_FORMAT_TEXT => state.text = data.to_string(),
-        CLIPBOARD_FORMAT_HTML => state.html = data.to_string(),
-        CLIPBOARD_FORMAT_IMAGE => state.image = data.to_string(),
-        CLIPBOARD_FORMAT_RTF => state.rtf = data.to_string(),
-        _ => match state
-            .custom
-            .iter_mut()
-            .find(|(candidate, _)| candidate == format)
-        {
-            Some((_, value)) => *value = data.to_string(),
-            None => state.custom.push((format.to_string(), data.to_string())),
-        },
+    if format == CLIPBOARD_FORMAT_TEXT {
+        state.text = data.to_string();
+        return;
     }
+    if format == CLIPBOARD_FORMAT_HTML {
+        state.html = data.to_string();
+        return;
+    }
+    if format == CLIPBOARD_FORMAT_IMAGE {
+        state.image = data.to_string();
+        return;
+    }
+    if format == CLIPBOARD_FORMAT_RTF {
+        state.rtf = data.to_string();
+        return;
+    }
+    let custom: &mut Vec<(String, String)> = &mut state.custom;
+    let existing = custom.iter().position(|(candidate, _)| candidate == format);
+    if let Some(index) = existing {
+        custom[index].1 = data.to_string();
+        return;
+    }
+    custom.push((format.to_string(), data.to_string()));
 }
 
 fn build_backend(denied: bool, rejected: bool) -> FakeBackend {
@@ -782,14 +802,11 @@ mod clipboard_sentinels {
             &backend.formats,
             &[CLIPBOARD_FORMAT_TEXT.to_string()],
         )) {
-            Ok(result) => assert!(
-                {
-                    let mut collected = Vec::new();
-                    entries(&mut collected, &result);
-                    collected
-                }
-                .is_empty()
-            ),
+            Ok(result) => {
+                let mut collected = Vec::new();
+                entries(&mut collected, &result);
+                assert!(collected.is_empty());
+            }
             Err(_) => panic!("denied reads are sentinels, not rejections"),
         }
         assert_eq!(

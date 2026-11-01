@@ -39,7 +39,9 @@ fn emit_listeners(listeners: &Arc<Mutex<Vec<ListenerSlot>>>) {
 }
 
 fn listener_count(listeners: &Arc<Mutex<Vec<ListenerSlot>>>) -> usize {
-    return listeners.lock().unwrap().iter().flatten().count();
+    let locked = listeners.lock().unwrap();
+    let slots: &Vec<ListenerSlot> = &locked;
+    return slots.iter().filter(|slot| slot.is_some()).count();
 }
 
 fn count_changes(watch: &ClipboardWatch) -> Arc<Mutex<usize>> {
