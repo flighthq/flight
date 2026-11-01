@@ -61,7 +61,7 @@ fn get_backend_cache_id(cache: &mut TextShaperCache, backend: &HostTextShaperCap
 fn make_cache_key(text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>) -> String {
     let flag = |value: Option<bool>| if value.unwrap_or(false) { "1" } else { "0" };
     let fmt = [
-        format.font.clone().unwrap_or_default(),
+        format.font.clone().unwrap_or(String::new()),
         format.size.unwrap_or(12.0).to_string(),
         flag(format.bold).to_string(),
         flag(format.italic).to_string(),
