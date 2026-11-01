@@ -351,7 +351,7 @@ pub fn compute_mesh_geometry_position_groups(out: &mut Vec<u32>, geometry: &Mesh
     out.resize(vertex_count as usize, 0);
 
     // Reinterpret the float buffer as u32 for bit-identical comparison
-    let bits: Vec<u32> = vertices.iter().map(|&f| f.to_bits()).collect();
+    let bits: Vec<u32> = vertices.iter().map(|&f: &f32| f.to_bits()).collect();
 
     let mut buckets: HashMap<u32, Vec<u32>> = HashMap::new();
 

@@ -1021,13 +1021,14 @@ fn get_midpoint(
     a: u32,
     b: u32,
 ) -> u32 {
-    let key = if a < b {
-        ((a as u64) << 32) | b as u64
+    // Multiply-add rather than shift-or: equal for u32 operands, and exact in an f64 lowering.
+    let key: u64 = if a < b {
+        a as u64 * MIDPOINT_KEY_STRIDE + b as u64
     } else {
-        ((b as u64) << 32) | a as u64
+        b as u64 * MIDPOINT_KEY_STRIDE + a as u64
     };
-    if let Some(&cached) = cache.get(&key) {
-        return cached;
+    if let Some(cached) = cache.get(&key) {
+        return *cached;
     }
     let va = verts[a as usize];
     let vb = verts[b as usize];
@@ -1135,3 +1136,5 @@ fn tetrahedron_verts() -> Vec<[f32; 3]> {
         [1.0, -1.0, -1.0],
     ];
 }
+
+const MIDPOINT_KEY_STRIDE: u64 = 4_294_967_296;
