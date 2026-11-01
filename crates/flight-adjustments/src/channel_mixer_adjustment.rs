@@ -53,7 +53,9 @@ pub fn initialize_channel_mixer_adjustment(
     options: Option<&ChannelMixerAdjustmentOptions>,
 ) {
     let matrix = options.map_or(IDENTITY_CHANNEL_MIXER, |o| o.matrix);
-    let m = |i: usize| -> f32 { matrix[i] };
+    let m = |i: usize| -> f32 {
+        return matrix[i];
+    };
     let mut color_matrix = create_channel_mixer_color_matrix(
         &[m(0), m(1), m(2)],
         &[m(4), m(5), m(6)],
