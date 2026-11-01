@@ -110,7 +110,7 @@ pub fn extract_glb_json_chunk(bytes: &Uint8Array) -> Option<String> {
         }
         let data_end = data_start + chunk_length;
         if chunk_type == 0x4e4f_534a {
-            let mut result = decode_utf8(&bytes[data_start..data_end], None, None);
+            let mut result: String = decode_utf8(&bytes[data_start..data_end], None, None);
             if result.starts_with('\u{feff}') {
                 result.remove(0);
             }

@@ -620,7 +620,8 @@ pub fn parse_collada_with_decoders(
     let root = parse_xml_document(xml).map(|root| Arc::new(RwLock::new(root)));
     let root = root.filter(|root| {
         let root = root.read().unwrap();
-        root.name == "COLLADA" || root.name.ends_with(":COLLADA")
+        let name: &str = &root.name;
+        return name == "COLLADA" || name.ends_with(":COLLADA");
     });
     let Some(root) = root else {
         report_collada_diagnostic(

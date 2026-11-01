@@ -107,7 +107,8 @@ pub(crate) fn build_gltf_image_reference(
         )
     };
     if let Some(uri) = uri {
-        if uri.starts_with("data:") {
+        let uri_text: &str = &uri;
+        if uri_text.starts_with("data:") {
             let Some(comma) = uri.find(',') else {
                 tally_gltf_numbers(
                     reader.drops.as_ref(),
