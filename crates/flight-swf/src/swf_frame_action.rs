@@ -220,7 +220,7 @@ fn swf_read_abc_calls(
         {
             let argument_count = swf_resolve_operand_usize(instruction, 1).unwrap_or(0);
             let start = stack.len().saturating_sub(argument_count);
-            let arguments_given: Vec<SwfAbcValue> = stack.drain(start..).collect();
+            let arguments_given: Vec<SwfAbcValue> = stack.drain(start..stack.len()).collect();
             if swf_resolve_abc_name(file, swf_resolve_operand_usize(instruction, 0).unwrap_or(0))
                 != ADD_FRAME_SCRIPT
             {
@@ -291,7 +291,7 @@ fn swf_read_abc_commands(file: &AbcFile, body: &[AbcInstruction]) -> Option<Vec<
         {
             let argument_count = swf_resolve_operand_usize(instruction, 1).unwrap_or(0);
             let start = stack.len().saturating_sub(argument_count);
-            let arguments_given: Vec<SwfAbcValue> = stack.drain(start..).collect();
+            let arguments_given: Vec<SwfAbcValue> = stack.drain(start..stack.len()).collect();
             let command = swf_read_abc_resolve_command(
                 swf_resolve_abc_name(file, swf_resolve_operand_usize(instruction, 0).unwrap_or(0)),
                 &arguments_given,
