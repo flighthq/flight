@@ -8131,6 +8131,21 @@ fn binary_is_assignment(operator: &BinOp) -> bool {
     );
 }
 
+fn literal_shift_amount(expression: &Expr) -> Option<u64> {
+    return match expression {
+        Expr::Lit(lit) => {
+            if let Lit::Int(int) = &lit.lit {
+                int.base10_parse::<u64>().ok()
+            } else {
+                None
+            }
+        }
+        Expr::Paren(paren) => literal_shift_amount(&paren.expr),
+        Expr::Group(group) => literal_shift_amount(&group.expr),
+        _ => None,
+    };
+}
+
 fn expression_precedence(expression: &Expr) -> u8 {
     return match expression {
         Expr::Assign(_) => 1,
@@ -8965,6 +8980,22 @@ fn emit_expression_value(
                     emit_binary_operand(&binary.left, entities, precedence, false)?,
                     emit_binary_operand(&binary.right, entities, precedence, true)?
                 ));
+            }
+            if matches!(binary.op, BinOp::Shl(_)) {
+                if let Some(shift_amount) = literal_shift_amount(&binary.right) {
+                    if shift_amount >= 32 {
+                        let left = emit_expression(&binary.left, entities)?;
+                        return Ok(format!("{left} * 2 ** {shift_amount}"));
+                    }
+                }
+            }
+            if matches!(binary.op, BinOp::ShlAssign(_)) {
+                if let Some(shift_amount) = literal_shift_amount(&binary.right) {
+                    if shift_amount >= 32 {
+                        let left = emit_expression(&binary.left, entities)?;
+                        return Ok(format!("{left} = {left} * 2 ** {shift_amount}"));
+                    }
+                }
             }
             Ok(format!(
                 "{} {} {}",
@@ -15871,11 +15902,15 @@ fn emit_method_call(
                     .next()
             });
             match target_type.as_deref() {
-                Some("f32" | "f64") => Ok(format!("parseFloat({receiver})")),
+                Some("f32" | "f64") => Ok(format!(
+                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && !Number.isNaN(v) ? v : null; }})({receiver})"
+                )),
                 Some(
                     "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32"
                     | "u64" | "u128" | "usize",
-                ) => Ok(format!("parseInt({receiver}, 10)")),
+                ) => Ok(format!(
+                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && Number.isInteger(v) ? v : null; }})({receiver})"
+                )),
                 Some(other) => Err(compile_error(format!(
                     "portable `.parse::<{other}>()` has no portable lowering",
                 ))),

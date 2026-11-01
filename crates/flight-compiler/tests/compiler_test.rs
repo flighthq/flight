@@ -4681,11 +4681,11 @@ pub fn parse_int(text: &str) -> Option<i32> {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("parseFloat(text)"),
+            output.contains("Number(s)") && output.contains("!Number.isNaN(v)"),
             "f64 parse: {output}"
         );
         assert!(
-            output.contains("parseInt(text, 10)"),
+            output.contains("Number(s)") && output.contains("Number.isInteger(v)"),
             "i32 parse: {output}"
         );
     }
