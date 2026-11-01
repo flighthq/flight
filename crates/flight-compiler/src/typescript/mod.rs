@@ -236,6 +236,7 @@ const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:"
 const ITER_MUT_ALIAS_MARKER: &str = "@iter-mut-alias:";
 
 const TRY_SUBSTITUTION_MARKER: &str = "@try-sub:";
+const TRY_COUNTER_MARKER: &str = "@try-counter:";
 
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
@@ -8680,7 +8681,7 @@ fn emit_block_with_context(
             let shadowed = !declared.insert(name);
             let effective_context = if local.init.as_ref().is_some_and(|init| {
                 !matches!(init.expr.as_ref(), Expr::Try(_))
-                    && expression_contains_try(&init.expr)
+                    && expression_contains_unconditional_try(&init.expr)
             }) {
                 let init = local.init.as_ref().unwrap();
                 emit_try_pre_extractions(out, &init.expr, &local_context, indent)?
@@ -8695,13 +8696,46 @@ fn emit_block_with_context(
                 shadowed,
                 rebound,
             )?;
+            if let Some(counter) = effective_context
+                .iter()
+                .find(|m| m.starts_with(TRY_COUNTER_MARKER))
+            {
+                block_context.retain(|m| !m.starts_with(TRY_COUNTER_MARKER));
+                block_context.insert(counter.clone());
+            }
             update_vitest_struct_local_context(local, &mut block_context);
             update_vitest_local_function_context(local, &mut block_context);
         } else if let Stmt::Local(local) = statement {
+            let try_count_before = block_context
+                .iter()
+                .find_map(|m| m.strip_prefix(TRY_COUNTER_MARKER))
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(0);
             emit_statement(out, statement, &block_context, indent)?;
+            if let Some(init) = &local.init {
+                let emitted = collect_unconditional_try_expressions(&init.expr).len();
+                if emitted > 0 {
+                    let new_count = try_count_before + emitted;
+                    block_context.retain(|m| !m.starts_with(TRY_COUNTER_MARKER));
+                    block_context.insert(format!("{TRY_COUNTER_MARKER}{new_count}"));
+                }
+            }
             update_vitest_local_function_context(local, &mut block_context);
         } else {
+            let try_count_before = block_context
+                .iter()
+                .find_map(|m| m.strip_prefix(TRY_COUNTER_MARKER))
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(0);
             emit_statement(out, statement, &block_context, indent)?;
+            if let Stmt::Expr(expression, _) = statement {
+                let emitted = collect_unconditional_try_expressions(expression).len();
+                if emitted > 0 {
+                    let new_count = try_count_before + emitted;
+                    block_context.retain(|m| !m.starts_with(TRY_COUNTER_MARKER));
+                    block_context.insert(format!("{TRY_COUNTER_MARKER}{new_count}"));
+                }
+            }
         }
     }
     return Ok(block_context);
@@ -19427,7 +19461,7 @@ fn emit_statement(
         Stmt::Local(local)
             if local.init.as_ref().is_some_and(|init| {
                 !matches!(init.expr.as_ref(), Expr::Try(_))
-                    && expression_contains_try(&init.expr)
+                    && expression_contains_unconditional_try(&init.expr)
             }) =>
         {
             let init = local.init.as_ref().unwrap();
@@ -19795,7 +19829,7 @@ fn emit_statement(
             if return_expression
                 .expr
                 .as_ref()
-                .is_some_and(|v| expression_contains_try(v)) =>
+                .is_some_and(|v| expression_contains_unconditional_try(v)) =>
         {
             let value = return_expression.expr.as_ref().unwrap();
             let try_context = emit_try_pre_extractions(out, value, entities, indent)?;
@@ -19898,7 +19932,7 @@ fn emit_statement(
                 && emit_entry_or_default_assign(out, binary, entities, indent)? => {}
         Stmt::Expr(Expr::MethodCall(call), _)
             if emit_entry_or_default_method(out, call, entities, indent)? => {}
-        Stmt::Expr(expression, _) if expression_contains_try(expression) => {
+        Stmt::Expr(expression, _) if expression_contains_unconditional_try(expression) => {
             let try_context =
                 emit_try_pre_extractions(out, expression, entities, indent)?;
             write_indent(out, indent);
@@ -21419,35 +21453,106 @@ fn expression_contains_method(expression: &Expr, expected: &str) -> bool {
     return finder.found;
 }
 
-fn expression_contains_try(expression: &Expr) -> bool {
+fn expression_contains_unconditional_try(expression: &Expr) -> bool {
     struct TryFinder {
         found: bool,
+        conditional_depth: usize,
     }
 
     impl<'ast> syn::visit::Visit<'ast> for TryFinder {
-        fn visit_expr_try(&mut self, _: &'ast syn::ExprTry) {
-            self.found = true;
+        fn visit_expr_try(&mut self, node: &'ast syn::ExprTry) {
+            if self.conditional_depth == 0 {
+                self.found = true;
+            }
+            syn::visit::visit_expr_try(self, node);
+        }
+        fn visit_expr_closure(&mut self, _: &'ast syn::ExprClosure) {}
+        fn visit_expr_async(&mut self, _: &'ast syn::ExprAsync) {}
+        fn visit_expr_match(&mut self, node: &'ast syn::ExprMatch) {
+            syn::visit::Visit::visit_expr(&mut *self, &node.expr);
+            self.conditional_depth += 1;
+            for arm in &node.arms {
+                syn::visit::Visit::visit_arm(&mut *self, arm);
+            }
+            self.conditional_depth -= 1;
+        }
+        fn visit_expr_if(&mut self, node: &'ast syn::ExprIf) {
+            syn::visit::Visit::visit_expr(&mut *self, &node.cond);
+            self.conditional_depth += 1;
+            syn::visit::Visit::visit_block(&mut *self, &node.then_branch);
+            if let Some((_, else_branch)) = &node.else_branch {
+                syn::visit::Visit::visit_expr(&mut *self, else_branch);
+            }
+            self.conditional_depth -= 1;
+        }
+        fn visit_expr_binary(&mut self, node: &'ast syn::ExprBinary) {
+            syn::visit::Visit::visit_expr(&mut *self, &node.left);
+            if matches!(node.op, BinOp::And(_) | BinOp::Or(_)) {
+                self.conditional_depth += 1;
+                syn::visit::Visit::visit_expr(&mut *self, &node.right);
+                self.conditional_depth -= 1;
+            } else {
+                syn::visit::Visit::visit_expr(&mut *self, &node.right);
+            }
         }
     }
 
-    let mut finder = TryFinder { found: false };
+    let mut finder = TryFinder {
+        found: false,
+        conditional_depth: 0,
+    };
     syn::visit::Visit::visit_expr(&mut finder, expression);
     return finder.found;
 }
 
-fn collect_try_expressions<'a>(expression: &'a Expr) -> Vec<&'a syn::ExprTry> {
+fn collect_unconditional_try_expressions<'a>(expression: &'a Expr) -> Vec<&'a syn::ExprTry> {
     struct TryCollector<'b> {
         nodes: Vec<&'b syn::ExprTry>,
+        conditional_depth: usize,
     }
 
     impl<'ast> syn::visit::Visit<'ast> for TryCollector<'ast> {
         fn visit_expr_try(&mut self, node: &'ast syn::ExprTry) {
-            self.nodes.push(node);
+            if self.conditional_depth == 0 {
+                self.nodes.push(node);
+            }
             syn::visit::visit_expr_try(self, node);
+        }
+        fn visit_expr_closure(&mut self, _: &'ast syn::ExprClosure) {}
+        fn visit_expr_async(&mut self, _: &'ast syn::ExprAsync) {}
+        fn visit_expr_match(&mut self, node: &'ast syn::ExprMatch) {
+            syn::visit::Visit::visit_expr(&mut *self, &node.expr);
+            self.conditional_depth += 1;
+            for arm in &node.arms {
+                syn::visit::Visit::visit_arm(&mut *self, arm);
+            }
+            self.conditional_depth -= 1;
+        }
+        fn visit_expr_if(&mut self, node: &'ast syn::ExprIf) {
+            syn::visit::Visit::visit_expr(&mut *self, &node.cond);
+            self.conditional_depth += 1;
+            syn::visit::Visit::visit_block(&mut *self, &node.then_branch);
+            if let Some((_, else_branch)) = &node.else_branch {
+                syn::visit::Visit::visit_expr(&mut *self, else_branch);
+            }
+            self.conditional_depth -= 1;
+        }
+        fn visit_expr_binary(&mut self, node: &'ast syn::ExprBinary) {
+            syn::visit::Visit::visit_expr(&mut *self, &node.left);
+            if matches!(node.op, BinOp::And(_) | BinOp::Or(_)) {
+                self.conditional_depth += 1;
+                syn::visit::Visit::visit_expr(&mut *self, &node.right);
+                self.conditional_depth -= 1;
+            } else {
+                syn::visit::Visit::visit_expr(&mut *self, &node.right);
+            }
         }
     }
 
-    let mut collector = TryCollector { nodes: vec![] };
+    let mut collector = TryCollector {
+        nodes: vec![],
+        conditional_depth: 0,
+    };
     syn::visit::Visit::visit_expr(&mut collector, expression);
     collector.nodes.reverse();
     return collector.nodes;
@@ -21459,15 +21564,20 @@ fn emit_try_pre_extractions(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<HashSet<String>, CompileError> {
-    let try_nodes = collect_try_expressions(expression);
+    let try_nodes = collect_unconditional_try_expressions(expression);
     if try_nodes.is_empty() {
         return Ok(entities.clone());
     }
+    let base_index = entities
+        .iter()
+        .find_map(|m| m.strip_prefix(TRY_COUNTER_MARKER))
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(0);
     let mut context = entities.clone();
-    for (index, try_node) in try_nodes.iter().enumerate() {
+    for (offset, try_node) in try_nodes.iter().enumerate() {
         let inner = emit_expression(&try_node.expr, &context)?;
         let key = try_node.to_token_stream().to_string();
-        let temp = format!("__try{index}");
+        let temp = format!("__try{}", base_index + offset);
         write_indent(out, indent);
         writeln!(out, "const {temp} = {inner};").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -21478,6 +21588,11 @@ fn emit_try_pre_extractions(
         writeln!(out, "}}").expect("writing to a String cannot fail");
         context.insert(format!("{TRY_SUBSTITUTION_MARKER}{key}={temp}"));
     }
+    context.retain(|m| !m.starts_with(TRY_COUNTER_MARKER));
+    context.insert(format!(
+        "{TRY_COUNTER_MARKER}{}",
+        base_index + try_nodes.len()
+    ));
     return Ok(context);
 }
 
