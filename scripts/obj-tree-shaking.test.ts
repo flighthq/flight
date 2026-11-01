@@ -105,6 +105,7 @@ async function bundleObjExports(names: readonly string[]): Promise<BundleReach> 
       sourcefile: 'obj-reach.ts',
     },
     treeShaking: true,
+    tsconfig: 'tsconfig.json',
     write: false,
   });
   const output = Object.values(result.metafile.outputs)[0];

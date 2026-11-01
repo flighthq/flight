@@ -125,6 +125,7 @@ async function bundleSpineBinaryExports(names: readonly string[]): Promise<Bundl
       sourcefile: 'spine-binary-reach.ts',
     },
     treeShaking: true,
+    tsconfig: 'tsconfig.json',
     write: false,
   });
   const output = Object.values(result.metafile.outputs)[0];

@@ -154,6 +154,7 @@ async function bundleAwd2Exports(names: readonly string[]): Promise<BundleReach>
       sourcefile: 'awd2-block-reach.ts',
     },
     treeShaking: true,
+    tsconfig: 'tsconfig.json',
     write: false,
   });
   const output = Object.values(result.metafile.outputs)[0];

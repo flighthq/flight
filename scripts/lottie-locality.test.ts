@@ -336,6 +336,7 @@ async function bundleFixture(fixture: string): Promise<string> {
     format: 'esm',
     keepNames: true,
     logLevel: 'error',
+    tsconfig: 'tsconfig.json',
     write: false,
   });
   return result.outputFiles[0].text;

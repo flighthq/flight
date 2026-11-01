@@ -125,6 +125,7 @@ async function bundleThreeDsExports(names: readonly string[]): Promise<BundleRea
       sourcefile: '3ds-chunk-reach.ts',
     },
     treeShaking: true,
+    tsconfig: 'tsconfig.json',
     write: false,
   });
   const output = Object.values(result.metafile.outputs)[0];

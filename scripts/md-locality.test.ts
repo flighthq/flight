@@ -165,6 +165,7 @@ function bundleFixture(fixture: string): Promise<string> {
     format: 'esm',
     keepNames: true,
     logLevel: 'error',
+    tsconfig: 'tsconfig.json',
     write: false,
   }).then((result) => result.outputFiles[0].text);
   bundles.set(fixture, pending);

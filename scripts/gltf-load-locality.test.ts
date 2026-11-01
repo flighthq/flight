@@ -51,6 +51,7 @@ async function bundleFixture(name: string): Promise<{ code: string; modules: Map
       },
     ],
     treeShaking: true,
+    tsconfig: 'tsconfig.json',
     write: false,
   });
   const output = Object.values(result.metafile.outputs)[0];
