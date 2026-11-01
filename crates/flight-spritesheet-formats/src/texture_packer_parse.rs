@@ -94,7 +94,7 @@ fn texture_packer_document_to_data(document: &TexturePackerDocument) -> Spritesh
     let animations = meta
         .frame_tags
         .as_deref()
-        .unwrap_or_default()
+        .unwrap_or(&[])
         .iter()
         .map(|tag| {
             let start = usize::try_from(tag.from.max(0))
