@@ -1615,11 +1615,17 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
                     .variants
                     .iter()
                     .any(|v| !matches!(v.fields, Fields::Unit));
-                if has_non_unit
+                let unit_count = item
+                    .variants
+                    .iter()
+                    .filter(|v| matches!(v.fields, Fields::Unit))
+                    .count();
+                let auto_promotable = has_non_unit
                     && !data_unions.contains(&name)
                     && !string_unions.contains_key(&name)
                     && !numeric_union_names.contains(&name)
-                {
+                    && (has_named_variants || unit_count <= 1);
+                if auto_promotable {
                     auto_data_unions.insert(name.clone());
                     data_unions.insert(name.clone());
                 }
