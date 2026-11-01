@@ -5707,6 +5707,31 @@ fn rn(value: Option<&Value>, default: f32) -> f32 {
     }
 
     #[test]
+    fn lowers_serde_json_turbofish_value_propagation() {
+        let source = r#"
+use serde_json::Value;
+
+pub fn parse_name(json: &str) -> Option<String> {
+    let Ok(doc) = serde_json::from_str::<Value>(json) else {
+        return None;
+    };
+    return doc.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("doc[\"name\"]"),
+            "turbofish Value propagation to doc binding: {output}"
+        );
+        assert!(
+            output.contains("typeof v === \"string\" ? v : undefined"),
+            "as_str on turbofish-propagated value: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_split_next_to_array_index() {
         let source = r#"
 pub fn strip_query(url: &str) -> &str {

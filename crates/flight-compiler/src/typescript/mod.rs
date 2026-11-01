@@ -3425,6 +3425,24 @@ fn rust_type_is_json_value(rust_type: &Type, context: &HashSet<String>) -> bool 
     );
 }
 
+fn call_turbofish_is_json_value(expression: &Expr, context: &HashSet<String>) -> bool {
+    let Expr::Call(call) = expression else {
+        return false;
+    };
+    let Expr::Path(path) = call.func.as_ref() else {
+        return false;
+    };
+    let Some(last_segment) = path.path.segments.last() else {
+        return false;
+    };
+    let PathArguments::AngleBracketed(turbofish) = &last_segment.arguments else {
+        return false;
+    };
+    return turbofish.args.iter().any(|arg| {
+        matches!(arg, GenericArgument::Type(rust_type) if rust_type_is_json_value(rust_type, context))
+    });
+}
+
 // `Ref<T>` and the spelling it aliases (`Arc<RwLock<T>>`) both lower to the payload rather than a
 // target-language cell. A clone of one of those fields therefore needs a forwarding alias when Rust
 // later writes through the cloned cell. Names alone are insufficient: a local `Ref`/`Arc`/`RwLock`
@@ -7887,6 +7905,13 @@ pub(crate) fn function_expression_context(
             {
                 self.context
                     .insert(format!("{JSON_VALUE_OPTION_MARKER}{name}"));
+            }
+            if let Some(initializer) = &local.init
+                && call_turbofish_is_json_value(&initializer.expr, self.context)
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.context
+                    .insert(format!("{JSON_VALUE_MARKER}{name}"));
             }
             if let Some(initializer) = &local.init
                 && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
