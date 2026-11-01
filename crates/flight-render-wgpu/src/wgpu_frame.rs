@@ -79,7 +79,8 @@ fn end_wgpu_frame_passes(state: &mut WgpuRenderState) {
     runtime.mask_write_mode = saved.mask_write_mode;
     runtime.current_scissor_rect = saved.current_scissor_rect;
     runtime.scissor_stack = saved.scissor_stack;
-    runtime.pass_stack.clear();
+    let runtime_pass_stack: &mut Vec<WgpuRenderPassRecord> = &mut runtime.pass_stack;
+    runtime_pass_stack.clear();
 }
 
 fn restore_borrower_frame_state(runtime: &mut WgpuRenderStateRuntime, saved: BorrowerFrameState) {
