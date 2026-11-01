@@ -16,9 +16,9 @@ fn assert_utf8_window(byte_length: usize, offset: usize, length: usize) {
 pub fn decode_utf8(bytes: &Uint8Array, offset: Option<usize>, length: Option<usize>) -> String {
     let offset = offset.unwrap_or(0);
     let length = length.unwrap_or_else(|| {
-        bytes.len().checked_sub(offset).unwrap_or_else(|| {
+        return bytes.len().checked_sub(offset).unwrap_or_else(|| {
             flight_entity::throw_range_error("decodeUTF8 window is outside the byte array");
-        })
+        });
     });
     assert_utf8_window(bytes.len(), offset, length);
     let end = offset + length;
