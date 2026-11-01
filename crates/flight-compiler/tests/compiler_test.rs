@@ -20777,6 +20777,61 @@ pub fn read_double(data: &[u8]) -> Option<u32> {
 }
 
 #[test]
+fn emits_renamed_binding_for_cross_scope_try_shadow() {
+    let source = r#"
+fn half(x: Option<u32>) -> Option<u32> { x }
+
+pub fn inner_block(value: Option<u32>) -> Option<u32> {
+    if value.is_some() {
+        let value = half(value)?;
+        return Some(value);
+    }
+    None
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("const value_1 = half(value)"),
+        "cross-scope shadow should use renamed binding: {result}"
+    );
+    assert!(
+        result.contains("if (value_1 === undefined)"),
+        "renamed binding should be checked for undefined: {result}"
+    );
+    assert!(
+        result.contains("return value_1"),
+        "subsequent references should use renamed binding: {result}"
+    );
+    assert!(
+        !result.contains("\n    value = half(value)"),
+        "should not bare-assign to outer-scope variable: {result}"
+    );
+}
+
+#[test]
+fn emits_inline_check_for_loop_variable_try_shadow() {
+    let source = r#"
+pub fn process(items: Vec<Option<u32>>) -> Option<Vec<u32>> {
+    let mut result: Vec<u32> = Vec::new();
+    for item in items {
+        let item = item?;
+        result.push(item);
+    }
+    Some(result)
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("if (item === undefined)"),
+        "loop variable shadow should emit inline check: {result}"
+    );
+    assert!(
+        !result.contains("item = item"),
+        "should not bare-assign to const loop variable: {result}"
+    );
+}
+
+#[test]
 fn emits_braced_switch_case_arms_to_avoid_redeclaration() {
     let source = r#"
 pub fn process(kind: u32, output: &mut [f64]) {

@@ -236,6 +236,7 @@ const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:"
 const ITER_MUT_ALIAS_MARKER: &str = "@iter-mut-alias:";
 
 const SCOPE_DECLARED_MARKER: &str = "@scope-declared:";
+const RENAME_MARKER: &str = "@rename:";
 const TRY_SUBSTITUTION_MARKER: &str = "@try-sub:";
 const TRY_COUNTER_MARKER: &str = "@try-counter:";
 
@@ -8697,6 +8698,7 @@ fn emit_block_with_context(
         .filter_map(|m| m.strip_prefix(SCOPE_DECLARED_MARKER))
         .map(|s| s.to_string())
         .collect();
+    block_context.retain(|m| !m.starts_with(SCOPE_DECLARED_MARKER));
     for (index, statement) in statements.iter().enumerate() {
         if let Stmt::Local(local) = statement
             && let Some(name) = local_pattern_name(&local.pat)
@@ -8720,7 +8722,16 @@ fn emit_block_with_context(
             } else {
                 local_context
             };
-            emit_local_with_shadow(out, local, &effective_context, indent, shadowed, rebound)?;
+            if let Some((old_name, new_name)) = emit_local_with_shadow(
+                out,
+                local,
+                &effective_context,
+                indent,
+                shadowed,
+                rebound,
+            )? {
+                block_context.insert(format!("{RENAME_MARKER}{old_name}={new_name}"));
+            }
             if let Some(counter) = effective_context
                 .iter()
                 .find(|m| m.starts_with(TRY_COUNTER_MARKER))
@@ -8842,6 +8853,15 @@ fn emit_closure_with_parameter_types(
                 &identifier.ident.to_string(),
                 &identity,
             );
+        }
+    }
+    for pattern in &closure.inputs {
+        if let Some(param_name) = local_pattern_name(pattern) {
+            closure_context.insert(format!("{SCOPE_DECLARED_MARKER}{param_name}"));
+            let camel = snake_to_lower_camel(&param_name);
+            if camel != param_name {
+                closure_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+            }
         }
     }
     let mut unused_index = 0_usize;
@@ -10009,7 +10029,19 @@ fn emit_expression_value(
         Expr::MethodCall(call) => emit_method_call(call, entities),
         Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
         Expr::Path(path) => {
-            if path.qself.is_none() && path.path.segments.len() == 1 {
+            if path.qself.is_none()
+                && path.path.leading_colon.is_none()
+                && path.path.segments.len() == 1
+            {
+                let js_name = emit_path_segment(&path.path.segments[0].ident.to_string());
+                let rename_prefix = format!("{RENAME_MARKER}{js_name}=");
+                if let Some(marker) = entities.iter().find(|m| m.starts_with(&rename_prefix)) {
+                    return Ok(marker[rename_prefix.len()..].to_string());
+                }
+            }
+            if path.qself.is_none()
+                && path.path.segments.len() == 1
+            {
                 let name = path.path.segments[0].ident.to_string();
                 if let Some(bound) = lexical_binding(entities, &name) {
                     let prefix = format!("{ITER_MUT_ALIAS_MARKER}{bound}=");
@@ -11096,6 +11128,17 @@ fn emit_function(
     .expect("writing to a String cannot fail");
     let mut function_context = signature_context;
     for argument in &function.sig.inputs {
+        if let FnArg::Typed(typed) = argument {
+            if let Some(param_name) = local_pattern_name(&typed.pat) {
+                function_context.insert(format!("{SCOPE_DECLARED_MARKER}{param_name}"));
+                let camel = snake_to_lower_camel(&param_name);
+                if camel != param_name {
+                    function_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                }
+            }
+        }
+    }
+    for argument in &function.sig.inputs {
         if (argument_is_nullable_guard(function, argument)
             || (nullable_options && argument_is_option(argument)))
             && let FnArg::Typed(argument) = argument
@@ -11181,6 +11224,17 @@ fn emit_local_function(
     )
     .expect("writing to a String cannot fail");
     let mut function_context = function_expression_context(function, &signature_context);
+    for argument in &function.sig.inputs {
+        if let FnArg::Typed(typed) = argument {
+            if let Some(param_name) = local_pattern_name(&typed.pat) {
+                function_context.insert(format!("{SCOPE_DECLARED_MARKER}{param_name}"));
+                let camel = snake_to_lower_camel(&param_name);
+                if camel != param_name {
+                    function_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                }
+            }
+        }
+    }
     function_context.insert(format!("{RETURN_TYPE_MARKER}{return_type}"));
     if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if type_is_named(rust_type, "u32"))
     {
@@ -11512,7 +11566,8 @@ pub(crate) fn emit_local(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    return emit_local_with_shadow(out, local, entities, indent, false, false);
+    emit_local_with_shadow(out, local, entities, indent, false, false)?;
+    return Ok(());
 }
 
 pub(crate) fn emit_local_with_shadow(
@@ -11522,7 +11577,7 @@ pub(crate) fn emit_local_with_shadow(
     indent: usize,
     shadowed: bool,
     rebound: bool,
-) -> Result<(), CompileError> {
+) -> Result<Option<(String, String)>, CompileError> {
     return emit_local_with_shadow_and_else(
         out, entities, local, indent, shadowed, rebound, emit_block,
     );
@@ -11536,13 +11591,13 @@ pub(crate) fn emit_local_with_shadow_and_else(
     shadowed: bool,
     rebound: bool,
     emit_else_block: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
-) -> Result<(), CompileError> {
+) -> Result<Option<(String, String)>, CompileError> {
     if local
         .init
         .as_ref()
         .is_some_and(|init| init.diverge.is_some())
     {
-        return emit_let_else_local(
+        emit_let_else_local(
             out,
             local,
             entities,
@@ -11550,13 +11605,13 @@ pub(crate) fn emit_local_with_shadow_and_else(
             shadowed,
             rebound,
             emit_else_block,
-        );
+        )?;
+        return Ok(None);
     }
     if let Some(initializer) = &local.init
         && let Expr::Try(try_expr) = initializer.expr.as_ref()
     {
-        emit_try_local(out, local, try_expr, entities, indent, shadowed)?;
-        return Ok(());
+        return emit_try_local(out, local, try_expr, entities, indent, shadowed);
     }
     if let Some(initializer) = &local.init
         && let Expr::Match(match_expr) = initializer.expr.as_ref()
@@ -11564,7 +11619,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         if let Some(_result) = emit_option_match_with_return_local(
             out, local, match_expr, entities, indent, shadowed, rebound,
         )? {
-            return Ok(());
+            return Ok(None);
         }
         if reject_function_exits_in_value_position(
             |visitor| {
@@ -11576,16 +11631,17 @@ pub(crate) fn emit_local_with_shadow_and_else(
         )
         .is_err()
         {
-            return emit_hoisted_match_value_local(
+            emit_hoisted_match_value_local(
                 out, local, match_expr, entities, indent, shadowed, rebound,
-            );
+            )?;
+            return Ok(None);
         }
     }
     if let Some(initializer) = &local.init
         && let Expr::Block(block) = initializer.expr.as_ref()
         && block_contains_function_exits(&block.block)
     {
-        return emit_hoisted_value_block_local(
+        emit_hoisted_value_block_local(
             out,
             local,
             &block.block,
@@ -11593,13 +11649,14 @@ pub(crate) fn emit_local_with_shadow_and_else(
             indent,
             shadowed,
             rebound,
-        );
+        )?;
+        return Ok(None);
     }
     if let Some(initializer) = &local.init
         && let Expr::Unsafe(unsafe_block) = initializer.expr.as_ref()
         && block_contains_function_exits(&unsafe_block.block)
     {
-        return emit_hoisted_value_block_local(
+        emit_hoisted_value_block_local(
             out,
             local,
             &unsafe_block.block,
@@ -11607,15 +11664,17 @@ pub(crate) fn emit_local_with_shadow_and_else(
             indent,
             shadowed,
             rebound,
-        );
+        )?;
+        return Ok(None);
     }
     if let Some(initializer) = &local.init
         && let Expr::If(if_expr) = initializer.expr.as_ref()
         && if_expression_contains_function_exits(if_expr)
     {
-        return emit_hoisted_if_value_local(
+        emit_hoisted_if_value_local(
             out, local, if_expr, entities, indent, shadowed, rebound,
-        );
+        )?;
+        return Ok(None);
     }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
@@ -11650,7 +11709,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
             }
             out.push_str(";\n");
         }
-        return Ok(());
+        return Ok(None);
     };
     let local_name = local_pattern_name(&local.pat);
     let local_binding_id = local_pattern_binding_id(entities, &local.pat);
@@ -11679,7 +11738,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         // A leading-underscore Ref alias is an implementation-only capture for writes through the
         // original field. Those writes resolve through its BindingId; emitting the snapshot local
         // would be both unused and semantically misleading in TypeScript.
-        return Ok(());
+        return Ok(None);
     }
     let inferred_struct_type = if rust_type.is_none() {
         inferred_vitest_struct_literal_type(&initializer.expr, entities)
@@ -11813,12 +11872,12 @@ pub(crate) fn emit_local_with_shadow_and_else(
             || value == format!("{pattern}!")
             || value == format!("{pattern}.value"))
     {
-        return Ok(());
+        return Ok(None);
     }
     write_indent(out, indent);
     if discard {
         writeln!(out, "{value};").expect("writing to a String cannot fail");
-        return Ok(());
+        return Ok(None);
     }
     if rebind {
         write!(out, "{pattern}").expect("writing to a String cannot fail");
@@ -11837,7 +11896,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
     }
     writeln!(out, " = {value};").expect("writing to a String cannot fail");
-    return Ok(());
+    return Ok(None);
 }
 
 fn emit_try_local(
@@ -11847,23 +11906,23 @@ fn emit_try_local(
     entities: &HashSet<String>,
     indent: usize,
     shadowed: bool,
-) -> Result<(), CompileError> {
+) -> Result<Option<(String, String)>, CompileError> {
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
     let inner_value = emit_expression(&try_expr.expr, entities)?;
-    let rebind = shadowed
-        || match &local.pat {
+    let self_referential = match &local.pat {
+        Pat::Ident(identifier) => {
+            expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
+        }
+        Pat::Type(typed) => match typed.pat.as_ref() {
             Pat::Ident(identifier) => {
                 expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
             }
-            Pat::Type(typed) => match typed.pat.as_ref() {
-                Pat::Ident(identifier) => {
-                    expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())
-                }
-                _ => false,
-            },
             _ => false,
-        };
+        },
+        _ => false,
+    };
+    let rebind = shadowed || self_referential;
     if pattern == inner_value && rebind {
         write_indent(out, indent);
         writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
@@ -11885,11 +11944,28 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "{keyword} {pattern} = {temp};")
             .expect("writing to a String cannot fail");
+    } else if rebind && !shadowed {
+        let fresh = format!("{pattern}_1");
+        let keyword = if mutable { "let" } else { "const" };
+        write_indent(out, indent);
+        writeln!(out, "{keyword} {fresh} = {inner_value};")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(out, "if ({fresh} === undefined) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        writeln!(out, "}}").expect("writing to a String cannot fail");
+        return Ok(Some((pattern, fresh)));
     } else if rebind {
+        let effective = try_rename_lookup(entities, &pattern);
         write_indent(out, indent);
-        writeln!(out, "{pattern} = {inner_value};").expect("writing to a String cannot fail");
+        writeln!(out, "{effective} = {inner_value};")
+            .expect("writing to a String cannot fail");
         write_indent(out, indent);
-        writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
+        writeln!(out, "if ({effective} === undefined) {{")
+            .expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -11906,7 +11982,7 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
     }
-    return Ok(());
+    return Ok(None);
 }
 
 /// Detects `let x = match scrutinee { Some(v) => v, None => return val }` and emits it as an
@@ -19933,7 +20009,15 @@ fn emit_statement(
             if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {
                 emit_iter_mut_loop(out, loop_expression, collection, chain, entities, indent)?;
             } else {
-                let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
+                let mut loop_context =
+                    lexical_pattern_context(entities, &loop_expression.pat);
+                if let Some(loop_var) = local_pattern_name(&loop_expression.pat) {
+                    loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{loop_var}"));
+                    let camel = snake_to_lower_camel(&loop_var);
+                    if camel != loop_var {
+                        loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                    }
+                }
                 if for_loop_iterates_strings(&loop_expression.expr, entities) {
                     if let Some(name) = local_pattern_name(&loop_expression.pat) {
                         loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
@@ -19952,11 +20036,20 @@ fn emit_statement(
             }
         }
         Stmt::Expr(Expr::While(loop_expression), _) => {
-            let loop_context = if let Expr::Let(binding) = loop_expression.cond.as_ref() {
+            let mut loop_context = if let Expr::Let(binding) = loop_expression.cond.as_ref() {
                 lexical_pattern_context(entities, &binding.pat)
             } else {
                 entities.clone()
             };
+            if let Expr::Let(binding) = loop_expression.cond.as_ref() {
+                if let Some(loop_var) = local_pattern_name(&binding.pat) {
+                    loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{loop_var}"));
+                    let camel = snake_to_lower_camel(&loop_var);
+                    if camel != loop_var {
+                        loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
+                    }
+                }
+            }
             let option_binding = emit_option_binding(&loop_expression.cond, entities)?;
             if let Some(binding) = &option_binding {
                 begin_option_while(
@@ -21472,6 +21565,14 @@ fn entity_runtime_state_store_imports(
         }
     }
     return Ok(imports);
+}
+
+fn try_rename_lookup(entities: &HashSet<String>, js_name: &str) -> String {
+    let prefix = format!("{RENAME_MARKER}{js_name}=");
+    return entities
+        .iter()
+        .find(|m| m.starts_with(&prefix))
+        .map_or_else(|| js_name.to_string(), |m| m[prefix.len()..].to_string());
 }
 
 fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
