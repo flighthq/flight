@@ -25,7 +25,9 @@ pub fn is_physics2d_pair_joint_suppressed(
 /// Recounts the suppressed pairs from every active, non-collide-connected two-body joint (TS
 /// `rebuildPhysics2DJointCollisionSuppressions`).
 pub fn rebuild_physics2d_joint_collision_suppressions(world: &mut Physics2DWorld) {
-    world.joint_collision_suppressions.clear();
+    let world_joint_collision_suppressions: &mut HashMap<i32, HashMap<i32, u32>> =
+        &mut world.joint_collision_suppressions;
+    world_joint_collision_suppressions.clear();
     for joint in &world.joints {
         let joint = joint.read().unwrap();
         let fields = joint.joint_fields();

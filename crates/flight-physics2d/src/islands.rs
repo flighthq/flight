@@ -10,7 +10,8 @@ use crate::world::find_physics2d_body;
 /// `buildPhysics2DSolveIslands`): roots in body order, and bodies, contacts and joints in their
 /// world order inside each root.
 pub fn build_physics2d_solve_islands(world: &mut Physics2DWorld) {
-    world.solve_island_roots.clear();
+    let world_solve_island_roots: &mut Vec<i32> = &mut world.solve_island_roots;
+    world_solve_island_roots.clear();
     world.solve_island_by_root.clear();
     world.solve_island_body_counts.clear();
     world.solve_island_contact_counts.clear();
@@ -274,7 +275,8 @@ fn union_dynamic_pair(world: &mut Physics2DWorld, a: i32, b: i32) {
 // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f64) {
     let config = world.config;
-    world.island_parents.clear();
+    let world_island_parents: &mut HashMap<i32, i32> = &mut world.island_parents;
+    world_island_parents.clear();
     world.island_sleep_timers.clear();
 
     for contact in world.contacts.clone() {

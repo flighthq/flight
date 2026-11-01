@@ -171,7 +171,8 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
     scratch.pairs.clear();
     (world.index.query_spatial_pairs)(&mut scratch.pairs);
 
-    world.events.began.clear();
+    let world_events_began: &mut Vec<Ref<Physics2DContact>> = &mut world.events.began;
+    world_events_began.clear();
     world.events.ended.clear();
     for contact in &world.contacts {
         contact.write().unwrap().touching = false;
@@ -1146,7 +1147,8 @@ fn step_physics2d_once(
         return;
     }
 
-    world.joint_events.broke.clear();
+    let world_joint_events_broke: &mut Vec<Physics2DBrokenJoint> = &mut world.joint_events.broke;
+    world_joint_events_broke.clear();
     if let Some(guard) = guards.and_then(|guards| guards.contact_intake_guard.clone()) {
         guard(world);
     }
