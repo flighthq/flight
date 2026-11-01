@@ -175,7 +175,12 @@ pub async fn get_current_geolocation_position(
     host_geolocation: &HostGeolocationCapability,
     options: Option<&GeolocationRequestOptions>,
 ) -> Option<GeolocationPosition> {
-    let owned_options = options.cloned().unwrap_or_default();
+    let owned_options: GeolocationRequestOptions =
+        options.cloned().unwrap_or(GeolocationRequestOptions {
+            enable_high_accuracy: None,
+            timeout_ms: None,
+            maximum_age_ms: None,
+        });
     return (host_geolocation.get_current_position)(owned_options).await;
 }
 
@@ -185,7 +190,12 @@ pub async fn get_current_geolocation_position_result(
     host_geolocation: &HostGeolocationCapability,
     options: Option<&GeolocationRequestOptions>,
 ) -> GeolocationPositionResult {
-    let owned_options = options.cloned().unwrap_or_default();
+    let owned_options: GeolocationRequestOptions =
+        options.cloned().unwrap_or(GeolocationRequestOptions {
+            enable_high_accuracy: None,
+            timeout_ms: None,
+            maximum_age_ms: None,
+        });
     return (host_geolocation.get_current_position_result)(owned_options).await;
 }
 
@@ -202,7 +212,12 @@ pub fn watch_geolocation_position(
     options: Option<&GeolocationRequestOptions>,
     on_error: Option<Arc<dyn Fn(GeolocationErrorReason) + Send + Sync>>,
 ) -> i32 {
-    let owned_options = options.cloned().unwrap_or_default();
+    let owned_options: GeolocationRequestOptions =
+        options.cloned().unwrap_or(GeolocationRequestOptions {
+            enable_high_accuracy: None,
+            timeout_ms: None,
+            maximum_age_ms: None,
+        });
     return (host_geolocation.watch_position)(handler, owned_options, on_error);
 }
 
