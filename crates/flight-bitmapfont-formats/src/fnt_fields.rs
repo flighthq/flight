@@ -72,33 +72,25 @@ pub(crate) fn parse_fnt_fields(rest: &str) -> HashMap<String, String> {
 }
 
 pub(crate) fn read_fnt_number(value: Option<&String>) -> Option<f32> {
-    let value = value?.trim();
-    if value.is_empty() {
+    let raw = value?;
+    let text = raw.trim();
+    if text.is_empty() {
         return None;
     }
-    let parsed = if let Some(hex) = value
-        .strip_prefix("0x")
-        .or_else(|| value.strip_prefix("0X"))
-    {
+    let parsed = if let Some(hex) = text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
         u64::from_str_radix(hex, 16)
             .ok()
             .map(|number| number as f32)
-    } else if let Some(binary) = value
-        .strip_prefix("0b")
-        .or_else(|| value.strip_prefix("0B"))
-    {
+    } else if let Some(binary) = text.strip_prefix("0b").or_else(|| text.strip_prefix("0B")) {
         u64::from_str_radix(binary, 2)
             .ok()
             .map(|number| number as f32)
-    } else if let Some(octal) = value
-        .strip_prefix("0o")
-        .or_else(|| value.strip_prefix("0O"))
-    {
+    } else if let Some(octal) = text.strip_prefix("0o").or_else(|| text.strip_prefix("0O")) {
         u64::from_str_radix(octal, 8)
             .ok()
             .map(|number| number as f32)
     } else {
-        value.parse::<f32>().ok()
+        text.parse::<f32>().ok()
     }?;
     if !parsed.is_finite() {
         return None;

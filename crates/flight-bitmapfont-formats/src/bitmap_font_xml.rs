@@ -32,8 +32,10 @@ fn parse_bitmap_font_xml_record(
     }
     let common = get_xml_element_child_by_name(&root, "common")?;
     let common = common.read().unwrap();
-    let line_height = get_xml_element_attribute_number(&common, "lineHeight")? as f32;
-    let base = get_xml_element_attribute_number(&common, "base")? as f32;
+    let line_height_value = get_xml_element_attribute_number(&common, "lineHeight")?;
+    let line_height = line_height_value as f32;
+    let base_value = get_xml_element_attribute_number(&common, "base")?;
+    let base = base_value as f32;
     drop(common);
     let mut dropped_pages = 0;
     let mut dropped_chars = 0;
@@ -96,23 +98,34 @@ fn parse_bitmap_font_xml_record(
 }
 
 fn read_xml_char(element: &XmlElement) -> Option<BitmapFontCharRecord> {
+    let height = get_xml_element_attribute_number(element, "height")?;
+    let id = get_xml_element_attribute_number(element, "id")?;
+    let width = get_xml_element_attribute_number(element, "width")?;
+    let x = get_xml_element_attribute_number(element, "x")?;
+    let xadvance = get_xml_element_attribute_number(element, "xadvance")?;
+    let xoffset = get_xml_element_attribute_number(element, "xoffset")?;
+    let y = get_xml_element_attribute_number(element, "y")?;
+    let yoffset = get_xml_element_attribute_number(element, "yoffset")?;
     return Some(BitmapFontCharRecord {
-        height: get_xml_element_attribute_number(element, "height")? as u32,
-        id: get_xml_element_attribute_number(element, "id")? as u32,
+        height: height as u32,
+        id: id as u32,
         page: get_xml_element_attribute_number(element, "page").unwrap_or(0.0) as i32,
-        width: get_xml_element_attribute_number(element, "width")? as u32,
-        x: get_xml_element_attribute_number(element, "x")? as u32,
-        xadvance: get_xml_element_attribute_number(element, "xadvance")? as f32,
-        xoffset: get_xml_element_attribute_number(element, "xoffset")? as i32,
-        y: get_xml_element_attribute_number(element, "y")? as u32,
-        yoffset: get_xml_element_attribute_number(element, "yoffset")? as i32,
+        width: width as u32,
+        x: x as u32,
+        xadvance: xadvance as f32,
+        xoffset: xoffset as i32,
+        y: y as u32,
+        yoffset: yoffset as i32,
     });
 }
 
 fn read_xml_kerning(element: &XmlElement) -> Option<BitmapFontKerningRecord> {
+    let amount = get_xml_element_attribute_number(element, "amount")?;
+    let first = get_xml_element_attribute_number(element, "first")?;
+    let second = get_xml_element_attribute_number(element, "second")?;
     return Some(BitmapFontKerningRecord {
-        amount: get_xml_element_attribute_number(element, "amount")? as f32,
-        first: get_xml_element_attribute_number(element, "first")? as u32,
-        second: get_xml_element_attribute_number(element, "second")? as u32,
+        amount: amount as f32,
+        first: first as u32,
+        second: second as u32,
     });
 }
