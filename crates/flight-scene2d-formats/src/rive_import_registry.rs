@@ -81,7 +81,8 @@ pub fn initialize_rive_artboard_import_context<'a>(
     out.artboard = artboard;
     out.diagnostics = diagnostics;
     out.font_names = font_names;
-    out.layouts.clear();
+    let out_layouts: &mut Vec<RiveLayoutImport> = &mut out.layouts;
+    out_layouts.clear();
     out.nodes.clear();
     out.nodes.push(Some(root.clone()));
     out.objects = objects;
