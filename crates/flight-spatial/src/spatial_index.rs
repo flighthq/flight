@@ -68,7 +68,8 @@ pub fn clear_spatial_index_2d(index: &mut SpatialIndex2D) {
         .as_mut()
         .expect("initialized spatial index");
     (state.backend.clear_spatial_index)();
-    state.pairs.clear();
+    let state_pairs: &mut Vec<SpatialPair> = &mut state.pairs;
+    state_pairs.clear();
 }
 
 pub(crate) fn explain_index_2d(
