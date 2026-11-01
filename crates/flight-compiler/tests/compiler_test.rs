@@ -5543,6 +5543,32 @@ pub fn as_number_check(value: &Value) -> Option<f64> {
     }
 
     #[test]
+    fn lowers_serde_json_value_as_str_function_ref() {
+        let source = r#"
+use serde_json::Value;
+
+pub fn get_name(value: &Value) -> Option<&str> {
+    return value.get("name").and_then(Value::as_str);
+}
+
+pub fn get_array(value: &Value) -> Option<&Vec<Value>> {
+    return value.get("items").and_then(Value::as_array);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("typeof value === \"string\""),
+            "Value::as_str ref: {output}"
+        );
+        assert!(
+            output.contains("Array.isArray(value)"),
+            "Value::as_array ref: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_split_next_to_array_index() {
         let source = r#"
 pub fn strip_query(url: &str) -> &str {

@@ -16782,6 +16782,14 @@ fn emit_option_combinator(
 ) -> Result<String, CompileError> {
     let method = call.method.to_string();
     if call.args.len() == 1 && !matches!(call.args.first(), Some(Expr::Closure(_))) {
+        if let Some(json_lowering) =
+            json_value_function_ref_lowering(call.args.first().unwrap(), entities)
+        {
+            let absent = option_absent_value(&call.receiver, entities);
+            return Ok(format!(
+                "((value) => value === {absent} ? {absent} : {json_lowering})({receiver})"
+            ));
+        }
         let function_ref = emit_expression(&call.args[0], entities)?;
         let absent = option_absent_value(&call.receiver, entities);
         return Ok(format!(
@@ -16869,6 +16877,58 @@ fn emit_option_combinator(
     return Ok(format!(
         "(({binding}) => {binding} === {absent} ? {absent} : {body})({receiver})"
     ));
+}
+
+fn json_value_function_ref_lowering(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    let Expr::Path(path) = expression else {
+        return None;
+    };
+    if path.qself.is_some() || path.path.segments.len() != 2 {
+        return None;
+    }
+    let owner = path.path.segments[0].ident.to_string();
+    let method = path.path.segments[1].ident.to_string();
+    if !entities.contains(&format!("{TYPE_USE_MARKER}{owner}")) {
+        return None;
+    }
+    let prefix = format!("{TYPE_USE_TARGET_MARKER}{owner}{PROVENANCE_SEPARATOR}");
+    let is_json_value = entities
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix))
+        .is_some_and(|imported| {
+            matches!(
+                imported,
+                "serde_json::Value" | "serde_json::value::Value"
+            )
+        });
+    if !is_json_value {
+        return None;
+    }
+    return match method.as_str() {
+        "as_str" => Some(
+            "(typeof value === \"string\" ? value : undefined)".to_string(),
+        ),
+        "as_f64" => Some(
+            "(typeof value === \"number\" ? value : undefined)".to_string(),
+        ),
+        "as_i64" | "as_u64" => Some(
+            "(typeof value === \"number\" && Number.isInteger(value) ? value : undefined)"
+                .to_string(),
+        ),
+        "as_bool" => Some(
+            "(typeof value === \"boolean\" ? value : undefined)".to_string(),
+        ),
+        "as_array" => Some(
+            "(Array.isArray(value) ? value : undefined)".to_string(),
+        ),
+        "as_object" => Some(
+            "(typeof value === \"object\" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : undefined)".to_string(),
+        ),
+        _ => None,
+    };
 }
 
 fn emit_ordered_comparison(
