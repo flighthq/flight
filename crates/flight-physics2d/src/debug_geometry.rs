@@ -376,9 +376,15 @@ pub fn write_physics2d_debug_geometry(
     world: &Physics2DWorld,
     options: Option<&Physics2DDebugGeometryOptions>,
 ) {
-    let options = options
-        .copied()
-        .unwrap_or(Physics2DDebugGeometryOptions::default());
+    let options = options.copied().unwrap_or(Physics2DDebugGeometryOptions {
+        center_of_mass_radius: None,
+        contact_normal_length: None,
+        draw_centers_of_mass: None,
+        draw_colliders: None,
+        draw_contacts: None,
+        draw_joints: None,
+        point_radius: None,
+    });
     out.line_count = 0;
     out.circle_count = 0;
 
