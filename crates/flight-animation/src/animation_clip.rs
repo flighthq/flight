@@ -53,9 +53,10 @@ pub fn initialize_animation_clip(
 ) {
     let mut copied_events: Vec<AnimationClipEvent> = events.to_vec();
     copied_events.sort_by(|a, b| {
-        a.time
+        return a
+            .time
             .partial_cmp(&b.time)
-            .unwrap_or(std::cmp::Ordering::Equal)
+            .unwrap_or(std::cmp::Ordering::Equal);
     });
     validate_animation_clip_events(&copied_events);
 
