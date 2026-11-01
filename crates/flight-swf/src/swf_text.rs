@@ -187,7 +187,7 @@ pub fn read_swf_font_glyph_outline_source(
         metadata
             .as_ref()
             .map(|value| value.codepoint_to_glyph_index.clone())
-            .unwrap_or_default(),
+            .unwrap_or(HashMap::new()),
     );
     let metrics = Arc::new(
         metadata
