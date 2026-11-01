@@ -216,10 +216,15 @@ pub fn connect_input_state_to_input_manager(
 /// Clears the four per-frame edge sets (TS `endInputStateFrame`).
 pub fn end_input_state_frame(state: &Ref<InputState>) {
     let locked: &mut InputState = &mut state.write().unwrap();
-    locked.just_pressed_keys.clear();
-    locked.just_released_keys.clear();
-    locked.just_pressed_gamepad_buttons.clear();
-    locked.just_released_gamepad_buttons.clear();
+    let just_pressed_keys: &mut HashSet<i32> = &mut locked.just_pressed_keys;
+    just_pressed_keys.clear();
+    let just_released_keys: &mut HashSet<i32> = &mut locked.just_released_keys;
+    just_released_keys.clear();
+    let just_pressed_gamepad_buttons: &mut HashSet<i32> = &mut locked.just_pressed_gamepad_buttons;
+    just_pressed_gamepad_buttons.clear();
+    let just_released_gamepad_buttons: &mut HashSet<i32> =
+        &mut locked.just_released_gamepad_buttons;
+    just_released_gamepad_buttons.clear();
 }
 
 /// Returns the current gamepad axis value, or 0 when not recorded (TS `getInputGamepadAxis`).
