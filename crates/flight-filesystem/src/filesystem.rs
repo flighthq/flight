@@ -48,59 +48,59 @@ mod sugar_tests {
         return HostFileSystemCapability {
             provider: Arc::new(()),
             append_text_file: Some(Arc::new(|path, data, _signal| {
-                done(path.len() < data.len())
+                return done(path.len() < data.len());
             })),
             can_access_file: Some(Arc::new(|_path, mode| {
-                done(mode == FileAccessMode::Readable)
+                return done(mode == FileAccessMode::Readable);
             })),
             copy: Some(Arc::new(|from, to| done(from != to))),
             directory_exists: Some(Arc::new(|path| done(path == "a"))),
             file_exists: Some(Arc::new(|path| done(path == "a"))),
             get_file_system_usage: Some(Arc::new(|| {
-                done(Some(FileSystemUsage {
+                return done(Some(FileSystemUsage {
                     used_bytes: 1,
                     quota_bytes: 2,
-                }))
+                }));
             })),
             make_directory: Some(Arc::new(|path| done(path == "a"))),
             open_file_read_stream: Some(Arc::new(|_path, _signal| done(None))),
             open_file_write_stream: Some(Arc::new(|_path, _signal| done(None))),
             read_binary_file: Some(Arc::new(|path, _signal| {
-                done(Some(path.as_bytes().to_vec().into_boxed_slice()))
+                return done(Some(path.as_bytes().to_vec().into_boxed_slice()));
             })),
             read_binary_file_range: Some(Arc::new(|_path, offset, length, _signal| {
-                done(Some(vec![offset as u8, length as u8].into_boxed_slice()))
+                return done(Some(vec![offset as u8, length as u8].into_boxed_slice()));
             })),
             read_directory: Some(Arc::new(|path, _signal| {
-                done(vec![FileEntry {
+                return done(vec![FileEntry {
                     name: "x".to_string(),
                     path: format!("{path}/x"),
                     is_directory: false,
-                }])
+                }]);
             })),
             read_directory_recursive: Some(Arc::new(|path, _options| {
-                done(vec![FileEntry {
+                return done(vec![FileEntry {
                     name: "y.bin".to_string(),
                     path: format!("{path}/y.bin"),
                     is_directory: false,
-                }])
+                }]);
             })),
             read_text_file: Some(Arc::new(|path, _signal| done(Some(format!("text {path}"))))),
             remove_directory: Some(Arc::new(|_path, recursive| done(recursive == Some(true)))),
             remove_file: Some(Arc::new(|path| done(path == "a"))),
             rename: Some(Arc::new(|from, to| done(from != to))),
             stat_file: Some(Arc::new(|path| {
-                done(Some(FileStat {
+                return done(Some(FileStat {
                     size: path.len() as usize,
                     is_directory: false,
                     modified_time: 2.0,
                     created_time: 1.0,
                     is_symlink: false,
-                }))
+                }));
             })),
             write_binary_file: Some(Arc::new(|_path, data, _signal| done(data.len() == 2))),
             write_file_atomic: Some(Arc::new(|_path, data, _signal| {
-                done(matches!(data, FileAtomicWriteData::Text(_)))
+                return done(matches!(data, FileAtomicWriteData::Text(_)));
             })),
             write_text_file: Some(Arc::new(|path, data, _signal| done(path != data))),
         };
@@ -309,9 +309,9 @@ mod sugar_tests {
     fn hostfilesystemcapability_write_binary_file_chunks_matches_write_binary_file_chunks() {
         let s = test_host();
         let chunks = || -> flight_stream::ByteChunkStream {
-            Box::pin(futures::stream::iter(vec![
+            return Box::pin(futures::stream::iter(vec![
                 Ok(vec![1u8].into_boxed_slice()),
-            ]))
+            ]));
         };
         let ra = block_on(s.write_binary_file_chunks("a", chunks(), None));
         let rb = block_on(write_binary_file_chunks(&s, "a", chunks(), None));
@@ -503,7 +503,7 @@ pub fn find_files(
         return Ok(all
             .into_iter()
             .filter(|entry| {
-                glob_matches(&tokens, &entry.name) || glob_matches(&tokens, &entry.path)
+                return glob_matches(&tokens, &entry.name) || glob_matches(&tokens, &entry.path);
             })
             .collect());
     });
