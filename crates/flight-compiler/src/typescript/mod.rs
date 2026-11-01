@@ -16842,6 +16842,11 @@ fn emit_option_combinator(
         };
         closure_context.insert(format!("{prefix}{}", binding_fact_marker(&fact)));
     }
+    if expression_is_json_value(&call.receiver, entities) {
+        if let Some(parameter) = parameter {
+            closure_context.insert(format!("{JSON_VALUE_MARKER}{parameter}"));
+        }
+    }
     let absent = option_absent_value(&call.receiver, entities);
     let binding = snake_to_lower_camel(&parameter_name);
     let body = emit_closure(closure, &closure_context)?;

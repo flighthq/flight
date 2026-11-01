@@ -5569,6 +5569,48 @@ pub fn get_array(value: &Value) -> Option<&Vec<Value>> {
     }
 
     #[test]
+    fn lowers_serde_json_value_closure_parameter_propagation() {
+        let source = r#"
+use serde_json::Value;
+
+pub fn get_name(data: &Value) -> Option<&str> {
+    return data.get("name").and_then(|v| v.as_str());
+}
+
+pub fn get_score(data: &Value) -> Option<f64> {
+    return data.get("score").and_then(|v| v.as_f64());
+}
+
+pub fn get_id(data: &Value) -> Option<i64> {
+    return data.get("id").and_then(|v| v.as_i64());
+}
+
+pub fn is_active(data: &Value) -> bool {
+    return data.get("active").and_then(|v| v.as_bool()).unwrap_or(false);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("typeof v === \"string\" ? v : undefined"),
+            "as_str closure: {output}"
+        );
+        assert!(
+            output.contains("typeof v === \"number\" ? v : undefined)(v))(data[\"score\"]"),
+            "as_f64 closure: {output}"
+        );
+        assert!(
+            output.contains("Number.isInteger(v) ? v : undefined"),
+            "as_i64 closure: {output}"
+        );
+        assert!(
+            output.contains("typeof v === \"boolean\" ? v : undefined"),
+            "as_bool closure: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_split_next_to_array_index() {
         let source = r#"
 pub fn strip_query(url: &str) -> &str {
