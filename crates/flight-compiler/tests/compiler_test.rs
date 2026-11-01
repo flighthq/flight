@@ -20760,22 +20760,30 @@ pub fn swap(input: &[f64]) -> (f64, f64) {
 }
 
 #[test]
-fn emits_let_for_mutable_loop_variable() {
+fn emits_index_loop_for_iter_mut() {
     let source = r#"
 pub fn scale(values: &mut [f64], factor: f64) {
-    for mut value in values.iter_mut() {
-        value *= factor;
+    for value in values.iter_mut() {
+        *value *= factor;
     }
 }
 "#;
     let result = compile_typescript(source, None).unwrap();
     assert!(
-        result.contains("for (let value of"),
-        "mutable loop var should use let: {result}"
+        result.contains("let __i = 0; __i < values.length; __i++"),
+        "iter_mut should emit index loop: {result}"
     );
     assert!(
-        !result.contains("for (const value of"),
-        "mutable loop var should not use const: {result}"
+        result.contains("let value = values[__i]"),
+        "iter_mut should alias element: {result}"
+    );
+    assert!(
+        result.contains("values[__i] = value"),
+        "iter_mut should write back: {result}"
+    );
+    assert!(
+        result.contains("value *= factor"),
+        "deref mutation should strip to bare assignment: {result}"
     );
 }
 
@@ -20797,6 +20805,30 @@ pub fn process(rx: Option<f64>, ry: Option<f64>) -> f64 {
     assert!(
         result.contains("rx + ry"),
         "should use narrowed bindings directly: {result}"
+    );
+}
+
+#[test]
+fn emits_index_loop_for_iter_mut_enumerate() {
+    let source = r#"
+pub fn fill_weights(out: &mut [f32]) {
+    for (i, weight) in out.iter_mut().enumerate() {
+        *weight = i as f32;
+    }
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("let i = 0; i < out.length; i++"),
+        "enumerate iter_mut should use index name from pattern: {result}"
+    );
+    assert!(
+        result.contains("let weight = out[i]"),
+        "enumerate iter_mut should alias element: {result}"
+    );
+    assert!(
+        result.contains("out[i] = weight"),
+        "enumerate iter_mut should write back: {result}"
     );
 }
 

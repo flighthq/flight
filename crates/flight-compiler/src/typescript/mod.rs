@@ -10591,6 +10591,203 @@ fn emit_entity_clone(receiver: &str, owner: &str, entities: &HashSet<String>) ->
     return format!("Object.defineProperties({{ ...{receiver} }}, {{ {descriptors} }})");
 }
 
+enum IterMutChain<'a> {
+    Bare,
+    Enumerate,
+    Take(&'a Expr),
+    EnumerateTake(&'a Expr),
+    Zip(&'a Expr),
+}
+
+fn iter_mut_chain<'a>(expression: &'a Expr) -> Option<(&'a Expr, IterMutChain<'a>)> {
+    let call = match peel_reference_and_paren(expression) {
+        Expr::MethodCall(call) => call,
+        _ => return None,
+    };
+    if call.method == "iter_mut" && call.args.is_empty() {
+        return Some((&call.receiver, IterMutChain::Bare));
+    }
+    if call.method == "enumerate" && call.args.is_empty() {
+        if let Expr::MethodCall(inner) = call.receiver.as_ref() {
+            if inner.method == "iter_mut" && inner.args.is_empty() {
+                return Some((&inner.receiver, IterMutChain::Enumerate));
+            }
+        }
+    }
+    if call.method == "take" && call.args.len() == 1 {
+        if let Expr::MethodCall(inner) = call.receiver.as_ref() {
+            if inner.method == "iter_mut" && inner.args.is_empty() {
+                return Some((&inner.receiver, IterMutChain::Take(&call.args[0])));
+            }
+            if inner.method == "enumerate" && inner.args.is_empty() {
+                if let Expr::MethodCall(inner2) = inner.receiver.as_ref() {
+                    if inner2.method == "iter_mut" && inner2.args.is_empty() {
+                        return Some((
+                            &inner2.receiver,
+                            IterMutChain::EnumerateTake(&call.args[0]),
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    if call.method == "zip" && call.args.len() == 1 {
+        if let Expr::MethodCall(inner) = call.receiver.as_ref() {
+            if inner.method == "iter_mut" && inner.args.is_empty() {
+                return Some((&inner.receiver, IterMutChain::Zip(&call.args[0])));
+            }
+        }
+    }
+    None
+}
+
+fn emit_iter_mut_loop(
+    out: &mut String,
+    loop_expression: &syn::ExprForLoop,
+    collection: &Expr,
+    chain: IterMutChain<'_>,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let collection_expr = emit_expression(collection, entities)?;
+    let index_var = "__i";
+    let (has_enumerate, take_bound) = match &chain {
+        IterMutChain::Bare => (false, None),
+        IterMutChain::Enumerate => (true, None),
+        IterMutChain::Take(bound) => (false, Some(emit_expression(bound, entities)?)),
+        IterMutChain::EnumerateTake(bound) => (true, Some(emit_expression(bound, entities)?)),
+        IterMutChain::Zip(_) => (false, None),
+    };
+    let limit = match &take_bound {
+        Some(bound) => format!("Math.min({collection_expr}.length, {bound})"),
+        None => format!("{collection_expr}.length"),
+    };
+
+    let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
+    if for_loop_iterates_strings(&loop_expression.expr, entities) {
+        if let Some(name) = local_pattern_name(&loop_expression.pat) {
+            loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
+        }
+    }
+    let mark_reference = |context: &mut HashSet<String>, pattern: &Pat| {
+        for name in pattern_identifiers(pattern) {
+            if let Some(id) = lexical_binding(context, &name.to_string()) {
+                context.insert(format!("{REFERENCE_PARAMETER_BINDING_MARKER}{id}"));
+            }
+        }
+    };
+    match &chain {
+        IterMutChain::Enumerate | IterMutChain::EnumerateTake(_) => {
+            if let Pat::Tuple(tuple) = &*loop_expression.pat {
+                if let Some(element_pat) = tuple.elems.last() {
+                    mark_reference(&mut loop_context, element_pat);
+                }
+            }
+        }
+        IterMutChain::Zip(_) => {
+            if let Pat::Tuple(tuple) = &*loop_expression.pat {
+                if let Some(first_pat) = tuple.elems.first() {
+                    mark_reference(&mut loop_context, first_pat);
+                }
+            }
+        }
+        _ => mark_reference(&mut loop_context, &loop_expression.pat),
+    }
+
+    if let IterMutChain::Zip(zip_expr) = &chain {
+        let zip_collection = emit_expression(zip_expr, entities)?;
+        let Pat::Tuple(tuple) = &*loop_expression.pat else {
+            return Err(compile_error(
+                "portable iter_mut().zip() requires a tuple pattern",
+            ));
+        };
+        if tuple.elems.len() != 2 {
+            return Err(compile_error(
+                "portable iter_mut().zip() requires a 2-element tuple pattern",
+            ));
+        }
+        let mut_name = emit_pattern(&tuple.elems[0])?;
+        let zip_name = emit_pattern(&tuple.elems[1])?;
+        write_indent(out, indent);
+        writeln!(
+            out,
+            "for (let {index_var} = 0; {index_var} < Math.min({collection_expr}.length, {zip_collection}.length); {index_var}++) {{"
+        )
+        .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "let {mut_name} = {collection_expr}[{index_var}];")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "const {zip_name} = {zip_collection}[{index_var}];")
+            .expect("writing to a String cannot fail");
+        emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
+        write_indent(out, indent + 1);
+        writeln!(out, "{collection_expr}[{index_var}] = {mut_name};")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
+
+    if has_enumerate {
+        let Pat::Tuple(tuple) = &*loop_expression.pat else {
+            return Err(compile_error(
+                "portable iter_mut().enumerate() requires a tuple pattern",
+            ));
+        };
+        if tuple.elems.len() != 2 {
+            return Err(compile_error(
+                "portable iter_mut().enumerate() requires a 2-element tuple pattern",
+            ));
+        }
+        let index_name = emit_pattern(&tuple.elems[0])?;
+        let element_name = emit_pattern(&tuple.elems[1])?;
+        write_indent(out, indent);
+        writeln!(
+            out,
+            "for (let {index_name} = 0; {index_name} < {limit}; {index_name}++) {{"
+        )
+        .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "let {element_name} = {collection_expr}[{index_name}];"
+        )
+        .expect("writing to a String cannot fail");
+        emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "{collection_expr}[{index_name}] = {element_name};"
+        )
+        .expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
+
+    let element_name = emit_pattern(&loop_expression.pat)?;
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "for (let {index_var} = 0; {index_var} < {limit}; {index_var}++) {{"
+    )
+    .expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    writeln!(
+        out,
+        "let {element_name} = {collection_expr}[{index_var}];"
+    )
+    .expect("writing to a String cannot fail");
+    emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
+    write_indent(out, indent + 1);
+    writeln!(out, "{collection_expr}[{index_var}] = {element_name};")
+        .expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    Ok(())
+}
+
 pub(crate) fn emit_for_header(
     pattern: &Pat,
     expression: &Expr,
@@ -11701,8 +11898,30 @@ fn emit_hoisted_match_value_local(
             ));
         }
     };
-    write_indent(out, indent);
-    writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
+    if let Pat::Tuple(tuple) = &local.pat {
+        for element in &tuple.elems {
+            if matches!(element, Pat::Wild(_)) {
+                continue;
+            }
+            let name = emit_pattern(element)?;
+            write_indent(out, indent);
+            writeln!(out, "let {name};").expect("writing to a String cannot fail");
+        }
+    } else if let Pat::Type(typed) = &local.pat
+        && let Pat::Tuple(tuple) = typed.pat.as_ref()
+    {
+        for element in &tuple.elems {
+            if matches!(element, Pat::Wild(_)) {
+                continue;
+            }
+            let name = emit_pattern(element)?;
+            write_indent(out, indent);
+            writeln!(out, "let {name};").expect("writing to a String cannot fail");
+        }
+    } else {
+        write_indent(out, indent);
+        writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
+    }
     emit_match_statement_with_target(out, match_expr, entities, indent, &pattern)?;
     return Ok(());
 }
@@ -12297,8 +12516,30 @@ fn emit_hoisted_if_value_local(
             ));
         }
     };
-    write_indent(out, indent);
-    writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
+    if let Pat::Tuple(tuple) = &local.pat {
+        for element in &tuple.elems {
+            if matches!(element, Pat::Wild(_)) {
+                continue;
+            }
+            let name = emit_pattern(element)?;
+            write_indent(out, indent);
+            writeln!(out, "let {name};").expect("writing to a String cannot fail");
+        }
+    } else if let Pat::Type(typed) = &local.pat
+        && let Pat::Tuple(tuple) = typed.pat.as_ref()
+    {
+        for element in &tuple.elems {
+            if matches!(element, Pat::Wild(_)) {
+                continue;
+            }
+            let name = emit_pattern(element)?;
+            write_indent(out, indent);
+            writeln!(out, "let {name};").expect("writing to a String cannot fail");
+        }
+    } else {
+        write_indent(out, indent);
+        writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
+    }
     emit_hoisted_if_value_branches(out, if_expr, &pattern, entities, indent)?;
     return Ok(());
 }
@@ -19409,22 +19650,36 @@ fn emit_statement(
             emit_copy_from_slice_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
-            let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
-            if for_loop_iterates_strings(&loop_expression.expr, entities) {
-                if let Some(name) = local_pattern_name(&loop_expression.pat) {
-                    loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
+            if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {
+                emit_iter_mut_loop(out, loop_expression, collection, chain, entities, indent)?;
+            } else {
+                let mut loop_context =
+                    lexical_pattern_context(entities, &loop_expression.pat);
+                if for_loop_iterates_strings(&loop_expression.expr, entities) {
+                    if let Some(name) = local_pattern_name(&loop_expression.pat) {
+                        loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
+                    }
                 }
+                write_indent(out, indent);
+                writeln!(
+                    out,
+                    "for ({}) {{",
+                    emit_for_header(
+                        &loop_expression.pat,
+                        &loop_expression.expr,
+                        entities
+                    )?
+                )
+                .expect("writing to a String cannot fail");
+                emit_block(
+                    out,
+                    &loop_expression.body.stmts,
+                    &loop_context,
+                    indent + 1,
+                )?;
+                write_indent(out, indent);
+                out.push_str("}\n");
             }
-            write_indent(out, indent);
-            writeln!(
-                out,
-                "for ({}) {{",
-                emit_for_header(&loop_expression.pat, &loop_expression.expr, entities)?
-            )
-            .expect("writing to a String cannot fail");
-            emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
-            write_indent(out, indent);
-            out.push_str("}\n");
         }
         Stmt::Expr(Expr::While(loop_expression), _) => {
             let loop_context = if let Expr::Let(binding) = loop_expression.cond.as_ref() {
