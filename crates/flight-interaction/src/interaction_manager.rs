@@ -168,7 +168,9 @@ pub fn connect_input_to_interaction(
     manager: Arc<RwLock<InteractionManager>>,
     coord_scale: f32,
 ) -> Arc<dyn Fn() + Send + Sync> {
-    let sx = move |v: f32| -> f32 { v * coord_scale };
+    let sx = move |v: f32| -> f32 {
+        return v * coord_scale;
+    };
 
     let mgr = manager.clone();
     let on_key_down: Arc<dyn Fn(&flight_input::InputKeyboardData) + Send + Sync> =

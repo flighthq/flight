@@ -238,7 +238,7 @@ pub fn set_focused_node(manager: &mut FocusManager, node: Option<NodeRef>) -> bo
     let previous = match begin_focus_transition(manager, &node) {
         FocusTransition::Rejected => return false,
         FocusTransition::Unchanged => return true,
-        FocusTransition::Changed(previous) => previous,
+        FocusTransition::Changed(prior) => prior,
     };
     if let Some(ref prev) = previous {
         emit_focus_signal(prev, &manager.root, FocusSignalName::OnFocusOut, &node);
@@ -261,13 +261,14 @@ pub fn set_focused_node(manager: &mut FocusManager, node: Option<NodeRef>) -> bo
 /// change made by a callback is the final state.
 // flight-lint: allow(conform-extra) D5 native shared-Ref projection of TS setFocusedNode: callbacks reach the canonical manager handle, so no guard may span them
 pub fn set_focused_node_ref(manager: &Ref<FocusManager>, node: Option<NodeRef>) -> bool {
-    let previous = {
+    let transition = {
         let mut guard = manager.write().unwrap();
-        match begin_focus_transition(&mut guard, &node) {
-            FocusTransition::Rejected => return false,
-            FocusTransition::Unchanged => return true,
-            FocusTransition::Changed(previous) => previous,
-        }
+        begin_focus_transition(&mut guard, &node)
+    };
+    let previous = match transition {
+        FocusTransition::Rejected => return false,
+        FocusTransition::Unchanged => return true,
+        FocusTransition::Changed(prior) => prior,
     };
     if let Some(ref prev) = previous {
         let root = manager.read().unwrap().root.clone();
