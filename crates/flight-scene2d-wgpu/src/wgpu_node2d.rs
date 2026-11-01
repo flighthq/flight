@@ -40,7 +40,7 @@ pub fn render_wgpu_scene2d(
     render_transform: Option<&Matrix>,
 ) {
     let state = &mut *pass.state;
-    let mut temp_stack = std::mem::take(&mut proxies.temp_stack);
+    let mut temp_stack: Vec<NodeRef> = std::mem::take(&mut proxies.temp_stack);
     temp_stack.clear();
     let clip_hooks = state.render_registries().clip_hooks;
     let mut scratch = render_transform.map(|_| create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0));
