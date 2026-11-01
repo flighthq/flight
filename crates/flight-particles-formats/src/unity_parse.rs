@@ -450,7 +450,7 @@ fn raw_to_config(raw: &Value, ppu: f32) -> ParticleEmitterConfig {
         .and_then(|emission| emission.get("bursts"))
         .and_then(|bursts| bursts.as_array())
         .cloned()
-        .unwrap_or_default();
+        .unwrap_or(Vec::new());
     let burst0 = bursts.first();
     let burst_count = burst0
         .map(|burst| rn(burst.get("count"), 0.0))

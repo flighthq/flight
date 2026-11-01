@@ -477,7 +477,7 @@ fn read_range(section: &LibgdxSection, defaults: Option<&LibgdxRangeValue>) -> L
         let default = if index == 0 { 0.0 } else { 1.0 };
         timeline.push(num_key(section, &format!("timeline{}", index), default));
     }
-    let default = defaults.cloned().unwrap_or_default();
+    let default = defaults.cloned().unwrap_or(LibgdxRangeValue::default());
     return LibgdxRangeValue {
         high_max: num_key(section, "highMax", default.high_max),
         high_min: num_key(section, "highMin", default.high_min),

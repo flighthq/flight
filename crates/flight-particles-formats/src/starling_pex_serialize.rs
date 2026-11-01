@@ -214,7 +214,7 @@ fn config_to_document(
             .unwrap_or(0.0),
         texture_file_name: existing
             .map(|document| document.texture_file_name.clone())
-            .unwrap_or_default(),
+            .unwrap_or(String::new()),
     };
 }
 

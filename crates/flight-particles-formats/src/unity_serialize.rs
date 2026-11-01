@@ -226,7 +226,7 @@ fn config_to_document(
         max_particles: config.max_particles,
         name: existing
             .map(|document| document.name.clone())
-            .unwrap_or_default(),
+            .unwrap_or(String::new()),
         physics_gravity,
         prewarm: existing.map(|document| document.prewarm).unwrap_or(false),
         rotation_over_lifetime: UnityRotationOverLifetime {

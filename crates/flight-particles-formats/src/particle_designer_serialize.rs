@@ -195,7 +195,7 @@ fn config_to_document(
         start_particle_size_variance: start_variance,
         texture_file_name: existing
             .map(|document| document.texture_file_name.clone())
-            .unwrap_or_default(),
+            .unwrap_or(String::new()),
     };
 }
 
