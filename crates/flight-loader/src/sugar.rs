@@ -350,7 +350,7 @@ mod sugar_tests {
                 };
                 entry.load = Arc::new(move |_, _| {
                     order.lock().unwrap().push(key);
-                    Box::pin(async { Ok(1) })
+                    return Box::pin(async { Ok(1) });
                 });
                 queue_resource_load(loader, ResourceLoadInput::Item(entry));
             }

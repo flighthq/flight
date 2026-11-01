@@ -37,7 +37,7 @@ mod queue_tests {
             key: key.map(str::to_string),
             load: Arc::new(move |_, _| {
                 let value = value.clone();
-                Box::pin(async move { Ok(value) })
+                return Box::pin(async move { Ok(value) });
             }),
             on_bytes_progress: None,
             priority: None,
@@ -531,9 +531,9 @@ fn drain_queue_with_limit(
             let mut pending = pending.write().unwrap();
             pending.sort_by(|a, b| {
                 let difference = b.read().unwrap().priority - a.read().unwrap().priority;
-                difference
+                return difference
                     .partial_cmp(&0.0)
-                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .unwrap_or(std::cmp::Ordering::Equal);
             });
             pending.first().cloned()
         };
@@ -992,7 +992,7 @@ fn queue_entry<T: Clone + Send + Sync + 'static>(
         let key = item.key.clone().unwrap_or_else(|| {
             let key = format!("__item_{}", state.item_counter);
             state.item_counter += 1;
-            key
+            return key;
         });
         (key, state.generation, state.options.clone())
     };
@@ -1130,7 +1130,8 @@ pub fn reset_resource_loader(loader: &Ref<ResourceLoader>) {
     let has_throttle = {
         let mut state = state.write().unwrap();
         state.cancelled = false;
-        state.dedupe_map.clear();
+        let dedupe_map: &mut HashMap<String, Unknown> = &mut state.dedupe_map;
+        dedupe_map.clear();
         state.in_flight.write().unwrap().entries.clear();
         state.loaded = 0;
         state.paused = false;
@@ -1184,7 +1185,7 @@ fn run_entry(
     context: &ResourceLoaderContext,
 ) {
     let result = catch_unwind(AssertUnwindSafe(|| {
-        run_entry_prefix(entry, loader, index, context)
+        return run_entry_prefix(entry, loader, index, context);
     }));
     if let Err(payload) = result {
         // A throw outside runEntry's try body is a rejected detached Promise, not a caller throw.
