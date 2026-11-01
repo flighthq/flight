@@ -4804,6 +4804,23 @@ pub fn classify(ch: char) -> (bool, bool, bool) {
     }
 
     #[test]
+    fn shadowed_match_arm_binding_keeps_const_on_outer_let() {
+        let source = r#"
+pub fn pick_value(input: Option<f32>) -> f32 {
+    let value = match input { Some(value) => value + 1.0, None => 0.0 };
+    return value * 2.0;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("const value = "),
+            "outer let should keep const: {output}"
+        );
+    }
+
+    #[test]
     fn tail_if_expression_gets_return_in_branches() {
         let source = r#"
 pub fn sign(x: i32) -> &'static str {

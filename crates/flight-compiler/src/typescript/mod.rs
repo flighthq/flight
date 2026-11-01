@@ -20823,6 +20823,13 @@ fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
     }
 
     impl<'ast> syn::visit::Visit<'ast> for IdentifierFinder<'_> {
+        fn visit_arm(&mut self, arm: &'ast syn::Arm) {
+            if pattern_binds_identifier(&arm.pat, self.expected) {
+                return;
+            }
+            syn::visit::visit_arm(self, arm);
+        }
+
         fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
             if closure
                 .inputs
