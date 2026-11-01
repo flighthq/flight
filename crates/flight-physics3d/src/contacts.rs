@@ -24,7 +24,8 @@ pub fn initialize_physics_3d_contact(out: &mut Physics3DContact) {
     out.normal_y = 0.0;
     out.normal_z = 0.0;
     out.point_count = 0;
-    out.points.clear();
+    let out_points: &mut Vec<Physics3DContactPoint> = &mut out.points;
+    out_points.clear();
     out.friction = 0.0;
     out.restitution = 0.0;
     out.enabled = true;
