@@ -64,91 +64,128 @@ fn get_gl_astc_srgb_format(gl: &glow::Context, format: TextureContainerFormat) -
     if !detect_gl_compressed_texture_support(gl).astc {
         return -1;
     }
-    return match format {
-        TextureContainerFormat::Astc4x4 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR,
-        TextureContainerFormat::Astc5x4 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR,
-        TextureContainerFormat::Astc5x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR,
-        TextureContainerFormat::Astc6x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR,
-        TextureContainerFormat::Astc6x6 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR,
-        TextureContainerFormat::Astc8x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR,
-        TextureContainerFormat::Astc8x6 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR,
-        TextureContainerFormat::Astc8x8 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR,
-        TextureContainerFormat::Astc10x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR,
-        TextureContainerFormat::Astc10x6 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR,
-        TextureContainerFormat::Astc10x8 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR,
-        TextureContainerFormat::Astc10x10 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR,
-        TextureContainerFormat::Astc12x10 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR,
-        TextureContainerFormat::Astc12x12 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR,
-        _ => return -1,
-    } as i32;
+    let value: i32 = match format {
+        TextureContainerFormat::Astc4x4 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR as i32,
+        TextureContainerFormat::Astc5x4 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR as i32,
+        TextureContainerFormat::Astc5x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR as i32,
+        TextureContainerFormat::Astc6x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR as i32,
+        TextureContainerFormat::Astc6x6 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR as i32,
+        TextureContainerFormat::Astc8x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR as i32,
+        TextureContainerFormat::Astc8x6 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR as i32,
+        TextureContainerFormat::Astc8x8 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR as i32,
+        TextureContainerFormat::Astc10x5 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR as i32,
+        TextureContainerFormat::Astc10x6 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR as i32,
+        TextureContainerFormat::Astc10x8 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR as i32,
+        TextureContainerFormat::Astc10x10 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR as i32,
+        TextureContainerFormat::Astc12x10 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR as i32,
+        TextureContainerFormat::Astc12x12 => glow::COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR as i32,
+        _ => -1,
+    };
+    return value;
 }
 
 pub fn get_gl_compressed_texture_format(gl: &glow::Context, format: TextureContainerFormat) -> i32 {
     let support = detect_gl_compressed_texture_support(gl);
-    let value = match format {
-        TextureContainerFormat::Bc1 if support.s3tc => glow::COMPRESSED_RGBA_S3TC_DXT1_EXT,
+    let value: i32 = match format {
+        TextureContainerFormat::Bc1 if support.s3tc => glow::COMPRESSED_RGBA_S3TC_DXT1_EXT as i32,
         TextureContainerFormat::Bc1Srgb if support.s3tc => {
-            glow::COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT
+            glow::COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT as i32
         }
-        TextureContainerFormat::Bc2 if support.s3tc => glow::COMPRESSED_RGBA_S3TC_DXT3_EXT,
+        TextureContainerFormat::Bc2 if support.s3tc => glow::COMPRESSED_RGBA_S3TC_DXT3_EXT as i32,
         TextureContainerFormat::Bc2Srgb if support.s3tc => {
-            glow::COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT
+            glow::COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT as i32
         }
-        TextureContainerFormat::Bc3 if support.s3tc => glow::COMPRESSED_RGBA_S3TC_DXT5_EXT,
+        TextureContainerFormat::Bc3 if support.s3tc => glow::COMPRESSED_RGBA_S3TC_DXT5_EXT as i32,
         TextureContainerFormat::Bc3Srgb if support.s3tc => {
-            glow::COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
+            glow::COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT as i32
         }
-        TextureContainerFormat::Bc4 if support.rgtc => glow::COMPRESSED_RED_RGTC1,
-        TextureContainerFormat::Bc4Snorm if support.rgtc => glow::COMPRESSED_SIGNED_RED_RGTC1,
-        TextureContainerFormat::Bc5 if support.rgtc => glow::COMPRESSED_RG_RGTC2,
-        TextureContainerFormat::Bc5Snorm if support.rgtc => glow::COMPRESSED_SIGNED_RG_RGTC2,
+        TextureContainerFormat::Bc4 if support.rgtc => glow::COMPRESSED_RED_RGTC1 as i32,
+        TextureContainerFormat::Bc4Snorm if support.rgtc => {
+            glow::COMPRESSED_SIGNED_RED_RGTC1 as i32
+        }
+        TextureContainerFormat::Bc5 if support.rgtc => glow::COMPRESSED_RG_RGTC2 as i32,
+        TextureContainerFormat::Bc5Snorm if support.rgtc => glow::COMPRESSED_SIGNED_RG_RGTC2 as i32,
         TextureContainerFormat::Bc6hUfloat if support.bptc => {
-            glow::COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT
+            glow::COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT as i32
         }
         TextureContainerFormat::Bc6hSfloat if support.bptc => {
-            glow::COMPRESSED_RGB_BPTC_SIGNED_FLOAT
+            glow::COMPRESSED_RGB_BPTC_SIGNED_FLOAT as i32
         }
-        TextureContainerFormat::Bc7 if support.bptc => glow::COMPRESSED_RGBA_BPTC_UNORM,
-        TextureContainerFormat::Bc7Srgb if support.bptc => glow::COMPRESSED_SRGB_ALPHA_BPTC_UNORM,
+        TextureContainerFormat::Bc7 if support.bptc => glow::COMPRESSED_RGBA_BPTC_UNORM as i32,
+        TextureContainerFormat::Bc7Srgb if support.bptc => {
+            glow::COMPRESSED_SRGB_ALPHA_BPTC_UNORM as i32
+        }
         TextureContainerFormat::Etc1 | TextureContainerFormat::Etc2Rgb if support.etc => {
-            glow::COMPRESSED_RGB8_ETC2
+            glow::COMPRESSED_RGB8_ETC2 as i32
         }
-        TextureContainerFormat::Etc2RgbSrgb if support.etc => glow::COMPRESSED_SRGB8_ETC2,
-        TextureContainerFormat::Etc2Rgba if support.etc => glow::COMPRESSED_RGBA8_ETC2_EAC,
+        TextureContainerFormat::Etc2RgbSrgb if support.etc => glow::COMPRESSED_SRGB8_ETC2 as i32,
+        TextureContainerFormat::Etc2Rgba if support.etc => glow::COMPRESSED_RGBA8_ETC2_EAC as i32,
         TextureContainerFormat::Etc2RgbaSrgb if support.etc => {
-            glow::COMPRESSED_SRGB8_ALPHA8_ETC2_EAC
+            glow::COMPRESSED_SRGB8_ALPHA8_ETC2_EAC as i32
         }
         TextureContainerFormat::Etc2RgbA1 if support.etc => {
-            glow::COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2
+            glow::COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 as i32
         }
         TextureContainerFormat::Etc2RgbA1Srgb if support.etc => {
-            glow::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2
+            glow::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 as i32
         }
-        TextureContainerFormat::EacR11 if support.etc => glow::COMPRESSED_R11_EAC,
-        TextureContainerFormat::EacR11Snorm if support.etc => glow::COMPRESSED_SIGNED_R11_EAC,
-        TextureContainerFormat::EacRg11 if support.etc => glow::COMPRESSED_RG11_EAC,
-        TextureContainerFormat::EacRg11Snorm if support.etc => glow::COMPRESSED_SIGNED_RG11_EAC,
+        TextureContainerFormat::EacR11 if support.etc => glow::COMPRESSED_R11_EAC as i32,
+        TextureContainerFormat::EacR11Snorm if support.etc => {
+            glow::COMPRESSED_SIGNED_R11_EAC as i32
+        }
+        TextureContainerFormat::EacRg11 if support.etc => glow::COMPRESSED_RG11_EAC as i32,
+        TextureContainerFormat::EacRg11Snorm if support.etc => {
+            glow::COMPRESSED_SIGNED_RG11_EAC as i32
+        }
         TextureContainerFormat::Pvrtc2bppRgb if support.pvrtc => 0x8c01,
         TextureContainerFormat::Pvrtc2bppRgba if support.pvrtc => 0x8c03,
         TextureContainerFormat::Pvrtc4bppRgb if support.pvrtc => 0x8c00,
         TextureContainerFormat::Pvrtc4bppRgba if support.pvrtc => 0x8c02,
-        TextureContainerFormat::Astc4x4 if support.astc => glow::COMPRESSED_RGBA_ASTC_4x4_KHR,
-        TextureContainerFormat::Astc5x4 if support.astc => glow::COMPRESSED_RGBA_ASTC_5x4_KHR,
-        TextureContainerFormat::Astc5x5 if support.astc => glow::COMPRESSED_RGBA_ASTC_5x5_KHR,
-        TextureContainerFormat::Astc6x5 if support.astc => glow::COMPRESSED_RGBA_ASTC_6x5_KHR,
-        TextureContainerFormat::Astc6x6 if support.astc => glow::COMPRESSED_RGBA_ASTC_6x6_KHR,
-        TextureContainerFormat::Astc8x5 if support.astc => glow::COMPRESSED_RGBA_ASTC_8x5_KHR,
-        TextureContainerFormat::Astc8x6 if support.astc => glow::COMPRESSED_RGBA_ASTC_8x6_KHR,
-        TextureContainerFormat::Astc8x8 if support.astc => glow::COMPRESSED_RGBA_ASTC_8x8_KHR,
-        TextureContainerFormat::Astc10x5 if support.astc => glow::COMPRESSED_RGBA_ASTC_10x5_KHR,
-        TextureContainerFormat::Astc10x6 if support.astc => glow::COMPRESSED_RGBA_ASTC_10x6_KHR,
-        TextureContainerFormat::Astc10x8 if support.astc => glow::COMPRESSED_RGBA_ASTC_10x8_KHR,
-        TextureContainerFormat::Astc10x10 if support.astc => glow::COMPRESSED_RGBA_ASTC_10x10_KHR,
-        TextureContainerFormat::Astc12x10 if support.astc => glow::COMPRESSED_RGBA_ASTC_12x10_KHR,
-        TextureContainerFormat::Astc12x12 if support.astc => glow::COMPRESSED_RGBA_ASTC_12x12_KHR,
-        _ => return -1,
+        TextureContainerFormat::Astc4x4 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_4x4_KHR as i32
+        }
+        TextureContainerFormat::Astc5x4 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_5x4_KHR as i32
+        }
+        TextureContainerFormat::Astc5x5 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_5x5_KHR as i32
+        }
+        TextureContainerFormat::Astc6x5 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_6x5_KHR as i32
+        }
+        TextureContainerFormat::Astc6x6 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_6x6_KHR as i32
+        }
+        TextureContainerFormat::Astc8x5 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_8x5_KHR as i32
+        }
+        TextureContainerFormat::Astc8x6 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_8x6_KHR as i32
+        }
+        TextureContainerFormat::Astc8x8 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_8x8_KHR as i32
+        }
+        TextureContainerFormat::Astc10x5 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_10x5_KHR as i32
+        }
+        TextureContainerFormat::Astc10x6 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_10x6_KHR as i32
+        }
+        TextureContainerFormat::Astc10x8 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_10x8_KHR as i32
+        }
+        TextureContainerFormat::Astc10x10 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_10x10_KHR as i32
+        }
+        TextureContainerFormat::Astc12x10 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_12x10_KHR as i32
+        }
+        TextureContainerFormat::Astc12x12 if support.astc => {
+            glow::COMPRESSED_RGBA_ASTC_12x12_KHR as i32
+        }
+        _ => -1,
     };
-    return value as i32;
+    return value;
 }
 
 fn get_texture_container_format_for_color_space(

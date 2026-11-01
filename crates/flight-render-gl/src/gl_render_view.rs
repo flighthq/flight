@@ -21,7 +21,7 @@ pub fn create_gl_render_view_resources(
     options: Option<GlRenderStateOptions>,
     target: Option<&RenderTargetDescriptor>,
 ) -> Result<GlRenderViewResources, String> {
-    let options = options.unwrap_or_default();
+    let options = options.unwrap_or(GlRenderStateOptions::default());
     let mut render_state = create_gl_render_state(context_state, Some(&options));
     render_state.render.pixel_ratio = device_pixel_ratio;
     let mut descriptor = target.cloned().unwrap_or(RenderTargetDescriptor {

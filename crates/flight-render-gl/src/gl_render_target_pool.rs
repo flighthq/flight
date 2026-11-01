@@ -21,7 +21,8 @@ pub fn create_gl_texture_render_target_pool() -> GlTextureRenderTargetPool {
 }
 
 pub fn initialize_gl_texture_render_target_pool(out: &mut GlTextureRenderTargetPool) {
-    out.free.clear();
+    let free: &mut Vec<GlTextureRenderTarget> = &mut out.free;
+    free.clear();
 }
 
 pub fn acquire_gl_texture_render_target(
