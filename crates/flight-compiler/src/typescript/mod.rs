@@ -3534,6 +3534,28 @@ pub(super) fn rust_default_expression(rust_type: &Type) -> Option<String> {
             }
         }
         Type::Reference(reference) => rust_default_expression(&reference.elem),
+        Type::Array(array) => {
+            if let Some(typed_array) = typed_array_for_type(&array.elem) {
+                let Expr::Lit(lit) = &array.len else {
+                    return None;
+                };
+                let Lit::Int(len) = &lit.lit else {
+                    return None;
+                };
+                Some(format!("new {typed_array}({})", len.base10_digits()))
+            } else {
+                let element_default = rust_default_expression(&array.elem)?;
+                let Expr::Lit(lit) = &array.len else {
+                    return None;
+                };
+                let Lit::Int(len) = &lit.lit else {
+                    return None;
+                };
+                let count: usize = len.base10_digits().parse().ok()?;
+                let elements = vec![element_default; count];
+                Some(format!("[{}]", elements.join(", ")))
+            }
+        }
         Type::Tuple(tuple) => tuple
             .elems
             .iter()
@@ -16505,6 +16527,12 @@ fn emit_method_call(
         "split" if arguments.len() == 1 => Err(compile_error(
             "portable `.split()` requires a receiver known to be `String` or `str`",
         )),
+        "split_at" if arguments.len() == 1 => {
+            Ok(format!(
+                "[{receiver}.slice(0, {0}), {receiver}.slice({0})]",
+                arguments[0]
+            ))
+        }
         "split_once" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(

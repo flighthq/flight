@@ -4333,6 +4333,22 @@ pub fn sort_len(values: &mut Vec<String>) {
     }
 
     #[test]
+    fn lowers_split_at_to_paired_slices() {
+        let source = r#"
+pub fn halve(data: &[i32], mid: usize) -> (&[i32], &[i32]) {
+    return data.split_at(mid);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains(".slice(0,") && output.contains(".slice(mid)"),
+            "split_at should produce paired slices: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_split_once_with_string_provenance() {
         let source = r#"
 pub fn first_part(s: &str) -> Option<(&str, &str)> {
@@ -7660,23 +7676,30 @@ pub fn allocate_defaults() -> Defaults {
     }
 
     #[test]
-    fn rejects_unsupported_entity_default_shapes_at_direct_allocation() {
-        let cases = [
-            (
-                "array",
-                r#"
-pub struct Unsupported {
+    fn initializes_entity_allocations_with_fixed_size_array_defaults() {
+        let source = r#"
+pub struct Matrix {
     runtime: EntityRuntimeSlot,
-    pub samples: [u32; 4],
+    pub m: [f32; 9],
+    pub indices: [u32; 4],
+    pub flags: [bool; 3],
 }
 
-pub fn allocate_unsupported() -> Unsupported {
-    let value: Unsupported = flight_entity::allocate_entity();
-    return value;
+pub fn allocate_matrix() -> Matrix {
+    return flight_entity::allocate_entity();
 }
-"#,
-                "cannot lower `allocate_entity` default for `UnsupportedRaw.samples`: unsupported Rust field type `[u32; 4]`",
-            ),
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains("flags: [false, false, false]"), "bool array default");
+        assert!(output.contains("indices: new Uint32Array(4)"), "typed array default");
+        assert!(output.contains("m: new Float32Array(9)"), "typed array default");
+    }
+
+    #[test]
+    fn rejects_unsupported_entity_default_shapes_at_direct_allocation() {
+        let cases = [
             (
                 "enum",
                 r#"
