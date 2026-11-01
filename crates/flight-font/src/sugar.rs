@@ -33,16 +33,16 @@ mod sugar_tests {
             add_font_face: Arc::new(|_| {}),
             check_font_face: Arc::new(move |shorthand| {
                 checks.lock().unwrap().push(shorthand.to_string());
-                true
+                return true;
             }),
             create_font_face: Arc::new(move |family, _source| {
-                Arc::new(FontFace {
+                return Arc::new(FontFace {
                     handle: flight_host::FontFaceHandle {
                         provider: face_provider.clone(),
                         handle: Arc::new(()),
                     },
                     family: family.to_string(),
-                })
+                });
             }),
             load_font_face: Arc::new(|_| Box::pin(async { Ok(()) })),
             load_font_faces: Arc::new(|_| Box::pin(async { Ok(Vec::new()) })),
