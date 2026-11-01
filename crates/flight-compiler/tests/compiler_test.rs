@@ -3050,6 +3050,22 @@ export function drainLocal(): number[] {
     }
 
     #[test]
+    fn lowers_round_ties_even() {
+        let source = r#"
+pub fn banker_round(value: f64) -> f64 {
+    return value.round_ties_even();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("Math.round(n)") && output.contains("% 2 !== 0"),
+            "round_ties_even should implement banker's rounding: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_sequence_optional_access_and_search() {
         let source = r#"
 pub fn get_or(values: &[i32], index: usize) -> i32 {
@@ -6147,6 +6163,38 @@ pub fn missing_or_zero(value: Option<i32>) -> bool {
 
         assert!(output.contains("!== undefined"), "{output}");
         assert!(output.contains("=== undefined"), "{output}");
+    }
+
+    #[test]
+    fn lowers_is_ok_and() {
+        let source = r#"
+pub fn is_valid(result: Option<i32>) -> bool {
+    return result.is_ok_and(|v| v > 0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("!== undefined && ("),
+            "is_ok_and should check non-null then apply predicate: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_is_multiple_of() {
+        let source = r#"
+pub fn is_even(n: i32) -> bool {
+    return n.is_multiple_of(2);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("n % 2 === 0"),
+            "is_multiple_of should lower to modulo check: {output}"
+        );
     }
 
     #[test]

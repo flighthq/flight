@@ -16068,6 +16068,9 @@ fn emit_method_call(
         "is_sign_positive" if arguments.is_empty() => {
             Ok(format!("({receiver} > 0 || Object.is({receiver}, 0))"))
         }
+        "is_multiple_of" if arguments.len() == 1 => {
+            Ok(format!("{receiver} % {} === 0", arguments[0]))
+        }
         "is_err" if arguments.is_empty() => Ok(format!(
             "{receiver} === {}",
             option_absent_value(&call.receiver, entities)
@@ -16076,6 +16079,13 @@ fn emit_method_call(
             "{receiver} !== {}",
             option_absent_value(&call.receiver, entities)
         )),
+        "is_ok_and" if arguments.len() == 1 => {
+            let absent = option_absent_value(&call.receiver, entities);
+            Ok(format!(
+                "({receiver} !== {absent} && ({})({receiver}))",
+                arguments[0]
+            ))
+        }
         "is_none" if arguments.is_empty() => Ok(format!(
             "{receiver} === {}",
             option_absent_value(&call.receiver, entities)
@@ -16403,6 +16413,9 @@ fn emit_method_call(
         }
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
+        "round_ties_even" if arguments.is_empty() => Ok(format!(
+            "((n: number): number => {{ const r = Math.round(n); const f = n - Math.trunc(n); return (f === 0.5 || f === -0.5) && r % 2 !== 0 ? r - Math.sign(n) : r; }})({receiver})"
+        )),
         "saturating_add" if arguments.len() == 1 => {
             Ok(format!(
                 "Math.min(0x7FFFFFFF, {receiver} + {})",
