@@ -1279,7 +1279,7 @@ fn parser_parse_scalar(parser: &mut Parser, token: &Token) -> ParseValue {
         };
     }
     if is_decimal_number(value) {
-        let parsed: f64 = text.parse().unwrap_or(f64::INFINITY);
+        let parsed: f64 = text.parse::<f64>().unwrap_or(f64::INFINITY);
         if !parsed.is_finite() {
             return parser_refuse(
                 parser,
