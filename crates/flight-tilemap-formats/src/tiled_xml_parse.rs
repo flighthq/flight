@@ -279,7 +279,7 @@ fn build_tiled_layer_from_xml(
         let image_source = image
             .as_ref()
             .map(|i| attr_string(&i.read().unwrap(), "source", ""))
-            .unwrap_or_default();
+            .unwrap_or(String::new());
         return Some(TiledLayer::ImageLayer(TiledImageLayerData {
             base,
             image: image_source,

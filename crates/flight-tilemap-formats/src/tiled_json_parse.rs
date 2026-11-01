@@ -99,9 +99,9 @@ fn bool_field(obj: &JsonObject, key: &str, fallback: bool) -> bool {
 fn build_tiled_layer_base_from_json(obj: &JsonObject) -> TiledLayerBase {
     let tint = str_field(obj, "tintcolor");
     return TiledLayerBase {
-        class: str_field(obj, "class").unwrap_or_default(),
+        class: str_field(obj, "class").unwrap_or(String::new()),
         id: num_field(obj, "id", 0.0) as i32,
-        name: str_field(obj, "name").unwrap_or_default(),
+        name: str_field(obj, "name").unwrap_or(String::new()),
         offset_x: num_field(obj, "offsetx", 0.0),
         offset_y: num_field(obj, "offsety", 0.0),
         opacity: num_field(obj, "opacity", 1.0),
@@ -264,7 +264,7 @@ fn build_tiled_layer_from_json(
     if layer_type.as_deref() == Some("imagelayer") {
         return Some(TiledLayer::ImageLayer(TiledImageLayerData {
             base,
-            image: str_field(obj, "image").unwrap_or_default(),
+            image: str_field(obj, "image").unwrap_or(String::new()),
             repeat_x: bool_field(obj, "repeatx", false),
             repeat_y: bool_field(obj, "repeaty", false),
         }));
@@ -371,7 +371,7 @@ fn build_tiled_tileset_from_json(
         image_height: num_field(obj, "imageheight", 0.0) as i32,
         image_width: num_field(obj, "imagewidth", 0.0) as i32,
         margin: num_field(obj, "margin", 0.0) as i32,
-        name: str_field(obj, "name").unwrap_or_default(),
+        name: str_field(obj, "name").unwrap_or(String::new()),
         object_alignment: as_object_alignment(str_field(obj, "objectalignment").as_deref()),
         properties: build_tiled_properties_from_json(obj),
         spacing: num_field(obj, "spacing", 0.0) as i32,
