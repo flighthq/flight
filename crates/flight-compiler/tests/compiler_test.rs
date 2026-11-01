@@ -4804,6 +4804,34 @@ pub fn classify(ch: char) -> (bool, bool, bool) {
     }
 
     #[test]
+    fn tail_match_expression_gets_return_in_arms() {
+        let source = r#"
+pub fn classify(x: i32) -> &'static str {
+    match x {
+        0 => "zero",
+        1 => "one",
+        _ => "other",
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("return \"zero\""),
+            "match arm should have return: {output}"
+        );
+        assert!(
+            output.contains("return \"one\""),
+            "match arm should have return: {output}"
+        );
+        assert!(
+            output.contains("return \"other\""),
+            "default arm should have return: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_last_mut_on_sequences() {
         let source = r#"
 pub fn tail(values: &mut Vec<i32>) -> i32 {

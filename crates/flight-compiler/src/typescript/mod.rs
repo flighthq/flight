@@ -8541,6 +8541,11 @@ fn emit_function_block(
         .iter()
         .any(|marker| marker.starts_with(RETURN_TYPE_MARKER) && !marker.ends_with("void"));
     if has_return_type
+        && let Some(Stmt::Expr(Expr::Match(match_expr), None)) = statements.last()
+    {
+        emit_block(out, &statements[..statements.len() - 1], entities, indent)?;
+        emit_return_match_with_exits(out, match_expr, entities, indent)
+    } else if has_return_type
         && let Some(Stmt::Expr(expr, None)) = statements.last()
         && tail_expression_needs_return(expr)
     {
