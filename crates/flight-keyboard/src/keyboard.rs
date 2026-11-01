@@ -43,13 +43,13 @@ mod sugar_tests {
     fn info_capability() -> HostSoftKeyboardInfoCapability {
         return HostSoftKeyboardInfoCapability {
             get_info: Arc::new(|out| {
-                *out = SoftKeyboardInfo {
+                return *out = SoftKeyboardInfo {
                     visible: true,
                     height: 240.0,
                     x: 1.0,
                     y: 2.0,
                     width: 320.0,
-                }
+                };
             }),
         };
     }
@@ -61,7 +61,7 @@ mod sugar_tests {
     fn visibility_capability() -> HostSoftKeyboardVisibilityCapability {
         return HostSoftKeyboardVisibilityCapability {
             hide: Arc::new(|| {
-                Box::pin(async { Ok(SoftKeyboardVisibilityResult::OperationFailed) })
+                return Box::pin(async { Ok(SoftKeyboardVisibilityResult::OperationFailed) });
             }),
             show: Arc::new(|| Box::pin(async { Ok(SoftKeyboardVisibilityResult::Ok) })),
         };
