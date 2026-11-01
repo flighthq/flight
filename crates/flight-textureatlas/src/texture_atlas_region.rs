@@ -201,6 +201,7 @@ pub fn get_texture_atlas_region_by_ordinal(
         let Some(name) = &guard.name else {
             continue;
         };
+        let name: &str = name;
         if !name.starts_with(prefix) {
             continue;
         }
@@ -243,9 +244,10 @@ pub fn get_texture_atlas_region_ordinal(region: &TextureAtlasRegion) -> f64 {
     let Some(name) = &region.name else {
         return -1.0;
     };
+    let name: &str = name;
     let bytes = name.as_bytes();
     let mut start = bytes.len();
-    while start > 0 && bytes[start - 1].is_ascii_digit() {
+    while start > 0 && bytes[start - 1] >= b'0' && bytes[start - 1] <= b'9' {
         start -= 1;
     }
     if start == bytes.len() {
@@ -276,7 +278,7 @@ pub fn get_texture_atlas_region_sequence(
             .unwrap()
             .name
             .as_ref()
-            .is_some_and(|name| name.starts_with(prefix));
+            .is_some_and(|name: &String| name.starts_with(prefix));
         if matches {
             out.push(region.clone());
         }
