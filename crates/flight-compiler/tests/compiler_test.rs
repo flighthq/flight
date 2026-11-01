@@ -20886,6 +20886,67 @@ pub fn scale_until_zero(values: &mut [f64], factor: f64) {
 }
 
 #[test]
+fn avoids_if_let_same_block_shadow_redeclaration() {
+    let source = r#"
+pub enum Value {
+    Sequence(Vec<u32>),
+    Number(u32),
+}
+
+pub fn get_value(key: &str) -> Option<Value> { return None; }
+
+pub fn process(key: &str) {
+    if let Some(items) = get_value(key) {
+        let Value::Sequence(items) = items else {
+            return;
+        };
+        for item in &items {
+            let _ = *item;
+        }
+    }
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    let const_items_count = result.matches("const items").count();
+    assert_eq!(
+        const_items_count, 0,
+        "should not have const items (use let for rebind): {result}"
+    );
+    assert!(
+        result.contains("let items = $items"),
+        "if-let binding should use let when body rebinds: {result}"
+    );
+    assert!(
+        result.contains("items = $letElse"),
+        "rebinding should use bare assignment: {result}"
+    );
+}
+
+#[test]
+fn emits_index_loop_for_implicit_iter_mut() {
+    let source = r#"
+pub fn scale(values: &mut [f64], factor: f64) {
+    for value in &mut *values {
+        *value *= factor;
+    }
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("let __i = 0; __i < values.length; __i++"),
+        "implicit iter_mut should emit index loop: {result}"
+    );
+    assert!(
+        result.contains("values[__i] *= factor"),
+        "implicit iter_mut element should alias collection slot: {result}"
+    );
+    assert!(
+        !result.contains("for (const"),
+        "should not emit for-of loop: {result}"
+    );
+}
+
+#[test]
 fn skips_redundant_tuple_option_binding_to_avoid_tdz() {
     let source = r#"
 pub fn process(rx: Option<f64>, ry: Option<f64>) -> f64 {

@@ -235,6 +235,7 @@ const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:"
 
 const ITER_MUT_ALIAS_MARKER: &str = "@iter-mut-alias:";
 
+const SCOPE_DECLARED_MARKER: &str = "@scope-declared:";
 const TRY_SUBSTITUTION_MARKER: &str = "@try-sub:";
 const TRY_COUNTER_MARKER: &str = "@try-counter:";
 
@@ -713,6 +714,16 @@ pub(crate) fn begin_option_if(
     binding: &(String, String, &'static str),
     rereadable: bool,
 ) -> (usize, bool) {
+    return begin_option_if_with_rebind(out, indent, binding, rereadable, false);
+}
+
+pub(crate) fn begin_option_if_with_rebind(
+    out: &mut String,
+    indent: usize,
+    binding: &(String, String, &'static str),
+    rereadable: bool,
+    body_rebinds: bool,
+) -> (usize, bool) {
     let (name, value, absent) = binding;
     let is_destructure = name.starts_with('[');
     let (if_indent, test) = if rereadable {
@@ -738,8 +749,9 @@ pub(crate) fn begin_option_if(
     write_indent(out, if_indent);
     writeln!(out, "if ({test} !== {absent}) {{").expect("writing to a String cannot fail");
     if &test != name {
+        let keyword = if body_rebinds { "let" } else { "const" };
         write_indent(out, if_indent + 1);
-        writeln!(out, "const {name} = {test};").expect("writing to a String cannot fail");
+        writeln!(out, "{keyword} {name} = {test};").expect("writing to a String cannot fail");
     }
     return (if_indent, !rereadable);
 }
@@ -8664,7 +8676,11 @@ fn emit_block_with_context(
             *declaration_counts.entry(name).or_insert(0_usize) += 1;
         }
     }
-    let mut declared = HashSet::new();
+    let mut declared: HashSet<String> = entities
+        .iter()
+        .filter_map(|m| m.strip_prefix(SCOPE_DECLARED_MARKER))
+        .map(|s| s.to_string())
+        .collect();
     for (index, statement) in statements.iter().enumerate() {
         if let Stmt::Local(local) = statement
             && let Some(name) = local_pattern_name(&local.pat)
@@ -10673,7 +10689,22 @@ enum IterMutChain<'a> {
     Zip(&'a Expr),
 }
 
+fn is_mutable_reference(expression: &Expr) -> bool {
+    match expression {
+        Expr::Reference(reference) => reference.mutability.is_some(),
+        Expr::Paren(paren) => is_mutable_reference(&paren.expr),
+        Expr::Group(group) => is_mutable_reference(&group.expr),
+        _ => false,
+    }
+}
+
 fn iter_mut_chain<'a>(expression: &'a Expr) -> Option<(&'a Expr, IterMutChain<'a>)> {
+    if is_mutable_reference(expression) {
+        let inner = peel_reference_and_paren(expression);
+        if !matches!(inner, Expr::MethodCall(_)) {
+            return Some((inner, IterMutChain::Bare));
+        }
+    }
     let call = match peel_reference_and_paren(expression) {
         Expr::MethodCall(call) => call,
         _ => return None,
@@ -12847,9 +12878,16 @@ fn emit_let_else_local(
             out.push_str("}\n");
             for (binding, expression) in &test.bindings {
                 let name = snake_to_lower_camel(binding);
+                let binding_shadowed = shadowed
+                    || expression_contains_identifier(&initializer.expr, binding);
                 write_indent(out, indent);
-                writeln!(out, "const {name} = {expression};")
-                    .expect("writing to a String cannot fail");
+                if binding_shadowed {
+                    writeln!(out, "{name} = {expression};")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    writeln!(out, "const {name} = {expression};")
+                        .expect("writing to a String cannot fail");
+                }
             }
             return Ok(());
         }
@@ -19516,7 +19554,7 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
             let let_chain = split_let_chain(&if_expression.cond);
-            let then_context = if let Some((binding, _, post_guards)) = &let_chain {
+            let mut then_context = if let Some((binding, _, post_guards)) = &let_chain {
                 let mut context = lexical_pattern_context(entities, &binding.pat);
                 for guard in post_guards {
                     if let Expr::Let(let_guard) = guard {
@@ -19609,13 +19647,31 @@ fn emit_statement(
             };
             let outer_indent = indent;
             let (indent, wrapped) = if let Some(binding) = &option_binding {
-                begin_option_if(
+                let opt_pat = if let Some((let_expr, _, _)) = &let_chain {
+                    Some(&let_expr.pat)
+                } else if let Expr::Let(b) = if_expression.cond.as_ref() {
+                    Some(&b.pat)
+                } else {
+                    None
+                };
+                let opt_rust_name = opt_pat.and_then(|p| local_pattern_name(p));
+                let body_rebinds = opt_rust_name.as_ref().is_some_and(|name| {
+                    if_expression.then_branch.stmts.iter().any(|stmt| {
+                        if let Stmt::Local(local) = stmt {
+                            statement_binds_name(&local.pat, name)
+                        } else {
+                            false
+                        }
+                    })
+                });
+                begin_option_if_with_rebind(
                     out,
                     indent,
                     binding,
                     option_scrutinee_is_rereadable(&if_expression.cond),
+                    body_rebinds,
                 )
-            } else if let Some((value_expr, ref test)) = data_union_if_let {
+            } else if let Some((ref value_expr, ref test)) = data_union_if_let {
                 write_indent(out, indent);
                 out.push_str("{\n");
                 write_indent(out, indent + 1);
@@ -19659,6 +19715,25 @@ fn emit_statement(
                 write_indent(out, indent + 1);
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
+            if option_binding.is_some() {
+                let pat = if let Some((let_expr, _, _)) = &let_chain {
+                    Some(&let_expr.pat)
+                } else if let Expr::Let(binding) = if_expression.cond.as_ref() {
+                    Some(&binding.pat)
+                } else {
+                    None
+                };
+                if let Some(pat) = pat {
+                    if let Some(name) = local_pattern_name(pat) {
+                        then_context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
+                    }
+                }
+            }
+            if let Some((_, ref test)) = data_union_if_let {
+                for (binding, _) in &test.bindings {
+                    then_context.insert(format!("{SCOPE_DECLARED_MARKER}{binding}"));
+                }
+            }
             if let Some(post_guards) = &let_chain_post_guards {
                 let mut body_indent = indent + 1;
                 let mut extra_closes: usize = 0;
@@ -19686,6 +19761,12 @@ fn emit_statement(
                         write_indent(out, body_indent);
                         writeln!(out, "const {name} = {scrutinee};")
                             .expect("writing to a String cannot fail");
+                        if let Expr::Let(let_binding) = let_guard {
+                            if let Some(rust_name) = local_pattern_name(&let_binding.pat) {
+                                then_context
+                                    .insert(format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+                            }
+                        }
                         extra_closes += 1;
                     }
                 }
@@ -21968,6 +22049,17 @@ pub(super) fn local_pattern_name(pattern: &Pat) -> Option<String> {
         Pat::Type(typed) => local_pattern_name(&typed.pat),
         _ => None,
     };
+}
+
+fn statement_binds_name(pattern: &Pat, name: &str) -> bool {
+    match pattern {
+        Pat::Ident(ident) => ident.ident == name,
+        Pat::Type(typed) => statement_binds_name(&typed.pat, name),
+        Pat::TupleStruct(ts) => ts.elems.iter().any(|elem| statement_binds_name(elem, name)),
+        Pat::Struct(s) => s.fields.iter().any(|f| statement_binds_name(&f.pat, name)),
+        Pat::Tuple(t) => t.elems.iter().any(|elem| statement_binds_name(elem, name)),
+        _ => false,
+    }
 }
 
 fn local_pattern_binding_id(entities: &HashSet<String>, pattern: &Pat) -> Option<String> {
