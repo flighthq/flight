@@ -102,7 +102,8 @@ pub fn clear_node_order_list(list: &mut NodeOrderList) {
 /// Empties the list and releases its node references (TS `disposeNodeOrderList`).
 pub fn dispose_node_order_list(list: &mut NodeOrderList) {
     list.entry_count = 0;
-    list.nodes.clear();
+    let list_nodes: &mut Vec<NodeRef> = &mut list.nodes;
+    list_nodes.clear();
     list.sort_keys.clear();
 }
 
