@@ -78,7 +78,7 @@ fn ensure_wgpu_render_texture_entry(
     let format = get_wgpu_render_texture_format(requested.format);
     let color_space = descriptor
         .color_space
-        .unwrap_or(RenderTargetColorSpace::default());
+        .unwrap_or(RenderTargetColorSpace::Srgb);
     let id = get_render_texture_id(render_texture);
     let existing = get_wgpu_render_texture_entry(state, render_texture);
     let Some(mut entry) = existing else {
