@@ -126,7 +126,8 @@ pub async fn send_net_request(
     };
     let body_on_bodyless_method = {
         let request = request.read().unwrap();
-        let method = request.method.to_uppercase();
+        let method_name: &str = &request.method;
+        let method = method_name.to_uppercase();
         (method == "GET" || method == "HEAD")
             && request.body.as_ref().is_some_and(|body| body.is_some())
     };
