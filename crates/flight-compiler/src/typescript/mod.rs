@@ -538,6 +538,8 @@ enum GeneralTupleElementCondition {
     Literal(String),
     EnumVariant(String),
     DataUnionKind(String),
+    OptionSome(String),
+    OptionNone(String),
     Wild,
 }
 
@@ -11438,7 +11440,7 @@ fn emit_match_statement_with_action(
     }
     if let Some(elems) = scrutinee_elements(&expression.expr)
         && let Some(arms_info) =
-            analyze_general_compound_match(&expression.expr, &expression.arms)
+            analyze_general_compound_match(&expression.expr, &expression.arms, entities)
     {
         write_indent(out, indent);
         out.push_str("{\n");
@@ -13875,7 +13877,11 @@ fn analyze_tuple_option_match(
     return has_option_test.then_some(analyzed);
 }
 
-fn analyze_general_tuple_element(pattern: &Pat) -> Option<GeneralTupleElement> {
+fn analyze_general_tuple_element(
+    pattern: &Pat,
+    scrutinee_elem: Option<&Expr>,
+    entities: &HashSet<String>,
+) -> Option<GeneralTupleElement> {
     return match pattern {
         Pat::Lit(lit) => {
             let value = match &lit.lit {
@@ -13892,6 +13898,16 @@ fn analyze_general_tuple_element(pattern: &Pat) -> Option<GeneralTupleElement> {
             })
         }
         Pat::Path(path) => {
+            if path.path.segments.len() == 1 && path.path.segments[0].ident == "None" {
+                let absent = scrutinee_elem
+                    .map(|e| option_absent_value(e, entities))
+                    .unwrap_or("null");
+                return Some(GeneralTupleElement {
+                    condition: GeneralTupleElementCondition::OptionNone(absent.to_string()),
+                    binding: None,
+                    field_bindings: Vec::new(),
+                });
+            }
             let (_owner, variant) = path_owner_and_member(&path.path)?;
             Some(GeneralTupleElement {
                 condition: GeneralTupleElementCondition::EnumVariant(
@@ -13902,6 +13918,34 @@ fn analyze_general_tuple_element(pattern: &Pat) -> Option<GeneralTupleElement> {
             })
         }
         Pat::TupleStruct(ts) => {
+            if ts.path.segments.len() == 1 && ts.path.segments[0].ident == "Some" {
+                let absent = scrutinee_elem
+                    .map(|e| option_absent_value(e, entities))
+                    .unwrap_or("null");
+                let binding = if ts.elems.len() == 1 {
+                    match &ts.elems[0] {
+                        Pat::Ident(id) if id.subpat.is_none() && id.ident != "_" => {
+                            Some(snake_to_lower_camel(&id.ident.to_string()))
+                        }
+                        Pat::Wild(_) => None,
+                        Pat::Reference(r) => match r.pat.as_ref() {
+                            Pat::Ident(id) if id.subpat.is_none() && id.ident != "_" => {
+                                Some(snake_to_lower_camel(&id.ident.to_string()))
+                            }
+                            Pat::Wild(_) => None,
+                            _ => return None,
+                        },
+                        _ => return None,
+                    }
+                } else {
+                    return None;
+                };
+                return Some(GeneralTupleElement {
+                    condition: GeneralTupleElementCondition::OptionSome(absent.to_string()),
+                    binding,
+                    field_bindings: Vec::new(),
+                });
+            }
             let (_, variant) = path_owner_and_member(&ts.path)?;
             let binding = if ts.elems.len() == 1 {
                 match &ts.elems[0] {
@@ -13980,8 +14024,12 @@ fn analyze_general_tuple_element(pattern: &Pat) -> Option<GeneralTupleElement> {
                 })
             }
         }
-        Pat::Reference(reference) => analyze_general_tuple_element(&reference.pat),
-        Pat::Paren(paren) => analyze_general_tuple_element(&paren.pat),
+        Pat::Reference(reference) => {
+            analyze_general_tuple_element(&reference.pat, scrutinee_elem, entities)
+        }
+        Pat::Paren(paren) => {
+            analyze_general_tuple_element(&paren.pat, scrutinee_elem, entities)
+        }
         _ => None,
     };
 }
@@ -13996,12 +14044,18 @@ fn pattern_elements(pattern: &Pat, arity: usize) -> Option<&Punctuated<Pat, syn:
 
 fn analyze_general_tuple_pattern(
     pattern: &Pat,
-    arity: usize,
+    scrutinee_elems: &Punctuated<Expr, syn::token::Comma>,
+    entities: &HashSet<String>,
 ) -> Option<GeneralTupleMatchArm> {
+    let arity = scrutinee_elems.len();
     if let Some(elems) = pattern_elements(pattern, arity) {
         let mut elements = Vec::new();
-        for elem in elems {
-            elements.push(analyze_general_tuple_element(elem)?);
+        for (i, elem) in elems.iter().enumerate() {
+            elements.push(analyze_general_tuple_element(
+                elem,
+                Some(&scrutinee_elems[i]),
+                entities,
+            )?);
         }
         return Some(GeneralTupleMatchArm {
             catch_all: false,
@@ -14014,8 +14068,12 @@ fn analyze_general_tuple_pattern(
             for case in &or.cases {
                 if let Some(elems) = pattern_elements(case, arity) {
                     let mut elements = Vec::new();
-                    for elem in elems {
-                        elements.push(analyze_general_tuple_element(elem)?);
+                    for (i, elem) in elems.iter().enumerate() {
+                        elements.push(analyze_general_tuple_element(
+                            elem,
+                            Some(&scrutinee_elems[i]),
+                            entities,
+                        )?);
                     }
                     alternatives.push(GeneralTupleAlternative { elements });
                 } else {
@@ -14050,13 +14108,13 @@ fn scrutinee_elements(expression: &Expr) -> Option<&Punctuated<Expr, syn::token:
 fn analyze_general_compound_match(
     scrutinee: &Expr,
     arms: &[syn::Arm],
+    entities: &HashSet<String>,
 ) -> Option<Vec<GeneralTupleMatchArm>> {
     let elems = scrutinee_elements(scrutinee)?;
-    let arity = elems.len();
     let mut has_condition = false;
     let mut analyzed = Vec::new();
     for arm in arms {
-        let info = analyze_general_tuple_pattern(&arm.pat, arity)?;
+        let info = analyze_general_tuple_pattern(&arm.pat, elems, entities)?;
         if !info.catch_all {
             has_condition = true;
         }
@@ -14078,6 +14136,12 @@ fn emit_general_tuple_element_condition(
         }
         GeneralTupleElementCondition::DataUnionKind(kind) => {
             Some(format!("{temp}.kind === \"{kind}\""))
+        }
+        GeneralTupleElementCondition::OptionSome(absent) => {
+            Some(format!("{temp} !== {absent}"))
+        }
+        GeneralTupleElementCondition::OptionNone(absent) => {
+            Some(format!("{temp} === {absent}"))
         }
         GeneralTupleElementCondition::Wild => None,
     };
@@ -14350,7 +14414,7 @@ fn emit_match_expression(
     }
     if let Some(elems) = scrutinee_elements(&expression.expr)
         && let Some(arms_info) =
-            analyze_general_compound_match(&expression.expr, &expression.arms)
+            analyze_general_compound_match(&expression.expr, &expression.arms, entities)
     {
         let mut out = String::new();
         out.push_str("(() => {\n");
@@ -14954,7 +15018,7 @@ pub(crate) fn emit_match_statement(
     }
     if let Some(elems) = scrutinee_elements(&expression.expr)
         && let Some(arms_info) =
-            analyze_general_compound_match(&expression.expr, &expression.arms)
+            analyze_general_compound_match(&expression.expr, &expression.arms, entities)
     {
         write_indent(out, indent);
         out.push_str("{\n");
