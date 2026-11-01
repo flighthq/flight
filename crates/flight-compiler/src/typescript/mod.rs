@@ -19796,6 +19796,24 @@ fn emit_statement(
             };
             emit_return_match_with_exits(out, match_expr, entities, indent)?;
         }
+        Stmt::Expr(Expr::Return(return_expression), _)
+            if return_expression
+                .expr
+                .as_ref()
+                .is_some_and(|v| expression_contains_try(v)) =>
+        {
+            let value = return_expression.expr.as_ref().unwrap();
+            let try_context = emit_try_pre_extractions(out, value, entities, indent)?;
+            write_indent(out, indent);
+            let mut emitted = emit_expression(value, &try_context)?;
+            if entities.contains(RETURNS_U32_MARKER) {
+                emitted = format!("({emitted}) >>> 0");
+            }
+            if entities.contains(RETURNS_NULLABLE_MARKER) {
+                emitted = nullable_option_value(value, emitted);
+            }
+            writeln!(out, "return {emitted};").expect("writing to a String cannot fail");
+        }
         Stmt::Expr(Expr::Return(return_expression), _) => {
             write_indent(out, indent);
             if let Some(value) = &return_expression.expr {

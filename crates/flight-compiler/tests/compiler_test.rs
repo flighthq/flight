@@ -20708,6 +20708,31 @@ pub fn test_try(x: f32) -> Option<f32> {
 }
 
 #[test]
+fn extracts_try_in_return_value_position() {
+    let source = r#"
+fn read_u16(bytes: &[u8], offset: usize) -> Option<u16> {
+    return Some(u16::from_le_bytes([
+        *bytes.get(offset)?,
+        *bytes.get(offset + 1)?,
+    ]));
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("__try0"),
+        "should extract try into temp: {result}"
+    );
+    assert!(
+        result.contains("if (__try0 === undefined)"),
+        "should check temp for undefined: {result}"
+    );
+    assert!(
+        result.contains("return"),
+        "should still emit return: {result}"
+    );
+}
+
+#[test]
 fn emits_braced_switch_case_arms_to_avoid_redeclaration() {
     let source = r#"
 pub fn process(kind: u32, output: &mut [f64]) {
