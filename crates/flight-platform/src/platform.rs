@@ -308,7 +308,7 @@ fn parse_js_int(segment: &str) -> Option<f64> {
     if digits_len == 0 {
         return None;
     }
-    let value: f64 = rest[..digits_len].parse().ok()?;
+    let value: f64 = rest[..digits_len].parse::<f64>().ok()?;
     return Some(if negative { -value } else { value });
 }
 
