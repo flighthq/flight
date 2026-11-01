@@ -75,7 +75,7 @@ pub fn end_command_transaction(history: &Ref<CommandHistory>) -> bool {
     let (collected, label) = {
         let mut guard = history.write().unwrap();
         let collected = guard.entries[start..].to_vec();
-        let label = guard.transaction_label.take().unwrap_or_default();
+        let label = guard.transaction_label.take().unwrap_or(String::new());
         (collected, label)
     };
     if collected.is_empty() {
