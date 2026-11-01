@@ -38,7 +38,7 @@ mod sugar_tests {
         return Arc::new(RwLock::new(AssetLoaderAdapter {
             load: Arc::new(|descriptor| {
                 let value = descriptor.read().unwrap().id.clone();
-                Box::pin(async move { Ok(value) })
+                return Box::pin(async move { Ok(value) });
             }),
             dispose: Arc::new(move |value| freed.lock().unwrap().push(value)),
         }));
@@ -442,10 +442,10 @@ mod sugar_tests {
         let seen = Arc::new(Mutex::new(Vec::new()));
         let values = seen.clone();
         let guard: AssetAcquireGuard = Arc::new(move |_, value| {
-            values
+            return values
                 .lock()
                 .unwrap()
-                .push(value.read().unwrap().id.clone())
+                .push(value.read().unwrap().id.clone());
         });
         method.set_acquire_guard(Some(guard.clone()));
         set_asset_acquire_guard(&free, Some(guard.clone()));

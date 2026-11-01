@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::enums::AssetLoadStatus;
 use crate::types::*;
 use flight_entity::{FlightError, FlightErrorKind, unknown_from_panic};
@@ -176,10 +177,10 @@ pub fn acquire_asset<T: Clone + Send + Sync + 'static>(
 
 fn clear_projections(runtime: &Ref<AssetLibraryRuntime>, entry: &Ref<AssetEntry>) {
     runtime.write().unwrap().projections.retain(|projection| {
-        projection
+        return projection
             .entry
             .upgrade()
-            .is_some_and(|current| !Arc::ptr_eq(&current, entry))
+            .is_some_and(|current| !Arc::ptr_eq(&current, entry));
     });
 }
 
@@ -203,10 +204,10 @@ fn delete_entry(runtime: &Ref<AssetLibraryRuntime>, id: &str) {
     runtime.entry_order.retain(|slot| slot.id != id);
     if let Some(entry) = entry {
         runtime.projections.retain(|projection| {
-            projection
+            return projection
                 .entry
                 .upgrade()
-                .is_some_and(|current| !Arc::ptr_eq(&current, &entry))
+                .is_some_and(|current| !Arc::ptr_eq(&current, &entry));
         });
     }
 }
@@ -260,7 +261,8 @@ pub fn dispose_asset_library(library: &Ref<AssetLibrary>) {
         }
     }
     let mut runtime = runtime.write().unwrap();
-    runtime.adapters.clear();
+    let adapters: &mut HashMap<AssetType, Unknown> = &mut runtime.adapters;
+    adapters.clear();
     runtime.adapter_calls.clear();
     runtime.acquire_guard = None;
     runtime.descriptors.clear();
@@ -362,7 +364,7 @@ pub fn load_asset_group(
     options: Option<&Ref<AssetGroupLoadOptions>>,
 ) -> SharedFuture<ResourceLoadResult<()>> {
     let prepared = catch_unwind(AssertUnwindSafe(|| {
-        prepare_asset_group(library, name, options)
+        return prepare_asset_group(library, name, options);
     }));
     match prepared {
         Ok(Some((future, context))) => {
@@ -493,11 +495,11 @@ fn project_promise<T: Clone + Send + Sync + 'static>(
         .projections
         .iter()
         .find(|projection| {
-            projection.type_id == TypeId::of::<T>()
+            return projection.type_id == TypeId::of::<T>()
                 && projection
                     .entry
                     .upgrade()
-                    .is_some_and(|current| Arc::ptr_eq(&current, entry))
+                    .is_some_and(|current| Arc::ptr_eq(&current, entry));
         })
         .map(|projection| projection.promise.clone());
     if let Some(Some(cached)) = cached {
