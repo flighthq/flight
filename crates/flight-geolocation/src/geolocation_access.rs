@@ -16,7 +16,8 @@ pub async fn prompt_for_geolocation_access(
             reason: GeolocationAccessReason::RuntimeUnavailable,
         };
     };
-    return match prompt_for_access().await {
+    let prompted = prompt_for_access().await;
+    return match prompted {
         Ok(outcome) => outcome,
         Err(_) => GeolocationAccessOutcome {
             reason: GeolocationAccessReason::OperationFailed,
