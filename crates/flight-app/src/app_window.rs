@@ -90,7 +90,7 @@ mod sugar_tests {
         );
         let direct_count = direct_released.clone();
         replace_window_observer(&direct_win, AppWindowObserverKey::RenderState, || {
-            Arc::new(move || *direct_count.lock().unwrap() += 1)
+            return Arc::new(move || *direct_count.lock().unwrap() += 1);
         });
         let replacement_method_count = method_released.clone();
         AppWindow::attach_render_state_observer(
@@ -99,7 +99,7 @@ mod sugar_tests {
         );
         let replacement_direct_count = direct_released.clone();
         replace_window_observer(&direct_win, AppWindowObserverKey::RenderState, || {
-            Arc::new(move || *replacement_direct_count.lock().unwrap() += 1)
+            return Arc::new(move || *replacement_direct_count.lock().unwrap() += 1);
         });
         AppWindow::detach_render_state_observer(&method_win);
         remove_window_observer(&direct_win, AppWindowObserverKey::RenderState);
@@ -1093,7 +1093,9 @@ pub fn dispose_app_window(win: &Ref<AppWindow>) {
     for release in releases {
         release();
     }
-    win.write().unwrap().observers.clear();
+    let mut guard = win.write().unwrap();
+    let observers: &mut Vec<(AppWindowObserverKey, AppUnsubscribe)> = &mut guard.observers;
+    observers.clear();
 }
 
 /// Releases the host's active pointer lock. The provider that acquired the lock (pinned in `state`)
@@ -1368,10 +1370,9 @@ fn remove_window_observer(win: &Ref<AppWindow>, key: AppWindowObserverKey) {
     if let Some(release) = release {
         release();
     }
-    win.write()
-        .unwrap()
-        .observers
-        .retain(|(entry, _)| *entry != key);
+    let mut guard = win.write().unwrap();
+    let observers: &mut Vec<(AppWindowObserverKey, AppUnsubscribe)> = &mut guard.observers;
+    observers.retain(|(entry, _)| *entry != key);
 }
 
 // The source's `observers.get(key)?.(); observers.set(key, subscribe(...))`: the previous release

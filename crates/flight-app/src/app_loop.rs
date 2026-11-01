@@ -487,7 +487,8 @@ pub fn dispose_app_loop(app: &Ref<AppLoop>) {
         cleanup();
     }
     let mut guard = app.write().unwrap();
-    guard.observers.clear();
+    let observers: &mut Vec<(AppLoopObserverKey, AppUnsubscribe)> = &mut guard.observers;
+    observers.clear();
     guard.is_running = false;
 }
 
@@ -650,10 +651,11 @@ fn remove_app_loop_observer(app: &Ref<AppLoop>, key: &AppLoopObserverKey) {
     if let Some(cleanup) = cleanup {
         cleanup();
     }
-    app.write()
-        .unwrap()
-        .observers
-        .retain(|(entry, _)| !is_same_observer(entry, key));
+    {
+        let mut guard = app.write().unwrap();
+        let observers: &mut Vec<(AppLoopObserverKey, AppUnsubscribe)> = &mut guard.observers;
+        observers.retain(|(entry, _)| !is_same_observer(entry, key));
+    }
 }
 
 // The source's `observers.get(key)?.(); observers.set(key, subscribe())`: the previous cleanup runs
@@ -709,9 +711,8 @@ pub fn resume_app_loop(app: &Ref<AppLoop>) {
     {
         return;
     }
-    guard
-        .observers
-        .retain(|(entry, _)| !matches!(entry, AppLoopObserverKey::Paused));
+    let observers: &mut Vec<(AppLoopObserverKey, AppUnsubscribe)> = &mut guard.observers;
+    observers.retain(|(entry, _)| !matches!(entry, AppLoopObserverKey::Paused));
     if let Some(loop_state) = &guard.loop_state {
         let mut state = loop_state.write().unwrap();
         state.last_time = -1.0;
@@ -818,19 +819,23 @@ pub fn start_app_loop(
     if let Some(previous) = previous {
         previous();
     }
-    app.write()
-        .unwrap()
-        .observers
-        .retain(|(entry, _)| !matches!(entry, AppLoopObserverKey::Paused));
-    let options = options.cloned().unwrap_or_default();
-    let max_delta_time = options.max_delta_time.unwrap_or(DEFAULT_MAX_DELTA_TIME);
-    let target_frame_rate = options.target_frame_rate.unwrap_or(0.0);
+    {
+        let mut guard = app.write().unwrap();
+        let observers: &mut Vec<(AppLoopObserverKey, AppUnsubscribe)> = &mut guard.observers;
+        observers.retain(|(entry, _)| !matches!(entry, AppLoopObserverKey::Paused));
+    }
+    let max_delta_time = options
+        .and_then(|o| o.max_delta_time)
+        .unwrap_or(DEFAULT_MAX_DELTA_TIME);
+    let target_frame_rate = options.and_then(|o| o.target_frame_rate).unwrap_or(0.0);
     let background_frame_rate = options
-        .background_frame_rate
+        .and_then(|o| o.background_frame_rate)
         .unwrap_or(DEFAULT_BACKGROUND_FRAME_RATE);
-    let fixed_time_step = options.fixed_time_step.unwrap_or(DEFAULT_FIXED_TIMESTEP);
+    let fixed_time_step = options
+        .and_then(|o| o.fixed_time_step)
+        .unwrap_or(DEFAULT_FIXED_TIMESTEP);
     let max_updates_per_frame = options
-        .max_updates_per_frame
+        .and_then(|o| o.max_updates_per_frame)
         .unwrap_or(DEFAULT_MAX_UPDATES_PER_FRAME);
     let loop_state = create_loop_state(fixed_time_step, max_delta_time, max_updates_per_frame);
     {
@@ -862,19 +867,20 @@ pub fn start_app_loop(
 /// options are self-contained, so deterministic headless callers need not start a loop.
 // flight-lint: allow(f64) D1: frame deltas are JS-number milliseconds
 pub fn step_app_loop(app: &Ref<AppLoop>, delta_time: f64, options: Option<&AppStepOptions>) {
-    let options = options.cloned().unwrap_or_default();
-    let existing = app.read().unwrap().loop_state.clone();
-    let fixed_time_step = options.fixed_time_step.unwrap_or(DEFAULT_FIXED_TIMESTEP);
+    let existing: Option<Ref<AppLoopState>> = app.read().unwrap().loop_state.clone();
+    let fixed_time_step = options
+        .and_then(|o| o.fixed_time_step)
+        .unwrap_or(DEFAULT_FIXED_TIMESTEP);
     let max_delta_time = options
-        .max_delta_time
+        .and_then(|o| o.max_delta_time)
         .or_else(|| {
-            existing
+            return existing
                 .as_ref()
-                .map(|state| state.read().unwrap().max_delta_time)
+                .map(|state| state.read().unwrap().max_delta_time);
         })
         .unwrap_or(DEFAULT_MAX_DELTA_TIME);
     let max_updates_per_frame = options
-        .max_updates_per_frame
+        .and_then(|o| o.max_updates_per_frame)
         .unwrap_or(DEFAULT_MAX_UPDATES_PER_FRAME);
     let loop_state = if fixed_time_step > 0.0 {
         Some(match existing {
@@ -894,7 +900,7 @@ pub fn step_app_loop(app: &Ref<AppLoop>, delta_time: f64, options: Option<&AppSt
             let mut guard = state.write().unwrap();
             guard.fixed_time_step = fixed_time_step;
             guard.max_updates_per_frame = max_updates_per_frame;
-            if options.max_delta_time.is_some() {
+            if options.and_then(|o| o.max_delta_time).is_some() {
                 guard.max_delta_time = max_delta_time;
             }
         }
@@ -918,9 +924,8 @@ pub fn step_app_loop(app: &Ref<AppLoop>, delta_time: f64, options: Option<&AppSt
 pub fn stop_app_loop(app: &Ref<AppLoop>) {
     remove_app_loop_observer(app, &AppLoopObserverKey::Loop);
     let mut guard = app.write().unwrap();
-    guard
-        .observers
-        .retain(|(entry, _)| !matches!(entry, AppLoopObserverKey::Paused));
+    let observers: &mut Vec<(AppLoopObserverKey, AppUnsubscribe)> = &mut guard.observers;
+    observers.retain(|(entry, _)| !matches!(entry, AppLoopObserverKey::Paused));
     guard.loop_state = None;
     guard.is_running = false;
 }

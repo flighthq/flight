@@ -591,7 +591,7 @@ pub fn attach_app_events(
 pub fn attach_app_open_file(host_app_open_file: &HostAppOpenFileCapability, app: &mut AppEvents) {
     let signal = app.on_open_file.clone();
     let unsubscribe = (host_app_open_file.subscribe)(Arc::new(move |path: &str| {
-        emit_signal(&signal, &path.to_string())
+        return emit_signal(&signal, &path.to_string());
     }));
     replace_app_subscription(app, AppSubscriptionKey::OpenFile, unsubscribe);
 }
