@@ -82,13 +82,13 @@ pub fn displace_bitmap(
             }
 
             let idx = |rx: Option<i32>, ry: Option<i32>| -> Option<usize> {
-                match (rx, ry) {
+                return match (rx, ry) {
                     (Some(rx), Some(ry)) => Some(
                         ((source.y + ry) as usize * s_stride as usize + (source.x + rx) as usize)
                             * 4,
                     ),
                     _ => None,
-                }
+                };
             };
             let i00 = idx(rx0, ry0);
             let i10 = idx(rx1, ry0);
