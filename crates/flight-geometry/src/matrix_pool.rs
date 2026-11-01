@@ -15,9 +15,10 @@ pub fn acquire_identity_matrix() -> Matrix {
 /// Acquires without initializing the components. Use `acquire_identity_matrix` when a known value is required.
 pub fn acquire_matrix() -> Matrix {
     return MATRIX_POOL.with(|pool| {
-        pool.borrow_mut()
+        return pool
+            .borrow_mut()
             .pop()
-            .unwrap_or_else(|| create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0))
+            .unwrap_or_else(|| create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0));
     });
 }
 

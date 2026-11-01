@@ -18,9 +18,10 @@ pub fn acquire_identity_quaternion() -> Quaternion {
 /// Acquires without initializing the components. Use `acquire_identity_quaternion` when a known value is required.
 pub fn acquire_quaternion() -> Quaternion {
     return QUATERNION_POOL.with(|pool| {
-        pool.borrow_mut()
+        return pool
+            .borrow_mut()
             .pop()
-            .unwrap_or_else(|| create_quaternion(0.0, 0.0, 0.0, 1.0))
+            .unwrap_or_else(|| create_quaternion(0.0, 0.0, 0.0, 1.0));
     });
 }
 

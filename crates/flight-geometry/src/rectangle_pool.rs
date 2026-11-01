@@ -18,9 +18,10 @@ pub fn acquire_empty_rectangle() -> Rectangle {
 /// Acquires without initializing the fields. Use `acquire_empty_rectangle` when an empty value is required.
 pub fn acquire_rectangle() -> Rectangle {
     return RECTANGLE_POOL.with(|pool| {
-        pool.borrow_mut()
+        return pool
+            .borrow_mut()
             .pop()
-            .unwrap_or_else(|| create_rectangle(0.0, 0.0, 0.0, 0.0))
+            .unwrap_or_else(|| create_rectangle(0.0, 0.0, 0.0, 0.0));
     });
 }
 

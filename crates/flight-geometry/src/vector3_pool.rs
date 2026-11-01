@@ -17,9 +17,10 @@ pub fn acquire_empty_vector3() -> Vector3 {
 /// Acquires without initializing the components. Use `acquire_empty_vector3` when a zero value is required.
 pub fn acquire_vector3() -> Vector3 {
     return VECTOR3_POOL.with(|pool| {
-        pool.borrow_mut()
+        return pool
+            .borrow_mut()
             .pop()
-            .unwrap_or_else(|| create_vector3(0.0, 0.0, 0.0))
+            .unwrap_or_else(|| create_vector3(0.0, 0.0, 0.0));
     });
 }
 
