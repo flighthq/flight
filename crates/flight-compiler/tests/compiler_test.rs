@@ -20758,3 +20758,41 @@ pub fn swap(input: &[f64]) -> (f64, f64) {
         "should not emit destructuring without initializer: {result}"
     );
 }
+
+#[test]
+fn emits_let_for_mutable_loop_variable() {
+    let source = r#"
+pub fn scale(values: &mut [f64], factor: f64) {
+    for mut value in values.iter_mut() {
+        value *= factor;
+    }
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("for (let value of"),
+        "mutable loop var should use let: {result}"
+    );
+    assert!(
+        !result.contains("for (const value of"),
+        "mutable loop var should not use const: {result}"
+    );
+}
+
+#[test]
+fn emits_const_for_immutable_loop_variable() {
+    let source = r#"
+pub fn sum(items: &[u32]) -> u32 {
+    let mut total = 0u32;
+    for item in items {
+        total += item;
+    }
+    return total;
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("for (const item of"),
+        "immutable loop var should use const: {result}"
+    );
+}

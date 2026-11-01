@@ -10596,6 +10596,7 @@ pub(crate) fn emit_for_header(
     expression: &Expr,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    let mutable = pattern_is_mutable(pattern);
     let pattern = emit_pattern(pattern)?;
     let (range_expr, step_override) = if let Expr::MethodCall(call) = expression {
         if call.method == "step_by" && call.args.len() == 1 {
@@ -10643,7 +10644,8 @@ pub(crate) fn emit_for_header(
         // facts for the loop binding with a const assertion.
         iterable = format!("{iterable} as const");
     }
-    return Ok(format!("const {pattern} of {iterable}"));
+    let keyword = if mutable { "let" } else { "const" };
+    return Ok(format!("{keyword} {pattern} of {iterable}"));
 }
 
 fn emit_function(
