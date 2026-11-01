@@ -504,7 +504,7 @@ pub fn create_polyhedron_mesh_geometry(
         .iter()
         .map(|v| {
             let len = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
-            [v[0] / len, v[1] / len, v[2] / len]
+            return [v[0] / len, v[1] / len, v[2] / len];
         })
         .collect();
     let mut faces: Vec<[u32; 3]> = face_indices.to_vec();
@@ -702,7 +702,7 @@ pub fn create_torus_knot_mesh_geometry(
         let x = (radius + tube) * (p * angle).cos() * (q * angle).cos();
         let y = (radius + tube) * (p * angle).cos() * (q * angle).sin();
         let z = (radius + tube) * (p * angle).sin();
-        [x, y, z]
+        return [x, y, z];
     };
 
     for i in 0..=t_seg {
