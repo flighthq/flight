@@ -759,7 +759,11 @@ pub(crate) fn begin_option_while(
         }
         return;
     }
-    let temp = if is_destructure { "$opt" } else { &format!("${name}") };
+    let temp = if is_destructure {
+        "$opt"
+    } else {
+        &format!("${name}")
+    };
     out.push_str("for (;;) {\n");
     write_indent(out, indent + 1);
     writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
@@ -1864,9 +1868,25 @@ pub(crate) fn insert_std_float_consts_context<'a>(
 }
 
 const FLOAT_CONST_NAMES: &[&str] = &[
-    "E", "FRAC_1_PI", "FRAC_1_SQRT_2", "FRAC_2_PI", "FRAC_2_SQRT_PI", "FRAC_PI_2", "FRAC_PI_3",
-    "FRAC_PI_4", "FRAC_PI_6", "FRAC_PI_8", "LN_2", "LN_10", "LOG2_E", "LOG2_10", "LOG10_E",
-    "LOG10_2", "PI", "SQRT_2", "TAU",
+    "E",
+    "FRAC_1_PI",
+    "FRAC_1_SQRT_2",
+    "FRAC_2_PI",
+    "FRAC_2_SQRT_PI",
+    "FRAC_PI_2",
+    "FRAC_PI_3",
+    "FRAC_PI_4",
+    "FRAC_PI_6",
+    "FRAC_PI_8",
+    "LN_2",
+    "LN_10",
+    "LOG2_E",
+    "LOG2_10",
+    "LOG10_E",
+    "LOG10_2",
+    "PI",
+    "SQRT_2",
+    "TAU",
 ];
 
 // Records what each `use` item brings into the type namespace (a named or renamed path, `self` of a
@@ -2286,13 +2306,18 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
         },
         Expr::Group(group) => expression_is_known_string(&group.expr, entities),
         Expr::If(if_expr) => {
-            let then_is_string = if_expr.then_branch.stmts.last().is_some_and(|stmt| match stmt {
-                syn::Stmt::Expr(expr, None) => expression_is_known_string(expr, entities),
-                _ => false,
-            });
-            let else_is_string = if_expr.else_branch.as_ref().is_some_and(|(_, expr)| {
-                expression_is_known_string(expr, entities)
-            });
+            let then_is_string = if_expr
+                .then_branch
+                .stmts
+                .last()
+                .is_some_and(|stmt| match stmt {
+                    syn::Stmt::Expr(expr, None) => expression_is_known_string(expr, entities),
+                    _ => false,
+                });
+            let else_is_string = if_expr
+                .else_branch
+                .as_ref()
+                .is_some_and(|(_, expr)| expression_is_known_string(expr, entities));
             then_is_string || else_is_string
         }
         Expr::Index(index) => expression_is_known_string(&index.expr, entities),
@@ -2341,14 +2366,12 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
                 ))
             })
         }
-        Expr::Match(match_expr) => match_expr.arms.iter().any(|arm| {
-            match arm.body.as_ref() {
-                Expr::Block(block) => block.block.stmts.last().is_some_and(|stmt| match stmt {
-                    syn::Stmt::Expr(expr, None) => expression_is_known_string(expr, entities),
-                    _ => false,
-                }),
-                expr => expression_is_known_string(expr, entities),
-            }
+        Expr::Match(match_expr) => match_expr.arms.iter().any(|arm| match arm.body.as_ref() {
+            Expr::Block(block) => block.block.stmts.last().is_some_and(|stmt| match stmt {
+                syn::Stmt::Expr(expr, None) => expression_is_known_string(expr, entities),
+                _ => false,
+            }),
+            expr => expression_is_known_string(expr, entities),
         }),
         Expr::Paren(paren) => expression_is_known_string(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
@@ -2392,9 +2415,7 @@ fn expression_is_option_of_json_value(expression: &Expr, entities: &HashSet<Stri
                 if matches!(closure.body.as_ref(), Expr::MethodCall(inner)
                     if inner.method == "get" && inner.args.len() == 1))
         }
-        Expr::Reference(reference) => {
-            expression_is_option_of_json_value(&reference.expr, entities)
-        }
+        Expr::Reference(reference) => expression_is_option_of_json_value(&reference.expr, entities),
         Expr::Paren(paren) => expression_is_option_of_json_value(&paren.expr, entities),
         Expr::Group(group) => expression_is_option_of_json_value(&group.expr, entities),
         _ => false,
@@ -2439,12 +2460,9 @@ fn emit_diverging_statement(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     return match expression {
-        Expr::Call(call) if expression_is_associated_path(&call.func, "panic", "panic_any") => {
-            Ok(format!(
-                "throw {};",
-                emit_expression(&call.args[0], entities)?
-            ))
-        }
+        Expr::Call(call) if expression_is_associated_path(&call.func, "panic", "panic_any") => Ok(
+            format!("throw {};", emit_expression(&call.args[0], entities)?),
+        ),
         Expr::Call(call) if expression_path_ends_with(&call.func, "throw_error") => Ok(format!(
             "throw new Error({});",
             emit_expression(&call.args[0], entities)?
@@ -2482,9 +2500,7 @@ fn expression_is_diverging(expression: &Expr) -> bool {
 
 fn macro_is_diverging(mac: &syn::Macro) -> bool {
     return mac.path.segments.last().is_some_and(|segment| {
-        segment.ident == "panic"
-            || segment.ident == "unreachable"
-            || segment.ident == "todo"
+        segment.ident == "panic" || segment.ident == "unreachable" || segment.ident == "todo"
     });
 }
 
@@ -2494,15 +2510,17 @@ fn statement_macro_is_diverging(statement: &syn::StmtMacro) -> bool {
 
 fn for_loop_iterates_strings(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
-        Expr::MethodCall(call) => matches!(
-            call.method.to_string().as_str(),
-            "lines"
-                | "split"
-                | "split_ascii_whitespace"
-                | "split_terminator"
-                | "split_whitespace"
-                | "splitn"
-        ) && expression_is_known_string(&call.receiver, entities),
+        Expr::MethodCall(call) => {
+            matches!(
+                call.method.to_string().as_str(),
+                "lines"
+                    | "split"
+                    | "split_ascii_whitespace"
+                    | "split_terminator"
+                    | "split_whitespace"
+                    | "splitn"
+            ) && expression_is_known_string(&call.receiver, entities)
+        }
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             matches!(
                 lexical_fact(entities, &path.path.segments[0].ident.to_string()),
@@ -2520,24 +2538,27 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
         Expr::Group(group) => return expression_numeric_type(&group.expr, entities),
         Expr::Paren(paren) => return expression_numeric_type(&paren.expr, entities),
         Expr::Reference(reference) => return expression_numeric_type(&reference.expr, entities),
-        Expr::Cast(cast) => return named_type(&cast.ty).filter(|name| {
-            matches!(
-                name.as_str(),
-                "f32" | "f64"
-                    | "i8"
-                    | "i16"
-                    | "i32"
-                    | "i64"
-                    | "i128"
-                    | "isize"
-                    | "u8"
-                    | "u16"
-                    | "u32"
-                    | "u64"
-                    | "u128"
-                    | "usize"
-            )
-        }),
+        Expr::Cast(cast) => {
+            return named_type(&cast.ty).filter(|name| {
+                matches!(
+                    name.as_str(),
+                    "f32"
+                        | "f64"
+                        | "i8"
+                        | "i16"
+                        | "i32"
+                        | "i64"
+                        | "i128"
+                        | "isize"
+                        | "u8"
+                        | "u16"
+                        | "u32"
+                        | "u64"
+                        | "u128"
+                        | "usize"
+                )
+            });
+        }
         Expr::Binary(binary) => {
             let left = expression_numeric_type(&binary.left, entities);
             let right = expression_numeric_type(&binary.right, entities);
@@ -2559,9 +2580,8 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                         let binding = binding_fact_from_marker(&fact);
                         if let BindingFact::Structure(identity) = binding {
                             return match identity.as_str() {
-                                "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128"
-                                | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
-                                | "usize" => Some(identity),
+                                "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize"
+                                | "u8" | "u16" | "u32" | "u64" | "u128" | "usize" => Some(identity),
                                 _ => None,
                             };
                         }
@@ -2577,10 +2597,14 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             });
         }
         Expr::If(if_expr) => {
-            let then_type = if_expr.then_branch.stmts.last().and_then(|stmt| match stmt {
-                syn::Stmt::Expr(expr, None) => expression_numeric_type(expr, entities),
-                _ => None,
-            });
+            let then_type = if_expr
+                .then_branch
+                .stmts
+                .last()
+                .and_then(|stmt| match stmt {
+                    syn::Stmt::Expr(expr, None) => expression_numeric_type(expr, entities),
+                    _ => None,
+                });
             let else_type = if_expr
                 .else_branch
                 .as_ref()
@@ -2610,41 +2634,43 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             }
             return result;
         }
-        Expr::MethodCall(call) if call.args.is_empty()
-            && matches!(call.method.to_string().as_str(), "len" | "count") =>
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(call.method.to_string().as_str(), "len" | "count") =>
         {
             return Some("usize".to_string());
         }
-        Expr::MethodCall(call) if call.method == "abs"
-            || call.method == "min"
-            || call.method == "max"
-            || call.method == "pow"
-            || call.method == "rem_euclid"
-            || call.method == "signum"
-            || call.method == "wrapping_add"
-            || call.method == "wrapping_sub"
-            || call.method == "wrapping_mul"
-            || call.method == "wrapping_neg"
-            || call.method == "wrapping_abs"
-            || call.method == "saturating_add"
-            || call.method == "saturating_sub"
-            || call.method == "saturating_mul"
-            || call.method == "saturating_neg"
-            || call.method == "saturating_abs"
-            || call.method == "checked_add"
-            || call.method == "checked_neg"
-            || call.method == "checked_sub"
-            || call.method == "checked_mul"
-            || call.method == "checked_div"
-            || call.method == "checked_rem"
-            || call.method == "unsigned_abs"
-            || call.method == "clamp"
-            || call.method == "div_euclid"
-            || call.method == "unwrap"
-            || call.method == "expect"
-            || call.method == "unwrap_or"
-            || call.method == "unwrap_or_default"
-            || call.method == "unwrap_or_else" =>
+        Expr::MethodCall(call)
+            if call.method == "abs"
+                || call.method == "min"
+                || call.method == "max"
+                || call.method == "pow"
+                || call.method == "rem_euclid"
+                || call.method == "signum"
+                || call.method == "wrapping_add"
+                || call.method == "wrapping_sub"
+                || call.method == "wrapping_mul"
+                || call.method == "wrapping_neg"
+                || call.method == "wrapping_abs"
+                || call.method == "saturating_add"
+                || call.method == "saturating_sub"
+                || call.method == "saturating_mul"
+                || call.method == "saturating_neg"
+                || call.method == "saturating_abs"
+                || call.method == "checked_add"
+                || call.method == "checked_neg"
+                || call.method == "checked_sub"
+                || call.method == "checked_mul"
+                || call.method == "checked_div"
+                || call.method == "checked_rem"
+                || call.method == "unsigned_abs"
+                || call.method == "clamp"
+                || call.method == "div_euclid"
+                || call.method == "unwrap"
+                || call.method == "expect"
+                || call.method == "unwrap_or"
+                || call.method == "unwrap_or_default"
+                || call.method == "unwrap_or_else" =>
         {
             return expression_numeric_type(&call.receiver, entities);
         }
@@ -2657,8 +2683,9 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                             if let BindingFact::Structure(identity) = element.as_ref() {
                                 return match identity.as_str() {
                                     "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128"
-                                    | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
-                                    | "usize" => Some(identity.clone()),
+                                    | "isize" | "u8" | "u16" | "u32" | "u64" | "u128" | "usize" => {
+                                        Some(identity.clone())
+                                    }
                                     _ => None,
                                 };
                             }
@@ -2678,16 +2705,14 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                 if let Expr::Path(path) = field.base.as_ref() {
                     if path.qself.is_none() && path.path.segments.len() == 1 {
                         let name = path.path.segments[0].ident.to_string();
-                        if let Some(BindingFact::Tuple(elements)) =
-                            lexical_fact(entities, &name)
-                        {
+                        if let Some(BindingFact::Tuple(elements)) = lexical_fact(entities, &name) {
                             let i = index.index as usize;
                             if i < elements.len() {
                                 if let BindingFact::Structure(identity) = &elements[i] {
                                     return match identity.as_str() {
-                                        "f32" | "f64" | "i8" | "i16" | "i32" | "i64"
-                                        | "i128" | "isize" | "u8" | "u16" | "u32" | "u64"
-                                        | "u128" | "usize" => Some(identity.clone()),
+                                        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128"
+                                        | "isize" | "u8" | "u16" | "u32" | "u64" | "u128"
+                                        | "usize" => Some(identity.clone()),
                                         _ => None,
                                     };
                                 }
@@ -2732,8 +2757,8 @@ fn literal_numeric_suffix(literal: &syn::ExprLit) -> Option<String> {
         _ => return None,
     };
     return match suffix {
-        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16"
-        | "u32" | "u64" | "u128" | "usize" => Some(suffix.to_string()),
+        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32"
+        | "u64" | "u128" | "usize" => Some(suffix.to_string()),
         _ => None,
     };
 }
@@ -3422,7 +3447,11 @@ fn rust_type_is_json_value(rust_type: &Type, context: &HashSet<String>) -> bool 
         return false;
     };
     return matches!(
-        resolved.iter().map(String::as_str).collect::<Vec<_>>().as_slice(),
+        resolved
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .as_slice(),
         ["serde_json", "Value"] | ["serde_json", "value", "Value"]
     );
 }
@@ -3947,8 +3976,6 @@ pub(crate) fn validate_dependency_export_name_bindings(
     }
     return Ok(());
 }
-
-
 
 pub(super) fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     if let Some(inner) = option_inner_type(rust_type) {
@@ -4968,14 +4995,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     }
                 }
                 Pat::TupleStruct(tuple)
-                    if tuple
-                        .path
-                        .segments
-                        .last()
-                        .is_some_and(|segment| {
-                            segment.ident == "Some" || segment.ident == "Ok"
-                        })
-                        && tuple.elems.len() == 1 =>
+                    if tuple.path.segments.last().is_some_and(|segment| {
+                        segment.ident == "Some" || segment.ident == "Ok"
+                    }) && tuple.elems.len() == 1 =>
                 {
                     let BindingFact::Option(payload) = fact else {
                         self.bind_unresolved_pattern(pattern);
@@ -5795,9 +5817,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         return None;
                     };
                     let payload = call_fact(self.context, OPTION_RETURN_MARKER, &path.path)?;
-                    Some(BindingFact::Option(Box::new(
-                        binding_fact_from_marker(&payload),
-                    )))
+                    Some(BindingFact::Option(Box::new(binding_fact_from_marker(
+                        &payload,
+                    ))))
                 }
                 Expr::Field(field) => {
                     let syn::Member::Named(field_name) = &field.member else {
@@ -5813,9 +5835,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                             "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
                         ),
                     )?;
-                    Some(BindingFact::Option(Box::new(
-                        binding_fact_from_marker(&payload),
-                    )))
+                    Some(BindingFact::Option(Box::new(binding_fact_from_marker(
+                        &payload,
+                    ))))
                 }
                 Expr::Group(group) => self.option_fact(&group.expr),
                 Expr::MethodCall(call)
@@ -5988,7 +6010,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             let method = call.method.to_string();
             let is_iterator_adapter = matches!(
                 method.as_str(),
-                "map" | "flat_map"
+                "map"
+                    | "flat_map"
                     | "filter"
                     | "filter_map"
                     | "for_each"
@@ -7109,10 +7132,7 @@ fn generation_context_with_types(
         insert_typed_array_constant_context(&mut context, &program.constants);
         for constant in &program.constants {
             if rust_type_is_string(&constant.ty) {
-                context.insert(format!(
-                    "{STRING_EXPRESSION_MARKER}{}",
-                    constant.ident
-                ));
+                context.insert(format!("{STRING_EXPRESSION_MARKER}{}", constant.ident));
             }
         }
         if program.nullable_options {
@@ -7470,8 +7490,7 @@ fn generation_context_with_types(
                         "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
                     if let Some(inner) = sequence_inner_type(&field.ty) {
-                        let element_fact =
-                            binding_fact_for_type(&context, Some(module), inner);
+                        let element_fact = binding_fact_for_type(&context, Some(module), inner);
                         if element_fact.has_source_structure()
                             || matches!(element_fact, BindingFact::TypedArray(_))
                         {
@@ -7622,10 +7641,25 @@ fn generation_context_with_types(
                         structure.ident
                     ));
                 }
-                if let Some(numeric) = named_type(&field.ty).filter(|n| matches!(n.as_str(),
-                    "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize"
-                    | "u8" | "u16" | "u32" | "u64" | "u128" | "usize"))
-                {
+                if let Some(numeric) = named_type(&field.ty).filter(|n| {
+                    matches!(
+                        n.as_str(),
+                        "f32"
+                            | "f64"
+                            | "i8"
+                            | "i16"
+                            | "i32"
+                            | "i64"
+                            | "i128"
+                            | "isize"
+                            | "u8"
+                            | "u16"
+                            | "u32"
+                            | "u64"
+                            | "u128"
+                            | "usize"
+                    )
+                }) {
                     context.insert(format!(
                         "{NUMERIC_FIELD_TYPE_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{numeric}",
                         structure.ident
@@ -7957,8 +7991,7 @@ pub(crate) fn function_expression_context(
                 && expression_is_json_value(&initializer.expr, self.context)
                 && let Some(name) = local_pattern_name(&local.pat)
             {
-                self.context
-                    .insert(format!("{JSON_VALUE_MARKER}{name}"));
+                self.context.insert(format!("{JSON_VALUE_MARKER}{name}"));
             }
             if let Some(initializer) = &local.init
                 && expression_is_option_of_json_value(&initializer.expr, self.context)
@@ -7971,8 +8004,7 @@ pub(crate) fn function_expression_context(
                 && call_turbofish_is_json_value(&initializer.expr, self.context)
                 && let Some(name) = local_pattern_name(&local.pat)
             {
-                self.context
-                    .insert(format!("{JSON_VALUE_MARKER}{name}"));
+                self.context.insert(format!("{JSON_VALUE_MARKER}{name}"));
             }
             if let Some(initializer) = &local.init
                 && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
@@ -8298,9 +8330,7 @@ pub(super) fn binding_fact_for_type(
     if let Type::Path(path) = rust_type
         && path.qself.is_none()
     {
-        let source = from
-            .map(String::from)
-            .or_else(|| current_source(entities));
+        let source = from.map(String::from).or_else(|| current_source(entities));
         if let Some(source) = &source {
             if let Some((owner, alias)) =
                 resolve_path_owner(entities, TYPE_ALIAS_OWNER_MARKER, source, &path.path)
@@ -9203,9 +9233,10 @@ fn emit_expression_value(
             Ok(format!("[{}]", elements.join(", ")))
         }
         Expr::Async(async_block) => emit_async_block_expression(&async_block.block, entities),
-        Expr::Await(await_expr) => {
-            Ok(format!("await {}", emit_expression(&await_expr.base, entities)?))
-        }
+        Expr::Await(await_expr) => Ok(format!(
+            "await {}",
+            emit_expression(&await_expr.base, entities)?
+        )),
         Expr::Assign(assign) => {
             if let Expr::Field(field) = assign.left.as_ref()
                 && let Some(store) = entity_runtime_state_access(field, entities)?
@@ -9421,8 +9452,7 @@ fn emit_expression_value(
                 }
                 return emit_expression(&call.args[0], entities);
             }
-            if (expression_is_path(&call.func, "Some")
-                || expression_is_path(&call.func, "Ok"))
+            if (expression_is_path(&call.func, "Some") || expression_is_path(&call.func, "Ok"))
                 && call.args.len() == 1
             {
                 return emit_expression(&call.args[0], entities);
@@ -9484,17 +9514,13 @@ fn emit_expression_value(
                 && call.args.len() == 1
             {
                 let bytes = emit_expression(&call.args[0], entities)?;
-                return Ok(format!(
-                    "new TextDecoder().decode(new Uint8Array({bytes}))"
-                ));
+                return Ok(format!("new TextDecoder().decode(new Uint8Array({bytes}))"));
             }
             if expression_is_associated_path(&call.func, "String", "from_utf8_lossy")
                 && call.args.len() == 1
             {
                 let bytes = emit_expression(&call.args[0], entities)?;
-                return Ok(format!(
-                    "new TextDecoder().decode(new Uint8Array({bytes}))"
-                ));
+                return Ok(format!("new TextDecoder().decode(new Uint8Array({bytes}))"));
             }
             if expression_is_associated_path(&call.func, "Vec", "new") && call.args.is_empty() {
                 return Ok("[] as never[]".to_string());
@@ -9690,10 +9716,12 @@ fn emit_expression_value(
             "({}) & 0xffff",
             emit_expression(&cast.expr, entities)?
         )),
-        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") || type_is_named(&cast.ty, "usize") => Ok(format!(
-            "({}) >>> 0",
-            emit_expression(&cast.expr, entities)?
-        )),
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") || type_is_named(&cast.ty, "usize") => {
+            Ok(format!(
+                "({}) >>> 0",
+                emit_expression(&cast.expr, entities)?
+            ))
+        }
         Expr::Cast(cast) if type_is_named(&cast.ty, "i8") => Ok(format!(
             "(({}) << 24) >> 24",
             emit_expression(&cast.expr, entities)?
@@ -10105,8 +10133,12 @@ fn emit_block_expression(
             let mut out = "(() => {\n".to_string();
             let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
             write_indent(&mut out, 1);
-            writeln!(out, "{}", emit_diverging_statement(&macro_expr, &block_context)?)
-                .expect("writing to a String cannot fail");
+            writeln!(
+                out,
+                "{}",
+                emit_diverging_statement(&macro_expr, &block_context)?
+            )
+            .expect("writing to a String cannot fail");
             out.push_str("})()");
             return Ok(out);
         }
@@ -10715,12 +10747,7 @@ fn emit_local_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
-    emit_function_block(
-        out,
-        &function.block.stmts,
-        &function_context,
-        indent + 1,
-    )?;
+    emit_function_block(out, &function.block.stmts, &function_context, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
     return Ok(());
@@ -10844,8 +10871,10 @@ fn emit_if_let_value_expression(
     if option_binding.is_none() && tuple_binding.is_none() {
         if let Expr::Let(binding) = expression.cond.as_ref() {
             if let Some(test) = data_union_pattern_test(&binding.pat, "$ifLet", entities)? {
-                return emit_if_let_data_union_value_expression(expression, binding, &test, entities)
-                    .map(Some);
+                return emit_if_let_data_union_value_expression(
+                    expression, binding, &test, entities,
+                )
+                .map(Some);
             }
         }
         return Ok(None);
@@ -10862,7 +10891,8 @@ fn emit_if_let_value_expression(
     };
     let mut out = "(() => {\n".to_string();
     if let Some((name, scrutinee, absent)) = &option_binding {
-        writeln!(out, "  if ({scrutinee} !== {absent}) {{").expect("writing to a String cannot fail");
+        writeln!(out, "  if ({scrutinee} !== {absent}) {{")
+            .expect("writing to a String cannot fail");
         writeln!(out, "    const {name} = {scrutinee};").expect("writing to a String cannot fail");
     } else if let Some((condition, bindings)) = &tuple_binding {
         writeln!(out, "  if ({condition}) {{").expect("writing to a String cannot fail");
@@ -11080,13 +11110,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         && let Expr::Match(match_expr) = initializer.expr.as_ref()
     {
         if let Some(result) = emit_option_match_with_return_local(
-            out,
-            local,
-            match_expr,
-            entities,
-            indent,
-            shadowed,
-            rebound,
+            out, local, match_expr, entities, indent, shadowed, rebound,
         )? {
             return Ok(result);
         }
@@ -11109,19 +11133,37 @@ pub(crate) fn emit_local_with_shadow_and_else(
         && let Expr::Block(block) = initializer.expr.as_ref()
         && block_contains_function_exits(&block.block)
     {
-        return emit_hoisted_value_block_local(out, local, &block.block, entities, indent, shadowed, rebound);
+        return emit_hoisted_value_block_local(
+            out,
+            local,
+            &block.block,
+            entities,
+            indent,
+            shadowed,
+            rebound,
+        );
     }
     if let Some(initializer) = &local.init
         && let Expr::Unsafe(unsafe_block) = initializer.expr.as_ref()
         && block_contains_function_exits(&unsafe_block.block)
     {
-        return emit_hoisted_value_block_local(out, local, &unsafe_block.block, entities, indent, shadowed, rebound);
+        return emit_hoisted_value_block_local(
+            out,
+            local,
+            &unsafe_block.block,
+            entities,
+            indent,
+            shadowed,
+            rebound,
+        );
     }
     if let Some(initializer) = &local.init
         && let Expr::If(if_expr) = initializer.expr.as_ref()
         && if_expression_contains_function_exits(if_expr)
     {
-        return emit_hoisted_if_value_local(out, local, if_expr, entities, indent, shadowed, rebound);
+        return emit_hoisted_if_value_local(
+            out, local, if_expr, entities, indent, shadowed, rebound,
+        );
     }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
@@ -11302,7 +11344,12 @@ pub(crate) fn emit_local_with_shadow_and_else(
             },
             _ => false,
         };
-    if rebind && !discard && (value == pattern || value == format!("{pattern}!") || value == format!("{pattern}.value")) {
+    if rebind
+        && !discard
+        && (value == pattern
+            || value == format!("{pattern}!")
+            || value == format!("{pattern}.value"))
+    {
         return Ok(());
     }
     write_indent(out, indent);
@@ -11545,7 +11592,13 @@ fn emit_return_match_with_exits(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    return emit_match_statement_with_action(out, expression, entities, indent, &HoistedMatchAction::Return);
+    return emit_match_statement_with_action(
+        out,
+        expression,
+        entities,
+        indent,
+        &HoistedMatchAction::Return,
+    );
 }
 
 fn emit_match_statement_with_target(
@@ -11555,7 +11608,13 @@ fn emit_match_statement_with_target(
     indent: usize,
     target: &str,
 ) -> Result<(), CompileError> {
-    return emit_match_statement_with_action(out, expression, entities, indent, &HoistedMatchAction::Assign(target));
+    return emit_match_statement_with_action(
+        out,
+        expression,
+        entities,
+        indent,
+        &HoistedMatchAction::Assign(target),
+    );
 }
 
 fn emit_match_statement_with_action(
@@ -11862,8 +11921,7 @@ fn emit_match_statement_with_action(
                 for alt in &info.alternatives {
                     let mut conditions = Vec::new();
                     for (i, element) in alt.elements.iter().enumerate() {
-                        if let Some(cond) =
-                            emit_general_tuple_element_condition(element, &temps[i])
+                        if let Some(cond) = emit_general_tuple_element_condition(element, &temps[i])
                         {
                             conditions.push(cond);
                         }
@@ -11897,12 +11955,8 @@ fn emit_match_statement_with_action(
                     }
                     for (binding_name, source_field) in &element.field_bindings {
                         write_indent(out, indent + 2);
-                        writeln!(
-                            out,
-                            "const {binding_name} = {}.{source_field};",
-                            temps[i]
-                        )
-                        .expect("writing to a String cannot fail");
+                        writeln!(out, "const {binding_name} = {}.{source_field};", temps[i])
+                            .expect("writing to a String cannot fail");
                     }
                 }
             }
@@ -12091,7 +12145,8 @@ fn emit_hoisted_value_block_local(
         emit_expression(value, &block_context)?
     };
     write_indent(out, indent);
-    writeln!(out, "{declaration} {pattern} = {value_str};").expect("writing to a String cannot fail");
+    writeln!(out, "{declaration} {pattern} = {value_str};")
+        .expect("writing to a String cannot fail");
     return Ok(());
 }
 
@@ -12260,7 +12315,8 @@ fn emit_let_else_local(
             if let Some(test) = data_union_pattern_test(&pattern.elems[0], temp, entities)? {
                 if let Some(predicate) = &test.predicate {
                     write_indent(out, indent);
-                    writeln!(out, "if (!({predicate})) {{").expect("writing to a String cannot fail");
+                    writeln!(out, "if (!({predicate})) {{")
+                        .expect("writing to a String cannot fail");
                     emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
                     write_indent(out, indent);
                     out.push_str("}\n");
@@ -12564,12 +12620,13 @@ fn emit_macro_expression(
         return emit_concat_macro(rust_macro, entities);
     }
     if name.ident == "todo" {
-        return Ok(
-            "(() => { throw new Error(\"not implemented\"); })()".to_string(),
-        );
+        return Ok("(() => { throw new Error(\"not implemented\"); })()".to_string());
     }
     if name.ident == "json" {
-        return emit_json_macro_value(&mut rust_macro.tokens.clone().into_iter().peekable(), entities);
+        return emit_json_macro_value(
+            &mut rust_macro.tokens.clone().into_iter().peekable(),
+            entities,
+        );
     }
     if name.ident == "assert" || name.ident == "debug_assert" {
         let mut body = String::new();
@@ -12710,8 +12767,9 @@ fn emit_json_macro_value(
                     }
                 }
             }
-            let expression: Expr = syn::parse2(expr_tokens)
-                .map_err(|error| compile_error(format!("failed to parse `json!` value: {error}")))?;
+            let expression: Expr = syn::parse2(expr_tokens).map_err(|error| {
+                compile_error(format!("failed to parse `json!` value: {error}"))
+            })?;
             emit_expression(&expression, entities)
         }
     }
@@ -12744,7 +12802,9 @@ fn emit_matches_macro(
         return Ok(format!("((value) => {full_predicate})({text})"));
     }
     if guard.is_some() {
-        return Err(compile_error("portable `matches!` guard requires a data union variant pattern"));
+        return Err(compile_error(
+            "portable `matches!` guard requires a data union variant pattern",
+        ));
     }
     if let Some(predicate) = emit_matches_literal_predicate(&pattern, subject, entities)? {
         if reusable {
@@ -12855,8 +12915,7 @@ fn emit_matches_literal_predicate(
             if let Pat::Wild(_) = &tuple.elems[0] {
                 return Ok(Some(format!("{subject} !== {absent}")));
             }
-            if let Some(inner) =
-                emit_matches_literal_predicate(&tuple.elems[0], subject, entities)?
+            if let Some(inner) = emit_matches_literal_predicate(&tuple.elems[0], subject, entities)?
             {
                 return Ok(Some(format!("{subject} !== {absent} && ({inner})")));
             }
@@ -12910,9 +12969,7 @@ fn emit_panic_message(
 ) -> Result<String, CompileError> {
     let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
         .parse2(rust_macro.tokens.clone())
-        .map_err(|error| {
-            compile_error(format!("failed to parse `panic!` arguments: {error}"))
-        })?;
+        .map_err(|error| compile_error(format!("failed to parse `panic!` arguments: {error}")))?;
     let Some(Expr::Lit(template)) = arguments.first() else {
         if arguments.is_empty() {
             return Ok("\"explicit panic\"".to_string());
@@ -12963,7 +13020,10 @@ fn emit_assert_statement(
             format!("`${{{}}}`", emit_expression(&arguments[1], entities)?)
         }
     } else {
-        format!("\"assertion failed: {}\"", condition_text.replace('"', "\\\""))
+        format!(
+            "\"assertion failed: {}\"",
+            condition_text.replace('"', "\\\"")
+        )
     };
     write_indent(out, indent);
     writeln!(out, "if (!({condition_text})) {{").expect("writing to a String cannot fail");
@@ -12990,7 +13050,9 @@ fn emit_assert_comparison_statement(
     let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
         .parse2(rust_macro.tokens.clone())
         .map_err(|error| {
-            compile_error(format!("failed to parse `{macro_name}!` arguments: {error}"))
+            compile_error(format!(
+                "failed to parse `{macro_name}!` arguments: {error}"
+            ))
         })?;
     if arguments.len() < 2 {
         return Err(compile_error(format!(
@@ -13987,7 +14049,12 @@ fn analyze_inferred_tagged_data_union_match(
 enum InferredPattern {
     CatchAll(Option<String>),
     NotEnum,
-    Variants(Vec<(String, String)>, Option<String>, Vec<(String, String)>, bool),
+    Variants(
+        Vec<(String, String)>,
+        Option<String>,
+        Vec<(String, String)>,
+        bool,
+    ),
 }
 
 fn inferred_tagged_data_union_pattern(pattern: &Pat) -> InferredPattern {
@@ -14094,7 +14161,7 @@ fn inferred_tagged_data_union_pattern(pattern: &Pat) -> InferredPattern {
                         all_variants.extend(variants);
                     }
                     InferredPattern::CatchAll(_) | InferredPattern::NotEnum => {
-                        return InferredPattern::NotEnum
+                        return InferredPattern::NotEnum;
                     }
                 }
             }
@@ -14321,9 +14388,9 @@ fn analyze_general_tuple_element(
             }
             let (_owner, variant) = path_owner_and_member(&path.path)?;
             Some(GeneralTupleElement {
-                condition: GeneralTupleElementCondition::EnumVariant(
-                    lower_camel_from_upper_camel(&variant),
-                ),
+                condition: GeneralTupleElementCondition::EnumVariant(lower_camel_from_upper_camel(
+                    &variant,
+                )),
                 binding: None,
                 field_bindings: Vec::new(),
             })
@@ -14438,9 +14505,7 @@ fn analyze_general_tuple_element(
         Pat::Reference(reference) => {
             analyze_general_tuple_element(&reference.pat, scrutinee_elem, entities)
         }
-        Pat::Paren(paren) => {
-            analyze_general_tuple_element(&paren.pat, scrutinee_elem, entities)
-        }
+        Pat::Paren(paren) => analyze_general_tuple_element(&paren.pat, scrutinee_elem, entities),
         _ => None,
     };
 }
@@ -14539,21 +14604,15 @@ fn emit_general_tuple_element_condition(
     temp: &str,
 ) -> Option<String> {
     return match &element.condition {
-        GeneralTupleElementCondition::Literal(value) => {
-            Some(format!("{temp} === {value}"))
-        }
+        GeneralTupleElementCondition::Literal(value) => Some(format!("{temp} === {value}")),
         GeneralTupleElementCondition::EnumVariant(variant) => {
             Some(format!("{temp} === \"{variant}\""))
         }
         GeneralTupleElementCondition::DataUnionKind(kind) => {
             Some(format!("{temp}.kind === \"{kind}\""))
         }
-        GeneralTupleElementCondition::OptionSome(absent) => {
-            Some(format!("{temp} !== {absent}"))
-        }
-        GeneralTupleElementCondition::OptionNone(absent) => {
-            Some(format!("{temp} === {absent}"))
-        }
+        GeneralTupleElementCondition::OptionSome(absent) => Some(format!("{temp} !== {absent}")),
+        GeneralTupleElementCondition::OptionNone(absent) => Some(format!("{temp} === {absent}")),
         GeneralTupleElementCondition::Wild => None,
     };
 }
@@ -14597,8 +14656,7 @@ fn emit_match_expression(
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                writeln!(out, "    if ({guard_expr}) {{")
-                    .expect("writing to a String cannot fail");
+                writeln!(out, "    if ({guard_expr}) {{").expect("writing to a String cannot fail");
                 writeln!(
                     out,
                     "      return {};",
@@ -14656,8 +14714,7 @@ fn emit_match_expression(
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                writeln!(out, "    if ({guard_expr}) {{")
-                    .expect("writing to a String cannot fail");
+                writeln!(out, "    if ({guard_expr}) {{").expect("writing to a String cannot fail");
                 writeln!(
                     out,
                     "      return {};",
@@ -14719,8 +14776,7 @@ fn emit_match_expression(
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                writeln!(out, "    if ({guard_expr}) {{")
-                    .expect("writing to a String cannot fail");
+                writeln!(out, "    if ({guard_expr}) {{").expect("writing to a String cannot fail");
                 writeln!(
                     out,
                     "      return {};",
@@ -14749,7 +14805,8 @@ fn emit_match_expression(
             for (i, elem) in scrutinee.elems.iter().enumerate() {
                 let value = emit_expression(elem, entities)?;
                 let temp = format!("$m{i}");
-                writeln!(out, "  const {temp} = {value};").expect("writing to a String cannot fail");
+                writeln!(out, "  const {temp} = {value};")
+                    .expect("writing to a String cannot fail");
                 temps.push(temp);
             }
             let last = expression.arms.len() - 1;
@@ -14763,8 +14820,7 @@ fn emit_match_expression(
                 } else {
                     let mut conditions = Vec::new();
                     for (i, element) in info.elements.iter().enumerate() {
-                        let absent =
-                            option_absent_value(&scrutinee.elems[i], entities);
+                        let absent = option_absent_value(&scrutinee.elems[i], entities);
                         match element {
                             TupleOptionElement::SomeBinding(_) | TupleOptionElement::SomeWild => {
                                 conditions.push(format!("{} !== {absent}", temps[i]));
@@ -14783,7 +14839,10 @@ fn emit_match_expression(
                     if index == 0 {
                         writeln!(out, "  if ({predicate}) {{")
                             .expect("writing to a String cannot fail");
-                    } else if !info.catch_all && index == last && infos[..index].iter().all(|i| !i.catch_all) {
+                    } else if !info.catch_all
+                        && index == last
+                        && infos[..index].iter().all(|i| !i.catch_all)
+                    {
                         out.push_str("  else {\n");
                     } else {
                         writeln!(out, "  else if ({predicate}) {{")
@@ -14848,8 +14907,7 @@ fn emit_match_expression(
                 for alt in &info.alternatives {
                     let mut conditions = Vec::new();
                     for (i, element) in alt.elements.iter().enumerate() {
-                        if let Some(cond) =
-                            emit_general_tuple_element_condition(element, &temps[i])
+                        if let Some(cond) = emit_general_tuple_element_condition(element, &temps[i])
                         {
                             conditions.push(cond);
                         }
@@ -14951,8 +15009,7 @@ fn emit_match_expression(
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                writeln!(out, "    if ({guard_expr}) {{")
-                    .expect("writing to a String cannot fail");
+                writeln!(out, "    if ({guard_expr}) {{").expect("writing to a String cannot fail");
                 writeln!(
                     out,
                     "      return {};",
@@ -14990,8 +15047,7 @@ fn emit_match_expression(
         let arm_context = lexical_pattern_context(entities, &arm.pat);
         if let Some((_, guard)) = &arm.guard {
             let guard_expr = emit_expression(guard, &arm_context)?;
-            writeln!(out, "      if ({guard_expr}) {{")
-                .expect("writing to a String cannot fail");
+            writeln!(out, "      if ({guard_expr}) {{").expect("writing to a String cannot fail");
             writeln!(
                 out,
                 "        return {};",
@@ -15454,8 +15510,7 @@ pub(crate) fn emit_match_statement(
                 for alt in &info.alternatives {
                     let mut conditions = Vec::new();
                     for (i, element) in alt.elements.iter().enumerate() {
-                        if let Some(cond) =
-                            emit_general_tuple_element_condition(element, &temps[i])
+                        if let Some(cond) = emit_general_tuple_element_condition(element, &temps[i])
                         {
                             conditions.push(cond);
                         }
@@ -15489,12 +15544,8 @@ pub(crate) fn emit_match_statement(
                     }
                     for (binding_name, source_field) in &element.field_bindings {
                         write_indent(out, indent + 2);
-                        writeln!(
-                            out,
-                            "const {binding_name} = {}.{source_field};",
-                            temps[i]
-                        )
-                        .expect("writing to a String cannot fail");
+                        writeln!(out, "const {binding_name} = {}.{source_field};", temps[i])
+                            .expect("writing to a String cannot fail");
                     }
                 }
             }
@@ -15597,38 +15648,35 @@ fn emit_match_patterns(
             entities,
         )?]),
         Pat::Range(range) => {
-            let start = range
-                .start
-                .as_ref()
-                .and_then(|expr| match expr.as_ref() {
-                    Expr::Lit(syn::ExprLit {
+            let start = range.start.as_ref().and_then(|expr| match expr.as_ref() {
+                Expr::Lit(syn::ExprLit {
+                    lit: Lit::Int(int), ..
+                }) => int.base10_parse::<i64>().ok(),
+                Expr::Lit(syn::ExprLit {
+                    lit: Lit::Byte(byte),
+                    ..
+                }) => Some(byte.value() as i64),
+                Expr::Unary(unary)
+                    if matches!(unary.op, UnOp::Neg(_))
+                        && matches!(
+                            unary.expr.as_ref(),
+                            Expr::Lit(syn::ExprLit {
+                                lit: Lit::Int(_),
+                                ..
+                            })
+                        ) =>
+                {
+                    if let Expr::Lit(syn::ExprLit {
                         lit: Lit::Int(int), ..
-                    }) => int.base10_parse::<i64>().ok(),
-                    Expr::Lit(syn::ExprLit {
-                        lit: Lit::Byte(byte),
-                        ..
-                    }) => Some(byte.value() as i64),
-                    Expr::Unary(unary)
-                        if matches!(unary.op, UnOp::Neg(_))
-                            && matches!(
-                                unary.expr.as_ref(),
-                                Expr::Lit(syn::ExprLit {
-                                    lit: Lit::Int(_),
-                                    ..
-                                })
-                            ) =>
+                    }) = unary.expr.as_ref()
                     {
-                        if let Expr::Lit(syn::ExprLit {
-                            lit: Lit::Int(int), ..
-                        }) = unary.expr.as_ref()
-                        {
-                            int.base10_parse::<i64>().ok().map(|v| -v)
-                        } else {
-                            None
-                        }
+                        int.base10_parse::<i64>().ok().map(|v| -v)
+                    } else {
+                        None
                     }
-                    _ => None,
-                });
+                }
+                _ => None,
+            });
             let end = range.end.as_ref().and_then(|expr| match expr.as_ref() {
                 Expr::Lit(syn::ExprLit {
                     lit: Lit::Int(int), ..
@@ -15659,9 +15707,7 @@ fn emit_match_patterns(
                 _ => None,
             });
             let (Some(start), Some(end)) = (start, end) else {
-                return Err(compile_error(
-                    "unsupported portable Rust match pattern",
-                ));
+                return Err(compile_error("unsupported portable Rust match pattern"));
             };
             let inclusive_end = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
                 end
@@ -15670,13 +15716,9 @@ fn emit_match_patterns(
             };
             let count = inclusive_end - start + 1;
             if count < 1 || count > 256 {
-                return Err(compile_error(
-                    "unsupported portable Rust match pattern",
-                ));
+                return Err(compile_error("unsupported portable Rust match pattern"));
             }
-            Ok((start..=inclusive_end)
-                .map(|v| v.to_string())
-                .collect())
+            Ok((start..=inclusive_end).map(|v| v.to_string()).collect())
         }
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
             let name = identifier.ident.to_string();
@@ -15754,7 +15796,7 @@ fn emit_method_call(
                     }
                 }
                 ("or_default", 0) => Err(compile_error(
-                    "portable `HashMap::entry().or_default()` as an expression is not supported; use `.or_insert(value)` or `.or_insert_with(|| value)` instead, or use `*map.entry(key).or_default() += value` or `map.entry(key).or_default().push(value)` as statements"
+                    "portable `HashMap::entry().or_default()` as an expression is not supported; use `.or_insert(value)` or `.or_insert_with(|| value)` instead, or use `*map.entry(key).or_default() += value` or `map.entry(key).or_default().push(value)` as statements",
                 )),
                 (method, args) => Err(compile_error(format!(
                     "portable `HashMap::entry().{method}` with {args} argument(s) has no portable lowering"
@@ -15810,9 +15852,7 @@ fn emit_method_call(
         "asin" if arguments.is_empty() => Ok(format!("Math.asin({receiver})")),
         "atan" if arguments.is_empty() => Ok(format!("Math.atan({receiver})")),
         "atan2" if arguments.len() == 1 => Ok(format!("Math.atan2({receiver}, {})", arguments[0])),
-        "bytes"
-            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "bytes" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
             Ok(format!("[...new TextEncoder().encode({receiver})]"))
         }
         "bytes" if arguments.is_empty() => Err(compile_error(
@@ -15829,14 +15869,10 @@ fn emit_method_call(
         "clear" if arguments.is_empty() => Err(compile_error(format!(
             "portable `.clear()` receiver `{receiver}` must be known to be `String`, `Vec`, slice, `HashMap`, or `HashSet`"
         ))),
-        "chars" if arguments.is_empty() => {
-            Ok(format!("[...{receiver}]"))
-        }
-        "char_indices" if arguments.is_empty() => {
-            Ok(format!(
-                "[...{receiver}].map((char, index) => [index, char] as const)"
-            ))
-        }
+        "chars" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
+        "char_indices" if arguments.is_empty() => Ok(format!(
+            "[...{receiver}].map((char, index) => [index, char] as const)"
+        )),
         "chain" if arguments.len() == 1 => Ok(format!("[...{receiver}, ...{}]", arguments[0])),
         "checked_add" if arguments.len() == 1 => Ok(format!(
             "((a: number, b: number): number | undefined => {{ const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum }})({receiver}, {})",
@@ -15853,9 +15889,7 @@ fn emit_method_call(
         "checked_neg" if arguments.is_empty() => Ok(format!(
             "((n: number): number | undefined => {{ const neg = -n; return neg > 0x7FFFFFFF || neg < -0x80000000 ? undefined : neg }})({receiver})"
         )),
-        "chunks"
-            if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
-        {
+        "chunks" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
                 "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i < items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
                 arguments[0]
@@ -15973,10 +16007,9 @@ fn emit_method_call(
             Ok(emit_entity_clone(&receiver, &owner, entities))
         }
         "clone" if arguments.is_empty() => Ok(receiver),
-        "clone_from" if arguments.len() == 1 => Ok(format!(
-            "Object.assign({receiver}, {})",
-            arguments[0]
-        )),
+        "clone_from" if arguments.len() == 1 => {
+            Ok(format!("Object.assign({receiver}, {})", arguments[0]))
+        }
         "cloned" | "copied" if arguments.is_empty() => Ok(receiver),
         "collect"
             if arguments.is_empty()
@@ -15999,15 +16032,12 @@ fn emit_method_call(
         )),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
         "contains_key" if arguments.len() == 1 => Ok(format!("{receiver}.has({})", arguments[0])),
-        "dedup" if arguments.is_empty() => {
-            Ok(format!(
-                "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read += 1) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write += 1; }} }} items.length = Math.min(write, items.length); }})({receiver})"
-            ))
-        }
-        "div_ceil" if arguments.len() == 1 => Ok(format!(
-            "Math.ceil({receiver} / {})",
-            arguments[0]
+        "dedup" if arguments.is_empty() => Ok(format!(
+            "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read += 1) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write += 1; }} }} items.length = Math.min(write, items.length); }})({receiver})"
         )),
+        "div_ceil" if arguments.len() == 1 => {
+            Ok(format!("Math.ceil({receiver} / {})", arguments[0]))
+        }
         "drain" if arguments.len() == 1 => {
             let Some(Expr::Range(range)) = call.args.first() else {
                 return Err(compile_error(
@@ -16071,10 +16101,7 @@ fn emit_method_call(
         }
         "find"
             if arguments.len() == 1
-                && matches!(
-                    peel_reference_and_paren(&call.args[0]),
-                    Expr::Closure(_)
-                ) =>
+                && matches!(peel_reference_and_paren(&call.args[0]), Expr::Closure(_)) =>
         {
             Ok(format!("{receiver}.find({})", arguments[0]))
         }
@@ -16128,16 +16155,12 @@ fn emit_method_call(
         "get" if arguments.len() == 1 && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!("{receiver}[{}]", arguments[0]))
         }
-        "as_str"
-            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
-        {
+        "as_str" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
                 "((v: unknown): string | undefined => typeof v === \"string\" ? v : undefined)({receiver})"
             ))
         }
-        "as_f64"
-            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
-        {
+        "as_f64" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
                 "((v: unknown): number | undefined => typeof v === \"number\" ? v : undefined)({receiver})"
             ))
@@ -16149,9 +16172,7 @@ fn emit_method_call(
                 "((v: unknown): number | undefined => typeof v === \"number\" && Number.isInteger(v) ? v : undefined)({receiver})"
             ))
         }
-        "as_bool"
-            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
-        {
+        "as_bool" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
                 "((v: unknown): boolean | undefined => typeof v === \"boolean\" ? v : undefined)({receiver})"
             ))
@@ -16197,9 +16218,7 @@ fn emit_method_call(
                 "(typeof {receiver} === \"object\" && {receiver} !== null && !Array.isArray({receiver}))"
             ))
         }
-        "is_null"
-            if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
-        {
+        "is_null" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!("({receiver} === null)"))
         }
         "hypot" if arguments.len() == 1 => Ok(format!("Math.hypot({receiver}, {})", arguments[0])),
@@ -16209,9 +16228,9 @@ fn emit_method_call(
             option_absent_value(&call.receiver, entities)
         )),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
-        "is_infinite" if arguments.is_empty() => {
-            Ok(format!("(!Number.isFinite({receiver}) && !Number.isNaN({receiver}))"))
-        }
+        "is_infinite" if arguments.is_empty() => Ok(format!(
+            "(!Number.isFinite({receiver}) && !Number.isNaN({receiver}))"
+        )),
         "is_sign_negative" if arguments.is_empty() => {
             Ok(format!("({receiver} < 0 || Object.is({receiver}, -0))"))
         }
@@ -16259,62 +16278,38 @@ fn emit_method_call(
             ))
         }
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
-        "insert" if arguments.len() == 2 => {
-            Ok(format!(
-                "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError(\"Vec insertion index out of bounds\"); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
-                arguments[0], arguments[1]
-            ))
-        }
+        "insert" if arguments.len() == 2 => Ok(format!(
+            "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError(\"Vec insertion index out of bounds\"); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
+            arguments[0], arguments[1]
+        )),
         "into" if arguments.is_empty() => Ok(receiver),
         "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "into_owned" if arguments.is_empty() => Ok(receiver),
         "into_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
-        "is_ascii_digit" if arguments.is_empty() => {
-            Ok(format!(
-                "((ch: string): boolean => ch >= '0' && ch <= '9')({receiver})"
-            ))
-        }
-        "is_ascii_lowercase" if arguments.is_empty() => {
-            Ok(format!(
-                "((ch: string): boolean => ch >= 'a' && ch <= 'z')({receiver})"
-            ))
-        }
-        "is_ascii_uppercase" if arguments.is_empty() => {
-            Ok(format!(
-                "((ch: string): boolean => ch >= 'A' && ch <= 'Z')({receiver})"
-            ))
-        }
-        "is_alphabetic" if arguments.is_empty() => {
-            Ok(format!(
-                "(/^[a-zA-Z]$/).test({receiver})"
-            ))
-        }
+        "is_ascii_digit" if arguments.is_empty() => Ok(format!(
+            "((ch: string): boolean => ch >= '0' && ch <= '9')({receiver})"
+        )),
+        "is_ascii_lowercase" if arguments.is_empty() => Ok(format!(
+            "((ch: string): boolean => ch >= 'a' && ch <= 'z')({receiver})"
+        )),
+        "is_ascii_uppercase" if arguments.is_empty() => Ok(format!(
+            "((ch: string): boolean => ch >= 'A' && ch <= 'Z')({receiver})"
+        )),
+        "is_alphabetic" if arguments.is_empty() => Ok(format!("(/^[a-zA-Z]$/).test({receiver})")),
         "is_ascii_alphabetic" if arguments.is_empty() => {
-            Ok(format!(
-                "(/^[a-zA-Z]$/).test({receiver})"
-            ))
+            Ok(format!("(/^[a-zA-Z]$/).test({receiver})"))
         }
         "is_ascii_alphanumeric" if arguments.is_empty() => {
-            Ok(format!(
-                "(/^[a-zA-Z0-9]$/).test({receiver})"
-            ))
+            Ok(format!("(/^[a-zA-Z0-9]$/).test({receiver})"))
         }
         "is_ascii_hexdigit" if arguments.is_empty() => {
-            Ok(format!(
-                "(/^[0-9a-fA-F]$/).test({receiver})"
-            ))
+            Ok(format!("(/^[0-9a-fA-F]$/).test({receiver})"))
         }
-        "is_ascii_whitespace" if arguments.is_empty() => {
-            Ok(format!(
-                "({receiver} === ' ' || {receiver} === '\\t' || {receiver} === '\\n' || {receiver} === '\\r' || {receiver} === '\\x0C')"
-            ))
-        }
-        "is_whitespace" if arguments.is_empty() => {
-            Ok(format!(
-                "(/^\\s$/).test({receiver})"
-            ))
-        }
+        "is_ascii_whitespace" if arguments.is_empty() => Ok(format!(
+            "({receiver} === ' ' || {receiver} === '\\t' || {receiver} === '\\n' || {receiver} === '\\r' || {receiver} === '\\x0C')"
+        )),
+        "is_whitespace" if arguments.is_empty() => Ok(format!("(/^\\s$/).test({receiver})")),
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_ref" if arguments.is_empty() => Ok(receiver),
@@ -16331,9 +16326,7 @@ fn emit_method_call(
         "as_slice" if arguments.is_empty() => Ok(receiver),
         "as_str" | "to_str" if arguments.is_empty() => Ok(receiver),
         "borrow" | "borrow_mut" if arguments.is_empty() => Ok(receiver),
-        "leading_zeros" if arguments.is_empty() => {
-            Ok(format!("Math.clz32({receiver})"))
-        }
+        "leading_zeros" if arguments.is_empty() => Ok(format!("Math.clz32({receiver})")),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "last" | "last_mut"
             if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) =>
@@ -16358,19 +16351,16 @@ fn emit_method_call(
                 Ok(format!("({receiver} = {receiver} ?? ({})())", arguments[0]))
             }
         }
-        "lines"
-            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
-        {
+        "lines" if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) => {
             Ok(format!("{receiver}.split('\\n')"))
         }
         "lines" if arguments.is_empty() => Err(compile_error(
             "portable `.lines()` requires a receiver known to be `String` or `str`",
         )),
         "ln" if arguments.is_empty() => Ok(format!("Math.log({receiver})")),
-        "log" if arguments.len() == 1 => Ok(format!(
-            "Math.log({receiver}) / Math.log({})",
-            arguments[0]
-        )),
+        "log" if arguments.len() == 1 => {
+            Ok(format!("Math.log({receiver}) / Math.log({})", arguments[0]))
+        }
         "log2" if arguments.is_empty() => Ok(format!("Math.log2({receiver})")),
         "log10" if arguments.is_empty() => Ok(format!("Math.log10({receiver})")),
         "map" if arguments.len() == 1 => Ok(format!("{receiver}.map({})", arguments[0])),
@@ -16445,8 +16435,8 @@ fn emit_method_call(
                     "((s) => {{ const v = Number(s); return s.trim() !== \"\" && !Number.isNaN(v) ? v : undefined; }})({receiver})"
                 )),
                 Some(
-                    "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32"
-                    | "u64" | "u128" | "usize",
+                    "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32" | "u64"
+                    | "u128" | "usize",
                 ) => Ok(format!(
                     "((s) => {{ const v = Number(s); return s.trim() !== \"\" && Number.isInteger(v) ? v : undefined; }})({receiver})"
                 )),
@@ -16558,27 +16548,19 @@ fn emit_method_call(
         "repeat" if arguments.len() == 1 => Err(compile_error(
             "portable `.repeat()` requires a receiver known to be `String`, `str`, `Vec`, slice, or a fixed-size array",
         )),
-        "rem_euclid" if arguments.len() == 1 => {
-            Ok(format!(
-                "((n: number, m: number): number => ((n % m) + m) % m)({receiver}, {})",
-                arguments[0]
-            ))
-        }
-        "reserve" | "reserve_exact" if arguments.len() == 1 => {
-            Ok(String::new())
-        }
-        "resize" if arguments.len() == 2 => {
-            Ok(format!(
-                "(<T>(items: T[], length: number, value: T): void => {{ while (items.length < length) {{ items.push(value); }} items.length = length; }})({receiver}, {}, {})",
-                arguments[0], arguments[1]
-            ))
-        }
-        "resize_with" if arguments.len() == 2 => {
-            Ok(format!(
-                "(<T>(items: T[], length: number, factory: () => T): void => {{ while (items.length < length) {{ items.push(factory()); }} items.length = length; }})({receiver}, {}, {})",
-                arguments[0], arguments[1]
-            ))
-        }
+        "rem_euclid" if arguments.len() == 1 => Ok(format!(
+            "((n: number, m: number): number => ((n % m) + m) % m)({receiver}, {})",
+            arguments[0]
+        )),
+        "reserve" | "reserve_exact" if arguments.len() == 1 => Ok(String::new()),
+        "resize" if arguments.len() == 2 => Ok(format!(
+            "(<T>(items: T[], length: number, value: T): void => {{ while (items.length < length) {{ items.push(value); }} items.length = length; }})({receiver}, {}, {})",
+            arguments[0], arguments[1]
+        )),
+        "resize_with" if arguments.len() == 2 => Ok(format!(
+            "(<T>(items: T[], length: number, factory: () => T): void => {{ while (items.length < length) {{ items.push(factory()); }} items.length = length; }})({receiver}, {}, {})",
+            arguments[0], arguments[1]
+        )),
         "reduce" if arguments.len() == 1 => Ok(format!("{receiver}.reduce({})", arguments[0])),
         "rfind" if arguments.len() == 1 => {
             let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
@@ -16594,10 +16576,7 @@ fn emit_method_call(
         "rsplit"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
         {
-            Ok(format!(
-                "{receiver}.split({}).reverse()",
-                arguments[0]
-            ))
+            Ok(format!("{receiver}.split({}).reverse()", arguments[0]))
         }
         "rsplit" if arguments.len() == 1 => Err(compile_error(
             "portable `.rsplit()` requires a receiver known to be `String` or `str`",
@@ -16614,18 +16593,14 @@ fn emit_method_call(
         "round_ties_even" if arguments.is_empty() => Ok(format!(
             "((n: number): number => {{ const r = Math.round(n); const f = n - Math.trunc(n); return (f === 0.5 || f === -0.5) && r % 2 !== 0 ? r - Math.sign(n) : r; }})({receiver})"
         )),
-        "saturating_add" if arguments.len() == 1 => {
-            Ok(format!(
-                "Math.min(0x7FFFFFFF, {receiver} + {})",
-                arguments[0]
-            ))
-        }
-        "saturating_mul" if arguments.len() == 1 => {
-            Ok(format!(
-                "Math.min(0x7FFFFFFF, {receiver} * {})",
-                arguments[0]
-            ))
-        }
+        "saturating_add" if arguments.len() == 1 => Ok(format!(
+            "Math.min(0x7FFFFFFF, {receiver} + {})",
+            arguments[0]
+        )),
+        "saturating_mul" if arguments.len() == 1 => Ok(format!(
+            "Math.min(0x7FFFFFFF, {receiver} * {})",
+            arguments[0]
+        )),
         "saturating_sub" if arguments.len() == 1 => {
             Ok(format!("Math.max(0, {receiver} - {})", arguments[0]))
         }
@@ -16650,12 +16625,10 @@ fn emit_method_call(
         "split" if arguments.len() == 1 => Err(compile_error(
             "portable `.split()` requires a receiver known to be `String` or `str`",
         )),
-        "split_at" | "split_at_mut" if arguments.len() == 1 => {
-            Ok(format!(
-                "[{receiver}.slice(0, {0}), {receiver}.slice({0})]",
-                arguments[0]
-            ))
-        }
+        "split_at" | "split_at_mut" if arguments.len() == 1 => Ok(format!(
+            "[{receiver}.slice(0, {0}), {receiver}.slice({0})]",
+            arguments[0]
+        )),
         "split_once" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
@@ -16663,17 +16636,13 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
-        "splitn" if arguments.len() == 2 => {
-            Ok(format!(
-                "((value: string, n: number, delimiter: string): string[] => {{ const parts: string[] = []; let rest = value; for (let i = 1; i < n && rest.length > 0; i++) {{ const index = rest.indexOf(delimiter); if (index === -1) break; parts.push(rest.slice(0, index)); rest = rest.slice(index + delimiter.length); }} parts.push(rest); return parts; }})({receiver}, {}, {})",
-                arguments[0], arguments[1]
-            ))
-        }
-        "split_whitespace" | "split_ascii_whitespace" if arguments.is_empty() => {
-            Ok(format!(
-                "{receiver}.split(/\\s+/).filter((s) => s.length > 0)"
-            ))
-        }
+        "splitn" if arguments.len() == 2 => Ok(format!(
+            "((value: string, n: number, delimiter: string): string[] => {{ const parts: string[] = []; let rest = value; for (let i = 1; i < n && rest.length > 0; i++) {{ const index = rest.indexOf(delimiter); if (index === -1) break; parts.push(rest.slice(0, index)); rest = rest.slice(index + delimiter.length); }} parts.push(rest); return parts; }})({receiver}, {}, {})",
+            arguments[0], arguments[1]
+        )),
+        "split_whitespace" | "split_ascii_whitespace" if arguments.is_empty() => Ok(format!(
+            "{receiver}.split(/\\s+/).filter((s) => s.length > 0)"
+        )),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
         "starts_with"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
@@ -16708,18 +16677,14 @@ fn emit_method_call(
         "trim" if arguments.is_empty() => Ok(format!("{receiver}.trim()")),
         "trim_end" if arguments.is_empty() => Ok(format!("{receiver}.trimEnd()")),
         "trim_start" if arguments.is_empty() => Ok(format!("{receiver}.trimStart()")),
-        "trim_end_matches" if arguments.len() == 1 => {
-            Ok(format!(
-                "((text: string, matches: (character: string) => boolean): string => {{ const chars = [...text]; let end = chars.length; while (end > 0 && matches(chars[end - 1])) {{ end -= 1; }} return chars.slice(0, end).join(\"\"); }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
-        "trim_start_matches" if arguments.len() == 1 => {
-            Ok(format!(
-                "((text: string, matches: (character: string) => boolean): string => {{ let offset = 0; for (const character of text) {{ if (!matches(character)) break; offset += character.length; }} return text.slice(offset); }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
+        "trim_end_matches" if arguments.len() == 1 => Ok(format!(
+            "((text: string, matches: (character: string) => boolean): string => {{ const chars = [...text]; let end = chars.length; while (end > 0 && matches(chars[end - 1])) {{ end -= 1; }} return chars.slice(0, end).join(\"\"); }})({receiver}, {})",
+            arguments[0]
+        )),
+        "trim_start_matches" if arguments.len() == 1 => Ok(format!(
+            "((text: string, matches: (character: string) => boolean): string => {{ let offset = 0; for (const character of text) {{ if (!matches(character)) break; offset += character.length; }} return text.slice(offset); }})({receiver}, {})",
+            arguments[0]
+        )),
         "sum" if arguments.is_empty() => {
             Ok(format!("{receiver}.reduce((sum, value) => sum + value, 0)"))
         }
@@ -16747,21 +16712,17 @@ fn emit_method_call(
             "([{receiver}[{}], {receiver}[{}]] = [{receiver}[{}], {receiver}[{}]])",
             arguments[0], arguments[1], arguments[1], arguments[0]
         )),
-        "swap_remove" if arguments.len() == 1 => {
-            Ok(format!(
-                "(<T>(items: T[], index: number): T => {{ const last = items.length - 1; if (index !== last) {{ [items[index], items[last]] = [items[last], items[index]]; }} return items.pop()!; }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
+        "swap_remove" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: T[], index: number): T => {{ const last = items.length - 1; if (index !== last) {{ [items[index], items[last]] = [items[last], items[index]]; }} return items.pop()!; }})({receiver}, {})",
+            arguments[0]
+        )),
         "take" if arguments.is_empty() => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
                 "(() => {{ const __tmp = {receiver}; {receiver} = {absent}; return __tmp; }})()"
             ))
         }
-        "take" if arguments.len() == 1 => {
-            Ok(format!("{receiver}.slice(0, {})", arguments[0]))
-        }
+        "take" if arguments.len() == 1 => Ok(format!("{receiver}.slice(0, {})", arguments[0])),
         "tan" if arguments.is_empty() => Ok(format!("Math.tan({receiver})")),
         "then" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
@@ -16887,18 +16848,12 @@ fn emit_method_call(
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "to_owned" if arguments.is_empty() => Ok(receiver),
         "to_string_lossy" if arguments.is_empty() => Ok(receiver),
-        "to_radians" if arguments.is_empty() => {
-            Ok(format!("({receiver} * Math.PI / 180)"))
-        }
-        "to_degrees" if arguments.is_empty() => {
-            Ok(format!("({receiver} * 180 / Math.PI)"))
-        }
-        "trim_matches" if arguments.len() == 1 => {
-            Ok(format!(
-                "((value: string, ch: string): string => {{ while (value.startsWith(ch)) {{ value = value.slice(ch.length); }} while (value.endsWith(ch)) {{ value = value.slice(0, value.length - ch.length); }} return value; }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
+        "to_radians" if arguments.is_empty() => Ok(format!("({receiver} * Math.PI / 180)")),
+        "to_degrees" if arguments.is_empty() => Ok(format!("({receiver} * 180 / Math.PI)")),
+        "trim_matches" if arguments.len() == 1 => Ok(format!(
+            "((value: string, ch: string): string => {{ while (value.startsWith(ch)) {{ value = value.slice(ch.length); }} while (value.endsWith(ch)) {{ value = value.slice(0, value.length - ch.length); }} return value; }})({receiver}, {})",
+            arguments[0]
+        )),
         "take_while" if arguments.len() == 1 => Ok(format!(
             "(<T>(items: readonly T[], predicate: (item: T) => boolean): T[] => {{ const result: T[] = []; for (const item of items) {{ if (!predicate(item)) break; result.push(item); }} return result; }})({receiver}, {})",
             arguments[0]
@@ -16931,9 +16886,7 @@ fn emit_method_call(
         "wrapping_mul" if arguments.len() == 1 => {
             Ok(format!("Math.imul(({receiver}), {}) >>> 0", arguments[0]))
         }
-        "wrapping_neg" if arguments.is_empty() => {
-            Ok(format!("((-({receiver})) >>> 0)"))
-        }
+        "wrapping_neg" if arguments.is_empty() => Ok(format!("((-({receiver})) >>> 0)")),
         "wrapping_shl" if arguments.len() == 1 => {
             Ok(format!("(({receiver}) << {}) >>> 0", arguments[0]))
         }
@@ -16956,10 +16909,7 @@ fn emit_method_call(
             if arguments.len() == 1
                 && (expression_contains_method(&call.receiver, "read")
                     || expression_contains_method(&call.receiver, "write"))
-                && matches!(
-                    peel_reference_and_paren(&call.args[0]),
-                    Expr::Path(_)
-                ) =>
+                && matches!(peel_reference_and_paren(&call.args[0]), Expr::Path(_)) =>
         {
             Ok(receiver)
         }
@@ -17044,9 +16994,7 @@ pub(crate) fn emit_option_binding(
     let Pat::TupleStruct(pattern) = &*binding.pat else {
         return Ok(None);
     };
-    if !(pattern.path.is_ident("Some") || pattern.path.is_ident("Ok"))
-        || pattern.elems.len() != 1
-    {
+    if !(pattern.path.is_ident("Some") || pattern.path.is_ident("Ok")) || pattern.elems.len() != 1 {
         return Ok(None);
     }
     if let Pat::Tuple(tuple) = &pattern.elems[0] {
@@ -17166,13 +17114,11 @@ fn emit_option_combinator(
     let absent = option_absent_value(&call.receiver, entities);
     let binding = snake_to_lower_camel(&parameter_name);
     let body = emit_closure(closure, &closure_context)?;
-    let body = body
-        .strip_prefix(&format!("({binding}) => "))
-        .or_else(|| {
-            let after_name = body.strip_prefix(&format!("({binding}: "))?;
-            let close = after_name.find(") => ")?;
-            Some(&after_name[close + ") => ".len()..])
-        });
+    let body = body.strip_prefix(&format!("({binding}) => ")).or_else(|| {
+        let after_name = body.strip_prefix(&format!("({binding}: "))?;
+        let close = after_name.find(") => ")?;
+        Some(&after_name[close + ") => ".len()..])
+    });
     let Some(body) = body else {
         return Err(compile_error(format!(
             "portable Option `.{method}()` closure cannot declare parameter or return types"
@@ -17220,10 +17166,7 @@ fn json_value_function_ref_lowering(
         .iter()
         .find_map(|marker| marker.strip_prefix(&prefix))
         .is_some_and(|imported| {
-            matches!(
-                imported,
-                "serde_json::Value" | "serde_json::value::Value"
-            )
+            matches!(imported, "serde_json::Value" | "serde_json::value::Value")
         });
     if !is_json_value {
         return None;
@@ -17380,23 +17323,26 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         Expr::Group(group) => expression_is_sequence(&group.expr, entities),
         Expr::Lit(literal) => matches!(&literal.lit, Lit::ByteStr(_)),
         Expr::If(if_expr) => {
-            let then_is_seq = if_expr.then_branch.stmts.last().is_some_and(|stmt| match stmt {
-                syn::Stmt::Expr(expr, None) => expression_is_sequence(expr, entities),
-                _ => false,
-            });
-            let else_is_seq = if_expr.else_branch.as_ref().is_some_and(|(_, expr)| {
-                expression_is_sequence(expr, entities)
-            });
-            then_is_seq || else_is_seq
-        }
-        Expr::Match(match_expr) => match_expr.arms.iter().any(|arm| {
-            match arm.body.as_ref() {
-                Expr::Block(block) => block.block.stmts.last().is_some_and(|stmt| match stmt {
+            let then_is_seq = if_expr
+                .then_branch
+                .stmts
+                .last()
+                .is_some_and(|stmt| match stmt {
                     syn::Stmt::Expr(expr, None) => expression_is_sequence(expr, entities),
                     _ => false,
-                }),
-                expr => expression_is_sequence(expr, entities),
-            }
+                });
+            let else_is_seq = if_expr
+                .else_branch
+                .as_ref()
+                .is_some_and(|(_, expr)| expression_is_sequence(expr, entities));
+            then_is_seq || else_is_seq
+        }
+        Expr::Match(match_expr) => match_expr.arms.iter().any(|arm| match arm.body.as_ref() {
+            Expr::Block(block) => block.block.stmts.last().is_some_and(|stmt| match stmt {
+                syn::Stmt::Expr(expr, None) => expression_is_sequence(expr, entities),
+                _ => false,
+            }),
+            expr => expression_is_sequence(expr, entities),
         }),
         Expr::MethodCall(call)
             if call.args.is_empty()
@@ -17463,18 +17409,38 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             if (call.args.is_empty()
                 && matches!(
                     call.method.to_string().as_str(),
-                    "collect" | "iter" | "into_iter"
-                        | "flatten" | "rev" | "enumerate" | "peekable"
-                        | "sorted" | "dedup" | "cloned" | "copied"
-                        | "keys" | "values"
+                    "collect"
+                        | "iter"
+                        | "into_iter"
+                        | "flatten"
+                        | "rev"
+                        | "enumerate"
+                        | "peekable"
+                        | "sorted"
+                        | "dedup"
+                        | "cloned"
+                        | "copied"
+                        | "keys"
+                        | "values"
                 ))
                 || (call.args.len() == 1
                     && matches!(
                         call.method.to_string().as_str(),
-                        "chunks" | "chunks_exact" | "chunks_exact_mut" | "chunks_mut"
-                            | "filter" | "map" | "flat_map" | "filter_map"
-                            | "skip" | "step_by" | "take" | "skip_while" | "take_while"
-                            | "chain" | "windows"
+                        "chunks"
+                            | "chunks_exact"
+                            | "chunks_exact_mut"
+                            | "chunks_mut"
+                            | "filter"
+                            | "map"
+                            | "flat_map"
+                            | "filter_map"
+                            | "skip"
+                            | "step_by"
+                            | "take"
+                            | "skip_while"
+                            | "take_while"
+                            | "chain"
+                            | "windows"
                     )) =>
         {
             expression_is_sequence(&call.receiver, entities)
@@ -17509,9 +17475,18 @@ fn expression_is_iterator_chain(expression: &Expr) -> bool {
             if call.args.len() == 1
                 && matches!(
                     call.method.to_string().as_str(),
-                    "chunks" | "chunks_exact" | "chunks_exact_mut" | "chunks_mut"
-                        | "filter" | "map" | "skip" | "step_by" | "take"
-                        | "flat_map" | "filter_map" | "windows"
+                    "chunks"
+                        | "chunks_exact"
+                        | "chunks_exact_mut"
+                        | "chunks_mut"
+                        | "filter"
+                        | "map"
+                        | "skip"
+                        | "step_by"
+                        | "take"
+                        | "flat_map"
+                        | "filter_map"
+                        | "windows"
                 ) =>
         {
             true
@@ -18758,9 +18733,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     }
     if !lenient {
         reject_unsupported_array_like_uses(program, &expression_context)?;
-    } else if let Err(error) =
-        reject_unsupported_array_like_uses(program, &expression_context)
-    {
+    } else if let Err(error) = reject_unsupported_array_like_uses(program, &expression_context) {
         lenient_diagnostics.push(error.to_string());
     }
     // The body is emitted before the imports so the package-internal state stores it actually reads
@@ -18980,10 +18953,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     }
     out.push_str(&body);
     if lenient && !lenient_diagnostics.is_empty() {
-        eprintln!(
-            "lenient: {} items skipped",
-            lenient_diagnostics.len()
-        );
+        eprintln!("lenient: {} items skipped", lenient_diagnostics.len());
         for diagnostic in &lenient_diagnostics {
             eprintln!("  {diagnostic}");
         }
@@ -19129,10 +19099,7 @@ fn emit_statement(
                         unreachable!()
                     };
                     if let Some(test) = data_union_pattern_test(pattern, "$ifLet", entities)? {
-                        Some((
-                            emit_expression(&let_expr.expr, entities)?,
-                            test,
-                        ))
+                        Some((emit_expression(&let_expr.expr, entities)?, test))
                     } else {
                         None
                     }
@@ -19170,9 +19137,7 @@ fn emit_statement(
                 write_indent(out, indent);
                 if let Some((condition, _)) = &tuple_binding {
                     writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
-                } else if matches!(&*if_expression.cond, Expr::Let(_))
-                    || let_chain.is_some()
-                {
+                } else if matches!(&*if_expression.cond, Expr::Let(_)) || let_chain.is_some() {
                     return Err(compile_error(
                         "portable `if let` requires a recognized Option or data union pattern",
                     ));
@@ -19211,9 +19176,7 @@ fn emit_statement(
                     extra_closes += 1;
                 }
                 for let_guard in &let_guards {
-                    if let Some(binding) =
-                        emit_option_binding(let_guard, &then_context)?
-                    {
+                    if let Some(binding) = emit_option_binding(let_guard, &then_context)? {
                         let (name, scrutinee, absent) = binding;
                         write_indent(out, body_indent);
                         writeln!(out, "if ({scrutinee} !== {absent}) {{")
@@ -19439,13 +19402,9 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::Binary(binary), _)
             if binary_is_assignment(&binary.op)
-                && emit_entry_or_default_assign(out, binary, entities, indent)? =>
-        {
-        }
+                && emit_entry_or_default_assign(out, binary, entities, indent)? => {}
         Stmt::Expr(Expr::MethodCall(call), _)
-            if emit_entry_or_default_method(out, call, entities, indent)? =>
-        {
-        }
+            if emit_entry_or_default_method(out, call, entities, indent)? => {}
         Stmt::Expr(expression, _) => {
             write_indent(out, indent);
             writeln!(out, "{};", emit_expression(expression, entities)?)
@@ -19509,17 +19468,12 @@ fn emit_statement(
             emit_assert_statement(out, &statement.mac, entities, indent)?;
         }
         Stmt::Macro(statement)
-            if statement
-                .mac
-                .path
-                .segments
-                .last()
-                .is_some_and(|name| {
-                    name.ident == "assert_eq"
-                        || name.ident == "assert_ne"
-                        || name.ident == "debug_assert_eq"
-                        || name.ident == "debug_assert_ne"
-                }) =>
+            if statement.mac.path.segments.last().is_some_and(|name| {
+                name.ident == "assert_eq"
+                    || name.ident == "assert_ne"
+                    || name.ident == "debug_assert_eq"
+                    || name.ident == "debug_assert_ne"
+            }) =>
         {
             emit_assert_comparison_statement(out, &statement.mac, entities, indent)?;
         }
@@ -19536,17 +19490,12 @@ fn emit_statement(
                 .expect("writing to a String cannot fail");
         }
         Stmt::Macro(statement)
-            if statement
-                .mac
-                .path
-                .segments
-                .last()
-                .is_some_and(|name| {
-                    name.ident == "println"
-                        || name.ident == "eprintln"
-                        || name.ident == "print"
-                        || name.ident == "eprint"
-                }) =>
+            if statement.mac.path.segments.last().is_some_and(|name| {
+                name.ident == "println"
+                    || name.ident == "eprintln"
+                    || name.ident == "print"
+                    || name.ident == "eprint"
+            }) =>
         {
             let name = &statement.mac.path.segments.last().unwrap().ident;
             let console_method = if name == "eprintln" || name == "eprint" {
@@ -19567,8 +19516,12 @@ fn emit_statement(
                 && let Lit::Str(template) = &template.lit
             {
                 let values = arguments.iter().skip(1).collect::<Vec<_>>();
-                let formatted =
-                    emit_format_template(&template.value(), &values, entities, &format!("portable `{name}!`"))?;
+                let formatted = emit_format_template(
+                    &template.value(),
+                    &values,
+                    entities,
+                    &format!("portable `{name}!`"),
+                )?;
                 write_indent(out, indent);
                 writeln!(out, "console.{console_method}({formatted});")
                     .expect("writing to a String cannot fail");
@@ -19807,10 +19760,7 @@ pub(crate) fn emit_type(
                             if type_args.is_empty() {
                                 Ok(format!("{module}.{name}"))
                             } else {
-                                Ok(format!(
-                                    "{module}.{name}<{}>",
-                                    type_args.join(", ")
-                                ))
+                                Ok(format!("{module}.{name}<{}>", type_args.join(", ")))
                             }
                         }
                         PathArguments::Parenthesized(_) => Err(compile_error(format!(
@@ -20480,11 +20430,8 @@ fn emit_entry_or_default_assign(
     let rhs = emit_expression(&binary.right, entities)?;
     let op = emit_binary_operator(&binary.op)?;
     write_indent(out, indent);
-    writeln!(
-        out,
-        "{map}.set({key}, ({map}.get({key}) ?? 0) {op} {rhs});",
-    )
-    .expect("writing to a String cannot fail");
+    writeln!(out, "{map}.set({key}, ({map}.get({key}) ?? 0) {op} {rhs});",)
+        .expect("writing to a String cannot fail");
     return Ok(true);
 }
 
@@ -20913,8 +20860,18 @@ fn constructor_path_default_value(expression: &Expr) -> Option<&'static str> {
     if path.qself.is_some() {
         return None;
     }
-    let segments: Vec<_> = path.path.segments.iter().map(|s| s.ident.to_string()).collect();
-    match segments.iter().map(|s| s.as_str()).collect::<Vec<_>>().as_slice() {
+    let segments: Vec<_> = path
+        .path
+        .segments
+        .iter()
+        .map(|s| s.ident.to_string())
+        .collect();
+    match segments
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
         ["String", "new"] => Some("''"),
         ["Vec", "new"] => Some("[]"),
         ["HashMap", "new"] | ["BTreeMap", "new"] => Some("new Map()"),
@@ -21473,7 +21430,10 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
     };
 }
 
-fn option_binding_fact_default(expression: &Expr, entities: &HashSet<String>) -> Option<&'static str> {
+fn option_binding_fact_default(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<&'static str> {
     let fact = match expression {
         Expr::MethodCall(call)
             if call.args.is_empty()
@@ -21530,7 +21490,9 @@ fn option_binding_fact_default(expression: &Expr, entities: &HashSet<String>) ->
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             lexical_fact(entities, &path.path.segments[0].ident.to_string())
         }
-        Expr::Reference(reference) => return option_binding_fact_default(&reference.expr, entities),
+        Expr::Reference(reference) => {
+            return option_binding_fact_default(&reference.expr, entities);
+        }
         Expr::Paren(paren) => return option_binding_fact_default(&paren.expr, entities),
         Expr::Group(group) => return option_binding_fact_default(&group.expr, entities),
         _ => None,
@@ -21582,8 +21544,8 @@ fn associated_numeric_method(expression: &Expr) -> Option<(String, String)> {
     let method = segments.next()?.ident.to_string();
     let owner = segments.next()?.ident.to_string();
     match owner.as_str() {
-        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
-        | "u64" | "usize" => Some((owner, method)),
+        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32" | "u64"
+        | "usize" => Some((owner, method)),
         _ => None,
     }
 }
@@ -21960,7 +21922,9 @@ fn apply_acronym_casing(name: &mut String) {
         if bytes[i].is_ascii_digit()
             && i + 1 < len
             && bytes[i + 1] == b'd'
-            && (i + 2 >= len || bytes[i + 2].is_ascii_uppercase() || !bytes[i + 2].is_ascii_alphabetic())
+            && (i + 2 >= len
+                || bytes[i + 2].is_ascii_uppercase()
+                || !bytes[i + 2].is_ascii_alphabetic())
         {
             result.push(bytes[i]);
             result.push(b'D');

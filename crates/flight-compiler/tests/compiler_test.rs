@@ -400,7 +400,8 @@ export function readRenamed(state: Counter): number {
 }
 "#
         );
-        let local = compile_typescript(r#"use std::sync::Arc;
+        let local = compile_typescript(
+            r#"use std::sync::Arc;
 
 pub struct RwLock<T> {
     pub inner: T,
@@ -409,17 +410,26 @@ pub struct RwLock<T> {
 pub fn read(value: Arc<RwLock<i32>>) -> i32 {
     return value.inner;
 }
-"#, None).unwrap();
-        assert!(local.contains("export function read(value: RwLock<number>): number {"), "{local}");
+"#,
+            None,
+        )
+        .unwrap();
+        assert!(
+            local.contains("export function read(value: RwLock<number>): number {"),
+            "{local}"
+        );
         assert_eq!(
-            compile_typescript(r#"use std::sync::Arc;
+            compile_typescript(
+                r#"use std::sync::Arc;
 
 pub fn read(value: Arc<RwLock<i32>>) -> i32 {
     return 0;
 }
-"#, None)
-                .unwrap_err()
-                .to_string(),
+"#,
+                None
+            )
+            .unwrap_err()
+            .to_string(),
             "cannot resolve the provenance of `RwLock`; import it from `std::sync` to lower it to its shared payload"
         );
     }
@@ -1541,8 +1551,14 @@ pub fn count_holders() -> i32 {
 "#;
         let output = compile_typescript(annotated, None).unwrap();
         assert!(!output.contains("holderSlot"), "{output}");
-        assert!(output.contains("function holderCount(): number"), "{output}");
-        assert!(output.contains("export function countHolders(): number"), "{output}");
+        assert!(
+            output.contains("function holderCount(): number"),
+            "{output}"
+        );
+        assert!(
+            output.contains("export function countHolders(): number"),
+            "{output}"
+        );
 
         let unannotated = annotated.replace("/// flight-compiler: rust-only\n", "");
         let output = compile_typescript(&unannotated, None).unwrap();
@@ -1930,8 +1946,7 @@ pub fn is_closed(segment: &Segment) -> bool {
         assert!(output.contains("return segment.kind === \"close\";"));
 
         {
-            let source =
-                "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(id, Id::Number(n) if n > 0); }\n";
+            let source = "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(id, Id::Number(n) if n > 0); }\n";
             let output = compile_typescript(source, None).unwrap();
             assert!(
                 output.contains("typeof id === \"number\" && ((n) => n > 0)(id)"),
@@ -1939,8 +1954,7 @@ pub fn is_closed(segment: &Segment) -> bool {
             );
         }
         {
-            let source =
-                "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(value, Some(_)); }\n";
+            let source = "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(value, Some(_)); }\n";
             let output = compile_typescript(source, None).unwrap();
             assert!(output.contains("value !== undefined"));
         }
@@ -1964,7 +1978,8 @@ pub fn has_text(tokens: &[Token], expected: &str) -> bool {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("typeof token === \"string\" && ((value) => value === expected)(token)"),
+            output
+                .contains("typeof token === \"string\" && ((value) => value === expected)(token)"),
             "matches! with guard should combine predicate and IIFE guard: {output}"
         );
     }
@@ -2180,7 +2195,10 @@ pub fn widened(value: Option<f32>) -> f32 {
         let source = "pub fn unproven(state: &RenderState) -> Option<LogState> {\n    return find_runtime(state).and_then(|runtime| runtime.log.clone());\n}\n";
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("((runtime) => runtime === undefined ? undefined : runtime.log") || output.contains("((runtime) => runtime === undefined ? undefined : structuredClone(runtime.log)"),
+            output.contains("((runtime) => runtime === undefined ? undefined : runtime.log")
+                || output.contains(
+                    "((runtime) => runtime === undefined ? undefined : structuredClone(runtime.log)"
+                ),
             "unproven Option and_then should compile: {output}"
         );
 
@@ -2332,8 +2350,7 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
         ));
 
         {
-            let source =
-                "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn pick(id: &Id) -> Id { return id.clone(); }\npub fn check(a: &Id, b: &Id, value: Option<i32>) -> bool { if let (Some(n), _) = (value, b) { return true; } return false; }\n";
+            let source = "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn pick(id: &Id) -> Id { return id.clone(); }\npub fn check(a: &Id, b: &Id, value: Option<i32>) -> bool { if let (Some(n), _) = (value, b) { return true; } return false; }\n";
             let output = compile_typescript(source, None).unwrap();
             assert!(output.contains("value !== undefined"));
         }
@@ -2944,9 +2961,8 @@ export function local(seed: number): number {
             ("f64", "8"),
             ("usize", "4"),
         ] {
-            let source = format!(
-                "pub fn f() -> usize {{ return std::mem::size_of::<{rust_type}>(); }}\n"
-            );
+            let source =
+                format!("pub fn f() -> usize {{ return std::mem::size_of::<{rust_type}>(); }}\n");
             assert_eq!(
                 compile_typescript(&source, None).unwrap(),
                 format!("export function f(): number {{\n  return {expected_size};\n}}\n"),
@@ -3287,8 +3303,14 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
 
         let source = "pub fn extend_from_iter(out: &mut Vec<String>, names: &[(u16, &str)]) {\n    out.extend(names.iter().map(|row| row.1.to_string()));\n}\n";
         let output = compile_typescript(source, None).unwrap();
-        assert!(output.contains("names.map((row) => String(row[1]))"), "iterator chain argument should be accepted: {output}");
-        assert!(output.contains("out.push(source[index])"), "extend should emit for-loop: {output}");
+        assert!(
+            output.contains("names.map((row) => String(row[1]))"),
+            "iterator chain argument should be accepted: {output}"
+        );
+        assert!(
+            output.contains("out.push(source[index])"),
+            "extend should emit for-loop: {output}"
+        );
     }
 
     #[test]
@@ -4715,10 +4737,7 @@ pub fn pairs(values: &mut Vec<i32>) -> Vec<Vec<i32>> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("i + size <= items.length"),
-            "{output}"
-        );
+        assert!(output.contains("i + size <= items.length"), "{output}");
     }
 
     #[test]
@@ -4731,10 +4750,7 @@ pub fn pages(total: usize, per_page: usize) -> usize {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("Math.ceil(total / perPage)"),
-            "{output}"
-        );
+        assert!(output.contains("Math.ceil(total / perPage)"), "{output}");
     }
 
     #[test]
@@ -4747,10 +4763,7 @@ pub fn lazy(cell: &mut Option<i32>, init: fn() -> i32) -> i32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("(cell = cell ?? (init)())"),
-            "{output}"
-        );
+        assert!(output.contains("(cell = cell ?? (init)())"), "{output}");
     }
 
     #[test]
@@ -4832,10 +4845,7 @@ pub fn ordered_by(values: &mut Vec<i32>, cmp: fn(&i32, &i32) -> std::cmp::Orderi
             output.contains(".sort((a, b) => a - b)"),
             "sort_unstable: {output}"
         );
-        assert!(
-            output.contains(".sort(cmp)"),
-            "sort_unstable_by: {output}"
-        );
+        assert!(output.contains(".sort(cmp)"), "sort_unstable_by: {output}");
     }
 
     #[test]
@@ -5106,14 +5116,8 @@ pub fn bits(value: f32) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("setFloat32(0, value, true)"),
-            "{output}"
-        );
-        assert!(
-            output.contains("getUint32(0, true)"),
-            "{output}"
-        );
+        assert!(output.contains("setFloat32(0, value, true)"), "{output}");
+        assert!(output.contains("getUint32(0, true)"), "{output}");
     }
 
     #[test]
@@ -5164,10 +5168,7 @@ pub fn string_default(value: Option<String>) -> String {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("?? 0"),
-            "i32 default should be 0: {output}"
-        );
+        assert!(output.contains("?? 0"), "i32 default should be 0: {output}");
         assert!(
             output.contains("?? false"),
             "bool default should be false: {output}"
@@ -5202,10 +5203,7 @@ pub fn shift(value: u32, n: u32) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("((value) << n) >>> 0"),
-            "{output}"
-        );
+        assert!(output.contains("((value) << n) >>> 0"), "{output}");
     }
 
     #[test]
@@ -5250,14 +5248,8 @@ pub fn from_u32(bits: u32) -> f32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("setUint32(0, bits, true)"),
-            "{output}"
-        );
-        assert!(
-            output.contains("getFloat32(0, true)"),
-            "{output}"
-        );
+        assert!(output.contains("setUint32(0, bits, true)"), "{output}");
+        assert!(output.contains("getFloat32(0, true)"), "{output}");
     }
 
     #[test]
@@ -5270,10 +5262,7 @@ pub fn same(a: &str, b: &str) -> bool {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains(".toLowerCase() === "),
-            "{output}"
-        );
+        assert!(output.contains(".toLowerCase() === "), "{output}");
     }
 
     #[test]
@@ -5313,10 +5302,7 @@ pub fn last_index(text: &str, pattern: &str) -> Option<usize> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("lastIndexOf(pattern)"),
-            "{output}"
-        );
+        assert!(output.contains("lastIndexOf(pattern)"), "{output}");
     }
 
     #[test]
@@ -5329,10 +5315,7 @@ pub fn parts(text: &str, sep: &str) -> Vec<String> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains(".split(sep).reverse()"),
-            "{output}"
-        );
+        assert!(output.contains(".split(sep).reverse()"), "{output}");
     }
 
     #[test]
@@ -5377,10 +5360,7 @@ pub fn negate(value: u32) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains(">>> 0"),
-            "{output}"
-        );
+        assert!(output.contains(">>> 0"), "{output}");
     }
 
     #[test]
@@ -5490,10 +5470,7 @@ pub fn last_split(text: &str, delimiter: &str) -> Option<(String, String)> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("lastIndexOf(delimiter)"),
-            "{output}"
-        );
+        assert!(output.contains("lastIndexOf(delimiter)"), "{output}");
     }
 
     #[test]
@@ -5506,10 +5483,7 @@ pub fn safe_mul(a: u32, b: u32) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("Math.min(0x7FFFFFFF, a * b)"),
-            "{output}"
-        );
+        assert!(output.contains("Math.min(0x7FFFFFFF, a * b)"), "{output}");
     }
 
     #[test]
@@ -5648,10 +5622,7 @@ pub fn as_number_check(value: &Value) -> Option<f64> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains(r#"value["name"]"#),
-            "get(string): {output}"
-        );
+        assert!(output.contains(r#"value["name"]"#), "get(string): {output}");
         assert!(
             output.contains("value === null"),
             "is_null on param: {output}"
@@ -5746,10 +5717,7 @@ pub fn get_nested(data: &Value) -> Option<&str> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("v[\"name\"]"),
-            "nested get: {output}"
-        );
+        assert!(output.contains("v[\"name\"]"), "nested get: {output}");
         assert!(
             output.contains("typeof v === \"string\" ? v : undefined"),
             "nested as_str: {output}"
@@ -5772,10 +5740,7 @@ fn rn(value: Option<&Value>, default: f32) -> f32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("value[key]"),
-            "option value get: {output}"
-        );
+        assert!(output.contains("value[key]"), "option value get: {output}");
         assert!(
             output.contains("typeof v === \"number\" ? v : undefined"),
             "option value as_f64: {output}"
@@ -5885,10 +5850,7 @@ pub fn narrow(value: i32) -> (u8, u16, i8, i16) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("& 0xff"),
-            "u8 cast should mask: {output}"
-        );
+        assert!(output.contains("& 0xff"), "u8 cast should mask: {output}");
         assert!(
             output.contains("& 0xffff"),
             "u16 cast should mask: {output}"
@@ -6369,7 +6331,8 @@ pub fn ascii_shout(text: String) -> String {
         )
         .unwrap();
         assert!(
-            sample_output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";\n"),
+            sample_output
+                .contains("import type { Matrix } from \"@flighthq/geometry/contract\";\n"),
             "{sample_output}"
         );
         assert!(
@@ -7710,9 +7673,18 @@ pub fn allocate_matrix() -> Matrix {
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
-        assert!(output.contains("flags: [false, false, false]"), "bool array default");
-        assert!(output.contains("indices: new Uint32Array(4)"), "typed array default");
-        assert!(output.contains("m: new Float32Array(9)"), "typed array default");
+        assert!(
+            output.contains("flags: [false, false, false]"),
+            "bool array default"
+        );
+        assert!(
+            output.contains("indices: new Uint32Array(4)"),
+            "typed array default"
+        );
+        assert!(
+            output.contains("m: new Float32Array(9)"),
+            "typed array default"
+        );
     }
 
     #[test]
@@ -12938,9 +12910,7 @@ pub fn repeat(values: &[u8], count: usize) -> Vec<u8> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains(
-            "Array.from({ length: count }, () => [...values]).flat()"
-        ));
+        assert!(output.contains("Array.from({ length: count }, () => [...values]).flat()"));
     }
 
     #[test]
@@ -12955,9 +12925,7 @@ pub fn repeat_pixels(count: usize) -> Vec<u8> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains(
-            "Array.from({ length: count }, () => [...PIXEL]).flat()"
-        ));
+        assert!(output.contains("Array.from({ length: count }, () => [...PIXEL]).flat()"));
     }
 
     #[test]
@@ -13113,8 +13081,7 @@ pub fn panic_in_match(code: i32) -> i32 {
             "export function notReached(): void {\n  throw new Error(\"explicit panic\");\n}"
         ));
         assert!(output.contains("throw new Error(`something went wrong`);"));
-        assert!(output
-            .contains("(() => { throw new Error(`unexpected code`); })()"));
+        assert!(output.contains("(() => { throw new Error(`unexpected code`); })()"));
     }
 
     #[test]
@@ -13160,7 +13127,10 @@ pub fn check_positive(value: i32) {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains("if (!(index < length)) {"));
-        assert!(output.contains("throw new Error(`index ${index} out of bounds for length ${length}`);"));
+        assert!(
+            output
+                .contains("throw new Error(`index ${index} out of bounds for length ${length}`);")
+        );
         assert!(output.contains("if (!(value > 0)) {"));
         assert!(output.contains("throw new Error(\"assertion failed: value > 0\");"));
     }
@@ -20078,12 +20048,9 @@ mod create_state {
 }
 "#;
 
-    let output = compile_vitest_with_alias_sources(
-        test_source,
-        "@flighthq/example/contract",
-        &[production],
-    )
-    .unwrap();
+    let output =
+        compile_vitest_with_alias_sources(test_source, "@flighthq/example/contract", &[production])
+            .unwrap();
     assert!(
         output.contains(".length = 0"),
         "should resolve .clear() on a Vec field from alias source (plain): {output}"
@@ -20323,7 +20290,8 @@ fn lowers_resize_with_to_push_loop() {
 
 #[test]
 fn lowers_split_ascii_whitespace() {
-    let source = "pub fn f(text: &str) -> Vec<&str> { return text.split_ascii_whitespace().collect(); }\n";
+    let source =
+        "pub fn f(text: &str) -> Vec<&str> { return text.split_ascii_whitespace().collect(); }\n";
     let output = compile_typescript(source, None).unwrap();
     assert!(
         output.contains("split(/\\s+/)") && output.contains("filter"),

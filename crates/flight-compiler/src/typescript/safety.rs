@@ -162,11 +162,8 @@ pub(super) fn reject_function_exits_in_value_position<'ast>(
 }
 
 pub(super) fn block_contains_function_exits(block: &syn::Block) -> bool {
-    return reject_function_exits_in_value_position(
-        |visitor| visitor.visit_block(block),
-        "",
-    )
-    .is_err();
+    return reject_function_exits_in_value_position(|visitor| visitor.visit_block(block), "")
+        .is_err();
 }
 
 pub(super) fn if_expression_contains_function_exits(expression: &syn::ExprIf) -> bool {

@@ -93,15 +93,16 @@ pub fn set_capture_baseline_field(
     field: CaptureBaselineField,
     value: &str,
 ) {
-    let mut entry: CaptureColumnBaseline = get_record_value(baseline, column)
-        .cloned()
-        .unwrap_or(CaptureColumnBaseline {
-            fingerprint: None,
-            source_hash: None,
-            sha256: None,
-            fingerprint_provenance: None,
-            sha256_provenance: None,
-        });
+    let mut entry: CaptureColumnBaseline =
+        get_record_value(baseline, column)
+            .cloned()
+            .unwrap_or(CaptureColumnBaseline {
+                fingerprint: None,
+                source_hash: None,
+                sha256: None,
+                fingerprint_provenance: None,
+                sha256_provenance: None,
+            });
     match field {
         CaptureBaselineField::Fingerprint => entry.fingerprint = Some(String::from(value)),
         CaptureBaselineField::Sha256 => entry.sha256 = Some(String::from(value)),
@@ -117,15 +118,16 @@ pub fn set_capture_baseline_provenance(
     field: CaptureBaselineProvenanceField,
     provenance: &CaptureBaselineProvenance,
 ) {
-    let mut entry: CaptureColumnBaseline = get_record_value(baseline, column)
-        .cloned()
-        .unwrap_or(CaptureColumnBaseline {
-            fingerprint: None,
-            source_hash: None,
-            sha256: None,
-            fingerprint_provenance: None,
-            sha256_provenance: None,
-        });
+    let mut entry: CaptureColumnBaseline =
+        get_record_value(baseline, column)
+            .cloned()
+            .unwrap_or(CaptureColumnBaseline {
+                fingerprint: None,
+                source_hash: None,
+                sha256: None,
+                fingerprint_provenance: None,
+                sha256_provenance: None,
+            });
     match field {
         CaptureBaselineProvenanceField::Fingerprint => {
             entry.fingerprint_provenance = Some(provenance.clone());

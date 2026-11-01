@@ -52,7 +52,10 @@ pub(crate) fn decode_gltf_buffer(
         drops,
         "external-missing",
         &[
-            ("firstUri", ImportDiagnosticDetailValue::String(uri.to_string())),
+            (
+                "firstUri",
+                ImportDiagnosticDetailValue::String(uri.to_string()),
+            ),
             (
                 "reason",
                 ImportDiagnosticDetailValue::String("external-not-supplied".to_string()),

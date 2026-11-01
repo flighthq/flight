@@ -384,7 +384,8 @@ pub fn stop_all_audio_mixer_channels(mixer: &Ref<AudioMixer>) {
         let Some(runtime) = mixer.mixer_runtime.as_mut() else {
             return;
         };
-        let channels_paused_by_mixer: &mut Vec<Ref<AudioChannel>> = &mut runtime.channels_paused_by_mixer;
+        let channels_paused_by_mixer: &mut Vec<Ref<AudioChannel>> =
+            &mut runtime.channels_paused_by_mixer;
         channels_paused_by_mixer.clear();
         std::mem::take(&mut runtime.active_channels)
     };

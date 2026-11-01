@@ -474,9 +474,7 @@ fn parse_generate_options(
             ));
         }
         GenerateKind::Tests if lenient => {
-            return Err(format!(
-                "--lenient is only valid for generate\n\n{USAGE}"
-            ));
+            return Err(format!("--lenient is only valid for generate\n\n{USAGE}"));
         }
         GenerateKind::Source | GenerateKind::Tests => {}
     }

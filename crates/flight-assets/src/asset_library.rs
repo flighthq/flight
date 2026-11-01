@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::enums::AssetLoadStatus;
 use crate::types::*;
 use flight_entity::{FlightError, FlightErrorKind, unknown_from_panic};
@@ -14,6 +13,7 @@ use flight_stream::{SharedFuture, create_shared_future};
 use futures::FutureExt;
 use futures::channel::oneshot;
 use std::any::{Any, TypeId};
+use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex, RwLock};
 use std::task::Poll;

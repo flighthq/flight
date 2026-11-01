@@ -1609,8 +1609,8 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
                     .variants
                     .iter()
                     .all(|v| matches!(v.fields, Fields::Named(_) | Fields::Unit));
-                let is_data_union = data_unions.contains(&name)
-                    || (has_named_variants && all_named_or_unit);
+                let is_data_union =
+                    data_unions.contains(&name) || (has_named_variants && all_named_or_unit);
                 if !lenient {
                     validate_enum(&item, is_data_union)?;
                 }
@@ -1635,7 +1635,10 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
                 return Err(unsupported_public("union", &item.ident.to_string()));
             }
             Item::ExternCrate(item) => extern_crates.push(item),
-            Item::ForeignMod(_) | Item::Impl(_) | Item::Macro(_) | Item::Mod(_)
+            Item::ForeignMod(_)
+            | Item::Impl(_)
+            | Item::Macro(_)
+            | Item::Mod(_)
             | Item::Trait(_) => {}
             _ => {}
         }
