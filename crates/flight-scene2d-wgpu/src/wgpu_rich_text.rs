@@ -165,11 +165,11 @@ pub fn draw_wgpu_rich_text(
         .as_any()
         .downcast_ref::<RichText>()
         .is_some_and(|source| {
-            get_rich_text_runtime(source)
+            return get_rich_text_runtime(source)
                 .read()
                 .unwrap()
                 .input
-                .is_some()
+                .is_some();
         });
     let overlay = get_scene2d_wgpu_runtime(state)
         .and_then(|runtime| runtime.text_input_overlay)

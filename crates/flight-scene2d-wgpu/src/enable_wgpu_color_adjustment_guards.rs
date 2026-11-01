@@ -29,7 +29,7 @@ pub fn enable_wgpu_color_adjustment_guards(
     let installed = registries
         .color_adjustment_feature_guard
         .is_some_and(|guard| {
-            std::ptr::fn_addr_eq(guard, warn_wgpu_color_adjustment_not_enabled as fn(_, _))
+            return std::ptr::fn_addr_eq(guard, warn_wgpu_color_adjustment_not_enabled as fn(_, _));
         });
     if !installed {
         registries.color_adjustment_feature_guard = Some(warn_wgpu_color_adjustment_not_enabled);
