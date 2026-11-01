@@ -11637,7 +11637,7 @@ fn emit_hoisted_match_arm_body(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    if let Expr::Return(_) = body {
+    if matches!(body, Expr::Return(_) | Expr::Continue(_) | Expr::Break(_)) {
         return emit_statement(out, &Stmt::Expr(body.clone(), None), entities, indent);
     }
     if let Expr::Block(block) = body {

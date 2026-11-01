@@ -12770,6 +12770,35 @@ pub fn hsv(out: &mut [f32; 4], i: i32, value: f32) {
     }
 
     #[test]
+    fn lowers_continue_and_break_in_match_arms() {
+        let source = r#"
+pub enum Shape {
+    Circle,
+    Square,
+    Triangle,
+}
+
+pub fn count_circles(shapes: &[Shape]) -> i32 {
+    let mut count: i32 = 0;
+    for shape in shapes {
+        match shape {
+            Shape::Circle => count += 1,
+            _ => continue,
+        }
+    }
+    return count;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("continue;"),
+            "match arm continue should emit continue statement: {output}"
+        );
+    }
+
+    #[test]
     fn preserves_conditional_bitwise_cast_and_unsigned_return_semantics() {
         let source = r##"
 pub fn hue(g: f32, b: f32, d: f32) -> f32 {
