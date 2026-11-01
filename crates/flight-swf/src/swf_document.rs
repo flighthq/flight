@@ -449,7 +449,8 @@ fn create_swf_timeline_source(
 
 // flight-lint: allow(conform-params) D23: document identity defines the import; authored sidecars are assigned after initialization
 pub fn initialize_swf_document_import(out: &mut SwfDocumentImport, document: Ref<Scene2DDocument>) {
-    out.appearances.clear();
+    let out_appearances: &mut Vec<SwfNodeAppearance> = &mut out.appearances;
+    out_appearances.clear();
     out.document = document;
     out.jpeg_alpha_payloads.clear();
 }

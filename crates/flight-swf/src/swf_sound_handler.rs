@@ -226,7 +226,8 @@ fn create_swf_sound_mime_type(format: u8, flags: u8) -> Option<String> {
 // flight-lint: allow(conform-params) Principal c0f9227c D23 keeps the defining resource while callers assign authored cue fields after initialization
 pub fn initialize_timeline_audio_cue(out: &mut TimelineAudioCue, resource: Ref<AudioResource>) {
     out.duration = None;
-    out.envelope.clear();
+    let out_envelope: &mut Vec<TimelineAudioEnvelopePoint> = &mut out.envelope;
+    out_envelope.clear();
     out.fields.frame = 0;
     out.gain = 1.0;
     out.fields.kind = String::from(TIMELINE_AUDIO_CUE_KIND);
