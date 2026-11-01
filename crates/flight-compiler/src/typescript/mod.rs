@@ -17002,9 +17002,12 @@ fn emit_method_call(
         }
         "unwrap_or_else" if arguments.len() == 1 => {
             if let Expr::Closure(closure) = peel_reference_and_paren(&call.args[0]) {
-                if closure.inputs.is_empty() {
+                if closure.inputs.is_empty() && !matches!(closure.body.as_ref(), Expr::Block(_)) {
                     let body = emit_expression(&closure.body, entities)?;
                     Ok(format!("({receiver} ?? {body})"))
+                } else if closure.inputs.is_empty() {
+                    let arrow = emit_closure(closure, entities)?;
+                    Ok(format!("({receiver} ?? ({arrow})())"))
                 } else {
                     Ok(format!("({receiver} ?? ({})())", arguments[0]))
                 }

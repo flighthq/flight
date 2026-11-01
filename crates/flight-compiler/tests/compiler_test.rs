@@ -4804,6 +4804,30 @@ pub fn classify(ch: char) -> (bool, bool, bool) {
     }
 
     #[test]
+    fn unwrap_or_else_block_closure_emits_iife() {
+        let source = r#"
+pub fn process(input: Option<i32>) -> i32 {
+    let val = input.unwrap_or_else(|| {
+        let x = 42;
+        return x * 2;
+    });
+    return val;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("(() => {"),
+            "block closure should become IIFE: {output}"
+        );
+        assert!(
+            output.contains("return x * 2"),
+            "closure return should be preserved: {output}"
+        );
+    }
+
+    #[test]
     fn shadowed_match_arm_binding_keeps_const_on_outer_let() {
         let source = r#"
 pub fn pick_value(input: Option<f32>) -> f32 {
