@@ -20,7 +20,8 @@ pub fn parse_obj_requirements(
         let mut library_models = Vec::new();
         for library in material_libraries.unwrap_or(&[]) {
             collect_obj_material_models(&mut library_models, library);
-            for model in library_models.drain(..) {
+            let model_count = library_models.len();
+            for model in library_models.drain(0..model_count) {
                 if !models.contains(&model) {
                     models.push(model);
                 }
