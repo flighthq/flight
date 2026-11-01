@@ -34,7 +34,7 @@ pub fn entries<'a, V>(out: &mut Vec<(&'a str, &'a V)>, record: &'a Record<V>) {
     out.clear();
     out.extend(ordered_positions(record).into_iter().map(|position| {
         let (key, value) = &record.storage[position];
-        (key.as_str(), value)
+        return (key.as_str(), value);
     }));
 }
 
