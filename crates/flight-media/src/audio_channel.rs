@@ -284,8 +284,8 @@ pub fn set_audio_channel_gain(channel: &Ref<AudioChannel>, value: f32) -> f32 {
             None
         } else {
             channel.channel_runtime.as_ref().and_then(|runtime| {
-                (runtime.source_handle != INVALID_SOURCE)
-                    .then(|| (runtime.backend.clone(), runtime.source_handle))
+                return (runtime.source_handle != INVALID_SOURCE)
+                    .then(|| (runtime.backend.clone(), runtime.source_handle));
             })
         }
     };
@@ -316,13 +316,13 @@ pub fn set_audio_channel_muted(channel: &Ref<AudioChannel>, value: bool) -> bool
         let mut channel = channel.write().unwrap();
         channel.muted = value;
         channel.channel_runtime.as_ref().and_then(|runtime| {
-            (runtime.source_handle != INVALID_SOURCE).then(|| {
-                (
+            return (runtime.source_handle != INVALID_SOURCE).then(|| {
+                return (
                     runtime.backend.clone(),
                     runtime.source_handle,
                     if value { 0.0 } else { channel.gain },
-                )
-            })
+                );
+            });
         })
     };
     if let Some((backend, source, gain)) = live {
@@ -338,8 +338,8 @@ pub fn set_audio_channel_pan(channel: &Ref<AudioChannel>, value: f32) -> f32 {
         (
             channel.pan,
             channel.channel_runtime.as_ref().and_then(|runtime| {
-                (runtime.source_handle != INVALID_SOURCE)
-                    .then(|| (runtime.backend.clone(), runtime.source_handle))
+                return (runtime.source_handle != INVALID_SOURCE)
+                    .then(|| (runtime.backend.clone(), runtime.source_handle));
             }),
         )
     };
@@ -354,8 +354,8 @@ pub fn set_audio_channel_playback_rate(channel: &Ref<AudioChannel>, value: f32) 
         let mut channel = channel.write().unwrap();
         channel.playback_rate = value;
         channel.channel_runtime.as_ref().and_then(|runtime| {
-            (runtime.source_handle != INVALID_SOURCE)
-                .then(|| (runtime.backend.clone(), runtime.source_handle))
+            return (runtime.source_handle != INVALID_SOURCE)
+                .then(|| (runtime.backend.clone(), runtime.source_handle));
         })
     };
     if let Some((backend, source)) = live {

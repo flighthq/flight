@@ -136,11 +136,11 @@ pub fn fade_audio_bus_gain(
     let node = {
         let mixer = mixer.read().unwrap();
         mixer.mixer_runtime.as_ref().and_then(|runtime| {
-            runtime
+            return runtime
                 .buses
                 .iter()
                 .find(|binding| Arc::ptr_eq(&binding.bus, bus))
-                .map(|binding| (runtime.graph, binding.node))
+                .map(|binding| (runtime.graph, binding.node));
         })
     };
     let muted = {
@@ -384,7 +384,8 @@ pub fn stop_all_audio_mixer_channels(mixer: &Ref<AudioMixer>) {
         let Some(runtime) = mixer.mixer_runtime.as_mut() else {
             return;
         };
-        runtime.channels_paused_by_mixer.clear();
+        let channels_paused_by_mixer: &mut Vec<Ref<AudioChannel>> = &mut runtime.channels_paused_by_mixer;
+        channels_paused_by_mixer.clear();
         std::mem::take(&mut runtime.active_channels)
     };
     for channel in channels {
