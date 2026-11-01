@@ -494,7 +494,7 @@ fn sections_to_document(sections: &LibgdxSections) -> LibgdxParticleDocument {
         .sections
         .iter()
         .map(|(key, _)| key)
-        .find(|key| key.starts_with("- ") && key.ends_with(" -"))
+        .find(|key: &&String| key.starts_with("- ") && key.ends_with(" -"))
         .cloned();
     let emitter_name = match &emitter_key {
         Some(key) => String::from(key[2..key.len() - 2].trim()),
