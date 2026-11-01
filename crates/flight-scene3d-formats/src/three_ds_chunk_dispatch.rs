@@ -6,6 +6,7 @@ pub fn build_three_ds_chunk_dispatch(
     out: &mut ThreeDsChunkDispatch,
     handlers: &[Ref<ThreeDsChunkHandler>],
 ) {
+    let out: &mut Vec<ThreeDsChunkDispatchEntry> = out;
     out.clear();
     for handler in handlers {
         let chunk_ids = handler.read().unwrap().chunk_ids.clone();

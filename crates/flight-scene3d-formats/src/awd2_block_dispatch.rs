@@ -77,6 +77,7 @@ pub fn initialize_awd2_parse_state(out: &mut Awd2ParseState) {
 
 // flight-lint: allow(conform-params) Principal21f7557f approved D24: required first caller-owned collection out, cleared then filled
 pub fn expand_awd2_block_dispatch(out: &mut Awd2BlockDispatch, blocks: &[Ref<Awd2BlockHandler>]) {
+    let out: &mut Vec<Awd2BlockDispatchEntry> = out;
     out.clear();
     for handler in blocks {
         let types = handler.read().unwrap().block_types.clone();
