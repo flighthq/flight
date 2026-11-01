@@ -20463,3 +20463,23 @@ pub fn test_reserved(default: f32) -> f32 {
         "bare reserved words should not appear as identifiers: {output}"
     );
 }
+
+#[test]
+fn try_operator_in_expression_position_is_rejected() {
+    let source = r#"
+fn helper(x: f32) -> Option<f32> { return Some(x); }
+
+pub fn test_try(x: f32) -> Option<f32> {
+    let mut out: Vec<f32> = Vec::new();
+    out.push(helper(x)?);
+    return out.first().copied();
+}
+"#;
+    let result = compile_typescript(source, None);
+    assert!(result.is_err(), "expression-position ? should be rejected");
+    let error = result.unwrap_err().to_string();
+    assert!(
+        error.contains("bind the result first"),
+        "error should suggest let binding: {error}"
+    );
+}

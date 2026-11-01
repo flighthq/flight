@@ -10086,7 +10086,9 @@ fn emit_expression_value(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
-        Expr::Try(try_expr) => emit_expression(&try_expr.expr, entities),
+        Expr::Try(_) => Err(compile_error(
+            "portable `?` in expression position has no lowering; bind the result first with `let x = expr?;`",
+        )),
         Expr::Unary(unary) => emit_unary_expression(unary, entities),
         _ => Err(compile_error(format!(
             "unsupported Rust expression `{}`",
