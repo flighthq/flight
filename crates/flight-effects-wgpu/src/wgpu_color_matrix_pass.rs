@@ -43,7 +43,9 @@ pub fn apply_color_matrix_pass_to_wgpu(
         COLOR_MATRIX_FRAGMENT_WGSL,
         Some(WgpuEffectBlendMode::Replace),
     );
-    let at = |index: usize| -> f32 { matrix.get(index).copied().unwrap_or(0.0) };
+    let at = |index: usize| -> f32 {
+        return matrix.get(index).copied().unwrap_or(0.0);
+    };
     draw_wgpu_effect_pass(
         state,
         source,
