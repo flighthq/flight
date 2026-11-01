@@ -107,8 +107,36 @@ fn compile_typescript_sources(
     visibility_sources: &[ModuleSource<'_>],
     crate_roots: &[CrateRootSource<'_>],
 ) -> Result<String, CompileError> {
+    return compile_typescript_sources_with_options(
+        source,
+        entity_module,
+        alias_sources,
+        external_alias_sources,
+        module_identities,
+        source_paths,
+        visibility_sources,
+        crate_roots,
+        false,
+    );
+}
+
+fn compile_typescript_sources_with_options(
+    source: &str,
+    entity_module: Option<&str>,
+    alias_sources: &[&str],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    module_identities: Option<Vec<String>>,
+    source_paths: &[&str],
+    visibility_sources: &[ModuleSource<'_>],
+    crate_roots: &[CrateRootSource<'_>],
+    lenient: bool,
+) -> Result<String, CompileError> {
     require_generated_source(source)?;
-    let program = model::parse_program(source)?;
+    let program = if lenient {
+        model::parse_program_lenient(source)?
+    } else {
+        model::parse_program(source)?
+    };
     let alias_programs = alias_sources
         .iter()
         .map(|alias_source| model::parse_program(alias_source))
@@ -229,6 +257,7 @@ fn compile_typescript_sources(
         visibility_programs: &visibility_programs,
         visibility_identities: &visibility_identities,
         source_paths: &all_source_paths,
+        lenient,
     })?;
     output =
         lower_string_union_variants(output, &program.string_unions, &program.string_union_values)?;
@@ -354,6 +383,28 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
     visibility_sources: &[ModuleSource<'_>],
     crate_roots: &[CrateRootSource<'_>],
 ) -> Result<String, CompileError> {
+    return compile_typescript_with_options(
+        source,
+        entity_module,
+        alias_sources,
+        external_alias_sources,
+        visibility_sources,
+        crate_roots,
+        false,
+    );
+}
+
+/// Compiles one Rust module with full options including lenient mode.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_options(
+    source: ModuleSource<'_>,
+    entity_module: Option<&str>,
+    alias_sources: &[ModuleSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    visibility_sources: &[ModuleSource<'_>],
+    crate_roots: &[CrateRootSource<'_>],
+    lenient: bool,
+) -> Result<String, CompileError> {
     let identities = std::iter::once(&source)
         .chain(alias_sources)
         .map(|module| module_identity_from_path(module.path, crate_roots))
@@ -369,7 +420,7 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
         .iter()
         .map(|module| module.source)
         .collect::<Vec<_>>();
-    return compile_typescript_sources(
+    return compile_typescript_sources_with_options(
         source.source,
         entity_module,
         &alias_source_texts,
@@ -380,6 +431,28 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
             .collect::<Vec<_>>(),
         visibility_sources,
         crate_roots,
+        lenient,
+    );
+}
+
+/// Compiles one Rust module in lenient mode: unsupported constructs emit a diagnostic comment
+/// instead of failing, so the output contains all items the compiler can lower and comment stubs
+/// for the rest.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_lenient(
+    source: &str,
+    entity_module: Option<&str>,
+) -> Result<String, CompileError> {
+    return compile_typescript_sources_with_options(
+        source,
+        entity_module,
+        &[],
+        &[],
+        None,
+        &[],
+        &[],
+        &[],
+        true,
     );
 }
 

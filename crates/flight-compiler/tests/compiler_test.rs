@@ -1,10 +1,11 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, VitestAliasSource, compile_typescript,
-    compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
-    compile_typescript_with_module_sources, compile_typescript_with_visibility_sources,
-    compile_vitest, compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
-    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
-    compile_vitest_with_visibility_sources, root_only_names, source_mode,
+    compile_typescript_lenient, compile_typescript_with_alias_sources,
+    compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
+    compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
+    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
+    compile_vitest_with_module_alias_sources, compile_vitest_with_visibility_sources,
+    root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -20372,5 +20373,28 @@ fn lowers_assert_macros_in_expression_position() {
     assert!(
         output.contains("throw new Error"),
         "assert macros should emit throw: {output}"
+    );
+}
+
+#[test]
+fn lenient_mode_emits_stubs_for_unsupported_functions() {
+    let source = r#"
+pub fn good(a: f32) -> f32 {
+    return a + 1.0;
+}
+pub fn bad(x: &dyn std::any::Any) -> bool {
+    return x.downcast_ref::<u32>().is_some();
+}
+"#;
+    let strict = compile_typescript(source, None);
+    assert!(strict.is_err(), "strict mode should reject downcast_ref");
+    let lenient = compile_typescript_lenient(source, None).unwrap();
+    assert!(
+        lenient.contains("export function good"),
+        "lenient should emit the good function: {lenient}"
+    );
+    assert!(
+        lenient.contains("// [lenient] fn bad:"),
+        "lenient should emit a stub for the bad function: {lenient}"
     );
 }

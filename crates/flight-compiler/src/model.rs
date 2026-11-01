@@ -1508,6 +1508,14 @@ fn parse_numeric_unions(attributes: &[Attribute]) -> Result<BTreeSet<String>, Co
 }
 
 pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
+    return parse_program_with_options(source, false);
+}
+
+pub(crate) fn parse_program_lenient(source: &str) -> Result<Program, CompileError> {
+    return parse_program_with_options(source, true);
+}
+
+fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, CompileError> {
     let source_mode = source_mode(source)?;
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
@@ -1690,7 +1698,9 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         &constants,
         &statics,
     )?;
-    validate_lazy_lock_statics(&statics, &functions, &constants, &structs, &type_aliases)?;
+    if !lenient {
+        validate_lazy_lock_statics(&statics, &functions, &constants, &structs, &type_aliases)?;
+    }
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
     return Ok(Program {

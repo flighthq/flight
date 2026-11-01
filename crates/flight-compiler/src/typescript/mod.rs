@@ -82,6 +82,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub visibility_programs: &'a [Program],
     pub visibility_identities: &'a [Option<String>],
     pub source_paths: &'a [Option<String>],
+    pub lenient: bool,
 }
 
 type PreferredAliases = HashMap<String, String>;
@@ -18669,7 +18670,13 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             .or_default()
             .insert(name);
     }
-    reject_entity_runtime_state_store_collisions(program, &programs)?;
+    let lenient = input.lenient;
+    let mut lenient_diagnostics: Vec<String> = Vec::new();
+    if !lenient {
+        reject_entity_runtime_state_store_collisions(program, &programs)?;
+    } else if let Err(error) = reject_entity_runtime_state_store_collisions(program, &programs) {
+        lenient_diagnostics.push(error.to_string());
+    }
     let source_identities = (0..programs.len())
         .map(|index| {
             module_identities
@@ -18678,14 +18685,30 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         })
         .chain(visibility_identities.iter().cloned())
         .collect::<Vec<_>>();
-    reject_unsafe_lazy_lock_initializers(
+    if !lenient {
+        reject_unsafe_lazy_lock_initializers(
+            program,
+            &programs,
+            visibility_programs,
+            &source_identities,
+            source_paths,
+        )?;
+    } else if let Err(error) = reject_unsafe_lazy_lock_initializers(
         program,
         &programs,
         visibility_programs,
         &source_identities,
         source_paths,
-    )?;
-    reject_unsupported_array_like_uses(program, &expression_context)?;
+    ) {
+        lenient_diagnostics.push(error.to_string());
+    }
+    if !lenient {
+        reject_unsupported_array_like_uses(program, &expression_context)?;
+    } else if let Err(error) =
+        reject_unsupported_array_like_uses(program, &expression_context)
+    {
+        lenient_diagnostics.push(error.to_string());
+    }
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
     let mut body = String::new();
@@ -18694,7 +18717,8 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     }
 
     for rust_enum in &program.enums {
-        emit_enum(
+        let enum_start = body.len();
+        let result = emit_enum(
             &mut body,
             rust_enum,
             program
@@ -18707,11 +18731,22 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             program.numeric_unions.get(&rust_enum.ident.to_string()),
             program.data_unions.contains(&rust_enum.ident.to_string()),
             &source_context,
-        )?;
-        body.push('\n');
+        );
+        match result {
+            Ok(()) => body.push('\n'),
+            Err(error) if lenient => {
+                body.truncate(enum_start);
+                let name = &rust_enum.ident;
+                lenient_diagnostics.push(format!("enum {name}: {error}"));
+                writeln!(body, "// [lenient] enum {name}: {error}\n")
+                    .expect("writing to a String cannot fail");
+            }
+            Err(error) => return Err(error),
+        }
     }
     for type_alias in &program.type_aliases {
-        emit_type_alias(
+        let alias_start = body.len();
+        let result = emit_type_alias(
             &mut body,
             type_alias,
             &source_context,
@@ -18719,11 +18754,22 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                 .callable_parameters
                 .get(&type_alias.ident.to_string())
                 .map(Vec::as_slice),
-        )?;
-        body.push('\n');
+        );
+        match result {
+            Ok(()) => body.push('\n'),
+            Err(error) if lenient => {
+                body.truncate(alias_start);
+                let name = &type_alias.ident;
+                lenient_diagnostics.push(format!("type {name}: {error}"));
+                writeln!(body, "// [lenient] type {name}: {error}\n")
+                    .expect("writing to a String cannot fail");
+            }
+            Err(error) => return Err(error),
+        }
     }
     for structure in &program.structs {
-        emit_struct(
+        let struct_start = body.len();
+        let result = emit_struct(
             &mut body,
             structure,
             &source_context,
@@ -18732,8 +18778,18 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             program
                 .readonly_structs
                 .contains(&structure.ident.to_string()),
-        )?;
-        body.push('\n');
+        );
+        match result {
+            Ok(()) => body.push('\n'),
+            Err(error) if lenient => {
+                body.truncate(struct_start);
+                let name = &structure.ident;
+                lenient_diagnostics.push(format!("struct {name}: {error}"));
+                writeln!(body, "// [lenient] struct {name}: {error}\n")
+                    .expect("writing to a String cannot fail");
+            }
+            Err(error) => return Err(error),
+        }
     }
     let group_members =
         crate::model::const_group_members(&program.const_groups, &program.constants)?;
@@ -18742,26 +18798,45 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         let rust_name = constant.ident.to_string();
         if let Some((_, owner, _)) = group_members.iter().find(|(name, _, _)| *name == rust_name) {
             if emitted_groups.insert(owner.clone()) {
-                emit_const_group(
+                let group_start = body.len();
+                let result = emit_const_group(
                     &mut body,
                     owner,
                     &group_members,
                     &program.constants,
                     &source_context,
-                )?;
-                body.push('\n');
+                );
+                match result {
+                    Ok(()) => body.push('\n'),
+                    Err(error) if lenient => {
+                        body.truncate(group_start);
+                        lenient_diagnostics.push(format!("const group {owner}: {error}"));
+                        writeln!(body, "// [lenient] const group {owner}: {error}\n")
+                            .expect("writing to a String cannot fail");
+                    }
+                    Err(error) => return Err(error),
+                }
             }
             continue;
         }
-        emit_constant(
+        let const_start = body.len();
+        let result = emit_constant(
             &mut body,
             constant,
             &source_context,
             program.frozen_objects.get(&rust_name).map(String::as_str),
-        )?;
-        body.push('\n');
+        );
+        match result {
+            Ok(()) => body.push('\n'),
+            Err(error) if lenient => {
+                body.truncate(const_start);
+                lenient_diagnostics.push(format!("const {rust_name}: {error}"));
+                writeln!(body, "// [lenient] const {rust_name}: {error}\n")
+                    .expect("writing to a String cannot fail");
+            }
+            Err(error) => return Err(error),
+        }
     }
-    let skip_unsupported = std::env::var("FLIGHT_COMPILE_SKIP_UNSUPPORTED").is_ok();
     for rust_static in &program.statics {
         let static_start = body.len();
         let result = emit_static(
@@ -18773,8 +18848,12 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         );
         match result {
             Ok(()) => body.push('\n'),
-            Err(_) if skip_unsupported => {
+            Err(error) if lenient => {
                 body.truncate(static_start);
+                let name = &rust_static.ident;
+                lenient_diagnostics.push(format!("static {name}: {error}"));
+                writeln!(body, "// [lenient] static {name}: {error}\n")
+                    .expect("writing to a String cannot fail");
             }
             Err(error) => return Err(error),
         }
@@ -18796,15 +18875,33 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                     body.push('\n');
                 }
             }
-            Err(_) if skip_unsupported => {
+            Err(error) if lenient => {
                 body.truncate(function_start);
+                let name = &function.sig.ident;
+                lenient_diagnostics.push(format!("fn {name}: {error}"));
+                writeln!(body, "// [lenient] fn {name}: {error}\n")
+                    .expect("writing to a String cannot fail");
             }
             Err(error) => return Err(error),
         }
     }
-    emit_entity_runtime_state_stores(&mut body, program, &source_context)?;
-    for (store, module) in entity_runtime_state_store_imports(&body, &programs, &program_modules)? {
-        value_imports.entry(module).or_default().insert(store);
+    if lenient {
+        if let Err(error) = emit_entity_runtime_state_stores(&mut body, program, &source_context) {
+            lenient_diagnostics.push(format!("entity runtime state stores: {error}"));
+        }
+    } else {
+        emit_entity_runtime_state_stores(&mut body, program, &source_context)?;
+    }
+    match entity_runtime_state_store_imports(&body, &programs, &program_modules) {
+        Ok(imports) => {
+            for (store, module) in imports {
+                value_imports.entry(module).or_default().insert(store);
+            }
+        }
+        Err(error) if lenient => {
+            lenient_diagnostics.push(format!("entity runtime state store imports: {error}"));
+        }
+        Err(error) => return Err(error),
     }
     for (module, names) in &value_imports {
         writeln!(
@@ -18828,6 +18925,15 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         out.push('\n');
     }
     out.push_str(&body);
+    if lenient && !lenient_diagnostics.is_empty() {
+        eprintln!(
+            "lenient: {} items skipped",
+            lenient_diagnostics.len()
+        );
+        for diagnostic in &lenient_diagnostics {
+            eprintln!("  {diagnostic}");
+        }
+    }
     return Ok(out);
 }
 

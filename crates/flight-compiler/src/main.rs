@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
@@ -25,6 +25,7 @@ struct GenerateOptions {
     entity_module: Option<String>,
     external_alias_modules: Vec<String>,
     external_alias_sources: Vec<PathBuf>,
+    lenient: bool,
     out: PathBuf,
     source: PathBuf,
     visibility_sources: Vec<PathBuf>,
@@ -242,7 +243,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     path: &root.path,
                 })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_typescript_with_visibility_sources_and_crate_roots(
+            flight_compiler::compile_typescript_with_options(
                 flight_compiler::ModuleSource {
                     path: &source_path,
                     source: &source,
@@ -252,6 +253,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &external_aliases,
                 &visibility_source_refs,
                 &crate_root_refs,
+                options.lenient,
             )
         }
         GenerateKind::Tests => {
@@ -373,6 +375,7 @@ fn parse_generate_options(
     let mut entity_module = None;
     let mut external_alias_modules = Vec::new();
     let mut external_alias_sources = Vec::new();
+    let mut lenient = false;
     let mut visibility_sources = Vec::new();
     let mut out = None;
     let mut source = None;
@@ -380,6 +383,7 @@ fn parse_generate_options(
     while index < arguments.len() {
         match arguments[index].as_str() {
             "--check" => check = true,
+            "--lenient" => lenient = true,
             "--alias-source" => {
                 index += 1;
                 let path = arguments
@@ -469,6 +473,11 @@ fn parse_generate_options(
                 "--entity-module is only valid for generate\n\n{USAGE}"
             ));
         }
+        GenerateKind::Tests if lenient => {
+            return Err(format!(
+                "--lenient is only valid for generate\n\n{USAGE}"
+            ));
+        }
         GenerateKind::Source | GenerateKind::Tests => {}
     }
     if external_alias_sources.len() != external_alias_modules.len() {
@@ -485,6 +494,7 @@ fn parse_generate_options(
         entity_module,
         external_alias_modules,
         external_alias_sources,
+        lenient,
         out: out.ok_or_else(|| format!("--out is required\n\n{USAGE}"))?,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         visibility_sources,
