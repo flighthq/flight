@@ -42,8 +42,7 @@ pub fn initialize_scene2d_document(out: &mut Scene2DDocument) {
 pub fn initialize_scene2d_slot_reference(out: &mut Scene2DSlotReference) {
     out.content = None;
     out.linkage = None;
-    let out_name: &mut String = &mut out.name;
-    out_name.clear();
+    out.name = String::new();
     out.required = false;
     out.target = create_display_object();
 }
