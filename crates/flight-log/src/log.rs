@@ -614,7 +614,7 @@ fn apply_redaction(
     state: &LogStateRef,
     data: HashMap<String, LogValue>,
 ) -> HashMap<String, LogValue> {
-    let paths = state.read().unwrap().redaction_paths.clone();
+    let paths: Vec<String> = state.read().unwrap().redaction_paths.clone();
     if paths.is_empty() {
         return data;
     }
@@ -879,13 +879,21 @@ pub fn exit_log_span(state: &LogStateRef, span: &LogSpan) {
 }
 
 fn flush_buffered_state(state: &Arc<Mutex<BufferedLogSinkState>>) {
-    let (batch, target) = {
+    let claim = {
         let mut s = state.lock().unwrap();
         if s.buf.is_empty() {
-            return;
+            None
+        } else {
+            let batch: Vec<LogEntry> = s.buf.clone();
+            let buf: &mut Vec<LogEntry> = &mut s.buf;
+            buf.clear();
+            Some((batch, s.target.clone()))
         }
-        (s.buf.drain(..).collect::<Vec<LogEntry>>(), s.target.clone())
     };
+    let Some(claim) = claim else {
+        return;
+    };
+    let (batch, target) = claim;
     for e in batch.iter() {
         target(e);
     }
