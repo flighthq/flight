@@ -376,7 +376,9 @@ pub fn write_physics2d_debug_geometry(
     world: &Physics2DWorld,
     options: Option<&Physics2DDebugGeometryOptions>,
 ) {
-    let options = options.copied().unwrap_or_default();
+    let options = options
+        .copied()
+        .unwrap_or(Physics2DDebugGeometryOptions::default());
     out.line_count = 0;
     out.circle_count = 0;
 
