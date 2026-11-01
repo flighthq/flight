@@ -1611,23 +1611,27 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
                     .all(|v| matches!(v.fields, Fields::Named(_) | Fields::Unit));
                 let is_data_union = data_unions.contains(&name)
                     || (has_named_variants && all_named_or_unit);
-                validate_enum(&item, is_data_union)?;
+                if !lenient {
+                    validate_enum(&item, is_data_union)?;
+                }
                 enums.push(item);
             }
             Item::Fn(function) => functions.push(function),
             Item::Static(item) => statics.push(item),
             Item::Struct(structure) => {
-                validate_fields(
-                    &structure,
-                    entity_runtime_states
-                        .get(&structure.ident.to_string())
-                        .map(String::as_str),
-                )?;
+                if !lenient {
+                    validate_fields(
+                        &structure,
+                        entity_runtime_states
+                            .get(&structure.ident.to_string())
+                            .map(String::as_str),
+                    )?;
+                }
                 structs.push(structure);
             }
             Item::Type(item) => type_aliases.push(item),
             Item::Use(item) => uses.push(item),
-            Item::Union(item) if is_public(&item.vis) => {
+            Item::Union(item) if !lenient && is_public(&item.vis) => {
                 return Err(unsupported_public("union", &item.ident.to_string()));
             }
             Item::ExternCrate(item) => extern_crates.push(item),
