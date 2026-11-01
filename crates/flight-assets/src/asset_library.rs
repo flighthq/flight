@@ -351,8 +351,8 @@ fn is_equivalent_asset_descriptor(a: &Ref<AssetDescriptor>, b: &Ref<AssetDescrip
     if a.id != b.id || a.r#type != b.r#type || a.url != b.url {
         return false;
     }
-    let a = a.groups.unwrap_or_default();
-    let b = b.groups.unwrap_or_default();
+    let a = a.groups.unwrap_or(Vec::new());
+    let b = b.groups.unwrap_or(Vec::new());
     return a.iter().all(|value| b.contains(value)) && b.iter().all(|value| a.contains(value));
 }
 
