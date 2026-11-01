@@ -321,8 +321,10 @@ pub fn run_cff_charstring(
     local_subrs: &[CffIndexEntry],
     global_subrs: &[CffIndexEntry],
 ) -> bool {
-    out.commands.clear();
-    out.data.clear();
+    let out_commands: &mut Vec<u8> = &mut out.commands;
+    out_commands.clear();
+    let out_data: &mut Vec<f64> = &mut out.data;
+    out_data.clear();
     out.winding = PathWinding::NonZero;
     let mut state = CffExecution {
         open: false,
