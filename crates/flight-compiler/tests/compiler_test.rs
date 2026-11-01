@@ -20805,16 +20805,39 @@ pub fn scale(values: &mut [f64], factor: f64) {
         "iter_mut should emit index loop: {result}"
     );
     assert!(
-        result.contains("let value = values[__i]"),
-        "iter_mut should alias element: {result}"
+        result.contains("values[__i] *= factor"),
+        "iter_mut element should alias collection slot directly: {result}"
     );
     assert!(
-        result.contains("values[__i] = value"),
-        "iter_mut should write back: {result}"
+        !result.contains("let value"),
+        "iter_mut should not copy into a local: {result}"
+    );
+}
+
+#[test]
+fn emits_iter_mut_alias_survives_early_exit() {
+    let source = r#"
+pub fn scale_until_zero(values: &mut [f64], factor: f64) {
+    for value in values.iter_mut() {
+        *value *= factor;
+        if *value == 0.0 {
+            break;
+        }
+    }
+}
+"#;
+    let result = compile_typescript(source, None).unwrap();
+    assert!(
+        result.contains("values[__i] *= factor"),
+        "mutation should write through alias: {result}"
     );
     assert!(
-        result.contains("value *= factor"),
-        "deref mutation should strip to bare assignment: {result}"
+        result.contains("values[__i] === 0"),
+        "read should go through alias: {result}"
+    );
+    assert!(
+        !result.contains("let value"),
+        "no copy variable that break could skip writing back: {result}"
     );
 }
 
@@ -20854,12 +20877,12 @@ pub fn fill_weights(out: &mut [f32]) {
         "enumerate iter_mut should use index name from pattern: {result}"
     );
     assert!(
-        result.contains("let weight = out[i]"),
-        "enumerate iter_mut should alias element: {result}"
+        result.contains("out[i] = i"),
+        "enumerate iter_mut element should alias collection slot directly: {result}"
     );
     assert!(
-        result.contains("out[i] = weight"),
-        "enumerate iter_mut should write back: {result}"
+        !result.contains("let weight"),
+        "enumerate iter_mut should not copy into a local: {result}"
     );
 }
 

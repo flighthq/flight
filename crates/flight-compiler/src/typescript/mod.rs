@@ -233,6 +233,8 @@ const REF_ALIAS_RECEIVER_CAPTURE_MARKER: &str = "@ref-alias-receiver-capture:";
 
 const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:";
 
+const ITER_MUT_ALIAS_MARKER: &str = "@iter-mut-alias:";
+
 const TRY_SUBSTITUTION_MARKER: &str = "@try-sub:";
 
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
@@ -9891,6 +9893,17 @@ fn emit_expression_value(
         Expr::Path(path) => {
             if path.qself.is_none()
                 && path.path.segments.len() == 1
+            {
+                let name = path.path.segments[0].ident.to_string();
+                if let Some(bound) = lexical_binding(entities, &name) {
+                    let prefix = format!("{ITER_MUT_ALIAS_MARKER}{bound}=");
+                    if let Some(marker) = entities.iter().find(|m| m.starts_with(&prefix)) {
+                        return Ok(marker[prefix.len()..].to_string());
+                    }
+                }
+            }
+            if path.qself.is_none()
+                && path.path.segments.len() == 1
                 && let Some(target) = ref_alias_target(entities, expression)?
             {
                 return emit_expression(&target, entities);
@@ -10721,6 +10734,12 @@ fn emit_iter_mut_loop(
         _ => mark_reference(&mut loop_context, &loop_expression.pat),
     }
 
+    let add_alias = |context: &mut HashSet<String>, name: &str, collection: &str, index: &str| {
+        if let Some(id) = lexical_binding(context, name) {
+            context.insert(format!("{ITER_MUT_ALIAS_MARKER}{id}={collection}[{index}]"));
+        }
+    };
+
     if let IterMutChain::Zip(zip_expr) = &chain {
         let zip_collection = emit_expression(zip_expr, entities)?;
         let Pat::Tuple(tuple) = &*loop_expression.pat else {
@@ -10735,6 +10754,7 @@ fn emit_iter_mut_loop(
         }
         let mut_name = emit_pattern(&tuple.elems[0])?;
         let zip_name = emit_pattern(&tuple.elems[1])?;
+        add_alias(&mut loop_context, &mut_name, &collection_expr, index_var);
         write_indent(out, indent);
         writeln!(
             out,
@@ -10742,15 +10762,9 @@ fn emit_iter_mut_loop(
         )
         .expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
-        writeln!(out, "let {mut_name} = {collection_expr}[{index_var}];")
-            .expect("writing to a String cannot fail");
-        write_indent(out, indent + 1);
         writeln!(out, "const {zip_name} = {zip_collection}[{index_var}];")
             .expect("writing to a String cannot fail");
         emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
-        write_indent(out, indent + 1);
-        writeln!(out, "{collection_expr}[{index_var}] = {mut_name};")
-            .expect("writing to a String cannot fail");
         write_indent(out, indent);
         out.push_str("}\n");
         return Ok(());
@@ -10769,47 +10783,28 @@ fn emit_iter_mut_loop(
         }
         let index_name = emit_pattern(&tuple.elems[0])?;
         let element_name = emit_pattern(&tuple.elems[1])?;
+        add_alias(&mut loop_context, &element_name, &collection_expr, &index_name);
         write_indent(out, indent);
         writeln!(
             out,
             "for (let {index_name} = 0; {index_name} < {limit}; {index_name}++) {{"
         )
         .expect("writing to a String cannot fail");
-        write_indent(out, indent + 1);
-        writeln!(
-            out,
-            "let {element_name} = {collection_expr}[{index_name}];"
-        )
-        .expect("writing to a String cannot fail");
         emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
-        write_indent(out, indent + 1);
-        writeln!(
-            out,
-            "{collection_expr}[{index_name}] = {element_name};"
-        )
-        .expect("writing to a String cannot fail");
         write_indent(out, indent);
         out.push_str("}\n");
         return Ok(());
     }
 
     let element_name = emit_pattern(&loop_expression.pat)?;
+    add_alias(&mut loop_context, &element_name, &collection_expr, index_var);
     write_indent(out, indent);
     writeln!(
         out,
         "for (let {index_var} = 0; {index_var} < {limit}; {index_var}++) {{"
     )
     .expect("writing to a String cannot fail");
-    write_indent(out, indent + 1);
-    writeln!(
-        out,
-        "let {element_name} = {collection_expr}[{index_var}];"
-    )
-    .expect("writing to a String cannot fail");
     emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
-    write_indent(out, indent + 1);
-    writeln!(out, "{collection_expr}[{index_var}] = {element_name};")
-        .expect("writing to a String cannot fail");
     write_indent(out, indent);
     out.push_str("}\n");
     Ok(())
