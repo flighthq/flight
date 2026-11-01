@@ -140,7 +140,7 @@ pub fn parse_bitmap_fingerprint(text: &str) -> Option<BitmapFingerprint> {
     if colon == 0 {
         return None;
     }
-    let grid_size: u32 = text[..colon].parse().ok()?;
+    let grid_size: u32 = text[..colon].parse::<u32>().ok()?;
     if grid_size < 1 {
         return None;
     }
