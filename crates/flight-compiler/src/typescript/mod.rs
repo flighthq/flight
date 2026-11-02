@@ -19994,7 +19994,28 @@ fn emit_statement(
                     } else {
                         unreachable!()
                     };
-                    if let Some(test) = data_union_pattern_test(pattern, "$ifLet", entities)? {
+                    let (effective_pattern, option_wrapped): (&Pat, bool) =
+                        if let Pat::TupleStruct(ts) = &**pattern
+                            && (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
+                            && ts.elems.len() == 1
+                        {
+                            (&ts.elems[0], true)
+                        } else {
+                            (pattern, false)
+                        };
+                    if let Some(mut test) =
+                        data_union_pattern_test(effective_pattern, "$ifLet", entities)?
+                    {
+                        if option_wrapped {
+                            let absent =
+                                option_absent_value(&let_expr.expr, entities);
+                            test.predicate = Some(match test.predicate {
+                                Some(predicate) => {
+                                    format!("$ifLet !== {absent} && {predicate}")
+                                }
+                                None => format!("$ifLet !== {absent}"),
+                            });
+                        }
                         Some((emit_expression(&let_expr.expr, entities)?, test))
                     } else {
                         None

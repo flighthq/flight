@@ -14088,6 +14088,37 @@ fn parse_digit(s: &str) -> Option<u8> { Some(0) }
     }
 
     #[test]
+    fn lowers_if_let_some_data_union_variant_to_combined_check() {
+        let source = r#"
+pub enum DocValue {
+    Boolean(bool),
+    Number(f64),
+    Text(String),
+}
+
+pub fn get_field(name: &str) -> Option<DocValue> { None }
+
+pub fn take_boolean(name: &str) -> bool {
+    if let Some(DocValue::Boolean(value)) = get_field(name) {
+        return value;
+    }
+    return false;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("$ifLet !== undefined"),
+            "should check for undefined (Option unwrap): {output}"
+        );
+        assert!(
+            output.contains(".kind ===") || output.contains("=== \"boolean\""),
+            "should check the data union variant kind: {output}"
+        );
+    }
+
+    #[test]
     fn preserves_receivers_for_optional_member_calls() {
         let source = r#"
 use std::sync::Arc;
