@@ -17029,11 +17029,7 @@ fn emit_method_call(
         "borrow" | "borrow_mut" if arguments.is_empty() => Ok(receiver),
         "leading_zeros" if arguments.is_empty() => Ok(format!("Math.clz32({receiver})")),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
-        "last" | "last_mut"
-            if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) =>
-        {
-            Ok(format!("{receiver}.at(-1)"))
-        }
+        "last" | "last_mut" if arguments.is_empty() => Ok(format!("{receiver}.at(-1)")),
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),
         "get_or_insert" if arguments.len() == 1 => {
             Ok(format!("({receiver} = {receiver} ?? {})", arguments[0]))
