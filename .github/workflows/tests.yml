@@ -17,11 +17,12 @@ name: CI
 #                  snapshot of main (crates.io's rate limit makes a full graph take ~2h, too slow and
 #                  too noisy to repeat per push; `rust-publish-dry-run` below proves it would publish).
 #
-# A `changes` job
-# (dorny/paths-filter) decides which areas a change touches, so a docs-only PR skips the code
-# legs — a fast success that still reports to branch protection, so these checks are safe to
-# mark required (unlike a whole-workflow path-skip, which never reports and leaves a required
-# check stuck "Expected — Waiting for status").
+# ★ NO PATH FILTERING. Every job runs on every push, so a green run means every check passed AT THIS
+# COMMIT. A filter on "what this push changed" broke that: a push that broke Rust followed by one that
+# touched only TypeScript skipped the Rust jobs, went green, and was promoted, published, and taggable
+# with Rust still broken underneath. Promote, Edge publish, Release, and the snapshot gates below all
+# read "CI green" as "this commit is good", so it has to mean exactly that. Change-scoped speed lives
+# in the pre-push hook instead, where it costs nothing in confidence.
 #
 # Documentation checks (docs:check, append-only-ledgers) are principal-facing review tools,
 # not CI gates. Run them locally with `npm run docs:check` / `npm run check:append-only-ledgers`.
@@ -33,8 +34,7 @@ on:
   pull_request:
   push:
     branches: [main, develop]
-  # A manual CI run deliberately executes the full gate (every path filter forced on), so its success
-  # means the same thing as a push-triggered success.
+  # A manual run executes the same full gate as a push, so its success means the same thing.
   workflow_dispatch:
 
 # Electron's postinstall downloads a ~100MB prebuilt binary from GitHub releases on the critical path of
@@ -59,68 +59,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Changes
-    runs-on: ubuntu-latest
-    outputs:
-      code: ${{ steps.scope.outputs.code }}
-      rust: ${{ steps.scope.outputs.rust }}
-    steps:
-      # Full history: paths-filter needs the merge-base (PRs) or the pre-push commit
-      # (pushes) present locally. A shallow clone makes it fetch --deepen in a loop, which
-      # is slow and can hit git's transient "shallow file has changed since we read it".
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: dorny/paths-filter@v4
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        id: filter
-        with:
-          # Compare pushes against the pushed branch itself (= the commit before the push),
-          # not the repository default branch. develop is a long-lived branch; diffing it
-          # against main would mark every area changed on every push and the docs-only skip
-          # below would never fire. Ignored for pull_request events, which keep the PR base.
-          base: ${{ github.ref_name }}
-          # All-except filter: a change triggers the code legs unless it only touches docs,
-          # so a newly added file type still triggers the legs by default. The exclusion is
-          # `agents/**/*.md`, NOT `agents/**` — that directory also holds executable tooling
-          # (todo.mjs, scaffold.mjs, bless-queue.mjs) that agents run every session, and a
-          # blanket exclusion let real code changes skip every leg.
-          filters: |
-            code:
-              - '**'
-              - '!**/*.md'
-              - '!agents/**/*.md'
-            rust:
-              - 'crates/**'
-              - 'Cargo.toml'
-              - 'Cargo.lock'
-              - 'scripts/publish-crates.sh'
-              - 'scripts/version-crates.sh'
-              - '.github/workflows/rust-publish.yml'
-
-      # There is no meaningful changed-file range on a manual dispatch. Treat it as an explicit request
-      # for the complete CI gate rather than allowing every path-filtered job to skip and reporting a
-      # misleading green run that Promote or Release could later mistake for a tested commit.
-      - id: scope
-        name: Resolve the areas to check
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          FILTER_CODE: ${{ steps.filter.outputs.code }}
-          FILTER_RUST: ${{ steps.filter.outputs.rust }}
-        run: |
-          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
-            echo 'code=true' >> "$GITHUB_OUTPUT"
-            echo 'rust=true' >> "$GITHUB_OUTPUT"
-          else
-            echo "code=$FILTER_CODE" >> "$GITHUB_OUTPUT"
-            echo "rust=$FILTER_RUST" >> "$GITHUB_OUTPUT"
-          fi
-
   rust-check:
     name: Rust · check
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -130,8 +70,6 @@ jobs:
 
   rust-test:
     name: Rust · test
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -144,46 +82,24 @@ jobs:
   # what keeps a broken crate visible on the push that broke it rather than on the next morning.
   rust-publish-dry-run:
     name: Rust · package (dry run)
-    # After check and test, mirroring the TypeScript side: verify, then (dry-run) publish. It is also the
-    # Rust arc's single verdict for the wasm publish, so it must END IN A DEFINITE STATE rather than be
-    # skipped for two different reasons: when no Rust changed (check and test skipped) it succeeds as a
-    # no-op; when check or test failed it is skipped, and so is everything waiting on it.
+    # After check and test, mirroring the TypeScript side: verify, then (dry-run) publish. Its success
+    # is the Rust arc's verdict, which the npm publish waits on.
     needs: [rust-check, rust-test]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Decide whether there is anything to package
-        id: gate
-        env:
-          CHECK_RESULT: ${{ needs.rust-check.result }}
-          TEST_RESULT: ${{ needs.rust-test.result }}
-        run: |
-          if [ "$CHECK_RESULT" = skipped ] && [ "$TEST_RESULT" = skipped ]; then
-            echo "No Rust changed in this push; nothing to package."
-            echo 'run=false' >> "$GITHUB_OUTPUT"
-          else
-            echo 'run=true' >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/checkout@v5
-        if: ${{ steps.gate.outputs.run == 'true' }}
       - uses: dtolnay/rust-toolchain@stable
-        if: ${{ steps.gate.outputs.run == 'true' }}
       - uses: Swatinem/rust-cache@v2
-        if: ${{ steps.gate.outputs.run == 'true' }}
-      - if: ${{ steps.gate.outputs.run == 'true' }}
-        run: cargo publish --workspace --dry-run --no-verify
+      - run: cargo publish --workspace --dry-run --no-verify
 
-  # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
-  # `build-check` job (`packages:check && typecheck`) that all of them needed, but it put a serial
-  # 1m23s in front of every leg on every push. Its only real effect was fail-fast, declining to start
-  # the other jobs when the graph does not compile — trading wall clock on every GREEN push for runner
-  # minutes on the rarer RED one, the wrong direction here. The jobs that depend on a working build
-  # (the publishes) still wait for this one. The cost is that `needs.changes.outputs.code` is restated
-  # per job; that repetition is the price of the parallelism and is deliberate.
+  # Every leg starts immediately rather than behind a preflight job. There used to be a `build-check`
+  # job (`packages:check && typecheck`) that all of them needed, but it put a serial 1m23s in front of
+  # every leg on every push. Its only real effect was fail-fast, declining to start the other jobs when
+  # the graph does not compile — trading wall clock on every GREEN push for runner minutes on the rarer
+  # RED one, the wrong direction here. The jobs that depend on a working build (the publishes) still
+  # wait for this one.
   build:
     name: TypeScript · build
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -217,8 +133,6 @@ jobs:
   # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
   test-fast:
     name: TypeScript · unit tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -231,8 +145,6 @@ jobs:
 
   test-host:
     name: TypeScript · host backend tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -249,8 +161,6 @@ jobs:
   # still runs every gate.
   quality-structure:
     name: Packaging · manifests and license
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -284,10 +194,13 @@ jobs:
     # never hand-pushed, racing the promotion's publish on a different concurrency key for the same version.
     # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
     name: Publish · npm next
-    # Gated on everything that says the PUBLISHED packages are sound: they compile and emit (build),
-    # behave (unit tests, and host tests for the published host-* backends), and package correctly with
-    # clean license provenance. Not on render smoke (the flakiest leg) or anything in hygiene.yml.
-    needs: [build, test-fast, test-host, quality-structure]
+    # Gated on both arcs. TypeScript: the published packages compile and emit (build), behave (unit
+    # tests, and host tests for the published host-* backends), and package correctly with clean
+    # license provenance. Rust: the authoritative source the generated packages and the wasm packages
+    # come from checks, tests, and packages (the dry run waits on check and test). A snapshot version
+    # therefore means both arcs passed for that commit, as `edge` and stable already do. Not on render
+    # smoke (the flakiest leg) or anything in hygiene.yml.
+    needs: [build, test-fast, test-host, quality-structure, rust-publish-dry-run]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
@@ -352,9 +265,8 @@ jobs:
 
   wasm-edge-publish:
     name: Publish · npm next (wasm)
-    # After both arcs: the npm publish (TypeScript verified and published) and the Rust dry run (the
-    # crates these wasm packages compile from verified, or untouched by this push).
-    needs: [edge-publish, rust-publish-dry-run]
+    # After the npm publish, which already waited on both the TypeScript and the Rust arcs.
+    needs: edge-publish
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
@@ -412,8 +324,6 @@ jobs:
     # builds its own harness as a separate step, so a harness that does not build fails that step —
     # visibly not a rendering failure — and a package type error still fails `TypeScript · build`.
     name: Render · ${{ matrix.label }}
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:

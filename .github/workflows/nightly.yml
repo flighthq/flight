@@ -67,12 +67,16 @@ jobs:
   # `cargo publish --workspace --dry-run`, so a crate that cannot publish is already red on the push
   # that broke it; a failure here is a registry or network problem.
   #
-  # Skipped when crates.io already has flight-sdk at this version. flight-sdk publishes last, so its
+  # Refuses a main commit with no successful CI run (a hand push skips Promote's guarantee). Skipped
+  # when crates.io already has flight-sdk at this version. flight-sdk publishes last, so its
   # presence means the whole graph landed; a run that failed partway leaves it absent, and the next
   # night retries (crates already uploaded are skipped as "already exists").
   rust-snapshot:
     name: Rust · resolve edge snapshot
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read tests.yml conclusions for main's commit
     outputs:
       publish: ${{ steps.check.outputs.publish }}
       sha: ${{ steps.check.outputs.sha }}
@@ -88,11 +92,23 @@ jobs:
           cache: 'npm'
       - run: npm ci --ignore-scripts
       - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          sha=$(git rev-parse HEAD)
           version=$(npx tsx scripts/edge-version.ts main | sed -n 's/^version=//p')
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          # Promote only moves main to a commit whose CI passed, but a hand push to main skips that.
+          # Re-prove it for this exact commit, as Edge publish and Release do; no run is never green.
+          successes=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?head_sha=${sha}" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')
+          if [ "${successes:-0}" -eq 0 ]; then
+            echo "::error::main is at ${sha}, which has no successful CI (tests.yml) run; refusing to publish it to crates.io."
+            exit 1
+          fi
           # crates.io asks API clients to identify themselves.
           status=$(curl -s -o /dev/null -w '%{http_code}' -A 'flighthq-nightly (github.com/flighthq/flight)' \
             "https://crates.io/api/v1/crates/flight-sdk/$version")
