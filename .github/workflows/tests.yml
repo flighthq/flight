@@ -166,6 +166,22 @@ jobs:
         env:
           FLIGHT_CHECK_GATES: typecheck
 
+  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
+  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
+  test-fast:
+    name: TypeScript · unit tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
+
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
   # `build-check` job (`packages:check && typecheck`) that all of them needed, which made the gate
   # read once — but it put a serial 1m23s in front of every leg on every push, and it computed
@@ -208,22 +224,6 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist.tgz
           retention-days: 1
-
-  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
-  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
-  test-fast:
-    name: TypeScript · unit tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test
 
   test-host:
     name: TypeScript · host backend tests
