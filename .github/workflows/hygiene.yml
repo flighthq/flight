@@ -1,9 +1,9 @@
 name: Hygiene
 
 # Repository hygiene on every push and PR — and it NEVER fails. CI (tests.yml) answers "is this a
-# working product for users"; these checks answer "is the repo tidy": lint, format (TS + Rust),
-# clippy, ordering, convention audits, generated-manifest and ratchet checks, the scripts and
-# dev-tool suites, and the advisory bundle-size report. A stale count or an unregenerated manifest
+# working product for users"; these checks answer "is the repo tidy": the whole-repo typecheck,
+# lint, format (TS + Rust), clippy, ordering, convention audits, generated-manifest and ratchet
+# checks, the scripts and dev-tool suites, and the advisory bundle-size report. A stale count or an unregenerated manifest
 # is worth knowing about but is not a broken product, so it must not turn a commit red.
 #
 # Every check step is `continue-on-error`, which keeps the JOB green (a job-level continue-on-error
@@ -68,6 +68,29 @@ jobs:
         if: always()
         env:
           OUTCOMES: cargo-fmt=${{ steps.fmt.outcome }} clippy=${{ steps.clippy.outcome }}
+        run: bash scripts/report-hygiene.sh
+
+  # The whole-repo typecheck. In CI the build already type-checks every package and its tests, so
+  # what this adds is examples, functional scenes, scripts, tools and conformance — none of it
+  # shipped, and the examples still build and render in CI's smoke legs. The pre-push hook runs the
+  # same typecheck and blocks on it, so a type error rarely gets this far.
+  typecheck:
+    name: TypeScript · typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - id: typecheck
+        continue-on-error: true
+        run: npm run typecheck
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: typecheck=${{ steps.typecheck.outcome }}
         run: bash scripts/report-hygiene.sh
 
   checks:

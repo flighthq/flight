@@ -1,12 +1,15 @@
 name: CI
 
-# The per-commit PRODUCT gate for every PR and for pushes to main/develop: does it build, typecheck,
-# pass its unit/host/Rust tests, render on every backend, and package for both registries. A red run
+# The per-commit PRODUCT gate for every PR and for pushes to main/develop: does it build (which
+# type-checks every package and its tests), pass its unit/host/Rust tests, render on every backend,
+# and package for both registries. A red run
 # here means something a user of the SDK would feel. Promote, the snapshot publishes, and branch
 # protection all read this workflow, so nothing that is bookkeeping may fail it.
 #
 # Everything else has a home that cannot turn this red:
-#   hygiene.yml  — every push, never fails: lint, format (TS + Rust), clippy, ordering, convention
+#   hygiene.yml  — every push, never fails: the whole-repo typecheck (examples, scripts, functional,
+#                  tools — package code is already type-checked by `build`), lint, format (TS + Rust),
+#                  clippy, ordering, convention
 #                  audits, regenerate/ratchet checks, the scripts and dev-tool suites, advisory size.
 #                  Failures surface as warnings and a run summary. The pre-push hook blocks on format.
 #   nightly.yml  — once a day on develop's tip: the per-package-environment test shards, render
@@ -150,47 +153,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo publish --workspace --dry-run --no-verify
 
-  quality-typecheck:
-    name: TypeScript · typecheck
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check
-        env:
-          FLIGHT_CHECK_GATES: typecheck
-
-  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
-  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
-  test-fast:
-    name: TypeScript · unit tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test
-
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
-  # `build-check` job (`packages:check && typecheck`) that all of them needed, which made the gate
-  # read once — but it put a serial 1m23s in front of every leg on every push, and it computed
-  # nothing the `quality` job below does not already compute: `npm run check` runs packages:check and
-  # typecheck as its first two gates. Its only real effect was fail-fast, declining to start 14 jobs
-  # when the graph does not compile. That trades wall clock on every GREEN push for runner minutes on
-  # the rarer RED one, which is the wrong direction here. The cost of removing it is that
-  # `needs.changes.outputs.code` is now restated per job; that repetition is the price of the
-  # parallelism and is deliberate.
+  # `build-check` job (`packages:check && typecheck`) that all of them needed, but it put a serial
+  # 1m23s in front of every leg on every push. Its only real effect was fail-fast, declining to start
+  # the other jobs when the graph does not compile — trading wall clock on every GREEN push for runner
+  # minutes on the rarer RED one, the wrong direction here. The jobs that depend on a working build
+  # (the publishes) still wait for this one. The cost is that `needs.changes.outputs.code` is restated
+  # per job; that repetition is the price of the parallelism and is deliberate.
   build:
     name: TypeScript · build
     needs: changes
@@ -223,6 +192,22 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist.tgz
           retention-days: 1
+
+  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
+  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
+  test-fast:
+    name: TypeScript · unit tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
 
   test-host:
     name: TypeScript · host backend tests
@@ -345,10 +330,9 @@ jobs:
 
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
-    # to the tag-triggered stable release (release.yml). Edge is meant to be *available*, so it gates
-    # only on the two correctness legs — `build` (it compiles) and `test-fast` (the merged unit-test
-    # run, seconds not minutes) — and deliberately NOT on the flaky `render-test` matrix or the
-    # quality legs, which still run in parallel but never block an edge build. It never runs on pull_request (no
+    # to the tag-triggered stable release (release.yml). It is meant to be *available*, so it gates on
+    # the jobs listed at `needs` below and deliberately NOT on the flaky `render-test` matrix, which
+    # still runs in parallel but never blocks a snapshot. It never runs on pull_request (no
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
     # dist-tag, so `latest` is untouched. See agents/packaging.md.
     #
@@ -361,7 +345,10 @@ jobs:
     # never hand-pushed, racing the promotion's publish on a different concurrency key for the same version.
     # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
     name: Publish · npm next
-    needs: [build, test-fast]
+    # Gated on everything that says the PUBLISHED packages are sound: they compile and emit (build),
+    # behave (unit tests, and host tests for the published host-* backends), and package correctly with
+    # clean license provenance. Not on render smoke (the flakiest leg) or anything in hygiene.yml.
+    needs: [build, test-fast, test-host, quality-structure]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
