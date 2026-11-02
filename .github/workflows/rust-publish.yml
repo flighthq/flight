@@ -1,4 +1,4 @@
-name: Rust Publish
+name: Publish · crates.io
 
 # Reusable workflow for publishing all Flight crates to crates.io.
 # Called by nightly.yml (main → edge, once a day) and release.yml (tag → stable).

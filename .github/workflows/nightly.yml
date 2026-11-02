@@ -8,7 +8,7 @@ name: Nightly
 #   comparison, coverage, minified size, API generation, Conformance (the fixture corpus), and the
 #   Host platform probes (advisory).
 #
-# Conformance and Host Matrix live in their own files, called here as jobs, so each can still be run
+# Conformance and Host Backends live in their own files, called here as jobs, so each can still be run
 # on its own by hand. Nightly gates nothing: promotion is per commit (CI green), and these are health
 # signals on develop.
 #
@@ -158,7 +158,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
           # Promote only moves main to a commit whose CI passed, but a hand push to main skips that.
-          # Re-prove it for this exact commit, as Edge publish and Release do; no run is never green.
+          # Re-prove it for this exact commit, as the npm edge publish and Release do; no run is never green.
           successes=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?head_sha=${sha}" \
             --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')
           if [ "${successes:-0}" -eq 0 ]; then
@@ -434,7 +434,7 @@ jobs:
 
   # Advisory: a platform failure is a warning in the Host job's summary, never a failed Nightly.
   host:
-    name: Host
+    name: Host backends
     needs: resolve
     if: ${{ needs.resolve.outputs.changed == 'true' }}
     uses: ./.github/workflows/host-matrix.yml

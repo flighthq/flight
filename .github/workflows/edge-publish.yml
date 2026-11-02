@@ -1,4 +1,4 @@
-name: Edge publish
+name: Publish · npm edge
 
 # Publishes the `edge` snapshot for a commit Promote has just adopted as `main`.
 #
@@ -13,7 +13,7 @@ name: Edge publish
 # Acceptance is the dist-tag, not a green run: `npm dist-tag ls @flighthq/sdk` should show `edge` at
 # the version the run published. Because either caller can supply the sha, the jobs below re-verify
 # it from the repository (on main, CI green) instead of trusting whoever passed it.
-run-name: Edge publish · ${{ inputs.sha }} · from promote run ${{ inputs.promote_run_id }}
+run-name: Publish · npm edge · ${{ inputs.sha }} · from promote run ${{ inputs.promote_run_id }}
 
 on:
   workflow_call:
@@ -227,7 +227,7 @@ jobs:
           PROMOTE_RUN_ID: ${{ inputs.promote_run_id }}
         run: |
           {
-            echo "### Edge publish"
+            echo "### Publish · npm edge"
             echo ""
             echo "| field | value |"
             echo "| --- | --- |"

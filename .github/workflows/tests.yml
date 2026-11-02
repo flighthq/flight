@@ -28,7 +28,7 @@ name: CI
 # ★ NO PATH FILTERING. Every job runs on every push, so a green run means every check passed AT THIS
 # COMMIT. A filter on "what this push changed" broke that: a push that broke Rust followed by one that
 # touched only TypeScript skipped the Rust jobs, went green, and was promoted, published, and taggable
-# with Rust still broken underneath. Promote, Edge publish, Release, and the snapshot gates below all
+# with Rust still broken underneath. Promote, the npm edge publish, Release, and the snapshot gates below all
 # read "CI green" as "this commit is good", so it has to mean exactly that. Change-scoped speed lives
 # in the pre-push hook instead, where it costs nothing in confidence.
 #

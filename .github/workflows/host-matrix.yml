@@ -1,4 +1,4 @@
-name: Host Matrix
+name: Host Backends
 
 # The host backends on their real platforms: web, Electron and Tauri on Linux, Capacitor on an Android
 # emulator and an iOS simulator. ADVISORY: these depend on things outside this repository (Xcode,
