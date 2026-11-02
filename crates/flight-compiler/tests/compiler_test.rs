@@ -21696,3 +21696,36 @@ pub fn process_items(items: &[Option<u32>]) -> u32 {
         "should not error on continue in match arm: {output}"
     );
 }
+
+#[test]
+fn lowers_if_let_err_to_absent_check() {
+    let source = r#"
+pub fn try_action(result: Result<u32, String>) {
+    if let Err(_) = result {
+        panic!("failed");
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("=== undefined"),
+        "should check for absent value: {output}"
+    );
+}
+
+#[test]
+fn lowers_if_let_err_binding_to_absent_check() {
+    let source = r#"
+pub fn try_action(result: Result<u32, String>) -> String {
+    if let Err(error) = result {
+        return error;
+    }
+    return String::new();
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("=== undefined"),
+        "should check for absent value: {output}"
+    );
+}

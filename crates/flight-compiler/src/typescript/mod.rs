@@ -20556,7 +20556,9 @@ fn emit_statement(
             } else {
                 indent
             };
-            let data_union_if_let = if option_binding.is_none() && tuple_binding.is_none() {
+            let (data_union_if_let, err_if_let) = if option_binding.is_none()
+                && tuple_binding.is_none()
+            {
                 let cond = if let Some((let_expr, _, _)) = &let_chain {
                     Some(&let_expr.pat)
                 } else if let Expr::Let(binding) = &*if_expression.cond {
@@ -20572,37 +20574,58 @@ fn emit_statement(
                     } else {
                         unreachable!()
                     };
-                    let (effective_pattern, option_wrapped): (&Pat, bool) =
-                        if let Pat::TupleStruct(ts) = &**pattern
-                            && (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
-                            && ts.elems.len() == 1
-                        {
-                            (&ts.elems[0], true)
-                        } else {
-                            (pattern, false)
-                        };
-                    if let Some(mut test) =
-                        data_union_pattern_test(effective_pattern, "$ifLet", entities)?
+                    if let Pat::TupleStruct(ts) = &**pattern
+                        && ts.path.is_ident("Err")
+                        && ts.elems.len() == 1
                     {
-                        if option_wrapped {
-                            let absent =
-                                option_absent_value(&let_expr.expr, entities);
-                            test.predicate = Some(match test.predicate {
-                                Some(predicate) => {
-                                    format!("$ifLet !== {absent} && {predicate}")
-                                }
-                                None => format!("$ifLet !== {absent}"),
-                            });
-                        }
-                        Some((emit_expression(&let_expr.expr, entities)?, test))
+                        let absent = option_absent_value(&let_expr.expr, entities);
+                        let scrutinee = emit_expression(&let_expr.expr, entities)?;
+                        let binding_name =
+                            if let Pat::Ident(id) = &ts.elems[0]
+                                && id.subpat.is_none()
+                                && id.ident != "_"
+                            {
+                                Some(snake_to_lower_camel(&id.ident.to_string()))
+                            } else {
+                                None
+                            };
+                        (None, Some((scrutinee, absent, binding_name)))
                     } else {
-                        None
+                        let (effective_pattern, option_wrapped): (&Pat, bool) =
+                            if let Pat::TupleStruct(ts) = &**pattern
+                                && (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
+                                && ts.elems.len() == 1
+                            {
+                                (&ts.elems[0], true)
+                            } else {
+                                (pattern, false)
+                            };
+                        if let Some(mut test) =
+                            data_union_pattern_test(effective_pattern, "$ifLet", entities)?
+                        {
+                            if option_wrapped {
+                                let absent =
+                                    option_absent_value(&let_expr.expr, entities);
+                                test.predicate = Some(match test.predicate {
+                                    Some(predicate) => {
+                                        format!("$ifLet !== {absent} && {predicate}")
+                                    }
+                                    None => format!("$ifLet !== {absent}"),
+                                });
+                            }
+                            (
+                                Some((emit_expression(&let_expr.expr, entities)?, test)),
+                                None,
+                            )
+                        } else {
+                            (None, None)
+                        }
                     }
                 } else {
-                    None
+                    (None, None)
                 }
             } else {
-                None
+                (None, None)
             };
             let outer_indent = indent;
             let (indent, wrapped) = if let Some(binding) = &option_binding {
@@ -20646,6 +20669,17 @@ fn emit_statement(
                         .expect("writing to a String cannot fail");
                 }
                 (indent + 1, true)
+            } else if let Some((ref scrutinee, ref absent, ref binding_name)) = err_if_let {
+                write_indent(out, indent);
+                writeln!(out, "if ({scrutinee} === {absent}) {{")
+                    .expect("writing to a String cannot fail");
+                if let Some(name) = binding_name {
+                    then_context.insert(name.clone());
+                    write_indent(out, indent + 1);
+                    writeln!(out, "const {name} = {absent};")
+                        .expect("writing to a String cannot fail");
+                }
+                (indent, false)
             } else {
                 let try_context =
                     if tuple_binding.is_none()
