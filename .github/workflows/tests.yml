@@ -11,7 +11,7 @@ name: CI
 #                  Failures surface as warnings and a run summary. The pre-push hook blocks on format.
 #   nightly.yml  — once a day on develop's tip: the per-package-environment test shards, render
 #                  parity, the reference-image comparison, coverage, minified size, and the crates.io
-#                  snapshot publish (crates.io's rate limit makes a full graph take ~2h, too slow and
+#                  snapshot of main (crates.io's rate limit makes a full graph take ~2h, too slow and
 #                  too noisy to repeat per push; `rust-publish-dry-run` below proves it would publish).
 #
 # A `changes` job

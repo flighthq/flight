@@ -286,13 +286,3 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
         run: npm run release -- --no-build --tag "${EDGE_TAG}" wasm
-
-  rust-edge-publish:
-    name: Publish · Rust · edge snapshot
-    needs: [publish]
-    if: ${{ needs.publish.outputs.version != '' }}
-    uses: ./.github/workflows/rust-publish.yml
-    with:
-      version: ${{ needs.publish.outputs.version }}
-    secrets:
-      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
