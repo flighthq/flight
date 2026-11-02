@@ -12246,11 +12246,24 @@ fn emit_hoisted_match_arm_body(
         };
         let block_context = emit_block_with_context(out, preceding, entities, indent)?;
         if let Stmt::Expr(value, None) = last {
-            let value_str = emit_expression(value, &block_context)?;
-            emit_hoisted_match_arm_value(out, &value_str, action, indent);
+            if expression_contains_unconditional_try(value) {
+                let try_context =
+                    emit_try_pre_extractions(out, value, &block_context, indent)?;
+                let value_str = emit_expression(value, &try_context)?;
+                emit_hoisted_match_arm_value(out, &value_str, action, indent);
+            } else {
+                let value_str = emit_expression(value, &block_context)?;
+                emit_hoisted_match_arm_value(out, &value_str, action, indent);
+            }
         } else {
             emit_statement(out, last, &block_context, indent)?;
         }
+        return Ok(());
+    }
+    if expression_contains_unconditional_try(body) {
+        let try_context = emit_try_pre_extractions(out, body, entities, indent)?;
+        let value_str = emit_expression(body, &try_context)?;
+        emit_hoisted_match_arm_value(out, &value_str, action, indent);
         return Ok(());
     }
     let value_str = emit_expression(body, entities)?;

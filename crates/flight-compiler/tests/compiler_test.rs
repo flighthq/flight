@@ -13926,6 +13926,38 @@ pub fn advance(input: Option<u32>) -> Option<u32> {
     }
 
     #[test]
+    fn lowers_try_operator_in_hoisted_match_arm_body() {
+        let source = r#"
+pub fn lookup(key: u32) -> Option<u32> {
+    let result = match key {
+        0 => resolve_zero()?,
+        1 => resolve_one()?,
+        _ => 0,
+    };
+    return Some(result);
+}
+
+fn resolve_zero() -> Option<u32> { Some(0) }
+fn resolve_one() -> Option<u32> { Some(1) }
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("__try"),
+            "match arm body try should pre-extract into a temporary: {output}"
+        );
+        assert!(
+            output.contains("if (__try") && output.contains("=== undefined)"),
+            "match arm body try should guard the extracted value: {output}"
+        );
+        assert!(
+            output.contains("return undefined;"),
+            "match arm body try should return undefined on failure: {output}"
+        );
+    }
+
+    #[test]
     fn preserves_receivers_for_optional_member_calls() {
         let source = r#"
 use std::sync::Arc;
