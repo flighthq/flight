@@ -16856,30 +16856,20 @@ fn emit_method_call(
         }
         "get" | "get_mut"
             if arguments.len() == 1
-                && !matches!(
-                    call.args.first(),
-                    Some(Expr::Reference(_))
-                        | Some(Expr::Lit(syn::ExprLit {
-                            lit: Lit::Str(_),
-                            ..
-                        }))
-                ) =>
-        {
-            Ok(format!("{receiver}[{}]", arguments[0]))
-        }
-        "get" | "get_mut"
-            if arguments.len() == 1
-                && matches!(
-                    call.args.first(),
-                    Some(Expr::Reference(_))
-                        | Some(Expr::Lit(syn::ExprLit {
-                            lit: Lit::Str(_),
-                            ..
-                        }))
-                ) =>
+                && call.args.first().is_some_and(|arg| {
+                    matches!(
+                        arg,
+                        Expr::Reference(_)
+                            | Expr::Lit(syn::ExprLit {
+                                lit: Lit::Str(_),
+                                ..
+                            })
+                    ) || expression_is_known_string(arg, entities)
+                }) =>
         {
             Ok(format!("{receiver}.get({})", arguments[0]))
         }
+        "get" | "get_mut" if arguments.len() == 1 => Ok(format!("{receiver}[{}]", arguments[0])),
         "as_str" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
                 "((v: unknown): string | undefined => typeof v === \"string\" ? v : undefined)({receiver})"
@@ -17237,6 +17227,28 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
+        "remove"
+            if arguments.len() == 1
+                && call.args.first().is_some_and(|arg| {
+                    matches!(
+                        arg,
+                        Expr::Reference(_)
+                            | Expr::Lit(syn::ExprLit {
+                                lit: Lit::Str(_),
+                                ..
+                            })
+                    ) || expression_is_known_string(arg, entities)
+                }) =>
+        {
+            Ok(format!(
+                "(<K, V>(entries: Map<K, V>, key: K): V | undefined => {{ const previous = entries.get(key); entries.delete(key); return previous; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "remove" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError(\"Vec removal index out of bounds\"); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
+            arguments[0]
+        )),
         "reverse" if arguments.is_empty() => Ok(format!("{receiver}.reverse()")),
         "replace" if arguments.len() == 2 => Ok(format!(
             "{receiver}.replaceAll({}, {})",
@@ -22485,6 +22497,22 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
             Some(String::new())
         }
         Expr::MethodCall(call) if call.method == "get" && call.args.len() == 1 => {
+            Some(String::new())
+        }
+        Expr::MethodCall(call)
+            if call.method == "remove"
+                && call.args.len() == 1
+                && call.args.first().is_some_and(|arg| {
+                    matches!(
+                        arg,
+                        Expr::Reference(_)
+                            | Expr::Lit(syn::ExprLit {
+                                lit: Lit::Str(_),
+                                ..
+                            })
+                    ) || expression_is_known_string(arg, entities)
+                }) =>
+        {
             Some(String::new())
         }
         Expr::MethodCall(call)
