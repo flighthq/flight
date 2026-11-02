@@ -1713,7 +1713,14 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
     )?;
     if !lenient {
         let use_refs = uses.iter().collect::<Vec<_>>();
-        validate_lazy_lock_statics(&statics, &functions, &constants, &structs, &type_aliases, &use_refs)?;
+        validate_lazy_lock_statics(
+            &statics,
+            &functions,
+            &constants,
+            &structs,
+            &type_aliases,
+            &use_refs,
+        )?;
     }
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
@@ -2903,16 +2910,13 @@ fn validate_lazy_lock_statics(
             )));
         }
         let is_known_type = |ident: &str| {
-            structs
-                .iter()
-                .any(|structure| structure.ident == ident)
+            structs.iter().any(|structure| structure.ident == ident)
                 || type_aliases
                     .iter()
                     .any(|type_alias| type_alias.ident == ident)
                 || lazy_lock_use_imports(uses).iter().any(|name| name == ident)
         };
-        let declared = lazy_lock_leaf_type_name(inner)
-            .is_some_and(|leaf| is_known_type(&leaf));
+        let declared = lazy_lock_leaf_type_name(inner).is_some_and(|leaf| is_known_type(&leaf));
         if !declared {
             return Err(compile_error(format!(
                 "`LazyLock` static `{name}` must hold a struct or type alias declared in this source; dependency-owned or unresolved value types are not portable"

@@ -11087,11 +11087,7 @@ pub fn get_defaults() -> u32 {
             "//! flight-compiler: target-native\n\nstd::thread_local! {\n    static CELLS: u32 = 0;\n}\n",
         );
         let (code, stderr, _) = run(&[&thread_local_native]);
-        assert_eq!(
-            code,
-            Some(0),
-            "thread_local! should be accepted: {stderr}"
-        );
+        assert_eq!(code, Some(0), "thread_local! should be accepted: {stderr}");
 
         let inventoried = write(
             source_root.join("native_impl.rs"),
@@ -21003,7 +20999,9 @@ pub fn read_value(value: Option<YamlValue>) -> Option<Mapping> {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("matchValue === undefined || matchValue !== undefined && matchValue.kind === \"null\""),
+        output.contains(
+            "matchValue === undefined || matchValue !== undefined && matchValue.kind === \"null\""
+        ),
         "should combine undefined check with kind check for None | Some(Variant): {output}"
     );
     assert!(

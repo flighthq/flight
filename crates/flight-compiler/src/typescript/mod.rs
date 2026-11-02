@@ -4138,9 +4138,7 @@ fn emit_hash_collection_method(
         ("HashSet", "insert", [value]) => Ok(format!(
             "(<T>(items: Set<T>, value: T): boolean => {{ if (items.has(value)) {{ return false; }} items.add(value); return true; }})({receiver}, {value})"
         )),
-        ("HashSet", "iter", []) | ("HashSet", "into_iter", []) => {
-            Ok(format!("[...{receiver}]"))
-        }
+        ("HashSet", "iter", []) | ("HashSet", "into_iter", []) => Ok(format!("[...{receiver}]")),
         ("HashSet", "remove", [value]) => Ok(format!("{receiver}.delete({value})")),
         ("HashMap", "contains_key", [key]) => Ok(format!("{receiver}.has({key})")),
         ("HashMap", "get", [key]) => Ok(option(format!("{receiver}.get({key})"))),
@@ -12042,8 +12040,7 @@ fn emit_try_local(
 ) -> Result<Option<(String, String)>, CompileError> {
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
-    let try_context =
-        emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
+    let try_context = emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
     let inner_value = emit_expression(&try_expr.expr, &try_context)?;
     let self_referential = match &local.pat {
         Pat::Ident(identifier) => {
@@ -12254,8 +12251,7 @@ fn emit_hoisted_match_arm_body(
         let block_context = emit_block_with_context(out, preceding, entities, indent)?;
         if let Stmt::Expr(value, None) = last {
             if expression_contains_unconditional_try(value) {
-                let try_context =
-                    emit_try_pre_extractions(out, value, &block_context, indent)?;
+                let try_context = emit_try_pre_extractions(out, value, &block_context, indent)?;
                 let value_str = emit_expression(value, &try_context)?;
                 emit_hoisted_match_arm_value(out, &value_str, action, indent);
             } else {
@@ -12972,8 +12968,7 @@ fn emit_hoisted_if_value_branch_block(
     let block_context = emit_block_with_context(out, preceding, entities, indent)?;
     if let Stmt::Expr(value, None) = last {
         if expression_contains_unconditional_try(value) {
-            let try_context =
-                emit_try_pre_extractions(out, value, &block_context, indent)?;
+            let try_context = emit_try_pre_extractions(out, value, &block_context, indent)?;
             let value_str = emit_expression(value, &try_context)?;
             write_indent(out, indent);
             writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
@@ -14991,8 +14986,7 @@ fn analyze_option_wrapped_inferred_data_union_match(
     for arm in arms {
         let info = match &arm.pat {
             Pat::TupleStruct(ts)
-                if (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
-                    && ts.elems.len() == 1 =>
+                if (ts.path.is_ident("Some") || ts.path.is_ident("Ok")) && ts.elems.len() == 1 =>
             {
                 match inferred_tagged_data_union_pattern(&ts.elems[0]) {
                     InferredPattern::Variants(variants, binding, field_bindings, _) => {
@@ -15077,9 +15071,7 @@ fn analyze_option_wrapped_inferred_data_union_match(
                         Pat::Path(path) if path.path.is_ident("None") => {
                             arm_none = true;
                         }
-                        Pat::Ident(id)
-                            if id.ident == "None" && id.subpat.is_none() =>
-                        {
+                        Pat::Ident(id) if id.ident == "None" && id.subpat.is_none() => {
                             arm_none = true;
                         }
                         Pat::Wild(_) => {
@@ -15090,12 +15082,7 @@ fn analyze_option_wrapped_inferred_data_union_match(
                                 && ts.elems.len() == 1 =>
                         {
                             match inferred_tagged_data_union_pattern(&ts.elems[0]) {
-                                InferredPattern::Variants(
-                                    variants,
-                                    binding,
-                                    field_bindings,
-                                    _,
-                                ) => {
+                                InferredPattern::Variants(variants, binding, field_bindings, _) => {
                                     for (variant_owner, _) in &variants {
                                         if let Some(expected) = &owner {
                                             if expected != variant_owner {
@@ -15105,8 +15092,7 @@ fn analyze_option_wrapped_inferred_data_union_match(
                                             owner = Some(variant_owner.clone());
                                         }
                                     }
-                                    arm_variants
-                                        .extend(variants.into_iter().map(|(_, v)| v));
+                                    arm_variants.extend(variants.into_iter().map(|(_, v)| v));
                                     if arm_binding.is_none() {
                                         arm_binding = binding;
                                     }
@@ -15194,9 +15180,7 @@ fn emit_option_wrapped_data_union_match_body(
             let predicate = if info.variants.len() == 1 {
                 format!("matchValue === {absent} || matchValue !== {absent} && {kind_predicate}")
             } else {
-                format!(
-                    "matchValue === {absent} || matchValue !== {absent} && ({kind_predicate})"
-                )
+                format!("matchValue === {absent} || matchValue !== {absent} && ({kind_predicate})")
             };
             if has_guards {
                 writeln!(out, "if (!$matched && ({predicate})) {{")
@@ -16228,8 +16212,7 @@ fn emit_match_expression(
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                writeln!(out, "    if ({guard_expr}) {{")
-                    .expect("writing to a String cannot fail");
+                writeln!(out, "    if ({guard_expr}) {{").expect("writing to a String cannot fail");
                 writeln!(
                     out,
                     "      return {};",
@@ -18021,9 +18004,10 @@ fn emit_method_call(
         "starts_with"
             if arguments.len() == 1
                 && (expression_is_known_string(&call.receiver, entities)
-                    || call.args.first().is_some_and(|arg| {
-                        expression_is_known_string(arg, entities)
-                    })) =>
+                    || call
+                        .args
+                        .first()
+                        .is_some_and(|arg| expression_is_known_string(arg, entities))) =>
         {
             Ok(format!("{receiver}.startsWith({})", arguments[0]))
         }
@@ -18047,9 +18031,10 @@ fn emit_method_call(
         "ends_with"
             if arguments.len() == 1
                 && (expression_is_known_string(&call.receiver, entities)
-                    || call.args.first().is_some_and(|arg| {
-                        expression_is_known_string(arg, entities)
-                    })) =>
+                    || call
+                        .args
+                        .first()
+                        .is_some_and(|arg| expression_is_known_string(arg, entities))) =>
         {
             Ok(format!("{receiver}.endsWith({})", arguments[0]))
         }
@@ -20399,8 +20384,12 @@ fn emit_value_block(
             let mut out = "(() => {\n".to_string();
             let try_context = emit_try_pre_extractions(&mut out, expression, entities, 1)?;
             write_indent(&mut out, 1);
-            writeln!(out, "return {};", emit_expression(expression, &try_context)?)
-                .expect("writing to a String cannot fail");
+            writeln!(
+                out,
+                "return {};",
+                emit_expression(expression, &try_context)?
+            )
+            .expect("writing to a String cannot fail");
             out.push_str("})()");
             return Ok(out);
         }
@@ -20556,32 +20545,30 @@ fn emit_statement(
             } else {
                 indent
             };
-            let (data_union_if_let, err_if_let) = if option_binding.is_none()
-                && tuple_binding.is_none()
-            {
-                let cond = if let Some((let_expr, _, _)) = &let_chain {
-                    Some(&let_expr.pat)
-                } else if let Expr::Let(binding) = &*if_expression.cond {
-                    Some(&binding.pat)
-                } else {
-                    None
-                };
-                if let Some(pattern) = cond {
-                    let let_expr = if let Some((let_expr, _, _)) = &let_chain {
-                        let_expr
+            let (data_union_if_let, err_if_let) =
+                if option_binding.is_none() && tuple_binding.is_none() {
+                    let cond = if let Some((let_expr, _, _)) = &let_chain {
+                        Some(&let_expr.pat)
                     } else if let Expr::Let(binding) = &*if_expression.cond {
-                        binding
+                        Some(&binding.pat)
                     } else {
-                        unreachable!()
+                        None
                     };
-                    if let Pat::TupleStruct(ts) = &**pattern
-                        && ts.path.is_ident("Err")
-                        && ts.elems.len() == 1
-                    {
-                        let absent = option_absent_value(&let_expr.expr, entities);
-                        let scrutinee = emit_expression(&let_expr.expr, entities)?;
-                        let binding_name =
-                            if let Pat::Ident(id) = &ts.elems[0]
+                    if let Some(pattern) = cond {
+                        let let_expr = if let Some((let_expr, _, _)) = &let_chain {
+                            let_expr
+                        } else if let Expr::Let(binding) = &*if_expression.cond {
+                            binding
+                        } else {
+                            unreachable!()
+                        };
+                        if let Pat::TupleStruct(ts) = &**pattern
+                            && ts.path.is_ident("Err")
+                            && ts.elems.len() == 1
+                        {
+                            let absent = option_absent_value(&let_expr.expr, entities);
+                            let scrutinee = emit_expression(&let_expr.expr, entities)?;
+                            let binding_name = if let Pat::Ident(id) = &ts.elems[0]
                                 && id.subpat.is_none()
                                 && id.ident != "_"
                             {
@@ -20589,44 +20576,43 @@ fn emit_statement(
                             } else {
                                 None
                             };
-                        (None, Some((scrutinee, absent, binding_name)))
-                    } else {
-                        let (effective_pattern, option_wrapped): (&Pat, bool) =
-                            if let Pat::TupleStruct(ts) = &**pattern
-                                && (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
-                                && ts.elems.len() == 1
-                            {
-                                (&ts.elems[0], true)
-                            } else {
-                                (pattern, false)
-                            };
-                        if let Some(mut test) =
-                            data_union_pattern_test(effective_pattern, "$ifLet", entities)?
-                        {
-                            if option_wrapped {
-                                let absent =
-                                    option_absent_value(&let_expr.expr, entities);
-                                test.predicate = Some(match test.predicate {
-                                    Some(predicate) => {
-                                        format!("$ifLet !== {absent} && {predicate}")
-                                    }
-                                    None => format!("$ifLet !== {absent}"),
-                                });
-                            }
-                            (
-                                Some((emit_expression(&let_expr.expr, entities)?, test)),
-                                None,
-                            )
+                            (None, Some((scrutinee, absent, binding_name)))
                         } else {
-                            (None, None)
+                            let (effective_pattern, option_wrapped): (&Pat, bool) =
+                                if let Pat::TupleStruct(ts) = &**pattern
+                                    && (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
+                                    && ts.elems.len() == 1
+                                {
+                                    (&ts.elems[0], true)
+                                } else {
+                                    (pattern, false)
+                                };
+                            if let Some(mut test) =
+                                data_union_pattern_test(effective_pattern, "$ifLet", entities)?
+                            {
+                                if option_wrapped {
+                                    let absent = option_absent_value(&let_expr.expr, entities);
+                                    test.predicate = Some(match test.predicate {
+                                        Some(predicate) => {
+                                            format!("$ifLet !== {absent} && {predicate}")
+                                        }
+                                        None => format!("$ifLet !== {absent}"),
+                                    });
+                                }
+                                (
+                                    Some((emit_expression(&let_expr.expr, entities)?, test)),
+                                    None,
+                                )
+                            } else {
+                                (None, None)
+                            }
                         }
+                    } else {
+                        (None, None)
                     }
                 } else {
                     (None, None)
-                }
-            } else {
-                (None, None)
-            };
+                };
             let outer_indent = indent;
             let (indent, wrapped) = if let Some(binding) = &option_binding {
                 let opt_pat = if let Some((let_expr, _, _)) = &let_chain {
@@ -20681,21 +20667,20 @@ fn emit_statement(
                 }
                 (indent, false)
             } else {
-                let try_context =
-                    if tuple_binding.is_none()
-                        && !matches!(&*if_expression.cond, Expr::Let(_))
-                        && let_chain.is_none()
-                        && expression_contains_unconditional_try(&if_expression.cond)
-                    {
-                        Some(emit_try_pre_extractions(
-                            out,
-                            &if_expression.cond,
-                            entities,
-                            indent,
-                        )?)
-                    } else {
-                        None
-                    };
+                let try_context = if tuple_binding.is_none()
+                    && !matches!(&*if_expression.cond, Expr::Let(_))
+                    && let_chain.is_none()
+                    && expression_contains_unconditional_try(&if_expression.cond)
+                {
+                    Some(emit_try_pre_extractions(
+                        out,
+                        &if_expression.cond,
+                        entities,
+                        indent,
+                    )?)
+                } else {
+                    None
+                };
                 write_indent(out, indent);
                 if let Some((condition, _)) = &tuple_binding {
                     writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
@@ -21037,8 +21022,7 @@ fn emit_statement(
             writeln!(out, "[{a}, {b}] = [{b}, {a}];").expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::Try(try_expr), _) => {
-            let try_context =
-                emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
+            let try_context = emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
             let inner = emit_expression(&try_expr.expr, &try_context)?;
             write_indent(out, indent);
             writeln!(out, "if ({inner} === undefined) {{")
@@ -21052,8 +21036,7 @@ fn emit_statement(
             let Expr::Try(try_expr) = assign.right.as_ref() else {
                 unreachable!()
             };
-            let try_context =
-                emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
+            let try_context = emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
             let inner = emit_expression(&try_expr.expr, &try_context)?;
             let target = emit_expression(&assign.left, &try_context)?;
             write_indent(out, indent);
@@ -23336,10 +23319,7 @@ fn option_binding_fact_default(
         }
         Expr::MethodCall(call)
             if call.args.is_empty()
-                && matches!(
-                    call.method.to_string().as_str(),
-                    "first" | "last" | "pop"
-                ) =>
+                && matches!(call.method.to_string().as_str(), "first" | "last" | "pop") =>
         {
             if let Some(element_fact) = sequence_element_binding_fact(&call.receiver, entities) {
                 return binding_fact_default(&element_fact);
