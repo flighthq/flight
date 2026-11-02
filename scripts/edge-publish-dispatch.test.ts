@@ -36,7 +36,7 @@ interface WorkflowJob {
   outputs?: Record<string, string>;
   permissions?: Record<string, string>;
   secrets?: Record<string, string>;
-  steps?: { name?: string; if?: string; run?: string; id?: string }[];
+  steps?: { name?: string; if?: string; run?: string; id?: string; uses?: string; with?: Record<string, string> }[];
   uses?: string;
   with?: Record<string, string>;
 }
@@ -70,7 +70,15 @@ describe('edge-publish promotion contract', () => {
     const publish = promoteJobs()['edge-publish'];
     expect(publish.permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
     expect(Object.keys(publish.secrets ?? {}).sort()).toEqual(['FLIGHT_COMPILER_DISPATCH_TOKEN', 'NPM_TOKEN']);
-    for (const step of promote.steps ?? []) expect(JSON.stringify(step), step.name).not.toContain('secrets.');
+    // The one credential the push job holds is the deploy key, and only checkout may see it: it pushes
+    // main, nothing else. No npm credential, and no other step touching a secret.
+    const checkout = (promote.steps ?? []).find((step) => step.uses === 'actions/checkout@v5');
+    expect(checkout?.with?.['ssh-key']).toBe('${{ secrets.PROMOTE_DEPLOY_KEY }}');
+    for (const step of promote.steps ?? []) {
+      const source = JSON.stringify(step);
+      const scrubbed = step === checkout ? source.replace('${{ secrets.PROMOTE_DEPLOY_KEY }}', '') : source;
+      expect(scrubbed, step.name ?? step.uses).not.toContain('secrets.');
+    }
   });
 
   it('only a push that actually moved main publishes', () => {
@@ -177,8 +185,8 @@ describe('edge-publish promotion contract', () => {
   it('no credential beyond the default token is introduced', () => {
     const receiver = readWorkflow('edge-publish');
     const promote = readWorkflow('promote');
-    // Promote reaches the publisher by calling it, which the default token permits; a PAT or App
-    // appearing here would mean a long-lived secret had been added to defeat the recursion guard.
+    // Promote reaches the publisher by calling it, which the default token permits. Its push uses the
+    // repository-scoped deploy key; a PAT or App credential appearing here would be a broader one.
     for (const source of [receiver, promote]) {
       expect(source).not.toMatch(/secrets\.(GH_PAT|PAT|APP_ID|APP_PRIVATE_KEY|BOT_TOKEN)/);
     }

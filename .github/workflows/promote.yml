@@ -9,11 +9,21 @@ name: Promote
 # incident, or a run whose conclusion flipped to green on a later re-run. The catch-up is cheap (one
 # API call plus a push) and idempotent, so running it against an already-current main is a no-op.
 #
+# ★ THE PUSH USES A DEPLOY KEY, `PROMOTE_DEPLOY_KEY`: an SSH key with write access to this repository
+# only, stored as a secret, used by the checkout step and nothing else. The built-in GITHUB_TOKEN is
+# barred from creating or updating files under .github/workflows/, and no workflow permission lifts
+# that, so a token push rejects any promotion that carries a workflow change — and every later one,
+# since they all contain it. A deploy key is not under that restriction. Without the secret, checkout
+# falls back to the token: promotion still works, except for workflow changes.
+#
+# What main may receive is enforced by GitHub too, not only by this workflow: the ruleset on main
+# requires CI's checks to have passed for the pushed commit (on develop, where they ran) and blocks
+# force pushes and deletion, for this key and for anyone pushing by hand.
+#
 # A promotion that moves main also publishes the `edge` snapshot of that commit, as a second job of
-# this run (`edge-publish`, which calls edge-publish.yml). It has to happen here rather than in a
-# workflow triggered by the push: this workflow pushes main with the default GITHUB_TOKEN, and GitHub
-# starts no workflow run from that token's events (its recursion guard), so a push-triggered publisher
-# would never fire. Each publishing event owns its publish: a develop push publishes `next` inside CI,
+# this run (`edge-publish`, which calls edge-publish.yml), rather than from a workflow triggered by the
+# push: nothing runs on pushes to main (CI and Hygiene run on develop, where these commits were
+# already tested), and publishing here keeps "promoted and published" one run, red if either fails. Each publishing event owns its publish: a develop push publishes `next` inside CI,
 # a promotion publishes `edge` here, Nightly publishes the crates.io snapshot, a tag publishes stable.
 #
 # Promotion deliberately does NOT gate on nightly's coverage or api jobs. Those are health signals
@@ -64,17 +74,21 @@ jobs:
     # No publish credential here: the npm token and provenance permission belong to the
     # `edge-publish` job below, so the step that pushes main never holds them.
     permissions:
-      contents: write # push refs/heads/main
+      contents: write # push refs/heads/main when falling back to the built-in token (see the header)
       actions: read # read tests.yml conclusions
 
     steps:
       # fetch-depth: 0 fetches all branches, so both origin/main and origin/develop are present
       # locally — the resolver below needs the range between them, and the remote needs main's
       # tip to validate the push as a fast-forward.
+      #
+      # `ssh-key` makes the remote SSH and persists the deploy key for the `git push` below (see the
+      # header); an absent secret leaves checkout on the built-in token.
       - uses: actions/checkout@v5
         with:
           ref: develop
           fetch-depth: 0
+          ssh-key: ${{ secrets.PROMOTE_DEPLOY_KEY }}
 
       # Resolves the NEWEST COMMIT ON DEVELOP, AHEAD OF MAIN, THAT HAS A GREEN CI RUN — not simply
       # the SHA that triggered this run. That one rule absorbs three separate failure modes:

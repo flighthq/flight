@@ -2,11 +2,9 @@ name: Publish · npm edge
 
 # Publishes the `edge` snapshot for a commit Promote has just adopted as `main`.
 #
-# ★ CALLED BY PROMOTE, AS A JOB OF THE PROMOTION RUN. `promote.yml` fast-forwards main with the default
-# `GITHUB_TOKEN`, and GitHub starts no workflow run from events raised by that token — the recursion
-# guard — so nothing triggered by the push could ever publish `edge`. Promote therefore calls this
-# workflow directly once main has moved. A called workflow needs no dispatch permission and no new
-# credential, and its result is part of the promotion's own run.
+# ★ CALLED BY PROMOTE, AS A JOB OF THE PROMOTION RUN, once main has moved. Nothing runs on pushes to
+# main (its commits were already tested on develop), so the promotion is what triggers the publish,
+# and its result is part of the promotion's own run. A called workflow needs no dispatch permission.
 #
 # ★ ALSO DISPATCHABLE BY HAND, to re-publish a commit main has adopted:
 #     gh workflow run edge-publish.yml --ref main -f sha="$(git rev-parse origin/main)"
