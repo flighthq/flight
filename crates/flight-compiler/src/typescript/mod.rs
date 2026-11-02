@@ -20334,7 +20334,9 @@ fn emit_statement(
             writeln!(out, "[{a}, {b}] = [{b}, {a}];").expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::Try(try_expr), _) => {
-            let inner = emit_expression(&try_expr.expr, entities)?;
+            let try_context =
+                emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
+            let inner = emit_expression(&try_expr.expr, &try_context)?;
             write_indent(out, indent);
             writeln!(out, "if ({inner} === undefined) {{")
                 .expect("writing to a String cannot fail");
@@ -20347,8 +20349,10 @@ fn emit_statement(
             let Expr::Try(try_expr) = assign.right.as_ref() else {
                 unreachable!()
             };
-            let inner = emit_expression(&try_expr.expr, entities)?;
-            let target = emit_expression(&assign.left, entities)?;
+            let try_context =
+                emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
+            let inner = emit_expression(&try_expr.expr, &try_context)?;
+            let target = emit_expression(&assign.left, &try_context)?;
             write_indent(out, indent);
             writeln!(out, "{target} = {inner};").expect("writing to a String cannot fail");
             write_indent(out, indent);
