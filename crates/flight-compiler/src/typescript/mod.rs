@@ -11800,7 +11800,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
     }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
-        Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) | Pat::Slice(_) => {
+        Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) | Pat::Slice(_) | Pat::Struct(_) => {
             (emit_pattern(&local.pat)?, None, false)
         }
         Pat::Type(typed) => {
@@ -19225,6 +19225,22 @@ pub(crate) fn emit_pattern(pattern: &Pat) -> Result<String, CompileError> {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
+        }
+        Pat::Struct(structure) => {
+            let mut fields = Vec::new();
+            for field in &structure.fields {
+                let member_name = match &field.member {
+                    syn::Member::Named(name) => snake_to_lower_camel(&name.to_string()),
+                    syn::Member::Unnamed(index) => index.index.to_string(),
+                };
+                let binding = emit_pattern(&field.pat)?;
+                if member_name == binding {
+                    fields.push(member_name);
+                } else {
+                    fields.push(format!("{member_name}: {binding}"));
+                }
+            }
+            Ok(format!("{{ {} }}", fields.join(", ")))
         }
         Pat::Paren(paren) => emit_pattern(&paren.pat),
         Pat::Type(typed) => emit_pattern(&typed.pat),

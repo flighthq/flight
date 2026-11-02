@@ -21834,3 +21834,44 @@ pub fn process(a: Option<u32>, b: Option<u32>) -> u32 {
         "should check None element is absent (inverted condition): {output}"
     );
 }
+
+#[test]
+fn lowers_struct_destructuring_in_local_binding() {
+    let source = r#"
+pub struct Config {
+    pub width: u32,
+    pub height: u32,
+    pub scale_factor: f64,
+}
+
+pub fn dimensions(config: &Config) -> (u32, u32) {
+    let Config { width, height, .. } = config;
+    (*width, *height)
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("{ width, height }"),
+        "should destructure struct fields: {output}"
+    );
+}
+
+#[test]
+fn lowers_struct_destructuring_with_field_rename() {
+    let source = r#"
+pub struct Point {
+    pub x_pos: f64,
+    pub y_pos: f64,
+}
+
+pub fn extract(point: &Point) -> (f64, f64) {
+    let Point { x_pos: a, y_pos: b } = point;
+    (*b, *a)
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("xPos: a"),
+        "should rename struct field in destructuring: {output}"
+    );
+}
