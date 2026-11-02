@@ -57,8 +57,7 @@ describe('CI product gate', () => {
     const jobs = readWorkflow('tests').jobs as Record<string, Workflow['jobs'][string] & { needs?: string[] }>;
     const gates = jobs.compliance.steps.map((step) => step.env?.FLIGHT_CHECK_GATES ?? '').join(',');
     expect(gates).toContain('license-provenance:check');
-    // The publish waits on Verified, and Verified on every gate, license provenance included.
-    expect(jobs['edge-publish'].needs).toBe('verified');
-    expect(jobs.verified.needs).toContain('compliance');
+    // Ready for next — the verdict Promote acts on — waits on every gate, license provenance included.
+    expect(jobs['ready-for-next'].needs).toContain('compliance');
   });
 });

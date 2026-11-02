@@ -14,14 +14,14 @@ function readWorkflow(name: string): Workflow {
 }
 
 describe('reference image CI workflow', () => {
-  it('gates promotion as part of Validate, on the commit pushed to next', () => {
-    const validate = readWorkflow('validate');
-    const job = validate.jobs['reference-image-check'];
-    // Validate checks the pushed commit itself, so the checkout takes no ref of its own.
+  it('gates main as part of CI · extended, on the commit pushed to next', () => {
+    const extended = readWorkflow('ci-extended');
+    const job = extended.jobs['reference-image-check'];
+    // CI · extended checks the pushed commit itself, so the checkout takes no ref of its own.
     const checkout = job.steps?.find((step) => step.uses === 'actions/checkout@v5');
     expect(checkout).toBeDefined();
     expect(checkout?.with?.ref).toBeUndefined();
-    expect(validate.jobs.validated.needs).toContain('reference-image-check');
+    expect(extended.jobs['ready-for-main'].needs).toContain('reference-image-check');
   });
 
   it('is neither in the per-push product gate nor a Nightly job', () => {

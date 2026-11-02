@@ -2,10 +2,11 @@ name: Nightly
 
 # The nightly stage of the lifecycle — a blessing, not a test run:
 #
-#   develop → CI → `next` (npm next) → Validate → Nightly → `main` (edge: crates.io + npm) → tag (latest)
+#   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
+#           → Nightly (`main`, edge on crates.io + npm) → tag (latest, via Release)
 #
-# Every commit on `next` already passed CI; Validate then ran the slower checks on it. Nightly takes the
-# newest commit on `next` that passed Validate, fast-forwards `main` to it, and publishes it as `edge` on
+# Every commit on `next` already passed CI; CI · extended then ran the slower checks on it. Nightly picks
+# up the newest commit on `next` marked `Ready for main`, fast-forwards `main` to it, and publishes it as `edge` on
 # both registries in the same run — crates.io first, then npm, under one version — so `main`, npm
 # `edge` and crates.io `edge` always name the same commit. Nothing promoted here is tested for the
 # first time tonight, so there are no morning surprises.
@@ -58,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read # read earlier Nightly, CI and Validate runs
+      actions: read # read earlier Nightly, CI and CI · extended runs
     outputs:
       candidate: ${{ steps.candidate.outputs.sha }}
       changed: ${{ steps.changed.outputs.changed }}
@@ -72,10 +73,10 @@ jobs:
       - id: pin
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      # The commit to promote: the NEWEST commit on `next`, ahead of `main`, with a successful Validate
+      # The commit to promote: the NEWEST commit on `next`, ahead of `main`, with a successful CI · extended
       # run. `git rev-list main..next` walks newest-first, so the first match is both the newest
       # candidate and a guaranteed fast-forward. The run list is used only as a SET of validated
-      # commits, never for ordering: Validate runs can finish out of order, or be cancelled by a newer
+      # commits, never for ordering: CI · extended runs can finish out of order, or be cancelled by a newer
       # push to `next` (a cancelled run never counts). per_page=100 bounds the lookback.
       - name: Find the newest validated commit on next
         id: candidate
@@ -100,7 +101,7 @@ jobs:
             exit 0
           fi
           validated=$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/validate.yml/runs?branch=next&status=success&event=push&per_page=100" \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/ci-extended.yml/runs?branch=next&status=success&event=push&per_page=100" \
             --jq '.workflow_runs[].head_sha' | sort -u)
           candidate=''
           for sha in $ahead; do
@@ -160,7 +161,7 @@ jobs:
   # Fast-forwards main to the validated candidate, with the promotion App's token: the built-in token
   # cannot update .github/workflows/ files. Without the App's secrets it falls back to the built-in
   # token, which then cannot promote workflow changes. The ruleset on main independently requires the
-  # candidate's `Validated` check, which it carries from its run on `next`.
+  # candidate's `Ready for main` check, which it carries from its run on `next`.
   promote:
     name: Promote · main
     needs: resolve

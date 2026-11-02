@@ -1,21 +1,21 @@
-name: Validate
+name: CI · extended
 
-# The second round, run on the `next` branch: every commit there already passed CI and was published
-# as npm `next`. These are the slower, thorough checks — the isolated per-package test lane, render
-# parity, and the reference-image comparison — and a commit that passes them all is what Nightly may
-# promote to `main` and publish as `edge`. So Nightly blesses what was already proved here; nothing it
-# promotes is tested for the first time at night.
+# The second, deeper round of CI, run in the `next` lane: every commit there already passed CI and was
+# published as npm `next`. These are the slower, thorough checks — the isolated per-package test lane,
+# render parity, and the reference-image comparison — and `Ready for main` marks a commit that passed
+# them all as eligible for Nightly to promote to `main` and publish as `edge`. So Nightly picks up
+# what was already proved here; nothing it promotes is tested for the first time at night.
 #
-# Lifecycle: develop → CI → `next` (npm next) → Validate → Nightly → `main` (edge: npm + crates.io)
-#                                                                  → tag (latest, via Release)
+#   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
+#           → Nightly (`main`, edge on crates.io + npm) → tag (latest, via Release)
 #
-# Triggered by CI's push to `next` (with the promotion App's token, so the push starts this run; a
-# push uses the pushed commit's own copy of this file). A newer `next` cancels an older run: nothing
-# here publishes, and only the newest validated commit matters to Nightly, so under a burst of pushes
-# the suite runs on the latest rather than on every one.
+# Triggered by Promote's push to `next` (made with the promotion App's token, so the push starts this
+# run; a push uses the pushed commit's own copy of this file). A newer `next` cancels an older run:
+# nothing here publishes, and only the newest eligible commit matters to Nightly, so under a burst of
+# pushes the suite runs on the latest rather than on every one.
 #
-# `Validated` is the single check the ruleset on main requires. It always reports, so it can never be
-# left "expected" by a skipped dependency.
+# `Ready for main` is the single check the ruleset on main requires. It always reports, so it can
+# never be left "expected" by a skipped dependency.
 on:
   push:
     branches: [next]
@@ -25,7 +25,7 @@ env:
   ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
 concurrency:
-  group: validate-${{ github.ref }}
+  group: ci-extended-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -43,8 +43,8 @@ jobs:
   # quarter of it is 11m35s, or 40% rather than 25%. The gap is cold cache. Running 141 packages in one
   # process warms the module and page cache for the ones behind it; four runners each start cold over
   # 35, so that warm-up is paid four times. Wall clock still improves ~2.5x, but this lane's runner
-  # minutes go UP by roughly 60%, a trade made deliberately: this lane is the slowest part of Validate,
-  # and Validate's wall clock is how long a commit waits to become promotable.
+  # minutes go UP by roughly 60%, a trade made deliberately: this lane is the slowest part of
+  # CI · extended, and its wall clock is how long a commit waits to become eligible for main.
   #
   # Folding the 141 configs into one Vitest run via `projects` was measured and rejected: each project
   # gets its own Vite server and therefore its own transform cache, so the boots merely move inside one
@@ -186,20 +186,20 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
 
-  validated:
-    name: Validated
+  ready-for-main:
+    name: Ready for main
     needs: [test, render-parity, reference-image-check]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Require every Validate check
+      - name: Require every extended check
         env:
           RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
           for result in $RESULTS; do
             if [ "$result" != success ]; then
-              echo "::error::a Validate check did not succeed (results: $RESULTS)"
+              echo "::error::an extended check did not succeed (results: $RESULTS)"
               exit 1
             fi
           done
-          echo "All Validate checks passed."
+          echo "All extended checks passed."

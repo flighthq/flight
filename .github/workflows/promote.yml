@@ -1,0 +1,203 @@
+name: Promote
+
+# Carries a develop commit that CI judged `Ready for next` into the `next` lane: publishes it as npm
+# `next`, then fast-forwards the `next` branch to it, so the branch and the channel always name the
+# same commit. CI verifies and publishes nothing; this workflow releases and moves, and nothing else.
+#
+#   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
+#           → Nightly (`main`, edge on crates.io + npm) → tag (latest, via Release)
+#
+# ★ IT RUNS FROM THE DEFAULT BRANCH'S COPY OF THIS FILE. A `workflow_run` workflow is registered and
+# executed from the repository's default branch only, so an edit here takes effect when it reaches the
+# default branch. With `develop` as the default branch that is as soon as it lands.
+#
+# It starts whenever CI finishes on develop, whatever the conclusion, and promotes only when that
+# run's `Ready for next` succeeded. CI's whole conclusion is NOT the test: it also includes Render
+# smoke, which does not gate `next`. Nothing is rebuilt: the publish takes the exact `dist` CI built
+# and checked, downloaded from the triggering run.
+#
+# Promotions run one at a time and never cancel, so a later commit cannot be published before an
+# earlier one finishes. GitHub keeps one waiting run and replaces it with newer ones, so under a burst
+# of pushes the newest commit is promoted and the ones it supersedes are skipped.
+run-name: "${{ github.event.workflow_run.head_commit.message || 'Promote' }}"
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [develop]
+  # Promote a specific CI run by hand, e.g. after re-running CI or when the event was missed.
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: The CI run to promote (its id, from the run's URL). It must be a develop push whose `Ready for next` passed.
+        required: true
+        type: string
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+concurrency:
+  group: promote-next
+  cancel-in-progress: false
+
+jobs:
+  # Decides from the CI run itself, never from the event's say-so: a develop push whose `Ready for next`
+  # job succeeded. A run that is not eligible is a normal outcome (CI red, a pull request), not a failure.
+  eligible:
+    name: Eligible
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      eligible: ${{ steps.check.outputs.eligible }}
+      run_id: ${{ steps.check.outputs.run_id }}
+      sha: ${{ steps.check.outputs.sha }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+        run: |
+          set -euo pipefail
+          run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
+            --jq '[.head_sha, .head_branch, .event, .name] | join(" ")')
+          read -r sha branch event workflow <<<"$run"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          ready=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.name == "Ready for next") | .conclusion] | .[0] // "missing"')
+          if [ "$workflow" = CI ] && [ "$branch" = develop ] && [ "$event" = push ] && [ "$ready" = success ]; then
+            echo "Eligible: ${sha} (CI run ${RUN_ID}) is Ready for next."
+            echo 'eligible=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "Not eligible: CI run ${RUN_ID} is ${workflow} on ${branch} (${event}), Ready for next: ${ready}."
+            echo 'eligible=false' >> "$GITHUB_OUTPUT"
+          fi
+
+  # npm `next`, from the exact build CI checked. Published BEFORE the branch moves, so `next` never
+  # names a commit npm `next` lacks. It never runs on pull requests (no secrets on forks, and only
+  # landed code publishes). The version is a prerelease under its own dist-tag, so `latest` is
+  # untouched. See agents/packaging.md.
+  publish:
+    name: Publish · npm next
+    needs: eligible
+    if: ${{ needs.eligible.outputs.eligible == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # download the triggering CI run's artifacts
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.eligible.outputs.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+          # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+
+      # CI's Package jobs' output, not a rebuild. The wasm packages' dist from `Package · npm` was
+      # compiled against type stubs, so it is removed and replaced with `Package · wasm`'s real build;
+      # nothing published comes from a stub build. Safe across the version stamp below: nothing inlines
+      # the package version at build time.
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist-${{ needs.eligible.outputs.sha }}
+          run-id: ${{ needs.eligible.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v7
+        with:
+          name: wasm-dist-${{ needs.eligible.outputs.sha }}
+          run-id: ${{ needs.eligible.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Restore dist from CI
+        run: |
+          set -euo pipefail
+          tar -xzf dist.tgz
+          rm -rf packages/*-wasm/dist
+          tar -xzf wasm-dist.tgz
+
+      # ★ An explicit channel: this runs from the default branch's workflow on a detached checkout,
+      # so neither GITHUB_REF_NAME nor the checkout names `develop`.
+      - name: Compute snapshot version and dist-tag
+        id: edge
+        run: npx tsx scripts/edge-version.ts develop >> "$GITHUB_OUTPUT"
+      # Exercise the same cumulative generator stable publication uses. npm has no release-notes
+      # field, so the rendered note lives in the run summary rather than inside one package tarball.
+      - name: Generate cumulative snapshot release notes
+        env:
+          SNAPSHOT_VERSION: ${{ steps.edge.outputs.version }}
+        run: |
+          set -euo pipefail
+          npm run release:notes -- "${SNAPSHOT_VERSION}" --through HEAD --output "${RUNNER_TEMP}/release-notes.md"
+          cat "${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_STEP_SUMMARY}"
+      - name: Stamp the graph to the snapshot version
+        env:
+          SNAPSHOT_VERSION: ${{ steps.edge.outputs.version }}
+        run: npm run version:packages "${SNAPSHOT_VERSION}"
+      - name: Publish snapshot to npm
+        env:
+          SNAPSHOT_TAG: ${{ steps.edge.outputs.tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+        run: npm run release -- --no-build --tag "${SNAPSHOT_TAG}"
+
+      # The npm artifact must exist before the downstream port and compiler are asked to release, so
+      # this follows the publish rather than running beside it. `flight-snapshot`, NOT
+      # `flight-release`: a receiver that has not learned about snapshots must do NOTHING rather than
+      # publish a prerelease to `latest`. The action documents that inversion and the 204 caveat.
+      - name: Dispatch downstream snapshot releases
+        uses: ./.github/actions/dispatch-downstream
+        with:
+          commit: ${{ needs.eligible.outputs.sha }}
+          dist-tag: ${{ steps.edge.outputs.tag }}
+          event-type: flight-snapshot
+          flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
+          version: ${{ steps.edge.outputs.version }}
+
+  # Moves the `next` branch to the commit just published. Its own job, so the npm credential and the
+  # push credential never share one. The push uses the promotion App's token: the built-in token
+  # cannot update .github/workflows/ files, and a push made with it would start no `CI · extended` run.
+  # Without the App's secrets it falls back to the built-in token (which then cannot promote workflow
+  # changes, and `CI · extended` must be run by hand). The ruleset on `next` independently requires
+  # the commit's `Ready for next`.
+  promote-next:
+    name: Promote · next
+    needs: [eligible, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push refs/heads/next when falling back to the built-in token
+    steps:
+      - name: Check for the promotion App
+        id: app
+        env:
+          APP_ID: ${{ secrets.PROMOTE_APP_ID }}
+        run: |
+          if [ -n "$APP_ID" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::PROMOTE_APP_ID is not set; pushing with the built-in token, which cannot promote workflow changes or start CI · extended.'
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Mint the promotion token
+        id: app-token
+        if: ${{ steps.app.outputs.configured == 'true' }}
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.PROMOTE_APP_ID }}
+          private-key: ${{ secrets.PROMOTE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+      - name: Fast-forward next to this commit
+        env:
+          CANDIDATE: ${{ needs.eligible.outputs.sha }}
+        run: bash scripts/fast-forward-branch.sh next "$CANDIDATE"
