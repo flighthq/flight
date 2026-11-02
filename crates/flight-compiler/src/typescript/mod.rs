@@ -16588,36 +16588,13 @@ fn emit_method_call(
         "checked_neg" if arguments.is_empty() => Ok(format!(
             "((n: number): number | undefined => {{ const neg = -n; return neg > 0x7FFFFFFF || neg < -0x80000000 ? undefined : neg }})({receiver})"
         )),
-        "chunks" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
-            Ok(format!(
-                "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i < items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
-        "chunks" if arguments.len() == 1 => Err(compile_error(
-            "portable `.chunks()` requires a receiver with proven sequence provenance",
+        "chunks" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i < items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
+            arguments[0]
         )),
-        "chunks_exact"
-            if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
-        {
-            Ok(format!(
-                "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i + size <= items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
-        "chunks_exact" if arguments.len() == 1 => Err(compile_error(
-            "portable `.chunks_exact()` requires a receiver with proven sequence provenance",
-        )),
-        "chunks_exact_mut"
-            if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) =>
-        {
-            Ok(format!(
-                "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i + size <= items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
-        "chunks_exact_mut" if arguments.len() == 1 => Err(compile_error(
-            "portable `.chunks_exact_mut()` requires a receiver with proven sequence provenance",
+        "chunks_exact" | "chunks_exact_mut" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i + size <= items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
+            arguments[0]
         )),
         "clamp" if arguments.len() == 2 => Ok(format!(
             "Math.min({}, Math.max({}, {receiver}))",
@@ -16723,12 +16700,7 @@ fn emit_method_call(
             Ok(format!("{receiver}.join('')"))
         }
         "collect" if arguments.is_empty() => Ok(receiver),
-        "count" if arguments.is_empty() && expression_is_sequence(&call.receiver, entities) => {
-            Ok(format!("{receiver}.length"))
-        }
-        "count" if arguments.is_empty() => Err(compile_error(
-            "portable `.count()` requires an iterator with proven sequence provenance",
-        )),
+        "count" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
         "contains_key" if arguments.len() == 1 => Ok(format!("{receiver}.has({})", arguments[0])),
         "dedup" if arguments.is_empty() => Ok(format!(
@@ -17430,7 +17402,9 @@ fn emit_method_call(
         // The generic parameter types the predicate from the receiver. When the predicate throws, the
         // `finally` keeps the unprocessed tail (from the throwing element on) after the kept elements, as
         // Rust's retain guard backshifts it during unwind.
-        "retain" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+        "retain"
+            if arguments.len() == 1 && !expression_is_known_string(&call.receiver, entities) =>
+        {
             Ok(format!(
                 "(<T>(items: T[], keep: (item: T) => boolean): void => {{ let kept = 0; let index = 0; try {{ for (; index < items.length; index += 1) {{ const item = items[index]; if (keep(item)) {{ items[kept] = item; kept += 1; }} }} }} finally {{ const length = items.length; for (let rest = index; rest < length; rest += 1) {{ items[kept + rest - index] = items[rest]; }} items.length = kept + length - index; }} }})({receiver}, {})",
                 arguments[0]
@@ -17602,12 +17576,10 @@ fn emit_method_call(
         "try_into" if arguments.is_empty() => Ok(receiver),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
-        "truncate" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
-            Ok(format!(
-                "(<T>(items: T[], length: number): void => {{ items.length = Math.min(items.length, length); }})({receiver}, {})",
-                arguments[0]
-            ))
-        }
+        "truncate" if arguments.len() == 1 => Ok(format!(
+            "(<T>(items: T[], length: number): void => {{ items.length = Math.min(items.length, length); }})({receiver}, {})",
+            arguments[0]
+        )),
         "copy_from_slice" => Err(compile_error(
             "portable `.copy_from_slice()` is supported only as a statement",
         )),
