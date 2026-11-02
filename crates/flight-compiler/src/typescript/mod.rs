@@ -16854,6 +16854,19 @@ fn emit_method_call(
         "get" if arguments.len() == 1 && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!("{receiver}[{}]", arguments[0]))
         }
+        "get" | "get_mut"
+            if arguments.len() == 1
+                && !matches!(
+                    call.args.first(),
+                    Some(Expr::Reference(_))
+                        | Some(Expr::Lit(syn::ExprLit {
+                            lit: Lit::Str(_),
+                            ..
+                        }))
+                ) =>
+        {
+            Ok(format!("{receiver}[{}]", arguments[0]))
+        }
         "as_str" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
                 "((v: unknown): string | undefined => typeof v === \"string\" ? v : undefined)({receiver})"
