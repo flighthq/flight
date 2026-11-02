@@ -53,13 +53,18 @@ pub fn create_swf_lossless_bitmap(
     }
 
     let has_color_table = format == FORMAT_COLOR_MAPPED;
-    let color_count = if has_color_table {
-        usize::from(*payload.get(5)?) + 1
-    } else {
-        0
-    };
+    let mut color_count: usize = 0;
+    if has_color_table {
+        if payload.len() <= LOSSLESS_HEADER_BYTES {
+            return None;
+        }
+        color_count = usize::from(payload[LOSSLESS_HEADER_BYTES]) + 1;
+    }
     let compressed_start = LOSSLESS_HEADER_BYTES + usize::from(has_color_table);
-    let compressed = payload.get(compressed_start..)?;
+    if compressed_start > payload.len() {
+        return None;
+    }
+    let compressed = &payload[compressed_start..payload.len()];
     let uncompressed_length = if has_color_table {
         color_count * if has_alpha { 4 } else { 3 }
             + align_swf_row(width as usize) * height as usize
