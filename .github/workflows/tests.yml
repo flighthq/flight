@@ -304,6 +304,10 @@ jobs:
   render-test:
     # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
     # e.g. a WebGPU-only smoke failure points at that backend rather than at rendering as a whole.
+    # Every leg here is SMOKE — each scene renders on each backend, is not blank, and passes its own
+    # in-page check — so the kind is left out of the names: `Render · functional` covers DOM, Canvas and
+    # WebGL, and only the serialized WebGPU leg carries a suffix. The other kinds run in Nightly and
+    # are named for theirs: `Render · functional parity`, `Render · reference images`.
     # Smoke (Tiers 1/2/4) runs here; parity (cross-backend, Tier 3) runs nightly. The
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
@@ -320,19 +324,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: functional · smoke · dom/canvas/webgl
+          - label: functional
             harness: functional
             check: test:functional:smoke
             args: --renderer=dom,canvas,webgl --retries 2
-          - label: functional · smoke · webgpu
+          - label: functional · webgpu
             harness: functional
             check: test:functional:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
-          - label: examples · smoke · dom/canvas/webgl
+          - label: examples
             harness: examples
             check: test:examples:smoke
             args: --renderer=dom,canvas,webgl
-          - label: examples · smoke · webgpu
+          - label: examples · webgpu
             harness: examples
             check: test:examples:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
