@@ -1,6 +1,6 @@
 name: CI
 
-# The per-commit PRODUCT gate for every PR and for pushes to main/develop. Flight is a Rust SDK with a
+# The per-commit PRODUCT gate for every PR and every push to develop. Flight is a Rust SDK with a
 # TypeScript companion, and this workflow is its pipeline in three stages:
 #
 #   Test        Rust and TypeScript, each validated by its own tests.
@@ -38,7 +38,11 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, develop]
+    # Develop only. Commits are made on develop and reach main only through Promote, after this
+    # workflow passed for them; Promote, the publishes and Release all look up that develop run by
+    # commit, so a run on main would only repeat it. A commit made directly on main has no CI run
+    # and is therefore refused by all of them, which is the intent.
+    branches: [develop]
   # A manual run executes the same full gate as a push, so its success means the same thing.
   workflow_dispatch:
 

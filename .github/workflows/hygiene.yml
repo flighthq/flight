@@ -21,7 +21,8 @@ name: Hygiene
 on:
   pull_request:
   push:
-    branches: [main, develop]
+    # Develop only, like CI: main receives only commits already checked here.
+    branches: [develop]
   workflow_dispatch:
 
 env:
