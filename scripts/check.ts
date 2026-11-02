@@ -128,9 +128,9 @@ if (!scoped) {
   add('double-casts:check', 'tsx', ['scripts/check-double-casts.ts']);
 
   // Script tests (scripts/**/*.test.ts, own vitest config) are deliberately NOT a gate here for now.
-  // They are still covered: CI runs them as their own leg (.github/workflows/tests.yml). Know the gap
+  // They are still covered: hygiene runs them as a non-failing leg (.github/workflows/hygiene.yml). Know the gap
   // this leaves locally — neither `npm run test` (unit lane: packages/**/src/**) nor `npm run check`
-  // reaches them, so a scripts failure will not surface until CI. Run `npm run test:scripts` before
+  // reaches them, so a scripts failure surfaces only as a hygiene warning. Run `npm run test:scripts` before
   // handing off work that touches scripts/, size fixtures, or anything those tests read as source text.
 
   // Advisory, and deliberately not a gate. `fingerprint-source-hashes:check` above proves a baseline

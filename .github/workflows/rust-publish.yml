@@ -1,7 +1,7 @@
 name: Rust Publish
 
 # Reusable workflow for publishing all Flight crates to crates.io.
-# Called by tests.yml (develop → next), edge-publish.yml (main → edge),
+# Called by nightly.yml (develop → next), edge-publish.yml (main → edge),
 # and release.yml (tag → stable). Also dispatchable manually.
 
 on:
@@ -9,6 +9,14 @@ on:
     inputs:
       version:
         description: The version to stamp and publish (e.g. 0.7.0 or 0.7.0-next.42.gabc1234). Leave empty to compute from edge-version.ts.
+        required: false
+        type: string
+      ref:
+        description: The commit to publish. Leave empty for the calling workflow's own commit.
+        required: false
+        type: string
+      branch:
+        description: The channel branch edge-version.ts computes for (main or develop). Leave empty to use the run's ref. A scheduled caller must set it, since its run ref is the default branch.
         required: false
         type: string
     secrets:
@@ -38,6 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref }}
           fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
@@ -65,9 +74,11 @@ jobs:
           cache: 'npm'
       - name: Install npm deps and compute version
         if: ${{ steps.version.outputs.version == '' }}
+        env:
+          CHANNEL_BRANCH: ${{ inputs.branch }}
         run: |
           npm ci --ignore-scripts
-          npx tsx scripts/edge-version.ts >> "$GITHUB_OUTPUT"
+          npx tsx scripts/edge-version.ts ${CHANNEL_BRANCH:+"$CHANNEL_BRANCH"} >> "$GITHUB_OUTPUT"
         id: computed
 
       - name: Set final version

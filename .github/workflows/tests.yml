@@ -1,6 +1,20 @@
 name: CI
 
-# The per-commit gate for every PR and for pushes to main/develop. A `changes` job
+# The per-commit PRODUCT gate for every PR and for pushes to main/develop: does it build, typecheck,
+# pass its unit/host/Rust tests, render on every backend, and package for both registries. A red run
+# here means something a user of the SDK would feel. Promote, the snapshot publishes, and branch
+# protection all read this workflow, so nothing that is bookkeeping may fail it.
+#
+# Everything else has a home that cannot turn this red:
+#   hygiene.yml  — every push, never fails: lint, format (TS + Rust), clippy, ordering, convention
+#                  audits, regenerate/ratchet checks, the scripts and dev-tool suites, advisory size.
+#                  Failures surface as warnings and a run summary. The pre-push hook blocks on format.
+#   nightly.yml  — once a day on develop's tip: the per-package-environment test shards, render
+#                  parity, the reference-image comparison, coverage, minified size, and the crates.io
+#                  snapshot publish (crates.io's rate limit makes a full graph take ~2h, too slow and
+#                  too noisy to repeat per push; `rust-publish-dry-run` below proves it would publish).
+#
+# A `changes` job
 # (dorny/paths-filter) decides which areas a change touches, so a docs-only PR skips the code
 # legs — a fast success that still reports to branch protection, so these checks are safe to
 # mark required (unlike a whole-workflow path-skip, which never reports and leaves a required
@@ -35,6 +49,12 @@ on:
 # `npm run electron:review` without a binary to launch.
 env:
   ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+# A newer push to the same PR supersedes the older run. Pushes to a branch key on their own run id,
+# so they never cancel each other: those runs publish snapshots, and a publish must never be cut off.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   changes:
@@ -95,20 +115,6 @@ jobs:
             echo "rust=$FILTER_RUST" >> "$GITHUB_OUTPUT"
           fi
 
-  test-scripts:
-    name: Tests · scripts
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test:scripts
-
   test-host:
     name: Tests · host backends
     needs: changes
@@ -122,21 +128,6 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run test:host
-
-  test-tools:
-    name: Tests · dev tools
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - uses: ./.github/actions/setup-playwright
-      - run: npm run test:tools
 
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
   # `build-check` job (`packages:check && typecheck`) that all of them needed, which made the gate
@@ -162,9 +153,9 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      # The single build of the graph per push. Handed to edge-publish and to all six render-test
+      # The single build of the graph per push. Handed to edge-publish and to all four render-test
       # legs, each of which would otherwise run its own full `tsc -b` over all 141 projects to
-      # produce byte-identical output — seven redundant compiles. Safe to reuse across the version
+      # produce byte-identical output — five redundant compiles. Safe to reuse across the version
       # stamp that edge-publish applies afterwards: nothing inlines the package version at build time
       # (the one manifest read, tool-capture's captureServer, does it at runtime), so dist does not
       # depend on the version in package.json.
@@ -204,57 +195,8 @@ jobs:
       - run: npm ci
       - run: npm run ${{ matrix.check }}
 
-  # Two test legs with different fidelity/speed tradeoffs. `test` is the thorough one: each package runs
-  # under its own vitest config, so node packages use the `node` environment and jsdom packages use
-  # `jsdom`, each isolated in its own process — correct, but that is 141 serial Vitest startups plus a
-  # fresh environment per test file. Fitting a full run gave `node ≈ 4.9s + 0.22s/file` and
-  # `jsdom ≈ 2.1s + 0.90s/file` per package: startup dominates the small node packages, per-file DOM
-  # construction dominates everything else, and neither is removable without giving up the fidelity
-  # this lane exists for. So it is DIVIDED rather than optimised — sharded by package across runners,
-  # weight-balanced in scripts/test-shard.ts, with `--shard` scaling off `strategy.job-total` so the
-  # matrix length is the only place the shard count is written.
-  #
-  # The division is NOT free and does not reach 4x: measured, the whole lane is 29m13s serial while one
-  # quarter of it is 11m35s, or 40% rather than 25%. The gap is cold cache. Running 141 packages in one
-  # process warms the module and page cache for the ones behind it; four runners each start cold over
-  # 35, so that warm-up is paid four times. Wall clock still improves ~2.5x, but this lane's runner
-  # minutes go UP by roughly 60% — the trade being made deliberately, since wall clock is what gates a
-  # push and this lane was the critical path.
-  #
-  # Folding the 141 configs into one Vitest run via `projects` was measured and rejected: each project
-  # gets its own Vite server and therefore its own transform cache, so the boots merely move inside one
-  # process and stay serial — and being serial per project, they are paid in full by every shard, which
-  # is what makes that shape unshardable. See the header of scripts/test-packages.ts.
-  #
-  # This is the one lane that runs tool-capture's serialized browser contracts. `test-fast` is the
-  # merged run (one shared jsdom env, no isolation) for ordinary unit tests; it excludes tool-capture so
-  # local pushes stay fast and don't launch browsers. Both gate PRs; edge-publish gates only on
-  # `test-fast`, so a snapshot ships without waiting on the thorough leg.
-  test:
-    name: Tests · per-package env · ${{ matrix.shard }}/${{ strategy.job-total }}
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      # Every shard runs even when one fails: they test disjoint packages, so a failure in one says
-      # nothing about the others and cancelling them costs a whole extra CI round to learn the rest.
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      # Only the shard holding tool-capture needs a browser, but which shard that is depends on the
-      # split, so every shard installs. Chromium is cached by the runner image and this is well off
-      # the critical path of the shard that actually uses it.
-      - uses: ./.github/actions/setup-playwright
-      - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
-
+  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
+  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
   test-fast:
     name: Tests · merged jsdom
     needs: changes
@@ -269,13 +211,12 @@ jobs:
       - run: npm ci
       - run: npm run test
 
-  # The quality sweep, split into four parallel jobs so a failure names its category in the
-  # GitHub Actions UI without scrolling a combined log. Each job sets FLIGHT_CHECK_GATES to
-  # its gate subset; `npm run check` runs only those gates and exits nonzero if any fail.
-  # Locally, `npm run check` with no env var still runs every gate as before.
-
+  # Only the gates that protect what a user installs: a manifest that resolves, imports that resolve
+  # through the blessed lanes, no orphaned dist, and license provenance (which must block every run).
+  # The convention and bookkeeping gates run in hygiene.yml. Locally, `npm run check` with no env var
+  # still runs every gate.
   quality-structure:
-    name: Quality · structure
+    name: Quality · packaging
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
@@ -291,7 +232,7 @@ jobs:
       - run: npm run check
         env:
           FLIGHT_CHECK_GATES: >-
-            packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,transport-bypasses:check, export-lanes:check
+            packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
 
 
   quality-typecheck:
@@ -310,67 +251,10 @@ jobs:
         env:
           FLIGHT_CHECK_GATES: typecheck
 
-  quality-lint:
-    name: Quality · lint & format
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check
-        env:
-          FLIGHT_CHECK_GATES: >-
-            lint,format:check,order:check,portable:check, mocks:check,backend-prefix:check
-
-
-  quality-invariants:
-    name: Quality · invariants
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check
-        env:
-          FLIGHT_CHECK_GATES: >-
-            exports:check,reachability:check,type-home:check, backend-lifecycle:check,entity-contracts:check,api:check, facets:check,catalog:check,support:check,instrumentation:check, fingerprint-computation-id:check,evidence:check,assertions:check, data-cast-colour:check,unit-test-cost:check, expected-image-descriptions:check,functional-antialiasing:check, degree-constants:check,capability-arrival:check,host-bypasses:check, mixed-absence:check,opaque-values:check,double-casts:check, capture provenance (advisory)
-
-
-  # Advisory, not a gate: `npm run size` always exits 0. It reports which bundles moved against the
-  # committed unminified baseline so a reviewer sees the tree-shaking delta in the log. The shipping
-  # number is terser-minified and the dedicated fixture corpus lives in nightly (`size-minified`).
-  # Gating on it here would push an author to rewrite the pin to clear the red, laundering the regression.
-  size:
-    name: Bundle size (advisory)
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run size
-
   render-test:
     # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
-    # e.g. parity failing while smoke passes means the backends disagree, not that rendering is broken.
-    # Smoke (Tiers 1/2/4) and parity (cross-backend, Tier 3) are environment-independent. The
+    # e.g. a WebGPU-only smoke failure points at that backend rather than at rendering as a whole.
+    # Smoke (Tiers 1/2/4) runs here; parity (cross-backend, Tier 3) runs nightly. The
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
     #
@@ -394,18 +278,12 @@ jobs:
           - label: functional · smoke · webgpu
             check: test:functional:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
-          - label: functional · parity
-            check: test:functional:parity
-            args: --parallel 1 --retries 2
           - label: examples · smoke · dom/canvas/webgl
             check: test:examples:smoke
             args: --renderer=dom,canvas,webgl
           - label: examples · smoke · webgpu
             check: test:examples:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
-          - label: examples · parity
-            check: test:examples:parity
-            args: --parallel 1 --retries 2
           # Screenshot-baseline legs (functional + examples) REMOVED. 4fdfd2a15 wired them as "the one
           # open question" and pre-registered two remedies — pin WebGL's rasterizer, or scope to pinned
           # backends. Both are exhausted: scoping to dom/canvas/webgpu (c7ef40d4e) still drifted, and
@@ -414,7 +292,7 @@ jobs:
           # machines. The underlying problem: a golden hash was never doing the correctness job — parity
           # and pixel oracles do that. The golden's only job is stability, and a stable reference must
           # be captured where it is checked. capture:*:check stays a LOCAL command for the machine whose
-          # hashes it holds; the CI correctness signal comes from smoke and parity above.
+          # hashes it holds; the CI correctness signal comes from smoke above and parity nightly.
 
     steps:
       - uses: actions/checkout@v4
@@ -423,10 +301,8 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      # The parity check imports the SDK from built dist (@flighthq/surface); restoring it is harmless
-      # for the smoke check (which resolves packages from source via the dev server). Kept uniform
-      # across the matrix rather than gated on the parity legs: the download is seconds, and a gate
-      # would make the two checks differ in setup for no measurable gain.
+      # Smoke resolves packages from source via the dev server, so dist is not strictly needed; it is
+      # restored anyway so the legs match the nightly parity legs, which import the SDK from dist.
       - uses: actions/download-artifact@v4
         with:
           name: dist-${{ github.sha }}
@@ -449,96 +325,11 @@ jobs:
       # Durable WebGPU rule: every leg that captures WebGPU serializes because this runner has one
       # SwiftShader adapter and concurrent devices can starve frame-capture buffer readback. Smoke
       # has no cross-backend comparison, so it splits: non-WebGPU backends stay parallel while
-      # WebGPU runs alone. Parity must compare backends within one run, so the whole leg keeps all
-      # renderers together and uses `--parallel 1`.
+      # WebGPU runs alone.
       - run: npm run ${{ matrix.check }} -- ${{ matrix.args }}
         env:
           FLIGHT_CAPTURE_WORKER_COUNT: 2
           FLIGHT_CAPTURE_TIMEOUT_MS: 45000
-
-  # The blessed-image comparison belongs to the per-commit gate: it is the only tier that can detect a
-  # pixel regression against promoted reference bytes. Keeping it in a separate workflow allowed Promote
-  # to advance main as soon as tests.yml passed even when this comparison was red or still running.
-  #
-  # This job is safe on pull requests and forks. Reference packs are public HTTPS reads, the job holds no
-  # secret, and its token is explicitly read-only. A zero-comparison run is a failure rather than a green
-  # no-op; the lock bounds the capture scope to cells for which reference bytes actually exist. Like every
-  # other code leg, it waits for changed-area detection and skips a docs-only change.
-  reference-image-check:
-    name: Reference Images · Check
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    env:
-      # The pack manifest does not yet carry capture provenance, so this must match the frame that was
-      # blessed. State it once for scope resolution and comparison rather than allowing either to guess.
-      ORACLE_CAPTURE_FRAMES: 1
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - run: npm ci
-
-      # Fetch first: an unresolvable lock fails before the expensive build, and the fetched packs define
-      # the exact capture scope used below.
-      - name: Fetch and verify the pinned reference packs
-        run: npx tsx ./scripts/reference-image-check.ts fetch
-
-      - name: Resolve the capture scope
-        id: reference_scope
-        run: |
-          set -euo pipefail
-          scope=$(npx tsx ./scripts/reference-image-check.ts scope --frames "$ORACLE_CAPTURE_FRAMES")
-          echo "$scope"
-          {
-            echo 'lines<<SCOPE'
-            echo "$scope"
-            echo 'SCOPE'
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Build the harness
-        run: |
-          npm run build
-          npm run build:functional
-
-      - uses: ./.github/actions/setup-playwright
-
-      # Echo the registered identity instead of recomputing it. The reference-image repository owns the
-      # identity; the observed browser is diagnostic evidence if the hosted runner later drifts from it.
-      - name: Echo the registered capture environment
-        run: |
-          echo "registered identity: $(node -p "require('./scripts/reference-image-capture-identity.json').environmentId")"
-          echo "observed playwright: $(npx playwright --version | tr -d ' ')"
-
-      - name: Capture the pinned cells
-        run: |
-          set -euo pipefail
-          printf '%s\n' "${{ steps.reference_scope.outputs.lines }}" | while read -r args; do
-            [ -n "$args" ] || continue
-            npx tsx ./packages/tool-capture/src/bin.ts capture $args
-          done
-
-      - name: Compare against the blessed references
-        run: npx tsx ./scripts/reference-image-check.ts check --frames "$ORACLE_CAPTURE_FRAMES"
-
-      # Green captures are disposable; on failure these bytes are the diagnosis.
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: reference-image-check-captures
-          path: |
-            .artifacts/functional/**/screenshot.png
-            .artifacts/reference-image-packs/**/*.png
-          include-hidden-files: true
-          if-no-files-found: warn
 
   rust-check:
     name: Rust · check
@@ -562,38 +353,26 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace
 
-  rust-clippy:
-    name: Rust · clippy
+  # Proves the crate graph would publish without uploading it: every publishable crate packages
+  # against the others through cargo's local overlay registry. The real upload is nightly, so this is
+  # what keeps a broken crate visible on the push that broke it rather than on the next morning.
+  rust-publish-dry-run:
+    name: Rust · publish dry run
     needs: changes
     if: ${{ needs.changes.outputs.rust == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --workspace
-
-  rust-fmt:
-    name: Rust · format
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - run: cargo fmt --all -- --check
+      - run: cargo publish --workspace --dry-run --no-verify
 
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
     # to the tag-triggered stable release (release.yml). Edge is meant to be *available*, so it gates
     # only on the two correctness legs — `build` (it compiles) and `test-fast` (the merged unit-test
-    # run, seconds not minutes) — and deliberately NOT on the thorough `test` leg or the
-    # health/hygiene legs (`size`, the flaky `render-test` matrix, `harness-build`, `quality`), which
-    # still run in parallel as signals but never block an edge build. It never runs on pull_request (no
+    # run, seconds not minutes) — and deliberately NOT on the flaky `render-test` matrix,
+    # `harness-build`, or the quality legs, which still run in parallel but never block an edge build. It never runs on pull_request (no
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
     # dist-tag, so `latest` is untouched. See agents/packaging.md.
     #
@@ -715,21 +494,3 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
         run: npm run release -- --no-build --tag "${EDGE_TAG}" wasm
-
-  rust-edge-publish:
-    # Publishes the Rust crate graph to crates.io in parallel with npm. Each registry computes the
-    # snapshot version independently from edge-version.ts — same git history, deterministic output.
-    # The Rust CI jobs are path-filtered and may be skipped when no Rust files changed; `always()`
-    # in the condition prevents skipped jobs from blocking, and the branch gate still applies.
-    name: Publish · Rust · ${{ github.ref_name }} snapshot
-    needs: [build, test-fast, rust-check, rust-test, rust-clippy, rust-fmt]
-    if: |-
-      always()
-      && github.event_name == 'push' && github.ref == 'refs/heads/develop'
-      && needs.build.result == 'success'
-      && needs.test-fast.result == 'success'
-      && !contains(needs.*.result, 'failure')
-      && !contains(needs.*.result, 'cancelled')
-    uses: ./.github/workflows/rust-publish.yml
-    secrets:
-      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

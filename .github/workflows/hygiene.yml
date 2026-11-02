@@ -1,0 +1,154 @@
+name: Hygiene
+
+# Repository hygiene on every push and PR — and it NEVER fails. CI (tests.yml) answers "is this a
+# working product for users"; these checks answer "is the repo tidy": lint, format (TS + Rust),
+# clippy, ordering, convention audits, generated-manifest and ratchet checks, the scripts and
+# dev-tool suites, and the advisory bundle-size report. A stale count or an unregenerated manifest
+# is worth knowing about but is not a broken product, so it must not turn a commit red.
+#
+# Every check step is `continue-on-error`, which keeps the JOB green (a job-level continue-on-error
+# would still publish a red check run, and GitHub marks the commit red for any red check). The last
+# step of each job turns the failed steps into `::warning` annotations and a run-summary table, so a
+# failure is visible on the run without failing it. Format also blocks locally in the pre-push hook,
+# which checks it first.
+#
+# The same gates still run where they are cheap to fix: `npm run check` locally runs every gate, the
+# pre-commit hook lints and formats staged files, and agents run the relevant checks at their
+# checkpoints (AGENTS.md).
+
+on:
+  pull_request:
+    paths-ignore: ['**/*.md']
+  push:
+    branches: [main, develop]
+    paths-ignore: ['**/*.md']
+  workflow_dispatch:
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+# Nothing here publishes or gates, so a newer push always supersedes an older run.
+concurrency:
+  group: hygiene-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Hygiene · checks
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: some invariant gates compare against earlier commits.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+
+      - id: lint
+        continue-on-error: true
+        run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: lint
+      - id: format
+        continue-on-error: true
+        run: npm run format:check
+      - id: conventions
+        continue-on-error: true
+        run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: 'order:check,portable:check,mocks:check,backend-prefix:check,transport-bypasses:check'
+      - id: invariants
+        continue-on-error: true
+        run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: 'exports:check,reachability:check,type-home:check, backend-lifecycle:check,entity-contracts:check,api:check, facets:check,catalog:check,support:check,instrumentation:check, fingerprint-computation-id:check,evidence:check,assertions:check, data-cast-colour:check,unit-test-cost:check, expected-image-descriptions:check,functional-antialiasing:check, degree-constants:check,capability-arrival:check,host-bypasses:check, mixed-absence:check,opaque-values:check,double-casts:check, capture provenance (advisory)'
+      # Advisory by construction: `npm run size` always exits 0 and only reports which bundles moved
+      # against the committed unminified baseline. The shipping (minified) number is nightly.
+      - id: size
+        continue-on-error: true
+        run: npm run size
+
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: 'lint=${{ steps.lint.outcome }} format=${{ steps.format.outcome }} conventions=${{ steps.conventions.outcome }} invariants=${{ steps.invariants.outcome }} size=${{ steps.size.outcome }}'
+        run: bash scripts/report-hygiene.sh
+
+  scripts:
+    name: Hygiene · scripts tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - id: scripts
+        continue-on-error: true
+        run: npm run test:scripts
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: scripts=${{ steps.scripts.outcome }}
+        run: bash scripts/report-hygiene.sh
+
+  tools:
+    name: Hygiene · dev tools tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - uses: ./.github/actions/setup-playwright
+      - id: tools
+        continue-on-error: true
+        run: npm run test:tools
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: tools=${{ steps.tools.outcome }}
+        run: bash scripts/report-hygiene.sh
+
+  rust:
+    name: Hygiene · Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Clippy costs a workspace compile, so it runs only when Rust changed; rustfmt is seconds and
+      # always runs. Pushes compare against the pushed branch, PRs against their base, as in CI.
+      - uses: dorny/paths-filter@v3
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        id: filter
+        with:
+          base: ${{ github.ref_name }}
+          filters: |
+            rust:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - id: fmt
+        continue-on-error: true
+        run: cargo fmt --all -- --check
+      - uses: Swatinem/rust-cache@v2
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.rust == 'true' }}
+      - id: clippy
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.rust == 'true' }}
+        continue-on-error: true
+        run: cargo clippy --workspace
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: cargo-fmt=${{ steps.fmt.outcome }} clippy=${{ steps.clippy.outcome }}
+        run: bash scripts/report-hygiene.sh
