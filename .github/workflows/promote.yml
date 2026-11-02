@@ -29,6 +29,12 @@ name: Promote
 # to notice. `branches: [develop]` below filters the TRIGGERING run's branch and is unrelated to
 # where this file lives; the two are easy to conflate. So this workflow lands on main first, and
 # from there watches develop.
+# Titled with the commit message, like the push-triggered runs beside it, rather than GitHub's default
+# of the workflow name. It is the commit whose CI run triggered this promotion — normally the one
+# promoted; the run summary names the commit actually promoted. Scheduled and manual runs have
+# no triggering commit and keep the workflow name.
+run-name: "${{ github.event.workflow_run.head_commit.message || 'Promote' }}"
+
 on:
   workflow_run:
     workflows: [CI]
@@ -175,6 +181,12 @@ jobs:
           fi
           echo "main advanced ${before} -> ${CANDIDATE}."
           echo "advanced=true" >> "$GITHUB_OUTPUT"
+          # The run title is the TRIGGERING commit; this names the one actually promoted.
+          {
+            echo "### Promoted"
+            echo ""
+            echo "\`${CANDIDATE}\` $(git log -1 --format='%s' "${CANDIDATE}")"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # The edge snapshot of the commit main just moved to. A called workflow runs as part of this run, so
   # a failed publish turns the promotion red instead of disappearing into a separate run nobody opens.

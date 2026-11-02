@@ -39,6 +39,10 @@
 # not a manual gate, and it is the same one every workflow here already paid.
 name: Reference Images · Bridge
 
+# Titled with the commit message of the capture run it bridges, like the push-triggered runs beside
+# it, rather than GitHub's default of the workflow name.
+run-name: "${{ github.event.workflow_run.head_commit.message || 'Reference Images · Bridge' }}"
+
 on:
   workflow_run:
     workflows: ['Reference Images · Capture']
