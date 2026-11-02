@@ -9,8 +9,8 @@ use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
 use syn::{
-    Attribute, BinOp, Expr, FnArg, GenericArgument, Item, ItemFn, ItemStruct, ItemUse, Lit,
-    Member, Pat, PathArguments, ReturnType, Stmt, Token, Type, UnOp, UseTree, Visibility,
+    Attribute, BinOp, Expr, FnArg, GenericArgument, Item, ItemFn, ItemStruct, ItemUse, Lit, Member,
+    Pat, PathArguments, ReturnType, Stmt, Token, Type, UnOp, UseTree, Visibility,
 };
 
 use crate::model::{ExternalNullableOptionProgram, Program, StringUnionStyle, TestProgram};
@@ -2485,7 +2485,10 @@ fn emit_diverging_statement(
                     emit_expression(message, entities)?
                 ))
             } else {
-                Ok(format!("throw {};", emit_expression(&call.args[0], entities)?))
+                Ok(format!(
+                    "throw {};",
+                    emit_expression(&call.args[0], entities)?
+                ))
             }
         }
         Expr::Call(call) if expression_path_ends_with(&call.func, "throw_error") => Ok(format!(
@@ -8717,14 +8720,9 @@ fn emit_block_with_context(
             } else {
                 local_context
             };
-            if let Some((old_name, new_name)) = emit_local_with_shadow(
-                out,
-                local,
-                &effective_context,
-                indent,
-                shadowed,
-                rebound,
-            )? {
+            if let Some((old_name, new_name)) =
+                emit_local_with_shadow(out, local, &effective_context, indent, shadowed, rebound)?
+            {
                 let rename_prefix = format!("{RENAME_MARKER}{old_name}=");
                 block_context.retain(|m| !m.starts_with(&rename_prefix));
                 block_context.insert(format!("{RENAME_MARKER}{old_name}={new_name}"));
@@ -9795,38 +9793,29 @@ fn emit_expression_value(
                     _ => {}
                 }
             }
-            if expression_path_ends_with(&call.func, "get_record_value")
-                && call.args.len() == 2
-            {
+            if expression_path_ends_with(&call.func, "get_record_value") && call.args.len() == 2 {
                 let record = emit_expression(&call.args[0], entities)?;
                 let key = emit_expression(&call.args[1], entities)?;
                 return Ok(format!("{record}[{key}]"));
             }
-            if expression_path_ends_with(&call.func, "set_record_value")
-                && call.args.len() == 3
-            {
+            if expression_path_ends_with(&call.func, "set_record_value") && call.args.len() == 3 {
                 let record = emit_expression(&call.args[0], entities)?;
                 let key = emit_expression(&call.args[1], entities)?;
                 let value = emit_expression(&call.args[2], entities)?;
                 return Ok(format!("({record}[{key}] = {value})"));
             }
-            if expression_path_ends_with(&call.func, "has_record_key")
-                && call.args.len() == 2
-            {
+            if expression_path_ends_with(&call.func, "has_record_key") && call.args.len() == 2 {
                 let record = emit_expression(&call.args[0], entities)?;
                 let key = emit_expression(&call.args[1], entities)?;
                 return Ok(format!("({key} in {record})"));
             }
-            if expression_path_ends_with(&call.func, "delete_record_value")
-                && call.args.len() == 2
+            if expression_path_ends_with(&call.func, "delete_record_value") && call.args.len() == 2
             {
                 let record = emit_expression(&call.args[0], entities)?;
                 let key = emit_expression(&call.args[1], entities)?;
                 return Ok(format!("(delete {record}[{key}])"));
             }
-            if expression_path_ends_with(&call.func, "get_record_keys")
-                && call.args.len() == 2
-            {
+            if expression_path_ends_with(&call.func, "get_record_keys") && call.args.len() == 2 {
                 let record = emit_expression(&call.args[1], entities)?;
                 return Ok(format!("Object.keys({record})"));
             }
@@ -9853,8 +9842,7 @@ fn emit_expression_value(
                     emit_expression(&call.args[0], entities)?
                 ));
             }
-            if expression_path_ends_with(&call.func, "throw_syntax_error") && call.args.len() == 1
-            {
+            if expression_path_ends_with(&call.func, "throw_syntax_error") && call.args.len() == 1 {
                 return Ok(format!(
                     "(() => {{ throw new SyntaxError({}); }})()",
                     emit_expression(&call.args[0], entities)?
@@ -10036,9 +10024,7 @@ fn emit_expression_value(
                     return Ok(marker[rename_prefix.len()..].to_string());
                 }
             }
-            if path.qself.is_none()
-                && path.path.segments.len() == 1
-            {
+            if path.qself.is_none() && path.path.segments.len() == 1 {
                 let name = path.path.segments[0].ident.to_string();
                 if let Some(bound) = lexical_binding(entities, &name) {
                     let prefix = format!("{ITER_MUT_ALIAS_MARKER}{bound}=");
@@ -11668,9 +11654,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         && let Expr::If(if_expr) = initializer.expr.as_ref()
         && if_expression_contains_function_exits(if_expr)
     {
-        emit_hoisted_if_value_local(
-            out, local, if_expr, entities, indent, shadowed, rebound,
-        )?;
+        emit_hoisted_if_value_local(out, local, if_expr, entities, indent, shadowed, rebound)?;
         return Ok(None);
     }
     let mutable = pattern_is_mutable(&local.pat);
@@ -11876,9 +11860,9 @@ pub(crate) fn emit_local_with_shadow_and_else(
         writeln!(out, "{value};").expect("writing to a String cannot fail");
         return Ok(None);
     }
-    let scope_declared = local_name.as_deref().is_some_and(|name| {
-        entities.contains(&format!("{SCOPE_DECLARED_MARKER}{name}"))
-    });
+    let scope_declared = local_name
+        .as_deref()
+        .is_some_and(|name| entities.contains(&format!("{SCOPE_DECLARED_MARKER}{name}")));
     if scope_declared || (rebind && !(rebound && shadowed)) {
         let fresh = next_try_rename(entities, &pattern);
         let keyword = if mutable || rebound { "let" } else { "const" };
@@ -11948,8 +11932,7 @@ fn emit_try_local(
         writeln!(out, "}}").expect("writing to a String cannot fail");
         let keyword = if mutable { "let" } else { "const" };
         write_indent(out, indent);
-        writeln!(out, "{keyword} {pattern} = {temp};")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "{keyword} {pattern} = {temp};").expect("writing to a String cannot fail");
     } else if rebind {
         let fresh = next_try_rename(entities, &pattern);
         let keyword = if mutable { "let" } else { "const" };
@@ -11957,8 +11940,7 @@ fn emit_try_local(
         writeln!(out, "{keyword} {fresh} = {inner_value};")
             .expect("writing to a String cannot fail");
         write_indent(out, indent);
-        writeln!(out, "if ({fresh} === undefined) {{")
-            .expect("writing to a String cannot fail");
+        writeln!(out, "if ({fresh} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
@@ -19692,8 +19674,7 @@ fn emit_statement(
             writeln!(out, "{record}[{key}] = {value};").expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::Call(call), _)
-            if expression_path_ends_with(&call.func, "get_record_keys")
-                && call.args.len() == 2 =>
+            if expression_path_ends_with(&call.func, "get_record_keys") && call.args.len() == 2 =>
         {
             let target = emit_expression(&call.args[0], entities)?;
             let record = emit_expression(&call.args[1], entities)?;
@@ -20003,8 +19984,7 @@ fn emit_statement(
             if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {
                 emit_iter_mut_loop(out, loop_expression, collection, chain, entities, indent)?;
             } else {
-                let mut loop_context =
-                    lexical_pattern_context(entities, &loop_expression.pat);
+                let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
                 if let Some(loop_var) = local_pattern_name(&loop_expression.pat) {
                     loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{loop_var}"));
                     let camel = snake_to_lower_camel(&loop_var);
@@ -20656,12 +20636,7 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Vec" => Ok(array_type(emit_single_generic_type(segment, entities)?)),
-                "Record"
-                    if matches!(
-                        segment.arguments,
-                        PathArguments::AngleBracketed(_)
-                    ) =>
-                {
+                "Record" if matches!(segment.arguments, PathArguments::AngleBracketed(_)) => {
                     Ok(format!(
                         "Record<string, {}>",
                         emit_single_generic_type(segment, entities)?
