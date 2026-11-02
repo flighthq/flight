@@ -14009,6 +14009,85 @@ fn resolve_one() -> Option<u32> { Some(1) }
     }
 
     #[test]
+    fn lowers_try_operator_in_if_statement_condition() {
+        let source = r#"
+pub struct Item {
+    pub type_key: u32,
+}
+
+pub fn check(items: &[Item], index: usize) -> Option<bool> {
+    if items.get(index)?.type_key == 42 {
+        return Some(true);
+    }
+    return Some(false);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("const __try0 = items[index]"),
+            "if-condition try should pre-extract into a temporary: {output}"
+        );
+        assert!(
+            output.contains("if (__try0 === undefined)"),
+            "if-condition try should guard the extracted value: {output}"
+        );
+        assert!(
+            output.contains("if (__try0.typeKey === 42)"),
+            "if-condition should use the extracted temporary for field access: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_try_operator_in_value_block() {
+        let source = r#"
+pub fn get_value(source: &[f32], index: usize) -> Option<f32> {
+    let scaled = { source.get(index)? * 2.0 };
+    return Some(scaled);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("__try"),
+            "value-block try should pre-extract into a temporary: {output}"
+        );
+        assert!(
+            output.contains("return undefined;"),
+            "value-block try should return undefined on failure: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_try_operator_in_hoisted_if_value_branch() {
+        let source = r#"
+pub fn parse_value(hex: &str) -> Option<f32> {
+    let alpha = if hex.len() == 4 {
+        f32::from(parse_digit(hex)?) / 255.0
+    } else {
+        1.0
+    };
+    return Some(alpha);
+}
+
+fn parse_digit(s: &str) -> Option<u8> { Some(0) }
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("__try"),
+            "hoisted if-value branch try should pre-extract into a temporary: {output}"
+        );
+        assert!(
+            output.contains("return undefined;"),
+            "hoisted if-value branch try should return undefined on failure: {output}"
+        );
+    }
+
+    #[test]
     fn preserves_receivers_for_optional_member_calls() {
         let source = r#"
 use std::sync::Arc;

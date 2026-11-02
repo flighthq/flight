@@ -12951,9 +12951,17 @@ fn emit_hoisted_if_value_branch_block(
     };
     let block_context = emit_block_with_context(out, preceding, entities, indent)?;
     if let Stmt::Expr(value, None) = last {
-        let value_str = emit_expression(value, &block_context)?;
-        write_indent(out, indent);
-        writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
+        if expression_contains_unconditional_try(value) {
+            let try_context =
+                emit_try_pre_extractions(out, value, &block_context, indent)?;
+            let value_str = emit_expression(value, &try_context)?;
+            write_indent(out, indent);
+            writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
+        } else {
+            let value_str = emit_expression(value, &block_context)?;
+            write_indent(out, indent);
+            writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
+        }
     } else {
         emit_statement(out, last, &block_context, indent)?;
     }
@@ -19809,6 +19817,15 @@ fn emit_value_block(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     if let [Stmt::Expr(expression, _)] = block.stmts.as_slice() {
+        if expression_contains_unconditional_try(expression) {
+            let mut out = "(() => {\n".to_string();
+            let try_context = emit_try_pre_extractions(&mut out, expression, entities, 1)?;
+            write_indent(&mut out, 1);
+            writeln!(out, "return {};", emit_expression(expression, &try_context)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("})()");
+            return Ok(out);
+        }
         return emit_expression(expression, entities);
     }
     return emit_block_expression(block, entities);
@@ -20026,6 +20043,21 @@ fn emit_statement(
                 }
                 (indent + 1, true)
             } else {
+                let try_context =
+                    if tuple_binding.is_none()
+                        && !matches!(&*if_expression.cond, Expr::Let(_))
+                        && let_chain.is_none()
+                        && expression_contains_unconditional_try(&if_expression.cond)
+                    {
+                        Some(emit_try_pre_extractions(
+                            out,
+                            &if_expression.cond,
+                            entities,
+                            indent,
+                        )?)
+                    } else {
+                        None
+                    };
                 write_indent(out, indent);
                 if let Some((condition, _)) = &tuple_binding {
                     writeln!(out, "if ({condition}) {{").expect("writing to a String cannot fail");
@@ -20034,10 +20066,11 @@ fn emit_statement(
                         "portable `if let` requires a recognized Option or data union pattern",
                     ));
                 } else {
+                    let ctx = try_context.as_ref().unwrap_or(entities);
                     writeln!(
                         out,
                         "if ({}) {{",
-                        emit_expression(&if_expression.cond, entities)?
+                        emit_expression(&if_expression.cond, ctx)?
                     )
                     .expect("writing to a String cannot fail");
                 }
