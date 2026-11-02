@@ -10968,10 +10968,6 @@ pub fn get_defaults() -> u32 {
             "pub fn probe() -> Vec<u8> {\n    return vec![external::make_drop!(crate::kernel::Kernel)];\n}\n".to_string(),
             "it cannot prove what the macro `external::make_drop!` in this crate expands to, and a macro can generate any `impl`".to_string(),
         ));
-        cases.push((
-            "std::thread_local! {\n    static CELLS: u32 = 0;\n}\n".to_string(),
-            "it cannot prove what the macro `std::thread_local!` in this crate expands to, and a macro can generate any `impl`".to_string(),
-        ));
         for (source, reason) in &cases {
             let native = write(
                 source_root.join("native.rs"),
@@ -10985,6 +10981,18 @@ pub fn get_defaults() -> u32 {
             );
             assert!(!emitted, "{source} emitted TypeScript");
         }
+
+        // thread_local! generates only static declarations, no impl blocks.
+        let thread_local_native = write(
+            source_root.join("native.rs"),
+            "//! flight-compiler: target-native\n\nstd::thread_local! {\n    static CELLS: u32 = 0;\n}\n",
+        );
+        let (code, stderr, _) = run(&[&thread_local_native]);
+        assert_eq!(
+            code,
+            Some(0),
+            "thread_local! should be accepted: {stderr}"
+        );
 
         let inventoried = write(
             source_root.join("native_impl.rs"),

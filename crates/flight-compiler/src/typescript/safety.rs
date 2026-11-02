@@ -1441,9 +1441,10 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
 
         // Whether `path` invokes, through the standard macro prelude or a resolved path, one of the
         // macros the proof knows cannot introduce an implicit-dispatch item: the standard library's
-        // expression, formatting, assertion and diagnostic macros (`include!`, `thread_local!` and
-        // every other standard macro fail closed), and `flight_entity::impl_entity`, which implements
-        // only `Entity`.
+        // expression, formatting, assertion and diagnostic macros, `thread_local!` (generates only
+        // `static` declarations with `thread::LocalKey`, no `impl` blocks), and
+        // `flight_entity::impl_entity`, which implements only `Entity`. `include!` and every other
+        // standard macro that could carry hidden items fail closed.
         fn is_standard_macro(
             &self,
             scope: usize,
@@ -1454,7 +1455,7 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
             let EagerScope {
                 context, program, ..
             } = &self.scopes[scope];
-            const ITEMLESS: [&str; 32] = [
+            const ITEMLESS: [&str; 33] = [
                 "assert",
                 "assert_eq",
                 "assert_ne",
@@ -1482,6 +1483,7 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                 "print",
                 "println",
                 "stringify",
+                "thread_local",
                 "todo",
                 "unimplemented",
                 "unreachable",
