@@ -19880,9 +19880,14 @@ fn emit_statement(
             if expression_path_ends_with(&call.func, "set_record_value")
                 && call.args.len() == 3 =>
         {
-            let record = emit_expression(&call.args[0], entities)?;
-            let key = emit_expression(&call.args[1], entities)?;
-            let value = emit_expression(&call.args[2], entities)?;
+            let ctx = if expression_contains_unconditional_try(&call.args[2]) {
+                emit_try_pre_extractions(out, &call.args[2], entities, indent)?
+            } else {
+                entities.clone()
+            };
+            let record = emit_expression(&call.args[0], &ctx)?;
+            let key = emit_expression(&call.args[1], &ctx)?;
+            let value = emit_expression(&call.args[2], &ctx)?;
             write_indent(out, indent);
             writeln!(out, "{record}[{key}] = {value};").expect("writing to a String cannot fail");
         }
