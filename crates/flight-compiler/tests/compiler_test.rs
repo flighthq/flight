@@ -9554,6 +9554,27 @@ pub fn absent_first(value: Option<f64>) -> f64 {
     }
 
     #[test]
+    fn lowers_option_match_with_tuple_destructure_in_some() {
+        let source = r#"pub fn find_value(items: &mut Vec<(usize, Vec<i32>)>, key: usize) -> i32 {
+    let result = match items.iter().find(|(k, _)| *k == key) {
+        Some((_, values)) => values[0],
+        None => -1,
+    };
+    return result;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("const [_unused0, values] = matchValue"),
+            "should destructure tuple inside Some arm: {output}"
+        );
+        assert!(
+            output.contains("if (matchValue !== undefined)"),
+            "should null-check the option: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_module_qualified_string_union_variants() {
         let module = |path, source| ModuleSource { path, source };
         let kinds = r#"//! flight-compiler: string-union Kind

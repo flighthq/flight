@@ -15013,6 +15013,23 @@ fn analyze_option_match(arms: &[syn::Arm]) -> Option<Vec<OptionMatchArm>> {
                         Some(snake_to_lower_camel(&identifier.ident.to_string()))
                     }
                     Pat::Wild(_) => None,
+                    Pat::Tuple(tuple) => {
+                        let mut names = Vec::new();
+                        let mut wild_count = 0usize;
+                        for elem in &tuple.elems {
+                            match elem {
+                                Pat::Ident(ident) if ident.subpat.is_none() => {
+                                    names.push(snake_to_lower_camel(&ident.ident.to_string()));
+                                }
+                                Pat::Wild(_) => {
+                                    names.push(format!("_unused{wild_count}"));
+                                    wild_count += 1;
+                                }
+                                _ => return None,
+                            }
+                        }
+                        Some(format!("[{}]", names.join(", ")))
+                    }
                     _ => return None,
                 };
                 has_some = true;
@@ -17793,13 +17810,15 @@ pub(crate) fn emit_option_binding(
     }
     if let Pat::Tuple(tuple) = &pattern.elems[0] {
         let mut names = Vec::new();
+        let mut wild_count = 0usize;
         for elem in &tuple.elems {
             match elem {
                 Pat::Ident(ident) => {
                     names.push(snake_to_lower_camel(&ident.ident.to_string()));
                 }
                 Pat::Wild(_) => {
-                    names.push("_".to_string());
+                    names.push(format!("_unused{wild_count}"));
+                    wild_count += 1;
                 }
                 _ => {
                     return Err(compile_error(
