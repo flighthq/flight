@@ -3,11 +3,11 @@ name: Promote
 # `main` is a machine-managed known-good pointer, never pushed by hand: it advances only to a
 # commit whose CI (tests.yml) actually concluded successfully. This workflow owns that promotion.
 #
-# Two triggers, one job. `workflow_run` is the fast path — CI finishing green on develop promotes
-# within seconds, so main tracks develop continuously. `schedule` is a catch-up for the cases the
-# event path can miss: a dropped or undelivered workflow_run, a GitHub incident, or a run whose
-# conclusion flipped to green on a later re-run. The catch-up is cheap (one API call plus a push)
-# and idempotent, so running it against an already-current main is a no-op, not a failure.
+# Two paths, one job. `workflow_run` is the fast path — CI finishing green on develop promotes
+# within seconds, so main tracks develop continuously. Nightly calls this workflow as its first job,
+# a catch-up for the cases the event path can miss: a dropped or undelivered workflow_run, a GitHub
+# incident, or a run whose conclusion flipped to green on a later re-run. The catch-up is cheap (one
+# API call plus a push) and idempotent, so running it against an already-current main is a no-op.
 #
 # A promotion that moves main also publishes the `edge` snapshot of that commit, as a second job of
 # this run (`edge-publish`, which calls edge-publish.yml). It has to happen here rather than in a
@@ -40,8 +40,7 @@ on:
     workflows: [CI]
     types: [completed]
     branches: [develop]
-  schedule:
-    - cron: '0 4 * * *'
+  workflow_call:
   workflow_dispatch:
 
 concurrency:

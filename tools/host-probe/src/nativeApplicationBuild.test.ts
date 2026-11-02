@@ -44,10 +44,12 @@ describe('native host CI configuration', () => {
     const packageJson = JSON.parse(readFileSync(resolve(repositoryRoot, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
     };
-    const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows/host-matrix.yml'), 'utf8');
+    // The contract is deterministic, so it runs per push in CI; host-matrix.yml holds the advisory
+    // platform probes.
+    const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows/tests.yml'), 'utf8');
 
     expect(packageJson.scripts['test:host-probe']).toBe('npm run test --workspace=@flighthq/tool-host-probe');
-    expect(workflow).toContain('- run: npm run test:host-probe');
+    expect(workflow).toContain('run: npm run test:host-probe');
   });
 
   it('uses the Capacitor 8 iOS toolchain and allows slow Android emulator setup', () => {

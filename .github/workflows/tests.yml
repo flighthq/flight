@@ -93,6 +93,10 @@ jobs:
         run: npm run test
       - name: Host backend tests
         run: npm run test:host
+      # The host probe's own contract tests: deterministic and ours. The probes on real platforms
+      # (emulators, simulators) are advisory and run in Nightly; see host-matrix.yml.
+      - name: Host contract
+        run: npm run test:host-probe
 
   # Whole repository, not per package: a design note claiming material came from elsewhere is exactly
   # what this exists to catch, and that note ships in no package. A hard stop beside the tests rather

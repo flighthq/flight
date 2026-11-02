@@ -1,58 +1,33 @@
 name: Host Matrix
 
-# This workflow owns executable host integration and nothing else. Unit, build, and rendering coverage
-# remain in CI; keeping the native matrix separate makes its platform cost and failures visible without
-# hiding them inside the general-purpose test jobs.
+# The host backends on their real platforms: web, Electron and Tauri on Linux, Capacitor on an Android
+# emulator and an iOS simulator. ADVISORY: these depend on things outside this repository (Xcode,
+# emulator images, Appium drivers, browsers), and emulators are flaky, so a failure here is a warning,
+# never a red build. Each probe retries once before it counts as failed. The deterministic part, the
+# host-probe contract tests, runs per push in CI's `Test · TypeScript`.
+#
+# Run nightly as a job of Nightly (which passes develop's pinned commit as `ref`), or on its own by
+# hand — "Run workflow" here — when changing a host backend and wanting an answer before tomorrow.
 on:
-  pull_request:
-    paths:
-      - '.github/actions/setup-playwright/**'
-      - '.github/workflows/host-matrix.yml'
-      - 'package-lock.json'
-      - 'package.json'
-      - 'packages/host-*/**'
-      - 'packages/types/**'
-      - 'tools/host-probe/**'
-  push:
-    branches: [main, develop]
-    paths:
-      - '.github/actions/setup-playwright/**'
-      - '.github/workflows/host-matrix.yml'
-      - 'package-lock.json'
-      - 'package.json'
-      - 'packages/host-*/**'
-      - 'packages/types/**'
-      - 'tools/host-probe/**'
-  schedule:
-    # Off the top of the hour, and after the repository's 04:00 UTC nightly quality workflow.
-    - cron: '17 5 * * *'
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to probe. Empty means the ref the run was started on.
+        required: false
+        type: string
+        default: ''
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: host-matrix-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: host-matrix-${{ inputs.ref || github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  contract:
-    name: Host contract
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-      - run: npm run test:host-probe
-
   runtime:
     name: Host · ${{ matrix.host }}
-    needs: contract
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -78,6 +53,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: actions/setup-node@v5
         with:
@@ -179,16 +156,22 @@ jobs:
           echo "HOST_PROBE_CAPACITOR_DEVICE=$simulator_name" >> "$GITHUB_ENV"
           echo "HOST_PROBE_CAPACITOR_DEVICE_UDID=$simulator_udid" >> "$GITHUB_ENV"
 
+      # Advisory, with one retry: the step may fail without failing the job (see the header), and a
+      # single flaky launch does not count. The report step at the end turns a failure into a warning.
       - name: Run the host probe
+        id: probe
         if: matrix.host != 'capacitor-android'
-        run: ${{ matrix.command }}
+        continue-on-error: true
+        run: ${{ matrix.command }} || { echo '::notice::host probe failed; retrying once'; ${{ matrix.command }}; }
         env:
           HOST_PROBE_ARTIFACT_DIR: ${{ runner.temp }}/host-probe-artifacts
 
       # The emulator action owns acceleration, startup, and teardown. The APK is already built, so this
       # step only starts Appium and enters the generated Capacitor WebView.
       - name: Run the Android host probe
+        id: android-probe
         if: matrix.host == 'capacitor-android'
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         env:
           HOST_PROBE_ARTIFACT_DIR: ${{ runner.temp }}/host-probe-artifacts
@@ -196,10 +179,11 @@ jobs:
           api-level: 34
           arch: x86_64
           profile: pixel_7
-          script: ${{ matrix.command }}
+          script: ${{ matrix.command }} || ${{ matrix.command }}
 
+      # The probe steps are continue-on-error, so `failure()` never fires; diagnostics key on their outcome.
       - name: Capture Android emulator diagnostics
-        if: failure() && matrix.host == 'capacitor-android'
+        if: steps.android-probe.outcome == 'failure'
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/host-probe-artifacts"
@@ -212,7 +196,7 @@ jobs:
             > "$RUNNER_TEMP/host-probe-artifacts/android-logcat.txt" 2>&1 || true
 
       - name: Print Appium diagnostic tail
-        if: failure() && startsWith(matrix.host, 'capacitor-')
+        if: startsWith(matrix.host, 'capacitor-') && (steps.probe.outcome == 'failure' || steps.android-probe.outcome == 'failure')
         run: |
           log="$RUNNER_TEMP/host-probe-artifacts/wdio-appium.log"
           if [ -f "$log" ]; then
@@ -222,10 +206,17 @@ jobs:
           fi
 
       - name: Upload Capacitor diagnostics
-        if: failure() && startsWith(matrix.host, 'capacitor-')
+        if: startsWith(matrix.host, 'capacitor-') && (steps.probe.outcome == 'failure' || steps.android-probe.outcome == 'failure')
         uses: actions/upload-artifact@v6
         with:
           name: host-matrix-${{ matrix.host }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/host-probe-artifacts
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Report
+        if: always()
+        env:
+          REPORT_AREA: Host
+          OUTCOMES: ${{ matrix.host }}=${{ matrix.host == 'capacitor-android' && steps.android-probe.outcome || steps.probe.outcome }}
+        run: bash scripts/report-hygiene.sh

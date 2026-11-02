@@ -4,17 +4,23 @@ name: Conformance
 # recording rejected, unsupported, degraded, or failed fixture outcomes. Acquisition integrity, corpus
 # completeness, harness validity, and the unit contracts remain hard failures. A seeded ratchet becomes
 # a hard failure automatically when its baseline is committed.
+# Run nightly as a job of Nightly (which passes develop's pinned commit as `ref`), or on its own by
+# hand: "Run workflow" here measures whichever branch is selected.
 on:
-  schedule:
-    # Run after both the 04:00 UTC quality nightly and the 05:17 UTC host matrix.
-    - cron: '43 6 * * *'
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to measure. Empty means the ref the run was started on.
+        required: false
+        type: string
+        default: ''
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: conformance-${{ github.event_name == 'schedule' && 'develop' || github.ref }}
+  group: conformance-${{ inputs.ref || github.ref }}
   cancel-in-progress: false
 
 env:
@@ -22,15 +28,14 @@ env:
 
 jobs:
   corpus:
-    name: Fixture corpus
+    name: Conformance · fixture corpus
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v5
         with:
-          # Scheduled workflows otherwise test the default branch. Nightly quality in this repository
-          # measures develop; manual dispatch preserves the branch selected by its caller.
-          ref: ${{ github.event_name == 'schedule' && 'develop' || github.ref }}
+          # Nightly passes develop's pinned commit; a manual run measures the branch it was started on.
+          ref: ${{ inputs.ref || github.ref }}
 
       - id: source
         name: Resolve source revision
@@ -50,7 +55,7 @@ jobs:
 
       - id: fixture-cache
         name: Restore verified fixture cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .cache/fixtures
           key: conformance-fixtures-${{ runner.os }}-${{ hashFiles('scripts/fixtures.ts', 'scripts/fixtures-core.ts') }}
@@ -67,7 +72,7 @@ jobs:
       # nightly run to download the complete corpus again.
       - name: Save verified fixture cache
         if: steps.fixture-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .cache/fixtures
           key: ${{ steps.fixture-cache.outputs.cache-primary-key }}
