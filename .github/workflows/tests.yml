@@ -144,9 +144,10 @@ jobs:
   # what keeps a broken crate visible on the push that broke it rather than on the next morning.
   rust-publish-dry-run:
     name: Rust · package (dry run)
-    # After check and test, mirroring the TypeScript side: verify, then (dry-run) publish.
-    needs: [changes, rust-check, rust-test]
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    # After check and test, mirroring the TypeScript side: verify, then (dry-run) publish. No `if` of
+    # its own: when no Rust changed, check and test are skipped, and a job whose needs were skipped is
+    # skipped with them.
+    needs: [rust-check, rust-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
