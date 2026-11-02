@@ -9723,26 +9723,6 @@ fn emit_expression_value(
                     emit_expression(&call.args[0], entities)?
                 ));
             }
-            if (expression_is_associated_path(&call.func, "f32", "from")
-                || expression_is_associated_path(&call.func, "f64", "from"))
-                && call.args.len() == 1
-            {
-                return emit_expression(&call.args[0], entities);
-            }
-            if expression_is_associated_path(&call.func, "u32", "from_str_radix")
-                && call.args.len() == 2
-            {
-                let digits = emit_expression(&call.args[0], entities)?;
-                let radix = emit_expression(&call.args[1], entities)?;
-                let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
-                    "null"
-                } else {
-                    "undefined"
-                };
-                return Ok(format!(
-                    "((digits: string, radix: number): number | {absent} => {{ if (!Number.isInteger(radix) || radix < 2 || radix > 36 || digits.length === 0) return {absent}; let index = digits[0] === '+' ? 1 : 0; if (index === digits.length) return {absent}; let value = 0; for (; index < digits.length; index += 1) {{ const code = digits.charCodeAt(index); const digit = code >= 48 && code <= 57 ? code - 48 : code >= 65 && code <= 90 ? code - 55 : code >= 97 && code <= 122 ? code - 87 : radix; if (digit >= radix) return {absent}; value = value * radix + digit; if (value > 0xffffffff) return {absent}; }} return value; }})({digits}, {radix})"
-                ));
-            }
             if expression_is_associated_path(&call.func, "char", "from_u32") && call.args.len() == 1
             {
                 let codepoint = emit_expression(&call.args[0], entities)?;
@@ -9787,8 +9767,37 @@ fn emit_expression_value(
                             ))),
                         };
                     }
-                    ("try_from" | "try_into", 1) => {
+                    ("from" | "try_from" | "try_into", 1) => {
                         return emit_expression(&call.args[0], entities);
+                    }
+                    ("round", 1) if matches!(numeric_type.as_str(), "f32" | "f64") => {
+                        let arg = emit_expression(&call.args[0], entities)?;
+                        return Ok(format!("Math.sign({arg}) * Math.round(Math.abs({arg}))"));
+                    }
+                    ("from_str_radix", 2) => {
+                        let digits = emit_expression(&call.args[0], entities)?;
+                        let radix = emit_expression(&call.args[1], entities)?;
+                        let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                            "null"
+                        } else {
+                            "undefined"
+                        };
+                        let max = match numeric_type.as_str() {
+                            "u8" => "0xff",
+                            "u16" => "0xffff",
+                            "u32" | "usize" => "0xffffffff",
+                            "i8" => "0x7f",
+                            "i16" => "0x7fff",
+                            "i32" | "isize" => "0x7fffffff",
+                            _ => {
+                                return Err(compile_error(format!(
+                                    "portable `{numeric_type}::from_str_radix()` is not supported for 64-bit types",
+                                )));
+                            }
+                        };
+                        return Ok(format!(
+                            "((digits: string, radix: number): number | {absent} => {{ if (!Number.isInteger(radix) || radix < 2 || radix > 36 || digits.length === 0) return {absent}; let index = digits[0] === '+' ? 1 : 0; if (index === digits.length) return {absent}; let value = 0; for (; index < digits.length; index += 1) {{ const code = digits.charCodeAt(index); const digit = code >= 48 && code <= 57 ? code - 48 : code >= 65 && code <= 90 ? code - 55 : code >= 97 && code <= 122 ? code - 87 : radix; if (digit >= radix) return {absent}; value = value * radix + digit; if (value > {max}) return {absent}; }} return value; }})({digits}, {radix})"
+                        ));
                     }
                     _ => {}
                 }
@@ -17213,7 +17222,9 @@ fn emit_method_call(
             ))
         }
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
-        "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
+        "round" if arguments.is_empty() => Ok(format!(
+            "Math.sign({receiver}) * Math.round(Math.abs({receiver}))"
+        )),
         "round_ties_even" if arguments.is_empty() => Ok(format!(
             "((n: number): number => {{ const r = Math.round(n); const f = n - Math.trunc(n); return (f === 0.5 || f === -0.5) && r % 2 !== 0 ? r - Math.sign(n) : r; }})({receiver})"
         )),

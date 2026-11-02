@@ -5463,6 +5463,58 @@ pub fn narrow(value: i64) -> Option<u32> {
     }
 
     #[test]
+    fn lowers_integer_from_widening_to_identity() {
+        let source = r#"
+pub fn widen_u8(value: u8) -> u32 {
+    return u32::from(value);
+}
+
+pub fn widen_u16(value: u16) -> usize {
+    return usize::from(value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains("u32.from"),
+            "u32::from should not emit u32.from: {output}"
+        );
+        assert!(
+            !output.contains("usize.from"),
+            "usize::from should not emit usize.from: {output}"
+        );
+        assert!(
+            output.contains("return value;"),
+            "integer widening should emit the operand directly: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_f32_round_with_half_away_from_zero() {
+        let source = r#"
+pub fn round_value(value: f32) -> f32 {
+    return f32::round(value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains("f32.round"),
+            "f32::round should not emit f32.round: {output}"
+        );
+        assert!(
+            output.contains("Math.sign"),
+            "f32::round should use Math.sign for half-away-from-zero: {output}"
+        );
+        assert!(
+            output.contains("Math.abs"),
+            "f32::round should use Math.abs for half-away-from-zero: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_wrapping_neg() {
         let source = r#"
 pub fn negate(value: u32) -> u32 {
