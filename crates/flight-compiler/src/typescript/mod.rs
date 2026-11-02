@@ -12035,7 +12035,9 @@ fn emit_try_local(
 ) -> Result<Option<(String, String)>, CompileError> {
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
-    let inner_value = emit_expression(&try_expr.expr, entities)?;
+    let try_context =
+        emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
+    let inner_value = emit_expression(&try_expr.expr, &try_context)?;
     let self_referential = match &local.pat {
         Pat::Ident(identifier) => {
             expression_contains_identifier(&try_expr.expr, &identifier.ident.to_string())

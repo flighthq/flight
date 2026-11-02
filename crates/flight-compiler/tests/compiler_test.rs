@@ -13817,6 +13817,25 @@ pub fn method_try(items: &[u32]) -> Option<u32> {
     }
 
     #[test]
+    fn lowers_try_operator_with_nested_try_in_receiver() {
+        let source = r#"
+pub fn get_first_length(items: Option<&Vec<String>>) -> Option<usize> {
+    let len = items?.first()?.len();
+    return Some(len);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("__try0"),
+            "nested try should pre-extract inner try into a temporary: {output}"
+        );
+        assert!(
+            output.contains("if (__try0 === undefined)"),
+            "nested try should guard the extracted temporary: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_try_operator_avoids_self_referential_const() {
         let source = r#"
 pub fn f(decompress: Option<u32>) -> Option<u32> {
