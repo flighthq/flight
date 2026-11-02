@@ -20983,6 +20983,36 @@ pub fn mapping_of(value: Option<YamlValue>) -> Option<Mapping> {
 }
 
 #[test]
+fn lowers_match_none_or_some_variant_to_combined_check() {
+    let source = r#"
+pub struct Mapping { pub name: String }
+
+enum YamlValue {
+    Mapping(Mapping),
+    Null,
+    Number(f64),
+}
+
+pub fn read_value(value: Option<YamlValue>) -> Option<Mapping> {
+    return match value {
+        None | Some(YamlValue::Null) => None,
+        Some(YamlValue::Mapping(m)) => Some(m),
+        Some(_) => None,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("matchValue === undefined || matchValue !== undefined && matchValue.kind === \"null\""),
+        "should combine undefined check with kind check for None | Some(Variant): {output}"
+    );
+    assert!(
+        output.contains("matchValue !== undefined && matchValue.kind === \"mapping\""),
+        "should check kind for Some(Mapping): {output}"
+    );
+}
+
+#[test]
 fn lowers_let_else_some_data_union_variant() {
     let source = r#"
 //! flight-compiler: data-union EffectValue

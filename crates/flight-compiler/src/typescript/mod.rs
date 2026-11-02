@@ -13928,8 +13928,12 @@ fn analyze_tagged_data_union_pattern(
 ) -> Result<TaggedDataUnionPatternAnalysis, CompileError> {
     return match pattern {
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            let name = identifier.ident.to_string();
+            if name == "None" {
+                return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+            }
             Ok(TaggedDataUnionPatternAnalysis::CatchAll(Some(
-                snake_to_lower_camel(&identifier.ident.to_string()),
+                snake_to_lower_camel(&name),
             )))
         }
         Pat::Or(or_pattern) => {
@@ -14113,8 +14117,12 @@ fn analyze_reserved_key_data_union_pattern(
 ) -> Result<ReservedKeyDataUnionPatternAnalysis, CompileError> {
     return match pattern {
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            let name = identifier.ident.to_string();
+            if name == "None" {
+                return Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary);
+            }
             Ok(ReservedKeyDataUnionPatternAnalysis::CatchAll(Some(
-                snake_to_lower_camel(&identifier.ident.to_string()),
+                snake_to_lower_camel(&name),
             )))
         }
         Pat::Or(or_pattern) => {
@@ -14621,8 +14629,12 @@ fn analyze_data_union_pattern(
 ) -> Result<DataUnionPatternAnalysis, CompileError> {
     return match pattern {
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            let name = identifier.ident.to_string();
+            if name == "None" {
+                return Ok(DataUnionPatternAnalysis::Ordinary);
+            }
             Ok(DataUnionPatternAnalysis::CatchAll(Some(
-                snake_to_lower_camel(&identifier.ident.to_string()),
+                snake_to_lower_camel(&name),
             )))
         }
         Pat::Or(or_pattern) => {
@@ -15061,6 +15073,73 @@ fn analyze_option_wrapped_inferred_data_union_match(
                     variants: Vec::new(),
                 }
             }
+            Pat::Or(or_pattern) => {
+                let mut arm_variants = Vec::new();
+                let mut arm_none = false;
+                let mut arm_binding = None;
+                let mut arm_field_bindings = Vec::new();
+                for case in &or_pattern.cases {
+                    match case {
+                        Pat::Path(path) if path.path.is_ident("None") => {
+                            arm_none = true;
+                        }
+                        Pat::Ident(id)
+                            if id.ident == "None" && id.subpat.is_none() =>
+                        {
+                            arm_none = true;
+                        }
+                        Pat::Wild(_) => {
+                            arm_none = true;
+                        }
+                        Pat::TupleStruct(ts)
+                            if (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
+                                && ts.elems.len() == 1 =>
+                        {
+                            match inferred_tagged_data_union_pattern(&ts.elems[0]) {
+                                InferredPattern::Variants(
+                                    variants,
+                                    binding,
+                                    field_bindings,
+                                    _,
+                                ) => {
+                                    for (variant_owner, _) in &variants {
+                                        if let Some(expected) = &owner {
+                                            if expected != variant_owner {
+                                                return None;
+                                            }
+                                        } else {
+                                            owner = Some(variant_owner.clone());
+                                        }
+                                    }
+                                    arm_variants
+                                        .extend(variants.into_iter().map(|(_, v)| v));
+                                    if arm_binding.is_none() {
+                                        arm_binding = binding;
+                                    }
+                                    if arm_field_bindings.is_empty() {
+                                        arm_field_bindings = field_bindings;
+                                    }
+                                }
+                                InferredPattern::CatchAll(_) => {}
+                                InferredPattern::NotEnum => return None,
+                            }
+                        }
+                        _ => return None,
+                    }
+                }
+                if arm_none {
+                    has_none = true;
+                }
+                if !arm_variants.is_empty() {
+                    has_variant = true;
+                }
+                OptionWrappedInferredDataUnionMatchArm {
+                    binding: arm_binding,
+                    field_bindings: arm_field_bindings,
+                    none_arm: arm_none,
+                    variants: arm_variants,
+                }
+            }
             _ => return None,
         };
         output.push(info);
@@ -15100,6 +15179,33 @@ fn emit_option_wrapped_data_union_match_body(
             let predicate = format!("matchValue === {absent}");
             if has_guards {
                 writeln!(out, "if (!$matched && {predicate}) {{")
+                    .expect("writing to a String cannot fail");
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(out, "{prefix} ({predicate}) {{")
+                    .expect("writing to a String cannot fail");
+            }
+        } else if info.none_arm && !info.variants.is_empty() {
+            let kind_predicate = info
+                .variants
+                .iter()
+                .map(|variant| {
+                    format!(
+                        "matchValue.kind === {:?}",
+                        lower_camel_from_upper_camel(variant)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(" || ");
+            let predicate = if info.variants.len() == 1 {
+                format!("matchValue === {absent} || matchValue !== {absent} && {kind_predicate}")
+            } else {
+                format!(
+                    "matchValue === {absent} || matchValue !== {absent} && ({kind_predicate})"
+                )
+            };
+            if has_guards {
+                writeln!(out, "if (!$matched && ({predicate})) {{")
                     .expect("writing to a String cannot fail");
             } else {
                 let prefix = if index == 0 { "if" } else { "else if" };
@@ -16066,6 +16172,30 @@ fn emit_match_expression(
                     writeln!(out, "  {prefix} (matchValue === {absent}) {{")
                         .expect("writing to a String cannot fail");
                 }
+            } else if info.none_arm && !info.variants.is_empty() {
+                let kind_predicate = info
+                    .variants
+                    .iter()
+                    .map(|variant| {
+                        format!(
+                            "matchValue.kind === {:?}",
+                            lower_camel_from_upper_camel(variant)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" || ");
+                let predicate = if info.variants.len() == 1 {
+                    format!(
+                        "matchValue === {absent} || matchValue !== {absent} && {kind_predicate}"
+                    )
+                } else {
+                    format!(
+                        "matchValue === {absent} || matchValue !== {absent} && ({kind_predicate})"
+                    )
+                };
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(out, "  {prefix} ({predicate}) {{")
+                    .expect("writing to a String cannot fail");
             } else if !info.variants.is_empty() {
                 let kind_predicate = info
                     .variants
@@ -16689,6 +16819,35 @@ pub(crate) fn emit_match_statement(
                 let predicate = format!("matchValue === {absent}");
                 if has_guards {
                     writeln!(out, "if (!$matched && {predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                } else {
+                    let prefix = if index == 0 { "if" } else { "else if" };
+                    writeln!(out, "{prefix} ({predicate}) {{")
+                        .expect("writing to a String cannot fail");
+                }
+            } else if info.none_arm && !info.variants.is_empty() {
+                let kind_predicate = info
+                    .variants
+                    .iter()
+                    .map(|variant| {
+                        format!(
+                            "matchValue.kind === {:?}",
+                            lower_camel_from_upper_camel(variant)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" || ");
+                let predicate = if info.variants.len() == 1 {
+                    format!(
+                        "matchValue === {absent} || matchValue !== {absent} && {kind_predicate}"
+                    )
+                } else {
+                    format!(
+                        "matchValue === {absent} || matchValue !== {absent} && ({kind_predicate})"
+                    )
+                };
+                if has_guards {
+                    writeln!(out, "if (!$matched && ({predicate})) {{")
                         .expect("writing to a String cannot fail");
                 } else {
                     let prefix = if index == 0 { "if" } else { "else if" };
