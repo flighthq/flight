@@ -361,6 +361,8 @@ const TYPED_ARRAY_SEQUENCE_FIELD_MARKER: &str = "@typed-array-sequence-field:";
 // Functions returning a Rust `Vec`, slice or fixed array (`module SEP function SEP`).
 pub(super) const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
 
+const BOOLEAN_EXPRESSION_MARKER: &str = "@boolean-expression:";
+
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 
 const STRING_FIELD_MARKER: &str = "@string-field:";
@@ -2293,6 +2295,31 @@ fn unwrap_option_payload_is_string(receiver: &Expr, entities: &HashSet<String>) 
         Expr::Group(group) => unwrap_option_payload_is_string(&group.expr, entities),
         _ => false,
     }
+}
+
+fn expression_is_known_boolean(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::Binary(binary) => matches!(
+            binary.op,
+            BinOp::Eq(_)
+                | BinOp::Ne(_)
+                | BinOp::Lt(_)
+                | BinOp::Le(_)
+                | BinOp::Gt(_)
+                | BinOp::Ge(_)
+                | BinOp::And(_)
+                | BinOp::Or(_)
+        ),
+        Expr::Group(group) => expression_is_known_boolean(&group.expr, entities),
+        Expr::Lit(literal) => matches!(&literal.lit, Lit::Bool(_)),
+        Expr::Paren(paren) => expression_is_known_boolean(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let name = path.path.segments[0].ident.to_string();
+            entities.contains(&format!("{BOOLEAN_EXPRESSION_MARKER}{name}"))
+        }
+        Expr::Unary(unary) => matches!(unary.op, UnOp::Not(_)),
+        _ => false,
+    };
 }
 
 fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> bool {
@@ -8006,6 +8033,10 @@ pub(crate) fn function_expression_context(
                     self.context
                         .insert(format!("{VEC_CLONE_EXPRESSION_MARKER}{local}:{optional}"));
                 }
+                if matches!(named_type(&typed.ty).as_deref(), Some("bool")) {
+                    self.context
+                        .insert(format!("{BOOLEAN_EXPRESSION_MARKER}{}", pattern.ident));
+                }
                 if rust_type_is_string(&typed.ty) {
                     self.context
                         .insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
@@ -8162,6 +8193,9 @@ pub(crate) fn function_expression_context(
         }
         if type_is_unsigned_integer(&argument.ty) {
             context.insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));
+        }
+        if matches!(named_type(&argument.ty).as_deref(), Some("bool")) {
+            context.insert(format!("{BOOLEAN_EXPRESSION_MARKER}{}", pattern.ident));
         }
         if rust_type_is_string(&argument.ty) {
             context.insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
@@ -9768,6 +9802,12 @@ fn emit_expression_value(
                         };
                     }
                     ("from" | "try_from" | "try_into", 1) => {
+                        if expression_is_known_boolean(&call.args[0], entities) {
+                            return Ok(format!(
+                                "Number({})",
+                                emit_expression(&call.args[0], entities)?
+                            ));
+                        }
                         return emit_expression(&call.args[0], entities);
                     }
                     ("round", 1) if matches!(numeric_type.as_str(), "f32" | "f64") => {

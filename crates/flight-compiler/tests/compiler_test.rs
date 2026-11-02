@@ -5491,6 +5491,26 @@ pub fn widen_u16(value: u16) -> usize {
     }
 
     #[test]
+    fn lowers_integer_from_bool_with_number_wrapper() {
+        let source = r#"
+pub fn bool_to_number(a: u8, b: u8, flag: bool) -> u32 {
+    return u32::from(a) + u32::from(b) * 0x100 + u32::from(flag);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("Number(flag)"),
+            "u32::from(bool) should emit Number(flag): {output}"
+        );
+        assert!(
+            !output.contains("Number(a)"),
+            "u32::from(u8) should not wrap with Number: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_f32_round_with_half_away_from_zero() {
         let source = r#"
 pub fn round_value(value: f32) -> f32 {
