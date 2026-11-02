@@ -82,6 +82,9 @@ describe('edge-publish promotion contract', () => {
       'package-npm',
       'package-crates',
       'package-wasm',
+      // Functional render smoke: SDK rendering is part of what `next` means. Example smoke is not —
+      // a stale example is upkeep, reported by Hygiene.
+      'render-test',
     ]);
   });
 

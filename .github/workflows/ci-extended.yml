@@ -76,7 +76,8 @@ jobs:
       - uses: ./.github/actions/setup-playwright
       - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
-  # Cross-backend parity (Tier 3); CI keeps the smoke legs. Parity must
+  # Cross-backend parity (Tier 3) of the functional scenes, a gate for `main`. Examples parity is a
+  # Nightly health signal: an example disagreeing across backends is as often stale as broken. Parity must
   # compare backends within one run, so each leg keeps every renderer together and serializes with
   # `--parallel 1` (the runner has one SwiftShader adapter; see the render-test notes in tests.yml).
   # The parity check imports the SDK from built dist, so each leg builds the graph first.
@@ -90,8 +91,6 @@ jobs:
         include:
           - label: functional parity
             check: test:functional:parity
-          - label: examples parity
-            check: test:examples:parity
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

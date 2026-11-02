@@ -15,8 +15,9 @@ name: Nightly
 # presence means the graph landed), and npm is re-run after any failed Nightly, so a failed or partial
 # publish is completed the next night even when nothing new was promoted.
 #
-# Health signals run alongside and gate nothing: coverage, minified size, API generation, Conformance
-# (the fixture corpus, too large to gate on), and the Host backends on real platforms (advisory).
+# Health signals run alongside and gate nothing: coverage, minified size, API generation, examples
+# parity, Conformance (the fixture corpus, too large to gate on), and the Host backends on real
+# platforms (advisory).
 # Conformance and Host Backends live in their own files, called here, so each stays runnable by hand.
 #
 # ★ QUIET NIGHTS ARE CHEAP. Resolve and the one-minute edge check always run (the check is what
@@ -369,6 +370,31 @@ jobs:
       - run: npm run api
       - run: npm run api:json
 
+  # Examples parity, a health signal: an example disagreeing across backends is as often stale as
+  # broken, so it no longer gates `main` (functional parity does, in CI · extended). Parity compares
+  # backends within one run, so every renderer stays together and serializes on the one software GPU.
+  examples-parity:
+    name: Render · examples parity
+    needs: resolve
+    if: ${{ needs.resolve.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: ./.github/actions/setup-playwright
+      - run: npm run test:examples:parity -- --parallel 1 --retries 2
+        env:
+          FLIGHT_CAPTURE_WORKER_COUNT: 2
+          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
+
   # Conformance and the Host platform probes live in their own files so each stays runnable by hand.
   conformance:
     name: Conformance
@@ -406,7 +432,7 @@ jobs:
   # green job from being named in the report.
   report-failure:
     name: Route failures
-    needs: [resolve, promote, edge-version, crates-edge, npm-edge, coverage, api, conformance]
+    needs: [resolve, promote, edge-version, crates-edge, npm-edge, coverage, api, examples-parity, conformance]
     if: failure()
     runs-on: ubuntu-latest
     permissions:
@@ -429,6 +455,7 @@ jobs:
           CRATES_EDGE_RESULT: ${{ needs.crates-edge.result }}
           NPM_EDGE_RESULT: ${{ needs.npm-edge.result }}
           CONFORMANCE_RESULT: ${{ needs.conformance.result }}
+          EXAMPLES_PARITY_RESULT: ${{ needs.examples-parity.result }}
         run: |
           set -euo pipefail
           route() {
@@ -463,3 +490,4 @@ jobs:
           route "crates-edge" "$CRATES_EDGE_RESULT"
           route "npm-edge" "$NPM_EDGE_RESULT"
           route "conformance" "$CONFORMANCE_RESULT"
+          route "examples-parity" "$EXAMPLES_PARITY_RESULT"

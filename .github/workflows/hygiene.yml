@@ -78,6 +78,48 @@ jobs:
           OUTCOMES: typecheck=${{ steps.typecheck.outcome }}
         run: bash scripts/report-hygiene.sh
 
+  # The examples on every backend, as a WARNING. An example failing is as often an example not yet
+  # updated for an API change as an SDK defect — upkeep, not a broken product — so it never fails the
+  # run. SDK rendering itself is gated in CI by the functional scenes.
+  examples:
+    name: Render · examples${{ matrix.suffix }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suffix: ''
+            args: --renderer=dom,canvas,webgl
+          - suffix: ' · webgpu'
+            args: --renderer=webgpu --parallel 1 --retries 2
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - id: harness
+        name: Build the examples harness
+        continue-on-error: true
+        run: npm run build:examples
+      - uses: ./.github/actions/setup-playwright
+      # Sized for this runner as CI's render legs are: one SwiftShader adapter, so WebGPU serializes.
+      - id: smoke
+        name: Run the examples
+        if: ${{ steps.harness.outcome == 'success' }}
+        continue-on-error: true
+        run: npm run test:examples:smoke -- ${{ matrix.args }}
+        env:
+          FLIGHT_CAPTURE_WORKER_COUNT: 2
+          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: examples-harness=${{ steps.harness.outcome }} examples-smoke=${{ steps.smoke.outcome }}
+        run: bash scripts/report-hygiene.sh
+
   checks:
     name: TypeScript · lint, format, conventions
     runs-on: ubuntu-latest

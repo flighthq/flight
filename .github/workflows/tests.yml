@@ -6,8 +6,9 @@ name: CI
 #   Test        Rust and TypeScript, each validated by its own tests.
 #   Compliance  license provenance across the whole repository — a hard stop, not a style check.
 #   Package     every registry's artifact built and validated: npm (TypeScript), wasm, crates.io.
-#   Ready for next  one summary verdict over Test, Compliance and Package: the single check the
-#               ruleset on `next` requires. CI itself publishes nothing and holds no publish credential.
+#   Ready for next  one summary verdict over Test, Compliance, Package and functional render smoke:
+#               the single check the ruleset on `next` requires. CI itself publishes nothing and
+#               holds no publish credential.
 #
 # What happens after, each in its own workflow:
 #   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
@@ -15,9 +16,9 @@ name: CI
 # `Package · npm` and `Package · wasm` leave their dist as artifacts for Promote to publish unchanged;
 # `Package · crates.io` proves on every push that the crates would publish.
 #
-# Render smoke runs beside them as a product signal but gates no publish. A red run here means
-# something a user of the SDK would feel. The `next` promotion, Nightly, the publishes, and branch
-# protection all read this workflow, so nothing that is bookkeeping may fail it.
+# Functional render smoke runs beside them and gates too; example smoke is a Hygiene warning.
+# A red run here means something a user of the SDK would feel. The `next` promotion, Nightly, the
+# publishes, and branch protection all read this workflow, so nothing that is bookkeeping may fail it.
 #
 # Everything else has a home that cannot turn this red:
 #   hygiene.yml  — every push, never fails: the whole-repo typecheck (examples, scripts, functional,
@@ -218,14 +219,13 @@ jobs:
           path: wasm-dist.tgz
           retention-days: 7
 
-  # The verdict that this commit may be promoted to `next`: every Test, Compliance and Package job
-  # succeeded. Promote reads it by name; the ruleset on `next` requires it. It always reports (never
-  # left "expected" by a skipped dependency) and runs on pull requests too, so renaming or adding a
-  # gate job changes only this `needs` list, never the ruleset. Render smoke is not in it: it is a
-  # product signal, not a gate for `next`.
+  # The verdict that this commit may be promoted to `next`: every Test, Compliance and Package job and
+  # functional render smoke succeeded. Promote reads it by name; the ruleset on `next` requires it.
+  # It always reports (never left "expected" by a skipped dependency) and runs on pull requests too,
+  # so renaming or adding a gate job changes only this `needs` list, never the ruleset.
   ready-for-next:
     name: Ready for next
-    needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm]
+    needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm, render-test]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -242,13 +242,15 @@ jobs:
           echo "All gates passed."
 
   render-test:
-    # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
-    # e.g. a WebGPU-only smoke failure points at that backend rather than at rendering as a whole.
-    # Every leg here is SMOKE — each scene renders on each backend, is not blank, and passes its own
-    # in-page check — so the kind is left out of the names: `Render · functional` covers DOM, Canvas and
-    # WebGL, and only the serialized WebGPU leg carries a suffix. The other kinds run in Nightly and
-    # are named for theirs: `Render · functional parity`, `Render · reference images`.
-    # Smoke (Tiers 1/2/4) runs here; parity (cross-backend, Tier 3) runs nightly. The
+    # Functional smoke, a GATE for `next`: every functional scene — test fixtures written against the
+    # SDK, each verifying its own output — renders on every backend, is not blank, and passes its
+    # in-page check. A failure is an SDK rendering defect. `Render · functional` covers DOM, Canvas and
+    # WebGL; only the serialized WebGPU leg carries a suffix.
+    #
+    # The examples are NOT here: an example failing is as often an example not yet updated for an API
+    # change as an SDK defect, so example smoke runs in Hygiene (a warning) and examples parity in
+    # Nightly (a health signal). Functional parity and reference images gate `main` in CI · extended.
+    # The
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
     #
@@ -271,14 +273,6 @@ jobs:
           - label: functional · webgpu
             harness: functional
             check: test:functional:smoke
-            args: --renderer=webgpu --parallel 1 --retries 2
-          - label: examples
-            harness: examples
-            check: test:examples:smoke
-            args: --renderer=dom,canvas,webgl
-          - label: examples · webgpu
-            harness: examples
-            check: test:examples:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
           # Screenshot-baseline legs (functional + examples) REMOVED. 4fdfd2a15 wired them as "the one
           # open question" and pre-registered two remedies — pin WebGL's rasterizer, or scope to pinned
