@@ -8762,6 +8762,32 @@ pub fn get_kernel(kernel: Option<&Kernel>) -> &Kernel {
     }
 
     #[test]
+    fn lowers_lazy_lock_statics_with_crate_imported_types() {
+        let source = r#"
+use std::sync::{Arc, LazyLock, RwLock};
+use crate::types::Handler;
+
+pub fn create_handler() -> Handler {
+    return Handler { weight: 1.0 };
+}
+
+pub static DEFAULT_HANDLER: LazyLock<Handler> = LazyLock::new(create_handler);
+
+pub static SHARED_HANDLER: LazyLock<Arc<RwLock<Handler>>> = LazyLock::new(|| {
+    Arc::new(RwLock::new(Handler { weight: 2.0 }))
+});
+"#;
+        let alias_source = r#"
+pub struct Handler {
+    pub weight: f64,
+}
+"#;
+        let output = compile_typescript_with_alias_sources(source, None, &[alias_source]).unwrap();
+        assert!(output.contains("export const DEFAULT_HANDLER: Handler = createHandler();\n"));
+        assert!(output.contains("export const SHARED_HANDLER: Readonly<Handler>"));
+    }
+
+    #[test]
     fn rejects_unsupported_lazy_lock_statics() {
         let declarations = "use std::sync::LazyLock;\n\npub struct Kernel {\n    pub scale: f64,\n}\n\npub fn create_kernel() -> Kernel {\n    return Kernel { scale: 1.0 };\n}\n";
         let unsupported_shape = |name: &str| {

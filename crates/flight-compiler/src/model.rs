@@ -1712,7 +1712,8 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         &statics,
     )?;
     if !lenient {
-        validate_lazy_lock_statics(&statics, &functions, &constants, &structs, &type_aliases)?;
+        let use_refs = uses.iter().collect::<Vec<_>>();
+        validate_lazy_lock_statics(&statics, &functions, &constants, &structs, &type_aliases, &use_refs)?;
     }
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
@@ -2850,6 +2851,7 @@ fn validate_lazy_lock_statics(
     constants: &[ItemConst],
     structs: &[ItemStruct],
     type_aliases: &[ItemType],
+    uses: &[&ItemUse],
 ) -> Result<(), CompileError> {
     struct LazyLockVisitor {
         found: bool,
@@ -2900,19 +2902,17 @@ fn validate_lazy_lock_statics(
                 "`LazyLock` static `{name}` cannot be `mut`"
             )));
         }
-        let declared = match inner {
-            Type::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
-                let segment = &path.path.segments[0];
-                matches!(segment.arguments, PathArguments::None)
-                    && (structs
-                        .iter()
-                        .any(|structure| structure.ident == segment.ident)
-                        || type_aliases
-                            .iter()
-                            .any(|type_alias| type_alias.ident == segment.ident))
-            }
-            _ => false,
+        let is_known_type = |ident: &str| {
+            structs
+                .iter()
+                .any(|structure| structure.ident == ident)
+                || type_aliases
+                    .iter()
+                    .any(|type_alias| type_alias.ident == ident)
+                || lazy_lock_use_imports(uses).iter().any(|name| name == ident)
         };
+        let declared = lazy_lock_leaf_type_name(inner)
+            .is_some_and(|leaf| is_known_type(&leaf));
         if !declared {
             return Err(compile_error(format!(
                 "`LazyLock` static `{name}` must hold a struct or type alias declared in this source; dependency-owned or unresolved value types are not portable"
@@ -2937,6 +2937,69 @@ fn validate_lazy_lock_statics(
         }
     }
     return Ok(());
+}
+
+fn lazy_lock_leaf_type_name(ty: &Type) -> Option<String> {
+    let Type::Path(path) = ty else {
+        return None;
+    };
+    if path.qself.is_some() {
+        return None;
+    }
+    let segment = path.path.segments.last()?;
+    let ident = segment.ident.to_string();
+    match &segment.arguments {
+        PathArguments::None => Some(ident),
+        PathArguments::AngleBracketed(args) => {
+            let wrapper = matches!(
+                ident.as_str(),
+                "Arc" | "Box" | "Ref" | "RwLock" | "Mutex" | "Record" | "Vec"
+            );
+            if wrapper && args.args.len() == 1 {
+                if let GenericArgument::Type(inner) = &args.args[0] {
+                    return lazy_lock_leaf_type_name(inner);
+                }
+            }
+            Some(ident)
+        }
+        PathArguments::Parenthesized(_) => None,
+    }
+}
+
+fn lazy_lock_use_imports(uses: &[&ItemUse]) -> Vec<String> {
+    let mut names = Vec::new();
+    for item_use in uses {
+        if let UseTree::Path(root) = &item_use.tree {
+            if root.ident == "crate" {
+                collect_crate_use_names(&root.tree, &mut names);
+            }
+        }
+    }
+    return names;
+}
+
+fn collect_crate_use_names(tree: &UseTree, out: &mut Vec<String>) {
+    match tree {
+        UseTree::Path(path) => collect_crate_use_names(&path.tree, out),
+        UseTree::Name(name) => {
+            let ident = name.ident.to_string();
+            if ident.chars().next().is_some_and(|c| c.is_uppercase()) {
+                out.push(ident);
+            }
+        }
+        UseTree::Rename(rename) => {
+            let ident = rename.rename.to_string();
+            if ident.chars().next().is_some_and(|c| c.is_uppercase()) {
+                out.push(ident);
+            }
+        }
+        UseTree::Glob(_) => {}
+        UseTree::Group(group) => {
+            for tree in &group.items {
+                collect_crate_use_names(tree, out);
+            }
+        }
+    }
 }
 
 fn validate_nullable_option_items(

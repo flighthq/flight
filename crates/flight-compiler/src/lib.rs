@@ -139,7 +139,7 @@ fn compile_typescript_sources_with_options(
     };
     let alias_programs = alias_sources
         .iter()
-        .map(|alias_source| model::parse_program(alias_source))
+        .map(|alias_source| model::parse_program_lenient(alias_source))
         .collect::<Result<Vec<_>, _>>()?;
     let visibility_programs = visibility_sources
         .iter()
@@ -514,7 +514,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
     let mut alias_programs = alias_sources
         .iter()
-        .map(|alias_source| model::parse_program(alias_source.source))
+        .map(|alias_source| model::parse_program_lenient(alias_source.source))
         .collect::<Result<Vec<_>, _>>()?;
     // A test reads a factory's result as the record it is: an identity alias such as
     // `NonEntityCreateResult<T>` classifies the production signature and is `T` for every value a test
