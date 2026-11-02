@@ -11754,7 +11754,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
     if let Some(initializer) = &local.init
         && let Expr::Try(try_expr) = initializer.expr.as_ref()
     {
-        return emit_try_local(out, local, try_expr, entities, indent, shadowed);
+        return emit_try_local(out, local, try_expr, entities, indent, shadowed, rebound);
     }
     if let Some(initializer) = &local.init
         && let Expr::Match(match_expr) = initializer.expr.as_ref()
@@ -12056,6 +12056,7 @@ fn emit_try_local(
     entities: &HashSet<String>,
     indent: usize,
     shadowed: bool,
+    rebound: bool,
 ) -> Result<Option<(String, String)>, CompileError> {
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
@@ -12091,7 +12092,7 @@ fn emit_try_local(
         writeln!(out, "return undefined;").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
-        let keyword = if mutable { "let" } else { "const" };
+        let keyword = if mutable || rebound { "let" } else { "const" };
         write_indent(out, indent);
         writeln!(out, "{keyword} {pattern} = {temp};").expect("writing to a String cannot fail");
     } else if rebind {
@@ -12108,7 +12109,7 @@ fn emit_try_local(
         writeln!(out, "}}").expect("writing to a String cannot fail");
         return Ok(Some((pattern, fresh)));
     } else {
-        let keyword = if mutable { "let" } else { "const" };
+        let keyword = if mutable || rebound { "let" } else { "const" };
         write_indent(out, indent);
         writeln!(out, "{keyword} {pattern} = {inner_value};")
             .expect("writing to a String cannot fail");
@@ -13049,7 +13050,18 @@ fn emit_hoisted_if_value_branch_block(
     let Some((last, preceding)) = block.stmts.split_last() else {
         return Err(compile_error("hoisted if-value branch cannot be empty"));
     };
-    let block_context = emit_block_with_context(out, preceding, entities, indent)?;
+    let mut branch_context = entities.clone();
+    for stmt in preceding {
+        if let Stmt::Local(local) = stmt {
+            if let Some(name) = local_pattern_name(&local.pat) {
+                let js_name = snake_to_lower_camel(&name);
+                if js_name == target {
+                    branch_context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
+                }
+            }
+        }
+    }
+    let block_context = emit_block_with_context(out, preceding, &branch_context, indent)?;
     if let Stmt::Expr(value, None) = last {
         if expression_contains_unconditional_try(value) {
             let try_context = emit_try_pre_extractions(out, value, &block_context, indent)?;

@@ -21998,3 +21998,54 @@ pub fn either(a: Option<u32>, b: Option<u32>) -> Option<u32> {
         "None must not appear as a binding: {output}"
     );
 }
+
+#[test]
+fn hoisted_if_value_renames_inner_binding_shadowing_target() {
+    let source = r#"
+fn read_tag(data: &[u8], offset: usize) -> String {
+    String::from("test")
+}
+
+pub fn parse_entry(data: &[u8], cursor: &mut usize, flag: usize) -> Option<String> {
+    let tag = if flag == 63 {
+        if *cursor + 4 > data.len() {
+            return None;
+        }
+        let tag = read_tag(data, *cursor);
+        *cursor += 4;
+        tag
+    } else {
+        String::from("default")
+    };
+    return Some(tag);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("tag = tag;"),
+        "inner binding must not self-assign: {output}"
+    );
+    assert!(
+        output.contains("tag = tag_1"),
+        "inner binding should be renamed to avoid shadowing target: {output}"
+    );
+}
+
+#[test]
+fn try_local_uses_let_when_rebound_without_self_reference() {
+    let source = r#"
+fn fetch(url: &str) -> Option<Vec<u8>> { None }
+fn transform(data: &[u8]) -> Vec<u8> { data.to_vec() }
+
+pub fn load(url: &str) -> Option<u32> {
+    let bytes = fetch(url)?;
+    let bytes = transform(&bytes);
+    return Some(bytes.len() as u32);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("let bytes = fetch(url)"),
+        "first rebound try-local should use let: {output}"
+    );
+}
