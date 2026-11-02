@@ -12287,7 +12287,23 @@ fn emit_hoisted_match_arm_body(
                 "hoisted match-value arm block cannot be empty",
             ));
         };
-        let block_context = emit_block_with_context(out, preceding, entities, indent)?;
+        let arm_entities = if let HoistedMatchAction::Assign(target) = action {
+            let mut ctx = entities.clone();
+            for stmt in preceding {
+                if let Stmt::Local(local) = stmt {
+                    if let Some(name) = local_pattern_name(&local.pat) {
+                        let js_name = snake_to_lower_camel(&name);
+                        if js_name == *target {
+                            ctx.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
+                        }
+                    }
+                }
+            }
+            ctx
+        } else {
+            entities.clone()
+        };
+        let block_context = emit_block_with_context(out, preceding, &arm_entities, indent)?;
         if let Stmt::Expr(value, None) = last {
             if expression_contains_unconditional_try(value) {
                 let try_context = emit_try_pre_extractions(out, value, &block_context, indent)?;
@@ -13224,7 +13240,9 @@ fn emit_let_else_local(
             referenced_path_identifier(&initializer.expr).as_deref() == Some(&rust_name);
         if !same_binding {
             let value = emit_expression(&initializer.expr, entities)?;
-            let rebind = shadowed || expression_contains_identifier(&initializer.expr, &rust_name);
+            let rebind = shadowed
+                || expression_contains_identifier(&initializer.expr, &rust_name)
+                || entities.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
             write_indent(out, indent);
             if rebind {
                 write!(out, "{name}").expect("writing to a String cannot fail");

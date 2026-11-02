@@ -22032,6 +22032,33 @@ pub fn parse_entry(data: &[u8], cursor: &mut usize, flag: usize) -> Option<Strin
 }
 
 #[test]
+fn match_arm_let_else_does_not_shadow_hoisted_target() {
+    let source = r#"
+fn detect(content: &str) -> Option<String> { None }
+
+pub fn parse(content: &str, format_kind: Option<&str>) -> bool {
+    let detected;
+    let kind = match format_kind {
+        Some(kind) => kind,
+        None => {
+            detected = detect(content);
+            let Some(kind) = detected.as_ref() else {
+                return false;
+            };
+            kind
+        }
+    };
+    return kind.len() > 0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("const kind = detected"),
+        "let-else binding must not shadow the hoisted match target: {output}"
+    );
+}
+
+#[test]
 fn try_local_uses_let_when_rebound_without_self_reference() {
     let source = r#"
 fn fetch(url: &str) -> Option<Vec<u8>> { None }
