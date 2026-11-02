@@ -70,14 +70,24 @@ describe('edge-publish promotion contract', () => {
     const publish = promoteJobs()['edge-publish'];
     expect(publish.permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
     expect(Object.keys(publish.secrets ?? {}).sort()).toEqual(['FLIGHT_COMPILER_DISPATCH_TOKEN', 'NPM_TOKEN']);
-    // The one credential the push job holds is the deploy key, and only checkout may see it: it pushes
-    // main, nothing else. No npm credential, and no other step touching a secret.
-    const checkout = (promote.steps ?? []).find((step) => step.uses === 'actions/checkout@v5');
-    expect(checkout?.with?.['ssh-key']).toBe('${{ secrets.PROMOTE_DEPLOY_KEY }}');
-    for (const step of promote.steps ?? []) {
-      const source = JSON.stringify(step);
-      const scrubbed = step === checkout ? source.replace('${{ secrets.PROMOTE_DEPLOY_KEY }}', '') : source;
-      expect(scrubbed, step.name ?? step.uses).not.toContain('secrets.');
+    // The one credential the push job holds is the promotion App: only the step that mints its token
+    // reads the key, the step before it reads only the App's ID, and checkout receives the minted
+    // token. No npm credential, and no other step touching a secret.
+    const steps = promote.steps ?? [];
+    const allowed = new Map<string | undefined, string[]>([
+      ['app', ['${{ secrets.PROMOTE_APP_ID }}']],
+      ['app-token', ['${{ secrets.PROMOTE_APP_ID }}', '${{ secrets.PROMOTE_APP_PRIVATE_KEY }}']],
+    ]);
+    const mint = steps.find((step) => step.id === 'app-token');
+    expect(mint?.uses).toBe('actions/create-github-app-token@v3');
+    expect(mint?.with?.['permission-contents']).toBe('write');
+    expect(mint?.with?.['permission-workflows']).toBe('write');
+    const checkout = steps.find((step) => step.uses === 'actions/checkout@v5');
+    expect(checkout?.with?.token).toBe('${{ steps.app-token.outputs.token || github.token }}');
+    for (const step of steps) {
+      let source = JSON.stringify(step);
+      for (const reference of allowed.get(step.id) ?? []) source = source.replaceAll(reference, '');
+      expect(source, step.name ?? step.uses).not.toContain('secrets.');
     }
   });
 
@@ -186,7 +196,7 @@ describe('edge-publish promotion contract', () => {
     const receiver = readWorkflow('edge-publish');
     const promote = readWorkflow('promote');
     // Promote reaches the publisher by calling it, which the default token permits. Its push uses the
-    // repository-scoped deploy key; a PAT or App credential appearing here would be a broader one.
+    // promotion App's repository-scoped token; a PAT or a generic App credential would be broader.
     for (const source of [receiver, promote]) {
       expect(source).not.toMatch(/secrets\.(GH_PAT|PAT|APP_ID|APP_PRIVATE_KEY|BOT_TOKEN)/);
     }

@@ -9,16 +9,18 @@ name: Promote
 # incident, or a run whose conclusion flipped to green on a later re-run. The catch-up is cheap (one
 # API call plus a push) and idempotent, so running it against an already-current main is a no-op.
 #
-# ★ THE PUSH USES A DEPLOY KEY, `PROMOTE_DEPLOY_KEY`: an SSH key with write access to this repository
-# only, stored as a secret, used by the checkout step and nothing else. The built-in GITHUB_TOKEN is
-# barred from creating or updating files under .github/workflows/, and no workflow permission lifts
-# that, so a token push rejects any promotion that carries a workflow change — and every later one,
-# since they all contain it. A deploy key is not under that restriction. Without the secret, checkout
-# falls back to the token: promotion still works, except for workflow changes.
+# ★ THE PUSH USES A GITHUB APP TOKEN. The built-in GITHUB_TOKEN is barred from creating or updating
+# files under .github/workflows/, and no workflow permission lifts that, so a token push rejects any
+# promotion that carries a workflow change — and every later one, since they all contain it. The
+# promotion App (secrets `PROMOTE_APP_ID` and `PROMOTE_APP_PRIVATE_KEY`) holds Contents and Workflows
+# write on this repository only; each run mints a token from it that is scoped to this repository,
+# narrowed to those two permissions, used only by checkout for the push, and expires within the hour.
+# Without the secrets the App step is skipped and checkout uses the built-in token: promotion still
+# works, except for workflow changes.
 #
 # What main may receive is enforced by GitHub too, not only by this workflow: the ruleset on main
 # requires CI's checks to have passed for the pushed commit (on develop, where they ran) and blocks
-# force pushes and deletion, for this key and for anyone pushing by hand.
+# force pushes and deletion, for the App and for anyone pushing by hand.
 #
 # A promotion that moves main also publishes the `edge` snapshot of that commit, as a second job of
 # this run (`edge-publish`, which calls edge-publish.yml), rather than from a workflow triggered by the
@@ -78,17 +80,40 @@ jobs:
       actions: read # read tests.yml conclusions
 
     steps:
+      # Only the App's ID is read here, to decide whether the next step can run; a step's `if` cannot
+      # read secrets directly.
+      - name: Check for the promotion App
+        id: app
+        env:
+          APP_ID: ${{ secrets.PROMOTE_APP_ID }}
+        run: |
+          if [ -n "$APP_ID" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::PROMOTE_APP_ID is not set; pushing with the built-in token, which cannot promote workflow changes.'
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Mint the promotion token
+        id: app-token
+        if: ${{ steps.app.outputs.configured == 'true' }}
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.PROMOTE_APP_ID }}
+          private-key: ${{ secrets.PROMOTE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+
       # fetch-depth: 0 fetches all branches, so both origin/main and origin/develop are present
       # locally — the resolver below needs the range between them, and the remote needs main's
       # tip to validate the push as a fast-forward.
       #
-      # `ssh-key` makes the remote SSH and persists the deploy key for the `git push` below (see the
-      # header); an absent secret leaves checkout on the built-in token.
+      # Checkout persists the token it was given for the `git push` below: the App token when the App
+      # is configured (see the header), otherwise the built-in token.
       - uses: actions/checkout@v5
         with:
           ref: develop
           fetch-depth: 0
-          ssh-key: ${{ secrets.PROMOTE_DEPLOY_KEY }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
       # Resolves the NEWEST COMMIT ON DEVELOP, AHEAD OF MAIN, THAT HAS A GREEN CI RUN — not simply
       # the SHA that triggered this run. That one rule absorbs three separate failure modes:
