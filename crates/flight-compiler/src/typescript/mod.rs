@@ -4158,6 +4158,8 @@ fn emit_hash_collection_method(
         ("HashMap", "into_values", []) | ("HashMap", "values", []) => {
             Ok(format!("[...{receiver}.values()]"))
         }
+        ("HashSet", "clone", []) => Ok(format!("new Set({receiver})")),
+        ("HashMap", "clone", []) => Ok(format!("new Map({receiver})")),
         _ => Err(compile_error(format!(
             "portable `{owner}::{method}` with {} argument(s) has no portable lowering",
             arguments.len()

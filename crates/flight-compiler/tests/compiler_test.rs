@@ -21892,3 +21892,35 @@ pub fn is_valid(value: &str) -> bool {
         "should emit equality checks against constants: {output}"
     );
 }
+
+#[test]
+fn lowers_hashset_clone_to_new_set() {
+    let source = r#"
+use std::collections::HashSet;
+
+pub fn copy_set(set: &HashSet<String>) -> HashSet<String> {
+    set.clone()
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("new Set(set)"),
+        "should lower HashSet::clone to new Set(): {output}"
+    );
+}
+
+#[test]
+fn lowers_hashmap_clone_to_new_map() {
+    let source = r#"
+use std::collections::HashMap;
+
+pub fn copy_map(map: &HashMap<String, u32>) -> HashMap<String, u32> {
+    map.clone()
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("new Map(map)"),
+        "should lower HashMap::clone to new Map(): {output}"
+    );
+}
