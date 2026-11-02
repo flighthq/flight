@@ -249,87 +249,6 @@ jobs:
             packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
 
 
-  render-test:
-    # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
-    # e.g. a WebGPU-only smoke failure points at that backend rather than at rendering as a whole.
-    # Smoke (Tiers 1/2/4) runs here; parity (cross-backend, Tier 3) runs nightly. The
-    # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
-    # excluded here; run `npm run test:regression` where the baselines were captured.
-    #
-    # Starts cold, beside everything else, and does not wait for `build`: smoke captures a Vite-built
-    # harness that maps every @flighthq/* import to package SOURCE, so the emitted package dist is
-    # never read. (Parity, which imports the SDK from dist, runs nightly and builds it there.) Each leg
-    # builds its own harness as a separate step, so a harness that does not build fails that step —
-    # visibly not a rendering failure — and a package type error still fails `TypeScript · build`.
-    name: Render · ${{ matrix.label }}
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: functional · smoke · dom/canvas/webgl
-            harness: functional
-            check: test:functional:smoke
-            args: --renderer=dom,canvas,webgl --retries 2
-          - label: functional · smoke · webgpu
-            harness: functional
-            check: test:functional:smoke
-            args: --renderer=webgpu --parallel 1 --retries 2
-          - label: examples · smoke · dom/canvas/webgl
-            harness: examples
-            check: test:examples:smoke
-            args: --renderer=dom,canvas,webgl
-          - label: examples · smoke · webgpu
-            harness: examples
-            check: test:examples:smoke
-            args: --renderer=webgpu --parallel 1 --retries 2
-          # Screenshot-baseline legs (functional + examples) REMOVED. 4fdfd2a15 wired them as "the one
-          # open question" and pre-registered two remedies — pin WebGL's rasterizer, or scope to pinned
-          # backends. Both are exhausted: scoping to dom/canvas/webgpu (c7ef40d4e) still drifted, and
-          # WebGPU IS pinned to SwiftShader yet six of ten functional diffs were webgpu-only — proving
-          # that even a pinned rasterizer does not make a CI-captured golden hash reproduce across
-          # machines. The underlying problem: a golden hash was never doing the correctness job — parity
-          # and pixel oracles do that. The golden's only job is stability, and a stable reference must
-          # be captured where it is checked. capture:*:check stays a LOCAL command for the machine whose
-          # hashes it holds; the CI correctness signal comes from smoke above and parity nightly.
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      # Built here rather than left to the capture tool's auto-build, so a harness that does not build
-      # is reported by this step and never mistaken for a rendering failure.
-      - name: Build the ${{ matrix.harness }} harness
-        run: npm run build:${{ matrix.harness }}
-      - uses: ./.github/actions/setup-playwright
-      # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
-      #
-      # Worker count: the runner has one SwiftShader adapter, so the default (available parallelism
-      # minus headroom, capped) puts six concurrent WebGPU devices on a single software GPU. The legs
-      # then overshoot the per-wait budget by ~26% (18901ms against 15000ms) — a contention signature,
-      # not a slow scene, since the same scenes verify in ~4-6s when they are not queueing for the
-      # adapter. Two workers keeps the runner busy without stacking devices on it.
-      #
-      # Wait budget: raised because the measured overshoots (18901ms, 17330ms) sit just past the
-      # default, so the default leaves no room for a runner that is merely having a bad minute. This
-      # buys headroom for contention; it does not paper over a stall, which the reason text still
-      # distinguishes by reporting how long the wait actually had.
-      #
-      # Durable WebGPU rule: every leg that captures WebGPU serializes because this runner has one
-      # SwiftShader adapter and concurrent devices can starve frame-capture buffer readback. Smoke
-      # has no cross-backend comparison, so it splits: non-WebGPU backends stay parallel while
-      # WebGPU runs alone.
-      - run: npm run ${{ matrix.check }} -- ${{ matrix.args }}
-        env:
-          FLIGHT_CAPTURE_WORKER_COUNT: 2
-          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
-
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
     # to the tag-triggered stable release (release.yml). It is meant to be *available*, so it gates on
@@ -460,3 +379,84 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
         run: npm run release -- --no-build --tag "${EDGE_TAG}" wasm
+
+  render-test:
+    # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
+    # e.g. a WebGPU-only smoke failure points at that backend rather than at rendering as a whole.
+    # Smoke (Tiers 1/2/4) runs here; parity (cross-backend, Tier 3) runs nightly. The
+    # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
+    # excluded here; run `npm run test:regression` where the baselines were captured.
+    #
+    # Starts cold, beside everything else, and does not wait for `build`: smoke captures a Vite-built
+    # harness that maps every @flighthq/* import to package SOURCE, so the emitted package dist is
+    # never read. (Parity, which imports the SDK from dist, runs nightly and builds it there.) Each leg
+    # builds its own harness as a separate step, so a harness that does not build fails that step —
+    # visibly not a rendering failure — and a package type error still fails `TypeScript · build`.
+    name: Render · ${{ matrix.label }}
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: functional · smoke · dom/canvas/webgl
+            harness: functional
+            check: test:functional:smoke
+            args: --renderer=dom,canvas,webgl --retries 2
+          - label: functional · smoke · webgpu
+            harness: functional
+            check: test:functional:smoke
+            args: --renderer=webgpu --parallel 1 --retries 2
+          - label: examples · smoke · dom/canvas/webgl
+            harness: examples
+            check: test:examples:smoke
+            args: --renderer=dom,canvas,webgl
+          - label: examples · smoke · webgpu
+            harness: examples
+            check: test:examples:smoke
+            args: --renderer=webgpu --parallel 1 --retries 2
+          # Screenshot-baseline legs (functional + examples) REMOVED. 4fdfd2a15 wired them as "the one
+          # open question" and pre-registered two remedies — pin WebGL's rasterizer, or scope to pinned
+          # backends. Both are exhausted: scoping to dom/canvas/webgpu (c7ef40d4e) still drifted, and
+          # WebGPU IS pinned to SwiftShader yet six of ten functional diffs were webgpu-only — proving
+          # that even a pinned rasterizer does not make a CI-captured golden hash reproduce across
+          # machines. The underlying problem: a golden hash was never doing the correctness job — parity
+          # and pixel oracles do that. The golden's only job is stability, and a stable reference must
+          # be captured where it is checked. capture:*:check stays a LOCAL command for the machine whose
+          # hashes it holds; the CI correctness signal comes from smoke above and parity nightly.
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      # Built here rather than left to the capture tool's auto-build, so a harness that does not build
+      # is reported by this step and never mistaken for a rendering failure.
+      - name: Build the ${{ matrix.harness }} harness
+        run: npm run build:${{ matrix.harness }}
+      - uses: ./.github/actions/setup-playwright
+      # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
+      #
+      # Worker count: the runner has one SwiftShader adapter, so the default (available parallelism
+      # minus headroom, capped) puts six concurrent WebGPU devices on a single software GPU. The legs
+      # then overshoot the per-wait budget by ~26% (18901ms against 15000ms) — a contention signature,
+      # not a slow scene, since the same scenes verify in ~4-6s when they are not queueing for the
+      # adapter. Two workers keeps the runner busy without stacking devices on it.
+      #
+      # Wait budget: raised because the measured overshoots (18901ms, 17330ms) sit just past the
+      # default, so the default leaves no room for a runner that is merely having a bad minute. This
+      # buys headroom for contention; it does not paper over a stall, which the reason text still
+      # distinguishes by reporting how long the wait actually had.
+      #
+      # Durable WebGPU rule: every leg that captures WebGPU serializes because this runner has one
+      # SwiftShader adapter and concurrent devices can starve frame-capture buffer readback. Smoke
+      # has no cross-backend comparison, so it splits: non-WebGPU backends stay parallel while
+      # WebGPU runs alone.
+      - run: npm run ${{ matrix.check }} -- ${{ matrix.args }}
+        env:
+          FLIGHT_CAPTURE_WORKER_COUNT: 2
+          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
