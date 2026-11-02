@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Scheduled workflows otherwise test the default branch. Nightly quality in this repository
           # measures develop; manual dispatch preserves the branch selected by its caller.
@@ -36,7 +36,7 @@ jobs:
         name: Resolve source revision
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
@@ -75,7 +75,7 @@ jobs:
       # SWF import results are content-addressed by fixture case and importer source. Restore the most
       # recent cache, then save a revision-specific successor after this run.
       - name: Restore import result cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .artifacts/import-conformance/cache
           key: conformance-results-${{ runner.os }}-${{ steps.source.outputs.sha }}
@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload conformance reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: conformance-${{ steps.source.outputs.sha }}
           path: |

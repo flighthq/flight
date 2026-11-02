@@ -160,7 +160,7 @@ describe('reference-image request presentation workflow', () => {
       };
     };
     const queue = workflow.jobs.requests.steps.find((step) => step['id'] === 'queue');
-    const upload = workflow.jobs.capture.steps.find((step) => step['uses'] === 'actions/upload-artifact@v4') as {
+    const upload = workflow.jobs.capture.steps.find((step) => step['uses'] === 'actions/upload-artifact@v6') as {
       with: { name: string; path: string };
     };
     const summary = workflow.jobs.capture.steps.find((step) =>

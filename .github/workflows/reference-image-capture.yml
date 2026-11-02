@@ -72,7 +72,7 @@ jobs:
       list: ${{ steps.queue.outputs.list }}
       any: ${{ steps.queue.outputs.any }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: queue
         env:
           REQUEST_PATH: ${{ github.event.inputs.request }}
@@ -96,7 +96,7 @@ jobs:
       matrix:
         request: ${{ fromJSON(needs.requests.outputs.list) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # First read the trusted request from the push that triggered this CURRENT workflow recipe.
           # Full history is required to prove its commissioned commit is reachable from this push before
@@ -105,7 +105,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
@@ -139,7 +139,7 @@ jobs:
       # own directory and contributes only the product build being measured. A second root checkout used to
       # replace today's tools with old ones: renamed flags that still parsed, or changed output shapes, then
       # failed silently. The explicit path is the version boundary rather than a comment readers must infer.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ steps.reviewed-build.outputs.commit }}
           path: reviewed
@@ -207,7 +207,7 @@ jobs:
           find "$dir" -type f | sed 's/^/  /'
           [ "$pngs" -gt 0 ] || { echo "no image staged for $REQUEST_ID" >&2; exit 1; }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           # The readable prefix is additive. The trailing UUID remains the artifact/request identity,
           # which the bridge extracts without ever folding this label into `requestPath`.

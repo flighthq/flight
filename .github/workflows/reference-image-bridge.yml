@@ -106,7 +106,7 @@ jobs:
       # never leaves this job, and the capture workflow — which executes commissioned code — has neither.
       - name: Mint an installation token
         id: app
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.ORACLE_APP_ID }}
           private-key: ${{ secrets.ORACLE_APP_PRIVATE_KEY }}
@@ -119,7 +119,7 @@ jobs:
       # path to request B's bytes, and every hash downstream would still verify.
       - name: Dispatch candidate batch
         id: dispatch
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ steps.app.outputs.token }}
           script: |

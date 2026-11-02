@@ -18,7 +18,7 @@ describe('reference image CI workflow', () => {
     const job = readWorkflow('nightly').jobs['reference-image-check'];
 
     expect(job.needs).toBe('resolve');
-    const checkout = job.steps?.find((step) => step.uses === 'actions/checkout@v4');
+    const checkout = job.steps?.find((step) => step.uses === 'actions/checkout@v5');
     expect(checkout?.with?.ref).toBe('${{ needs.resolve.outputs.sha }}');
   });
 

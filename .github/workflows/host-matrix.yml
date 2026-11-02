@@ -40,8 +40,8 @@ jobs:
     name: Host contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
@@ -77,16 +77,16 @@ jobs:
             command: HOST_PROBE_CAPACITOR_PLATFORM=ios npm exec --workspace=@flighthq/tool-host-probe -- wdio run wdio.capacitor.conf.ts
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
 
       - name: Install Java for Android
         if: matrix.host == 'capacitor-android'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -223,7 +223,7 @@ jobs:
 
       - name: Upload Capacitor diagnostics
         if: failure() && startsWith(matrix.host, 'capacitor-')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: host-matrix-${{ matrix.host }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/host-probe-artifacts

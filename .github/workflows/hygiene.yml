@@ -37,12 +37,12 @@ jobs:
     name: Rust · format and clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       # Clippy costs a workspace compile, so it runs only when Rust changed; rustfmt is seconds and
       # always runs. Pushes compare against the pushed branch, PRs against their base, as in CI.
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         if: ${{ github.event_name != 'workflow_dispatch' }}
         id: filter
         with:
@@ -78,8 +78,8 @@ jobs:
     name: TypeScript · typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
@@ -98,10 +98,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Full history: some invariant gates compare against earlier commits.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
@@ -141,8 +141,8 @@ jobs:
     name: Scripts · tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
@@ -160,8 +160,8 @@ jobs:
     name: Dev tools · tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'npm'
