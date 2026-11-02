@@ -17841,6 +17841,18 @@ pub(crate) fn emit_option_binding(
             option_absent_value(&binding.expr, entities),
         )));
     }
+    if let Pat::TupleStruct(inner_ts) = &pattern.elems[0]
+        && (inner_ts.path.is_ident("Some") || inner_ts.path.is_ident("Ok"))
+        && inner_ts.elems.len() == 1
+        && let Pat::Ident(identifier) = &inner_ts.elems[0]
+        && identifier.subpat.is_none()
+    {
+        return Ok(Some((
+            snake_to_lower_camel(&identifier.ident.to_string()),
+            emit_expression(&binding.expr, entities)?,
+            option_absent_value(&binding.expr, entities),
+        )));
+    }
     let Pat::Ident(identifier) = &pattern.elems[0] else {
         return Ok(None);
     };

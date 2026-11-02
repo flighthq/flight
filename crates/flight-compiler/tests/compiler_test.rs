@@ -14119,6 +14119,30 @@ pub fn take_boolean(name: &str) -> bool {
     }
 
     #[test]
+    fn lowers_if_let_some_some_to_single_undefined_check() {
+        let source = r#"
+pub fn check(nodes: &[Option<u32>], index: usize) {
+    if let Some(Some(node)) = nodes.get(index) {
+        use_node(*node);
+    }
+}
+
+fn use_node(n: u32) {}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("!== undefined"),
+            "double Option unwrap should emit a single undefined check: {output}"
+        );
+        assert!(
+            !output.contains("recognized Option"),
+            "should not fail with unrecognized pattern: {output}"
+        );
+    }
+
+    #[test]
     fn preserves_receivers_for_optional_member_calls() {
         let source = r#"
 use std::sync::Arc;
