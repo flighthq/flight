@@ -4,7 +4,7 @@ name: Release
 # site at that tag (source == published at the release commit, so it faithfully demonstrates the
 # published SDK) and attaches it as a GitHub release asset the site repo serves at flighthq.ai/examples.
 # On `develop`, run `npm run version:packages <version>`, commit, and push; wait for green CI.
-# Tag that tested commit and push only the tag. `main` remains machine-managed by Nightly's promotion.
+# Tag that tested commit and push only the tag. `main` remains machine-managed by Promote · edge.
 on:
   push:
     # Bare numeric version tags (no "v" prefix), e.g. 0.1.0. The release asset is named after the tag.
@@ -60,7 +60,7 @@ jobs:
             echo "::error::release workflow publishes from a version tag; got ${GITHUB_REF_TYPE} ref ${GITHUB_REF_NAME}"
             exit 1
           fi
-      # Release deliberately verifies the tagged commit's CI directly rather than requiring Nightly
+      # Release deliberately verifies the tagged commit's CI directly rather than requiring Promote · edge
       # to have promoted it to `main`: a newer validated commit can legitimately advance main past this one.
       # Exact head_sha lookup also keeps an intentionally old tag from falling outside a recent-run window.
       # There is deliberately no branch filter: this gate proves the exact tree passed CI wherever its

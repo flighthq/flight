@@ -4,8 +4,8 @@ name: Conformance
 # recording rejected, unsupported, degraded, or failed fixture outcomes. Acquisition integrity, corpus
 # completeness, harness validity, and the unit contracts remain hard failures. A seeded ratchet becomes
 # a hard failure automatically when its baseline is committed.
-# Run nightly as a job of Nightly (which passes develop's pinned commit as `ref`), or on its own by
-# hand: "Run workflow" here measures whichever branch is selected.
+# Run nightly as a job of Hygiene · nightly (on main), or on its own by hand: "Run workflow" here
+# measures whichever branch is selected.
 on:
   workflow_call:
     inputs:
@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          # Nightly passes develop's pinned commit; a manual run measures the branch it was started on.
+          # A caller may pass a commit; otherwise the run's own ref (main when called nightly).
           ref: ${{ inputs.ref || github.ref }}
 
       - id: source

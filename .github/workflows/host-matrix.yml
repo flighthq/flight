@@ -6,8 +6,8 @@ name: Host Backends
 # never a red build. Each probe retries once before it counts as failed. The deterministic part, the
 # host-probe contract tests, runs per push in CI's `Test · TypeScript`.
 #
-# Run nightly as a job of Nightly (which passes develop's pinned commit as `ref`), or on its own by
-# hand — "Run workflow" here — when changing a host backend and wanting an answer before tomorrow.
+# Run nightly as a job of Hygiene · nightly (on main), or on its own by hand — "Run workflow" here —
+# when changing a host backend and wanting an answer before tomorrow.
 on:
   workflow_call:
     inputs:

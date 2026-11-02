@@ -29,13 +29,13 @@
 # fix did not work" rather than "my fix is not deployed". That cost a full debugging round: a broken
 # `steps.` reference was fixed on develop and the very next run reproduced the same stack trace.
 # Its sibling `reference-image-capture.yml` is a `push` workflow and runs the PUSHED branch's copy, so the two
-# iterate at different speeds. When changing this file, expect: push -> CI -> Promote -> CI · extended -> Nightly
-# promotes it to main (or run Nightly by hand) -> then test.
+# iterate at different speeds. When changing this file, expect: push -> CI -> Promote · next -> CI · extended
+# -> Promote · edge moves it to main (or run Promote · edge by hand) -> then test.
 #
 # ★ THIS DOES NOT MAKE COMMISSIONING WAIT FOR A PROMOTION. Where this FILE lives and which branch the
 # TRIGGERING RUN is on are different things, and conflating them is the easy mistake. The file lands on
 # `main` once; from then on a capture running on `develop` dispatches immediately. `main` advances
-# nightly to the newest validated commit (or when Nightly is run by hand), so the one-time cost is at
+# nightly to the newest validated commit (or when Promote · edge is run by hand), so the one-time cost is at
 # most a day, not a manual gate, and it is the same one every workflow here already paid.
 name: Reference Images · Bridge
 

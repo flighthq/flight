@@ -3,15 +3,15 @@ name: CI · extended
 # The second, deeper round of CI, run in the `next` lane: every commit there already passed CI and was
 # published as npm `next`. These are the slower, thorough checks — the isolated per-package test lane,
 # render parity, and the reference-image comparison — and `Ready for main` marks a commit that passed
-# them all as eligible for Nightly to promote to `main` and publish as `edge`. So Nightly picks up
+# them all as eligible for Promote · edge to promote to `main` and publish as `edge`. So Promote · edge picks up
 # what was already proved here; nothing it promotes is tested for the first time at night.
 #
-#   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
-#           → Nightly (`main`, edge on crates.io + npm) → tag (latest, via Release)
+#   develop → CI (Ready for next) → Promote · next (npm next, `next`) → CI · extended (Ready for main)
+#           → Promote · edge (`main`, edge on crates.io + npm) → tag (latest, via Release)
 #
-# Triggered by Promote's push to `next` (made with the promotion App's token, so the push starts this
+# Triggered by Promote · next's push to `next` (made with the promotion App's token, so the push starts this
 # run; a push uses the pushed commit's own copy of this file). A newer `next` cancels an older run:
-# nothing here publishes, and only the newest eligible commit matters to Nightly, so under a burst of
+# nothing here publishes, and only the newest eligible commit matters to Promote · edge, so under a burst of
 # pushes the suite runs on the latest rather than on every one.
 #
 # `Ready for main` is the single check the ruleset on main requires. It always reports, so it can
@@ -77,7 +77,7 @@ jobs:
       - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
   # Cross-backend parity (Tier 3) of the functional scenes, a gate for `main`. Examples parity is a
-  # Nightly health signal: an example disagreeing across backends is as often stale as broken. Parity must
+  # Hygiene · nightly warning: an example disagreeing across backends is as often stale as broken. Parity must
   # compare backends within one run, so each leg keeps every renderer together and serializes with
   # `--parallel 1` (the runner has one SwiftShader adapter; see the render-test notes in tests.yml).
   # The parity check imports the SDK from built dist, so each leg builds the graph first.

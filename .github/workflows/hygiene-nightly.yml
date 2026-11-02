@@ -1,0 +1,122 @@
+name: Hygiene · nightly
+
+# The slow hygiene signals, once a night: coverage thresholds, examples parity, Conformance (the fixture
+# corpus) and the Host backends on real platforms. Like Hygiene, they protect the repository's health
+# rather than gate anything — nothing waits on this workflow.
+#
+# ★ IT CHECKS `main`, THE COMMIT ITS OWN WORKFLOW CAME FROM. A scheduled run uses the default branch's
+# copy of this file (main's); checking main's code with it keeps the workflow and the code from the
+# same commit, so they can never be out of step. `main` is exactly what Promote · edge published as
+# `edge`, so this is the nightly health of the edge release. It lags develop by up to a day, which
+# these slow signals can afford. Scheduled an hour after Promote · edge, so it sees the night's `main`.
+#
+# Skipped when `main` has not moved since the last successful run. A manual run always runs.
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+concurrency:
+  group: hygiene-nightly
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # read earlier Hygiene · nightly runs
+    outputs:
+      changed: ${{ steps.changed.outputs.changed }}
+    steps:
+      - id: changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          last=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/hygiene-nightly.yml/runs?status=success&per_page=1" \
+            --jq '.workflow_runs[0].head_sha // empty')
+          if [ "$last" = "$GITHUB_SHA" ]; then
+            echo "main is still at ${GITHUB_SHA}, checked by the last successful run; skipping."
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+  coverage:
+    name: TypeScript · coverage
+    needs: resolve
+    if: ${{ needs.resolve.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - uses: ./.github/actions/setup-playwright
+      - id: coverage
+        continue-on-error: true
+        run: npm run test:coverage
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: coverage=${{ steps.coverage.outcome }}
+        run: bash scripts/report-hygiene.sh
+
+  # Examples parity: an example disagreeing across backends is as often stale as broken, so this is a
+  # warning, not a gate (functional parity gates `main`, in CI · extended). Parity compares
+  # backends within one run, so every renderer stays together and serializes on the one software GPU.
+  examples-parity:
+    name: Render · examples parity
+    needs: resolve
+    if: ${{ needs.resolve.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: ./.github/actions/setup-playwright
+      - id: parity
+        continue-on-error: true
+        run: npm run test:examples:parity -- --parallel 1 --retries 2
+        env:
+          FLIGHT_CAPTURE_WORKER_COUNT: 2
+          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: examples-parity=${{ steps.parity.outcome }}
+        run: bash scripts/report-hygiene.sh
+
+  # Conformance and the Host platform probes live in their own files so each stays runnable by hand.
+  # Conformance's corpus scores are measurements, so it fails only on its own tooling or a broken
+  # fixture download; the Host probes are advisory throughout.
+  conformance:
+    name: Conformance
+    needs: resolve
+    if: ${{ needs.resolve.outputs.changed == 'true' }}
+    uses: ./.github/workflows/conformance.yml
+
+  # Advisory: a platform failure is a warning in the Host job's summary.
+  host:
+    name: Host backends
+    needs: resolve
+    if: ${{ needs.resolve.outputs.changed == 'true' }}
+    uses: ./.github/workflows/host-matrix.yml

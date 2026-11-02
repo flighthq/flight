@@ -3,20 +3,16 @@ import { join } from 'node:path';
 
 import { parse } from 'yaml';
 
-const workflowPath = join(import.meta.dirname, '..', '.github', 'workflows', 'nightly.yml');
+const workflowPath = join(import.meta.dirname, '..', '.github', 'workflows', 'hygiene.yml');
 
 describe('minified size workflow', () => {
-  it('gates the dedicated size fixtures instead of examples', () => {
+  it('reports the dedicated size fixtures instead of examples, as a hygiene warning', () => {
     const workflow = parse(readFileSync(workflowPath, 'utf8')) as {
-      jobs: {
-        'size-minified': {
-          steps: { run?: string }[];
-        };
-      };
+      jobs: { checks: { steps: { id?: string; run?: string; 'continue-on-error'?: boolean }[] } };
     };
-    const commands = workflow.jobs['size-minified'].steps.flatMap((step) => step.run ?? []);
+    const step = workflow.jobs.checks.steps.find((candidate) => candidate.id === 'size-minified');
 
-    expect(commands).toContain('npm run size:minified');
-    expect(commands).not.toContain('npm run size:minified -- --fixtures');
+    expect(step?.run).toBe('npm run size:minified');
+    expect(step?.['continue-on-error']).toBe(true);
   });
 });

@@ -11,25 +11,24 @@ name: CI
 #               holds no publish credential.
 #
 # What happens after, each in its own workflow:
-#   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
-#           → Nightly (`main`, edge on crates.io + npm) → tag (latest, via Release)
-# `Package · npm` and `Package · wasm` leave their dist as artifacts for Promote to publish unchanged;
+#   develop → CI (Ready for next) → Promote · next (npm next, `next`) → CI · extended (Ready for main)
+#           → Promote · edge (`main`, edge on crates.io + npm) → tag (latest, via Release)
+# `Package · npm` and `Package · wasm` leave their dist as artifacts for Promote · next to publish unchanged;
 # `Package · crates.io` proves on every push that the crates would publish.
 #
 # Functional render smoke runs beside them and gates too; example smoke is a Hygiene warning.
-# A red run here means something a user of the SDK would feel. The `next` promotion, Nightly, the
+# A red run here means something a user of the SDK would feel. The promotions, the
 # publishes, and branch protection all read this workflow, so nothing that is bookkeeping may fail it.
 #
 # Everything else has a home that cannot turn this red:
 #   hygiene.yml  — every push, never fails: the whole-repo typecheck (examples, scripts, functional,
 #                  tools — package code is already type-checked by `Package · npm`), lint, format
 #                  (TS + Rust), clippy, ordering, convention audits, regenerate/ratchet checks, the
-#                  scripts and dev-tool suites, advisory size.
+#                  scripts and dev-tool suites, example smoke, size, API generation.
 #                  Failures surface as warnings and a run summary. The pre-push hook blocks on format.
-#   nightly.yml  — once a day on develop's tip: the per-package-environment test shards, render
-#                  parity, the reference-image comparison, coverage, minified size, and the crates.io
-#                  snapshot of main (crates.io's rate limit makes a full graph take ~2h, too slow and
-#                  too noisy to repeat per push; `Package · crates.io` below proves it would publish).
+#   hygiene-nightly.yml — once a night on main, never gates: coverage, examples parity, Conformance,
+#                  and the Host backends on real platforms.
+#   ci-extended.yml — on `next`: the slower checks that mark a commit Ready for main.
 #
 # ★ NO PATH FILTERING. Every job runs on every push, so a green run means every check passed AT THIS
 # COMMIT. A filter on "what this push changed" broke that: a push that broke Rust followed by one that
@@ -104,7 +103,7 @@ jobs:
       - name: Host backend tests
         run: npm run test:host
       # The host probe's own contract tests: deterministic and ours. The probes on real platforms
-      # (emulators, simulators) are advisory and run in Nightly; see host-matrix.yml.
+      # (emulators, simulators) are advisory and run in Hygiene · nightly; see host-matrix.yml.
       - name: Host contract
         run: npm run test:host-probe
 
@@ -154,16 +153,16 @@ jobs:
         env:
           FLIGHT_CHECK_GATES: packages:check,module-specifiers:check,package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
 
-      # Handed to Promote, which publishes it unchanged, so it does not repeat the full `tsc -b` over
-      # all 141 projects. Safe to reuse across the version stamp Promote applies: nothing inlines the
+      # Handed to Promote · next, which publishes it unchanged, so it does not repeat the full `tsc -b` over
+      # all 141 projects. Safe to reuse across the version stamp Promote · next applies: nothing inlines the
       # package version at build time (the one manifest read, tool-capture's captureServer, does it at
       # runtime). The four wasm packages are in this build too, compiled against committed type stubs;
-      # Promote replaces their dist with `Package · wasm`'s real one.
+      # Promote · next replaces their dist with `Package · wasm`'s real one.
       #
       # Tarred first because upload-artifact is slow over many small files, and 141 dist directories
       # are ~76MB of them — as one tarball it is 5.8MB. Uploaded unconditionally: it is cheap, and a
-      # gate that drifted from Promote's own eligibility rule would silently starve it rather than fail.
-      # Kept long enough for Promote to run after a queue or a manual re-run.
+      # gate that drifted from Promote · next's eligibility rule would silently starve it rather than fail.
+      # Kept long enough for Promote · next to run after a queue or a manual re-run.
       - name: Tar dist for the publish
         run: tar -czf dist.tgz packages/*/dist
       - uses: actions/upload-artifact@v6
@@ -220,7 +219,7 @@ jobs:
           retention-days: 7
 
   # The verdict that this commit may be promoted to `next`: every Test, Compliance and Package job and
-  # functional render smoke succeeded. Promote reads it by name; the ruleset on `next` requires it.
+  # functional render smoke succeeded. Promote · next reads it by name; the ruleset on `next` requires it.
   # It always reports (never left "expected" by a skipped dependency) and runs on pull requests too,
   # so renaming or adding a gate job changes only this `needs` list, never the ruleset.
   ready-for-next:
@@ -229,7 +228,7 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     permissions:
-      actions: write # start Promote; no secret and no publish credential
+      actions: write # start Promote · next; no secret and no publish credential
     steps:
       - name: Require every gate
         env:
@@ -242,12 +241,12 @@ jobs:
             fi
           done
           echo "All gates passed."
-      # ★ STARTED DELIBERATELY, ON DEVELOP. A run started this way uses develop's copy of promote.yml —
-      # the copy this very commit carries — so a change to Promote takes effect with the commit that makes
+      # ★ STARTED DELIBERATELY, ON DEVELOP. A run started this way uses develop's copy of promote-next.yml —
+      # the copy this very commit carries — so a change to Promote · next takes effect with the commit that makes
       # it. Waiting for CI to finish (`workflow_run`) would instead run the DEFAULT branch's copy, `main`'s,
       # a day behind. Only develop pushes hand off, and only after every gate passed (this step runs
-      # only when the one above succeeded). Promote re-checks the run itself rather than trusting this.
-      - name: Hand off to Promote
+      # only when the one above succeeded). Promote · next re-checks the run itself rather than trusting this.
+      - name: Hand off to Promote · next
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -255,9 +254,9 @@ jobs:
           TITLE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
-          gh workflow run promote.yml --repo "$GITHUB_REPOSITORY" --ref develop \
+          gh workflow run promote-next.yml --repo "$GITHUB_REPOSITORY" --ref develop \
             -f run_id="$RUN_ID" -f title="$(printf '%s' "$TITLE" | head -n 1)"
-          echo "Started Promote for CI run ${RUN_ID}."
+          echo "Started Promote · next for CI run ${RUN_ID}."
 
   render-test:
     # Functional smoke, a GATE for `next`: every functional scene — test fixtures written against the
@@ -267,7 +266,7 @@ jobs:
     #
     # The examples are NOT here: an example failing is as often an example not yet updated for an API
     # change as an SDK defect, so example smoke runs in Hygiene (a warning) and examples parity in
-    # Nightly (a health signal). Functional parity and reference images gate `main` in CI · extended.
+    # Hygiene · nightly (a warning). Functional parity and reference images gate `main` in CI · extended.
     # The
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.

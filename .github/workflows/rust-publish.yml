@@ -1,8 +1,8 @@
 name: Publish · crates.io
 
 # Reusable workflow for publishing all Flight crates to crates.io.
-# Called by nightly.yml (main → edge, once a day) and release.yml (tag → stable).
-# Also dispatchable manually. crates.io carries no develop (`next`) lane; see nightly.yml.
+# Called by promote-edge.yml (main → edge, once a day) and release.yml (tag → stable).
+# Also dispatchable manually. crates.io carries no develop (`next`) lane; see promote-edge.yml.
 
 on:
   workflow_call:

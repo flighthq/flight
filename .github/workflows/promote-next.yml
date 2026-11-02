@@ -1,17 +1,17 @@
-name: Promote
+name: Promote · next
 
 # Carries a develop commit that CI judged `Ready for next` into the `next` lane: publishes it as npm
 # `next`, then fast-forwards the `next` branch to it, so the branch and the channel always name the
 # same commit. CI verifies and publishes nothing; this workflow releases and moves, and nothing else.
 #
-#   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
-#           → Nightly (`main`, edge on crates.io + npm) → tag (latest, via Release)
+#   develop → CI (Ready for next) → Promote · next (npm next, `next`) → CI · extended (Ready for main)
+#           → Promote · edge (`main`, edge on crates.io + npm) → tag (latest, via Release)
 #
 # ★ STARTED BY CI, DELIBERATELY, ON DEVELOP. CI's `Ready for next` job starts this workflow on
 # `develop` once every gate passed, so the run uses develop's copy of this file — the one the commit
 # being promoted carries — and a change here takes effect with the commit that makes it. (Waiting for CI
-# to finish instead would run the default branch's copy, `main`'s, a day behind.) Nightly, which
-# promotes to `main`, deliberately does the opposite: it runs main's validated copy.
+# to finish instead would run the default branch's copy, `main`'s, a day behind.) Promote · edge, which
+# promotes to `main`, deliberately does the opposite: it runs main's copy, kept minimal for that.
 #
 # Eligibility is re-established from the CI run itself, not taken from whoever started this: a develop
 # push whose `Ready for next` succeeded. Nothing is rebuilt: the publish takes the exact `dist` CI
@@ -20,7 +20,7 @@ name: Promote
 # Promotions run one at a time and never cancel, so a later commit cannot be published before an
 # earlier one finishes. GitHub keeps one waiting run and replaces it with newer ones, so under a burst
 # of pushes the newest commit is promoted and the ones it supersedes are skipped.
-run-name: "${{ inputs.title || 'Promote' }}"
+run-name: "${{ inputs.title || 'Promote · next' }}"
 
 on:
   # Started by CI with its run, or by hand to promote a specific CI run (e.g. after re-running CI).
@@ -177,7 +177,7 @@ jobs:
   # changes, and `CI · extended` must be run by hand). The ruleset on `next` independently requires
   # the commit's `Ready for next`.
   promote-next:
-    name: Promote · next
+    name: Fast-forward next
     needs: [eligible, publish]
     runs-on: ubuntu-latest
     permissions:

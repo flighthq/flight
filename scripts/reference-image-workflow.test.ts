@@ -24,8 +24,9 @@ describe('reference image CI workflow', () => {
     expect(extended.jobs['ready-for-main'].needs).toContain('reference-image-check');
   });
 
-  it('is neither in the per-push product gate nor a Nightly job', () => {
+  it('is neither in the per-push product gate nor a scheduled job', () => {
     expect(readWorkflow('tests').jobs['reference-image-check']).toBeUndefined();
-    expect(readWorkflow('nightly').jobs['reference-image-check']).toBeUndefined();
+    expect(readWorkflow('promote-edge').jobs['reference-image-check']).toBeUndefined();
+    expect(readWorkflow('hygiene-nightly').jobs['reference-image-check']).toBeUndefined();
   });
 });

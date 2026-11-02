@@ -153,15 +153,28 @@ jobs:
         env:
           FLIGHT_CHECK_GATES: 'exports:check,reachability:check,type-home:check, backend-lifecycle:check,entity-contracts:check,api:check, facets:check,catalog:check,support:check,instrumentation:check, fingerprint-computation-id:check,evidence:check,assertions:check, data-cast-colour:check,unit-test-cost:check, expected-image-descriptions:check,functional-antialiasing:check, degree-constants:check,capability-arrival:check,host-bypasses:check, mixed-absence:check,opaque-values:check,double-casts:check, capture provenance (advisory)'
       # Advisory by construction: `npm run size` always exits 0 and only reports which bundles moved
-      # against the committed unminified baseline. The shipping (minified) number is nightly.
+      # against the committed unminified baseline.
       - id: size
         continue-on-error: true
         run: npm run size
+      # The shipping number: every dedicated tools/size fixture through terser, against its pin in
+      # tools/size/size.baseline.json. About a minute. Examples may import whole-store conveniences, so
+      # they are deliberately not the cost contract. A warning, not a gate: the pin's own remedy
+      # (`size:minified:baseline`) erases whatever a gate objected to, so a red gate mostly bought a
+      # rewritten pin.
+      - id: size-minified
+        continue-on-error: true
+        run: npm run size:minified
+      - id: api
+        continue-on-error: true
+        run: |
+          npm run api
+          npm run api:json
 
       - name: Report
         if: always()
         env:
-          OUTCOMES: 'lint=${{ steps.lint.outcome }} format=${{ steps.format.outcome }} conventions=${{ steps.conventions.outcome }} invariants=${{ steps.invariants.outcome }} size=${{ steps.size.outcome }}'
+          OUTCOMES: 'lint=${{ steps.lint.outcome }} format=${{ steps.format.outcome }} conventions=${{ steps.conventions.outcome }} invariants=${{ steps.invariants.outcome }} size=${{ steps.size.outcome }} size-minified=${{ steps.size-minified.outcome }} api=${{ steps.api.outcome }}'
         run: bash scripts/report-hygiene.sh
 
   scripts:

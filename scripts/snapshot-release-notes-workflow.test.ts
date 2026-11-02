@@ -19,7 +19,7 @@ function jobSteps(workflowName: string, jobName: string): WorkflowStep[] {
 
 describe('snapshot release notes contract', () => {
   it.each([
-    ['next', 'promote', 'publish'],
+    ['next', 'promote-next', 'publish'],
     ['edge', 'edge-publish', 'publish'],
   ])('generates cumulative %s notes before publishing to npm', (_channel, workflowName, jobName) => {
     const steps = jobSteps(workflowName, jobName);

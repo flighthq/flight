@@ -1,0 +1,253 @@
+name: Promote · edge
+
+# Promotes to the `edge` channel, once a night: fast-forwards `main` to the newest commit on `next` that
+# CI · extended marked `Ready for main`, then publishes it as `edge` — crates.io first, then npm, under
+# one version — so `main`, npm `edge` and crates.io `edge` always name the same commit.
+#
+#   develop → CI (Ready for next) → Promote · next (npm next, `next`) → CI · extended (Ready for main)
+#           → Promote · edge (`main`, edge on crates.io + npm) → tag (latest, via Release)
+#
+# ★ DELIBERATELY MINIMAL. A scheduled run always uses the DEFAULT branch's copy of this file (main's),
+# so a change here takes effect once it has itself been promoted to main. A workflow that can only be
+# fixed by promoting must have as little in it as possible that could break: it tests nothing (CI and
+# CI · extended already proved every commit it promotes), measures nothing (that is Hygiene · nightly),
+# and does exactly three things — choose, fast-forward, publish. Should main's copy ever break, run this
+# workflow by hand on `next` (Actions → Promote · edge → Run workflow): a manual run uses that branch's
+# copy, and promoting with it puts the fix on main.
+#
+# The publish also catches up: crates.io is probed for main's version (flight-sdk uploads last, so its
+# presence means the graph landed), and npm is re-run after any failed run, so a failed or partial
+# publish is completed the next night even when nothing new was promoted. On a night with nothing new
+# and nothing missing, only the cheap resolve jobs run.
+on:
+  schedule:
+    # Off the top of the hour, where GitHub delays or drops scheduled runs under load.
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+# Nothing here launches Electron; skip its ~100MB binary download in `npm ci`.
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+concurrency:
+  group: promote-edge
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read earlier Promote · edge and CI · extended runs
+    outputs:
+      candidate: ${{ steps.candidate.outputs.sha }}
+      retry: ${{ steps.retry.outputs.retry }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # The commit to promote: the NEWEST commit on `next`, ahead of `main`, with a successful CI · extended
+      # run. `git rev-list main..next` walks newest-first, so the first match is both the newest
+      # candidate and a guaranteed fast-forward. The run list is used only as a SET of validated
+      # commits, never for ordering: CI · extended runs can finish out of order, or be cancelled by a newer
+      # push to `next` (a cancelled run never counts). per_page=100 bounds the lookback.
+      - name: Find the newest validated commit on next
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! git ls-remote --exit-code origin refs/heads/next >/dev/null; then
+            echo 'No next branch yet; nothing to promote.'
+            echo 'sha=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags origin +refs/heads/next:refs/remotes/origin/next +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor refs/remotes/origin/main refs/remotes/origin/next; then
+            echo "::error::main is not an ancestor of next; the branches have diverged. Promotion needs a human."
+            exit 1
+          fi
+          ahead=$(git rev-list refs/remotes/origin/main..refs/remotes/origin/next)
+          if [ -z "$ahead" ]; then
+            echo "main is level with next; nothing to promote."
+            echo 'sha=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          validated=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/ci-extended.yml/runs?branch=next&status=success&event=push&per_page=100" \
+            --jq '.workflow_runs[].head_sha' | sort -u)
+          candidate=''
+          for sha in $ahead; do
+            if grep -qxF "$sha" <<<"$validated"; then
+              candidate="$sha"
+              break
+            fi
+          done
+          if [ -z "$candidate" ]; then
+            echo "$(wc -w <<<"$ahead") commit(s) on next ahead of main, none validated yet; nothing to promote."
+          else
+            echo "Promoting $candidate ($(git log -1 --format='%s' "$candidate"))"
+          fi
+          echo "sha=$candidate" >> "$GITHUB_OUTPUT"
+
+      # Whether the last finished run failed: the npm edge publish then reruns tonight, completing a
+      # graph it may have left partly published (its publisher skips what is already there).
+      - id: retry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          last=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/promote-edge.yml/runs?status=completed&per_page=1" \
+            --jq '.workflow_runs[0].conclusion // "success"')
+          if [ "$last" = success ]; then echo 'retry=false' >> "$GITHUB_OUTPUT"; else echo 'retry=true' >> "$GITHUB_OUTPUT"; fi
+          echo "Last finished Promote · edge: ${last}."
+
+  # Fast-forwards main to the validated candidate, with the promotion App's token: the built-in token
+  # cannot update .github/workflows/ files. Without the App's secrets it falls back to the built-in
+  # token, which then cannot promote workflow changes. The ruleset on main independently requires the
+  # candidate's `Ready for main` check, which it carries from its run on `next`.
+  promote:
+    name: Fast-forward main
+    needs: resolve
+    if: ${{ needs.resolve.outputs.candidate != '' }}
+    runs-on: ubuntu-latest
+    outputs:
+      advanced: ${{ steps.push.outputs.advanced }}
+    permissions:
+      contents: write # push refs/heads/main when falling back to the built-in token
+    steps:
+      - name: Check for the promotion App
+        id: app
+        env:
+          APP_ID: ${{ secrets.PROMOTE_APP_ID }}
+        run: |
+          if [ -n "$APP_ID" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::PROMOTE_APP_ID is not set; pushing with the built-in token, which cannot promote workflow changes.'
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Mint the promotion token
+        id: app-token
+        if: ${{ steps.app.outputs.configured == 'true' }}
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.PROMOTE_APP_ID }}
+          private-key: ${{ secrets.PROMOTE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+      - name: Fast-forward main to the validated commit
+        id: push
+        env:
+          CANDIDATE: ${{ needs.resolve.outputs.candidate }}
+        run: bash scripts/fast-forward-branch.sh main "$CANDIDATE"
+
+  # What `edge` should be tonight: main's commit (after any promotion above), under the version both
+  # registries publish it as, and which registries to publish to. Runs whether or not a promotion
+  # happened, so a failed or partial publish from an earlier night is completed.
+  #
+  # crates.io is probed (flight-sdk uploads last, so its presence means the graph landed). npm is NOT
+  # probed: its publisher completes a partial graph package by package, and a probe of one package
+  # could report "published" for a half-published graph and skip it forever. So npm runs on any new
+  # promotion, any crates.io publish, any manual run, and after any failed run.
+  edge-version:
+    name: Publish · resolve edge
+    needs: [resolve, promote]
+    if: ${{ !cancelled() && needs.resolve.result == 'success' && needs.promote.result != 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read tests.yml conclusions for main's commit
+    outputs:
+      crates: ${{ steps.check.outputs.crates }}
+      npm: ${{ steps.check.outputs.npm }}
+      sha: ${{ steps.check.outputs.sha }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ADVANCED: ${{ needs.promote.outputs.advanced }}
+          RETRY: ${{ needs.resolve.outputs.retry }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          version=$(npx tsx scripts/edge-version.ts main | sed -n 's/^version=//p')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          # main receives only validated commits, but a hand push skips that. Re-prove CI for this
+          # exact commit, as the npm edge publish and Release do; no run is never green.
+          successes=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?head_sha=${sha}" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')
+          if [ "${successes:-0}" -eq 0 ]; then
+            echo "::error::main is at ${sha}, which has no successful CI run; refusing to publish it as edge."
+            exit 1
+          fi
+
+          # crates.io asks API clients to identify themselves.
+          status=$(curl -s -o /dev/null -w '%{http_code}' -A 'flighthq-nightly (github.com/flighthq/flight)' \
+            "https://crates.io/api/v1/crates/flight-sdk/${version}")
+          case "$status" in
+            200) crates=false ;;
+            404) crates=true ;;
+            *) echo "::error::crates.io answered HTTP $status for flight-sdk ${version}"; exit 1 ;;
+          esac
+          if [ "$ADVANCED" = true ] || [ "$crates" = true ] || [ "$RETRY" = true ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
+            npm=true
+          else
+            npm=false
+          fi
+          echo "edge ${version} (${sha}): crates.io publish=${crates}, npm publish=${npm}"
+          echo "crates=$crates" >> "$GITHUB_OUTPUT"
+          echo "npm=$npm" >> "$GITHUB_OUTPUT"
+
+  # crates.io first: it is the slow, rate-limited half (~2h for the graph), and if it fails, npm is not
+  # published, so a version never exists on one registry without the other. A partial upload is
+  # completed the next night (crates already up are skipped as "already exists").
+  crates-edge:
+    name: Publish · crates.io edge
+    needs: edge-version
+    if: ${{ needs.edge-version.outputs.crates == 'true' }}
+    uses: ./.github/workflows/rust-publish.yml
+    with:
+      ref: ${{ needs.edge-version.outputs.sha }}
+      version: ${{ needs.edge-version.outputs.version }}
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # Then npm, once crates.io has the version (published just now, or already).
+  npm-edge:
+    name: Publish · npm edge
+    needs: [edge-version, crates-edge]
+    if: >-
+      ${{ !cancelled() && needs.edge-version.result == 'success' && needs.edge-version.outputs.npm == 'true' && (needs.crates-edge.result == 'success' || needs.edge-version.outputs.crates == 'false') }}
+
+
+    permissions:
+      contents: read
+      actions: read # edge-publish.yml re-reads tests.yml conclusions for the sha
+      id-token: write # npm provenance
+    uses: ./.github/workflows/edge-publish.yml
+    with:
+      sha: ${{ needs.edge-version.outputs.sha }}
+      promote_run_id: ${{ github.run_id }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      FLIGHT_COMPILER_DISPATCH_TOKEN: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
