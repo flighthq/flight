@@ -134,7 +134,7 @@ jobs:
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-  # The thorough unit lane, moved here from per-push CI (which keeps the merged `test-fast` run). Each package runs
+  # The thorough unit lane, moved here from per-push CI (whose `Test · TypeScript` keeps the merged run). Each package runs
   # under its own vitest config, so node packages use the `node` environment and jsdom packages use
   # `jsdom`, each isolated in its own process — correct, but that is 141 serial Vitest startups plus a
   # fresh environment per test file. Fitting a full run gave `node ≈ 4.9s + 0.22s/file` and
@@ -156,7 +156,7 @@ jobs:
   # process and stay serial — and being serial per project, they are paid in full by every shard, which
   # is what makes that shape unshardable. See the header of scripts/test-packages.ts.
   #
-  # This is the one lane that runs tool-capture's serialized browser contracts; `test-fast` excludes
+  # This is the one lane that runs tool-capture's serialized browser contracts; the merged run excludes
   # tool-capture so pushes stay fast and don't launch browsers.
   test:
     name: TypeScript · per-package tests · ${{ matrix.shard }}/${{ strategy.job-total }}

@@ -1,21 +1,29 @@
 name: CI
 
-# The per-commit PRODUCT gate for every PR and for pushes to main/develop: does it build (which
-# type-checks every package and its tests), pass its unit/host/Rust tests, render on every backend,
-# and package for both registries. A red run
-# here means something a user of the SDK would feel. Promote, the snapshot publishes, and branch
-# protection all read this workflow, so nothing that is bookkeeping may fail it.
+# The per-commit PRODUCT gate for every PR and for pushes to main/develop. Flight is a Rust SDK with a
+# TypeScript companion, and this workflow is its pipeline in three stages:
+#
+#   Test        Rust and TypeScript, each validated by its own tests.
+#   Compliance  license provenance across the whole repository — a hard stop, not a style check.
+#   Package     every registry's artifact built and validated: npm (TypeScript), wasm, crates.io.
+#   Publish     npm `next`, once, with TypeScript and wasm together. crates.io is queued for the
+#               nightly snapshot of main; `Package · crates.io` proves on every push that it would
+#               succeed.
+#
+# Render smoke runs beside them as a product signal but gates no publish. A red run here means
+# something a user of the SDK would feel. Promote, the publishes, and branch protection all read this
+# workflow, so nothing that is bookkeeping may fail it.
 #
 # Everything else has a home that cannot turn this red:
 #   hygiene.yml  — every push, never fails: the whole-repo typecheck (examples, scripts, functional,
-#                  tools — package code is already type-checked by `build`), lint, format (TS + Rust),
-#                  clippy, ordering, convention
-#                  audits, regenerate/ratchet checks, the scripts and dev-tool suites, advisory size.
+#                  tools — package code is already type-checked by `Package · npm`), lint, format
+#                  (TS + Rust), clippy, ordering, convention audits, regenerate/ratchet checks, the
+#                  scripts and dev-tool suites, advisory size.
 #                  Failures surface as warnings and a run summary. The pre-push hook blocks on format.
 #   nightly.yml  — once a day on develop's tip: the per-package-environment test shards, render
 #                  parity, the reference-image comparison, coverage, minified size, and the crates.io
 #                  snapshot of main (crates.io's rate limit makes a full graph take ~2h, too slow and
-#                  too noisy to repeat per push; `rust-publish-dry-run` below proves it would publish).
+#                  too noisy to repeat per push; `Package · crates.io` below proves it would publish).
 #
 # ★ NO PATH FILTERING. Every job runs on every push, so a green run means every check passed AT THIS
 # COMMIT. A filter on "what this push changed" broke that: a push that broke Rust followed by one that
@@ -26,9 +34,6 @@ name: CI
 #
 # Documentation checks (docs:check, append-only-ledgers) are principal-facing review tools,
 # not CI gates. Run them locally with `npm run docs:check` / `npm run check:append-only-ledgers`.
-#
-# Nightly (nightly.yml) runs what does NOT belong on the PR path: full coverage thresholds
-# and API-surface generation.
 
 on:
   pull_request:
@@ -59,108 +64,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rust-check:
-    name: Rust · check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-
   rust-test:
-    name: Rust · test
+    name: Test · Rust
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      # Compiles every crate (libraries, binaries, tests, examples) before running anything, so a
+      # separate `cargo check` or `cargo build` would only repeat that compile.
       - run: cargo test --workspace
 
-  # Proves the crate graph would publish without uploading it: every publishable crate packages
-  # against the others through cargo's local overlay registry. The real upload is nightly, so this is
-  # what keeps a broken crate visible on the push that broke it rather than on the next morning.
-  rust-publish-dry-run:
-    name: Rust · package (dry run)
-    # After check and test, mirroring the TypeScript side: verify, then (dry-run) publish. Its success
-    # is the Rust arc's verdict, which the npm publish waits on.
-    needs: [rust-check, rust-test]
+  # Two suites, one job: the merged unit run (one shared jsdom environment; the isolated per-package
+  # shards and tool-capture's browser contracts run nightly) and the host backends, which run under
+  # their own config because they are a different environment, not a second runner for the same tests.
+  # Separate steps keep a failure named.
+  ts-test:
+    name: Test · TypeScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo publish --workspace --dry-run --no-verify
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - name: Unit tests
+        run: npm run test
+      - name: Host backend tests
+        run: npm run test:host
+
+  # Whole repository, not per package: a design note claiming material came from elsewhere is exactly
+  # what this exists to catch, and that note ships in no package. A hard stop beside the tests rather
+  # than a hygiene warning, because what it guards is the right to ship at all.
+  compliance:
+    name: Compliance · license provenance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: license-provenance:check
 
   # Every leg starts immediately rather than behind a preflight job. There used to be a `build-check`
   # job (`packages:check && typecheck`) that all of them needed, but it put a serial 1m23s in front of
   # every leg on every push. Its only real effect was fail-fast, declining to start the other jobs when
   # the graph does not compile — trading wall clock on every GREEN push for runner minutes on the rarer
-  # RED one, the wrong direction here. The jobs that depend on a working build (the publishes) still
-  # wait for this one.
-  build:
-    name: TypeScript · build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-
-      # The single build of the graph per push, handed to the npm publish jobs so they do not repeat
-      # the full `tsc -b` over all 141 projects. Safe to reuse across the version
-      # stamp that edge-publish applies afterwards: nothing inlines the package version at build time
-      # (the one manifest read, tool-capture's captureServer, does it at runtime), so dist does not
-      # depend on the version in package.json.
-      #
-      # Tarred first because upload-artifact is slow over many small files, and 141 dist directories
-      # are ~76MB of them — as one tarball it is 5.8MB. Uploaded unconditionally rather than gated on
-      # the release-channel branch: it is cheap, and a gate that drifted from the publish job's own
-      # condition would silently starve it rather than fail it.
-      - name: Tar dist for the publish jobs
-        run: tar -czf dist.tgz packages/*/dist
-      - uses: actions/upload-artifact@v6
-        with:
-          name: dist-${{ github.sha }}
-          path: dist.tgz
-          retention-days: 1
-
-  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
-  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
-  test-fast:
-    name: TypeScript · unit tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test
-
-  test-host:
-    name: TypeScript · host backend tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test:host
-
-  # Only the gates that protect what a user installs: a manifest that resolves, imports that resolve
-  # through the blessed lanes, no orphaned dist, and license provenance (which must block every run).
-  # The convention and bookkeeping gates run in hygiene.yml. Locally, `npm run check` with no env var
-  # still runs every gate.
-  quality-structure:
-    name: Packaging · manifests and license
+  # RED one, the wrong direction here. The publish still waits for every Package job.
+  package-npm:
+    name: Package · npm
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -171,11 +128,82 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      - run: npm run check
+      # `tsc -b` over every package, tests included, against its dependencies' emitted declarations —
+      # what a consumer of the published packages compiles against.
+      - name: Build
+        run: npm run build
+      # The gates that protect what a user installs: manifests that resolve, imports through the
+      # blessed lanes, the SDK's subpaths, and no orphaned dist. The convention and bookkeeping gates
+      # run in hygiene.yml; locally, `npm run check` with no env var still runs every gate.
+      - name: Packaging checks
+        run: npm run check
         env:
-          FLIGHT_CHECK_GATES: >-
-            packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
+          FLIGHT_CHECK_GATES: packages:check,module-specifiers:check,package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
 
+      # Handed to the publish so it does not repeat the full `tsc -b` over all 141 projects. Safe to
+      # reuse across the version stamp the publish applies afterwards: nothing inlines the package
+      # version at build time (the one manifest read, tool-capture's captureServer, does it at runtime).
+      # The four wasm packages are in this build too, compiled against committed type stubs; the publish
+      # replaces their dist with `Package · wasm`'s real one.
+      #
+      # Tarred first because upload-artifact is slow over many small files, and 141 dist directories
+      # are ~76MB of them — as one tarball it is 5.8MB. Uploaded unconditionally rather than gated on
+      # the release-channel branch: it is cheap, and a gate that drifted from the publish job's own
+      # condition would silently starve it rather than fail it.
+      - name: Tar dist for the publish
+        run: tar -czf dist.tgz packages/*/dist
+      - uses: actions/upload-artifact@v6
+        with:
+          name: dist-${{ github.sha }}
+          path: dist.tgz
+          retention-days: 1
+
+  # Builds and validates every crate's .crate file against the others through cargo's local overlay
+  # registry, without uploading. The real crates.io upload is the nightly snapshot of main, so this is
+  # what keeps a crate that cannot publish visible on the push that broke it.
+  package-crates:
+    name: Package · crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo package --workspace --no-verify
+
+  # The four wasm npm packages are compiled Rust: wasm-pack builds each crate for the wasm32 target —
+  # the only job that compiles these crates for the target they ship to — and their npm builds wrap
+  # the result. Packaged before anything publishes, so a wasm failure blocks the release instead of
+  # leaving a snapshot version on npm without its wasm packages.
+  package-wasm:
+    name: Package · wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+      - run: npm ci
+      - name: Build the wasm crates
+        run: npm run build:wasm
+      - name: Build the wasm npm packages
+        run: |
+          npm run build -w @flighthq/bitmap-wasm \
+            -w @flighthq/compression-wasm \
+            -w @flighthq/physics2d-abi-wasm \
+            -w @flighthq/physics3d-abi-wasm
+      - name: Tar wasm dist for the publish
+        run: tar -czf wasm-dist.tgz packages/*-wasm/dist
+      - uses: actions/upload-artifact@v6
+        with:
+          name: wasm-dist-${{ github.sha }}
+          path: wasm-dist.tgz
+          retention-days: 1
 
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
@@ -194,13 +222,11 @@ jobs:
     # never hand-pushed, racing the promotion's publish on a different concurrency key for the same version.
     # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
     name: Publish · npm next
-    # Gated on both arcs. TypeScript: the published packages compile and emit (build), behave (unit
-    # tests, and host tests for the published host-* backends), and package correctly with clean
-    # license provenance. Rust: the authoritative source the generated packages and the wasm packages
-    # come from checks, tests, and packages (the dry run waits on check and test). A snapshot version
-    # therefore means both arcs passed for that commit, as `edge` and stable already do. Not on render
-    # smoke (the flakiest leg) or anything in hygiene.yml.
-    needs: [build, test-fast, test-host, quality-structure, rust-publish-dry-run]
+    # Waits on every Test, Compliance, and Package job: both languages tested, provenance clean, and
+    # every registry's artifact built — so a snapshot version means the whole SDK passed for that
+    # commit, as `edge` and stable already do. Not on render smoke (the flakiest leg) or anything in
+    # hygiene.yml. One job publishes the TypeScript and wasm packages together.
+    needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
@@ -222,13 +248,21 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm ci
 
-      # Reuses the `build` job's output instead of rebuilding the graph. See the note on the tar step
-      # in `build` for why dist survives the version stamp below.
+      # Reuses the Package jobs' output instead of rebuilding. The wasm packages' dist from
+      # `Package · npm` was compiled against type stubs, so it is removed and replaced with
+      # `Package · wasm`'s real build; nothing published comes from a stub build.
       - uses: actions/download-artifact@v7
         with:
           name: dist-${{ github.sha }}
-      - name: Restore dist from the build job
-        run: tar -xzf dist.tgz
+      - uses: actions/download-artifact@v7
+        with:
+          name: wasm-dist-${{ github.sha }}
+      - name: Restore dist from the Package jobs
+        run: |
+          set -euo pipefail
+          tar -xzf dist.tgz
+          rm -rf packages/*-wasm/dist
+          tar -xzf wasm-dist.tgz
 
       - name: Compute snapshot version and dist-tag
         id: edge
@@ -244,8 +278,8 @@ jobs:
           cat "${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_STEP_SUMMARY}"
       - name: Stamp the graph to the snapshot version
         run: npm run version:packages ${{ steps.edge.outputs.version }}
-      - name: Publish snapshot to npm (excluding wasm)
-        run: npm run release -- --no-build --exclude wasm --tag ${{ steps.edge.outputs.tag }}
+      - name: Publish snapshot to npm
+        run: npm run release -- --no-build --tag ${{ steps.edge.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
@@ -263,54 +297,6 @@ jobs:
           flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
           version: ${{ steps.edge.outputs.version }}
 
-  wasm-edge-publish:
-    name: Publish · npm next (wasm)
-    # After the npm publish, which already waited on both the TypeScript and the Rust arcs.
-    needs: edge-publish
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    concurrency:
-      group: wasm-edge-publish-${{ github.ref }}
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-          registry-url: https://registry.npmjs.org
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      - name: Install wasm-pack
-        run: cargo install wasm-pack
-      - run: npm ci
-      - run: npm run build:wasm
-      - name: Build wasm package dist
-        run: |
-          npm run build -w @flighthq/bitmap-wasm \
-            -w @flighthq/compression-wasm \
-            -w @flighthq/physics2d-abi-wasm \
-            -w @flighthq/physics3d-abi-wasm
-      - name: Compute snapshot version and dist-tag
-        id: edge
-        run: npx tsx scripts/edge-version.ts >> "$GITHUB_OUTPUT"
-      - name: Stamp the graph to the snapshot version
-        env:
-          EDGE_VERSION: ${{ steps.edge.outputs.version }}
-        run: npm run version:packages "${EDGE_VERSION}"
-      - name: Publish wasm snapshot to npm
-        env:
-          EDGE_TAG: ${{ steps.edge.outputs.tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: 'true'
-        run: npm run release -- --no-build --tag "${EDGE_TAG}" wasm
-
   render-test:
     # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
     # e.g. a WebGPU-only smoke failure points at that backend rather than at rendering as a whole.
@@ -322,7 +308,7 @@ jobs:
     # harness that maps every @flighthq/* import to package SOURCE, so the emitted package dist is
     # never read. (Parity, which imports the SDK from dist, runs nightly and builds it there.) Each leg
     # builds its own harness as a separate step, so a harness that does not build fails that step —
-    # visibly not a rendering failure — and a package type error still fails `TypeScript · build`.
+    # visibly not a rendering failure — and a package type error still fails `Package · npm`.
     name: Render · ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 30

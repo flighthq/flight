@@ -53,9 +53,10 @@ describe('hygiene workflow', () => {
 });
 
 describe('CI product gate', () => {
-  it('blocks on license provenance', () => {
-    const steps = readWorkflow('tests').jobs['quality-structure'].steps;
-    const gates = steps.map((step) => step.env?.FLIGHT_CHECK_GATES ?? '').join(',');
+  it('blocks on license provenance, and the publish waits for it', () => {
+    const jobs = readWorkflow('tests').jobs as Record<string, Workflow['jobs'][string] & { needs?: string[] }>;
+    const gates = jobs.compliance.steps.map((step) => step.env?.FLIGHT_CHECK_GATES ?? '').join(',');
     expect(gates).toContain('license-provenance:check');
+    expect(jobs['edge-publish'].needs).toContain('compliance');
   });
 });
