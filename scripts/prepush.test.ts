@@ -1,5 +1,6 @@
 import {
   affectsHostBackends,
+  affectsRustFormat,
   affectsSharedPackageTests,
   affectsTools,
   resolveChangedTestArguments,
@@ -65,6 +66,22 @@ describe('affectsHostBackends', () => {
 
   it('ignores SDK packages', () => {
     expect(affectsHostBackends(['packages/mesh/src/mesh.ts'])).toBe(false);
+  });
+});
+
+describe('affectsRustFormat', () => {
+  it('runs for crate sources and the workspace manifests', () => {
+    expect(affectsRustFormat(['crates/flight-math/src/lib.rs'])).toBe(true);
+    expect(affectsRustFormat(['Cargo.toml'])).toBe(true);
+    expect(affectsRustFormat(['Cargo.lock'])).toBe(true);
+  });
+
+  it('skips a change with no Rust', () => {
+    expect(affectsRustFormat(['packages/mesh/src/mesh.ts', 'agents/commands.md'])).toBe(false);
+  });
+
+  it('runs when changed-file discovery fails', () => {
+    expect(affectsRustFormat(null)).toBe(true);
   });
 });
 

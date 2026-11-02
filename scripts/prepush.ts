@@ -1,15 +1,18 @@
 // Pre-push gate: a fast, change-scoped confidence check — deliberately NOT a copy of CI.
-// CI (.github/workflows/tests.yml) runs the full build and the complete suite; this hook
+// CI (.github/workflows/tests.yml) runs the build and the product tests, hygiene.yml the rest; this hook
 // only runs what the push is likely to have affected, so it stays fast as the repo grows.
 //
 //   1. changed-file classify  — first, so a closed Markdown-only change can skip typecheck
-//   2. typecheck              — unless every changed file is Markdown documentation
-//   3. lane routing           — changed paths select which test runners to invoke:
+//   2. format                 — TS/JSON/Markdown always, Rust when Rust changed. Seconds, and run
+//                               before anything slow: CI reports format as hygiene and never fails on
+//                               it, so this hook is the one place it blocks, and it should fail fast.
+//   3. typecheck              — unless every changed file is Markdown documentation
+//   4. lane routing           — changed paths select which test runners to invoke:
 //        packages/<sdk>/src/  → vitest run --changed (SDK unit tests)
 //        packages/host-*/src/ → npm run test:host
 //        packages/tool-*/src/ → npm run test:tools
 //
-// The repository-wide script suite is deliberately CI-only here. Its source gates build bundles,
+// The repository-wide script suite is deliberately left to the hygiene workflow. Its source gates build bundles,
 // create TypeScript programs, and scan the whole tree, so even a changed-path trigger is too coarse
 // for an interactive push hook. Run `npm run test:scripts` explicitly while changing scripts.
 //
@@ -88,6 +91,13 @@ export function shouldRunPrepushTypecheck(changedFiles: readonly string[] | null
   return changedFiles === null || changedFiles.length === 0 || changedFiles.some((file) => !file.endsWith('.md'));
 }
 
+export function affectsRustFormat(changedFiles: readonly string[] | null): boolean {
+  return (
+    changedFiles === null ||
+    changedFiles.some((file) => file.startsWith('crates/') || /^Cargo\.(toml|lock)$/.test(file))
+  );
+}
+
 export function affectsSharedPackageTests(changedFiles: readonly string[]): boolean {
   return changedFiles.some(
     (file) =>
@@ -135,6 +145,13 @@ function main(): void {
     base === null
       ? null
       : ((capture(`git diff --name-only ${base}...HEAD`) ?? undefined)?.split('\n').filter(Boolean) ?? null);
+
+  run('npm run format:check');
+  if (affectsRustFormat(changed)) {
+    run('cargo fmt --all -- --check');
+  } else {
+    console.log(pc.dim('pre-push: no Rust changed — skipping cargo fmt'));
+  }
 
   if (shouldRunPrepushTypecheck(changed)) {
     run('npm run typecheck');
