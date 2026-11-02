@@ -30,9 +30,8 @@ on:
   pull_request:
   push:
     branches: [main, develop]
-  # Reference Image Check used to be a standalone manually-dispatchable workflow. Keep that operational
-  # escape hatch after folding it into CI; a manual CI run deliberately executes the full gate so its
-  # success means the same thing as a push-triggered success.
+  # A manual CI run deliberately executes the full gate (every path filter forced on), so its success
+  # means the same thing as a push-triggered success.
   workflow_dispatch:
 
 # Electron's postinstall downloads a ~100MB prebuilt binary from GitHub releases on the critical path of
@@ -376,13 +375,13 @@ jobs:
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
     # dist-tag, so `latest` is untouched. See agents/packaging.md.
     #
-    # ★ DEVELOP ONLY — THE `main` ARM MOVED TO edge-publish.yml AND IS NOT DEAD CODE HERE, IT IS A
+    # ★ DEVELOP ONLY — THE `main` ARM MOVED TO promote.yml (via edge-publish.yml) AND IS NOT DEAD CODE HERE, IT IS A
     # DUPLICATE. `main` advances only through promote.yml, which pushes with the default GITHUB_TOKEN,
     # and GitHub raises no workflow-triggering event for that token. So this job could never fire on
     # `main` in normal operation — the `edge` tag silently stopped advancing, which is the defect
-    # edge-publish.yml now fixes by explicit dispatch. Keeping `refs/heads/main` here would leave a
+    # Promote now fixes by calling edge-publish.yml once main has moved. Keeping `refs/heads/main` here would leave a
     # second publisher for the same channel, reachable only by a hand-push to a branch documented as
-    # never hand-pushed, racing the dispatched run on a different concurrency key for the same version.
+    # never hand-pushed, racing the promotion's publish on a different concurrency key for the same version.
     # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
     name: Publish · npm · ${{ github.ref_name }} snapshot
     needs: [build, test-fast]

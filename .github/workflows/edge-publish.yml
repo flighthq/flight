@@ -2,55 +2,36 @@ name: Edge publish
 
 # Publishes the `edge` snapshot for a commit Promote has just adopted as `main`.
 #
-# ★ WHY THIS WORKFLOW EXISTS AT ALL: A GITHUB_TOKEN PUSH CREATES NO WORKFLOW RUN.
-# `promote.yml` fast-forwards main with the default `GITHUB_TOKEN`, and GitHub deliberately does not
-# start a workflow run from events raised by that token — the recursion guard. So `tests.yml` never
-# fires on `main`, its `edge-publish` job never runs there, and the `edge` dist-tag silently stops
-# advancing. Nothing reports this: there is no failed run to look at, only an absence.
+# ★ CALLED BY PROMOTE, AS A JOB OF THE PROMOTION RUN. `promote.yml` fast-forwards main with the default
+# `GITHUB_TOKEN`, and GitHub starts no workflow run from events raised by that token — the recursion
+# guard — so nothing triggered by the push could ever publish `edge`. Promote therefore calls this
+# workflow directly once main has moved. A called workflow needs no dispatch permission and no new
+# credential, and its result is part of the promotion's own run.
 #
-# ★ WHY `workflow_dispatch` AND NOT `workflow_run`. `workflow_run` chains off a *run*, and the whole
-# problem is that no run is created. `workflow_dispatch` and `repository_dispatch` are the two
-# documented exceptions to the recursion guard — GITHUB_TOKEN CAN raise them — so an explicit dispatch
-# is the one mechanism that closes the gap without a new credential. A PAT or GitHub App would also
-# work and is deliberately not used: it means a long-lived secret whose only purpose is to defeat a
-# guard the platform already exempts this event from.
-#
-# THIS FILE MUST LIVE ON THE DEFAULT BRANCH (`main`) TO BE DISPATCHABLE, for the same reason
-# promote.yml documents: Actions registers `workflow_dispatch` from the default branch only.
-#
-# ★ FIRST ROLLOUT IS NOT SELF-STARTING, AND THE FIRST PROMOTION MUST NOT BE ASSUMED PUBLISHED.
-# This workflow becomes dispatchable only once it is ON main. The promotion that CARRIES it to main is
-# therefore the one promotion that cannot dispatch it: at the moment `promote.yml` runs its dispatch
-# step, main does not yet have the file registered, and `gh workflow run edge-publish.yml` fails with
-# "could not find any workflows named edge-publish.yml".
-#
-# That failure is loud, not silent — the dispatch step is fail-closed, so the promotion goes RED and
-# says so. Which is the correct behaviour and also the trap: the red is expected exactly once, and an
-# operator who dismisses it as a rollout artifact will also have skipped the edge publish for that
-# commit without noticing. THE FIRST PROMOTION AFTER THIS LANDS PUBLISHES NOTHING TO `edge`.
-#
-# The one-time bootstrap, to be performed by a human and NOT automated (an auto-retry here would hide
-# the very case that needs looking at):
-#
-#   1. Land promote.yml + edge-publish.yml on `main` — through the normal promotion, whose dispatch
-#      step is expected to fail. Record that run; it is the known-red one.
-#   2. Confirm the workflow is registered: `gh workflow list` should now show "Edge publish".
-#   3. Dispatch it once, by hand, for the commit main now points at:
-#        gh workflow run edge-publish.yml --ref main -f sha="$(git rev-parse origin/main)"
-#      Watch that run to completion. This is the visible, deliberate act that closes the gap the
-#      failed step left, and it exercises the whole receiver path once before anything depends on it.
-#   4. Verify the channel actually moved — `npm dist-tag ls @flighthq/sdk` should show `edge` at the
-#      version this run published. That check is the real acceptance for the whole mechanism; every
-#      local gate up to here proves only that the wiring is right, never that a package was published.
-#   5. From the NEXT promotion onward the dispatch is automatic and no further manual step exists.
-#
-# A staged alternative, if the red promotion is unacceptable: land edge-publish.yml on main FIRST, on
-# its own, and only then land the promote.yml dispatch step. The receiver is inert until something
-# dispatches it, so shipping it early costs nothing and removes the known-red run entirely. This is the
-# safer order and is preferred where the branch protection allows two passes.
+# ★ ALSO DISPATCHABLE BY HAND, to re-publish a commit main has adopted:
+#     gh workflow run edge-publish.yml --ref main -f sha="$(git rev-parse origin/main)"
+# Acceptance is the dist-tag, not a green run: `npm dist-tag ls @flighthq/sdk` should show `edge` at
+# the version the run published. Because either caller can supply the sha, the jobs below re-verify
+# it from the repository (on main, CI green) instead of trusting whoever passed it.
 run-name: Edge publish · ${{ inputs.sha }} · from promote run ${{ inputs.promote_run_id }}
 
 on:
+  workflow_call:
+    inputs:
+      sha:
+        description: The exact promoted commit to publish. Must already be on main.
+        required: true
+        type: string
+      promote_run_id:
+        description: The promote.yml run that called this, for the run summary.
+        required: false
+        type: string
+        default: ''
+    secrets:
+      NPM_TOKEN:
+        required: true
+      FLIGHT_COMPILER_DISPATCH_TOKEN:
+        required: true
   workflow_dispatch:
     inputs:
       sha:
@@ -58,7 +39,7 @@ on:
         required: true
         type: string
       promote_run_id:
-        description: The promote.yml run that dispatched this, for run correlation.
+        description: The promote.yml run this re-publishes for, if any (shown in the run summary).
         required: false
         type: string
         default: ''
@@ -71,7 +52,7 @@ concurrency:
   # last-write-wins the OLDER build could land on `edge` and stay there. Serializing per channel is the
   # only key that makes the tag's final value a function of promotion order.
   #
-  # Retries and duplicate dispatches of one candidate are handled by the publisher being idempotent per
+  # Retries and duplicate runs of one candidate are handled by the publisher being idempotent per
   # package, not by the concurrency key. Never cancel mid-publish: a cancelled run leaves the graph
   # half-published.
   group: edge-publish-main
@@ -92,9 +73,9 @@ jobs:
       actions: read # read tests.yml run conclusions for the dispatched sha
       id-token: write # npm provenance
     steps:
-      # ★ CHECK OUT THE INPUT, THEN VERIFY IT. The sha arrives as a dispatch input, which is caller-
-      # supplied data — this workflow is dispatchable by hand as well as by promote.yml. Everything
-      # below re-establishes from the repository what the input only claims.
+      # ★ CHECK OUT THE INPUT, THEN VERIFY IT. The sha is caller-supplied data — this workflow is
+      # dispatchable by hand as well as called by promote.yml. Everything below re-establishes from
+      # the repository what the input only claims.
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.sha }}
@@ -126,7 +107,7 @@ jobs:
           echo "${CANDIDATE} is on main and checked out."
 
       # The same gate release.yml applies to a tag: prove THIS tree passed CI. Promote already resolved
-      # the candidate from green runs, but this workflow is independently dispatchable, so it re-proves
+      # the candidate from green runs, but this workflow is also dispatchable by hand, so it re-proves
       # it rather than trusting the caller. Absence of a run is never treated as green.
       - name: Verify the dispatched commit passed CI
         env:
@@ -161,9 +142,9 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm ci
 
-      # tests.yml's edge-publish reuses its own run's `build` artifact. This workflow is a separate run
-      # with no such artifact, so it builds the graph itself. That is the cost of decoupling the publish
-      # from the run that tested the commit, and it is the reason the CI gate above is a hard check
+      # tests.yml's edge-publish reuses its own run's `build` artifact. The promotion run that calls this
+      # did not build, so it builds the graph itself. That is the cost of publishing from a different run
+      # than the one that tested the commit, and it is the reason the CI gate above is a hard check
       # rather than an inherited `needs:`.
       - run: npm run build
 
@@ -220,9 +201,8 @@ jobs:
           flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
           version: ${{ steps.edge.outputs.version }}
 
-      # Correlation in the direction that is fully supported: this run names the promote run that asked
-      # for it, in `run-name` above and in the summary here. The reverse link is best-effort on the
-      # promote side, because the dispatch API returns no run id.
+      # Names the promotion this publish belongs to. When called by promote.yml it is the same run; a
+      # hand dispatch may pass the promotion it re-publishes for.
       # ★ EVERY INTERPOLATED VALUE ARRIVES THROUGH `env`, INCLUDING IN THE MARKDOWN.
       # `${{ inputs.sha }}` written straight into a `run:` block is substituted before bash ever sees
       # the script, so a crafted input becomes shell source — and a Markdown table is still a shell
@@ -244,7 +224,7 @@ jobs:
             echo "| candidate | \`${CANDIDATE}\` |"
             echo "| version | \`${EDGE_VERSION}\` |"
             echo "| dist-tag | \`${EDGE_TAG}\` |"
-            echo "| dispatched by | promote run \`${PROMOTE_RUN_ID}\` |"
+            echo "| promote run | \`${PROMOTE_RUN_ID:-none (dispatched by hand)}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
   wasm-edge-publish:

@@ -3,15 +3,15 @@ import { join } from 'node:path';
 
 import { parse } from 'yaml';
 
-// Static acceptance for the promote -> edge-publish dispatch contract. The external gate is a real
-// `edge` dist-tag after a future promotion, which nothing here can or should reach: dispatching a
-// workflow, promoting, or publishing are all live actions. What IS checkable without any of that is
-// the contract itself — that the dispatch exists, is wired to the promoted sha, cannot fail silently,
-// and that the receiver re-verifies what it was handed.
+// Static acceptance for the promote -> edge-publish contract. The external gate is a real `edge`
+// dist-tag after a future promotion, which nothing here can or should reach: promoting and publishing
+// are live actions. What IS checkable without either is the contract itself — that a promotion which
+// moves main publishes exactly that commit, that the publish cannot fail silently, that the push job
+// never holds the publish credential, and that the publisher re-verifies what it was handed.
 //
 // ★ THESE ASSERT ABSENCES AS WELL AS PRESENCES, and the absences are the load-bearing half. The defect
-// being fixed was an absence — no run, no error, no edge — so a test suite that only checked for the
-// presence of a dispatch step would pass against a remedy that never fires.
+// these guard against was an absence — no run, no error, no edge — so a test suite that only checked
+// for the presence of a publish job would pass against a remedy that never fires.
 
 const WORKFLOWS = join(__dirname, '..', '.github', 'workflows');
 
@@ -23,53 +23,58 @@ function parseWorkflow(name: string): Record<string, unknown> {
   return parse(readWorkflow(name)) as Record<string, unknown>;
 }
 
-function promoteSteps(): { name?: string; if?: string; run?: string; id?: string }[] {
-  const promote = parseWorkflow('promote') as {
-    jobs: { promote: { steps: { name?: string; if?: string; run?: string; id?: string }[] } };
-  };
-  return promote.jobs.promote.steps;
-}
-
 function stepNamed(steps: { name?: string }[], fragment: string): Record<string, unknown> {
   const found = steps.find((step) => step.name?.includes(fragment));
   if (found === undefined) throw new Error(`no step whose name contains ${JSON.stringify(fragment)}`);
   return found as Record<string, unknown>;
 }
 
-describe('edge-publish dispatch contract', () => {
-  it('promote dispatches edge-publish.yml with the resolved candidate sha', () => {
-    const dispatch = stepNamed(promoteSteps(), 'Dispatch the edge publish');
-    const run = String(dispatch.run);
-    expect(run).toContain('gh workflow run edge-publish.yml');
+interface WorkflowJob {
+  'continue-on-error'?: boolean;
+  if?: string;
+  needs?: string | string[];
+  outputs?: Record<string, string>;
+  permissions?: Record<string, string>;
+  secrets?: Record<string, string>;
+  steps?: { name?: string; if?: string; run?: string; id?: string }[];
+  uses?: string;
+  with?: Record<string, string>;
+}
+
+function promoteJobs(): Record<string, WorkflowJob> {
+  return (parseWorkflow('promote') as { jobs: Record<string, WorkflowJob> }).jobs;
+}
+
+describe('edge-publish promotion contract', () => {
+  it('promote calls edge-publish.yml with the resolved candidate sha after main moved', () => {
+    const job = promoteJobs()['edge-publish'];
+    expect(job.uses).toBe('./.github/workflows/edge-publish.yml');
+    expect(job.needs).toBe('promote');
     // The exact promoted commit, not a branch name — publishing "whatever main is now" would race a
     // later promotion and publish a commit this run never resolved.
-    expect(run).toContain('sha=${CANDIDATE}');
-    expect(String(dispatch.if)).toContain("steps.push.outputs.advanced == 'true'");
+    expect(job.with?.sha).toBe('${{ needs.promote.outputs.sha }}');
+    expect(job.if).toBe("${{ needs.promote.outputs.advanced == 'true' }}");
+    // `advanced` must come from the push step's before/after comparison, not from the candidate alone.
+    expect(promoteJobs().promote.outputs?.advanced).toBe('${{ steps.push.outputs.advanced }}');
   });
 
-  it('promote holds actions: write, without which the dispatch is a 403', () => {
-    const promote = parseWorkflow('promote') as {
-      jobs: { promote: { permissions: Record<string, string> } };
-    };
-    // `gh workflow run` is a write on the actions scope. With `actions: read` the promotion still goes
-    // green and the dispatch is refused — the exact silent absence this change removes, reintroduced
-    // by a plausible least-privilege trim.
-    expect(promote.jobs.promote.permissions.actions).toBe('write');
-    expect(promote.jobs.promote.permissions.contents).toBe('write');
+  it('a failed publish fails the promotion rather than passing silently', () => {
+    // The publish is a job of the promotion run, so its failure is the run's failure. A
+    // continue-on-error here would let the promotion go green having published nothing.
+    expect(promoteJobs()['edge-publish']['continue-on-error']).toBeUndefined();
   });
 
-  it('the dispatch fails the promote job rather than passing silently', () => {
-    const dispatch = stepNamed(promoteSteps(), 'Dispatch the edge publish');
-    const run = String(dispatch.run);
-    // `set -e` is what turns a failed `gh workflow run` into a failed job. Without it the command's
-    // exit status is discarded and the promotion goes green having published nothing — the original
-    // defect, reintroduced one layer up.
-    expect(run).toContain('set -euo pipefail');
-    expect(dispatch['continue-on-error']).toBeUndefined();
+  it('the job that pushes main holds no publish credential', () => {
+    const promote = promoteJobs().promote;
+    expect(promote.permissions).toEqual({ actions: 'read', contents: 'write' });
+    const publish = promoteJobs()['edge-publish'];
+    expect(publish.permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
+    expect(Object.keys(publish.secrets ?? {}).sort()).toEqual(['FLIGHT_COMPILER_DISPATCH_TOKEN', 'NPM_TOKEN']);
+    for (const step of promote.steps ?? []) expect(JSON.stringify(step), step.name).not.toContain('secrets.');
   });
 
-  it('only a push that actually moved main dispatches a publish', () => {
-    const push = stepNamed(promoteSteps(), 'Fast-forward main');
+  it('only a push that actually moved main publishes', () => {
+    const push = stepNamed(promoteJobs().promote.steps ?? [], 'Fast-forward main');
     const run = String(push.run);
     // A no-op push succeeds at the git level; the contract is "non-no-op", so main's tip is compared
     // before and after rather than inferred from the exit code.
@@ -78,43 +83,21 @@ describe('edge-publish dispatch contract', () => {
     expect(run).toContain('git ls-remote origin refs/heads/main');
   });
 
-  it('correlation is best-effort and cannot fail the promotion', () => {
-    const link = stepNamed(promoteSteps(), 'Link the dispatched edge-publish run');
-    // The dispatch already succeeded by this point; a run that has not surfaced yet is a missing link,
-    // not a failed promotion. This is the one step that may legitimately fail open.
-    expect(link['continue-on-error']).toBe(true);
-  });
-
-  it('correlation asks gh for fields it actually returns', () => {
-    const run = String(stepNamed(promoteSteps(), 'Link the dispatched edge-publish run').run);
-    // ★ `gh run list --json` HAS NO `title`. Requesting it exits non-zero, and since this step is
-    // `continue-on-error` that failure is invisible — a correlation step that never correlates. The
-    // supported field is `displayTitle`; `headSha` is the exact one, since the dispatch runs `--ref
-    // main` right after main was moved to the candidate.
-    // Comment lines are stripped first: the rationale above the command necessarily names the wrong
-    // field, and matching prose would fail on the explanation rather than on the code.
-    const commands = run
-      .split('\n')
-      .filter((line) => !line.trim().startsWith('#'))
-      .join('\n');
-    expect(commands).toContain('displayTitle');
-    expect(commands).toContain('headSha');
-    expect(commands).not.toMatch(/--json[^\n]*(^|[,\s])title([,\s]|$)/m);
-  });
-
-  it('the receiver is dispatch-only — not workflow_run, not push', () => {
+  it('the receiver is called or dispatched — not workflow_run, not push', () => {
     const receiver = parseWorkflow('edge-publish') as { on: Record<string, unknown> };
-    expect(Object.keys(receiver.on)).toEqual(['workflow_dispatch']);
-    // workflow_run would chain off a run, and the absent run is the entire problem being solved.
+    expect(Object.keys(receiver.on).sort()).toEqual(['workflow_call', 'workflow_dispatch']);
+    // A push made with the default token starts no run, so a push-triggered publisher never fires,
+    // and workflow_run would chain off that same absent run.
     expect(receiver.on.workflow_run).toBeUndefined();
     expect(receiver.on.push).toBeUndefined();
   });
 
   it('the receiver requires a sha input and keys concurrency on it', () => {
     const receiver = parseWorkflow('edge-publish') as {
-      on: { workflow_dispatch: { inputs: Record<string, { required?: boolean }> } };
+      on: Record<'workflow_call' | 'workflow_dispatch', { inputs: Record<string, { required?: boolean }> }>;
       concurrency: { group: string; 'cancel-in-progress': boolean };
     };
+    expect(receiver.on.workflow_call.inputs.sha.required).toBe(true);
     expect(receiver.on.workflow_dispatch.inputs.sha.required).toBe(true);
     // ★ CHANNEL-GLOBAL. `edge` is one dist-tag; two concurrent publishes race on it and last-write-wins
     // can leave the OLDER build on the tag. Keying on the candidate would permit exactly that, so the
@@ -130,7 +113,7 @@ describe('edge-publish dispatch contract', () => {
     };
     const verify = stepNamed(receiver.jobs.publish.steps, 'Verify the checkout is the dispatched commit');
     const run = String(verify.run);
-    // The input is caller-supplied — this workflow is hand-dispatchable too — so the checkout is
+    // The input is caller-supplied — this workflow is hand-dispatchable as well as called — so the checkout is
     // re-read and the commit's membership of main is re-established from the repository.
     expect(run).toContain('git rev-parse HEAD');
     expect(run).toContain('merge-base --is-ancestor');
@@ -185,10 +168,8 @@ describe('edge-publish dispatch contract', () => {
 
   it('the values that carry candidate data are quoted where they are used', () => {
     const receiver = readWorkflow('edge-publish');
-    const promote = readWorkflow('promote');
     // Unquoted, a value containing whitespace word-splits and a later argument becomes a separate one.
-    // These three carry caller-influenced or computed data into commands.
-    expect(promote).toContain('--field "sha=${CANDIDATE}"');
+    // These carry caller-influenced or computed data into commands.
     expect(receiver).toContain('npm run version:packages "${EDGE_VERSION}"');
     expect(receiver).toContain('--tag "${EDGE_TAG}"');
   });
@@ -196,25 +177,19 @@ describe('edge-publish dispatch contract', () => {
   it('no credential beyond the default token is introduced', () => {
     const receiver = readWorkflow('edge-publish');
     const promote = readWorkflow('promote');
-    // The whole reason workflow_dispatch was chosen over a PAT/App is that the default token may raise
-    // it. A secret appearing here would mean that argument had quietly been abandoned.
+    // Promote reaches the publisher by calling it, which the default token permits; a PAT or App
+    // appearing here would mean a long-lived secret had been added to defeat the recursion guard.
     for (const source of [receiver, promote]) {
       expect(source).not.toMatch(/secrets\.(GH_PAT|PAT|APP_ID|APP_PRIVATE_KEY|BOT_TOKEN)/);
     }
     expect(promote).toContain('GH_TOKEN: ${{ github.token }}');
-    // NPM_TOKEN is the publish credential and predates this change; it is not a trigger credential.
+    // NPM_TOKEN is the publish credential, passed only to the publish job; it is not a trigger credential.
     expect(receiver).toContain('secrets.NPM_TOKEN');
   });
 
-  it('the first-rollout bootstrap is written down where the operator will be', () => {
+  it('the hand re-publish is written down where the operator will be', () => {
     const receiver = readWorkflow('edge-publish');
-    // The promotion that carries this file to main cannot dispatch it — the workflow is not registered
-    // until it IS on main. That run goes red (the dispatch is fail-closed) and its edge publish does
-    // not happen. Both facts have to be stated, or the expected red gets dismissed as a rollout
-    // artifact and the skipped publish goes with it.
-    expect(receiver).toContain('FIRST ROLLOUT IS NOT SELF-STARTING');
-    expect(receiver).toContain('THE FIRST PROMOTION AFTER THIS LANDS PUBLISHES NOTHING TO `edge`');
-    // The manual step must be spelled out as a command, and the acceptance must be the dist-tag rather
+    // The manual path must be spelled out as a command, and the acceptance must be the dist-tag rather
     // than a green run — every local gate proves wiring, never that a package was published.
     expect(receiver).toContain('gh workflow run edge-publish.yml --ref main');
     expect(receiver).toContain('npm dist-tag ls @flighthq/sdk');
