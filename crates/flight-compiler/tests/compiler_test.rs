@@ -21792,3 +21792,45 @@ pub fn process(decoders: Option<u32>) -> u32 {
         "should still emit the null check: {output}"
     );
 }
+
+#[test]
+fn let_else_tuple_with_some_wildcard() {
+    let source = r#"
+pub fn process(field: Option<u32>, caret: Option<u32>) -> u32 {
+    let (Some(field), Some(_)) = (field, caret) else {
+        return 0;
+    };
+    field
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("const _ ="),
+        "should not bind wildcard pattern: {output}"
+    );
+    assert!(
+        output.contains("=== undefined"),
+        "should check both elements for absent: {output}"
+    );
+}
+
+#[test]
+fn let_else_tuple_with_none_pattern() {
+    let source = r#"
+pub fn process(a: Option<u32>, b: Option<u32>) -> u32 {
+    let (Some(value), None) = (a, b) else {
+        return 0;
+    };
+    value
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("const None"),
+        "should not emit None as an identifier binding: {output}"
+    );
+    assert!(
+        output.contains("!== undefined"),
+        "should check None element is absent (inverted condition): {output}"
+    );
+}

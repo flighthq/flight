@@ -13248,22 +13248,55 @@ fn emit_let_else_local(
                     if (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
                         && ts.elems.len() == 1 =>
                 {
-                    let Pat::Ident(ident) = &ts.elems[0] else {
-                        return Err(compile_error(
-                            "portable `let-else` tuple option element must bind an identifier",
-                        ));
-                    };
-                    let name = snake_to_lower_camel(&ident.ident.to_string());
-                    let temp = format!("$t{i}");
                     let absent = option_absent_value(&init_tuple.elems[i], entities);
+                    match &ts.elems[0] {
+                        Pat::Ident(ident) => {
+                            let name = snake_to_lower_camel(&ident.ident.to_string());
+                            let temp = format!("$t{i}");
+                            write_indent(out, indent);
+                            writeln!(out, "const {temp} = {value};")
+                                .expect("writing to a String cannot fail");
+                            conditions.push(format!("{temp} === {absent}"));
+                            temps.push(Some(temp));
+                            names.push(name);
+                        }
+                        Pat::Wild(_) => {
+                            let temp = format!("$t{i}");
+                            write_indent(out, indent);
+                            writeln!(out, "const {temp} = {value};")
+                                .expect("writing to a String cannot fail");
+                            conditions.push(format!("{temp} === {absent}"));
+                            temps.push(None);
+                            names.push("_".to_string());
+                        }
+                        _ => {
+                            return Err(compile_error(
+                                "portable `let-else` tuple option element must bind an identifier or `_`",
+                            ));
+                        }
+                    }
+                }
+                Pat::Wild(_) => {
+                    temps.push(None);
+                    names.push("_".to_string());
+                }
+                Pat::Path(path) if path.path.is_ident("None") => {
+                    let absent = option_absent_value(&init_tuple.elems[i], entities);
+                    let temp = format!("$t{i}");
                     write_indent(out, indent);
                     writeln!(out, "const {temp} = {value};")
                         .expect("writing to a String cannot fail");
-                    conditions.push(format!("{temp} === {absent}"));
-                    temps.push(Some(temp));
-                    names.push(name);
+                    conditions.push(format!("{temp} !== {absent}"));
+                    temps.push(None);
+                    names.push("_".to_string());
                 }
-                Pat::Wild(_) => {
+                Pat::Ident(ident) if ident.ident == "None" => {
+                    let absent = option_absent_value(&init_tuple.elems[i], entities);
+                    let temp = format!("$t{i}");
+                    write_indent(out, indent);
+                    writeln!(out, "const {temp} = {value};")
+                        .expect("writing to a String cannot fail");
+                    conditions.push(format!("{temp} !== {absent}"));
                     temps.push(None);
                     names.push("_".to_string());
                 }
