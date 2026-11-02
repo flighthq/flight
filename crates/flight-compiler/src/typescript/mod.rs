@@ -13729,6 +13729,10 @@ fn emit_matches_literal_predicate(
             Ok(Some(parts.join(" || ")))
         }
         Pat::Wild(_) => Ok(Some("true".to_string())),
+        Pat::Ident(ident) if ident.subpat.is_none() => {
+            let name = emit_path_segment(&ident.ident.to_string());
+            Ok(Some(format!("{subject} === {name}")))
+        }
         Pat::Path(path) => {
             let emitted = emit_expression(
                 &Expr::Path(syn::ExprPath {

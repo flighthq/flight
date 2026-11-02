@@ -21875,3 +21875,20 @@ pub fn extract(point: &Point) -> (f64, f64) {
         "should rename struct field in destructuring: {output}"
     );
 }
+
+#[test]
+fn matches_macro_with_constant_identifiers() {
+    let source = r#"
+pub const FOO: &str = "foo";
+pub const BAR: &str = "bar";
+
+pub fn is_valid(value: &str) -> bool {
+    matches!(value, FOO | BAR)
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("value === FOO || value === BAR"),
+        "should emit equality checks against constants: {output}"
+    );
+}
