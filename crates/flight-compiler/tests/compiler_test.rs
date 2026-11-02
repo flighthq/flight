@@ -7996,6 +7996,59 @@ pub fn allocate_matrix() -> Matrix {
     }
 
     #[test]
+    fn resolves_compound_entity_field_defaults_from_alias_sources() {
+        let inner = r#"
+pub struct Vector3 {
+    runtime: EntityRuntimeSlot,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+pub fn create_vector3(x: f32, y: f32, z: f32) -> Vector3 {
+    let mut out: Vector3 = flight_entity::allocate_entity();
+    out.x = x;
+    out.y = y;
+    out.z = z;
+    return out;
+}
+"#;
+        let outer = r#"
+pub struct Box3D {
+    runtime: EntityRuntimeSlot,
+    pub min: Vector3,
+    pub max: Vector3,
+    pub scale: f32,
+}
+
+pub fn create_box3d() -> Box3D {
+    let mut out: Box3D = flight_entity::allocate_entity();
+    return out;
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(
+            outer,
+            Some("@flighthq/entity/contract"),
+            &[inner],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("allocateEntity<Vector3Raw>()"),
+            "nested entity allocation: {output}"
+        );
+        assert!(
+            output.contains("scale: 0"),
+            "primitive default preserved: {output}"
+        );
+        assert!(
+            output.contains("Object.assign(allocateEntity<Box3DRaw>()"),
+            "outer entity allocation: {output}"
+        );
+    }
+
+    #[test]
     fn rejects_unsupported_entity_default_shapes_at_direct_allocation() {
         let cases = [
             (

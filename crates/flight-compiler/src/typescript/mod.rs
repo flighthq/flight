@@ -7993,6 +7993,59 @@ fn generation_context_with_types(
             }
         }
     }
+    // Resolve compound entity defaults: when a field's Rust type is itself an entity whose
+    // allocation defaults are fully known, promote the unsupported marker to a default marker
+    // carrying the nested allocation expression. Loops until convergence for transitive cases.
+    loop {
+        let unsupported: Vec<(String, String, String)> = context
+            .iter()
+            .filter_map(|marker| marker.strip_prefix(ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER))
+            .filter_map(|rest| {
+                let (owning_type, rest) = rest.split_once(':')?;
+                let (field_name, rust_type) = rest.split_once(':')?;
+                Some((
+                    owning_type.to_string(),
+                    field_name.to_string(),
+                    rust_type.to_string(),
+                ))
+            })
+            .collect();
+
+        let mut to_remove = Vec::new();
+        let mut to_add = Vec::new();
+        for (owning_type, field_name, rust_type) in &unsupported {
+            if !entity_types.contains(rust_type) {
+                continue;
+            }
+            let inner_ts_type = format!("{rust_type}Raw");
+            let inner_unsupported_prefix =
+                format!("{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{inner_ts_type}:");
+            if context
+                .iter()
+                .any(|m| m.starts_with(&inner_unsupported_prefix))
+            {
+                continue;
+            }
+            let Ok(value) = entity_allocation(&inner_ts_type, &context) else {
+                continue;
+            };
+            to_remove.push(format!(
+                "{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{owning_type}:{field_name}:{rust_type}"
+            ));
+            to_add.push(format!(
+                "{ENTITY_DEFAULT_FIELD_MARKER}{owning_type}:{field_name}:{value}"
+            ));
+        }
+        if to_remove.is_empty() {
+            break;
+        }
+        for entry in to_remove {
+            context.remove(&entry);
+        }
+        for entry in to_add {
+            context.insert(entry);
+        }
+    }
     return Ok(context);
 }
 
