@@ -6904,6 +6904,28 @@ pub fn check(input: String) -> bool {
     }
 
     #[test]
+    fn infers_string_receiver_from_string_argument_for_starts_with() {
+        let source = r#"
+pub fn check(name: &str) -> bool {
+    return name.starts_with("prefix_");
+}
+
+pub fn check_end(name: &str) -> bool {
+    return name.ends_with(".json");
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("name.startsWith(\"prefix_\")"),
+            "starts_with with string literal argument should infer string receiver: {output}"
+        );
+        assert!(
+            output.contains("name.endsWith(\".json\")"),
+            "ends_with with string literal argument should infer string receiver: {output}"
+        );
+    }
+
+    #[test]
     fn tracks_sequence_provenance_through_string_split() {
         let source = r#"
 pub fn split_count(input: &str) -> usize {

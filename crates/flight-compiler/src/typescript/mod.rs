@@ -17415,7 +17415,11 @@ fn emit_method_call(
         )),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
         "starts_with"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+            if arguments.len() == 1
+                && (expression_is_known_string(&call.receiver, entities)
+                    || call.args.first().is_some_and(|arg| {
+                        expression_is_known_string(arg, entities)
+                    })) =>
         {
             Ok(format!("{receiver}.startsWith({})", arguments[0]))
         }
@@ -17437,7 +17441,11 @@ fn emit_method_call(
             ))
         }
         "ends_with"
-            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+            if arguments.len() == 1
+                && (expression_is_known_string(&call.receiver, entities)
+                    || call.args.first().is_some_and(|arg| {
+                        expression_is_known_string(arg, entities)
+                    })) =>
         {
             Ok(format!("{receiver}.endsWith({})", arguments[0]))
         }
