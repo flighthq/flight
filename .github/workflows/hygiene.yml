@@ -33,8 +33,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  rust:
+    name: Rust · format and clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Clippy costs a workspace compile, so it runs only when Rust changed; rustfmt is seconds and
+      # always runs. Pushes compare against the pushed branch, PRs against their base, as in CI.
+      - uses: dorny/paths-filter@v3
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        id: filter
+        with:
+          base: ${{ github.ref_name }}
+          filters: |
+            rust:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - id: fmt
+        continue-on-error: true
+        run: cargo fmt --all -- --check
+      - uses: Swatinem/rust-cache@v2
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.rust == 'true' }}
+      - id: clippy
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.rust == 'true' }}
+        continue-on-error: true
+        run: cargo clippy --workspace
+      - name: Report
+        if: always()
+        env:
+          OUTCOMES: cargo-fmt=${{ steps.fmt.outcome }} clippy=${{ steps.clippy.outcome }}
+        run: bash scripts/report-hygiene.sh
+
   checks:
-    name: Hygiene · checks
+    name: TypeScript · lint, format, conventions
     runs-on: ubuntu-latest
     steps:
       # Full history: some invariant gates compare against earlier commits.
@@ -78,7 +115,7 @@ jobs:
         run: bash scripts/report-hygiene.sh
 
   scripts:
-    name: Hygiene · scripts tests
+    name: Scripts · tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +134,7 @@ jobs:
         run: bash scripts/report-hygiene.sh
 
   tools:
-    name: Hygiene · dev tools tests
+    name: Dev tools · tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -114,41 +151,4 @@ jobs:
         if: always()
         env:
           OUTCOMES: tools=${{ steps.tools.outcome }}
-        run: bash scripts/report-hygiene.sh
-
-  rust:
-    name: Hygiene · Rust
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      # Clippy costs a workspace compile, so it runs only when Rust changed; rustfmt is seconds and
-      # always runs. Pushes compare against the pushed branch, PRs against their base, as in CI.
-      - uses: dorny/paths-filter@v3
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        id: filter
-        with:
-          base: ${{ github.ref_name }}
-          filters: |
-            rust:
-              - 'crates/**'
-              - 'Cargo.toml'
-              - 'Cargo.lock'
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-      - id: fmt
-        continue-on-error: true
-        run: cargo fmt --all -- --check
-      - uses: Swatinem/rust-cache@v2
-        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.rust == 'true' }}
-      - id: clippy
-        if: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.rust == 'true' }}
-        continue-on-error: true
-        run: cargo clippy --workspace
-      - name: Report
-        if: always()
-        env:
-          OUTCOMES: cargo-fmt=${{ steps.fmt.outcome }} clippy=${{ steps.clippy.outcome }}
         run: bash scripts/report-hygiene.sh

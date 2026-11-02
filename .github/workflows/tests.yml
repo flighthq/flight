@@ -57,7 +57,7 @@ concurrency:
 
 jobs:
   changes:
-    name: Detect changed areas
+    name: Changes
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.scope.outputs.code }}
@@ -114,8 +114,44 @@ jobs:
             echo "rust=$FILTER_RUST" >> "$GITHUB_OUTPUT"
           fi
 
-  test-host:
-    name: Tests · host backends
+  rust-check:
+    name: Rust · check
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace
+
+  rust-test:
+    name: Rust · test
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace
+
+  # Proves the crate graph would publish without uploading it: every publishable crate packages
+  # against the others through cargo's local overlay registry. The real upload is nightly, so this is
+  # what keeps a broken crate visible on the push that broke it rather than on the next morning.
+  rust-publish-dry-run:
+    name: Rust · package (dry run)
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish --workspace --dry-run --no-verify
+
+  quality-typecheck:
+    name: TypeScript · typecheck
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
@@ -126,7 +162,9 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      - run: npm run test:host
+      - run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: typecheck
 
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
   # `build-check` job (`packages:check && typecheck`) that all of them needed, which made the gate
@@ -138,7 +176,7 @@ jobs:
   # `needs.changes.outputs.code` is now restated per job; that repetition is the price of the
   # parallelism and is deliberate.
   build:
-    name: Build · emit
+    name: TypeScript · build
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
@@ -171,8 +209,62 @@ jobs:
           path: dist.tgz
           retention-days: 1
 
+  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
+  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
+  test-fast:
+    name: TypeScript · unit tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
+
+  test-host:
+    name: TypeScript · host backend tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:host
+
+  # Only the gates that protect what a user installs: a manifest that resolves, imports that resolve
+  # through the blessed lanes, no orphaned dist, and license provenance (which must block every run).
+  # The convention and bookkeeping gates run in hygiene.yml. Locally, `npm run check` with no env var
+  # still runs every gate.
+  quality-structure:
+    name: Packaging · manifests and license
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: >-
+            packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
+
+
   harness-build:
-    name: Build · harness · ${{ matrix.label }}
+    name: Render · build · ${{ matrix.label }}
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
@@ -193,62 +285,6 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run ${{ matrix.check }}
-
-  # The merged unit run: one shared jsdom environment, no per-package isolation. The isolated
-  # per-package-environment shards (and tool-capture's browser contracts) run nightly; see nightly.yml.
-  test-fast:
-    name: Tests · merged jsdom
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test
-
-  # Only the gates that protect what a user installs: a manifest that resolves, imports that resolve
-  # through the blessed lanes, no orphaned dist, and license provenance (which must block every run).
-  # The convention and bookkeeping gates run in hygiene.yml. Locally, `npm run check` with no env var
-  # still runs every gate.
-  quality-structure:
-    name: Quality · packaging
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check
-        env:
-          FLIGHT_CHECK_GATES: >-
-            packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
-
-
-  quality-typecheck:
-    name: Quality · typecheck
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check
-        env:
-          FLIGHT_CHECK_GATES: typecheck
 
   render-test:
     # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
@@ -330,42 +366,6 @@ jobs:
           FLIGHT_CAPTURE_WORKER_COUNT: 2
           FLIGHT_CAPTURE_TIMEOUT_MS: 45000
 
-  rust-check:
-    name: Rust · check
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-
-  rust-test:
-    name: Rust · test
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo test --workspace
-
-  # Proves the crate graph would publish without uploading it: every publishable crate packages
-  # against the others through cargo's local overlay registry. The real upload is nightly, so this is
-  # what keeps a broken crate visible on the push that broke it rather than on the next morning.
-  rust-publish-dry-run:
-    name: Rust · publish dry run
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo publish --workspace --dry-run --no-verify
-
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
     # to the tag-triggered stable release (release.yml). Edge is meant to be *available*, so it gates
@@ -383,7 +383,7 @@ jobs:
     # second publisher for the same channel, reachable only by a hand-push to a branch documented as
     # never hand-pushed, racing the promotion's publish on a different concurrency key for the same version.
     # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
-    name: Publish · npm · ${{ github.ref_name }} snapshot
+    name: Publish · npm next
     needs: [build, test-fast]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
@@ -448,8 +448,9 @@ jobs:
           version: ${{ steps.edge.outputs.version }}
 
   wasm-edge-publish:
-    name: Publish · Wasm · ${{ github.ref_name }} snapshot
-    needs: [build, test-fast, edge-publish]
+    name: Publish · npm next (wasm)
+    # Only after the main npm publish, which already waited on build and the unit tests.
+    needs: edge-publish
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:

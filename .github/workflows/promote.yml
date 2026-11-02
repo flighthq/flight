@@ -51,7 +51,7 @@ jobs:
     # success is worth resolving. schedule/workflow_dispatch carry no triggering run to inspect,
     # so they always proceed — that is what makes the catch-up able to recover a missed event.
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-    name: Fast-forward main to the newest green commit
+    name: Fast-forward main
     runs-on: ubuntu-latest
     outputs:
       advanced: ${{ steps.push.outputs.advanced }}
@@ -181,6 +181,7 @@ jobs:
   # edge-publish.yml still re-verifies the sha (on main, CI green) rather than trusting this caller,
   # because it can also be run by hand to re-publish.
   edge-publish:
+    name: Publish · npm edge
     needs: promote
     if: ${{ needs.promote.outputs.advanced == 'true' }}
     permissions:

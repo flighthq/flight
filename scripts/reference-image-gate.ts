@@ -1,5 +1,5 @@
 // Runs the full reference-image check pipeline locally, reproducing the CI
-// `Reference Images · Check` job from nightly.yml. The steps:
+// `Render · reference images` job from nightly.yml. The steps:
 //   0. Print environment identity and first-run disclosure
 //   1. Fetch and verify the pinned reference packs
 //   2. Build the harness (build + build:functional)

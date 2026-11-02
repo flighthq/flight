@@ -1,4 +1,4 @@
-name: Nightly Quality
+name: Nightly
 
 # Per-push CI (tests.yml) gates the build, typecheck, merged unit tests, host tests, Rust tests, and
 # render smoke — so nightly does NOT repeat them. Nightly holds the work too slow or too
@@ -56,65 +56,67 @@ jobs:
       - id: pin
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-  coverage:
-    name: Coverage thresholds
-    needs: resolve
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.resolve.outputs.sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - uses: ./.github/actions/setup-playwright
-      - run: npm run test:coverage
-
-  # The shipping bundle size: every dedicated tools/size fixture built through terser, failing when
-  # one exceeds its pin in tools/size/size.baseline.json. Examples are demonstrations and may import
-  # whole-store conveniences, so they are deliberately not the cost contract. It runs here rather
-  # than per-PR because the terser leg is not worth adding to every push for a number that moves rarely.
+  # The crates.io snapshot lane: main's tip under the same `edge` version npm published for that
+  # commit, so one version string names one commit on both registries. crates.io has no dist-tags to
+  # subscribe to, so it carries a single snapshot lane — the promoted one — rather than mirroring npm's
+  # per-push develop (`next`) lane; to depend on an unreleased develop commit from Cargo, use a git
+  # dependency pinned by `rev`. Stable releases publish from release.yml.
   #
-  # Like every job here it is a health signal and blocks no promotion — so moving it off the PR path
-  # means shipping size is no longer enforced before a commit reaches main. That is deliberate: the
-  # pin's own remedy (`size:minified:baseline`) erases whatever the gate objected to, so a red gate
-  # mostly bought a rewritten pin. Catching it nightly and deciding costs a day and keeps the record.
-  size-minified:
-    name: Bundle size (minified)
-    needs: resolve
+  # crates.io admits roughly one new version a minute once a short burst is spent, so the ~155-crate
+  # graph takes about two hours — the reason this is nightly rather than per promotion. Per-push CI runs
+  # `cargo publish --workspace --dry-run`, so a crate that cannot publish is already red on the push
+  # that broke it; a failure here is a registry or network problem.
+  #
+  # Skipped when crates.io already has flight-sdk at this version. flight-sdk publishes last, so its
+  # presence means the whole graph landed; a run that failed partway leaves it absent, and the next
+  # night retries (crates already uploaded are skipped as "already exists").
+  rust-snapshot:
+    name: Rust · resolve edge snapshot
     runs-on: ubuntu-latest
-
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+      sha: ${{ steps.check.outputs.sha }}
+      version: ${{ steps.check.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.resolve.outputs.sha }}
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
-      - run: npm ci
-      - run: npm run size:minified
+      - run: npm ci --ignore-scripts
+      - id: check
+        run: |
+          set -euo pipefail
+          version=$(npx tsx scripts/edge-version.ts main | sed -n 's/^version=//p')
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # crates.io asks API clients to identify themselves.
+          status=$(curl -s -o /dev/null -w '%{http_code}' -A 'flighthq-nightly (github.com/flighthq/flight)' \
+            "https://crates.io/api/v1/crates/flight-sdk/$version")
+          if [ "$status" = 200 ]; then
+            echo "flight-sdk $version is already on crates.io; nothing to publish"
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+          elif [ "$status" = 404 ]; then
+            echo "flight-sdk $version is not on crates.io yet; publishing"
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::crates.io answered HTTP $status for flight-sdk $version"
+            exit 1
+          fi
 
-  api:
-    name: API generation
-    needs: resolve
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.resolve.outputs.sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run api
-      - run: npm run api:json
+  rust-publish:
+    name: Publish · crates.io edge
+    needs: rust-snapshot
+    if: ${{ needs.rust-snapshot.outputs.publish == 'true' }}
+    uses: ./.github/workflows/rust-publish.yml
+    with:
+      ref: ${{ needs.rust-snapshot.outputs.sha }}
+      version: ${{ needs.rust-snapshot.outputs.version }}
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   # The thorough unit lane, moved here from per-push CI (which keeps the merged `test-fast` run). Each package runs
   # under its own vitest config, so node packages use the `node` environment and jsdom packages use
@@ -141,7 +143,7 @@ jobs:
   # This is the one lane that runs tool-capture's serialized browser contracts; `test-fast` excludes
   # tool-capture so pushes stay fast and don't launch browsers.
   test:
-    name: Tests · per-package env · ${{ matrix.shard }}/${{ strategy.job-total }}
+    name: TypeScript · per-package tests · ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: resolve
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -165,6 +167,66 @@ jobs:
       # the critical path of the shard that actually uses it.
       - uses: ./.github/actions/setup-playwright
       - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+
+  coverage:
+    name: TypeScript · coverage
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - uses: ./.github/actions/setup-playwright
+      - run: npm run test:coverage
+
+  # The shipping bundle size: every dedicated tools/size fixture built through terser, failing when
+  # one exceeds its pin in tools/size/size.baseline.json. Examples are demonstrations and may import
+  # whole-store conveniences, so they are deliberately not the cost contract. It runs here rather
+  # than per-PR because the terser leg is not worth adding to every push for a number that moves rarely.
+  #
+  # Like every job here it is a health signal and blocks no promotion — so moving it off the PR path
+  # means shipping size is no longer enforced before a commit reaches main. That is deliberate: the
+  # pin's own remedy (`size:minified:baseline`) erases whatever the gate objected to, so a red gate
+  # mostly bought a rewritten pin. Catching it nightly and deciding costs a day and keeps the record.
+  size-minified:
+    name: TypeScript · bundle size (minified)
+    needs: resolve
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run size:minified
+
+  api:
+    name: TypeScript · API generation
+    needs: resolve
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run api
+      - run: npm run api:json
 
   # Cross-backend parity (Tier 3), moved here from per-push CI, which keeps the smoke legs. Parity must
   # compare backends within one run, so each leg keeps every renderer together and serializes with
@@ -207,7 +269,7 @@ jobs:
   # read-only. A zero-comparison run is a failure rather than a green no-op; the lock bounds the capture
   # scope to cells for which reference bytes actually exist.
   reference-image-check:
-    name: Reference Images · Check
+    name: Render · reference images
     needs: resolve
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -283,68 +345,6 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
 
-  # The crates.io snapshot lane: main's tip under the same `edge` version npm published for that
-  # commit, so one version string names one commit on both registries. crates.io has no dist-tags to
-  # subscribe to, so it carries a single snapshot lane — the promoted one — rather than mirroring npm's
-  # per-push develop (`next`) lane; to depend on an unreleased develop commit from Cargo, use a git
-  # dependency pinned by `rev`. Stable releases publish from release.yml.
-  #
-  # crates.io admits roughly one new version a minute once a short burst is spent, so the ~155-crate
-  # graph takes about two hours — the reason this is nightly rather than per promotion. Per-push CI runs
-  # `cargo publish --workspace --dry-run`, so a crate that cannot publish is already red on the push
-  # that broke it; a failure here is a registry or network problem.
-  #
-  # Skipped when crates.io already has flight-sdk at this version. flight-sdk publishes last, so its
-  # presence means the whole graph landed; a run that failed partway leaves it absent, and the next
-  # night retries (crates already uploaded are skipped as "already exists").
-  rust-snapshot:
-    name: Resolve the Rust snapshot
-    runs-on: ubuntu-latest
-    outputs:
-      publish: ${{ steps.check.outputs.publish }}
-      sha: ${{ steps.check.outputs.sha }}
-      version: ${{ steps.check.outputs.version }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci --ignore-scripts
-      - id: check
-        run: |
-          set -euo pipefail
-          version=$(npx tsx scripts/edge-version.ts main | sed -n 's/^version=//p')
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          # crates.io asks API clients to identify themselves.
-          status=$(curl -s -o /dev/null -w '%{http_code}' -A 'flighthq-nightly (github.com/flighthq/flight)' \
-            "https://crates.io/api/v1/crates/flight-sdk/$version")
-          if [ "$status" = 200 ]; then
-            echo "flight-sdk $version is already on crates.io; nothing to publish"
-            echo 'publish=false' >> "$GITHUB_OUTPUT"
-          elif [ "$status" = 404 ]; then
-            echo "flight-sdk $version is not on crates.io yet; publishing"
-            echo 'publish=true' >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::crates.io answered HTTP $status for flight-sdk $version"
-            exit 1
-          fi
-
-  rust-publish:
-    name: Publish · Rust · edge snapshot
-    needs: rust-snapshot
-    if: ${{ needs.rust-snapshot.outputs.publish == 'true' }}
-    uses: ./.github/workflows/rust-publish.yml
-    with:
-      ref: ${{ needs.rust-snapshot.outputs.sha }}
-      version: ${{ needs.rust-snapshot.outputs.version }}
-    secrets:
-      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
   # Routes the red. A scheduled run has no author watching it, so without this its failures land
   # nowhere — which is not hypothetical: `coverage` and `api` ran unrouted for their whole existence,
   # and a signal nobody receives is indistinguishable from a signal that never fired.
@@ -363,7 +363,7 @@ jobs:
   # `if: failure()` fires when a needed job failed; the per-job `result` check below is what keeps a
   # green job from being named in the report.
   report-failure:
-    name: Route nightly failures
+    name: Route failures
     needs: [resolve, coverage, api, test, render-parity, reference-image-check, rust-snapshot, rust-publish]
     if: failure()
     runs-on: ubuntu-latest

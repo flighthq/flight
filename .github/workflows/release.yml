@@ -42,7 +42,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish to npm and attach examples bundle
+    name: Publish · npm
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -174,7 +174,7 @@ jobs:
           fi
 
   wasm-publish:
-    name: Publish · Wasm · ${{ github.ref_name }}
+    name: Publish · npm (wasm)
     needs: [publish]
     runs-on: ubuntu-latest
     steps:
@@ -206,7 +206,7 @@ jobs:
     # Publishes the Rust crate graph to crates.io at the tagged stable version. Runs after the npm
     # publish job succeeds so that the release is coordinated, but the two registries are independent —
     # Rust does not depend on npm being live.
-    name: Publish · Rust · ${{ github.ref_name }}
+    name: Publish · crates.io
     needs: [publish]
     uses: ./.github/workflows/rust-publish.yml
     with:
