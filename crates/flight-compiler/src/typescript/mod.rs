@@ -4131,6 +4131,9 @@ fn emit_hash_collection_method(
         ("HashSet", "insert", [value]) => Ok(format!(
             "(<T>(items: Set<T>, value: T): boolean => {{ if (items.has(value)) {{ return false; }} items.add(value); return true; }})({receiver}, {value})"
         )),
+        ("HashSet", "iter", []) | ("HashSet", "into_iter", []) => {
+            Ok(format!("[...{receiver}]"))
+        }
         ("HashSet", "remove", [value]) => Ok(format!("{receiver}.delete({value})")),
         ("HashMap", "contains_key", [key]) => Ok(format!("{receiver}.has({key})")),
         ("HashMap", "get", [key]) => Ok(option(format!("{receiver}.get({key})"))),
@@ -4141,6 +4144,9 @@ fn emit_hash_collection_method(
         ("HashMap", "remove", [key]) => Ok(option(format!(
             "(<K, V>(entries: Map<K, V>, key: K): V | undefined => {{ const previous = entries.get(key); entries.delete(key); return previous; }})({receiver}, {key})"
         ))),
+        ("HashMap", "iter", []) | ("HashMap", "into_iter", []) => {
+            Ok(format!("[...{receiver}.entries()]"))
+        }
         ("HashMap", "into_keys", []) | ("HashMap", "keys", []) => {
             Ok(format!("[...{receiver}.keys()]"))
         }

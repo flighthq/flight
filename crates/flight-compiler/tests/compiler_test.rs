@@ -874,14 +874,19 @@ export function unmarkTracker(tracker: Tracker, label: string): boolean {
 }
 "#
         );
+        let iter_output = compile_typescript(
+            "use std::collections::HashSet;\npub fn a(s: &HashSet<i32>) -> usize { return s.iter().count(); }",
+            None,
+        )
+        .unwrap();
+        assert!(
+            iter_output.contains("[...s]"),
+            "HashSet::iter lowers to spread: {iter_output}"
+        );
         for (source, message) in [
             (
                 "use other::make;\npub fn a() -> bool { return make().insert(1); }",
                 "unsupported Rust method call `.insert()`; impl sugar is not a transpilation source",
-            ),
-            (
-                "use std::collections::HashSet;\npub fn a(s: &HashSet<i32>) -> usize { return s.iter().count(); }",
-                "portable `HashSet::iter` with 0 argument(s) has no portable lowering",
             ),
             (
                 "use std::collections::HashMap;\npub fn a(m: &mut HashMap<i32, f32>) { m.entry(1); }",
