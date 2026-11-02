@@ -45,8 +45,8 @@ concurrency:
 
 jobs:
   # Decides from the CI run itself, never from the caller's say-so: a develop push whose `Ready for next`
-  # job succeeded. CI starts this from inside `Ready for next`, so that job may still be finishing; it
-  # is awaited (briefly) rather than read as "not yet". A run that is not eligible ends quietly.
+  # job succeeded. CI starts this after `Ready for next` completes, but a hand-started run may race a
+  # CI run still in progress, so that job is awaited (briefly). A run that is not eligible ends quietly.
   eligible:
     name: Eligible
     runs-on: ubuntu-latest
@@ -68,8 +68,7 @@ jobs:
           read -r sha branch event workflow <<<"$run"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          # `Ready for next` is the job that started this run, so wait for it to complete (10 minutes
-          # at most; it finishes seconds after the hand-off).
+          # Wait for `Ready for next` to complete if it has not yet (10 minutes at most).
           ready=pending
           for _ in $(seq 1 60); do
             ready=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" \

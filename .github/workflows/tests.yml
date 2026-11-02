@@ -227,8 +227,6 @@ jobs:
     needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm, render-test]
     if: ${{ always() }}
     runs-on: ubuntu-latest
-    permissions:
-      actions: write # start Promote · next; no secret and no publish credential
     steps:
       - name: Require every gate
         env:
@@ -241,13 +239,27 @@ jobs:
             fi
           done
           echo "All gates passed."
+
+  # Its own job, after the verdict, so that a failed hand-off is its own red box and never makes
+  # `Ready for next` report a commit as unready when every gate passed.
+  #
+  # ★ promote-next.yml MUST EXIST ON THE DEFAULT BRANCH (main) to be startable at all — GitHub registers
+  # `workflow_dispatch` workflows from the default branch only, though a run then uses the copy on the
+  # ref it was started on. So renaming that file needs the new name on main before this works again.
+  handoff:
+    name: Hand off to Promote · next
+    needs: ready-for-next
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # start Promote · next; no secret and no publish credential
+    steps:
       # ★ STARTED DELIBERATELY, ON DEVELOP. A run started this way uses develop's copy of promote-next.yml —
       # the copy this very commit carries — so a change to Promote · next takes effect with the commit that makes
       # it. Waiting for CI to finish (`workflow_run`) would instead run the DEFAULT branch's copy, `main`'s,
-      # a day behind. Only develop pushes hand off, and only after every gate passed (this step runs
-      # only when the one above succeeded). Promote · next re-checks the run itself rather than trusting this.
-      - name: Hand off to Promote · next
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
+      # a day behind. Only develop pushes hand off, and only once `Ready for next` passed (this job needs
+      # it). Promote · next re-checks the run itself rather than trusting this.
+      - name: Start Promote · next on develop
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
