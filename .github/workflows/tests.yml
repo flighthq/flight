@@ -206,18 +206,17 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      # The single build of the graph per push. Handed to edge-publish and to all four render-test
-      # legs, each of which would otherwise run its own full `tsc -b` over all 141 projects to
-      # produce byte-identical output — five redundant compiles. Safe to reuse across the version
+      # The single build of the graph per push, handed to the npm publish jobs so they do not repeat
+      # the full `tsc -b` over all 141 projects. Safe to reuse across the version
       # stamp that edge-publish applies afterwards: nothing inlines the package version at build time
       # (the one manifest read, tool-capture's captureServer, does it at runtime), so dist does not
       # depend on the version in package.json.
       #
       # Tarred first because upload-artifact is slow over many small files, and 141 dist directories
       # are ~76MB of them — as one tarball it is 5.8MB. Uploaded unconditionally rather than gated on
-      # the release-channel branches: render-test now consumes it on every push, and a gate would
-      # silently starve a consumer rather than fail it.
-      - name: Tar dist for the publish and render jobs
+      # the release-channel branch: it is cheap, and a gate that drifted from the publish job's own
+      # condition would silently starve it rather than fail it.
+      - name: Tar dist for the publish jobs
         run: tar -czf dist.tgz packages/*/dist
       - uses: actions/upload-artifact@v4
         with:
@@ -263,29 +262,6 @@ jobs:
             packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
 
 
-  harness-build:
-    name: Render · build · ${{ matrix.label }}
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: functional
-            check: build:functional
-          - label: examples
-            check: build:examples
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run ${{ matrix.check }}
-
   render-test:
     # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
     # e.g. a WebGPU-only smoke failure points at that backend rather than at rendering as a whole.
@@ -293,13 +269,13 @@ jobs:
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
     #
-    # Needs `build` for its dist artifact, not to be sequenced behind it: each leg used to run its own
-    # `npm run build`, so a full tsc -b over all 141 projects ran six more times per push to produce
-    # output byte-identical to what `build` already emitted and uploaded. Waiting for that job costs
-    # nothing net — these legs previously waited on a preflight of comparable length — and the
-    # download replaces ~71s of compile per leg.
+    # Starts cold, beside everything else, and does not wait for `build`: smoke captures a Vite-built
+    # harness that maps every @flighthq/* import to package SOURCE, so the emitted package dist is
+    # never read. (Parity, which imports the SDK from dist, runs nightly and builds it there.) Each leg
+    # builds its own harness as a separate step, so a harness that does not build fails that step —
+    # visibly not a rendering failure — and a package type error still fails `TypeScript · build`.
     name: Render · ${{ matrix.label }}
-    needs: [changes, build]
+    needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -308,15 +284,19 @@ jobs:
       matrix:
         include:
           - label: functional · smoke · dom/canvas/webgl
+            harness: functional
             check: test:functional:smoke
             args: --renderer=dom,canvas,webgl --retries 2
           - label: functional · smoke · webgpu
+            harness: functional
             check: test:functional:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
           - label: examples · smoke · dom/canvas/webgl
+            harness: examples
             check: test:examples:smoke
             args: --renderer=dom,canvas,webgl
           - label: examples · smoke · webgpu
+            harness: examples
             check: test:examples:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
           # Screenshot-baseline legs (functional + examples) REMOVED. 4fdfd2a15 wired them as "the one
@@ -336,13 +316,10 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      # Smoke resolves packages from source via the dev server, so dist is not strictly needed; it is
-      # restored anyway so the legs match the nightly parity legs, which import the SDK from dist.
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist-${{ github.sha }}
-      - name: Restore dist from the build job
-        run: tar -xzf dist.tgz
+      # Built here rather than left to the capture tool's auto-build, so a harness that does not build
+      # is reported by this step and never mistaken for a rendering failure.
+      - name: Build the ${{ matrix.harness }} harness
+        run: npm run build:${{ matrix.harness }}
       - uses: ./.github/actions/setup-playwright
       # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
       #
@@ -370,8 +347,8 @@ jobs:
     # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
     # to the tag-triggered stable release (release.yml). Edge is meant to be *available*, so it gates
     # only on the two correctness legs — `build` (it compiles) and `test-fast` (the merged unit-test
-    # run, seconds not minutes) — and deliberately NOT on the flaky `render-test` matrix,
-    # `harness-build`, or the quality legs, which still run in parallel but never block an edge build. It never runs on pull_request (no
+    # run, seconds not minutes) — and deliberately NOT on the flaky `render-test` matrix or the
+    # quality legs, which still run in parallel but never block an edge build. It never runs on pull_request (no
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
     # dist-tag, so `latest` is untouched. See agents/packaging.md.
     #
