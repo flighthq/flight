@@ -231,13 +231,12 @@ function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean)
         : ensureWgpuScene3DLayouts(state).drawBindGroupLayout,
     ],
   });
+  // TS 7's DOM lib types `buffers` as a mutable array, so the readonly skinned layouts are copied.
+  const buffers: GPUVertexBufferLayout[] =
+    skinned && skinning !== null ? [...skinning.vertexBufferLayouts] : SHADOW_VERTEX_BUFFER_LAYOUTS;
   const pipeline = device.createRenderPipeline({
     layout,
-    vertex: {
-      module,
-      entryPoint: 'vs_main',
-      buffers: skinned && skinning !== null ? skinning.vertexBufferLayouts : SHADOW_VERTEX_BUFFER_LAYOUTS,
-    },
+    vertex: { module, entryPoint: 'vs_main', buffers },
     primitive: { topology: 'triangle-list', frontFace: 'ccw', cullMode: 'front' },
     depthStencil: { format: SHADOW_DEPTH_FORMAT, depthWriteEnabled: true, depthCompare: 'less' },
   });
