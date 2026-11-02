@@ -144,16 +144,34 @@ jobs:
   # what keeps a broken crate visible on the push that broke it rather than on the next morning.
   rust-publish-dry-run:
     name: Rust · package (dry run)
-    # After check and test, mirroring the TypeScript side: verify, then (dry-run) publish. No `if` of
-    # its own: when no Rust changed, check and test are skipped, and a job whose needs were skipped is
-    # skipped with them.
+    # After check and test, mirroring the TypeScript side: verify, then (dry-run) publish. It is also the
+    # Rust arc's single verdict for the wasm publish, so it must END IN A DEFINITE STATE rather than be
+    # skipped for two different reasons: when no Rust changed (check and test skipped) it succeeds as a
+    # no-op; when check or test failed it is skipped, and so is everything waiting on it.
     needs: [rust-check, rust-test]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     steps:
+      - name: Decide whether there is anything to package
+        id: gate
+        env:
+          CHECK_RESULT: ${{ needs.rust-check.result }}
+          TEST_RESULT: ${{ needs.rust-test.result }}
+        run: |
+          if [ "$CHECK_RESULT" = skipped ] && [ "$TEST_RESULT" = skipped ]; then
+            echo "No Rust changed in this push; nothing to package."
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v5
+        if: ${{ steps.gate.outputs.run == 'true' }}
       - uses: dtolnay/rust-toolchain@stable
+        if: ${{ steps.gate.outputs.run == 'true' }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo publish --workspace --dry-run --no-verify
+        if: ${{ steps.gate.outputs.run == 'true' }}
+      - if: ${{ steps.gate.outputs.run == 'true' }}
+        run: cargo publish --workspace --dry-run --no-verify
 
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
   # `build-check` job (`packages:check && typecheck`) that all of them needed, but it put a serial
@@ -334,8 +352,9 @@ jobs:
 
   wasm-edge-publish:
     name: Publish · npm next (wasm)
-    # Only after the main npm publish, which already waited on build and the unit tests.
-    needs: edge-publish
+    # After both arcs: the npm publish (TypeScript verified and published) and the Rust dry run (the
+    # crates these wasm packages compile from verified, or untouched by this push).
+    needs: [edge-publish, rust-publish-dry-run]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
