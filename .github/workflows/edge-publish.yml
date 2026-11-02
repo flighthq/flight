@@ -1,6 +1,7 @@
 name: Publish · npm edge
 
-# Publishes the `edge` snapshot for a commit Promote has just adopted as `main`.
+# Publishes the `edge` snapshot to npm for the commit Nightly has just promoted to `main` (after
+# crates.io has it, so the two registries carry the same versions).
 #
 # ★ CALLED BY PROMOTE, AS A JOB OF THE PROMOTION RUN, once main has moved. Nothing runs on pushes to
 # main (its commits were already tested on develop), so the promotion is what triggers the publish,
@@ -11,7 +12,7 @@ name: Publish · npm edge
 # Acceptance is the dist-tag, not a green run: `npm dist-tag ls @flighthq/sdk` should show `edge` at
 # the version the run published. Because either caller can supply the sha, the jobs below re-verify
 # it from the repository (on main, CI green) instead of trusting whoever passed it.
-run-name: Publish · npm edge · ${{ inputs.sha }} · from promote run ${{ inputs.promote_run_id }}
+run-name: Publish · npm edge · ${{ inputs.sha }}
 
 on:
   workflow_call:
@@ -21,7 +22,7 @@ on:
         required: true
         type: string
       promote_run_id:
-        description: The promote.yml run that called this, for the run summary.
+        description: The Nightly run that called this, for the run summary.
         required: false
         type: string
         default: ''
@@ -37,7 +38,7 @@ on:
         required: true
         type: string
       promote_run_id:
-        description: The promote.yml run this re-publishes for, if any (shown in the run summary).
+        description: The Nightly run this re-publishes for, if any (shown in the run summary).
         required: false
         type: string
         default: ''
@@ -72,7 +73,7 @@ jobs:
       id-token: write # npm provenance
     steps:
       # ★ CHECK OUT THE INPUT, THEN VERIFY IT. The sha is caller-supplied data — this workflow is
-      # dispatchable by hand as well as called by promote.yml. Everything below re-establishes from
+      # dispatchable by hand as well as called by Nightly. Everything below re-establishes from
       # the repository what the input only claims.
       - uses: actions/checkout@v5
         with:
@@ -104,7 +105,7 @@ jobs:
           fi
           echo "${CANDIDATE} is on main and checked out."
 
-      # The same gate release.yml applies to a tag: prove THIS tree passed CI. Promote already resolved
+      # The same gate release.yml applies to a tag: prove THIS tree passed CI. Nightly already resolved
       # the candidate from green runs, but this workflow is also dispatchable by hand, so it re-proves
       # it rather than trusting the caller. Absence of a run is never treated as green.
       - name: Verify the dispatched commit passed CI
@@ -209,7 +210,7 @@ jobs:
           flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
           version: ${{ steps.edge.outputs.version }}
 
-      # Names the promotion this publish belongs to. When called by promote.yml it is the same run; a
+      # Names the Nightly run this publish belongs to. When called by Nightly it is the same run; a
       # hand dispatch may pass the promotion it re-publishes for.
       # ★ EVERY INTERPOLATED VALUE ARRIVES THROUGH `env`, INCLUDING IN THE MARKDOWN.
       # `${{ inputs.sha }}` written straight into a `run:` block is substituted before bash ever sees
@@ -232,5 +233,5 @@ jobs:
             echo "| candidate | \`${CANDIDATE}\` |"
             echo "| version | \`${EDGE_VERSION}\` |"
             echo "| dist-tag | \`${EDGE_TAG}\` |"
-            echo "| promote run | \`${PROMOTE_RUN_ID:-none (dispatched by hand)}\` |"
+            echo "| Nightly run | \`${PROMOTE_RUN_ID:-none (dispatched by hand)}\` |"
           } >> "$GITHUB_STEP_SUMMARY"

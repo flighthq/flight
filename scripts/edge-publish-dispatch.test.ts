@@ -3,11 +3,13 @@ import { join } from 'node:path';
 
 import { parse } from 'yaml';
 
-// Static acceptance for the promote -> edge-publish contract. The external gate is a real `edge`
-// dist-tag after a future promotion, which nothing here can or should reach: promoting and publishing
-// are live actions. What IS checkable without either is the contract itself — that a promotion which
-// moves main publishes exactly that commit, that the publish cannot fail silently, that the push job
-// never holds the publish credential, and that the publisher re-verifies what it was handed.
+// Static acceptance for the promotion and edge-publish contract: develop → CI → `next` (npm next) →
+// Validate → Nightly → `main` (edge on crates.io, then npm). The external gate is a real `edge`
+// dist-tag after a future Nightly, which nothing here can or should reach: promoting and publishing are
+// live actions. What IS checkable without either is the contract itself — that each promotion moves
+// only forward to a commit that passed its gate, that the push jobs hold only the promotion App and
+// never a publish credential, that crates.io goes before npm, and that the publisher re-verifies what
+// it was handed.
 //
 // ★ THESE ASSERT ABSENCES AS WELL AS PRESENCES, and the absences are the load-bearing half. The defect
 // these guard against was an absence — no run, no error, no edge — so a test suite that only checked
@@ -41,64 +43,77 @@ interface WorkflowJob {
   with?: Record<string, string>;
 }
 
-function promoteJobs(): Record<string, WorkflowJob> {
-  return (parseWorkflow('promote') as { jobs: Record<string, WorkflowJob> }).jobs;
+function jobsOf(name: string): Record<string, WorkflowJob> {
+  return (parseWorkflow(name) as { jobs: Record<string, WorkflowJob> }).jobs;
+}
+
+// The promotion App is the only credential a push job may hold: only the step that mints its token
+// reads the key, the step before it reads only the App's ID, and checkout receives the minted token.
+function expectOnlyThePromotionApp(job: WorkflowJob, label: string): void {
+  expect(job.permissions, label).toEqual({ contents: 'write' });
+  const steps = job.steps ?? [];
+  const allowed = new Map<string | undefined, string[]>([
+    ['app', ['${{ secrets.PROMOTE_APP_ID }}']],
+    ['app-token', ['${{ secrets.PROMOTE_APP_ID }}', '${{ secrets.PROMOTE_APP_PRIVATE_KEY }}']],
+  ]);
+  const mint = steps.find((step) => step.id === 'app-token');
+  expect(mint?.uses, label).toBe('actions/create-github-app-token@v3');
+  expect(mint?.with?.['permission-contents'], label).toBe('write');
+  expect(mint?.with?.['permission-workflows'], label).toBe('write');
+  const checkout = steps.find((step) => step.uses === 'actions/checkout@v5');
+  expect(checkout?.with?.token, label).toBe('${{ steps.app-token.outputs.token || github.token }}');
+  for (const step of steps) {
+    let source = JSON.stringify(step);
+    for (const reference of allowed.get(step.id) ?? []) source = source.replaceAll(reference, '');
+    expect(source, `${label}: ${step.name ?? step.uses}`).not.toContain('secrets.');
+  }
 }
 
 describe('edge-publish promotion contract', () => {
-  it('promote calls edge-publish.yml with the resolved candidate sha after main moved', () => {
-    const job = promoteJobs()['edge-publish'];
-    expect(job.uses).toBe('./.github/workflows/edge-publish.yml');
-    expect(job.needs).toBe('promote');
-    // The exact promoted commit, not a branch name — publishing "whatever main is now" would race a
-    // later promotion and publish a commit this run never resolved.
-    expect(job.with?.sha).toBe('${{ needs.promote.outputs.sha }}');
-    expect(job.if).toBe("${{ needs.promote.outputs.advanced == 'true' }}");
-    // `advanced` must come from the push step's before/after comparison, not from the candidate alone.
-    expect(promoteJobs().promote.outputs?.advanced).toBe('${{ steps.push.outputs.advanced }}');
+  it('CI moves next only after npm next is published, and only forward', () => {
+    const job = jobsOf('tests')['promote-next'];
+    // Published first, so the `next` branch never names a commit npm `next` lacks.
+    expect(job.needs).toBe('edge-publish');
+    expect(String(job.steps?.at(-1)?.run)).toBe('bash scripts/fast-forward-branch.sh next "$CANDIDATE"');
+    expectOnlyThePromotionApp(job, 'promote-next');
   });
 
-  it('a failed publish fails the promotion rather than passing silently', () => {
-    // The publish is a job of the promotion run, so its failure is the run's failure. A
-    // continue-on-error here would let the promotion go green having published nothing.
-    expect(promoteJobs()['edge-publish']['continue-on-error']).toBeUndefined();
+  it('Nightly promotes only the newest validated commit on next, and only forward', () => {
+    const jobs = jobsOf('nightly');
+    const resolve = String(stepNamed(jobs.resolve.steps ?? [], 'Find the newest validated commit on next').run);
+    // Candidates are commits on next ahead of main with a successful Validate run.
+    expect(resolve).toContain('git rev-list refs/remotes/origin/main..refs/remotes/origin/next');
+    expect(resolve).toContain('actions/workflows/validate.yml/runs?branch=next&status=success&event=push');
+    expect(jobs.promote.if).toBe("${{ needs.resolve.outputs.candidate != '' }}");
+    expect(String(jobs.promote.steps?.at(-1)?.run)).toBe('bash scripts/fast-forward-branch.sh main "$CANDIDATE"');
+    expectOnlyThePromotionApp(jobs.promote, 'nightly promote');
   });
 
-  it('the job that pushes main holds no publish credential', () => {
-    const promote = promoteJobs().promote;
-    expect(promote.permissions).toEqual({ actions: 'read', contents: 'write' });
-    const publish = promoteJobs()['edge-publish'];
-    expect(publish.permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
-    expect(Object.keys(publish.secrets ?? {}).sort()).toEqual(['FLIGHT_COMPILER_DISPATCH_TOKEN', 'NPM_TOKEN']);
-    // The one credential the push job holds is the promotion App: only the step that mints its token
-    // reads the key, the step before it reads only the App's ID, and checkout receives the minted
-    // token. No npm credential, and no other step touching a secret.
-    const steps = promote.steps ?? [];
-    const allowed = new Map<string | undefined, string[]>([
-      ['app', ['${{ secrets.PROMOTE_APP_ID }}']],
-      ['app-token', ['${{ secrets.PROMOTE_APP_ID }}', '${{ secrets.PROMOTE_APP_PRIVATE_KEY }}']],
-    ]);
-    const mint = steps.find((step) => step.id === 'app-token');
-    expect(mint?.uses).toBe('actions/create-github-app-token@v3');
-    expect(mint?.with?.['permission-contents']).toBe('write');
-    expect(mint?.with?.['permission-workflows']).toBe('write');
-    const checkout = steps.find((step) => step.uses === 'actions/checkout@v5');
-    expect(checkout?.with?.token).toBe('${{ steps.app-token.outputs.token || github.token }}');
-    for (const step of steps) {
-      let source = JSON.stringify(step);
-      for (const reference of allowed.get(step.id) ?? []) source = source.replaceAll(reference, '');
-      expect(source, step.name ?? step.uses).not.toContain('secrets.');
-    }
+  it('Nightly publishes edge to crates.io before npm, for the commit main points at', () => {
+    const jobs = jobsOf('nightly');
+    expect(jobs['crates-edge'].uses).toBe('./.github/workflows/rust-publish.yml');
+    expect(jobs['crates-edge'].with?.ref).toBe('${{ needs.edge-version.outputs.sha }}');
+    expect(jobs['npm-edge'].uses).toBe('./.github/workflows/edge-publish.yml');
+    expect(jobs['npm-edge'].with?.sha).toBe('${{ needs.edge-version.outputs.sha }}');
+    // npm waits for crates.io: if crates.io fails, npm is not published, so a version never exists on
+    // one registry without the other.
+    expect(jobs['npm-edge'].needs).toEqual(['edge-version', 'crates-edge']);
+    expect(String(jobs['npm-edge'].if)).toContain("needs.crates-edge.result == 'success'");
+    for (const name of ['crates-edge', 'npm-edge']) expect(jobs[name]['continue-on-error'], name).toBeUndefined();
+    // Only the npm publish holds the npm credential, and with only the permissions it needs.
+    expect(jobs['npm-edge'].permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
+    expect(Object.keys(jobs['npm-edge'].secrets ?? {}).sort()).toEqual(['FLIGHT_COMPILER_DISPATCH_TOKEN', 'NPM_TOKEN']);
   });
 
-  it('only a push that actually moved main publishes', () => {
-    const push = stepNamed(promoteJobs().promote.steps ?? [], 'Fast-forward main');
-    const run = String(push.run);
-    // A no-op push succeeds at the git level; the contract is "non-no-op", so main's tip is compared
-    // before and after rather than inferred from the exit code.
-    expect(run).toContain('advanced=false');
-    expect(run).toContain('advanced=true');
-    expect(run).toContain('git ls-remote origin refs/heads/main');
+  it('Nightly never skips npm on a single-package probe', () => {
+    // ★ npm's publisher completes a partial graph package by package; a probe of one package could
+    // report "published" for a half-published graph and skip it forever. npm runs on promotion, on a
+    // crates.io publish, on a manual run, and after any failed Nightly instead.
+    const source = readWorkflow('nightly');
+    expect(source).not.toContain('registry.npmjs.org');
+    expect(source).not.toContain('npm view');
+    const check = String(jobsOf('nightly')['edge-version'].steps?.find((step) => step.id === 'check')?.run);
+    expect(check).toContain('[ "$ADVANCED" = true ] || [ "$crates" = true ] || [ "$RETRY" = true ]');
   });
 
   it('the receiver is called or dispatched — not workflow_run, not push', () => {
@@ -169,9 +184,11 @@ describe('edge-publish promotion contract', () => {
     // script-injection shape, and a Markdown summary table is no safer than a command line. Every value
     // must arrive through `env`, where bash sees it as an ordinary variable. Asserting over every step
     // of both workflows means a new step cannot reintroduce it at a site nobody thought to check.
-    for (const name of ['promote', 'edge-publish']) {
+    for (const name of ['nightly', 'edge-publish', 'tests']) {
       const doc = parseWorkflow(name) as { jobs: Record<string, { steps?: { name?: string; run?: string }[] }> };
-      for (const job of Object.values(doc.jobs)) {
+      // CI's matrix legs interpolate their own static matrix values; only its promotion handles data.
+      const jobs = name === 'tests' ? [doc.jobs['promote-next']!] : Object.values(doc.jobs);
+      for (const job of jobs) {
         for (const step of job.steps ?? []) {
           if (typeof step.run !== 'string') continue;
           expect({ step: step.name, workflow: name, interpolations: step.run.match(/\$\{\{[^}]*\}\}/g) }).toEqual({
@@ -194,13 +211,13 @@ describe('edge-publish promotion contract', () => {
 
   it('no credential beyond the default token is introduced', () => {
     const receiver = readWorkflow('edge-publish');
-    const promote = readWorkflow('promote');
-    // Promote reaches the publisher by calling it, which the default token permits. Its push uses the
+    const nightly = readWorkflow('nightly');
+    // Nightly reaches the publisher by calling it, which the default token permits. The pushes use the
     // promotion App's repository-scoped token; a PAT or a generic App credential would be broader.
-    for (const source of [receiver, promote]) {
+    for (const source of [receiver, nightly, readWorkflow('tests')]) {
       expect(source).not.toMatch(/secrets\.(GH_PAT|PAT|APP_ID|APP_PRIVATE_KEY|BOT_TOKEN)/);
     }
-    expect(promote).toContain('GH_TOKEN: ${{ github.token }}');
+    expect(nightly).toContain('GH_TOKEN: ${{ github.token }}');
     // NPM_TOKEN is the publish credential, passed only to the publish job; it is not a trigger credential.
     expect(receiver).toContain('secrets.NPM_TOKEN');
   });

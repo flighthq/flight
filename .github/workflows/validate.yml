@@ -1,0 +1,205 @@
+name: Validate
+
+# The second round, run on the `next` branch: every commit there already passed CI and was published
+# as npm `next`. These are the slower, thorough checks — the isolated per-package test lane, render
+# parity, and the reference-image comparison — and a commit that passes them all is what Nightly may
+# promote to `main` and publish as `edge`. So Nightly blesses what was already proved here; nothing it
+# promotes is tested for the first time at night.
+#
+# Lifecycle: develop → CI → `next` (npm next) → Validate → Nightly → `main` (edge: npm + crates.io)
+#                                                                  → tag (latest, via Release)
+#
+# Triggered by CI's push to `next` (with the promotion App's token, so the push starts this run; a
+# push uses the pushed commit's own copy of this file). A newer `next` cancels an older run: nothing
+# here publishes, and only the newest validated commit matters to Nightly, so under a burst of pushes
+# the suite runs on the latest rather than on every one.
+#
+# `Validated` is the single check the ruleset on main requires. It always reports, so it can never be
+# left "expected" by a skipped dependency.
+on:
+  push:
+    branches: [next]
+  workflow_dispatch:
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The thorough unit lane (CI's `Test · TypeScript` keeps the merged run). Each package runs
+  # under its own vitest config, so node packages use the `node` environment and jsdom packages use
+  # `jsdom`, each isolated in its own process — correct, but that is 141 serial Vitest startups plus a
+  # fresh environment per test file. Fitting a full run gave `node ≈ 4.9s + 0.22s/file` and
+  # `jsdom ≈ 2.1s + 0.90s/file` per package: startup dominates the small node packages, per-file DOM
+  # construction dominates everything else, and neither is removable without giving up the fidelity
+  # this lane exists for. So it is DIVIDED rather than optimised — sharded by package across runners,
+  # weight-balanced in scripts/test-shard.ts, with `--shard` scaling off `strategy.job-total` so the
+  # matrix length is the only place the shard count is written.
+  #
+  # The division is NOT free and does not reach 4x: measured, the whole lane is 29m13s serial while one
+  # quarter of it is 11m35s, or 40% rather than 25%. The gap is cold cache. Running 141 packages in one
+  # process warms the module and page cache for the ones behind it; four runners each start cold over
+  # 35, so that warm-up is paid four times. Wall clock still improves ~2.5x, but this lane's runner
+  # minutes go UP by roughly 60%, a trade made deliberately: this lane is the slowest part of Validate,
+  # and Validate's wall clock is how long a commit waits to become promotable.
+  #
+  # Folding the 141 configs into one Vitest run via `projects` was measured and rejected: each project
+  # gets its own Vite server and therefore its own transform cache, so the boots merely move inside one
+  # process and stay serial — and being serial per project, they are paid in full by every shard, which
+  # is what makes that shape unshardable. See the header of scripts/test-packages.ts.
+  #
+  # This is the one lane that runs tool-capture's serialized browser contracts; the merged run excludes
+  # tool-capture so pushes stay fast and don't launch browsers.
+  test:
+    name: TypeScript · per-package tests · ${{ matrix.shard }}/${{ strategy.job-total }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      # Every shard runs even when one fails: they test disjoint packages, so a failure in one says
+      # nothing about the others and cancelling them costs a whole extra CI round to learn the rest.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      # Only the shard holding tool-capture needs a browser, but which shard that is depends on the
+      # split, so every shard installs. Chromium is cached by the runner image and this is well off
+      # the critical path of the shard that actually uses it.
+      - uses: ./.github/actions/setup-playwright
+      - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+
+  # Cross-backend parity (Tier 3); CI keeps the smoke legs. Parity must
+  # compare backends within one run, so each leg keeps every renderer together and serializes with
+  # `--parallel 1` (the runner has one SwiftShader adapter; see the render-test notes in tests.yml).
+  # The parity check imports the SDK from built dist, so each leg builds the graph first.
+  render-parity:
+    name: Render · ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: functional parity
+            check: test:functional:parity
+          - label: examples parity
+            check: test:examples:parity
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: ./.github/actions/setup-playwright
+      - run: npm run ${{ matrix.check }} -- --parallel 1 --retries 2
+        env:
+          FLIGHT_CAPTURE_WORKER_COUNT: 2
+          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
+
+  # The blessed-image comparison: the only tier that can detect a pixel regression against promoted
+  # reference bytes. A gate for main: a pixel regression holds the commit on `next`.
+  #
+  # Reference packs are public HTTPS reads, the job holds no secret, and its token is explicitly
+  # read-only. A zero-comparison run is a failure rather than a green no-op; the lock bounds the capture
+  # scope to cells for which reference bytes actually exist.
+  reference-image-check:
+    name: Render · reference images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      # The pack manifest does not yet carry capture provenance, so this must match the frame that was
+      # blessed. State it once for scope resolution and comparison rather than allowing either to guess.
+      ORACLE_CAPTURE_FRAMES: 1
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Fetch first: an unresolvable lock fails before the expensive build, and the fetched packs define
+      # the exact capture scope used below.
+      - name: Fetch and verify the pinned reference packs
+        run: npx tsx ./scripts/reference-image-check.ts fetch
+
+      - name: Resolve the capture scope
+        id: reference_scope
+        run: |
+          set -euo pipefail
+          scope=$(npx tsx ./scripts/reference-image-check.ts scope --frames "$ORACLE_CAPTURE_FRAMES")
+          echo "$scope"
+          {
+            echo 'lines<<SCOPE'
+            echo "$scope"
+            echo 'SCOPE'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build the harness
+        run: |
+          npm run build
+          npm run build:functional
+
+      - uses: ./.github/actions/setup-playwright
+
+      # Echo the registered identity instead of recomputing it. The reference-image repository owns the
+      # identity; the observed browser is diagnostic evidence if the hosted runner later drifts from it.
+      - name: Echo the registered capture environment
+        run: |
+          echo "registered identity: $(node -p "require('./scripts/reference-image-capture-identity.json').environmentId")"
+          echo "observed playwright: $(npx playwright --version | tr -d ' ')"
+
+      - name: Capture the pinned cells
+        run: |
+          set -euo pipefail
+          printf '%s\n' "${{ steps.reference_scope.outputs.lines }}" | while read -r args; do
+            [ -n "$args" ] || continue
+            npx tsx ./packages/tool-capture/src/bin.ts capture $args
+          done
+
+      - name: Compare against the blessed references
+        run: npx tsx ./scripts/reference-image-check.ts check --frames "$ORACLE_CAPTURE_FRAMES"
+
+      # Green captures are disposable; on failure these bytes are the diagnosis.
+      - if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: reference-image-check-captures
+          path: |
+            .artifacts/functional/**/screenshot.png
+            .artifacts/reference-image-packs/**/*.png
+          include-hidden-files: true
+          if-no-files-found: warn
+
+  validated:
+    name: Validated
+    needs: [test, render-parity, reference-image-check]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every Validate check
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [ "$result" != success ]; then
+              echo "::error::a Validate check did not succeed (results: $RESULTS)"
+              exit 1
+            fi
+          done
+          echo "All Validate checks passed."

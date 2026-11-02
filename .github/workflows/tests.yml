@@ -6,13 +6,17 @@ name: CI
 #   Test        Rust and TypeScript, each validated by its own tests.
 #   Compliance  license provenance across the whole repository — a hard stop, not a style check.
 #   Package     every registry's artifact built and validated: npm (TypeScript), wasm, crates.io.
-#   Publish     npm `next`, once, with TypeScript and wasm together. crates.io is queued for the
-#               nightly snapshot of main; `Package · crates.io` proves on every push that it would
-#               succeed.
+#   Verified    one summary check over Test, Compliance and Package: what `next` publishes on, and
+#               the single check the ruleset on `next` requires.
+#   Publish     npm `next`, once, with TypeScript and wasm together; then the `next` branch moves to
+#               the same commit, so branch and channel always agree. Validate then runs the slower
+#               checks on `next`, and Nightly promotes what passed to `main` and publishes it as `edge`
+#               on npm and crates.io together. `Package · crates.io` proves on every push that the
+#               crates would publish.
 #
 # Render smoke runs beside them as a product signal but gates no publish. A red run here means
-# something a user of the SDK would feel. Promote, the publishes, and branch protection all read this
-# workflow, so nothing that is bookkeeping may fail it.
+# something a user of the SDK would feel. The `next` promotion, Nightly, the publishes, and branch
+# protection all read this workflow, so nothing that is bookkeeping may fail it.
 #
 # Everything else has a home that cannot turn this red:
 #   hygiene.yml  — every push, never fails: the whole-repo typecheck (examples, scripts, functional,
@@ -28,8 +32,8 @@ name: CI
 # ★ NO PATH FILTERING. Every job runs on every push, so a green run means every check passed AT THIS
 # COMMIT. A filter on "what this push changed" broke that: a push that broke Rust followed by one that
 # touched only TypeScript skipped the Rust jobs, went green, and was promoted, published, and taggable
-# with Rust still broken underneath. Promote, the npm edge publish, Release, and the snapshot gates below all
-# read "CI green" as "this commit is good", so it has to mean exactly that. Change-scoped speed lives
+# with Rust still broken underneath. The promotions, the publishes, and Release all read "CI green" as
+# "this commit is good", so it has to mean exactly that. Change-scoped speed lives
 # in the pre-push hook instead, where it costs nothing in confidence.
 #
 # Documentation checks (docs:check, append-only-ledgers) are principal-facing review tools,
@@ -38,10 +42,10 @@ name: CI
 on:
   pull_request:
   push:
-    # Develop only. Commits are made on develop and reach main only through Promote, after this
-    # workflow passed for them; Promote, the publishes and Release all look up that develop run by
-    # commit, so a run on main would only repeat it. A commit made directly on main has no CI run
-    # and is therefore refused by all of them, which is the intent.
+    # Develop only. Commits are made on develop and reach `next` and `main` only through the
+    # promotions, after this workflow passed for them; the promotions, the publishes and Release all
+    # look up that develop run by commit, so a run on `next` or `main` would only repeat it. A commit
+    # made directly on either has no CI run and is therefore refused by all of them: the intent.
     branches: [develop]
   # A manual run executes the same full gate as a push, so its success means the same thing.
   workflow_dispatch:
@@ -213,6 +217,29 @@ jobs:
           path: wasm-dist.tgz
           retention-days: 1
 
+  # The one check that says "this commit may be published as next": every Test, Compliance and
+  # Package job succeeded. It always reports (never left "expected" by a skipped dependency), runs on
+  # pull requests too, and is what the ruleset on `next` requires — so renaming or adding a gate job
+  # changes only this `needs` list, never the ruleset. Render smoke is not in it, as it is not a gate
+  # for `next`.
+  verified:
+    name: Verified
+    needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every gate
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [ "$result" != success ]; then
+              echo "::error::a gate did not succeed (results: $RESULTS)"
+              exit 1
+            fi
+          done
+          echo "All gates passed."
+
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
     # to the tag-triggered stable release (release.yml). It is meant to be *available*, so it gates on
@@ -221,20 +248,14 @@ jobs:
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
     # dist-tag, so `latest` is untouched. See agents/packaging.md.
     #
-    # ★ DEVELOP ONLY — THE `main` ARM MOVED TO promote.yml (via edge-publish.yml) AND IS NOT DEAD CODE HERE, IT IS A
-    # DUPLICATE. `main` advances only through promote.yml, which pushes with the default GITHUB_TOKEN,
-    # and GitHub raises no workflow-triggering event for that token. So this job could never fire on
-    # `main` in normal operation — the `edge` tag silently stopped advancing, which is the defect
-    # Promote now fixes by calling edge-publish.yml once main has moved. Keeping `refs/heads/main` here would leave a
-    # second publisher for the same channel, reachable only by a hand-push to a branch documented as
-    # never hand-pushed, racing the promotion's publish on a different concurrency key for the same version.
-    # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
+    # ★ DEVELOP ONLY. `edge` (main) is published by Nightly, after it promotes a validated commit to
+    # main, together with crates.io. Publishing it here too would be a second publisher for the same
+    # channel, racing Nightly's on a different concurrency key for the same version.
     name: Publish · npm next
-    # Waits on every Test, Compliance, and Package job: both languages tested, provenance clean, and
-    # every registry's artifact built — so a snapshot version means the whole SDK passed for that
-    # commit, as `edge` and stable already do. Not on render smoke (the flakiest leg) or anything in
-    # hygiene.yml. One job publishes the TypeScript and wasm packages together.
-    needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm]
+    # Waits on `Verified`: both languages tested, provenance clean, and every registry's artifact
+    # built. Not on render smoke (the flakiest leg) or anything in hygiene.yml. One job publishes the
+    # TypeScript and wasm packages together.
+    needs: verified
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
@@ -304,6 +325,55 @@ jobs:
           event-type: flight-snapshot
           flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
           version: ${{ steps.edge.outputs.version }}
+
+  # Moves the `next` branch to the commit just published as npm `next`, so the branch and the channel
+  # always name the same commit — published first, so the branch never points at something npm lacks.
+  # Its own job, so the npm credential and the push credential never share one. The push uses the
+  # promotion App's token: the built-in token cannot update .github/workflows/ files, and a push made
+  # with it would start no Validate run. Without the App's secrets it falls back to the built-in token
+  # (which then cannot promote workflow changes, and Validate must be run by hand).
+  #
+  # CI runs for successive pushes can finish out of order, so `next` only ever moves forward: when it
+  # already contains this commit, a newer one got there first and there is nothing to do.
+  promote-next:
+    name: Promote · next
+    needs: edge-publish
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push refs/heads/next when falling back to the built-in token
+    concurrency:
+      group: promote-next
+      cancel-in-progress: false
+    steps:
+      - name: Check for the promotion App
+        id: app
+        env:
+          APP_ID: ${{ secrets.PROMOTE_APP_ID }}
+        run: |
+          if [ -n "$APP_ID" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::PROMOTE_APP_ID is not set; pushing with the built-in token, which cannot promote workflow changes or start Validate.'
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Mint the promotion token
+        id: app-token
+        if: ${{ steps.app.outputs.configured == 'true' }}
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.PROMOTE_APP_ID }}
+          private-key: ${{ secrets.PROMOTE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+      - name: Fast-forward next to this commit
+        env:
+          CANDIDATE: ${{ github.sha }}
+        run: bash scripts/fast-forward-branch.sh next "$CANDIDATE"
 
   render-test:
     # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —

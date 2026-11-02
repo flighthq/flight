@@ -1,28 +1,32 @@
 name: Nightly
 
-# The nightly stage of the lifecycle: push (CI, Hygiene) → Promote → Nightly → Release. Everything
-# too slow, too external, or too environment-sensitive for every push runs here, once, as one run:
+# The nightly stage of the lifecycle — a blessing, not a test run:
 #
-#   the catch-up promotion (Promote, first, so the crates.io snapshot below sees it), the crates.io
-#   snapshot of main, the per-package-environment test shards, render parity, the reference-image
-#   comparison, coverage, minified size, API generation, Conformance (the fixture corpus), and the
-#   Host platform probes (advisory).
+#   develop → CI → `next` (npm next) → Validate → Nightly → `main` (edge: crates.io + npm) → tag (latest)
 #
-# Conformance and Host Backends live in their own files, called here as jobs, so each can still be run
-# on its own by hand. Nightly gates nothing: promotion is per commit (CI green), and these are health
-# signals on develop.
+# Every commit on `next` already passed CI; Validate then ran the slower checks on it. Nightly takes the
+# newest commit on `next` that passed Validate, fast-forwards `main` to it, and publishes it as `edge` on
+# both registries in the same run — crates.io first, then npm, under one version — so `main`, npm
+# `edge` and crates.io `edge` always name the same commit. Nothing promoted here is tested for the
+# first time tonight, so there are no morning surprises.
 #
-# ★ SKIPPED WHEN NOTHING CHANGED. `resolve` compares develop's pushes against the last SUCCESSFUL
-# Nightly run; with no push since, every other job is skipped and the run is a quick green no-op. It
-# counts from the last success, not the last run, so a failed Nightly reruns each night until it is
-# green rather than going quiet because nobody pushed. A manual run always does everything.
+# The publish also catches up: crates.io is probed for main's version (flight-sdk uploads last, so its
+# presence means the graph landed), and npm is re-run after any failed Nightly, so a failed or partial
+# publish is completed the next night even when nothing new was promoted.
+#
+# Health signals run alongside and gate nothing: coverage, minified size, API generation, Conformance
+# (the fixture corpus, too large to gate on), and the Host backends on real platforms (advisory).
+# Conformance and Host Backends live in their own files, called here, so each stays runnable by hand.
+#
+# ★ QUIET NIGHTS ARE CHEAP. Resolve and the one-minute edge check always run (the check is what
+# completes a failed or partial publish). Promotion runs only with a validated commit to promote, the
+# publishes only when a registry lacks main's version, and the health signals only after a push to
+# develop since the last SUCCESSFUL Nightly — so a failed one reruns rather than going quiet. A manual
+# run promotes and publishes whatever is ready and runs every health signal: the "promote now" button.
 #
 # Size is split across the two paths on cost. Hygiene runs `npm run size`, a fast unminified esbuild
 # sweep that reports advisory tree-shaking deltas. The terser-minified sweep — the number that is
 # actually shipped — takes about a minute across the dedicated fixture corpus and runs here.
-#
-# The `resolve` job pins develop's tip once so every job tests exactly the same commit — scheduled
-# workflows otherwise check out the default branch, which is not what Nightly is meant to test.
 on:
   schedule:
     # Off the top of the hour, where GitHub delays or drops scheduled runs under load.
@@ -50,23 +54,82 @@ concurrency:
 
 jobs:
   resolve:
-    name: Pin develop
+    name: Resolve
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read # read earlier Nightly and CI runs
+      actions: read # read earlier Nightly, CI and Validate runs
     outputs:
+      candidate: ${{ steps.candidate.outputs.sha }}
       changed: ${{ steps.changed.outputs.changed }}
+      retry: ${{ steps.retry.outputs.retry }}
       sha: ${{ steps.pin.outputs.sha }}
     steps:
       - uses: actions/checkout@v5
         with:
           ref: develop
+          fetch-depth: 0
       - id: pin
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      # A push to develop since the last successful Nightly is what makes tonight's run worth doing.
-      # Push time is read from CI's push-triggered runs, which is exact; commit dates are not (a commit
-      # made yesterday may be pushed today).
+
+      # The commit to promote: the NEWEST commit on `next`, ahead of `main`, with a successful Validate
+      # run. `git rev-list main..next` walks newest-first, so the first match is both the newest
+      # candidate and a guaranteed fast-forward. The run list is used only as a SET of validated
+      # commits, never for ordering: Validate runs can finish out of order, or be cancelled by a newer
+      # push to `next` (a cancelled run never counts). per_page=100 bounds the lookback.
+      - name: Find the newest validated commit on next
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! git ls-remote --exit-code origin refs/heads/next >/dev/null; then
+            echo 'No next branch yet; nothing to promote.'
+            echo 'sha=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags origin +refs/heads/next:refs/remotes/origin/next +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor refs/remotes/origin/main refs/remotes/origin/next; then
+            echo "::error::main is not an ancestor of next; the branches have diverged. Promotion needs a human."
+            exit 1
+          fi
+          ahead=$(git rev-list refs/remotes/origin/main..refs/remotes/origin/next)
+          if [ -z "$ahead" ]; then
+            echo "main is level with next; nothing to promote."
+            echo 'sha=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          validated=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/validate.yml/runs?branch=next&status=success&event=push&per_page=100" \
+            --jq '.workflow_runs[].head_sha' | sort -u)
+          candidate=''
+          for sha in $ahead; do
+            if grep -qxF "$sha" <<<"$validated"; then
+              candidate="$sha"
+              break
+            fi
+          done
+          if [ -z "$candidate" ]; then
+            echo "$(wc -w <<<"$ahead") commit(s) on next ahead of main, none validated yet; nothing to promote."
+          else
+            echo "Promoting $candidate ($(git log -1 --format='%s' "$candidate"))"
+          fi
+          echo "sha=$candidate" >> "$GITHUB_OUTPUT"
+
+      # Whether the last finished Nightly failed: the npm edge publish then reruns tonight, completing a
+      # graph it may have left partly published (its publisher skips what is already there).
+      - id: retry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          last=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly.yml/runs?status=completed&per_page=1" \
+            --jq '.workflow_runs[0].conclusion // "success"')
+          if [ "$last" = success ]; then echo 'retry=false' >> "$GITHUB_OUTPUT"; else echo 'retry=true' >> "$GITHUB_OUTPUT"; fi
+          echo "Last finished Nightly: ${last}."
+
+      # Whether the health signals are worth running: a push to develop since the last successful
+      # Nightly. Push time comes from CI's push-triggered runs, which is exact; commit dates are not.
       - id: changed
         env:
           GH_TOKEN: ${{ github.token }}
@@ -74,14 +137,13 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = workflow_dispatch ]; then
-            echo 'Manual run: running everything.'
+            echo 'Manual run: running every health signal.'
             echo 'changed=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           last=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly.yml/runs?status=success&per_page=1" \
             --jq '.workflow_runs[0].created_at // empty')
           if [ -z "$last" ]; then
-            echo 'No earlier successful Nightly: running everything.'
             echo 'changed=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -91,50 +153,73 @@ jobs:
             echo "${pushes} push(es) to develop since the last successful Nightly (${last})."
             echo 'changed=true' >> "$GITHUB_OUTPUT"
           else
-            echo "No push to develop since the last successful Nightly (${last}); skipping tonight."
+            echo "No push to develop since the last successful Nightly (${last}); health signals skip."
             echo 'changed=false' >> "$GITHUB_OUTPUT"
           fi
 
-  # The catch-up for Promote's per-commit path (a dropped workflow_run, an incident, a run that went
-  # green on a re-run). First, so the crates.io snapshot below reads main after it.
+  # Fast-forwards main to the validated candidate, with the promotion App's token: the built-in token
+  # cannot update .github/workflows/ files. Without the App's secrets it falls back to the built-in
+  # token, which then cannot promote workflow changes. The ruleset on main independently requires the
+  # candidate's `Validated` check, which it carries from its run on `next`.
   promote:
-    name: Promote
+    name: Promote · main
     needs: resolve
-    if: ${{ needs.resolve.outputs.changed == 'true' }}
+    if: ${{ needs.resolve.outputs.candidate != '' }}
+    runs-on: ubuntu-latest
+    outputs:
+      advanced: ${{ steps.push.outputs.advanced }}
     permissions:
-      contents: write # push refs/heads/main
-      actions: read # read tests.yml conclusions
-      id-token: write # npm provenance for the edge publish
-    uses: ./.github/workflows/promote.yml
-    secrets: inherit
+      contents: write # push refs/heads/main when falling back to the built-in token
+    steps:
+      - name: Check for the promotion App
+        id: app
+        env:
+          APP_ID: ${{ secrets.PROMOTE_APP_ID }}
+        run: |
+          if [ -n "$APP_ID" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::PROMOTE_APP_ID is not set; pushing with the built-in token, which cannot promote workflow changes.'
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Mint the promotion token
+        id: app-token
+        if: ${{ steps.app.outputs.configured == 'true' }}
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.PROMOTE_APP_ID }}
+          private-key: ${{ secrets.PROMOTE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token || github.token }}
+      - name: Fast-forward main to the validated commit
+        id: push
+        env:
+          CANDIDATE: ${{ needs.resolve.outputs.candidate }}
+        run: bash scripts/fast-forward-branch.sh main "$CANDIDATE"
 
-  # The crates.io snapshot lane: main's tip under the same `edge` version npm published for that
-  # commit, so one version string names one commit on both registries. crates.io has no dist-tags to
-  # subscribe to, so it carries a single snapshot lane — the promoted one — rather than mirroring npm's
-  # per-push develop (`next`) lane; to depend on an unreleased develop commit from Cargo, use a git
-  # dependency pinned by `rev`. Stable releases publish from release.yml.
+  # What `edge` should be tonight: main's commit (after any promotion above), under the version both
+  # registries publish it as, and which registries to publish to. Runs whether or not a promotion
+  # happened, so a failed or partial publish from an earlier night is completed.
   #
-  # crates.io admits roughly one new version a minute once a short burst is spent, so the ~155-crate
-  # graph takes about two hours — the reason this is nightly rather than per promotion. Per-push CI runs
-  # `Package · crates.io`, so a crate that cannot package is already red on the push that broke it; a
-  # failure here is a registry or network problem.
-  #
-  # Refuses a main commit with no successful CI run (a hand push skips Promote's guarantee). Skipped
-  # when crates.io already has flight-sdk at this version. flight-sdk publishes last, so its
-  # presence means the whole graph landed; a run that failed partway leaves it absent, and the next
-  # night retries (crates already uploaded are skipped as "already exists").
-  rust-snapshot:
-    name: Rust · resolve edge snapshot
-    # After the catch-up promotion, whether or not it moved main (or even succeeded): this publishes
-    # whatever main points at, re-proving that commit's CI below.
+  # crates.io is probed (flight-sdk uploads last, so its presence means the graph landed). npm is NOT
+  # probed: its publisher completes a partial graph package by package, and a probe of one package
+  # could report "published" for a half-published graph and skip it forever. So npm runs on any new
+  # promotion, any crates.io publish, any manual run, and after any failed Nightly.
+  edge-version:
+    name: Publish · resolve edge
     needs: [resolve, promote]
-    if: ${{ !cancelled() && needs.resolve.outputs.changed == 'true' }}
+    if: ${{ !cancelled() && needs.resolve.result == 'success' && needs.promote.result != 'failure' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       actions: read # read tests.yml conclusions for main's commit
     outputs:
-      publish: ${{ steps.check.outputs.publish }}
+      crates: ${{ steps.check.outputs.crates }}
+      npm: ${{ steps.check.outputs.npm }}
       sha: ${{ steps.check.outputs.sha }}
       version: ${{ steps.check.outputs.version }}
     steps:
@@ -150,6 +235,9 @@ jobs:
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
+          ADVANCED: ${{ needs.promote.outputs.advanced }}
+          RETRY: ${{ needs.resolve.outputs.retry }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           sha=$(git rev-parse HEAD)
@@ -157,89 +245,65 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-          # Promote only moves main to a commit whose CI passed, but a hand push to main skips that.
-          # Re-prove it for this exact commit, as the npm edge publish and Release do; no run is never green.
+          # main receives only validated commits, but a hand push skips that. Re-prove CI for this
+          # exact commit, as the npm edge publish and Release do; no run is never green.
           successes=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?head_sha=${sha}" \
             --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')
           if [ "${successes:-0}" -eq 0 ]; then
-            echo "::error::main is at ${sha}, which has no successful CI (tests.yml) run; refusing to publish it to crates.io."
-            exit 1
-          fi
-          # crates.io asks API clients to identify themselves.
-          status=$(curl -s -o /dev/null -w '%{http_code}' -A 'flighthq-nightly (github.com/flighthq/flight)' \
-            "https://crates.io/api/v1/crates/flight-sdk/$version")
-          if [ "$status" = 200 ]; then
-            echo "flight-sdk $version is already on crates.io; nothing to publish"
-            echo 'publish=false' >> "$GITHUB_OUTPUT"
-          elif [ "$status" = 404 ]; then
-            echo "flight-sdk $version is not on crates.io yet; publishing"
-            echo 'publish=true' >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::crates.io answered HTTP $status for flight-sdk $version"
+            echo "::error::main is at ${sha}, which has no successful CI run; refusing to publish it as edge."
             exit 1
           fi
 
-  rust-publish:
+          # crates.io asks API clients to identify themselves.
+          status=$(curl -s -o /dev/null -w '%{http_code}' -A 'flighthq-nightly (github.com/flighthq/flight)' \
+            "https://crates.io/api/v1/crates/flight-sdk/${version}")
+          case "$status" in
+            200) crates=false ;;
+            404) crates=true ;;
+            *) echo "::error::crates.io answered HTTP $status for flight-sdk ${version}"; exit 1 ;;
+          esac
+          if [ "$ADVANCED" = true ] || [ "$crates" = true ] || [ "$RETRY" = true ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
+            npm=true
+          else
+            npm=false
+          fi
+          echo "edge ${version} (${sha}): crates.io publish=${crates}, npm publish=${npm}"
+          echo "crates=$crates" >> "$GITHUB_OUTPUT"
+          echo "npm=$npm" >> "$GITHUB_OUTPUT"
+
+  # crates.io first: it is the slow, rate-limited half (~2h for the graph), and if it fails, npm is not
+  # published, so a version never exists on one registry without the other. A partial upload is
+  # completed the next night (crates already up are skipped as "already exists").
+  crates-edge:
     name: Publish · crates.io edge
-    needs: rust-snapshot
-    if: ${{ needs.rust-snapshot.outputs.publish == 'true' }}
+    needs: edge-version
+    if: ${{ needs.edge-version.outputs.crates == 'true' }}
     uses: ./.github/workflows/rust-publish.yml
     with:
-      ref: ${{ needs.rust-snapshot.outputs.sha }}
-      version: ${{ needs.rust-snapshot.outputs.version }}
+      ref: ${{ needs.edge-version.outputs.sha }}
+      version: ${{ needs.edge-version.outputs.version }}
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-  # The thorough unit lane, moved here from per-push CI (whose `Test · TypeScript` keeps the merged run). Each package runs
-  # under its own vitest config, so node packages use the `node` environment and jsdom packages use
-  # `jsdom`, each isolated in its own process — correct, but that is 141 serial Vitest startups plus a
-  # fresh environment per test file. Fitting a full run gave `node ≈ 4.9s + 0.22s/file` and
-  # `jsdom ≈ 2.1s + 0.90s/file` per package: startup dominates the small node packages, per-file DOM
-  # construction dominates everything else, and neither is removable without giving up the fidelity
-  # this lane exists for. So it is DIVIDED rather than optimised — sharded by package across runners,
-  # weight-balanced in scripts/test-shard.ts, with `--shard` scaling off `strategy.job-total` so the
-  # matrix length is the only place the shard count is written.
-  #
-  # The division is NOT free and does not reach 4x: measured, the whole lane is 29m13s serial while one
-  # quarter of it is 11m35s, or 40% rather than 25%. The gap is cold cache. Running 141 packages in one
-  # process warms the module and page cache for the ones behind it; four runners each start cold over
-  # 35, so that warm-up is paid four times. Wall clock still improves ~2.5x, but this lane's runner
-  # minutes go UP by roughly 60%. The sharding predates this lane's move to nightly, where wall clock no
-  # longer gates a push; it is kept because one serial 29-minute job would still delay the morning signal.
-  #
-  # Folding the 141 configs into one Vitest run via `projects` was measured and rejected: each project
-  # gets its own Vite server and therefore its own transform cache, so the boots merely move inside one
-  # process and stay serial — and being serial per project, they are paid in full by every shard, which
-  # is what makes that shape unshardable. See the header of scripts/test-packages.ts.
-  #
-  # This is the one lane that runs tool-capture's serialized browser contracts; the merged run excludes
-  # tool-capture so pushes stay fast and don't launch browsers.
-  test:
-    name: TypeScript · per-package tests · ${{ matrix.shard }}/${{ strategy.job-total }}
-    needs: resolve
-    if: ${{ needs.resolve.outputs.changed == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      # Every shard runs even when one fails: they test disjoint packages, so a failure in one says
-      # nothing about the others and cancelling them costs a whole extra CI round to learn the rest.
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.resolve.outputs.sha }}
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      # Only the shard holding tool-capture needs a browser, but which shard that is depends on the
-      # split, so every shard installs. Chromium is cached by the runner image and this is well off
-      # the critical path of the shard that actually uses it.
-      - uses: ./.github/actions/setup-playwright
-      - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+  # Then npm, once crates.io has the version (published just now, or already).
+  npm-edge:
+    name: Publish · npm edge
+    needs: [edge-version, crates-edge]
+    if: >-
+      ${{ !cancelled() && needs.edge-version.result == 'success' && needs.edge-version.outputs.npm == 'true' && (needs.crates-edge.result == 'success' || needs.edge-version.outputs.crates == 'false') }}
+
+
+    permissions:
+      contents: read
+      actions: read # edge-publish.yml re-reads tests.yml conclusions for the sha
+      id-token: write # npm provenance
+    uses: ./.github/workflows/edge-publish.yml
+    with:
+      sha: ${{ needs.edge-version.outputs.sha }}
+      promote_run_id: ${{ github.run_id }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      FLIGHT_COMPILER_DISPATCH_TOKEN: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
 
   coverage:
     name: TypeScript · coverage
@@ -304,125 +368,6 @@ jobs:
       - run: npm run api
       - run: npm run api:json
 
-  # Cross-backend parity (Tier 3), moved here from per-push CI, which keeps the smoke legs. Parity must
-  # compare backends within one run, so each leg keeps every renderer together and serializes with
-  # `--parallel 1` (the runner has one SwiftShader adapter; see the render-test notes in tests.yml).
-  # The parity check imports the SDK from built dist, so each leg builds the graph first.
-  render-parity:
-    name: Render · ${{ matrix.label }}
-    needs: resolve
-    if: ${{ needs.resolve.outputs.changed == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: functional parity
-            check: test:functional:parity
-          - label: examples parity
-            check: test:examples:parity
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.resolve.outputs.sha }}
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - uses: ./.github/actions/setup-playwright
-      - run: npm run ${{ matrix.check }} -- --parallel 1 --retries 2
-        env:
-          FLIGHT_CAPTURE_WORKER_COUNT: 2
-          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
-
-  # The blessed-image comparison: the only tier that can detect a pixel regression against promoted
-  # reference bytes. It moved here from per-push CI, so Promote no longer waits on it — a pixel
-  # regression now surfaces the next morning instead of blocking main. Render smoke still runs per push.
-  #
-  # Reference packs are public HTTPS reads, the job holds no secret, and its token is explicitly
-  # read-only. A zero-comparison run is a failure rather than a green no-op; the lock bounds the capture
-  # scope to cells for which reference bytes actually exist.
-  reference-image-check:
-    name: Render · reference images
-    needs: resolve
-    if: ${{ needs.resolve.outputs.changed == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    env:
-      # The pack manifest does not yet carry capture provenance, so this must match the frame that was
-      # blessed. State it once for scope resolution and comparison rather than allowing either to guess.
-      ORACLE_CAPTURE_FRAMES: 1
-
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.resolve.outputs.sha }}
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - run: npm ci
-
-      # Fetch first: an unresolvable lock fails before the expensive build, and the fetched packs define
-      # the exact capture scope used below.
-      - name: Fetch and verify the pinned reference packs
-        run: npx tsx ./scripts/reference-image-check.ts fetch
-
-      - name: Resolve the capture scope
-        id: reference_scope
-        run: |
-          set -euo pipefail
-          scope=$(npx tsx ./scripts/reference-image-check.ts scope --frames "$ORACLE_CAPTURE_FRAMES")
-          echo "$scope"
-          {
-            echo 'lines<<SCOPE'
-            echo "$scope"
-            echo 'SCOPE'
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Build the harness
-        run: |
-          npm run build
-          npm run build:functional
-
-      - uses: ./.github/actions/setup-playwright
-
-      # Echo the registered identity instead of recomputing it. The reference-image repository owns the
-      # identity; the observed browser is diagnostic evidence if the hosted runner later drifts from it.
-      - name: Echo the registered capture environment
-        run: |
-          echo "registered identity: $(node -p "require('./scripts/reference-image-capture-identity.json').environmentId")"
-          echo "observed playwright: $(npx playwright --version | tr -d ' ')"
-
-      - name: Capture the pinned cells
-        run: |
-          set -euo pipefail
-          printf '%s\n' "${{ steps.reference_scope.outputs.lines }}" | while read -r args; do
-            [ -n "$args" ] || continue
-            npx tsx ./packages/tool-capture/src/bin.ts capture $args
-          done
-
-      - name: Compare against the blessed references
-        run: npx tsx ./scripts/reference-image-check.ts check --frames "$ORACLE_CAPTURE_FRAMES"
-
-      # Green captures are disposable; on failure these bytes are the diagnosis.
-      - if: failure()
-        uses: actions/upload-artifact@v6
-        with:
-          name: reference-image-check-captures
-          path: |
-            .artifacts/functional/**/screenshot.png
-            .artifacts/reference-image-packs/**/*.png
-          include-hidden-files: true
-          if-no-files-found: warn
-
   # Conformance and the Host platform probes live in their own files so each stays runnable by hand.
   conformance:
     name: Conformance
@@ -460,19 +405,7 @@ jobs:
   # green job from being named in the report.
   report-failure:
     name: Route failures
-    needs:
-      [
-        resolve,
-        promote,
-        coverage,
-        api,
-        test,
-        render-parity,
-        reference-image-check,
-        rust-snapshot,
-        rust-publish,
-        conformance,
-      ]
+    needs: [resolve, promote, edge-version, crates-edge, npm-edge, coverage, api, conformance]
     if: failure()
     runs-on: ubuntu-latest
     permissions:
@@ -490,13 +423,11 @@ jobs:
           RESOLVE_RESULT: ${{ needs.resolve.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
           API_RESULT: ${{ needs.api.result }}
-          TEST_RESULT: ${{ needs.test.result }}
-          RENDER_PARITY_RESULT: ${{ needs.render-parity.result }}
-          REFERENCE_IMAGE_RESULT: ${{ needs.reference-image-check.result }}
           PROMOTE_RESULT: ${{ needs.promote.result }}
+          EDGE_VERSION_RESULT: ${{ needs.edge-version.result }}
+          CRATES_EDGE_RESULT: ${{ needs.crates-edge.result }}
+          NPM_EDGE_RESULT: ${{ needs.npm-edge.result }}
           CONFORMANCE_RESULT: ${{ needs.conformance.result }}
-          RUST_SNAPSHOT_RESULT: ${{ needs.rust-snapshot.result }}
-          RUST_PUBLISH_RESULT: ${{ needs.rust-publish.result }}
         run: |
           set -euo pipefail
           route() {
@@ -526,10 +457,8 @@ jobs:
           route "resolve" "$RESOLVE_RESULT"
           route "coverage" "$COVERAGE_RESULT"
           route "api" "$API_RESULT"
-          route "test" "$TEST_RESULT"
-          route "render-parity" "$RENDER_PARITY_RESULT"
-          route "reference-image-check" "$REFERENCE_IMAGE_RESULT"
           route "promote" "$PROMOTE_RESULT"
+          route "edge-version" "$EDGE_VERSION_RESULT"
+          route "crates-edge" "$CRATES_EDGE_RESULT"
+          route "npm-edge" "$NPM_EDGE_RESULT"
           route "conformance" "$CONFORMANCE_RESULT"
-          route "rust-snapshot" "$RUST_SNAPSHOT_RESULT"
-          route "rust-publish" "$RUST_PUBLISH_RESULT"
