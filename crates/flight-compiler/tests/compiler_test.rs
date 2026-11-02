@@ -20952,6 +20952,37 @@ pub fn classify_byte(byte: u8) -> i32 {
 }
 
 #[test]
+fn lowers_match_on_option_of_enum_variant_to_kind_check() {
+    let source = r#"
+pub struct Mapping { pub name: String }
+pub struct Sequence { pub items: Vec<f64> }
+
+enum YamlValue {
+    Mapping(Mapping),
+    Null,
+    Sequence(Sequence),
+}
+
+pub fn mapping_of(value: Option<YamlValue>) -> Option<Mapping> {
+    return match value {
+        Some(YamlValue::Mapping(m)) => Some(m),
+        Some(YamlValue::Sequence(_)) => None,
+        _ => None,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("matchValue !== undefined && matchValue.kind === \"mapping\""),
+        "should check undefined and kind for Some(Variant): {output}"
+    );
+    assert!(
+        output.contains("matchValue !== undefined && matchValue.kind === \"sequence\""),
+        "should check undefined and kind for Some(Sequence): {output}"
+    );
+}
+
+#[test]
 fn lowers_let_else_some_data_union_variant() {
     let source = r#"
 //! flight-compiler: data-union EffectValue
