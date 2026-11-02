@@ -5505,6 +5505,14 @@ pub fn unannotated_bool_local(format: u8) -> usize {
 pub fn inline_bool_comparison(format: u8) -> u32 {
     return 1 + u32::from(format == 3);
 }
+
+pub struct Header {
+    pub compressed: bool,
+}
+
+pub fn struct_bool_field(header: &Header) -> u32 {
+    return 1 + u32::from(header.compressed);
+}
 "#;
 
         let output = compile_typescript(source, None).unwrap();
@@ -5524,6 +5532,10 @@ pub fn inline_bool_comparison(format: u8) -> u32 {
         assert!(
             output.contains("Number(format === 3)"),
             "u32::from(inline comparison) should emit Number(format === 3): {output}"
+        );
+        assert!(
+            output.contains("Number(header.compressed)"),
+            "u32::from(bool struct field) should emit Number(header.compressed): {output}"
         );
     }
 

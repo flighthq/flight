@@ -363,6 +363,8 @@ pub(super) const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
 
 const BOOLEAN_EXPRESSION_MARKER: &str = "@boolean-expression:";
 
+const BOOLEAN_FIELD_MARKER: &str = "@boolean-field:";
+
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 
 const STRING_FIELD_MARKER: &str = "@string-field:";
@@ -2310,6 +2312,16 @@ fn expression_is_known_boolean(expression: &Expr, entities: &HashSet<String>) ->
                 | BinOp::And(_)
                 | BinOp::Or(_)
         ),
+        Expr::Field(field) => {
+            if let syn::Member::Named(field_name) = &field.member {
+                if let Some(owner) = expression_struct_name(&field.base, entities) {
+                    return entities.contains(&format!(
+                        "{BOOLEAN_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}"
+                    ));
+                }
+            }
+            false
+        }
         Expr::Group(group) => expression_is_known_boolean(&group.expr, entities),
         Expr::Lit(literal) => matches!(&literal.lit, Lit::Bool(_)),
         Expr::Paren(paren) => expression_is_known_boolean(&paren.expr, entities),
@@ -7749,6 +7761,12 @@ fn generation_context_with_types(
                 }) {
                     context.insert(format!(
                         "{NUMERIC_FIELD_TYPE_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{numeric}",
+                        structure.ident
+                    ));
+                }
+                if matches!(named_type(&field.ty).as_deref(), Some("bool")) {
+                    context.insert(format!(
+                        "{BOOLEAN_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
                         structure.ident
                     ));
                 }
