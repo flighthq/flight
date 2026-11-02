@@ -21727,3 +21727,68 @@ pub fn try_action(result: Result<u32, String>) -> String {
         "should check for absent value: {output}"
     );
 }
+
+#[test]
+fn renames_match_arm_binding_that_shadows_assignment_target() {
+    let source = r#"
+pub fn get_value(opt: Option<u32>) -> u32 {
+    let value = match opt {
+        Some(value) => value + 1,
+        None => return 0,
+    };
+    value
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("const value = value"),
+        "should not emit self-referential const: {output}"
+    );
+    assert!(
+        output.contains("$value"),
+        "should rename binding to $value to avoid shadowing: {output}"
+    );
+}
+
+#[test]
+fn preserves_identity_match_arm_without_rename() {
+    let source = r#"
+pub fn detect_format(format_kind: Option<u32>) -> u32 {
+    let kind = match format_kind {
+        Some(kind) => kind,
+        None => return 0,
+    };
+    kind
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("$kind"),
+        "identity arm should not rename binding: {output}"
+    );
+    assert!(
+        output.contains("const kind = formatKind"),
+        "identity arm should assign scrutinee directly: {output}"
+    );
+}
+
+#[test]
+fn skips_let_chain_binding_when_name_equals_scrutinee() {
+    let source = r#"
+pub fn process(decoders: Option<u32>) -> u32 {
+    if let Some(decoders) = decoders && decoders > 0 {
+        return decoders;
+    }
+    0
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("const decoders = decoders"),
+        "should not emit self-referential const that causes TDZ: {output}"
+    );
+    assert!(
+        output.contains("decoders !== undefined"),
+        "should still emit the null check: {output}"
+    );
+}

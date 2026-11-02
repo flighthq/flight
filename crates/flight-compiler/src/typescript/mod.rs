@@ -12152,12 +12152,6 @@ fn emit_option_match_with_return_local(
     }
     write_indent(out, indent);
     out.push_str("}\n");
-    if let Some(binding) = some_binding {
-        let declaration = if mutable || rebound { "let" } else { "const" };
-        write_indent(out, indent);
-        writeln!(out, "{declaration} {binding} = {scrutinee};")
-            .expect("writing to a String cannot fail");
-    }
     if let Some(name) = local_name {
         let ts_name = snake_to_lower_camel(&name);
         let body_is_identity = some_binding.is_some_and(|b| {
@@ -12169,21 +12163,39 @@ fn emit_option_match_with_return_local(
                 false
             }
         });
+        let binding_shadows_local = some_binding.is_some_and(|b| b == ts_name) && !body_is_identity;
+        let effective_binding = if binding_shadows_local {
+            some_binding.map(|b| format!("${b}"))
+        } else {
+            some_binding.map(str::to_string)
+        };
+        if let Some(ref binding) = effective_binding {
+            let declaration = if mutable || rebound { "let" } else { "const" };
+            write_indent(out, indent);
+            writeln!(out, "{declaration} {binding} = {scrutinee};")
+                .expect("writing to a String cannot fail");
+        }
         if body_is_identity {
-            if some_binding.as_deref() != Some(&ts_name) {
+            if effective_binding.as_deref() != Some(&ts_name) {
                 let declaration = if mutable || rebound { "let" } else { "const" };
                 write_indent(out, indent);
                 writeln!(
                     out,
                     "{declaration} {ts_name} = {};",
-                    some_binding.unwrap_or(&scrutinee)
+                    effective_binding.as_deref().unwrap_or(&scrutinee)
                 )
                 .expect("writing to a String cannot fail");
             }
         } else {
-            let arm_context = if let Some(binding) = some_binding {
+            let arm_context = if let Some(ref binding) = effective_binding {
                 let mut context = entities.clone();
-                context.insert(binding.to_string());
+                context.insert(binding.clone());
+                if binding_shadows_local {
+                    context.insert(format!(
+                        "{RENAME_MARKER}{}={binding}",
+                        some_binding.unwrap()
+                    ));
+                }
                 context
             } else {
                 entities.clone()
@@ -12196,6 +12208,13 @@ fn emit_option_match_with_return_local(
             };
             write_indent(out, indent);
             writeln!(out, "{declaration} {ts_name} = {body_value};")
+                .expect("writing to a String cannot fail");
+        }
+    } else {
+        if let Some(binding) = some_binding {
+            let declaration = if mutable || rebound { "let" } else { "const" };
+            write_indent(out, indent);
+            writeln!(out, "{declaration} {binding} = {scrutinee};")
                 .expect("writing to a String cannot fail");
         }
     }
@@ -12389,12 +12408,30 @@ fn emit_match_statement_with_action(
                 writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
             }
-            if let Some(binding) = info.binding {
+            let assign_target = match action {
+                HoistedMatchAction::Assign(t) => Some(*t),
+                HoistedMatchAction::Return => None,
+            };
+            let binding_renamed = if let Some(ref binding) = info.binding
+                && assign_target == Some(binding.as_str())
+            {
+                let fresh = format!("${binding}");
                 write_indent(out, indent + 2);
-                writeln!(out, "const {binding} = matchValue;")
+                writeln!(out, "const {fresh} = matchValue;")
                     .expect("writing to a String cannot fail");
+                Some((binding.clone(), fresh))
+            } else {
+                if let Some(binding) = &info.binding {
+                    write_indent(out, indent + 2);
+                    writeln!(out, "const {binding} = matchValue;")
+                        .expect("writing to a String cannot fail");
+                }
+                None
+            };
+            let mut arm_context = lexical_pattern_context(entities, &arm.pat);
+            if let Some((ref original, ref fresh)) = binding_renamed {
+                arm_context.insert(format!("{RENAME_MARKER}{original}={fresh}"));
             }
-            let arm_context = lexical_pattern_context(entities, &arm.pat);
             let body_indent = if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
                 write_indent(out, indent + 2);
@@ -20756,9 +20793,11 @@ fn emit_statement(
                         writeln!(out, "if ({scrutinee} !== {absent}) {{")
                             .expect("writing to a String cannot fail");
                         body_indent += 1;
-                        write_indent(out, body_indent);
-                        writeln!(out, "const {name} = {scrutinee};")
-                            .expect("writing to a String cannot fail");
+                        if name != scrutinee {
+                            write_indent(out, body_indent);
+                            writeln!(out, "const {name} = {scrutinee};")
+                                .expect("writing to a String cannot fail");
+                        }
                         if let Expr::Let(let_binding) = let_guard {
                             if let Some(rust_name) = local_pattern_name(&let_binding.pat) {
                                 let camel = snake_to_lower_camel(&rust_name);
