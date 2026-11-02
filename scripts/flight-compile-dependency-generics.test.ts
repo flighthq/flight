@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for generic dependency entities, run through the real `flight-compile` CLI against the real
 // `flight-signals` source: `Signal<T>` from a companion-owning dependency renders as its `SignalRaw<T>`

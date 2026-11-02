@@ -56,7 +56,7 @@
     "@flighthq/scene2d": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/types": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Flight-native scene document model and bounded text codec",
   "sideEffects": false

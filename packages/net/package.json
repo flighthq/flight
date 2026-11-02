@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "HTTP(S) transport (URLLoader/URLRequest) over a swappable web/native backend (fetch by default)",
   "sideEffects": false

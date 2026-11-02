@@ -3,7 +3,7 @@ import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
-import ts from 'typescript';
+import ts from 'typescript5';
 
 export interface ModuleSpecifierIssue {
   readonly column: number;

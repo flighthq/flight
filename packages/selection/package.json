@@ -47,7 +47,7 @@
     "@flighthq/signals": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Ordered scene-graph selection state and geometric selection queries",
   "sideEffects": false

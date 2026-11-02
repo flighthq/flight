@@ -42,7 +42,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Tree-shakable GPU texture-container parsers (KTX2 / DDS / Basis / ATF), peer selection, and level layout — no transcode",
   "sideEffects": false

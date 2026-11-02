@@ -46,7 +46,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Path-following animation — advances a marker along a @flighthq/path by arc length at a controlled speed and reports its world position, tangent, and heading angle, with clamp/loop/pingpong end behaviors and distance/progress seek; plain-data MotionPath state stepped by small out-param functions over path's arc-length sampling",
   "sideEffects": false

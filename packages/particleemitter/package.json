@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@flighthq/math": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "ParticleEmitter 2D and 3D composition layer over @flighthq/particles",
   "sideEffects": false

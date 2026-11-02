@@ -50,7 +50,7 @@
     "@flighthq/surface": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Canvas 2D recipes for render effects (CSS-filter and draw-op compositing pipeline)",
   "flight": {

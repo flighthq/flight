@@ -43,7 +43,7 @@
     "@flighthq/geometry": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "2D rectangle bin-packing — MaxRects placement with padding/border, optional power-of-two/square/rotation, and a fixed or growable bin; plain-data rectangles in, placements + used extent + unpacked out",
   "sideEffects": false

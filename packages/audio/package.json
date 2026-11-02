@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "AudioResource lifecycle — create/clone/dispose, sample-tier and decoded-bytes constructors, URL/Blob/Base64 loaders, codec negotiation, and container MIME detection",
   "sideEffects": false

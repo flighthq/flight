@@ -48,7 +48,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Tree-shakable styled-text markup codec — parse/serialize the htmlText tag set to the rich-text model",
   "sideEffects": false

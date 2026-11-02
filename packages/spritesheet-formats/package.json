@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@flighthq/entity": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Import/export spritesheet atlas configs from industry-standard formats (TexturePacker, Aseprite, Cocos plist, Starling, libGDX atlas)",
   "sideEffects": false

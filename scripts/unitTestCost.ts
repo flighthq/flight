@@ -59,7 +59,7 @@ export interface UnitTestCostReport {
 export function getUnitTestCapability(specifier: string): UnitTestCapability | null {
   if (specifier === 'node:child_process' || specifier === 'child_process') return 'spawns-process';
   if (specifier === 'rollup' || specifier === 'vite' || specifier === 'esbuild') return 'builds-bundle';
-  if (specifier === 'typescript' || specifier === 'ts-morph') return 'runs-compiler';
+  if (specifier === 'typescript' || specifier === 'typescript5' || specifier === 'ts-morph') return 'runs-compiler';
   return null;
 }
 

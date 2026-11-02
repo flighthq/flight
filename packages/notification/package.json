@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "System notifications over a swappable web (Notification API) / native backend",
   "sideEffects": false

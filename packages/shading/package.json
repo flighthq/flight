@@ -42,7 +42,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Material Feature / Modifier tier — compiled shader augmentations that inject into a ShadedMaterial's shading and produce batchable variants. A composable base lit material carrying an ordered Modifier stack, an open registry keyed by feature kind over the diffuse/specular/normal/emissive/effect slot taxonomy, the composition/ordering contract that turns a stack into a deterministic ordered feature-set plus a stable define-key, seed emissive/rim/animated-normal modifier constructors, and sentinel-returning validation; substrate-agnostic and tree-shakable, the tier between complete materials and post-output adjustments",
   "sideEffects": false

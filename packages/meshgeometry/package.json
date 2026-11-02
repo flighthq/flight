@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Mesh geometry: vertex layouts, primitive builders, and normals/tangents/bounds",
   "sideEffects": false

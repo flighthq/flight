@@ -3,7 +3,7 @@ import type { Dirent } from 'node:fs';
 import { basename, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 import { formatGateProvenance, readGateTreeState } from './gate-provenance.ts';
 

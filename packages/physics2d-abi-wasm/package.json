@@ -32,7 +32,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Wasm-backed drop-in replacement for @flighthq/physics2d-abi",
   "sideEffects": false

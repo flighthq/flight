@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Exercises declaration-derived reserved-key unions through the real CLI. The generated module must
 // accept independently-authored structural objects under strict TypeScript and distinguish presence

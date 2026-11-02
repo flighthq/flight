@@ -59,7 +59,7 @@
     "@flighthq/requirement": "*",
     "@flighthq/scene2d-dom": "*",
     "esbuild": "*",
-    "typescript": "^5.3.0",
+    "typescript": "^7.0.2",
     "vite": "*"
   },
   "description": "Vite plugin serving generated Flight registration source from analyzed content",

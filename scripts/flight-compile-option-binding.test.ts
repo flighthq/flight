@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for `if let Some(name) = value` and `while let Some(name) = value`, run through the real
 // `flight-compile` CLI: a scrutinee that is not a plain binding or field is evaluated once per test, a

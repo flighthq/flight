@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for the compiler's `HashSet` / `HashMap` lowering to `Set` / `Map`, run through the real
 // `flight-compile` CLI: the emitted TypeScript must typecheck under `strict` and keep Rust's return values

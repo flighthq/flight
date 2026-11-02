@@ -48,7 +48,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Render-effect intents and substrate-agnostic recipe math",
   "sideEffects": false

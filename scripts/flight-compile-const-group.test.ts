@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for the compiler's `const-group` directive, run through the real `flight-compile` CLI:
 // a prefixed group of public Rust constants becomes one exported TypeScript const object that typechecks

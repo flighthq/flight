@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Pixel-level image manipulation using browser ImageData",
   "sideEffects": false

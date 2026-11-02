@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for value blocks and `match` values, which lower to immediately invoked arrows, run through
 // the real `flight-compile` CLI: a `return` or `?` inside one would leave only the arrow, so valid Rust that

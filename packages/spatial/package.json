@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "2D broadphase spatial index over object AABBs — candidate-pair, region, point, and ray queries behind a swappable index seam (uniform-grid default), feeding @flighthq/collision narrow-phase",
   "sideEffects": false

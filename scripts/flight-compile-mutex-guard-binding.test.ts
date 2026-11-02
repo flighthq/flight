@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Exercises shared-cell binding provenance through the real CLI. Guard identity is lexical: a reference
 // that shadows a guard, a guard that shadows a reference, and same-named bindings in sibling closures

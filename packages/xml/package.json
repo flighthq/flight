@@ -40,7 +40,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Lightweight tree-building (DOM-style) XML parser: parseXmlDocument builds an XmlElement tree, plus parseXmlAttributes and element query helpers, for atlas, plist, and sprite-sheet format files",
   "sideEffects": false

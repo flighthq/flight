@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Exercises nullable Option return provenance through the real source and Vitest generators. A local
 // initialized by a nullable-return call must keep `null` as its absent value even when its name gives

@@ -60,7 +60,7 @@
     "@flighthq/updater": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Electron host adapter with injected API/platform configuration and explicit capability composition",
   "flight": {

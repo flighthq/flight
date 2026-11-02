@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Immutable recoverable-state captures over plain data — captureSnapshot deep-clones and deep-freezes a state object, restoreSnapshot deep-assigns a snapshot back into live mutable state, interpolateSnapshots schema-aware lerps numeric leaves between two snapshots, and snapshotsEqual deep-compares; the primitive under save/undo/netcode/replay, deps types + math only",
   "sideEffects": false

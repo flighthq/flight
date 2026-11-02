@@ -55,7 +55,7 @@
   "devDependencies": {
     "@flighthq/scene2d": "*",
     "@webgpu/types": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "WebGPU renderer core: render state, targets, shaders, draw, surface, and background",
   "sideEffects": false

@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Host-explicit display enumeration, geometry, work area, scale factor, and display events",
   "sideEffects": false

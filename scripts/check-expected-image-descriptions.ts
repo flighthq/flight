@@ -13,7 +13,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
-import ts from 'typescript';
+import ts from 'typescript5';
 
 import { discoverEntries } from '../packages/tool-capture/src/captureEntries.ts';
 import { functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds.ts';

@@ -46,7 +46,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Atlas-based multi-quad scene node and instance-buffer operations",
   "sideEffects": false

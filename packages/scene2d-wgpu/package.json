@@ -69,7 +69,7 @@
     "@flighthq/textureatlas": "*",
     "@flighthq/tilemap": "*",
     "@webgpu/types": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "WebGPU display-object renderers (bitmap, shape, sprite, text, tilemap, particles)",
   "sideEffects": false

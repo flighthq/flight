@@ -40,7 +40,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Scalar numeric utilities — interpolation, clamping, angles, rounding, randomness, hashing, statistics, and number theory",
   "sideEffects": false

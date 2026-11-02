@@ -46,7 +46,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Texture atlases: regions, grid slicing, UVs, and constructors over image resources",
   "sideEffects": false

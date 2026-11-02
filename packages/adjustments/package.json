@@ -42,7 +42,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Pointwise value-remap adjustment descriptors and color-matrix fuse math",
   "sideEffects": false

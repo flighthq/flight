@@ -46,7 +46,7 @@
   "devDependencies": {
     "@flighthq/node": "*",
     "@flighthq/scene2d": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Explicit mode resolution and substitution for flight document scene tokens",
   "sideEffects": false

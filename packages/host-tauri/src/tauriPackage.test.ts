@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 import { rollup } from 'rollup';
 import type { OutputChunk } from 'rollup';
-import ts from 'typescript';
+import ts from 'typescript5';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import * as publicApi from './index.ts';

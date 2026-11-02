@@ -41,7 +41,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "DOM-free image decode/encode seam: MIME-keyed decoder/encoder registry over swappable per-format backends",
   "sideEffects": false

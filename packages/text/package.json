@@ -51,7 +51,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Text display objects: single-format TextLabel and multi-format RichText built on the text-layout spine",
   "sideEffects": false

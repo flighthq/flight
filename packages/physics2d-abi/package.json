@@ -44,7 +44,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Persistent handle and packed-buffer execution ABI for Physics2D, with an executable TypeScript reference backend",
   "sideEffects": false

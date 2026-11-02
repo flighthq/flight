@@ -25,7 +25,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 const SWF_DOCUMENT_PATH = join('packages', 'swf', 'src', 'swfDocument.ts');
 const CAPABILITIES_PATH = join('agents', 'packages', 'swf', 'capabilities.json');

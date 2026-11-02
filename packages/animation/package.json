@@ -44,7 +44,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Target-free animation core: keyframe sampler (step/linear/cubic, quaternion slerp), clips, and an explicit playhead",
   "sideEffects": false

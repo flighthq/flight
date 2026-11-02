@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@flighthq/image": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Display-object authoring format codecs — SVG and Lottie documents into Flight display trees",
   "sideEffects": false

@@ -41,7 +41,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Pure user-agent string parsing to device and platform identity tokens.",
   "sideEffects": false

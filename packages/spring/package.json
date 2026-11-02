@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Spring-physics animation — plain-data damped-harmonic springs (frequency + damping-ratio config, physical stiffness/damping/mass constructor) stepped by a numerically stable analytic integrator that stays finite for stiff springs at any deltaTime; scalar springs plus componentwise 2D/3D vector springs, settle detection, and reset",
   "sideEffects": false

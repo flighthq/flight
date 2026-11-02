@@ -34,7 +34,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Overridable so the detector can be pointed at another corpus WITHOUT changing what this cell's own
 // figures measure. A sweep whose default scope moves silently would make every previously reported

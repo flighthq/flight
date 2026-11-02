@@ -51,7 +51,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "WebGL2 renderer core: render state, targets, shaders, draw, and fullscreen passes",
   "sideEffects": false

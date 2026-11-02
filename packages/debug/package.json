@@ -44,7 +44,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Opt-in diagnostics umbrella over @flighthq/log — an open subsystem registry driving per-channel log levels, guard-enablers, and a dev console sink",
   "sideEffects": false

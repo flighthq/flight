@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for opaque `dyn Any` trait objects, run through the real `flight-compile` CLI: a trait object
 // whose only non-auto bound resolves to `std::any::Any` lowers to `object` (the opaque `ProviderRef` and

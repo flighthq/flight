@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@flighthq/path": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "OpenType/TrueType codec neighbor of @flighthq/font — parse font bytes into a GlyphOutlineSource (outlines, advances, codepoint mapping)",
   "sideEffects": false

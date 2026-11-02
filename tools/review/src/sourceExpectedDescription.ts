@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import ts from 'typescript5';
 
 /** Whether this exact functional cell declares itself an unsupported control rather than a review subject. */
 export function sourceDeclaresFunctionalBackendControl(source: string): boolean {

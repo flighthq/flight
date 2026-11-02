@@ -22,7 +22,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Tags the importer routes by numeric literal in a Map rather than through a `TAG_*` constant. A
 // constant-based extractor cannot see these at all, so without this table they are silently miscounted

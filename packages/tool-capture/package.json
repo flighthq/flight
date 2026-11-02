@@ -53,7 +53,7 @@
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Turn-key Flight capture, visual verification, parity, and benchmark CLI and API",
   "flight": {

@@ -47,7 +47,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "3D picking: camera-ray scene selection (ray vs bounds + brute-force ray vs triangle)",
   "sideEffects": false

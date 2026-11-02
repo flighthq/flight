@@ -41,7 +41,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Host-explicit assistive-technology bridge for mirrored semantic nodes, focus, and announcements",
   "sideEffects": false

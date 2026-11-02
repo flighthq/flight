@@ -57,7 +57,7 @@
     "@flighthq/scene3d": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Renderer registration, render state, render queue, and backend draw contracts",
   "sideEffects": false

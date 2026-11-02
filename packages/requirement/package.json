@@ -43,7 +43,7 @@
     "@flighthq/entity": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Plain requirement collection and set algebra for content-to-registration resolution",
   "sideEffects": false

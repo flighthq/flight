@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 import { describe, expect, test } from 'vitest';
 
 import { getCaptureEntryRoute } from '../packages/tool-capture/src/captureEntries.ts';

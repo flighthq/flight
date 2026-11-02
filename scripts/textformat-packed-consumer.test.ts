@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const ROOT = resolve(__dirname, '..');

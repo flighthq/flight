@@ -47,7 +47,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Renderer-agnostic text layout engine: measures and positions glyphs into layout groups",
   "sideEffects": false

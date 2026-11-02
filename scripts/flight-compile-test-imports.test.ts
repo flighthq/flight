@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for test generation through the real `flight-compile generate-tests` CLI: a foreign item a
 // test uses only inside `assert!` / `assert_eq!` is imported from its owning package's contract, not

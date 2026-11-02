@@ -38,7 +38,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Future explicit-host live webcam streaming, device enumeration, and stream lifecycle",
   "sideEffects": false

@@ -54,7 +54,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Dependency-injected Tauri Host providers over a minimal TauriApi",
   "flight": {

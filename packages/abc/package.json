@@ -41,7 +41,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "ABC (AVM2) bytecode container parsing into plain data",
   "sideEffects": false

@@ -47,7 +47,7 @@
     "@flighthq/xml": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Tiled (TMX/TMJ/TSX/TSJ) tilemap import/export codec — faithful TiledMap document plus TilemapData projection",
   "sideEffects": false

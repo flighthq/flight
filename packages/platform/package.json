@@ -43,7 +43,7 @@
     "@flighthq/useragent": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Platform identification seam for the desktop/mobile integration suite: OS/kind/arch detection with a swappable host backend",
   "sideEffects": false

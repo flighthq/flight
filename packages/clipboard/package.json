@@ -43,7 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "System clipboard operations over explicit Host capability vectors for text, images, formats, bookmarks, and change subscriptions",
   "sideEffects": false

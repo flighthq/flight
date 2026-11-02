@@ -43,7 +43,7 @@
     "@flighthq/entity": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Bedrock color primitive — packed-RGBA pack/unpack, sRGB↔linear transfer, HSL/HSV, OkLab, luminance/contrast, premultiply, hex; pure value/space math over plain numbers and LinearColor",
   "sideEffects": false

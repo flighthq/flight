@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for the compiler's type-position lowering of `Pin<Box<dyn Future<Output = T> + Send>>`
 // to `Promise<T>`, run through the real `flight-compile` CLI: the emitted capability types typecheck under

@@ -80,7 +80,7 @@
     "@flighthq/video": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Explicit Web Host providers plus compatibility enablers for unmigrated browser capability seams",
   "flight": {

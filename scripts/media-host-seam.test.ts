@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 import { describe, expect, it } from 'vitest';
 
 import * as hostWebContract from '../packages/host-web/src/contract.ts';

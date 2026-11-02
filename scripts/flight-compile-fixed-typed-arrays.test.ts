@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import ts from 'typescript';
+import ts from 'typescript5';
 
 // Regressions for fixed arrays of typed-array primitives (`[f64; N]` is `Float64Array`) outside `let` and
 // return sites, run through the real `flight-compile` CLI: literals pushed into `Vec<[f64; N]>` locals and

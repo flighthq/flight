@@ -46,7 +46,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Controller-only behavior for caller-authored 2D interface visuals",
   "sideEffects": false

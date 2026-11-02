@@ -43,7 +43,7 @@
   "devDependencies": {
     "@flighthq/compression": "*",
     "esbuild": "*",
-    "typescript": "^5.3.0"
+    "typescript": "^7.0.2"
   },
   "description": "Domain-agnostic build manifest model, content-analysis mapping, diffing and TypeScript codegen",
   "flight": {
