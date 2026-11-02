@@ -228,6 +228,8 @@ jobs:
     needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm, render-test]
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    permissions:
+      actions: write # start Promote; no secret and no publish credential
     steps:
       - name: Require every gate
         env:
@@ -240,6 +242,22 @@ jobs:
             fi
           done
           echo "All gates passed."
+      # ★ STARTED DELIBERATELY, ON DEVELOP. A run started this way uses develop's copy of promote.yml —
+      # the copy this very commit carries — so a change to Promote takes effect with the commit that makes
+      # it. Waiting for CI to finish (`workflow_run`) would instead run the DEFAULT branch's copy, `main`'s,
+      # a day behind. Only develop pushes hand off, and only after every gate passed (this step runs
+      # only when the one above succeeded). Promote re-checks the run itself rather than trusting this.
+      - name: Hand off to Promote
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          gh workflow run promote.yml --repo "$GITHUB_REPOSITORY" --ref develop \
+            -f run_id="$RUN_ID" -f title="$(printf '%s' "$TITLE" | head -n 1)"
+          echo "Started Promote for CI run ${RUN_ID}."
 
   render-test:
     # Functional smoke, a GATE for `next`: every functional scene — test fixtures written against the

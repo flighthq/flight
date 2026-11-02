@@ -7,32 +7,34 @@ name: Promote
 #   develop → CI (Ready for next) → Promote (npm next, `next`) → CI · extended (Ready for main)
 #           → Nightly (`main`, edge on crates.io + npm) → tag (latest, via Release)
 #
-# ★ IT RUNS FROM THE DEFAULT BRANCH'S COPY OF THIS FILE. A `workflow_run` workflow is registered and
-# executed from the repository's default branch only, so an edit here takes effect when it reaches the
-# default branch. With `develop` as the default branch that is as soon as it lands.
+# ★ STARTED BY CI, DELIBERATELY, ON DEVELOP. CI's `Ready for next` job starts this workflow on
+# `develop` once every gate passed, so the run uses develop's copy of this file — the one the commit
+# being promoted carries — and a change here takes effect with the commit that makes it. (Waiting for CI
+# to finish instead would run the default branch's copy, `main`'s, a day behind.) Nightly, which
+# promotes to `main`, deliberately does the opposite: it runs main's validated copy.
 #
-# It starts whenever CI finishes on develop, whatever the conclusion, and promotes only when that
-# run's `Ready for next` succeeded. CI's whole conclusion is NOT the test: it also includes Render
-# smoke, which does not gate `next`. Nothing is rebuilt: the publish takes the exact `dist` CI built
-# and checked, downloaded from the triggering run.
+# Eligibility is re-established from the CI run itself, not taken from whoever started this: a develop
+# push whose `Ready for next` succeeded. Nothing is rebuilt: the publish takes the exact `dist` CI
+# built and checked, downloaded from that run.
 #
 # Promotions run one at a time and never cancel, so a later commit cannot be published before an
 # earlier one finishes. GitHub keeps one waiting run and replaces it with newer ones, so under a burst
 # of pushes the newest commit is promoted and the ones it supersedes are skipped.
-run-name: "${{ github.event.workflow_run.head_commit.message || 'Promote' }}"
+run-name: "${{ inputs.title || 'Promote' }}"
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [develop]
-  # Promote a specific CI run by hand, e.g. after re-running CI or when the event was missed.
+  # Started by CI with its run, or by hand to promote a specific CI run (e.g. after re-running CI).
   workflow_dispatch:
     inputs:
       run_id:
         description: The CI run to promote (its id, from the run's URL). It must be a develop push whose `Ready for next` passed.
         required: true
         type: string
+      title:
+        description: Run title; CI passes the commit message. Optional.
+        required: false
+        type: string
+        default: ''
 
 env:
   ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
@@ -42,8 +44,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Decides from the CI run itself, never from the event's say-so: a develop push whose `Ready for next`
-  # job succeeded. A run that is not eligible is a normal outcome (CI red, a pull request), not a failure.
+  # Decides from the CI run itself, never from the caller's say-so: a develop push whose `Ready for next`
+  # job succeeded. CI starts this from inside `Ready for next`, so that job may still be finishing; it
+  # is awaited (briefly) rather than read as "not yet". A run that is not eligible ends quietly.
   eligible:
     name: Eligible
     runs-on: ubuntu-latest
@@ -57,7 +60,7 @@ jobs:
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+          RUN_ID: ${{ inputs.run_id }}
         run: |
           set -euo pipefail
           run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
@@ -65,8 +68,15 @@ jobs:
           read -r sha branch event workflow <<<"$run"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          ready=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" \
-            --jq '[.jobs[] | select(.name == "Ready for next") | .conclusion] | .[0] // "missing"')
+          # `Ready for next` is the job that started this run, so wait for it to complete (10 minutes
+          # at most; it finishes seconds after the hand-off).
+          ready=pending
+          for _ in $(seq 1 60); do
+            ready=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+              --jq '[.jobs[] | select(.name == "Ready for next") | (.conclusion // "pending")] | .[0] // "missing"')
+            [ "$ready" = pending ] || break
+            sleep 10
+          done
           if [ "$workflow" = CI ] && [ "$branch" = develop ] && [ "$event" = push ] && [ "$ready" = success ]; then
             echo "Eligible: ${sha} (CI run ${RUN_ID}) is Ready for next."
             echo 'eligible=true' >> "$GITHUB_OUTPUT"

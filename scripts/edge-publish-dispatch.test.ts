@@ -88,6 +88,20 @@ describe('edge-publish promotion contract', () => {
     ]);
   });
 
+  it('CI hands off to Promote deliberately, on develop, so Promote runs the promoted commit copy', () => {
+    const ready = jobsOf('tests')['ready-for-next'];
+    const handoff = (ready.steps ?? []).find((step) => step.name === 'Hand off to Promote');
+    // Only develop pushes, and only after the gate step above it succeeded (steps stop on failure).
+    expect(handoff?.if).toBe("${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}");
+    expect(String(handoff?.run)).toContain('gh workflow run promote.yml --repo "$GITHUB_REPOSITORY" --ref develop');
+    // Starting a workflow is the only write CI holds, and it holds no secret.
+    expect(ready.permissions).toEqual({ actions: 'write' });
+    // ★ No `workflow_run` trigger: that would run the DEFAULT branch's copy (main's), a day behind the
+    // commit being promoted.
+    const promote = parseWorkflow('promote') as { on: Record<string, unknown> };
+    expect(Object.keys(promote.on)).toEqual(['workflow_dispatch']);
+  });
+
   it('Promote acts only on a develop push whose Ready for next succeeded', () => {
     const check = String(jobsOf('promote').eligible.steps?.find((step) => step.id === 'check')?.run);
     // Decided from the CI run itself, by the gate job's name — not from CI's overall conclusion, which
