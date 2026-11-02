@@ -5496,17 +5496,34 @@ pub fn widen_u16(value: u16) -> usize {
 pub fn bool_to_number(a: u8, b: u8, flag: bool) -> u32 {
     return u32::from(a) + u32::from(b) * 0x100 + u32::from(flag);
 }
+
+pub fn unannotated_bool_local(format: u8) -> usize {
+    let has_table = format == 3;
+    return 5 + usize::from(has_table);
+}
+
+pub fn inline_bool_comparison(format: u8) -> u32 {
+    return 1 + u32::from(format == 3);
+}
 "#;
 
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
             output.contains("Number(flag)"),
-            "u32::from(bool) should emit Number(flag): {output}"
+            "u32::from(bool param) should emit Number(flag): {output}"
         );
         assert!(
             !output.contains("Number(a)"),
             "u32::from(u8) should not wrap with Number: {output}"
+        );
+        assert!(
+            output.contains("Number(hasTable)"),
+            "usize::from(unannotated bool local) should emit Number(hasTable): {output}"
+        );
+        assert!(
+            output.contains("Number(format === 3)"),
+            "u32::from(inline comparison) should emit Number(format === 3): {output}"
         );
     }
 

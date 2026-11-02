@@ -8072,6 +8072,13 @@ pub(crate) fn function_expression_context(
                 }
             }
             if let Some(initializer) = &local.init
+                && expression_is_known_boolean(&initializer.expr, self.context)
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.context
+                    .insert(format!("{BOOLEAN_EXPRESSION_MARKER}{name}"));
+            }
+            if let Some(initializer) = &local.init
                 && expression_is_known_string(&initializer.expr, self.context)
                 && let Some(name) = local_pattern_name(&local.pat)
             {
