@@ -5590,6 +5590,51 @@ pub fn is_some_and_digit(byte: Option<u8>) -> bool {
     }
 
     #[test]
+    fn lowers_get_and_remove_for_unproven_receivers_with_string_dispatch() {
+        let source = r#"
+use std::collections::HashMap;
+
+pub fn slice_get_chain(values: &[f32], index: usize) -> f64 {
+    return values.get(index).copied().unwrap_or(0.0) as f64;
+}
+
+pub fn map_get_by_key(map: &HashMap<String, u32>, key: &str) -> Option<u32> {
+    return map.get(key).copied();
+}
+
+pub fn remove_by_index(items: &mut Vec<u32>, index: usize) -> u32 {
+    return items.remove(index);
+}
+
+pub fn map_remove_check(map: &mut HashMap<String, u32>, key: &str) -> bool {
+    return map.remove(key).is_some();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("values[index]"),
+            "slice .get(index) should emit bracket access: {output}"
+        );
+        assert!(
+            output.contains("map.get(key)"),
+            "HashMap .get(key) should emit .get(): {output}"
+        );
+        assert!(
+            output.contains("splice(index, 1)"),
+            "Vec .remove(index) should emit splice: {output}"
+        );
+        assert!(
+            output.contains("entries.delete(key)"),
+            "HashMap .remove(key) should emit map delete: {output}"
+        );
+        assert!(
+            output.contains("!== undefined"),
+            ".remove(key).is_some() should check !== undefined: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_f32_round_with_half_away_from_zero() {
         let source = r#"
 pub fn round_value(value: f32) -> f32 {
