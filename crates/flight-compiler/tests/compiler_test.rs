@@ -5311,6 +5311,36 @@ pub fn f(a: u32, b: u32) -> u32 {
     }
 
     #[test]
+    fn lowers_unwrap_or_default_on_sequence_first_last_pop() {
+        let source = r#"
+pub fn first_value(items: &Vec<f32>) -> f32 {
+    return items.first().copied().unwrap_or_default();
+}
+
+pub fn last_name(names: &Vec<String>) -> String {
+    return names.last().cloned().unwrap_or_default();
+}
+
+pub fn pop_flag(flags: &mut Vec<bool>) -> bool {
+    return flags.pop().unwrap_or_default();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("?? 0"),
+            "first().copied().unwrap_or_default() on f32 should resolve to ?? 0: {output}"
+        );
+        assert!(
+            output.contains("?? \"\""),
+            "last().cloned().unwrap_or_default() on String should resolve to ?? \"\": {output}"
+        );
+        assert!(
+            output.contains("?? false"),
+            "pop().unwrap_or_default() on bool should resolve to ?? false: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_wrapping_shl() {
         let source = r#"
 pub fn shift(value: u32, n: u32) -> u32 {

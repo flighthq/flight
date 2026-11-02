@@ -22644,6 +22644,18 @@ fn option_binding_fact_default(
             let numeric_type = expression_numeric_type(&call.receiver, entities)?;
             return binding_fact_default(&BindingFact::Structure(numeric_type));
         }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "first" | "last" | "pop"
+                ) =>
+        {
+            if let Some(element_fact) = sequence_element_binding_fact(&call.receiver, entities) {
+                return binding_fact_default(&element_fact);
+            }
+            None
+        }
         Expr::Field(field) => {
             if let syn::Member::Named(field_name) = &field.member {
                 if let Some(owner) = expression_struct_name(&field.base, entities) {
@@ -22704,6 +22716,25 @@ fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {
         BindingFact::Tuple(_) => None,
         BindingFact::UnresolvedPattern => None,
     };
+}
+
+fn sequence_element_binding_fact(
+    receiver: &Expr,
+    entities: &HashSet<String>,
+) -> Option<BindingFact> {
+    match receiver {
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let name = path.path.segments[0].ident.to_string();
+            match lexical_fact(entities, &name)? {
+                BindingFact::Sequence(element) => Some(*element),
+                _ => None,
+            }
+        }
+        Expr::Reference(reference) => sequence_element_binding_fact(&reference.expr, entities),
+        Expr::Paren(paren) => sequence_element_binding_fact(&paren.expr, entities),
+        Expr::Group(group) => sequence_element_binding_fact(&group.expr, entities),
+        _ => None,
+    }
 }
 
 fn emit_numeric_function_reference(
