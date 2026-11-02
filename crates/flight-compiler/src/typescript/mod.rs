@@ -8859,6 +8859,23 @@ fn emit_block_with_context(
                 block_context.retain(|m| !m.starts_with(TRY_COUNTER_MARKER));
                 block_context.insert(counter.clone());
             }
+            if let Some(init) = &local.init {
+                if matches!(init.expr.as_ref(), Expr::Try(_))
+                    && expression_contains_unconditional_try(&init.expr)
+                {
+                    let try_count_before = block_context
+                        .iter()
+                        .find_map(|m| m.strip_prefix(TRY_COUNTER_MARKER))
+                        .and_then(|s| s.parse::<usize>().ok())
+                        .unwrap_or(0);
+                    let emitted = collect_unconditional_try_expressions(&init.expr).len();
+                    if emitted > 0 {
+                        let new_count = try_count_before + emitted;
+                        block_context.retain(|m| !m.starts_with(TRY_COUNTER_MARKER));
+                        block_context.insert(format!("{TRY_COUNTER_MARKER}{new_count}"));
+                    }
+                }
+            }
             update_vitest_struct_local_context(local, &mut block_context);
             update_vitest_local_function_context(local, &mut block_context);
         } else if let Stmt::Local(local) = statement {
@@ -12723,17 +12740,45 @@ fn emit_match_statement_with_action(
                 writeln!(out, "{prefix} ({predicate}) {{")
                     .expect("writing to a String cannot fail");
             }
-            if let Some(alt) = info.alternatives.first() {
-                for (i, element) in alt.elements.iter().enumerate() {
-                    if let Some(binding) = &element.binding {
-                        write_indent(out, indent + 2);
-                        writeln!(out, "const {binding} = {};", temps[i])
+            {
+                let mut binding_positions: Vec<(String, Vec<usize>)> = Vec::new();
+                for alt in &info.alternatives {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(binding) = &element.binding {
+                            if let Some(entry) =
+                                binding_positions.iter_mut().find(|(n, _)| n == binding)
+                            {
+                                if !entry.1.contains(&i) {
+                                    entry.1.push(i);
+                                }
+                            } else {
+                                binding_positions.push((binding.clone(), vec![i]));
+                            }
+                        }
+                    }
+                }
+                for (binding, positions) in &binding_positions {
+                    write_indent(out, indent + 2);
+                    if positions.len() == 1 {
+                        writeln!(out, "const {binding} = {};", temps[positions[0]])
+                            .expect("writing to a String cannot fail");
+                    } else {
+                        let chain = positions
+                            .iter()
+                            .map(|p| temps[*p].as_str())
+                            .collect::<Vec<_>>()
+                            .join(" ?? ");
+                        writeln!(out, "const {binding} = {chain};")
                             .expect("writing to a String cannot fail");
                     }
-                    for (binding_name, source_field) in &element.field_bindings {
-                        write_indent(out, indent + 2);
-                        writeln!(out, "const {binding_name} = {}.{source_field};", temps[i])
-                            .expect("writing to a String cannot fail");
+                }
+                if let Some(alt) = info.alternatives.first() {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        for (binding_name, source_field) in &element.field_bindings {
+                            write_indent(out, indent + 2);
+                            writeln!(out, "const {binding_name} = {}.{source_field};", temps[i])
+                                .expect("writing to a String cannot fail");
+                        }
                     }
                 }
             }
@@ -15672,6 +15717,15 @@ fn analyze_general_tuple_element(
                     binding: None,
                     field_bindings: Vec::new(),
                 })
+            } else if id.ident == "None" {
+                let absent = scrutinee_elem
+                    .map(|e| option_absent_value(e, entities))
+                    .unwrap_or("null");
+                Some(GeneralTupleElement {
+                    condition: GeneralTupleElementCondition::OptionNone(absent.to_string()),
+                    binding: None,
+                    field_bindings: Vec::new(),
+                })
             } else {
                 Some(GeneralTupleElement {
                     condition: GeneralTupleElementCondition::Wild,
@@ -16110,19 +16164,47 @@ fn emit_match_expression(
                 writeln!(out, "  {prefix} ({predicate}) {{")
                     .expect("writing to a String cannot fail");
             }
-            if let Some(alt) = info.alternatives.first() {
-                for (i, element) in alt.elements.iter().enumerate() {
-                    if let Some(binding) = &element.binding {
-                        writeln!(out, "    const {binding} = {};", temps[i])
+            {
+                let mut binding_positions: Vec<(String, Vec<usize>)> = Vec::new();
+                for alt in &info.alternatives {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(binding) = &element.binding {
+                            if let Some(entry) =
+                                binding_positions.iter_mut().find(|(n, _)| n == binding)
+                            {
+                                if !entry.1.contains(&i) {
+                                    entry.1.push(i);
+                                }
+                            } else {
+                                binding_positions.push((binding.clone(), vec![i]));
+                            }
+                        }
+                    }
+                }
+                for (binding, positions) in &binding_positions {
+                    if positions.len() == 1 {
+                        writeln!(out, "    const {binding} = {};", temps[positions[0]])
+                            .expect("writing to a String cannot fail");
+                    } else {
+                        let chain = positions
+                            .iter()
+                            .map(|p| temps[*p].as_str())
+                            .collect::<Vec<_>>()
+                            .join(" ?? ");
+                        writeln!(out, "    const {binding} = {chain};")
                             .expect("writing to a String cannot fail");
                     }
-                    for (binding_name, source_field) in &element.field_bindings {
-                        writeln!(
-                            out,
-                            "    const {binding_name} = {}.{source_field};",
-                            temps[i]
-                        )
-                        .expect("writing to a String cannot fail");
+                }
+                if let Some(alt) = info.alternatives.first() {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        for (binding_name, source_field) in &element.field_bindings {
+                            writeln!(
+                                out,
+                                "    const {binding_name} = {}.{source_field};",
+                                temps[i]
+                            )
+                            .expect("writing to a String cannot fail");
+                        }
                     }
                 }
             }
@@ -16814,17 +16896,45 @@ pub(crate) fn emit_match_statement(
                 writeln!(out, "{prefix} ({predicate}) {{")
                     .expect("writing to a String cannot fail");
             }
-            if let Some(alt) = info.alternatives.first() {
-                for (i, element) in alt.elements.iter().enumerate() {
-                    if let Some(binding) = &element.binding {
-                        write_indent(out, indent + 2);
-                        writeln!(out, "const {binding} = {};", temps[i])
+            {
+                let mut binding_positions: Vec<(String, Vec<usize>)> = Vec::new();
+                for alt in &info.alternatives {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        if let Some(binding) = &element.binding {
+                            if let Some(entry) =
+                                binding_positions.iter_mut().find(|(n, _)| n == binding)
+                            {
+                                if !entry.1.contains(&i) {
+                                    entry.1.push(i);
+                                }
+                            } else {
+                                binding_positions.push((binding.clone(), vec![i]));
+                            }
+                        }
+                    }
+                }
+                for (binding, positions) in &binding_positions {
+                    write_indent(out, indent + 2);
+                    if positions.len() == 1 {
+                        writeln!(out, "const {binding} = {};", temps[positions[0]])
+                            .expect("writing to a String cannot fail");
+                    } else {
+                        let chain = positions
+                            .iter()
+                            .map(|p| temps[*p].as_str())
+                            .collect::<Vec<_>>()
+                            .join(" ?? ");
+                        writeln!(out, "const {binding} = {chain};")
                             .expect("writing to a String cannot fail");
                     }
-                    for (binding_name, source_field) in &element.field_bindings {
-                        write_indent(out, indent + 2);
-                        writeln!(out, "const {binding_name} = {}.{source_field};", temps[i])
-                            .expect("writing to a String cannot fail");
+                }
+                if let Some(alt) = info.alternatives.first() {
+                    for (i, element) in alt.elements.iter().enumerate() {
+                        for (binding_name, source_field) in &element.field_bindings {
+                            write_indent(out, indent + 2);
+                            writeln!(out, "const {binding_name} = {}.{source_field};", temps[i])
+                                .expect("writing to a String cannot fail");
+                        }
                     }
                 }
             }

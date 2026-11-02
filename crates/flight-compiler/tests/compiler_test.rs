@@ -21924,3 +21924,77 @@ pub fn copy_map(map: &HashMap<String, u32>) -> HashMap<String, u32> {
         "should lower HashMap::clone to new Map(): {output}"
     );
 }
+
+#[test]
+fn try_counter_persists_across_consecutive_statements() {
+    let source = r#"
+fn checked(value: i32) -> Option<i32> {
+    if value < 0 { return None; }
+    return Some(value);
+}
+
+pub fn chained(a: i32, b: i32) -> Option<i32> {
+    let left = checked(a)?.checked_sub(1)?;
+    let right = checked(b)?.checked_add(1)?;
+    return Some(left + right);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("__try0"),
+        "first try variable should be __try0: {output}"
+    );
+    assert!(
+        !output.contains("const __try0 = checked(b)"),
+        "second statement must not reuse __try0: {output}"
+    );
+    let count = output.matches("const __try0").count();
+    assert_eq!(
+        count, 1,
+        "exactly one const __try0 declaration; found {count}: {output}"
+    );
+}
+
+#[test]
+fn match_tuple_or_pattern_recognizes_none() {
+    let source = r#"
+pub fn either_slot(slash: Option<usize>, backslash: Option<usize>) -> Option<usize> {
+    let index = match (slash, backslash) {
+        (Some(a), Some(b)) => Some(a.max(b)),
+        (Some(index), None) | (None, Some(index)) => Some(index),
+        (None, None) => None,
+    };
+    return index;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("const None"),
+        "None must not be emitted as a binding: {output}"
+    );
+    assert!(
+        output.contains("=== undefined"),
+        "None positions should emit === undefined checks: {output}"
+    );
+}
+
+#[test]
+fn match_tuple_or_pattern_binds_from_multiple_positions() {
+    let source = r#"
+pub fn either(a: Option<u32>, b: Option<u32>) -> Option<u32> {
+    return match (a, b) {
+        (Some(v), None) | (None, Some(v)) => Some(v),
+        _ => None,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("??"),
+        "binding spanning multiple positions should use ?? coalescing: {output}"
+    );
+    assert!(
+        !output.contains("const None"),
+        "None must not appear as a binding: {output}"
+    );
+}
