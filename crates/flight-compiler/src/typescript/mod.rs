@@ -16867,6 +16867,19 @@ fn emit_method_call(
         {
             Ok(format!("{receiver}[{}]", arguments[0]))
         }
+        "get" | "get_mut"
+            if arguments.len() == 1
+                && matches!(
+                    call.args.first(),
+                    Some(Expr::Reference(_))
+                        | Some(Expr::Lit(syn::ExprLit {
+                            lit: Lit::Str(_),
+                            ..
+                        }))
+                ) =>
+        {
+            Ok(format!("{receiver}.get({})", arguments[0]))
+        }
         "as_str" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
                 "((v: unknown): string | undefined => typeof v === \"string\" ? v : undefined)({receiver})"
@@ -22471,17 +22484,12 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
         {
             Some(String::new())
         }
-        Expr::MethodCall(call)
-            if call.method == "get"
-                && call.args.len() == 1
-                && expression_is_sequence(&call.receiver, entities) =>
-        {
+        Expr::MethodCall(call) if call.method == "get" && call.args.len() == 1 => {
             Some(String::new())
         }
         Expr::MethodCall(call)
             if call.args.is_empty()
-                && matches!(call.method.to_string().as_str(), "first" | "last" | "pop")
-                && expression_is_sequence(&call.receiver, entities) =>
+                && matches!(call.method.to_string().as_str(), "first" | "last" | "pop") =>
         {
             Some(String::new())
         }
