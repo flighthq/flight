@@ -10,14 +10,14 @@
 # credential able to rewrite the store it is measured against; splitting it across two workflows is what
 # enforces it, not a convention anyone has to remember.
 #
-# ★ THE TRIGGER IS EVERY PUSH TO THE TRUNK, DELIBERATELY, AND THAT REPLACED A PATH FILTER THAT KEPT
-# SILENTLY MISSING COMMISSIONS. A path filter answers "did the queue change in this push"; the body
-# answers "what is outstanding now". Those are different questions, and three separate pushes ran no
-# capture because a fix landed under `scripts/` or under the sibling workflow file rather than under
-# `reference-image-requests/`. Each miss looked like success: no run, no error, nothing in the run list.
-# The body is the queue's only reader, so the trigger now simply asks it on every push. That is only
-# affordable because the build is gated on there being work (below) — an empty queue is a checkout and
-# an `npm ci`.
+# ★ THE TRIGGER IS A PATH FILTER OVER THE WHOLE PIPELINE, NOT JUST THE QUEUE. A filter on
+# `reference-image-requests/**` alone kept silently missing commissions: three pushes ran no capture
+# because the fix landed under `scripts/` or in a sibling workflow file, and each miss looked like
+# success (no run, no error). Every-push triggering fixed that but put two runs (this and the bridge)
+# on every push to develop. The filter below covers everything this pipeline reads from the CURRENT
+# checkout — the queue, the reference-image scripts and identity file, the capture tool, the Playwright
+# setup, and both workflow files — so a fix to any of them re-asks the live queue. A request left
+# outstanding by something else is re-run with a manual dispatch, which processes the whole queue.
 #
 # ★ NOT `pull_request_target`, AND NOT A FORK TRIGGER. Both would hand a commissioned commit a token with
 # write scope on this repository. The trigger is a push to the trunk — work that has already landed — plus
@@ -34,6 +34,13 @@ name: Reference Images · Capture
 on:
   push:
     branches: [develop]
+    paths:
+      - 'reference-image-requests/**'
+      - 'scripts/reference-image-*'
+      - 'packages/tool-capture/**'
+      - '.github/actions/setup-playwright/**'
+      - '.github/workflows/reference-image-capture.yml'
+      - '.github/workflows/reference-image-bridge.yml'
   workflow_dispatch:
     inputs:
       request:
