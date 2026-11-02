@@ -8815,10 +8815,31 @@ fn emit_block_with_context(
     insert_vitest_rebound_struct_context(statements, &mut block_context);
     let mut declaration_counts = HashMap::new();
     for statement in statements {
-        if let Stmt::Local(local) = statement
-            && let Some(name) = local_pattern_name(&local.pat)
-        {
-            *declaration_counts.entry(name).or_insert(0_usize) += 1;
+        if let Stmt::Local(local) = statement {
+            if let Some(name) = local_pattern_name(&local.pat) {
+                *declaration_counts.entry(name).or_insert(0_usize) += 1;
+            }
+            if let Pat::Tuple(tuple) = &local.pat {
+                for elem in &tuple.elems {
+                    let name = match elem {
+                        Pat::TupleStruct(ts)
+                            if (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
+                                && ts.elems.len() == 1 =>
+                        {
+                            if let Pat::Ident(ident) = &ts.elems[0] {
+                                Some(ident.ident.to_string())
+                            } else {
+                                None
+                            }
+                        }
+                        Pat::Ident(ident) if ident.ident != "None" => Some(ident.ident.to_string()),
+                        _ => None,
+                    };
+                    if let Some(name) = name {
+                        *declaration_counts.entry(name).or_insert(0_usize) += 1;
+                    }
+                }
+            }
         }
     }
     let mut declared: HashSet<String> = HashSet::new();
@@ -12975,7 +12996,21 @@ fn emit_hoisted_value_block_local(
             "hoisted value block must end with an expression",
         ));
     };
-    let block_context = emit_block_with_context(out, preceding, entities, indent)?;
+    let target_js = local_pattern_name(&local.pat).map(|n| snake_to_lower_camel(&n));
+    let mut block_entities = entities.clone();
+    if let Some(ref target) = target_js {
+        for stmt in preceding {
+            if let Stmt::Local(inner) = stmt {
+                if let Some(name) = local_pattern_name(&inner.pat) {
+                    let js_name = snake_to_lower_camel(&name);
+                    if js_name == *target {
+                        block_entities.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
+                    }
+                }
+            }
+        }
+    }
+    let block_context = emit_block_with_context(out, preceding, &block_entities, indent)?;
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => (emit_pattern(&local.pat)?, None),
@@ -13317,6 +13352,7 @@ fn emit_let_else_local(
         }
         let mut temps = Vec::new();
         let mut names = Vec::new();
+        let mut rebinds = Vec::new();
         let mut conditions = Vec::new();
         for (i, elem) in tuple.elems.iter().enumerate() {
             let value = emit_expression(&init_tuple.elems[i], entities)?;
@@ -13328,7 +13364,12 @@ fn emit_let_else_local(
                     let absent = option_absent_value(&init_tuple.elems[i], entities);
                     match &ts.elems[0] {
                         Pat::Ident(ident) => {
-                            let name = snake_to_lower_camel(&ident.ident.to_string());
+                            let rust_name = ident.ident.to_string();
+                            let name = snake_to_lower_camel(&rust_name);
+                            let is_rebind = shadowed
+                                || expression_contains_identifier(&init_tuple.elems[i], &rust_name)
+                                || entities
+                                    .contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
                             let temp = format!("$t{i}");
                             write_indent(out, indent);
                             writeln!(out, "const {temp} = {value};")
@@ -13336,6 +13377,7 @@ fn emit_let_else_local(
                             conditions.push(format!("{temp} === {absent}"));
                             temps.push(Some(temp));
                             names.push(name);
+                            rebinds.push(is_rebind);
                         }
                         Pat::Wild(_) => {
                             let temp = format!("$t{i}");
@@ -13345,6 +13387,7 @@ fn emit_let_else_local(
                             conditions.push(format!("{temp} === {absent}"));
                             temps.push(None);
                             names.push("_".to_string());
+                            rebinds.push(false);
                         }
                         _ => {
                             return Err(compile_error(
@@ -13356,6 +13399,7 @@ fn emit_let_else_local(
                 Pat::Wild(_) => {
                     temps.push(None);
                     names.push("_".to_string());
+                    rebinds.push(false);
                 }
                 Pat::Path(path) if path.path.is_ident("None") => {
                     let absent = option_absent_value(&init_tuple.elems[i], entities);
@@ -13366,6 +13410,7 @@ fn emit_let_else_local(
                     conditions.push(format!("{temp} !== {absent}"));
                     temps.push(None);
                     names.push("_".to_string());
+                    rebinds.push(false);
                 }
                 Pat::Ident(ident) if ident.ident == "None" => {
                     let absent = option_absent_value(&init_tuple.elems[i], entities);
@@ -13376,14 +13421,26 @@ fn emit_let_else_local(
                     conditions.push(format!("{temp} !== {absent}"));
                     temps.push(None);
                     names.push("_".to_string());
+                    rebinds.push(false);
                 }
                 Pat::Ident(ident) => {
-                    let name = snake_to_lower_camel(&ident.ident.to_string());
-                    write_indent(out, indent);
-                    writeln!(out, "const {name} = {value};")
-                        .expect("writing to a String cannot fail");
+                    let rust_name = ident.ident.to_string();
+                    let name = snake_to_lower_camel(&rust_name);
+                    let is_rebind = shadowed
+                        || expression_contains_identifier(&init_tuple.elems[i], &rust_name)
+                        || entities.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+                    if is_rebind {
+                        write_indent(out, indent);
+                        writeln!(out, "{name} = {value};")
+                            .expect("writing to a String cannot fail");
+                    } else {
+                        write_indent(out, indent);
+                        writeln!(out, "const {name} = {value};")
+                            .expect("writing to a String cannot fail");
+                    }
                     temps.push(None);
                     names.push(name);
+                    rebinds.push(is_rebind);
                 }
                 _ => {
                     return Err(compile_error(
@@ -13409,7 +13466,12 @@ fn emit_let_else_local(
             }
             if let Some(temp) = &temps[i] {
                 write_indent(out, indent);
-                writeln!(out, "const {name} = {temp};").expect("writing to a String cannot fail");
+                if rebinds[i] {
+                    writeln!(out, "{name} = {temp};").expect("writing to a String cannot fail");
+                } else {
+                    writeln!(out, "const {name} = {temp};")
+                        .expect("writing to a String cannot fail");
+                }
             }
         }
         return Ok(());
@@ -21142,10 +21204,18 @@ fn emit_statement(
             emit_match_statement(out, match_expression, entities, indent)?;
         }
         Stmt::Expr(Expr::Block(block), _) => {
-            emit_block(out, &block.block.stmts, entities, indent)?;
+            write_indent(out, indent);
+            out.push_str("{\n");
+            emit_block(out, &block.block.stmts, entities, indent + 1)?;
+            write_indent(out, indent);
+            out.push_str("}\n");
         }
         Stmt::Expr(Expr::Unsafe(unsafe_block), _) => {
-            emit_block(out, &unsafe_block.block.stmts, entities, indent)?;
+            write_indent(out, indent);
+            out.push_str("{\n");
+            emit_block(out, &unsafe_block.block.stmts, entities, indent + 1)?;
+            write_indent(out, indent);
+            out.push_str("}\n");
         }
         Stmt::Expr(Expr::Break(break_expr), _) => {
             write_indent(out, indent);

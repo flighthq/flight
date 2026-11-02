@@ -22076,3 +22076,60 @@ pub fn load(url: &str) -> Option<u32> {
         "first rebound try-local should use let: {output}"
     );
 }
+
+#[test]
+fn tuple_let_else_rebinds_existing_bindings() {
+    let source = r#"
+fn parse(s: &str) -> Option<u32> { None }
+
+pub fn compare(a: &str, b: &str) -> f64 {
+    let first = parse(a);
+    let second = parse(b);
+    let (Some(first), Some(second)) = (first, second) else {
+        return f64::INFINITY;
+    };
+    return (first as f64) - (second as f64);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("let first = parse(a)"),
+        "first declaration should use let when rebound by tuple let-else: {output}"
+    );
+    assert!(
+        !output.contains("const first = $t0") && !output.contains("const second = $t1"),
+        "tuple let-else post-condition should not redeclare with const: {output}"
+    );
+    assert!(
+        output.contains("first = $t0") && output.contains("second = $t1"),
+        "tuple let-else should reassign existing bindings: {output}"
+    );
+}
+
+#[test]
+fn scoping_block_preserves_braces() {
+    let source = r#"
+fn process(data: &[u8]) -> u32 { 0 }
+
+pub fn run(data: &[u8]) -> u32 {
+    {
+        let temp = process(data);
+        assert!(temp > 0);
+    }
+    {
+        let temp = process(data);
+        return temp;
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    let count = output.matches("const temp = process(data)").count();
+    assert_eq!(
+        count, 2,
+        "both scoping blocks should declare temp independently: {output}"
+    );
+    assert!(
+        output.contains("{\n") && output.matches('{').count() > 2,
+        "scoping blocks should preserve their braces: {output}"
+    );
+}
