@@ -64,7 +64,7 @@ describe('flight-compile shadowing clones', () => {
     expect(result.stderr.trim()).toBe('');
     const typescript = readFileSync(out, 'utf8');
     expect(typescript).not.toContain('node = node');
-    expect(typescript).toContain('delta = delta + 1;');
+    expect(typescript).toContain('const delta_1 = delta + 1;');
     const program = ts.createProgram([out], {
       lib: ['lib.es2022.d.ts'],
       module: ts.ModuleKind.ESNext,
