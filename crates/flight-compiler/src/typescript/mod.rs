@@ -10263,6 +10263,9 @@ fn emit_expression_value(
                     return Ok(value.to_string());
                 }
             }
+            if let Some((numeric_type, method)) = associated_numeric_method(expression) {
+                return emit_numeric_function_reference(&numeric_type, &method);
+            }
             let last = path.path.segments.len() - 1;
             let rendered = path
                 .path
@@ -17747,6 +17750,11 @@ fn emit_option_combinator(
 ) -> Result<String, CompileError> {
     let method = call.method.to_string();
     if call.args.len() == 1 && !matches!(call.args.first(), Some(Expr::Closure(_))) {
+        if let Some((_, ref_method)) = associated_numeric_method(&call.args[0])
+            && matches!(ref_method.as_str(), "from" | "try_from" | "try_into")
+        {
+            return Ok(receiver.to_string());
+        }
         if let Some(json_lowering) =
             json_value_function_ref_lowering(call.args.first().unwrap(), entities)
         {
@@ -17757,8 +17765,13 @@ fn emit_option_combinator(
         }
         let function_ref = emit_expression(&call.args[0], entities)?;
         let absent = option_absent_value(&call.receiver, entities);
+        let call_expr = if function_ref.starts_with('(') {
+            format!("({function_ref})(value)")
+        } else {
+            format!("{function_ref}(value)")
+        };
         return Ok(format!(
-            "((value) => value === {absent} ? {absent} : {function_ref}(value))({receiver})"
+            "((value) => value === {absent} ? {absent} : {call_expr})({receiver})"
         ));
     }
     let closure = match call.args.first() {
@@ -22587,6 +22600,37 @@ fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {
         BindingFact::Option(_) => None,
         BindingFact::Tuple(_) => None,
         BindingFact::UnresolvedPattern => None,
+    };
+}
+
+fn emit_numeric_function_reference(
+    numeric_type: &str,
+    method: &str,
+) -> Result<String, CompileError> {
+    return match method {
+        "from" | "try_from" | "try_into" => Ok("(v) => v".to_string()),
+        "is_ascii_digit" => Ok("((v: string | number): boolean => typeof v === 'number' ? v >= 48 && v <= 57 : v >= '0' && v <= '9')".to_string()),
+        "is_ascii_lowercase" => Ok("((v: string | number): boolean => typeof v === 'number' ? v >= 97 && v <= 122 : v >= 'a' && v <= 'z')".to_string()),
+        "is_ascii_uppercase" => Ok("((v: string | number): boolean => typeof v === 'number' ? v >= 65 && v <= 90 : v >= 'A' && v <= 'Z')".to_string()),
+        "is_ascii_alphabetic" => Ok("((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))".to_string()),
+        "is_ascii_alphanumeric" => Ok("((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z0-9]$/).test(v))".to_string()),
+        "is_ascii_hexdigit" => Ok("((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 70) || (v >= 97 && v <= 102) : (/^[0-9a-fA-F]$/).test(v))".to_string()),
+        "is_ascii_whitespace" => Ok("((v: string | number): boolean => typeof v === 'number' ? v === 32 || v === 9 || v === 10 || v === 13 || v === 12 : v === ' ' || v === '\\t' || v === '\\n' || v === '\\r' || v === '\\x0C')".to_string()),
+        "is_finite" => Ok("((v: number): boolean => Number.isFinite(v))".to_string()),
+        "is_nan" => Ok("((v: number): boolean => Number.isNaN(v))".to_string()),
+        "is_infinite" => Ok("((v: number): boolean => !Number.isFinite(v) && !Number.isNaN(v))".to_string()),
+        "min" if matches!(numeric_type, "f32" | "f64") => Ok("Math.min".to_string()),
+        "max" if matches!(numeric_type, "f32" | "f64") => Ok("Math.max".to_string()),
+        "round" if matches!(numeric_type, "f32" | "f64") => {
+            Ok("((v: number): number => Math.sign(v) * Math.round(Math.abs(v)))".to_string())
+        }
+        "floor" if matches!(numeric_type, "f32" | "f64") => Ok("Math.floor".to_string()),
+        "ceil" if matches!(numeric_type, "f32" | "f64") => Ok("Math.ceil".to_string()),
+        "abs" if matches!(numeric_type, "f32" | "f64") => Ok("Math.abs".to_string()),
+        "sqrt" if matches!(numeric_type, "f32" | "f64") => Ok("Math.sqrt".to_string()),
+        _ => Err(compile_error(format!(
+            "portable `{numeric_type}::{method}` as a function reference is not supported"
+        ))),
     };
 }
 

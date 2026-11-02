@@ -5540,6 +5540,56 @@ pub fn struct_bool_field(header: &Header) -> u32 {
     }
 
     #[test]
+    fn lowers_numeric_function_reference_in_callback_position() {
+        let source = r#"
+pub fn widen_with_map(values: &[f32]) -> Vec<f64> {
+    return values.iter().copied().map(f64::from).collect();
+}
+pub fn check_digits(bytes: &[u8]) -> bool {
+    return bytes.iter().all(u8::is_ascii_digit);
+}
+pub fn option_widen(value: Option<f32>) -> Option<f64> {
+    return value.map(f64::from);
+}
+pub fn is_some_and_digit(byte: Option<u8>) -> bool {
+    return byte.is_some_and(u8::is_ascii_digit);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            !output.contains("f64.from") && !output.contains("u8.isAsciiDigit"),
+            "numeric function references should not emit bare Type.method paths: {output}"
+        );
+        assert!(
+            output.contains(".map((v) => v)"),
+            "f64::from in iterator .map() should emit identity lambda: {output}"
+        );
+        assert!(
+            output.contains(".every("),
+            "u8::is_ascii_digit in .all() should emit .every() with inline predicate: {output}"
+        );
+        let option_widen_fn = output
+            .lines()
+            .find(|line| line.contains("function optionWiden"))
+            .expect("should contain optionWiden function");
+        let option_widen_body = output
+            .lines()
+            .skip_while(|line| !line.contains("function optionWiden"))
+            .skip(1)
+            .next()
+            .unwrap_or("");
+        assert!(
+            option_widen_body.contains("return value"),
+            "Option.map(f64::from) should be identity — just return value: {option_widen_fn} / {option_widen_body}"
+        );
+        assert!(
+            output.contains("is_ascii_digit") || output.contains("v >= 48"),
+            "u8::is_ascii_digit in is_some_and should emit digit check: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_f32_round_with_half_away_from_zero() {
         let source = r#"
 pub fn round_value(value: f32) -> f32 {
