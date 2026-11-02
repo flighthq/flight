@@ -13942,9 +13942,7 @@ fn analyze_tagged_data_union_pattern(
                 match analyze_tagged_data_union_pattern(pattern, entities)? {
                     TaggedDataUnionPatternAnalysis::Variants(patterns) => variants.extend(patterns),
                     TaggedDataUnionPatternAnalysis::CatchAll(_) => {
-                        return Err(compile_error(
-                            "tagged data union `|` pattern cannot contain a catch-all",
-                        ));
+                        return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
                     }
                     TaggedDataUnionPatternAnalysis::Ordinary => {
                         return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
@@ -14133,9 +14131,7 @@ fn analyze_reserved_key_data_union_pattern(
                         variants.extend(patterns);
                     }
                     ReservedKeyDataUnionPatternAnalysis::CatchAll(_) => {
-                        return Err(compile_error(
-                            "reserved-key data union `|` pattern cannot contain a catch-all",
-                        ));
+                        return Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary);
                     }
                     ReservedKeyDataUnionPatternAnalysis::Ordinary => {
                         return Ok(ReservedKeyDataUnionPatternAnalysis::Ordinary);
@@ -14643,9 +14639,7 @@ fn analyze_data_union_pattern(
                 match analyze_data_union_pattern(pattern, entities)? {
                     DataUnionPatternAnalysis::Variants(patterns) => variants.extend(patterns),
                     DataUnionPatternAnalysis::CatchAll(_) => {
-                        return Err(compile_error(
-                            "transparent data union `|` pattern cannot contain a catch-all",
-                        ));
+                        return Ok(DataUnionPatternAnalysis::Ordinary);
                     }
                     DataUnionPatternAnalysis::Ordinary => {
                         return Ok(DataUnionPatternAnalysis::Ordinary);
