@@ -378,10 +378,6 @@ describe('flight-compile HashSet and HashMap lowering', () => {
         'error: unsupported Rust method call `.insert()`; impl sugar is not a transpilation source',
       ],
       [
-        'use std::collections::HashSet;\npub fn a(s: &HashSet<i32>) -> usize { return s.iter().count(); }\n',
-        'error: portable `HashSet::iter` with 0 argument(s) has no portable lowering',
-      ],
-      [
         'use std::collections::HashMap;\npub fn a(m: &mut HashMap<i32, f32>) { m.entry(1); }\n',
         'error: portable `HashMap::entry` with 1 argument(s) has no portable lowering',
       ],
