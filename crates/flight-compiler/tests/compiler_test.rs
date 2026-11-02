@@ -21670,3 +21670,29 @@ pub fn sum(items: &[u32]) -> u32 {
         "immutable loop var should use const: {result}"
     );
 }
+
+#[test]
+fn hoists_match_value_local_when_arm_has_continue() {
+    let source = r#"
+pub fn process_items(items: &[Option<u32>]) -> u32 {
+    let mut total = 0u32;
+    for item in items {
+        let value = match item {
+            Some(v) => *v,
+            None => continue,
+        };
+        total += value;
+    }
+    return total;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("continue"),
+        "should emit continue statement in hoisted match: {output}"
+    );
+    assert!(
+        !output.contains("continue expression"),
+        "should not error on continue in match arm: {output}"
+    );
+}

@@ -139,6 +139,16 @@ pub(super) fn reject_function_exits_in_value_position<'ast>(
     impl<'ast> Visit<'ast> for FunctionExitFinder {
         fn visit_expr_closure(&mut self, _closure: &'ast syn::ExprClosure) {}
 
+        fn visit_expr_break(&mut self, expression: &'ast syn::ExprBreak) {
+            self.found.get_or_insert("break");
+            syn::visit::visit_expr_break(self, expression);
+        }
+
+        fn visit_expr_continue(&mut self, expression: &'ast syn::ExprContinue) {
+            self.found.get_or_insert("continue");
+            syn::visit::visit_expr_continue(self, expression);
+        }
+
         fn visit_expr_return(&mut self, expression: &'ast syn::ExprReturn) {
             self.found.get_or_insert("return");
             syn::visit::visit_expr_return(self, expression);
