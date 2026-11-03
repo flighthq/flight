@@ -4597,7 +4597,7 @@ fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<
     if globs.iter().any(|glob| {
         !matches!(
             glob.first().map(String::as_str),
-            Some("std" | "core" | "alloc")
+            Some("std" | "core" | "alloc" | "crate")
         )
     }) {
         return None;

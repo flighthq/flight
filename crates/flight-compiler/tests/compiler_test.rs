@@ -2635,6 +2635,7 @@ pub struct Capability {
             "use std as standard;\nuse std::pin;\npub type P = pin::Pin<standard::boxed::Box<dyn Future<Output = u32>>>;\n",
             "use std::pin::{self as pinning};\npub type P = pinning::Pin<Box<dyn Future<Output = u32> + Send>>;\n",
             "use std::pin::*;\npub type P = Pin<Box<dyn Future<Output = u32> + Send>>;\n",
+            "use crate::enums::*;\nuse std::future::Future;\nuse std::pin::Pin;\npub type P = Pin<Box<dyn Future<Output = u32> + Send>>;\n",
         ] {
             assert_eq!(
                 compile_typescript(source, None).unwrap(),
