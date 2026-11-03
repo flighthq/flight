@@ -2265,6 +2265,48 @@ fn unwrap_option_payload_is_string(receiver: &Expr, entities: &HashSet<String>) 
     }
 }
 
+fn unwrap_result_payload_is_string(receiver: &Expr, entities: &HashSet<String>) -> bool {
+    match receiver {
+        Expr::Call(call) => {
+            if let Expr::Path(path) = call.func.as_ref() {
+                if expression_is_associated_path(call.func.as_ref(), "serde_json", "to_string")
+                    || expression_is_associated_path(
+                        call.func.as_ref(),
+                        "serde_json",
+                        "to_string_pretty",
+                    )
+                {
+                    return true;
+                }
+                if path.qself.is_none() {
+                    return call_fact(entities, RETURN_BINDING_FACT_MARKER, &path.path)
+                        .as_ref()
+                        .is_some_and(|fact| {
+                            matches!(
+                                binding_fact_from_marker(fact),
+                                BindingFact::Structure(s) if s == "String" || s == "str"
+                            )
+                        });
+                }
+            }
+            false
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "as_ref" | "as_mut" | "clone"
+                ) =>
+        {
+            unwrap_result_payload_is_string(&call.receiver, entities)
+        }
+        Expr::Reference(reference) => unwrap_result_payload_is_string(&reference.expr, entities),
+        Expr::Paren(paren) => unwrap_result_payload_is_string(&paren.expr, entities),
+        Expr::Group(group) => unwrap_result_payload_is_string(&group.expr, entities),
+        _ => false,
+    }
+}
+
 fn expression_is_known_boolean(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
         Expr::Binary(binary) => matches!(
@@ -2377,7 +2419,8 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
                     call.method.to_string().as_str(),
                     "unwrap" | "expect" | "unwrap_or" | "unwrap_or_else" | "unwrap_or_default"
                 ) && (expression_is_known_string(&call.receiver, entities)
-                    || unwrap_option_payload_is_string(&call.receiver, entities)))
+                    || unwrap_option_payload_is_string(&call.receiver, entities)
+                    || unwrap_result_payload_is_string(&call.receiver, entities)))
         }
         Expr::Field(field) => {
             let syn::Member::Named(field_name) = &field.member else {

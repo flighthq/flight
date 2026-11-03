@@ -22758,6 +22758,10 @@ pub fn format_data(data: &BTreeMap<String, String>) -> String {
         output.contains("JSON.stringify(data, null, 2)"),
         "should lower serde_json::to_string_pretty to JSON.stringify with indent: {output}"
     );
+    assert!(
+        output.contains("text += \"\\n\""),
+        "push on serde_json result should lower to string append: {output}"
+    );
 }
 
 #[test]
