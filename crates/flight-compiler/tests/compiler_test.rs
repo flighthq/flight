@@ -14115,6 +14115,29 @@ pub fn example() -> f32 {
     }
 
     #[test]
+    fn no_duplicate_break_when_match_arm_breaks_loop() {
+        let source = r#"
+pub fn skip(values: &[u8]) -> usize {
+    let mut pos: usize = 0;
+    while pos < values.len() {
+        match values[pos] {
+            1 | 2 | 3 => pos += 1,
+            _ => break,
+        }
+    }
+    return pos;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains("break;\n          break;"),
+            "switch arm with loop break should not emit a redundant switch break: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_try_operator_in_hoisted_if_value_branch() {
         let source = r#"
 pub fn parse_value(hex: &str) -> Option<f32> {

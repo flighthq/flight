@@ -12515,9 +12515,9 @@ fn emit_option_match_with_return_local(
     return Ok(Some(()));
 }
 
-fn arm_body_contains_function_exit(body: &Expr) -> bool {
+fn arm_body_contains_control_flow_exit(body: &Expr) -> bool {
     return match body {
-        Expr::Return(_) => true,
+        Expr::Return(_) | Expr::Break(_) | Expr::Continue(_) => true,
         Expr::Block(block) => block_contains_function_exits(&block.block),
         _ => false,
     };
@@ -13211,7 +13211,7 @@ fn emit_match_statement_with_action(
         emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
         if arm.guard.is_some() {
             if matches!(action, HoistedMatchAction::Assign(_))
-                && !arm_body_contains_function_exit(&arm.body)
+                && !arm_body_contains_control_flow_exit(&arm.body)
             {
                 write_indent(out, body_indent);
                 out.push_str("break;\n");
@@ -13219,7 +13219,7 @@ fn emit_match_statement_with_action(
             write_indent(out, indent + 3);
             out.push_str("}\n");
         } else if matches!(action, HoistedMatchAction::Assign(_))
-            && !arm_body_contains_function_exit(&arm.body)
+            && !arm_body_contains_control_flow_exit(&arm.body)
         {
             write_indent(out, indent + 3);
             out.push_str("break;\n");
@@ -17607,8 +17607,10 @@ pub(crate) fn emit_match_statement(
                     indent + 4,
                 )?,
             }
-            write_indent(out, indent + 4);
-            out.push_str("break;\n");
+            if !arm_body_contains_control_flow_exit(&arm.body) {
+                write_indent(out, indent + 4);
+                out.push_str("break;\n");
+            }
             write_indent(out, indent + 3);
             out.push_str("}\n");
         } else {
@@ -17623,8 +17625,10 @@ pub(crate) fn emit_match_statement(
                     indent + 3,
                 )?,
             }
-            write_indent(out, indent + 3);
-            out.push_str("break;\n");
+            if !arm_body_contains_control_flow_exit(&arm.body) {
+                write_indent(out, indent + 3);
+                out.push_str("break;\n");
+            }
         }
         write_indent(out, indent + 2);
         out.push_str("}\n");
