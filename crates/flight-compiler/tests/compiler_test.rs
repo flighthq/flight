@@ -22925,6 +22925,22 @@ pub fn get_children(node: &NodeRuntime) -> &Vec<u32> {
 }
 
 #[test]
+fn lowers_mem_take_through_method_chain_place() {
+    let source = r#"
+use std::mem;
+pub struct State { pub items: Vec<u32> }
+pub fn drain(state: &mut State) -> Vec<u32> {
+    return std::mem::take(&mut state.write().unwrap().items);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("__tmp") && output.contains("return __tmp"),
+        "mem::take through method chain should lower as swap-and-return: {output}"
+    );
+}
+
+#[test]
 fn lowers_trait_entity_runtime_mut_to_free_function() {
     let source = r#"
 pub struct EntityRuntimeSlot {}

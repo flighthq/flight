@@ -4174,6 +4174,7 @@ fn swap_operand_is_place(operand: &Expr) -> bool {
             Expr::Path(path) => path.qself.is_none() && path.path.segments.len() == 1,
             Expr::Field(field) => is_place(&field.base),
             Expr::Index(index) => is_place(&index.expr),
+            Expr::MethodCall(call) if call.args.is_empty() => is_place(&call.receiver),
             _ => false,
         };
     }
