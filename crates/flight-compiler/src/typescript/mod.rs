@@ -8905,7 +8905,79 @@ fn emit_block_with_context(
                 .find_map(|m| m.strip_prefix(TRY_COUNTER_MARKER))
                 .and_then(|s| s.parse::<usize>().ok())
                 .unwrap_or(0);
-            emit_statement(out, statement, &block_context, indent)?;
+            let tuple_pat = match &local.pat {
+                Pat::Tuple(t) => Some(t),
+                Pat::Type(typed) => {
+                    if let Pat::Tuple(t) = typed.pat.as_ref() {
+                        Some(t)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            };
+            if let Some(tuple) = tuple_pat
+                && local.init.is_some()
+            {
+                let elem_rust_names: Vec<Option<String>> = tuple
+                    .elems
+                    .iter()
+                    .map(|elem| match elem {
+                        Pat::Ident(ident) if ident.ident != "_" && ident.ident != "None" => {
+                            Some(ident.ident.to_string())
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                let any_rebound = elem_rust_names.iter().any(|n| {
+                    n.as_ref()
+                        .is_some_and(|name| declaration_counts.get(name).is_some_and(|c| *c > 1))
+                });
+                let any_shadowed = elem_rust_names
+                    .iter()
+                    .any(|n| n.as_ref().is_some_and(|name| declared.contains(name)));
+                if any_shadowed {
+                    let init = local.init.as_ref().unwrap();
+                    let value = emit_expression(&init.expr, &block_context)?;
+                    let temp = format!("__dt{index}");
+                    write_indent(out, indent);
+                    writeln!(out, "const {temp} = {value};")
+                        .expect("writing to a String cannot fail");
+                    for (i, elem) in tuple.elems.iter().enumerate() {
+                        let Some(rust_name) = &elem_rust_names[i] else {
+                            continue;
+                        };
+                        let js_name = snake_to_lower_camel(rust_name);
+                        let is_shadowed = declared.contains(rust_name);
+                        let is_mutable = matches!(elem, Pat::Ident(id) if id.mutability.is_some());
+                        let is_rebound = declaration_counts.get(rust_name).is_some_and(|c| *c > 1);
+                        write_indent(out, indent);
+                        if is_shadowed {
+                            writeln!(out, "{js_name} = {temp}[{i}];")
+                                .expect("writing to a String cannot fail");
+                        } else {
+                            let keyword = if is_mutable || is_rebound {
+                                "let"
+                            } else {
+                                "const"
+                            };
+                            writeln!(out, "{keyword} {js_name} = {temp}[{i}];")
+                                .expect("writing to a String cannot fail");
+                        }
+                    }
+                } else if any_rebound {
+                    emit_local_with_shadow(out, local, &block_context, indent, false, true)?;
+                } else {
+                    emit_statement(out, statement, &block_context, indent)?;
+                }
+                for name in &elem_rust_names {
+                    if let Some(n) = name {
+                        declared.insert(n.clone());
+                    }
+                }
+            } else {
+                emit_statement(out, statement, &block_context, indent)?;
+            }
             if let Some(init) = &local.init {
                 let emitted = collect_unconditional_try_expressions(&init.expr).len();
                 if emitted > 0 {
@@ -13011,6 +13083,77 @@ fn emit_hoisted_value_block_local(
         }
     }
     let block_context = emit_block_with_context(out, preceding, &block_entities, indent)?;
+    let tuple_pat = match &local.pat {
+        Pat::Tuple(t) => Some(t),
+        Pat::Type(typed) => {
+            if let Pat::Tuple(t) = typed.pat.as_ref() {
+                Some(t)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    };
+    if let Some(tuple) = tuple_pat {
+        let mut hoisted_names: HashSet<String> = HashSet::new();
+        for stmt in preceding {
+            if let Stmt::Local(inner) = stmt {
+                if let Some(name) = local_pattern_name(&inner.pat) {
+                    hoisted_names.insert(snake_to_lower_camel(&name));
+                }
+            }
+        }
+        let elem_js_names: Vec<Option<String>> = tuple
+            .elems
+            .iter()
+            .map(|elem| match elem {
+                Pat::Ident(ident) if ident.ident != "_" && ident.ident != "None" => {
+                    Some(snake_to_lower_camel(&ident.ident.to_string()))
+                }
+                _ => None,
+            })
+            .collect();
+        let any_collision = elem_js_names
+            .iter()
+            .any(|n| n.as_ref().is_some_and(|name| hoisted_names.contains(name)));
+        if any_collision {
+            let tail_elems: Vec<String> = if let Expr::Tuple(tail_tuple) = value {
+                tail_tuple
+                    .elems
+                    .iter()
+                    .map(|e| emit_expression(e, &block_context))
+                    .collect::<Result<_, _>>()?
+            } else {
+                let value_str = emit_expression(value, &block_context)?;
+                let temp = "__hvb";
+                write_indent(out, indent);
+                writeln!(out, "const {temp} = {value_str};")
+                    .expect("writing to a String cannot fail");
+                (0..tuple.elems.len())
+                    .map(|i| format!("{temp}[{i}]"))
+                    .collect()
+            };
+            for (i, _elem) in tuple.elems.iter().enumerate() {
+                let Some(js_name) = &elem_js_names[i] else {
+                    continue;
+                };
+                let elem_value = &tail_elems[i];
+                let collides = hoisted_names.contains(js_name);
+                if collides {
+                    if elem_value != js_name {
+                        write_indent(out, indent);
+                        writeln!(out, "{js_name} = {elem_value};")
+                            .expect("writing to a String cannot fail");
+                    }
+                } else {
+                    write_indent(out, indent);
+                    writeln!(out, "const {js_name} = {elem_value};")
+                        .expect("writing to a String cannot fail");
+                }
+            }
+            return Ok(());
+        }
+    }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => (emit_pattern(&local.pat)?, None),

@@ -22133,3 +22133,60 @@ pub fn run(data: &[u8]) -> u32 {
         "scoping blocks should preserve their braces: {output}"
     );
 }
+
+#[test]
+fn tuple_destructure_promotes_to_let_when_element_rebound() {
+    let source = r#"
+pub fn travel(track: Option<f64>, thumb: Option<f64>, orient: f64) -> f64 {
+    let (track, thumb, orient) = (track, thumb, orient);
+    let (Some(track), Some(thumb)) = (track, thumb) else {
+        return 0.0;
+    };
+    return track - thumb + orient;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("let [track, thumb, orient]"),
+        "tuple destructure should use let when elements are rebound: {output}"
+    );
+    assert!(
+        !output.contains("const [track, thumb, orient]"),
+        "tuple destructure should not use const when elements are rebound: {output}"
+    );
+    assert!(
+        output.contains("track = $t0") && output.contains("thumb = $t1"),
+        "tuple let-else should bare-assign to the let bindings: {output}"
+    );
+}
+
+#[test]
+fn hoisted_value_block_tuple_decomposes_on_name_collision() {
+    let source = r#"
+fn compute(x: i32) -> i32 { x }
+
+pub fn run(items: &[i32]) -> i32 {
+    let (next, rest) = {
+        let next = compute(items[0]);
+        if next < 0 {
+            return -1;
+        }
+        (next, items.len() as i32)
+    };
+    return next + rest;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("const [next, rest]") && !output.contains("let [next, rest]"),
+        "hoisted value block with name collision should decompose, not destructure: {output}"
+    );
+    assert!(
+        output.contains("const rest ="),
+        "non-colliding element should get a fresh const declaration: {output}"
+    );
+    assert!(
+        !output.contains("const next = compute") || output.matches("const next").count() <= 1,
+        "next should not be redeclared after hoisting: {output}"
+    );
+}
