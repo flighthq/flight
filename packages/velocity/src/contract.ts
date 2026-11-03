@@ -5,7 +5,7 @@ export { contributeTransformVelocity } from './transformVelocity.ts';
 export {
   addVelocity,
   clampVelocity,
-  cloneVelocity2d,
+  cloneVelocity2D,
   copyVelocity,
   dampVelocity,
   isVelocityZero,

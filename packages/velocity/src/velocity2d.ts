@@ -44,7 +44,7 @@ export function clampVelocity(out: Velocity2D, velocity: Readonly<Velocity2D>, m
 /**
  * Clones a `Velocity2D` value (D23 value type: copy and clone).
  */
-export function cloneVelocity2d(source: Readonly<Velocity2D>): Velocity2D {
+export function cloneVelocity2D(source: Readonly<Velocity2D>): Velocity2D {
   return { x: source.x, y: source.y };
 }
 
@@ -83,8 +83,8 @@ export function dampVelocity(
  * Useful for skipping velocity-buffer writes on effectively-still objects.
  */
 export function isVelocityZero(velocity: Readonly<Velocity2D>, epsilon?: number): boolean {
-  epsilon = epsilon ?? 0.0;
-  return Math.abs(velocity.x) <= epsilon && Math.abs(velocity.y) <= epsilon;
+  const epsilon_1 = epsilon ?? 0.0;
+  return Math.abs(velocity.x) <= epsilon_1 && Math.abs(velocity.y) <= epsilon_1;
 }
 
 /**

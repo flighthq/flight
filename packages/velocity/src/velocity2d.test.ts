@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addVelocity,
   clampVelocity,
-  cloneVelocity2d,
+  cloneVelocity2D,
   copyVelocity,
   dampVelocity,
   isVelocityZero,
@@ -35,7 +35,7 @@ describe('addVelocity', () => {
   });
   it('is alias safe when out equals a', () => {
     let a: Velocity2D = { x: 5.0, y: 3.0 };
-    const aClone = cloneVelocity2d(a);
+    const aClone = cloneVelocity2D(a);
     addVelocity(a, aClone, { x: 1.0, y: 1.0 });
     expect(a.x).toEqual(6.0);
     expect(a.y).toEqual(4.0);
@@ -62,7 +62,7 @@ describe('clampVelocity', () => {
   });
   it('is alias safe when out equals velocity', () => {
     let v: Velocity2D = { x: 10.0, y: 0.0 };
-    const vClone = cloneVelocity2d(v);
+    const vClone = cloneVelocity2D(v);
     clampVelocity(v, vClone, 5.0);
     assertApprox(v.x, 5.0);
     assertApprox(v.y, 0.0);
@@ -75,10 +75,10 @@ describe('clampVelocity', () => {
   });
 });
 
-describe('cloneVelocity2d', () => {
+describe('cloneVelocity2D', () => {
   it('creates a copy of a velocity', () => {
     const v: Velocity2D = { x: 3.0, y: -7.0 };
-    const result = cloneVelocity2d(v);
+    const result = cloneVelocity2D(v);
     expect(result.x).toEqual(v.x);
     expect(result.y).toEqual(v.y);
   });
@@ -94,7 +94,7 @@ describe('copyVelocity', () => {
   });
   it('is alias safe when out equals source', () => {
     let v: Velocity2D = { x: 7.0, y: 2.0 };
-    const vClone = cloneVelocity2d(v);
+    const vClone = cloneVelocity2D(v);
     copyVelocity(v, vClone);
     expect(v.x).toEqual(7.0);
     expect(v.y).toEqual(2.0);
@@ -122,7 +122,7 @@ describe('dampVelocity', () => {
   });
   it('is alias safe when out equals current', () => {
     let current: Velocity2D = { x: 10.0, y: 0.0 };
-    const currentClone = cloneVelocity2d(current);
+    const currentClone = cloneVelocity2D(current);
     dampVelocity(current, currentClone, { x: 0.0, y: 0.0 }, 0.5);
     expect(current.x).toEqual(5.0);
     expect(current.y).toEqual(0.0);
@@ -176,7 +176,7 @@ describe('lerpVelocity', () => {
   });
   it('is alias safe when out equals a', () => {
     let a: Velocity2D = { x: 0.0, y: 0.0 };
-    const aClone = cloneVelocity2d(a);
+    const aClone = cloneVelocity2D(a);
     lerpVelocity(a, aClone, { x: 10.0, y: 0.0 }, 0.5);
     expect(a.x).toEqual(5.0);
     expect(a.y).toEqual(0.0);
@@ -199,7 +199,7 @@ describe('normalizeVelocity', () => {
   });
   it('is alias safe when out equals source', () => {
     let v: Velocity2D = { x: 5.0, y: 0.0 };
-    const vClone = cloneVelocity2d(v);
+    const vClone = cloneVelocity2D(v);
     normalizeVelocity(v, vClone);
     expect(v.x).toEqual(1.0);
     expect(v.y).toEqual(0.0);
@@ -215,7 +215,7 @@ describe('scaleVelocity', () => {
   });
   it('is alias safe when out equals velocity', () => {
     let v: Velocity2D = { x: 4.0, y: 2.0 };
-    const vClone = cloneVelocity2d(v);
+    const vClone = cloneVelocity2D(v);
     scaleVelocity(v, vClone, 0.5);
     expect(v.x).toEqual(2.0);
     expect(v.y).toEqual(1.0);
@@ -231,7 +231,7 @@ describe('subtractVelocity', () => {
   });
   it('is alias safe when out equals a', () => {
     let a: Velocity2D = { x: 5.0, y: 3.0 };
-    const aClone = cloneVelocity2d(a);
+    const aClone = cloneVelocity2D(a);
     subtractVelocity(a, aClone, { x: 2.0, y: 1.0 });
     expect(a.x).toEqual(3.0);
     expect(a.y).toEqual(2.0);
