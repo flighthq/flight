@@ -8866,7 +8866,7 @@ fn emit_block_with_context(
             } else {
                 local_context
             };
-            if let Some((old_name, new_name)) =
+            for (old_name, new_name) in
                 emit_local_with_shadow(out, local, &effective_context, indent, shadowed, rebound)?
             {
                 let rename_prefix = format!("{RENAME_MARKER}{old_name}=");
@@ -8955,6 +8955,12 @@ fn emit_block_with_context(
                     });
                     (scope, self_ref)
                 };
+                let hoisted_scope_declared = init_is_hoisted_block
+                    && elem_rust_names.iter().any(|n| {
+                        n.as_ref().is_some_and(|name| {
+                            block_context.contains(&format!("{SCOPE_DECLARED_MARKER}{name}"))
+                        })
+                    });
                 let needs_decompose = any_shadowed || any_scope_declared || any_self_ref;
                 if needs_decompose {
                     let value = emit_expression(&init.expr, &block_context)?;
@@ -9004,8 +9010,14 @@ fn emit_block_with_context(
                                 .expect("writing to a String cannot fail");
                         }
                     }
-                } else if any_rebound {
-                    emit_local_with_shadow(out, local, &block_context, indent, false, true)?;
+                } else if any_rebound || hoisted_scope_declared {
+                    for (old_name, new_name) in
+                        emit_local_with_shadow(out, local, &block_context, indent, false, true)?
+                    {
+                        let rename_prefix = format!("{RENAME_MARKER}{old_name}=");
+                        block_context.retain(|m| !m.starts_with(&rename_prefix));
+                        block_context.insert(format!("{RENAME_MARKER}{old_name}={new_name}"));
+                    }
                 } else {
                     emit_statement(out, statement, &block_context, indent)?;
                 }
@@ -11852,7 +11864,7 @@ pub(crate) fn emit_local_with_shadow(
     indent: usize,
     shadowed: bool,
     rebound: bool,
-) -> Result<Option<(String, String)>, CompileError> {
+) -> Result<Vec<(String, String)>, CompileError> {
     return emit_local_with_shadow_and_else(
         out, entities, local, indent, shadowed, rebound, emit_block,
     );
@@ -11866,7 +11878,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
     shadowed: bool,
     rebound: bool,
     emit_else_block: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
-) -> Result<Option<(String, String)>, CompileError> {
+) -> Result<Vec<(String, String)>, CompileError> {
     if local
         .init
         .as_ref()
@@ -11880,12 +11892,18 @@ pub(crate) fn emit_local_with_shadow_and_else(
             shadowed,
             rebound,
             emit_else_block,
-        )?);
+        )?
+        .into_iter()
+        .collect());
     }
     if let Some(initializer) = &local.init
         && let Expr::Try(try_expr) = initializer.expr.as_ref()
     {
-        return emit_try_local(out, local, try_expr, entities, indent, shadowed, rebound);
+        return Ok(
+            emit_try_local(out, local, try_expr, entities, indent, shadowed, rebound)?
+                .into_iter()
+                .collect(),
+        );
     }
     if let Some(initializer) = &local.init
         && let Expr::Match(match_expr) = initializer.expr.as_ref()
@@ -11893,7 +11911,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         if let Some(_result) = emit_option_match_with_return_local(
             out, local, match_expr, entities, indent, shadowed, rebound,
         )? {
-            return Ok(None);
+            return Ok(vec![]);
         }
         if reject_function_exits_in_value_position(
             |visitor| {
@@ -11908,14 +11926,14 @@ pub(crate) fn emit_local_with_shadow_and_else(
             emit_hoisted_match_value_local(
                 out, local, match_expr, entities, indent, shadowed, rebound,
             )?;
-            return Ok(None);
+            return Ok(vec![]);
         }
     }
     if let Some(initializer) = &local.init
         && let Expr::Block(block) = initializer.expr.as_ref()
         && block_contains_function_exits(&block.block)
     {
-        emit_hoisted_value_block_local(
+        return Ok(emit_hoisted_value_block_local(
             out,
             local,
             &block.block,
@@ -11923,14 +11941,13 @@ pub(crate) fn emit_local_with_shadow_and_else(
             indent,
             shadowed,
             rebound,
-        )?;
-        return Ok(None);
+        )?);
     }
     if let Some(initializer) = &local.init
         && let Expr::Unsafe(unsafe_block) = initializer.expr.as_ref()
         && block_contains_function_exits(&unsafe_block.block)
     {
-        emit_hoisted_value_block_local(
+        return Ok(emit_hoisted_value_block_local(
             out,
             local,
             &unsafe_block.block,
@@ -11938,15 +11955,14 @@ pub(crate) fn emit_local_with_shadow_and_else(
             indent,
             shadowed,
             rebound,
-        )?;
-        return Ok(None);
+        )?);
     }
     if let Some(initializer) = &local.init
         && let Expr::If(if_expr) = initializer.expr.as_ref()
         && if_expression_contains_function_exits(if_expr)
     {
         emit_hoisted_if_value_local(out, local, if_expr, entities, indent, shadowed, rebound)?;
-        return Ok(None);
+        return Ok(vec![]);
     }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
@@ -11981,7 +11997,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
             }
             out.push_str(";\n");
         }
-        return Ok(None);
+        return Ok(vec![]);
     };
     let local_name = local_pattern_name(&local.pat);
     let local_binding_id = local_pattern_binding_id(entities, &local.pat);
@@ -12010,7 +12026,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         // A leading-underscore Ref alias is an implementation-only capture for writes through the
         // original field. Those writes resolve through its BindingId; emitting the snapshot local
         // would be both unused and semantically misleading in TypeScript.
-        return Ok(None);
+        return Ok(vec![]);
     }
     let inferred_struct_type = if rust_type.is_none() {
         inferred_vitest_struct_literal_type(&initializer.expr, entities)
@@ -12144,12 +12160,12 @@ pub(crate) fn emit_local_with_shadow_and_else(
             || value == format!("{pattern}!")
             || value == format!("{pattern}.value"))
     {
-        return Ok(None);
+        return Ok(vec![]);
     }
     write_indent(out, indent);
     if discard {
         writeln!(out, "{value};").expect("writing to a String cannot fail");
-        return Ok(None);
+        return Ok(vec![]);
     }
     let scope_declared = local_name
         .as_deref()
@@ -12158,7 +12174,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         let fresh = next_try_rename(entities, &pattern);
         let keyword = if mutable || rebound { "let" } else { "const" };
         writeln!(out, "{keyword} {fresh} = {value};").expect("writing to a String cannot fail");
-        return Ok(Some((pattern, fresh)));
+        return Ok(vec![(pattern, fresh)]);
     }
     if rebind {
         write!(out, "{pattern}").expect("writing to a String cannot fail");
@@ -12177,7 +12193,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
     }
     writeln!(out, " = {value};").expect("writing to a String cannot fail");
-    return Ok(None);
+    return Ok(vec![]);
 }
 
 fn emit_try_local(
@@ -13097,7 +13113,7 @@ fn emit_hoisted_value_block_local(
     indent: usize,
     shadowed: bool,
     rebound: bool,
-) -> Result<(), CompileError> {
+) -> Result<Vec<(String, String)>, CompileError> {
     let Some((last, preceding)) = block.stmts.split_last() else {
         return Err(compile_error("hoisted value block cannot be empty"));
     };
@@ -13190,14 +13206,21 @@ fn emit_hoisted_value_block_local(
                     .map(|i| format!("{temp}[{i}]"))
                     .collect()
             };
+            let mut renames = Vec::new();
             for (i, _elem) in tuple.elems.iter().enumerate() {
                 let Some(js_name) = &elem_js_names[i] else {
                     continue;
                 };
                 let elem_value = &tail_elems[i];
                 let is_scope_declared = matches!(&tuple.elems[i], Pat::Ident(ident) if entities.contains(&format!("{SCOPE_DECLARED_MARKER}{}", ident.ident)));
-                let collides = hoisted_names.contains(js_name) || is_scope_declared;
-                if collides {
+                let collides_hoisted = hoisted_names.contains(js_name);
+                if is_scope_declared && !collides_hoisted {
+                    let fresh = next_try_rename(&block_context, js_name);
+                    write_indent(out, indent);
+                    writeln!(out, "const {fresh} = {elem_value};")
+                        .expect("writing to a String cannot fail");
+                    renames.push((js_name.clone(), fresh));
+                } else if collides_hoisted {
                     if elem_value != js_name {
                         write_indent(out, indent);
                         writeln!(out, "{js_name} = {elem_value};")
@@ -13209,7 +13232,7 @@ fn emit_hoisted_value_block_local(
                         .expect("writing to a String cannot fail");
                 }
             }
-            return Ok(());
+            return Ok(renames);
         }
     }
     let mutable = pattern_is_mutable(&local.pat);
@@ -13239,7 +13262,7 @@ fn emit_hoisted_value_block_local(
     write_indent(out, indent);
     writeln!(out, "{declaration} {pattern} = {value_str};")
         .expect("writing to a String cannot fail");
-    return Ok(());
+    return Ok(vec![]);
 }
 
 fn emit_hoisted_if_value_local(

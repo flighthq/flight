@@ -22237,8 +22237,8 @@ pub fn exit_tuple_block(seed: u32, limit: u32) -> u32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("seed = seed_1 * 2"),
-        "scope-declared tuple element should bare-assign (parameter is mutable in TS): {output}"
+        output.contains("const seed_2 = seed_1 * 2"),
+        "scope-declared tuple element should get a fresh name: {output}"
     );
     assert!(
         output.contains("const extra = 1"),
@@ -22247,6 +22247,10 @@ pub fn exit_tuple_block(seed: u32, limit: u32) -> u32 {
     assert!(
         !output.contains("const [seed"),
         "should not use destructuring that redeclares the parameter: {output}"
+    );
+    assert!(
+        output.contains("return (seed_2 + extra)"),
+        "subsequent uses should resolve to the fresh name: {output}"
     );
 }
 
