@@ -2158,6 +2158,76 @@ pub fn first_big(values: &[u32]) -> u32 {
     }
 
     #[test]
+    fn switch_arm_with_conditional_return_still_emits_break() {
+        let source = r#"
+pub fn decode(kind: u32, data: &[u8], pos: &mut usize) -> u32 {
+    let mut result = 0u32;
+    match kind {
+        0 => {
+            if *pos >= data.len() {
+                return 0;
+            }
+            result = data[*pos] as u32;
+            *pos += 1;
+        }
+        1 => {
+            if *pos + 1 >= data.len() {
+                return 0;
+            }
+            result = (data[*pos] as u32) | ((data[*pos + 1] as u32) << 8);
+            *pos += 2;
+        }
+        _ => {}
+    }
+    return result;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("switch"),
+            "match without loop break lowers to switch: {output}"
+        );
+        let case0_section = output.split("case 0:").nth(1).unwrap_or("");
+        let before_case1 = case0_section.split("case 1:").next().unwrap_or("");
+        assert!(
+            before_case1.contains("break;"),
+            "case 0 must have trailing break despite conditional return: {output}"
+        );
+    }
+
+    #[test]
+    fn switch_arm_with_inner_loop_break_emits_case_break() {
+        let source = r#"
+pub fn loop_in_arm(values: &[u32], mode: u32) -> u32 {
+    let mut total = 0u32;
+    match mode {
+        1 => {
+            for value in values {
+                if *value == 3 {
+                    break;
+                }
+                total += *value;
+            }
+        }
+        _ => total = 100,
+    }
+    return total;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("switch"),
+            "match with break inside inner loop still uses switch: {output}"
+        );
+        let case1_section = output.split("case 1:").nth(1).unwrap_or("");
+        let before_default = case1_section.split("default:").next().unwrap_or("");
+        assert!(
+            before_default.contains("break;"),
+            "case 1 must have trailing break after for-loop: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_match_on_tuple_of_options_to_null_checked_if_else() {
         let source = r#"
 pub struct Rect {
