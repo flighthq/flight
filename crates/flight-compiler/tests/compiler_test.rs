@@ -2774,7 +2774,7 @@ pub struct Capability {
     fn lowers_async_fn_to_async_function_with_promise_return() {
         assert_eq!(
             compile_typescript("pub async fn f() -> u32 { return 1; }\n", None).unwrap(),
-            "export async function f(): Promise<number> {\n  return (1) >>> 0;\n}\n"
+            "export async function f(): Promise<number> {\n  return 1 >>> 0;\n}\n"
         );
         assert_eq!(
             compile_typescript(
@@ -2806,7 +2806,7 @@ pub struct Capability {
                 None
             )
             .unwrap(),
-            "export function f(): number {\n  const x = (async () => 42)();\n  return (0) >>> 0;\n}\n"
+            "export function f(): number {\n  const x = (async () => 42)();\n  return 0 >>> 0;\n}\n"
         );
         assert_eq!(
             compile_typescript(
@@ -2814,7 +2814,7 @@ pub struct Capability {
                 None
             )
             .unwrap(),
-            "export interface Out {\n  ok: boolean;\n}\n\nexport function f(): number {\n  const x = (async () => ({ ok: true }))();\n  return (0) >>> 0;\n}\n"
+            "export interface Out {\n  ok: boolean;\n}\n\nexport function f(): number {\n  const x = (async () => ({ ok: true }))();\n  return 0 >>> 0;\n}\n"
         );
         assert_eq!(
             compile_typescript(
@@ -2822,7 +2822,7 @@ pub struct Capability {
                 None
             )
             .unwrap(),
-            "export async function f(): Promise<number> {\n  const y = await (async () => 1)();\n  return (y) >>> 0;\n}\n"
+            "export async function f(): Promise<number> {\n  const y = await (async () => 1)();\n  return y >>> 0;\n}\n"
         );
         assert_eq!(
             compile_typescript(
@@ -2843,7 +2843,7 @@ pub struct Capability {
                 None
             )
             .unwrap(),
-            "export function f(x: number): number {\n  const y = x;\n  return (y) >>> 0;\n}\n"
+            "export function f(x: number): number {\n  const y = x;\n  return y >>> 0;\n}\n"
         );
     }
 
@@ -3054,7 +3054,7 @@ pub fn keep_even(values: &mut Vec<u32>) {
             )
             .unwrap(),
             format!(
-                "export function keepEvenInValueBlock(values: number[]): number {{\n  return ((() => {{\n  const items: number[] = values;\n  {retain}(items, (value) => value % 2 === 0);\n  return 0;\n}})()) >>> 0;\n}}\n"
+                "export function keepEvenInValueBlock(values: number[]): number {{\n  return (() => {{\n  const items: number[] = values;\n  {retain}(items, (value) => value % 2 === 0);\n  return 0;\n}})() >>> 0;\n}}\n"
             )
         );
 
@@ -3244,7 +3244,7 @@ pub fn local(seed: u32) -> u32 {
 }
 
 export function swapValue(slot: Slot, next: number): number {
-  return ((() => { const __tmp = slot.value; slot.value = next; return __tmp; })()) >>> 0;
+  return (() => { const __tmp = slot.value; slot.value = next; return __tmp; })() >>> 0;
 }
 
 export function swapItems(slot: Slot, next: number[]): number[] {
@@ -3252,7 +3252,7 @@ export function swapItems(slot: Slot, next: number[]): number[] {
 }
 
 export function first(values: number[], next: number): number {
-  return ((() => { const __tmp = values[0]; values[0] = next; return __tmp; })()) >>> 0;
+  return (() => { const __tmp = values[0]; values[0] = next; return __tmp; })() >>> 0;
 }
 
 export function local(seed: number): number {
@@ -3380,7 +3380,7 @@ export function drainLocal(): number[] {
         let source = "pub fn take(values: &mut Vec<u32>, index: usize) -> u32 { return values.remove(index); }\n";
         assert_eq!(
             compile_typescript(source, None).unwrap(),
-            "export function take(values: number[], index: number): number {\n  return ((<T>(items: T[], index: number): T => { if (index >= items.length) { throw new RangeError(\"Vec removal index out of bounds\"); } return items.splice(index, 1)[0]; })(values, index)) >>> 0;\n}\n"
+            "export function take(values: number[], index: number): number {\n  return (<T>(items: T[], index: number): T => { if (index >= items.length) { throw new RangeError(\"Vec removal index out of bounds\"); } return items.splice(index, 1)[0]; })(values, index) >>> 0;\n}\n"
         );
     }
 
@@ -13686,7 +13686,7 @@ pub fn local_high_byte() -> u32 {
         ));
         assert!(output.contains("return bucket.values.slice();"));
         assert!(output.contains("return value === \"\";"));
-        assert!(output.contains("return (0xffffffff) >>> 0;"));
+        assert!(output.contains("return 0xffffffff >>> 0;"));
         assert!(output.contains("return (color >>> 24) >>> 0;"));
         assert!(output.contains("const color: number = 0xf00000ff;"));
         assert!(output.contains("result.name = \"copy\";"));
@@ -14104,7 +14104,7 @@ pub fn has_zero(values: &[u32]) -> bool {
         assert!(output.contains("const matchValue = index;"));
         assert!(output.contains("const value = 1.0;\n  return value;"));
         assert!(output.contains("const high = red << 24;\n  return high | alpha;"));
-        assert!(output.contains("return (value) >>> 0;"));
+        assert!(output.contains("return value >>> 0;"));
         assert!(output.contains("return values.some((value) => value === 0);"));
     }
 

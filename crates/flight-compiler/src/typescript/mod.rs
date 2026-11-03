@@ -22337,12 +22337,14 @@ fn emit_statement(
             let value = return_expression.expr.as_ref().unwrap();
             let try_context = emit_try_pre_extractions(out, value, entities, indent)?;
             write_indent(out, indent);
-            let mut emitted = emit_expression(value, &try_context)?;
-            if entities.contains(RETURNS_U32_MARKER)
+            let mut emitted = if entities.contains(RETURNS_U32_MARKER)
                 && !expression_is_unsigned_result(value, entities)
             {
-                emitted = format!("({emitted}) >>> 0");
-            }
+                let operand = emit_binary_operand(value, &try_context, 10, false)?;
+                format!("{operand} >>> 0")
+            } else {
+                emit_expression(value, &try_context)?
+            };
             if entities.contains(RETURNS_NULLABLE_MARKER) {
                 emitted = nullable_option_value(value, emitted);
             }
@@ -22374,7 +22376,11 @@ fn emit_statement(
                 if entities.contains(RETURNS_U32_MARKER)
                     && !expression_is_unsigned_result(returned, entities)
                 {
-                    value = format!("({value}) >>> 0");
+                    value = if is_primary_expression_text(&value) {
+                        format!("{value} >>> 0")
+                    } else {
+                        format!("({value}) >>> 0")
+                    };
                 }
                 if entities.contains(RETURNS_NULLABLE_MARKER) {
                     value = nullable_option_value(returned, value);
