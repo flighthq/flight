@@ -23481,7 +23481,6 @@ pub fn get_u16_bits() -> i32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-<<<<<<< Updated upstream
         output.contains("32 | 0"),
         "usize::BITS should be 32: {output}"
     );
@@ -23490,13 +23489,6 @@ pub fn get_u16_bits() -> i32 {
         output.contains("16 | 0"),
         "u16::BITS should be 16: {output}"
     );
-=======
-        output.contains("(32)"),
-        "usize::BITS should be 32: {output}"
-    );
-    assert!(output.contains("(8)"), "u8::BITS should be 8: {output}");
-    assert!(output.contains("(16)"), "u16::BITS should be 16: {output}");
->>>>>>> Stashed changes
 }
 
 #[test]
@@ -23528,7 +23520,6 @@ pub fn clamp_value(value: i32, lo: i32, hi: i32) -> i32 {
 }
 
 #[test]
-<<<<<<< Updated upstream
 fn elides_widening_integer_casts() {
     let source = r#"
 pub fn chained_u8_to_u32(x: f64) -> u32 {
@@ -23647,8 +23638,6 @@ pub fn extract_pair(color: u32) -> u16 {
 }
 
 #[test]
-=======
->>>>>>> Stashed changes
 fn lowers_option_tuple_closure_parameter() {
     let source = r#"
 pub fn get_parts(source: &Foo) -> Option<(Bar, Baz)> {

@@ -23975,7 +23975,6 @@ fn constructor_path_default_value(expression: &Expr) -> Option<&'static str> {
     }
 }
 
-<<<<<<< Updated upstream
 fn expression_is_unsigned_result(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
         Expr::Cast(cast) => matches!(
@@ -24033,8 +24032,6 @@ fn is_widening_integer_cast(source: &str, target: &str) -> bool {
     };
 }
 
-=======
->>>>>>> Stashed changes
 fn strip_as_ptr(expression: &Expr) -> &Expr {
     let expr = peel_reference_and_paren(expression);
     if let Expr::MethodCall(call) = expr {
