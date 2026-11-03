@@ -13109,14 +13109,25 @@ fn emit_hoisted_value_block_local(
     };
     let target_js = local_pattern_name(&local.pat).map(|n| snake_to_lower_camel(&n));
     let mut block_entities = entities.clone();
-    if let Some(ref target) = target_js {
-        for stmt in preceding {
-            if let Stmt::Local(inner) = stmt {
-                if let Some(name) = local_pattern_name(&inner.pat) {
-                    let js_name = snake_to_lower_camel(&name);
-                    if js_name == *target {
-                        block_entities.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
-                    }
+    let tuple_target_js: Vec<String> = match &local.pat {
+        Pat::Tuple(t) => t
+            .elems
+            .iter()
+            .filter_map(|elem| match elem {
+                Pat::Ident(ident) if ident.ident != "_" && ident.ident != "None" => {
+                    Some(snake_to_lower_camel(&ident.ident.to_string()))
+                }
+                _ => None,
+            })
+            .collect(),
+        _ => Vec::new(),
+    };
+    for stmt in preceding {
+        if let Stmt::Local(inner) = stmt {
+            if let Some(name) = local_pattern_name(&inner.pat) {
+                let js_name = snake_to_lower_camel(&name);
+                if target_js.as_deref() == Some(&js_name) || tuple_target_js.contains(&js_name) {
+                    block_entities.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
                 }
             }
         }
@@ -13138,7 +13149,8 @@ fn emit_hoisted_value_block_local(
         for stmt in preceding {
             if let Stmt::Local(inner) = stmt {
                 if let Some(name) = local_pattern_name(&inner.pat) {
-                    hoisted_names.insert(snake_to_lower_camel(&name));
+                    let js_name = snake_to_lower_camel(&name);
+                    hoisted_names.insert(resolve_rename(&block_context, &js_name));
                 }
             }
         }

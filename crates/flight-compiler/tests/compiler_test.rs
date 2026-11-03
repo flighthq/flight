@@ -22179,16 +22179,16 @@ pub fn run(items: &[i32]) -> i32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        !output.contains("const [next, rest]") && !output.contains("let [next, rest]"),
-        "hoisted value block with name collision should decompose, not destructure: {output}"
+        output.contains("const next_1 = compute"),
+        "inner local should be renamed to avoid collision: {output}"
     );
     assert!(
-        output.contains("const rest ="),
-        "non-colliding element should get a fresh const declaration: {output}"
+        output.contains("const [next, rest]"),
+        "outer tuple should destructure cleanly after inner rename: {output}"
     );
     assert!(
-        !output.contains("const next = compute") || output.matches("const next").count() <= 1,
-        "next should not be redeclared after hoisting: {output}"
+        output.contains("next_1") && !output.contains("next = next_1"),
+        "inner local renamed, no bare-assign to const: {output}"
     );
 }
 
