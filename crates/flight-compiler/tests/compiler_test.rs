@@ -13271,6 +13271,10 @@ pub fn filtered_characters(value: &str) -> String {
     return value.chars().filter(|character| *character != '\n').collect::<String>();
 }
 
+pub fn filtered_digits(value: &str) -> String {
+    return value.chars().filter(|c| *c != '.').collect();
+}
+
 pub fn append_character(value: &mut String, character: char) {
     value.push(character);
 }
@@ -13323,6 +13327,10 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
             output.contains(
                 "return [...value].filter((character) => character !== \"\\n\").join('');"
             )
+        );
+        assert!(
+            output.contains("return [...value].filter((c) => c !== \".\").join('');"),
+            "chars().filter().collect() without turbofish should join to string: {output}"
         );
         assert!(output.contains("value += character;"));
         assert!(output.contains("return [...value][0];"));

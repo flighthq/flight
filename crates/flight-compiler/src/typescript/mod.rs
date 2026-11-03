@@ -18012,6 +18012,13 @@ fn emit_method_call(
         {
             Ok(format!("{receiver}.join('')"))
         }
+        "collect"
+            if arguments.is_empty()
+                && method_chain_includes(&call.receiver, "chars")
+                && !immediate_receiver_is_method(&call.receiver, "chars") =>
+        {
+            Ok(format!("{receiver}.join('')"))
+        }
         "collect" if arguments.is_empty() => Ok(receiver),
         "count" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
@@ -19316,6 +19323,19 @@ fn expression_is_ordered_primitive(expression: &Expr, entities: &HashSet<String>
         }
         _ => expression_is_known_string(expression, entities),
     };
+}
+
+fn method_chain_includes(expression: &Expr, method_name: &str) -> bool {
+    return match expression {
+        Expr::MethodCall(call) => {
+            call.method == method_name || method_chain_includes(&call.receiver, method_name)
+        }
+        _ => false,
+    };
+}
+
+fn immediate_receiver_is_method(expression: &Expr, method_name: &str) -> bool {
+    return matches!(expression, Expr::MethodCall(call) if call.method == method_name);
 }
 
 // Whether evaluating the expression more than once is side-effect free, so a lowering may repeat
