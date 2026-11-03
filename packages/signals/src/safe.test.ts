@@ -152,7 +152,7 @@ describe('emitSignalSafe', () => {
     connectSignal(
       signal,
       (event: Readonly<TextEvent>) => {
-        bCalls.value.push(`b:${event.value}`);
+        return bCalls.value.push(`b:${event.value}`);
       },
       undefined,
     );

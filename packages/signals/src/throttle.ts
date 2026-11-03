@@ -152,9 +152,12 @@ export function connectSignalDebounced<T>(
       timerTimerId.value = undefined;
       timerLeadingFired.value = false;
       if (trailing) {
-        const args = takePendingSignalArgs(timerLastArgs);
-        if (args !== undefined) {
-          timerSlot(args.value);
+        {
+          const $args = takePendingSignalArgs(timerLastArgs);
+          if ($args !== undefined) {
+            const args = $args;
+            timerSlot(args.value);
+          }
         }
       }
     });
@@ -232,9 +235,12 @@ export function connectSignalThrottled<T>(
           const id = setSignalTimeout(handlerState, intervalMs, () => {
             timerLastFiredAt.value = timerState!.nowMs;
             timerTrailingTimer.value = undefined;
-            const args = takePendingSignalArgs(timerLastArgs);
-            if (args !== undefined) {
-              timerSlot(args.value);
+            {
+              const $args = takePendingSignalArgs(timerLastArgs);
+              if ($args !== undefined) {
+                const args = $args;
+                timerSlot(args.value);
+              }
             }
           });
           handlerTrailingTimer.value = id;
@@ -258,9 +264,12 @@ export function connectSignalThrottled<T>(
         const id = setSignalTimeout(handlerState, remaining, () => {
           timerLastFiredAt.value = timerState!.nowMs;
           timerTrailingTimer.value = undefined;
-          const args = takePendingSignalArgs(timerLastArgs);
-          if (args !== undefined) {
-            timerSlot(args.value);
+          {
+            const $args = takePendingSignalArgs(timerLastArgs);
+            if ($args !== undefined) {
+              const args = $args;
+              timerSlot(args.value);
+            }
           }
         });
         handlerTrailingTimer.value = id;
@@ -304,7 +313,8 @@ export function createSignalTimerState(): SignalTimerStateRaw {
 
 export function initializeSignalTimerState(out: SignalTimerStateRaw): void {
   out.nowMs = 0.0;
-  out.timers.length = 0;
+  const outTimers: SignalTimer[] = out.timers;
+  outTimers.length = 0;
   out.nextId = 1;
 }
 

@@ -272,7 +272,6 @@ describe('initializeSignalTimerState', () => {
     let state = createSignalTimerState();
     setSignalTimeout(state, 10.0, () => {});
     advanceSignalTimers(state, 5.0);
-    state = state!;
     initializeSignalTimerState(state);
     expect(state.nowMs).toEqual(0.0);
     expect(state.timers.length === 0).toBe(true);
