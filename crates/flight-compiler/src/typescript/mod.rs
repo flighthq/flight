@@ -4732,6 +4732,59 @@ fn transparent_data_union(rust_enum: &syn::ItemEnum) -> bool {
         .any(|variant| matches!(variant.fields, syn::Fields::Named(_)));
 }
 
+fn entity_ref_data_union(rust_enum: &syn::ItemEnum, programs: &[&Program]) -> bool {
+    let payload_variants = rust_enum
+        .variants
+        .iter()
+        .filter(|variant| !matches!(variant.fields, syn::Fields::Unit));
+    let mut count = 0;
+    for variant in payload_variants {
+        let syn::Fields::Unnamed(fields) = &variant.fields else {
+            return false;
+        };
+        if fields.unnamed.len() != 1 {
+            return false;
+        }
+        let Some(inner) = peel_wrapper_type(&fields.unnamed[0].ty) else {
+            return false;
+        };
+        if !programs
+            .iter()
+            .any(|program| program.entities.contains(&inner))
+        {
+            return false;
+        }
+        count += 1;
+    }
+    return count >= 2;
+}
+
+fn peel_wrapper_type(rust_type: &Type) -> Option<String> {
+    match rust_type {
+        Type::Reference(reference) => peel_wrapper_type(&reference.elem),
+        Type::Group(group) => peel_wrapper_type(&group.elem),
+        Type::Paren(paren) => peel_wrapper_type(&paren.elem),
+        Type::Path(path) => {
+            let segment = path.path.segments.last()?;
+            let name = segment.ident.to_string();
+            match name.as_str() {
+                "Arc" | "Box" | "Ref" | "RwLock" => {
+                    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                        return None;
+                    };
+                    let inner = arguments.args.iter().find_map(|argument| match argument {
+                        GenericArgument::Type(rust_type) => Some(rust_type),
+                        _ => None,
+                    })?;
+                    peel_wrapper_type(inner)
+                }
+                _ => Some(name),
+            }
+        }
+        _ => None,
+    }
+}
+
 fn runtime_categories_for_type(
     rust_type: &Type,
     programs: &[&Program],
@@ -5046,7 +5099,7 @@ fn insert_data_union_context(
             if !program.data_unions.contains(&owner) {
                 continue;
             }
-            if !transparent_data_union(rust_enum) {
+            if !transparent_data_union(rust_enum) || entity_ref_data_union(rust_enum, programs) {
                 for variant in &rust_enum.variants {
                     let variant_name = variant.ident.to_string();
                     context.insert(format!(
@@ -10143,6 +10196,13 @@ fn emit_expression_value(
                 }
                 return emit_expression(&call.args[0], entities);
             }
+            if let Some((owner, variant)) = associated_owner_and_member(&call.func)
+                && is_tagged_data_union_variant(entities, &owner, &variant)
+                && !data_union_unit(entities, &owner, &variant)
+                && call.args.len() == 1
+            {
+                return emit_expression(&call.args[0], entities);
+            }
             if (expression_is_path(&call.func, "Some") || expression_is_path(&call.func, "Ok"))
                 && call.args.len() == 1
             {
@@ -14763,6 +14823,32 @@ fn analyze_tagged_data_union_pattern(
                 },
             ]))
         }
+        Pat::TupleStruct(pattern) => {
+            let Some((owner, variant)) = path_owner_and_member(&pattern.path) else {
+                return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+            };
+            if !is_tagged_data_union_variant(entities, &owner, &variant) {
+                return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+            }
+            if data_union_unit(entities, &owner, &variant) {
+                return Err(compile_error(format!(
+                    "tagged data union unit variant `{owner}::{variant}` cannot declare field patterns"
+                )));
+            }
+            let mut bindings = BTreeMap::new();
+            if pattern.elems.len() == 1 {
+                if let Some(binding) = tagged_data_union_field_binding(&pattern.elems[0])? {
+                    bindings.insert(binding, "@self".to_string());
+                }
+            }
+            Ok(TaggedDataUnionPatternAnalysis::Variants(vec![
+                TaggedDataUnionPattern {
+                    bindings,
+                    owner,
+                    variant,
+                },
+            ]))
+        }
         Pat::Wild(_) => Ok(TaggedDataUnionPatternAnalysis::CatchAll(None)),
         _ => Ok(TaggedDataUnionPatternAnalysis::Ordinary),
     };
@@ -15346,16 +15432,21 @@ fn tagged_data_union_bindings(
                     )
                 })
                 .collect::<Vec<_>>();
+            let field_value = |field: &str| -> String {
+                if field == "@self" {
+                    value.to_string()
+                } else {
+                    format!("{value}.{field}")
+                }
+            };
             let expression = if fields.iter().all(|(_, field)| *field == fields[0].1) {
-                format!("{value}.{}", fields[0].1)
+                field_value(fields[0].1)
             } else {
-                let mut expression = format!(
-                    "{value}.{}",
-                    fields.last().expect("tagged match arm has a variant").1
-                );
+                let mut expression =
+                    field_value(fields.last().expect("tagged match arm has a variant").1);
                 for (variant, field) in fields.iter().rev().skip(1) {
-                    expression =
-                        format!("{value}.kind === {variant:?} ? {value}.{field} : {expression}");
+                    let fv = field_value(field);
+                    expression = format!("{value}.kind === {variant:?} ? {fv} : {expression}");
                 }
                 expression
             };

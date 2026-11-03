@@ -15213,6 +15213,75 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
     }
 
     #[test]
+    fn classifies_entity_ref_data_union_as_tagged() {
+        let types = r#"
+use flight_entity::EntityRuntimeSlot;
+
+pub struct Ortho {
+    runtime: EntityRuntimeSlot,
+    pub half_width: f32,
+}
+
+pub struct Persp {
+    runtime: EntityRuntimeSlot,
+    pub fov_y: f32,
+}
+
+pub struct RawProj {
+    runtime: EntityRuntimeSlot,
+    pub value: f32,
+}
+
+flight_entity::impl_entity!(Ortho);
+flight_entity::impl_entity!(Persp);
+flight_entity::impl_entity!(RawProj);
+
+pub type Ref<T> = std::sync::Arc<std::sync::RwLock<T>>;
+
+pub enum Proj {
+    Orthographic(Ref<Ortho>),
+    Perspective(Ref<Persp>),
+    Raw(Ref<RawProj>),
+}
+"#;
+        let source = r#"
+use crate::types::{Proj, Ortho, Persp, Ref};
+
+pub fn is_ortho(p: &Proj) -> bool {
+    return matches!(p, Proj::Orthographic(_));
+}
+
+pub fn make_persp(p: Ref<Persp>) -> Proj {
+    return Proj::Perspective(p);
+}
+
+pub fn describe(p: &Proj) -> f32 {
+    return match p {
+        Proj::Orthographic(o) => o.half_width,
+        Proj::Perspective(per) => per.fov_y,
+        Proj::Raw(r) => r.value,
+    };
+}
+"#;
+        let output = compile_typescript_with_alias_sources(
+            source,
+            Some("@flighthq/entity/contract"),
+            &[types],
+        )
+        .unwrap();
+
+        assert!(output.contains("p.kind === \"orthographic\""));
+        assert!(
+            output.contains("return p;"),
+            "entity-ref construction should pass through"
+        );
+        assert!(output.contains("matchValue.kind === \"orthographic\""));
+        assert!(output.contains("matchValue.kind === \"perspective\""));
+        assert!(output.contains("const o = matchValue;"));
+        assert!(output.contains("const r = matchValue;"));
+    }
+
+    #[test]
     fn rejects_repeated_tagged_data_union_match_variants() {
         let source = r#"
 //! flight-compiler: data-union PathSegment
