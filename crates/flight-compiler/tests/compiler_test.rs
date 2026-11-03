@@ -1082,11 +1082,17 @@ export function isA(code: KeyCode): boolean {
                 "`const-group {owner}` collides with another emitted value binding named `{owner}`"
             );
         };
-        // A compiler-injected local.
-        let injected = "//! flight-compiler: const-group PI CODE_\n\nuse std::f32::consts::PI;\n\npub const CODE_A: i32 = 1;\n\npub fn circle_area(radius: f32) -> f32 {\n    return PI * radius * radius;\n}\n";
-        assert_eq!(
-            compile_typescript(injected, None).unwrap_err().to_string(),
-            collision("PI")
+        // Float constants are inlined (PI → Math.PI), so a const-group named PI no longer
+        // collides with an emitted binding.
+        let no_collision = "//! flight-compiler: const-group PI CODE_\n\nuse std::f32::consts::PI;\n\npub const CODE_A: i32 = 1;\n\npub fn circle_area(radius: f32) -> f32 {\n    return PI * radius * radius;\n}\n";
+        let output = compile_typescript(no_collision, None).unwrap();
+        assert!(
+            output.contains("Math.PI * radius * radius"),
+            "PI should be inlined to Math.PI: {output}"
+        );
+        assert!(
+            !output.contains("const PI = Math.PI"),
+            "const PI declaration should not be emitted: {output}"
         );
         // A compiler-provided import.
         let provided = "//! flight-compiler: const-group allocateEntity CODE_\n\nuse flight_entity::allocate_entity;\n\npub const CODE_A: i32 = 1;\n\n#[derive(Default)]\npub struct Record {\n    pub value: i32,\n}\n\npub fn create_record() -> Record {\n    let record: Record = allocate_entity();\n    return record;\n}\n";
@@ -12745,13 +12751,16 @@ pub fn customized_spring_preset() -> SpringConfig {
             );
         };
 
+        // Float constants are inlined (PI → Math.PI), so a dependency export-name `PI` no
+        // longer collides with the inlined constant.
         let pi = test(
             "use std::f32::consts::PI;\n",
             "        assert_eq!(decoded as f32 * PI, call_decoder(1) as f32 * PI);\n",
         );
-        assert_eq!(
-            compile("PI", &pi).unwrap_err().to_string(),
-            "`flight-compiler: export-name` TypeScript name `PI` imported from `@flighthq/codec/contract` collides with a local item"
+        let pi_output = compile("PI", &pi).unwrap();
+        assert!(
+            pi_output.contains("Math.PI"),
+            "PI should be inlined to Math.PI: {pi_output}"
         );
         let without_pi = test("", "        assert_eq!(decoded, call_decoder(1));\n");
         let output = compile("PI", &without_pi).unwrap();

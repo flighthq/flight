@@ -3140,9 +3140,6 @@ fn program_value_bindings(program: &Program, context: &HashSet<String>) -> BTree
             bindings.insert(rust_enum.ident.to_string());
         }
     }
-    if program.standard_constants.contains("PI") {
-        bindings.insert("PI".to_string());
-    }
     return bindings;
 }
 
@@ -20826,10 +20823,6 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
     let mut body = String::new();
-    if program.standard_constants.contains("PI") {
-        body.push_str("const PI = Math.PI;\n\n");
-    }
-
     for rust_enum in &program.enums {
         let enum_start = body.len();
         let result = emit_enum(

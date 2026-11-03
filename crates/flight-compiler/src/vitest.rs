@@ -1016,9 +1016,6 @@ pub(crate) fn emit_test_program(
                 .map(|constant| emit_path_name(&constant.ident.to_string(), context)),
         )
         .collect::<std::collections::BTreeSet<_>>();
-    if program.standard_constants.contains("PI") {
-        local_values.insert("PI".to_string());
-    }
     contract_symbols.retain(|symbol| {
         return !dependency_items.contains(symbol)
             && !cross_crate_local_names.contains(&emit_path_name(symbol, context));
@@ -1077,9 +1074,6 @@ pub(crate) fn emit_test_program(
             format!("@flighthq/{package}/contract")
         )
         .expect("writing to a String cannot fail");
-    }
-    if program.standard_constants.contains("PI") {
-        out.push_str("\nconst PI = Math.PI;\n");
     }
     for type_alias in &program.type_aliases {
         out.push('\n');
