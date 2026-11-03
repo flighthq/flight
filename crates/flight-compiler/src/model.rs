@@ -45,7 +45,6 @@ pub(crate) struct Program {
     // Unit enums lowered to a type-only TS union of their declared integer discriminants, in
     // declaration order (`numeric-union`).
     pub(crate) numeric_unions: BTreeMap<String, Vec<(String, i64)>>,
-    pub(crate) standard_constants: HashSet<String>,
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) readonly_structs: HashSet<String>,
@@ -1540,7 +1539,6 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
     let mut entities = HashSet::new();
     let mut enums = Vec::new();
     let mut functions = Vec::new();
-    let mut standard_constants = HashSet::new();
     let mut statics = Vec::new();
     let mut structs = Vec::new();
     let mut type_aliases = Vec::new();
@@ -1592,9 +1590,6 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
     let mut auto_data_unions = HashSet::new();
     let mut rust_only_functions = BTreeSet::new();
     for item in file.items {
-        if let Item::Use(item_use) = &item {
-            collect_standard_constant(&item_use.tree, &mut Vec::new(), &mut standard_constants);
-        }
         validate_rust_only_item(&item)?;
         match item {
             Item::Fn(function) if has_rust_only_directive(&function.attrs) => {
@@ -1745,7 +1740,6 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         nullable_options,
         array_like_parameters,
         numeric_unions,
-        standard_constants,
         statics,
         structs,
         readonly_structs,

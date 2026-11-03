@@ -1005,7 +1005,7 @@ pub(crate) fn emit_test_program(
                         .map_or_else(|| emit_path_name(symbol, context), str::to_string)
                 }),
         );
-    let mut local_values = program
+    let local_values = program
         .helpers
         .iter()
         .map(|helper| snake_to_lower_camel(&helper.sig.ident.to_string()))
