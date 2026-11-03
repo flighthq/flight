@@ -22874,3 +22874,67 @@ pub fn param_tuple(value: u32) -> u32 {
         "return should use renamed value_1: {output}"
     );
 }
+
+#[test]
+fn lowers_trait_field_accessor_to_identity() {
+    let source = r#"
+pub struct NodeFields { pub enabled: bool }
+pub fn check_enabled(node: &NodeFields) -> bool {
+    return node.node_fields().enabled;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("node.enabled"),
+        "node_fields() should be identity (fields are flat in TS): {output}"
+    );
+    assert!(
+        !output.contains("nodeFields"),
+        "should not emit a nested nodeFields access: {output}"
+    );
+}
+
+#[test]
+fn lowers_trait_fields_mut_accessor_to_identity() {
+    let source = r#"
+pub struct Node2DFields { pub x: f32 }
+pub fn set_position(node: &mut Node2DFields, x: f32) {
+    node.node2d_fields_mut().x = x;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("node.x = x"),
+        "node2d_fields_mut() should be identity: {output}"
+    );
+}
+
+#[test]
+fn lowers_trait_runtime_accessor_to_free_function() {
+    let source = r#"
+pub struct NodeRuntime { pub children: Vec<u32> }
+pub fn get_children(node: &NodeRuntime) -> &Vec<u32> {
+    return &node.node_runtime().children;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("getNodeRuntime(node).children"),
+        "node_runtime() should lower to getNodeRuntime(): {output}"
+    );
+}
+
+#[test]
+fn lowers_trait_entity_runtime_mut_to_free_function() {
+    let source = r#"
+pub struct EntityRuntimeSlot {}
+pub fn get_runtime(entity: &mut EntityRuntimeSlot) {
+    entity.entity_runtime_mut();
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("getEntityRuntime(entity)"),
+        "entity_runtime_mut() should lower to getEntityRuntime(): {output}"
+    );
+}

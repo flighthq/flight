@@ -18285,6 +18285,19 @@ fn emit_method_call(
         .map(|argument| emit_expression(argument, entities))
         .collect::<Result<Vec<_>, _>>()?;
     let method = call.method.to_string();
+    // Trait field accessors: *_fields() / *_fields_mut() are identity in TS because entity
+    // interfaces flatten the fields struct (Node extends NodeFields, Entity).
+    if arguments.is_empty() && (method.ends_with("_fields") || method.ends_with("_fields_mut")) {
+        return Ok(receiver);
+    }
+    // Trait runtime accessors: *_runtime() / *_runtime_mut() lower to getXxxRuntime(receiver).
+    if arguments.is_empty() && (method.ends_with("_runtime") || method.ends_with("_runtime_mut")) {
+        let base = method.trim_end_matches("_mut");
+        let mut camel = snake_to_lower_camel(base);
+        camel[..1].make_ascii_uppercase();
+        let ts_fn = format!("get{camel}");
+        return Ok(format!("{ts_fn}({receiver})"));
+    }
     if method == "fold" && arguments.len() == 2 {
         let reducer = match arguments[1].as_str() {
             "Math.max" => "(left, right) => Math.max(left, right)",
