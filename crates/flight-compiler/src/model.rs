@@ -578,9 +578,7 @@ pub(crate) fn has_companion_metadata(source: &str) -> Result<bool, CompileError>
 
 fn has_entity_runtime(structure: &ItemStruct) -> bool {
     return structure.fields.iter().any(|field| {
-        !is_public(&field.vis)
-            && field.ident.as_ref().is_some_and(|ident| ident == "runtime")
-            && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
+        !is_public(&field.vis) && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
     });
 }
 
@@ -2676,7 +2674,7 @@ fn validate_entity_runtime_states(
                 "`flight-compiler: entity-runtime-state {owner}.{field_name}` names no field of `{owner}`"
             )));
         };
-        if field_name == "runtime" || is_public(&field.vis) {
+        if type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot") || is_public(&field.vis) {
             return Err(compile_error(format!(
                 "`flight-compiler: entity-runtime-state {owner}.{field_name}` must designate a crate-private state field, not a public field or the runtime slot"
             )));
@@ -2788,8 +2786,7 @@ fn validate_fields(
     for field in &fields.named {
         if !(module_private_plain_data
             || is_public(&field.vis)
-            || field.ident.as_ref().is_some_and(|ident| ident == "runtime")
-                && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
+            || type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
             || designated_state.is_some_and(|designated| {
                 field
                     .ident
