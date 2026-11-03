@@ -5,8 +5,6 @@ import { describe, expect, it } from 'vitest';
 
 import { CIRCLE_KAPPA, DEG_TO_RAD, EPSILON, HALF_PI, RAD_TO_DEG, TAU } from './contract.ts';
 
-const PI = Math.PI;
-
 function assertClose(actual: number, expected: number, digits: number): void {
   const diff = Math.abs(actual - expected);
   const tsBound = 0.5 * Math.pow(10.0, -digits);
