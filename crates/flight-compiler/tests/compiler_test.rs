@@ -22193,6 +22193,37 @@ pub fn run(items: &[i32]) -> i32 {
 }
 
 #[test]
+fn hoisted_value_block_let_else_renames_on_scope_declared() {
+    let source = r#"
+fn current_element(x: &i32) -> Option<i32> { Some(*x) }
+
+pub fn pause(channel: &mut i32) {
+    let element = {
+        let Some(element) = current_element(channel) else {
+            return;
+        };
+        *channel = element;
+        element
+    };
+    let _ = element + 1;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("const element_1 = currentElement"),
+        "inner let-else binding should be renamed to element_1: {output}"
+    );
+    assert!(
+        output.contains("if (element_1 === undefined)"),
+        "guard should use renamed binding: {output}"
+    );
+    assert!(
+        output.contains("const element = element_1"),
+        "outer binding should capture renamed inner value: {output}"
+    );
+}
+
+#[test]
 fn tuple_destructure_renames_on_inner_block_self_ref() {
     let source = r#"
 pub fn inner_block(seed: u32, flag: bool) -> u32 {

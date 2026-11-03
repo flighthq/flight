@@ -11872,7 +11872,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         .as_ref()
         .is_some_and(|init| init.diverge.is_some())
     {
-        emit_let_else_local(
+        return Ok(emit_let_else_local(
             out,
             local,
             entities,
@@ -11880,8 +11880,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
             shadowed,
             rebound,
             emit_else_block,
-        )?;
-        return Ok(None);
+        )?);
     }
     if let Some(initializer) = &local.init
         && let Expr::Try(try_expr) = initializer.expr.as_ref()
@@ -13377,7 +13376,7 @@ fn emit_let_else_local(
     shadowed: bool,
     rebound: bool,
     emit_else_block: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
-) -> Result<(), CompileError> {
+) -> Result<Option<(String, String)>, CompileError> {
     let initializer = local
         .init
         .as_ref()
@@ -13424,7 +13423,7 @@ fn emit_let_else_local(
             write_indent(out, indent);
             writeln!(out, "const [{}] = $opt;", names.join(", "))
                 .expect("writing to a String cannot fail");
-            return Ok(());
+            return Ok(None);
         }
         if let Pat::TupleStruct(_) | Pat::Struct(_) = &pattern.elems[0] {
             let value = emit_expression(&initializer.expr, entities)?;
@@ -13452,7 +13451,7 @@ fn emit_let_else_local(
                     writeln!(out, "const {name} = {expression};")
                         .expect("writing to a String cannot fail");
                 }
-                return Ok(());
+                return Ok(None);
             }
             return Err(compile_error(
                 "portable `let Some` binding needs an identifier, tuple, or data union variant",
@@ -13467,11 +13466,32 @@ fn emit_let_else_local(
         let name = snake_to_lower_camel(&rust_name);
         let same_binding =
             referenced_path_identifier(&initializer.expr).as_deref() == Some(&rust_name);
+        let scope_declared = entities.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
         if !same_binding {
             let value = emit_expression(&initializer.expr, entities)?;
-            let rebind = shadowed
-                || expression_contains_identifier(&initializer.expr, &rust_name)
-                || entities.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+            if scope_declared && !shadowed {
+                let fresh = next_try_rename(entities, &name);
+                let keyword = if identifier.mutability.is_some() || rebound {
+                    "let"
+                } else {
+                    "const"
+                };
+                write_indent(out, indent);
+                writeln!(out, "{keyword} {fresh} = {value};")
+                    .expect("writing to a String cannot fail");
+                write_indent(out, indent);
+                writeln!(
+                    out,
+                    "if ({fresh} === {}) {{",
+                    option_absent_value(&initializer.expr, entities)
+                )
+                .expect("writing to a String cannot fail");
+                emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+                write_indent(out, indent);
+                out.push_str("}\n");
+                return Ok(Some((name, fresh)));
+            }
+            let rebind = shadowed || expression_contains_identifier(&initializer.expr, &rust_name);
             write_indent(out, indent);
             if rebind {
                 write!(out, "{name}").expect("writing to a String cannot fail");
@@ -13495,7 +13515,7 @@ fn emit_let_else_local(
         emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
         write_indent(out, indent);
         out.push_str("}\n");
-        return Ok(());
+        return Ok(None);
     }
     if let Pat::TupleStruct(_) | Pat::Struct(_) = &local.pat {
         let value_expr = emit_expression(&initializer.expr, entities)?;
@@ -13516,13 +13536,22 @@ fn emit_let_else_local(
             emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
+            let mut rename_pair = None;
             for (binding, expression) in &test.bindings {
                 let name = snake_to_lower_camel(binding);
-                let binding_shadowed = shadowed
-                    || expression_contains_identifier(&initializer.expr, binding)
-                    || entities.contains(&format!("{SCOPE_DECLARED_MARKER}{binding}"));
+                let scope_declared =
+                    entities.contains(&format!("{SCOPE_DECLARED_MARKER}{binding}"));
+                let binding_shadowed =
+                    shadowed || expression_contains_identifier(&initializer.expr, binding);
                 write_indent(out, indent);
-                if binding_shadowed {
+                if scope_declared && !binding_shadowed {
+                    let fresh = next_try_rename(entities, &name);
+                    writeln!(out, "const {fresh} = {expression};")
+                        .expect("writing to a String cannot fail");
+                    if rename_pair.is_none() {
+                        rename_pair = Some((name, fresh));
+                    }
+                } else if binding_shadowed {
                     writeln!(out, "{name} = {expression};")
                         .expect("writing to a String cannot fail");
                 } else {
@@ -13530,7 +13559,7 @@ fn emit_let_else_local(
                         .expect("writing to a String cannot fail");
                 }
             }
-            return Ok(());
+            return Ok(rename_pair);
         }
     }
     if let Pat::Tuple(tuple) = &local.pat {
@@ -13670,7 +13699,7 @@ fn emit_let_else_local(
                 }
             }
         }
-        return Ok(());
+        return Ok(None);
     }
     return Err(compile_error(
         "portable `let-else` supports only a `Some(name)` or tuple pattern",
