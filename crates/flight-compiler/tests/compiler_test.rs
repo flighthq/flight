@@ -547,6 +547,31 @@ pub fn same(a: &Holder, b: &Holder) -> bool {
         }
     }
 
+    #[test]
+    fn resolves_arc_ptr_eq_through_generic_type_alias_chain() {
+        let source = r#"
+use std::sync::Arc;
+use std::sync::RwLock;
+
+pub type Ref<T> = Arc<RwLock<T>>;
+
+pub struct Player {
+    pub name: String,
+}
+
+pub type PlayerRef = Ref<Player>;
+
+pub fn are_same(a: &PlayerRef, b: &PlayerRef) -> bool {
+    return Arc::ptr_eq(a, b);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("a === b"),
+            "should resolve generic alias chain to identity-bearing: {output}"
+        );
+    }
+
     // A dependency crate's identity-bearing types and public fields are read in that crate's own
     // sources (an alias in one file, the struct using it in another), so its handles compare by
     // allocation; its primitive payload still fails closed.

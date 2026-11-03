@@ -380,9 +380,12 @@ pub(super) const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
 // `Arc`, including absolute paths and renamed root or module imports.
 const SOURCE_TYPE_PATH_CONTEXT_MARKER: &str = "@source-type-path-context:";
 
-// Owner facts for each non-generic source type alias, and `{module}␟{alias}␟{type tokens}` for its
+// Owner facts for each source type alias, and `{module}␟{alias}␟{type tokens}` for its
 // definition, so a struct identity is seen through alias chains across sources.
 const TYPE_ALIAS_DEFINITION_MARKER: &str = "@type-alias-definition:";
+
+// Generic parameter names for a type alias: `{module}␟{alias}␟{param1,param2,...}`.
+const TYPE_ALIAS_GENERICS_MARKER: &str = "@type-alias-generics:";
 
 const TYPE_ALIAS_OWNER_MARKER: &str = "@type-alias-owner:";
 
@@ -1249,6 +1252,7 @@ pub(crate) fn external_shared_identity_facts(
         crate_name: String,
         context: HashSet<String>,
         aliases: BTreeMap<String, Type>,
+        generic_aliases: BTreeMap<String, (Vec<String>, Type)>,
         structures: BTreeSet<String>,
         file: syn::File,
     }
@@ -1263,6 +1267,7 @@ pub(crate) fn external_shared_identity_facts(
         let file = syn::parse_file(source)
             .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
         let mut aliases = BTreeMap::new();
+        let mut generic_aliases = BTreeMap::new();
         let mut structures = BTreeSet::new();
         let mut local_names = Vec::new();
         for item in &file.items {
@@ -1275,6 +1280,18 @@ pub(crate) fn external_shared_identity_facts(
                     local_names.push(alias.ident.to_string());
                     if alias.generics.params.is_empty() {
                         aliases.insert(alias.ident.to_string(), alias.ty.as_ref().clone());
+                    } else {
+                        let params: Vec<String> = alias
+                            .generics
+                            .params
+                            .iter()
+                            .filter_map(|p| match p {
+                                syn::GenericParam::Type(t) => Some(t.ident.to_string()),
+                                _ => None,
+                            })
+                            .collect();
+                        generic_aliases
+                            .insert(alias.ident.to_string(), (params, alias.ty.as_ref().clone()));
                     }
                 }
                 syn::Item::Enum(item) => local_names.push(item.ident.to_string()),
@@ -1295,6 +1312,7 @@ pub(crate) fn external_shared_identity_facts(
             crate_name: format!("flight_{}", package.replace('-', "_")),
             context,
             aliases,
+            generic_aliases,
             structures,
             file,
         });
@@ -1323,6 +1341,7 @@ pub(crate) fn external_shared_identity_facts(
                     && external_type_is_shared_identity(
                         &context,
                         &source.aliases,
+                        &source.generic_aliases,
                         &source.structures,
                         &alias.ty,
                         0,
@@ -1358,6 +1377,7 @@ pub(crate) fn external_shared_identity_facts(
                     && external_type_is_shared_identity(
                         &context,
                         &source.aliases,
+                        &source.generic_aliases,
                         &source.structures,
                         &field.ty,
                         0,
@@ -1418,6 +1438,7 @@ fn external_struct_type_with(context: &HashSet<String>, rust_type: &Type) -> Opt
 fn external_type_is_shared_identity(
     context: &HashSet<String>,
     aliases: &BTreeMap<String, Type>,
+    generic_aliases: &BTreeMap<String, (Vec<String>, Type)>,
     structures: &BTreeSet<String>,
     rust_type: &Type,
     depth: usize,
@@ -1438,10 +1459,41 @@ fn external_type_is_shared_identity(
             return external_type_is_shared_identity(
                 context,
                 aliases,
+                generic_aliases,
                 structures,
                 definition,
                 depth + 1,
             );
+        }
+        if let Some((params, definition)) = generic_aliases.get(&name) {
+            let type_args: Vec<&Type> = match &path.path.segments[0].arguments {
+                PathArguments::AngleBracketed(args) => args
+                    .args
+                    .iter()
+                    .filter_map(|a| match a {
+                        GenericArgument::Type(t) => Some(t),
+                        _ => None,
+                    })
+                    .collect(),
+                _ => vec![],
+            };
+            if params.len() == type_args.len() {
+                let mut def_str = definition.to_token_stream().to_string();
+                for (param, arg) in params.iter().zip(type_args.iter()) {
+                    def_str =
+                        substitute_type_param(&def_str, param, &arg.to_token_stream().to_string());
+                }
+                if let Ok(substituted) = syn::parse_str::<Type>(&def_str) {
+                    return external_type_is_shared_identity(
+                        context,
+                        aliases,
+                        generic_aliases,
+                        structures,
+                        &substituted,
+                        depth + 1,
+                    );
+                }
+            }
         }
     }
     return shared_identity_type_at_depth(context, None, rust_type, depth);
@@ -3892,16 +3944,76 @@ fn shared_identity_type_at_depth(
     else {
         return false;
     };
-    let Some(definition) = unique_marker_suffix(
+    let Some(mut definition_str) = unique_marker_suffix(
         entities,
         &format!(
             "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
         ),
-    )
-    .and_then(|definition| syn::parse_str::<Type>(&definition).ok()) else {
+    ) else {
+        return false;
+    };
+    if let Some(generics_str) = unique_marker_suffix(
+        entities,
+        &format!(
+            "{TYPE_ALIAS_GENERICS_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+        ),
+    ) {
+        let params: Vec<&str> = generics_str.split(',').collect();
+        let type_args: Vec<&Type> = path
+            .segments
+            .last()
+            .and_then(|seg| match &seg.arguments {
+                PathArguments::AngleBracketed(args) => Some(
+                    args.args
+                        .iter()
+                        .filter_map(|a| match a {
+                            GenericArgument::Type(t) => Some(t),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+                _ => None,
+            })
+            .unwrap_or_default();
+        if params.len() == type_args.len() {
+            for (param, arg) in params.iter().zip(type_args.iter()) {
+                let arg_tokens = arg.to_token_stream().to_string();
+                definition_str = substitute_type_param(&definition_str, param, &arg_tokens);
+            }
+        }
+    }
+    let Some(definition) = syn::parse_str::<Type>(&definition_str).ok() else {
         return false;
     };
     return shared_identity_type_at_depth(entities, Some(&owner), &definition, depth + 1);
+}
+
+fn substitute_type_param(definition: &str, param: &str, replacement: &str) -> String {
+    let mut result = String::with_capacity(definition.len() + replacement.len());
+    let mut chars = definition.char_indices().peekable();
+    while let Some((i, ch)) = chars.next() {
+        if ch.is_ascii_alphabetic() || ch == '_' {
+            let start = i;
+            let mut end = i + ch.len_utf8();
+            while let Some(&(_, next)) = chars.peek() {
+                if next.is_ascii_alphanumeric() || next == '_' {
+                    end += next.len_utf8();
+                    chars.next();
+                } else {
+                    break;
+                }
+            }
+            let word = &definition[start..end];
+            if word == param {
+                result.push_str(replacement);
+            } else {
+                result.push_str(word);
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+    return result;
 }
 
 // The payload of `Arc::new` / `Rc::new` proven to lower to a fresh or existing object: a literal
@@ -7500,11 +7612,7 @@ fn generation_context_with_types(
                 }
             }
         }
-        for alias in program
-            .type_aliases
-            .iter()
-            .filter(|alias| alias.generics.params.is_empty())
-        {
+        for alias in &program.type_aliases {
             context.insert(owner_marker(
                 TYPE_ALIAS_OWNER_MARKER,
                 module,
@@ -7516,6 +7624,22 @@ fn generation_context_with_types(
                 alias.ident,
                 alias.ty.to_token_stream()
             ));
+            if !alias.generics.params.is_empty() {
+                let params: Vec<String> = alias
+                    .generics
+                    .params
+                    .iter()
+                    .filter_map(|p| match p {
+                        syn::GenericParam::Type(t) => Some(t.ident.to_string()),
+                        _ => None,
+                    })
+                    .collect();
+                context.insert(format!(
+                    "{TYPE_ALIAS_GENERICS_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+                    alias.ident,
+                    params.join(",")
+                ));
+            }
         }
     }
     for (module, program) in programs {
