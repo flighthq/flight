@@ -4990,6 +4990,22 @@ pub fn replace_first_two(s: &str) -> String {
     }
 
     #[test]
+    fn lowers_replacen_without_string_provenance() {
+        let source = r#"
+pub fn splice(source: &str, marker: &str) -> String {
+    return get_body(source).replacen(marker, "replacement", 1);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("indexOf(pattern)"),
+            "replacen without provenance should still compile: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_take_while_to_loop() {
         let source = r#"
 pub fn positive(values: &Vec<i32>) -> Vec<i32> {
@@ -6450,6 +6466,26 @@ pub fn first_token(line: &str) -> &str {
         assert!(
             output.contains("filter((s) => s.length > 0)[0]"),
             "split_whitespace().next(): {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_string_from_to_identity() {
+        let source = r#"
+pub fn clone_string(value: &str) -> String {
+    return String::from(value);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            !output.contains("String.from"),
+            "String::from should not emit String.from: {output}"
+        );
+        assert!(
+            output.contains("return value"),
+            "String::from should lower to identity: {output}"
         );
     }
 

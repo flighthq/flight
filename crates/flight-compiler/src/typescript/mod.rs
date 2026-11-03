@@ -8148,7 +8148,19 @@ fn generation_context_with_types(
                     continue;
                 };
                 let field_name = snake_to_lower_camel(&field_name.to_string());
-                let Some(mut value) = rust_default_expression(&field.ty) else {
+                let Some(mut value) = rust_default_expression(&field.ty).or_else(|| {
+                    let field_type_name = match &field.ty {
+                        Type::Path(path) if path.qself.is_none() => {
+                            path.path.segments.last().map(|s| s.ident.to_string())
+                        }
+                        _ => None,
+                    }?;
+                    if entity_types.contains(&field_type_name) {
+                        Some(format!("allocateEntity<{field_type_name}Raw>()"))
+                    } else {
+                        None
+                    }
+                }) else {
                     context.insert(format!(
                         "{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{}",
                         rust_type_description(&field.ty)
@@ -10309,6 +10321,9 @@ fn emit_expression_value(
                 && call.args.len() == 1
             {
                 return Ok("''".to_string());
+            }
+            if expression_is_associated_path(&call.func, "String", "from") && call.args.len() == 1 {
+                return emit_expression(&call.args[0], entities);
             }
             if expression_is_associated_path(&call.func, "String", "from_utf16_lossy")
                 && call.args.len() == 1
@@ -19061,16 +19076,9 @@ fn emit_method_call(
             "{receiver}.replaceAll({}, {})",
             arguments[0], arguments[1]
         )),
-        "replacen"
-            if arguments.len() == 3 && expression_is_known_string(&call.receiver, entities) =>
-        {
-            Ok(format!(
-                "((value: string, pattern: string, replacement: string, count: number): string => {{ let result = value; for (let i = 0; i < count; i++) {{ const index = result.indexOf(pattern); if (index === -1) break; result = result.slice(0, index) + replacement + result.slice(index + pattern.length); }} return result; }})({receiver}, {}, {}, {})",
-                arguments[0], arguments[1], arguments[2]
-            ))
-        }
-        "replacen" if arguments.len() == 3 => Err(compile_error(
-            "portable `.replacen()` requires a receiver known to be `String` or `str`",
+        "replacen" if arguments.len() == 3 => Ok(format!(
+            "((value: string, pattern: string, replacement: string, count: number): string => {{ let result = value; for (let i = 0; i < count; i++) {{ const index = result.indexOf(pattern); if (index === -1) break; result = result.slice(0, index) + replacement + result.slice(index + pattern.length); }} return result; }})({receiver}, {}, {}, {})",
+            arguments[0], arguments[1], arguments[2]
         )),
         "repeat"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
