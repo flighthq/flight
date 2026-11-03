@@ -9,9 +9,9 @@
  */
 export function premultiplyColorAlpha(color: number): number {
   const a = (color & 0xff) / 255.0;
-  const r = Math.round(((color >>> 24) & 0xff) * a) >>> 0;
-  const g = Math.round(((color >>> 16) & 0xff) * a) >>> 0;
-  const b = Math.round(((color >>> 8) & 0xff) * a) >>> 0;
+  const r = (Math.sign(((color >>> 24) & 0xff) * a) * Math.round(Math.abs(((color >>> 24) & 0xff) * a))) >>> 0;
+  const g = (Math.sign(((color >>> 16) & 0xff) * a) * Math.round(Math.abs(((color >>> 16) & 0xff) * a))) >>> 0;
+  const b = (Math.sign(((color >>> 8) & 0xff) * a) * Math.round(Math.abs(((color >>> 8) & 0xff) * a))) >>> 0;
   return ((r << 24) | (g << 16) | (b << 8) | (color & 0xff)) >>> 0;
 }
 
@@ -25,8 +25,11 @@ export function unpremultiplyColorAlpha(color: number): number {
   if (a === 0.0) {
     return color >>> 0;
   }
-  const r = Math.min(Math.round(((color >>> 24) & 0xff) / a), 255.0) >>> 0;
-  const g = Math.min(Math.round(((color >>> 16) & 0xff) / a), 255.0) >>> 0;
-  const b = Math.min(Math.round(((color >>> 8) & 0xff) / a), 255.0) >>> 0;
+  const r =
+    Math.min(Math.sign(((color >>> 24) & 0xff) / a) * Math.round(Math.abs(((color >>> 24) & 0xff) / a)), 255.0) >>> 0;
+  const g =
+    Math.min(Math.sign(((color >>> 16) & 0xff) / a) * Math.round(Math.abs(((color >>> 16) & 0xff) / a)), 255.0) >>> 0;
+  const b =
+    Math.min(Math.sign(((color >>> 8) & 0xff) / a) * Math.round(Math.abs(((color >>> 8) & 0xff) / a)), 255.0) >>> 0;
   return ((r << 24) | (g << 16) | (b << 8) | (color & 0xff)) >>> 0;
 }

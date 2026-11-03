@@ -35,36 +35,42 @@ export function hsvToRgb(out: Float32Array, h: number, s: number, v: number): vo
   const q = v * (1.0 - f * s);
   const t = v * (1.0 - (1.0 - f) * s);
   switch (i) {
-    case 0:
+    case 0: {
       out[0] = v;
       out[1] = t;
       out[2] = p;
       break;
-    case 1:
+    }
+    case 1: {
       out[0] = q;
       out[1] = v;
       out[2] = p;
       break;
-    case 2:
+    }
+    case 2: {
       out[0] = p;
       out[1] = v;
       out[2] = t;
       break;
-    case 3:
+    }
+    case 3: {
       out[0] = p;
       out[1] = q;
       out[2] = v;
       break;
-    case 4:
+    }
+    case 4: {
       out[0] = t;
       out[1] = p;
       out[2] = v;
       break;
-    default:
+    }
+    default: {
       out[0] = v;
       out[1] = p;
       out[2] = q;
       break;
+    }
   }
 }
 

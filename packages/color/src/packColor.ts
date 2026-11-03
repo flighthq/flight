@@ -67,10 +67,22 @@ export function getColorRgb(color: number): number {
  * Components are clamped to [0, 1] and rounded to 8-bit precision.
  */
 export function packColor(r: number, g: number, b: number, a: number): number {
-  const ri = Math.round(Math.min(Math.max(r, 0.0), 1.0) * 255.0) >>> 0;
-  const gi = Math.round(Math.min(Math.max(g, 0.0), 1.0) * 255.0) >>> 0;
-  const bi = Math.round(Math.min(Math.max(b, 0.0), 1.0) * 255.0) >>> 0;
-  const ai = Math.round(Math.min(Math.max(a, 0.0), 1.0) * 255.0) >>> 0;
+  const ri =
+    (Math.sign(Math.min(Math.max(r, 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(r, 0.0), 1.0) * 255.0))) >>>
+    0;
+  const gi =
+    (Math.sign(Math.min(Math.max(g, 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(g, 0.0), 1.0) * 255.0))) >>>
+    0;
+  const bi =
+    (Math.sign(Math.min(Math.max(b, 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(b, 0.0), 1.0) * 255.0))) >>>
+    0;
+  const ai =
+    (Math.sign(Math.min(Math.max(a, 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(a, 0.0), 1.0) * 255.0))) >>>
+    0;
   return ((ri << 24) | (gi << 16) | (bi << 8) | ai) >>> 0;
 }
 
@@ -79,10 +91,22 @@ export function packColor(r: number, g: number, b: number, a: number): number {
  * `LinearColor` entity. RGB channels are gamma-encoded to sRGB; alpha passes through unchanged.
  */
 export function packLinearChannelsToColor(r: number, g: number, b: number, a: number): number {
-  const ri = Math.round(Math.min(Math.max(linearChannelToSrgb(r), 0.0), 1.0) * 255.0) >>> 0;
-  const gi = Math.round(Math.min(Math.max(linearChannelToSrgb(g), 0.0), 1.0) * 255.0) >>> 0;
-  const bi = Math.round(Math.min(Math.max(linearChannelToSrgb(b), 0.0), 1.0) * 255.0) >>> 0;
-  const ai = Math.round(Math.min(Math.max(a, 0.0), 1.0) * 255.0) >>> 0;
+  const ri =
+    (Math.sign(Math.min(Math.max(linearChannelToSrgb(r), 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(linearChannelToSrgb(r), 0.0), 1.0) * 255.0))) >>>
+    0;
+  const gi =
+    (Math.sign(Math.min(Math.max(linearChannelToSrgb(g), 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(linearChannelToSrgb(g), 0.0), 1.0) * 255.0))) >>>
+    0;
+  const bi =
+    (Math.sign(Math.min(Math.max(linearChannelToSrgb(b), 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(linearChannelToSrgb(b), 0.0), 1.0) * 255.0))) >>>
+    0;
+  const ai =
+    (Math.sign(Math.min(Math.max(a, 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(a, 0.0), 1.0) * 255.0))) >>>
+    0;
   return ((ri << 24) | (gi << 16) | (bi << 8) | ai) >>> 0;
 }
 
@@ -111,7 +135,10 @@ export function packOpaqueColor(rgb: number): number {
  * the opacity of a fixed color without unpacking it.
  */
 export function setColorAlpha(color: number, alpha: number): number {
-  const a = Math.round(Math.min(Math.max(alpha, 0.0), 1.0) * 255.0) >>> 0;
+  const a =
+    (Math.sign(Math.min(Math.max(alpha, 0.0), 1.0) * 255.0) *
+      Math.round(Math.abs(Math.min(Math.max(alpha, 0.0), 1.0) * 255.0))) >>>
+    0;
   return ((color & 0xffffff00) | a) >>> 0;
 }
 

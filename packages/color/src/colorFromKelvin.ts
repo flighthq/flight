@@ -34,8 +34,8 @@ export function colorFromKelvin(kelvin: number): number {
       b = 138.5177312231 * Math.log(temp - 10.0) - 305.0447927307;
     }
   }
-  const ri = Math.min(Math.max(Math.round(r), 0.0), 255.0) >>> 0;
-  const gi = Math.min(Math.max(Math.round(g), 0.0), 255.0) >>> 0;
-  const bi = Math.min(Math.max(Math.round(b), 0.0), 255.0) >>> 0;
+  const ri = Math.min(Math.max(Math.sign(r) * Math.round(Math.abs(r)), 0.0), 255.0) >>> 0;
+  const gi = Math.min(Math.max(Math.sign(g) * Math.round(Math.abs(g)), 0.0), 255.0) >>> 0;
+  const bi = Math.min(Math.max(Math.sign(b) * Math.round(Math.abs(b)), 0.0), 255.0) >>> 0;
   return ((ri << 24) | (gi << 16) | (bi << 8) | 0xff) >>> 0;
 }

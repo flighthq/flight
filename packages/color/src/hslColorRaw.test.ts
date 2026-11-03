@@ -95,9 +95,9 @@ describe('rgbToHsl', () => {
     let rgb = new Float32Array([0.0, 0.0, 0.0, 1.0]);
     hslToRgb(rgb, hsl.h, hsl.s, hsl.l);
     const repacked =
-      ((Math.round(rgb[0] * 255.0) >>> 0) << 24) |
-      ((Math.round(rgb[1] * 255.0) >>> 0) << 16) |
-      ((Math.round(rgb[2] * 255.0) >>> 0) << 8) |
+      (((Math.sign(rgb[0] * 255.0) * Math.round(Math.abs(rgb[0] * 255.0))) >>> 0) << 24) |
+      (((Math.sign(rgb[1] * 255.0) * Math.round(Math.abs(rgb[1] * 255.0))) >>> 0) << 16) |
+      (((Math.sign(rgb[2] * 255.0) * Math.round(Math.abs(rgb[2] * 255.0))) >>> 0) << 8) |
       0xff;
     const orig: number = 0x3c8ab5ff;
     const origR = (orig >>> 24) & 0xff;
