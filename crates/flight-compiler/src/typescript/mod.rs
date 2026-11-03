@@ -10394,6 +10394,30 @@ fn emit_expression_value(
             {
                 return Ok("[] as never[]".to_string());
             }
+            if expression_is_associated_path(&call.func, "serde_json", "to_string")
+                && call.args.len() == 1
+            {
+                return Ok(format!(
+                    "JSON.stringify({})",
+                    emit_expression(&call.args[0], entities)?
+                ));
+            }
+            if expression_is_associated_path(&call.func, "serde_json", "to_string_pretty")
+                && call.args.len() == 1
+            {
+                return Ok(format!(
+                    "JSON.stringify({}, null, 2)",
+                    emit_expression(&call.args[0], entities)?
+                ));
+            }
+            if expression_is_associated_path(&call.func, "serde_json", "from_str")
+                && call.args.len() == 1
+            {
+                let input = emit_expression(&call.args[0], entities)?;
+                return Ok(format!(
+                    "(() => {{ try {{ return JSON.parse({input}); }} catch {{ return undefined; }} }})()"
+                ));
+            }
             if expression_is_associated_path(&call.func, "Mutex", "new") && call.args.len() == 1 {
                 return Ok(format!(
                     "{{ value: {} }}",

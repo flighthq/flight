@@ -22689,6 +22689,59 @@ pub fn copy_map(map: &HashMap<String, u32>) -> HashMap<String, u32> {
 }
 
 #[test]
+fn lowers_serde_json_to_string_pretty_to_json_stringify() {
+    let source = r#"
+use std::collections::BTreeMap;
+
+pub fn format_data(data: &BTreeMap<String, String>) -> String {
+    let mut text = serde_json::to_string_pretty(data).expect("serializes to JSON");
+    text.push('\n');
+    return text;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("JSON.stringify(data, null, 2)"),
+        "should lower serde_json::to_string_pretty to JSON.stringify with indent: {output}"
+    );
+}
+
+#[test]
+fn lowers_serde_json_to_string_to_json_stringify() {
+    let source = r#"
+pub fn serialize(value: &f64) -> String {
+    serde_json::to_string(value).unwrap()
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("JSON.stringify(value)"),
+        "should lower serde_json::to_string to JSON.stringify: {output}"
+    );
+}
+
+#[test]
+fn lowers_serde_json_from_str_to_json_parse() {
+    let source = r#"
+use std::collections::BTreeMap;
+
+pub fn parse_data(text: &str) -> Option<BTreeMap<String, String>> {
+    let parsed: BTreeMap<String, String> = serde_json::from_str(text).ok()?;
+    return Some(parsed);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("JSON.parse(text)"),
+        "should lower serde_json::from_str to JSON.parse: {output}"
+    );
+    assert!(
+        output.contains("try"),
+        "should wrap JSON.parse in try-catch: {output}"
+    );
+}
+
+#[test]
 fn try_counter_persists_across_consecutive_statements() {
     let source = r#"
 fn checked(value: i32) -> Option<i32> {
