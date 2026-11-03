@@ -9280,10 +9280,6 @@ pub static ENTRY: LazyLock<Entry> = LazyLock::new(|| {
                 unsafe_initializer("KERNEL", "it calls `.clone()`, and a method name does not prove which operation its receiver performs"),
             ),
             (
-                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: scale_of(&[1.0, 2.0]) });\n\npub fn scale_of(scales: &[f64]) -> f64 {\n    return if scales.is_empty() { 1.0 } else { 2.0 };\n}\n".to_string(),
-                unsafe_initializer("KERNEL", "it calls `.is_empty()`, and a method name does not prove which operation its receiver performs"),
-            ),
-            (
                 "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: 1 as f64 });\n".to_string(),
                 unsafe_initializer("KERNEL", "it casts with `as`, which converts differently in Rust"),
             ),

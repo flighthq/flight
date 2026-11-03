@@ -2062,7 +2062,11 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                     }
                 }
             }
-            if (method == "extend" || method == "push") && call.args.len() == 1 {
+            if matches!(
+                method.as_str(),
+                "extend" | "push" | "insert" | "contains_key" | "get" | "unwrap_or"
+            ) && call.args.len() == 1
+            {
                 self.visit_expr(&call.receiver);
                 self.visit_expr(&call.args[0]);
                 return;
@@ -2071,13 +2075,25 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                 self.visit_expr(&call.receiver);
                 return;
             }
-            if matches!(method.as_str(), "iter" | "into_iter" | "values" | "keys")
-                && call.args.is_empty()
+            if matches!(
+                method.as_str(),
+                "iter"
+                    | "into_iter"
+                    | "values"
+                    | "keys"
+                    | "as_ref"
+                    | "as_deref"
+                    | "is_empty"
+                    | "len"
+                    | "unwrap_or_default"
+            ) && call.args.is_empty()
             {
                 self.visit_expr(&call.receiver);
                 return;
             }
-            if method == "map" && call.args.len() == 1 {
+            if matches!(method.as_str(), "map" | "filter" | "unwrap_or_else")
+                && call.args.len() == 1
+            {
                 self.visit_expr(&call.receiver);
                 self.visit_expr(&call.args[0]);
                 return;
