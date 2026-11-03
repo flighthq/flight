@@ -4312,7 +4312,13 @@ fn emit_hash_collection_method(
             Ok(format!("[...{receiver}.values()]"))
         }
         ("HashSet", "clone", []) => Ok(format!("new Set({receiver})")),
+        ("HashSet", "retain", [predicate]) => Ok(format!(
+            "(<T>(items: Set<T>, keep: (item: T) => boolean): void => {{ for (const item of items) {{ if (!keep(item)) {{ items.delete(item); }} }} }})({receiver}, {predicate})"
+        )),
         ("HashMap", "clone", []) => Ok(format!("new Map({receiver})")),
+        ("HashMap", "retain", [predicate]) => Ok(format!(
+            "(<K, V>(entries: Map<K, V>, keep: (key: K, value: V) => boolean): void => {{ for (const [key, value] of entries) {{ if (!keep(key, value)) {{ entries.delete(key); }} }} }})({receiver}, {predicate})"
+        )),
         _ => Err(compile_error(format!(
             "portable `{owner}::{method}` with {} argument(s) has no portable lowering",
             arguments.len()

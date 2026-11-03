@@ -22711,6 +22711,38 @@ pub fn copy_map(map: &HashMap<String, u32>) -> HashMap<String, u32> {
 }
 
 #[test]
+fn lowers_hashmap_retain_to_iteration_with_delete() {
+    let source = r#"
+use std::collections::HashMap;
+
+pub fn keep_positive(map: &mut HashMap<String, i32>) {
+    map.retain(|_key, value| *value > 0);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("entries.delete(key)"),
+        "should lower HashMap::retain to iteration with delete: {output}"
+    );
+}
+
+#[test]
+fn lowers_hashset_retain_to_iteration_with_delete() {
+    let source = r#"
+use std::collections::HashSet;
+
+pub fn keep_even(set: &mut HashSet<u32>) {
+    set.retain(|value| value % 2 == 0);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("items.delete(item)"),
+        "should lower HashSet::retain to iteration with delete: {output}"
+    );
+}
+
+#[test]
 fn lowers_serde_json_to_string_pretty_to_json_stringify() {
     let source = r#"
 use std::collections::BTreeMap;
