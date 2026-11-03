@@ -2600,11 +2600,11 @@ pub struct Capability {
         for (source, expected) in [
             (
                 "use std::pin::Pin;\npub type P = Pin<Box<u32>>;\n",
-                "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+                "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` or `Pin<Box<dyn Stream<Item = T> + Send>>` in a type position",
             ),
             (
                 "use std::future::Future;\nuse std::pin::Pin;\npub type P = Pin<Box<dyn Future<Output = u32> + Unpin>>;\n",
-                "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+                "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` or `Pin<Box<dyn Stream<Item = T> + Send>>` in a type position",
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
@@ -2643,6 +2643,28 @@ pub struct Capability {
                 "{source}"
             );
         }
+    }
+
+    #[test]
+    fn lowers_pinned_boxed_stream_to_async_iterable() {
+        for source in [
+            "use std::pin::Pin;\npub type S = Pin<Box<dyn futures::Stream<Item = u32> + Send>>;\n",
+            "use std::pin::Pin;\nuse futures_core::stream::Stream;\npub type S = Pin<Box<dyn Stream<Item = String> + Send>>;\n",
+        ] {
+            let output = compile_typescript(source, None).unwrap();
+            assert!(
+                output.contains("AsyncIterable<"),
+                "expected AsyncIterable in output for: {source}\ngot: {output}"
+            );
+        }
+        assert_eq!(
+            compile_typescript(
+                "use std::pin::Pin;\npub type S = Pin<Box<dyn futures::Stream<Item = u32> + Send>>;\n",
+                None,
+            )
+            .unwrap(),
+            "export type S = AsyncIterable<number>;\n\n"
+        );
     }
 
     #[test]

@@ -2950,14 +2950,20 @@ fn peel_shared_view(expression: &Expr) -> &Expr {
     }
 }
 
-// `Pin<Box<dyn Future<Output = T> [+ Send | + Sync | + 'a]>>`, accepted only when `Pin`, `Box`, `Future`
-// and every auto-trait bound resolve (see `resolve_type_path`) to the standard library. A path named
-// `Pin` that resolves elsewhere is an ordinary type unless it spells the future shape, which fails
-// closed; so does a standard `Pin` of any other shape and a `Pin` whose provenance is uncertain.
-fn pinned_boxed_future_output<'a>(
+enum PinnedBoxedTrait<'a> {
+    Future(&'a Type),
+    Stream(&'a Type),
+}
+
+// `Pin<Box<dyn Future<Output = T> [+ Send | + Sync | + 'a]>>` or
+// `Pin<Box<dyn Stream<Item = T> [+ Send | + Sync | + 'a]>>`, accepted only when `Pin`, `Box`, and
+// every auto-trait bound resolve to the standard library, and the primary trait resolves to
+// `std::future::Future` or to a `futures`-crate `Stream`. A path named `Pin` that resolves
+// elsewhere is an ordinary type unless it spells the shape, which fails closed.
+fn pinned_boxed_trait_output<'a>(
     path: &'a syn::TypePath,
     context: &HashSet<String>,
-) -> Result<Option<&'a Type>, CompileError> {
+) -> Result<Option<PinnedBoxedTrait<'a>>, CompileError> {
     let Some(last) = path.path.segments.last() else {
         return Ok(None);
     };
@@ -2986,9 +2992,9 @@ fn pinned_boxed_future_output<'a>(
             None => "cannot resolve the provenance of `Pin`; import it from `std::pin` to lower a pinned boxed future to `Promise`".to_string(),
         }));
     }
-    let Some((boxed, future, auto_traits, output)) = shape else {
+    let Some((boxed, primary_trait, auto_traits, output)) = shape else {
         return Err(compile_error(
-            "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+            "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` or `Pin<Box<dyn Stream<Item = T> + Send>>` in a type position",
         ));
     };
     let standard = |path: &syn::Path, name: &str| {
@@ -3006,11 +3012,10 @@ fn pinned_boxed_future_output<'a>(
     });
     if other_standard_bound {
         return Err(compile_error(
-            "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+            "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` or `Pin<Box<dyn Stream<Item = T> + Send>>` in a type position",
         ));
     }
     if !standard(boxed, "Box")
-        || !standard(future, "Future")
         || !auto_traits
             .iter()
             .all(|bound| standard(bound, "Send") || standard(bound, "Sync"))
@@ -3019,7 +3024,34 @@ fn pinned_boxed_future_output<'a>(
             "portable `Pin<Box<dyn Future<Output = T>>>` needs `Box`, `Future` and its auto-trait bounds to resolve to the standard library",
         ));
     }
-    return Ok(Some(output));
+    let is_standard_future = standard(primary_trait, "Future");
+    let is_stream = is_futures_stream_path(primary_trait, context);
+    if is_standard_future {
+        return Ok(Some(PinnedBoxedTrait::Future(output)));
+    }
+    if is_stream {
+        return Ok(Some(PinnedBoxedTrait::Stream(output)));
+    }
+    return Err(compile_error(
+        "portable `Pin<Box<dyn Future<Output = T>>>` needs `Box`, `Future` and its auto-trait bounds to resolve to the standard library",
+    ));
+}
+
+fn is_futures_stream_path(path: &syn::Path, context: &HashSet<String>) -> bool {
+    let segments: Vec<_> = path.segments.iter().map(|s| s.ident.to_string()).collect();
+    if segments.last().map(String::as_str) != Some("Stream") {
+        return false;
+    }
+    if let Some(resolved) = resolve_type_path(path, context) {
+        return matches!(
+            resolved.iter().map(String::as_str).collect::<Vec<_>>()[..],
+            ["futures", .., "Stream"]
+                | ["futures_core", .., "Stream"]
+                | ["core", "stream", "Stream"]
+                | ["std", "stream", "Stream"]
+        );
+    }
+    matches!(segments[..], [ref a, ..] if a == "futures" || a == "futures_core")
 }
 
 // The `Box` path, `Future` path, other trait-bound paths and `Output` type of
@@ -3063,7 +3095,7 @@ fn pinned_boxed_future_shape(
                         else {
                             return None;
                         };
-                        if associated.ident != "Output"
+                        if !matches!(associated.ident.to_string().as_str(), "Output" | "Item")
                             || associated.generics.is_some()
                             || future.is_some()
                         {
@@ -22478,10 +22510,15 @@ pub(crate) fn emit_type(
         }
         Type::Paren(paren) => emit_type(&paren.elem, entities),
         Type::Path(path) => {
-            // A pinned boxed future is the value of an asynchronous host operation: `Promise<T>` in a
-            // type position. Async bodies and `.await` stay unsupported.
-            if let Some(output) = pinned_boxed_future_output(path, entities)? {
-                return Ok(format!("Promise<{}>", emit_type(output, entities)?));
+            if let Some(pinned) = pinned_boxed_trait_output(path, entities)? {
+                return match pinned {
+                    PinnedBoxedTrait::Future(output) => {
+                        Ok(format!("Promise<{}>", emit_type(output, entities)?))
+                    }
+                    PinnedBoxedTrait::Stream(item) => {
+                        Ok(format!("AsyncIterable<{}>", emit_type(item, entities)?))
+                    }
+                };
             }
             if let Some(kind) = hash_collection_type(rust_type, entities) {
                 let segment = path
