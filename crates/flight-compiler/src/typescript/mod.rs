@@ -988,36 +988,6 @@ pub(crate) fn export_name<'a>(context: &'a HashSet<String>, rust_name: &str) -> 
 
 // The dependency-crate struct (`crate::Struct`) an expression holds: a parameter or local declared as
 // one, or a source struct field declared as one, seen through references and clones.
-fn expression_external_struct(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
-    return match expression {
-        Expr::Group(group) => expression_external_struct(&group.expr, entities),
-        Expr::Paren(paren) => expression_external_struct(&paren.expr, entities),
-        Expr::Reference(reference) => expression_external_struct(&reference.expr, entities),
-        Expr::MethodCall(call) if call.method == "clone" && call.args.is_empty() => {
-            expression_external_struct(&call.receiver, entities)
-        }
-        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
-            let id = lexical_binding(entities, &path.path.segments[0].ident.to_string())?;
-            unique_marker_suffix(
-                entities,
-                &format!("{EXTERNAL_STRUCT_BINDING_MARKER}{id}{PROVENANCE_SEPARATOR}"),
-            )
-        }
-        Expr::Field(field) => {
-            let syn::Member::Named(member) = &field.member else {
-                return None;
-            };
-            let owner = expression_struct_identity(&field.base, entities)?;
-            unique_marker_suffix(
-                entities,
-                &format!(
-                    "{EXTERNAL_STRUCT_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
-                ),
-            )
-        }
-        _ => None,
-    };
-}
 
 // A shared-allocation payload whose TypeScript lowering is a fresh object: a struct literal, a
 // closure, or a new collection or `Mutex` cell, possibly inside an erased `RwLock`.
@@ -1064,71 +1034,6 @@ fn expression_is_rereadable(expression: &Expr) -> bool {
 
 // An `Arc::ptr_eq` operand proven to hold an identity-bearing TypeScript object, so `===` compares
 // allocations as Rust does. A primitive or unit payload lowers to its value and never qualifies.
-fn expression_is_shared_identity(expression: &Expr, entities: &HashSet<String>) -> bool {
-    let expression = peel_shared_view(expression);
-    return match expression {
-        Expr::Call(call)
-            if (expression_is_associated_path(&call.func, "Arc", "new")
-                || expression_is_associated_path(&call.func, "Rc", "new"))
-                && call.args.len() == 1 =>
-        {
-            shared_payload_is_identity(&call.args[0], entities)
-        }
-        Expr::Call(call) => {
-            call_returns_shared_identity(entities, &call.func)
-                || expression_struct_identity(expression, entities).is_some()
-        }
-        Expr::Field(field) => {
-            if expression_struct_identity(expression, entities).is_some() {
-                return true;
-            }
-            let syn::Member::Named(member) = &field.member else {
-                return false;
-            };
-            let base = peel_shared_view(&field.base);
-            if expression_struct_identity(base, entities).is_some_and(|owner| {
-                entities.contains(&format!(
-                    "{SHARED_IDENTITY_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}"
-                ))
-            }) {
-                return true;
-            }
-            expression_external_struct(base, entities).is_some_and(|external| {
-                entities.contains(&format!(
-                    "{SHARED_IDENTITY_EXTERNAL_FIELD_MARKER}{external}{PROVENANCE_SEPARATOR}{member}"
-                ))
-            })
-        }
-        Expr::Index(index) => {
-            let Expr::Field(field) = peel_shared_view(&index.expr) else {
-                return false;
-            };
-            let syn::Member::Named(member) = &field.member else {
-                return false;
-            };
-            expression_struct_identity(peel_shared_view(&field.base), entities).is_some_and(
-                |owner| {
-                    entities.contains(&format!(
-                        "{SHARED_IDENTITY_ELEMENT_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}"
-                    ))
-                },
-            )
-        }
-        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
-            let name = path.path.segments[0].ident.to_string();
-            if matches!(
-                lexical_fact(entities, &name),
-                Some(BindingFact::Structure(_) | BindingFact::HashMap | BindingFact::HashSet)
-            ) {
-                return true;
-            }
-            lexical_binding(entities, &name).is_some_and(|id| {
-                entities.contains(&format!("{SHARED_IDENTITY_BINDING_MARKER}{id}"))
-            })
-        }
-        _ => expression_struct_identity(expression, entities).is_some(),
-    };
-}
 
 // The string union every value of `expression` is a variant of: a variant path, or a conditional,
 // match or block whose every result is a variant of that one union.
@@ -4169,22 +4074,6 @@ fn substitute_type_param(definition: &str, param: &str, replacement: &str) -> St
 
 // The payload of `Arc::new` / `Rc::new` proven to lower to a fresh or existing object: a literal
 // allocation, an erased `RwLock` around one, or a struct value.
-fn shared_payload_is_identity(payload: &Expr, entities: &HashSet<String>) -> bool {
-    return match payload {
-        Expr::Group(group) => shared_payload_is_identity(&group.expr, entities),
-        Expr::Paren(paren) => shared_payload_is_identity(&paren.expr, entities),
-        Expr::Call(call)
-            if expression_is_associated_path(&call.func, "RwLock", "new")
-                && call.args.len() == 1 =>
-        {
-            shared_payload_is_identity(&call.args[0], entities)
-        }
-        payload => {
-            expression_is_identity_payload(payload)
-                || expression_struct_identity(payload, entities).is_some()
-        }
-    };
-}
 
 // The type-namespace provenance (`use` items and local declarations) recorded for source `from`.
 fn source_type_context(entities: &HashSet<String>, from: &str) -> HashSet<String> {
