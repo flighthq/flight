@@ -1208,7 +1208,7 @@ export function isA(code: KeyCode): boolean {
             "{output}"
         );
         assert!(
-            output.contains("export const Code = {\n  A: -1,\n  B: (0x2),\n};"),
+            output.contains("export const Code = {\n  A: -1,\n  B: 0x2,\n};"),
             "{output}"
         );
     }
@@ -2485,7 +2485,7 @@ pub fn compare_offset(a: i32, b: i32) -> Ordering {
         assert!(output.contains("return Math.sign(a - b) === -1;"));
         assert!(output.contains("return Math.sign(a - b) !== 1;"));
         assert!(output.contains(
-            "return ((left, right) => (left < right ? -1 : left > right ? 1 : 0))((a + 1), b);"
+            "return ((left, right) => (left < right ? -1 : left > right ? 1 : 0))(a + 1, b);"
         ));
         assert!(!output.contains("Ordering"));
 
@@ -5385,11 +5385,11 @@ pub fn g(value: i16) -> [u8; 2] {
 "#;
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("setUint32(0, (a + b), true)"),
+            output.contains("setUint32(0, a + b, true)"),
             "binary u32 to_le_bytes: {output}"
         );
         assert!(
-            output.contains("setInt16(0, (-value), false)"),
+            output.contains("setInt16(0, -value, false)"),
             "unary i16 to_be_bytes: {output}"
         );
     }
@@ -8884,7 +8884,7 @@ fn take_pending<T: Clone>(pending: &Arc<Mutex<Option<T>>>) -> Option<T> {
 
         assert!(output.contains("function takePending<T>(pending: { value: T | undefined })"));
         assert!(output.contains("let guard = pending;"));
-        assert!(output.contains("const value = (guard.value);"), "{output}");
+        assert!(output.contains("const value = guard.value;"), "{output}");
         assert!(output.contains("guard.value = undefined;"));
         assert!(!output.contains("pending.value;"));
         assert!(!output.contains("Readonly<{ value:"));
@@ -13838,7 +13838,7 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
 
         assert!(output.contains("((g - b) / d + (g < b ? 6.0 : 0.0)) / 6.0"));
         assert!(
-            output.contains("return ((ri << 24) | (gi << 16) | (bi << 8) | ai) >>> 0;"),
+            output.contains("return (ri << 24 | gi << 16 | bi << 8 | ai) >>> 0;"),
             "{output}"
         );
         assert!(output.contains("return (value & 0xff) === 0;"));
@@ -21256,7 +21256,7 @@ mod easing_family {
         assert!(output.contains("const EPSILON: number = 1e-5;"));
         assert!(output.contains("function family(): Family"));
         assert!(output.contains(
-            "const values: number[] = (Array.from({ length: 2 - 0 + 1 }, (_, index) => 0 + index)).map((index) => index);"
+            "const values: number[] = Array.from({ length: 2 - 0 + 1 }, (_, index) => 0 + index).map((index) => index);"
         ));
         assert!(output.contains("return values.map((value) => value / 2.0);"));
         assert!(output.contains("expect(value.name).toEqual(\"Linear\");"));
@@ -23552,19 +23552,19 @@ pub fn same_cast(x: f64) -> u32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("return (x & 0xff);\n"),
+        output.contains("return x & 0xff;\n"),
         "u8->u32 chain should elide outer >>> 0, keeping inner & 0xff: {output}"
     );
     assert!(
-        output.contains("return (x & 0xffff);\n"),
+        output.contains("return x & 0xffff;\n"),
         "u16->u32 chain should elide outer >>> 0, keeping inner & 0xffff: {output}"
     );
     assert!(
-        output.contains("return ((x << 24) >> 24);\n"),
+        output.contains("return (x << 24) >> 24;\n"),
         "i8->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
     );
     assert!(
-        output.contains("return ((x << 16) >> 16);\n"),
+        output.contains("return (x << 16) >> 16;\n"),
         "i16->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
     );
     assert!(

@@ -9017,6 +9017,7 @@ fn expression_precedence(expression: &Expr) -> u8 {
         Expr::Cast(cast) if type_is_named(&cast.ty, "u32") => 10,
         Expr::Cast(cast) => expression_precedence(&cast.expr),
         Expr::Group(group) => expression_precedence(&group.expr),
+        Expr::Paren(paren) => expression_precedence(&paren.expr),
         Expr::If(_) => 2,
         Expr::Reference(reference) => expression_precedence(&reference.expr),
         Expr::Unary(_) => 13,
@@ -10693,7 +10694,7 @@ fn emit_expression_value(
         Expr::Macro(expression) => emit_macro_expression(&expression.mac, entities),
         Expr::Match(expression) => emit_match_expression(expression, entities),
         Expr::MethodCall(call) => emit_method_call(call, entities),
-        Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
+        Expr::Paren(paren) => emit_expression(&paren.expr, entities),
         Expr::Path(path) => {
             if path.qself.is_none()
                 && path.path.leading_colon.is_none()
