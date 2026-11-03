@@ -18463,6 +18463,25 @@ fn emit_method_call(
         "dedup" if arguments.is_empty() => Ok(format!(
             "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read += 1) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write += 1; }} }} items.length = Math.min(write, items.length); }})({receiver})"
         )),
+        "downcast_ref" | "downcast_mut" if arguments.is_empty() => {
+            let target_type = call.turbofish.as_ref().and_then(|arguments| {
+                arguments
+                    .args
+                    .iter()
+                    .filter_map(|arg| match arg {
+                        GenericArgument::Type(rust_type) => Some(emit_type(rust_type, entities)),
+                        _ => None,
+                    })
+                    .next()
+            });
+            match target_type {
+                Some(Ok(ts_type)) => Ok(format!("({receiver} as {ts_type})")),
+                Some(Err(error)) => Err(error),
+                None => Err(compile_error(
+                    "portable `.downcast_ref()` requires a turbofish type annotation",
+                )),
+            }
+        }
         "div_ceil" if arguments.len() == 1 => {
             Ok(format!("Math.ceil({receiver} / {})", arguments[0]))
         }
@@ -18722,12 +18741,19 @@ fn emit_method_call(
             ))
         }
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
+        "is_lt" if arguments.is_empty() => Ok(format!("({receiver} < 0)")),
+        "is_gt" if arguments.is_empty() => Ok(format!("({receiver} > 0)")),
+        "is_le" if arguments.is_empty() => Ok(format!("({receiver} <= 0)")),
+        "is_ge" if arguments.is_empty() => Ok(format!("({receiver} >= 0)")),
+        "is_eq" if arguments.is_empty() => Ok(format!("({receiver} === 0)")),
+        "is_ne" if arguments.is_empty() => Ok(format!("({receiver} !== 0)")),
         "insert" if arguments.len() == 2 => Ok(format!(
             "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError(\"Vec insertion index out of bounds\"); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
             arguments[0], arguments[1]
         )),
         "into" if arguments.is_empty() => Ok(receiver),
         "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
+        "into_inner" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "into_owned" if arguments.is_empty() => Ok(receiver),
         "into_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
@@ -18758,6 +18784,7 @@ fn emit_method_call(
         "is_whitespace" if arguments.is_empty() => Ok(format!("(/^\\s$/).test({receiver})")),
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
+        "as_any" | "as_any_mut" if arguments.is_empty() => Ok(receiver),
         "as_ref" if arguments.is_empty() => Ok(receiver),
         "as_mut" if arguments.is_empty() => Ok(receiver),
         "as_bytes"
@@ -19426,6 +19453,14 @@ fn emit_method_call(
             Ok(format!("{receiver}.value"))
         }
         "unsigned_abs" if arguments.is_empty() => Ok(format!("Math.abs({receiver}) >>> 0")),
+        "upgrade" if arguments.is_empty() => Ok(receiver),
+        "strong_count" if arguments.is_empty() => Err(compile_error(
+            "portable `.strong_count()` has no TypeScript equivalent; reference counting is not modeled",
+        )),
+        "weak_count" if arguments.is_empty() => Err(compile_error(
+            "portable `.weak_count()` has no TypeScript equivalent; reference counting is not modeled",
+        )),
+        "ptr_eq" if arguments.len() == 1 => Ok(format!("({receiver} === {})", arguments[0])),
         "unwrap" if arguments.is_empty() => Ok(if receiver.ends_with('!') {
             receiver
         } else {

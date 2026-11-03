@@ -21736,11 +21736,11 @@ pub fn good(a: f32) -> f32 {
     return a + 1.0;
 }
 pub fn bad(x: &dyn std::any::Any) -> bool {
-    return x.downcast_ref::<u32>().is_some();
+    return x.type_id() == std::any::TypeId::of::<u32>();
 }
 "#;
     let strict = compile_typescript(source, None);
-    assert!(strict.is_err(), "strict mode should reject downcast_ref");
+    assert!(strict.is_err(), "strict mode should reject type_id");
     let lenient = compile_typescript_lenient(source, None).unwrap();
     assert!(
         lenient.contains("export function good"),
