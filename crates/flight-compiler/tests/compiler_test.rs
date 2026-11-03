@@ -14091,6 +14091,30 @@ pub fn get_value(source: &[f32], index: usize) -> Option<f32> {
     }
 
     #[test]
+    fn lowers_void_block_in_value_position_as_iife() {
+        let source = r#"
+pub fn example() -> f32 {
+    let mut result = 0.0_f32;
+    let _: () = {
+        result = 1.0;
+    };
+    return result;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("(() => {"),
+            "void value block should emit as IIFE: {output}"
+        );
+        assert!(
+            output.contains("result = 1.0;"),
+            "void value block should emit the assignment: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_try_operator_in_hoisted_if_value_branch() {
         let source = r#"
 pub fn parse_value(hex: &str) -> Option<f32> {

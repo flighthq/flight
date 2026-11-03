@@ -10820,6 +10820,12 @@ fn emit_block_expression(
             out.push_str("})()");
             return Ok(out);
         }
+        Stmt::Expr(_, Some(_)) | Stmt::Local(_) | Stmt::Macro(_) => {
+            let mut out = "(() => {\n".to_string();
+            emit_block(&mut out, &block.stmts, entities, 1)?;
+            out.push_str("})()");
+            return Ok(out);
+        }
         _ => {
             return Err(compile_error(
                 "portable value block must end with an expression",
