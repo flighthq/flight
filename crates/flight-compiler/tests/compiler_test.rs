@@ -22876,6 +22876,34 @@ pub fn param_tuple(value: u32) -> u32 {
 }
 
 #[test]
+fn lowers_trait_narrowing_as_node_to_identity() {
+    let source = r#"
+pub fn narrow(node: &u32) -> u32 {
+    return node.as_bounds_node().unwrap().x;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("node!.x"),
+        "as_bounds_node() should be identity: {output}"
+    );
+}
+
+#[test]
+fn lowers_transform2d_accessor_to_identity() {
+    let source = r#"
+pub fn get_scale(node: &u32) -> f32 {
+    return *node.transform2d().scale_x;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("node.scaleX"),
+        "transform2d() should be identity: {output}"
+    );
+}
+
+#[test]
 fn lowers_trait_field_accessor_to_identity() {
     let source = r#"
 pub struct NodeFields { pub enabled: bool }

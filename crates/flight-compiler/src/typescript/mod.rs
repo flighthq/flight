@@ -18291,6 +18291,24 @@ fn emit_method_call(
     if arguments.is_empty() && (method.ends_with("_fields") || method.ends_with("_fields_mut")) {
         return Ok(receiver);
     }
+    // Trait narrowing accessors: as_*_node() / as_*_node_mut() are identity in TS because
+    // structural typing already carries the capability (the Option wrapper is Rust-only).
+    if arguments.is_empty()
+        && (method.starts_with("as_") && method.ends_with("_node")
+            || method.starts_with("as_") && method.ends_with("_node_mut"))
+    {
+        return Ok(receiver);
+    }
+    // Bundled-reference accessors: transform2d() / transform3d() return a struct of field refs
+    // that flatten to the entity in TS.
+    if arguments.is_empty()
+        && matches!(
+            method.as_str(),
+            "transform2d" | "transform2d_mut" | "transform3d" | "transform3d_mut"
+        )
+    {
+        return Ok(receiver);
+    }
     // Trait runtime accessors: *_runtime() / *_runtime_mut() lower to getXxxRuntime(receiver).
     if arguments.is_empty() && (method.ends_with("_runtime") || method.ends_with("_runtime_mut")) {
         let base = method.trim_end_matches("_mut");
