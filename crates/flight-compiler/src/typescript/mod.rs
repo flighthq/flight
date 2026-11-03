@@ -22328,7 +22328,9 @@ fn emit_statement(
             let try_context = emit_try_pre_extractions(out, value, entities, indent)?;
             write_indent(out, indent);
             let mut emitted = emit_expression(value, &try_context)?;
-            if entities.contains(RETURNS_U32_MARKER) && !expression_is_unsigned_cast(value) {
+            if entities.contains(RETURNS_U32_MARKER)
+                && !expression_is_unsigned_result(value, entities)
+            {
                 emitted = format!("({emitted}) >>> 0");
             }
             if entities.contains(RETURNS_NULLABLE_MARKER) {
@@ -22359,7 +22361,9 @@ fn emit_statement(
                 } else {
                     emit_expression(value, entities)?
                 };
-                if entities.contains(RETURNS_U32_MARKER) && !expression_is_unsigned_cast(returned) {
+                if entities.contains(RETURNS_U32_MARKER)
+                    && !expression_is_unsigned_result(returned, entities)
+                {
                     value = format!("({value}) >>> 0");
                 }
                 if entities.contains(RETURNS_NULLABLE_MARKER) {
@@ -23955,14 +23959,18 @@ fn constructor_path_default_value(expression: &Expr) -> Option<&'static str> {
     }
 }
 
-fn expression_is_unsigned_cast(expression: &Expr) -> bool {
+fn expression_is_unsigned_result(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
         Expr::Cast(cast) => matches!(
             named_type(&cast.ty).as_deref(),
             Some("u8" | "u16" | "u32" | "usize")
         ),
-        Expr::Paren(paren) => expression_is_unsigned_cast(&paren.expr),
-        Expr::Group(group) => expression_is_unsigned_cast(&group.expr),
+        Expr::Paren(paren) => expression_is_unsigned_result(&paren.expr, entities),
+        Expr::Group(group) => expression_is_unsigned_result(&group.expr, entities),
+        Expr::Call(_) | Expr::MethodCall(_) => matches!(
+            expression_numeric_type(expression, entities).as_deref(),
+            Some("u8" | "u16" | "u32" | "usize")
+        ),
         _ => false,
     };
 }
