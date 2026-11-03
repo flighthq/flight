@@ -2344,7 +2344,7 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
             then_is_string || else_is_string
         }
         Expr::Index(index) => expression_is_known_string(&index.expr, entities),
-        Expr::Lit(literal) => matches!(&literal.lit, Lit::Str(_)),
+        Expr::Lit(literal) => matches!(&literal.lit, Lit::Str(_) | Lit::Char(_)),
         Expr::Macro(expression) => expression
             .mac
             .path
