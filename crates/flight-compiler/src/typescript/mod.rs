@@ -2749,6 +2749,8 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
                 || call.method == "wrapping_mul"
                 || call.method == "wrapping_neg"
                 || call.method == "wrapping_abs"
+                || call.method == "wrapping_shl"
+                || call.method == "wrapping_shr"
                 || call.method == "saturating_add"
                 || call.method == "saturating_sub"
                 || call.method == "saturating_mul"
@@ -10611,30 +10613,29 @@ fn emit_expression_value(
         Expr::Cast(cast) if is_integer_cast_elided(&cast.expr, &cast.ty, entities) => {
             emit_expression(&cast.expr, entities)
         }
-        Expr::Cast(cast) if type_is_named(&cast.ty, "u8") => Ok(format!(
-            "({}) & 0xff",
-            emit_expression(&cast.expr, entities)?
-        )),
-        Expr::Cast(cast) if type_is_named(&cast.ty, "u16") => Ok(format!(
-            "({}) & 0xffff",
-            emit_expression(&cast.expr, entities)?
-        )),
-        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") || type_is_named(&cast.ty, "usize") => {
-            Ok(format!(
-                "({}) >>> 0",
-                emit_expression(&cast.expr, entities)?
-            ))
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u8") => {
+            let operand = emit_binary_operand(&cast.expr, entities, 7, false)?;
+            Ok(format!("{operand} & 0xff"))
         }
-        Expr::Cast(cast) if type_is_named(&cast.ty, "i8") => Ok(format!(
-            "(({}) << 24) >> 24",
-            emit_expression(&cast.expr, entities)?
-        )),
-        Expr::Cast(cast) if type_is_named(&cast.ty, "i16") => Ok(format!(
-            "(({}) << 16) >> 16",
-            emit_expression(&cast.expr, entities)?
-        )),
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u16") => {
+            let operand = emit_binary_operand(&cast.expr, entities, 7, false)?;
+            Ok(format!("{operand} & 0xffff"))
+        }
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") || type_is_named(&cast.ty, "usize") => {
+            let operand = emit_binary_operand(&cast.expr, entities, 10, false)?;
+            Ok(format!("{operand} >>> 0"))
+        }
+        Expr::Cast(cast) if type_is_named(&cast.ty, "i8") => {
+            let operand = emit_binary_operand(&cast.expr, entities, 10, false)?;
+            Ok(format!("({operand} << 24) >> 24"))
+        }
+        Expr::Cast(cast) if type_is_named(&cast.ty, "i16") => {
+            let operand = emit_binary_operand(&cast.expr, entities, 10, false)?;
+            Ok(format!("({operand} << 16) >> 16"))
+        }
         Expr::Cast(cast) if type_is_named(&cast.ty, "i32") || type_is_named(&cast.ty, "isize") => {
-            Ok(format!("({}) | 0", emit_expression(&cast.expr, entities)?))
+            let operand = emit_binary_operand(&cast.expr, entities, 5, false)?;
+            Ok(format!("{operand} | 0"))
         }
         Expr::Cast(cast) => emit_expression(&cast.expr, entities),
         Expr::Closure(closure) => emit_closure(closure, entities),
@@ -19524,18 +19525,26 @@ fn emit_method_call(
             "portable `.extend_from_slice()` is supported only as a statement",
         )),
         "wrapping_add" if arguments.len() == 1 => {
-            Ok(format!("(({receiver}) + {}) >>> 0", arguments[0]))
+            let lhs = emit_binary_operand(&call.receiver, entities, 11, false)?;
+            let rhs = emit_binary_operand(&call.args[0], entities, 11, true)?;
+            Ok(format!("({lhs} + {rhs}) >>> 0"))
         }
         "wrapping_mul" if arguments.len() == 1 => {
-            Ok(format!("Math.imul(({receiver}), {}) >>> 0", arguments[0]))
+            Ok(format!("Math.imul({receiver}, {}) >>> 0", arguments[0]))
         }
-        "wrapping_neg" if arguments.is_empty() => Ok(format!("((-({receiver})) >>> 0)")),
+        "wrapping_neg" if arguments.is_empty() => Ok(format!("((-{receiver}) >>> 0)")),
         "wrapping_shl" if arguments.len() == 1 => {
-            Ok(format!("(({receiver}) << {}) >>> 0", arguments[0]))
+            let lhs = emit_binary_operand(&call.receiver, entities, 10, false)?;
+            Ok(format!("({lhs} << {}) >>> 0", arguments[0]))
         }
-        "wrapping_shr" if arguments.len() == 1 => Ok(format!("({receiver}) >>> {}", arguments[0])),
+        "wrapping_shr" if arguments.len() == 1 => {
+            let lhs = emit_binary_operand(&call.receiver, entities, 10, false)?;
+            Ok(format!("{lhs} >>> {}", arguments[0]))
+        }
         "wrapping_sub" if arguments.len() == 1 => {
-            Ok(format!("(({receiver}) - {}) >>> 0", arguments[0]))
+            let lhs = emit_binary_operand(&call.receiver, entities, 11, false)?;
+            let rhs = emit_binary_operand(&call.args[0], entities, 11, true)?;
+            Ok(format!("({lhs} - {rhs}) >>> 0"))
         }
         "windows" if arguments.len() == 1 => Ok(format!(
             "Array.from({{ length: Math.max(0, {receiver}.length - {} + 1) }}, (_, index) => {receiver}.slice(index, index + {}))",

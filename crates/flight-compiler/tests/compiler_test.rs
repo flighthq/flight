@@ -5682,7 +5682,7 @@ pub fn shift(value: u32, n: u32) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("((value) << n) >>> 0"), "{output}");
+        assert!(output.contains("(value << n) >>> 0"), "{output}");
     }
 
     #[test]
@@ -7053,7 +7053,7 @@ import type { NodeRef } from "@flighthq/node/contract";
         ));
         assert!(transform_output.contains("sample.previousWorldTransform !== null"));
         assert!(transform_output.contains("sample.previousWorldTransform === null"));
-        assert!(transform_output.contains("const $child = getNodeChildAt(node, (i) | 0);"));
+        assert!(transform_output.contains("const $child = getNodeChildAt(node, i | 0);"));
         assert!(transform_output.contains("if ($child !== null) {"));
         assert_eq!(transform_output.matches("getNodeChildAt(").count(), 1);
     }
@@ -13842,7 +13842,10 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
             "{output}"
         );
         assert!(output.contains("return (value & 0xff) === 0;"));
-        assert!(output.contains("return (((value) >>> 0) * 3) >>> 0;"));
+        assert!(
+            output.contains("return ((value >>> 0) * 3) >>> 0;"),
+            "{output}"
+        );
         assert!(
             output.contains("return `#${(color & 0xffffff).toString(16).padStart(6, \"0\")}`;")
         );
@@ -22140,7 +22143,7 @@ pub fn read_char(raw: &[u8]) -> Option<u32> {
         "should check renamed binding for undefined: {result}"
     );
     assert!(
-        result.contains("return (raw_1)"),
+        result.contains("return raw_1 >>> 0"),
         "subsequent uses should reference renamed binding: {result}"
     );
 }
@@ -23478,11 +23481,14 @@ pub fn get_u16_bits() -> i32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("(32)"),
+        output.contains("32 | 0"),
         "usize::BITS should be 32: {output}"
     );
-    assert!(output.contains("(8)"), "u8::BITS should be 8: {output}");
-    assert!(output.contains("(16)"), "u16::BITS should be 16: {output}");
+    assert!(output.contains("8 | 0"), "u8::BITS should be 8: {output}");
+    assert!(
+        output.contains("16 | 0"),
+        "u16::BITS should be 16: {output}"
+    );
 }
 
 #[test]
@@ -23546,19 +23552,19 @@ pub fn same_cast(x: f64) -> u32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("return ((x) & 0xff);\n"),
+        output.contains("return (x & 0xff);\n"),
         "u8->u32 chain should elide outer >>> 0, keeping inner & 0xff: {output}"
     );
     assert!(
-        output.contains("return ((x) & 0xffff);\n"),
+        output.contains("return (x & 0xffff);\n"),
         "u16->u32 chain should elide outer >>> 0, keeping inner & 0xffff: {output}"
     );
     assert!(
-        output.contains("return (((x) << 24) >> 24);\n"),
+        output.contains("return ((x << 24) >> 24);\n"),
         "i8->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
     );
     assert!(
-        output.contains("return (((x) << 16) >> 16);\n"),
+        output.contains("return ((x << 16) >> 16);\n"),
         "i16->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
     );
     assert!(
