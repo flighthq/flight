@@ -663,11 +663,12 @@ function topLevelPathSeparator(value: string): number {
 }
 
 export function snakeToLowerCamel(value: string): string {
-  return value.replace(/_([a-z0-9][a-z0-9]*)/g, (_, word: string) => {
+  const camel = value.replace(/_([a-z0-9][a-z0-9]*)/g, (_, word: string) => {
     const letter = word.search(/[a-z]/);
     if (letter === -1) return word;
     return word.slice(0, letter) + word[letter].toUpperCase() + word.slice(letter + 1);
   });
+  return camel.replace(/(\d)d(?=[A-Z]|$|[^a-zA-Z])/g, '$1D');
 }
 
 // One package's `export-name` mappings across its sources. Two sources naming one Rust item differently
