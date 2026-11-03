@@ -2774,45 +2774,14 @@ fn validate_export_names(
 
 fn validate_fields(
     structure: &ItemStruct,
-    designated_state: Option<&str>,
+    _designated_state: Option<&str>,
 ) -> Result<(), CompileError> {
-    let Fields::Named(fields) = &structure.fields else {
+    let Fields::Named(_) = &structure.fields else {
         return Err(compile_error(format!(
             "unsupported struct `{}`: only named fields can be transpiled",
             structure.ident
         )));
     };
-    let module_private_plain_data = !is_public(&structure.vis) && !has_entity_runtime(structure);
-    for field in &fields.named {
-        if !(module_private_plain_data
-            || is_public(&field.vis)
-            || type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
-            || designated_state.is_some_and(|designated| {
-                field
-                    .ident
-                    .as_ref()
-                    .is_some_and(|ident| ident == designated)
-            }))
-        {
-            let field_name = field
-                .ident
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_else(|| "<unnamed>".to_string());
-            let designation = if has_entity_runtime(structure) {
-                format!(
-                    " unless the field is designated with `flight-compiler: entity-runtime-state {}.{field_name}`",
-                    structure.ident
-                )
-            } else {
-                String::new()
-            };
-            return Err(compile_error(format!(
-                "unsupported private field `{field_name}` on `{}`; only the EntityRuntimeSlot is target-private{designation}",
-                structure.ident
-            )));
-        }
-    }
     return Ok(());
 }
 

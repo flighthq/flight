@@ -8028,18 +8028,6 @@ flight_entity::impl_entity!(LassoSelection);
                 entity("//! flight-compiler: entity-runtime-state Lasso.runtime", ""),
                 "`flight-compiler: entity-runtime-state Lasso.runtime` must designate a crate-private state field, not a public field or the runtime slot".to_string(),
             ),
-            (
-                entity("", "    pub(crate) state: f64,\n    pub(crate) extra: f64,\n")
-                    .replace("//! flight-compiler: entity-runtime-state Lasso.state", ""),
-                "unsupported private field `state` on `Lasso`; only the EntityRuntimeSlot is target-private unless the field is designated with `flight-compiler: entity-runtime-state Lasso.state`".to_string(),
-            ),
-            (
-                entity(
-                    "//! flight-compiler: entity-runtime-state Lasso.state",
-                    "    pub(crate) state: f64,\n    pub(crate) extra: f64,\n",
-                ),
-                "unsupported private field `extra` on `Lasso`; only the EntityRuntimeSlot is target-private unless the field is designated with `flight-compiler: entity-runtime-state Lasso.extra`".to_string(),
-            ),
         ];
 
         for (source, expected) in cases {
@@ -8053,37 +8041,40 @@ flight_entity::impl_entity!(LassoSelection);
     }
 
     #[test]
-    fn keeps_private_fields_invalid_on_exported_structs_and_entities() {
-        let cases = [
-            (
-                r#"
+    fn skips_private_fields_on_structs_and_entities() {
+        let record_source = r#"
 pub struct PublicRecord {
     hidden: f32,
+    pub visible: f32,
 }
-"#,
-                "unsupported private field `hidden` on `PublicRecord`; only the EntityRuntimeSlot is target-private",
-            ),
-            (
-                r#"
+"#;
+        let record_output =
+            compile_typescript(record_source, Some("@flighthq/entity/contract")).unwrap();
+        assert!(
+            !record_output.contains("hidden"),
+            "private field should be excluded from TS interface"
+        );
+        assert!(
+            record_output.contains("visible"),
+            "public field should appear in TS interface"
+        );
+
+        let entity_source = r#"
+use flight_entity::EntityRuntimeSlot;
+
 struct InternalEntity {
     runtime: EntityRuntimeSlot,
     hidden: f32,
 }
 
 flight_entity::impl_entity!(InternalEntity);
-"#,
-                "unsupported private field `hidden` on `InternalEntity`; only the EntityRuntimeSlot is target-private unless the field is designated with `flight-compiler: entity-runtime-state InternalEntity.hidden`",
-            ),
-        ];
-
-        for (source, expected) in cases {
-            assert_eq!(
-                compile_typescript(source, Some("@flighthq/entity/contract"))
-                    .unwrap_err()
-                    .to_string(),
-                expected
-            );
-        }
+"#;
+        let entity_output =
+            compile_typescript(entity_source, Some("@flighthq/entity/contract")).unwrap();
+        assert!(
+            !entity_output.contains("hidden"),
+            "private field should be excluded from entity TS interface"
+        );
     }
 
     #[test]
