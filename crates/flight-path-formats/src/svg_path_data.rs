@@ -264,7 +264,11 @@ fn parse_svg_path_data_into(path: &mut Path, d: &str) -> Option<SvgPathDataExpla
             }
 
             let relative = active >= b'a';
-            let upper = active.to_ascii_uppercase();
+            let upper = if relative && active <= b'z' {
+                active - (b'a' - b'A')
+            } else {
+                active
+            };
 
             // Every operand read runs in order without short-circuiting, as in the source: a failed
             // read leaves the position at its start, and later reads continue from there.

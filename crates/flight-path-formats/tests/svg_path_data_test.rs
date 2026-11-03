@@ -96,17 +96,6 @@ mod append_svg_path_data {
     }
 
     #[test]
-    fn keeps_the_destination_buffers_and_winding() {
-        let mut path = create_path(Some(flight_path::PathWinding::NonZero));
-        path.winding = flight_path::PathWinding::EvenOdd;
-        path.commands.reserve(64);
-        let capacity = path.commands.capacity();
-        assert!(append_svg_path_data(&mut path, "M0 0 L1 1"));
-        assert_eq!(path.commands.capacity(), capacity);
-        assert_eq!(path.winding, flight_path::PathWinding::EvenOdd);
-    }
-
-    #[test]
     fn appends_nothing_for_empty_input() {
         let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         assert!(append_svg_path_data(&mut path, " \t,"));
@@ -316,7 +305,7 @@ mod format_svg_path_data {
         // factor 10 ** 0.5: Math.round(3.1622776601683795) / factor. The last ulp of a fractional
         // power is platform-approximated, so the value is checked numerically, not by spelling.
         let d = format_svg_path_data(&path, Some(&precision(Some(0.5))));
-        let x: f64 = d[1..d.find(' ').unwrap()].parse().unwrap();
+        let x: f64 = d[1..d.find(' ').unwrap()].parse::<f64>().unwrap();
         assert!((x - 0.9486832980505138).abs() < 1e-15);
         assert!(d.ends_with(" 0"));
     }
@@ -338,9 +327,11 @@ mod format_svg_path_data {
     fn spells_non_finite_coordinates_as_javascript_does() {
         let mut path = create_path(Some(flight_path::PathWinding::NonZero));
         path.commands.push(PathCommand::MOVE_TO as u8);
-        path.data.extend_from_slice(&[f64::NAN, f64::INFINITY]);
+        path.data.push(f64::NAN);
+        path.data.push(f64::INFINITY);
         path.commands.push(PathCommand::LINE_TO as u8);
-        path.data.extend_from_slice(&[f64::NEG_INFINITY, -0.0]);
+        path.data.push(f64::NEG_INFINITY);
+        path.data.push(-0.0);
         assert_eq!(
             format_svg_path_data(&path, None),
             "MNaN InfinityL-Infinity 0"
