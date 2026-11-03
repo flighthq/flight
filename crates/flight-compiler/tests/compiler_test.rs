@@ -8137,6 +8137,58 @@ pub fn create_box3d() -> Box3D {
     }
 
     #[test]
+    fn resolves_compound_entity_field_defaults_from_visibility_sources() {
+        let visibility = r#"
+pub struct Vector3 {
+    runtime: EntityRuntimeSlot,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+flight_entity::impl_entity!(Vector3);
+"#;
+        let source = r#"
+use crate::Vector3;
+
+pub struct Bounds {
+    runtime: EntityRuntimeSlot,
+    pub min: Vector3,
+    pub max: Vector3,
+}
+
+pub fn create_bounds() -> Bounds {
+    let mut out: Bounds = flight_entity::allocate_entity();
+    return out;
+}
+"#;
+
+        let output = compile_typescript_with_visibility_sources(
+            ModuleSource {
+                path: "src/bounds.rs",
+                source,
+            },
+            Some("@flighthq/entity/contract"),
+            &[ModuleSource {
+                path: "src/vector3.rs",
+                source: visibility,
+            }],
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("allocateEntity<Vector3Raw>()"),
+            "nested entity allocation from visibility source: {output}"
+        );
+        assert!(
+            output.contains("Object.assign(allocateEntity<BoundsRaw>()"),
+            "outer entity allocation: {output}"
+        );
+    }
+
+    #[test]
     fn rejects_unsupported_entity_default_shapes_at_direct_allocation() {
         let cases = [
             (

@@ -7069,6 +7069,7 @@ pub(crate) fn generation_context(
         &external_shared_identity_facts.iter().cloned().collect(),
         contract_source,
         true,
+        &[],
     );
 }
 
@@ -7331,6 +7332,7 @@ fn generation_context_with_types(
     type_context: &HashSet<String>,
     contract_source: Option<&str>,
     strict_vitest_provenance: bool,
+    visibility_programs: &[Program],
 ) -> Result<HashSet<String>, CompileError> {
     let mut context = type_context.clone();
     insert_export_name_context(&mut context, programs)?;
@@ -7339,11 +7341,16 @@ fn generation_context_with_types(
         .map(|(_, program)| *program)
         .collect::<Vec<_>>();
     insert_data_union_context(&mut context, &program_refs, external_record_structs)?;
-    let entity_types = programs
+    let entity_types: HashSet<String> = programs
         .iter()
         .flat_map(|(_, program)| &program.entities)
+        .chain(
+            visibility_programs
+                .iter()
+                .flat_map(|program| &program.entities),
+        )
         .cloned()
-        .collect::<HashSet<_>>();
+        .collect();
     context.extend(
         entity_types
             .iter()
@@ -20703,6 +20710,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         &type_context,
         None,
         false,
+        visibility_programs,
     )?;
     insert_string_union_context(&mut expression_context, external_string_unions.iter());
     expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));

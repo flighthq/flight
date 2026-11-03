@@ -2100,11 +2100,27 @@ pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileE
                 program.enums.push(item.clone());
             }
             Item::ExternCrate(item) => program.extern_crates.push(item.clone()),
+            Item::Macro(item_macro) => {
+                if item_macro
+                    .mac
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| segment.ident == "impl_entity")
+                    && let Ok(entity_type) = syn::parse2::<Type>(item_macro.mac.tokens.clone())
+                    && let Some(name) = type_name(&entity_type)
+                {
+                    program.entities.insert(name);
+                }
+            }
             Item::Mod(item) => {
                 program.type_names.insert(item.ident.to_string());
             }
             Item::Struct(item) => {
                 program.type_names.insert(item.ident.to_string());
+                if has_entity_runtime(item) {
+                    program.entities.insert(item.ident.to_string());
+                }
                 program.structs.push(item.clone());
             }
             Item::Trait(item) => {
