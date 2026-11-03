@@ -10281,13 +10281,16 @@ fn emit_expression_value(
                 return emit_expression(&call.args[0], entities);
             }
             if (expression_is_associated_path(&call.func, "Arc", "ptr_eq")
-                || expression_is_associated_path(&call.func, "Rc", "ptr_eq"))
+                || expression_is_associated_path(&call.func, "Rc", "ptr_eq")
+                || expression_is_associated_path(&call.func, "ptr", "eq"))
                 && call.args.len() == 2
             {
+                let lhs = strip_as_ptr(&call.args[0]);
+                let rhs = strip_as_ptr(&call.args[1]);
                 return Ok(format!(
                     "{} === {}",
-                    emit_expression(&call.args[0], entities)?,
-                    emit_expression(&call.args[1], entities)?
+                    emit_expression(lhs, entities)?,
+                    emit_expression(rhs, entities)?
                 ));
             }
             if expression_is_associated_path(&call.func, "RwLock", "new") && call.args.len() == 1 {
@@ -23933,6 +23936,16 @@ fn constructor_path_default_value(expression: &Expr) -> Option<&'static str> {
         ["HashSet", "new"] | ["BTreeSet", "new"] => Some("new Set()"),
         _ => None,
     }
+}
+
+fn strip_as_ptr(expression: &Expr) -> &Expr {
+    let expr = peel_reference_and_paren(expression);
+    if let Expr::MethodCall(call) = expr {
+        if call.method == "as_ptr" && call.args.is_empty() {
+            return &call.receiver;
+        }
+    }
+    return expression;
 }
 
 pub(super) fn peel_reference_and_paren(expression: &Expr) -> &Expr {

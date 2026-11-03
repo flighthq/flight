@@ -23486,6 +23486,20 @@ pub fn get_u16_bits() -> i32 {
 }
 
 #[test]
+fn lowers_std_ptr_eq_with_as_ptr_to_identity_comparison() {
+    let source = r#"
+pub fn same_buffer(out: &[u8], source: &[u8]) -> bool {
+    return std::ptr::eq(out.as_ptr(), source.as_ptr());
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("out === source"),
+        "std::ptr::eq(a.as_ptr(), b.as_ptr()) should lower to a === b: {output}"
+    );
+}
+
+#[test]
 fn lowers_integer_min_max_as_math_min_max() {
     let source = r#"
 pub fn clamp_value(value: i32, lo: i32, hi: i32) -> i32 {
