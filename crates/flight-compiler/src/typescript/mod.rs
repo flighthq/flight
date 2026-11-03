@@ -18978,13 +18978,19 @@ fn emit_method_call(
         "pow" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "powf" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
         "powi" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
-        "cmp" if arguments.len() == 1 => emit_ordered_comparison(
-            &call.receiver,
-            &call.args[0],
-            &receiver,
-            &arguments[0],
-            entities,
-        ),
+        "cmp" if arguments.len() == 1 => {
+            if let Some(result) = emit_encode_utf16_cmp(&call.receiver, &call.args[0], entities)? {
+                Ok(result)
+            } else {
+                emit_ordered_comparison(
+                    &call.receiver,
+                    &call.args[0],
+                    &receiver,
+                    &arguments[0],
+                    entities,
+                )
+            }
+        }
         "partial_cmp" if arguments.len() == 1 => Ok(format!("{receiver} - {}", arguments[0])),
         "pop" if arguments.is_empty() => Ok(format!("{receiver}.pop()")),
         "position" if arguments.len() == 1 => Ok(format!(
@@ -19268,9 +19274,17 @@ fn emit_method_call(
         }
         "take" if arguments.len() == 1 => Ok(format!("{receiver}.slice(0, {})", arguments[0])),
         "tan" if arguments.is_empty() => Ok(format!("Math.tan({receiver})")),
+        "then" if arguments.len() == 1 && expression_contains_method(&call.receiver, "cmp") => {
+            Ok(format!("({receiver} || {})", arguments[0]))
+        }
         "then" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!("({receiver} ? ({})() : {absent})", arguments[0]))
+        }
+        "then_with"
+            if arguments.len() == 1 && expression_contains_method(&call.receiver, "cmp") =>
+        {
+            Ok(format!("({receiver} || ({})())", arguments[0]))
         }
         "then_some" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
@@ -19770,6 +19784,38 @@ fn json_value_function_ref_lowering(
         ),
         _ => None,
     };
+}
+
+fn emit_encode_utf16_cmp(
+    left: &Expr,
+    right: &Expr,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    let left_string = match left {
+        Expr::MethodCall(call) if call.args.is_empty() && call.method == "encode_utf16" => {
+            Some(call.receiver.as_ref())
+        }
+        _ => None,
+    };
+    let right_string = match right {
+        Expr::MethodCall(call) if call.args.is_empty() && call.method == "encode_utf16" => {
+            Some(call.receiver.as_ref())
+        }
+        _ => None,
+    };
+    let (Some(left_inner), Some(right_inner)) = (left_string, right_string) else {
+        return Ok(None);
+    };
+    let left_text = emit_expression(left_inner, entities)?;
+    let right_text = emit_expression(right_inner, entities)?;
+    if expression_is_reusable(left_inner) && expression_is_reusable(right_inner) {
+        return Ok(Some(format!(
+            "{left_text} < {right_text} ? -1 : {left_text} > {right_text} ? 1 : 0"
+        )));
+    }
+    return Ok(Some(format!(
+        "((left, right) => (left < right ? -1 : left > right ? 1 : 0))({left_text}, {right_text})"
+    )));
 }
 
 fn emit_ordered_comparison(

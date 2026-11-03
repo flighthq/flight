@@ -2494,6 +2494,55 @@ pub fn compare_offset(a: i32, b: i32) -> Ordering {
         }
     }
 
+    #[test]
+    fn lowers_encode_utf16_cmp_to_native_string_comparison() {
+        let source = r#"
+use std::cmp::Ordering;
+
+pub fn compare_utf16(a: &str, b: &str) -> Ordering {
+    return a.encode_utf16().cmp(b.encode_utf16());
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("a < b ? -1 : a > b ? 1 : 0"),
+            "encode_utf16 cmp: {output}"
+        );
+        assert!(
+            !output.contains("charCodeAt"),
+            "should not expand encode_utf16: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_ordering_then_to_or_chain() {
+        let source = r#"
+use std::cmp::Ordering;
+
+pub fn compare_pair(a1: i32, b1: i32, a2: i32, b2: i32) -> Ordering {
+    return a1.cmp(&b1).then(a2.cmp(&b2));
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("||"), "then on cmp should use ||: {output}");
+    }
+
+    #[test]
+    fn lowers_ordering_then_with_to_or_chain() {
+        let source = r#"
+use std::cmp::Ordering;
+
+pub fn compare_lazy(a1: i32, b1: i32, a2: i32, b2: i32) -> Ordering {
+    return a1.cmp(&b1).then_with(|| a2.cmp(&b2));
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("||"),
+            "then_with on cmp should use ||: {output}"
+        );
+    }
+
     // A tuple `if let` over data union variants tests every element's runtime category together
     // and binds each payload inside the branch.
     #[test]
