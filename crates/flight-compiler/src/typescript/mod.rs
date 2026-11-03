@@ -8933,34 +8933,73 @@ fn emit_block_with_context(
                     n.as_ref()
                         .is_some_and(|name| declaration_counts.get(name).is_some_and(|c| *c > 1))
                 });
+                let init = local.init.as_ref().unwrap();
+                let init_is_hoisted_block = matches!(init.expr.as_ref(),
+                    Expr::Block(b) if block_contains_function_exits(&b.block))
+                    || matches!(init.expr.as_ref(),
+                    Expr::Unsafe(u) if block_contains_function_exits(&u.block));
                 let any_shadowed = elem_rust_names
                     .iter()
                     .any(|n| n.as_ref().is_some_and(|name| declared.contains(name)));
-                if any_shadowed {
-                    let init = local.init.as_ref().unwrap();
+                let (any_scope_declared, any_self_ref) = if init_is_hoisted_block {
+                    (false, false)
+                } else {
+                    let scope = elem_rust_names.iter().any(|n| {
+                        n.as_ref().is_some_and(|name| {
+                            block_context.contains(&format!("{SCOPE_DECLARED_MARKER}{name}"))
+                        })
+                    });
+                    let self_ref = elem_rust_names.iter().any(|n| {
+                        n.as_ref()
+                            .is_some_and(|name| expression_contains_identifier(&init.expr, name))
+                    });
+                    (scope, self_ref)
+                };
+                let needs_decompose = any_shadowed || any_scope_declared || any_self_ref;
+                if needs_decompose {
                     let value = emit_expression(&init.expr, &block_context)?;
                     let temp = format!("__dt{index}");
                     write_indent(out, indent);
                     writeln!(out, "const {temp} = {value};")
                         .expect("writing to a String cannot fail");
-                    for (i, elem) in tuple.elems.iter().enumerate() {
+                    for (i, _elem) in tuple.elems.iter().enumerate() {
                         let Some(rust_name) = &elem_rust_names[i] else {
                             continue;
                         };
                         let js_name = snake_to_lower_camel(rust_name);
                         let is_shadowed = declared.contains(rust_name);
-                        let is_mutable = matches!(elem, Pat::Ident(id) if id.mutability.is_some());
+                        let is_scope_declared =
+                            block_context.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+                        let is_self_ref = expression_contains_identifier(&init.expr, rust_name);
+                        let is_mutable = matches!(
+                            tuple.elems[i],
+                            Pat::Ident(ref id) if id.mutability.is_some()
+                        );
                         let is_rebound = declaration_counts.get(rust_name).is_some_and(|c| *c > 1);
-                        write_indent(out, indent);
                         if is_shadowed {
+                            write_indent(out, indent);
                             writeln!(out, "{js_name} = {temp}[{i}];")
                                 .expect("writing to a String cannot fail");
+                        } else if is_scope_declared || is_self_ref {
+                            let fresh = next_try_rename(&block_context, &js_name);
+                            let keyword = if is_mutable || is_rebound {
+                                "let"
+                            } else {
+                                "const"
+                            };
+                            write_indent(out, indent);
+                            writeln!(out, "{keyword} {fresh} = {temp}[{i}];")
+                                .expect("writing to a String cannot fail");
+                            let rename_prefix = format!("{RENAME_MARKER}{js_name}=");
+                            block_context.retain(|m| !m.starts_with(&rename_prefix));
+                            block_context.insert(format!("{RENAME_MARKER}{js_name}={fresh}"));
                         } else {
                             let keyword = if is_mutable || is_rebound {
                                 "let"
                             } else {
                                 "const"
                             };
+                            write_indent(out, indent);
                             writeln!(out, "{keyword} {js_name} = {temp}[{i}];")
                                 .expect("writing to a String cannot fail");
                         }
@@ -13508,7 +13547,8 @@ fn emit_let_else_local(
                     match &ts.elems[0] {
                         Pat::Ident(ident) => {
                             let rust_name = ident.ident.to_string();
-                            let name = snake_to_lower_camel(&rust_name);
+                            let base_name = snake_to_lower_camel(&rust_name);
+                            let name = resolve_rename(entities, &base_name);
                             let is_rebind = shadowed
                                 || expression_contains_identifier(&init_tuple.elems[i], &rust_name)
                                 || entities
@@ -13568,7 +13608,8 @@ fn emit_let_else_local(
                 }
                 Pat::Ident(ident) => {
                     let rust_name = ident.ident.to_string();
-                    let name = snake_to_lower_camel(&rust_name);
+                    let base_name = snake_to_lower_camel(&rust_name);
+                    let name = resolve_rename(entities, &base_name);
                     let is_rebind = shadowed
                         || expression_contains_identifier(&init_tuple.elems[i], &rust_name)
                         || entities.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
@@ -22835,6 +22876,14 @@ fn entity_runtime_state_store_imports(
         }
     }
     return Ok(imports);
+}
+
+fn resolve_rename(entities: &HashSet<String>, js_name: &str) -> String {
+    let prefix = format!("{RENAME_MARKER}{js_name}=");
+    if let Some(marker) = entities.iter().find(|m| m.starts_with(&prefix)) {
+        return marker[prefix.len()..].to_string();
+    }
+    return js_name.to_string();
 }
 
 fn next_try_rename(entities: &HashSet<String>, js_name: &str) -> String {

@@ -22147,16 +22147,17 @@ pub fn travel(track: Option<f64>, thumb: Option<f64>, orient: f64) -> f64 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("let [track, thumb, orient]"),
-        "tuple destructure should use let when elements are rebound: {output}"
+        output.contains("let track_1 = __dt") && output.contains("let thumb_1 = __dt"),
+        "parameter-shadowing tuple should decompose with fresh let names: {output}"
     );
     assert!(
-        !output.contains("const [track, thumb, orient]"),
-        "tuple destructure should not use const when elements are rebound: {output}"
+        !output.contains("let [track, thumb, orient]")
+            && !output.contains("const [track, thumb, orient]"),
+        "must not destructure into parameter names (TS2451): {output}"
     );
     assert!(
-        output.contains("track = $t0") && output.contains("thumb = $t1"),
-        "tuple let-else should bare-assign to the let bindings: {output}"
+        output.contains("track_1 = $t0") && output.contains("thumb_1 = $t1"),
+        "tuple let-else should bare-assign to the renamed bindings: {output}"
     );
 }
 
@@ -22188,5 +22189,72 @@ pub fn run(items: &[i32]) -> i32 {
     assert!(
         !output.contains("const next = compute") || output.matches("const next").count() <= 1,
         "next should not be redeclared after hoisting: {output}"
+    );
+}
+
+#[test]
+fn tuple_destructure_renames_on_inner_block_self_ref() {
+    let source = r#"
+pub fn inner_block(seed: u32, flag: bool) -> u32 {
+    let next = seed + 1;
+    if flag {
+        let (next, other) = (next * 10, 1);
+        if next + other > 1000 {
+            return 0;
+        }
+    }
+    return next;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("next_1") && output.contains("__dt"),
+        "inner-block self-referential tuple should decompose with fresh next_1: {output}"
+    );
+    assert!(
+        !output.contains("const [next,") && !output.contains("const [next ]"),
+        "must not emit const [next destructure that causes TDZ: {output}"
+    );
+}
+
+#[test]
+fn tuple_destructure_renames_on_loop_variable_shadow() {
+    let source = r#"
+pub fn loop_var(values: &[u32]) -> u32 {
+    let mut total = 0;
+    for value in values {
+        let (value, extra) = (*value * 2, 1);
+        total += value + extra;
+    }
+    return total;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("value_1") && output.contains("__dt"),
+        "loop variable tuple shadow should decompose with fresh value_1: {output}"
+    );
+    assert!(
+        output.contains("total += value_1 + extra"),
+        "subsequent uses should resolve through rename: {output}"
+    );
+}
+
+#[test]
+fn tuple_destructure_renames_on_parameter_shadow() {
+    let source = r#"
+pub fn param_tuple(value: u32) -> u32 {
+    let (value, extra) = (value * 3, 1);
+    return value + extra;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("value_1") && output.contains("__dt"),
+        "parameter tuple shadow should decompose with fresh value_1: {output}"
+    );
+    assert!(
+        output.contains("value_1 + extra"),
+        "return should use renamed value_1: {output}"
     );
 }
