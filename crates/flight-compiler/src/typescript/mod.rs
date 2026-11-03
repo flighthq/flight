@@ -3766,6 +3766,39 @@ pub(super) fn rust_default_expression(rust_type: &Type) -> Option<String> {
     };
 }
 
+fn entity_field_default(
+    rust_type: &Type,
+    entity_types: &HashSet<String>,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    return match rust_type {
+        Type::Path(path) if path.qself.is_none() => {
+            let segment = path.path.segments.last()?;
+            let name = segment.ident.to_string();
+            if entity_types.contains(&name) {
+                let ts_type = format!("{name}Raw");
+                return entity_allocation(&ts_type, entities).ok();
+            }
+            match name.as_str() {
+                "Arc" | "Box" | "Rc" | "Ref" => {
+                    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                        return None;
+                    };
+                    arguments.args.iter().find_map(|argument| match argument {
+                        GenericArgument::Type(inner) => {
+                            entity_field_default(inner, entity_types, entities)
+                        }
+                        _ => None,
+                    })
+                }
+                _ => None,
+            }
+        }
+        Type::Reference(reference) => entity_field_default(&reference.elem, entity_types, entities),
+        _ => None,
+    };
+}
+
 pub(super) fn rust_literal_to_typescript(expression: &Expr) -> Option<String> {
     return match expression {
         Expr::Lit(literal) => match &literal.lit {
@@ -8148,19 +8181,9 @@ fn generation_context_with_types(
                     continue;
                 };
                 let field_name = snake_to_lower_camel(&field_name.to_string());
-                let Some(mut value) = rust_default_expression(&field.ty).or_else(|| {
-                    let field_type_name = match &field.ty {
-                        Type::Path(path) if path.qself.is_none() => {
-                            path.path.segments.last().map(|s| s.ident.to_string())
-                        }
-                        _ => None,
-                    }?;
-                    if entity_types.contains(&field_type_name) {
-                        Some(format!("allocateEntity<{field_type_name}Raw>()"))
-                    } else {
-                        None
-                    }
-                }) else {
+                let Some(mut value) = rust_default_expression(&field.ty)
+                    .or_else(|| entity_field_default(&field.ty, &entity_types, &context))
+                else {
                     context.insert(format!(
                         "{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{}",
                         rust_type_description(&field.ty)
