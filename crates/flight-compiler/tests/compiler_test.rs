@@ -22224,6 +22224,33 @@ pub fn pause(channel: &mut i32) {
 }
 
 #[test]
+fn hoisted_value_block_tuple_decomposes_on_scope_declared() {
+    let source = r#"
+pub fn exit_tuple_block(seed: u32, limit: u32) -> u32 {
+    let (seed, extra) = {
+        let seed = seed + 1;
+        if seed > limit { return 0; }
+        (seed * 2, 1)
+    };
+    return seed + extra;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("seed = seed_1 * 2"),
+        "scope-declared tuple element should bare-assign (parameter is mutable in TS): {output}"
+    );
+    assert!(
+        output.contains("const extra = 1"),
+        "non-scope-declared tuple element should get const declaration: {output}"
+    );
+    assert!(
+        !output.contains("const [seed"),
+        "should not use destructuring that redeclares the parameter: {output}"
+    );
+}
+
+#[test]
 fn tuple_destructure_renames_on_inner_block_self_ref() {
     let source = r#"
 pub fn inner_block(seed: u32, flag: bool) -> u32 {

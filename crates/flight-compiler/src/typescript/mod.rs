@@ -13166,7 +13166,14 @@ fn emit_hoisted_value_block_local(
         let any_collision = elem_js_names
             .iter()
             .any(|n| n.as_ref().is_some_and(|name| hoisted_names.contains(name)));
-        if any_collision {
+        let any_scope_declared = tuple.elems.iter().any(|elem| {
+            if let Pat::Ident(ident) = elem {
+                entities.contains(&format!("{SCOPE_DECLARED_MARKER}{}", ident.ident))
+            } else {
+                false
+            }
+        });
+        if any_collision || any_scope_declared {
             let tail_elems: Vec<String> = if let Expr::Tuple(tail_tuple) = value {
                 tail_tuple
                     .elems
@@ -13188,7 +13195,8 @@ fn emit_hoisted_value_block_local(
                     continue;
                 };
                 let elem_value = &tail_elems[i];
-                let collides = hoisted_names.contains(js_name);
+                let is_scope_declared = matches!(&tuple.elems[i], Pat::Ident(ident) if entities.contains(&format!("{SCOPE_DECLARED_MARKER}{}", ident.ident)));
+                let collides = hoisted_names.contains(js_name) || is_scope_declared;
                 if collides {
                     if elem_value != js_name {
                         write_indent(out, indent);
