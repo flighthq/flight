@@ -9103,6 +9103,35 @@ pub static ENTRIES: LazyLock<Vec<Entry>> = LazyLock::new(|| {
     }
 
     #[test]
+    fn lowers_once_lock_static_inside_function_body() {
+        let source = r#"
+use std::sync::OnceLock;
+
+pub struct Label {
+    pub name: String,
+}
+
+pub fn empty_labels() -> Vec<Label> {
+    static EMPTY: OnceLock<Vec<Label>> = OnceLock::new();
+    return EMPTY.get_or_init(|| Vec::new()).clone();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("let EMPTY"),
+            "OnceLock static inside fn should emit as local let: {output}"
+        );
+        assert!(
+            !output.contains("OnceLock"),
+            "OnceLock type should not appear in output: {output}"
+        );
+        assert!(
+            output.contains("function emptyLabels"),
+            "function should be emitted: {output}"
+        );
+    }
+
+    #[test]
     fn rejects_unsupported_lazy_lock_statics() {
         let declarations = "use std::sync::LazyLock;\n\npub struct Kernel {\n    pub scale: f64,\n}\n\npub fn create_kernel() -> Kernel {\n    return Kernel { scale: 1.0 };\n}\n";
         let unsupported_shape = |name: &str| {

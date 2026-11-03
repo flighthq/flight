@@ -22080,6 +22080,16 @@ fn emit_statement(
         Stmt::Item(syn::Item::Fn(item_fn)) => {
             emit_local_function(out, item_fn, entities, indent)?;
         }
+        Stmt::Item(syn::Item::Static(item_static))
+            if crate::model::once_lock_static_inner_type(item_static).is_some() =>
+        {
+            let inner = crate::model::once_lock_static_inner_type(item_static).unwrap();
+            let name = emit_path_segment(&item_static.ident.to_string());
+            let typescript_type = emit_type(inner, entities)?;
+            write_indent(out, indent);
+            writeln!(out, "let {name}: {typescript_type} | undefined;")
+                .expect("writing to a String cannot fail");
+        }
         Stmt::Item(_) => {
             return Err(compile_error(
                 "unsupported item declaration inside function body",

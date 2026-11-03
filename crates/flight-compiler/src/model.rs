@@ -795,6 +795,34 @@ pub(crate) fn lazy_lock_static(rust_static: &ItemStatic) -> Option<(&Type, &syn:
     return Some((inner, &call.args[0]));
 }
 
+pub(crate) fn once_lock_static_inner_type(rust_static: &ItemStatic) -> Option<&Type> {
+    let Type::Path(path) = rust_static.ty.as_ref() else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    if segment.ident != "OnceLock" {
+        return None;
+    }
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    let [GenericArgument::Type(inner)] = arguments.args.iter().collect::<Vec<_>>().as_slice()
+    else {
+        return None;
+    };
+    let syn::Expr::Call(call) = rust_static.expr.as_ref() else {
+        return None;
+    };
+    let syn::Expr::Path(function) = call.func.as_ref() else {
+        return None;
+    };
+    let last = function.path.segments.last()?;
+    if last.ident != "new" || !call.args.is_empty() {
+        return None;
+    }
+    return Some(inner);
+}
+
 fn next_directive_field(value: &str) -> Option<(&str, &str)> {
     let value = value.trim_start();
     if value.is_empty() {
