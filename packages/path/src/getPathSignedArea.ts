@@ -13,8 +13,8 @@ export type ContourOrientation = 'ccw' | 'cw' | 'degenerate';
  * Returns the orientation of the path's primary (first) contour.
  */
 export function getPathContourOrientation(path: Readonly<PathRaw>, tolerance?: number): ContourOrientation {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   if (contours.length === 0) {
     return 'degenerate';
   }
@@ -33,8 +33,8 @@ export function getPathContourOrientation(path: Readonly<PathRaw>, tolerance?: n
  * formula to the flattened contours.
  */
 export function getPathSignedArea(path: Readonly<PathRaw>, tolerance?: number): number {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   let total: number = 0.0;
   for (let ci = 0; ci < contours.length; ci += 1) {
     total += shoelaceArea(contours[ci]);

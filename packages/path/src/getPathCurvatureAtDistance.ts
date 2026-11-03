@@ -25,8 +25,8 @@ function curvatureAtVertex(contour: Readonly<number[]>, count: number, vertex: n
  * straight segments, or degenerate geometry.
  */
 export function getPathCurvatureAtDistance(path: Readonly<PathRaw>, distance: number, tolerance?: number): number {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   return samplePathCurvature(contours, distance);
 }
 

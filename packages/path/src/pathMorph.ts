@@ -22,13 +22,15 @@ export function createPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>
  */
 export function samplePathMorph(out: PathRaw, morph: Readonly<PathMorphRaw>, progress: number): void {
   const commands = morph.commands;
-  out.commands.length = 0;
+  const outCommands: number[] = out.commands;
+  outCommands.length = 0;
   for (let i = 0; i < commands.length; i += 1) {
     out.commands.push(commands[i]);
   }
   const startData = morph.startData;
   const endData = morph.endData;
-  out.data.length = 0;
+  const outData: number[] = out.data;
+  outData.length = 0;
   for (let _ = 0; _ < startData.length; _ += 1) {
     out.data.push(0.0);
   }

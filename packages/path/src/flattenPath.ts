@@ -76,10 +76,10 @@ export function flattenPath(path: Readonly<PathRaw>, tolerance?: number): number
 }
 
 function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: number): void {
-  tolerance = tolerance ?? 0.25;
+  const tolerance_1 = tolerance ?? 0.25;
   const commands = path.commands;
   const data = path.data;
-  const toleranceSq = tolerance * tolerance;
+  const toleranceSq = tolerance_1 * tolerance_1;
   let contour: number | undefined = undefined;
   let x: number = 0.0;
   let y: number = 0.0;

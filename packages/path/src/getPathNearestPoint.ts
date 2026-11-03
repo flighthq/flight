@@ -18,8 +18,8 @@ export function getPathNearestPoint(
   out: Vector2Like,
   tolerance?: number,
 ): number {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   let bestDistSq = Number.POSITIVE_INFINITY;
   let bestX: number = 0.0;
   let bestY: number = 0.0;

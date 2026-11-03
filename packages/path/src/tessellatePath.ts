@@ -126,10 +126,10 @@ function tessellateContour(source: Readonly<number[]>, vertices: number[], indic
  * Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
  */
 export function tessellatePath(path: Readonly<PathRaw>, tolerance?: number): PathMesh {
-  tolerance = tolerance ?? 0.25;
+  const tolerance_1 = tolerance ?? 0.25;
   let vertices: number[] = [] as never[];
   let indices: number[] = [] as never[];
-  const contours = flattenPath(path, tolerance);
+  const contours = flattenPath(path, tolerance_1);
   for (let i = 0; i < contours.length; i += 1) {
     tessellateContour(contours[i], vertices, indices);
   }
@@ -140,10 +140,12 @@ export function tessellatePath(path: Readonly<PathRaw>, tolerance?: number): Pat
  * Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
  */
 export function tessellatePathInto(path: Readonly<PathRaw>, out: PathMesh, tolerance?: number): void {
-  tolerance = tolerance ?? 0.25;
-  out.vertices.length = 0;
-  out.indices.length = 0;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const outVertices: number[] = out.vertices;
+  outVertices.length = 0;
+  const outIndices: number[] = out.indices;
+  outIndices.length = 0;
+  const contours = flattenPath(path, tolerance_1);
   for (let i = 0; i < contours.length; i += 1) {
     tessellateContour(contours[i], out.vertices, out.indices);
   }

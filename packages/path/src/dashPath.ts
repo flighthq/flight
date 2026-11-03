@@ -104,15 +104,17 @@ export function dashPath(
   out: PathRaw,
   tolerance?: number,
 ): void {
-  tolerance = tolerance ?? 0.25;
+  const tolerance_1 = tolerance ?? 0.25;
   const totalDashLength = dashTotal(dash);
   if (totalDashLength <= 0.0) {
     copyCommands(source, out);
     return;
   }
-  const contours = flattenPath(source, tolerance);
-  out.commands.length = 0;
-  out.data.length = 0;
+  const contours = flattenPath(source, tolerance_1);
+  const outCommands: number[] = out.commands;
+  outCommands.length = 0;
+  const outData: number[] = out.data;
+  outData.length = 0;
   out.winding = source.winding;
   for (const contour of contours) {
     applyDashToContour(contour, dash, dashOffset, totalDashLength, out);

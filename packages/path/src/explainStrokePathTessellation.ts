@@ -13,7 +13,7 @@ export function explainStrokePathTessellation(
   style: Readonly<StrokeStyle>,
   tolerance?: number,
 ): StrokePathTessellationExplanation {
-  tolerance = tolerance ?? 0.25;
-  const geometry = buildStrokePathGeometry(path, style, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const geometry = buildStrokePathGeometry(path, style, tolerance_1);
   return { supported: geometry.issue === 'ok', reason: geometry.issue, subpath: geometry.issueSubpath ?? null };
 }

@@ -139,8 +139,8 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
  * Curves are adaptively flattened before the winding number test.
  */
 export function containsPathPoint(path: Readonly<PathRaw>, px: number, py: number, tolerance?: number): boolean {
-  tolerance = tolerance ?? 0.25;
-  const winding = computePathWindingNumber(path, px, py, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const winding = computePathWindingNumber(path, px, py, tolerance_1);
   if (path.winding === 'evenOdd') {
     return (winding & 1) !== 0;
   }

@@ -134,8 +134,10 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: PathRaw): void {
  */
 export function reversePath(source: Readonly<PathRaw>, out: PathRaw): void {
   const subpaths = decodeSubpaths(source);
-  out.commands.length = 0;
-  out.data.length = 0;
+  const outCommands: number[] = out.commands;
+  outCommands.length = 0;
+  const outData: number[] = out.data;
+  outData.length = 0;
   out.winding = source.winding;
   for (const subpath of subpaths) {
     encodeReversedSubpath(subpath, out);

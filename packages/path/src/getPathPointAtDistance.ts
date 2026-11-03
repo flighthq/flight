@@ -16,8 +16,8 @@ export function getPathPointAtDistance(
   out: Vector2Like,
   tolerance?: number,
 ): boolean {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   return samplePathPoint(contours, distance, out);
 }
 
@@ -31,8 +31,8 @@ export function getPathPositionAtDistance(
   tangentOut: Vector2Like,
   tolerance?: number,
 ): boolean {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   const hasPoint = samplePathPoint(contours, distance, pointOut);
   samplePathTangent(contours, distance, tangentOut);
   return hasPoint;
@@ -47,8 +47,8 @@ export function getPathTangentAtDistance(
   out: Vector2Like,
   tolerance?: number,
 ): boolean {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   return samplePathTangent(contours, distance, out);
 }
 

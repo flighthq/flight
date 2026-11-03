@@ -351,7 +351,7 @@ export function buildStrokePathGeometry(
     const matchValue = style.dash;
     if (matchValue !== undefined) {
       const pattern = matchValue;
-      return pattern;
+      return pattern.slice();
     } else {
       return [] as never[];
     }
@@ -381,7 +381,7 @@ export function buildStrokePathGeometry(
     const spans =
       dash.length !== 0
         ? applyDash(subpath, dash, dashOffset)
-        : [{ closed: subpath.closed, points: subpath.points, sourceIndex: subpath.sourceIndex }];
+        : [{ closed: subpath.closed, points: subpath.points.slice(), sourceIndex: subpath.sourceIndex }];
     for (let j = 0; j < spans.length; j += 1) {
       const built = buildStrokePiece(spans[j], halfWidth, join, cap, miterLimit, tolerance);
       if (built.piece !== undefined) {

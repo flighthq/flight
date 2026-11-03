@@ -71,9 +71,9 @@ function appendPointsReverse(path: PathRaw, points: Readonly<number[]>): void {
  * Converts a centerline Path into its fill outline.
  */
 export function strokePath(path: Readonly<PathRaw>, style: Readonly<StrokeStyle>, tolerance?: number): PathRaw {
-  tolerance = tolerance ?? 0.25;
+  const tolerance_1 = tolerance ?? 0.25;
   let result = createPath('nonZero');
-  const geometry = buildStrokePathGeometry(path, style, tolerance);
+  const geometry = buildStrokePathGeometry(path, style, tolerance_1);
   for (let i = 0; i < geometry.pieces.length; i += 1) {
     appendPieceOutline(result, geometry.pieces[i]);
   }

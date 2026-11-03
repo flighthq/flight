@@ -20,8 +20,8 @@ function contourLength(contour: Readonly<number[]>): number {
  * Returns an array of arc lengths, one per contour in the path.
  */
 export function getPathContourLengths(path: Readonly<PathRaw>, tolerance?: number): number[] {
-  tolerance = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance);
+  const tolerance_1 = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance_1);
   let out: number[] = [] as never[];
   for (let ci = 0; ci < contours.length; ci += 1) {
     out.push(contourLength(contours[ci]));

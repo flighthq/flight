@@ -11,12 +11,14 @@ import { PathCommand } from './path.ts';
  * Alias-safe: captures all input before writing to `out`.
  */
 export function cleanPath(source: Readonly<PathRaw>, tolerance: number, out: PathRaw, flattenTolerance?: number): void {
-  flattenTolerance = flattenTolerance ?? 0.25;
-  const contours = flattenPath(source, flattenTolerance);
+  const flattenTolerance_1 = flattenTolerance ?? 0.25;
+  const contours = flattenPath(source, flattenTolerance_1);
   const winding = source.winding;
   const toleranceSq = tolerance * tolerance;
-  out.commands.length = 0;
-  out.data.length = 0;
+  const outCommands: number[] = out.commands;
+  outCommands.length = 0;
+  const outData: number[] = out.data;
+  outData.length = 0;
   out.winding = winding;
   for (const contour of contours) {
     const n = Math.trunc(contour.length / 2);

@@ -172,13 +172,13 @@ export function appendPathArc(
   anticlockwise?: boolean,
   connectToCurrent?: boolean,
 ): void {
-  anticlockwise = anticlockwise ?? false;
-  connectToCurrent = connectToCurrent ?? false;
+  const anticlockwise_1 = anticlockwise ?? false;
+  const connectToCurrent_1 = connectToCurrent ?? false;
   if (radius <= 0.0) {
     return;
   }
   let sweep = endAngle - startAngle;
-  if (anticlockwise) {
+  if (anticlockwise_1) {
     if (sweep > 0.0) {
       sweep -= Math.PI * 2.0;
     }
@@ -189,7 +189,7 @@ export function appendPathArc(
   }
   const arcStartX = centerX + Math.cos(startAngle) * radius;
   const arcStartY = centerY + Math.sin(startAngle) * radius;
-  if (connectToCurrent) {
+  if (connectToCurrent_1) {
     appendPathLineTo(path, arcStartX, arcStartY);
   } else {
     appendPathMoveTo(path, arcStartX, arcStartY);

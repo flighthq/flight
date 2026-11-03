@@ -21,13 +21,15 @@ export function copyPath(out: PathRaw, source: Readonly<PathRaw>): void {
   const commands: number[] = source.commands.slice();
   const data: number[] = source.data.slice();
   const winding = source.winding;
-  out.commands.length = 0;
+  const outCommands: number[] = out.commands;
+  outCommands.length = 0;
   for (let i = 0; i < commands.length; i += 1) {
-    out.commands.push(commands[i]);
+    outCommands.push(commands[i]);
   }
-  out.data.length = 0;
+  const outData: number[] = out.data;
+  outData.length = 0;
   for (let i = 0; i < data.length; i += 1) {
-    out.data.push(data[i]);
+    outData.push(data[i]);
   }
   out.winding = winding;
 }
