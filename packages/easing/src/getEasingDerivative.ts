@@ -20,12 +20,12 @@ export const DEFAULT_EASING_DERIVATIVE_EPSILON: number = 1e-3;
  * `epsilon` defaults to `DEFAULT_EASING_DERIVATIVE_EPSILON`.
  */
 export function getEasingDerivative(ease: EasingFunction, t: number, epsilon?: number): number {
-  epsilon = epsilon ?? DEFAULT_EASING_DERIVATIVE_EPSILON;
-  if (t <= epsilon) {
-    return (ease(epsilon * 2.0) - ease(0.0)) / (epsilon * 2.0);
+  const epsilon_1 = epsilon ?? DEFAULT_EASING_DERIVATIVE_EPSILON;
+  if (t <= epsilon_1) {
+    return (ease(epsilon_1 * 2.0) - ease(0.0)) / (epsilon_1 * 2.0);
   }
-  if (t >= 1.0 - epsilon) {
-    return (ease(1.0) - ease(1.0 - epsilon * 2.0)) / (epsilon * 2.0);
+  if (t >= 1.0 - epsilon_1) {
+    return (ease(1.0) - ease(1.0 - epsilon_1 * 2.0)) / (epsilon_1 * 2.0);
   }
-  return (ease(t + epsilon) - ease(t - epsilon)) / (2.0 * epsilon);
+  return (ease(t + epsilon_1) - ease(t - epsilon_1)) / (2.0 * epsilon_1);
 }

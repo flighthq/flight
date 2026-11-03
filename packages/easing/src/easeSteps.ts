@@ -21,16 +21,16 @@ const STEPS_GUARD: { value: EasingStepsGuard | null } = { value: null };
  * returned function divides by zero and yields NaN for every input.
  */
 export function easeSteps(count: number, position?: StepPosition): EasingFunction {
-  position = position ?? 'jumpEnd';
-  if (position === 'jumpNone' && count < 2) {
+  const position_1 = position ?? 'jumpEnd';
+  if (position_1 === 'jumpNone' && count < 2) {
     const guard = STEPS_GUARD.value;
     if (guard !== null) {
       const g = guard;
-      g(count, position);
+      g(count, position_1);
     }
   }
   const jumps: number = (() => {
-    const matchValue = position;
+    const matchValue = position_1;
     switch (matchValue) {
       case 'jumpNone':
         return count - 1;
@@ -41,7 +41,7 @@ export function easeSteps(count: number, position?: StepPosition): EasingFunctio
     }
   })();
   const startOffset: number = (() => {
-    const matchValue = position;
+    const matchValue = position_1;
     switch (matchValue) {
       case 'jumpStart':
       case 'jumpBoth':

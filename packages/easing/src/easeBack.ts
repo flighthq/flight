@@ -28,6 +28,6 @@ export function easeInOutBack(t: number): number {
  * Ease-out with overshoot: decelerates past the target before settling back.
  */
 export function easeOutBack(t: number): number {
-  t = t - 1.0;
-  return t * t * ((S + 1.0) * t + S) + 1.0;
+  const t_1 = t - 1.0;
+  return t_1 * t_1 * ((S + 1.0) * t_1 + S) + 1.0;
 }

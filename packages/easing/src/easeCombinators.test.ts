@@ -43,9 +43,9 @@ describe('easeClamp', () => {
     assertApprox(clamped(1.5), easeInCubic(1.0));
   });
   it('is safe when composed', () => {
-    const double = easeClamp(easeClamp(easeInCubic));
-    assertApprox(double(-1.0), easeInCubic(0.0));
-    assertApprox(double(2.0), easeInCubic(1.0));
+    const double_ = easeClamp(easeClamp(easeInCubic));
+    assertApprox(double_(-1.0), easeInCubic(0.0));
+    assertApprox(double_(2.0), easeInCubic(1.0));
   });
 });
 

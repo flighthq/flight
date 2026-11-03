@@ -3,9 +3,7 @@
 
 import type { EasingFunction } from './easingTypes.ts';
 
-const PI = Math.PI;
-
-const TAU: number = 2.0 * PI;
+const TAU: number = 2.0 * Math.PI;
 
 const DEFAULT_DAMPED_SINE_PERIOD: number = 0.4;
 
