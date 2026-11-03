@@ -23599,6 +23599,39 @@ pub fn narrow_i32_to_u32(x: i32) -> u32 {
 }
 
 #[test]
+fn elides_bitand_mask_then_same_cast() {
+    let source = r#"
+pub fn extract_channel(color: u32) -> u8 {
+    return ((color >> 24) & 0xff) as u8;
+}
+pub fn extract_pair(color: u32) -> u16 {
+    return (color & 0xffff) as u16;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    let channel_fn = output
+        .split("function extractChannel")
+        .nth(1)
+        .and_then(|s| s.split("\n}\n").next())
+        .unwrap_or("");
+    assert_eq!(
+        channel_fn.matches("& 0xff").count(),
+        1,
+        "should have exactly one & 0xff, not double: {output}"
+    );
+    let pair_fn = output
+        .split("function extractPair")
+        .nth(1)
+        .and_then(|s| s.split("\n}\n").next())
+        .unwrap_or("");
+    assert_eq!(
+        pair_fn.matches("& 0xffff").count(),
+        1,
+        "should have exactly one & 0xffff, not double: {output}"
+    );
+}
+
+#[test]
 fn lowers_option_tuple_closure_parameter() {
     let source = r#"
 pub fn get_parts(source: &Foo) -> Option<(Bar, Baz)> {

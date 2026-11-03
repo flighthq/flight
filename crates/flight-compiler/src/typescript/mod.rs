@@ -2650,6 +2650,13 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
             });
         }
         Expr::Binary(binary) => {
+            if matches!(binary.op, BinOp::BitAnd(_)) {
+                if let Some(mask_type) =
+                    bitand_mask_type(&binary.right).or_else(|| bitand_mask_type(&binary.left))
+                {
+                    return Some(mask_type);
+                }
+            }
             let left = expression_numeric_type(&binary.left, entities);
             let right = expression_numeric_type(&binary.right, entities);
             return match (left, right) {
@@ -23968,6 +23975,21 @@ fn is_integer_cast_elided(inner: &Expr, target: &Type, entities: &HashSet<String
         return false;
     };
     return is_widening_integer_cast(&source_name, &target_name);
+}
+
+fn bitand_mask_type(expression: &Expr) -> Option<String> {
+    let value = match expression {
+        Expr::Lit(lit) => match &lit.lit {
+            Lit::Int(int_lit) => int_lit.base10_parse::<u64>().ok()?,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    return match value {
+        0xff => Some("u8".to_string()),
+        0xffff => Some("u16".to_string()),
+        _ => None,
+    };
 }
 
 fn is_widening_integer_cast(source: &str, target: &str) -> bool {
