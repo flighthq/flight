@@ -279,8 +279,7 @@ pub fn connect_signal_debounced<T: Clone + Send + 'static>(
                 *timer_timer_id.lock().unwrap() = None;
                 *timer_leading_fired.lock().unwrap() = false;
                 if trailing {
-                    let args = take_pending_signal_args(&timer_last_args);
-                    if let Some(args) = args {
+                    if let Some(args) = take_pending_signal_args(&timer_last_args) {
                         timer_slot(&args.value);
                     }
                 }
@@ -354,8 +353,7 @@ pub fn connect_signal_throttled<T: Clone + Send + 'static>(
                     Arc::new(move || {
                         *timer_last_fired_at.lock().unwrap() = timer_state.read().unwrap().now_ms;
                         *timer_trailing_timer.lock().unwrap() = None;
-                        let args = take_pending_signal_args(&timer_last_args);
-                        if let Some(args) = args {
+                        if let Some(args) = take_pending_signal_args(&timer_last_args) {
                             timer_slot(&args.value);
                         }
                     }),
@@ -381,8 +379,7 @@ pub fn connect_signal_throttled<T: Clone + Send + 'static>(
                 Arc::new(move || {
                     *timer_last_fired_at.lock().unwrap() = timer_state.read().unwrap().now_ms;
                     *timer_trailing_timer.lock().unwrap() = None;
-                    let args = take_pending_signal_args(&timer_last_args);
-                    if let Some(args) = args {
+                    if let Some(args) = take_pending_signal_args(&timer_last_args) {
                         timer_slot(&args.value);
                     }
                 }),
