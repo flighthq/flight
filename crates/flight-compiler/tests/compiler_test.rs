@@ -2069,6 +2069,63 @@ pub fn f(x: u8) -> &'static str {
     }
 
     #[test]
+    fn lowers_match_break_inside_loop_to_if_else_not_switch() {
+        let source = r#"
+pub fn skip_spaces(units: &[u8], start: usize) -> usize {
+    let mut pos = start;
+    while pos < units.len() {
+        match units[pos] {
+            32 | 9 => pos += 1,
+            _ => break,
+        }
+    }
+    return pos;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            !output.contains("switch"),
+            "match with break inside loop must not lower to switch: {output}"
+        );
+        assert!(
+            output.contains("if (") && output.contains("else {"),
+            "match with break inside loop must lower to if/else: {output}"
+        );
+        assert!(
+            output.contains("break"),
+            "break must be preserved: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_match_continue_inside_loop_to_if_else_not_switch() {
+        let source = r#"
+pub fn first_big(values: &[u32]) -> u32 {
+    let mut found: u32 = 0;
+    for value in values {
+        match *value {
+            0..=9 => continue,
+            _ => {
+                found = *value;
+                break;
+            }
+        }
+    }
+    return found;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            !output.contains("switch"),
+            "match with continue inside loop must not lower to switch: {output}"
+        );
+        assert!(
+            output.contains("continue"),
+            "continue must be preserved: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_match_on_tuple_of_options_to_null_checked_if_else() {
         let source = r#"
 pub struct Rect {

@@ -12633,6 +12633,52 @@ fn arm_body_contains_control_flow_exit(body: &Expr) -> bool {
     };
 }
 
+fn match_arms_contain_loop_break(arms: &[syn::Arm]) -> bool {
+    struct LoopBreakVisitor {
+        found: bool,
+        loop_depth: usize,
+    }
+    impl<'ast> syn::visit::Visit<'ast> for LoopBreakVisitor {
+        fn visit_expr_break(&mut self, _node: &'ast syn::ExprBreak) {
+            if self.loop_depth == 0 {
+                self.found = true;
+            }
+        }
+        fn visit_expr_continue(&mut self, _node: &'ast syn::ExprContinue) {
+            if self.loop_depth == 0 {
+                self.found = true;
+            }
+        }
+        fn visit_expr_while(&mut self, node: &'ast syn::ExprWhile) {
+            self.loop_depth += 1;
+            syn::visit::visit_expr_while(self, node);
+            self.loop_depth -= 1;
+        }
+        fn visit_expr_for_loop(&mut self, node: &'ast syn::ExprForLoop) {
+            self.loop_depth += 1;
+            syn::visit::visit_expr_for_loop(self, node);
+            self.loop_depth -= 1;
+        }
+        fn visit_expr_loop(&mut self, node: &'ast syn::ExprLoop) {
+            self.loop_depth += 1;
+            syn::visit::visit_expr_loop(self, node);
+            self.loop_depth -= 1;
+        }
+        fn visit_expr_closure(&mut self, _node: &'ast syn::ExprClosure) {}
+    }
+    let mut visitor = LoopBreakVisitor {
+        found: false,
+        loop_depth: 0,
+    };
+    for arm in arms {
+        syn::visit::Visit::visit_expr(&mut visitor, &arm.body);
+        if visitor.found {
+            return true;
+        }
+    }
+    return false;
+}
+
 enum HoistedMatchAction<'a> {
     Assign(&'a str),
     Return,
@@ -13290,6 +13336,9 @@ fn emit_match_statement_with_action(
             indent,
         )?;
         return Ok(());
+    }
+    if match_arms_contain_loop_break(&expression.arms) {
+        return emit_match_as_if_else_with_action(out, expression, entities, indent, action);
     }
     write_indent(out, indent);
     writeln!(
@@ -17683,6 +17732,9 @@ pub(crate) fn emit_match_statement(
         out.push_str("}\n");
         return Ok(());
     }
+    if match_arms_contain_loop_break(&expression.arms) {
+        return emit_match_as_if_else(out, expression, entities, indent);
+    }
     write_indent(out, indent);
     writeln!(
         out,
@@ -17863,6 +17915,123 @@ fn emit_match_patterns(
         Pat::Wild(_) => Ok(vec!["default".to_string()]),
         _ => Err(compile_error("unsupported portable Rust match pattern")),
     };
+}
+
+fn emit_match_as_if_else(
+    out: &mut String,
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    write_indent(out, indent);
+    out.push_str("{\n");
+    write_indent(out, indent + 1);
+    writeln!(
+        out,
+        "const matchValue = {};",
+        emit_expression(&expression.expr, entities)?
+    )
+    .expect("writing to a String cannot fail");
+    let mut first = true;
+    for arm in &expression.arms {
+        let patterns = emit_match_patterns(&arm.pat, entities)?;
+        let arm_context = lexical_pattern_context(entities, &arm.pat);
+        let is_default = patterns.len() == 1 && patterns[0] == "default";
+        write_indent(out, indent + 1);
+        if is_default {
+            if first {
+                out.push_str("{\n");
+            } else {
+                out.push_str("else {\n");
+            }
+        } else {
+            let conditions: Vec<String> = patterns
+                .iter()
+                .map(|p| format!("matchValue === {p}"))
+                .collect();
+            let prefix = if first { "if" } else { "else if" };
+            writeln!(out, "{prefix} ({}) {{", conditions.join(" || "))
+                .expect("writing to a String cannot fail");
+        }
+        first = false;
+        if let Pat::Ident(identifier) = &arm.pat {
+            if identifier.ident != "_" && identifier.subpat.is_none() {
+                let binding = snake_to_lower_camel(&identifier.ident.to_string());
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+        }
+        match arm.body.as_ref() {
+            Expr::Block(block) => emit_block(out, &block.block.stmts, &arm_context, indent + 2)?,
+            expression => emit_statement(
+                out,
+                &Stmt::Expr(expression.clone(), None),
+                &arm_context,
+                indent + 2,
+            )?,
+        }
+        write_indent(out, indent + 1);
+        out.push_str("}\n");
+    }
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
+fn emit_match_as_if_else_with_action(
+    out: &mut String,
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+    action: &HoistedMatchAction<'_>,
+) -> Result<(), CompileError> {
+    write_indent(out, indent);
+    out.push_str("{\n");
+    write_indent(out, indent + 1);
+    writeln!(
+        out,
+        "const matchValue = {};",
+        emit_expression(&expression.expr, entities)?
+    )
+    .expect("writing to a String cannot fail");
+    let mut first = true;
+    for arm in &expression.arms {
+        let patterns = emit_match_patterns(&arm.pat, entities)?;
+        let arm_context = lexical_pattern_context(entities, &arm.pat);
+        let is_default = patterns.len() == 1 && patterns[0] == "default";
+        write_indent(out, indent + 1);
+        if is_default {
+            if first {
+                out.push_str("{\n");
+            } else {
+                out.push_str("else {\n");
+            }
+        } else {
+            let conditions: Vec<String> = patterns
+                .iter()
+                .map(|p| format!("matchValue === {p}"))
+                .collect();
+            let prefix = if first { "if" } else { "else if" };
+            writeln!(out, "{prefix} ({}) {{", conditions.join(" || "))
+                .expect("writing to a String cannot fail");
+        }
+        first = false;
+        if let Pat::Ident(identifier) = &arm.pat {
+            if identifier.ident != "_" && identifier.subpat.is_none() {
+                let binding = snake_to_lower_camel(&identifier.ident.to_string());
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+        }
+        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+        write_indent(out, indent + 1);
+        out.push_str("}\n");
+    }
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
 }
 
 fn emit_member(member: &syn::Member) -> String {
