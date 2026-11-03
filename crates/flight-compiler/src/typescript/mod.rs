@@ -200,6 +200,8 @@ const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-defau
 
 const ENTITY_CLONE_FIELD_MARKER: &str = "@entity-clone-field:";
 
+const ENUM_DEFAULT_VARIANT_MARKER: &str = "@enum-default-variant:";
+
 // A struct field whose declared type provably erases an identity-bearing shared cell in TypeScript:
 // `flight_entity::Ref<T>` or the equivalent standard `Arc<RwLock<T>>`. Only clones of these fields
 // may be rewritten as forwarding aliases to the original field.
@@ -3778,6 +3780,13 @@ fn entity_field_default(
             if entity_types.contains(&name) {
                 let ts_type = format!("{name}Raw");
                 return entity_allocation(&ts_type, entities).ok();
+            }
+            let enum_prefix = format!("{ENUM_DEFAULT_VARIANT_MARKER}{name}:");
+            if let Some(variant) = entities
+                .iter()
+                .find_map(|marker| marker.strip_prefix(&enum_prefix))
+            {
+                return Some(format!("{name}.{variant}"));
             }
             match name.as_str() {
                 "Arc" | "Box" | "Rc" | "Ref" => {
@@ -8156,6 +8165,22 @@ fn generation_context_with_types(
                     context.insert(format!(
                         "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
                         structure.ident,
+                    ));
+                }
+            }
+        }
+        for rust_enum in &program.enums {
+            let enum_name = rust_enum.ident.to_string();
+            for variant in &rust_enum.variants {
+                if variant
+                    .attrs
+                    .iter()
+                    .any(|attr| attr.path().is_ident("default"))
+                    && variant.fields.is_empty()
+                {
+                    context.insert(format!(
+                        "{ENUM_DEFAULT_VARIANT_MARKER}{enum_name}:{}",
+                        variant.ident
                     ));
                 }
             }

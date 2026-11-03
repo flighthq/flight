@@ -8491,6 +8491,42 @@ pub fn create_bounds() -> Bounds {
     }
 
     #[test]
+    fn resolves_enum_default_variant_as_entity_field_default() {
+        let source = r#"
+use flight_entity::allocate_entity;
+use flight_entity::EntityRuntimeSlot;
+
+#[derive(Clone, Copy, Default)]
+pub enum Encoding {
+    Msdf,
+    #[default]
+    Raster,
+    Sdf,
+}
+
+pub struct FontConfig {
+    runtime: EntityRuntimeSlot,
+    pub size: f32,
+    pub encoding: Encoding,
+}
+
+flight_entity::impl_entity!(FontConfig);
+
+pub fn create_font_config() -> FontConfig {
+    let mut out: FontConfig = allocate_entity();
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(
+            output.contains("encoding: Encoding.Raster"),
+            "enum field should get default variant: {output}"
+        );
+    }
+
+    #[test]
     fn rejects_unsupported_entity_default_shapes_at_direct_allocation() {
         let cases = [
             (
