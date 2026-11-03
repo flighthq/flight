@@ -1993,19 +1993,71 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
         }
 
         fn visit_expr_macro(&mut self, expression: &'ast syn::ExprMacro) {
-            self.reject(format!(
-                "it invokes `{}!`",
-                expression
-                    .mac
-                    .path
-                    .segments
-                    .last()
-                    .map(|segment| segment.ident.to_string())
-                    .unwrap_or_default()
-            ));
+            let macro_name = expression
+                .mac
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string())
+                .unwrap_or_default();
+            if macro_name == "vec" {
+                if let Ok(elements) =
+                    expression
+                        .mac
+                        .parse_body_with(|input: syn::parse::ParseStream| {
+                            let mut elements = Vec::new();
+                            while !input.is_empty() {
+                                elements.push(input.parse::<Expr>()?);
+                                if !input.is_empty() {
+                                    input.parse::<syn::Token![,]>()?;
+                                }
+                            }
+                            Ok(elements)
+                        })
+                {
+                    for element in &elements {
+                        self.visit_expr(element);
+                    }
+                    return;
+                }
+            }
+            self.reject(format!("it invokes `{macro_name}!`"));
         }
 
         fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+            let method = call.method.to_string();
+            if method == "to_string" && call.args.is_empty() {
+                let receiver_is_literal = match call.receiver.as_ref() {
+                    Expr::Lit(_) => true,
+                    Expr::Reference(reference) => matches!(reference.expr.as_ref(), Expr::Lit(_)),
+                    _ => false,
+                };
+                if receiver_is_literal {
+                    return;
+                }
+                if let Some(eager_type) = self.infer(&call.receiver) {
+                    if matches!(
+                        eager_type,
+                        EagerType::Bool
+                            | EagerType::F32
+                            | EagerType::F64
+                            | EagerType::FloatLiteral
+                            | EagerType::Integer(_)
+                            | EagerType::IntegerLiteral
+                    ) {
+                        return;
+                    }
+                }
+            }
+            if (method == "extend" || method == "push") && call.args.len() == 1 {
+                self.visit_expr(&call.receiver);
+                self.visit_expr(&call.args[0]);
+                return;
+            }
+            if method == "collect" && call.args.is_empty() {
+                self.visit_expr(&call.receiver);
+                return;
+            }
             self.reject(format!(
                 "it calls `.{}()`, and a method name does not prove which operation its receiver performs",
                 call.method
