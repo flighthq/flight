@@ -18906,6 +18906,10 @@ fn emit_method_call(
             "((v: string | number): boolean => typeof v === 'number' ? v === 32 || v === 9 || v === 10 || v === 13 || v === 12 : v === ' ' || v === '\\t' || v === '\\n' || v === '\\r' || v === '\\x0C')({receiver})"
         )),
         "is_whitespace" if arguments.is_empty() => Ok(format!("(/^\\s$/).test({receiver})")),
+        "len_utf16" if arguments.is_empty() => Ok(format!("{receiver}.length")),
+        "len_utf8" if arguments.is_empty() => {
+            Ok(format!("new TextEncoder().encode({receiver}).length"))
+        }
         "iter" | "iter_mut" if arguments.is_empty() => Ok(receiver),
         "join" if arguments.len() == 1 => Ok(format!("{receiver}.join({})", arguments[0])),
         "as_any" | "as_any_mut" if arguments.is_empty() => Ok(receiver),

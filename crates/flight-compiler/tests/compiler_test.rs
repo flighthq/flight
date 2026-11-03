@@ -22742,6 +22742,24 @@ pub fn parse_data(text: &str) -> Option<BTreeMap<String, String>> {
 }
 
 #[test]
+fn lowers_char_len_utf16_to_string_length() {
+    let source = r#"
+pub fn utf16_length(text: &str) -> usize {
+    let mut total: usize = 0;
+    for character in text.chars() {
+        total += character.len_utf16();
+    }
+    return total;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(".length"),
+        "should lower len_utf16 to .length: {output}"
+    );
+}
+
+#[test]
 fn try_counter_persists_across_consecutive_statements() {
     let source = r#"
 fn checked(value: i32) -> Option<i32> {
