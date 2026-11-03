@@ -24780,14 +24780,26 @@ impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
 
     fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
         if pattern.qself.is_none() {
-            self.record_value_path(&pattern.path);
+            if let Some((owner, _)) = path_owner_and_member(&pattern.path)
+                && is_string_union(self.context, &owner)
+            {
+                self.record_type_path(&pattern.path);
+            } else {
+                self.record_value_path(&pattern.path);
+            }
         }
         syn::visit::visit_pat_struct(self, pattern);
     }
 
     fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
         if pattern.qself.is_none() {
-            self.record_value_path(&pattern.path);
+            if let Some((owner, _)) = path_owner_and_member(&pattern.path)
+                && is_string_union(self.context, &owner)
+            {
+                self.record_type_path(&pattern.path);
+            } else {
+                self.record_value_path(&pattern.path);
+            }
         }
         syn::visit::visit_pat_tuple_struct(self, pattern);
     }

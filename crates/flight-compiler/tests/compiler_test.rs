@@ -12198,6 +12198,49 @@ pub fn is_ready(widget: &Widget) -> bool {
     }
 
     #[test]
+    fn imports_string_union_matched_in_patterns_as_type_only() {
+        let dependency = r#"
+//! flight-compiler: string-union Segment
+
+pub enum Segment {
+    MoveTo { x: f32, y: f32 },
+    Close,
+}
+
+pub fn walk(callback: &mut dyn FnMut(Segment)) {
+    callback(Segment::Close);
+}
+"#;
+        let externals = [ExternalAliasSource {
+            source: dependency,
+            module: "@flighthq/dep/contract",
+        }];
+        let consumer = r#"
+use flight_dep::{Segment, walk};
+
+pub fn describe(segment: Segment) -> &'static str {
+    return match segment {
+        Segment::MoveTo { x, y } => "move",
+        Segment::Close => "close",
+    };
+}
+"#;
+
+        let output =
+            compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
+                .unwrap();
+
+        assert!(
+            output.contains("import type { Segment }"),
+            "string union used only in match patterns should be a type import: {output}"
+        );
+        assert!(
+            !output.contains("import { Segment"),
+            "string union used only in match patterns should not be a value import: {output}"
+        );
+    }
+
+    #[test]
     fn imports_generic_dependency_export_names_in_type_positions() {
         let dependency = r#"
 //! flight-compiler: companion wrapper.ts
