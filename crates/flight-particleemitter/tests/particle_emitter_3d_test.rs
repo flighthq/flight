@@ -1,6 +1,5 @@
 // flight-lint: allow(test-default-call) ParticleEmitterConfigOptions is an input option bag with no create function
 use flight_geometry::{create_aabb, create_matrix4};
-use flight_node::Node;
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 use flight_particles::{ParticleEmitterConfigOptions, create_particle_emitter_config_options};
 
@@ -161,7 +160,7 @@ mod create_particle_emitter_3d {
     fn kind_and_defaults() {
         let emitter = create_particle_emitter_3d();
         let guard = emitter.read().unwrap();
-        assert_eq!(guard.node_fields().kind, PARTICLE_EMITTER_3D_KIND);
+        assert_eq!(guard.kind, PARTICLE_EMITTER_3D_KIND);
         assert_eq!(guard.data.particle_count, 0);
         assert_eq!(guard.data.world_space, false);
     }
@@ -177,7 +176,7 @@ mod create_particle_emitter_3d {
     fn is_a_scene_node() {
         let emitter = create_particle_emitter_3d();
         let guard = emitter.read().unwrap();
-        assert_eq!(guard.node_fields().kind, PARTICLE_EMITTER_3D_KIND);
+        assert_eq!(guard.kind, PARTICLE_EMITTER_3D_KIND);
     }
 }
 

@@ -7,7 +7,7 @@ use flight_meshgeometry::{
     MeshGeometry, MeshMorph, MeshSkinBindPose, get_mesh_geometry_skin_bind_pose,
     set_mesh_geometry_skin_bind_pose,
 };
-use flight_node::{Node, NodeRef};
+use flight_node::{Node, NodeRef, get_node_runtime};
 use flight_scene3d::{Mesh, NODE3D_TRAITS_KEY, Node3DNarrow, Skin};
 use std::sync::{Arc, RwLock};
 
@@ -27,7 +27,7 @@ pub(crate) fn cached_bind_pose(geometry: &mut MeshGeometry) -> Ref<MeshSkinBindP
 
 pub(crate) fn mesh_inputs(node: &NodeRef) -> Option<MeshInputs> {
     let node = node.read().unwrap();
-    let traits = node.node_runtime().traits.as_ref()?;
+    let traits = get_node_runtime(&*node).traits.as_ref()?;
     if !Arc::ptr_eq(&traits.key, &NODE3D_TRAITS_KEY) {
         return None;
     }
@@ -41,7 +41,7 @@ pub(crate) fn mesh_inputs(node: &NodeRef) -> Option<MeshInputs> {
 }
 
 pub(crate) fn mesh_mut(node: &mut dyn Node) -> Option<&mut Mesh> {
-    let traits = node.node_runtime().traits.as_ref()?;
+    let traits = get_node_runtime(node).traits.as_ref()?;
     if !Arc::ptr_eq(&traits.key, &NODE3D_TRAITS_KEY) {
         return None;
     }
@@ -50,7 +50,7 @@ pub(crate) fn mesh_mut(node: &mut dyn Node) -> Option<&mut Mesh> {
 }
 
 pub(crate) fn mesh_ref(node: &dyn Node) -> Option<&Mesh> {
-    let traits = node.node_runtime().traits.as_ref()?;
+    let traits = get_node_runtime(node).traits.as_ref()?;
     if !Arc::ptr_eq(&traits.key, &NODE3D_TRAITS_KEY) {
         return None;
     }

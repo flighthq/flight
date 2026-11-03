@@ -2,10 +2,10 @@
 use flight_signals::emit_signal;
 
 use crate::internal::initialize_tween;
-use crate::types::{ErasedTweenHandle, Tween};
+use crate::types::{ErasedTweenHandle, Tween, erase_tween_handle, write_tween_ops_values};
 
 pub fn get_tween_progress<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
-    return get_tween_progress_erased(&tween.to_erased());
+    return get_tween_progress_erased(&erase_tween_handle(tween));
 }
 
 pub(crate) fn get_tween_progress_erased(handle: &ErasedTweenHandle) -> f32 {
@@ -21,7 +21,7 @@ pub(crate) fn get_tween_progress_erased(handle: &ErasedTweenHandle) -> f32 {
 }
 
 pub fn invalidate_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) {
-    invalidate_tween_erased(&tween.to_erased());
+    invalidate_tween_erased(&erase_tween_handle(tween));
 }
 
 pub(crate) fn invalidate_tween_erased(handle: &ErasedTweenHandle) {
@@ -32,7 +32,7 @@ pub(crate) fn invalidate_tween_erased(handle: &ErasedTweenHandle) {
 }
 
 pub fn restart_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>, include_delay: bool) {
-    restart_tween_erased(&tween.to_erased(), include_delay);
+    restart_tween_erased(&erase_tween_handle(tween), include_delay);
 }
 
 pub(crate) fn restart_tween_erased(handle: &ErasedTweenHandle, include_delay: bool) {
@@ -47,7 +47,7 @@ pub(crate) fn restart_tween_erased(handle: &ErasedTweenHandle, include_delay: bo
 }
 
 pub fn seek_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>, time_seconds: f32) {
-    seek_tween_erased(&tween.to_erased(), time_seconds);
+    seek_tween_erased(&erase_tween_handle(tween), time_seconds);
 }
 
 pub(crate) fn seek_tween_erased(handle: &ErasedTweenHandle, time_seconds: f32) {
@@ -83,7 +83,7 @@ pub(crate) fn seek_tween_erased(handle: &ErasedTweenHandle, time_seconds: f32) {
 
     {
         let inner = handle.data.read().unwrap();
-        inner.ops.write_values(eased_t, snapping);
+        write_tween_ops_values(&inner, eased_t, snapping);
     }
 
     emit_signal(&on_update, &());
@@ -95,7 +95,7 @@ pub(crate) fn seek_tween_erased(handle: &ErasedTweenHandle, time_seconds: f32) {
 }
 
 pub fn set_tween_progress<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>, progress: f32) {
-    set_tween_progress_erased(&tween.to_erased(), progress);
+    set_tween_progress_erased(&erase_tween_handle(tween), progress);
 }
 
 pub(crate) fn set_tween_progress_erased(handle: &ErasedTweenHandle, progress: f32) {

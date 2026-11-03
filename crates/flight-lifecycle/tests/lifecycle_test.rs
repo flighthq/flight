@@ -16,24 +16,22 @@ struct FakeBackend {
     capability: HostLifecycleCapability,
 }
 
-impl FakeBackend {
-    fn set_state(&self, state: AppLifecycleState) {
-        self.shared.lock().unwrap().state = state;
+fn fire_fake_backend_memory_warning(backend: &FakeBackend, level: AppMemoryPressure) {
+    let listener = backend.shared.lock().unwrap().memory_listener.clone();
+    if let Some(listener) = listener {
+        listener(level);
     }
+}
 
-    fn fire(&self) {
-        let listener = self.shared.lock().unwrap().state_listener.clone();
-        if let Some(listener) = listener {
-            listener();
-        }
+fn fire_fake_backend_state_change(backend: &FakeBackend) {
+    let listener = backend.shared.lock().unwrap().state_listener.clone();
+    if let Some(listener) = listener {
+        listener();
     }
+}
 
-    fn fire_memory(&self, level: AppMemoryPressure) {
-        let listener = self.shared.lock().unwrap().memory_listener.clone();
-        if let Some(listener) = listener {
-            listener(level);
-        }
-    }
+fn set_fake_backend_state(backend: &FakeBackend, state: AppLifecycleState) {
+    backend.shared.lock().unwrap().state = state;
 }
 
 fn fake_backend() -> FakeBackend {
@@ -98,21 +96,19 @@ fn read(count: &Arc<Mutex<usize>>) -> usize {
 /// Deterministic stand-in for TS `Math.random()` in the property tests (xorshift64*).
 struct Storm(u64);
 
-impl Storm {
-    fn next(&mut self, bound: usize) -> usize {
-        self.0 ^= self.0 >> 12;
-        self.0 ^= self.0 << 25;
-        self.0 ^= self.0 >> 27;
-        return (self.0.wrapping_mul(0x2545F4914F6CDD1D) >> 33) as usize % bound;
-    }
+fn get_storm_next(storm: &mut Storm, bound: usize) -> usize {
+    storm.0 ^= storm.0 >> 12;
+    storm.0 ^= storm.0 << 25;
+    storm.0 ^= storm.0 >> 27;
+    return (storm.0.wrapping_mul(0x2545F4914F6CDD1D) >> 33) as usize % bound;
+}
 
-    fn state(&mut self) -> AppLifecycleState {
-        return [
-            AppLifecycleState::Active,
-            AppLifecycleState::Inactive,
-            AppLifecycleState::Background,
-        ][self.next(3)];
-    }
+fn get_storm_state(storm: &mut Storm) -> AppLifecycleState {
+    return [
+        AppLifecycleState::Active,
+        AppLifecycleState::Inactive,
+        AppLifecycleState::Background,
+    ][get_storm_next(storm, 3)];
 }
 
 mod attach_app_lifecycle {
@@ -125,8 +121,8 @@ mod attach_app_lifecycle {
         let changes = counter(&app.on_state_change);
         let pauses = counter(&app.on_pause);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Background);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Background);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&changes), 1);
         assert_eq!(read(&pauses), 1);
     }
@@ -137,44 +133,44 @@ mod attach_app_lifecycle {
         let mut app = create_app_lifecycle();
         let pauses = counter(&app.on_pause);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Inactive);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Inactive);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&pauses), 1);
     }
 
     #[test]
     fn does_not_double_fire_on_pause_for_inactive_to_background() {
         let backend = fake_backend();
-        backend.set_state(AppLifecycleState::Inactive);
+        set_fake_backend_state(&backend, AppLifecycleState::Inactive);
         let mut app = create_app_lifecycle();
         let pauses = counter(&app.on_pause);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Background);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Background);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&pauses), 0);
     }
 
     #[test]
     fn emits_on_resume_when_returning_to_active_from_background() {
         let backend = fake_backend();
-        backend.set_state(AppLifecycleState::Background);
+        set_fake_backend_state(&backend, AppLifecycleState::Background);
         let mut app = create_app_lifecycle();
         let resumes = counter(&app.on_resume);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Active);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Active);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&resumes), 1);
     }
 
     #[test]
     fn emits_on_resume_when_returning_to_active_from_inactive() {
         let backend = fake_backend();
-        backend.set_state(AppLifecycleState::Inactive);
+        set_fake_backend_state(&backend, AppLifecycleState::Inactive);
         let mut app = create_app_lifecycle();
         let resumes = counter(&app.on_resume);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Active);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Active);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&resumes), 1);
     }
 
@@ -185,8 +181,8 @@ mod attach_app_lifecycle {
         let changes = counter(&app.on_state_change);
         attach_app_lifecycle(&backend.capability, &mut app);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Background);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Background);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&changes), 1);
     }
 
@@ -209,8 +205,8 @@ mod attach_app_lifecycle {
             None,
         );
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Background);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Background);
+        fire_fake_backend_state_change(&backend);
         assert!(*saved.lock().unwrap());
     }
 
@@ -237,10 +233,10 @@ mod attach_app_lifecycle {
             None,
         );
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Background);
-        backend.fire();
-        backend.set_state(AppLifecycleState::Active);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Background);
+        fire_fake_backend_state_change(&backend);
+        set_fake_backend_state(&backend, AppLifecycleState::Active);
+        fire_fake_backend_state_change(&backend);
         let restored = restored.lock().unwrap().clone().expect("restored");
         let bag = restored.read().unwrap();
         let x = flight_entity::get_record_value(&bag, "x").and_then(|value| value.as_ref());
@@ -268,10 +264,10 @@ mod attach_app_lifecycle {
         );
         attach_app_lifecycle(&backend.capability, &mut app);
         for _ in 0..2 {
-            backend.set_state(AppLifecycleState::Background);
-            backend.fire();
-            backend.set_state(AppLifecycleState::Active);
-            backend.fire();
+            set_fake_backend_state(&backend, AppLifecycleState::Background);
+            fire_fake_backend_state_change(&backend);
+            set_fake_backend_state(&backend, AppLifecycleState::Active);
+            fire_fake_backend_state_change(&backend);
         }
         let (saved, restored) = (saved.lock().unwrap(), restored.lock().unwrap());
         assert_eq!((saved.len(), restored.len()), (2, 2));
@@ -292,7 +288,7 @@ mod attach_app_lifecycle {
             None,
         );
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.fire_memory(AppMemoryPressure::Critical);
+        fire_fake_backend_memory_warning(&backend, AppMemoryPressure::Critical);
         assert_eq!(*levels.lock().unwrap(), vec![AppMemoryPressure::Critical]);
     }
 
@@ -304,10 +300,11 @@ mod attach_app_lifecycle {
             let mut app = create_app_lifecycle();
             let changes = counter(&app.on_state_change);
             attach_app_lifecycle(&backend.capability, &mut app);
-            let fire_count = 1 + storm.next(30);
+            let fire_count = 1 + get_storm_next(&mut storm, 30);
             for _ in 0..fire_count {
-                backend.set_state(storm.state());
-                backend.fire();
+                let state = get_storm_state(&mut storm);
+                set_fake_backend_state(&backend, state);
+                fire_fake_backend_state_change(&backend);
             }
             assert_eq!(read(&changes), fire_count);
             detach_app_lifecycle(&mut app);
@@ -320,19 +317,19 @@ mod attach_app_lifecycle {
         let mut storm = Storm(0xD1B54A32D192ED03);
         for _trial in 0..200 {
             let backend = fake_backend();
-            let start = storm.state();
-            backend.set_state(start);
+            let start = get_storm_state(&mut storm);
+            set_fake_backend_state(&backend, start);
             let mut app = create_app_lifecycle();
             let pauses = counter(&app.on_pause);
             let resumes = counter(&app.on_resume);
             attach_app_lifecycle(&backend.capability, &mut app);
             let mut previous = start;
             let (mut expected_pauses, mut expected_resumes) = (0, 0);
-            let fire_count = 1 + storm.next(30);
+            let fire_count = 1 + get_storm_next(&mut storm, 30);
             for _ in 0..fire_count {
-                let next = storm.state();
-                backend.set_state(next);
-                backend.fire();
+                let next = get_storm_state(&mut storm);
+                set_fake_backend_state(&backend, next);
+                fire_fake_backend_state_change(&backend);
                 if previous == AppLifecycleState::Active && next != AppLifecycleState::Active {
                     expected_pauses += 1;
                 } else if previous != AppLifecycleState::Active && next == AppLifecycleState::Active
@@ -357,9 +354,9 @@ mod attach_app_lifecycle {
             let pauses = counter(&app.on_pause);
             let resumes = counter(&app.on_resume);
             attach_app_lifecycle(&backend.capability, &mut app);
-            let fire_count = 1 + storm.next(30);
+            let fire_count = 1 + get_storm_next(&mut storm, 30);
             for _ in 0..fire_count {
-                backend.fire();
+                fire_fake_backend_state_change(&backend);
             }
             assert_eq!(read(&changes), fire_count);
             assert_eq!(read(&pauses), 0);
@@ -373,15 +370,17 @@ mod attach_app_lifecycle {
         let mut storm = Storm(0xA0761D6478BD642F);
         for _trial in 0..200 {
             let backend = fake_backend();
-            backend.set_state(storm.state());
+            let state = get_storm_state(&mut storm);
+            set_fake_backend_state(&backend, state);
             let mut app = create_app_lifecycle();
             let pauses = counter(&app.on_pause);
             let resumes = counter(&app.on_resume);
             attach_app_lifecycle(&backend.capability, &mut app);
-            let fire_count = 1 + storm.next(30);
+            let fire_count = 1 + get_storm_next(&mut storm, 30);
             for _ in 0..fire_count {
-                backend.set_state(storm.state());
-                backend.fire();
+                let state = get_storm_state(&mut storm);
+                set_fake_backend_state(&backend, state);
+                fire_fake_backend_state_change(&backend);
             }
             assert!(read(&pauses).abs_diff(read(&resumes)) <= 1);
             detach_app_lifecycle(&mut app);
@@ -403,8 +402,8 @@ mod attach_app_lifecycle {
         );
         let changes = counter(&on_state_change);
         attach_app_lifecycle(&backend.capability, &mut app.lock().unwrap());
-        backend.fire();
-        backend.fire();
+        fire_fake_backend_state_change(&backend);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&changes), 1);
     }
 }
@@ -442,7 +441,7 @@ mod detach_app_lifecycle {
         let changes = counter(&app.on_state_change);
         attach_app_lifecycle(&backend.capability, &mut app);
         detach_app_lifecycle(&mut app);
-        backend.fire();
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&changes), 0);
     }
 
@@ -473,7 +472,7 @@ mod dispose_app_lifecycle {
         let changes = counter(&app.on_state_change);
         attach_app_lifecycle(&backend.capability, &mut app);
         dispose_app_lifecycle(&mut app);
-        backend.fire();
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&changes), 0);
     }
 
@@ -483,12 +482,12 @@ mod dispose_app_lifecycle {
         let mut app = create_app_lifecycle();
         let restores = counter(&app.on_restore_state);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Background);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Background);
+        fire_fake_backend_state_change(&backend);
         dispose_app_lifecycle(&mut app);
         attach_app_lifecycle(&backend.capability, &mut app);
-        backend.set_state(AppLifecycleState::Active);
-        backend.fire();
+        set_fake_backend_state(&backend, AppLifecycleState::Active);
+        fire_fake_backend_state_change(&backend);
         assert_eq!(read(&restores), 0);
     }
 }
@@ -583,7 +582,7 @@ mod get_app_lifecycle_state {
     #[test]
     fn reads_from_the_active_backend() {
         let backend = fake_backend();
-        backend.set_state(AppLifecycleState::Inactive);
+        set_fake_backend_state(&backend, AppLifecycleState::Inactive);
         assert_eq!(
             get_app_lifecycle_state(&backend.capability),
             AppLifecycleState::Inactive

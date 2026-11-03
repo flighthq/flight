@@ -21,7 +21,7 @@ use flight_meshgeometry::{
     get_mesh_geometry_triangle_vertex_indices, get_mesh_geometry_vertex_position,
 };
 use flight_node::contract::get_node_world_matrix4;
-use flight_node::{Node, NodeRef};
+use flight_node::{Node, NodeRef, get_node_runtime};
 use flight_scene3d::contract::{get_mesh_runtime, get_node3d_world_bounds};
 use flight_scene3d::{Mesh, NODE3D_TRAITS_KEY, Node3DNarrow};
 
@@ -237,7 +237,7 @@ fn intersect_mesh_triangles(
 
 // Narrows a scene node to the Mesh it is, through the scene's own Node3D family dispatch.
 pub(crate) fn narrow_mesh(node: &dyn Node) -> Option<&Mesh> {
-    let traits = node.node_runtime().traits.as_ref()?;
+    let traits = get_node_runtime(node).traits.as_ref()?;
     if !Arc::ptr_eq(&traits.key, &NODE3D_TRAITS_KEY) {
         return None;
     }
@@ -264,7 +264,7 @@ fn pick_node(
         let test_mesh = narrow_mesh(&*guard).is_some_and(|mesh| {
             return predicate.is_none_or(|predicate| predicate(mesh));
         });
-        (test_mesh, guard.node_runtime().children.clone())
+        (test_mesh, get_node_runtime(&*guard).children.clone())
     };
     if test_mesh {
         intersect_mesh_triangles(node, ray, max_distance, cull_backfaces, hit, on_hit);

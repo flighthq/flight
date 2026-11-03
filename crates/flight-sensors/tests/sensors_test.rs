@@ -47,131 +47,138 @@ struct ProviderState {
     unsubscribe_order: Mutex<Vec<&'static str>>,
 }
 
-impl ProviderState {
-    fn new() -> Self {
-        return ProviderState {
-            listeners: Mutex::new(Listeners {
-                absolute_orientation: None,
-                ambient_light: None,
-                barometer: None,
-                gravity: None,
-                linear_acceleration: None,
-                magnetometer: None,
-                motion: None,
-                orientation: None,
-                proximity: None,
-                quaternion: None,
-            }),
-            options_were_none: Mutex::new(Vec::new()),
-            permission_error: Mutex::new(None),
-            permission_sensor: Mutex::new(None),
-            permission_state: Mutex::new(SensorsPermissionState::Granted),
-            request_error: Mutex::new(None),
-            request_result: Mutex::new(true),
-            subscribe_order: Mutex::new(Vec::new()),
-            support: Mutex::new(Support {
-                ambient_light: false,
-                barometer: false,
-                gravity: false,
-                gyroscope: false,
-                linear_acceleration: false,
-                magnetometer: false,
-                motion: false,
-                orientation: false,
-                proximity: false,
-            }),
-            throw_on_subscribe: Mutex::new(None),
-            throw_on_unsubscribe: Mutex::new(None),
-            unsubscribe_order: Mutex::new(Vec::new()),
-        };
-    }
+fn create_provider_state() -> ProviderState {
+    return ProviderState {
+        listeners: Mutex::new(Listeners {
+            absolute_orientation: None,
+            ambient_light: None,
+            barometer: None,
+            gravity: None,
+            linear_acceleration: None,
+            magnetometer: None,
+            motion: None,
+            orientation: None,
+            proximity: None,
+            quaternion: None,
+        }),
+        options_were_none: Mutex::new(Vec::new()),
+        permission_error: Mutex::new(None),
+        permission_sensor: Mutex::new(None),
+        permission_state: Mutex::new(SensorsPermissionState::Granted),
+        request_error: Mutex::new(None),
+        request_result: Mutex::new(true),
+        subscribe_order: Mutex::new(Vec::new()),
+        support: Mutex::new(Support {
+            ambient_light: false,
+            barometer: false,
+            gravity: false,
+            gyroscope: false,
+            linear_acceleration: false,
+            magnetometer: false,
+            motion: false,
+            orientation: false,
+            proximity: false,
+        }),
+        throw_on_subscribe: Mutex::new(None),
+        throw_on_unsubscribe: Mutex::new(None),
+        unsubscribe_order: Mutex::new(Vec::new()),
+    };
+}
 
-    fn fire_absolute_orientation(&self, reading: &OrientationReading) {
-        let listener = self.listeners.lock().unwrap().absolute_orientation.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_absolute_orientation(state: &ProviderState, reading: &OrientationReading) {
+    let listener = state.listeners.lock().unwrap().absolute_orientation.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_ambient_light(&self, reading: &AmbientLightReading) {
-        let listener = self.listeners.lock().unwrap().ambient_light.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_ambient_light(state: &ProviderState, reading: &AmbientLightReading) {
+    let listener = state.listeners.lock().unwrap().ambient_light.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_barometer(&self, reading: &PressureReading) {
-        let listener = self.listeners.lock().unwrap().barometer.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_barometer(state: &ProviderState, reading: &PressureReading) {
+    let listener = state.listeners.lock().unwrap().barometer.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_gravity(&self, reading: &MotionReading) {
-        let listener = self.listeners.lock().unwrap().gravity.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_gravity(state: &ProviderState, reading: &MotionReading) {
+    let listener = state.listeners.lock().unwrap().gravity.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_linear_acceleration(&self, reading: &MotionReading) {
-        let listener = self.listeners.lock().unwrap().linear_acceleration.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_linear_acceleration(state: &ProviderState, reading: &MotionReading) {
+    let listener = state.listeners.lock().unwrap().linear_acceleration.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_magnetometer(&self, reading: &MotionReading) {
-        let listener = self.listeners.lock().unwrap().magnetometer.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_magnetometer(state: &ProviderState, reading: &MotionReading) {
+    let listener = state.listeners.lock().unwrap().magnetometer.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_motion(&self, acceleration: &MotionReading, rotation_rate: &RotationRateReading) {
-        let listener = self.listeners.lock().unwrap().motion.clone();
-        if let Some(listener) = listener {
-            listener(acceleration, rotation_rate);
-        }
+fn fire_motion(
+    state: &ProviderState,
+    acceleration: &MotionReading,
+    rotation_rate: &RotationRateReading,
+) {
+    let listener = state.listeners.lock().unwrap().motion.clone();
+    if let Some(listener) = listener {
+        listener(acceleration, rotation_rate);
     }
+}
 
-    fn fire_orientation(&self, reading: &OrientationReading) {
-        let listener = self.listeners.lock().unwrap().orientation.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_orientation(state: &ProviderState, reading: &OrientationReading) {
+    let listener = state.listeners.lock().unwrap().orientation.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_proximity(&self, reading: &ProximityReading) {
-        let listener = self.listeners.lock().unwrap().proximity.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_proximity(state: &ProviderState, reading: &ProximityReading) {
+    let listener = state.listeners.lock().unwrap().proximity.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn fire_quaternion(&self, reading: &QuaternionReading) {
-        let listener = self.listeners.lock().unwrap().quaternion.clone();
-        if let Some(listener) = listener {
-            listener(reading);
-        }
+fn fire_quaternion(state: &ProviderState, reading: &QuaternionReading) {
+    let listener = state.listeners.lock().unwrap().quaternion.clone();
+    if let Some(listener) = listener {
+        listener(reading);
     }
+}
 
-    fn record_subscribe(&self, name: &'static str, options: Option<SensorSubscribeOptions>) {
-        self.subscribe_order.lock().unwrap().push(name);
-        self.options_were_none
-            .lock()
-            .unwrap()
-            .push(options.is_none());
-        if *self.throw_on_subscribe.lock().unwrap() == Some(name) {
-            panic!("subscribe failed: {name}");
-        }
+fn record_subscribe(
+    state: &ProviderState,
+    name: &'static str,
+    options: Option<SensorSubscribeOptions>,
+) {
+    state.subscribe_order.lock().unwrap().push(name);
+    state
+        .options_were_none
+        .lock()
+        .unwrap()
+        .push(options.is_none());
+    if *state.throw_on_subscribe.lock().unwrap() == Some(name) {
+        panic!("subscribe failed: {name}");
     }
+}
 
-    fn record_unsubscribe(&self, name: &'static str) {
-        self.unsubscribe_order.lock().unwrap().push(name);
-        if *self.throw_on_unsubscribe.lock().unwrap() == Some(name) {
-            panic!("unsubscribe failed: {name}");
-        }
+fn record_unsubscribe(state: &ProviderState, name: &'static str) {
+    state.unsubscribe_order.lock().unwrap().push(name);
+    if *state.throw_on_unsubscribe.lock().unwrap() == Some(name) {
+        panic!("unsubscribe failed: {name}");
     }
 }
 
@@ -249,7 +256,7 @@ fn provider(state: &Arc<ProviderState>) -> HostSensorsCapability {
             return Box::pin(async move { result });
         }),
         subscribe_absolute_orientation: Arc::new(move |listener, options| {
-            absolute_subscription.record_subscribe("absolute_orientation", options);
+            record_subscribe(&absolute_subscription, "absolute_orientation", options);
             absolute_subscription
                 .listeners
                 .lock()
@@ -257,39 +264,39 @@ fn provider(state: &Arc<ProviderState>) -> HostSensorsCapability {
                 .absolute_orientation = Some(listener);
             let release_state = absolute_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("absolute_orientation");
+                record_unsubscribe(&release_state, "absolute_orientation");
                 release_state.listeners.lock().unwrap().absolute_orientation = None;
             });
         }),
         subscribe_ambient_light: Arc::new(move |listener, options| {
-            ambient_subscription.record_subscribe("ambient_light", options);
+            record_subscribe(&ambient_subscription, "ambient_light", options);
             ambient_subscription.listeners.lock().unwrap().ambient_light = Some(listener);
             let release_state = ambient_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("ambient_light");
+                record_unsubscribe(&release_state, "ambient_light");
                 release_state.listeners.lock().unwrap().ambient_light = None;
             });
         }),
         subscribe_barometer: Arc::new(move |listener, options| {
-            barometer_subscription.record_subscribe("barometer", options);
+            record_subscribe(&barometer_subscription, "barometer", options);
             barometer_subscription.listeners.lock().unwrap().barometer = Some(listener);
             let release_state = barometer_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("barometer");
+                record_unsubscribe(&release_state, "barometer");
                 release_state.listeners.lock().unwrap().barometer = None;
             });
         }),
         subscribe_gravity: Arc::new(move |listener, options| {
-            gravity_subscription.record_subscribe("gravity", options);
+            record_subscribe(&gravity_subscription, "gravity", options);
             gravity_subscription.listeners.lock().unwrap().gravity = Some(listener);
             let release_state = gravity_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("gravity");
+                record_unsubscribe(&release_state, "gravity");
                 release_state.listeners.lock().unwrap().gravity = None;
             });
         }),
         subscribe_linear_acceleration: Arc::new(move |listener, options| {
-            linear_subscription.record_subscribe("linear_acceleration", options);
+            record_subscribe(&linear_subscription, "linear_acceleration", options);
             linear_subscription
                 .listeners
                 .lock()
@@ -297,12 +304,12 @@ fn provider(state: &Arc<ProviderState>) -> HostSensorsCapability {
                 .linear_acceleration = Some(listener);
             let release_state = linear_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("linear_acceleration");
+                record_unsubscribe(&release_state, "linear_acceleration");
                 release_state.listeners.lock().unwrap().linear_acceleration = None;
             });
         }),
         subscribe_magnetometer: Arc::new(move |listener, options| {
-            magnetometer_subscription.record_subscribe("magnetometer", options);
+            record_subscribe(&magnetometer_subscription, "magnetometer", options);
             magnetometer_subscription
                 .listeners
                 .lock()
@@ -310,21 +317,21 @@ fn provider(state: &Arc<ProviderState>) -> HostSensorsCapability {
                 .magnetometer = Some(listener);
             let release_state = magnetometer_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("magnetometer");
+                record_unsubscribe(&release_state, "magnetometer");
                 release_state.listeners.lock().unwrap().magnetometer = None;
             });
         }),
         subscribe_motion: Arc::new(move |listener, options| {
-            motion_subscription.record_subscribe("motion", options);
+            record_subscribe(&motion_subscription, "motion", options);
             motion_subscription.listeners.lock().unwrap().motion = Some(listener);
             let release_state = motion_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("motion");
+                record_unsubscribe(&release_state, "motion");
                 release_state.listeners.lock().unwrap().motion = None;
             });
         }),
         subscribe_orientation: Arc::new(move |listener, options| {
-            orientation_subscription.record_subscribe("orientation", options);
+            record_subscribe(&orientation_subscription, "orientation", options);
             orientation_subscription
                 .listeners
                 .lock()
@@ -332,25 +339,25 @@ fn provider(state: &Arc<ProviderState>) -> HostSensorsCapability {
                 .orientation = Some(listener);
             let release_state = orientation_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("orientation");
+                record_unsubscribe(&release_state, "orientation");
                 release_state.listeners.lock().unwrap().orientation = None;
             });
         }),
         subscribe_proximity: Arc::new(move |listener, options| {
-            proximity_subscription.record_subscribe("proximity", options);
+            record_subscribe(&proximity_subscription, "proximity", options);
             proximity_subscription.listeners.lock().unwrap().proximity = Some(listener);
             let release_state = proximity_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("proximity");
+                record_unsubscribe(&release_state, "proximity");
                 release_state.listeners.lock().unwrap().proximity = None;
             });
         }),
         subscribe_quaternion: Arc::new(move |listener, options| {
-            quaternion_subscription.record_subscribe("quaternion", options);
+            record_subscribe(&quaternion_subscription, "quaternion", options);
             quaternion_subscription.listeners.lock().unwrap().quaternion = Some(listener);
             let release_state = quaternion_subscription.clone();
             return Arc::new(move || {
-                release_state.record_unsubscribe("quaternion");
+                record_unsubscribe(&release_state, "quaternion");
                 release_state.listeners.lock().unwrap().quaternion = None;
             });
         }),
@@ -376,7 +383,7 @@ mod attach_sensors {
 
     #[test]
     fn emits_every_provider_stream_and_motion_pair_in_source_order() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         let mut sensors = create_sensors();
         let counts = Arc::new(Mutex::new([0_usize; 11]));
         let motion_order = Arc::new(Mutex::new(Vec::new()));
@@ -455,16 +462,20 @@ mod attach_sensors {
             None,
         );
         attach_sensors(&provider(&state), &mut sensors);
-        state.fire_motion(&create_motion_reading(), &create_rotation_rate_reading());
-        state.fire_linear_acceleration(&create_motion_reading());
-        state.fire_gravity(&create_motion_reading());
-        state.fire_orientation(&create_orientation_reading());
-        state.fire_absolute_orientation(&create_orientation_reading());
-        state.fire_magnetometer(&create_motion_reading());
-        state.fire_ambient_light(&create_ambient_light_reading());
-        state.fire_barometer(&create_pressure_reading());
-        state.fire_proximity(&create_proximity_reading());
-        state.fire_quaternion(&create_quaternion_reading());
+        fire_motion(
+            &state,
+            &create_motion_reading(),
+            &create_rotation_rate_reading(),
+        );
+        fire_linear_acceleration(&state, &create_motion_reading());
+        fire_gravity(&state, &create_motion_reading());
+        fire_orientation(&state, &create_orientation_reading());
+        fire_absolute_orientation(&state, &create_orientation_reading());
+        fire_magnetometer(&state, &create_motion_reading());
+        fire_ambient_light(&state, &create_ambient_light_reading());
+        fire_barometer(&state, &create_pressure_reading());
+        fire_proximity(&state, &create_proximity_reading());
+        fire_quaternion(&state, &create_quaternion_reading());
         assert_eq!(*counts.lock().unwrap(), [1; 11]);
         assert_eq!(
             *motion_order.lock().unwrap(),
@@ -474,7 +485,7 @@ mod attach_sensors {
 
     #[test]
     fn preserves_provider_scratch_identity_and_passes_no_subscription_options() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         let host = provider(&state);
         let provider_ref = state.clone() as ProviderRef;
         assert!(Arc::ptr_eq(&host.provider, &provider_ref));
@@ -493,8 +504,8 @@ mod attach_sensors {
         );
         attach_sensors(&host, &mut sensors);
         let reading = create_motion_reading();
-        state.fire_gravity(&reading);
-        state.fire_gravity(&reading);
+        fire_gravity(&state, &reading);
+        fire_gravity(&state, &reading);
         assert_eq!(
             *seen.lock().unwrap(),
             [(&reading as *const MotionReading as usize); 2]
@@ -504,7 +515,7 @@ mod attach_sensors {
 
     #[test]
     fn subscribes_in_exact_order_and_does_not_release_partial_work_when_subscribe_throws() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         *state.throw_on_subscribe.lock().unwrap() = Some("gravity");
         let mut sensors = create_sensors();
         let result = catch_unwind(AssertUnwindSafe(|| {
@@ -521,7 +532,7 @@ mod attach_sensors {
 
     #[test]
     fn reattach_consumes_the_prior_bundle_before_subscribing_again() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         let host = provider(&state);
         let mut sensors = create_sensors();
         attach_sensors(&host, &mut sensors);
@@ -535,7 +546,11 @@ mod attach_sensors {
             Arc::new(move |_: &MotionReading| *captured.lock().unwrap() += 1),
             None,
         );
-        state.fire_motion(&create_motion_reading(), &create_rotation_rate_reading());
+        fire_motion(
+            &state,
+            &create_motion_reading(),
+            &create_rotation_rate_reading(),
+        );
         assert_eq!(*seen.lock().unwrap(), 1);
     }
 }
@@ -918,7 +933,7 @@ mod detach_sensors {
 
     #[test]
     fn is_safe_unattached_and_stops_delivery_after_an_exact_ordered_release() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         let mut sensors = create_sensors();
         detach_sensors(&mut sensors);
         attach_sensors(&provider(&state), &mut sensors);
@@ -945,14 +960,18 @@ mod detach_sensors {
             Arc::new(move |_: &MotionReading| *captured.lock().unwrap() += 1),
             None,
         );
-        state.fire_motion(&create_motion_reading(), &create_rotation_rate_reading());
+        fire_motion(
+            &state,
+            &create_motion_reading(),
+            &create_rotation_rate_reading(),
+        );
         assert_eq!(*seen.lock().unwrap(), 0);
         assert!(!has_entity_binding(&sensors));
     }
 
     #[test]
     fn stops_at_the_first_throw_and_forgets_the_bundle_only_after_a_complete_retry() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         let mut sensors = create_sensors();
         attach_sensors(&provider(&state), &mut sensors);
         *state.throw_on_unsubscribe.lock().unwrap() = Some("barometer");
@@ -975,7 +994,7 @@ mod dispose_sensors {
 
     #[test]
     fn delegates_to_the_same_release_without_clearing_signals() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         let mut sensors = create_sensors();
         connect_signal(
             &sensors.on_accelerometer,
@@ -994,7 +1013,7 @@ mod get_sensors_permission_state {
 
     #[test]
     fn forwards_the_optional_sensor_and_preserves_rejection() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         *state.permission_state.lock().unwrap() = SensorsPermissionState::Prompt;
         let host = provider(&state);
         assert_eq!(
@@ -1023,7 +1042,7 @@ mod has_accelerometer {
 
     #[test]
     fn delegates_to_motion_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().motion = true;
         assert!(has_accelerometer(&provider(&state)));
     }
@@ -1034,7 +1053,7 @@ mod has_ambient_light_sensor {
 
     #[test]
     fn delegates_to_ambient_light_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().ambient_light = true;
         assert!(has_ambient_light_sensor(&provider(&state)));
     }
@@ -1045,7 +1064,7 @@ mod has_barometer {
 
     #[test]
     fn delegates_to_barometer_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().barometer = true;
         assert!(has_barometer(&provider(&state)));
     }
@@ -1056,7 +1075,7 @@ mod has_gravity_sensor {
 
     #[test]
     fn delegates_to_gravity_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().gravity = true;
         assert!(has_gravity_sensor(&provider(&state)));
     }
@@ -1067,7 +1086,7 @@ mod has_gyroscope {
 
     #[test]
     fn delegates_to_gyroscope_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().gyroscope = true;
         assert!(has_gyroscope(&provider(&state)));
     }
@@ -1078,7 +1097,7 @@ mod has_linear_acceleration_sensor {
 
     #[test]
     fn delegates_to_linear_acceleration_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().linear_acceleration = true;
         assert!(has_linear_acceleration_sensor(&provider(&state)));
     }
@@ -1089,7 +1108,7 @@ mod has_magnetometer {
 
     #[test]
     fn delegates_to_magnetometer_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().magnetometer = true;
         assert!(has_magnetometer(&provider(&state)));
     }
@@ -1100,7 +1119,7 @@ mod has_orientation_sensor {
 
     #[test]
     fn delegates_to_orientation_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().orientation = true;
         assert!(has_orientation_sensor(&provider(&state)));
     }
@@ -1111,7 +1130,7 @@ mod has_proximity_sensor {
 
     #[test]
     fn delegates_to_proximity_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         state.support.lock().unwrap().proximity = true;
         assert!(has_proximity_sensor(&provider(&state)));
     }
@@ -1262,7 +1281,7 @@ mod initialize_sensors {
 
     #[test]
     fn replaces_signals_and_detaches_an_existing_bundle() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         let mut out = create_sensors();
         attach_sensors(&provider(&state), &mut out);
         initialize_sensors(&mut out);
@@ -1276,7 +1295,7 @@ mod is_sensors_supported {
 
     #[test]
     fn delegates_to_motion_support() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         assert!(!is_sensors_supported(&provider(&state)));
         state.support.lock().unwrap().motion = true;
         assert!(is_sensors_supported(&provider(&state)));
@@ -1288,7 +1307,7 @@ mod request_sensors_permission {
 
     #[test]
     fn forwards_the_boolean_and_preserves_rejection() {
-        let state = Arc::new(ProviderState::new());
+        let state = Arc::new(create_provider_state());
         *state.request_result.lock().unwrap() = false;
         let host = provider(&state);
         assert_eq!(block_on(request_sensors_permission(&host)), Ok(false));

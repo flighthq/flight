@@ -27,36 +27,34 @@ struct FakeProvider {
     change: HostConnectivityChangeCapability,
 }
 
-impl FakeProvider {
-    fn set(&self, edit: impl FnOnce(&mut ConnectivityStatus)) {
-        edit(&mut self.state.lock().unwrap().current);
-    }
+fn edit_fake_provider_status(provider: &FakeProvider, edit: impl FnOnce(&mut ConnectivityStatus)) {
+    edit(&mut provider.state.lock().unwrap().current);
+}
 
-    fn fire(&self) {
-        let listeners: Vec<ConnectivityChangeListener> = self
-            .state
-            .lock()
-            .unwrap()
-            .listeners
-            .iter()
-            .map(|(_, l)| l.clone())
-            .collect();
-        for listener in listeners {
-            listener();
-        }
+fn fire_fake_provider_change(provider: &FakeProvider) {
+    let listeners: Vec<ConnectivityChangeListener> = provider
+        .state
+        .lock()
+        .unwrap()
+        .listeners
+        .iter()
+        .map(|(_, listener)| listener.clone())
+        .collect();
+    for listener in listeners {
+        listener();
     }
+}
 
-    fn active_subscriptions(&self) -> usize {
-        return self.state.lock().unwrap().listeners.len();
-    }
+fn get_fake_provider_active_subscription_count(provider: &FakeProvider) -> usize {
+    return provider.state.lock().unwrap().listeners.len();
+}
 
-    fn destroy_calls(&self) -> usize {
-        return self.state.lock().unwrap().destroys;
-    }
+fn get_fake_provider_destroy_call_count(provider: &FakeProvider) -> usize {
+    return provider.state.lock().unwrap().destroys;
+}
 
-    fn unsubscribe_calls(&self) -> usize {
-        return self.state.lock().unwrap().unsubscribes;
-    }
+fn get_fake_provider_unsubscribe_call_count(provider: &FakeProvider) -> usize {
+    return provider.state.lock().unwrap().unsubscribes;
 }
 
 fn unreported_status() -> ConnectivityStatus {
@@ -174,12 +172,12 @@ mod attach_connectivity {
             &provider.change,
             &mut connectivity
         ));
-        provider.set(|s| {
+        edit_fake_provider_status(&provider, |s| {
             s.metered = true;
             s.online = Some(false);
             s.type_ = ConnectivityConnectionType::Cellular;
         });
-        provider.fire();
+        fire_fake_provider_change(&provider);
         let changes = changes.lock().unwrap();
         assert_eq!(changes.len(), 1);
         assert!(changes[0].metered);
@@ -199,10 +197,10 @@ mod attach_connectivity {
         let mut connectivity = create_connectivity();
         let offline = collect(&connectivity.on_offline);
         attach_connectivity(&provider.status, &provider.change, &mut connectivity);
-        provider.fire();
+        fire_fake_provider_change(&provider);
         assert_eq!(offline.lock().unwrap().len(), 0);
-        provider.set(|s| s.online = Some(false));
-        provider.fire();
+        edit_fake_provider_status(&provider, |s| s.online = Some(false));
+        fire_fake_provider_change(&provider);
         assert_eq!(offline.lock().unwrap().len(), 1);
     }
 
@@ -215,7 +213,7 @@ mod attach_connectivity {
             &provider.change,
             &mut connectivity
         ));
-        assert_eq!(provider.active_subscriptions(), 0);
+        assert_eq!(get_fake_provider_active_subscription_count(&provider), 0);
     }
 
     #[test]
@@ -226,12 +224,12 @@ mod attach_connectivity {
         let changes = collect(&connectivity.on_change);
         attach_connectivity(&a.status, &a.change, &mut connectivity);
         attach_connectivity(&b.status, &b.change, &mut connectivity);
-        assert_eq!(a.unsubscribe_calls(), 1);
-        assert_eq!(a.active_subscriptions(), 0);
-        assert_eq!(b.active_subscriptions(), 1);
-        a.fire();
+        assert_eq!(get_fake_provider_unsubscribe_call_count(&a), 1);
+        assert_eq!(get_fake_provider_active_subscription_count(&a), 0);
+        assert_eq!(get_fake_provider_active_subscription_count(&b), 1);
+        fire_fake_provider_change(&a);
         assert_eq!(changes.lock().unwrap().len(), 0);
-        b.fire();
+        fire_fake_provider_change(&b);
         assert_eq!(changes.lock().unwrap().len(), 1);
     }
 
@@ -241,9 +239,11 @@ mod attach_connectivity {
         let mut connectivity = create_connectivity();
         let changes = collect(&connectivity.on_change);
         attach_connectivity(&provider.status, &provider.change, &mut connectivity);
-        provider.fire();
-        provider.set(|s| s.type_ = ConnectivityConnectionType::Cellular);
-        provider.fire();
+        fire_fake_provider_change(&provider);
+        edit_fake_provider_status(&provider, |s| {
+            s.type_ = ConnectivityConnectionType::Cellular
+        });
+        fire_fake_provider_change(&provider);
         let changes = changes.lock().unwrap();
         assert_eq!(changes[0].type_, ConnectivityConnectionType::Wifi);
         assert_eq!(changes[1].type_, ConnectivityConnectionType::Cellular);
@@ -269,10 +269,10 @@ mod attach_connectivity {
             let mut c = connectivity.lock().unwrap();
             attach_connectivity(&provider.status, &provider.change, &mut c);
         }
-        provider.fire();
+        fire_fake_provider_change(&provider);
         assert_eq!(*deliveries.lock().unwrap(), 1);
-        assert_eq!(provider.unsubscribe_calls(), 1);
-        provider.fire();
+        assert_eq!(get_fake_provider_unsubscribe_call_count(&provider), 1);
+        fire_fake_provider_change(&provider);
         assert_eq!(*deliveries.lock().unwrap(), 1);
     }
 }
@@ -307,7 +307,7 @@ mod destroy_connectivity {
         let provider = default_provider();
         destroy_connectivity(&provider.change);
         destroy_connectivity(&provider.change);
-        assert_eq!(provider.destroy_calls(), 1);
+        assert_eq!(get_fake_provider_destroy_call_count(&provider), 1);
         assert!((provider.change.subscribe)(Arc::new(|| {})).is_none());
     }
 }
@@ -322,7 +322,7 @@ mod detach_connectivity {
         attach_connectivity(&provider.status, &provider.change, &mut connectivity);
         detach_connectivity(&mut connectivity);
         detach_connectivity(&mut connectivity);
-        assert_eq!(provider.unsubscribe_calls(), 1);
+        assert_eq!(get_fake_provider_unsubscribe_call_count(&provider), 1);
     }
 }
 
@@ -574,7 +574,7 @@ mod dispose_connectivity {
         connect_signal(&connectivity.on_online, Arc::new(|_: &()| {}), None);
         dispose_connectivity(&mut connectivity);
         dispose_connectivity(&mut connectivity);
-        assert_eq!(provider.unsubscribe_calls(), 1);
+        assert_eq!(get_fake_provider_unsubscribe_call_count(&provider), 1);
         assert_eq!(
             [
                 has_signal_slots(&connectivity.on_change),

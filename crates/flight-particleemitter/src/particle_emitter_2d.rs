@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use flight_entity::Ref;
 use flight_geometry::{Rectangle, Vector2, copy_rectangle, create_rectangle};
-use flight_node::Node;
+use flight_node::{Node, invalidate_node_local_bounds};
 use flight_scene2d::{Node2DRuntime, Node2DRuntimeMethods, create_node2d, create_node2d_runtime};
 use flight_scene3d::Node3D;
+use flight_scene3d::contract::get_node3d_runtime;
 
 use flight_particles::{ParticleEmitterConfig, ParticleEmitterState};
 
@@ -141,7 +142,7 @@ pub fn get_particle_emitter_2d_runtime(source: &ParticleEmitter2D) -> &ParticleE
 }
 
 pub fn get_particle_emitter_3d_runtime(source: &dyn Node3D) -> &flight_scene3d::Node3DRuntime {
-    return source.node3d_fields().node3d_runtime();
+    return get_node3d_runtime(source);
 }
 
 pub fn is_particle_emitter_3d(node: &dyn Node) -> bool {
@@ -163,28 +164,29 @@ pub fn set_particle_emitter_2d_local_bounds_rectangle(
     target: &flight_node::NodeRef,
     rect: &Rectangle,
 ) {
-    let mut guard = target.write().unwrap();
-    let pe = guard
-        .as_any_mut()
-        .downcast_mut::<ParticleEmitter2D>()
-        .unwrap();
-    if pe
-        .particle_emitter_2d_runtime
-        .local_bounds_rectangle
-        .is_none()
     {
-        pe.particle_emitter_2d_runtime.local_bounds_rectangle =
-            Some(create_rectangle(0.0, 0.0, 0.0, 0.0));
-    }
-    copy_rectangle(
-        pe.particle_emitter_2d_runtime
+        let mut guard = target.write().unwrap();
+        let pe = guard
+            .as_any_mut()
+            .downcast_mut::<ParticleEmitter2D>()
+            .unwrap();
+        if pe
+            .particle_emitter_2d_runtime
             .local_bounds_rectangle
-            .as_mut()
-            .unwrap(),
-        rect,
-    );
-    let runtime = pe.node_runtime_mut();
-    runtime.local_bounds_id = runtime.local_bounds_id.wrapping_add(1);
+            .is_none()
+        {
+            pe.particle_emitter_2d_runtime.local_bounds_rectangle =
+                Some(create_rectangle(0.0, 0.0, 0.0, 0.0));
+        }
+        copy_rectangle(
+            pe.particle_emitter_2d_runtime
+                .local_bounds_rectangle
+                .as_mut()
+                .unwrap(),
+            rect,
+        );
+    }
+    invalidate_node_local_bounds(target);
 }
 
 pub fn set_particle_emitter_2d_particle(

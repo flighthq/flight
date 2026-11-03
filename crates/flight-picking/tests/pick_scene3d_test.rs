@@ -10,7 +10,7 @@ use flight_meshgeometry::{
     MeshMorphTarget, PrimitiveTopology, create_mesh_geometry_from_attributes,
 };
 use flight_node::contract::invalidate_node_local_transform;
-use flight_node::{NodeRef, add_node_child};
+use flight_node::{NodeRef, add_node_child, set_node_enabled};
 use flight_picking::contract::*;
 use flight_scene3d::contract::{get_mesh_runtime, update_mesh_morph};
 use flight_scene3d::{Mesh, Node3DFields, create_node3d};
@@ -208,7 +208,7 @@ mod pick_scene3d {
         let camera = make_camera();
         let scene = group();
         let disabled = group();
-        disabled.write().unwrap().node_fields_mut().enabled = false;
+        set_node_enabled(&disabled, false);
         add_node_child(&disabled, &node(&box_mesh()));
         add_node_child(&scene, &disabled);
         let mut out = create_scene3d_hit();

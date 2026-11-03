@@ -1,5 +1,5 @@
 use flight_geometry::{create_rectangle, create_vector2};
-use flight_node::{Node, NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
+use flight_node::{NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
 use flight_textureatlas::{
     TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas,
     create_texture_atlas_region, set_texture_atlas_region,
@@ -318,7 +318,7 @@ mod create_particle_emitter_2d {
         assert!(guard.data.ids.is_empty());
         assert_eq!(guard.data.particle_count, 0);
         assert!(guard.data.transforms.is_empty());
-        assert_eq!(guard.node_fields().kind, PARTICLE_EMITTER_2D_KIND);
+        assert_eq!(guard.kind, PARTICLE_EMITTER_2D_KIND);
     }
 
     #[test]

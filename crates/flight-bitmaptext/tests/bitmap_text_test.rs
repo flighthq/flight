@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use flight_geometry::create_rectangle;
-use flight_node::Node;
+use flight_node::get_node_runtime;
 
 use super::*;
 
@@ -49,9 +49,9 @@ mod create_bitmap_text {
     fn creates_a_leaf_with_one_empty_page() {
         let text = create_bitmap_text(Some(create_test_glyph_source_without_kerning()));
         let text = text.read().unwrap();
-        assert_eq!(text.node_fields().kind, BITMAP_TEXT_KIND);
+        assert_eq!(text.kind, BITMAP_TEXT_KIND);
         assert_eq!(get_bitmap_text_pages(&text).len(), 1);
-        assert!(text.node_runtime().children.is_none());
+        assert!(get_node_runtime(&*text).children.is_none());
     }
 
     #[test]

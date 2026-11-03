@@ -1,11 +1,13 @@
 use flight_signals::emit_signal;
 
 use crate::internal::initialize_tween;
-use crate::types::{ErasedTweenHandle, Tween, TweenManager};
+use crate::types::{
+    ErasedTweenHandle, Tween, TweenManager, erase_tween_handle, write_tween_ops_values,
+};
 
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
 pub fn complete_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) {
-    complete_tween_erased(&tween.to_erased());
+    complete_tween_erased(&erase_tween_handle(tween));
 }
 
 pub(crate) fn complete_tween_erased(handle: &ErasedTweenHandle) {
@@ -20,7 +22,7 @@ pub(crate) fn complete_tween_erased(handle: &ErasedTweenHandle) {
         let inner = handle.data.read().unwrap();
         let effective_t = if inner.common.reverse { 0.0 } else { 1.0 };
         let eased_t = (inner.common.ease)(effective_t);
-        inner.ops.write_values(eased_t, inner.common.snapping);
+        write_tween_ops_values(&inner, eased_t, inner.common.snapping);
         inner.common.on_complete.clone()
     };
 
@@ -53,7 +55,7 @@ fn update_tween(handle: &ErasedTweenHandle, delta_time: f32) {
         let t = (active_elapsed / inner.common.duration).min(1.0);
         let effective_t = if inner.common.reverse { 1.0 - t } else { t };
         let eased_t = (inner.common.ease)(effective_t);
-        inner.ops.write_values(eased_t, inner.common.snapping);
+        write_tween_ops_values(&inner, eased_t, inner.common.snapping);
         (
             t,
             inner.common.on_update.clone(),

@@ -175,6 +175,10 @@ pub fn create_tween_context() -> TweenContext {
     };
 }
 
+pub(crate) fn initialize_tween_ops(inner: &mut ErasedTweenInner, smart_rotation: bool) {
+    TweenOps::initialize(&mut *inner.ops, smart_rotation);
+}
+
 fn default_ease(t: f32) -> f32 {
     return t;
 }
@@ -185,16 +189,28 @@ pub fn equals_tween<T: ?Sized + Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T
     return Arc::ptr_eq(&a.data, &b.data);
 }
 
+pub(crate) fn erase_tween_handle<T: ?Sized + Send + Sync + 'static>(
+    tween: &Tween<T>,
+) -> ErasedTweenHandle {
+    return ErasedTweenHandle {
+        data: tween.data.clone(),
+    };
+}
+
 pub(crate) fn erased_has_property(handle: &ErasedTweenHandle, key: &str) -> bool {
     let inner = handle.data.read().unwrap();
     if let Some(ref reg_keys) = inner.registration_property_keys {
         return reg_keys.iter().any(|k| k == key);
     }
-    return inner.ops.has_property(key);
+    return TweenOps::has_property(&*inner.ops, key);
 }
 
 pub(crate) fn erased_target_key(handle: &ErasedTweenHandle) -> usize {
-    return handle.data.read().unwrap().ops.target_key();
+    return TweenOps::target_key(&*handle.data.read().unwrap().ops);
+}
+
+pub(crate) fn get_tween_ops_property_keys(inner: &ErasedTweenInner) -> Vec<String> {
+    return TweenOps::property_keys(&*inner.ops);
 }
 
 pub(crate) fn target_key_from_ref<T: ?Sized>(target: &Ref<T>) -> usize {
@@ -209,6 +225,10 @@ pub fn tween_with<T: ?Sized>(
     to: f32,
 ) -> TweenProp<T> {
     return TweenProp { get, key, to };
+}
+
+pub(crate) fn write_tween_ops_values(inner: &ErasedTweenInner, eased_t: f32, snapping: bool) {
+    TweenOps::write_values(&*inner.ops, eased_t, snapping);
 }
 
 // ── Impl blocks ──────────────────────────────────────────────────────
@@ -279,12 +299,6 @@ impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
             data: inner,
             _marker: PhantomData,
             runtime: EntityRuntimeSlot::default(),
-        };
-    }
-
-    pub(crate) fn to_erased(&self) -> ErasedTweenHandle {
-        return ErasedTweenHandle {
-            data: self.data.clone(),
         };
     }
 }

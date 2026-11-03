@@ -1,5 +1,6 @@
 use crate::support::*;
-use flight_geometry::create_matrix4;
+use flight_geometry::{create_matrix4, create_transform3d};
+use flight_node::contract::get_node_transform3d;
 use flight_node::{NodeRef, add_node_child, get_node_parent, invalidate_node_local_transform};
 use flight_skeleton3d::contract::*;
 use std::sync::{Arc, Mutex};
@@ -81,9 +82,14 @@ mod clone_skeleton3d_joint_hierarchy {
             Arc::new(move |joint, index| {
                 sink.lock().unwrap().push(index);
                 assert!(joint.try_write().is_ok());
-                let joint = joint.read().unwrap();
-                let fields = joint.node3d_fields();
-                let out = super::joint(fields.position.x, fields.position.y, fields.position.z);
+                let node: NodeRef = joint.clone();
+                let mut transform = create_transform3d();
+                get_node_transform3d(&mut transform, &node);
+                let out = super::joint(
+                    transform.position.x,
+                    transform.position.y,
+                    transform.position.z,
+                );
                 return out;
             }),
         );

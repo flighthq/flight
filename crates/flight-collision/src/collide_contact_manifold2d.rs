@@ -10,8 +10,8 @@ pub fn collide_contact_manifold2d(
 ) -> bool {
     clear_collision_contact_manifold2d(out);
 
-    let rank_a = contact_shape_kind_rank(a.kind());
-    let rank_b = contact_shape_kind_rank(b.kind());
+    let rank_a = contact_shape_kind_rank(get_collision_shape2d_kind(a));
+    let rank_b = contact_shape_kind_rank(get_collision_shape2d_kind(b));
 
     // Area-less kinds cannot produce contact manifolds
     if rank_a < 0 || rank_b < 0 {

@@ -40,8 +40,16 @@ fn bitmap_font_constructors_match_their_free_functions() {
     let method = BitmapFont::new(&state, &create_test_data());
     let function = create_bitmap_font(&state, &create_test_data());
     assert_eq!(
-        method.get_glyph(65).unwrap().read().unwrap().width,
-        function.get_glyph(65).unwrap().read().unwrap().width
+        get_bitmap_font_glyph(&method, 65)
+            .unwrap()
+            .read()
+            .unwrap()
+            .width,
+        get_bitmap_font_glyph(&function, 65)
+            .unwrap()
+            .read()
+            .unwrap()
+            .width
     );
     let mut initialized: BitmapFont = allocate_entity();
     initialized.initialize(&state, &create_test_data());
@@ -81,7 +89,7 @@ fn bitmap_font_methods_match_their_free_functions() {
     let state = BitmapFontGuardState::new();
     let font = BitmapFont::new(&state, &create_test_data());
     assert!(Arc::ptr_eq(
-        &font.get_glyph(65).unwrap(),
+        &get_bitmap_font_glyph(&font, 65).unwrap(),
         &get_bitmap_font_glyph(&font, 65).unwrap()
     ));
     assert_eq!(
@@ -107,7 +115,7 @@ fn bitmap_font_methods_match_their_free_functions() {
     let source = font.create_glyph_source();
     assert!(Arc::ptr_eq(
         &(source.read().unwrap().get_glyph_entry)(65).unwrap(),
-        &font.get_glyph(65).unwrap()
+        &get_bitmap_font_glyph(&font, 65).unwrap()
     ));
 }
 

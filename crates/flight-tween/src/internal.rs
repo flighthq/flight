@@ -6,13 +6,13 @@ use flight_signals::create_signal;
 use crate::types::{
     EasingFunction, ErasedTweenHandle, ErasedTweenInner, ErasedTweenRef, PropertyState, Tween,
     TweenCommon, TweenManager, TweenOptions, TweenProp, TypedTweenOps, erased_has_property,
-    erased_target_key,
+    erased_target_key, get_tween_ops_property_keys, initialize_tween_ops,
 };
 
 pub(crate) fn initialize_tween(handle: &ErasedTweenHandle) {
     let mut inner = handle.data.write().unwrap();
     let smart_rotation = inner.common.smart_rotation;
-    inner.ops.initialize(smart_rotation);
+    initialize_tween_ops(&mut inner, smart_rotation);
     inner.common.initialized = true;
 }
 
@@ -44,7 +44,7 @@ pub(crate) fn add_tween_to_manager(
     if overwrite {
         let keys_to_check: Vec<String> = match registration_property_keys {
             Some(keys) => keys.to_vec(),
-            None => handle.data.read().unwrap().ops.property_keys(),
+            None => get_tween_ops_property_keys(&handle.data.read().unwrap()),
         };
 
         for i in (0..list.len()).rev() {

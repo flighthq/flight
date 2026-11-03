@@ -1,7 +1,7 @@
 use crate::update_mesh_skin::{cached_bind_pose, mesh_inputs, mesh_mut};
 use crate::{compute_skeleton3d_joint_matrices, get_mesh_skin_conservative_bounds};
 use flight_geometry::create_aabb;
-use flight_node::NodeRef;
+use flight_node::{NodeRef, get_node_runtime};
 // flight-lint: allow(conform-params) D16 preserve original Mesh NodeRef without holding a node lock across hierarchy resolution
 pub fn prepare_mesh_skinning(mesh: &NodeRef) {
     let Some(input) = mesh_inputs(mesh) else {
@@ -27,7 +27,10 @@ pub fn prepare_scene3d_skinning(scene: &NodeRef) {
         if !node.node_fields().enabled {
             return;
         }
-        node.node_runtime().children.clone().unwrap_or_default()
+        get_node_runtime(&*node)
+            .children
+            .clone()
+            .unwrap_or_default()
     };
     prepare_mesh_skinning(scene);
     for child in children {

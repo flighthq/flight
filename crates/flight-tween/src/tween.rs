@@ -6,7 +6,8 @@ use crate::internal::{add_tween_to_manager, initialize_tween, make_tween};
 use crate::tween_manager::default_manager;
 use crate::types::{
     ErasedTweenHandle, StopTweenOptions, Tween, TweenContext, TweenManager, TweenOptions,
-    TweenProp, erased_has_property, target_key_from_ref,
+    TweenProp, erase_tween_handle, erased_has_property, get_tween_ops_property_keys,
+    target_key_from_ref, write_tween_ops_values,
 };
 
 pub fn create_tween<T: ?Sized + Send + Sync + 'static>(
@@ -19,7 +20,7 @@ pub fn create_tween<T: ?Sized + Send + Sync + 'static>(
     let default_ease = manager.data.read().unwrap().default_ease;
     let tween = make_tween(target, duration, props, options, default_ease);
     let overwrite = options.and_then(|o| o.overwrite).unwrap_or(true);
-    let handle = tween.to_erased();
+    let handle = erase_tween_handle(&tween);
     add_tween_to_manager(manager, &handle, overwrite, None, None);
     return tween;
 }
@@ -104,7 +105,7 @@ pub fn get_tween_on_yoyo<T: ?Sized + Send + Sync + 'static>(
 
 // flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_property_keys<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> Vec<String> {
-    return tween.data.read().unwrap().ops.property_keys();
+    return get_tween_ops_property_keys(&tween.data.read().unwrap());
 }
 
 // flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
@@ -251,7 +252,7 @@ pub fn stop_tween<T: ?Sized + Send + Sync + 'static>(
     tween: &Tween<T>,
     options: Option<&StopTweenOptions>,
 ) {
-    stop_tween_erased(&tween.to_erased(), options);
+    stop_tween_erased(&erase_tween_handle(tween), options);
 }
 
 pub(crate) fn stop_tween_erased(handle: &ErasedTweenHandle, options: Option<&StopTweenOptions>) {
@@ -271,7 +272,7 @@ pub(crate) fn stop_tween_erased(handle: &ErasedTweenHandle, options: Option<&Sto
             let inner = handle.data.read().unwrap();
             let effective_t = if inner.common.reverse { 0.0 } else { 1.0 };
             let eased_t = (inner.common.ease)(effective_t);
-            inner.ops.write_values(eased_t, inner.common.snapping);
+            write_tween_ops_values(&inner, eased_t, inner.common.snapping);
             inner.common.on_complete.clone()
         };
 
