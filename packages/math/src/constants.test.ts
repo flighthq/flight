@@ -36,10 +36,10 @@ describe('circleKappa', () => {
 
 describe('degToRadConstant', () => {
   it('converts 180 degrees to pi', () => {
-    assertClose(180.0 * DEG_TO_RAD, PI, 10);
+    assertClose(180.0 * DEG_TO_RAD, Math.PI, 10);
   });
   it('converts 360 degrees to two pi', () => {
-    assertClose(360.0 * DEG_TO_RAD, PI * 2.0, 10);
+    assertClose(360.0 * DEG_TO_RAD, Math.PI * 2.0, 10);
   });
 });
 
@@ -54,13 +54,13 @@ describe('epsilonConstant', () => {
 
 describe('halfPi', () => {
   it('equals pi over 2', () => {
-    assertClose(HALF_PI, PI / 2.0, 10);
+    assertClose(HALF_PI, Math.PI / 2.0, 10);
   });
 });
 
 describe('radToDegConstant', () => {
   it('converts pi radians to 180 degrees', () => {
-    assertClose(PI * RAD_TO_DEG, 180.0, 10);
+    assertClose(Math.PI * RAD_TO_DEG, 180.0, 10);
   });
   it('is the reciprocal of deg to rad', () => {
     assertClose(RAD_TO_DEG * DEG_TO_RAD, 1.0, 10);
@@ -69,6 +69,6 @@ describe('radToDegConstant', () => {
 
 describe('tau', () => {
   it('equals two pi', () => {
-    assertClose(TAU, PI * 2.0, 10);
+    assertClose(TAU, Math.PI * 2.0, 10);
   });
 });

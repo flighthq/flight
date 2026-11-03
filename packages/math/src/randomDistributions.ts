@@ -27,13 +27,13 @@ export function pick<T>(random: RandomSource, items: Readonly<T[]>): T | undefin
  * positive.
  */
 export function randomExponential(random: RandomSource, rate?: number): number {
-  rate = rate ?? 1.0;
-  if (!Number.isFinite(rate) || rate <= 0.0) {
+  const rate_1 = rate ?? 1.0;
+  if (!Number.isFinite(rate_1) || rate_1 <= 0.0) {
     throw new RangeError('randomExponential: rate must be finite and > 0');
   }
   const u = random();
   const safeU = u === 0.0 ? ZERO_SAMPLE_EPSILON : u;
-  return -Math.log(safeU) / rate;
+  return -Math.log(safeU) / rate_1;
 }
 
 /**
@@ -43,14 +43,14 @@ export function randomExponential(random: RandomSource, rate?: number): number {
  * Each call consumes two values from `random` and discards one.
  */
 export function randomGaussian(random: RandomSource, mean?: number, standardDeviation?: number): number {
-  mean = mean ?? 0.0;
-  standardDeviation = standardDeviation ?? 1.0;
+  const mean_1 = mean ?? 0.0;
+  const standardDeviation_1 = standardDeviation ?? 1.0;
   const u1 = random();
   const u2 = random();
   const safeU1 = u1 === 0.0 ? ZERO_SAMPLE_EPSILON : u1;
   const angle = Math.PI * 2 * u2;
   const z = Math.sqrt(-2.0 * Math.log(safeU1)) * Math.cos(angle);
-  return mean + z * standardDeviation;
+  return mean_1 + z * standardDeviation_1;
 }
 
 /**
@@ -65,15 +65,15 @@ export function randomGaussianPair(
   mean?: number,
   standardDeviation?: number,
 ): readonly [number, number] {
-  mean = mean ?? 0.0;
-  standardDeviation = standardDeviation ?? 1.0;
+  const mean_1 = mean ?? 0.0;
+  const standardDeviation_1 = standardDeviation ?? 1.0;
   const u1 = random();
   const u2 = random();
   const safeU1 = u1 === 0.0 ? ZERO_SAMPLE_EPSILON : u1;
   const mag = Math.sqrt(-2.0 * Math.log(safeU1));
   const angle = Math.PI * 2 * u2;
-  const z0 = mean + mag * Math.cos(angle) * standardDeviation;
-  const z1 = mean + mag * Math.sin(angle) * standardDeviation;
+  const z0 = mean_1 + mag * Math.cos(angle) * standardDeviation_1;
+  const z1 = mean_1 + mag * Math.sin(angle) * standardDeviation_1;
   return [z0, z1];
 }
 
@@ -162,11 +162,11 @@ export function randomOnUnitSphere(out: Float32Array, random: RandomSource): voi
  * lambda (lambda <= ~30). Throws if `lambda` is not finite or not positive.
  */
 export function randomPoisson(random: RandomSource, lambda?: number): number {
-  lambda = lambda ?? 1.0;
-  if (!Number.isFinite(lambda) || lambda <= 0.0) {
+  const lambda_1 = lambda ?? 1.0;
+  if (!Number.isFinite(lambda_1) || lambda_1 <= 0.0) {
     throw new RangeError('randomPoisson: lambda must be finite and > 0');
   }
-  const limit = Math.exp(-lambda);
+  const limit = Math.exp(-lambda_1);
   let k = 0;
   let product = random();
   while (product > limit) {

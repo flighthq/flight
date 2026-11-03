@@ -31,17 +31,17 @@ export function factorial(n: number): number {
  * is undefined).
  */
 export function gcd(a: number, b: number): number {
-  a = Math.abs(a);
-  b = Math.abs(b);
-  if (a === 0 && b === 0) {
+  let a_1 = Math.abs(a);
+  let b_1 = Math.abs(b);
+  if (a_1 === 0 && b_1 === 0) {
     throw new RangeError('gcd: both arguments must not be 0');
   }
-  while (b !== 0) {
-    const t = b;
-    b = a % b;
-    a = t;
+  while (b_1 !== 0) {
+    const t = b_1;
+    b_1 = a_1 % b_1;
+    a_1 = t;
   }
-  return a;
+  return a_1;
 }
 
 /**

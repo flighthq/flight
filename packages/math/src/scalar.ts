@@ -36,7 +36,7 @@ export function quantize(value: number, steps: number, min: number, max: number)
   }
   const t = (value - min) / (max - min);
   const clamped = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
-  return min + (Math.round(clamped * steps) / steps) * (max - min);
+  return min + ((Math.sign(clamped * steps) * Math.round(Math.abs(clamped * steps))) / steps) * (max - min);
 }
 
 /**

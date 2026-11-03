@@ -10,8 +10,8 @@ import { EPSILON } from './constants.ts';
  * much larger than 1, use `approxEqualRelative`.
  */
 export function approxEqual(a: number, b: number, epsilon?: number): boolean {
-  epsilon = epsilon ?? EPSILON;
-  return Math.abs(a - b) <= epsilon;
+  const epsilon_1 = epsilon ?? EPSILON;
+  return Math.abs(a - b) <= epsilon_1;
 }
 
 /**
@@ -23,10 +23,10 @@ export function approxEqual(a: number, b: number, epsilon?: number): boolean {
  * (absolute).
  */
 export function approxEqualRelative(a: number, b: number, relativeEpsilon?: number): boolean {
-  relativeEpsilon = relativeEpsilon ?? EPSILON;
+  const relativeEpsilon_1 = relativeEpsilon ?? EPSILON;
   const diff = Math.abs(a - b);
   const largest = Math.abs(a) > Math.abs(b) ? Math.abs(a) : Math.abs(b);
-  let threshold = relativeEpsilon * largest;
+  let threshold = relativeEpsilon_1 * largest;
   threshold = threshold > EPSILON ? threshold : EPSILON;
   return diff <= threshold;
 }
@@ -35,6 +35,6 @@ export function approxEqualRelative(a: number, b: number, relativeEpsilon?: numb
  * Return `true` if `|value| <= epsilon`.
  */
 export function approxZero(value: number, epsilon?: number): boolean {
-  epsilon = epsilon ?? EPSILON;
-  return Math.abs(value) <= epsilon;
+  const epsilon_1 = epsilon ?? EPSILON;
+  return Math.abs(value) <= epsilon_1;
 }

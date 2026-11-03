@@ -41,17 +41,17 @@ describe('damp', () => {
 
 describe('lerpAngle', () => {
   it('interpolates between two close angles', () => {
-    const result = lerpAngle(0.0, PI / 2.0, 0.5);
-    assertClose(result, PI / 4.0, 10);
+    const result = lerpAngle(0.0, Math.PI / 2.0, 0.5);
+    assertClose(result, Math.PI / 4.0, 10);
   });
   it('takes the shortest arc across zero two pi', () => {
-    const tau = PI * 2.0;
-    const result = lerpAngle(PI * 1.9, PI * 0.1, 0.5);
+    const tau = Math.PI * 2.0;
+    const result = lerpAngle(Math.PI * 1.9, Math.PI * 0.1, 0.5);
     const normalised = ((result % tau) + tau) % tau;
     assertClose(normalised, 0.0, 5);
   });
   it('takes the shortest arc clockwise across zero two pi', () => {
-    const result = lerpAngle(PI * 0.1, PI * 1.9, 0.5);
+    const result = lerpAngle(Math.PI * 0.1, Math.PI * 1.9, 0.5);
     assertClose(result, 0.0, 10);
   });
   it('returns a at t zero', () => {

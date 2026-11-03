@@ -9,8 +9,8 @@ import type { RandomSource } from './random.ts';
  * Values outside `[0, 1]` behave like the nearest endpoint; `0.5` is a fair coin flip.
  */
 export function randomBool(random: RandomSource, probability?: number): boolean {
-  probability = probability ?? 0.5;
-  return random() < probability;
+  const probability_1 = probability ?? 0.5;
+  return random() < probability_1;
 }
 
 /**

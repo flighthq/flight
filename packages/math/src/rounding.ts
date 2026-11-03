@@ -58,7 +58,7 @@ export function roundTo(value: number, step: number): number {
   if (step <= 0.0) {
     return value;
   }
-  const magnitude = Math.round(Math.abs(value) / step) * step;
+  const magnitude = Math.sign(Math.abs(value) / step) * Math.round(Math.abs(Math.abs(value) / step)) * step;
   if (magnitude === 0.0) {
     return 0.0;
   }
