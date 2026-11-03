@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use flight_camera::contract::*;
 use flight_geometry::{create_rectangle, intersects_rectangle};
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn options(zoom: Option<f32>, rotation: Option<f32>) -> Camera2DOptions {
     return Camera2DOptions {

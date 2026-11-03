@@ -28,7 +28,9 @@ export function clearFlowStack(stack: FlowStackRaw): void {
     const callback = maybeOnExit ?? noFlowCallback;
     callback();
   }
-  stack!.states.length = 0;
+  let s = stack!;
+  const states: FlowState[] = s.states;
+  states.length = 0;
 }
 
 export function createFlowStack(): FlowStackRaw {
@@ -206,7 +208,8 @@ function takeTopFlowState(stack: FlowStackRaw): FlowState | null {
     previous.push(state);
   }
   const popped = previous[top];
-  current.states.length = 0;
+  const currentStates: FlowState[] = current.states;
+  currentStates.length = 0;
   for (const item of previous) {
     if (current.states.length >= top) {
       break;

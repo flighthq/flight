@@ -1,6 +1,6 @@
 use flight_camera::contract::*;
 
-use crate::test_support::*;
+use crate::common::*;
 
 mod get_camera_3d_forward {
     use super::*;

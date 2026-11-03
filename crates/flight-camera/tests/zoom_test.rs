@@ -1,6 +1,6 @@
 use flight_camera::contract::*;
 
-use crate::test_support::*;
+use crate::common::*;
 
 mod zoom_camera_2d_at_screen_point {
     use super::*;

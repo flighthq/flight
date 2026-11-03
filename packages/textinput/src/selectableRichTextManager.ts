@@ -16,7 +16,6 @@ export function blurSelectableRichText(manager: SelectableRichTextManagerRaw): v
   const target = manager!.focused ?? undefined;
   if (target !== undefined) {
     let runtime = getMutableRuntime(target);
-    runtime = runtime!;
     runtime.selectionBeginIndex = 0;
     runtime.selectionEndIndex = 0;
   }
@@ -83,14 +82,12 @@ export function dispatchSelectableRichTextPointerDown(
   let layout = getTextLayout(node) ?? undefined;
   if (layout === undefined) {
     if (!extend) {
-      runtime = runtime!;
       runtime.selectionBeginIndex = 0;
       runtime.selectionEndIndex = 0;
     }
     return;
   }
   const index = computeRichTextCharIndexAtPoint(layout!, x, y);
-  runtime = runtime!;
   if (extend) {
     runtime.selectionEndIndex = index;
   } else {
@@ -137,14 +134,12 @@ export function getSelectableRichTextSelectionText(manager: SelectableRichTextMa
     return '';
   }
   let runtime = getMutableRuntime(target);
-  runtime = runtime!;
   const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
   const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
   return utf16Slice(target!.data.text, start, end);
 }
 
 function getMutableRuntime(source: RichText): RichTextRuntime {
-  source = source!;
   return getRichTextRuntime(source);
 }
 

@@ -1,7 +1,7 @@
 use flight_camera::contract::*;
 use flight_geometry::create_vector3;
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn make_camera() -> Camera3D {
     return camera_3d(0.1, 1000.0, 1.0);

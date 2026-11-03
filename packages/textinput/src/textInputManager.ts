@@ -174,7 +174,6 @@ function getTargetLayout(target: RichText): TextLayoutResult | undefined {
 }
 
 function getTextInputFocusTarget(manager: TextInputManagerRaw): RichText | undefined {
-  manager = manager!;
   if (!manager.enabled) {
     return undefined;
   }

@@ -1,6 +1,6 @@
 use flight_camera::contract::*;
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn options(
     x: Option<f32>,

@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 
-import type { Velocity2D } from './velocity2d.ts';
+import type { Velocity2D } from './velocity2D.ts';
 import type { VelocityExplanation } from './velocityExplanation.ts';
 import type { VelocitySample } from './velocitySample.ts';
 import {

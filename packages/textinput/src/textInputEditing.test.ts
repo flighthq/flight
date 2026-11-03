@@ -274,7 +274,6 @@ function richTextOptions(): TestRichTextData {
 }
 
 function runtime(source: RichText): RichTextRuntime {
-  source = source!;
   return getRichTextRuntime(source);
 }
 

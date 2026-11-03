@@ -7,7 +7,7 @@ use flight_camera_controls::contract::*;
 use flight_entity::Ref;
 use flight_geometry::{Rectangle, create_rectangle};
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn camera() -> Camera2D {
     return create_camera_2d();

@@ -1,4 +1,4 @@
-mod test_support;
+mod common;
 
 #[path = "basis_test.rs"]
 mod flight_camera_basis_test;

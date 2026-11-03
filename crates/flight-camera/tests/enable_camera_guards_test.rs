@@ -8,7 +8,7 @@ use flight_log::{
     create_memory_log_sink, get_memory_log_sink_entries, remove_log_sink,
 };
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn log_state() -> LogStateRef {
     return Arc::new(RwLock::new(create_log_state()));

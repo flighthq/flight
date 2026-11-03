@@ -1,7 +1,7 @@
 use flight_camera::contract::*;
 use flight_geometry::{create_matrix, matrix_transform_point_xy};
 
-use crate::test_support::*;
+use crate::common::*;
 
 mod get_camera_2d_view_matrix {
     use super::*;

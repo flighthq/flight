@@ -1,7 +1,7 @@
 use flight_camera::contract::*;
 use flight_geometry::{create_matrix4, set_matrix4};
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn perspective_camera() -> Camera3D {
     return camera_3d(0.1, 100.0, 1.0);

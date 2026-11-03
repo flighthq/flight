@@ -83,7 +83,6 @@ export function explainStatechartTransition(
   }
   const ri = regionIndex >>> 0;
   let chart = instance!.chart;
-  chart = chart!;
   if (ri >= chart.regions.length) {
     return invalidRegionExplanation(regionIndex);
   }
@@ -235,7 +234,6 @@ function assertStatechartInputKind(
 }
 
 function clearStatechartTriggers(instance: StatechartInstanceRaw, chart: StatechartRaw): void {
-  chart = chart!;
   let current = instance!;
   let inputIndex = 0;
   while (inputIndex < chart.inputs.length) {
@@ -397,7 +395,6 @@ export function initializeStatechartInstancePortable(
 }
 
 function getStatechartTransitionCount(chart: StatechartRaw, regionIndex: number, sourceStateIndex: number): number {
-  chart = chart!;
   const region = chart.regions[regionIndex >>> 0];
   if (sourceStateIndex < 0 || sourceStateIndex >>> 0 >= region.states.length) {
     throw new RangeError(`Statechart region ${regionIndex} has an invalid active state`);

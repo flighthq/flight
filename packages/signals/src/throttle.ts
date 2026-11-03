@@ -303,7 +303,7 @@ export function connectSignalThrottled<T>(
 
 export function createSignalTimerState(): SignalTimerStateRaw {
   let out: SignalTimerStateRaw = Object.assign(allocateEntity<SignalTimerStateRaw>(), {
-    nextId: 0,
+    nextId: 1,
     nowMs: 0,
     timers: [],
   });

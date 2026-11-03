@@ -1,6 +1,6 @@
 use flight_camera::contract::*;
 
-use crate::test_support::*;
+use crate::common::*;
 
 mod create_camera_2d {
     use super::*;
@@ -35,7 +35,7 @@ mod initialize_camera_2d {
 
     #[test]
     fn is_the_construction_initializer_of_create_camera_2d() {
-        let mut camera = flight_entity::allocate_entity::<Camera2D>();
+        let mut camera: Camera2D = flight_entity::allocate_entity::<Camera2D>();
         let id = flight_entity::get_entity_id(&camera);
         camera.rotation = 2.0;
         camera.x = 3.0;

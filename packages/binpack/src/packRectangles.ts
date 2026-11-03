@@ -310,7 +310,6 @@ function packIntoBin(
       unpacked.push(rect.id);
       continue;
     }
-    placement = placement!;
     placements.push({
       id: rect.id,
       x: placement.x + border,

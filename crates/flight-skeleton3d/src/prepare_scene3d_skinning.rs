@@ -22,7 +22,7 @@ pub fn prepare_mesh_skinning(mesh: &NodeRef) {
     }
 }
 pub fn prepare_scene3d_skinning(scene: &NodeRef) {
-    let children = {
+    let children: Vec<NodeRef> = {
         let node = scene.read().unwrap();
         if !node.node_fields().enabled {
             return;
@@ -30,7 +30,7 @@ pub fn prepare_scene3d_skinning(scene: &NodeRef) {
         get_node_runtime(&*node)
             .children
             .clone()
-            .unwrap_or_default()
+            .unwrap_or(Vec::new())
     };
     prepare_mesh_skinning(scene);
     for child in children {

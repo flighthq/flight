@@ -5,7 +5,7 @@ use flight_camera::contract::{
 use flight_camera_controls::contract::*;
 use flight_geometry::create_bounding_sphere;
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn perspective(aspect: f32, fov_y: f32) -> Projection {
     let projection = create_perspective_projection();

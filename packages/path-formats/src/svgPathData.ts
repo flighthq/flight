@@ -1,364 +1,592 @@
+// Generated from crates/flight-path-formats/src/svg_path_data.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import {
-  appendPathEllipticalArcTo,
   appendPathClose,
   appendPathCubicCurveTo,
-  appendPathQuadraticCurveTo,
+  appendPathEllipticalArcTo,
   appendPathLineTo,
   appendPathMoveTo,
+  appendPathQuadraticCurveTo,
   createPath,
   forEachPathSegment,
 } from '@flighthq/path/contract';
-import type { Path, SvgPathDataFormatOptions } from '@flighthq/types/contract';
+import type { Path, PathSegment } from '@flighthq/path/contract';
+
+import type { SvgPathDataExplanation, SvgPathDataFormatOptions } from './types.ts';
+
+/**
+ * The scanner over the input's UTF-16 code units, so positions are the source's string indices.
+ */
+interface SvgPathDataReader {
+  units: number[];
+  pos: number;
+}
 
 /**
  * Parses an SVG path `d` string into the end of an existing `path`, appending its contours via the
- * `@flighthq/path` builders. Supports the full SVG path grammar: absolute (uppercase) and relative
+ * flight-path builders. Supports the full SVG path grammar: absolute (uppercase) and relative
  * (lowercase) `M L H V C S Q T A Z`, implicit repeated commands, and the smooth-curve shorthands
- * `S`/`T` (reflecting the previous cubic/quadratic control point). Returns `false` without further
- * mutation guarantee on structurally malformed input (a leading command that is not moveto, an
- * unknown command letter, or a missing/short coordinate run). A failed parse leaves `path`
- * unchanged; returns `true` when the whole string parses. An empty or whitespace-only string is
- * well-formed and appends nothing.
+ * `S`/`T` (reflecting the previous cubic/quadratic control point). Returns `false` on structurally
+ * malformed input (a leading command that is not moveto, an unknown command letter, or a
+ * missing/short coordinate run); the input is parsed into a scratch path first, so a failed parse
+ * leaves `path` unchanged. Returns `true` when the whole string parses. An empty or
+ * whitespace-only string is well-formed and appends nothing.
  *
- * Elliptic arcs (`A`/`a`) are appended through `appendPathEllipticalArcTo`, which approximates them as cubic
- * bezier segments — a subsequent `forEachPathSegment` walk (and `formatSvgPathData`) therefore sees
- * cubics, not an arc verb. The geometry round-trips; the arc command does not.
+ * Elliptic arcs (`A`/`a`) are appended through `appendPathEllipticalArcTo`, which approximates
+ * them as cubic bezier segments, so a later `forEachPathSegment` walk (and
+ * `formatSvgPathData`) sees cubics, not an arc verb. The geometry round-trips; the arc command
+ * does not.
  */
 export function appendSvgPathData(path: Path, d: string): boolean {
-  const scratch = createPath();
-  if (parseSvgPathDataInto(scratch, d) !== null) return false;
-  path.commands.push(...scratch.commands);
-  path.data.push(...scratch.data);
+  let scratch = createPath('nonZero');
+  if (parseSvgPathDataInto(scratch, d) !== undefined) {
+    return false;
+  }
+  for (let index = 0, count = scratch.commands.length; index < count; index++) {
+    path.commands.push(scratch.commands[index]);
+  }
+  for (let index = 0, count = scratch.data.length; index < count; index++) {
+    path.data.push(scratch.data[index]);
+  }
   return true;
 }
 
 /**
- * Explains why an SVG path `d` string cannot be parsed. Returns `null` for well-formed input, or
- * the input position and a stable reason for malformed input.
+ * Explains why an SVG path `d` string cannot be parsed: `undefined` for well-formed input, or the input
+ * position (UTF-16 code-unit index) and a stable reason for malformed input.
  */
-export function explainSvgPathData(d: string): { position: number; reason: string } | null {
-  return parseSvgPathDataInto(createPath(), d);
+export function explainSvgPathData(d: string): SvgPathDataExplanation | undefined {
+  return parseSvgPathDataInto(createPath('nonZero'), d);
 }
 
-function parseSvgPathDataInto(path: Path, d: string): { position: number; reason: string } | null {
-  const length = d.length;
-  let pos = 0;
+function explanation(position: number, reason: string): SvgPathDataExplanation | undefined {
+  return { position: position, reason: String(reason) };
+}
 
-  // Current point, subpath start (for Z), and the last emitted control points in absolute space.
-  // `lastControl2` feeds `S` reflection (valid only after C/S); `lastQuadControl` feeds `T`
-  // reflection (valid only after Q/T). `lastKind` records the previous group's canonical letter so
-  // a shorthand can decide whether reflection applies.
-  let currentX = 0;
-  let currentY = 0;
-  let startX = 0;
-  let startY = 0;
-  let lastControl2X = 0;
-  let lastControl2Y = 0;
-  let lastQuadControlX = 0;
-  let lastQuadControlY = 0;
-  let lastKind = '';
-
-  function skipSeparators(): void {
-    while (pos < length) {
-      const c = d.charCodeAt(pos);
-      // space, tab, LF, CR, FF, or comma
-      if (c === 32 || c === 9 || c === 10 || c === 13 || c === 12 || c === 44) pos++;
-      else break;
-    }
+function formatSvgNumber(value: number, precision?: number): string {
+  if (precision === undefined) {
+    return getJsNumberString(value);
   }
+  const factor = Math.pow(10.0, precision);
+  return getJsNumberString(roundJs(value * factor) / factor);
+}
 
-  function readNumber(): number | null {
-    skipSeparators();
-    const start = pos;
-    if (pos < length && (d[pos] === '+' || d[pos] === '-')) pos++;
-    let sawDigit = false;
-    while (pos < length && d[pos] >= '0' && d[pos] <= '9') {
-      pos++;
-      sawDigit = true;
-    }
-    if (pos < length && d[pos] === '.') {
-      pos++;
-      while (pos < length && d[pos] >= '0' && d[pos] <= '9') {
-        pos++;
-        sawDigit = true;
+/**
+ * Serializes a `Path` to an SVG path `d` string, emitting absolute commands. Each `PathSegment`
+ * maps to its SVG verb: `MoveTo`→`M`, `LineTo`→`L`, `QuadraticCurveTo`→`Q`, `CubicCurveTo`→`C`,
+ * `Close`→`Z`. Arcs are not a distinct segment kind (the path stores them as cubics), so no `A`
+ * command is produced.
+ *
+ * `options.precision`, when given, rounds every coordinate to that many decimal places and drops
+ * trailing zeros; the default emits full-precision numbers (also trailing-zero-free). Numbers are
+ * spelled as JavaScript's `String(number)` spells them.
+ */
+export function formatSvgPathData(path: Readonly<Path>, options?: Readonly<SvgPathDataFormatOptions>): string {
+  const precision = options?.precision;
+  let parts: string[] = [] as never[];
+  forEachPathSegment(path, (segment: PathSegment) =>
+    (() => {
+      const matchValue = segment;
+      if (matchValue.kind === 'moveTo') {
+        const x = matchValue.x;
+        const y = matchValue.y;
+        return (() => {
+          parts.push(`M${formatSvgNumber(x, precision)} ${formatSvgNumber(y, precision)}`);
+        })();
+      } else if (matchValue.kind === 'lineTo') {
+        const x = matchValue.x;
+        const y = matchValue.y;
+        return (() => {
+          parts.push(`L${formatSvgNumber(x, precision)} ${formatSvgNumber(y, precision)}`);
+        })();
+      } else if (matchValue.kind === 'quadraticCurveTo') {
+        const controlX = matchValue.controlX;
+        const controlY = matchValue.controlY;
+        const x = matchValue.x;
+        const y = matchValue.y;
+        return (() => {
+          parts.push(
+            `Q${formatSvgNumber(controlX, precision)} ${formatSvgNumber(controlY, precision)} ${formatSvgNumber(x, precision)} ${formatSvgNumber(y, precision)}`,
+          );
+        })();
+      } else if (matchValue.kind === 'cubicCurveTo') {
+        const controlX1 = matchValue.controlX1;
+        const controlY1 = matchValue.controlY1;
+        const controlX2 = matchValue.controlX2;
+        const controlY2 = matchValue.controlY2;
+        const x = matchValue.x;
+        const y = matchValue.y;
+        return (() => {
+          parts.push(
+            `C${formatSvgNumber(controlX1, precision)} ${formatSvgNumber(controlY1, precision)} ${formatSvgNumber(controlX2, precision)} ${formatSvgNumber(controlY2, precision)} ${formatSvgNumber(x, precision)} ${formatSvgNumber(y, precision)}`,
+          );
+        })();
+      } else if (matchValue.kind === 'close') {
+        return parts.push('Z');
       }
-    }
-    if (!sawDigit) {
-      pos = start;
-      return null;
-    }
-    if (pos < length && (d[pos] === 'e' || d[pos] === 'E')) {
-      const expStart = pos;
-      pos++;
-      if (pos < length && (d[pos] === '+' || d[pos] === '-')) pos++;
-      let expDigit = false;
-      while (pos < length && d[pos] >= '0' && d[pos] <= '9') {
-        pos++;
-        expDigit = true;
-      }
-      if (!expDigit) pos = expStart;
-    }
-    const value = Number.parseFloat(d.slice(start, pos));
-    return Number.isFinite(value) ? value : null;
+    })(),
+  );
+  return parts.join('');
+}
+
+function getJsNumberString(value: number): string {
+  if (Number.isNaN(value)) {
+    return 'NaN';
   }
-
-  // An arc flag is a single '0' or '1' character, which may be packed against neighbours with no
-  // separator (`0110` = four flags), so it is read one char at a time rather than as a number.
-  function readFlag(): number | null {
-    skipSeparators();
-    if (pos < length && d[pos] === '0') {
-      pos++;
-      return 0;
-    }
-    if (pos < length && d[pos] === '1') {
-      pos++;
-      return 1;
-    }
-    return null;
+  if (value === 0.0) {
+    return '0';
   }
+  if (!Number.isFinite(value) && !Number.isNaN(value)) {
+    return String(value > 0.0 ? 'Infinity' : '-Infinity');
+  }
+  const sign = value < 0.0 ? '-' : '';
+  const scientific = `${Math.abs(value).toExponential()}`;
+  const [mantissa, exponent] = ((value: string, delimiter: string): [string, string] | undefined => {
+    const index = value.indexOf(delimiter);
+    return index === -1 ? undefined : [value.slice(0, index), value.slice(index + delimiter.length)];
+  })(scientific, 'e')!;
+  const digits: string = [...mantissa].filter((c) => c !== '.').join('');
+  const k = digits.length;
+  const n =
+    ((s) => {
+      const v = Number(s);
+      return s.trim() !== '' && Number.isInteger(v) ? v : undefined;
+    })(exponent)! + 1;
+  const body =
+    k <= n && n <= 21
+      ? `${digits}${'0'.repeat((n - k) >>> 0)}`
+      : 0 < n && n <= 21
+        ? `${digits.slice(0, n >>> 0)}.${digits.slice(n >>> 0)}`
+        : -6 < n && n <= 0
+          ? `0.${'0'.repeat(-n >>> 0)}${digits}`
+          : (() => {
+              const e = n - 1;
+              const exponentSign = e < 0 ? '-' : '+';
+              return k === 1
+                ? `${digits}e${exponentSign}${Math.abs(e)}`
+                : `${digits.slice(0, 1)}.${digits.slice(1)}e${exponentSign}${Math.abs(e)}`;
+            })();
+  return `${sign}${body}`;
+}
 
-  while (true) {
-    skipSeparators();
-    if (pos >= length) break;
+function isAsciiLetter(unit: number): boolean {
+  return (
+    Array.from({ length: 90 - 65 + 1 }, (_, index) => 65 + index).includes(unit) ||
+    Array.from({ length: 122 - 97 + 1 }, (_, index) => 97 + index).includes(unit)
+  );
+}
 
-    const commandLetter = d[pos];
-    if (!isSvgCommandLetter(commandLetter)) return { position: pos, reason: 'expected-command' };
-    pos++;
+function isDigit(reader: Readonly<SvgPathDataReader>): boolean {
+  return reader.pos < reader.units.length && reader.units[reader.pos] >= 48 && reader.units[reader.pos] <= 57;
+}
 
-    // Path data must open with a moveto.
-    if (lastKind === '' && commandLetter !== 'M' && commandLetter !== 'm') {
-      return { position: pos - 1, reason: 'expected-moveto' };
+function isSvgCommandLetter(unit: number): boolean {
+  return Array.from({ length: 'MmLlHhVvCcSsQqTtAaZz'.length }, (_, index) =>
+    'MmLlHhVvCcSsQqTtAaZz'.charCodeAt(index),
+  ).some((letter) => letter === unit);
+}
+
+function isUnit(reader: Readonly<SvgPathDataReader>, a: number, b: number): boolean {
+  return reader.pos < reader.units.length && (reader.units[reader.pos] === a || reader.units[reader.pos] === b);
+}
+
+/**
+ * Parses an SVG path `d` string into a freshly allocated `Path`, or `undefined` on structurally
+ * malformed input (see `appendSvgPathData` for the malformed cases). An empty or
+ * whitespace-only string yields an empty path, not `undefined`.
+ */
+export function parseSvgPathData(d: string): Path | undefined {
+  let path = createPath('nonZero');
+  if (parseSvgPathDataInto(path, d) !== undefined) {
+    return undefined;
+  }
+  return path;
+}
+
+function parseSvgPathDataInto(path: Path, d: string): SvgPathDataExplanation | undefined {
+  let reader = { units: Array.from({ length: d.length }, (_, index) => d.charCodeAt(index)), pos: 0 };
+  const length = reader.units.length;
+  let currentX = 0.0;
+  let currentY = 0.0;
+  let startX = 0.0;
+  let startY = 0.0;
+  let lastControl2X = 0.0;
+  let lastControl2Y = 0.0;
+  let lastQuadControlX = 0.0;
+  let lastQuadControlY = 0.0;
+  let lastKind: number = 0;
+  for (;;) {
+    skipSeparators(reader);
+    if (reader.pos >= length) {
+      break;
     }
-
-    if (commandLetter === 'Z' || commandLetter === 'z') {
+    const commandLetter = reader.units[reader.pos];
+    if (!isSvgCommandLetter(commandLetter)) {
+      return explanation(reader.pos, 'expected-command');
+    }
+    reader.pos += 1;
+    if (lastKind === 0 && commandLetter !== 77 && commandLetter !== 109) {
+      return explanation(reader.pos - 1, 'expected-moveto');
+    }
+    if (commandLetter === 90 || commandLetter === 122) {
       appendPathClose(path);
       currentX = startX;
       currentY = startY;
-      lastKind = 'Z';
+      lastKind = 90;
       continue;
     }
-
-    // Execute one or more operand groups. After the first `M`/`m` group, implicit repeats are
-    // lineto groups (SVG spec), so the active letter shifts from M→L (or m→l).
-    let active = commandLetter;
+    let active = commandLetter & 0xff;
     let first = true;
-    while (true) {
+    for (;;) {
       if (!first) {
-        skipSeparators();
-        if (pos >= length) break;
-        // Any letter ends the current operand run. The outer command reader then distinguishes a
-        // supported command from an unknown one and can report the latter at its actual position.
-        if (isAsciiLetter(d[pos])) break;
+        skipSeparators(reader);
+        if (reader.pos >= length) {
+          break;
+        }
+        if (isAsciiLetter(reader.units[reader.pos])) {
+          break;
+        }
       }
-
-      const relative = active >= 'a';
-      const upper = relative ? active.toUpperCase() : active;
-
-      if (upper === 'M') {
-        const nx = readNumber();
-        const ny = readNumber();
-        if (nx === null || ny === null) return { position: pos, reason: 'expected-coordinate-pair' };
+      const relative = active >= 97;
+      const upper = relative && active <= 122 ? active - (97 - 65) : active;
+      if (upper === 77) {
+        let nx = readNumber(reader);
+        let ny = readNumber(reader);
+        const $t0 = nx;
+        const $t1 = ny;
+        if ($t0 === undefined || $t1 === undefined) {
+          return explanation(reader.pos, 'expected-coordinate-pair');
+        }
+        nx = $t0;
+        ny = $t1;
         currentX = relative ? currentX + nx : nx;
         currentY = relative ? currentY + ny : ny;
         startX = currentX;
         startY = currentY;
         appendPathMoveTo(path, currentX, currentY);
-        lastKind = 'M';
-      } else if (upper === 'L') {
-        const nx = readNumber();
-        const ny = readNumber();
-        if (nx === null || ny === null) return { position: pos, reason: 'expected-coordinate-pair' };
-        currentX = relative ? currentX + nx : nx;
-        currentY = relative ? currentY + ny : ny;
-        appendPathLineTo(path, currentX, currentY);
-        lastKind = 'L';
-      } else if (upper === 'H') {
-        const nx = readNumber();
-        if (nx === null) return { position: pos, reason: 'expected-coordinate' };
-        currentX = relative ? currentX + nx : nx;
-        appendPathLineTo(path, currentX, currentY);
-        lastKind = 'L';
-      } else if (upper === 'V') {
-        const ny = readNumber();
-        if (ny === null) return { position: pos, reason: 'expected-coordinate' };
-        currentY = relative ? currentY + ny : ny;
-        appendPathLineTo(path, currentX, currentY);
-        lastKind = 'L';
-      } else if (upper === 'C') {
-        const x1 = readNumber();
-        const y1 = readNumber();
-        const x2 = readNumber();
-        const y2 = readNumber();
-        const x = readNumber();
-        const y = readNumber();
-        if (x1 === null || y1 === null || x2 === null || y2 === null || x === null || y === null) {
-          return { position: pos, reason: 'expected-cubic-coordinates' };
-        }
-        const c1x = relative ? currentX + x1 : x1;
-        const c1y = relative ? currentY + y1 : y1;
-        const c2x = relative ? currentX + x2 : x2;
-        const c2y = relative ? currentY + y2 : y2;
-        const ax = relative ? currentX + x : x;
-        const ay = relative ? currentY + y : y;
-        appendPathCubicCurveTo(path, c1x, c1y, c2x, c2y, ax, ay);
-        lastControl2X = c2x;
-        lastControl2Y = c2y;
-        currentX = ax;
-        currentY = ay;
-        lastKind = 'C';
-      } else if (upper === 'S') {
-        const x2 = readNumber();
-        const y2 = readNumber();
-        const x = readNumber();
-        const y = readNumber();
-        if (x2 === null || y2 === null || x === null || y === null) {
-          return { position: pos, reason: 'expected-smooth-cubic-coordinates' };
-        }
-        const reflect = lastKind === 'C' || lastKind === 'S';
-        const c1x = reflect ? 2 * currentX - lastControl2X : currentX;
-        const c1y = reflect ? 2 * currentY - lastControl2Y : currentY;
-        const c2x = relative ? currentX + x2 : x2;
-        const c2y = relative ? currentY + y2 : y2;
-        const ax = relative ? currentX + x : x;
-        const ay = relative ? currentY + y : y;
-        appendPathCubicCurveTo(path, c1x, c1y, c2x, c2y, ax, ay);
-        lastControl2X = c2x;
-        lastControl2Y = c2y;
-        currentX = ax;
-        currentY = ay;
-        lastKind = 'S';
-      } else if (upper === 'Q') {
-        const x1 = readNumber();
-        const y1 = readNumber();
-        const x = readNumber();
-        const y = readNumber();
-        if (x1 === null || y1 === null || x === null || y === null) {
-          return { position: pos, reason: 'expected-quadratic-coordinates' };
-        }
-        const cx = relative ? currentX + x1 : x1;
-        const cy = relative ? currentY + y1 : y1;
-        const ax = relative ? currentX + x : x;
-        const ay = relative ? currentY + y : y;
-        appendPathQuadraticCurveTo(path, cx, cy, ax, ay);
-        lastQuadControlX = cx;
-        lastQuadControlY = cy;
-        currentX = ax;
-        currentY = ay;
-        lastKind = 'Q';
-      } else if (upper === 'T') {
-        const x = readNumber();
-        const y = readNumber();
-        if (x === null || y === null) return { position: pos, reason: 'expected-coordinate-pair' };
-        const reflect = lastKind === 'Q' || lastKind === 'T';
-        const cx = reflect ? 2 * currentX - lastQuadControlX : currentX;
-        const cy = reflect ? 2 * currentY - lastQuadControlY : currentY;
-        const ax = relative ? currentX + x : x;
-        const ay = relative ? currentY + y : y;
-        appendPathQuadraticCurveTo(path, cx, cy, ax, ay);
-        lastQuadControlX = cx;
-        lastQuadControlY = cy;
-        currentX = ax;
-        currentY = ay;
-        lastKind = 'T';
-      } else if (upper === 'A') {
-        const rx = readNumber();
-        const ry = readNumber();
-        const rotationDegrees = readNumber();
-        const largeArc = readFlag();
-        const sweep = readFlag();
-        const x = readNumber();
-        const y = readNumber();
-        if (
-          rx === null ||
-          ry === null ||
-          rotationDegrees === null ||
-          largeArc === null ||
-          sweep === null ||
-          x === null ||
-          y === null
-        ) {
-          return { position: pos, reason: 'expected-arc-parameters' };
-        }
-        const ax = relative ? currentX + x : x;
-        const ay = relative ? currentY + y : y;
-        // appendPathEllipticalArcTo discovers its start through the path's last stored point. CLOSE stores no
-        // coordinates, so anchor the SVG pen at the subpath origin before asking it to build cubics.
-        if (lastKind === 'Z') appendPathMoveTo(path, currentX, currentY);
-        appendPathEllipticalArcTo(path, rx, ry, (rotationDegrees * Math.PI) / 180, largeArc === 1, sweep === 1, ax, ay);
-        currentX = ax;
-        currentY = ay;
-        lastKind = 'A';
+        lastKind = 77;
       } else {
-        return { position: pos - 1, reason: 'unsupported-command' };
+        if (upper === 76) {
+          let nx = readNumber(reader);
+          let ny = readNumber(reader);
+          const $t0 = nx;
+          const $t1 = ny;
+          if ($t0 === undefined || $t1 === undefined) {
+            return explanation(reader.pos, 'expected-coordinate-pair');
+          }
+          nx = $t0;
+          ny = $t1;
+          currentX = relative ? currentX + nx : nx;
+          currentY = relative ? currentY + ny : ny;
+          appendPathLineTo(path, currentX, currentY);
+          lastKind = 76;
+        } else {
+          if (upper === 72) {
+            const nx = readNumber(reader);
+            if (nx === undefined) {
+              return explanation(reader.pos, 'expected-coordinate');
+            }
+            currentX = relative ? currentX + nx : nx;
+            appendPathLineTo(path, currentX, currentY);
+            lastKind = 76;
+          } else {
+            if (upper === 86) {
+              const ny = readNumber(reader);
+              if (ny === undefined) {
+                return explanation(reader.pos, 'expected-coordinate');
+              }
+              currentY = relative ? currentY + ny : ny;
+              appendPathLineTo(path, currentX, currentY);
+              lastKind = 76;
+            } else {
+              if (upper === 67) {
+                let x1 = readNumber(reader);
+                let y1 = readNumber(reader);
+                let x2 = readNumber(reader);
+                let y2 = readNumber(reader);
+                let x = readNumber(reader);
+                let y = readNumber(reader);
+                const $t0 = x1;
+                const $t1 = y1;
+                const $t2 = x2;
+                const $t3 = y2;
+                const $t4 = x;
+                const $t5 = y;
+                if (
+                  $t0 === undefined ||
+                  $t1 === undefined ||
+                  $t2 === undefined ||
+                  $t3 === undefined ||
+                  $t4 === undefined ||
+                  $t5 === undefined
+                ) {
+                  return explanation(reader.pos, 'expected-cubic-coordinates');
+                }
+                x1 = $t0;
+                y1 = $t1;
+                x2 = $t2;
+                y2 = $t3;
+                x = $t4;
+                y = $t5;
+                const c1x = relative ? currentX + x1 : x1;
+                const c1y = relative ? currentY + y1 : y1;
+                const c2x = relative ? currentX + x2 : x2;
+                const c2y = relative ? currentY + y2 : y2;
+                const ax = relative ? currentX + x : x;
+                const ay = relative ? currentY + y : y;
+                appendPathCubicCurveTo(path, c1x, c1y, c2x, c2y, ax, ay);
+                lastControl2X = c2x;
+                lastControl2Y = c2y;
+                currentX = ax;
+                currentY = ay;
+                lastKind = 67;
+              } else {
+                if (upper === 83) {
+                  let x2 = readNumber(reader);
+                  let y2 = readNumber(reader);
+                  let x = readNumber(reader);
+                  let y = readNumber(reader);
+                  const $t0 = x2;
+                  const $t1 = y2;
+                  const $t2 = x;
+                  const $t3 = y;
+                  if ($t0 === undefined || $t1 === undefined || $t2 === undefined || $t3 === undefined) {
+                    return explanation(reader.pos, 'expected-smooth-cubic-coordinates');
+                  }
+                  x2 = $t0;
+                  y2 = $t1;
+                  x = $t2;
+                  y = $t3;
+                  const reflect = lastKind === 67 || lastKind === 83;
+                  const c1x = reflect ? 2.0 * currentX - lastControl2X : currentX;
+                  const c1y = reflect ? 2.0 * currentY - lastControl2Y : currentY;
+                  const c2x = relative ? currentX + x2 : x2;
+                  const c2y = relative ? currentY + y2 : y2;
+                  const ax = relative ? currentX + x : x;
+                  const ay = relative ? currentY + y : y;
+                  appendPathCubicCurveTo(path, c1x, c1y, c2x, c2y, ax, ay);
+                  lastControl2X = c2x;
+                  lastControl2Y = c2y;
+                  currentX = ax;
+                  currentY = ay;
+                  lastKind = 83;
+                } else {
+                  if (upper === 81) {
+                    let x1 = readNumber(reader);
+                    let y1 = readNumber(reader);
+                    let x = readNumber(reader);
+                    let y = readNumber(reader);
+                    const $t0 = x1;
+                    const $t1 = y1;
+                    const $t2 = x;
+                    const $t3 = y;
+                    if ($t0 === undefined || $t1 === undefined || $t2 === undefined || $t3 === undefined) {
+                      return explanation(reader.pos, 'expected-quadratic-coordinates');
+                    }
+                    x1 = $t0;
+                    y1 = $t1;
+                    x = $t2;
+                    y = $t3;
+                    const cx = relative ? currentX + x1 : x1;
+                    const cy = relative ? currentY + y1 : y1;
+                    const ax = relative ? currentX + x : x;
+                    const ay = relative ? currentY + y : y;
+                    appendPathQuadraticCurveTo(path, cx, cy, ax, ay);
+                    lastQuadControlX = cx;
+                    lastQuadControlY = cy;
+                    currentX = ax;
+                    currentY = ay;
+                    lastKind = 81;
+                  } else {
+                    if (upper === 84) {
+                      let x = readNumber(reader);
+                      let y = readNumber(reader);
+                      const $t0 = x;
+                      const $t1 = y;
+                      if ($t0 === undefined || $t1 === undefined) {
+                        return explanation(reader.pos, 'expected-coordinate-pair');
+                      }
+                      x = $t0;
+                      y = $t1;
+                      const reflect = lastKind === 81 || lastKind === 84;
+                      const cx = reflect ? 2.0 * currentX - lastQuadControlX : currentX;
+                      const cy = reflect ? 2.0 * currentY - lastQuadControlY : currentY;
+                      const ax = relative ? currentX + x : x;
+                      const ay = relative ? currentY + y : y;
+                      appendPathQuadraticCurveTo(path, cx, cy, ax, ay);
+                      lastQuadControlX = cx;
+                      lastQuadControlY = cy;
+                      currentX = ax;
+                      currentY = ay;
+                      lastKind = 84;
+                    } else {
+                      if (upper === 65) {
+                        let rx = readNumber(reader);
+                        let ry = readNumber(reader);
+                        let rotationDegrees = readNumber(reader);
+                        let largeArc = readFlag(reader);
+                        let sweep = readFlag(reader);
+                        let x = readNumber(reader);
+                        let y = readNumber(reader);
+                        const $t0 = rx;
+                        const $t1 = ry;
+                        const $t2 = rotationDegrees;
+                        const $t3 = largeArc;
+                        const $t4 = sweep;
+                        const $t5 = x;
+                        const $t6 = y;
+                        if (
+                          $t0 === undefined ||
+                          $t1 === undefined ||
+                          $t2 === undefined ||
+                          $t3 === undefined ||
+                          $t4 === undefined ||
+                          $t5 === undefined ||
+                          $t6 === undefined
+                        ) {
+                          return explanation(reader.pos, 'expected-arc-parameters');
+                        }
+                        rx = $t0;
+                        ry = $t1;
+                        rotationDegrees = $t2;
+                        largeArc = $t3;
+                        sweep = $t4;
+                        x = $t5;
+                        y = $t6;
+                        const ax = relative ? currentX + x : x;
+                        const ay = relative ? currentY + y : y;
+                        if (lastKind === 90) {
+                          appendPathMoveTo(path, currentX, currentY);
+                        }
+                        appendPathEllipticalArcTo(
+                          path,
+                          rx,
+                          ry,
+                          (rotationDegrees * Math.PI) / 180.0,
+                          largeArc,
+                          sweep,
+                          ax,
+                          ay,
+                        );
+                        currentX = ax;
+                        currentY = ay;
+                        lastKind = 65;
+                      } else {
+                        return explanation(reader.pos - 1, 'unsupported-command');
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-
       first = false;
-      if (active === 'M') active = 'L';
-      else if (active === 'm') active = 'l';
+      if (active === 77) {
+        active = 76;
+      } else {
+        if (active === 109) {
+          active = 108;
+        }
+      }
     }
   }
-
-  return null;
+  return undefined;
 }
 
-/**
- * Serializes a `Path` to an SVG path `d` string, emitting absolute commands. Each `PathSegment`
- * maps to its SVG verb: `moveTo`→`M`, `lineTo`→`L`, `quadraticCurveTo`→`Q`, `cubicCurveTo`→`C`,
- * `close`→`Z`. Arcs are not a distinct segment kind — the path stores them as cubics — so no `A`
- * command is produced.
- *
- * `options.precision`, when given, rounds every coordinate to that many decimal places and drops
- * trailing zeros; the default emits full-precision numbers (also trailing-zero-free).
- */
-export function formatSvgPathData(path: Readonly<Path>, options?: Readonly<SvgPathDataFormatOptions>): string {
-  const precision = options?.precision;
-  const parts: string[] = [];
-  forEachPathSegment(path, (segment) => {
-    if (segment.kind === 'moveTo') {
-      parts.push(`M${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`);
-    } else if (segment.kind === 'lineTo') {
-      parts.push(`L${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`);
-    } else if (segment.kind === 'quadraticCurveTo') {
-      parts.push(
-        `Q${formatSvgNumber(segment.controlX, precision)} ${formatSvgNumber(segment.controlY, precision)} ` +
-          `${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`,
-      );
-    } else if (segment.kind === 'cubicCurveTo') {
-      parts.push(
-        `C${formatSvgNumber(segment.controlX1, precision)} ${formatSvgNumber(segment.controlY1, precision)} ` +
-          `${formatSvgNumber(segment.controlX2, precision)} ${formatSvgNumber(segment.controlY2, precision)} ` +
-          `${formatSvgNumber(segment.x, precision)} ${formatSvgNumber(segment.y, precision)}`,
-      );
-    } else if (segment.kind === 'close') {
-      parts.push('Z');
+function readFlag(reader: SvgPathDataReader): boolean | undefined {
+  skipSeparators(reader);
+  if (isUnit(reader, 48, 48)) {
+    reader.pos += 1;
+    return false;
+  }
+  if (isUnit(reader, 49, 49)) {
+    reader.pos += 1;
+    return true;
+  }
+  return undefined;
+}
+
+function readNumber(reader: SvgPathDataReader): number | undefined {
+  skipSeparators(reader);
+  const start = reader.pos;
+  if (isUnit(reader, 43, 45)) {
+    reader.pos += 1;
+  }
+  let sawDigit = false;
+  while (isDigit(reader)) {
+    reader.pos += 1;
+    sawDigit = true;
+  }
+  if (isUnit(reader, 46, 46)) {
+    reader.pos += 1;
+    while (isDigit(reader)) {
+      reader.pos += 1;
+      sawDigit = true;
     }
-  });
-  return parts.join('');
+  }
+  if (!sawDigit) {
+    reader.pos = start;
+    return undefined;
+  }
+  if (isUnit(reader, 101, 69)) {
+    const expStart = reader.pos;
+    reader.pos += 1;
+    if (isUnit(reader, 43, 45)) {
+      reader.pos += 1;
+    }
+    let expDigit = false;
+    while (isDigit(reader)) {
+      reader.pos += 1;
+      expDigit = true;
+    }
+    if (!expDigit) {
+      reader.pos = expStart;
+    }
+  }
+  const token = ((units: Readonly<number[]>): string => {
+    let value = '';
+    for (let index = 0; index < units.length; index += 0x8000)
+      value += String.fromCharCode(...units.slice(index, index + 0x8000));
+    return value;
+  })(reader.units.slice(start, reader.pos));
+  const value = ((s) => {
+    const v = Number(s);
+    return s.trim() !== '' && !Number.isNaN(v) ? v : undefined;
+  })(token);
+  if (value === undefined) {
+    return undefined;
+  }
+  return Number.isFinite(value) ? value : undefined;
 }
 
-/**
- * Parses an SVG path `d` string into a freshly allocated `Path`, or returns `null` on structurally
- * malformed input (see `appendSvgPathData` for the malformed cases). An empty or whitespace-only
- * string yields an empty path, not `null`.
- */
-export function parseSvgPathData(d: string): Path | null {
-  const path = createPath();
-  if (parseSvgPathDataInto(path, d) !== null) return null;
-  return path;
+function roundJs(value: number): number {
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+  const floor = Math.floor(value);
+  const rounded = value - floor >= 0.5 ? floor + 1.0 : floor;
+  return rounded === 0.0 && value < 0.0 ? -0.0 : rounded;
 }
 
-function formatSvgNumber(value: number, precision?: number): string {
-  if (precision === undefined) return String(value);
-  const factor = 10 ** precision;
-  // String() of the rounded number drops trailing zeros and normalizes -0 to "0".
-  return String(Math.round(value * factor) / factor);
-}
-
-function isSvgCommandLetter(c: string): boolean {
-  return 'MmLlHhVvCcSsQqTtAaZz'.indexOf(c) !== -1;
-}
-
-function isAsciiLetter(c: string): boolean {
-  const code = c.charCodeAt(0);
-  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+function skipSeparators(reader: SvgPathDataReader): void {
+  while (reader.pos < reader.units.length) {
+    {
+      const matchValue = reader.units[reader.pos];
+      if (
+        matchValue === 32 ||
+        matchValue === 9 ||
+        matchValue === 10 ||
+        matchValue === 13 ||
+        matchValue === 12 ||
+        matchValue === 44
+      ) {
+        reader.pos += 1;
+      } else {
+        break;
+      }
+    }
+  }
 }

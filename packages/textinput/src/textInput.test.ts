@@ -229,7 +229,6 @@ function richTextOptions(): TestRichTextData {
 }
 
 function runtime(source: RichText): RichTextRuntime {
-  source = source!;
   return getRichTextRuntime(source);
 }
 
@@ -351,7 +350,6 @@ describe('enableTextInput', () => {
   it('allocates the input slot with default state', () => {
     const text = crate.createDefaultRichText();
     let state = enableTextInput(text, undefined);
-    state = state!;
     expect(state.caretIndex).toEqual(0);
     expect(state.selectionIndex).toEqual(0);
     expect(state.passwordCharacter).toEqual('•');
@@ -365,7 +363,6 @@ describe('enableTextInput', () => {
       displayAsPassword: true,
       restrict: '0-9',
     });
-    state = state!;
     expect(state.caretColor).toEqual(0xff00_00ff);
     expect(state.displayAsPassword).toBe(true);
     expect(state.restrict).toEqual('0-9');

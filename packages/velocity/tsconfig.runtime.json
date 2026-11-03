@@ -19,7 +19,7 @@
   "include": ["src/**/*.ts"],
   "exclude": [
     "src/contract.velocity-types.ts",
-    "src/velocity2d.ts",
+    "src/velocity2D.ts",
     "src/velocityExplanation.ts",
     "src/velocitySample.ts",
     "src/velocityStore.ts"

@@ -4,7 +4,7 @@
 import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 
-import type { Velocity2D } from './velocity2d.ts';
+import type { Velocity2D } from './velocity2D.ts';
 import type { VelocityExplanation } from './velocityExplanation.ts';
 
 /**

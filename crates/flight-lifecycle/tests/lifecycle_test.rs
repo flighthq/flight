@@ -94,13 +94,15 @@ fn read(count: &Arc<Mutex<usize>>) -> usize {
 }
 
 /// Deterministic stand-in for TS `Math.random()` in the property tests (xorshift64*).
-struct Storm(u64);
+struct Storm {
+    state: u64,
+}
 
 fn get_storm_next(storm: &mut Storm, bound: usize) -> usize {
-    storm.0 ^= storm.0 >> 12;
-    storm.0 ^= storm.0 << 25;
-    storm.0 ^= storm.0 >> 27;
-    return (storm.0.wrapping_mul(0x2545F4914F6CDD1D) >> 33) as usize % bound;
+    storm.state ^= storm.state >> 12;
+    storm.state ^= storm.state << 25;
+    storm.state ^= storm.state >> 27;
+    return (storm.state.wrapping_mul(0x2545F4914F6CDD1D) >> 33) as usize % bound;
 }
 
 fn get_storm_state(storm: &mut Storm) -> AppLifecycleState {
@@ -294,7 +296,9 @@ mod attach_app_lifecycle {
 
     #[test]
     fn property_on_state_change_fires_exactly_once_per_backend_notification_across_random_storms() {
-        let mut storm = Storm(0x9E3779B97F4A7C15);
+        let mut storm = Storm {
+            state: 0x9E3779B97F4A7C15,
+        };
         for _trial in 0..200 {
             let backend = fake_backend();
             let mut app = create_app_lifecycle();
@@ -314,7 +318,9 @@ mod attach_app_lifecycle {
     #[test]
     fn property_on_resume_on_pause_collapse_a_random_storm_to_the_minimal_active_boundary_edge_set()
     {
-        let mut storm = Storm(0xD1B54A32D192ED03);
+        let mut storm = Storm {
+            state: 0xD1B54A32D192ED03,
+        };
         for _trial in 0..200 {
             let backend = fake_backend();
             let start = get_storm_state(&mut storm);
@@ -346,7 +352,9 @@ mod attach_app_lifecycle {
 
     #[test]
     fn property_a_focus_blur_flutter_that_never_leaves_active_emits_no_pause_or_resume() {
-        let mut storm = Storm(0x8CB92BA72F3D8DD7);
+        let mut storm = Storm {
+            state: 0x8CB92BA72F3D8DD7,
+        };
         for _trial in 0..100 {
             let backend = fake_backend();
             let mut app = create_app_lifecycle();
@@ -367,7 +375,9 @@ mod attach_app_lifecycle {
 
     #[test]
     fn property_pause_and_resume_counts_stay_balanced_within_one_across_any_storm() {
-        let mut storm = Storm(0xA0761D6478BD642F);
+        let mut storm = Storm {
+            state: 0xA0761D6478BD642F,
+        };
         for _trial in 0..200 {
             let backend = fake_backend();
             let state = get_storm_state(&mut storm);

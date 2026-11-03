@@ -44,12 +44,12 @@ function findNodesInMarqueeSelectionInto(
   candidates: Readonly<NodeRef[]>,
   mode?: MarqueeSelectionModeRaw,
 ): void {
-  mode = mode ?? MarqueeSelectionModeRaw.Intersect;
+  const mode_1 = mode ?? MarqueeSelectionModeRaw.Intersect;
   out.length = 0;
   for (const candidate of candidates) {
     const bounds = getNodeLocalBoundsRectangle(candidate);
     const isMatch = (() => {
-      const matchValue = mode;
+      const matchValue = mode_1;
       switch (matchValue) {
         case MarqueeSelectionModeRaw.Contain:
           return (() => {

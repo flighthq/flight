@@ -9,7 +9,7 @@ import type { PathRaw } from './path.ts';
  * Allocates a new `Path` that is a deep copy of `source`.
  */
 export function clonePath(source: Readonly<PathRaw>): PathRaw {
-  let out: PathRaw = Object.assign(allocateEntity<PathRaw>(), { commands: [], data: [] });
+  let out: PathRaw = Object.assign(allocateEntity<PathRaw>(), { commands: [], data: [], winding: 'nonZero' });
   copyPath(out, source);
   return out;
 }

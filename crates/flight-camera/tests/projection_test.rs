@@ -3,7 +3,7 @@ use flight_geometry::{
     create_matrix4, create_perspective_matrix4, set_orthographic_matrix4, set_perspective_matrix4,
 };
 
-use crate::test_support::*;
+use crate::common::*;
 
 mod create_orthographic_projection {
     use super::*;
@@ -73,7 +73,8 @@ mod initialize_orthographic_projection {
 
     #[test]
     fn restores_defaults_while_preserving_entity_identity() {
-        let mut projection = flight_entity::allocate_entity::<OrthographicProjection>();
+        let mut projection: OrthographicProjection =
+            flight_entity::allocate_entity::<OrthographicProjection>();
         projection.half_height = 2.0;
         projection.half_width = 5.0;
         let id = flight_entity::get_entity_id(&projection);
@@ -89,7 +90,8 @@ mod initialize_perspective_projection {
 
     #[test]
     fn restores_defaults_while_preserving_entity_identity() {
-        let mut projection = flight_entity::allocate_entity::<PerspectiveProjection>();
+        let mut projection: PerspectiveProjection =
+            flight_entity::allocate_entity::<PerspectiveProjection>();
         projection.aspect = 2.0;
         projection.fov_y = 0.5;
         let id = flight_entity::get_entity_id(&projection);
@@ -105,7 +107,7 @@ mod initialize_raw_projection {
 
     #[test]
     fn restores_identity_matrix_while_preserving_entity_identity() {
-        let mut projection = flight_entity::allocate_entity::<RawProjection>();
+        let mut projection: RawProjection = flight_entity::allocate_entity::<RawProjection>();
         projection.matrix.write().unwrap().m[0] = 7.0;
         let id = flight_entity::get_entity_id(&projection);
         initialize_raw_projection(&mut projection);

@@ -69,7 +69,6 @@ describe('acquireClipRegion', () => {
     releaseClipRegion(a);
     let reused = acquireClipRegion();
     expect(a === reused).toBe(true);
-    reused = reused!;
     expect(reused.rect.x).toEqual(0.0);
     expect(reused.contours).toEqual(null);
     expect(reused.winding).toEqual('nonZero');
@@ -149,7 +148,6 @@ describe('copyClipRegion', () => {
 describe('createClipRegionFromCircle', () => {
   it('creates a contour with the circle bounds', () => {
     let clip = createClipRegionFromCircle(50.0, 50.0, 20.0, undefined);
-    clip = clip!;
     expect(clip.contours !== null).toBe(true);
     expect(Math.abs(clip.rect.x - 30.0) < 0.5).toBe(true);
     expect(Math.abs(clip.rect.width - 40.0) < 0.5).toBe(true);
@@ -176,7 +174,6 @@ describe('createClipRegionFromContours', () => {
 describe('createClipRegionFromEllipse', () => {
   it('creates a contour with the source rectangle bounds', () => {
     let clip = createClipRegionFromEllipse(createRectangle(10.0, 20.0, 40.0, 30.0), undefined);
-    clip = clip!;
     expect(clip.contours !== null).toBe(true);
     expect(Math.abs(clip.rect.x - 10.0) < 0.5).toBe(true);
     expect(Math.abs(clip.rect.height - 30.0) < 0.5).toBe(true);
@@ -191,7 +188,6 @@ describe('createClipRegionFromPath', () => {
     appendPathLineTo(path, 10.0, 0.0);
     appendPathLineTo(path, 10.0, 10.0);
     let clip = createClipRegionFromPath(path, undefined);
-    clip = clip!;
     expect(clip.rect.width).toEqual(10.0);
     expect(clip.rect.height).toEqual(10.0);
     expect(clip.winding).toEqual('evenOdd');
@@ -203,7 +199,6 @@ describe('createClipRegionFromRectangle', () => {
     let rectangle = createRectangle(5.0, 6.0, 20.0, 30.0);
     let clip = createClipRegionFromRectangle(rectangle);
     rectangle.x = 99.0;
-    clip = clip!;
     expect(clip.rect.x).toEqual(5.0);
     expect(clip.contours).toEqual(null);
     expect(clip.version).toEqual(0);
@@ -299,7 +294,6 @@ describe('intersectClipRegions', () => {
     let a = createClipRegionFromContours(contours(), 'evenOdd');
     const b = createClipRegionFromRectangle(createRectangle(5.0, 5.0, 10.0, 10.0));
     intersectClipRegions(a, a, b);
-    a = a!;
     expect(a.rect).toEqual(createRectangle(5.0, 5.0, 5.0, 5.0));
     expect(a.contours !== null).toBe(true);
     expect(a.winding).toEqual('evenOdd');
@@ -408,7 +402,6 @@ describe('setClipRegionToContours', () => {
     let source = triangle();
     setClipRegionToContours(out, source, 'evenOdd');
     source[0][0] = 99.0;
-    out = out!;
     expect(out.contours).toEqual(triangle());
     expect(out.rect).toEqual(createRectangle(0.0, 0.0, 10.0, 10.0));
     expect(out.version).toEqual(1);
@@ -419,7 +412,6 @@ describe('setClipRegionToRectangle', () => {
   it('retargets contours to scissor form and bumps version', () => {
     let out = createClipRegionFromContours(triangle(), 'evenOdd');
     setClipRegionToRectangle(out, createRectangle(5.0, 6.0, 7.0, 8.0));
-    out = out!;
     expect(out.contours).toEqual(null);
     expect(out.rect).toEqual(createRectangle(5.0, 6.0, 7.0, 8.0));
     expect(out.winding).toEqual('nonZero');
@@ -466,7 +458,6 @@ describe('unionClipRegions', () => {
     const a = createClipRegionFromContours(triangle(), 'evenOdd');
     let b = createClipRegionFromRectangle(createRectangle(5.0, 5.0, 20.0, 20.0));
     unionClipRegions(b, a, b);
-    b = b!;
     expect(b.rect).toEqual(createRectangle(0.0, 0.0, 25.0, 25.0));
     expect(b.contours).toEqual(triangle());
     expect(b.winding).toEqual('evenOdd');

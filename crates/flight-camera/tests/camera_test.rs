@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_camera::contract::*;
 use flight_geometry::{
@@ -6,9 +6,9 @@ use flight_geometry::{
     set_matrix4_look_at, set_perspective_matrix4,
 };
 
-use crate::test_support::*;
+use crate::common::*;
 
-fn fixed_projection() -> Arc<std::sync::RwLock<PerspectiveProjection>> {
+fn fixed_projection() -> Arc<RwLock<PerspectiveProjection>> {
     let projection = create_perspective_projection();
     {
         let mut projection = projection.write().unwrap();
@@ -49,7 +49,7 @@ mod create_camera_3d {
 
     #[test]
     fn accepts_an_optional_near_clip_plane() {
-        let plane = Arc::new(std::sync::RwLock::new(create_plane(0.0, 1.0, 0.0, -2.0)));
+        let plane = Arc::new(RwLock::new(create_plane(0.0, 1.0, 0.0, -2.0)));
         let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
         camera.near_clip_plane = Some(plane.clone());
         let stored = camera.near_clip_plane.as_ref().expect("plane is stored");
@@ -165,9 +165,7 @@ mod get_camera_3d_view_projection_matrix4 {
         let mut camera = camera_with(camera_projection, 0.1, 100.0);
         let mut without_clip = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut without_clip, &camera, 1.5);
-        camera.near_clip_plane = Some(Arc::new(std::sync::RwLock::new(create_plane(
-            0.0, 1.0, 0.0, -1.0,
-        ))));
+        camera.near_clip_plane = Some(Arc::new(RwLock::new(create_plane(0.0, 1.0, 0.0, -1.0))));
         let mut with_clip = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut with_clip, &camera, 1.5);
         assert!((0..16).any(|index| with_clip.m[index] != without_clip.m[index]));
@@ -193,13 +191,11 @@ mod initialize_camera_3d {
 
     #[test]
     fn is_the_construction_initializer_of_create_camera_3d() {
-        let mut camera = flight_entity::allocate_entity::<Camera3D>();
+        let mut camera: Camera3D = flight_entity::allocate_entity::<Camera3D>();
         let id = flight_entity::get_entity_id(&camera);
         camera.far = 10.0;
         camera.near = 1.0;
-        camera.near_clip_plane = Some(Arc::new(std::sync::RwLock::new(create_plane(
-            0.0, 1.0, 0.0, -2.0,
-        ))));
+        camera.near_clip_plane = Some(Arc::new(RwLock::new(create_plane(0.0, 1.0, 0.0, -2.0))));
         camera.projection = Projection::Perspective(fixed_projection());
         initialize_camera_3d(&mut camera);
         assert_eq!(camera.far, 0.0);

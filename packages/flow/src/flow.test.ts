@@ -44,19 +44,19 @@ function labeledState(name: string, log: { value: string[] }): FlowState {
   return state({
     name: String(name),
     onEnter: () => {
-      enterLog.value.push(`${enterName}.enter`);
+      return enterLog.value.push(`${enterName}.enter`);
     },
     onExit: () => {
-      exitLog.value.push(`${exitName}.exit`);
+      return exitLog.value.push(`${exitName}.exit`);
     },
     onPause: () => {
-      pauseLog.value.push(`${pauseName}.pause`);
+      return pauseLog.value.push(`${pauseName}.pause`);
     },
     onResume: () => {
-      resumeLog.value.push(`${resumeName}.resume`);
+      return resumeLog.value.push(`${resumeName}.resume`);
     },
     onUpdate: (dt: number) => {
-      updateLog.value.push(`${updateName}.update:${dt}`);
+      return updateLog.value.push(`${updateName}.update:${dt}`);
     },
     renderBelow: undefined,
     updateBelow: undefined,

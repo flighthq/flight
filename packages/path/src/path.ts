@@ -616,7 +616,7 @@ export function appendPathTangentArcTo(
  * `createPath(winding = 'nonZero')`).
  */
 export function createPath(winding?: PathWinding): PathRaw {
-  let out: PathRaw = Object.assign(allocateEntity<PathRaw>(), { commands: [], data: [] });
+  let out: PathRaw = Object.assign(allocateEntity<PathRaw>(), { commands: [], data: [], winding: 'nonZero' });
   initializePath(out, winding);
   return out;
 }

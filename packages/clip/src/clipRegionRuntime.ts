@@ -19,7 +19,6 @@ interface ClipRegionRuntime {
 
 export function acquireClipRegionFromPool(): ClipRegion | null {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   if (runtime.poolSize === 0) {
     return null;
   }
@@ -56,7 +55,6 @@ function getBoundClipRegionRuntime(): ClipRegionRuntime {
 
 export function getClipRegionContoursGuard(): ClipRegionContoursGuard | null {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   return runtime.contoursGuard;
 }
 
@@ -66,13 +64,11 @@ function getClipRegionRuntime(state: ClipRegionStateRaw): ClipRegionRuntime {
 
 export function isClipRegionReleased(clip: ClipRegion): boolean {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   return clipRegionRuntimeContains(runtime, clip);
 }
 
 export function releaseClipRegionToPool(clip: ClipRegion): void {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   const index = runtime.poolSize;
   if (index < runtime.pool.length) {
     runtime.pool[index] = clip;
@@ -84,31 +80,26 @@ export function releaseClipRegionToPool(clip: ClipRegion): void {
 
 export function setClipRegionContoursGuardSlot(guard: ClipRegionContoursGuard | null): void {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   runtime.contoursGuard = guard;
 }
 
 export function setClipRegionReleaseGuardSlot(guard: ClipRegionReleaseGuard | null): void {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   runtime.releaseGuard = guard;
 }
 
 export function setClipRegionUseGuardSlot(guard: ClipRegionUseGuard | null): void {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   runtime.useGuard = guard;
 }
 
 export function snapshotClipRegionReleaseGuard(clip: ClipRegion): readonly [ClipRegionReleaseGuard | null, boolean] {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   return [runtime.releaseGuard, clipRegionRuntimeContains(runtime, clip)];
 }
 
 export function snapshotClipRegionUseGuard(clip: ClipRegion): readonly [ClipRegionUseGuard | null, boolean] {
   let runtime = getBoundClipRegionRuntime();
-  runtime = runtime!;
   return [runtime.useGuard, clipRegionRuntimeContains(runtime, clip)];
 }
 

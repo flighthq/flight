@@ -227,6 +227,7 @@ function compile(
         targetNativeSources,
       ),
       ...dependencyAliasArguments(dependencySources(command)),
+      ...dependencyVisibilityArguments(command),
       ...contractArguments(command, trailing),
     ],
     {
@@ -328,6 +329,27 @@ function dependencySources(command: string): DependencySource[] {
     }
   }
   return sources;
+}
+
+// Every non-root, non-rust-only source of this crate's `flight-*` dependencies, as visibility sources, so
+// the compiler can resolve entity and field types that cross the crate boundary (an entity field holding a
+// dependency's `Ref<Vector3>`, a `.clear()` on a dependency struct's `Vec` field). Tests also see
+// dev-dependencies. The entity crate is already supplied by `entityArguments`.
+function dependencyVisibilityArguments(command: string): string[] {
+  if (command !== 'generate' && command !== 'generate-tests') return [];
+  const manifest = readFileSync(join(crateRoot, 'Cargo.toml'), 'utf8');
+  const arguments_: string[] = [];
+  for (const crateName of collectFlightDependencyCrates(manifest, command === 'generate-tests')) {
+    if (crateName === options.crateName || crateName === 'flight-entity') continue;
+    const sourceRoot = join(repositoryRoot, 'crates', crateName, 'src');
+    if (!existsSync(sourceRoot)) continue;
+    for (const path of crateSourcePaths(sourceRoot)) {
+      if (['contract.rs', 'lib.rs', 'sugar.rs'].some((name) => path.endsWith(`/${name}`))) continue;
+      if (/^\/\/!\s*flight-compiler:\s*rust-only\b/m.test(readFileSync(path, 'utf8'))) continue;
+      arguments_.push('--visibility-source', path);
+    }
+  }
+  return arguments_;
 }
 
 function entityArguments(command: string): string[] {

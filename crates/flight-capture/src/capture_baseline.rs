@@ -21,19 +21,7 @@ pub fn create_capture_baseline() -> CaptureBaseline {
 
 /// Compares keys by UTF-16 code units, the order `Array.prototype.sort()` uses for object keys.
 fn compare_utf16(left: &str, right: &str) -> Ordering {
-    let mut left_units = left.encode_utf16();
-    let mut right_units = right.encode_utf16();
-    loop {
-        match (left_units.next(), right_units.next()) {
-            (None, None) => return Ordering::Equal,
-            (None, Some(_)) => return Ordering::Less,
-            (Some(_), None) => return Ordering::Greater,
-            (Some(left_unit), Some(right_unit)) => match left_unit.cmp(&right_unit) {
-                Ordering::Equal => continue,
-                other => return other,
-            },
-        }
-    }
+    return left.encode_utf16().cmp(right.encode_utf16());
 }
 
 /// Serializes a baseline to its committed text form: columns in sorted key order, each column's

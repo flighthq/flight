@@ -1,4 +1,4 @@
-mod test_support;
+mod common;
 
 #[path = "camera_shake_test.rs"]
 mod flight_camera_controls_camera_shake_test;

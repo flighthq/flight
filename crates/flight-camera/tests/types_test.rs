@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_camera::contract::*;
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn assert_entity<T: flight_entity::Entity>() {}
 
@@ -57,9 +57,9 @@ mod camera_types {
 
     #[test]
     fn camera_2d_follow_options_retain_the_world_bounds_handle() {
-        let bounds = std::sync::Arc::new(std::sync::RwLock::new(
-            flight_geometry::create_rectangle(0.0, 0.0, 100.0, 100.0),
-        ));
+        let bounds = Arc::new(RwLock::new(flight_geometry::create_rectangle(
+            0.0, 0.0, 100.0, 100.0,
+        )));
         let options = Camera2DFollowOptions {
             deadzone_half_height: Some(10.0),
             deadzone_half_width: Some(20.0),

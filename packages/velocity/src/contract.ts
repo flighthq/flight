@@ -15,8 +15,8 @@ export {
   scaleVelocity,
   subtractVelocity,
   zeroVelocity,
-} from './velocity2d.ts';
-export type { Velocity2D } from './velocity2d.ts';
+} from './velocity2D.ts';
+export type { Velocity2D } from './velocity2D.ts';
 export { getVelocityReasonString, parseVelocityReason } from './velocityExplanation.ts';
 export type { VelocityExplanation, VelocityReason } from './velocityExplanation.ts';
 export {

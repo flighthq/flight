@@ -3,7 +3,7 @@ use flight_entity::{
     allocate_entity, get_entity_id, get_entity_runtime, get_entity_uid, set_entity_uid,
 };
 
-use crate::test_support::*;
+use crate::common::*;
 
 mod add_camera_shake_trauma {
     use super::*;

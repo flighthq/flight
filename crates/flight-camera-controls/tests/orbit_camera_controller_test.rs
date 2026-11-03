@@ -7,7 +7,7 @@ use flight_entity::{
 };
 use flight_geometry::create_vector3;
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn options(
     azimuth: Option<f32>,

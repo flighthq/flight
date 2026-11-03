@@ -1,6 +1,6 @@
 use flight_camera::contract::*;
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn orthographic_camera(near: f32, far: f32) -> Camera3D {
     let mut camera = create_camera_3d();

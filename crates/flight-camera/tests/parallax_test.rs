@@ -1,6 +1,6 @@
 use flight_camera::contract::*;
 
-use crate::test_support::*;
+use crate::common::*;
 
 fn camera() -> Camera2D {
     let options = Camera2DOptions {

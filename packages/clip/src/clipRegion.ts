@@ -68,7 +68,6 @@ function createEmptyClipRegion(): ClipRegion {
 
 export function clipRegionContainsPoint(clip: ClipRegion, x: number, y: number): boolean {
   guardClipRegionUse(clip);
-  clip = clip!;
   if (!containsRectanglePointXY(clip.rect, x, y)) {
     return false;
   }
@@ -115,7 +114,6 @@ export function clipRegionIntersectsRectangle(clip: ClipRegion, rectangle: Reado
 
 export function cloneClipRegion(clip: ClipRegion): ClipRegion {
   guardClipRegionUse(clip);
-  clip = clip!;
   let out: ClipRegion = allocateEntity<ClipRegion>();
   out.rect = cloneRectangle(clip.rect);
   out.contours = cloneClipRegionContours(clip.contours);
@@ -131,7 +129,6 @@ export function copyClipRegion(out: ClipRegion, source: ClipRegion): void {
     return;
   }
   const [rect, contours, winding] = snapshotClipRegion(source);
-  out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   copyRectangle(mutableOut.rect, rect);
   mutableOut.contours = contours;
@@ -157,8 +154,6 @@ export function equalsClipRegion(a: ClipRegion, b: ClipRegion): boolean {
   if (a === b) {
     return true;
   }
-  a = a!;
-  b = b!;
   return (
     a.winding === b.winding &&
     equalClipRegionRectangles(a.rect, b.rect) &&
@@ -281,7 +276,6 @@ export function intersectClipRegions(out: ClipRegion, a: ClipRegion, b: ClipRegi
   const y0 = Math.max(aRect.y, bRect.y);
   const x1 = Math.min(aRect.x + aRect.width, bRect.x + bRect.width);
   const y1 = Math.min(aRect.y + aRect.height, bRect.y + bRect.height);
-  out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   if (x1 <= x0 || y1 <= y0) {
     mutableOut.rect.x = 0.0;
@@ -305,14 +299,12 @@ export function intersectClipRegions(out: ClipRegion, a: ClipRegion, b: ClipRegi
 
 export function invalidateClipRegion(clip: ClipRegion): void {
   guardClipRegionUse(clip);
-  clip = clip!;
   const mutableClip: EntityConstruction<ClipRegion> = clip;
   mutableClip.version = (mutableClip.version + 1) >>> 0;
 }
 
 export function isClipRegionEmpty(clip: ClipRegion): boolean {
   guardClipRegionUse(clip);
-  clip = clip!;
   if (isEmptyRectangle(clip.rect)) {
     return true;
   }
@@ -333,7 +325,6 @@ export function normalizeClipRegion(out: ClipRegion, clip: ClipRegion): void {
   guardClipRegionUse(clip);
   const [rect, contours, winding] = snapshotClipRegion(clip);
   const normalized = normalizedClipRegionBounds(contours);
-  out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   if (normalized !== null) {
     const bounds = normalized;
@@ -437,7 +428,6 @@ export function releaseClipRegion(clip: ClipRegion): void {
 }
 
 function resetClipRegion(region: ClipRegion): void {
-  region = region!;
   const mutableRegion: EntityConstruction<ClipRegion> = region;
   mutableRegion.rect.x = 0.0;
   mutableRegion.rect.y = 0.0;
@@ -485,7 +475,6 @@ export function setClipRegionToContours(out: ClipRegion, contours: Readonly<numb
   const explanation = explainClipRegionContours(contours);
   const guard = getClipRegionContoursGuard();
   callClipRegionContoursGuard(explanation, guard, contours);
-  out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   setRectangleToContoursBounds(mutableOut.rect, contours);
   mutableOut.contours = copyClipRegionContours(contours);
@@ -495,7 +484,6 @@ export function setClipRegionToContours(out: ClipRegion, contours: Readonly<numb
 
 export function setClipRegionToRectangle(out: ClipRegion, rectangle: Readonly<RectangleLike>): void {
   guardClipRegionUse(out);
-  out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   mutableOut.rect = cloneRectangle(rectangle);
   mutableOut.contours = null;
@@ -539,7 +527,6 @@ function setRectangleToContoursBounds(out: Rectangle, contours: Readonly<number[
 }
 
 function snapshotClipRegion(clip: ClipRegion): readonly [Rectangle, number[][] | null, PathWinding] {
-  clip = clip!;
   return [cloneRectangle(clip.rect), cloneClipRegionContours(clip.contours), clip.winding];
 }
 
@@ -547,7 +534,6 @@ export function transformClipRegion(out: ClipRegion, clip: ClipRegion, matrix: R
   guardClipRegionUse(out);
   guardClipRegionUse(clip);
   const [rect, contours, winding] = snapshotClipRegion(clip);
-  out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   if (contours !== null) {
     const sourceContours = contours;
@@ -614,7 +600,6 @@ export function unionClipRegions(out: ClipRegion, a: ClipRegion, b: ClipRegion):
   guardClipRegionUse(b);
   const [aRect, aContours, aWinding] = snapshotClipRegion(a);
   const [bRect, bContours, bWinding] = snapshotClipRegion(b);
-  out = out!;
   const mutableOut: EntityConstruction<ClipRegion> = out;
   mergeRectangle(mutableOut.rect, aRect, bRect);
   const [contours, winding] = selectContours(aContours, aWinding, bContours, bWinding);

@@ -158,7 +158,6 @@ function applyHistoryRecord(
 ): void {
   source!.data.text = String(text);
   const length = utf16Len(text);
-  state = state!;
   state.caretIndex = Math.min(caretIndex, length);
   state.selectionIndex = Math.min(selectionIndex, length);
   state.desiredCaretX = DESIRED_CARET_X_UNSET;
@@ -168,7 +167,6 @@ function applyHistoryRecord(
 
 export function applyTextInputRestriction(source: RichText, text: string, replaceLength: number): string {
   const [multiline, maxChars, currentLength] = (() => {
-    source = source!;
     return [source.data.multiline, source.data.maxChars, utf16Len(source.data.text)];
   })();
   let value = multiline
@@ -190,7 +188,6 @@ export function applyTextInputRestriction(source: RichText, text: string, replac
 
 export function canRedoTextInput(source: RichText): boolean {
   let state = getInputState(source);
-  state = state!;
   return state.historyIndex < (state.history.length | 0) - 1;
 }
 
@@ -207,7 +204,6 @@ function clampIndex(value: number, length: number): number {
 
 export function clearTextInputHistory(source: RichText): void {
   let state = getInputState(source);
-  state = state!;
   state.history = [] as never[];
   state.historyIndex = -1;
 }
@@ -315,7 +311,9 @@ function getInputState(source: RichText): TextInputState {
       return state;
     }
   }
-  throw new Error('text input is not enabled on this RichText; call enableTextInput first');
+  return (() => {
+    throw new Error('text input is not enabled on this RichText; call enableTextInput first');
+  })();
 }
 
 function getKeyboardCommand(data: Readonly<InputKeyboardData>): KeyboardCommand {
@@ -504,7 +502,6 @@ export function getTextInputCharacterIndexAtPoint(
 
 export function getTextInputDisplayText(source: RichText): string {
   let state = getInputState(source);
-  state = state!;
   const text = source!.data.text;
   if (!state.displayAsPassword) {
     return text;
@@ -517,14 +514,12 @@ export function getTextInputDisplayText(source: RichText): string {
 export function getTextInputSelectionBeginIndex(source: RichText): number {
   const length = utf16Len(source!.data.text);
   let state = getInputState(source);
-  state = state!;
   return Math.min(Math.min(state.caretIndex, length), Math.min(state.selectionIndex, length));
 }
 
 export function getTextInputSelectionEndIndex(source: RichText): number {
   const length = utf16Len(source!.data.text);
   let state = getInputState(source);
-  state = state!;
   return Math.max(Math.min(state.caretIndex, length), Math.min(state.selectionIndex, length));
 }
 
@@ -587,12 +582,14 @@ export function handleTextInputKeyboard(
 ): boolean {
   const command = getKeyboardCommand(data);
   switch (command) {
-    case KeyboardCommand.None:
+    case KeyboardCommand.None: {
       break;
-    case KeyboardCommand.Backspace:
+    }
+    case KeyboardCommand.Backspace: {
       deleteTextInputBackward(source);
       break;
-    case KeyboardCommand.Copy:
+    }
+    case KeyboardCommand.Copy: {
       const copyText = getTextInputSelectionText(source);
       if (copyText.length !== 0) {
         {
@@ -604,7 +601,8 @@ export function handleTextInputKeyboard(
         }
       }
       break;
-    case KeyboardCommand.Cut:
+    }
+    case KeyboardCommand.Cut: {
       const cutText = getTextInputSelectionText(source);
       if (cutText.length !== 0) {
         {
@@ -617,23 +615,29 @@ export function handleTextInputKeyboard(
         replaceSelectedTextInput(source, '', undefined);
       }
       break;
-    case KeyboardCommand.Delete:
+    }
+    case KeyboardCommand.Delete: {
       deleteTextInputForward(source);
       break;
-    case KeyboardCommand.DeleteWordBackward:
+    }
+    case KeyboardCommand.DeleteWordBackward: {
       deleteTextInputWordBackward(source);
       break;
-    case KeyboardCommand.DeleteWordForward:
+    }
+    case KeyboardCommand.DeleteWordForward: {
       deleteTextInputWordForward(source);
       break;
-    case KeyboardCommand.DocumentEnd:
+    }
+    case KeyboardCommand.DocumentEnd: {
       const length = utf16Len(source!.data.text);
       moveTextInputCaret(source, length | 0, data.shiftKey);
       break;
-    case KeyboardCommand.DocumentStart:
+    }
+    case KeyboardCommand.DocumentStart: {
       moveTextInputCaret(source, 0, data.shiftKey);
       break;
-    case KeyboardCommand.Down:
+    }
+    case KeyboardCommand.Down: {
       const downLayout = ((options) => (options === undefined ? undefined : options.layout))(options);
       if (downLayout !== undefined) {
         moveTextInputCaretDown(source, downLayout!, data.shiftKey);
@@ -641,7 +645,8 @@ export function handleTextInputKeyboard(
         moveTextInputCaretDown(source, undefined, data.shiftKey);
       }
       break;
-    case KeyboardCommand.End:
+    }
+    case KeyboardCommand.End: {
       const endLayout = ((options) => (options === undefined ? undefined : options.layout))(options);
       if (endLayout !== undefined) {
         moveTextInputCaretToLineEnd(source, endLayout!, data.shiftKey);
@@ -649,7 +654,8 @@ export function handleTextInputKeyboard(
         moveTextInputCaretToLineEnd(source, undefined, data.shiftKey);
       }
       break;
-    case KeyboardCommand.Home:
+    }
+    case KeyboardCommand.Home: {
       const homeLayout = ((options) => (options === undefined ? undefined : options.layout))(options);
       if (homeLayout !== undefined) {
         moveTextInputCaretToLineStart(source, homeLayout!, data.shiftKey);
@@ -657,34 +663,40 @@ export function handleTextInputKeyboard(
         moveTextInputCaretToLineStart(source, undefined, data.shiftKey);
       }
       break;
-    case KeyboardCommand.Left:
+    }
+    case KeyboardCommand.Left: {
       const leftText = source!.data.text;
       const leftCaret = getTextInputCaretIndex(source);
       const previous = getPreviousGraphemeBoundary(webTextSegmenterBackend, leftText, usizeToI32(leftCaret), undefined);
       moveTextInputCaret(source, previous | 0, data.shiftKey);
       break;
-    case KeyboardCommand.Paste:
+    }
+    case KeyboardCommand.Paste: {
       insertTextInput(
         source,
         ((options) => (options === undefined ? undefined : options.clipboardText))(options) ?? '',
       );
       break;
-    case KeyboardCommand.Return:
+    }
+    case KeyboardCommand.Return: {
       if (!source!.data.multiline) {
         return false;
       }
       insertTextInput(source, '\n');
       break;
-    case KeyboardCommand.Right:
+    }
+    case KeyboardCommand.Right: {
       const rightText = source!.data.text;
       const rightCaret = getTextInputCaretIndex(source);
       const next = getNextGraphemeBoundary(webTextSegmenterBackend, rightText, usizeToI32(rightCaret), undefined);
       moveTextInputCaret(source, next | 0, data.shiftKey);
       break;
-    case KeyboardCommand.SelectAll:
+    }
+    case KeyboardCommand.SelectAll: {
       selectAllTextInput(source);
       break;
-    case KeyboardCommand.Up:
+    }
+    case KeyboardCommand.Up: {
       const upLayout = ((options) => (options === undefined ? undefined : options.layout))(options);
       if (upLayout !== undefined) {
         moveTextInputCaretUp(source, upLayout!, data.shiftKey);
@@ -692,12 +704,15 @@ export function handleTextInputKeyboard(
         moveTextInputCaretUp(source, undefined, data.shiftKey);
       }
       break;
-    case KeyboardCommand.WordLeft:
+    }
+    case KeyboardCommand.WordLeft: {
       moveTextInputCaretByWord(source, -1, data.shiftKey);
       break;
-    case KeyboardCommand.WordRight:
+    }
+    case KeyboardCommand.WordRight: {
       moveTextInputCaretByWord(source, 1, data.shiftKey);
       break;
+    }
   }
   return command !== KeyboardCommand.None;
 }
@@ -749,7 +764,6 @@ export function moveTextInputCaret(source: RichText, index: number, extendSelect
   const length = utf16Len(source!.data.text);
   const caret = clampIndex(index, length);
   let state = getInputState(source);
-  state = state!;
   state.caretIndex = caret;
   if (!extendSelection) {
     state.selectionIndex = caret;
@@ -780,7 +794,6 @@ export function moveTextInputCaretDown(
   let out = createTextSelectionRectangle();
   getTextInputCaretRectangle(out, source, layout);
   const desiredX = (() => {
-    state = state!;
     if (state.desiredCaretX === DESIRED_CARET_X_UNSET) {
       state.desiredCaretX = out.x;
     }
@@ -796,7 +809,6 @@ export function moveTextInputCaretDown(
   const targetIndex = getTextInputCharacterIndexAtPoint(source, layout, desiredX, targetY);
   const length = utf16Len(source!.data.text);
   const newCaret = Math.min(targetIndex, length);
-  state = state!;
   state.caretIndex = newCaret;
   if (!extendSelection) {
     state.selectionIndex = newCaret;
@@ -845,7 +857,6 @@ export function moveTextInputCaretUp(
   let out = createTextSelectionRectangle();
   getTextInputCaretRectangle(out, source, layout);
   const desiredX = (() => {
-    state = state!;
     if (state.desiredCaretX === DESIRED_CARET_X_UNSET) {
       state.desiredCaretX = out.x;
     }
@@ -860,7 +871,6 @@ export function moveTextInputCaretUp(
   const targetIndex = getTextInputCharacterIndexAtPoint(source, layout, desiredX, targetY);
   const length = utf16Len(source!.data.text);
   const newCaret = Math.min(targetIndex, length);
-  state = state!;
   state.caretIndex = newCaret;
   if (!extendSelection) {
     state.selectionIndex = newCaret;
@@ -1018,7 +1028,6 @@ export function scrollTextInputCaretIntoView(
   const caretTop = out.y;
   const caretBottom = out.y + out.height;
   const [scrollV, scrollH] = (() => {
-    source = source!;
     return [source.data.scrollV, source.data.scrollH];
   })();
   const scrollVLine = Math.max((scrollV | 0) - 1, 0) >>> 0;
@@ -1133,7 +1142,6 @@ export function selectWordAtTextInputIndex(source: RichText, index: number): voi
 export function setTextInputSelection(source: RichText, beginIndex: number, endIndex: number): void {
   const length = utf16Len(source!.data.text);
   let state = getInputState(source);
-  state = state!;
   state.selectionIndex = clampIndex(beginIndex, length);
   state.caretIndex = clampIndex(endIndex, length);
   void state;

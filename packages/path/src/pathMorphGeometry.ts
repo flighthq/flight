@@ -118,7 +118,12 @@ function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContou
 }
 
 function allocatePathMorph(preparation: PathMorphPreparation, winding: PathWinding): PathMorphRaw {
-  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), { commands: [], endData: [], startData: [] });
+  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), {
+    commands: [],
+    endData: [],
+    startData: [],
+    winding: 'nonZero',
+  });
   initializePathMorph(morph, preparation.commands, preparation.endData, preparation.startData, winding);
   return morph;
 }

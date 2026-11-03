@@ -69,7 +69,6 @@ function applyTextInputOptions(state: TextInputState, options: Readonly<TextInpu
 
 export function disableTextInput(node: RichText): void {
   const runtime: RichTextRuntime = (() => {
-    node = node!;
     return getRichTextRuntime(node);
   })();
   runtime!.input = null;
@@ -77,7 +76,6 @@ export function disableTextInput(node: RichText): void {
 
 export function enableTextInput(node: RichText, options?: Readonly<TextInputOptions>): TextInputState {
   const runtime: RichTextRuntime = (() => {
-    node = node!;
     return getRichTextRuntime(node);
   })();
   const existing = runtime!.input ?? undefined;
@@ -95,7 +93,6 @@ export function enableTextInput(node: RichText, options?: Readonly<TextInputOpti
 
 export function getTextInputState(node: RichText): TextInputState | null {
   const runtime: RichTextRuntime = (() => {
-    node = node!;
     return getRichTextRuntime(node);
   })();
   const input = runtime!.input ?? undefined;
