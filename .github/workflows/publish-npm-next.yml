@@ -1,6 +1,6 @@
-name: Publish · npm edge
+name: Publish · npm next
 
-# Publishes the `edge` snapshot to npm for the commit Promote · edge has just moved `main` to (after
+# Publishes the `next` snapshot to npm for the commit Promote · next has just moved `main` to (after
 # crates.io has it, so the two registries carry the same versions).
 #
 # ★ CALLED BY PROMOTE, AS A JOB OF THE PROMOTION RUN, once main has moved. Nothing runs on pushes to
@@ -8,11 +8,11 @@ name: Publish · npm edge
 # and its result is part of the promotion's own run. A called workflow needs no dispatch permission.
 #
 # ★ ALSO DISPATCHABLE BY HAND, to re-publish a commit main has adopted:
-#     gh workflow run edge-publish.yml --ref main -f sha="$(git rev-parse origin/main)"
-# Acceptance is the dist-tag, not a green run: `npm dist-tag ls @flighthq/sdk` should show `edge` at
+#     gh workflow run publish-npm-next.yml --ref main -f sha="$(git rev-parse origin/main)"
+# Acceptance is the dist-tag, not a green run: `npm dist-tag ls @flighthq/sdk` should show `next` at
 # the version the run published. Because either caller can supply the sha, the jobs below re-verify
 # it from the repository (on main, CI green) instead of trusting whoever passed it.
-run-name: Publish · npm edge · ${{ inputs.sha }}
+run-name: Publish · npm next · ${{ inputs.sha }}
 
 on:
   workflow_call:
@@ -22,7 +22,7 @@ on:
         required: true
         type: string
       promote_run_id:
-        description: The Promote · edge run that called this, for the run summary.
+        description: The Promote · next run that called this, for the run summary.
         required: false
         type: string
         default: ''
@@ -38,23 +38,23 @@ on:
         required: true
         type: string
       promote_run_id:
-        description: The Promote · edge run this re-publishes for, if any (shown in the run summary).
+        description: The Promote · next run this re-publishes for, if any (shown in the run summary).
         required: false
         type: string
         default: ''
 
 concurrency:
-  # ★ CHANNEL-GLOBAL, NOT CANDIDATE-KEYED. `edge` is ONE npm dist-tag and every publish stamps the
+  # ★ CHANNEL-GLOBAL, NOT CANDIDATE-KEYED. `next` is ONE npm dist-tag and every publish stamps the
   # whole ~141-package graph to a single version, so two publishes are never independent work however
   # different their candidates are — they contend for the same pointer. A candidate-keyed group let two
   # promotions in the same minute publish CONCURRENTLY and race on that tag, and because a dist-tag is
-  # last-write-wins the OLDER build could land on `edge` and stay there. Serializing per channel is the
+  # last-write-wins the OLDER build could land on `next` and stay there. Serializing per channel is the
   # only key that makes the tag's final value a function of promotion order.
   #
   # Retries and duplicate runs of one candidate are handled by the publisher being idempotent per
   # package, not by the concurrency key. Never cancel mid-publish: a cancelled run leaves the graph
   # half-published.
-  group: edge-publish-main
+  group: publish-npm-next
   cancel-in-progress: false
 
 env:
@@ -65,15 +65,15 @@ jobs:
     name: npm
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.edge.outputs.version }}
-      tag: ${{ steps.edge.outputs.tag }}
+      version: ${{ steps.snapshot.outputs.version }}
+      tag: ${{ steps.snapshot.outputs.tag }}
     permissions:
       contents: read
       actions: read # read tests.yml run conclusions for the dispatched sha
       id-token: write # npm provenance
     steps:
       # ★ CHECK OUT THE INPUT, THEN VERIFY IT. The sha is caller-supplied data — this workflow is
-      # dispatchable by hand as well as called by Promote · edge. Everything below re-establishes from
+      # dispatchable by hand as well as called by Promote · next. Everything below re-establishes from
       # the repository what the input only claims.
       - uses: actions/checkout@v5
         with:
@@ -95,17 +95,17 @@ jobs:
             exit 1
           fi
 
-          # The edge channel means "what main points at". A commit that is not on main — a develop-only
+          # The next channel means "what main points at". A commit that is not on main — a develop-only
           # commit, or one promotion has not adopted — must not be published under that tag, however it
           # was dispatched.
           git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
           if ! git merge-base --is-ancestor "$CANDIDATE" refs/remotes/origin/main; then
-            echo "::error::${CANDIDATE} is not an ancestor of origin/main; edge publishes only commits main has adopted."
+            echo "::error::${CANDIDATE} is not an ancestor of origin/main; next publishes only commits main has adopted."
             exit 1
           fi
           echo "${CANDIDATE} is on main and checked out."
 
-      # The same gate release.yml applies to a tag: prove THIS tree passed CI. Promote · edge already resolved
+      # The same gate release.yml applies to a tag: prove THIS tree passed CI. Promote · next already resolved
       # the candidate from green runs, but this workflow is also dispatchable by hand, so it re-proves
       # it rather than trusting the caller. Absence of a run is never treated as green.
       - name: Verify the dispatched commit passed CI
@@ -124,11 +124,11 @@ jobs:
           run_states=${ci_fields[2]:-unknown}
 
           if (( run_count == 0 )); then
-            echo "::error::no tests.yml run exists for ${CANDIDATE}; refusing to publish an untested commit to edge."
+            echo "::error::no tests.yml run exists for ${CANDIDATE}; refusing to publish an untested commit to next."
             exit 1
           fi
           if (( success_count == 0 )); then
-            echo "::error::tests.yml ran for ${CANDIDATE} but no run succeeded (states: ${run_states}); refusing to publish to edge."
+            echo "::error::tests.yml ran for ${CANDIDATE} but no run succeeded (states: ${run_states}); refusing to publish to next."
             exit 1
           fi
           echo "tests.yml has a successful run for ${CANDIDATE}."
@@ -159,17 +159,17 @@ jobs:
 
       # ★ AN EXPLICIT BRANCH ARGUMENT, BECAUSE THIS CHECKOUT IS DETACHED. edge-version falls back to
       # GITHUB_REF_NAME / the current git branch to pick the channel, and neither names `main` on a
-      # detached checkout of a sha. Passing it explicitly is what keeps the dist-tag `edge` rather than
+      # detached checkout of a sha. Passing it explicitly is what keeps the dist-tag `next` rather than
       # whatever the fallback happened to resolve.
       - name: Compute snapshot version and dist-tag
-        id: edge
+        id: snapshot
         run: npx tsx scripts/edge-version.ts main >> "$GITHUB_OUTPUT"
 
       # Exercise the same cumulative generator stable publication uses. npm has no release-notes
       # field, so the rendered note lives in the run summary rather than inside one package tarball.
       - name: Generate cumulative snapshot release notes
         env:
-          SNAPSHOT_VERSION: ${{ steps.edge.outputs.version }}
+          SNAPSHOT_VERSION: ${{ steps.snapshot.outputs.version }}
         run: |
           set -euo pipefail
           npm run release:notes -- "${SNAPSHOT_VERSION}" --through HEAD --output "${RUNNER_TEMP}/release-notes.md"
@@ -188,14 +188,14 @@ jobs:
       # one of them.
       - name: Stamp the graph to the snapshot version
         env:
-          EDGE_VERSION: ${{ steps.edge.outputs.version }}
-        run: npm run version:packages "${EDGE_VERSION}"
+          SNAPSHOT_VERSION: ${{ steps.snapshot.outputs.version }}
+        run: npm run version:packages "${SNAPSHOT_VERSION}"
       - name: Publish snapshot to npm
         env:
-          EDGE_TAG: ${{ steps.edge.outputs.tag }}
+          SNAPSHOT_TAG: ${{ steps.snapshot.outputs.tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
-        run: npm run release -- --no-build --exclude wasm --tag "${EDGE_TAG}"
+        run: npm run release -- --no-build --exclude wasm --tag "${SNAPSHOT_TAG}"
 
       # The npm artifact must exist before the downstream port and compiler are asked to release, so
       # this follows the publish rather than running beside it. `flight-snapshot`, NOT
@@ -205,12 +205,12 @@ jobs:
         uses: ./.github/actions/dispatch-downstream
         with:
           commit: ${{ inputs.sha }}
-          dist-tag: ${{ steps.edge.outputs.tag }}
+          dist-tag: ${{ steps.snapshot.outputs.tag }}
           event-type: flight-snapshot
           flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
-          version: ${{ steps.edge.outputs.version }}
+          version: ${{ steps.snapshot.outputs.version }}
 
-      # Names the Promote · edge run this publish belongs to. When called by it, it is the same run; a
+      # Names the Promote · next run this publish belongs to. When called by it, it is the same run; a
       # hand dispatch may pass the promotion it re-publishes for.
       # ★ EVERY INTERPOLATED VALUE ARRIVES THROUGH `env`, INCLUDING IN THE MARKDOWN.
       # `${{ inputs.sha }}` written straight into a `run:` block is substituted before bash ever sees
@@ -221,17 +221,17 @@ jobs:
         if: ${{ always() }}
         env:
           CANDIDATE: ${{ inputs.sha }}
-          EDGE_VERSION: ${{ steps.edge.outputs.version }}
-          EDGE_TAG: ${{ steps.edge.outputs.tag }}
+          SNAPSHOT_VERSION: ${{ steps.snapshot.outputs.version }}
+          SNAPSHOT_TAG: ${{ steps.snapshot.outputs.tag }}
           PROMOTE_RUN_ID: ${{ inputs.promote_run_id }}
         run: |
           {
-            echo "### Publish · npm edge"
+            echo "### Publish · npm next"
             echo ""
             echo "| field | value |"
             echo "| --- | --- |"
             echo "| candidate | \`${CANDIDATE}\` |"
-            echo "| version | \`${EDGE_VERSION}\` |"
-            echo "| dist-tag | \`${EDGE_TAG}\` |"
-            echo "| Promote · edge run | \`${PROMOTE_RUN_ID:-none (dispatched by hand)}\` |"
+            echo "| version | \`${SNAPSHOT_VERSION}\` |"
+            echo "| dist-tag | \`${SNAPSHOT_TAG}\` |"
+            echo "| Promote · next run | \`${PROMOTE_RUN_ID:-none (dispatched by hand)}\` |"
           } >> "$GITHUB_STEP_SUMMARY"

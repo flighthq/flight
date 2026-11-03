@@ -1,41 +1,31 @@
 name: Promote · next
 
-# Carries a develop commit that CI judged `Ready for next` into the `next` lane: publishes it as npm
-# `next`, then fast-forwards the `next` branch to it, so the branch and the channel always name the
-# same commit. CI verifies and publishes nothing; this workflow releases and moves, and nothing else.
+# Promotes to the `next` channel, once a night: fast-forwards `main` to the newest commit on `staging` that
+# CI · extended marked `Ready for main`, then publishes it as `next` — crates.io first, then npm, under
+# one version — so `main`, npm `next` and crates.io `next` always name the same commit.
 #
-#   develop → CI (Ready for next) → Promote · next (npm next, `next`) → CI · extended (Ready for main)
-#           → Promote · edge (`main`, edge on crates.io + npm) → tag (latest, via Release)
+#   develop → CI (Ready for staging) → Promote · edge (npm edge, `staging`) → CI · extended (Ready for main)
+#           → Promote · next (`main`, next on crates.io + npm) → tag (latest, via Release)
 #
-# ★ STARTED BY CI, DELIBERATELY, ON DEVELOP. CI's `Ready for next` job starts this workflow on
-# `develop` once every gate passed, so the run uses develop's copy of this file — the one the commit
-# being promoted carries — and a change here takes effect with the commit that makes it. (Waiting for CI
-# to finish instead would run the default branch's copy, `main`'s, a day behind.) Promote · edge, which
-# promotes to `main`, deliberately does the opposite: it runs main's copy, kept minimal for that.
+# ★ DELIBERATELY MINIMAL. A scheduled run always uses the DEFAULT branch's copy of this file (main's),
+# so a change here takes effect once it has itself been promoted to main. A workflow that can only be
+# fixed by promoting must have as little in it as possible that could break: it tests nothing (CI and
+# CI · extended already proved every commit it promotes), measures nothing (that is Hygiene · nightly),
+# and does exactly three things — choose, fast-forward, publish. Should main's copy ever break, run this
+# workflow by hand on `staging` (Actions → Promote · next → Run workflow): a manual run uses that branch's
+# copy, and promoting with it puts the fix on main.
 #
-# Eligibility is re-established from the CI run itself, not taken from whoever started this: a develop
-# push whose `Ready for next` succeeded. Nothing is rebuilt: the publish takes the exact `dist` CI
-# built and checked, downloaded from that run.
-#
-# Promotions run one at a time and never cancel, so a later commit cannot be published before an
-# earlier one finishes. GitHub keeps one waiting run and replaces it with newer ones, so under a burst
-# of pushes the newest commit is promoted and the ones it supersedes are skipped.
-run-name: "${{ inputs.title || 'Promote · next' }}"
-
+# The publish also catches up: crates.io is probed for main's version (flight-sdk uploads last, so its
+# presence means the graph landed), and npm is re-run after any failed run, so a failed or partial
+# publish is completed the next night even when nothing new was promoted. On a night with nothing new
+# and nothing missing, only the cheap resolve jobs run.
 on:
-  # Started by CI with its run, or by hand to promote a specific CI run (e.g. after re-running CI).
+  schedule:
+    # Off the top of the hour, where GitHub delays or drops scheduled runs under load.
+    - cron: '23 4 * * *'
   workflow_dispatch:
-    inputs:
-      run_id:
-        description: The CI run to promote (its id, from the run's URL). It must be a develop push whose `Ready for next` passed.
-        required: true
-        type: string
-      title:
-        description: Run title; CI passes the commit message. Optional.
-        required: false
-        type: string
-        default: ''
 
+# Nothing here launches Electron; skip its ~100MB binary download in `npm ci`.
 env:
   ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
@@ -44,143 +34,89 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Decides from the CI run itself, never from the caller's say-so: a develop push whose `Ready for next`
-  # job succeeded. CI starts this after `Ready for next` completes, but a hand-started run may race a
-  # CI run still in progress, so that job is awaited (briefly). A run that is not eligible ends quietly.
-  eligible:
-    name: Eligible
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-    outputs:
-      eligible: ${{ steps.check.outputs.eligible }}
-      run_id: ${{ steps.check.outputs.run_id }}
-      sha: ${{ steps.check.outputs.sha }}
-    steps:
-      - id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ inputs.run_id }}
-        run: |
-          set -euo pipefail
-          run=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
-            --jq '[.head_sha, .head_branch, .event, .name] | join(" ")')
-          read -r sha branch event workflow <<<"$run"
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          # Wait for `Ready for next` to complete if it has not yet (10 minutes at most).
-          ready=pending
-          for _ in $(seq 1 60); do
-            ready=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" \
-              --jq '[.jobs[] | select(.name == "Ready for next") | (.conclusion // "pending")] | .[0] // "missing"')
-            [ "$ready" = pending ] || break
-            sleep 10
-          done
-          if [ "$workflow" = CI ] && [ "$branch" = develop ] && [ "$event" = push ] && [ "$ready" = success ]; then
-            echo "Eligible: ${sha} (CI run ${RUN_ID}) is Ready for next."
-            echo 'eligible=true' >> "$GITHUB_OUTPUT"
-          else
-            echo "Not eligible: CI run ${RUN_ID} is ${workflow} on ${branch} (${event}), Ready for next: ${ready}."
-            echo 'eligible=false' >> "$GITHUB_OUTPUT"
-          fi
-
-  # npm `next`, from the exact build CI checked. Published BEFORE the branch moves, so `next` never
-  # names a commit npm `next` lacks. It never runs on pull requests (no secrets on forks, and only
-  # landed code publishes). The version is a prerelease under its own dist-tag, so `latest` is
-  # untouched. See agents/packaging.md.
-  publish:
-    name: Publish · npm next
-    needs: eligible
-    if: ${{ needs.eligible.outputs.eligible == 'true' }}
+  resolve:
+    name: Resolve
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read # download the triggering CI run's artifacts
-      id-token: write # npm provenance
+      actions: read # read earlier Promote · next and CI · extended runs
+    outputs:
+      candidate: ${{ steps.candidate.outputs.sha }}
+      retry: ${{ steps.retry.outputs.retry }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.eligible.outputs.sha }}
           fetch-depth: 0
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: 'npm'
-          # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
-          registry-url: https://registry.npmjs.org
-      - run: npm ci
 
-      # CI's Package jobs' output, not a rebuild. The wasm packages' dist from `Package · npm` was
-      # compiled against type stubs, so it is removed and replaced with `Package · wasm`'s real build;
-      # nothing published comes from a stub build. Safe across the version stamp below: nothing inlines
-      # the package version at build time.
-      - uses: actions/download-artifact@v7
-        with:
-          name: dist-${{ needs.eligible.outputs.sha }}
-          run-id: ${{ needs.eligible.outputs.run_id }}
-          github-token: ${{ github.token }}
-      - uses: actions/download-artifact@v7
-        with:
-          name: wasm-dist-${{ needs.eligible.outputs.sha }}
-          run-id: ${{ needs.eligible.outputs.run_id }}
-          github-token: ${{ github.token }}
-      - name: Restore dist from CI
+      # The commit to promote: the NEWEST commit on `staging`, ahead of `main`, with a successful CI · extended
+      # run. `git rev-list main..staging` walks newest-first, so the first match is both the newest
+      # candidate and a guaranteed fast-forward. The run list is used only as a SET of validated
+      # commits, never for ordering: CI · extended runs can finish out of order, or be cancelled by a newer
+      # push to `staging` (a cancelled run never counts). per_page=100 bounds the lookback.
+      - name: Find the newest validated commit on staging
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tar -xzf dist.tgz
-          rm -rf packages/*-wasm/dist
-          tar -xzf wasm-dist.tgz
+          if ! git ls-remote --exit-code origin refs/heads/staging >/dev/null; then
+            echo 'No staging branch yet; nothing to promote.'
+            echo 'sha=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags origin +refs/heads/staging:refs/remotes/origin/staging +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor refs/remotes/origin/main refs/remotes/origin/staging; then
+            echo "::error::main is not an ancestor of staging; the branches have diverged. Promotion needs a human."
+            exit 1
+          fi
+          ahead=$(git rev-list refs/remotes/origin/main..refs/remotes/origin/staging)
+          if [ -z "$ahead" ]; then
+            echo "main is level with staging; nothing to promote."
+            echo 'sha=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          validated=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/ci-extended.yml/runs?branch=staging&status=success&event=push&per_page=100" \
+            --jq '.workflow_runs[].head_sha' | sort -u)
+          candidate=''
+          for sha in $ahead; do
+            if grep -qxF "$sha" <<<"$validated"; then
+              candidate="$sha"
+              break
+            fi
+          done
+          if [ -z "$candidate" ]; then
+            echo "$(wc -w <<<"$ahead") commit(s) on staging ahead of main, none validated yet; nothing to promote."
+          else
+            echo "Promoting $candidate ($(git log -1 --format='%s' "$candidate"))"
+          fi
+          echo "sha=$candidate" >> "$GITHUB_OUTPUT"
 
-      # ★ An explicit channel: this runs from the default branch's workflow on a detached checkout,
-      # so neither GITHUB_REF_NAME nor the checkout names `develop`.
-      - name: Compute snapshot version and dist-tag
-        id: edge
-        run: npx tsx scripts/edge-version.ts develop >> "$GITHUB_OUTPUT"
-      # Exercise the same cumulative generator stable publication uses. npm has no release-notes
-      # field, so the rendered note lives in the run summary rather than inside one package tarball.
-      - name: Generate cumulative snapshot release notes
+      # Whether the last finished run failed: the npm next publish then reruns tonight, completing a
+      # graph it may have left partly published (its publisher skips what is already there).
+      - id: retry
         env:
-          SNAPSHOT_VERSION: ${{ steps.edge.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          npm run release:notes -- "${SNAPSHOT_VERSION}" --through HEAD --output "${RUNNER_TEMP}/release-notes.md"
-          cat "${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_STEP_SUMMARY}"
-      - name: Stamp the graph to the snapshot version
-        env:
-          SNAPSHOT_VERSION: ${{ steps.edge.outputs.version }}
-        run: npm run version:packages "${SNAPSHOT_VERSION}"
-      - name: Publish snapshot to npm
-        env:
-          SNAPSHOT_TAG: ${{ steps.edge.outputs.tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: 'true'
-        run: npm run release -- --no-build --tag "${SNAPSHOT_TAG}"
+          last=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/promote-next.yml/runs?status=completed&per_page=1" \
+            --jq '.workflow_runs[0].conclusion // "success"')
+          if [ "$last" = success ]; then echo 'retry=false' >> "$GITHUB_OUTPUT"; else echo 'retry=true' >> "$GITHUB_OUTPUT"; fi
+          echo "Last finished Promote · next: ${last}."
 
-      # The npm artifact must exist before the downstream port and compiler are asked to release, so
-      # this follows the publish rather than running beside it. `flight-snapshot`, NOT
-      # `flight-release`: a receiver that has not learned about snapshots must do NOTHING rather than
-      # publish a prerelease to `latest`. The action documents that inversion and the 204 caveat.
-      - name: Dispatch downstream snapshot releases
-        uses: ./.github/actions/dispatch-downstream
-        with:
-          commit: ${{ needs.eligible.outputs.sha }}
-          dist-tag: ${{ steps.edge.outputs.tag }}
-          event-type: flight-snapshot
-          flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
-          version: ${{ steps.edge.outputs.version }}
-
-  # Moves the `next` branch to the commit just published. Its own job, so the npm credential and the
-  # push credential never share one. The push uses the promotion App's token: the built-in token
-  # cannot update .github/workflows/ files, and a push made with it would start no `CI · extended` run.
-  # Without the App's secrets it falls back to the built-in token (which then cannot promote workflow
-  # changes, and `CI · extended` must be run by hand). The ruleset on `next` independently requires
-  # the commit's `Ready for next`.
-  promote-next:
-    name: Fast-forward next
-    needs: [eligible, publish]
+  # Fast-forwards main to the validated candidate, with the promotion App's token: the built-in token
+  # cannot update .github/workflows/ files. Without the App's secrets it falls back to the built-in
+  # token, which then cannot promote workflow changes. The ruleset on main independently requires the
+  # candidate's `Ready for main` check, which it carries from its run on `staging`.
+  promote:
+    name: Fast-forward main
+    needs: resolve
+    if: ${{ needs.resolve.outputs.candidate != '' }}
     runs-on: ubuntu-latest
+    outputs:
+      advanced: ${{ steps.push.outputs.advanced }}
     permissions:
-      contents: write # push refs/heads/next when falling back to the built-in token
+      contents: write # push refs/heads/main when falling back to the built-in token
     steps:
       - name: Check for the promotion App
         id: app
@@ -190,7 +126,7 @@ jobs:
           if [ -n "$APP_ID" ]; then
             echo 'configured=true' >> "$GITHUB_OUTPUT"
           else
-            echo '::notice::PROMOTE_APP_ID is not set; pushing with the built-in token, which cannot promote workflow changes or start CI · extended.'
+            echo '::notice::PROMOTE_APP_ID is not set; pushing with the built-in token, which cannot promote workflow changes.'
             echo 'configured=false' >> "$GITHUB_OUTPUT"
           fi
       - name: Mint the promotion token
@@ -206,7 +142,112 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token || github.token }}
-      - name: Fast-forward next to this commit
+      - name: Fast-forward main to the validated commit
+        id: push
         env:
-          CANDIDATE: ${{ needs.eligible.outputs.sha }}
-        run: bash scripts/fast-forward-branch.sh next "$CANDIDATE"
+          CANDIDATE: ${{ needs.resolve.outputs.candidate }}
+        run: bash scripts/fast-forward-branch.sh main "$CANDIDATE"
+
+  # What `next` should be tonight: main's commit (after any promotion above), under the version both
+  # registries publish it as, and which registries to publish to. Runs whether or not a promotion
+  # happened, so a failed or partial publish from an earlier night is completed.
+  #
+  # crates.io is probed (flight-sdk uploads last, so its presence means the graph landed). npm is NOT
+  # probed: its publisher completes a partial graph package by package, and a probe of one package
+  # could report "published" for a half-published graph and skip it forever. So npm runs on any new
+  # promotion, any crates.io publish, any manual run, and after any failed run.
+  version:
+    name: Publish · resolve next
+    needs: [resolve, promote]
+    if: ${{ !cancelled() && needs.resolve.result == 'success' && needs.promote.result != 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read tests.yml conclusions for main's commit
+    outputs:
+      crates: ${{ steps.check.outputs.crates }}
+      npm: ${{ steps.check.outputs.npm }}
+      sha: ${{ steps.check.outputs.sha }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ADVANCED: ${{ needs.promote.outputs.advanced }}
+          RETRY: ${{ needs.resolve.outputs.retry }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          version=$(npx tsx scripts/edge-version.ts main | sed -n 's/^version=//p')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          # main receives only validated commits, but a hand push skips that. Re-prove CI for this
+          # exact commit, as the npm next publish and Release do; no run is never green.
+          successes=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?head_sha=${sha}" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')
+          if [ "${successes:-0}" -eq 0 ]; then
+            echo "::error::main is at ${sha}, which has no successful CI run; refusing to publish it as next."
+            exit 1
+          fi
+
+          # crates.io asks API clients to identify themselves.
+          status=$(curl -s -o /dev/null -w '%{http_code}' -A 'flighthq-nightly (github.com/flighthq/flight)' \
+            "https://crates.io/api/v1/crates/flight-sdk/${version}")
+          case "$status" in
+            200) crates=false ;;
+            404) crates=true ;;
+            *) echo "::error::crates.io answered HTTP $status for flight-sdk ${version}"; exit 1 ;;
+          esac
+          if [ "$ADVANCED" = true ] || [ "$crates" = true ] || [ "$RETRY" = true ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
+            npm=true
+          else
+            npm=false
+          fi
+          echo "next ${version} (${sha}): crates.io publish=${crates}, npm publish=${npm}"
+          echo "crates=$crates" >> "$GITHUB_OUTPUT"
+          echo "npm=$npm" >> "$GITHUB_OUTPUT"
+
+  # crates.io first: it is the slow, rate-limited half (~2h for the graph), and if it fails, npm is not
+  # published, so a version never exists on one registry without the other. A partial upload is
+  # completed the next night (crates already up are skipped as "already exists").
+  crates-next:
+    name: Publish · crates.io next
+    needs: version
+    if: ${{ needs.version.outputs.crates == 'true' }}
+    uses: ./.github/workflows/rust-publish.yml
+    with:
+      ref: ${{ needs.version.outputs.sha }}
+      version: ${{ needs.version.outputs.version }}
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # Then npm, once crates.io has the version (published just now, or already).
+  npm-next:
+    name: Publish · npm next
+    needs: [version, crates-next]
+    if: >-
+      ${{ !cancelled() && needs.version.result == 'success' && needs.version.outputs.npm == 'true' && (needs.crates-next.result == 'success' || needs.version.outputs.crates == 'false') }}
+
+
+    permissions:
+      contents: read
+      actions: read # publish-npm-next.yml re-reads tests.yml conclusions for the sha
+      id-token: write # npm provenance
+    uses: ./.github/workflows/publish-npm-next.yml
+    with:
+      sha: ${{ needs.version.outputs.sha }}
+      promote_run_id: ${{ github.run_id }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      FLIGHT_COMPILER_DISPATCH_TOKEN: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}

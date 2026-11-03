@@ -19,8 +19,8 @@ function jobSteps(workflowName: string, jobName: string): WorkflowStep[] {
 
 describe('snapshot release notes contract', () => {
   it.each([
-    ['next', 'promote-next', 'publish'],
-    ['edge', 'edge-publish', 'publish'],
+    ['edge', 'promote-edge', 'publish'],
+    ['next', 'publish-npm-next', 'publish'],
   ])('generates cumulative %s notes before publishing to npm', (_channel, workflowName, jobName) => {
     const steps = jobSteps(workflowName, jobName);
     const generateIndex = steps.findIndex((step) => step.name === 'Generate cumulative snapshot release notes');
@@ -30,7 +30,7 @@ describe('snapshot release notes contract', () => {
 
     expect(generateIndex).toBeGreaterThan(-1);
     expect(publishIndex).toBeGreaterThan(generateIndex);
-    expect(generate?.env?.SNAPSHOT_VERSION).toBe('${{ steps.edge.outputs.version }}');
+    expect(generate?.env?.SNAPSHOT_VERSION).toBe('${{ steps.snapshot.outputs.version }}');
     expect(run).toContain('npm run release:notes -- "${SNAPSHOT_VERSION}"');
     expect(run).toContain('--through HEAD');
     expect(run).toContain('--output "${RUNNER_TEMP}/release-notes.md"');

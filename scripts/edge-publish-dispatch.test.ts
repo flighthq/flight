@@ -3,10 +3,10 @@ import { join } from 'node:path';
 
 import { parse } from 'yaml';
 
-// Static acceptance for the promotion and edge-publish contract: develop → CI (Ready for next) →
-// Promote · next (npm next, `next`) → CI · extended (Ready for main) → Promote · edge (`main`, edge on crates.io, then
-// npm). The external gate is a real `edge`
-// dist-tag after a future Promote · edge, which nothing here can or should reach: promoting and publishing are
+// Static acceptance for the promotion and publish contract: develop → CI (Ready for staging) →
+// Promote · edge (npm edge, `staging`) → CI · extended (Ready for main) → Promote · next (`main`, next on
+// crates.io, then npm). The external gate is a real `next` dist-tag after a future Promote · next,
+// which nothing here can or should reach: promoting and publishing are
 // live actions. What IS checkable without either is the contract itself — that each promotion moves
 // only forward to a commit that passed its gate, that the push jobs hold only the promotion App and
 // never a publish credential, that crates.io goes before npm, and that the publisher re-verifies what
@@ -74,8 +74,8 @@ describe('edge-publish promotion contract', () => {
   it('CI publishes nothing and holds no publish credential', () => {
     const ci = readWorkflow('tests');
     expect(ci).not.toContain('secrets.');
-    expect(Object.keys(jobsOf('tests'))).not.toContain('promote-next');
-    expect(jobsOf('tests')['ready-for-next'].needs).toEqual([
+    expect(Object.keys(jobsOf('tests'))).not.toContain('promote-edge');
+    expect(jobsOf('tests')['ready-for-staging'].needs).toEqual([
       'rust-test',
       'ts-test',
       'compliance',
@@ -88,93 +88,93 @@ describe('edge-publish promotion contract', () => {
     ]);
   });
 
-  it('CI hands off to Promote deliberately, on develop, so Promote runs the promoted commit copy', () => {
+  it('CI hands off to Promote · edge deliberately, on develop, so it runs the promoted commit copy', () => {
     const handoff = jobsOf('tests').handoff;
-    // Its own job after the verdict: a failed hand-off never turns `Ready for next` red.
-    expect(handoff.needs).toBe('ready-for-next');
-    expect(jobsOf('tests')['ready-for-next'].permissions).toBeUndefined();
+    // Its own job after the verdict: a failed hand-off never turns `Ready for staging` red.
+    expect(handoff.needs).toBe('ready-for-staging');
+    expect(jobsOf('tests')['ready-for-staging'].permissions).toBeUndefined();
     // Only develop pushes.
     expect(handoff.if).toBe("${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}");
     expect(String(handoff.steps?.[0]?.run)).toContain(
-      'gh workflow run promote-next.yml --repo "$GITHUB_REPOSITORY" --ref develop',
+      'gh workflow run promote-edge.yml --repo "$GITHUB_REPOSITORY" --ref develop',
     );
     // Starting a workflow is the only write CI holds, and it holds no secret.
     expect(handoff.permissions).toEqual({ actions: 'write' });
     // ★ No `workflow_run` trigger: that would run the DEFAULT branch's copy (main's), a day behind the
     // commit being promoted.
-    const promote = parseWorkflow('promote-next') as { on: Record<string, unknown> };
+    const promote = parseWorkflow('promote-edge') as { on: Record<string, unknown> };
     expect(Object.keys(promote.on)).toEqual(['workflow_dispatch']);
   });
 
-  it('Promote acts only on a develop push whose Ready for next succeeded', () => {
-    const check = String(jobsOf('promote-next').eligible.steps?.find((step) => step.id === 'check')?.run);
+  it('Promote · edge acts only on a develop push whose Ready for staging succeeded', () => {
+    const check = String(jobsOf('promote-edge').eligible.steps?.find((step) => step.id === 'check')?.run);
     // Decided from the CI run itself, by the gate job's name — not from CI's overall conclusion, which
     // includes Render smoke, a signal rather than a gate for next.
-    expect(check).toContain('select(.name == "Ready for next")');
+    expect(check).toContain('select(.name == "Ready for staging")');
     expect(check).toContain('[ "$branch" = develop ] && [ "$event" = push ] && [ "$ready" = success ]');
-    expect(jobsOf('promote-next').publish.if).toBe("${{ needs.eligible.outputs.eligible == 'true' }}");
+    expect(jobsOf('promote-edge').publish.if).toBe("${{ needs.eligible.outputs.eligible == 'true' }}");
   });
 
-  it('Promote moves next only after npm next is published, and only forward', () => {
-    const job = jobsOf('promote-next')['promote-next'];
-    // Published first, so the `next` branch never names a commit npm `next` lacks.
+  it('Promote · edge moves staging only after npm edge is published, and only forward', () => {
+    const job = jobsOf('promote-edge')['promote-staging'];
+    // Published first, so the `staging` branch never names a commit npm `edge` lacks.
     expect(job.needs).toEqual(['eligible', 'publish']);
-    expect(String(job.steps?.at(-1)?.run)).toBe('bash scripts/fast-forward-branch.sh next "$CANDIDATE"');
-    expectOnlyThePromotionApp(job, 'promote-next');
+    expect(String(job.steps?.at(-1)?.run)).toBe('bash scripts/fast-forward-branch.sh staging "$CANDIDATE"');
+    expectOnlyThePromotionApp(job, 'promote-edge');
   });
 
-  it('Promote publishes the exact build CI checked, on the next channel', () => {
-    const publish = jobsOf('promote-next').publish;
+  it('Promote · edge publishes the exact build CI checked, on the edge channel', () => {
+    const publish = jobsOf('promote-edge').publish;
     const downloads = (publish.steps ?? []).filter((step) => step.uses === 'actions/download-artifact@v7');
     expect(downloads.map((step) => step.with?.['run-id'])).toEqual([
       '${{ needs.eligible.outputs.run_id }}',
       '${{ needs.eligible.outputs.run_id }}',
     ]);
     // A workflow_run job runs on the default branch with a detached checkout, so the channel is named.
-    expect(readWorkflow('promote-next')).toContain('scripts/edge-version.ts develop');
+    expect(readWorkflow('promote-edge')).toContain('scripts/edge-version.ts develop');
     expect(publish.permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
   });
 
-  it('Promote · edge promotes only the newest validated commit on next, and only forward', () => {
-    const jobs = jobsOf('promote-edge');
-    const resolve = String(stepNamed(jobs.resolve.steps ?? [], 'Find the newest validated commit on next').run);
-    // Candidates are commits on next ahead of main with a successful CI · extended run.
-    expect(resolve).toContain('git rev-list refs/remotes/origin/main..refs/remotes/origin/next');
-    expect(resolve).toContain('actions/workflows/ci-extended.yml/runs?branch=next&status=success&event=push');
+  it('Promote · next promotes only the newest validated commit on staging, and only forward', () => {
+    const jobs = jobsOf('promote-next');
+    const resolve = String(stepNamed(jobs.resolve.steps ?? [], 'Find the newest validated commit on staging').run);
+    // Candidates are commits on staging ahead of main with a successful CI · extended run.
+    expect(resolve).toContain('git rev-list refs/remotes/origin/main..refs/remotes/origin/staging');
+    expect(resolve).toContain('actions/workflows/ci-extended.yml/runs?branch=staging&status=success&event=push');
     expect(jobs.promote.if).toBe("${{ needs.resolve.outputs.candidate != '' }}");
     expect(String(jobs.promote.steps?.at(-1)?.run)).toBe('bash scripts/fast-forward-branch.sh main "$CANDIDATE"');
-    expectOnlyThePromotionApp(jobs.promote, 'promote-edge fast-forward');
+    expectOnlyThePromotionApp(jobs.promote, 'promote-next fast-forward');
   });
 
-  it('Promote · edge publishes edge to crates.io before npm, for the commit main points at', () => {
-    const jobs = jobsOf('promote-edge');
-    expect(jobs['crates-edge'].uses).toBe('./.github/workflows/rust-publish.yml');
-    expect(jobs['crates-edge'].with?.ref).toBe('${{ needs.edge-version.outputs.sha }}');
-    expect(jobs['npm-edge'].uses).toBe('./.github/workflows/edge-publish.yml');
-    expect(jobs['npm-edge'].with?.sha).toBe('${{ needs.edge-version.outputs.sha }}');
+  it('Promote · next publishes next to crates.io before npm, for the commit main points at', () => {
+    const jobs = jobsOf('promote-next');
+    expect(jobs['crates-next'].uses).toBe('./.github/workflows/rust-publish.yml');
+    expect(jobs['crates-next'].with?.ref).toBe('${{ needs.version.outputs.sha }}');
+    expect(jobs['npm-next'].uses).toBe('./.github/workflows/publish-npm-next.yml');
+    expect(jobs['npm-next'].with?.sha).toBe('${{ needs.version.outputs.sha }}');
     // npm waits for crates.io: if crates.io fails, npm is not published, so a version never exists on
     // one registry without the other.
-    expect(jobs['npm-edge'].needs).toEqual(['edge-version', 'crates-edge']);
-    expect(String(jobs['npm-edge'].if)).toContain("needs.crates-edge.result == 'success'");
-    for (const name of ['crates-edge', 'npm-edge']) expect(jobs[name]['continue-on-error'], name).toBeUndefined();
+    expect(jobs['npm-next'].needs).toEqual(['version', 'crates-next']);
+    expect(String(jobs['npm-next'].if)).toContain("needs.crates-next.result == 'success'");
+    for (const name of ['crates-next', 'npm-next']) expect(jobs[name]['continue-on-error'], name).toBeUndefined();
     // Only the npm publish holds the npm credential, and with only the permissions it needs.
-    expect(jobs['npm-edge'].permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
-    expect(Object.keys(jobs['npm-edge'].secrets ?? {}).sort()).toEqual(['FLIGHT_COMPILER_DISPATCH_TOKEN', 'NPM_TOKEN']);
+    expect(jobs['npm-next'].permissions).toEqual({ actions: 'read', contents: 'read', 'id-token': 'write' });
+    expect(Object.keys(jobs['npm-next'].secrets ?? {}).sort()).toEqual(['FLIGHT_COMPILER_DISPATCH_TOKEN', 'NPM_TOKEN']);
   });
 
-  it('Promote · edge never skips npm on a single-package probe', () => {
+  it('Promote · next never skips npm on a single-package probe', () => {
     // ★ npm's publisher completes a partial graph package by package; a probe of one package could
     // report "published" for a half-published graph and skip it forever. npm runs on promotion, on a
     // crates.io publish, on a manual run, and after any failed Nightly instead.
-    const source = readWorkflow('promote-edge');
+    const source = readWorkflow('promote-next');
     expect(source).not.toContain('registry.npmjs.org');
     expect(source).not.toContain('npm view');
-    const check = String(jobsOf('promote-edge')['edge-version'].steps?.find((step) => step.id === 'check')?.run);
+    const check = String(jobsOf('promote-next')['version'].steps?.find((step) => step.id === 'check')?.run);
     expect(check).toContain('[ "$ADVANCED" = true ] || [ "$crates" = true ] || [ "$RETRY" = true ]');
   });
 
   it('the receiver is called or dispatched — not workflow_run, not push', () => {
-    const receiver = parseWorkflow('edge-publish') as { on: Record<string, unknown> };
+    const receiver = parseWorkflow('publish-npm-next') as { on: Record<string, unknown> };
     expect(Object.keys(receiver.on).sort()).toEqual(['workflow_call', 'workflow_dispatch']);
     // A push made with the default token starts no run, so a push-triggered publisher never fires,
     // and workflow_run would chain off that same absent run.
@@ -183,22 +183,22 @@ describe('edge-publish promotion contract', () => {
   });
 
   it('the receiver requires a sha input and keys concurrency on it', () => {
-    const receiver = parseWorkflow('edge-publish') as {
+    const receiver = parseWorkflow('publish-npm-next') as {
       on: Record<'workflow_call' | 'workflow_dispatch', { inputs: Record<string, { required?: boolean }> }>;
       concurrency: { group: string; 'cancel-in-progress': boolean };
     };
     expect(receiver.on.workflow_call.inputs.sha.required).toBe(true);
     expect(receiver.on.workflow_dispatch.inputs.sha.required).toBe(true);
-    // ★ CHANNEL-GLOBAL. `edge` is one dist-tag; two concurrent publishes race on it and last-write-wins
+    // ★ CHANNEL-GLOBAL. `next` is one dist-tag; two concurrent publishes race on it and last-write-wins
     // can leave the OLDER build on the tag. Keying on the candidate would permit exactly that, so the
     // group must NOT vary with the input.
-    expect(receiver.concurrency.group).toBe('edge-publish-main');
+    expect(receiver.concurrency.group).toBe('publish-npm-next');
     expect(receiver.concurrency.group).not.toContain('inputs.sha');
     expect(receiver.concurrency['cancel-in-progress']).toBe(false);
   });
 
   it('the receiver verifies the sha it was handed instead of trusting it', () => {
-    const receiver = parseWorkflow('edge-publish') as {
+    const receiver = parseWorkflow('publish-npm-next') as {
       jobs: { publish: { steps: { name?: string; run?: string }[] } };
     };
     const verify = stepNamed(receiver.jobs.publish.steps, 'Verify the checkout is the dispatched commit');
@@ -212,15 +212,15 @@ describe('edge-publish promotion contract', () => {
   });
 
   it('the receiver names the channel explicitly, because its checkout is detached', () => {
-    const receiver = readWorkflow('edge-publish');
+    const receiver = readWorkflow('publish-npm-next');
     // edge-version falls back to the current branch to choose the dist-tag, and a detached checkout of
     // a sha names no branch. Without the explicit argument the tag is whatever the fallback resolves.
     expect(receiver).toContain('scripts/edge-version.ts main');
   });
 
   it('the publisher always runs — no outer skip may gate the whole graph', () => {
-    const source = readWorkflow('edge-publish');
-    const receiver = parseWorkflow('edge-publish') as {
+    const source = readWorkflow('publish-npm-next');
+    const receiver = parseWorkflow('publish-npm-next') as {
       jobs: { publish: { steps: { name?: string; if?: string }[] } };
     };
     const steps = receiver.jobs.publish.steps;
@@ -241,7 +241,7 @@ describe('edge-publish promotion contract', () => {
     // script-injection shape, and a Markdown summary table is no safer than a command line. Every value
     // must arrive through `env`, where bash sees it as an ordinary variable. Asserting over every step
     // of both workflows means a new step cannot reintroduce it at a site nobody thought to check.
-    for (const name of ['promote-edge', 'edge-publish', 'promote-next']) {
+    for (const name of ['promote-next', 'publish-npm-next', 'promote-edge']) {
       const doc = parseWorkflow(name) as { jobs: Record<string, { steps?: { name?: string; run?: string }[] }> };
       for (const job of Object.values(doc.jobs)) {
         for (const step of job.steps ?? []) {
@@ -257,19 +257,19 @@ describe('edge-publish promotion contract', () => {
   });
 
   it('the values that carry candidate data are quoted where they are used', () => {
-    const receiver = readWorkflow('edge-publish');
+    const receiver = readWorkflow('publish-npm-next');
     // Unquoted, a value containing whitespace word-splits and a later argument becomes a separate one.
     // These carry caller-influenced or computed data into commands.
-    expect(receiver).toContain('npm run version:packages "${EDGE_VERSION}"');
-    expect(receiver).toContain('--tag "${EDGE_TAG}"');
+    expect(receiver).toContain('npm run version:packages "${SNAPSHOT_VERSION}"');
+    expect(receiver).toContain('--tag "${SNAPSHOT_TAG}"');
   });
 
   it('no credential beyond the default token is introduced', () => {
-    const receiver = readWorkflow('edge-publish');
-    const promoteEdge = readWorkflow('promote-edge');
+    const receiver = readWorkflow('publish-npm-next');
+    const promoteEdge = readWorkflow('promote-next');
     // Nightly reaches the publisher by calling it, which the default token permits. The pushes use the
     // promotion App's repository-scoped token; a PAT or a generic App credential would be broader.
-    for (const source of [receiver, promoteEdge, readWorkflow('promote-next')]) {
+    for (const source of [receiver, promoteEdge, readWorkflow('promote-edge')]) {
       expect(source).not.toMatch(/secrets\.(GH_PAT|PAT|APP_ID|APP_PRIVATE_KEY|BOT_TOKEN)/);
     }
     expect(promoteEdge).toContain('GH_TOKEN: ${{ github.token }}');
@@ -278,19 +278,19 @@ describe('edge-publish promotion contract', () => {
   });
 
   it('the hand re-publish is written down where the operator will be', () => {
-    const receiver = readWorkflow('edge-publish');
+    const receiver = readWorkflow('publish-npm-next');
     // The manual path must be spelled out as a command, and the acceptance must be the dist-tag rather
     // than a green run — every local gate proves wiring, never that a package was published.
-    expect(receiver).toContain('gh workflow run edge-publish.yml --ref main');
+    expect(receiver).toContain('gh workflow run publish-npm-next.yml --ref main');
     expect(receiver).toContain('npm dist-tag ls @flighthq/sdk');
   });
 
-  it('npm next is published only from develop, and edge only by Promote · edge', () => {
+  it('npm edge is published only from develop, and next only by Promote · next', () => {
     // Two publishers for one dist-tag, on different concurrency keys, could race the same version.
-    expect(String(jobsOf('promote-next').eligible.steps?.find((step) => step.id === 'check')?.run)).toContain(
+    expect(String(jobsOf('promote-edge').eligible.steps?.find((step) => step.id === 'check')?.run)).toContain(
       '[ "$branch" = develop ]',
     );
     expect(readWorkflow('tests')).not.toContain('npm run release');
-    expect(readWorkflow('promote-next')).not.toContain('edge-publish.yml');
+    expect(readWorkflow('promote-edge')).not.toContain('publish-npm-next.yml');
   });
 });

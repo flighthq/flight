@@ -1,24 +1,24 @@
 name: CI · extended
 
-# The second, deeper round of CI, run in the `next` lane: every commit there already passed CI and was
-# published as npm `next`. These are the slower, thorough checks — the isolated per-package test lane,
+# The second, deeper round of CI, run in the `staging` lane: every commit there already passed CI and was
+# published as npm `edge`. These are the slower, thorough checks — the isolated per-package test lane,
 # render parity, and the reference-image comparison — and `Ready for main` marks a commit that passed
-# them all as eligible for Promote · edge to promote to `main` and publish as `edge`. So Promote · edge picks up
+# them all as eligible for Promote · next to promote to `main` and publish as `next`. So Promote · next picks up
 # what was already proved here; nothing it promotes is tested for the first time at night.
 #
-#   develop → CI (Ready for next) → Promote · next (npm next, `next`) → CI · extended (Ready for main)
-#           → Promote · edge (`main`, edge on crates.io + npm) → tag (latest, via Release)
+#   develop → CI (Ready for staging) → Promote · edge (npm edge, `staging`) → CI · extended (Ready for main)
+#           → Promote · next (`main`, next on crates.io + npm) → tag (latest, via Release)
 #
-# Triggered by Promote · next's push to `next` (made with the promotion App's token, so the push starts this
-# run; a push uses the pushed commit's own copy of this file). A newer `next` cancels an older run:
-# nothing here publishes, and only the newest eligible commit matters to Promote · edge, so under a burst of
+# Triggered by Promote · edge's push to `staging` (made with the promotion App's token, so the push starts this
+# run; a push uses the pushed commit's own copy of this file). A newer `staging` cancels an older run:
+# nothing here publishes, and only the newest eligible commit matters to Promote · next, so under a burst of
 # pushes the suite runs on the latest rather than on every one.
 #
 # `Ready for main` is the single check the ruleset on main requires. It always reports, so it can
 # never be left "expected" by a skipped dependency.
 on:
   push:
-    branches: [next]
+    branches: [staging]
   workflow_dispatch:
 
 env:
@@ -106,7 +106,7 @@ jobs:
           FLIGHT_CAPTURE_TIMEOUT_MS: 45000
 
   # The blessed-image comparison: the only tier that can detect a pixel regression against promoted
-  # reference bytes. A gate for main: a pixel regression holds the commit on `next`.
+  # reference bytes. A gate for main: a pixel regression holds the commit on `staging`.
   #
   # Reference packs are public HTTPS reads, the job holds no secret, and its token is explicitly
   # read-only. A zero-comparison run is a failure rather than a green no-op; the lock bounds the capture

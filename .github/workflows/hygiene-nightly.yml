@@ -6,9 +6,9 @@ name: Hygiene · nightly
 #
 # ★ IT CHECKS `main`, THE COMMIT ITS OWN WORKFLOW CAME FROM. A scheduled run uses the default branch's
 # copy of this file (main's); checking main's code with it keeps the workflow and the code from the
-# same commit, so they can never be out of step. `main` is exactly what Promote · edge published as
-# `edge`, so this is the nightly health of the edge release. It lags develop by up to a day, which
-# these slow signals can afford. Scheduled an hour after Promote · edge, so it sees the night's `main`.
+# same commit, so they can never be out of step. `main` is exactly what Promote · next published as
+# `next`, so this is the nightly health of the next release. It lags develop by up to a day, which
+# these slow signals can afford. Scheduled an hour after Promote · next, so it sees the night's `main`.
 #
 # Skipped when `main` has not moved since the last successful run. A manual run always runs.
 on:

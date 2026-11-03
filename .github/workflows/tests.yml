@@ -6,14 +6,14 @@ name: CI
 #   Test        Rust and TypeScript, each validated by its own tests.
 #   Compliance  license provenance across the whole repository — a hard stop, not a style check.
 #   Package     every registry's artifact built and validated: npm (TypeScript), wasm, crates.io.
-#   Ready for next  one summary verdict over Test, Compliance, Package and functional render smoke:
-#               the single check the ruleset on `next` requires. CI itself publishes nothing and
+#   Ready for staging  one summary verdict over Test, Compliance, Package and functional render smoke:
+#               the single check the ruleset on `staging` requires. CI itself publishes nothing and
 #               holds no publish credential.
 #
 # What happens after, each in its own workflow:
-#   develop → CI (Ready for next) → Promote · next (npm next, `next`) → CI · extended (Ready for main)
-#           → Promote · edge (`main`, edge on crates.io + npm) → tag (latest, via Release)
-# `Package · npm` and `Package · wasm` leave their dist as artifacts for Promote · next to publish unchanged;
+#   develop → CI (Ready for staging) → Promote · edge (npm edge, `staging`) → CI · extended (Ready for main)
+#           → Promote · next (`main`, next on crates.io + npm) → tag (latest, via Release)
+# `Package · npm` and `Package · wasm` leave their dist as artifacts for Promote · edge to publish unchanged;
 # `Package · crates.io` proves on every push that the crates would publish.
 #
 # Functional render smoke runs beside them and gates too; example smoke is a Hygiene warning.
@@ -28,7 +28,7 @@ name: CI
 #                  Failures surface as warnings and a run summary. The pre-push hook blocks on format.
 #   hygiene-nightly.yml — once a night on main, never gates: coverage, examples parity, Conformance,
 #                  and the Host backends on real platforms.
-#   ci-extended.yml — on `next`: the slower checks that mark a commit Ready for main.
+#   ci-extended.yml — on `staging`: the slower checks that mark a commit Ready for main.
 #
 # ★ NO PATH FILTERING. Every job runs on every push, so a green run means every check passed AT THIS
 # COMMIT. A filter on "what this push changed" broke that: a push that broke Rust followed by one that
@@ -43,9 +43,9 @@ name: CI
 on:
   pull_request:
   push:
-    # Develop only. Commits are made on develop and reach `next` and `main` only through the
+    # Develop only. Commits are made on develop and reach `staging` and `main` only through the
     # promotions, after this workflow passed for them; the promotions, the publishes and Release all
-    # look up that develop run by commit, so a run on `next` or `main` would only repeat it. A commit
+    # look up that develop run by commit, so a run on `staging` or `main` would only repeat it. A commit
     # made directly on either has no CI run and is therefore refused by all of them: the intent.
     branches: [develop]
   # A manual run executes the same full gate as a push, so its success means the same thing.
@@ -153,16 +153,16 @@ jobs:
         env:
           FLIGHT_CHECK_GATES: packages:check,module-specifiers:check,package-dist-orphans:check,sdk-subpaths:check,export-lanes:check
 
-      # Handed to Promote · next, which publishes it unchanged, so it does not repeat the full `tsc -b` over
-      # all 141 projects. Safe to reuse across the version stamp Promote · next applies: nothing inlines the
+      # Handed to Promote · edge, which publishes it unchanged, so it does not repeat the full `tsc -b` over
+      # all 141 projects. Safe to reuse across the version stamp Promote · edge applies: nothing inlines the
       # package version at build time (the one manifest read, tool-capture's captureServer, does it at
       # runtime). The four wasm packages are in this build too, compiled against committed type stubs;
-      # Promote · next replaces their dist with `Package · wasm`'s real one.
+      # Promote · edge replaces their dist with `Package · wasm`'s real one.
       #
       # Tarred first because upload-artifact is slow over many small files, and 141 dist directories
       # are ~76MB of them — as one tarball it is 5.8MB. Uploaded unconditionally: it is cheap, and a
-      # gate that drifted from Promote · next's eligibility rule would silently starve it rather than fail.
-      # Kept long enough for Promote · next to run after a queue or a manual re-run.
+      # gate that drifted from Promote · edge's eligibility rule would silently starve it rather than fail.
+      # Kept long enough for Promote · edge to run after a queue or a manual re-run.
       - name: Tar dist for the publish
         run: tar -czf dist.tgz packages/*/dist
       - uses: actions/upload-artifact@v6
@@ -218,12 +218,12 @@ jobs:
           path: wasm-dist.tgz
           retention-days: 7
 
-  # The verdict that this commit may be promoted to `next`: every Test, Compliance and Package job and
-  # functional render smoke succeeded. Promote · next reads it by name; the ruleset on `next` requires it.
+  # The verdict that this commit may be promoted to `staging`: every Test, Compliance and Package job and
+  # functional render smoke succeeded. Promote · edge reads it by name; the ruleset on `staging` requires it.
   # It always reports (never left "expected" by a skipped dependency) and runs on pull requests too,
   # so renaming or adding a gate job changes only this `needs` list, never the ruleset.
-  ready-for-next:
-    name: Ready for next
+  ready-for-staging:
+    name: Ready for staging
     needs: [rust-test, ts-test, compliance, package-npm, package-crates, package-wasm, render-test]
     if: ${{ always() }}
     runs-on: ubuntu-latest
@@ -241,37 +241,37 @@ jobs:
           echo "All gates passed."
 
   # Its own job, after the verdict, so that a failed hand-off is its own red box and never makes
-  # `Ready for next` report a commit as unready when every gate passed.
+  # `Ready for staging` report a commit as unready when every gate passed.
   #
-  # ★ promote-next.yml MUST EXIST ON THE DEFAULT BRANCH (main) to be startable at all — GitHub registers
+  # ★ promote-edge.yml MUST EXIST ON THE DEFAULT BRANCH (main) to be startable at all — GitHub registers
   # `workflow_dispatch` workflows from the default branch only, though a run then uses the copy on the
   # ref it was started on. So renaming that file needs the new name on main before this works again.
   handoff:
-    name: Hand off to Promote · next
-    needs: ready-for-next
+    name: Hand off to Promote · edge
+    needs: ready-for-staging
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
-      actions: write # start Promote · next; no secret and no publish credential
+      actions: write # start Promote · edge; no secret and no publish credential
     steps:
-      # ★ STARTED DELIBERATELY, ON DEVELOP. A run started this way uses develop's copy of promote-next.yml —
-      # the copy this very commit carries — so a change to Promote · next takes effect with the commit that makes
+      # ★ STARTED DELIBERATELY, ON DEVELOP. A run started this way uses develop's copy of promote-edge.yml —
+      # the copy this very commit carries — so a change to Promote · edge takes effect with the commit that makes
       # it. Waiting for CI to finish (`workflow_run`) would instead run the DEFAULT branch's copy, `main`'s,
-      # a day behind. Only develop pushes hand off, and only once `Ready for next` passed (this job needs
-      # it). Promote · next re-checks the run itself rather than trusting this.
-      - name: Start Promote · next on develop
+      # a day behind. Only develop pushes hand off, and only once `Ready for staging` passed (this job needs
+      # it). Promote · edge re-checks the run itself rather than trusting this.
+      - name: Start Promote · edge on develop
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
           TITLE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
-          gh workflow run promote-next.yml --repo "$GITHUB_REPOSITORY" --ref develop \
+          gh workflow run promote-edge.yml --repo "$GITHUB_REPOSITORY" --ref develop \
             -f run_id="$RUN_ID" -f title="$(printf '%s' "$TITLE" | head -n 1)"
-          echo "Started Promote · next for CI run ${RUN_ID}."
+          echo "Started Promote · edge for CI run ${RUN_ID}."
 
   render-test:
-    # Functional smoke, a GATE for `next`: every functional scene — test fixtures written against the
+    # Functional smoke, a GATE for `staging`: every functional scene — test fixtures written against the
     # SDK, each verifying its own output — renders on every backend, is not blank, and passes its
     # in-page check. A failure is an SDK rendering defect. `Render · functional` covers DOM, Canvas and
     # WebGL; only the serialized WebGPU leg carries a suffix.

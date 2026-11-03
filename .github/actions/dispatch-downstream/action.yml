@@ -2,7 +2,7 @@ name: Dispatch downstream release
 description: Ask flight-rs and flight-compiler to release at a version this repo just published to npm
 
 # ONE PLACE THAT OWNS THE PAYLOAD CONTRACT. Three workflows publish @flighthq/* to npm — release.yml
-# (stable tags), edge-publish.yml (`edge`, from main, called by promote-edge.yml) and tests.yml (`next`, from develop) — and each
+# (stable tags), publish-npm-next.yml (`next`, from main, called by promote-next.yml) and promote-edge.yml (`edge`, from develop) — and each
 # must ask the same two downstream repos to release the matching version. Six hand-written `gh api`
 # calls would be six chances for the payload to drift out of step with the receivers, which is the one
 # failure this contract cannot detect (see the 204 note below). So the call lives here once.
@@ -28,7 +28,7 @@ inputs:
     description: Source commit the release is built from; informational traceability only
     required: true
   dist-tag:
-    description: npm dist-tag the downstream artifact must publish under (latest, edge, next)
+    description: npm dist-tag the downstream artifact must publish under (latest, next, edge)
     required: true
   event-type:
     description: repository_dispatch event_type — flight-release for stable tags, flight-snapshot otherwise
@@ -84,7 +84,7 @@ runs:
     # ★ EVERY INTERPOLATED VALUE ARRIVES THROUGH `env`, never `${{ }}` inside the script. A value
     # substituted directly into a `run:` block becomes shell SOURCE before bash sees it; through the
     # environment it stays data, and every reference below is quoted so word-splitting cannot
-    # reassemble it. Same rule edge-publish.yml documents for its summary step.
+    # reassemble it. Same rule publish-npm-next.yml documents for its summary step.
     - name: Dispatch downstream releases
       if: steps.confirm.outputs.proceed == 'true'
       shell: bash

@@ -16,7 +16,7 @@
 //             major, so it switches itself with no code change. Either way an edge build sorts *above*
 //             the last release as its upcoming version, not as a prerelease of it.
 //   version = <bumped>-<channel>.<count>.<sha>
-//             channel  main -> edge, develop -> next   (this is also the dist-tag).
+//             channel  develop -> edge, main -> next   (this is also the dist-tag).
 //             count    commits since the last version tag (`git rev-list --count <tag>..HEAD`),
 //                      resetting to a small number each release, so it reads as "Nth build toward the
 //                      next version" — monotonic within a release cycle, so edge builds sort in commit
@@ -86,10 +86,12 @@ function detectBumpLevel(range: string): BumpLevel {
   return level;
 }
 
-// main -> the "edge" channel, develop -> the "next" channel; any other branch is not a publish target.
+// develop -> the "edge" channel (every green push, the least mature), main -> the "next" channel (fully
+// checked, nightly); any other branch is not a publish target. Alphabetical prerelease order then
+// matches maturity: for one base version every `next` build sorts above every `edge` build.
 function channelForBranch(name: string): 'edge' | 'next' | undefined {
-  if (name === 'main') return 'edge';
-  if (name === 'develop') return 'next';
+  if (name === 'develop') return 'edge';
+  if (name === 'main') return 'next';
   return undefined;
 }
 
