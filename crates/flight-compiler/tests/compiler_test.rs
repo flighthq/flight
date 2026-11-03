@@ -9132,6 +9132,27 @@ pub fn empty_labels() -> Vec<Label> {
     }
 
     #[test]
+    fn allows_lazy_lock_to_string_on_string_receiver() {
+        let source = r#"
+use std::sync::LazyLock;
+
+pub struct Entry {
+    pub label: String,
+}
+
+pub static ENTRY: LazyLock<Entry> = LazyLock::new(|| {
+    let name: String = String::new();
+    return Entry { label: name.to_string() };
+});
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("export const ENTRY"),
+            "to_string on String receiver in LazyLock: {output}"
+        );
+    }
+
+    #[test]
     fn rejects_unsupported_lazy_lock_statics() {
         let declarations = "use std::sync::LazyLock;\n\npub struct Kernel {\n    pub scale: f64,\n}\n\npub fn create_kernel() -> Kernel {\n    return Kernel { scale: 1.0 };\n}\n";
         let unsupported_shape = |name: &str| {

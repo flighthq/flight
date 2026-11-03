@@ -299,6 +299,8 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
         IntegerLiteral,
         // `&T`, `&mut T`, or a standard `LazyLock<T>` / `Box<T>` / `Arc<T>`: dereferences to `T`.
         Pointer(Box<EagerType>),
+        // `String` or `&str`.
+        Str,
         // A struct this crate declares, by the index of its source in `programs` and its name.
         Struct(usize, String),
     }
@@ -342,6 +344,7 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
             "f64" => Some(EagerType::F64),
             "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32" | "u64"
             | "u128" | "usize" => Some(EagerType::Integer(name.to_string())),
+            "str" => Some(EagerType::Str),
             _ => None,
         };
     }
@@ -615,6 +618,7 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                     let resolved = self.resolve(scope, &path.path)?;
                     let resolved = resolved.iter().map(String::as_str).collect::<Vec<_>>();
                     match resolved.as_slice() {
+                        ["std" | "alloc", "string", "String"] => Some(EagerType::Str),
                         ["std", "sync", "LazyLock"]
                         | ["std" | "alloc", "boxed", "Box"]
                         | ["std" | "alloc", "sync", "Arc"] => {
@@ -807,6 +811,7 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                         "f64" => Some(EagerType::F64),
                         suffix => primitive_eager_type(suffix),
                     },
+                    Lit::Str(_) => Some(EagerType::Str),
                     _ => None,
                 },
                 Expr::Unary(unary) => match (unary.op, self.infer(&unary.expr)?) {
@@ -2039,14 +2044,19 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                     return;
                 }
                 if let Some(eager_type) = self.infer(&call.receiver) {
+                    let inner = match &eager_type {
+                        EagerType::Pointer(inner) => inner.as_ref(),
+                        other => other,
+                    };
                     if matches!(
-                        eager_type,
+                        inner,
                         EagerType::Bool
                             | EagerType::F32
                             | EagerType::F64
                             | EagerType::FloatLiteral
                             | EagerType::Integer(_)
                             | EagerType::IntegerLiteral
+                            | EagerType::Str
                     ) {
                         return;
                     }
