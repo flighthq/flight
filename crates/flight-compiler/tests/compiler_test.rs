@@ -22904,6 +22904,68 @@ pub fn get_scale(node: &u32) -> f32 {
 }
 
 #[test]
+fn lowers_plain_fields_accessor_to_identity() {
+    let source = r#"
+pub fn is_broken(joint: &u32) -> bool {
+    return joint.fields().broken;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("joint.broken"),
+        "fields() should be identity: {output}"
+    );
+}
+
+#[test]
+fn lowers_plain_fields_mut_accessor_to_identity() {
+    let source = r#"
+pub fn set_broken(joint: &mut u32) {
+    joint.fields_mut().broken = true;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("joint.broken = true"),
+        "fields_mut() should be identity: {output}"
+    );
+}
+
+#[test]
+fn lowers_atomic_load_to_identity() {
+    let source = r#"
+use std::sync::atomic::{AtomicBool, Ordering};
+pub fn is_stepping(flag: &AtomicBool) -> bool {
+    return flag.load(Ordering::Relaxed);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("return flag"),
+        "atomic load() should be identity: {output}"
+    );
+    assert!(
+        !output.contains(".load"),
+        "load() should not appear in output: {output}"
+    );
+}
+
+#[test]
+fn lowers_atomic_store_to_assignment() {
+    let source = r#"
+use std::sync::atomic::{AtomicBool, Ordering};
+pub fn set_stepping(flag: &mut AtomicBool) {
+    flag.store(true, Ordering::Relaxed);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("flag = true"),
+        "atomic store() should lower to assignment: {output}"
+    );
+}
+
+#[test]
 fn lowers_trait_field_accessor_to_identity() {
     let source = r#"
 pub struct NodeFields { pub enabled: bool }

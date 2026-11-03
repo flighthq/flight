@@ -18286,9 +18286,14 @@ fn emit_method_call(
         .map(|argument| emit_expression(argument, entities))
         .collect::<Result<Vec<_>, _>>()?;
     let method = call.method.to_string();
-    // Trait field accessors: *_fields() / *_fields_mut() are identity in TS because entity
-    // interfaces flatten the fields struct (Node extends NodeFields, Entity).
-    if arguments.is_empty() && (method.ends_with("_fields") || method.ends_with("_fields_mut")) {
+    // Trait field accessors: *_fields() / *_fields_mut() / fields() / fields_mut() are identity
+    // in TS because entity interfaces flatten the fields struct (Node extends NodeFields, Entity).
+    if arguments.is_empty()
+        && (method == "fields"
+            || method == "fields_mut"
+            || method.ends_with("_fields")
+            || method.ends_with("_fields_mut"))
+    {
         return Ok(receiver);
     }
     // Trait narrowing accessors: as_*_node() / as_*_node_mut() are identity in TS because
@@ -18833,6 +18838,7 @@ fn emit_method_call(
         "borrow" | "borrow_mut" if arguments.is_empty() => Ok(receiver),
         "leading_zeros" if arguments.is_empty() => Ok(format!("Math.clz32({receiver})")),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
+        "load" if arguments.len() == 1 => Ok(receiver),
         "last" | "last_mut" if arguments.is_empty() => Ok(format!("{receiver}.at(-1)")),
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),
         "get_or_insert" if arguments.len() == 1 => {
@@ -19144,6 +19150,7 @@ fn emit_method_call(
         "sort_unstable_by" if arguments.len() == 1 => {
             Ok(format!("{receiver}.sort({})", arguments[0]))
         }
+        "store" if arguments.len() == 2 => Ok(format!("{receiver} = {}", arguments[0])),
         "split" if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) => {
             Ok(format!("{receiver}.split({})", arguments[0]))
         }
