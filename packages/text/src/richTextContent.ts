@@ -105,8 +105,8 @@ function characterUtf16Len(character: string): number {
 }
 
 function clampRanges(ranges: TextFormatRangeRaw[], length: number): void {
-  for (const range of ranges) {
-    range.end = Math.min(range.end, length);
+  for (let __i = 0; __i < ranges.length; __i++) {
+    ranges[__i].end = Math.min(ranges[__i].end, length);
   }
   (<T>(items: T[], keep: (item: T) => boolean): void => {
     let kept = 0;
