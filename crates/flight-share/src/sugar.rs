@@ -1,7 +1,8 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 use flight_entity::Ref;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::*;
@@ -318,6 +319,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShareContentCapability {
     pub fn can_share(&self, content: &Ref<ShareContent>) -> bool {
         return can_share_content(self, content);
@@ -344,6 +346,7 @@ impl HostShareContentCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShareFilesCapability {
     pub fn can_share(&self, files: &[Ref<ShareFile>]) -> bool {
         return can_share_files(self, files);
@@ -354,24 +357,28 @@ impl HostShareFilesCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShareContent {
     pub fn has_fields(&self) -> bool {
         return has_share_content_fields(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShareFile {
     pub fn is_valid(&self) -> bool {
         return is_share_file_valid(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShareSignals {
     pub fn new() -> Ref<Self> {
         return enable_share_signals();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShareState {
     pub fn attach(&self, signals: &Ref<ShareSignals>) {
         return attach_share_signals(self, signals);

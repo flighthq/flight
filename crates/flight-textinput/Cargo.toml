@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Portable RichText editing and selection management"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

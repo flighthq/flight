@@ -15,7 +15,7 @@ pub const STROKE_PATH_TESSELLATION_ISSUE_SELF_INTERSECTING_CENTERLINE: u8 = 3;
 pub const STROKE_PATH_TESSELLATION_ISSUE_REVERSING_JOIN: u8 = 4;
 pub const STROKE_PATH_TESSELLATION_ISSUE_SELF_INTERSECTING_OUTLINE: u8 = 5;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -883,6 +883,7 @@ fn signed_join_sweep(previous: &SegmentFrame, next: &SegmentFrame, turn: f64) ->
     return sweep;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn build_stroke_geometry(&self, style: &StrokeStyle, tolerance: f64) -> StrokePathGeometry {

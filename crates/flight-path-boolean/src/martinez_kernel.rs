@@ -1175,6 +1175,7 @@ impl Default for PathBooleanKernel {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PathBooleanKernel {
     /// The Martinez kernel (`create_martinez_path_boolean_kernel`).
     pub fn new() -> Self {

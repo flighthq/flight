@@ -104,6 +104,7 @@ pub fn suppress_velocity(field: &mut VelocityField, source: SourceId) {
     contribute_velocity(field, source, 0.0, 0.0);
 }
 
+#[cfg(feature = "object-api")]
 impl VelocityField {
     pub fn new() -> Self {
         return create_velocity_field();

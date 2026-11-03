@@ -1,6 +1,6 @@
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -49,6 +49,7 @@ pub fn get_bitmap_coverage(source: &Bitmap, background_color: u32, channel_toler
     covered as f64 / total_pixels as f64
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     // flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
     pub fn coverage(&self, background_color: u32, channel_tolerance: u32) -> f64 {

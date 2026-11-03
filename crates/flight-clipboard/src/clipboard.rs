@@ -1,6 +1,6 @@
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -710,6 +710,7 @@ pub async fn write_clipboard_text(
 // D18 sugar: methods on each capability record delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostClipboardBookmarkCapability {
     pub async fn has_bookmark(&self) -> ClipboardBoolResult {
         return has_clipboard_bookmark(self).await;
@@ -724,6 +725,7 @@ impl HostClipboardBookmarkCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostClipboardFormatsCapability {
     pub async fn get_formats(&self) -> ClipboardStringsResult {
         return get_clipboard_formats(self).await;
@@ -774,6 +776,7 @@ impl HostClipboardFormatsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostClipboardImageCapability {
     pub async fn has_image(&self) -> ClipboardBoolResult {
         return has_clipboard_image(self).await;
@@ -788,6 +791,7 @@ impl HostClipboardImageCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostClipboardTextCapability {
     pub async fn clear(&self) -> ClipboardBoolResult {
         return clear_clipboard(self).await;

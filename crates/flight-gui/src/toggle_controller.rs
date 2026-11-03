@@ -163,6 +163,7 @@ fn update_toggle_visuals(r: &Ref<GuiControllerRuntime<ToggleControllerFields>>) 
     };
     set_gui_visible(r, node.as_ref(), over);
 }
+#[cfg(feature = "object-api")]
 impl ToggleController {
     pub fn new(options: &ToggleControllerOptions) -> Self {
         return create_toggle_controller(options);

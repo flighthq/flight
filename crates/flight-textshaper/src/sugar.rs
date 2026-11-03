@@ -1,5 +1,6 @@
 //! D18 Rust conveniences: each method delegates to one public free function.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::sync::Arc;
 
 use flight_entity::Ref;
@@ -9,7 +10,7 @@ use flight_textformat::TextFormat;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -446,6 +447,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTextShaperCapability {
     pub fn explain_text_shaper_operation(
         &self,
@@ -547,6 +549,7 @@ impl HostTextShaperCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShapedRun {
     pub fn initialize_shaped_run(&mut self) {
         initialize_shaped_run(self);
@@ -573,6 +576,7 @@ impl ShapedRun {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextShaperCache {
     pub fn initialize_text_shaper_cache(&mut self) {
         initialize_text_shaper_cache(self);
@@ -587,6 +591,7 @@ impl TextShaperCache {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShapedRunPool {
     pub fn acquire_shaped_run(&mut self) -> Ref<ShapedRun> {
         return acquire_shaped_run(self);
@@ -614,6 +619,7 @@ impl ShapedRunPool {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextShaperSignalsState {
     pub fn dispose_text_shaper_signals(&mut self) {
         dispose_text_shaper_signals(self);
@@ -628,6 +634,7 @@ impl TextShaperSignalsState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextShaperSignals {
     pub fn initialize_text_shaper_signals(&mut self) {
         initialize_text_shaper_signals(self);

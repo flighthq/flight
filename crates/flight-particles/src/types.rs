@@ -421,6 +421,7 @@ impl Default for EmitterShape {
 }
 
 // flight-lint: allow(sugar-delegates) delegates to particle_blend_mode_as_str
+#[cfg(feature = "object-api")]
 impl ParticleBlendMode {
     pub fn as_str(&self) -> &'static str {
         return particle_blend_mode_as_str(*self);

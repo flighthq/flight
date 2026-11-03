@@ -4,7 +4,7 @@
 use crate::{linear_channel_to_srgb, srgb_channel_to_linear};
 use flight_entity::EntityRuntimeSlot;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -149,6 +149,7 @@ pub fn unpack_color_to_linear(out: &mut LinearColor, color: u32) {
     out.a = (color & 0xff) as f32 / 255.0;
 }
 
+#[cfg(feature = "object-api")]
 impl LinearColor {
     pub fn pack_to_color(&self) -> u32 {
         return pack_linear_to_color(self);

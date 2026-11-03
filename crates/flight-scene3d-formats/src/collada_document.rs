@@ -2,7 +2,7 @@ use crate::collada_decoder_family::COLLADA_ALL_ELEMENT_DECODERS;
 use crate::collada_parse::parse_collada_with_decoders;
 use crate::collada_types::{ColladaImportOptions, ColladaParseResult};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::collada_material_decoder::COLLADA_MATERIAL_DECODER;
@@ -58,6 +58,7 @@ pub fn parse_collada(xml: &str, options: Option<&ColladaImportOptions>) -> Colla
     return parse_collada_with_decoders(xml, decoders, options);
 }
 
+#[cfg(feature = "object-api")]
 impl ColladaImportOptions {
     pub fn parse(&self, xml: &str) -> ColladaParseResult {
         return parse_collada(xml, Some(self));

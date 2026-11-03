@@ -5,7 +5,7 @@ use flight_signals::{clear_signal, create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Mutex;
 
@@ -520,6 +520,7 @@ pub fn unregister_protocol_schemes(
     return all_succeeded;
 }
 
+#[cfg(feature = "object-api")]
 impl ProtocolHandler {
     pub fn new() -> Self {
         return create_protocol_handler();
@@ -534,6 +535,7 @@ impl ProtocolHandler {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostProtocolDefaultCapability {
     pub fn is_scheme_default(&self, scheme: &str) -> bool {
         return is_protocol_scheme_default(self, scheme);
@@ -548,18 +550,21 @@ impl HostProtocolDefaultCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostProtocolLaunchCapability {
     pub fn launch_url(&self) -> Option<String> {
         return get_protocol_launch_url(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostProtocolOpenCapability {
     pub fn attach_handler(&self, handler: &mut ProtocolHandler) {
         attach_protocol_handler(self, handler);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostProtocolRegistrationCapability {
     pub fn register_scheme(&self, scheme: &str) -> bool {
         return register_protocol_scheme(self, scheme);
@@ -574,12 +579,14 @@ impl HostProtocolRegistrationCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostProtocolRegistrationQueryCapability {
     pub fn is_scheme_registered(&self, scheme: &str) -> bool {
         return is_protocol_scheme_registered(self, scheme);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostProtocolUnregistrationCapability {
     pub fn unregister_scheme(&self, scheme: &str) -> bool {
         return unregister_protocol_scheme(self, scheme);

@@ -2,7 +2,7 @@ use crate::types::{AudioMimeTypeData, HostAudioCodecCapability};
 
 // The contract file-structure rule requires modules before functions and impls.
 #[allow(clippy::items_after_test_module)]
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -130,6 +130,7 @@ pub fn infer_audio_mime_type(url: &str) -> Option<String> {
     };
 }
 
+#[cfg(feature = "object-api")]
 impl HostAudioCodecCapability {
     pub fn can_play_audio_type(&self, mime_type: &str) -> bool {
         return can_play_audio_type(self, mime_type);

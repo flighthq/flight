@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use flight_entity::allocate_entity;
 
+#[cfg(feature = "object-api")]
 use crate::geolocation_access::prompt_for_geolocation_access;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -225,6 +226,7 @@ pub fn watch_geolocation_position(
 // D18 sugar: methods on the capability delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostGeolocationCapability {
     pub fn clear_watch(&self, id: i32) {
         return clear_geolocation_watch(self, id);

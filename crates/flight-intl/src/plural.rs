@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::cache::{FormatterCache, get_cache_key, get_cached};
 use crate::options::*;
 use crate::types::*;
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::intl_test_support::{locale, test_host};
@@ -50,7 +50,9 @@ fn get_plural_rules(
             .map(|v| IntlOptionsKey::Plural(PluralRulesOptionsKey { options: v }))
             .as_ref(),
     );
-    return get_cached(cache, &key, || host.open_plural_rules(locale, values));
+    return get_cached(cache, &key, || {
+        create_intl_plural_rules(host, locale, values)
+    });
 }
 
 /// Delegates one plural selection to a cached rules handle (Rust-owned receiver sugar).
@@ -101,6 +103,7 @@ pub fn select_plural_category(
     return select_intl_plural_category(&rules, value);
 }
 
+#[cfg(feature = "object-api")]
 impl IntlPluralRulesHandle {
     // flight-lint: allow(f64) D1: plural selection consumes the JS number value exactly
     pub fn select(&self, value: f64) -> IntlPluralCategory {
@@ -110,6 +113,7 @@ impl IntlPluralRulesHandle {
 
 /// Delegates one plural-rules construction to the host capability.
 
+#[cfg(feature = "object-api")]
 impl HostIntlCapability {
     pub fn open_plural_rules(
         &self,

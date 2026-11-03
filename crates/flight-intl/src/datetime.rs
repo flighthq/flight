@@ -3,7 +3,7 @@
 use crate::cache::{FormatterCache, get_cache_key, get_cached};
 use crate::options::*;
 use crate::types::*;
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::intl_test_support::{locale, test_host};
@@ -112,7 +112,9 @@ fn format_date_value(
             options: options,
         })),
     );
-    let formatter = get_cached(cache, &key, || host.open_date_time_format(locale, options));
+    let formatter = get_cached(cache, &key, || {
+        create_intl_date_time_format(host, locale, options)
+    });
     return format_intl_date_time(&formatter, date);
 }
 
@@ -140,6 +142,7 @@ pub fn format_time(
     return format_date_value(cache, host, date, locale, &values);
 }
 
+#[cfg(feature = "object-api")]
 impl IntlDateTimeFormatHandle {
     // flight-lint: allow(f64) D1: the source date argument is an epoch-millisecond JS number
     pub fn format(&self, date: f64) -> String {
@@ -149,6 +152,7 @@ impl IntlDateTimeFormatHandle {
 
 /// Delegates one date-time formatter construction to the host capability (Rust-owned receiver sugar).
 
+#[cfg(feature = "object-api")]
 impl HostIntlCapability {
     pub fn open_date_time_format(
         &self,

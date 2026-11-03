@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_font::GlyphMetrics;
 use flight_glyphatlas::{GlyphAtlas, GlyphEntry, GlyphSource};
@@ -13,7 +14,7 @@ use crate::explain_bitmap_font_glyph::*;
 use crate::summarize_bitmap_font::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
 
@@ -107,6 +108,7 @@ impl GlyphAtlasBitmapFontMethods for Ref<GlyphAtlas> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFont {
     pub fn new(guard_state: &BitmapFontGuardStateRef, data: &BitmapFontData) -> Ref<BitmapFont> {
         return create_bitmap_font(guard_state, data);
@@ -117,36 +119,42 @@ impl BitmapFont {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFontEncoding {
     pub fn as_str(&self) -> &'static str {
         return get_bitmap_font_encoding_string(*self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFontGlyphExplanationReason {
     pub fn as_str(&self) -> &'static str {
         return get_bitmap_font_glyph_explanation_reason_string(*self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFontGuardLogKey {
     pub fn as_str(&self) -> &'static str {
         return get_bitmap_font_guard_log_key_string(*self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFontGuardReason {
     pub fn as_str(&self) -> &'static str {
         return get_bitmap_font_guard_reason_string(*self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFontGuardState {
     pub fn new() -> BitmapFontGuardStateRef {
         return create_bitmap_font_guard_state();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFontKerningPair {
     pub fn unpack(&mut self, key: u64) {
         unpack_bitmap_font_kerning_key(self, key);

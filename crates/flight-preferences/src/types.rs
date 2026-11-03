@@ -631,6 +631,7 @@ impl Default for StorageSignals {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageBatchMutationOutcome<StorageClearNamespaceFailureReason> {
     pub fn is_ok(&self) -> bool {
         return storage_batch_mutation_outcome_is_ok(self);
@@ -641,6 +642,7 @@ impl StorageBatchMutationOutcome<StorageClearNamespaceFailureReason> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageBatchMutationOutcome<StorageRemoveItemFailureReason> {
     pub fn is_ok(&self) -> bool {
         return storage_batch_mutation_outcome_is_ok(self);
@@ -651,6 +653,7 @@ impl StorageBatchMutationOutcome<StorageRemoveItemFailureReason> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageBatchMutationOutcome<StorageSetItemFailureReason> {
     pub fn is_ok(&self) -> bool {
         return storage_batch_mutation_outcome_is_ok(self);
@@ -661,6 +664,7 @@ impl StorageBatchMutationOutcome<StorageSetItemFailureReason> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageGetItemFailureReason {
     pub fn into_clear_namespace(self) -> StorageClearNamespaceFailureReason {
         return storage_get_item_failure_into_clear_namespace(self);
@@ -675,6 +679,7 @@ impl StorageGetItemFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl<F: Copy> StorageMutationOutcome<F> {
     pub fn is_ok(&self) -> bool {
         return storage_mutation_outcome_is_ok(self);
@@ -685,12 +690,14 @@ impl<F: Copy> StorageMutationOutcome<F> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageRemoveItemFailureReason {
     pub fn into_clear_namespace(self) -> StorageClearNamespaceFailureReason {
         return storage_remove_item_failure_into_clear_namespace(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl<V, F: Copy> StorageValueOutcome<V, F> {
     pub fn is_ok(&self) -> bool {
         return storage_value_outcome_is_ok(self);

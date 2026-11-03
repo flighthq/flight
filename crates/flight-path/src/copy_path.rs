@@ -2,7 +2,7 @@ use flight_entity::allocate_entity;
 
 use crate::path::Path;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -65,6 +65,7 @@ pub fn copy_path(out: &mut Path, source: &Path) {
     out.winding = winding;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn clone_path(&self) -> Path {
         return clone_path(self);

@@ -19,7 +19,7 @@ use flight_scene3d::{
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -413,6 +413,7 @@ fn walk_awd2_blocks(state: &mut Awd2ParseState, dispatch: &Awd2BlockDispatch) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Awd2ParseOptions {
     pub fn parse(
         &self,

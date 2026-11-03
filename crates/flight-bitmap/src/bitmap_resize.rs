@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -277,6 +277,7 @@ fn resolve_resize_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn resize(
         &mut self,

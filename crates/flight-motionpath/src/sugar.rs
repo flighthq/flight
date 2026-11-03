@@ -1,6 +1,7 @@
 //! D18 sugar for the motion-path public lane: constructor and receiver methods that delegate to the
 //! free functions. Sugar contains no logic.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_geometry::{Vector2, create_vector2};
 use flight_path::Path;
@@ -8,7 +9,7 @@ use flight_path::Path;
 use crate::motion_path::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::RwLock;
 
@@ -118,6 +119,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MotionPath {
     /// The convenience constructor mirrors `create_motion_path` (D18).
     // flight-lint: allow(f64) D1: speed and tolerance flow through flight-path's f64 arc-length API

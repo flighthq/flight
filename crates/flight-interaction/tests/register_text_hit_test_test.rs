@@ -1,9 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_geometry::set_rectangle;
-use flight_interaction::hit_tests::{
-    HitTestContext, describe_graph_hit, find_graph_hit_target_precise,
-};
+use flight_interaction::hit_tests::{describe_graph_hit, find_graph_hit_target_precise};
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
 };
@@ -81,7 +79,7 @@ mod register_text_hit_test {
 
     #[test]
     fn registers_handler_for_text_kind() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_text_hit_test(&mut ctx);
         let text = text_node_with_bounds(0.0, 0.0, 100.0, 100.0);
         let result = find_graph_hit_target_precise(&ctx, &text, 50.0, 50.0);
@@ -90,7 +88,7 @@ mod register_text_hit_test {
 
     #[test]
     fn miss_outside_bounds() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_text_hit_test(&mut ctx);
         let text = text_node_with_bounds(0.0, 0.0, 100.0, 100.0);
         let result = find_graph_hit_target_precise(&ctx, &text, 200.0, 200.0);
@@ -99,7 +97,7 @@ mod register_text_hit_test {
 
     #[test]
     fn text_without_layout_hits_via_bounds_and_sub_index_zero() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_text_hit_test(&mut ctx);
         let text = text_node_with_bounds(0.0, 0.0, 50.0, 50.0);
         let result = find_graph_hit_target_precise(&ctx, &text, 25.0, 25.0);
@@ -111,7 +109,7 @@ mod register_text_hit_test {
 
     #[test]
     fn describe_graph_hit_left_char_sub_index_zero() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_text_hit_test(&mut ctx);
         let text = text_node_with_measure("ABCDE", 100.0, 100.0);
         let result = find_graph_hit_target_precise(&ctx, &text, 1.0, 10.0);
@@ -126,7 +124,7 @@ mod register_text_hit_test {
 
     #[test]
     fn describe_graph_hit_right_char_sub_index_greater_than_left() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_text_hit_test(&mut ctx);
         let text = text_node_with_measure("ABCDE", 100.0, 100.0);
         let mut hit_left = HitTestResult::new();

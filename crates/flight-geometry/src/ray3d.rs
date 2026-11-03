@@ -389,6 +389,7 @@ impl Default for Ray3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Ray3D {
     pub fn new(
         origin_x: f32,

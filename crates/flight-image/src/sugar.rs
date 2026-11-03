@@ -1,6 +1,7 @@
 //! D18 Rust conveniences for the image public lane. Every method delegates directly to one public
 //! free-function contract; loading, resolution and source-binding behavior remain in that layer.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::sync::Arc;
 
 use flight_bitmap::{Bitmap, HostBitmapReadbackCapability};
@@ -15,7 +16,7 @@ use flight_texture::{CreateTexture2DOptions, Texture, TextureSourceRef};
 use crate::contract::*;
 
 #[allow(clippy::items_after_test_module)]
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -233,24 +234,28 @@ pub trait ImageResourceMethods {
     fn is_empty(&self) -> bool;
 }
 
+#[cfg(feature = "object-api")]
 impl CompressedImageResource {
     pub fn new(compressed: Arc<CompressedImageData>) -> Ref<Self> {
         return create_compressed_image_resource(compressed);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl EmbeddedImageResourceReference {
     pub fn new(bytes: Ref<Box<Uint8Array>>) -> Ref<Self> {
         return create_embedded_image_resource_reference(bytes);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ExternalImageResourceReference {
     pub fn new(uri: String) -> Ref<Self> {
         return create_external_image_resource_reference(uri);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostImageCapability {
     pub fn create_resource_from_bitmap(&self, bitmap: &Bitmap) -> Option<Ref<ImageResource>> {
         return create_image_resource_from_bitmap(self, bitmap);
@@ -296,6 +301,7 @@ impl HostImageCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageResolverState {
     pub fn new() -> Self {
         return create_image_resolver_state();
@@ -317,12 +323,14 @@ impl ImageResolverState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageResource {
     pub fn new(image: Arc<HostImageSource>, state: &ImageResolverState) -> Ref<Self> {
         return create_image_resource(image, state);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageResourceFailure {
     pub fn new(cause: &Unknown) -> Ref<Self> {
         return create_image_resource_failure(cause);
@@ -350,6 +358,7 @@ impl ImageResourceMethods for Ref<ImageResource> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageResourceReference {
     pub fn create_texture(&self, opts: Option<&CreateTexture2DOptions>) -> Ref<Texture> {
         return create_texture_from_image_resource(self, opts);
@@ -383,6 +392,7 @@ impl ImageResourceReference {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageUrlOriginContext {
     pub fn is_same_origin(&self, url: &str) -> bool {
         return is_image_url_same_origin(url, self);

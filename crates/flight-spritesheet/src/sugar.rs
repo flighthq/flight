@@ -1,11 +1,12 @@
 //! D18 Rust conveniences: each method delegates to one public free function.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_textureatlas::TextureAtlas;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -341,6 +342,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Spritesheet {
     pub fn create_spritesheet_animation_from_frame_names(
         &self,
@@ -367,18 +369,21 @@ impl Spritesheet {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetFrame {
     pub fn initialize_spritesheet_frame(&mut self) {
         initialize_spritesheet_frame(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetAnimation {
     pub fn initialize_spritesheet_animation(&mut self) {
         initialize_spritesheet_animation(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetData {
     pub fn create_spritesheet_from_data(&self, atlas: &Ref<TextureAtlas>) -> Spritesheet {
         return create_spritesheet_from_data(self, atlas);
@@ -396,18 +401,21 @@ impl SpritesheetData {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetFrameData {
     pub fn initialize_spritesheet_frame_data(&mut self) {
         initialize_spritesheet_frame_data(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetAnimationData {
     pub fn initialize_spritesheet_animation_data(&mut self) {
         initialize_spritesheet_animation_data(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetPlayer {
     // flight-lint: allow(f64) D1: elapsed time, speed and the display index are JS numbers
     pub fn initialize_spritesheet_player(&mut self) {
@@ -478,6 +486,7 @@ impl SpritesheetPlayer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetPlayerPool {
     pub fn acquire_spritesheet_player(&mut self) -> Ref<SpritesheetPlayer> {
         return acquire_spritesheet_player(self);

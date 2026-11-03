@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Socket capability seam: framed connection lifecycle, opt-in event signals and raw TCP byte streams routed through explicit host providers"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

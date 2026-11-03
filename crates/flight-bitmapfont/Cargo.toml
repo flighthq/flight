@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Static bitmap fonts, glyph-source adapters, diagnostics, and atlas snapshots"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

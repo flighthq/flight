@@ -4,7 +4,7 @@ use crate::path::{Path, PathMesh, PathMeshTyped};
 use crate::tessellate_path::tessellate_path_into;
 use crate::tessellate_path_typed::tessellate_path_typed_into;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -166,6 +166,7 @@ pub fn release_path_mesh_typed(pool: &mut PathMeshPool, mesh: PathMeshTyped) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PathMeshPool {
     pub fn new() -> Self {
         return create_path_mesh_pool();

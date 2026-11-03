@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -126,6 +126,7 @@ pub fn to_clamped_u8(value: f32) -> u8 {
     return value.round_ties_even() as u8;
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     pub fn pixel(&self, x: u32, y: u32) -> u32 {
         return get_bitmap_pixel(self, x, y);

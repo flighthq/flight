@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -87,6 +87,7 @@ pub fn apply_bitmap_palette_map(
     invalidate_bitmap(&mut dest.bitmap);
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn apply_palette_map(
         &mut self,

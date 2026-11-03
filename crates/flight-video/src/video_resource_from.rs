@@ -9,7 +9,7 @@ use crate::types::*;
 use crate::video_format::select_video_resource_url;
 use crate::video_resource::create_video_resource;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::{Future, ready};
     use std::sync::Arc;
@@ -175,6 +175,7 @@ pub fn load_video_resource_from_urls(
     return load_video_resource_from_url(host_video, &selected.url, options, signal);
 }
 
+#[cfg(feature = "object-api")]
 impl HostVideoCapability {
     pub fn load_video_resource_from_blob(
         &self,

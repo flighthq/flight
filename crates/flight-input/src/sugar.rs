@@ -2,12 +2,13 @@
 //! traits on the shared handles. TypeScript keeps the free functions only.
 //! flight-compiler: rust-only
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_host::InputIngressSource;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod input_binding_sugar_tests {
     use std::sync::Arc;
 
@@ -226,7 +227,7 @@ mod input_binding_sugar_tests {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod input_gamepad_sugar_tests {
     use super::*;
 
@@ -240,7 +241,7 @@ mod input_gamepad_sugar_tests {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod input_state_sugar_tests {
     use super::*;
     use crate::input_signals::create_input_manager;
@@ -358,7 +359,7 @@ mod input_state_sugar_tests {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod input_timer_sugar_tests {
     use std::sync::Arc;
 
@@ -427,6 +428,7 @@ mod input_timer_sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostInputIngressCapability {
     pub fn attach_gamepad(
         &self,
@@ -519,12 +521,14 @@ impl InputManagerMethods for Ref<InputManager> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GamepadStickOutput {
     pub fn apply_dead_zone(&mut self, x: f32, y: f32, dead_zone: f32) {
         return apply_gamepad_stick_dead_zone(self, x, y, dead_zone);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl InputState {
     pub fn new() -> Ref<InputState> {
         return create_input_state();
@@ -588,6 +592,7 @@ impl InputStateMethods for Ref<InputState> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl InputKeyRepeatTimer {
     pub fn new(options: &InputKeyRepeatOptions) -> Ref<InputKeyRepeatTimer> {
         return create_input_key_repeat_timer(options);

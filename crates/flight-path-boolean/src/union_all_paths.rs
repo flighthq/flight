@@ -5,7 +5,7 @@ use crate::martinez_kernel::{PathBooleanKernel, PathBooleanOperation};
 use crate::path_boolean::PathBooleanOptions;
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_path::{Path, PathWinding, append_path_rectangle, create_path};
 
@@ -86,6 +86,7 @@ pub fn union_all_paths(
     write_path_boolean_contours(out, &result);
 }
 
+#[cfg(feature = "object-api")]
 impl PathBooleanKernel {
     pub fn union_all_paths(
         &self,

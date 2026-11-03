@@ -7,7 +7,7 @@ use flight_path::{PathWinding, create_path, flatten_path, get_path_bounds};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -317,6 +317,7 @@ const RASTER_GUARD: i32 = 1;
 const RASTER_SAMPLE_AXIS: u32 = 4;
 const RASTER_SAMPLE_COUNT: u32 = RASTER_SAMPLE_AXIS * RASTER_SAMPLE_AXIS;
 
+#[cfg(feature = "object-api")]
 impl GlyphOutlineSource {
     pub fn new(
         get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>,

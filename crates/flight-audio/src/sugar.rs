@@ -1,6 +1,7 @@
 //! D18 Rust conveniences for the audio public lane. Every method delegates directly to one
 //! public free-function contract; this module contains no independent audio behavior.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_buffer::Blob;
 use flight_entity::{Float32Array, Ref, Uint8Array, Unknown};
 use flight_net::{HostNetCapability, NetState};
@@ -31,7 +32,7 @@ use crate::types::{
 
 // The contract file-structure rule requires modules before traits and impls.
 #[allow(clippy::items_after_test_module)]
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::collections::HashMap;
     use std::future::Future;
@@ -586,18 +587,21 @@ impl AudioResourceMethods for Ref<AudioResource> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl<'a> AudioMimeTypeData<'a> {
     pub fn detect_mime_type(self) -> Option<String> {
         return detect_audio_mime_type(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AudioResourceFailure {
     pub fn new(cause: &Unknown) -> Ref<Self> {
         return create_audio_resource_failure(cause);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AudioResourceReference {
     pub fn explain_resolution(&self) -> AudioResourceReferenceResolutionExplanation {
         return explain_audio_resource_reference_resolution(self);
@@ -625,18 +629,21 @@ impl AudioResourceReference {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl EmbeddedAudioResourceReference {
     pub fn new(bytes: Ref<Box<Uint8Array>>) -> Ref<Self> {
         return create_embedded_audio_resource_reference(bytes);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ExternalAudioResourceReference {
     pub fn new(uri: String) -> Ref<Self> {
         return create_external_audio_resource_reference(uri);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAudioCodecCapability {
     pub fn select_audio_resource_url(
         &self,
@@ -647,6 +654,7 @@ impl HostAudioCodecCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAudioDecodeCapabilities {
     pub async fn load_resource_from_base64(
         &self,

@@ -2,7 +2,7 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, Mutex};
 
@@ -333,6 +333,7 @@ fn release_video_resource_object_url(
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostVideoCapability {
     pub fn destroy_video_resource(&self, resource: &mut VideoResource) {
         destroy_video_resource(self, resource);
@@ -364,6 +365,7 @@ impl HostVideoCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl VideoResource {
     pub fn initialize_video_resource(&mut self) {
         initialize_video_resource(self);

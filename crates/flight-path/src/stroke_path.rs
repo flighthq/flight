@@ -4,7 +4,7 @@ use crate::path::{
 };
 use crate::stroke_path_geometry::{StrokePathPieceGeometry, build_stroke_path_geometry};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -119,6 +119,7 @@ pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> 
     return result;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn stroke(&self, style: &StrokeStyle, tolerance: Option<f64>) -> Path {

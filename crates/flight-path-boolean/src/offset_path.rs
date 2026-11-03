@@ -4,7 +4,7 @@ use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel};
 use crate::path_boolean::{PathOffsetEnd, PathOffsetJoin, PathOffsetOptions};
 use crate::resolve_path_regions::resolve_path_regions;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_path::{Path, append_path_rectangle, create_path};
 
@@ -523,6 +523,7 @@ fn reverse_vertex_loop(vertices: &[f64]) -> Vec<f64> {
     return out;
 }
 
+#[cfg(feature = "object-api")]
 impl PathBooleanKernel {
     // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
     pub fn offset_path(

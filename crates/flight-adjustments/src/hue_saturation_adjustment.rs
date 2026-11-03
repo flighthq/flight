@@ -6,7 +6,7 @@ use crate::color_lut_adjustment::{clamp01, fract, hue2rgb};
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_lut_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -130,6 +130,7 @@ impl Default for HueSaturationAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HueSaturationAdjustment {
     pub fn new(options: Option<&HueSaturationAdjustmentOptions>) -> Self {
         return create_hue_saturation_adjustment(options);

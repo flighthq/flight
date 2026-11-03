@@ -1,6 +1,6 @@
 use crate::path::{Path, PathCommand, PathSegment};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -89,6 +89,7 @@ pub fn for_each_path_segment(path: &Path, visitor: &mut dyn FnMut(PathSegment)) 
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn for_each_segment(&self, visitor: &mut dyn FnMut(PathSegment)) {
         return for_each_path_segment(self, visitor);

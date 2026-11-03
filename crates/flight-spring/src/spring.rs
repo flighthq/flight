@@ -3,7 +3,7 @@ use flight_entity::allocate_entity;
 
 use crate::SpringConfig;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -184,6 +184,7 @@ pub fn update_spring_angle(
     update_spring(spring, value + shortest_delta, config, delta_time);
 }
 
+#[cfg(feature = "object-api")]
 impl Spring {
     pub fn new(value: f32, velocity: f32) -> Self {
         return create_spring(value, velocity);

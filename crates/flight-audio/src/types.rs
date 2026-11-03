@@ -9,7 +9,7 @@ use flight_host::ProviderRef;
 use flight_resource::ResourceResolutionState;
 use flight_stream::AbortSignal;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -351,6 +351,7 @@ impl<'a> AudioMimeTypeData<'a> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AudioChannelState {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_audio_channel_state(value);
@@ -361,6 +362,7 @@ impl AudioChannelState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AudioResourceFailureKind {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_audio_resource_failure_kind(value);
@@ -371,6 +373,7 @@ impl AudioResourceFailureKind {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AudioResourceReferenceKind {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_audio_resource_reference_kind(value);

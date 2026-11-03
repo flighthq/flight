@@ -1,9 +1,10 @@
 //! D18 Rust conveniences for the texture public lane. Every method delegates to a public free
 //! function; sampling, source identity and dirty-version behavior remain in the contract layer.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -510,6 +511,7 @@ pub trait TextureExt: TextureVariant + Sized {
 
 impl<T: TextureVariant> TextureExt for T {}
 
+#[cfg(feature = "object-api")]
 impl AlphaType {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_alpha_type(value);
@@ -520,6 +522,7 @@ impl AlphaType {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CubeTexture {
     pub fn new() -> Self {
         return create_cube_texture();
@@ -550,6 +553,7 @@ impl CubeTexture {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PixelFormat {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_pixel_format(value);
@@ -560,6 +564,7 @@ impl PixelFormat {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RenderTargetColorSpace {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_render_target_color_space(value);
@@ -570,6 +575,7 @@ impl RenderTargetColorSpace {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Sampler {
     pub fn new() -> Self {
         return create_sampler();
@@ -604,18 +610,21 @@ impl Sampler {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Texture {
     pub fn new(opts: Option<&CreateTextureOptions>) -> Self {
         return create_texture(opts);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Texture2D {
     pub fn new() -> Self {
         return create_texture_2d();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureColorSpace {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_texture_color_space(value);
@@ -626,6 +635,7 @@ impl TextureColorSpace {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureDimension {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_texture_dimension(value);
@@ -636,6 +646,7 @@ impl TextureDimension {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureFilter {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_texture_filter(value);
@@ -646,6 +657,7 @@ impl TextureFilter {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureGamut {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_texture_gamut(value);
@@ -656,6 +668,7 @@ impl TextureGamut {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureWrap {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_texture_wrap(value);
@@ -666,6 +679,7 @@ impl TextureWrap {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl VoxelGrid {
     pub fn invalidate(&mut self) {
         return invalidate_voxel_grid(self);

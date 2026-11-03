@@ -9,7 +9,7 @@ use flight_image_codec::{
     DecodedImage, HostImageDecodeCapabilities, HostImageDecodeFormatCapability, ImageDecodeOptions,
 };
 use flight_resource::ResourceResolutionState;
-use flight_stream::{abort_controller, create_abort_controller};
+use flight_stream::{abort_controller, create_abort_controller, is_abort_signal_aborted};
 use flight_texture::{AlphaType, TextureSource, TextureSourceRef};
 
 fn bytes(values: &[u8]) -> Ref<Box<Uint8Array>> {
@@ -583,7 +583,7 @@ mod resolve_image_resource_reference {
             let controller = controller.clone();
             let reason = reason.clone();
             move |_, signal| {
-                assert!(!signal.is_aborted());
+                assert!(!is_abort_signal_aborted(&signal));
                 abort_controller(&controller, Some(reason.clone()));
                 let reason = reason.clone();
                 return Box::pin(async move {

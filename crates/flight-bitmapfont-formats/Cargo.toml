@@ -9,6 +9,9 @@ authors.workspace = true
 description = "AngelCode bitmap-font codecs, diagnostics, detection, and caller-owned registration"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

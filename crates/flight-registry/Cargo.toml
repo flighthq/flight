@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Immutable kind-map and ordinal-table helpers for Flight registries"
 autotests = false
 
+[features]
+object-api = []
+
 [dependencies]
 flight-entity.workspace = true
 

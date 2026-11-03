@@ -2,7 +2,7 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -159,6 +159,7 @@ pub fn parse_bitmap_fingerprint(text: &str) -> Option<BitmapFingerprint> {
     return Some(make_bitmap_fingerprint(grid_size, cells));
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFingerprint {
     // flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
     pub fn compare(&self, b: &BitmapFingerprint) -> f64 {

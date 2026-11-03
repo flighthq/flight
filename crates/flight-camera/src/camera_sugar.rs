@@ -1,6 +1,7 @@
 //! D18 sugar for the camera public lane: constructors and receiver methods that delegate to the
 //! free functions. Sugar contains no logic.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_geometry::{
     Frustum, Matrix, Matrix4, Ray3D, Rectangle, Vector2, Vector3, create_frustum, create_matrix,
     create_matrix4, create_ray3d, create_rectangle, create_vector2, create_vector3,
@@ -26,7 +27,7 @@ use crate::view_matrix::*;
 use crate::visible_bounds::*;
 use crate::zoom::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -558,6 +559,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Camera3D {
     pub fn new() -> Camera3D {
         return create_camera_3d();
@@ -716,6 +718,7 @@ impl Camera3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Camera2D {
     pub fn new() -> Camera2D {
         return create_camera_2d();
@@ -810,6 +813,7 @@ impl Camera2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Projection {
     pub fn is_orthographic(&self) -> bool {
         return is_orthographic_projection(self);
@@ -830,6 +834,7 @@ impl Projection {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl OrthographicProjection {
     pub fn new() -> std::sync::Arc<std::sync::RwLock<Self>> {
         return create_orthographic_projection();
@@ -840,12 +845,14 @@ impl OrthographicProjection {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PerspectiveProjection {
     pub fn new() -> std::sync::Arc<std::sync::RwLock<Self>> {
         return create_perspective_projection();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RawProjection {
     pub fn new() -> std::sync::Arc<std::sync::RwLock<Self>> {
         return create_raw_projection();

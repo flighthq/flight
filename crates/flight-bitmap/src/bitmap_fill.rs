@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -129,12 +129,14 @@ pub fn flood_fill_bitmap(out: &mut Bitmap, x: i32, y: i32, color: u32) {
     invalidate_bitmap(out);
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     pub fn flood_fill(&mut self, x: i32, y: i32, color: u32) {
         return flood_fill_bitmap(self, x, y, color);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn fill_rectangle(&mut self, color: u32) {
         return fill_bitmap_rectangle(self, color);

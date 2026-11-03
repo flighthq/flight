@@ -167,7 +167,7 @@ fn build_tiled_layer_data_from_xml(
                     (
                         "compression",
                         ImportDiagnosticDetailValue::String(
-                            compression.unwrap().as_str().to_string(),
+                            get_tiled_compression_str(&compression.unwrap()).to_string(),
                         ),
                     ),
                     (

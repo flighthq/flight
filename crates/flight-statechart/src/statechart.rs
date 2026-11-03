@@ -15,7 +15,7 @@ use crate::statechart_typed_arrays::{
 };
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 /// flight-compiler: rust-only — Rust-only extension-method parity tests.
 mod sugar_tests {
     use super::*;
@@ -893,6 +893,7 @@ pub(crate) trait StatechartInstanceMethods {
     fn set_region_duration(&self, region_index: i32, duration: f64);
 }
 
+#[cfg(feature = "object-api")]
 impl StatechartRaw {
     pub fn get_input_index(&self, name: &str) -> i32 {
         return get_statechart_input_index(self, name);
@@ -967,6 +968,7 @@ impl StatechartInstanceMethods for Ref<StatechartInstanceRaw> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StatechartInstanceRaw {
     pub fn new(chart: &Ref<StatechartRaw>) -> Ref<StatechartInstanceRaw> {
         return create_statechart_instance(chart);

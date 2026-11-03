@@ -3,7 +3,7 @@
 use crate::path::{Path, PathMorph, PathMorphCreationReason};
 use crate::path_morph_geometry::{allocate_path_morph, prepare_path_morph};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -100,6 +100,7 @@ pub fn sample_path_morph(out: &mut Path, morph: &PathMorph, progress: f64) {
     out.winding = morph.winding;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn sample_morph(&mut self, morph: &PathMorph, progress: f64) {
@@ -107,6 +108,7 @@ impl Path {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PathMorph {
     pub fn new(start: &Path, end: &Path) -> Option<Self> {
         return create_path_morph(start, end);

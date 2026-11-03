@@ -2,7 +2,7 @@ use flight_entity::Uint8Array;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -102,6 +102,7 @@ fn resolve_bitmap_encode(
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostBitmapEncodeCapability {
     pub fn encode_bitmap(
         &self,

@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Tilemap format codecs: TMX/Tiled and related importers"
 autotests = false
 
+[features]
+object-api = []
+
 [dependencies]
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }

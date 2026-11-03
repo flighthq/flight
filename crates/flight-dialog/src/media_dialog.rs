@@ -1,6 +1,6 @@
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::sync::Arc;
@@ -137,6 +137,7 @@ pub fn show_open_image_dialog(
     return (host_image_open_dialog.open)(options);
 }
 
+#[cfg(feature = "object-api")]
 impl HostImageOpenDialogCapability {
     pub fn show_open_image_dialog(
         &self,
@@ -146,6 +147,7 @@ impl HostImageOpenDialogCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostPhotoCaptureDialogCapability {
     pub fn show_capture_photo_dialog(
         &self,
@@ -155,6 +157,7 @@ impl HostPhotoCaptureDialogCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostVideoCaptureDialogCapability {
     pub fn show_capture_video_dialog(
         &self,

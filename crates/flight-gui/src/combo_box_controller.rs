@@ -120,6 +120,7 @@ fn set_open_runtime(r: &Ref<GuiControllerRuntime<ComboBoxControllerFields>>, ope
     let signal = signals.read().unwrap().on_open_change.clone();
     emit_gui_signal(&signal, &open);
 }
+#[cfg(feature = "object-api")]
 impl ComboBoxController {
     pub fn new(options: &ComboBoxControllerOptions) -> Self {
         return create_combo_box_controller(options);

@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Spring physics simulation: 1D, 2D, and 3D springs with configurable frequency and damping"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

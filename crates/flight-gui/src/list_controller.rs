@@ -219,6 +219,7 @@ pub(crate) fn set_visible_runtime(
     let content = r.read().unwrap().fields.content.clone();
     set_gui_visible(r, content.as_ref(), visible);
 }
+#[cfg(feature = "object-api")]
 impl ListController {
     pub fn new(options: &ListControllerOptions) -> Self {
         return create_list_controller(options);

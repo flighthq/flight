@@ -1,12 +1,13 @@
 //! D18 Rust conveniences for the permissions public lane. Methods contain no behavior: capability
 //! methods and enum string helpers delegate to the corresponding free functions.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_geolocation::HostGeolocationCapability;
 
 use crate::permission::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -203,6 +204,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostPermissionsCapability {
     pub async fn get_permission_state(
         &self,
@@ -250,6 +252,7 @@ impl HostPermissionsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PermissionQueryFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_permission_query_failure_reason(value);
@@ -260,6 +263,7 @@ impl PermissionQueryFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PermissionQueryReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_permission_query_reason(value);
@@ -270,6 +274,7 @@ impl PermissionQueryReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PermissionRequestFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_permission_request_failure_reason(value);
@@ -280,6 +285,7 @@ impl PermissionRequestFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PermissionRequestReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_permission_request_reason(value);
@@ -290,6 +296,7 @@ impl PermissionRequestReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PermissionState {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_permission_state(value);
@@ -300,6 +307,7 @@ impl PermissionState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StoragePersistenceOutcomeReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_persistence_outcome_reason(value);

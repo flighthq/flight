@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Portable TextLabel, NativeText, and RichText display nodes"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

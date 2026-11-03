@@ -2,7 +2,7 @@ use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 use flight_entity::Uint8Array;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -166,6 +166,7 @@ fn spread_index(t: f32, spread: GradientSpread) -> usize {
     (s * 255.0).round().min(255.0) as usize
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn fill_linear_gradient(
         &mut self,

@@ -57,6 +57,7 @@ fn throw_not_supported(message: &str) -> ! {
     });
 }
 
+#[cfg(feature = "object-api")]
 impl AudioBuffer {
     pub fn new(length: usize, number_of_channels: usize, sample_rate: f32) -> Ref<AudioBuffer> {
         return create_audio_buffer(length, number_of_channels, sample_rate);

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use flight_log::{LogData, LogDataOrProvider, LogLevel, LogStateRef, LogValue, log_once};
 
 use crate::tiled_layer_data::{TiledGuardState, set_tiled_layer_data_guard};
-use crate::types::{TiledCompression, TiledLayerDataFailure};
+use crate::types::{TiledCompression, TiledLayerDataFailure, get_tiled_compression_str};
 
 // flight-lint: allow(conform-params) D5: caller-owned guard state replaces TS module-level uninstall
 pub fn disable_tilemap_formats_guards(guard_state: &TiledGuardState) {
@@ -41,7 +41,7 @@ fn warn_tiled_layer_data_failure(
             "message".to_string(),
             LogValue::Str(format!(
                 "A tile layer is {}-compressed but no inflate seam was supplied, so it was preserved as an all-zero grid. Pass options.inflate to parseTiledTmx/parseTiledTmj to decode it.",
-                compression.as_str(),
+                get_tiled_compression_str(&compression),
             )),
         );
         log_once(
@@ -59,8 +59,8 @@ fn warn_tiled_layer_data_failure(
         "message".to_string(),
         LogValue::Str(format!(
             "The supplied inflate seam returned null for a {}-compressed tile layer, so it was preserved as an all-zero grid. The payload or the seam's {} support is the fault, not the parse.",
-            compression.as_str(),
-            compression.as_str(),
+            get_tiled_compression_str(&compression),
+            get_tiled_compression_str(&compression),
         )),
     );
     log_once(

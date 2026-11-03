@@ -175,6 +175,7 @@ impl Default for Transform3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Transform3D {
     pub fn new() -> Self {
         return create_transform3d();

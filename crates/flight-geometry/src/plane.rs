@@ -154,6 +154,7 @@ pub fn set_plane_from_points(out: &mut Plane, a: &Vector3, b: &Vector3, c: &Vect
     out.d = -(out.a * a.x + out.b * a.y + out.c * a.z);
 }
 
+#[cfg(feature = "object-api")]
 impl Plane {
     pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
         return create_plane(a, b, c, d);

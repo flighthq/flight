@@ -1,6 +1,6 @@
 use crate::{LinearColor, pack_linear_channels_to_color, srgb_channel_to_linear};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[allow(clippy::items_after_test_module)] // keep Rust-only sugar coverage beside its implementation
 mod sugar_tests {
     use super::*;
@@ -68,6 +68,7 @@ pub fn lerp_linear_color(out: &mut LinearColor, start: &LinearColor, end: &Linea
     out.a = a0 + (a1 - a0) * tc;
 }
 
+#[cfg(feature = "object-api")]
 impl LinearColor {
     pub fn lerp(&mut self, start: &LinearColor, end: &LinearColor, t: f32) {
         lerp_linear_color(self, start, end, t);

@@ -1,5 +1,6 @@
 //! flight-compiler: rust-only
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_geometry::{Matrix, Rectangle};
 use flight_path::{Path, PathWinding};
@@ -47,7 +48,7 @@ mod tests {
 
     #[test]
     fn query_sugar_matches_free_functions() {
-        let clip = ClipRegion::new_from_contours(&triangle(), PathWinding::EvenOdd);
+        let clip = create_clip_region_from_contours(&triangle(), PathWinding::EvenOdd);
         let mut method = create_rectangle(0.0, 0.0, 0.0, 0.0);
         let mut function = create_rectangle(0.0, 0.0, 0.0, 0.0);
         clip.bounds(&mut method);
@@ -62,9 +63,9 @@ mod tests {
 
     #[test]
     fn mutation_sugar_matches_free_functions() {
-        let source = ClipRegion::new_from_rectangle(&create_rectangle(1.0, 2.0, 3.0, 4.0));
-        let method = ClipRegion::new_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
-        let function = ClipRegion::new_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
+        let source = create_clip_region_from_rectangle(&create_rectangle(1.0, 2.0, 3.0, 4.0));
+        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
+        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 0.0));
         let matrix = create_matrix(2.0, 0.0, 0.0, 3.0, 4.0, 5.0);
         method.transform_from(&source, &matrix);
         transform_clip_region(&function, &source, &matrix);
@@ -156,6 +157,7 @@ impl ClipRegionMethods for Ref<ClipRegion> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ClipRegion {
     // flight-lint: allow(f64) circle geometry feeds the f64 Path.data lane without truncation
     pub fn new_from_circle(x: f64, y: f64, radius: f64, tolerance: Option<f64>) -> Ref<ClipRegion> {

@@ -4,7 +4,7 @@ use url::Url;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -469,12 +469,14 @@ pub async fn write_shell_shortcut_link(
 // D18 sugar: methods on the capability records delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostShellBeepCapability {
     pub fn beep(&self) {
         return shell_beep(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShellExternalCapability {
     pub async fn open_external_url(
         &self,
@@ -485,18 +487,21 @@ impl HostShellExternalCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShellPathOpenCapability {
     pub async fn open_path(&self, path: &str) -> ShellPathOpenOutcome {
         return open_shell_path(self, path).await;
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShellPathRevealCapability {
     pub async fn reveal_path(&self, path: &str) -> ShellPathRevealOutcome {
         return reveal_shell_path(self, path).await;
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShellProcessCapability {
     pub fn spawn_process(
         &self,
@@ -508,6 +513,7 @@ impl HostShellProcessCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShellShortcutLinkCapability {
     pub async fn read_shortcut_link(&self, shortcut_path: &str) -> ShellShortcutLinkReadOutcome {
         return read_shell_shortcut_link(self, shortcut_path).await;
@@ -523,6 +529,7 @@ impl HostShellShortcutLinkCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShellTrashCapability {
     pub async fn move_item_to_trash(&self, path: &str) -> ShellTrashOutcome {
         return move_shell_item_to_trash(self, path).await;

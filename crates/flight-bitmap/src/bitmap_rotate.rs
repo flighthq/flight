@@ -2,7 +2,7 @@ use crate::bitmap::invalidate_bitmap;
 use crate::bitmap_affine::transform_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -237,6 +237,7 @@ fn swap_pixels(data: &mut [u8], a: usize, b: usize) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
     pub fn rotate(

@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -149,6 +149,7 @@ fn swap_pixels(data: &mut [u8], a: usize, b: usize) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn flip_horizontal(&mut self, source: &BitmapRegion) {
         return flip_bitmap_horizontal(self, source);

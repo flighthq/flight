@@ -117,6 +117,7 @@ fn update_progress_visual(runtime: &Ref<GuiControllerRuntime<ProgressBarControll
     };
     set_gui_scale(runtime, node.as_ref(), orientation, value);
 }
+#[cfg(feature = "object-api")]
 impl ProgressBarController {
     pub fn new(options: &ProgressBarControllerOptions) -> Self {
         return create_progress_bar_controller(options);

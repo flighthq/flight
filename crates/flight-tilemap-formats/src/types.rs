@@ -422,12 +422,14 @@ pub fn get_tiled_stagger_index_str(value: &TiledStaggerIndex) -> &'static str {
 
 // ── Impl sugar (delegates to free functions) ─────────────────────────────
 
+#[cfg(feature = "object-api")]
 impl TiledCompression {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_compression_str(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledLayer {
     pub fn base(&self) -> &TiledLayerBase {
         return get_tiled_layer_base(self);
@@ -438,42 +440,49 @@ impl TiledLayer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledLayerDataFailure {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_layer_data_failure_str(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledObjectAlignment {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_object_alignment_str(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledOrientation {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_orientation_str(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledPropertyType {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_property_type_str(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledRenderOrder {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_render_order_str(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledStaggerAxis {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_stagger_axis_str(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TiledStaggerIndex {
     pub fn as_str(&self) -> &'static str {
         return get_tiled_stagger_index_str(self);

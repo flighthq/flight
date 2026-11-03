@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_geometry::Rectangle;
 use flight_textformat::TextFormat;
@@ -12,22 +13,25 @@ use crate::text_metrics::*;
 use crate::type_strings::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
 
+#[cfg(feature = "object-api")]
 impl RichTextContent {
     pub fn new() -> Self {
         return create_rich_text_content();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextAutoSize {
     pub fn as_str(&self) -> &'static str {
         return get_text_auto_size_string(*self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextBoundsSpec {
     pub fn compute_height(&self, layout: &TextLayoutResult) -> f32 {
         return compute_text_bounds_height(self, layout);
@@ -46,18 +50,21 @@ impl TextBoundsSpec {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextJustification {
     pub fn as_str(&self) -> &'static str {
         return get_text_justification_string(*self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextLayoutGroup {
     pub fn new(format: Ref<TextFormat>) -> Self {
         return create_text_layout_group(format);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextLayoutMeasureState {
     pub fn new() -> Self {
         return create_text_layout_measure_state();
@@ -75,6 +82,7 @@ impl TextLayoutMeasureState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextLayoutResult {
     pub fn new() -> Self {
         return create_text_layout_result();
@@ -89,6 +97,7 @@ impl TextLayoutResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextMetrics {
     pub fn new() -> Self {
         return create_text_metrics();
@@ -99,6 +108,7 @@ impl TextMetrics {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextVerticalAlign {
     pub fn as_str(&self) -> &'static str {
         return get_text_vertical_align_string(*self);

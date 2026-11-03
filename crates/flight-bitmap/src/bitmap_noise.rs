@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -356,6 +356,7 @@ fn value_noise(x: f64, y: f64, seed: i32) -> f64 {
     top + (bottom - top) * fy
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn fill_noise(&mut self, seed: u32, low: u8, high: u8, gray_scale: bool) {
         return fill_bitmap_noise(self, seed, low, high, gray_scale);

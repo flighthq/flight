@@ -4,7 +4,7 @@
 use crate::TextFormat;
 use flight_entity::{EntityRuntimeSlot, Ref, allocate_entity};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -75,6 +75,7 @@ pub fn initialize_text_format_range(
 
 flight_entity::impl_entity!(TextFormatRange);
 
+#[cfg(feature = "object-api")]
 impl TextFormatRange {
     pub fn new(format: Ref<TextFormat>, start: usize, end: usize) -> Self {
         return create_text_format_range(format, start, end);

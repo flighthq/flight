@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::sync::Arc;
 
 use flight_spritesheet::SpritesheetData;
@@ -5,7 +6,7 @@ use flight_spritesheet::SpritesheetData;
 use crate::spritesheet_detect::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_spritesheet::create_spritesheet_data;
@@ -161,6 +162,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpritesheetFormatRegistry {
     pub fn new() -> Self {
         return create_spritesheet_format_registry();

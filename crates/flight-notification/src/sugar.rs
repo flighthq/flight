@@ -1,6 +1,7 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use std::sync::Arc;
@@ -719,6 +720,7 @@ mod sugar_tests {
 
 // NotificationCancelReason
 
+#[cfg(feature = "object-api")]
 impl NotificationCancelReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_cancel_reason(value);
@@ -731,6 +733,7 @@ impl NotificationCancelReason {
 
 // NotificationCloseReason
 
+#[cfg(feature = "object-api")]
 impl NotificationCloseReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_close_reason(value);
@@ -743,6 +746,7 @@ impl NotificationCloseReason {
 
 // NotificationDeliveryReason
 
+#[cfg(feature = "object-api")]
 impl NotificationDeliveryReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_delivery_reason(value);
@@ -755,6 +759,7 @@ impl NotificationDeliveryReason {
 
 // NotificationDirection
 
+#[cfg(feature = "object-api")]
 impl NotificationDirection {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_direction(value);
@@ -767,6 +772,7 @@ impl NotificationDirection {
 
 // NotificationEventReleaseReason
 
+#[cfg(feature = "object-api")]
 impl NotificationEventReleaseReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_event_release_reason(value);
@@ -779,6 +785,7 @@ impl NotificationEventReleaseReason {
 
 // NotificationLifecycleFailureOperation
 
+#[cfg(feature = "object-api")]
 impl NotificationLifecycleFailureOperation {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_lifecycle_failure_operation(value);
@@ -791,6 +798,7 @@ impl NotificationLifecycleFailureOperation {
 
 // NotificationLifecycleReason
 
+#[cfg(feature = "object-api")]
 impl NotificationLifecycleReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_lifecycle_reason(value);
@@ -803,6 +811,7 @@ impl NotificationLifecycleReason {
 
 // NotificationPermission
 
+#[cfg(feature = "object-api")]
 impl NotificationPermission {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_permission(value);
@@ -815,6 +824,7 @@ impl NotificationPermission {
 
 // NotificationPermissionRequestReason
 
+#[cfg(feature = "object-api")]
 impl NotificationPermissionRequestReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_permission_request_reason(value);
@@ -827,6 +837,7 @@ impl NotificationPermissionRequestReason {
 
 // NotificationSchedulePrecision
 
+#[cfg(feature = "object-api")]
 impl NotificationSchedulePrecision {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_schedule_precision(value);
@@ -839,6 +850,7 @@ impl NotificationSchedulePrecision {
 
 // NotificationScheduleReason
 
+#[cfg(feature = "object-api")]
 impl NotificationScheduleReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_schedule_reason(value);
@@ -851,6 +863,7 @@ impl NotificationScheduleReason {
 
 // NotificationScheduleRepeat
 
+#[cfg(feature = "object-api")]
 impl NotificationScheduleRepeat {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_schedule_repeat(value);
@@ -863,6 +876,7 @@ impl NotificationScheduleRepeat {
 
 // NotificationSubscriptionAttachReason
 
+#[cfg(feature = "object-api")]
 impl NotificationSubscriptionAttachReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_subscription_attach_reason(value);
@@ -875,6 +889,7 @@ impl NotificationSubscriptionAttachReason {
 
 // NotificationSubscriptionDetachReason
 
+#[cfg(feature = "object-api")]
 impl NotificationSubscriptionDetachReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_subscription_detach_reason(value);
@@ -887,6 +902,7 @@ impl NotificationSubscriptionDetachReason {
 
 // NotificationSubscriptionDisposeReason
 
+#[cfg(feature = "object-api")]
 impl NotificationSubscriptionDisposeReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_notification_subscription_dispose_reason(value);

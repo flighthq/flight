@@ -1103,6 +1103,7 @@ impl Default for Matrix4 {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Matrix4 {
     pub fn new() -> Self {
         return create_matrix4();

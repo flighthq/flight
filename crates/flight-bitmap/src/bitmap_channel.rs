@@ -3,7 +3,7 @@ use flight_entity::{Uint8Array, allocate_entity};
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -193,12 +193,14 @@ pub fn split_bitmap_channels(source: &Bitmap) -> [Bitmap; 4] {
     [make(r_data), make(g_data), make(b_data), make(a_data)]
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     pub fn split_channels(&self) -> [Bitmap; 4] {
         return split_bitmap_channels(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn merge_channels(
         &mut self,

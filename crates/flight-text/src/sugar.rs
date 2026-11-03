@@ -1,6 +1,7 @@
 //! flight-compiler: rust-only
 //! D18 Rust conveniences for the public text contract.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_geometry::Rectangle;
 use flight_node::NodeRef;
@@ -19,10 +20,11 @@ use crate::text_label::*;
 use crate::text_label_layout::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
 
+#[cfg(feature = "object-api")]
 impl NativeText {
     pub fn new() -> Ref<Self> {
         return create_native_text();
@@ -94,6 +96,7 @@ impl NativeTextMethods for Ref<NativeText> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextLabel {
     pub fn new(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<Self> {
         return create_text_label(layout_context);
@@ -155,6 +158,7 @@ impl TextLabelMethods for Ref<TextLabel> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RichText {
     pub fn new(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<Self> {
         return create_rich_text(layout_context);

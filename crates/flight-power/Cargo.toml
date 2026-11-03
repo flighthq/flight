@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Power status, keep-awake, battery health, thermal state and idle monitoring over host capabilities"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

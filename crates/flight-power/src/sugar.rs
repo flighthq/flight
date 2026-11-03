@@ -1,6 +1,7 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use std::sync::Arc;
@@ -242,6 +243,7 @@ mod sugar_tests {
 
 // PowerContext
 
+#[cfg(feature = "object-api")]
 impl PowerContext {
     pub fn new() -> Self {
         return create_power_context();
@@ -250,6 +252,7 @@ impl PowerContext {
 
 // HostPowerBatteryHealthCapability
 
+#[cfg(feature = "object-api")]
 impl HostPowerBatteryHealthCapability {
     pub fn get_battery_health(&self, out: &mut PowerBatteryHealth) -> PowerBatteryHealth {
         return get_power_battery_health(self, out);
@@ -258,6 +261,7 @@ impl HostPowerBatteryHealthCapability {
 
 // HostPowerIdleCapability
 
+#[cfg(feature = "object-api")]
 impl HostPowerIdleCapability {
     pub fn get_idle_state(&self, threshold_seconds: f32) -> PowerIdleState {
         return get_power_system_idle_state(self, threshold_seconds);
@@ -270,6 +274,7 @@ impl HostPowerIdleCapability {
 
 // HostPowerKeepAwakeCapability
 
+#[cfg(feature = "object-api")]
 impl HostPowerKeepAwakeCapability {
     pub fn acquire(&self, mode: Option<PowerKeepAwakeMode>) -> PowerKeepAwakeAcquireFuture {
         return acquire_power_keep_awake(self, mode);
@@ -286,6 +291,7 @@ impl HostPowerKeepAwakeCapability {
 
 // HostPowerStatusCapability
 
+#[cfg(feature = "object-api")]
 impl HostPowerStatusCapability {
     pub fn get_status(&self, out: &mut PowerStatus) -> PowerStatus {
         return get_power_status(self, out);
@@ -294,6 +300,7 @@ impl HostPowerStatusCapability {
 
 // HostPowerThermalCapability
 
+#[cfg(feature = "object-api")]
 impl HostPowerThermalCapability {
     pub fn get_thermal_state(&self) -> PowerThermalState {
         return get_power_thermal_state(self);
@@ -302,6 +309,7 @@ impl HostPowerThermalCapability {
 
 // Power
 
+#[cfg(feature = "object-api")]
 impl Power {
     pub fn new() -> Self {
         return create_power();
@@ -344,6 +352,7 @@ impl Power {
 
 // PowerBatteryHealth
 
+#[cfg(feature = "object-api")]
 impl PowerBatteryHealth {
     pub fn new() -> Self {
         return make_power_battery_health();
@@ -352,6 +361,7 @@ impl PowerBatteryHealth {
 
 // PowerBatteryHealthState
 
+#[cfg(feature = "object-api")]
 impl PowerBatteryHealthState {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_power_battery_health_state(value);
@@ -364,6 +374,7 @@ impl PowerBatteryHealthState {
 
 // PowerIdleState
 
+#[cfg(feature = "object-api")]
 impl PowerIdleState {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_power_idle_state(value);
@@ -376,6 +387,7 @@ impl PowerIdleState {
 
 // PowerKeepAwakeAcquireReason
 
+#[cfg(feature = "object-api")]
 impl PowerKeepAwakeAcquireReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_power_keep_awake_acquire_reason(value);
@@ -388,6 +400,7 @@ impl PowerKeepAwakeAcquireReason {
 
 // PowerKeepAwakeMode
 
+#[cfg(feature = "object-api")]
 impl PowerKeepAwakeMode {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_power_keep_awake_mode(value);
@@ -400,6 +413,7 @@ impl PowerKeepAwakeMode {
 
 // PowerKeepAwakeReleaseReason
 
+#[cfg(feature = "object-api")]
 impl PowerKeepAwakeReleaseReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_power_keep_awake_release_reason(value);
@@ -412,6 +426,7 @@ impl PowerKeepAwakeReleaseReason {
 
 // PowerStatus
 
+#[cfg(feature = "object-api")]
 impl PowerStatus {
     pub fn new() -> Self {
         return make_power_status();
@@ -420,6 +435,7 @@ impl PowerStatus {
 
 // PowerThermalState
 
+#[cfg(feature = "object-api")]
 impl PowerThermalState {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_power_thermal_state(value);

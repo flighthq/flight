@@ -9,6 +9,9 @@ authors.workspace = true
 description = "2D/3D math primitives: vectors, matrices, rectangles, and object pools"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

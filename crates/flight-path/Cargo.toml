@@ -9,6 +9,9 @@ authors.workspace = true
 description = "2D path geometry: creation, tessellation, stroke, morph, bounds, arc lengths, curvature"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

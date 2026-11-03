@@ -477,6 +477,7 @@ impl fmt::Debug for ImageResolverState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageCrossOrigin {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_image_cross_origin(value);
@@ -487,6 +488,7 @@ impl ImageCrossOrigin {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageOperation {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_image_operation(value);
@@ -497,6 +499,7 @@ impl ImageOperation {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageResourceFailureKind {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_image_resource_failure_kind(value);
@@ -507,6 +510,7 @@ impl ImageResourceFailureKind {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ImageResourceReferenceKind {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_image_resource_reference_kind(value);

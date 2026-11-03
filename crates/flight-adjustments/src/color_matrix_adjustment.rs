@@ -4,7 +4,7 @@ use crate::contract::Adjustment;
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -55,6 +55,7 @@ pub fn is_color_matrix_adjustment(operation: &dyn Adjustment) -> bool {
     return get_adjustment_color_matrix(operation).is_some();
 }
 
+#[cfg(feature = "object-api")]
 impl ColorMatrixAdjustment {
     // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
     pub fn new(color_matrix: [f32; 20]) -> Self {

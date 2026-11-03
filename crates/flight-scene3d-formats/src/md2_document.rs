@@ -5,7 +5,7 @@ use flight_entity::Uint8Array;
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_scene3d::{Scene3D, Scene3DDocument, create_scene3d_from_document};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::md2_types::Md2SectionHandler;
@@ -84,6 +84,7 @@ pub fn parse_md2(
     return parse_md2_with_section_handlers(bytes, diagnostics, handlers);
 }
 
+#[cfg(feature = "object-api")]
 impl Md2ImportOptions {
     pub fn parse(
         &self,

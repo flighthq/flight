@@ -1,7 +1,9 @@
 //! libGDX 2D Particle Editor `.p` serialization (TS `libgdxSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;
-use flight_particles::{EmitterShape, ParticleBlendMode, ParticleEmitterConfig};
+use flight_particles::{
+    EmitterShape, ParticleBlendMode, ParticleEmitterConfig, particle_blend_mode_as_str,
+};
 
 use crate::libgdx_parse::{
     LibgdxActiveRangeValue, LibgdxParticleDocument, LibgdxRangeValue, LibgdxSpawnShape,
@@ -57,7 +59,7 @@ fn collect_libgdx_serialize_warnings(config: &ParticleEmitterConfig) -> Vec<Stri
     {
         warnings.push(format!(
             "Blend mode '{}' has no libGDX equivalent and was approximated as 'normal'",
-            blend_mode.as_str()
+            particle_blend_mode_as_str(*blend_mode)
         ));
     }
     if config.color_curve.is_some() {

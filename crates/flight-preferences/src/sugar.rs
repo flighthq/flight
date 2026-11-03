@@ -1,8 +1,9 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 
 // ── D18 sugar tests ────────────────────────────────────────────────────────
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_signals::connect_signal;
@@ -775,6 +776,7 @@ mod sugar_tests {
 
 // ── Impl sugar (alphabetical by type) ──────────────────────────────────────
 
+#[cfg(feature = "object-api")]
 impl StorageClearFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_clear_failure_reason(value);
@@ -785,6 +787,7 @@ impl StorageClearFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageClearNamespaceFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_clear_namespace_failure_reason(value);
@@ -795,6 +798,7 @@ impl StorageClearNamespaceFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageGetItemFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_get_item_failure_reason(value);
@@ -805,6 +809,7 @@ impl StorageGetItemFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageMigrationReadFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_migration_read_failure_reason(value);
@@ -815,6 +820,7 @@ impl StorageMigrationReadFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageReadFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_read_failure_reason(value);
@@ -825,6 +831,7 @@ impl StorageReadFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageRemoveItemFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_remove_item_failure_reason(value);
@@ -835,6 +842,7 @@ impl StorageRemoveItemFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageSetItemFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_set_item_failure_reason(value);
@@ -845,6 +853,7 @@ impl StorageSetItemFailureReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StorageWriteFailureReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_storage_write_failure_reason(value);

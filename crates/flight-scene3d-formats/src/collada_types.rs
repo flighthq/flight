@@ -182,6 +182,7 @@ pub enum ColladaUpAxis {
     ZUp,
 }
 
+#[cfg(feature = "object-api")]
 impl ColladaImportOptions {
     pub fn parse_with_decoders(
         &self,

@@ -5,7 +5,7 @@ use flight_signals::{clear_signal, create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::task::{Context, Poll, Waker};
@@ -434,6 +434,7 @@ pub fn parse_connectivity_connection_type(value: &str) -> Option<ConnectivityCon
     };
 }
 
+#[cfg(feature = "object-api")]
 impl Connectivity {
     pub fn new() -> Self {
         return create_connectivity();
@@ -448,18 +449,21 @@ impl Connectivity {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ConnectivityStatus {
     pub fn has_changed(&self, other: &ConnectivityStatus) -> bool {
         return has_connectivity_status_changed(self, other);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostConnectivityChangeCapability {
     pub fn destroy(&self) {
         destroy_connectivity(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostConnectivityReachabilityCapability {
     pub async fn detect_reachability(
         &self,
@@ -470,6 +474,7 @@ impl HostConnectivityReachabilityCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostConnectivityStatusCapability {
     pub fn attach(
         &self,

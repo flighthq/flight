@@ -1,9 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_geometry::set_rectangle;
-use flight_interaction::hit_tests::{
-    HitTestContext, find_graph_hit_target_precise, hit_test_graph_point,
-};
+use flight_interaction::hit_tests::{find_graph_hit_target_precise, hit_test_graph_point};
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
 };
@@ -88,7 +86,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn registers_handler_for_shape_kind() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_fill(0.0, 0.0, 100.0, 100.0);
         let result = find_graph_hit_target_precise(&ctx, &shape, 50.0, 50.0);
@@ -97,7 +95,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn hit_inside_filled_region() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_fill(10.0, 10.0, 80.0, 80.0);
         let result = find_graph_hit_target_precise(&ctx, &shape, 50.0, 50.0);
@@ -106,7 +104,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn miss_outside_filled_region() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_fill(10.0, 10.0, 20.0, 20.0);
         let result = find_graph_hit_target_precise(&ctx, &shape, 50.0, 50.0);
@@ -115,7 +113,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn shape_with_no_commands_misses() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_shape_hit_test(&mut ctx);
         let shape: NodeRef = create_shape();
         enable_node_interaction_state(&shape);
@@ -126,7 +124,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn circle_center_hits_precise() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_circle(50.0, 50.0, 40.0);
         let result = find_graph_hit_target_precise(&ctx, &shape, 50.0, 50.0);
@@ -138,7 +136,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn circle_bbox_corner_misses_precise() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_circle(50.0, 50.0, 40.0);
         let result = find_graph_hit_target_precise(&ctx, &shape, 85.0, 85.0);
@@ -150,7 +148,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn circle_bbox_corner_hits_coarse() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_default_hit_tests(&mut ctx);
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_circle(50.0, 50.0, 40.0);
@@ -160,7 +158,7 @@ mod register_shape_hit_test {
 
     #[test]
     fn morph_shape_progress_changes_hit_regions() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_default_hit_tests(&mut ctx);
         register_shape_hit_test(&mut ctx);
 

@@ -2,7 +2,7 @@ use flight_geometry::RectangleLike;
 
 use crate::path::{Path, PathCommand};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_geometry::create_rectangle;
 
@@ -259,6 +259,7 @@ fn quadratic_extremum_t(p0: f64, p1: f64, p2: f64) -> Option<f64> {
     return None;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn bounds(&self, out: &mut RectangleLike) -> bool {
         return get_path_bounds(self, out);

@@ -7,7 +7,7 @@ use flight_encoding::decode_utf8;
 use flight_entity::Uint8Array;
 use flight_meshgeometry::{MeshGeometry, MeshGeometryOptions, create_mesh_geometry};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::stl_test_helper::{StlFixtureFacet, build_binary_stl};
@@ -211,6 +211,7 @@ fn resolve_facet_normal(facet: &StlFacet, policy: StlNormalPolicy) -> [f64; 3] {
     };
 }
 
+#[cfg(feature = "object-api")]
 impl StlImportOptions {
     pub fn parse(&self, bytes: &Uint8Array) -> Option<MeshGeometry> {
         return parse_stl(bytes, Some(self));

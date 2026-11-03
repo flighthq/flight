@@ -11,7 +11,7 @@ pub use flight_font::{
     HostGlyphRasterizerCapability,
 };
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 

@@ -5,7 +5,7 @@ use crate::capture_mesh_morph_bind_pose;
 use crate::get_mesh_geometry_morph_bind_pose;
 use crate::set_mesh_geometry_morph_bind_pose;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::{
@@ -99,6 +99,7 @@ pub fn update_mesh_geometry_morph(geometry: &mut MeshGeometry, morph: &MeshMorph
     record_morph_blended_weights(geometry, morph);
 }
 
+#[cfg(feature = "object-api")]
 impl MeshGeometry {
     pub fn update_geometry_morph(&mut self, morph: &MeshMorph) {
         update_mesh_geometry_morph(self, morph);

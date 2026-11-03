@@ -3,7 +3,7 @@ use flight_entity::allocate_entity;
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_matrix_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -65,6 +65,7 @@ impl Default for InvertAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl InvertAdjustment {
     pub fn new(options: Option<&InvertAdjustmentOptions>) -> Self {
         return create_invert_adjustment(options);

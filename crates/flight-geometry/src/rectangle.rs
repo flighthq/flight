@@ -288,6 +288,7 @@ pub fn set_rectangle_top_left(out: &mut Rectangle, point: &Vector2) {
     out.y = point.y;
 }
 
+#[cfg(feature = "object-api")]
 impl Rectangle {
     pub fn new(x: f32, y: f32, width: f32, height: f32) -> Self {
         return create_rectangle(x, y, width, height);

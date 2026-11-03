@@ -9,7 +9,7 @@ use crate::loop_types::*;
 use crate::types::AppUnsubscribe;
 use crate::window_types::AppWindow;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -949,12 +949,14 @@ pub fn unregister_app_loop_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppExitCapability {
     pub fn attach_app_loop_exit(&self, app: &Ref<AppLoop>) {
         attach_app_loop_exit(self, app);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppLoopCapability {
     pub fn start_app_loop(
         &self,

@@ -1,6 +1,7 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -119,6 +120,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ParticleEmitterConfig {
     pub fn new(overrides: Option<&ParticleEmitterConfigOptions>) -> Self {
         return create_particle_emitter_config(overrides);
@@ -133,12 +135,14 @@ impl ParticleEmitterConfig {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ParticleEmitterSignals {
     pub fn new() -> Self {
         return create_particle_emitter_signals();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ParticleEmitterState {
     pub fn new() -> Self {
         return create_particle_emitter_state();
@@ -157,6 +161,7 @@ impl ParticleEmitterState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ParticleObjectsState {
     pub fn new() -> Self {
         return create_particle_objects_state();

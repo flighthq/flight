@@ -31,11 +31,11 @@ pub fn format_tiled_tmj(map: &TiledMap) -> String {
     );
     out.insert(
         "orientation".to_string(),
-        serde_json::json!(map.orientation.as_str()),
+        serde_json::json!(get_tiled_orientation_str(&map.orientation)),
     );
     out.insert(
         "renderorder".to_string(),
-        serde_json::json!(map.render_order.as_str()),
+        serde_json::json!(get_tiled_render_order_str(&map.render_order)),
     );
     if let Some(ref tv) = map.tiled_version {
         out.insert("tiledversion".to_string(), serde_json::json!(tv));
@@ -61,10 +61,16 @@ pub fn format_tiled_tmj(map: &TiledMap) -> String {
         );
     }
     if let Some(ref sa) = map.stagger_axis {
-        out.insert("staggeraxis".to_string(), serde_json::json!(sa.as_str()));
+        out.insert(
+            "staggeraxis".to_string(),
+            serde_json::json!(get_tiled_stagger_axis_str(sa)),
+        );
     }
     if let Some(ref si) = map.stagger_index {
-        out.insert("staggerindex".to_string(), serde_json::json!(si.as_str()));
+        out.insert(
+            "staggerindex".to_string(),
+            serde_json::json!(get_tiled_stagger_index_str(si)),
+        );
     }
     if let Some(hex) = map.hex_side_length {
         out.insert("hexsidelength".to_string(), serde_json::json!(hex));
@@ -79,12 +85,15 @@ pub fn format_tiled_tmj(map: &TiledMap) -> String {
 }
 
 fn json_layer(layer: &TiledLayer) -> serde_json::Map<String, serde_json::Value> {
-    let base = layer.base();
+    let base = get_tiled_layer_base(layer);
     let mut out = serde_json::Map::new();
     out.insert("id".to_string(), serde_json::json!(base.id));
     out.insert("name".to_string(), serde_json::json!(base.name));
     out.insert("opacity".to_string(), serde_json::json!(base.opacity));
-    out.insert("type".to_string(), serde_json::json!(layer.layer_type()));
+    out.insert(
+        "type".to_string(),
+        serde_json::json!(get_tiled_layer_type(layer)),
+    );
     out.insert("visible".to_string(), serde_json::json!(base.visible));
     out.insert("x".to_string(), serde_json::json!(0));
     out.insert("y".to_string(), serde_json::json!(0));
@@ -206,7 +215,7 @@ fn json_property(property: &TiledProperty) -> serde_json::Map<String, serde_json
     out.insert("name".to_string(), serde_json::json!(property.name));
     out.insert(
         "type".to_string(),
-        serde_json::json!(property.property_type.as_str()),
+        serde_json::json!(get_tiled_property_type_str(&property.property_type)),
     );
     match &property.value {
         TiledPropertyValue::String(s) => {
@@ -260,7 +269,7 @@ fn json_tileset(tileset: &TiledTileset) -> serde_json::Map<String, serde_json::V
     if tileset.object_alignment != TiledObjectAlignment::Unspecified {
         out.insert(
             "objectalignment".to_string(),
-            serde_json::json!(tileset.object_alignment.as_str()),
+            serde_json::json!(get_tiled_object_alignment_str(&tileset.object_alignment)),
         );
     }
     if !tileset.tiles.is_empty() {
@@ -359,7 +368,7 @@ fn json_tileset_tile(tile: &TiledTilesetTile) -> serde_json::Map<String, serde_j
 fn next_layer_id(layers: &[TiledLayer]) -> i32 {
     let mut max = 0;
     for layer in layers {
-        let id = layer.base().id;
+        let id = get_tiled_layer_base(layer).id;
         if id > max {
             max = id;
         }

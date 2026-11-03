@@ -3,7 +3,7 @@ use flight_path::Path;
 use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation};
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_path::create_path;
 
@@ -62,6 +62,7 @@ pub fn resolve_path_regions(
     write_path_boolean_contours(out, &resolved);
 }
 
+#[cfg(feature = "object-api")]
 impl PathBooleanKernel {
     // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
     pub fn resolve_path_regions(

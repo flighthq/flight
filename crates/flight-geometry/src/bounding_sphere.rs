@@ -285,6 +285,7 @@ impl Default for BoundingSphere {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BoundingSphere {
     pub fn new(center_x: f32, center_y: f32, center_z: f32, radius: f32) -> Self {
         return create_bounding_sphere(center_x, center_y, center_z, radius);

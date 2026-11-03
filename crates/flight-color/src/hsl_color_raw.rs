@@ -2,7 +2,7 @@
 
 use flight_entity::EntityRuntimeSlot;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -102,6 +102,7 @@ pub fn rgb_to_hsl(out: &mut HslColor, color: u32) {
     out.l = l;
 }
 
+#[cfg(feature = "object-api")]
 impl HslColor {
     pub fn rgb_to_hsl(&mut self, color: u32) {
         rgb_to_hsl(self, color);

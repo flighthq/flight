@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 // flight-lint: allow-file(f64) D1: command scalars are the wire's IEEE doubles
 //! Rust convenience methods for the public physics3d-abi lane (D18): each delegates to its free
 //! function. Methods sit on the function's primary (out or first) argument.
@@ -12,7 +13,7 @@ use flight_spatial::SpatialAabb3D;
 use crate::contract::*;
 
 #[allow(clippy::items_after_test_module)]
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_collision::{CollisionColliderShape3D, CollisionSphere3D};
     use flight_physics3d::{
@@ -301,6 +302,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DAbi {
     pub fn create_world(&self) -> Physics3DAbiWorldHandle {
         return create_physics3d_abi_world(self);
@@ -332,6 +334,7 @@ impl Physics3DAbi {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DAbiBodyBuffer {
     pub fn new(capacity: usize) -> Physics3DAbiBodyBuffer {
         return create_physics3d_abi_body_buffer(capacity);
@@ -347,6 +350,7 @@ impl Physics3DAbiBodyBuffer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DAbiCommandBuffer {
     pub fn new(byte_capacity: Option<usize>) -> Physics3DAbiCommandBuffer {
         return create_physics3d_abi_command_buffer(byte_capacity);
@@ -471,6 +475,7 @@ impl Physics3DAbiCommandBuffer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DAbiContactBuffer {
     pub fn new(contact_capacity: usize, point_capacity: usize) -> Physics3DAbiContactBuffer {
         return create_physics3d_abi_contact_buffer(contact_capacity, point_capacity);
@@ -486,6 +491,7 @@ impl Physics3DAbiContactBuffer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DAbiExecutionResult {
     pub fn new() -> Physics3DAbiExecutionResult {
         return create_physics3d_abi_execution_result();
@@ -501,6 +507,7 @@ impl Physics3DAbiExecutionResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DAbiJointBuffer {
     pub fn new(capacity: usize) -> Physics3DAbiJointBuffer {
         return create_physics3d_abi_joint_buffer(capacity);
@@ -511,6 +518,7 @@ impl Physics3DAbiJointBuffer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DAbiQueryBuffer {
     pub fn new(capacity: usize) -> Physics3DAbiQueryBuffer {
         return create_physics3d_abi_query_buffer(capacity);

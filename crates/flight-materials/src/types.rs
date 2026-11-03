@@ -3,7 +3,7 @@ use std::sync::Arc;
 use flight_entity::{EntityRuntimeSlot, Kind, Ref};
 use flight_texture::Texture;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     mod color_scale_bias {
         use crate::color_scale_bias::*;
@@ -1493,6 +1493,7 @@ impl MaterialData for MaterialDataFields {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MaterialConversionContext {
     pub fn new(guard: MaterialConversionGuard) -> Self {
         return create_material_conversion_context(guard);
@@ -1682,6 +1683,7 @@ impl MaterialData for TintMaterialData {
 // ── D18 sugar delegates ─────────────────────────────────────────────────────
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: MaterialFields methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl MaterialFields {
     pub fn new(kind: Kind) -> Self {
         return crate::material::create_material(kind);
@@ -1709,6 +1711,7 @@ impl MaterialFields {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: Material3DFields methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl Material3DFields {
     pub fn new(kind: Kind) -> Self {
         return crate::material3d::create_material3d(kind);
@@ -1736,6 +1739,7 @@ impl Material3DFields {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardMaterial methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl StandardMaterial {
     pub fn new() -> Self {
         return crate::standard_material::create_standard_material();
@@ -1747,6 +1751,7 @@ impl StandardMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ColorScaleBias methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl ColorScaleBias {
     pub fn new() -> Self {
         return crate::color_scale_bias::create_color_scale_bias();
@@ -1842,6 +1847,7 @@ impl ColorScaleBias {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: BlinnPhongMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl BlinnPhongMaterial {
     pub fn new() -> Self {
         return crate::classic_materials::create_blinn_phong_material();
@@ -1849,6 +1855,7 @@ impl BlinnPhongMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: LambertMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl LambertMaterial {
     pub fn new() -> Self {
         return crate::classic_materials::create_lambert_material();
@@ -1856,6 +1863,7 @@ impl LambertMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: DepthMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl DepthMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_depth_material();
@@ -1863,6 +1871,7 @@ impl DepthMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: EmissiveMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl EmissiveMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_emissive_material();
@@ -1870,6 +1879,7 @@ impl EmissiveMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: MatcapMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl MatcapMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_matcap_material();
@@ -1877,6 +1887,7 @@ impl MatcapMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: NormalMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl NormalMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_normal_material();
@@ -1884,6 +1895,7 @@ impl NormalMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ToonMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl ToonMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_toon_material();
@@ -1891,6 +1903,7 @@ impl ToonMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: UnlitMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl UnlitMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_unlit_material();
@@ -1898,6 +1911,7 @@ impl UnlitMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: VertexColorMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl VertexColorMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_vertex_color_material();
@@ -1905,6 +1919,7 @@ impl VertexColorMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: WireframeMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl WireframeMaterial {
     pub fn new() -> Self {
         return crate::unlit_materials::create_wireframe_material();
@@ -1912,6 +1927,7 @@ impl WireframeMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardPbrMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl StandardPbrMaterial {
     pub fn new() -> Self {
         return crate::pbr_materials::create_standard_pbr_material();
@@ -1919,6 +1935,7 @@ impl StandardPbrMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: CustomShaderMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl CustomShaderMaterial {
     pub fn new() -> Self {
         return crate::custom_shader_material::create_custom_shader_material();
@@ -1926,6 +1943,7 @@ impl CustomShaderMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: AnisotropyPbrExtension methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl AnisotropyPbrExtension {
     pub fn new() -> Self {
         return crate::anisotropy_pbr_extension::create_anisotropy_pbr_extension();
@@ -1937,6 +1955,7 @@ impl AnisotropyPbrExtension {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ClearcoatPbrExtension methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl ClearcoatPbrExtension {
     pub fn new() -> Self {
         return crate::clearcoat_pbr_extension::create_clearcoat_pbr_extension();
@@ -1948,6 +1967,7 @@ impl ClearcoatPbrExtension {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: IridescencePbrExtension methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl IridescencePbrExtension {
     pub fn new() -> Self {
         return crate::iridescence_pbr_extension::create_iridescence_pbr_extension();
@@ -1959,6 +1979,7 @@ impl IridescencePbrExtension {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: SheenPbrExtension methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl SheenPbrExtension {
     pub fn new() -> Self {
         return crate::sheen_pbr_extension::create_sheen_pbr_extension();
@@ -1970,6 +1991,7 @@ impl SheenPbrExtension {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: SpecularPbrExtension methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl SpecularPbrExtension {
     pub fn new() -> Self {
         return crate::specular_pbr_extension::create_specular_pbr_extension();
@@ -1981,6 +2003,7 @@ impl SpecularPbrExtension {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: TransmissionVolumePbrExtension methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl TransmissionVolumePbrExtension {
     pub fn new() -> Self {
         return crate::transmission_volume_pbr_extension::create_transmission_volume_pbr_extension(
@@ -1993,6 +2016,7 @@ impl TransmissionVolumePbrExtension {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: WrappedDiffusePbrExtension methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl WrappedDiffusePbrExtension {
     pub fn new() -> Self {
         return crate::wrapped_diffuse_pbr_extension::create_wrapped_diffuse_pbr_extension();
@@ -2004,6 +2028,7 @@ impl WrappedDiffusePbrExtension {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ExtendedPbrMaterial constructor delegates to free function
+#[cfg(feature = "object-api")]
 impl ExtendedPbrMaterial {
     pub fn new() -> Self {
         return crate::extended_pbr_material::create_extended_pbr_material();
@@ -2011,6 +2036,7 @@ impl ExtendedPbrMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: PhongMaterial methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl PhongMaterial {
     pub fn new() -> Self {
         return crate::classic_materials::create_phong_material();
@@ -2030,6 +2056,7 @@ impl PhongMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: SpecularGlossinessPbrMaterial methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl SpecularGlossinessPbrMaterial {
     pub fn new() -> Self {
         return crate::pbr_materials::create_specular_glossiness_pbr_material();
@@ -2049,6 +2076,7 @@ impl SpecularGlossinessPbrMaterial {
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardPbrMaterialProperties methods delegate to free functions
+#[cfg(feature = "object-api")]
 impl StandardPbrMaterialProperties {
     pub fn new(opts: Option<&StandardPbrMaterialPropertiesOptions>) -> Self {
         return crate::pbr_materials::create_standard_pbr_material_properties(opts);

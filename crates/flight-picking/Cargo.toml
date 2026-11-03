@@ -9,6 +9,9 @@ authors.workspace = true
 description = "3D picking: camera-ray scene selection (ray vs bounds + brute-force ray vs triangle)"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

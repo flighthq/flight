@@ -2,7 +2,7 @@ use crate::{Scene3D, scene_node::as_node3d};
 use flight_entity::{EntityRuntimeSlot, Kind, allocate_entity};
 use flight_node::NodeRef;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_entity::{get_entity_uid, set_entity_uid};
@@ -134,6 +134,7 @@ fn visit_kinds(out: &mut Scene3DKindUsage, node: &NodeRef) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene3DKindUsage {
     pub fn new() -> Self {
         return create_scene3d_kind_usage();

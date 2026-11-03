@@ -3,7 +3,7 @@ use flight_geometry::Vector2Like;
 use crate::flatten_path::flatten_path;
 use crate::path::Path;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_geometry::create_vector2;
 
@@ -181,6 +181,7 @@ fn sample_path_tangent(contours: &[Vec<f64>], distance: f64, out: &mut Vector2Li
     return true;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn point_at_distance(

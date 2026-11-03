@@ -1,5 +1,6 @@
 //! D18 sugar: thin receiver methods delegating to the free-function contract.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_geometry::{Matrix, Vector2};
 use flight_path::Path;
 
@@ -18,7 +19,7 @@ use crate::skeleton2d::*;
 use crate::skeleton2d_guards::Skeleton2DGuardState;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_entity::allocate_entity;
 
@@ -165,12 +166,14 @@ impl Skeleton2DMethods for Skeleton2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RegionAttachment2D {
     pub fn compute_vertices(&self, out: &mut [f32], skeleton: &Skeleton2D, bone_index: i32) {
         compute_skeleton_2d_region_attachment_vertices(out, self, skeleton, bone_index);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MeshAttachment2D {
     pub fn deform(
         &self,
@@ -184,6 +187,7 @@ impl MeshAttachment2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PathAttachment2D {
     pub fn deform(
         &self,
@@ -197,6 +201,7 @@ impl PathAttachment2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PointAttachment2D {
     pub fn compute_position(&self, out: &mut Vector2, skeleton: &Skeleton2D, bone_index: i32) {
         compute_skeleton_2d_point_attachment_position(out, self, skeleton, bone_index);
@@ -207,6 +212,7 @@ impl PointAttachment2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BoundingBoxAttachment2D {
     pub fn compute_vertices(
         &self,
@@ -222,6 +228,7 @@ impl BoundingBoxAttachment2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ClippingAttachment2D {
     pub fn compute_vertices(
         &self,

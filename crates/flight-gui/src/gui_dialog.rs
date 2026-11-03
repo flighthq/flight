@@ -331,6 +331,7 @@ fn snapshot_focus(r: &Ref<GuiControllerRuntime<GuiDialogFields>>) {
     s.fields.previous_focus = previous;
     s.fields.has_focus_snapshot = true;
 }
+#[cfg(feature = "object-api")]
 impl GuiDialog {
     pub fn new(options: Option<&GuiDialogOptions>) -> Self {
         return create_gui_dialog(options);

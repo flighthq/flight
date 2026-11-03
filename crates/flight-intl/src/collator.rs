@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use crate::cache::{FormatterCache, get_cache_key, get_cached};
 use crate::options::*;
 use crate::types::*;
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::intl_test_support::{locale, test_host};
@@ -72,7 +72,7 @@ fn get_collator(
             .map(|v| IntlOptionsKey::Collator(CollatorOptionsKey { options: v }))
             .as_ref(),
     );
-    return get_cached(cache, &key, || host.open_collator(locale, values));
+    return get_cached(cache, &key, || create_intl_collator(host, locale, values));
 }
 
 /// Returns a new array of `items` sorted by locale-aware collation; the input is not mutated (TS
@@ -102,6 +102,7 @@ pub fn sort_strings(
     });
 }
 
+#[cfg(feature = "object-api")]
 impl IntlCollatorHandle {
     // flight-lint: allow(f64) D1: the comparator returns the source's JS number result
     pub fn compare(&self, a: &str, b: &str) -> f64 {
@@ -111,6 +112,7 @@ impl IntlCollatorHandle {
 
 /// Delegates one collator construction to the host capability (Rust-owned receiver sugar target).
 
+#[cfg(feature = "object-api")]
 impl HostIntlCapability {
     pub fn open_collator(
         &self,

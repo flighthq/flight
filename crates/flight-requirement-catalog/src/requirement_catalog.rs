@@ -4,7 +4,7 @@ use flight_requirement::contract::get_requirement_facet_string;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_requirement::RequirementFacet;
@@ -173,6 +173,7 @@ pub fn unregister_requirement_catalog_entry(
     return true;
 }
 
+#[cfg(feature = "object-api")]
 impl RequirementCatalog {
     pub fn new(
         entries: &[RequirementCatalogEntry],

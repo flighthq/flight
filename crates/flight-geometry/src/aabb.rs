@@ -360,6 +360,7 @@ pub fn union_aabb(out: &mut Aabb, a: &Aabb, b: &Aabb) {
     out.max.z = a_max_z.max(b_max_z);
 }
 
+#[cfg(feature = "object-api")]
 impl Aabb {
     pub fn new(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> Self {
         return create_aabb(min_x, min_y, min_z, max_x, max_y, max_z);

@@ -64,6 +64,7 @@ fn clock_dispose_matches_dispose_clock() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_effective_scale_matches_get_clock_effective_scale() {
     let parent = clock(2.0, false);
     let child = create_child_clock(
@@ -79,6 +80,7 @@ fn clock_effective_scale_matches_get_clock_effective_scale() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_enable_signals_matches_enable_clock_signals() {
     let a = create_clock();
     let b = create_clock();
@@ -99,6 +101,7 @@ fn clock_enable_signals_matches_enable_clock_signals() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_is_effectively_paused_matches_is_clock_effectively_paused() {
     let parent = clock(1.0, true);
     let child = create_child_clock(&parent, None);
@@ -111,11 +114,13 @@ fn clock_is_effectively_paused_matches_is_clock_effectively_paused() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_new_matches_create_clock() {
     assert!(same_state(&Clock::new(), &create_clock()));
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_parent_matches_get_clock_parent() {
     let parent = create_clock();
     let child = create_child_clock(&parent, None);
@@ -127,6 +132,7 @@ fn clock_parent_matches_get_clock_parent() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_pause_matches_pause_clock() {
     let (a, b) = pair(1.0, false);
     a.write().unwrap().pause();
@@ -146,6 +152,7 @@ fn clock_remove_child_matches_remove_clock_child() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_reset_matches_reset_clock() {
     let (a, b) = pair(2.0, false);
     advance_clock(&a, 10.0);
@@ -156,6 +163,7 @@ fn clock_reset_matches_reset_clock() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_resume_matches_resume_clock() {
     let (a, b) = pair(1.0, true);
     a.write().unwrap().resume();
@@ -164,6 +172,7 @@ fn clock_resume_matches_resume_clock() {
 }
 
 #[test]
+#[cfg(feature = "object-api")]
 fn clock_set_scale_matches_set_clock_scale() {
     let (a, b) = pair(1.0, false);
     a.write().unwrap().set_scale(0.25);

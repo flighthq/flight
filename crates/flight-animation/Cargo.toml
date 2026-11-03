@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Animation system: clips, keyframes, sampling, blending, and animation state management"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

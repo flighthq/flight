@@ -1,4 +1,5 @@
 //! D18 Rust-only delegates; the free functions remain the canonical contract.
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 use flight_entity::Ref;
 use flight_scene2d::Node2DRef;
@@ -18,7 +19,7 @@ pub trait GuiNodeMethods {
     );
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use std::sync::{Arc, RwLock};
@@ -1667,6 +1668,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl<F> GuiController<F> {
     // Keep the full name because the concrete controller aliases each have their own dispose method.
     pub fn dispose_gui_controller(&self, clear: &dyn Fn()) {
@@ -1701,6 +1703,7 @@ impl GuiNodeMethods for Node2DRef {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GuiOrientation {
     pub fn as_str(&self) -> &'static str {
         return get_gui_orientation_string(*self);
@@ -1710,6 +1713,7 @@ impl GuiOrientation {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GuiDialogCloseReason {
     pub fn as_str(&self) -> &'static str {
         return get_gui_dialog_close_reason_string(*self);
@@ -1719,6 +1723,7 @@ impl GuiDialogCloseReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ButtonController {
     pub fn dispose(&self) {
         dispose_button_controller(self);
@@ -1734,6 +1739,7 @@ impl ButtonController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ToggleController {
     pub fn dispose(&self) {
         dispose_toggle_controller(self);
@@ -1749,6 +1755,7 @@ impl ToggleController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ProgressBarController {
     pub fn dispose(&self) {
         dispose_progress_bar_controller(self);
@@ -1761,6 +1768,7 @@ impl ProgressBarController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RadioGroupController {
     pub fn dispose(&self) {
         dispose_radio_group_controller(self);
@@ -1776,6 +1784,7 @@ impl RadioGroupController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TabBarController {
     pub fn dispose(&self) {
         dispose_tab_bar_controller(self);
@@ -1791,6 +1800,7 @@ impl TabBarController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SliderController {
     pub fn dispose(&self) {
         dispose_slider_controller(self);
@@ -1806,6 +1816,7 @@ impl SliderController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ScrollBarController {
     pub fn dispose(&self) {
         dispose_scroll_bar_controller(self);
@@ -1821,6 +1832,7 @@ impl ScrollBarController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ListController {
     pub fn dispose(&self) {
         dispose_list_controller(self);
@@ -1839,6 +1851,7 @@ impl ListController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ComboBoxController {
     pub fn dispose(&self) {
         dispose_combo_box_controller(self);
@@ -1854,6 +1867,7 @@ impl ComboBoxController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ScrollViewController {
     pub fn dispose(&self) {
         dispose_scroll_view_controller(self);
@@ -1872,6 +1886,7 @@ impl ScrollViewController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SplitPaneController {
     pub fn dispose(&self) {
         dispose_split_pane_controller(self);
@@ -1887,6 +1902,7 @@ impl SplitPaneController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl WindowController {
     pub fn dispose(&self) {
         dispose_window_controller(self);
@@ -1902,6 +1918,7 @@ impl WindowController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TooltipController {
     pub fn dispose(&self) {
         dispose_tooltip_controller(self);
@@ -1914,6 +1931,7 @@ impl TooltipController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TreeViewController {
     pub fn dispose(&self) {
         dispose_tree_view_controller(self);
@@ -1938,6 +1956,7 @@ impl TreeViewController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextInputController {
     pub fn blur(&self) {
         blur_text_input_controller(self);
@@ -1959,6 +1978,7 @@ impl TextInputController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GuiDialog {
     pub fn active_entry(&self) -> Option<Ref<GuiDialogEntry>> {
         return get_active_gui_dialog_entry(self);

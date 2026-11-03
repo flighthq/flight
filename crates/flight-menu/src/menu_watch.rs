@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use std::sync::Mutex;
@@ -284,18 +284,21 @@ pub fn dispose_menu_select(select: &mut MenuSelect) {
 // D18 sugar: methods delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostMenuHighlightCapability {
     pub fn attach_highlight(&self, highlight: &mut MenuHighlight) {
         return attach_menu_highlight(self, highlight);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostMenuSelectCapability {
     pub fn attach_select(&self, select: &mut MenuSelect) {
         return attach_menu_select(self, select);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MenuHighlight {
     pub fn new() -> Self {
         return create_menu_highlight();
@@ -310,6 +313,7 @@ impl MenuHighlight {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MenuSelect {
     pub fn new() -> Self {
         return create_menu_select();

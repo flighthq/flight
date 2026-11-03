@@ -3,7 +3,7 @@ use crate::types::{HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability}
 
 // The contract file-structure rule requires modules before functions and impls.
 #[allow(clippy::items_after_test_module)]
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -59,6 +59,7 @@ pub fn has_audio_decode_slot(audio_decode: &HostAudioDecodeCapabilities, mime_ty
     return get_audio_decode_slot(audio_decode, mime_type).is_some();
 }
 
+#[cfg(feature = "object-api")]
 impl HostAudioDecodeCapabilities {
     pub fn get_audio_decode_slot(
         &self,

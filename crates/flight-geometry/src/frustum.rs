@@ -315,6 +315,7 @@ pub fn set_frustum_from_matrix4(out: &mut Frustum, view_projection: &Matrix4) {
     set_and_normalize_plane(&mut out.far, r30 - r20, r31 - r21, r32 - r22, r33 - r23);
 }
 
+#[cfg(feature = "object-api")]
 impl Frustum {
     pub fn new() -> Self {
         return create_frustum();

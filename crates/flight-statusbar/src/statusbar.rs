@@ -5,7 +5,7 @@ use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Mutex;
 
@@ -639,18 +639,21 @@ pub fn set_status_bar_visible(
     (host_status_bar_visibility.set_visible)(visible, animation);
 }
 
+#[cfg(feature = "object-api")]
 impl HostStatusBarChangeCapability {
     pub fn attach(&self, host_status_bar_info: &HostStatusBarInfoCapability, bar: &mut StatusBar) {
         attach_status_bar(self, host_status_bar_info, bar);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostStatusBarColorCapability {
     pub fn set_color(&self, color: u32, animated: Option<bool>) {
         set_status_bar_color(self, color, animated);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostStatusBarInfoCapability {
     pub fn height(&self) -> f32 {
         return get_status_bar_height(self);
@@ -664,24 +667,28 @@ impl HostStatusBarInfoCapability {
 // These three capabilities already have fields with the short names (`set_overlays_content`,
 // `set_style`, `set_visible`), so their delegates keep the fuller free-function names (D18 collision
 // rule) rather than shadow the raw provider callbacks.
+#[cfg(feature = "object-api")]
 impl HostStatusBarOverlaysCapability {
     pub fn set_status_bar_overlays_content(&self, overlay: bool) {
         set_status_bar_overlays_content(self, overlay);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostStatusBarStyleCapability {
     pub fn set_status_bar_style(&self, style: StatusBarStyle) {
         set_status_bar_style(self, style);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostStatusBarVisibilityCapability {
     pub fn set_status_bar_visible(&self, visible: bool, animation: Option<StatusBarAnimation>) {
         set_status_bar_visible(self, visible, animation);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StatusBar {
     pub fn new() -> Self {
         return create_status_bar();
@@ -696,6 +703,7 @@ impl StatusBar {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl StatusBarStyleStacks {
     pub fn new() -> Self {
         return create_status_bar_style_stacks();

@@ -2,7 +2,7 @@
 use crate::path::{Path, PathMeshTyped};
 use crate::tessellate_path::tessellate_path;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -75,6 +75,7 @@ pub fn tessellate_path_typed_into(path: &Path, out: &mut PathMeshTyped, toleranc
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn tessellate_typed(&self, tolerance: Option<f64>) -> PathMeshTyped {

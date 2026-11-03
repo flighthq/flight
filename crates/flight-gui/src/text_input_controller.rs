@@ -391,6 +391,7 @@ fn update_caret(r: &Ref<GuiControllerRuntime<TextInputControllerFields>>) {
     let caret = r.read().unwrap().fields.caret.clone();
     set_gui_position(r, caret.as_ref(), GuiOrientation::Vertical, rectangle.y);
 }
+#[cfg(feature = "object-api")]
 impl TextInputController {
     pub fn new(options: &TextInputControllerOptions) -> Self {
         return create_text_input_controller(options);

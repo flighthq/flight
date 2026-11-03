@@ -1,7 +1,7 @@
 use crate::flatten_path::flatten_path;
 use crate::path::{Path, PathCommand};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -405,6 +405,7 @@ fn reparameterize(pts: &[f64], first: usize, last: usize, u: &[f64], bezier: &[f
     return u_prime;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn fit_curves(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {

@@ -665,6 +665,7 @@ impl Default for Matrix {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Matrix {
     pub fn new(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Self {
         return create_matrix(a, b, c, d, tx, ty);

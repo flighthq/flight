@@ -2,7 +2,7 @@ use flight_buffer::get_array_buffer_storage;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -57,6 +57,7 @@ pub fn infer_font_format_from_url(url: &str) -> Option<&'static str> {
     };
 }
 
+#[cfg(feature = "object-api")]
 impl FontFormatData<'_> {
     pub fn detect_font_format(self) -> Option<&'static str> {
         return detect_font_format(self);

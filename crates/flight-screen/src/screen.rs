@@ -6,7 +6,7 @@ use flight_signals::{clear_signal, create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::sync::Mutex;
@@ -864,6 +864,7 @@ pub fn screen_to_dip_rect(out: &mut Rectangle, screen: &ScreenInfo, rect: &Recta
     out.height = rect.height / screen.scale_factor;
 }
 
+#[cfg(feature = "object-api")]
 impl HostScreenChangeCapability {
     pub fn attach(&self, signals: &mut ScreenSignals) {
         attach_screen_signals(self, signals);
@@ -872,6 +873,7 @@ impl HostScreenChangeCapability {
 
 // The details capability's `request` field shares the short name, so that delegate keeps the fuller
 // free-function name (D18 collision rule).
+#[cfg(feature = "object-api")]
 impl HostScreenDetailsCapability {
     pub async fn detail_permission(&self) -> ScreenPermissionResult {
         return get_screen_detail_permission(self).await;
@@ -882,12 +884,14 @@ impl HostScreenDetailsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostScreenPermissionChangeCapability {
     pub fn attach(&self, permission_change: &mut ScreenPermissionChange) {
         attach_screen_permission_change(self, permission_change);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostScreenQueryCapability {
     // flight-lint: allow(f64) `id` is the exact-match display id (see `ScreenInfo`)
     pub fn by_id(&self, out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, id: f64) -> bool {
@@ -939,6 +943,7 @@ impl HostScreenQueryCapability {
 }
 
 // The coordinate conversions keep their full names: dropping "screen" would change their meaning.
+#[cfg(feature = "object-api")]
 impl ScreenInfo {
     pub fn new() -> Self {
         return create_screen_info();
@@ -973,12 +978,14 @@ impl ScreenInfo {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ScreenMode {
     pub fn new() -> Self {
         return create_screen_mode();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ScreenPermissionChange {
     pub fn new() -> Self {
         return create_screen_permission_change();
@@ -993,12 +1000,14 @@ impl ScreenPermissionChange {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ScreenQueryScratch {
     pub fn new() -> Self {
         return create_screen_query_scratch();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ScreenSignals {
     pub fn new() -> Self {
         return create_screen_signals();

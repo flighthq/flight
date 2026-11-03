@@ -3,7 +3,7 @@ use flight_entity::allocate_entity;
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_matrix_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -74,6 +74,7 @@ impl Default for BrightnessContrastAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BrightnessContrastAdjustment {
     pub fn new(options: Option<&BrightnessContrastAdjustmentOptions>) -> Self {
         return create_brightness_contrast_adjustment(options);

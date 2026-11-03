@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Texture sampling views, open pixel-source identities, cube faces, UV transforms, color-space policy and voxel sources"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

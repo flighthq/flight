@@ -6,7 +6,7 @@ use flight_requirement_catalog::{RequirementCatalog, find_requirement_catalog_en
 
 use crate::types::{RequirementCodegenPlan, RequirementDeclination};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_requirement::RequirementFacet;
@@ -121,6 +121,7 @@ fn requirement_identity(requirement: &Requirement) -> String {
     .join("\0");
 }
 
+#[cfg(feature = "object-api")]
 impl RequirementCodegenPlan {
     pub fn new(catalog: &RequirementCatalog, requirements: &RequirementSet, backend: &str) -> Self {
         return create_requirement_codegen_plan(catalog, requirements, backend);

@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_geometry::Rectangle;
 use flight_glyphatlas::GlyphSource;
@@ -10,7 +11,7 @@ use crate::explain_bitmap_text_missing_glyphs::*;
 use crate::types::*;
 use crate::update_bitmap_text::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
 
@@ -24,6 +25,7 @@ impl GlyphSourceBitmapTextMethods for Ref<GlyphSource> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapText {
     pub fn new(glyph_source: Option<Ref<GlyphSource>>) -> Ref<Self> {
         return create_bitmap_text(glyph_source);
@@ -98,12 +100,14 @@ impl BitmapText {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapTextAlign {
     pub fn as_str(&self) -> &'static str {
         return get_bitmap_text_align_string(*self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapTextGuardState {
     pub fn disable(&mut self) {
         disable_bitmap_text_guards(self);

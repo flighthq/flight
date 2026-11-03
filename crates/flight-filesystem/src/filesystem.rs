@@ -14,7 +14,7 @@ use futures::StreamExt;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::{Future, ready};
     use std::sync::Arc;
@@ -1160,6 +1160,7 @@ pub fn write_text_file(
     return write(path, data, signal);
 }
 
+#[cfg(feature = "object-api")]
 impl HostFileSystemCapability {
     pub fn append_text_file(
         &self,

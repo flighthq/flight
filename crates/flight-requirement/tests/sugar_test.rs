@@ -1,3 +1,5 @@
+#![cfg(feature = "object-api")]
+
 //! flight-compiler: rust-only
 
 use flight_requirement::contract::*;

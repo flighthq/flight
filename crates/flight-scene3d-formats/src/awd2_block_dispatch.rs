@@ -4,7 +4,7 @@ use crate::awd2_types::{
 use flight_entity::{Ref, allocate_entity};
 use std::sync::{Arc, RwLock};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_entity::get_entity_uid;
@@ -95,6 +95,7 @@ pub fn expand_awd2_block_dispatch(out: &mut Awd2BlockDispatch, blocks: &[Ref<Awd
     return;
 }
 
+#[cfg(feature = "object-api")]
 impl Awd2ParseState {
     pub fn new() -> Self {
         return create_awd2_parse_state();

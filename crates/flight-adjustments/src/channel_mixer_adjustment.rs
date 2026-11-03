@@ -4,7 +4,7 @@ use crate::contract::AdjustmentFields;
 use crate::contract::create_channel_mixer_color_matrix;
 use crate::contract::initialize_color_matrix_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -77,6 +77,7 @@ impl Default for ChannelMixerAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ChannelMixerAdjustment {
     pub fn new(options: Option<&ChannelMixerAdjustmentOptions>) -> Self {
         return create_channel_mixer_adjustment(options);

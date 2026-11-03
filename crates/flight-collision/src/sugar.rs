@@ -1,9 +1,10 @@
 //! Rust convenience methods for the public collision lane (D18).
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::collision_support2d::support_collision_capsule2d;
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -1201,6 +1202,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionAabb2D {
     pub fn collide_aabb_contact(
         &self,
@@ -1247,6 +1249,7 @@ impl CollisionAabb2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionAabb3D {
     pub fn support(
         &self,
@@ -1263,6 +1266,7 @@ impl CollisionAabb3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionBox3D {
     pub fn support(
         &self,
@@ -1279,6 +1283,7 @@ impl CollisionBox3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionCapsule2D {
     pub fn collide_aabb_contact(
         &self,
@@ -1311,12 +1316,15 @@ impl CollisionCapsule2D {
     ) -> bool {
         return collide_capsule_polygon_contact_manifold2d(self, other, out);
     }
+}
 
+impl CollisionCapsule2D {
     pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
         support_collision_capsule2d(self, direction_x, direction_y, out);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionCapsule3D {
     pub fn support(
         &self,
@@ -1333,6 +1341,7 @@ impl CollisionCapsule3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionCircle2D {
     pub fn collide_aabb_contact(
         &self,
@@ -1395,6 +1404,7 @@ impl CollisionCircle2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionCone3D {
     pub fn support(
         &self,
@@ -1407,6 +1417,7 @@ impl CollisionCone3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionContactManifold2D {
     pub fn new() -> Self {
         return create_collision_contact_manifold2d();
@@ -1417,6 +1428,7 @@ impl CollisionContactManifold2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionContactManifold3D {
     pub fn new() -> Self {
         return create_collision_contact_manifold3d();
@@ -1427,6 +1439,7 @@ impl CollisionContactManifold3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionConvex3D {
     pub fn support(
         &self,
@@ -1439,6 +1452,7 @@ impl CollisionConvex3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionCylinder3D {
     pub fn support(
         &self,
@@ -1451,12 +1465,14 @@ impl CollisionCylinder3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionDistance3D {
     pub fn new() -> Self {
         return create_collision_distance3d();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionHeightfield3D {
     pub fn new() -> Self {
         return create_collision_heightfield3d();
@@ -1499,6 +1515,7 @@ impl CollisionHeightfield3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionManifold2D {
     pub fn new() -> Self {
         return create_collision_manifold2d();
@@ -1509,6 +1526,7 @@ impl CollisionManifold2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionManifold3D {
     pub fn new() -> Self {
         return create_collision_manifold3d();
@@ -1519,6 +1537,7 @@ impl CollisionManifold3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionObb2D {
     pub fn collide_obb_contact(
         &self,
@@ -1553,6 +1572,7 @@ impl CollisionObb2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionPolygon2D {
     pub fn collide_polygon_contact(
         &self,
@@ -1571,18 +1591,21 @@ impl CollisionPolygon2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionRaycastHit2D {
     pub fn new() -> Self {
         return create_collision_raycast_hit2d();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionRaycastHit3D {
     pub fn new() -> Self {
         return create_collision_raycast_hit3d();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionSegment2D {
     pub fn test_aabb(&self, other: &CollisionAabb2D) -> bool {
         return test_segment_aabb_collision2d(self, other);
@@ -1609,6 +1632,7 @@ impl CollisionSegment2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionShape2D {
     pub fn collide_contact(
         &self,
@@ -1706,6 +1730,7 @@ impl CollisionShape2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionShape3D {
     pub fn collide_contact(
         &self,
@@ -1927,6 +1952,7 @@ impl CollisionShape3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionSphere3D {
     pub fn support(
         &self,
@@ -1955,18 +1981,21 @@ impl CollisionSphere3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionTimeOfImpact2D {
     pub fn new() -> Self {
         return create_collision_time_of_impact2d();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionTimeOfImpact3D {
     pub fn new() -> Self {
         return create_collision_time_of_impact3d();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionTriangleMesh3D {
     pub fn new() -> Self {
         return create_collision_triangle_mesh3d();

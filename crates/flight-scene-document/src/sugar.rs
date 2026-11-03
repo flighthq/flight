@@ -1,6 +1,7 @@
 //! Rust convenience methods for the public scene-document lane (D18): each delegates to its free
 //! function.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::flight_document_resource_dependencies::get_flight_document_resource_dependencies;
 use crate::flight_document_text::format_flight_document_text;
 use crate::scene_document_materialization_selection::{
@@ -14,7 +15,7 @@ use crate::scene_document_scene3d_materialization::{
 };
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_entity::allocate_entity;
 
@@ -105,6 +106,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl FlightDocument {
     pub fn create_scene2d_materialization(
         &self,

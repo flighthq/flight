@@ -1,6 +1,6 @@
 use crate::path::{Path, PathCommand, PathWinding};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -309,6 +309,7 @@ fn flatten_quadratic_winding_number(
     );
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn contains_point(&self, px: f64, py: f64, tolerance: Option<f64>) -> bool {

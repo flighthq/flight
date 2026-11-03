@@ -2,7 +2,7 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -382,6 +382,7 @@ fn read_platform_info(host_platform: &HostPlatformCapability) -> PlatformInfo {
     return info;
 }
 
+#[cfg(feature = "object-api")]
 impl HostPlatformCapability {
     pub fn engine(&self) -> PlatformEngine {
         return get_platform_engine(self);
@@ -428,6 +429,7 @@ impl HostPlatformCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PlatformInfo {
     pub fn new() -> Self {
         return create_platform_info();

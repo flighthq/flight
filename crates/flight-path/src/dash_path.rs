@@ -3,7 +3,7 @@
 use crate::flatten_path::flatten_path;
 use crate::path::{Path, PathCommand};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -170,6 +170,7 @@ fn dash_total(dash: &[f64]) -> f64 {
     return total;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn dash(&self, dash: &[f64], dash_offset: f64, out: &mut Path, tolerance: Option<f64>) {

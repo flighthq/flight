@@ -4,7 +4,7 @@ use std::task::{Context, Poll, Waker};
 
 use flight_entity::{Ref, Unknown};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -296,12 +296,14 @@ pub async fn wait_aborted(signal: &AbortSignal) -> Unknown {
 // D18 sugar: methods on the shared types delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl AbortController {
     pub fn abort(&self, reason: Option<Unknown>) {
         return abort_controller(self, reason);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AbortSignal {
     pub fn add_listener(&self, callback: AbortCallback) {
         return add_abort_listener(self, callback);

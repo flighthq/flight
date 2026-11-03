@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -125,6 +125,7 @@ fn permute_pixel_index(cursor: u32, bits: u32, mask: u32) -> u32 {
     v & mask
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn dissolve_pixels(
         &mut self,

@@ -3,7 +3,7 @@ use flight_useragent::DEVICE_FORM_FACTOR_UNKNOWN;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, Mutex};
 
@@ -302,18 +302,21 @@ pub fn refresh_device_info(host_device: &HostDeviceCapability) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl DeviceCapabilities {
     pub fn new() -> Self {
         return create_device_capabilities();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl DeviceDisplayMetrics {
     pub fn new() -> Self {
         return create_device_display_metrics();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl DeviceInfo {
     pub fn new() -> Self {
         return create_device_info();
@@ -322,6 +325,7 @@ impl DeviceInfo {
 
 // The capability's optional `refresh` field shares the short name, so the delegate keeps the fuller
 // free-function name (D18 collision rule) rather than shadow the raw provider callback.
+#[cfg(feature = "object-api")]
 impl HostDeviceCapability {
     pub fn capabilities(&self, out: &mut DeviceCapabilities) {
         get_device_capabilities(out, self);
@@ -348,6 +352,7 @@ impl HostDeviceCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SafeAreaInsets {
     pub fn new() -> Self {
         return create_safe_area_insets();

@@ -125,6 +125,7 @@ fn set_radio_index(runtime: &Ref<GuiControllerRuntime<RadioGroupControllerFields
     let signal = signals.read().unwrap().on_change.clone();
     emit_gui_signal(&signal, &next);
 }
+#[cfg(feature = "object-api")]
 impl RadioGroupController {
     pub fn new(options: &RadioGroupControllerOptions) -> Self {
         return create_radio_group_controller(options);

@@ -6,7 +6,7 @@ use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_signals::{cancel_signal, connect_signal, has_signal_slots};
 
@@ -408,6 +408,7 @@ pub fn request_app_back(app: &AppLifecycle) -> bool {
     return cancelled != Some(true);
 }
 
+#[cfg(feature = "object-api")]
 impl AppLifecycle {
     pub fn new() -> Self {
         return create_app_lifecycle();
@@ -426,6 +427,7 @@ impl AppLifecycle {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostLifecycleCapability {
     pub fn app_launch_kind(&self) -> AppLaunchKind {
         return get_app_launch_kind(self);

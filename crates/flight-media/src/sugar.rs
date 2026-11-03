@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_host::{AudioDeviceHandle, AudioSourceHandle, HostSpawnCapability};
 use flight_video::HostVideoCapability;
@@ -10,7 +11,7 @@ use crate::types::*;
 use crate::video_channel::*;
 use crate::video_channel_runtime::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
 
@@ -282,12 +283,14 @@ impl AudioMixerMethods for Ref<AudioMixer> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AudioBus {
     pub fn new() -> Ref<AudioBus> {
         return create_audio_bus();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AudioMixer {
     pub fn new(
         host_audio_mixer: &HostAudioMixerCapability,
@@ -298,6 +301,7 @@ impl AudioMixer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl VideoChannelRuntimeState {
     pub fn new() -> VideoChannelRuntimeStateRef {
         return create_video_channel_runtime_state();

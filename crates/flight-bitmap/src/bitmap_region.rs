@@ -1,6 +1,6 @@
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -66,6 +66,7 @@ pub fn set_bitmap_region(
     out.height = height;
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn new(bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32) -> Self {
         return create_bitmap_region(bitmap, x, y, width, height);

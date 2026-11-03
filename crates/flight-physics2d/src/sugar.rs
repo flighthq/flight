@@ -1,6 +1,7 @@
 //! Rust convenience methods for the public physics2d lane (D18): each delegates to its free
 //! function.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_collision::{CollisionRegistry2D, CollisionShape2D};
 use flight_entity::{Kind, Ref};
 use flight_log::LogStateRef;
@@ -9,7 +10,7 @@ use flight_spatial::SpatialAabb2D;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -612,6 +613,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DCollider {
     pub fn new(local: &CollisionShape2D) -> Ref<Physics2DCollider> {
         return create_physics2d_collider(local);
@@ -622,12 +624,14 @@ impl Physics2DCollider {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DContact {
     pub fn is_valid(&self) -> bool {
         return is_physics2d_contact_valid(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DDebugGeometry {
     pub fn new() -> Physics2DDebugGeometry {
         return create_physics2d_debug_geometry();
@@ -642,18 +646,21 @@ impl Physics2DDebugGeometry {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DDistanceJoint {
     pub fn new() -> Ref<Physics2DDistanceJoint> {
         return create_physics2d_distance_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DGearJoint {
     pub fn new() -> Ref<Physics2DGearJoint> {
         return create_physics2d_gear_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DGuardState {
     pub fn are_enabled(&self) -> bool {
         return are_physics2d_guards_enabled(self);
@@ -668,12 +675,14 @@ impl Physics2DGuardState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DJointFields {
     pub fn visit_base_number_fields(&self, visit: &mut dyn FnMut(f32)) {
         return visit_physics2d_joint_base_number_fields(self, visit);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DJointReaction {
     pub fn new() -> Physics2DJointReaction {
         return create_physics2d_joint_reaction();
@@ -684,36 +693,42 @@ impl Physics2DJointReaction {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DMassData {
     pub fn compute_collider(&mut self, collider: &Physics2DCollider) {
         return compute_physics2d_collider_mass_data(self, collider);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DMouseJoint {
     pub fn new() -> Ref<Physics2DMouseJoint> {
         return create_physics2d_mouse_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DPrismaticJoint {
     pub fn new() -> Ref<Physics2DPrismaticJoint> {
         return create_physics2d_prismatic_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DPulleyJoint {
     pub fn new() -> Ref<Physics2DPulleyJoint> {
         return create_physics2d_pulley_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DQueryFilter {
     pub fn new() -> Physics2DQueryFilter {
         return create_physics2d_query_filter();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DQueryResult {
     pub fn new() -> Physics2DQueryResult {
         return create_physics2d_query_result();
@@ -739,6 +754,7 @@ impl Physics2DQueryResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DRayResult {
     pub fn new() -> Physics2DRayResult {
         return create_physics2d_ray_result();
@@ -789,18 +805,21 @@ impl Physics2DRayResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DRevoluteJoint {
     pub fn new() -> Ref<Physics2DRevoluteJoint> {
         return create_physics2d_revolute_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DRopeJoint {
     pub fn new() -> Ref<Physics2DRopeJoint> {
         return create_physics2d_rope_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DShapeCastResult {
     pub fn new() -> Physics2DShapeCastResult {
         return create_physics2d_shape_cast_result();
@@ -829,6 +848,7 @@ impl Physics2DShapeCastResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DSolverConfig {
     pub fn new(options: Option<&Physics2DSolverConfigOptions>) -> Physics2DSolverConfig {
         return create_physics2d_solver_config(options);
@@ -839,18 +859,21 @@ impl Physics2DSolverConfig {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DWeldJoint {
     pub fn new() -> Ref<Physics2DWeldJoint> {
         return create_physics2d_weld_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DWheelJoint {
     pub fn new() -> Ref<Physics2DWheelJoint> {
         return create_physics2d_wheel_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics2DWorld {
     pub fn new() -> Physics2DWorld {
         return create_physics2d_world();
@@ -1039,6 +1062,7 @@ impl Physics2DWorld {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RigidBody2D {
     pub fn new() -> Ref<RigidBody2D> {
         return create_rigid_body2d();

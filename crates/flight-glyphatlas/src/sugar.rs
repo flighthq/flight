@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::sync::Arc;
 
 use flight_bitmap::Bitmap;
@@ -8,7 +9,7 @@ use flight_log::LogStateRef;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, Mutex, RwLock};
 
@@ -328,12 +329,14 @@ impl GlyphAtlasMethods for Ref<GlyphAtlas> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GlyphAtlas {
     pub fn new(options: &GlyphAtlasOptions) -> Ref<Self> {
         return create_glyph_atlas(options);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GlyphSource {
     pub fn new(atlas: &Ref<GlyphAtlas>) -> Ref<Self> {
         return create_glyph_source_from_glyph_atlas(atlas);

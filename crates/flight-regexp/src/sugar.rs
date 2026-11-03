@@ -1,8 +1,9 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 
 use crate::regexp::{RegExp, RegExpExecResult, create_reg_exp, exec_reg_exp, test_reg_exp};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
 
@@ -21,6 +22,7 @@ impl RegExpMethods for Ref<RegExp> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RegExp {
     pub fn new(source: &str, flags: &str) -> Ref<RegExp> {
         return create_reg_exp(source, flags);

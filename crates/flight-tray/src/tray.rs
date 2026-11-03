@@ -17,7 +17,7 @@ use flight_stream::{SharedFuture, create_shared_future};
 use crate::results::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::task::{Context, Poll, Waker};
@@ -1377,6 +1377,7 @@ pub fn stop_tray_icon_animation(tray: &Ref<TrayIcon>) -> TrayAnimationStopResult
     return TrayAnimationStopResult::Stopped;
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayBalloonCapability {
     pub fn display_balloon(
         &self,
@@ -1391,6 +1392,7 @@ impl HostTrayBalloonCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayBalloonEventsCapability {
     pub fn on_balloon_event(
         &self,
@@ -1401,12 +1403,14 @@ impl HostTrayBalloonEventsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayBoundsCapability {
     pub fn icon_bounds(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayBoundsResult> {
         return get_tray_icon_bounds(self, tray);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayDoubleClickPolicyCapability {
     pub fn set_ignore_double_click_events(
         &self,
@@ -1417,6 +1421,7 @@ impl HostTrayDoubleClickPolicyCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayDropEventsCapability {
     pub fn on_drop(
         &self,
@@ -1427,6 +1432,7 @@ impl HostTrayDropEventsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayImageCapability {
     pub fn set_icon(&self, tray: &Ref<TrayIcon>, icon: &str) -> TrayFuture<TrayImageUpdateResult> {
         return set_tray_icon(self, tray, icon);
@@ -1444,6 +1450,7 @@ impl HostTrayImageCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayInteractionEventsCapability {
     pub fn on_interaction(
         &self,
@@ -1454,6 +1461,7 @@ impl HostTrayInteractionEventsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayLifecycleCapability {
     pub fn create_icon(&self, options: &TrayIconOptions) -> TrayFuture<TrayCreateResult> {
         return create_tray_icon(self, options);
@@ -1464,6 +1472,7 @@ impl HostTrayLifecycleCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayMenuCapability {
     pub fn set_icon_context_menu(
         &self,
@@ -1474,6 +1483,7 @@ impl HostTrayMenuCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayMenuSelectionEventsCapability {
     pub fn on_menu_selection(
         &self,
@@ -1484,6 +1494,7 @@ impl HostTrayMenuSelectionEventsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayPopupMenuCapability {
     pub fn popup_context_menu(
         &self,
@@ -1494,6 +1505,7 @@ impl HostTrayPopupMenuCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayPressedImageCapability {
     pub fn set_pressed_icon(
         &self,
@@ -1504,6 +1516,7 @@ impl HostTrayPressedImageCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayTemplateImageCapability {
     pub fn set_icon_template(
         &self,
@@ -1514,6 +1527,7 @@ impl HostTrayTemplateImageCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayTitleCapability {
     pub fn icon_title(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayTitleReadResult> {
         return get_tray_icon_title(self, tray);
@@ -1528,6 +1542,7 @@ impl HostTrayTitleCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostTrayTooltipCapability {
     pub fn icon_tooltip(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayTooltipReadResult> {
         return get_tray_icon_tooltip(self, tray);
@@ -1542,6 +1557,7 @@ impl HostTrayTooltipCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TrayAnimationState {
     pub fn new(spawn: HostSpawnCapability, timers: Ref<SignalTimerState>) -> Self {
         return create_tray_animation_state(spawn, timers);

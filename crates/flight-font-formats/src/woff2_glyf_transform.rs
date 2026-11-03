@@ -14,7 +14,7 @@ use crate::sfnt_assembly::{
 use crate::types::Woff2GlyfStreams;
 use crate::woff2_font::Woff2TransformReverser;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -493,6 +493,7 @@ pub fn reverse_woff2_glyf_transform(streams: &Woff2GlyfStreams) -> Option<Woff2R
     });
 }
 
+#[cfg(feature = "object-api")]
 impl Woff2GlyfStreams {
     pub fn reverse_glyf_transform(&self) -> Option<Woff2ReversedTables> {
         return reverse_woff2_glyf_transform(self);

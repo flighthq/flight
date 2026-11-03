@@ -5,7 +5,7 @@ use crate::martinez_kernel::PathBooleanKernel;
 use crate::path_boolean::PathBooleanOptions;
 use crate::resolve_path_regions::resolve_path_regions;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_path::{Path, PathWinding, append_path_rectangle, create_path};
 
@@ -69,6 +69,7 @@ pub fn simplify_path(
     resolve_path_regions(out, path_boolean_kernel, &contours, fill_rule);
 }
 
+#[cfg(feature = "object-api")]
 impl PathBooleanKernel {
     pub fn simplify_path(&self, out: &mut Path, path: &Path, options: Option<&PathBooleanOptions>) {
         return simplify_path(out, self, path, options);

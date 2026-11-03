@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Image codec dispatch: MIME detection and host-capability decode/encode routing"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

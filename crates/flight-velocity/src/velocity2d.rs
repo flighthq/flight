@@ -131,6 +131,7 @@ pub fn zero_velocity(out: &mut Velocity2D) {
     out.y = 0.0;
 }
 
+#[cfg(feature = "object-api")]
 impl Velocity2D {
     pub fn add(&self, other: &Self) -> Self {
         let mut out = Self::default();

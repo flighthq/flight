@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Device identity, capabilities, display metrics and safe-area insets read through an explicit host capability"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

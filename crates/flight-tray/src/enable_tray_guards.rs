@@ -6,7 +6,7 @@ use flight_log::{LogLevel, LogStateRef, log_once};
 use crate::tray::set_tray_animation_guard;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::RwLock;
 
@@ -110,6 +110,7 @@ fn format_tray_interval(interval_ms: f64) -> String {
     return format!("{}", interval_ms);
 }
 
+#[cfg(feature = "object-api")]
 impl TrayAnimationState {
     pub fn disable_guards(&mut self) {
         disable_tray_guards(self);

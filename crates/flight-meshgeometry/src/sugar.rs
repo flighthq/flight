@@ -1,7 +1,8 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::*;
 use flight_geometry::Matrix4;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use std::fmt::Debug;
@@ -867,6 +868,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MeshGeometry {
     pub fn new(options: MeshGeometryOptions) -> MeshGeometry {
         return create_mesh_geometry(options);
@@ -1154,6 +1156,7 @@ impl MeshGeometry {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl VertexAttributeLayout {
     pub fn vertex_attribute(&self, semantic: VertexSemantic) -> Option<&VertexAttribute> {
         return get_vertex_attribute(self, semantic);
@@ -1163,6 +1166,7 @@ impl VertexAttributeLayout {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MeshTriangleVertexIndices {
     pub fn triangle_vertex_indices(
         &mut self,

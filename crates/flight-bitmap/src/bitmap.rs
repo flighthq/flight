@@ -2,7 +2,7 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -141,6 +141,7 @@ pub fn invalidate_bitmap(bitmap: &mut Bitmap) {
     bitmap.version = bitmap.version.wrapping_add(1);
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     pub fn new(width: u32, height: u32, color: Option<u32>) -> Self {
         return create_bitmap(width, height, color);

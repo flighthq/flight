@@ -3,7 +3,7 @@ use flight_entity::Uint8Array;
 use crate::detect_image_mime_type::detect_image_mime_type;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -116,6 +116,7 @@ fn resolve_decode_slot<'a>(
 // D18 sugar: methods on the capability record delegate to the contract
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostImageDecodeCapabilities {
     pub async fn decode_image(
         &self,

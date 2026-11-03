@@ -1,7 +1,7 @@
 use crate::path::{Path, PathMorphCreationExplanation, PathMorphCreationReason};
 use crate::path_morph_geometry::build_path_morph;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -45,6 +45,7 @@ pub fn explain_path_morph_creation(start: &Path, end: &Path) -> PathMorphCreatio
     };
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn explain_morph_creation(&self, end: &Path) -> PathMorphCreationExplanation {
         return explain_path_morph_creation(self, end);

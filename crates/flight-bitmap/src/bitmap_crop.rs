@@ -3,7 +3,7 @@ use flight_entity::allocate_entity;
 use crate::bitmap_channel::initialize_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -231,6 +231,7 @@ pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
     )
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     pub fn crop(&self, rect: &RectangleLike) -> Bitmap {
         return crop_bitmap(self, rect);

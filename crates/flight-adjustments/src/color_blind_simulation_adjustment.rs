@@ -4,7 +4,7 @@ use crate::contract::AdjustmentFields;
 use crate::contract::AdjustmentSignatureValue;
 use crate::contract::initialize_color_matrix_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -140,6 +140,7 @@ impl AdjustmentSignatureValue for ColorBlindType {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ColorBlindSimulationAdjustment {
     pub fn new(options: Option<&ColorBlindSimulationAdjustmentOptions>) -> Self {
         return create_color_blind_simulation_adjustment(options);

@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -120,6 +120,7 @@ pub fn set_bitmap_alpha(out: &mut BitmapRegion, alpha: f32) {
     invalidate_bitmap(&mut out.bitmap);
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn copy_alpha(&mut self, source: &BitmapRegion) {
         return copy_bitmap_alpha(self, source);

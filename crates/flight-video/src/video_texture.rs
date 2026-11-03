@@ -17,7 +17,7 @@ use flight_texture::{
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -409,6 +409,7 @@ fn update_video_image_size(host_video: &HostVideoCapability, image: &mut ImageRe
         .map_or(0.0, |get_height| get_height(&image.source)) as u32;
 }
 
+#[cfg(feature = "object-api")]
 impl HostVideoCapability {
     pub fn create_video_texture(
         &self,

@@ -32,7 +32,7 @@ mod configure_directional_shadow_camera_3d {
             &create_vector3(0.0, -1.0, 0.0),
             &bounds(),
         );
-        assert!(camera.projection.is_orthographic());
+        assert!(is_orthographic_projection(&camera.projection));
         let radius = 1.0_f32.hypot(1.0).hypot(1.0);
         let (half_width, _half_height) = orthographic(&camera.projection);
         assert_close(half_width, radius);

@@ -9,7 +9,9 @@ use flight_buffer::{
 use flight_entity::{FlightError, Float32Array, Record, Ref, Uint8Array, set_record_value};
 use flight_host::ProviderRef;
 use flight_net::{HostNetCapability, NetRequestOptions, NetResponse, NetResponseBody, NetState};
-use flight_stream::{AbortSignal, abort_controller, create_abort_controller};
+use flight_stream::{
+    AbortSignal, abort_controller, create_abort_controller, is_abort_signal_aborted,
+};
 
 fn bytes(values: &[u8]) -> Ref<Box<Uint8Array>> {
     return Arc::new(RwLock::new(values.to_vec().into_boxed_slice()));
@@ -350,7 +352,7 @@ mod load_audio_resource_from_url {
                     Some(flight_net::NetResponseType::ArrayBuffer)
                 );
                 assert!(request.body.is_none());
-                assert!(!options.unwrap().signal.unwrap().is_aborted());
+                assert!(!is_abort_signal_aborted(&options.unwrap().signal.unwrap(),));
             },
         );
         let seen = Arc::new(Mutex::new(None));

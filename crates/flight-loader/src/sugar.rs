@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::ResourceLoadItemStatus;
 use crate::resource_loader::*;
 use crate::types::*;
@@ -24,7 +25,7 @@ pub trait ResourceLoaderMethods {
     fn start(&self);
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_host::MockHost;
@@ -388,6 +389,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ResourceLoader {
     pub fn new(
         options: Option<&Ref<ResourceLoaderOptions>>,

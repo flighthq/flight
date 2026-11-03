@@ -4,7 +4,7 @@ use flight_geometry::Vector2Like;
 
 use crate::path::{Path, PathCommand};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_geometry::create_vector2;
 
@@ -386,6 +386,7 @@ fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Opt
     return None;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn segment_curvature_at_parameter(&self, segment_index: usize, t: f64) -> Option<f64> {

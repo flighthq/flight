@@ -3,7 +3,7 @@
 use crate::flatten_path::flatten_path;
 use crate::path::Path;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -89,6 +89,7 @@ fn shoelace_area(contour: &[f64]) -> f64 {
     return area / 2.0;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn contour_orientation(&self, tolerance: Option<f64>) -> ContourOrientation {

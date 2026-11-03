@@ -17,7 +17,7 @@ pub const PATH_MORPH_ISSUE_CONTOUR_COUNT_MISMATCH: u8 = 2;
 pub const PATH_MORPH_ISSUE_CONTOUR_CLOSEDNESS_MISMATCH: u8 = 3;
 pub const PATH_MORPH_ISSUE_CONTOUR_ORIENTATION_MISMATCH: u8 = 4;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -739,6 +739,7 @@ fn subdivide_cubic_segments(
     return segments;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn build_morph(&self, end: &Path) -> PathMorphBuildResult {
         return build_path_morph(self, end);

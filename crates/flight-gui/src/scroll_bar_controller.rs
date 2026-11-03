@@ -377,6 +377,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>) {
     let thumb = r.read().unwrap().fields.thumb.clone();
     set_gui_position(r, thumb.as_ref(), orientation, position);
 }
+#[cfg(feature = "object-api")]
 impl ScrollBarController {
     pub fn new(options: &ScrollBarControllerOptions, timer: Arc<HostTimerCapability>) -> Self {
         return create_scroll_bar_controller(options, timer);

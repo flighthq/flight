@@ -122,6 +122,7 @@ mod message_tests {
         assert!(matches!(fields.get("url"), Some(LogValue::Str(value)) if value == "u"));
     }
 
+    #[cfg(feature = "object-api")]
     fn net_state() -> NetState {
         return NetState {
             data: std::sync::Arc::new(std::sync::RwLock::new(crate::types::NetStateData {
@@ -132,6 +133,7 @@ mod message_tests {
     }
 
     #[test]
+    #[cfg(feature = "object-api")]
     fn enabled_method_matches_the_free_query_before_and_after_enabling() {
         let state = net_state();
         let log = std::sync::Arc::new(std::sync::RwLock::new(flight_log::create_log_state()));
@@ -142,6 +144,7 @@ mod message_tests {
     }
 
     #[test]
+    #[cfg(feature = "object-api")]
     fn disable_method_matches_the_free_flag_and_removes_the_actual_guard() {
         use flight_log::{
             add_log_sink, create_log_state, create_memory_log_sink, get_memory_log_sink_entries,
@@ -173,6 +176,7 @@ mod message_tests {
     }
 
     #[test]
+    #[cfg(feature = "object-api")]
     fn enable_method_matches_the_free_installed_callback_and_live_clock_metadata() {
         use flight_log::{
             add_log_sink, create_log_state, create_memory_log_sink, get_memory_log_sink_entries,
@@ -330,6 +334,7 @@ pub(crate) fn warn_on_net_misuse(
     );
 }
 
+#[cfg(feature = "object-api")]
 impl NetState {
     pub fn are_guards_enabled(&self) -> bool {
         return are_net_guards_enabled(self);

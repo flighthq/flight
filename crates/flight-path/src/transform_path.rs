@@ -3,7 +3,7 @@ use flight_geometry::MatrixLike;
 use crate::copy_path::copy_path;
 use crate::path::{Path, PathCommand};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_geometry::create_matrix;
 
@@ -118,6 +118,7 @@ pub fn translate_path(source: &Path, dx: f64, dy: f64, out: &mut Path) {
     transform_path_coordinates(source, 1.0, 0.0, 0.0, 1.0, dx, dy, out);
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn transform(&self, matrix: &MatrixLike, out: &mut Path) {
         return transform_path(self, matrix, out);

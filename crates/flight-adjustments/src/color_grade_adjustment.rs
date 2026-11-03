@@ -6,7 +6,7 @@ use crate::color_lut_adjustment::{clamp01, unpack_rgb};
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_lut_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -163,6 +163,7 @@ impl Default for ColorGradeAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ColorGradeAdjustment {
     pub fn new(options: Option<&ColorGradeAdjustmentOptions>) -> Self {
         return create_color_grade_adjustment(options);

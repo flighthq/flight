@@ -9,6 +9,9 @@ authors.workspace = true
 description = "HTTP capability facade with portable requests, form encoding and opt-in diagnostics"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

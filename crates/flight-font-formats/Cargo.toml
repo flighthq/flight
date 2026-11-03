@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Pure CFF, OpenType, WOFF and WOFF2 font codecs"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

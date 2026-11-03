@@ -6,7 +6,7 @@ use crate::cache::{FormatterCache, get_cache_key, get_cached};
 use crate::options::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::intl_test_support::{locale, test_host};
@@ -150,9 +150,12 @@ fn get_number_format(
             .map(|v| IntlOptionsKey::Number(NumberFormatOptionsKey { options: v }))
             .as_ref(),
     );
-    return get_cached(cache, &key, || host.open_number_format(locale, values));
+    return get_cached(cache, &key, || {
+        create_intl_number_format(host, locale, values)
+    });
 }
 
+#[cfg(feature = "object-api")]
 impl IntlNumberFormatHandle {
     // flight-lint: allow(f64) D1: number formatting consumes the JS number value exactly
     pub fn format(&self, value: f64) -> String {
@@ -160,6 +163,7 @@ impl IntlNumberFormatHandle {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostIntlCapability {
     pub fn open_number_format(
         &self,

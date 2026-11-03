@@ -4,7 +4,7 @@ use flight_entity::Ref;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_entity::Record;
@@ -186,12 +186,14 @@ pub fn set_net_guard(state: &NetState, guard: Option<NetGuard>) {
     state.data.write().unwrap().guard = guard;
 }
 
+#[cfg(feature = "object-api")]
 impl NetResponse {
     pub fn explain(&self) -> Option<NetResponseExplanation> {
         return explain_net_response(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostNetCapability {
     pub async fn send_request(
         &self,

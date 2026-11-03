@@ -1,7 +1,7 @@
 use crate::flatten_path::flatten_path;
 use crate::path::Path;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -50,6 +50,7 @@ pub fn get_path_length(path: &Path, tolerance: Option<f64>) -> f64 {
     return total;
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn length(&self, tolerance: Option<f64>) -> f64 {

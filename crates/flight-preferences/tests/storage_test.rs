@@ -1054,7 +1054,7 @@ mod remove_namespaced_storage_item {
             "a",
             Some(&signals),
         );
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         let log = changes.lock().unwrap();
         assert_eq!(
             log[0],
@@ -1084,7 +1084,7 @@ mod remove_storage_item {
             None,
         );
         let result = remove_storage_item(&backend, "missing", Some(&signals));
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         assert!(changes.lock().unwrap().is_empty());
     }
 }
@@ -1129,7 +1129,7 @@ mod set_namespaced_storage_item {
             "value",
             None,
         );
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         assert_eq!(state.data.lock().unwrap().get("app.key").unwrap(), "value");
     }
 }
@@ -1141,7 +1141,7 @@ mod set_storage_boolean {
     fn serializes_booleans() {
         let (backend, state) = memory_backend(&[]);
         let result = set_storage_boolean(&backend, "flag", true, None);
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         assert_eq!(state.data.lock().unwrap().get("flag").unwrap(), "true");
     }
 }
@@ -1155,7 +1155,7 @@ mod set_storage_item {
         let signals = create_storage_signals();
 
         let result = set_storage_item(&backend, "key", "unobserved", Some(&signals));
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         assert_eq!(*state.get_calls.lock().unwrap(), 0);
 
         let changes: Arc<Mutex<Vec<StorageChange>>> = Arc::new(Mutex::new(Vec::new()));
@@ -1183,7 +1183,7 @@ mod set_storage_item {
 
         state.set_failures.lock().unwrap().clear();
         let result = set_storage_item(&backend, "key", "new", Some(&signals));
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         let log = changes.lock().unwrap();
         assert_eq!(
             log[0],
@@ -1229,7 +1229,7 @@ mod set_storage_json {
     fn serializes_values() {
         let (backend, state) = memory_backend(&[]);
         let result = set_storage_json(&backend, "value", &serde_json::json!({"x": 1}), None);
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         assert_eq!(
             state.data.lock().unwrap().get("value").unwrap(),
             r#"{"x":1}"#
@@ -1272,7 +1272,7 @@ mod set_storage_number {
     fn stores_finite_values() {
         let (backend, state) = memory_backend(&[]);
         let result = set_storage_number(&backend, "number", 2.5, None);
-        assert!(result.is_ok());
+        assert!(storage_mutation_outcome_is_ok(&result));
         assert_eq!(state.data.lock().unwrap().get("number").unwrap(), "2.5");
     }
 }

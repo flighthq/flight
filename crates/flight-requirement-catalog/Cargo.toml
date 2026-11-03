@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Caller-owned requirement catalog data and deterministic built-in ownership rows"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

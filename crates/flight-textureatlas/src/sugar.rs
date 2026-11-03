@@ -1,5 +1,6 @@
 //! D18 Rust conveniences: each method delegates to one public free function.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -10,7 +11,7 @@ use flight_texture::Texture2D;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::collections::HashMap;
     use std::sync::{Arc, RwLock};
@@ -629,6 +630,7 @@ impl TextureAtlasMethods for Ref<TextureAtlas> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureAtlasRegion {
     pub fn initialize_texture_atlas_region(&mut self) {
         initialize_texture_atlas_region(self);
@@ -666,6 +668,7 @@ impl TextureAtlasRegion {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureAtlasGuardState {
     pub fn are_texture_atlas_guards_enabled(&self) -> bool {
         return are_texture_atlas_guards_enabled(self);
@@ -692,6 +695,7 @@ impl TextureAtlasGuardState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GridSliceOptions {
     pub fn create_texture_atlas_from_grid(
         &self,

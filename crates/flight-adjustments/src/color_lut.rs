@@ -1,7 +1,7 @@
 use crate::contract::AdjustmentSignatureValue;
 use crate::contract::ColorTransformFunction;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -135,6 +135,7 @@ impl AdjustmentSignatureValue for ColorLut {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ColorLut {
     pub fn sample(&self, out: &mut [f32; 3], r: f32, g: f32, b: f32) {
         sample_color_lut(self, out, r, g, b);

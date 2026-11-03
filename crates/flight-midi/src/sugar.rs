@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 #![allow(async_fn_in_trait, clippy::items_after_test_module)]
 
 //! D18 Rust conveniences for the MIDI public lane. Every method is a thin delegate to a free
@@ -8,7 +9,7 @@ use flight_permissions::HostMidiPermissionCapability;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::sync::Arc;
@@ -752,12 +753,14 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostMidiAccessCapability {
     pub async fn request_access(&self) -> MidiAccessRequestOutcome {
         return request_midi_access(self).await;
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiAccessDisposeReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_access_dispose_reason(value);
@@ -768,6 +771,7 @@ impl MidiAccessDisposeReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiAccessResourceOperations {
     pub async fn attach_state_change(
         &self,
@@ -816,6 +820,7 @@ impl MidiAccessMethods for Ref<MidiAccess> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiAccessPortsReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_access_ports_reason(value);
@@ -826,6 +831,7 @@ impl MidiAccessPortsReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiAccessRequestReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_access_request_reason(value);
@@ -836,6 +842,7 @@ impl MidiAccessRequestReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiAccessStateSubscription {
     pub fn new() -> Ref<Self> {
         return create_midi_access_state_subscription();
@@ -863,6 +870,7 @@ impl MidiEventAttachmentMethods for Ref<MidiEventAttachment> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiEventBackendAttachReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_event_backend_attach_reason(value);
@@ -877,6 +885,7 @@ pub trait MidiEventAttachmentMethods {
     async fn release(&self) -> MidiEventReleaseProviderResult;
 }
 
+#[cfg(feature = "object-api")]
 impl MidiEventReleaseReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_event_release_reason(value);
@@ -903,6 +912,7 @@ impl MidiInputPortMethods for Ref<MidiInputPort> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiInputPortResourceOperations {
     pub async fn attach_message(
         &self,
@@ -935,6 +945,7 @@ impl MidiInputPortResourceOperations {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiInputMessageSubscription {
     pub fn new() -> Ref<Self> {
         return create_midi_input_message_subscription();
@@ -956,6 +967,7 @@ impl MidiInputMessageSubscriptionMethods for Ref<MidiInputMessageSubscription> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiMessageSendReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_message_send_reason(value);
@@ -977,6 +989,7 @@ impl MidiOutputPortMethods for Ref<MidiOutputPort> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiOutputPortResourceOperations {
     pub async fn attach_state_change(
         &self,
@@ -1007,6 +1020,7 @@ impl MidiOutputPortResourceOperations {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPort {
     pub async fn attach_state_subscription(
         &self,
@@ -1036,6 +1050,7 @@ impl MidiPort {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortCloseReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_close_reason(value);
@@ -1046,6 +1061,7 @@ impl MidiPortCloseReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortConnection {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_connection(value);
@@ -1056,6 +1072,7 @@ impl MidiPortConnection {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortConnectionOutcomeReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_connection_outcome_reason(value);
@@ -1066,6 +1083,7 @@ impl MidiPortConnectionOutcomeReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortDisposeReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_dispose_reason(value);
@@ -1076,6 +1094,7 @@ impl MidiPortDisposeReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortLifecycleFailureOperation {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_lifecycle_failure_operation(value);
@@ -1086,6 +1105,7 @@ impl MidiPortLifecycleFailureOperation {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortOpenReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_open_reason(value);
@@ -1096,6 +1116,7 @@ impl MidiPortOpenReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortResourceOperations {
     pub async fn attach_state_change(
         &self,
@@ -1121,6 +1142,7 @@ impl MidiPortResourceOperations {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortState {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_state(value);
@@ -1131,6 +1153,7 @@ impl MidiPortState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortStateOutcomeReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_state_outcome_reason(value);
@@ -1141,6 +1164,7 @@ impl MidiPortStateOutcomeReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortStateSubscription {
     pub fn new() -> Ref<Self> {
         return create_midi_port_state_subscription();
@@ -1162,6 +1186,7 @@ impl MidiPortStateSubscriptionMethods for Ref<MidiPortStateSubscription> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiPortType {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_port_type(value);
@@ -1172,6 +1197,7 @@ impl MidiPortType {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiSubscriptionAttachReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_subscription_attach_reason(value);
@@ -1182,6 +1208,7 @@ impl MidiSubscriptionAttachReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiSubscriptionDetachReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_subscription_detach_reason(value);
@@ -1192,6 +1219,7 @@ impl MidiSubscriptionDetachReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MidiSubscriptionDisposeReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_midi_subscription_dispose_reason(value);

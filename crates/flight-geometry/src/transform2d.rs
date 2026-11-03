@@ -110,6 +110,7 @@ impl Default for Transform2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Transform2D {
     pub fn new(
         x: f32,

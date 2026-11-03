@@ -22,7 +22,7 @@ use flight_xml::{XmlElement, parse_xml_document};
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock, RwLock};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 

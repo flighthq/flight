@@ -10,6 +10,7 @@ description = "Portable three-dimensional rigid-body dynamics and constraint sol
 autotests = false
 
 [features]
+object-api = []
 default = []
 stress-tests = []
 

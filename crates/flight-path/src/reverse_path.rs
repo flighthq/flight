@@ -3,7 +3,7 @@
 use crate::for_each_path_segment::for_each_path_segment;
 use crate::path::{Path, PathCommand, PathSegment};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -218,6 +218,7 @@ pub fn reverse_path(source: &Path, out: &mut Path) {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn reverse(&self, out: &mut Path) {
         return reverse_path(self, out);

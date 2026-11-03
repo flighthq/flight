@@ -1,6 +1,7 @@
 //! D18 sugar: extension methods on the shared flow handles. Every method delegates to the free-function
 //! contract and keeps the caller-owned guard state visible, so a method call cannot hide it.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::sync::Arc;
 
 use flight_entity::Ref;
@@ -9,7 +10,7 @@ use crate::flow::*;
 use crate::flow_guards::{disable_flow_guards, enable_flow_guards};
 use crate::flow_types::{FlowStack, FlowState};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod flow_guard_state_sugar_tests {
     use super::*;
     use crate::types::FlowGuardState;
@@ -56,7 +57,7 @@ mod flow_guard_state_sugar_tests {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod flow_stack_sugar_tests {
     use super::*;
     use crate::types::FlowGuardState;
@@ -268,6 +269,7 @@ impl FlowStackMethods for Ref<FlowStack> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl FlowStack {
     pub fn new() -> Ref<FlowStack> {
         return create_flow_stack();

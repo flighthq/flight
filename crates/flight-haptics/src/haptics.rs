@@ -1,7 +1,7 @@
 use crate::types::{
     HapticImpactStyle, HapticNotificationType, HapticsCapabilities, HostHapticsCapability,
 };
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{
         Arc,
@@ -213,12 +213,14 @@ pub fn vibrate_device_waveform(
     return (host_haptics.vibrate_pattern)(timings);
 }
 
+#[cfg(feature = "object-api")]
 impl HapticsCapabilities {
     pub fn get(&mut self, host_haptics: &HostHapticsCapability) {
         get_haptics_capabilities(self, host_haptics);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostHapticsCapability {
     pub fn cancel_device_vibration(&self) -> bool {
         return cancel_device_vibration(self);

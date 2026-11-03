@@ -1,6 +1,7 @@
 //! Rust convenience methods for the curated Physics3D public lane. Every method delegates to the
 //! free-function contract so both call styles have one implementation.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_collision::{CollisionColliderShape3D, CollisionRegistry3D, CollisionShape3D};
 use flight_entity::Ref;
 use flight_log::LogStateRef;
@@ -9,7 +10,7 @@ use flight_spatial::SpatialAabb3D;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::collections::HashMap;
     use std::sync::{Arc, RwLock};
@@ -339,12 +340,14 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DBallAndSocketJoint {
     pub fn new() -> Ref<Physics3DBallAndSocketJoint> {
         return create_physics_3d_ball_and_socket_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DCollider {
     pub fn new(local: &CollisionColliderShape3D) -> Physics3DColliderRef {
         return create_physics_3d_collider(local);
@@ -355,18 +358,21 @@ impl Physics3DCollider {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DConeTwistJoint {
     pub fn new() -> Ref<Physics3DConeTwistJoint> {
         return create_physics_3d_cone_twist_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DContact {
     pub fn is_valid(&self) -> bool {
         return is_physics_3d_contact_valid(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DDebugGeometry {
     pub fn new() -> Physics3DDebugGeometry {
         return create_physics_3d_debug_geometry();
@@ -381,24 +387,28 @@ impl Physics3DDebugGeometry {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DDistanceJoint {
     pub fn new() -> Ref<Physics3DDistanceJoint> {
         return create_physics_3d_distance_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DFixedJoint {
     pub fn new() -> Ref<Physics3DFixedJoint> {
         return create_physics_3d_fixed_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DGeneric6DofJoint {
     pub fn new() -> Ref<Physics3DGeneric6DofJoint> {
         return create_physics_3d_generic_6_dof_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DGuardState {
     pub fn are_enabled(&self) -> bool {
         return are_physics_3d_guards_enabled(self);
@@ -413,12 +423,14 @@ impl Physics3DGuardState {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DHingeJoint {
     pub fn new() -> Ref<Physics3DHingeJoint> {
         return create_physics_3d_hinge_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DJointReaction {
     pub fn new() -> Physics3DJointReaction {
         return create_physics_3d_joint_reaction();
@@ -441,6 +453,7 @@ impl Physics3DJointReaction {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DMassData {
     pub fn new() -> Physics3DMassData {
         return create_physics_3d_mass_data();
@@ -455,12 +468,14 @@ impl Physics3DMassData {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DQueryFilter {
     pub fn new() -> Physics3DQueryFilter {
         return create_physics_3d_query_filter();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DQueryResult {
     pub fn new() -> Physics3DQueryResult {
         return create_physics_3d_query_result();
@@ -487,6 +502,7 @@ impl Physics3DQueryResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DRayResult {
     pub fn new() -> Physics3DRayResult {
         return create_physics_3d_ray_result();
@@ -547,6 +563,7 @@ impl Physics3DRayResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DShapeCastResult {
     pub fn new() -> Physics3DShapeCastResult {
         return create_physics_3d_shape_cast_result();
@@ -578,12 +595,14 @@ impl Physics3DShapeCastResult {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DSliderJoint {
     pub fn new() -> Ref<Physics3DSliderJoint> {
         return create_physics_3d_slider_joint();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DSolverConfig {
     pub fn new(options: Option<&Physics3DSolverConfigOptions>) -> Physics3DSolverConfig {
         return create_physics_3d_solver_config(options);
@@ -594,6 +613,7 @@ impl Physics3DSolverConfig {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Physics3DWorld {
     pub fn new() -> Physics3DWorld {
         return create_physics_3d_world();
@@ -779,6 +799,7 @@ impl Physics3DWorld {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RigidBody3D {
     pub fn new() -> RigidBody3DRef {
         return create_rigid_body_3d();

@@ -635,6 +635,7 @@ impl Default for Quaternion {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Quaternion {
     pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
         return create_quaternion(x, y, z, w);

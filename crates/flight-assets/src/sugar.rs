@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::asset_library::*;
 use crate::enable_asset_guards::*;
 use crate::explain_asset_load::*;
@@ -7,7 +8,7 @@ use flight_loader::{ResourceLoadResult, ResourceLoaderContext};
 use flight_log::LogStateRef;
 use flight_stream::SharedFuture;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::enums::AssetLoadStatus;
@@ -507,6 +508,7 @@ pub trait AssetLibraryMethods {
     fn set_acquire_guard(&self, guard: Option<AssetAcquireGuard>) -> ();
 }
 
+#[cfg(feature = "object-api")]
 impl AssetLibrary {
     pub fn new(context: &ResourceLoaderContext) -> Ref<Self> {
         return create_asset_library(context);

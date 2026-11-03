@@ -1,7 +1,7 @@
 use crate::bitmap::create_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -112,6 +112,7 @@ pub fn get_bitmap_mismatch(
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     pub fn compare(&self, other: &Bitmap) -> Option<Bitmap> {
         return compare_bitmap(self, other);

@@ -6,7 +6,7 @@ use crate::{
     update_spring,
 };
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -118,6 +118,7 @@ pub fn update_spring3d(
     update_spring(&mut spring3d.z, target_z, config, delta_time);
 }
 
+#[cfg(feature = "object-api")]
 impl Spring3D {
     pub fn new(
         value_x: f32,

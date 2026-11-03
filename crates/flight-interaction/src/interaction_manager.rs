@@ -6,7 +6,9 @@ use flight_entity::UnknownValue;
 use flight_node::{NodeRef, get_node_parent};
 use flight_signals::{connect_signal, create_signal, disconnect_signal, emit_signal};
 
-use crate::hit_tests::{HitTestContext, find_graph_hit_target, find_graph_hit_target_precise};
+use crate::hit_tests::{
+    create_hit_test_context, find_graph_hit_target, find_graph_hit_target_precise,
+};
 use crate::node_interaction_state::get_node_cursor;
 use crate::types::{
     AnyInteractionSignalSlot, InteractionDispatchLayer, InteractionDispatchLayerEntry,
@@ -58,7 +60,7 @@ pub fn create_interaction_manager(
         double_click_delay: 500.0,
         double_click_distance: 4.0,
         enabled: true,
-        hit_test_ctx: HitTestContext::new(),
+        hit_test_ctx: create_hit_test_context(),
         pointer_captures: HashMap::new(),
         pointer_states: HashMap::new(),
         precise: false,

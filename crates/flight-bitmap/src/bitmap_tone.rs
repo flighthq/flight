@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -115,6 +115,7 @@ pub fn apply_bitmap_levels(
     apply_bitmap_curve(out, source, Some(&lut), Some(&lut), Some(&lut), None);
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn apply_curve(
         &mut self,

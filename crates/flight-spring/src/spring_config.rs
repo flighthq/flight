@@ -40,6 +40,7 @@ pub fn initialize_spring_config(out: &mut SpringConfig, frequency: f32, damping_
     out.frequency = frequency;
 }
 
+#[cfg(feature = "object-api")]
 impl SpringConfig {
     pub fn new(frequency: f32, damping_ratio: f32) -> Self {
         return create_spring_config(frequency, damping_ratio);

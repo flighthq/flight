@@ -1,7 +1,9 @@
 //! D18 method conveniences delegate to the contract free functions. Inline tests compare both paths.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 
+#[cfg(feature = "object-api")]
 impl LightUnit {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_light_unit(value);
@@ -12,6 +14,7 @@ impl LightUnit {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene3DForwardLightSelectionReason {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_scene_3d_forward_light_selection_reason(value);
@@ -22,6 +25,7 @@ impl Scene3DForwardLightSelectionReason {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AmbientLight {
     pub fn new() -> Self {
         return create_ambient_light();
@@ -32,6 +36,7 @@ impl AmbientLight {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl DirectionalLight {
     pub fn new(options: Option<&DirectionalLightOptions>) -> Self {
         return create_directional_light(options);
@@ -58,6 +63,7 @@ impl DirectionalLight {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PointLight {
     pub fn new() -> Self {
         return create_point_light();
@@ -68,6 +74,7 @@ impl PointLight {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpotLight {
     pub fn new(options: Option<&SpotLightOptions>) -> Self {
         return create_spot_light(options);
@@ -98,6 +105,7 @@ impl SpotLight {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HemisphereLight {
     pub fn new() -> Self {
         return create_hemisphere_light();
@@ -108,6 +116,7 @@ impl HemisphereLight {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AreaLight {
     pub fn new() -> Self {
         return create_area_light();
@@ -127,6 +136,7 @@ impl AreaLight {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Environment {
     pub fn new() -> Self {
         return create_environment();
@@ -137,6 +147,7 @@ impl Environment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl LightProbe {
     pub fn new(
         position: &flight_geometry::Vector3,
@@ -162,6 +173,7 @@ impl LightProbe {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl LightProbeGrid {
     pub fn new(
         probes: &[flight_entity::Ref<LightProbe>],
@@ -180,6 +192,7 @@ impl LightProbeGrid {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene3DLights {
     pub fn new() -> Self {
         return create_scene_3d_lights();

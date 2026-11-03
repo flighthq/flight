@@ -1,5 +1,6 @@
 //! Rust convenience methods for the public picking lane (D18): each delegates to its free function.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 // flight-lint: allow-file(contract-vocabulary) D16 receiver plumbing retains the original open Node and Material EntityRefs
 
 use flight_camera::Camera3D;
@@ -14,7 +15,7 @@ use crate::pick_scene3d::{
 use crate::scene_hit_attributes::*;
 use crate::types::{Scene3DHit, Scene3DPickOptions};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -244,6 +245,7 @@ pub trait Scene3DPickMethods {
     ) -> bool;
 }
 
+#[cfg(feature = "object-api")]
 impl Scene3DHit {
     pub fn is_front_facing(&self, ray: &Ray3D) -> bool {
         return is_scene3d_hit_front_facing(self, ray);

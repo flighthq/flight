@@ -2,7 +2,7 @@ use crate::bitmap::invalidate_bitmap;
 use crate::bitmap_palette_map::apply_bitmap_palette_map;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -105,6 +105,7 @@ pub fn get_bitmap_histogram(source: &BitmapRegion) -> BitmapHistogram {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn equalize_histogram(&mut self, source: &BitmapRegion) {
         return equalize_bitmap_histogram(self, source);

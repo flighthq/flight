@@ -528,12 +528,14 @@ fn set_derived_cache_value<T: 'static + Send>(cache: &DerivedCache, value: T) {
     *cache.0.lock().unwrap() = Some(Box::new(value));
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionShape2D {
     pub fn kind(&self) -> CollisionShapeKind2D {
         return get_collision_shape2d_kind(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CollisionShape3D {
     pub fn kind(&self) -> CollisionShapeKind3D {
         return get_collision_shape3d_kind(self);

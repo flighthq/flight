@@ -435,6 +435,7 @@ pub fn write_vector3_to_float32_array(out: &mut [f32], offset: usize, source: &V
     out[offset + 2] = source.z;
 }
 
+#[cfg(feature = "object-api")]
 impl Vector3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         return create_vector3(x, y, z);

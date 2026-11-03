@@ -7,7 +7,7 @@ use flight_entity::{EntityRuntimeSlot, Uint8Array, Unknown};
 use flight_host::{FontFaceHandle, ProviderRef};
 use flight_path::Path;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 

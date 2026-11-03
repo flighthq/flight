@@ -1,6 +1,6 @@
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -88,6 +88,7 @@ pub fn get_bitmap_color_bounds_rectangle(
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn color_bounds_rectangle(
         &self,

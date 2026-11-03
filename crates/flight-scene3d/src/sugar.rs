@@ -1,4 +1,5 @@
 //! Native receiver conveniences; the free-function contract remains authoritative.
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 // flight-lint: allow-file(contract-vocabulary) D16 receiver plumbing retains the original open Node and Material EntityRefs
 use crate::contract::*;
 use flight_animation::AnimationClip;
@@ -61,7 +62,7 @@ pub trait Scene3DAnimationMethods {
     fn apply_to_scene3d(&self, time: f32);
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_geometry::{create_aabb, create_frustum, create_matrix4, create_vector3};
@@ -661,11 +662,13 @@ impl Scene3DAnimationMethods for AnimationClip {
         apply_animation_clip_to_scene3d(self, time);
     }
 }
+#[cfg(feature = "object-api")]
 impl Scene3D {
     pub fn new() -> Self {
         return create_scene3d();
     }
 }
+#[cfg(feature = "object-api")]
 impl Scene3DDocument {
     pub fn build(&self, scene_index: Option<i32>) -> Scene3D {
         return create_scene3d_from_document(self, scene_index);
@@ -677,11 +680,13 @@ impl Scene3DDocument {
         return create_scene3d_lights_from_document(self);
     }
 }
+#[cfg(feature = "object-api")]
 impl Scene3DKindUsage {
     pub fn populate(&mut self, scene: &Scene3D) {
         get_scene3d_kind_usage(self, scene);
     }
 }
+#[cfg(feature = "object-api")]
 impl Node3DFields {
     pub fn new(kind: Option<Kind>) -> Self {
         return create_node3d(kind);
@@ -693,6 +698,7 @@ impl Node3DFields {
         return get_node3d_signals(self);
     }
 }
+#[cfg(feature = "object-api")]
 impl Mesh {
     pub fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Self> {
         return create_mesh(geometry, materials);
@@ -710,6 +716,7 @@ impl Mesh {
         update_mesh_morph(self);
     }
 }
+#[cfg(feature = "object-api")]
 impl Billboard {
     pub fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Self> {
         return create_billboard(geometry, materials);
@@ -721,6 +728,7 @@ impl Billboard {
         return get_billboard_signals(self);
     }
 }
+#[cfg(feature = "object-api")]
 impl InstancedMesh {
     pub fn new(
         geometry: Ref<MeshGeometry>,
@@ -730,12 +738,14 @@ impl InstancedMesh {
         return create_instanced_mesh(geometry, materials, capacity);
     }
 }
+#[cfg(feature = "object-api")]
 impl InstancedMeshSignals {
     pub fn new() -> Ref<Self> {
         return create_instanced_mesh_signals();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BillboardMode {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_billboard_mode(value);
@@ -744,6 +754,7 @@ impl BillboardMode {
         return get_billboard_mode_string(self);
     }
 }
+#[cfg(feature = "object-api")]
 impl MeshDeformer {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_mesh_deformer(value);
@@ -752,6 +763,7 @@ impl MeshDeformer {
         return get_mesh_deformer_string(self);
     }
 }
+#[cfg(feature = "object-api")]
 impl Scene3DAnimationPath {
     pub fn parse(value: &str) -> Option<Self> {
         return parse_scene3d_animation_path(value);

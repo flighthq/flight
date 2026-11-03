@@ -16,7 +16,7 @@ fn escape_xml(value: &str) -> String {
 }
 
 fn format_layer_base_attrs(layer: &TiledLayer) -> String {
-    let base = layer.base();
+    let base = get_tiled_layer_base(layer);
     let mut out = attr("id", &base.id.to_string()) + &attr("name", &base.name);
     if base.opacity != 1.0 {
         out += &attr("opacity", &base.opacity.to_string());
@@ -66,8 +66,8 @@ pub fn format_tiled_tmx(map: &TiledMap) -> String {
     if let Some(ref tv) = map.tiled_version {
         open += &attr("tiledversion", tv);
     }
-    open += &attr("orientation", map.orientation.as_str());
-    open += &attr("renderorder", map.render_order.as_str());
+    open += &attr("orientation", get_tiled_orientation_str(&map.orientation));
+    open += &attr("renderorder", get_tiled_render_order_str(&map.render_order));
     open += &attr("width", &map.width.to_string());
     open += &attr("height", &map.height.to_string());
     open += &attr("tilewidth", &map.tile_width.to_string());
@@ -77,10 +77,10 @@ pub fn format_tiled_tmx(map: &TiledMap) -> String {
         open += &attr("backgroundcolor", &format_tiled_color(bg));
     }
     if let Some(ref sa) = map.stagger_axis {
-        open += &attr("staggeraxis", sa.as_str());
+        open += &attr("staggeraxis", get_tiled_stagger_axis_str(sa));
     }
     if let Some(ref si) = map.stagger_index {
-        open += &attr("staggerindex", si.as_str());
+        open += &attr("staggerindex", get_tiled_stagger_index_str(si));
     }
     if let Some(hex) = map.hex_side_length {
         open += &attr("hexsidelength", &hex.to_string());
@@ -219,7 +219,7 @@ fn write_properties(lines: &mut Vec<String>, properties: &[TiledProperty]) {
     for property in properties {
         let mut out = format!("<property{}", attr("name", &property.name));
         if property.property_type != TiledPropertyType::String {
-            out += &attr("type", property.property_type.as_str());
+            out += &attr("type", get_tiled_property_type_str(&property.property_type));
         }
         let value_str = match &property.value {
             TiledPropertyValue::String(s) => s.clone(),
@@ -249,7 +249,10 @@ fn write_tileset(lines: &mut Vec<String>, tileset: &TiledTileset, first_gid: Opt
         open += &attr("spacing", &tileset.spacing.to_string());
     }
     if tileset.object_alignment != TiledObjectAlignment::Unspecified {
-        open += &attr("objectalignment", tileset.object_alignment.as_str());
+        open += &attr(
+            "objectalignment",
+            get_tiled_object_alignment_str(&tileset.object_alignment),
+        );
     }
     lines.push(format!("{}>", open));
     if tileset.tile_offset_x != 0 || tileset.tile_offset_y != 0 {

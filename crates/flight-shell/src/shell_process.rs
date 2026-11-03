@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -86,6 +86,7 @@ pub fn terminate_shell_process(process: &ShellProcess) {
 // D18 sugar: the process method delegates to the free function
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl ShellProcess {
     pub fn terminate(&self) {
         return terminate_shell_process(self);

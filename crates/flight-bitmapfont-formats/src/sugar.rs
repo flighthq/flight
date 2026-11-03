@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::sync::Arc;
 
 use flight_bitmapfont::{BitmapFont, BitmapFontGuardStateRef};
@@ -7,7 +8,7 @@ use flight_importdiagnostics::ImportDiagnostic;
 use crate::bitmap_font_detect::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_bitmapfont::create_bitmap_font_guard_state;
@@ -179,6 +180,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapFontFormatRegistry {
     pub fn new(guard_state: &BitmapFontGuardStateRef) -> Self {
         return create_bitmap_font_format_registry(guard_state);

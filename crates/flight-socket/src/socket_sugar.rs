@@ -1,13 +1,14 @@
 //! D18 sugar for the socket public lane: entity lifecycle methods, capability operations and
 //! connection commands, each a thin delegate to its free function. Sugar contains no logic.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 
 use crate::explain_socket_send_failure::explain_socket_send_failure;
 use crate::socket::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, Mutex, RwLock};
 
@@ -482,6 +483,7 @@ mod sugar_tests {
 // D18 sugar: capability and connection methods delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostSocketCapability {
     pub fn open_socket(
         &self,
@@ -496,6 +498,7 @@ impl HostSocketCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SocketEventSink {
     pub fn handle_socket_close(&self, info: &SocketCloseInfo) {
         return handle_socket_close(self, info);
@@ -515,6 +518,7 @@ impl SocketEventSink {
 }
 
 /// The convenience constructor mirrors `create_socket` (D18).
+#[cfg(feature = "object-api")]
 impl Socket {
     pub fn new(
         guard_state: &SocketGuardStateRef,
@@ -525,6 +529,7 @@ impl Socket {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SocketConnection {
     pub fn close_socket_connection(&self, code: Option<i32>, reason: Option<&str>) {
         return close_socket_connection(self, code, reason);
@@ -535,6 +540,7 @@ impl SocketConnection {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TcpSocketConnection {
     pub fn close_tcp_socket_connection(&self) {
         return close_tcp_socket_connection(self);

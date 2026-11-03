@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Portable 2D rigid-body dynamics: a sequential-impulse solver over the spatial broadphase and collision narrow phase"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

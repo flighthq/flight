@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Flight scene documents: the YAML text codec, logical validation, resource dependencies and 2D/3D scene materialization"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

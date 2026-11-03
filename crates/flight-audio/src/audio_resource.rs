@@ -82,6 +82,7 @@ pub fn is_audio_resource_empty(resource: &Ref<AudioResource>) -> bool {
     return buffer.read().unwrap().length == 0;
 }
 
+#[cfg(feature = "object-api")]
 impl AudioResource {
     pub fn new(buffer: Option<Ref<AudioBuffer>>) -> Ref<AudioResource> {
         return create_audio_resource(buffer);

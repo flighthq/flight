@@ -6,7 +6,7 @@ use crate::{
     update_spring,
 };
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -94,6 +94,7 @@ pub fn update_spring2d(
     update_spring(&mut spring2d.y, target_y, config, delta_time);
 }
 
+#[cfg(feature = "object-api")]
 impl Spring2D {
     pub fn new(value_x: f32, value_y: f32, velocity_x: f32, velocity_y: f32) -> Self {
         return create_spring2d(value_x, value_y, velocity_x, velocity_y);

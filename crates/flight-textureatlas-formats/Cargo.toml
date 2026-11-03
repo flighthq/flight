@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Texture-atlas descriptor parsers, detection, and caller-owned format registration"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

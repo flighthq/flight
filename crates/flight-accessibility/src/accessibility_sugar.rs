@@ -1,10 +1,11 @@
 //! D18 sugar for the accessibility public lane: methods on the host capability record delegate to
 //! the six public functions. Sugar contains no logic and no synthetic property behavior.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::accessibility::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, Mutex};
 
@@ -191,6 +192,7 @@ mod sugar_tests {
 // D18 sugar: capability methods delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostAccessibilityCapability {
     pub fn announce(
         &self,

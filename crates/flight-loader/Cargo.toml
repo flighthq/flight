@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Executor-neutral resource loading with host-owned scheduling"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

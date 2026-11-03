@@ -2,7 +2,7 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -32,6 +32,7 @@ pub fn initialize_font_resource(out: &mut FontResource) {
     return;
 }
 
+#[cfg(feature = "object-api")]
 impl FontResource {
     pub fn new() -> Self {
         return create_font_resource();

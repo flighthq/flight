@@ -1,7 +1,7 @@
 use crate::flatten_path::flatten_path;
 use crate::path::{Path, PathCommand};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -120,6 +120,7 @@ fn douglas_peucker(pts: &[f64], first: usize, last: usize, tolerance_sq: f64, ke
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn decimate(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {

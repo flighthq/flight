@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Accelerator parsing and explicit global-shortcut lifecycle over host capabilities"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

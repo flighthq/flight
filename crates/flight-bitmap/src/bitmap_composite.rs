@@ -2,7 +2,7 @@ use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 use flight_entity::Uint8Array;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -336,6 +336,7 @@ pub fn write_bitmap_pixels32(dest: &mut BitmapRegion, pixels: &[u32]) {
     invalidate_bitmap(&mut dest.bitmap);
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn composite_pixels(&mut self, pixels: &Uint8Array, mode: BitmapCompositeMode) {
         return composite_bitmap_pixels(self, pixels, mode);

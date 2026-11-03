@@ -3,7 +3,7 @@ use flight_entity::allocate_entity;
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_matrix_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -89,6 +89,7 @@ impl Default for GrayscaleAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl GrayscaleAdjustment {
     pub fn new(options: Option<&GrayscaleAdjustmentOptions>) -> Self {
         return create_grayscale_adjustment(options);

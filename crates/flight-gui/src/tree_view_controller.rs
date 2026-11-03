@@ -394,6 +394,7 @@ fn update_visibility(r: &Ref<GuiControllerRuntime<TreeViewControllerFields>>) {
         set_gui_visible(r, Some(&visual), visible);
     }
 }
+#[cfg(feature = "object-api")]
 impl TreeViewController {
     pub fn new(options: &TreeViewControllerOptions) -> Self {
         return create_tree_view_controller(options);

@@ -3,7 +3,7 @@ use flight_materials::ColorScaleBias;
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_materials::ColorScaleBias;
     use flight_materials::contract::create_color_scale_bias;
@@ -269,12 +269,14 @@ pub fn scroll_bitmap(out: &mut Bitmap, dx: i32, dy: i32) {
     invalidate_bitmap(out);
 }
 
+#[cfg(feature = "object-api")]
 impl Bitmap {
     pub fn scroll(&mut self, dx: i32, dy: i32) {
         return scroll_bitmap(self, dx, dy);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn apply_color_scale_bias(&mut self, source: &BitmapRegion, ct: &ColorScaleBias) {
         return apply_bitmap_color_scale_bias(self, source, ct);

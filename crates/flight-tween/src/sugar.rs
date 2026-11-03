@@ -1,8 +1,9 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::RwLock;
 
@@ -304,6 +305,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TweenContext {
     pub fn create_tween_default<T: ?Sized + Send + Sync + 'static>(
         &self,
@@ -324,6 +326,7 @@ impl TweenContext {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
     pub fn complete_tween(&self) {
         complete_tween(self);
@@ -426,6 +429,7 @@ impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TweenManager {
     pub fn create_color_tween<T: ?Sized + Send + Sync + 'static>(
         &self,

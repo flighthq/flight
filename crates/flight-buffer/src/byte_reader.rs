@@ -1,6 +1,6 @@
 use flight_entity::{NonEntityCreateResult, Uint8Array};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -196,6 +196,7 @@ pub fn skip_byte_reader(reader: &mut ByteReader<'_>, count: usize) {
     reader.offset += count;
 }
 
+#[cfg(feature = "object-api")]
 impl<'a> ByteReader<'a> {
     pub fn new(bytes: &'a Uint8Array, offset: Option<usize>) -> Self {
         return create_byte_reader(bytes, offset);

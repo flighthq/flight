@@ -2,12 +2,13 @@
 //! receivers (`Ref<dyn Node2D>`, `Ref<HtmlView>`, `Ref<Scene2D>`) take their methods through
 //! extension traits.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_clip::ClipRegion;
 use flight_entity::Ref;
 
 use crate::contract::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -331,48 +332,56 @@ impl Scene2DRefMethods for Ref<Scene2D> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl dyn Node2D {
     pub fn get_node2d_runtime(&self) -> &Node2DRuntime {
         return get_node2d_runtime(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl DisplayObject {
     pub fn get_display_object_runtime(&self) -> &DisplayObjectRuntime {
         return get_display_object_runtime(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HtmlView {
     pub fn get_html_view_runtime(&self) -> &HtmlViewRuntime {
         return get_html_view_runtime(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HtmlViewData {
     pub fn initialize_html_view_data(&mut self) {
         initialize_html_view_data(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Node2DAnimationPath {
     pub fn get_node2d_animation_path_string(self) -> &'static str {
         return get_node2d_animation_path_string(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scale9Sprite {
     pub fn get_scale9_sprite_runtime(&self) -> Ref<Scale9SpriteRuntime> {
         return get_scale9_sprite_runtime(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scale9SpriteData {
     pub fn initialize_scale9_sprite_data(&mut self, scale9_grid: &flight_geometry::Rectangle) {
         initialize_scale9_sprite_data(self, scale9_grid);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene2D {
     pub fn initialize_scene2d(&mut self, root: Node2DRef) {
         initialize_scene2d(self, root);
@@ -391,42 +400,49 @@ impl Scene2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene2DAlign {
     pub fn get_scene2d_align_string(self) -> &'static str {
         return get_scene2d_align_string(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene2DDisplayState {
     pub fn get_scene2d_display_state_string(self) -> &'static str {
         return get_scene2d_display_state_string(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene2DKindUsage {
     pub fn initialize_scene2d_kind_usage(&mut self) {
         initialize_scene2d_kind_usage(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene2DQuality {
     pub fn get_scene2d_quality_string(self) -> &'static str {
         return get_scene2d_quality_string(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene2DScaleMode {
     pub fn get_scene2d_scale_mode_string(self) -> &'static str {
         return get_scene2d_scale_mode_string(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Scene2DSignals {
     pub fn initialize_scene2d_signals(&mut self) {
         initialize_scene2d_signals(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Sprite {
     pub fn clone_sprite(&self) -> Ref<Sprite> {
         return clone_sprite(self);
@@ -437,6 +453,7 @@ impl Sprite {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpriteData {
     pub fn initialize_sprite_data(&mut self) {
         initialize_sprite_data(self);

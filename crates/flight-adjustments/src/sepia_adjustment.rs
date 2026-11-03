@@ -3,7 +3,7 @@ use flight_entity::allocate_entity;
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_matrix_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -83,6 +83,7 @@ impl Default for SepiaAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SepiaAdjustment {
     pub fn new(options: Option<&SepiaAdjustmentOptions>) -> Self {
         return create_sepia_adjustment(options);

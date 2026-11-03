@@ -2,7 +2,7 @@ use flight_stream::AbortSignal;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::sync::{Arc, Mutex};
@@ -254,6 +254,7 @@ pub fn show_warning_dialog(
     return show_message_with_kind(host_message_dialog, options, MessageDialogKind::Warning);
 }
 
+#[cfg(feature = "object-api")]
 impl HostMessageDialogCapability {
     pub fn show_confirm_dialog(
         &self,
@@ -300,6 +301,7 @@ impl HostMessageDialogCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostPromptDialogCapability {
     pub fn show_prompt_dialog(
         &self,

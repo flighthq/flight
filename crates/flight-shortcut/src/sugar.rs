@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_platform::PlatformName;
 
@@ -6,7 +7,7 @@ use crate::shortcut_explicit_dependency::*;
 use crate::shortcut_key_name::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::{Arc, RwLock};
@@ -345,6 +346,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShortcutQueryCapability {
     pub async fn query_conflict(&self, accelerator: &str) -> GlobalShortcutQueryOutcome {
         return query_global_shortcut_conflict(self, accelerator).await;
@@ -355,6 +357,7 @@ impl HostShortcutQueryCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostShortcutTriggerCapability {
     pub async fn destroy(&self) -> ShortcutTriggerDestroyResult {
         return destroy_shortcut_trigger(self).await;
@@ -369,6 +372,7 @@ impl HostShortcutTriggerCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ParsedAccelerator {
     pub fn new() -> Self {
         return make_parsed_accelerator();
@@ -383,24 +387,28 @@ impl ParsedAccelerator {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutDigitKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_digit_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutEditingKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_editing_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutFunctionKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_function_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutKeyName {
     pub fn label(self) -> String {
         return get_accelerator_key_label(self);
@@ -443,48 +451,56 @@ impl ShortcutKeyName {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutLetterKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_letter_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutLockKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_lock_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutMediaKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_media_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutNavigationKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_navigation_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutNumpadKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_numpad_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutPunctuationKeyName {
     pub fn to_key_name(self) -> ShortcutKeyName {
         return shortcut_punctuation_key_name_to_key_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutModifier {
     pub fn label(self, platform: PlatformName) -> String {
         return get_accelerator_modifier_label(self, platform);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ShortcutState {
     pub fn new() -> Self {
         return create_shortcut_state();

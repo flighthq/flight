@@ -1,8 +1,9 @@
 //! Rust convenience methods for the public spatial lane (D18).
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -302,6 +303,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpatialIndex2D {
     pub fn new(backend: Option<SpatialIndexBackend2D>) -> Self {
         return create_spatial_index_2d(backend);
@@ -335,6 +337,7 @@ impl SpatialIndex2D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpatialIndex3D {
     pub fn new(backend: Option<SpatialIndexBackend3D>) -> Self {
         return create_spatial_index_3d(backend);
@@ -395,12 +398,14 @@ impl SpatialIndex3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpatialIndexBackend2D {
     pub fn new(cell_size: f32) -> Self {
         return create_uniform_grid_spatial_backend_2d(cell_size);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpatialIndexBackend3D {
     pub fn from_bvh(margin: Option<f32>) -> Self {
         return create_bvh_spatial_backend_3d(margin);
@@ -410,6 +415,7 @@ impl SpatialIndexBackend3D {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SpatialIndexingNotice {
     pub fn format(&self) -> String {
         return format_spatial_indexing_notice(self);

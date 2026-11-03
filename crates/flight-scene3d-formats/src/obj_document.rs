@@ -5,7 +5,7 @@ use crate::obj_types::ObjImportOptions;
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_scene3d::{Scene3D, Scene3DDocument, create_scene3d_from_document};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::mtl_parse::parse_obj_material_library;
@@ -70,6 +70,7 @@ pub fn parse_obj(
     return parse_obj_with_material_handlers(source, materials, diagnostics, material_handlers);
 }
 
+#[cfg(feature = "object-api")]
 impl ObjImportOptions {
     pub fn parse(
         &self,

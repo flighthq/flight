@@ -57,6 +57,11 @@ use crate::types::StorageValueErr;
 use crate::types::StorageValueOk;
 use crate::types::StorageValueOutcome;
 use crate::types::StorageWriteFailureReason;
+use crate::types::storage_get_item_failure_into_clear_namespace;
+use crate::types::storage_get_item_failure_into_migration_read;
+use crate::types::storage_get_item_failure_into_read;
+use crate::types::storage_mutation_outcome_is_ok;
+use crate::types::storage_remove_item_failure_into_clear_namespace;
 
 pub fn create_storage_signals() -> StorageSignals {
     let mut out: StorageSignals = allocate_entity();
@@ -93,7 +98,7 @@ pub fn clear_storage(
     signals: Option<&StorageSignals>,
 ) -> StorageClearResult {
     let result = (host_preferences.clear)();
-    if result.is_ok() && storage_signals_active(signals) {
+    if storage_mutation_outcome_is_ok(&result) && storage_signals_active(signals) {
         emit_signal(
             &signals.unwrap().on_change,
             &StorageChange {
@@ -119,7 +124,7 @@ pub fn clear_storage_namespace(
             return StorageBatchMutationOutcome::Err(StorageBatchMutationErr {
                 completed: 0,
                 failed_key: None,
-                reason: reason.into_clear_namespace(),
+                reason: storage_get_item_failure_into_clear_namespace(reason),
             });
         }
     };
@@ -137,7 +142,7 @@ pub fn clear_storage_namespace(
                 return StorageBatchMutationOutcome::Err(StorageBatchMutationErr {
                     completed,
                     failed_key: Some(key.clone()),
-                    reason: reason.into_clear_namespace(),
+                    reason: storage_remove_item_failure_into_clear_namespace(reason),
                 });
             }
         }
@@ -236,7 +241,7 @@ pub fn get_storage_boolean(
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
             return StorageValueOutcome::Err(StorageValueErr {
-                reason: reason.into_read(),
+                reason: storage_get_item_failure_into_read(reason),
             });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
@@ -457,7 +462,7 @@ pub fn get_storage_json<T: serde::de::DeserializeOwned>(
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
             return StorageValueOutcome::Err(StorageValueErr {
-                reason: reason.into_read(),
+                reason: storage_get_item_failure_into_read(reason),
             });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
@@ -517,7 +522,7 @@ pub fn get_storage_number(
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
             return StorageValueOutcome::Err(StorageValueErr {
-                reason: reason.into_read(),
+                reason: storage_get_item_failure_into_read(reason),
             });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
@@ -580,7 +585,7 @@ pub fn migrate_storage(
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
             return StorageMigrationOutcomeInner::ReadVersionFailed(
                 StorageMigrationReadVersionFailed {
-                    reason: reason.into_migration_read(),
+                    reason: storage_get_item_failure_into_migration_read(reason),
                 },
             );
         }
@@ -670,7 +675,7 @@ fn remove_storage_item_from_backend(
         None
     };
     let result = (host_preferences.remove_item)(key);
-    if result.is_ok() && active {
+    if storage_mutation_outcome_is_ok(&result) && active {
         if let Some(old) = old_value {
             emit_signal(
                 &signals.unwrap().on_change,
@@ -763,7 +768,7 @@ fn set_storage_item_on_backend(
         None
     };
     let result = (host_preferences.set_item)(key, value);
-    if result.is_ok() && active {
+    if storage_mutation_outcome_is_ok(&result) && active {
         let changed = match &old_value {
             Some(old) => old != value,
             None => true,

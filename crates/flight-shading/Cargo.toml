@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Composable shading modifier descriptors, registries, ordering, and define keys"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

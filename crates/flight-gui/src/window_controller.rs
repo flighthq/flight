@@ -352,6 +352,7 @@ pub fn set_window_controller_position(controller: &WindowController, x: f32, y: 
 pub fn set_window_controller_size(controller: &WindowController, width: f32, height: f32) {
     set_size_runtime(&get_gui_controller_runtime(controller), width, height);
 }
+#[cfg(feature = "object-api")]
 impl WindowController {
     pub fn new(options: &WindowControllerOptions) -> Self {
         return create_window_controller(options);

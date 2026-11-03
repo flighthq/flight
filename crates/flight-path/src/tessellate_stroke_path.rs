@@ -3,7 +3,7 @@
 use crate::path::{Path, PathMesh, StrokePathTessellationReason, StrokeStyle};
 use crate::stroke_path_geometry::{StrokePathPieceGeometry, build_stroke_path_geometry};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -140,6 +140,7 @@ pub fn tessellate_stroke_path(
     return Some(mesh);
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn tessellate_stroke(

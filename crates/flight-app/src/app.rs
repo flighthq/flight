@@ -11,7 +11,7 @@ use crate::types::*;
 #[path = "../tests/fixture.rs"]
 mod fixture;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::sync::{Arc, Mutex};
@@ -910,6 +910,7 @@ pub fn show_app(host_app_show: &HostAppShowCapability) {
     (host_app_show.show_app)();
 }
 
+#[cfg(feature = "object-api")]
 impl AppEvents {
     pub fn new() -> Self {
         return create_app_events();
@@ -924,6 +925,7 @@ impl AppEvents {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppActivateCapability {
     pub fn attach_app_activate(&self, app: &mut AppEvents) {
         attach_app_activate(self, app);
@@ -950,24 +952,28 @@ impl HostAppActivateCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppActivationPolicyCapability {
     pub fn set_app_activation_policy(&self, policy: AppActivationPolicy) {
         set_app_activation_policy(self, policy);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppAllWindowsClosedCapability {
     pub fn attach_app_all_windows_closed(&self, app: &mut AppEvents) {
         attach_app_all_windows_closed(self, app);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppBadgeCapability {
     pub fn set_app_badge_count(&self, count: i32) -> AppProviderFuture<bool> {
         return set_app_badge_count(self, count);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppDockCapability {
     pub fn bounce_app_dock(&self) -> i32 {
         return bounce_app_dock(self);
@@ -994,18 +1000,21 @@ impl HostAppDockCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppFocusCapability {
     pub fn focus_app(&self) {
         focus_app(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppHideCapability {
     pub fn hide_app(&self) {
         hide_app(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppLocaleCapability {
     pub fn get_app_locale(&self) -> String {
         return get_app_locale(self);
@@ -1020,6 +1029,7 @@ impl HostAppLocaleCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppLoginItemCapability {
     pub fn get_app_login_item(&self) -> AppLoginItem {
         return get_app_login_item(self);
@@ -1030,24 +1040,28 @@ impl HostAppLoginItemCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppNameCapability {
     pub fn get_app_name(&self) -> String {
         return get_app_name(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppNameWriteCapability {
     pub fn set_app_name(&self, name: &str) {
         set_app_name(self, name);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppOpenFileCapability {
     pub fn attach_app_open_file(&self, app: &mut AppEvents) {
         attach_app_open_file(self, app);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppPathCapability {
     pub fn get_app_directory_path(&self, kind: AppPathKind) -> String {
         return get_app_directory_path(self, kind);
@@ -1062,24 +1076,28 @@ impl HostAppPathCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppQuitCapability {
     pub fn quit_app(&self) {
         quit_app(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppQuitRequestCapability {
     pub fn attach_app_quit_request(&self, app: &mut AppEvents) {
         attach_app_quit_request(self, app);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppReadyCapability {
     pub fn attach_app_ready(&self, app: &mut AppEvents) {
         attach_app_ready(self, app);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppRecentDocumentsCapability {
     pub fn add_app_recent_document(&self, path: &str) {
         add_app_recent_document(self, path);
@@ -1090,24 +1108,28 @@ impl HostAppRecentDocumentsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppRelaunchCapability {
     pub fn relaunch_app(&self) {
         relaunch_app(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppSecondInstanceCapability {
     pub fn attach_app_second_instance(&self, app: &mut AppEvents) {
         attach_app_second_instance(self, app);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppShowCapability {
     pub fn show_app(&self) {
         show_app(self);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppSingleInstanceCapability {
     pub fn has_app_single_instance_lock(&self) -> bool {
         return has_app_single_instance_lock(self);
@@ -1122,12 +1144,14 @@ impl HostAppSingleInstanceCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppUserModelIdCapability {
     pub fn set_app_user_model_id(&self, id: &str) {
         set_app_user_model_id(self, id);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostAppVersionCapability {
     pub fn get_app_version(&self) -> String {
         return get_app_version(self);

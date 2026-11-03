@@ -1,6 +1,7 @@
 //! D18 Rust conveniences for the Clock public lane. Every method delegates directly to one public
 //! free-function contract; this module contains no independent Clock behavior.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_signals::{FrameTick, Signal};
 
@@ -50,6 +51,7 @@ impl ClockMethods for Ref<Clock> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Clock {
     /// A root clock (`create_clock`), returned as the shared handle.
     pub fn new() -> Ref<Clock> {

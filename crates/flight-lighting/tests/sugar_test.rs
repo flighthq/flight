@@ -1,3 +1,5 @@
+#![cfg(feature = "object-api")]
+
 use std::sync::{Arc, RwLock};
 
 use flight_geometry::{create_aabb, create_vector3};

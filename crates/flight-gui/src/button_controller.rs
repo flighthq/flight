@@ -226,6 +226,7 @@ fn update_button_visuals(runtime: &Ref<GuiControllerRuntime<ButtonControllerFiel
         apply_node_interactive_states(&mut binding.write().unwrap(), &flags);
     }
 }
+#[cfg(feature = "object-api")]
 impl ButtonController {
     pub fn new(options: &ButtonControllerOptions) -> Self {
         return create_button_controller(options);

@@ -5,7 +5,7 @@ use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::sync::{Arc, Mutex};
@@ -491,6 +491,7 @@ fn soft_keyboard_info_out() -> SoftKeyboardInfo {
     };
 }
 
+#[cfg(feature = "object-api")]
 impl SoftKeyboard {
     pub fn new() -> Self {
         return create_soft_keyboard();
@@ -505,12 +506,14 @@ impl SoftKeyboard {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSoftKeyboardAccessoryBarCapability {
     pub async fn set_visible(&self, visible: bool) -> SoftKeyboardSetterOperationResult {
         return set_soft_keyboard_accessory_bar_visible(self, visible).await;
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSoftKeyboardChangeCapability {
     pub async fn attach(
         &self,
@@ -521,6 +524,7 @@ impl HostSoftKeyboardChangeCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSoftKeyboardInfoCapability {
     pub fn height(&self) -> f32 {
         return get_soft_keyboard_height(self);
@@ -535,6 +539,7 @@ impl HostSoftKeyboardInfoCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSoftKeyboardResizeModeWriteCapability {
     pub async fn set_mode(
         &self,
@@ -544,12 +549,14 @@ impl HostSoftKeyboardResizeModeWriteCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSoftKeyboardScrollAssistCapability {
     pub async fn set_enabled(&self, enabled: bool) -> SoftKeyboardSetterOperationResult {
         return set_soft_keyboard_scroll_assist_enabled(self, enabled).await;
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSoftKeyboardStyleCapability {
     pub async fn set_style(
         &self,
@@ -559,6 +566,7 @@ impl HostSoftKeyboardStyleCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSoftKeyboardVisibilityCapability {
     pub async fn hide(&self) -> SoftKeyboardVisibilityOperationResult {
         return hide_soft_keyboard(self).await;

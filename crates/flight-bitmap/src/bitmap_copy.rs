@@ -1,7 +1,7 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -133,6 +133,7 @@ pub fn copy_bitmap_pixels(dest: &mut BitmapRegion, source: &BitmapRegion, compos
     invalidate_bitmap(&mut dest.bitmap);
 }
 
+#[cfg(feature = "object-api")]
 impl BitmapRegion {
     pub fn copy_channel(
         &mut self,

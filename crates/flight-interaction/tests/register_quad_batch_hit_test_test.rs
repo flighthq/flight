@@ -1,4 +1,4 @@
-use flight_interaction::hit_tests::{HitTestContext, find_graph_hit_target_precise};
+use flight_interaction::hit_tests::find_graph_hit_target_precise;
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
 };
@@ -51,7 +51,7 @@ mod register_quad_batch_hit_test {
 
     #[test]
     fn hit_inside_instance_region() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_quad_batch_hit_test(&mut ctx);
         let qb = quad_batch_with_one_instance(10.0, 10.0, 50.0, 50.0);
         let result = find_graph_hit_target_precise(&ctx, &qb, 35.0, 35.0);
@@ -60,7 +60,7 @@ mod register_quad_batch_hit_test {
 
     #[test]
     fn miss_outside_instance_region() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_quad_batch_hit_test(&mut ctx);
         let qb = quad_batch_with_one_instance(10.0, 10.0, 20.0, 20.0);
         let result = find_graph_hit_target_precise(&ctx, &qb, 200.0, 200.0);
@@ -69,7 +69,7 @@ mod register_quad_batch_hit_test {
 
     #[test]
     fn no_instances_misses() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_quad_batch_hit_test(&mut ctx);
         let qb: NodeRef = create_quad_batch();
         enable_node_interaction_state(&qb);

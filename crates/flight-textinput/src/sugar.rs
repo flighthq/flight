@@ -1,5 +1,6 @@
 //! D18 Rust conveniences for the public text-input contract.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_input::InputKeyboardData;
 use flight_text::{RichText, TextInputOptions, TextInputState};
@@ -11,7 +12,7 @@ use crate::text_input_editing::*;
 use crate::text_input_manager::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
 
@@ -264,6 +265,7 @@ impl RichTextInputMethods for Ref<RichText> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl SelectableRichTextManager {
     pub fn new() -> Ref<Self> {
         return create_selectable_rich_text_manager();
@@ -298,6 +300,7 @@ impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextInputManager {
     pub fn new() -> Ref<Self> {
         return create_text_input_manager();

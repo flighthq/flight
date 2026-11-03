@@ -193,6 +193,7 @@ fn show_runtime(r: &Ref<GuiControllerRuntime<TooltipControllerFields>>) {
 pub fn show_tooltip_controller(controller: &TooltipController) {
     show_runtime(&get_gui_controller_runtime(controller));
 }
+#[cfg(feature = "object-api")]
 impl TooltipController {
     pub fn new(options: &TooltipControllerOptions, timer: Arc<HostTimerCapability>) -> Self {
         return create_tooltip_controller(options, timer);

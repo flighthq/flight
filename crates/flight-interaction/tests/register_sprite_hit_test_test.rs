@@ -7,7 +7,7 @@ use flight_bitmap::{BitmapReadbackMode, HostBitmapReadbackCapability, create_bit
 use flight_geometry::set_rectangle;
 use flight_host::HostImageSource;
 use flight_image::{ImageResource, create_image_resolver_state, create_image_resource};
-use flight_interaction::hit_tests::{HitTestContext, find_graph_hit_target_precise};
+use flight_interaction::hit_tests::find_graph_hit_target_precise;
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
 };
@@ -120,7 +120,7 @@ mod register_sprite_hit_test {
 
     #[test]
     fn hit_inside_bounds_with_no_texture() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, stub_readback(), None);
         let sprite = sprite_node_with_bounds(0.0, 0.0, 100.0, 100.0);
         let result = find_graph_hit_target_precise(&ctx, &sprite, 50.0, 50.0);
@@ -129,7 +129,7 @@ mod register_sprite_hit_test {
 
     #[test]
     fn miss_outside_bounds_with_no_texture() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, stub_readback(), None);
         let sprite = sprite_node_with_bounds(0.0, 0.0, 100.0, 100.0);
         let result = find_graph_hit_target_precise(&ctx, &sprite, 200.0, 200.0);
@@ -138,7 +138,7 @@ mod register_sprite_hit_test {
 
     #[test]
     fn default_alpha_threshold_is_one() {
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, stub_readback(), None);
         let sprite = sprite_node_with_bounds(0.0, 0.0, 50.0, 50.0);
         let result = find_graph_hit_target_precise(&ctx, &sprite, 25.0, 25.0);
@@ -149,7 +149,7 @@ mod register_sprite_hit_test {
     fn opaque_pixel_hits_with_alpha_readback() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 255, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let source = make_host_source();
         let image = make_image_resource(&source, 10, 10);
@@ -163,7 +163,7 @@ mod register_sprite_hit_test {
     fn transparent_pixel_misses_with_alpha_readback() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 0, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let source = make_host_source();
         let image = make_image_resource(&source, 10, 10);
@@ -176,7 +176,7 @@ mod register_sprite_hit_test {
     fn cache_success_does_not_re_read_bitmap() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 255, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let source = make_host_source();
         let image = make_image_resource(&source, 10, 10);
@@ -190,7 +190,7 @@ mod register_sprite_hit_test {
     fn different_resources_same_host_source_get_independent_cache_entries() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 255, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let shared_source = make_host_source();
         let image_a = make_image_resource(&shared_source, 10, 10);
@@ -223,7 +223,7 @@ mod register_sprite_hit_test {
                 };
             }),
         });
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let source = make_host_source();
         let image = make_image_resource(&source, 10, 10);
@@ -242,7 +242,7 @@ mod register_sprite_hit_test {
     fn threshold_at_exact_alpha_value_hits() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 128, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(128));
         let source = make_host_source();
         let image = make_image_resource(&source, 10, 10);
@@ -255,7 +255,7 @@ mod register_sprite_hit_test {
     fn threshold_above_alpha_value_misses() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 127, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(128));
         let source = make_host_source();
         let image = make_image_resource(&source, 10, 10);
@@ -268,7 +268,7 @@ mod register_sprite_hit_test {
     fn different_image_and_readback_sizes_use_image_dimensions_for_uv() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(8, 8, 255, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let source = make_host_source();
         let image = make_image_resource(&source, 20, 20);
@@ -281,7 +281,7 @@ mod register_sprite_hit_test {
     fn negative_pixel_outside_bitmap_bounds_misses() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(5, 5, 255, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let source = make_host_source();
         let image = make_image_resource(&source, 5, 5);
@@ -294,7 +294,7 @@ mod register_sprite_hit_test {
     fn dropped_resource_evicts_cache_entry() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 255, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         {
             let source = make_host_source();
@@ -318,7 +318,7 @@ mod register_sprite_hit_test {
     fn resource_dimension_change_uses_current_dimensions() {
         let calls = Arc::new(AtomicUsize::new(0));
         let readback = counting_readback(10, 10, 255, calls.clone());
-        let mut ctx = HitTestContext::new();
+        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
         register_sprite_hit_test(&mut ctx, readback, Some(1));
         let source = make_host_source();
         let image = make_image_resource(&source, 10, 10);

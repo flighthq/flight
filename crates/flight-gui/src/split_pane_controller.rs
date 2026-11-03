@@ -299,6 +299,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<SplitPaneControllerFields>>) {
         set_gui_scale(r, node.as_ref(), orientation, scale);
     }
 }
+#[cfg(feature = "object-api")]
 impl SplitPaneController {
     pub fn new(options: &SplitPaneControllerOptions) -> Self {
         return create_split_pane_controller(options);

@@ -7,7 +7,7 @@ use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -393,6 +393,7 @@ fn validate_menu_radio_groups(items: &[Ref<MenuItemTemplate>]) -> Option<String>
 // D18 sugar: methods delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostMenuPopupCapability {
     pub async fn show_context_menu(
         &self,
@@ -405,6 +406,7 @@ impl HostMenuPopupCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MenuSignalsState {
     pub fn enable_signals(&mut self) -> Ref<MenuSignals> {
         return enable_menu_signals(self);

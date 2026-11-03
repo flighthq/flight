@@ -7,7 +7,7 @@ use crate::contract::ColorLut;
 use crate::contract::initialize_color_lut_adjustment;
 use crate::contract::sample_color_lut;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -95,6 +95,7 @@ impl Default for LookupTableGradeAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl LookupTableGradeAdjustment {
     pub fn new(options: Option<&LookupTableGradeAdjustmentOptions>) -> Self {
         return create_lookup_table_grade_adjustment(options);

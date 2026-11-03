@@ -3,7 +3,7 @@ use flight_entity::allocate_entity;
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_matrix_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -67,6 +67,7 @@ impl Default for TintAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TintAdjustment {
     pub fn new(rgba: u32) -> Self {
         return create_tint_adjustment(rgba);

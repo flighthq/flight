@@ -5,7 +5,7 @@ use flight_entity::Uint8Array;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -151,6 +151,7 @@ pub fn select_video_resource_url<'a>(
     return None;
 }
 
+#[cfg(feature = "object-api")]
 impl HostVideoCapability {
     pub fn can_play_video_type(&self, mime_type: &str) -> bool {
         return can_play_video_type(self, mime_type);

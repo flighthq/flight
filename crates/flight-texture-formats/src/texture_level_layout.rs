@@ -1,6 +1,6 @@
 use crate::types::{TextureContainerFormat, TextureContainerLevel, TextureContainerLevels};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -174,6 +174,7 @@ fn shifted_dimension(base: usize, shift: usize) -> usize {
     };
 }
 
+#[cfg(feature = "object-api")]
 impl TextureContainerFormat {
     pub fn compute_levels(
         self,

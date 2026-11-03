@@ -8,7 +8,7 @@ use crate::path_boolean::{
 };
 use crate::simplify_path::simplify_path;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_path::{PathWinding, create_path};
 
@@ -142,6 +142,7 @@ pub fn explain_simplify_path(
     return None;
 }
 
+#[cfg(feature = "object-api")]
 impl PathBooleanKernel {
     // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
     pub fn explain_offset_path(

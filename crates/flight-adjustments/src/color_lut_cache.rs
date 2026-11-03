@@ -9,7 +9,7 @@ use crate::contract::ColorTransformFunction;
 use crate::contract::bake_color_lut;
 use crate::contract::get_adjustment_color_transform;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
@@ -111,6 +111,7 @@ impl Default for ColorLutCache {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ColorLutCache {
     pub fn new() -> Self {
         return create_color_lut_cache();

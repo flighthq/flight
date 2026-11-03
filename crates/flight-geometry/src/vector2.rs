@@ -276,6 +276,7 @@ pub fn write_vector2_to_float32_array(out: &mut [f32], offset: usize, source: &V
     out[offset + 1] = source.y;
 }
 
+#[cfg(feature = "object-api")]
 impl Vector2 {
     pub fn new(x: f32, y: f32) -> Self {
         return create_vector2(x, y);

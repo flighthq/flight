@@ -1,7 +1,9 @@
 //! Particle Designer plist serialization (TS `particleDesignerSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;
-use flight_particles::{EmitterShape, ParticleBlendMode, ParticleEmitterConfig};
+use flight_particles::{
+    EmitterShape, ParticleBlendMode, ParticleEmitterConfig, particle_blend_mode_as_str,
+};
 
 use crate::particle_designer_parse::{ParticleDesignerDocument, ParticleDesignerEmitterType};
 use crate::text::format_js_number;
@@ -37,7 +39,7 @@ fn collect_particle_designer_serialize_warnings(config: &ParticleEmitterConfig) 
     {
         warnings.push(format!(
             "Blend mode '{}' has no Particle Designer equivalent and was approximated as 'normal'",
-            blend_mode.as_str()
+            particle_blend_mode_as_str(*blend_mode)
         ));
     }
     if config.color_curve.is_some() {

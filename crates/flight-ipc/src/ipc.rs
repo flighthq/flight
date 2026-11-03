@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -241,18 +241,21 @@ pub fn send_ipc_message_to<Target>(
     (host_ipc_targeted_send.send)(target, channel, args);
 }
 
+#[cfg(feature = "object-api")]
 impl HostIpcHandleCapability {
     pub fn on_invoke(&self, channel: &str, handler: IpcInvokeHandler) -> IpcUnsubscribe {
         return on_ipc_invoke(self, channel, handler);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostIpcInvokeCapability {
     pub async fn invoke(&self, channel: &str, args: IpcArguments) -> IpcInvokeResult {
         return invoke_ipc(self, channel, args).await;
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostIpcMessageCapability {
     pub fn on_message(&self, channel: &str, listener: IpcMessageListener) -> IpcUnsubscribe {
         return on_ipc_message(self, channel, listener);
@@ -263,12 +266,14 @@ impl HostIpcMessageCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostIpcSendCapability {
     pub fn send_message(&self, channel: &str, args: IpcArguments) {
         return send_ipc_message(self, channel, args);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl<Target> HostIpcTargetedSendCapability<Target> {
     pub fn send_message_to(&self, target: &Target, channel: &str, args: IpcArguments) {
         return send_ipc_message_to(self, target, channel, args);

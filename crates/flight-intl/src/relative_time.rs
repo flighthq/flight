@@ -3,7 +3,7 @@
 use crate::cache::{FormatterCache, get_cache_key, get_cached};
 use crate::options::*;
 use crate::types::*;
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::intl_test_support::{locale, test_host};
@@ -70,11 +70,12 @@ pub fn format_relative_time(
             .as_ref(),
     );
     let formatter = get_cached(cache, &key, || {
-        return host.open_relative_time_format(locale, values);
+        return create_intl_relative_time_format(host, locale, values);
     });
     return format_intl_relative_time(&formatter, value, unit);
 }
 
+#[cfg(feature = "object-api")]
 impl IntlRelativeTimeFormatHandle {
     // flight-lint: allow(f64) D1: relative-time formatting consumes the JS number offset exactly
     pub fn format(&self, value: f64, unit: IntlRelativeTimeUnit) -> String {
@@ -84,6 +85,7 @@ impl IntlRelativeTimeFormatHandle {
 
 /// Delegates one relative-time-formatter construction to the host capability.
 
+#[cfg(feature = "object-api")]
 impl HostIntlCapability {
     pub fn open_relative_time_format(
         &self,

@@ -8,7 +8,7 @@ use flight_importdiagnostics::{
 };
 use flight_scene3d::{Scene3D, Scene3DDocument, create_scene3d_from_document};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::md5_types::{MD5_SKELETON_FEATURE, Md5SectionHandler};
@@ -95,6 +95,7 @@ pub fn parse_md5_mesh(
     return parse_md5_mesh_with_section_handlers(source, diagnostics, handlers);
 }
 
+#[cfg(feature = "object-api")]
 impl Md5ImportOptions {
     pub fn parse(
         &self,

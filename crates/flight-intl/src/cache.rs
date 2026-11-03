@@ -10,7 +10,7 @@ use std::sync::Arc;
 use crate::options::{IntlOptionsKey, get_options_key};
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -98,6 +98,7 @@ pub fn get_cached<T: 'static + Send + Sync>(
     return built;
 }
 
+#[cfg(feature = "object-api")]
 impl FormatterCache {
     pub fn new() -> FormatterCache {
         return create_formatter_cache();

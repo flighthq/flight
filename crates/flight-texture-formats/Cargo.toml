@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Dependency-free GPU texture container parsing and level layout"
 autotests = false
 
+[features]
+object-api = []
+
 [dependencies]
 flight-buffer = { workspace = true }
 flight-entity.workspace = true

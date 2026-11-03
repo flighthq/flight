@@ -397,6 +397,7 @@ fn test_node_geometry(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, prec
     return false;
 }
 
+#[cfg(feature = "object-api")]
 impl HitTestContext {
     pub fn new() -> Self {
         return create_hit_test_context();

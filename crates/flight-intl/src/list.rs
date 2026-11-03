@@ -3,7 +3,7 @@
 use crate::cache::{FormatterCache, get_cache_key, get_cached};
 use crate::options::*;
 use crate::types::*;
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::intl_test_support::{locale, test_host};
@@ -56,10 +56,13 @@ pub fn format_list(
             .map(|v| IntlOptionsKey::List(ListFormatOptionsKey { options: v }))
             .as_ref(),
     );
-    let formatter = get_cached(cache, &key, || host.open_list_format(locale, values));
+    let formatter = get_cached(cache, &key, || {
+        create_intl_list_format(host, locale, values)
+    });
     return format_intl_list(&formatter, items);
 }
 
+#[cfg(feature = "object-api")]
 impl IntlListFormatHandle {
     pub fn format(&self, items: &[String]) -> String {
         return format_intl_list(self, items);
@@ -68,6 +71,7 @@ impl IntlListFormatHandle {
 
 /// Delegates one list-formatter construction to the host capability.
 
+#[cfg(feature = "object-api")]
 impl HostIntlCapability {
     pub fn open_list_format(
         &self,

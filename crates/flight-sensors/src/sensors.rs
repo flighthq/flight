@@ -8,7 +8,7 @@ use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, Mutex};
 
@@ -757,12 +757,14 @@ pub async fn request_sensors_permission(
     return (host_sensors.request_permission)().await;
 }
 
+#[cfg(feature = "object-api")]
 impl AmbientLightReading {
     pub fn new() -> Self {
         return create_ambient_light_reading();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSensorsCapability {
     pub async fn get_permission_state(
         &self,
@@ -816,42 +818,49 @@ impl HostSensorsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MotionReading {
     pub fn new() -> Self {
         return create_motion_reading();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl OrientationReading {
     pub fn new() -> Self {
         return create_orientation_reading();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl PressureReading {
     pub fn new() -> Self {
         return create_pressure_reading();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ProximityReading {
     pub fn new() -> Self {
         return create_proximity_reading();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl QuaternionReading {
     pub fn new() -> Self {
         return create_quaternion_reading();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl RotationRateReading {
     pub fn new() -> Self {
         return create_rotation_rate_reading();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl Sensors {
     pub fn new() -> Self {
         return create_sensors();

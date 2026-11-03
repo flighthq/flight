@@ -5,7 +5,7 @@ use crate::contract::AdjustmentSignatureValue;
 use crate::contract::initialize_color_matrix_adjustment;
 use flight_materials::ColorScaleBias;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use flight_materials::color_scale_bias::create_color_scale_bias;
@@ -97,6 +97,7 @@ impl AdjustmentSignatureValue for ColorScaleBias {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ColorScaleBiasAdjustment {
     pub fn new(color_scale_bias: &ColorScaleBias) -> Self {
         return create_color_scale_bias_adjustment(color_scale_bias);

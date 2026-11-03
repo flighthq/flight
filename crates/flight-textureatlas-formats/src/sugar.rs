@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use std::sync::Arc;
 
 use flight_textureatlas::TextureAtlas;
@@ -5,7 +6,7 @@ use flight_textureatlas::TextureAtlas;
 use crate::texture_atlas_detect::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod tests {
     use super::*;
     use flight_textureatlas::create_texture_atlas;
@@ -162,6 +163,7 @@ mod tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl TextureAtlasFormatRegistry {
     pub fn new() -> Self {
         return create_texture_atlas_format_registry();

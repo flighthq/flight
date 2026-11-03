@@ -7,7 +7,7 @@ use crate::types::*;
 
 // The contract file-structure rule requires modules before functions and impls.
 #[allow(clippy::items_after_test_module)]
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -127,12 +127,14 @@ pub fn initialize_input_signals(out: &mut InputSignals) {
 // D18 sugar: constructors delegate to the create functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl InputManager {
     pub fn new() -> Ref<InputManager> {
         return create_input_manager();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl InputSignals {
     pub fn new() -> Ref<InputSignals> {
         return create_input_signals();

@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Shell capability seam: external URL policy, trash, path open/reveal, shortcut links, beep and child processes routed through host providers"
 autotests = false
 
+[features]
+object-api = []
+
 [lib]
 doctest = false
 

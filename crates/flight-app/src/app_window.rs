@@ -20,7 +20,7 @@ use crate::window_types::*;
 #[allow(dead_code)]
 mod window_fixture;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::task::{Context, Poll, Waker};
@@ -1663,6 +1663,7 @@ pub fn show_window(host_window_visibility: &HostWindowVisibilityCapability, win:
     (host_window_visibility.show)(win);
 }
 
+#[cfg(feature = "object-api")]
 impl HostElementFullscreenCapability {
     pub fn attach_window_fullscreen(&self, win: &Ref<AppWindow>) {
         attach_window_fullscreen(self, win);
@@ -1680,6 +1681,7 @@ impl HostElementFullscreenCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowAppearanceCapability {
     pub fn set_window_icon(&self, win: &Ref<AppWindow>, icon: &str) {
         set_window_icon(self, win, icon);
@@ -1694,6 +1696,7 @@ impl HostWindowAppearanceCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowAttachCapability {
     pub fn attach_window(
         &self,
@@ -1706,6 +1709,7 @@ impl HostWindowAttachCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowAttentionCapability {
     pub fn flash_window_frame(&self, win: &Ref<AppWindow>) {
         flash_window_frame(self, win);
@@ -1716,24 +1720,28 @@ impl HostWindowAttentionCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowContentProtectionCapability {
     pub fn set_window_content_protection(&self, win: &Ref<AppWindow>, enabled: bool) {
         set_window_content_protection(self, win, enabled);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowFocusCapability {
     pub fn focus_window(&self, win: &Ref<AppWindow>) {
         focus_window(self, win);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowFullscreenCapability {
     pub fn set_window_fullscreen(&self, win: &Ref<AppWindow>, fullscreen: bool) {
         set_window_fullscreen(self, win, fullscreen);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowGeometryCapability {
     pub fn attach_window_move(&self, win: &Ref<AppWindow>) {
         attach_window_move(self, win);
@@ -1764,12 +1772,14 @@ impl HostWindowGeometryCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowHierarchyCapability {
     pub fn set_window_parent(&self, win: &Ref<AppWindow>, parent: Option<&Ref<AppWindow>>) {
         set_window_parent(self, win, parent);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowLifecycleCapability {
     pub fn attach_window_close(&self, win: &Ref<AppWindow>) {
         attach_window_close(self, win);
@@ -1789,18 +1799,21 @@ impl HostWindowLifecycleCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowProgressCapability {
     pub fn set_window_progress(&self, win: &Ref<AppWindow>, progress: f32) {
         set_window_progress(self, win, progress);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowShadowCapability {
     pub fn set_window_has_shadow(&self, win: &Ref<AppWindow>, has_shadow: bool) {
         set_window_has_shadow(self, win, has_shadow);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowShellCapability {
     pub fn set_window_menu_bar_visible(&self, win: &Ref<AppWindow>, visible: bool) {
         set_window_menu_bar_visible(self, win, visible);
@@ -1811,6 +1824,7 @@ impl HostWindowShellCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowSizeConstraintsCapability {
     pub fn set_window_maximum_size(&self, win: &Ref<AppWindow>, width: f32, height: f32) {
         set_window_maximum_size(self, win, width, height);
@@ -1825,6 +1839,7 @@ impl HostWindowSizeConstraintsCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowStateCapability {
     pub fn maximize_window(&self, win: &Ref<AppWindow>) {
         maximize_window(self, win);
@@ -1839,6 +1854,7 @@ impl HostWindowStateCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowVisibilityCapability {
     pub fn attach_window_visibility(&self, win: &Ref<AppWindow>) {
         attach_window_visibility(self, win);
@@ -1853,6 +1869,7 @@ impl HostWindowVisibilityCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostWindowZOrderCapability {
     pub fn set_window_always_on_top(&self, win: &Ref<AppWindow>, always_on_top: bool) {
         set_window_always_on_top(self, win, always_on_top);

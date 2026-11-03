@@ -6,7 +6,7 @@ use flight_entity::Uint8Array;
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_scene3d::{Scene3D, Scene3DDocument, create_scene3d_from_document};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::three_ds_types::ThreeDsChunkHandler;
@@ -63,6 +63,7 @@ pub fn parse3ds(
     return parse_three_ds_document_with_dispatch(bytes, diagnostics, &dispatch);
 }
 
+#[cfg(feature = "object-api")]
 impl ThreeDsImportOptions {
     pub fn parse(
         &self,

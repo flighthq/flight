@@ -308,6 +308,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<SliderControllerFields>>) {
     let thumb = r.read().unwrap().fields.thumb.clone();
     set_gui_position(r, thumb.as_ref(), orientation, position);
 }
+#[cfg(feature = "object-api")]
 impl SliderController {
     pub fn new(options: &SliderControllerOptions) -> Self {
         return create_slider_controller(options);

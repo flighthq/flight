@@ -4,7 +4,7 @@ use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel, PathBoolean
 use crate::path_boolean::PathBooleanOptions;
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_path::{Path, PathWinding, append_path_rectangle, create_path};
 
@@ -280,6 +280,7 @@ pub fn xor_paths(
     );
 }
 
+#[cfg(feature = "object-api")]
 impl PathBooleanKernel {
     pub fn boolean_paths(
         &self,

@@ -9,6 +9,9 @@ authors.workspace = true
 description = "Portable sharing commands over explicit host capabilities and caller-owned signal state"
 autotests = false
 
+[features]
+object-api = []
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

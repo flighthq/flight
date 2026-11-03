@@ -4,7 +4,7 @@ use flight_entity::{Ref, allocate_entity};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::task::{Context, Poll, Waker};
@@ -217,6 +217,7 @@ pub fn show_save_file_dialog(
     return (host_file_save_dialog.save)(options);
 }
 
+#[cfg(feature = "object-api")]
 impl HostDirectoryOpenDialogCapability {
     pub fn show_open_directory_dialog(
         &self,
@@ -226,6 +227,7 @@ impl HostDirectoryOpenDialogCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostFileOpenDialogCapability {
     pub fn show_open_file_dialog(
         &self,
@@ -235,6 +237,7 @@ impl HostFileOpenDialogCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostFileSaveDialogCapability {
     pub fn show_save_file_dialog(
         &self,

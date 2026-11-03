@@ -2,7 +2,7 @@
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::surface::allocate_surface;
@@ -76,12 +76,14 @@ pub fn set_surface_display_size(
     return (capability.set_display_size)(surface, width, height);
 }
 
+#[cfg(feature = "object-api")]
 impl HostSurfaceResizeCapability {
     pub fn resize(&self, surface: &SurfaceRef, width: f32, height: f32) {
         return resize_surface(self, surface, width, height);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostSurfaceDisplayCapability {
     pub fn set_display_size(&self, surface: &SurfaceRef, width: f32, height: f32) {
         return set_surface_display_size(self, surface, width, height);

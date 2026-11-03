@@ -1,6 +1,6 @@
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
@@ -74,6 +74,7 @@ fn get_image_encode_slot<'a>(
     };
 }
 
+#[cfg(feature = "object-api")]
 impl HostImageEncodeCapabilities {
     pub async fn encode_image(
         &self,

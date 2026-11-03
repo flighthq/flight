@@ -293,6 +293,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<ScrollViewControllerFields>>) {
         set_value_runtime(&runtime, value);
     }
 }
+#[cfg(feature = "object-api")]
 impl ScrollViewController {
     pub fn new(options: &ScrollViewControllerOptions) -> Self {
         return create_scroll_view_controller(options);

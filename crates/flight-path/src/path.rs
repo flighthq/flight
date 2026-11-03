@@ -7,7 +7,7 @@
 
 use flight_entity::{EntityRuntimeSlot, Float32Array, Uint32Array, allocate_entity};
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
 
@@ -1054,6 +1054,7 @@ fn vector_angle(ux: f64, uy: f64, vx: f64, vy: f64) -> f64 {
     };
 }
 
+#[cfg(feature = "object-api")]
 impl Path {
     pub fn new() -> Self {
         return create_path(Some(PathWinding::NonZero));

@@ -1,6 +1,7 @@
 //! D18 sugar for the camera-controls public lane: constructors and receiver methods that delegate
 //! to the free functions. Sugar contains no logic.
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_camera::contract::Camera3D;
 
 use crate::camera_shake::*;
@@ -8,7 +9,7 @@ use crate::fly_camera_controller::*;
 use crate::orbit_camera_controller::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use flight_camera::contract::{Projection, create_camera_3d, create_perspective_projection};
     use flight_geometry::create_vector3;
@@ -316,6 +317,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CameraShake {
     pub fn new() -> CameraShake {
         return create_camera_shake();
@@ -334,12 +336,14 @@ impl CameraShake {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl CameraShakeOffset {
     pub fn new() -> CameraShakeOffset {
         return create_camera_shake_offset();
     }
 }
 
+#[cfg(feature = "object-api")]
 impl FlyCameraController {
     pub fn new(options: Option<&FlyCameraControllerOptions>) -> FlyCameraController {
         return create_fly_camera_controller(options);
@@ -374,6 +378,7 @@ impl FlyCameraController {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl OrbitCameraController {
     pub fn new(options: Option<&OrbitCameraControllerOptions>) -> OrbitCameraController {
         return create_orbit_camera_controller(options);

@@ -5,7 +5,7 @@ use flight_host::HostImageSource;
 use crate::bitmap_readback_resolver::resolve_bitmap_readback;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Arc;
 
@@ -68,6 +68,7 @@ pub fn explain_bitmap_readback(
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostBitmapReadbackCapability {
     pub fn explain_bitmap_readback(
         &self,

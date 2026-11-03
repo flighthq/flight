@@ -123,6 +123,7 @@ fn set_tab_index(runtime: &Ref<GuiControllerRuntime<TabBarControllerFields>>, in
         emit_gui_signal(&signal, &next);
     }
 }
+#[cfg(feature = "object-api")]
 impl TabBarController {
     pub fn new(options: &TabBarControllerOptions) -> Self {
         return create_tab_bar_controller(options);

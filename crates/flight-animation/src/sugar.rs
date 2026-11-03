@@ -1,9 +1,10 @@
 //! Rust convenience methods for the public animation lane (D18).
 
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;
 use flight_entity::Ref;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use std::sync::{Arc, RwLock};
@@ -593,6 +594,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationSampleAccumulator {
     pub fn new(components: usize, quaternion: bool) -> Self {
         return create_animation_sample_accumulator(components, quaternion);
@@ -611,6 +613,7 @@ impl AnimationSampleAccumulator {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationBlendTree {
     pub fn new(inputs: &[AnimationBlendTreeInput]) -> Self {
         return create_animation_blend_tree(inputs);
@@ -637,6 +640,7 @@ impl AnimationBlendTree {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationClip {
     pub fn new(
         channels: Vec<AnimationChannel>,
@@ -664,6 +668,7 @@ impl AnimationClip {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationCrossfade {
     pub fn new(
         from: AnimationPlayerRef,
@@ -691,6 +696,7 @@ impl AnimationCrossfade {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationLayerStack {
     pub fn new(layers: &[AnimationLayer]) -> Self {
         return create_animation_layer_stack(layers);
@@ -717,6 +723,7 @@ impl AnimationLayerStack {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationPlayer {
     pub fn new(clip: AnimationClip) -> Self {
         return create_animation_player(clip);
@@ -751,6 +758,7 @@ impl AnimationPlayer {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationRootMotionExtractor {
     pub fn new(clip: &Ref<AnimationClip>, channel_index: usize) -> Self {
         return create_animation_root_motion_extractor(clip, channel_index);
@@ -761,6 +769,7 @@ impl AnimationRootMotionExtractor {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationStateMachine {
     pub fn new(states: &[AnimationStateMachineState], initial_state: Option<StateRef>) -> Self {
         return create_animation_state_machine(states, initial_state);
@@ -800,6 +809,7 @@ impl AnimationStateMachine {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl AnimationTrack {
     pub fn new() -> Self {
         return create_animation_track();

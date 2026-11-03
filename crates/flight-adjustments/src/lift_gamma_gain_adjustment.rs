@@ -6,7 +6,7 @@ use crate::color_lut_adjustment::{clamp01, unpack_rgb};
 use crate::contract::AdjustmentFields;
 use crate::contract::initialize_color_lut_adjustment;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
 
@@ -101,6 +101,7 @@ impl Default for LiftGammaGainAdjustment {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl LiftGammaGainAdjustment {
     pub fn new(options: Option<&LiftGammaGainAdjustmentOptions>) -> Self {
         return create_lift_gamma_gain_adjustment(options);

@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_buffer::ArrayBufferView;
 use flight_entity::Unknown;
 
@@ -5,7 +6,7 @@ use crate::font_resource_from::*;
 use crate::font_status::*;
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::future::Future;
     use std::sync::{Arc, Mutex};
@@ -137,6 +138,7 @@ mod sugar_tests {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl HostFontLoadingCapability {
     pub fn is_font_loaded(&self, family: &str, style: Option<&str>) -> bool {
         return is_font_loaded(self, family, style);

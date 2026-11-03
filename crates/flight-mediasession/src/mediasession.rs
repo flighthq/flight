@@ -6,7 +6,7 @@ use flight_signals::{clear_signal, create_signal, emit_signal};
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::Mutex;
 
@@ -643,6 +643,7 @@ pub fn set_media_session_position_state(
     return (host_media_session.set_position_state)(state);
 }
 
+#[cfg(feature = "object-api")]
 impl HostMediaSessionActionCapability {
     pub fn attach_action(&self, signal: &mut MediaSessionActionSignal) -> bool {
         return attach_media_session_action(self, signal);
@@ -652,6 +653,7 @@ impl HostMediaSessionActionCapability {
 // The command capability's fields share the short names (`clear_metadata`, `set_position_state`,
 // `destroy`, ...), and the delegating `set_position_state` validates where the raw field does not, so
 // these methods keep the fuller free-function names (D18 collision rule) rather than shadow the fields.
+#[cfg(feature = "object-api")]
 impl HostMediaSessionCapability {
     pub fn clear_media_session_metadata(&self) -> MediaSessionClearMetadataOutcome {
         return clear_media_session_metadata(self);
@@ -690,6 +692,7 @@ impl HostMediaSessionCapability {
     }
 }
 
+#[cfg(feature = "object-api")]
 impl MediaSessionActionSignal {
     pub fn new() -> Self {
         return create_media_session_action_signal();

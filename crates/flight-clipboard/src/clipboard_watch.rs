@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::types::*;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use super::*;
     use std::sync::Mutex;
@@ -136,12 +136,14 @@ pub fn dispose_clipboard_watch(watch: &mut ClipboardWatch) {
 // D18 sugar: methods on the watch delegate to the free functions
 // ============================================================================
 
+#[cfg(feature = "object-api")]
 impl HostClipboardChangeSubscriber {
     pub fn attach_watch(&self, watch: &mut ClipboardWatch) {
         return attach_clipboard_watch(self, watch);
     }
 }
 
+#[cfg(feature = "object-api")]
 impl ClipboardWatch {
     pub fn new() -> Self {
         return create_clipboard_watch();
