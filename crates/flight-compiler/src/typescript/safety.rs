@@ -2061,6 +2061,17 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                 self.visit_expr(&call.receiver);
                 return;
             }
+            if matches!(method.as_str(), "iter" | "into_iter" | "values" | "keys")
+                && call.args.is_empty()
+            {
+                self.visit_expr(&call.receiver);
+                return;
+            }
+            if method == "map" && call.args.len() == 1 {
+                self.visit_expr(&call.receiver);
+                self.visit_expr(&call.args[0]);
+                return;
+            }
             self.reject(format!(
                 "it calls `.{}()`, and a method name does not prove which operation its receiver performs",
                 call.method

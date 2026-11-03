@@ -9082,6 +9082,27 @@ pub struct Handler {
     }
 
     #[test]
+    fn allows_lazy_lock_initializer_with_iter_map_collect() {
+        let source = r#"
+use std::sync::LazyLock;
+
+pub struct Entry {
+    pub value: f64,
+}
+
+pub static ENTRIES: LazyLock<Vec<Entry>> = LazyLock::new(|| {
+    let scales: Vec<f64> = vec![1.0, 2.0, 3.0];
+    scales.into_iter().map(|s| Entry { value: s }).collect()
+});
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("export const ENTRIES"),
+            "into_iter/map/collect chain in LazyLock initializer: {output}"
+        );
+    }
+
+    #[test]
     fn rejects_unsupported_lazy_lock_statics() {
         let declarations = "use std::sync::LazyLock;\n\npub struct Kernel {\n    pub scale: f64,\n}\n\npub fn create_kernel() -> Kernel {\n    return Kernel { scale: 1.0 };\n}\n";
         let unsupported_shape = |name: &str| {
