@@ -7,12 +7,12 @@ export function getTextLineBreakIndex(lineBreaks: Readonly<number[]>, startIndex
   if (lineBreaks.length === 0) {
     return -1;
   }
-  startIndex = startIndex ?? 0;
+  const startIndex_1 = startIndex ?? 0;
   let low = 0;
   let high = lineBreaks.length;
   while (low < high) {
     const middle = (low + high) >> 1;
-    if (lineBreaks[middle] >= startIndex) {
+    if (lineBreaks[middle] >= startIndex_1) {
       high = middle;
     } else {
       low = middle + 1;
