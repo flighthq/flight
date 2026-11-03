@@ -23460,3 +23460,41 @@ mod classify {
         "terminal else should emit: {output}"
     );
 }
+
+#[test]
+fn lowers_integer_bits_constants() {
+    let source = r#"
+pub fn get_usize_bits() -> i32 {
+    return usize::BITS as i32;
+}
+
+pub fn get_u8_bits() -> i32 {
+    return u8::BITS as i32;
+}
+
+pub fn get_u16_bits() -> i32 {
+    return u16::BITS as i32;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("(32)"),
+        "usize::BITS should be 32: {output}"
+    );
+    assert!(output.contains("(8)"), "u8::BITS should be 8: {output}");
+    assert!(output.contains("(16)"), "u16::BITS should be 16: {output}");
+}
+
+#[test]
+fn lowers_integer_min_max_as_math_min_max() {
+    let source = r#"
+pub fn clamp_value(value: i32, lo: i32, hi: i32) -> i32 {
+    return i32::max(lo, i32::min(value, hi));
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("Math.max(lo, Math.min(value, hi))"),
+        "i32::max/min should lower to Math.max/min: {output}"
+    );
+}

@@ -10839,6 +10839,23 @@ fn emit_expression_value(
             {
                 return Ok("(-0x80000000)".to_string());
             }
+            if path_is_type_constant(&path.path, "u8", "BITS")
+                || path_is_type_constant(&path.path, "i8", "BITS")
+            {
+                return Ok("8".to_string());
+            }
+            if path_is_type_constant(&path.path, "u16", "BITS")
+                || path_is_type_constant(&path.path, "i16", "BITS")
+            {
+                return Ok("16".to_string());
+            }
+            if path_is_type_constant(&path.path, "u32", "BITS")
+                || path_is_type_constant(&path.path, "i32", "BITS")
+                || path_is_type_constant(&path.path, "usize", "BITS")
+                || path_is_type_constant(&path.path, "isize", "BITS")
+            {
+                return Ok("32".to_string());
+            }
             if path_is_float_constant(&path.path, "MIN_POSITIVE") {
                 return Ok("2.2250738585072014e-308".to_string());
             }
@@ -24798,8 +24815,8 @@ fn emit_numeric_function_reference(
         "is_finite" => Ok("((v: number): boolean => Number.isFinite(v))".to_string()),
         "is_nan" => Ok("((v: number): boolean => Number.isNaN(v))".to_string()),
         "is_infinite" => Ok("((v: number): boolean => !Number.isFinite(v) && !Number.isNaN(v))".to_string()),
-        "min" if matches!(numeric_type, "f32" | "f64") => Ok("Math.min".to_string()),
-        "max" if matches!(numeric_type, "f32" | "f64") => Ok("Math.max".to_string()),
+        "min" => Ok("Math.min".to_string()),
+        "max" => Ok("Math.max".to_string()),
         "round" if matches!(numeric_type, "f32" | "f64") => {
             Ok("((v: number): number => Math.sign(v) * Math.round(Math.abs(v)))".to_string())
         }
