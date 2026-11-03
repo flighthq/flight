@@ -4785,6 +4785,22 @@ fn peel_wrapper_type(rust_type: &Type) -> Option<String> {
     }
 }
 
+fn peel_wrapper_type_name(description: &str) -> &str {
+    let mut s = description;
+    loop {
+        let found = ["Arc<", "Box<", "Rc<", "Ref<", "RwLock<"]
+            .iter()
+            .find_map(|prefix| s.strip_prefix(prefix));
+        let Some(inner) = found else {
+            return s;
+        };
+        let Some(inner) = inner.strip_suffix('>') else {
+            return s;
+        };
+        s = inner;
+    }
+}
+
 fn runtime_categories_for_type(
     rust_type: &Type,
     programs: &[&Program],
@@ -8311,10 +8327,11 @@ fn generation_context_with_types(
         let mut to_remove = Vec::new();
         let mut to_add = Vec::new();
         for (owning_type, field_name, rust_type) in &unsupported {
-            if !entity_types.contains(rust_type) {
+            let entity_name = peel_wrapper_type_name(rust_type);
+            if !entity_types.contains(entity_name) {
                 continue;
             }
-            let inner_ts_type = format!("{rust_type}Raw");
+            let inner_ts_type = format!("{entity_name}Raw");
             let inner_unsupported_prefix =
                 format!("{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{inner_ts_type}:");
             if context

@@ -15282,6 +15282,63 @@ pub fn describe(p: &Proj) -> f32 {
     }
 
     #[test]
+    fn resolves_entity_ref_field_default_through_wrapper_types() {
+        let source = r#"
+use flight_entity::EntityRuntimeSlot;
+
+pub type Ref<T> = std::sync::Arc<std::sync::RwLock<T>>;
+
+pub struct Inner {
+    runtime: EntityRuntimeSlot,
+    pub x: f32,
+    pub y: f32,
+}
+
+flight_entity::impl_entity!(Inner);
+
+pub struct Outer {
+    runtime: EntityRuntimeSlot,
+    pub name: f32,
+    pub child: Ref<Inner>,
+}
+
+flight_entity::impl_entity!(Outer);
+
+pub fn create_inner(x: f32, y: f32) -> Inner {
+    let mut out: Inner = allocate_entity();
+    initialize_inner(&mut out, x, y);
+    return out;
+}
+
+pub fn initialize_inner(out: &mut Inner, x: f32, y: f32) {
+    out.x = x;
+    out.y = y;
+}
+
+pub fn create_outer() -> Outer {
+    let mut out: Outer = allocate_entity();
+    initialize_outer(&mut out);
+    return out;
+}
+
+pub fn initialize_outer(out: &mut Outer) {
+    out.name = 0.0;
+    initialize_inner(&mut out.child.write().unwrap(), 1.0, 2.0);
+}
+"#;
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(
+            output.contains("allocateEntity<InnerRaw>()"),
+            "inner entity allocation should appear as nested default"
+        );
+        assert!(
+            output.contains("child: Object.assign(allocateEntity<InnerRaw>()"),
+            "Ref<Inner> field should get nested entity allocation default"
+        );
+    }
+
+    #[test]
     fn rejects_repeated_tagged_data_union_match_variants() {
         let source = r#"
 //! flight-compiler: data-union PathSegment
