@@ -17917,6 +17917,14 @@ fn emit_match_patterns(
     };
 }
 
+fn is_match_binding_pattern(pattern: &Pat) -> bool {
+    match pattern {
+        Pat::Ident(identifier) => identifier.ident != "_" && identifier.subpat.is_none(),
+        Pat::Reference(reference) => is_match_binding_pattern(&reference.pat),
+        _ => false,
+    }
+}
+
 fn emit_match_as_if_else(
     out: &mut String,
     expression: &syn::ExprMatch,
@@ -17936,7 +17944,8 @@ fn emit_match_as_if_else(
     for arm in &expression.arms {
         let patterns = emit_match_patterns(&arm.pat, entities)?;
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        let is_default = patterns.len() == 1 && patterns[0] == "default";
+        let is_default =
+            (patterns.len() == 1 && patterns[0] == "default") || is_match_binding_pattern(&arm.pat);
         write_indent(out, indent + 1);
         if is_default {
             if first {
@@ -17999,7 +18008,8 @@ fn emit_match_as_if_else_with_action(
     for arm in &expression.arms {
         let patterns = emit_match_patterns(&arm.pat, entities)?;
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        let is_default = patterns.len() == 1 && patterns[0] == "default";
+        let is_default =
+            (patterns.len() == 1 && patterns[0] == "default") || is_match_binding_pattern(&arm.pat);
         write_indent(out, indent + 1);
         if is_default {
             if first {

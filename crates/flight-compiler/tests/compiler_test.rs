@@ -2126,6 +2126,38 @@ pub fn first_big(values: &[u32]) -> u32 {
     }
 
     #[test]
+    fn lowers_match_binding_catch_all_after_range_in_loop() {
+        let source = r#"
+pub fn first_big(values: &[u32]) -> u32 {
+    let mut found: u32 = 0;
+    for value in values {
+        match *value {
+            0..=9 => continue,
+            other => {
+                found = other;
+                break;
+            }
+        }
+    }
+    return found;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            !output.contains("switch"),
+            "match with binding + break must not lower to switch: {output}"
+        );
+        assert!(
+            output.contains("const other = matchValue"),
+            "binding catch-all must declare const: {output}"
+        );
+        assert!(
+            output.contains("else {"),
+            "binding catch-all must be an else branch: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_match_on_tuple_of_options_to_null_checked_if_else() {
         let source = r#"
 pub struct Rect {
