@@ -13812,6 +13812,15 @@ fn emit_let_else_local(
                     Pat::Ident(ident) => {
                         names.push(snake_to_lower_camel(&ident.ident.to_string()));
                     }
+                    Pat::Reference(reference) => {
+                        if let Pat::Ident(ident) = reference.pat.as_ref() {
+                            names.push(snake_to_lower_camel(&ident.ident.to_string()));
+                        } else {
+                            return Err(compile_error(
+                                "portable `let Some((..))` tuple elements must be identifiers",
+                            ));
+                        }
+                    }
                     Pat::Wild(_) => {
                         names.push("_".to_string());
                     }
@@ -14023,6 +14032,32 @@ fn emit_let_else_local(
                             temps.push(None);
                             names.push("_".to_string());
                             rebinds.push(false);
+                        }
+                        Pat::Reference(reference) => {
+                            if let Pat::Ident(ident) = reference.pat.as_ref() {
+                                let rust_name = ident.ident.to_string();
+                                let base_name = snake_to_lower_camel(&rust_name);
+                                let name = resolve_rename(entities, &base_name);
+                                let is_rebind = shadowed
+                                    || expression_contains_identifier(
+                                        &init_tuple.elems[i],
+                                        &rust_name,
+                                    )
+                                    || entities
+                                        .contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
+                                let temp = format!("$t{i}");
+                                write_indent(out, indent);
+                                writeln!(out, "const {temp} = {value};")
+                                    .expect("writing to a String cannot fail");
+                                conditions.push(format!("{temp} === {absent}"));
+                                temps.push(Some(temp));
+                                names.push(name);
+                                rebinds.push(is_rebind);
+                            } else {
+                                return Err(compile_error(
+                                    "portable `let-else` tuple option element must bind an identifier or `_`",
+                                ));
+                            }
                         }
                         _ => {
                             return Err(compile_error(
@@ -19544,6 +19579,15 @@ pub(crate) fn emit_option_binding(
             match elem {
                 Pat::Ident(ident) => {
                     names.push(snake_to_lower_camel(&ident.ident.to_string()));
+                }
+                Pat::Reference(reference) => {
+                    if let Pat::Ident(ident) = reference.pat.as_ref() {
+                        names.push(snake_to_lower_camel(&ident.ident.to_string()));
+                    } else {
+                        return Err(compile_error(
+                            "portable `if let Some((..))` tuple elements must be identifiers",
+                        ));
+                    }
                 }
                 Pat::Wild(_) => {
                     names.push(format!("_unused{wild_count}"));

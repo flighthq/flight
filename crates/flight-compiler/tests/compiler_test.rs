@@ -7174,6 +7174,28 @@ pub fn find_value(items: &[(i32, String)]) -> Option<String> {
     }
 
     #[test]
+    fn lowers_tuple_reference_patterns_in_some_destructure() {
+        let source = r#"
+pub fn sum_pairs(items: &[(f64, f64)]) -> f64 {
+    let mut total = 0.0;
+    for pair in items.iter() {
+        if let Some((&x, &y)) = Some(pair).map(|p| (&p.0, &p.1)) {
+            total += x + y;
+        }
+    }
+    return total;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("[x, y]"),
+            "reference patterns should strip & and destructure: {output}"
+        );
+    }
+
+    #[test]
     fn propagates_binding_facts_through_result_ok_pattern() {
         let source = r#"
 pub fn check(input: Result<String, i32>) -> bool {
