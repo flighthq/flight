@@ -10349,7 +10349,16 @@ pub fn create_checked_kernel(count: i32, flag: bool) -> Kernel {
         let hidden_impure = "use std::sync::atomic::{AtomicU32, Ordering};\n\nuse crate::kernel::Kernel;\n\nstatic DEFAULTS: AtomicU32 = AtomicU32::new(0);\n\nimpl Default for Kernel {\n    fn default() -> Kernel {\n        DEFAULTS.fetch_add(1, Ordering::SeqCst);\n        return Kernel { runtime: flight_entity::EntityRuntimeSlot::default(), scale: 0.0 };\n    }\n}\n";
         let plain =
             "pub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n}\n";
-        let cases: [(String, Vec<&str>, String); 21] = [
+        let custom_literal_default = kernel(&format!(
+            "{plain}\nimpl Default for Kernel {{\n    fn default() -> Kernel {{\n        return Kernel {{ runtime: EntityRuntimeSlot::default(), scale: 7.0 }};\n    }}\n}}\n"
+        ));
+        let output = compile(&custom_literal_default, &[]).unwrap();
+        assert!(
+            output.contains("scale: 7"),
+            "custom Default literal override: {output}"
+        );
+
+        let cases: [(String, Vec<&str>, String); 20] = [
             (
                 kernel(plain),
                 vec![],
@@ -10359,11 +10368,6 @@ pub fn create_checked_kernel(count: i32, flag: bool) -> Kernel {
                 kernel(plain),
                 vec![hidden_impure],
                 "the manual `Default` for `Kernel` must return one struct literal of `Kernel`, so its field values can be compared with the generated allocation".to_string(),
-            ),
-            (
-                kernel(&format!("{plain}\nimpl Default for Kernel {{\n    fn default() -> Kernel {{\n        return Kernel {{ runtime: EntityRuntimeSlot::default(), scale: 7.0 }};\n    }}\n}}\n")),
-                vec![],
-                "the manual `Default` for `Kernel` sets `scale` to `7.0`, which the generated allocation does not reproduce".to_string(),
             ),
             (
                 kernel(&format!("{plain}\nimpl Default for Kernel {{\n    fn default() -> Kernel {{\n        return Kernel {{ runtime: EntityRuntimeSlot::default(), scale: read_scale() }};\n    }}\n}}\n\npub fn read_scale() -> f64 {{\n    return flight_math::random();\n}}\n")),

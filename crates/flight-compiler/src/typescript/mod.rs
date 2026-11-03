@@ -3734,6 +3734,85 @@ pub(super) fn rust_default_expression(rust_type: &Type) -> Option<String> {
     };
 }
 
+pub(super) fn rust_literal_to_typescript(expression: &Expr) -> Option<String> {
+    return match expression {
+        Expr::Lit(literal) => match &literal.lit {
+            Lit::Int(integer) => Some(integer.base10_digits().to_string()),
+            Lit::Float(float) => {
+                let value: f64 = float.base10_parse().ok()?;
+                if value.fract() == 0.0 {
+                    Some(format!("{}", value as i64))
+                } else {
+                    Some(value.to_string())
+                }
+            }
+            Lit::Bool(flag) => Some(if flag.value { "true" } else { "false" }.to_string()),
+            Lit::Str(string) => Some(format!("\"{}\"", string.value())),
+            _ => None,
+        },
+        Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
+            let inner = rust_literal_to_typescript(&unary.expr)?;
+            Some(format!("-{inner}"))
+        }
+        _ => None,
+    };
+}
+
+fn custom_default_field_values(
+    impl_item: &syn::ItemImpl,
+    structure: &ItemStruct,
+) -> Option<BTreeMap<String, String>> {
+    let (_, trait_path, _) = impl_item.trait_.as_ref()?;
+    let last_segment = trait_path.segments.last()?;
+    if last_segment.ident != "Default" {
+        return None;
+    }
+    let self_name = match impl_item.self_ty.as_ref() {
+        Type::Path(path) => path.path.segments.last()?.ident.to_string(),
+        _ => return None,
+    };
+    if self_name != structure.ident.to_string() {
+        return None;
+    }
+    let default_fn = impl_item.items.iter().find_map(|item| match item {
+        syn::ImplItem::Fn(function) if function.sig.ident == "default" => Some(function),
+        _ => None,
+    })?;
+    let literal = match default_fn.block.stmts.as_slice() {
+        [Stmt::Expr(Expr::Return(returned), _)] => {
+            if let Some(Expr::Struct(literal)) = returned.expr.as_deref() {
+                Some(literal)
+            } else {
+                None
+            }
+        }
+        [Stmt::Expr(Expr::Struct(literal), None)] => Some(literal),
+        _ => None,
+    }?;
+    let mut overrides = BTreeMap::new();
+    for field_value in &literal.fields {
+        let syn::Member::Named(member) = &field_value.member else {
+            continue;
+        };
+        let field = structure
+            .fields
+            .iter()
+            .find(|f| f.ident.as_ref() == Some(member))?;
+        if !is_public(&field.vis) {
+            continue;
+        }
+        let default = rust_default_expression(&field.ty);
+        let actual = rust_literal_to_typescript(&field_value.expr);
+        if let (Some(default), Some(actual)) = (&default, &actual) {
+            if default != actual {
+                let field_name = snake_to_lower_camel(&member.to_string());
+                overrides.insert(field_name, actual.clone());
+            }
+        }
+    }
+    return Some(overrides);
+}
+
 pub(super) fn rust_type_description(rust_type: &Type) -> String {
     return rust_type
         .to_token_stream()
@@ -7991,6 +8070,30 @@ fn generation_context_with_types(
                 context.insert(format!(
                     "{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{value}"
                 ));
+            }
+        }
+        for structure in program
+            .structs
+            .iter()
+            .filter(|_| program.source_mode != crate::SourceMode::TargetNative)
+        {
+            let entity = structure.ident.to_string();
+            if !entity_types.contains(&entity) {
+                continue;
+            }
+            let typescript_type = format!("{entity}Raw");
+            for impl_item in &program.facts.impls {
+                let Some(overrides) = custom_default_field_values(impl_item, structure) else {
+                    continue;
+                };
+                for (field_name, value) in overrides {
+                    let default_key =
+                        format!("{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:");
+                    context.retain(|entry| !entry.starts_with(&default_key));
+                    context.insert(format!(
+                        "{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{value}"
+                    ));
+                }
             }
         }
         for function in &program.functions {

@@ -17,7 +17,8 @@ use super::{
     TYPE_USE_MARKER, TYPE_USE_TARGET_MARKER, canonical_type_path_root, current_source,
     entity_runtime_state_store, insert_program_type_path_context, lexical_fact, marker_suffixes,
     named_type, option_inner_type, peel_reference_and_paren, resolve_path_owner,
-    rust_default_expression, rust_type_description, snake_to_lower_camel,
+    rust_default_expression, rust_literal_to_typescript, rust_type_description,
+    snake_to_lower_camel,
 };
 
 // Whether `op` is binary arithmetic (`+ - * / %`), which Rust dispatches through `Add` and its kin.
@@ -1785,11 +1786,13 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
                     && !(self.is_emitted_default_type(struct_scope, &field.ty)
                         && self.is_emitted_default_value(scope, &field.ty, &value.expr))
                 {
-                    self.reject(format!(
-                        "the manual `Default` for `{name}` sets `{member}` to `{}`, which the generated allocation does not reproduce",
-                        value.expr.to_token_stream()
-                    ));
-                    break;
+                    if rust_literal_to_typescript(&value.expr).is_none() {
+                        self.reject(format!(
+                            "the manual `Default` for `{name}` sets `{member}` to `{}`, which the generated allocation does not reproduce",
+                            value.expr.to_token_stream()
+                        ));
+                        break;
+                    }
                 }
                 if let Expr::Call(call) = &value.expr
                     && call.args.is_empty()
