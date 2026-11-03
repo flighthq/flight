@@ -13,7 +13,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.on_complete(),
+            &get_tween_on_complete(&timer),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -30,7 +30,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.on_complete(),
+            &get_tween_on_complete(&timer),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -60,7 +60,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.on_complete(),
+            &get_tween_on_complete(&timer),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -103,7 +103,7 @@ mod create_tween_timer {
         let ticks = Arc::new(Mutex::new(0i32));
         let ticks_c = ticks.clone();
         connect_signal(
-            &timer.on_repeat(),
+            &get_tween_on_repeat(&timer),
             Arc::new(move |_: &()| {
                 *ticks_c.lock().unwrap() += 1;
             }),
@@ -113,6 +113,6 @@ mod create_tween_timer {
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         assert_eq!(*ticks.lock().unwrap(), 3);
-        assert!(!timer.is_complete());
+        assert!(!is_tween_complete(&timer));
     }
 }

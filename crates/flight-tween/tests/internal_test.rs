@@ -53,7 +53,7 @@ mod has_tween_property {
             }],
             None,
         );
-        assert!(tween.property_keys().contains(&"x".to_string()));
+        assert!(get_tween_property_keys(&tween).contains(&"x".to_string()));
     }
 
     #[test]
@@ -71,7 +71,7 @@ mod has_tween_property {
             }],
             None,
         );
-        assert!(!tween.property_keys().contains(&"y".to_string()));
+        assert!(!get_tween_property_keys(&tween).contains(&"y".to_string()));
     }
 }
 
@@ -94,9 +94,9 @@ mod initialize_tween {
             }],
             None,
         );
-        assert!(!tween.is_initialized());
+        assert!(!is_tween_initialized(&tween));
         update_tweens(&manager, 1.0);
-        assert!(tween.is_initialized());
+        assert!(is_tween_initialized(&tween));
     }
 
     #[test]
@@ -155,7 +155,7 @@ mod make_tween {
             None,
             linear_ease,
         );
-        assert_eq!(tween.duration(), 1000.0);
-        assert_eq!(tween.property_keys().len(), 2);
+        assert_eq!(get_tween_duration(&tween), 1000.0);
+        assert_eq!(get_tween_property_keys(&tween).len(), 2);
     }
 }

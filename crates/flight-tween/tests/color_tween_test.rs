@@ -142,7 +142,7 @@ mod create_color_tween {
         assert_eq!(get_active_tween_count(&manager), 1);
 
         stop_tweens(&manager, &target, None::<&[TweenProp<ColorObj>]>, None);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
     }
 
     #[test]
@@ -173,7 +173,7 @@ mod create_color_tween {
         );
 
         // The color tween's overwrite should have marked the numeric tween complete
-        assert!(numeric_tween.is_complete());
+        assert!(is_tween_complete(&numeric_tween));
 
         // Targeted stop by property
         stop_tweens(
@@ -186,7 +186,7 @@ mod create_color_tween {
             }]),
             None,
         );
-        assert!(color_tween.is_complete());
+        assert!(is_tween_complete(&color_tween));
 
         // Kill by property
         let next_color_tween = create_color_tween(
@@ -199,7 +199,7 @@ mod create_color_tween {
             None,
         );
         kill_tweens_of_property(&manager, "color");
-        assert!(next_color_tween.is_complete());
+        assert!(is_tween_complete(&next_color_tween));
     }
 
     #[test]

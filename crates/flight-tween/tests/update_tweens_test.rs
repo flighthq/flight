@@ -50,7 +50,7 @@ mod complete_tween {
         );
         complete_tween(&tween);
         assert_eq!(target.read().unwrap().x, 100.0);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
     }
 
     #[test]
@@ -71,7 +71,7 @@ mod complete_tween {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.on_complete(),
+            &get_tween_on_complete(&tween),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -105,7 +105,7 @@ mod complete_tween {
                 snapping: None,
             }),
         );
-        assert!(!tween.is_initialized());
+        assert!(!is_tween_initialized(&tween));
         complete_tween(&tween);
         assert_eq!(target.read().unwrap().x, 100.0);
     }
@@ -136,7 +136,7 @@ mod complete_tween {
         );
         complete_tween(&tween);
         assert_eq!(target.read().unwrap().x, 0.0);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
     }
 
     #[test]
@@ -399,7 +399,7 @@ mod update_tweens {
             None,
         );
         update_tweens(&manager, 1000.0);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
     }
 
     #[test]
@@ -440,7 +440,7 @@ mod update_tweens {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.on_complete(),
+            &get_tween_on_complete(&tween),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -468,7 +468,7 @@ mod update_tweens {
         let updates = Arc::new(Mutex::new(0i32));
         let updates_c = updates.clone();
         connect_signal(
-            &tween.on_update(),
+            &get_tween_on_update(&tween),
             Arc::new(move |_: &()| {
                 *updates_c.lock().unwrap() += 1;
             }),
@@ -536,7 +536,7 @@ mod update_tweens {
         let repeats = Arc::new(Mutex::new(0i32));
         let repeats_c = repeats.clone();
         connect_signal(
-            &tween.on_repeat(),
+            &get_tween_on_repeat(&tween),
             Arc::new(move |_: &()| {
                 *repeats_c.lock().unwrap() += 1;
             }),
@@ -546,7 +546,7 @@ mod update_tweens {
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         assert_eq!(*repeats.lock().unwrap(), 2);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
     }
 
     #[test]
@@ -638,7 +638,7 @@ mod update_tweens {
         let yoyos = Arc::new(Mutex::new(0i32));
         let yoyos_c = yoyos.clone();
         connect_signal(
-            &tween.on_yoyo(),
+            &get_tween_on_yoyo(&tween),
             Arc::new(move |_: &()| {
                 *yoyos_c.lock().unwrap() += 1;
             }),
@@ -675,7 +675,7 @@ mod update_tweens {
         let yoyos = Arc::new(Mutex::new(0i32));
         let yoyos_c = yoyos.clone();
         connect_signal(
-            &tween.on_yoyo(),
+            &get_tween_on_yoyo(&tween),
             Arc::new(move |_: &()| {
                 *yoyos_c.lock().unwrap() += 1;
             }),
@@ -713,7 +713,7 @@ mod update_tweens {
         let yoyos = Arc::new(Mutex::new(0i32));
         let yoyos_c = yoyos.clone();
         connect_signal(
-            &tween.on_yoyo(),
+            &get_tween_on_yoyo(&tween),
             Arc::new(move |_: &()| {
                 *yoyos_c.lock().unwrap() += 1;
             }),
@@ -752,7 +752,7 @@ mod update_tweens {
         let repeats = Arc::new(Mutex::new(0i32));
         let repeats_c = repeats.clone();
         connect_signal(
-            &tween.on_repeat(),
+            &get_tween_on_repeat(&tween),
             Arc::new(move |_: &()| {
                 *repeats_c.lock().unwrap() += 1;
             }),
@@ -762,8 +762,8 @@ mod update_tweens {
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         assert_eq!(*repeats.lock().unwrap(), 3);
-        assert!(!tween.is_complete());
-        assert_eq!(tween.repeat(), -1);
+        assert!(!is_tween_complete(&tween));
+        assert_eq!(get_tween_repeat(&tween), -1);
     }
 
     #[test]
@@ -881,7 +881,7 @@ mod update_tweens {
         );
         pause_tween(&tween);
         update_tweens(&manager, 500.0);
-        assert_eq!(tween.elapsed(), 0.0);
+        assert_eq!(get_tween_elapsed(&tween), 0.0);
         resume_tween(&tween);
         update_tweens(&manager, 500.0);
         assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
@@ -944,7 +944,7 @@ mod update_tweens {
         );
         update_tweens(&manager, 1.0);
         assert_eq!(target.read().unwrap().x, 100.0);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
         assert!(target.read().unwrap().x.is_finite());
     }
 }

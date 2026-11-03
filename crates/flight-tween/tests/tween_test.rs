@@ -62,7 +62,7 @@ mod apply_tween {
         let target = target_x(0.0);
         let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         apply_tween(&manager, &target, &[prop_x(50.0)]);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
         assert_eq!(get_x(&target), 50.0);
     }
 }
@@ -84,7 +84,7 @@ mod create_tween {
         let target = target_x(0.0);
         let first = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         create_tween(&manager, &target, 1000.0, &[prop_x(200.0)], None);
-        assert!(first.is_complete());
+        assert!(is_tween_complete(&first));
     }
 
     #[test]
@@ -108,7 +108,7 @@ mod create_tween {
                 snapping: None,
             }),
         );
-        assert!(!first.is_complete());
+        assert!(!is_tween_complete(&first));
     }
 
     #[test]
@@ -117,7 +117,7 @@ mod create_tween {
         let target = target_xy(0.0, 0.0);
         let first = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         create_tween(&manager, &target, 1000.0, &[prop_y(200.0)], None);
-        assert!(!first.is_complete());
+        assert!(!is_tween_complete(&first));
     }
 
     #[test]
@@ -125,14 +125,14 @@ mod create_tween {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
         let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
-        assert!(!tween.is_complete());
-        assert_eq!(tween.elapsed(), 0.0);
-        assert!(!tween.is_paused());
-        assert_eq!(tween.repeat(), 0);
-        assert!(!tween.reflect());
-        assert!(!tween.reverse());
-        assert!(!tween.smart_rotation());
-        assert!(!tween.snapping());
+        assert!(!is_tween_complete(&tween));
+        assert_eq!(get_tween_elapsed(&tween), 0.0);
+        assert!(!is_tween_paused(&tween));
+        assert_eq!(get_tween_repeat(&tween), 0);
+        assert!(!is_tween_reflect(&tween));
+        assert!(!is_tween_reverse(&tween));
+        assert!(!is_tween_smart_rotation(&tween));
+        assert!(!is_tween_snapping(&tween));
     }
 
     #[test]
@@ -146,7 +146,7 @@ mod create_tween {
             &[prop_x(100.0), prop_y(200.0)],
             None,
         );
-        let keys = tween.property_keys();
+        let keys = get_tween_property_keys(&tween);
         assert_eq!(keys.len(), 2);
         assert!(keys.contains(&"x".to_string()));
         assert!(keys.contains(&"y".to_string()));
@@ -817,8 +817,8 @@ mod kill_tweens_of_property {
             }),
         );
         kill_tweens_of_property(&manager, "x");
-        assert!(a.is_complete());
-        assert!(b.is_complete());
+        assert!(is_tween_complete(&a));
+        assert!(is_tween_complete(&b));
     }
 
     #[test]
@@ -843,8 +843,8 @@ mod kill_tweens_of_property {
             }),
         );
         kill_tweens_of_property(&manager, "x");
-        assert!(a.is_complete());
-        assert!(!b.is_complete());
+        assert!(is_tween_complete(&a));
+        assert!(!is_tween_complete(&b));
     }
 
     #[test]
@@ -864,8 +864,8 @@ mod kill_tweens_of_property {
         let t1 = create_tween(&manager, &t1_target, 1000.0, &[prop_x(100.0)], None);
         let t2 = create_tween(&manager, &t2_target, 1000.0, &[prop_x(200.0)], None);
         kill_tweens_of_property(&manager, "x");
-        assert!(t1.is_complete());
-        assert!(t2.is_complete());
+        assert!(is_tween_complete(&t1));
+        assert!(is_tween_complete(&t2));
     }
 }
 
@@ -878,7 +878,7 @@ mod pause_all_tweens {
         let target = target_x(0.0);
         let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_all_tweens(&manager);
-        assert!(a.is_paused());
+        assert!(is_tween_paused(&a));
     }
 }
 
@@ -891,7 +891,7 @@ mod pause_tween {
         let target = target_x(0.0);
         let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tween(&tween);
-        assert!(tween.is_paused());
+        assert!(is_tween_paused(&tween));
     }
 }
 
@@ -904,7 +904,7 @@ mod pause_tweens {
         let target = target_x(0.0);
         let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tweens(&manager, &target);
-        assert!(t.is_paused());
+        assert!(is_tween_paused(&t));
     }
 }
 
@@ -920,8 +920,8 @@ mod reset_all_tweens {
         let b = create_tween(&manager, &t2, 1000.0, &[prop_x(100.0)], None);
         reset_all_tweens(&manager);
         assert_eq!(get_active_tween_count(&manager), 0);
-        assert!(!a.is_complete());
-        assert!(!b.is_complete());
+        assert!(!is_tween_complete(&a));
+        assert!(!is_tween_complete(&b));
     }
 }
 
@@ -935,7 +935,7 @@ mod resume_all_tweens {
         let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_all_tweens(&manager);
         resume_all_tweens(&manager);
-        assert!(!a.is_paused());
+        assert!(!is_tween_paused(&a));
     }
 }
 
@@ -949,7 +949,7 @@ mod resume_tween {
         let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tween(&tween);
         resume_tween(&tween);
-        assert!(!tween.is_paused());
+        assert!(!is_tween_paused(&tween));
     }
 }
 
@@ -963,7 +963,7 @@ mod resume_tweens {
         let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tweens(&manager, &target);
         resume_tweens(&manager, &target);
-        assert!(!t.is_paused());
+        assert!(!is_tween_paused(&t));
     }
 }
 
@@ -976,7 +976,7 @@ mod stop_all_tweens {
         let target = target_x(0.0);
         let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         stop_all_tweens(&manager, None);
-        assert!(a.is_complete());
+        assert!(is_tween_complete(&a));
     }
 }
 
@@ -989,7 +989,7 @@ mod stop_tween {
         let target = target_x(0.0);
         let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         stop_tween(&tween, None);
-        assert!(tween.is_complete());
+        assert!(is_tween_complete(&tween));
     }
 
     #[test]
@@ -1057,7 +1057,7 @@ mod stop_tween {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.on_complete(),
+            &get_tween_on_complete(&tween),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -1081,7 +1081,7 @@ mod stop_tween {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.on_complete(),
+            &get_tween_on_complete(&tween),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -1124,8 +1124,8 @@ mod stop_tweens {
             }),
         );
         stop_tweens(&manager, &target, None, None);
-        assert!(a.is_complete());
-        assert!(b.is_complete());
+        assert!(is_tween_complete(&a));
+        assert!(is_tween_complete(&b));
     }
 
     #[test]
@@ -1150,8 +1150,8 @@ mod stop_tweens {
             }),
         );
         stop_tweens(&manager, &target, Some(&[prop_x(0.0)]), None);
-        assert!(a.is_complete());
-        assert!(!b.is_complete());
+        assert!(is_tween_complete(&a));
+        assert!(!is_tween_complete(&b));
     }
 
     #[test]
@@ -1221,7 +1221,7 @@ mod stop_tweens {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.on_complete(),
+            &get_tween_on_complete(&tween),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -1247,7 +1247,7 @@ mod stop_tweens {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.on_complete(),
+            &get_tween_on_complete(&tween),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
