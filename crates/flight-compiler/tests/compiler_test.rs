@@ -21558,7 +21558,7 @@ pub fn read_length(data: &[u8], pos: usize, short: usize, marker: usize) -> Opti
         "should preserve the early return: {output}"
     );
     assert!(
-        output.contains("length = (data[pos])"),
+        output.contains("length = data[pos]"),
         "should assign in the then branch: {output}"
     );
     assert!(
@@ -23510,6 +23510,91 @@ pub fn clamp_value(value: i32, lo: i32, hi: i32) -> i32 {
     assert!(
         output.contains("Math.max(lo, Math.min(value, hi))"),
         "i32::max/min should lower to Math.max/min: {output}"
+    );
+}
+
+#[test]
+fn elides_widening_integer_casts() {
+    let source = r#"
+pub fn chained_u8_to_u32(x: f64) -> u32 {
+    return (x as u8) as u32;
+}
+pub fn chained_u16_to_u32(x: f64) -> u32 {
+    return (x as u16) as u32;
+}
+pub fn chained_i8_to_i32(x: f64) -> i32 {
+    return (x as i8) as i32;
+}
+pub fn chained_i16_to_i32(x: f64) -> i32 {
+    return (x as i16) as i32;
+}
+pub fn chained_u8_to_i32(x: f64) -> i32 {
+    return (x as u8) as i32;
+}
+pub fn len_as_u32(data: &[u8]) -> u32 {
+    return data.len() as u32;
+}
+pub fn len_as_i32(data: &[u8]) -> i32 {
+    return data.len() as i32;
+}
+pub fn literal_u8_as_u32() -> u32 {
+    return 0u8 as u32;
+}
+pub fn same_cast(x: f64) -> u32 {
+    return (x as u32) as u32;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("return ((x) & 0xff);\n"),
+        "u8->u32 chain should elide outer >>> 0, keeping inner & 0xff: {output}"
+    );
+    assert!(
+        output.contains("return ((x) & 0xffff);\n"),
+        "u16->u32 chain should elide outer >>> 0, keeping inner & 0xffff: {output}"
+    );
+    assert!(
+        output.contains("return (((x) << 24) >> 24);\n"),
+        "i8->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
+    );
+    assert!(
+        output.contains("return (((x) << 16) >> 16);\n"),
+        "i16->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
+    );
+    assert!(
+        output.contains("return data.length;\n"),
+        "len() as u32 should elide >>> 0: {output}"
+    );
+    assert!(
+        output.contains("return 0;\n"),
+        "0u8 as u32 should elide to bare 0: {output}"
+    );
+    let u8_to_i32_fn = output
+        .split("function chainedU8ToI32")
+        .nth(1)
+        .and_then(|s| s.split("\n}\n").next())
+        .unwrap_or("");
+    assert!(
+        !u8_to_i32_fn.contains("| 0"),
+        "u8->i32 chain should elide outer | 0: {output}"
+    );
+}
+
+#[test]
+fn preserves_narrowing_integer_casts() {
+    let source = r#"
+pub fn narrow_u32_to_u8(x: u32) -> u8 {
+    return x as u8;
+}
+pub fn narrow_i32_to_u32(x: i32) -> u32 {
+    return x as u32;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("& 0xff"), "u32->u8 must mask: {output}");
+    assert!(
+        output.contains(">>> 0"),
+        "i32->u32 must unsigned-shift: {output}"
     );
 }
 

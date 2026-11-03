@@ -10601,6 +10601,9 @@ fn emit_expression_value(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("{function}({})", arguments.join(", ")))
         }
+        Expr::Cast(cast) if is_integer_cast_elided(&cast.expr, &cast.ty, entities) => {
+            emit_expression(&cast.expr, entities)
+        }
         Expr::Cast(cast) if type_is_named(&cast.ty, "u8") => Ok(format!(
             "({}) & 0xff",
             emit_expression(&cast.expr, entities)?
@@ -22318,7 +22321,7 @@ fn emit_statement(
             let try_context = emit_try_pre_extractions(out, value, entities, indent)?;
             write_indent(out, indent);
             let mut emitted = emit_expression(value, &try_context)?;
-            if entities.contains(RETURNS_U32_MARKER) {
+            if entities.contains(RETURNS_U32_MARKER) && !expression_is_unsigned_cast(value) {
                 emitted = format!("({emitted}) >>> 0");
             }
             if entities.contains(RETURNS_NULLABLE_MARKER) {
@@ -22349,7 +22352,7 @@ fn emit_statement(
                 } else {
                     emit_expression(value, entities)?
                 };
-                if entities.contains(RETURNS_U32_MARKER) {
+                if entities.contains(RETURNS_U32_MARKER) && !expression_is_unsigned_cast(returned) {
                     value = format!("({value}) >>> 0");
                 }
                 if entities.contains(RETURNS_NULLABLE_MARKER) {
@@ -23943,6 +23946,44 @@ fn constructor_path_default_value(expression: &Expr) -> Option<&'static str> {
         ["HashSet", "new"] | ["BTreeSet", "new"] => Some("new Set()"),
         _ => None,
     }
+}
+
+fn expression_is_unsigned_cast(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Cast(cast) => matches!(
+            named_type(&cast.ty).as_deref(),
+            Some("u8" | "u16" | "u32" | "usize")
+        ),
+        Expr::Paren(paren) => expression_is_unsigned_cast(&paren.expr),
+        Expr::Group(group) => expression_is_unsigned_cast(&group.expr),
+        _ => false,
+    };
+}
+
+fn is_integer_cast_elided(inner: &Expr, target: &Type, entities: &HashSet<String>) -> bool {
+    let Some(target_name) = named_type(target) else {
+        return false;
+    };
+    let Some(source_name) = expression_numeric_type(inner, entities) else {
+        return false;
+    };
+    return is_widening_integer_cast(&source_name, &target_name);
+}
+
+fn is_widening_integer_cast(source: &str, target: &str) -> bool {
+    if source == target {
+        return true;
+    }
+    return match (source, target) {
+        ("u32", "usize") | ("usize", "u32") => true,
+        ("i32", "isize") | ("isize", "i32") => true,
+        ("u8", "u16" | "u32" | "usize" | "i16" | "i32" | "isize") => true,
+        ("u16", "u32" | "usize" | "i32" | "isize") => true,
+        ("i8", "i16" | "i32" | "isize") => true,
+        ("i16", "i32" | "isize") => true,
+        ("f32", "f64") => true,
+        _ => false,
+    };
 }
 
 fn strip_as_ptr(expression: &Expr) -> &Expr {
