@@ -2414,19 +2414,19 @@ pub fn widened(value: Option<f32>) -> f32 {
             "function reference in Option combinator should compile: {output}"
         );
 
-        for (source, expected) in [
-            (
-                "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n",
-                "portable `.and_then()` requires a receiver declared as Rust `Option`",
-            ),
-            (
-                "pub fn sum(value: Option<(f32, f32)>) -> f32 { return value.map(|(a, b)| a + b).unwrap_or(0.0); }\n",
-                "portable Option `.map()` closure parameter must be an identifier",
-            ),
-        ] {
-            let error = compile_typescript(source, None).unwrap_err();
-            assert_eq!(error.to_string(), expected);
-        }
+        let source = "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n";
+        let error = compile_typescript(source, None).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "portable `.and_then()` requires a receiver declared as Rust `Option`"
+        );
+
+        let source = "pub fn sum(value: Option<(f32, f32)>) -> f32 { return value.map(|(a, b)| a + b).unwrap_or(0.0); }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("([a, b]) => a + b"),
+            "Option .map with tuple closure should destructure: {output}"
+        );
     }
 
     // `.cmp()` on integers and strings is a normalized three-way comparison, `Ordering` lowers to a
@@ -23510,5 +23510,31 @@ pub fn clamp_value(value: i32, lo: i32, hi: i32) -> i32 {
     assert!(
         output.contains("Math.max(lo, Math.min(value, hi))"),
         "i32::max/min should lower to Math.max/min: {output}"
+    );
+}
+
+#[test]
+fn lowers_option_tuple_closure_parameter() {
+    let source = r#"
+pub fn get_parts(source: &Foo) -> Option<(Bar, Baz)> {
+    return None;
+}
+
+pub fn get_bar(source: &Foo) -> Option<Bar> {
+    return get_parts(source).and_then(|(bar, _)| bar.clone());
+}
+
+pub fn get_index(source: &Foo) -> Option<usize> {
+    return get_parts(source).map(|(_, index)| index);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("([bar, _unused0]) => bar"),
+        "Option .and_then with tuple closure should destructure: {output}"
+    );
+    assert!(
+        output.contains("([_unused0, index]) => index"),
+        "Option .map with tuple closure should destructure: {output}"
     );
 }

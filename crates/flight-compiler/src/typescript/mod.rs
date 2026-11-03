@@ -19746,6 +19746,13 @@ fn emit_option_combinator(
         }
     };
     let parameter = option_closure_parameter(&closure.inputs[0]);
+    if parameter.is_none() && closure_pattern_is_tuple(&closure.inputs[0]) {
+        let absent = option_absent_value(&call.receiver, entities);
+        let emitted = emit_closure(closure, entities)?;
+        return Ok(format!(
+            "((_optionPayload) => _optionPayload === {absent} ? {absent} : ({emitted})(_optionPayload))({receiver})"
+        ));
+    }
     let parameter_name = match parameter {
         Some(ident) => ident.to_string(),
         None if closure_pattern_is_wildcard(&closure.inputs[0]) => "_unused0".to_string(),
@@ -24564,6 +24571,16 @@ fn closure_pattern_is_wildcard(pattern: &Pat) -> bool {
         Pat::Reference(reference) => closure_pattern_is_wildcard(&reference.pat),
         Pat::Type(typed) => closure_pattern_is_wildcard(&typed.pat),
         Pat::Paren(paren) => closure_pattern_is_wildcard(&paren.pat),
+        _ => false,
+    };
+}
+
+fn closure_pattern_is_tuple(pattern: &Pat) -> bool {
+    return match pattern {
+        Pat::Tuple(_) => true,
+        Pat::Reference(reference) => closure_pattern_is_tuple(&reference.pat),
+        Pat::Type(typed) => closure_pattern_is_tuple(&typed.pat),
+        Pat::Paren(paren) => closure_pattern_is_tuple(&paren.pat),
         _ => false,
     };
 }
