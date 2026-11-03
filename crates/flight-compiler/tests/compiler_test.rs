@@ -517,34 +517,40 @@ export function freshDiffers(): boolean {
 }
 "#
         );
-        for source in [
-            r#"use std::sync::Arc;
+        assert_eq!(
+            compile_typescript(
+                r#"use std::sync::Arc;
 pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
     return Arc::ptr_eq(a, b);
 }
 "#,
-            r#"use std::sync::Arc;
-pub fn fresh() -> bool {
-    let a = Arc::new(());
-    let b = Arc::new(());
-    return Arc::ptr_eq(&a, &b);
+                None
+            )
+            .unwrap(),
+            "export function same(a: number, b: number): boolean {\n  return a === b;\n}\n",
+        );
+    }
+
+    #[test]
+    fn lowers_rc_ptr_eq_to_reference_equality() {
+        let output = compile_typescript(
+            r#"use std::rc::Rc;
+
+pub struct Node {
+    pub value: i32,
+}
+
+pub fn same(a: &Rc<Node>, b: &Rc<Node>) -> bool {
+    return Rc::ptr_eq(a, b);
 }
 "#,
-            r#"use std::sync::Arc;
-pub struct Holder {
-    pub name: Arc<String>,
-}
-pub fn same(a: &Holder, b: &Holder) -> bool {
-    return Arc::ptr_eq(&a.name, &b.name);
-}
-"#,
-        ] {
-            assert_eq!(
-                compile_typescript(source, None).unwrap_err().to_string(),
-                "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
-                "{source}"
-            );
-        }
+            None,
+        )
+        .unwrap();
+        assert!(
+            output.contains("return a === b;"),
+            "Rc::ptr_eq should lower to reference equality: {output}"
+        );
     }
 
     #[test]
@@ -639,9 +645,13 @@ pub fn same_serial(a: &Source, b: &Source) -> bool {
 "#;
         assert_eq!(
             compile_typescript_with_external_alias_sources(primitive, None, &[], &dependency)
-                .unwrap_err()
-                .to_string(),
-            "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations"
+                .unwrap(),
+            r#"import type { Source } from "@flighthq/dep/contract";
+
+export function sameSerial(a: Readonly<Source>, b: Readonly<Source>): boolean {
+  return a.serial === b.serial;
+}
+"#
         );
     }
 
@@ -8523,6 +8533,40 @@ pub fn create_font_config() -> FontConfig {
         assert!(
             output.contains("encoding: Encoding.Raster"),
             "enum field should get default variant: {output}"
+        );
+    }
+
+    #[test]
+    fn resolves_record_and_rwlock_entity_field_defaults() {
+        let source = r#"
+use std::sync::Arc;
+use std::sync::RwLock;
+use flight_entity::allocate_entity;
+use flight_entity::EntityRuntimeSlot;
+
+pub struct Registry {
+    runtime: EntityRuntimeSlot,
+    pub entries: Record<String>,
+    pub guarded: Arc<RwLock<Vec<i32>>>,
+}
+
+flight_entity::impl_entity!(Registry);
+
+pub fn create_registry() -> Registry {
+    let mut out: Registry = allocate_entity();
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(
+            output.contains("entries: {}"),
+            "Record field should get empty object default: {output}"
+        );
+        assert!(
+            output.contains("guarded: []"),
+            "Arc<RwLock<Vec<T>>> field should unwrap to empty array default: {output}"
         );
     }
 

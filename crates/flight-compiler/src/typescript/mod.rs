@@ -3713,7 +3713,8 @@ pub(super) fn rust_default_expression(rust_type: &Type) -> Option<String> {
                 "Vec" => Some("[]".to_string()),
                 "HashMap" | "BTreeMap" => Some("new Map()".to_string()),
                 "HashSet" | "BTreeSet" => Some("new Set()".to_string()),
-                "Arc" | "Box" | "Rc" | "Ref" => {
+                "Record" => Some("{}".to_string()),
+                "Arc" | "Box" | "Rc" | "Ref" | "RwLock" => {
                     let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
                         return None;
                     };
@@ -3789,7 +3790,7 @@ fn entity_field_default(
                 return Some(format!("{name}.{variant}"));
             }
             match name.as_str() {
-                "Arc" | "Box" | "Rc" | "Ref" => {
+                "Arc" | "Box" | "Rc" | "Ref" | "RwLock" => {
                     let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
                         return None;
                     };
@@ -10341,18 +10342,10 @@ fn emit_expression_value(
             if expression_is_associated_path(&call.func, "Arc", "clone") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
             }
-            if expression_is_associated_path(&call.func, "Arc", "ptr_eq") && call.args.len() == 2 {
-                // Both operands are `&Arc<T>` for one `T`, so proving either payload identity-bearing
-                // proves the comparison.
-                if !call
-                    .args
-                    .iter()
-                    .any(|argument| expression_is_shared_identity(argument, entities))
-                {
-                    return Err(compile_error(
-                        "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
-                    ));
-                }
+            if (expression_is_associated_path(&call.func, "Arc", "ptr_eq")
+                || expression_is_associated_path(&call.func, "Rc", "ptr_eq"))
+                && call.args.len() == 2
+            {
                 return Ok(format!(
                     "{} === {}",
                     emit_expression(&call.args[0], entities)?,
