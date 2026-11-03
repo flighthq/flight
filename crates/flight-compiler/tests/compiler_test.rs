@@ -2543,6 +2543,50 @@ pub fn compare_lazy(a1: i32, b1: i32, a2: i32, b2: i32) -> Ordering {
         );
     }
 
+    #[test]
+    fn lowers_cmp_on_field_accesses_without_type_annotation() {
+        let source = r#"
+use std::cmp::Ordering;
+
+pub struct Contact {
+    pub body_a: u32,
+    pub body_b: u32,
+}
+
+pub fn compare_contacts(l: &Contact, r: &Contact) -> Ordering {
+    return l.body_a.cmp(&r.body_a).then(l.body_b.cmp(&r.body_b));
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("l.bodyA < r.bodyA ? -1 : l.bodyA > r.bodyA ? 1 : 0"),
+            "field cmp: {output}"
+        );
+        assert!(output.contains("||"), "then chain: {output}");
+    }
+
+    #[test]
+    fn lowers_cmp_on_let_bound_field_access() {
+        let source = r#"
+use std::cmp::Ordering;
+
+pub struct Entry {
+    pub height: i32,
+}
+
+pub fn compare_entries(a: &Entry, b: &Entry) -> Ordering {
+    let a_height = a.height;
+    let b_height = b.height;
+    return b_height.cmp(&a_height);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("bHeight < aHeight ? -1 : bHeight > aHeight ? 1 : 0"),
+            "let-bound field cmp: {output}"
+        );
+    }
+
     // A tuple `if let` over data union variants tests every element's runtime category together
     // and binds each payload inside the branch.
     #[test]

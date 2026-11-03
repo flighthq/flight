@@ -8497,6 +8497,13 @@ pub(crate) fn function_expression_context(
                     .insert(format!("{BOOLEAN_EXPRESSION_MARKER}{name}"));
             }
             if let Some(initializer) = &local.init
+                && matches!(initializer.expr.as_ref(), Expr::Field(_))
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.context
+                    .insert(format!("{ORDERED_PRIMITIVE_MARKER}{name}"));
+            }
+            if let Some(initializer) = &local.init
                 && expression_is_known_string(&initializer.expr, self.context)
                 && let Some(name) = local_pattern_name(&local.pat)
             {
@@ -19865,6 +19872,9 @@ fn expression_is_ordered_primitive(expression: &Expr, entities: &HashSet<String>
         {
             expression_is_ordered_primitive(&binary.left, entities)
                 && expression_is_ordered_primitive(&binary.right, entities)
+        }
+        Expr::Call(_) | Expr::Cast(_) | Expr::Field(_) | Expr::Index(_) | Expr::MethodCall(_) => {
+            true
         }
         Expr::Group(group) => expression_is_ordered_primitive(&group.expr, entities),
         Expr::Lit(literal) => matches!(&literal.lit, Lit::Int(_) | Lit::Str(_)),
