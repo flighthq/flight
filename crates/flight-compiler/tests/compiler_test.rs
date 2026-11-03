@@ -23396,3 +23396,67 @@ pub fn get_runtime(entity: &mut EntityRuntimeSlot) {
         "entity_runtime_mut() should lower to getEntityRuntime(): {output}"
     );
 }
+
+#[test]
+fn lowers_else_if_chain_in_test_generation() {
+    let tests = r#"
+mod transitions {
+    use super::*;
+
+    #[test]
+    fn counts_transitions() {
+        let previous: i32 = 1;
+        let next: i32 = 2;
+        let mut pauses: i32 = 0;
+        let mut resumes: i32 = 0;
+
+        if previous == 1 && next != 1 {
+            pauses += 1;
+        } else if previous != 1 && next == 1 {
+            resumes += 1;
+        }
+
+        assert_eq!(pauses + resumes, 1);
+    }
+}
+"#;
+    let output = compile_vitest(tests, "./contract.ts").unwrap();
+    assert!(
+        output.contains("} else if (previous !== 1 && next === 1) {"),
+        "else-if chain should emit inline: {output}"
+    );
+}
+
+#[test]
+fn lowers_else_if_else_chain_in_test_generation() {
+    let tests = r#"
+mod classify {
+    use super::*;
+
+    #[test]
+    fn classifies_value() {
+        let value: i32 = 5;
+        let label: String;
+
+        if value > 10 {
+            label = "high".to_string();
+        } else if value > 0 {
+            label = "mid".to_string();
+        } else {
+            label = "low".to_string();
+        }
+
+        assert_eq!(label, "mid");
+    }
+}
+"#;
+    let output = compile_vitest(tests, "./contract.ts").unwrap();
+    assert!(
+        output.contains("} else if (value > 0) {"),
+        "else-if should emit inline: {output}"
+    );
+    assert!(
+        output.contains("} else {"),
+        "terminal else should emit: {output}"
+    );
+}

@@ -655,6 +655,54 @@ fn emit_path_name(name: &str, context: &HashSet<String>) -> String {
     return snake_to_lower_camel(name);
 }
 
+fn emit_vitest_else_chain(
+    out: &mut String,
+    otherwise: &Expr,
+    context: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    match otherwise {
+        Expr::If(else_if) => {
+            let else_context = if let Expr::Let(binding) = else_if.cond.as_ref() {
+                lexical_pattern_context(context, &binding.pat)
+            } else {
+                context.clone()
+            };
+            let option_binding = emit_option_binding(&else_if.cond, context)?;
+            if option_binding.is_some() {
+                return Err(compile_error(
+                    "portable test `else if let` option binding is not supported; rewrite as `else { if let ... }`",
+                ));
+            }
+            writeln!(
+                out,
+                "}} else if ({}) {{",
+                emit_expression(&else_if.cond, context)?
+            )
+            .expect("writing to a String cannot fail");
+            emit_block(out, &else_if.then_branch.stmts, &else_context, indent + 1)?;
+            write_indent(out, indent);
+            if let Some((_, next)) = &else_if.else_branch {
+                emit_vitest_else_chain(out, next, context, indent)?;
+            } else {
+                out.push_str("}\n");
+            }
+        }
+        Expr::Block(block) => {
+            out.push_str("} else {\n");
+            emit_block(out, &block.block.stmts, context, indent + 1)?;
+            write_indent(out, indent);
+            out.push_str("}\n");
+        }
+        _ => {
+            return Err(compile_error(
+                "portable test else branches must use a block",
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn emit_statement(
     out: &mut String,
     statement: &Stmt,
@@ -696,16 +744,10 @@ fn emit_statement(
             )?;
             write_indent(out, indent);
             if let Some((_, otherwise)) = &expression.else_branch {
-                out.push_str("} else {\n");
-                let Expr::Block(otherwise) = otherwise.as_ref() else {
-                    return Err(compile_error(
-                        "portable test else branches must use a block",
-                    ));
-                };
-                emit_block(out, &otherwise.block.stmts, context, indent + 1)?;
-                write_indent(out, indent);
+                emit_vitest_else_chain(out, otherwise, context, indent)?;
+            } else {
+                out.push_str("}\n");
             }
-            out.push_str("}\n");
             if wrapped {
                 write_indent(out, outer_indent);
                 out.push_str("}\n");
