@@ -24573,6 +24573,24 @@ fn option_binding_fact_default(
         }
         Expr::MethodCall(call)
             if call.args.is_empty()
+                && matches!(call.method.to_string().as_str(), "as_str" | "to_str") =>
+        {
+            return Some("\"\"");
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "as_f64" | "as_i64" | "as_u64"
+                ) =>
+        {
+            return Some("0");
+        }
+        Expr::MethodCall(call) if call.args.is_empty() && call.method == "as_bool" => {
+            return Some("false");
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
                 && matches!(
                     call.method.to_string().as_str(),
                     "checked_neg" | "checked_abs"

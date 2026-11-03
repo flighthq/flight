@@ -22742,6 +22742,20 @@ pub fn parse_data(text: &str) -> Option<BTreeMap<String, String>> {
 }
 
 #[test]
+fn lowers_as_str_unwrap_or_default_to_nullish_coalesce() {
+    let source = r#"
+pub fn name_or_empty(value: Option<&str>) -> String {
+    value.unwrap_or_default().to_string()
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(r#"?? """#),
+        "should lower .unwrap_or_default() on Option<&str> chain to ?? \"\": {output}"
+    );
+}
+
+#[test]
 fn lowers_char_len_utf16_to_string_length() {
     let source = r#"
 pub fn utf16_length(text: &str) -> usize {
