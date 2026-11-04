@@ -14236,6 +14236,9 @@ pub(crate) fn emit_local_with_shadow_and_else(
     {
         return Ok(vec![]);
     }
+    if value == "[] as never[]" && !rebind && typescript_type.is_some() {
+        value = "[]".to_string();
+    }
     write_indent(out, indent);
     if discard {
         writeln!(out, "{value};").expect("writing to a String cannot fail");

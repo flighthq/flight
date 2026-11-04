@@ -560,7 +560,7 @@ export function sameParam(a: Readonly<ProviderRef>, b: Readonly<ProviderRef>): b
 export function freshDiffers(): boolean {
   const first: Readonly<Node> = { value: 1 };
   const second = first;
-  const third: Readonly<number[]> = [] as never[];
+  const third: Readonly<number[]> = [];
   const fourth = [] as never[];
   return (first === second) && !(third === fourth);
 }
@@ -16303,7 +16303,8 @@ pub fn collect(count: usize) -> Vec<i32> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("[] as never[]"));
+        assert!(output.contains("number[] = [];"));
+        assert!(!output.contains("as never[]"));
         assert!(output.contains("items.push(42)"));
     }
 
