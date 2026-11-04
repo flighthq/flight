@@ -937,13 +937,18 @@ function publicExports(
   if (exactRoots.length > 0) return renderPublicExports(symbolModules, symbols, exactRoots);
 
   // `index.ts` is the curated public-API manifest. Strict promotion replaces implementation files,
-  // not that package-level API decision: retain its exact surface while Rust-only compatibility
-  // declarations still exist outside the generated symbol set. A root-only directive remains the
-  // explicit way for Rust to replace that manifest.
+  // not that package-level API decision: retain its exact export routes, including compatibility
+  // types owned by an auxiliary TypeScript barrel outside the generated symbol set. A root-only
+  // directive remains the explicit way for Rust to replace that manifest.
   const indexPath = join(packageSourceRoot, 'index.ts');
   if (existsSync(indexPath)) {
-    const existingRoots = [...collectContractTypeScriptSymbols(indexPath).keys()];
-    if (existingRoots.length > 0) return renderPublicExports(symbolModules, symbols, existingRoots);
+    const existingIndex = readFileSync(indexPath, 'utf8');
+    if (collectContractTypeScriptSymbols(indexPath).size > 0) {
+      return existingIndex.replace(
+        /^\/\/ Generated from [^\r\n]+ by flight-compiler\.\r?\n\/\/ Rust is authoritative; run `npm run generate` after changing it\.\r?\n\r?\n/,
+        '',
+      );
+    }
   }
 
   const roots: string[] = [];

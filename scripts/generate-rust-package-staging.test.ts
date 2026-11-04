@@ -138,7 +138,7 @@ edition = "2024"
     expect(stagingEntries()).toEqual([]);
   }, 120_000);
 
-  it('preserves the existing curated root when Rust also exposes rust-only compatibility types', async () => {
+  it('preserves the exact curated root including auxiliary compatibility exports', async () => {
     writeFileSync(
       join(crateRoot, 'src', 'lib.rs'),
       'mod types;\nmod value;\npub mod contract;\npub use contract::{alpha_value, MissingType};\n',
@@ -151,7 +151,11 @@ edition = "2024"
 pub fn alpha_value() -> i32 { return 1; }
 `,
     );
-    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { alphaValue } from './contract.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'compat.ts'), 'export interface MissingType { value: number; }\n');
+    writeFileSync(
+      join(packageRoot, 'src', 'index.ts'),
+      "export type { MissingType } from './compat.ts';\nexport { alphaValue } from './contract.ts';\n",
+    );
 
     const first = await generateWhileScanning();
     const second = await generateWhileScanning();
@@ -161,7 +165,7 @@ pub fn alpha_value() -> i32 { return 1; }
     const root = readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8');
     expect(root).toContain("export { alphaValue } from './contract.ts';");
     expect(root).not.toContain('zetaValue');
-    expect(root).not.toContain('MissingType');
+    expect(root).toContain("export type { MissingType } from './compat.ts';");
   }, 120_000);
 
   it('forwards lenient production generation', async () => {
