@@ -1,5 +1,8 @@
-import type { PathRaw } from './path.ts';
+// Generated from crates/flight-path/src/flatten_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 const MAX_SUBDIVISION_DEPTH: number = 16;
 
@@ -66,13 +69,13 @@ function flattenCubic(
  * until their deviation from a chord is within `tolerance` (path units).
  * A CLOSE verb appends the contour's start point, making the closure explicit.
  */
-export function flattenPath(path: Readonly<PathRaw>, tolerance?: number): number[][] {
+export function flattenPath(path: Readonly<Path>, tolerance?: number): number[][] {
   let out: number[][] = [] as never[];
   flattenPathInto(out, path, tolerance);
   return out;
 }
 
-function flattenPathInto(out: number[][], path: Readonly<PathRaw>, tolerance?: number): void {
+function flattenPathInto(out: number[][], path: Readonly<Path>, tolerance?: number): void {
   const tolerance_1 = tolerance ?? 0.25;
   const commands = path.commands;
   const data = path.data;

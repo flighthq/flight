@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 mod color_from_kelvin;
 mod hsl_color_raw;
 mod hsv_color_raw;

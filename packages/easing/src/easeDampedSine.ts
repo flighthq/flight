@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/src/ease_damped_sine.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { EasingFunction } from './easingTypes.ts';
 
 const TAU: number = 2.0 * Math.PI;
@@ -17,7 +20,7 @@ export function easeInDampedSine(amplitude: number, period: number): EasingFunct
       return t;
     }
     const time = t - 1.0;
-    return -(overshoot * Math.pow(2.0, 10.0 * time) * Math.sin(((time - phase) * TAU) / wavelength));
+    return -overshoot * Math.pow(2.0, 10.0 * time) * Math.sin(((time - phase) * TAU) / wavelength);
   };
 }
 

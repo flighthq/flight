@@ -1,3 +1,6 @@
+// Generated from crates/flight-clip/src/clip_region_runtime.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: callable-parameters EasingFunction t
 //! flight-compiler: callable-parameters ScalarRemap x
 

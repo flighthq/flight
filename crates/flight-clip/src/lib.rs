@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 mod clip_log;
 mod clip_path;
 mod clip_region;

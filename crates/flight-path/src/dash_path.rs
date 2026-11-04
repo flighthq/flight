@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 //! flight-compiler: array-like dash_path.dash dash_total.dash apply_dash_to_contour.dash
 
 use crate::flatten_path::flatten_path;

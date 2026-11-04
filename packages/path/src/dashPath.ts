@@ -1,13 +1,16 @@
+// Generated from crates/flight-path/src/dash_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 function applyDashToContour(
   pts: Readonly<number[]>,
   dash: ArrayLike<number>,
   dashOffset: number,
   totalDashLength: number,
-  out: PathRaw,
+  out: Path,
 ): void {
   const n = Math.trunc(pts.length / 2);
   if (n < 2) {
@@ -21,7 +24,7 @@ function applyDashToContour(
   for (let i = 0; i < dash.length; i += 1) {
     if (skipped + dash[i] > offset) {
       dashIndex = i;
-      remaining = dash[i] - (offset - skipped);
+      remaining = dash[i] - offset - skipped;
       isOn = i % 2 === 0;
       break;
     }
@@ -81,7 +84,7 @@ function applyDashToContour(
   }
 }
 
-function copyCommands(source: Readonly<PathRaw>, out: PathRaw): void {
+function copyCommands(source: Readonly<Path>, out: Path): void {
   const commands = source.commands.slice();
   const data = source.data.slice();
   const winding = source.winding;
@@ -95,10 +98,10 @@ function copyCommands(source: Readonly<PathRaw>, out: PathRaw): void {
  * An empty or all-zero dash array copies the source unchanged (solid stroke). Alias-safe.
  */
 export function dashPath(
-  source: Readonly<PathRaw>,
+  source: Readonly<Path>,
   dash: ArrayLike<number>,
   dashOffset: number,
-  out: PathRaw,
+  out: Path,
   tolerance?: number,
 ): void {
   const tolerance_1 = tolerance ?? 0.25;

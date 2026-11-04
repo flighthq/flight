@@ -1,5 +1,8 @@
+// Generated from crates/flight-path/src/get_path_contour_lengths.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 function contourLength(contour: Readonly<number[]>): number {
   let len: number = 0.0;
@@ -16,7 +19,7 @@ function contourLength(contour: Readonly<number[]>): number {
 /**
  * Returns an array of arc lengths, one per contour in the path.
  */
-export function getPathContourLengths(path: Readonly<PathRaw>, tolerance?: number): number[] {
+export function getPathContourLengths(path: Readonly<Path>, tolerance?: number): number[] {
   const tolerance_1 = tolerance ?? 0.25;
   const contours = flattenPath(path, tolerance_1);
   let out: number[] = [] as never[];

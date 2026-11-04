@@ -36,8 +36,8 @@
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts",
-    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-input --package input",
-    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-input --package input --check"
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-input --package input --lenient",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-input --package input --lenient --check"
   },
   "dependencies": {
     "@flighthq/entity": "*",

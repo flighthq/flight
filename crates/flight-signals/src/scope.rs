@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_entity::allocate_entity;
 
 use crate::connection::disconnect_signal_connection;

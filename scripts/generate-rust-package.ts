@@ -1,7 +1,7 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { DependencySource, ResolvedExternalContractExports } from './generate-rust-package-exports.ts';
@@ -35,6 +35,7 @@ import {
 import { collectPackageSourceFileNames } from './generate-rust-package-sources.ts';
 
 interface Options {
+  auditNative: boolean;
   check: boolean;
   crateName: string;
   crateRoot?: string;
@@ -46,9 +47,12 @@ interface Options {
 type SourceMode = 'generate' | 'rust-only' | 'target-native';
 
 interface PackageModule {
+  generatedTypescript?: string;
   directPublicExports?: boolean;
   fileName: string;
   mode: SourceMode;
+  nativePublicTypescript?: string;
+  nativeTypescript?: string;
   rustSource: string;
   typescript: string;
 }
@@ -58,6 +62,20 @@ interface SymbolOwner {
   hasType: boolean;
   hasValue: boolean;
   isClass?: boolean;
+}
+
+interface NativeAuditEntry {
+  diagnostics: string[];
+  kind: 'source' | 'test';
+  rustSource: string;
+  skipped: number;
+  status: 'blocked' | 'compiler-clean' | 'partial';
+  typescript: string;
+}
+
+interface NativeOverlay {
+  exports: string;
+  imports: string;
 }
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,6 +89,7 @@ const compilerPath = join(
   'debug',
   process.platform === 'win32' ? 'flight-compile.exe' : 'flight-compile',
 );
+const lenientSkippedByOutput = new Map<string, number>();
 
 execFileSync('cargo', ['build', '--quiet', '--package', 'flight-compiler'], {
   cwd: repositoryRoot,
@@ -105,107 +124,245 @@ try {
   const targetNativeSources = rustSourceModes
     .filter(({ mode }) => mode === 'target-native')
     .map(({ rustPath }) => rustPath);
-  const modules = rustSources
-    .map((rustSource) => loadModule(rustSource, aliasSources))
-    .filter((module): module is PackageModule => module !== null);
-  const needsGeneratedSymbols = rootMode === 'generate' || modules.some((module) => module.mode === 'generate');
-  const companions = needsGeneratedSymbols ? loadCompanions(modules) : [];
-  const symbolModules = [...modules, ...companions];
-  const symbols = needsGeneratedSymbols ? collectExportSymbols(symbolModules) : new Map<string, SymbolOwner>();
-  let externalExports: ResolvedExternalContractExports = { output: '', symbols: new Map() };
-  if (rootMode === 'generate') {
-    const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
-    externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
-  }
-  const publicSymbols = new Map([...symbols, ...externalExports.symbols]);
-  // Intra-package imports also resolve crate-internal exports, owner-qualified through each module's Rust
-  // paths; the public lanes keep using `symbols`.
-  const crateOwners = needsGeneratedSymbols ? collectCrateExportSymbols(symbolModules) : new Map();
-  const generatedFiles: string[] = [];
-
-  for (const module of modules) {
-    if (module.mode !== 'generate') continue;
-    const imports = crateImports(
-      join(crateRoot, 'src', module.rustSource),
-      module.fileName,
-      module.typescript,
-      new Map([
-        ...resolveCrateExportSymbols(
-          readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8'),
-          module.fileName,
-          crateOwners,
-        ),
-        ...symbols,
-      ]),
-    );
-    writeGenerated(
-      join(stagingSourceRoot, module.fileName),
-      imports + module.typescript,
-      join(crateRoot, 'src', module.rustSource),
-    );
-    generatedFiles.push(module.fileName);
-  }
-
-  for (const rustTest of testFiles(crateRoot)) {
-    const rustPath = join(crateRoot, 'tests', rustTest);
-    const fileName = `${snakeToLowerCamel(rustTest.slice(0, -8))}.test.ts`;
-    const mode = sourceMode(rustPath);
-    if (mode === 'rust-only') continue;
-    if (mode === 'target-native') {
-      requireTargetNative(fileName, rustPath);
-      continue;
-    }
-    const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
-    let typescript = compile(
-      'generate-tests',
-      compilePath,
-      join(rawRoot, fileName),
-      ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
-      aliasSources,
-      targetNativeSources,
-    );
-    if (typescript.includes('crate.')) {
-      typescript = addRustTestSupportImport(typescript);
-    }
-    writeGenerated(join(stagingSourceRoot, fileName), typescript, rustPath);
-    generatedFiles.push(fileName);
-  }
-
-  if (rootMode === 'generate') {
-    writeGenerated(
-      join(stagingSourceRoot, 'contract.ts'),
-      contractExports(crateRoot, modules, symbolModules, symbols) + externalExports.output,
-      rootRustPath,
-    );
-    writeGenerated(
-      join(stagingSourceRoot, 'index.ts'),
-      publicExports(crateRoot, modules, symbolModules, publicSymbols),
-      rootRustPath,
-    );
-    generatedFiles.push('contract.ts', 'index.ts');
-  } else if (rootMode === 'target-native') {
-    requireTargetNative('contract.ts', rootRustPath);
-    requireTargetNative('index.ts', rootRustPath);
+  if (options.auditNative) {
+    auditNativeSources(rootMode, rustSourceModes, aliasSources, targetNativeSources);
   } else {
-    throw new Error(`${relative(repositoryRoot, rootRustPath)} cannot be rust-only`);
-  }
+    const modules = rustSources
+      .map((rustSource) => loadModule(rustSource, aliasSources))
+      .filter((module): module is PackageModule => module !== null);
+    const needsGeneratedSymbols = rootMode === 'generate' || modules.some((module) => module.mode === 'generate');
+    const companions = needsGeneratedSymbols ? loadCompanions(modules) : [];
+    const symbolModules = [...modules, ...companions];
+    const symbols = needsGeneratedSymbols ? collectExportSymbols(symbolModules) : new Map<string, SymbolOwner>();
+    let externalExports: ResolvedExternalContractExports = { output: '', symbols: new Map() };
+    if (rootMode === 'generate') {
+      const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
+      externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
+    }
+    const publicSymbols = new Map([...symbols, ...externalExports.symbols]);
+    // Intra-package imports also resolve crate-internal exports, owner-qualified through each module's Rust
+    // paths; the public lanes keep using `symbols`.
+    const crateOwners = needsGeneratedSymbols ? collectCrateExportSymbols(symbolModules) : new Map();
+    const generatedFiles: string[] = [];
 
-  if (generatedFiles.length > 0) {
-    formatStagedSources();
-    execFileSync(
-      tsxPath(),
-      [join(repositoryRoot, 'scripts', 'order.ts'), '--fix', `--root=${stagingRoot}`, stagingSourceRoot],
-      {
-        cwd: repositoryRoot,
-        stdio: 'inherit',
-      },
-    );
-    formatStagedSources();
-  }
+    for (const module of modules) {
+      if (module.mode !== 'generate') continue;
+      const generatedTypescript = module.generatedTypescript ?? module.typescript;
+      const imports = crateImports(
+        join(crateRoot, 'src', module.rustSource),
+        module.fileName,
+        generatedTypescript,
+        new Map([
+          ...resolveCrateExportSymbols(
+            readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8'),
+            module.fileName,
+            crateOwners,
+          ),
+          ...symbols,
+        ]),
+      );
+      if (module.nativeTypescript === undefined) {
+        writeGenerated(
+          join(stagingSourceRoot, module.fileName),
+          imports + generatedTypescript,
+          join(crateRoot, 'src', module.rustSource),
+        );
+        generatedFiles.push(module.fileName);
+        continue;
+      }
 
-  finishGeneration(generatedFiles);
+      const stem = module.fileName.slice(0, -3);
+      const generatedFileName = `${stem}.generated.ts`;
+      const nativeFileName = `${stem}.native.ts`;
+      const overlay = renderNativeOverlay(
+        generatedTypescript,
+        module.nativeTypescript,
+        module.nativePublicTypescript ?? module.nativeTypescript,
+        generatedFileName,
+        nativeFileName,
+      );
+      writeGenerated(
+        join(stagingSourceRoot, generatedFileName),
+        overlay.imports + imports + generatedTypescript,
+        join(crateRoot, 'src', module.rustSource),
+      );
+      writeGenerated(
+        join(stagingSourceRoot, module.fileName),
+        overlay.exports,
+        join(crateRoot, 'src', module.rustSource),
+      );
+      writeFileSync(join(stagingSourceRoot, nativeFileName), module.nativeTypescript);
+      generatedFiles.push(module.fileName, generatedFileName, nativeFileName);
+    }
+
+    for (const rustTest of testFiles(crateRoot)) {
+      const rustPath = join(crateRoot, 'tests', rustTest);
+      const fileName = `${snakeToLowerCamel(rustTest.slice(0, -8))}.test.ts`;
+      const mode = sourceMode(rustPath);
+      if (mode === 'rust-only') continue;
+      if (mode === 'target-native') {
+        requireTargetNative(fileName, rustPath);
+        continue;
+      }
+      const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
+      let typescript = compile(
+        'generate-tests',
+        compilePath,
+        join(rawRoot, fileName),
+        ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
+        aliasSources,
+        targetNativeSources,
+      );
+      if (typescript.includes('crate.')) {
+        typescript = addRustTestSupportImport(typescript);
+      }
+      writeGenerated(join(stagingSourceRoot, fileName), typescript, rustPath);
+      generatedFiles.push(fileName);
+    }
+
+    if (rootMode === 'generate') {
+      writeGenerated(
+        join(stagingSourceRoot, 'contract.ts'),
+        contractExports(crateRoot, modules, symbolModules, symbols) + externalExports.output,
+        rootRustPath,
+      );
+      writeGenerated(
+        join(stagingSourceRoot, 'index.ts'),
+        publicExports(crateRoot, modules, symbolModules, publicSymbols),
+        rootRustPath,
+      );
+      generatedFiles.push('contract.ts', 'index.ts');
+    } else if (rootMode === 'target-native') {
+      requireTargetNative('contract.ts', rootRustPath);
+      requireTargetNative('index.ts', rootRustPath);
+    } else {
+      throw new Error(`${relative(repositoryRoot, rootRustPath)} cannot be rust-only`);
+    }
+
+    if (generatedFiles.length > 0) {
+      formatStagedSources();
+      execFileSync(
+        tsxPath(),
+        [join(repositoryRoot, 'scripts', 'order.ts'), '--fix', `--root=${stagingRoot}`, stagingSourceRoot],
+        {
+          cwd: repositoryRoot,
+          stdio: 'inherit',
+        },
+      );
+      formatStagedSources();
+    }
+
+    finishGeneration(generatedFiles);
+  }
 } finally {
   rmSync(stagingRoot, { force: true, recursive: true });
+}
+
+function auditNativeSources(
+  rootMode: SourceMode,
+  rustSources: readonly { mode: SourceMode; rustPath: string }[],
+  aliasSources: string[],
+  targetNativeSources: string[],
+): void {
+  const entries: NativeAuditEntry[] = [];
+  for (const { mode, rustPath } of rustSources) {
+    if (mode !== 'target-native') continue;
+    const fileName = `${snakeToLowerCamel(basename(rustPath, '.rs'))}.ts`;
+    entries.push(
+      probeNativeSource(
+        'generate',
+        rustPath,
+        fileName,
+        [],
+        aliasSources,
+        targetNativeSources.filter((candidate) => candidate !== rustPath),
+      ),
+    );
+  }
+  for (const rustTest of testFiles(crateRoot)) {
+    const rustPath = join(crateRoot, 'tests', rustTest);
+    if (sourceMode(rustPath) !== 'target-native') continue;
+    const fileName = `${snakeToLowerCamel(rustTest.slice(0, -8))}.test.ts`;
+    const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.audit.rs`));
+    entries.push(
+      probeNativeSource(
+        'generate-tests',
+        compilePath,
+        fileName,
+        ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
+        aliasSources,
+        targetNativeSources.filter((candidate) => candidate !== rustPath),
+        rustPath,
+      ),
+    );
+  }
+  const summary = {
+    blocked: entries.filter((entry) => entry.status === 'blocked').length,
+    compilerClean: entries.filter((entry) => entry.status === 'compiler-clean').length,
+    partial: entries.filter((entry) => entry.status === 'partial').length,
+    targetNative: entries.length,
+  };
+  console.log(
+    JSON.stringify(
+      {
+        crate: options.crateName,
+        entries,
+        package: options.packageName,
+        rootMode,
+        summary,
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+function probeNativeSource(
+  command: 'generate' | 'generate-tests',
+  source: string,
+  fileName: string,
+  trailing: string[],
+  aliasSources: string[],
+  targetNativeSources: string[],
+  reportedSource = source,
+): NativeAuditEntry {
+  const out = join(rawRoot, `${fileName}.audit.ts`);
+  const result = spawnSync(
+    compilerPath,
+    [
+      command,
+      '--source',
+      source,
+      '--out',
+      out,
+      '--probe-target-native',
+      ...entityArguments(command),
+      ...(command === 'generate' ? ['--lenient'] : []),
+      ...compilerAliasArguments(command, aliasSources, source),
+      ...compilerVisibilityArguments(
+        command,
+        crateSourcePaths(join(crateRoot, 'src')),
+        aliasSources,
+        source,
+        targetNativeSources,
+      ),
+      ...dependencyAliasArguments(dependencySources(command)),
+      ...dependencyVisibilityArguments(command),
+      ...contractArguments(command, trailing),
+    ],
+    { cwd: repositoryRoot, encoding: 'utf8' },
+  );
+  const stderr = result.stderr.trim();
+  const skipped = Number(/lenient: (\d+) items skipped/.exec(stderr)?.[1] ?? 0);
+  const status = result.status === 0 ? (skipped === 0 ? 'compiler-clean' : 'partial') : 'blocked';
+  return {
+    diagnostics: stderr === '' ? [] : stderr.split(/\r?\n/),
+    kind: command === 'generate' ? 'source' : 'test',
+    rustSource: relative(crateRoot, reportedSource),
+    skipped,
+    status,
+    typescript: fileName,
+  };
 }
 
 function addRustTestSupportImport(typescript: string): string {
@@ -226,33 +383,40 @@ function compile(
   aliasSources: string[] = [],
   targetNativeSources: string[] = [],
 ): string {
-  execFileSync(
-    compilerPath,
-    [
+  const arguments_ = [
+    command,
+    '--source',
+    source,
+    '--out',
+    out,
+    ...entityArguments(command),
+    ...(options.lenient && command === 'generate' ? ['--lenient'] : []),
+    ...compilerAliasArguments(command, aliasSources, source),
+    ...compilerVisibilityArguments(
       command,
-      '--source',
+      crateSourcePaths(join(crateRoot, 'src')),
+      aliasSources,
       source,
-      '--out',
-      out,
-      ...entityArguments(command),
-      ...(options.lenient && command === 'generate' ? ['--lenient'] : []),
-      ...compilerAliasArguments(command, aliasSources, source),
-      ...compilerVisibilityArguments(
-        command,
-        crateSourcePaths(join(crateRoot, 'src')),
-        aliasSources,
-        source,
-        targetNativeSources,
-      ),
-      ...dependencyAliasArguments(dependencySources(command)),
-      ...dependencyVisibilityArguments(command),
-      ...contractArguments(command, trailing),
-    ],
-    {
+      targetNativeSources,
+    ),
+    ...dependencyAliasArguments(dependencySources(command)),
+    ...dependencyVisibilityArguments(command),
+    ...contractArguments(command, trailing),
+  ];
+  if (options.lenient && command === 'generate') {
+    const result = spawnSync(compilerPath, arguments_, { cwd: repositoryRoot, encoding: 'utf8' });
+    if (result.stderr) process.stderr.write(result.stderr);
+    if (result.error) throw result.error;
+    if (result.status !== 0) {
+      throw new Error(`flight-compile ${command} failed with exit code ${String(result.status)}`);
+    }
+    lenientSkippedByOutput.set(out, Number(/lenient: (\d+) items skipped/.exec(result.stderr)?.[1] ?? 0));
+  } else {
+    execFileSync(compilerPath, arguments_, {
       cwd: repositoryRoot,
       stdio: ['ignore', 'ignore', 'inherit'],
-    },
-  );
+    });
+  }
   return readFileSync(out, 'utf8');
 }
 
@@ -397,6 +561,13 @@ function finishGeneration(fileNames: string[]): void {
       )
     : new Map<string, string>();
   const staleArtifacts = collectStaleGeneratedFileNames(existingFiles, expected, generatedHeader);
+  for (const [fileName] of existingFiles) {
+    if (!fileName.endsWith('.native.ts') || expected.has(fileName)) continue;
+    const generatedFileName = `${fileName.slice(0, -'.native.ts'.length)}.generated.ts`;
+    const generated = existingFiles.get(generatedFileName);
+    if (generated?.startsWith(generatedHeader)) staleArtifacts.push(fileName);
+  }
+  staleArtifacts.sort();
   for (const fileName of fileNames) {
     const stagedPath = join(stagingSourceRoot, fileName);
     const packagePath = join(packageSourceRoot, fileName);
@@ -541,12 +712,135 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
       typescript: requireTargetNative(fileName, rustPath),
     };
   }
+  const outputPath = join(rawRoot, fileName);
+  const typescript = compile('generate', rustPath, outputPath, [], aliasSources);
+  if ((lenientSkippedByOutput.get(outputPath) ?? 0) === 0) {
+    return {
+      fileName,
+      mode,
+      rustSource,
+      typescript,
+    };
+  }
+  const stem = fileName.slice(0, -3);
+  const nativePath = join(packageSourceRoot, `${stem}.native.ts`);
+  const originalPath = join(packageSourceRoot, fileName);
+  const storedNativeTypescript = existsSync(nativePath)
+    ? readFileSync(nativePath, 'utf8')
+    : existsSync(originalPath) && !hasGeneratedProvenanceHeader(readFileSync(originalPath, 'utf8'))
+      ? readFileSync(originalPath, 'utf8')
+      : undefined;
+  if (storedNativeTypescript === undefined) {
+    throw new Error(
+      `${relative(repositoryRoot, rustPath)} needs a native overlay, but ${relative(repositoryRoot, nativePath)} is missing`,
+    );
+  }
+  const nativePublicTypescript = stripExposedNativeFallbacks(storedNativeTypescript, typescript);
+  const nativeTypescript = exposeNativeFallbacks(nativePublicTypescript, typescript);
   return {
     fileName,
+    generatedTypescript: typescript,
     mode,
+    nativePublicTypescript,
+    nativeTypescript,
     rustSource,
-    typescript: compile('generate', rustPath, join(rawRoot, fileName), [], aliasSources),
+    // Symbol ownership is the union of the generated portion and the native fallback portion. The
+    // staged public module re-exports that same union from the two implementation files.
+    typescript: `${typescript}\n${nativeTypescript}`,
   };
+}
+
+function renderNativeOverlay(
+  generatedTypescript: string,
+  nativeTypescript: string,
+  nativePublicTypescript: string,
+  generatedFileName: string,
+  nativeFileName: string,
+): NativeOverlay {
+  const generated = collectTypeScriptExportSymbols(generatedTypescript);
+  const native = collectTypeScriptExportSymbols(nativeTypescript);
+  const nativePublic = collectTypeScriptExportSymbols(nativePublicTypescript);
+  const fallback = new Map([...native].filter(([name]) => !generated.has(name)));
+  const publicFallback = new Map([...nativePublic].filter(([name]) => !generated.has(name)));
+  if (fallback.size === 0) {
+    throw new Error(`lenient generation skipped items, but ${nativeFileName} provides no missing exported symbols`);
+  }
+
+  const generatedWithoutDiagnostics = generatedTypescript.replace(/^\/\/ \[lenient\].*$/gm, '');
+  const imports = renderSymbolList(
+    [...fallback].filter(([name]) => new RegExp(`\\b${escapeRegExp(name)}\\b`).test(generatedWithoutDiagnostics)),
+    `./${nativeFileName}`,
+    'import',
+  );
+  const exports =
+    renderSymbolList([...generated], `./${generatedFileName}`, 'export') +
+    renderSymbolList([...publicFallback], `./${nativeFileName}`, 'export');
+  return { exports, imports };
+}
+
+function exposeNativeFallbacks(nativeTypescript: string, generatedTypescript: string): string {
+  const nativeSymbols = collectTypeScriptExportSymbols(nativeTypescript);
+  const exportNames = new Set<string>();
+  for (const name of lenientFallbackNames(generatedTypescript)) {
+    if (nativeSymbols.has(name)) continue;
+    if (
+      new RegExp(
+        `^(?:async\\s+)?function\\s+${escapeRegExp(name)}\\b|^(?:const|let|var)\\s+${escapeRegExp(name)}\\b|^(?:class|enum|interface|type)\\s+${escapeRegExp(name)}\\b`,
+        'm',
+      ).test(nativeTypescript)
+    ) {
+      exportNames.add(name);
+    }
+  }
+  if (exportNames.size === 0) return nativeTypescript;
+  return `${nativeTypescript.trimEnd()}\n\n// flight-compiler: native fallback exports\nexport { ${[...exportNames].sort().join(', ')} };\n`;
+}
+
+function stripExposedNativeFallbacks(nativeTypescript: string, generatedTypescript: string): string {
+  const marked = nativeTypescript.replace(
+    /\n*\/\/ flight-compiler: native fallback exports\r?\nexport \{[^}]*\};\s*$/,
+    '\n',
+  );
+  if (marked !== nativeTypescript) return marked;
+
+  // Compatibility with the first overlay prototype, before the generated export carried a marker.
+  const names = [...lenientFallbackNames(generatedTypescript)].sort().join(', ');
+  return names === ''
+    ? nativeTypescript
+    : nativeTypescript.replace(new RegExp(`\\n+export \\{ ${escapeRegExp(names)} \\};\\s*$`), '\n');
+}
+
+function lenientFallbackNames(generatedTypescript: string): Set<string> {
+  const names = new Set<string>();
+  for (const match of generatedTypescript.matchAll(
+    /^\/\/ \[lenient\] (?:enum|fn|static|struct|type) ([A-Za-z_][A-Za-z0-9_]*):/gm,
+  )) {
+    names.add(snakeToLowerCamel(match[1]));
+  }
+  return names;
+}
+
+function renderSymbolList(
+  symbols: [string, { hasType: boolean; hasValue: boolean }][],
+  specifier: string,
+  kind: 'export' | 'import',
+): string {
+  const values = symbols
+    .filter(([, symbol]) => symbol.hasValue)
+    .map(([name]) => name)
+    .sort();
+  const types = symbols
+    .filter(([, symbol]) => symbol.hasType && !symbol.hasValue)
+    .map(([name]) => name)
+    .sort();
+  let output = '';
+  if (values.length > 0) output += `${kind} { ${values.join(', ')} } from './${specifier.replace(/^\.\//, '')}';\n`;
+  if (types.length > 0) output += `${kind} type { ${types.join(', ')} } from './${specifier.replace(/^\.\//, '')}';\n`;
+  return output === '' ? output : `${output}\n`;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function moduleExportNames(module: PackageModule): Map<string, string> {
@@ -556,10 +850,15 @@ function moduleExportNames(module: PackageModule): Map<string, string> {
 function parseOptions(arguments_: string[]): Options {
   const values = new Map<string, string>();
   const allowed = new Set(['--crate', '--crate-root', '--package', '--package-root']);
+  let auditNative = false;
   let check = false;
   let lenient = false;
   for (let index = 0; index < arguments_.length; index += 1) {
     const key = arguments_[index];
+    if (key === '--audit-native') {
+      auditNative = true;
+      continue;
+    }
     if (key === '--check') {
       check = true;
       continue;
@@ -571,7 +870,7 @@ function parseOptions(arguments_: string[]): Options {
     const value = arguments_[index + 1];
     if (!key || !allowed.has(key) || !value) {
       throw new Error(
-        'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check] [--lenient]',
+        'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--audit-native] [--check] [--lenient]',
       );
     }
     values.set(key, value);
@@ -581,10 +880,11 @@ function parseOptions(arguments_: string[]): Options {
   const packageName = values.get('--package');
   if (!crateName || !packageName) {
     throw new Error(
-      'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check] [--lenient]',
+      'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--audit-native] [--check] [--lenient]',
     );
   }
   return {
+    auditNative,
     check,
     crateName,
     crateRoot: values.get('--crate-root'),

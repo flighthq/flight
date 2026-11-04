@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};

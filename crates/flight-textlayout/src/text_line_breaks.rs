@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: root-only getTextLineBreakIndex getTextLineBreaks
 
 use crate::text_units::find_utf16_unit;

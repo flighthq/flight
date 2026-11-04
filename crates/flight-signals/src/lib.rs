@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 mod connection;
 mod emitter;
 mod internal;

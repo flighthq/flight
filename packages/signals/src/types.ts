@@ -1,3 +1,6 @@
+// Generated from crates/flight-signals/src/types.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { EntityRaw } from '@flighthq/entity/contract';
 
 /**

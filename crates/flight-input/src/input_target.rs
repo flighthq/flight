@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_entity::{Ref, allocate_entity};
 
 use crate::types::*;

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use crate::path::{
     Path, PathWinding, StrokeStyle, append_path_close, append_path_line_to, append_path_move_to,
     create_path,

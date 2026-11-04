@@ -1,26 +1,29 @@
+// Generated from crates/flight-path/src/transform_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { MatrixLike } from '@flighthq/geometry/contract';
 
 import { copyPath } from './copyPath.ts';
-import type { PathRaw } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`,
  * writing the result into `out`. Alias-safe. Commands and winding are copied unchanged.
  */
-export function transformPath(source: Readonly<PathRaw>, matrix: Readonly<MatrixLike>, out: PathRaw): void {
+export function transformPath(source: Readonly<Path>, matrix: Readonly<MatrixLike>, out: Path): void {
   transformPathCoordinates(source, matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty, out);
 }
 
 function transformPathCoordinates(
-  source: Readonly<PathRaw>,
+  source: Readonly<Path>,
   a: number,
   b: number,
   c: number,
   d: number,
   tx: number,
   ty: number,
-  out: PathRaw,
+  out: Path,
 ): void {
   copyPath(out, source);
   const commands = out.commands.slice();
@@ -71,6 +74,6 @@ function transformPathCoordinates(
 /**
  * Translates all points in `source` by (dx, dy). Alias-safe.
  */
-export function translatePath(source: Readonly<PathRaw>, dx: number, dy: number, out: PathRaw): void {
+export function translatePath(source: Readonly<Path>, dx: number, dy: number, out: Path): void {
   transformPathCoordinates(source, 1.0, 0.0, 0.0, 1.0, dx, dy, out);
 }

@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/angle.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { DEG_TO_RAD, RAD_TO_DEG, TAU } from './constants.ts';
 
 /**

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 #[cfg(test)]
 mod tests {
     use super::*;

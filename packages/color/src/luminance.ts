@@ -1,3 +1,6 @@
+// Generated from crates/flight-color/src/luminance.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { srgbChannelToLinear } from './srgbTransfer.ts';
 
 /**

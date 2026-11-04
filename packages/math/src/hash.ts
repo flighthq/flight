@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/hash.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { RandomSource } from './random.ts';
 import { createRandomSource } from './random.ts';
 
@@ -18,14 +21,14 @@ export function createRandomSourceFromHash(x: number, y: number): RandomSource {
  * tile/cell content and gradient noise seed generation.
  */
 export function hash2D(x: number, y: number): number {
-  return hashCombine(hashUint32(x >>> 0), y >>> 0) >>> 0;
+  return hashCombine(hashUint32(x >>> 0), y >>> 0);
 }
 
 /**
  * Stateless position-seeded hash over a 3D integer grid.
  */
 export function hash3D(x: number, y: number, z: number): number {
-  return hashCombine(hash2D(x, y), z >>> 0) >>> 0;
+  return hashCombine(hash2D(x, y), z >>> 0);
 }
 
 /**
@@ -35,8 +38,8 @@ export function hash3D(x: number, y: number, z: number): number {
  */
 export function hashCombine(seed: number, value: number): number {
   const seedI = seed | 0;
-  const inner = (((((((value + 0x9e3779b9) >>> 0) + (seedI << 6)) >>> 0) >>> 0) + (seedI >> 2)) >>> 0) >>> 0;
-  return hashUint32((seed ^ inner) >>> 0) >>> 0;
+  const inner = (((((value + 0x9e3779b9) >>> 0) + ((seedI << 6) >>> 0)) >>> 0) + ((seedI >> 2) >>> 0)) >>> 0;
+  return hashUint32((seed ^ inner) >>> 0);
 }
 
 /**

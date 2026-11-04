@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use flight_geometry::RectangleLike;
 
 use crate::path::{Path, PathCommand};

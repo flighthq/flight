@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 /// Return the `t` value that maps to `value` in the range `[a, b]`.
 ///
 /// The inverse of `lerp`: `inverse_lerp(a, b, lerp(a, b, t)) == t` when

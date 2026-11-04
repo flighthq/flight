@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 /// Ease-in with overshoot: starts by pulling back before accelerating forward.
 pub fn ease_in_back(t: f32) -> f32 {
     return t * t * ((S + 1.0) * t - S);

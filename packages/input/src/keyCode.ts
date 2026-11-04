@@ -1,3 +1,6 @@
+// Generated from crates/flight-input/src/key_code.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * The open numeric key-code domain (TS `KeyCode` value union).
  */

@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use flight_path::{Path, PathWinding, flatten_path};
 
 use crate::boolean_paths::get_path_boolean_fill_rule_for_winding;

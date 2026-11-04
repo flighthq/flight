@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_NONE StrokePathTessellationIssueNone
 //! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_INVALID_STYLE StrokePathTessellationIssueInvalidStyle
 //! flight-compiler: export-name STROKE_PATH_TESSELLATION_ISSUE_INVALID_PATH StrokePathTessellationIssueInvalidPath

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_signals::contract::null_signal_emit;
 
 mod null_signal_emit {

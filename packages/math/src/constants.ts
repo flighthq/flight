@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/constants.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Control-point distance, as a fraction of the radius, for approximating a quarter circle with one
  * cubic Bezier: `4 * (sqrt(2) - 1) / 3`.

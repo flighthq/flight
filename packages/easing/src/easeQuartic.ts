@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/src/ease_quartic.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Ease-in-out quartic: slow start and end.
  */

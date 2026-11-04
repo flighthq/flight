@@ -1,4 +1,8 @@
-import type { PathMesh, PathRaw, StrokeStyle } from './path.ts';
+// Generated from crates/flight-path/src/tessellate_stroke_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { PathMesh, StrokeStyle } from './path.ts';
+import type { Path } from './pathCompat.ts';
 import type { StrokePathPieceGeometry } from './strokePathGeometry.ts';
 import { buildStrokePathGeometry } from './strokePathGeometry.ts';
 
@@ -10,10 +14,10 @@ function appendRoundCap(
   interior: Readonly<number[]>,
   end: Readonly<number[]>,
 ): void {
-  const center = Math.trunc(mesh.vertices.length / 2) >>> 0;
+  const center = Math.trunc(mesh.vertices.length / 2);
   mesh.vertices.push((start[0] + end[0]) / 2.0);
   mesh.vertices.push((start[1] + end[1]) / 2.0);
-  const arcBase = Math.trunc(mesh.vertices.length / 2) >>> 0;
+  const arcBase = Math.trunc(mesh.vertices.length / 2);
   mesh.vertices.push(start[0]);
   mesh.vertices.push(start[1]);
   for (let i = 0; i < interior.length; i += 1) {
@@ -32,7 +36,7 @@ function appendStrokePieceMesh(mesh: PathMesh, piece: Readonly<StrokePathPieceGe
   if (sectionCount < 2) {
     return;
   }
-  const base = Math.trunc(mesh.vertices.length / 2) >>> 0;
+  const base = Math.trunc(mesh.vertices.length / 2);
   for (let i = 0; i < sectionCount; i += 1) {
     mesh.vertices.push(piece.left[i * 2]);
     mesh.vertices.push(piece.left[i * 2 + 1]);
@@ -41,7 +45,7 @@ function appendStrokePieceMesh(mesh: PathMesh, piece: Readonly<StrokePathPieceGe
   }
   const connectionCount = piece.closed ? sectionCount : sectionCount - 1;
   for (let i = 0; i < connectionCount; i += 1) {
-    const next = ((i + 1) % sectionCount) >>> 0;
+    const next = (i + 1) % sectionCount;
     const left = base + (i >>> 0) * 2;
     const right = left + 1;
     const nextLeft = base + next * 2;
@@ -63,12 +67,12 @@ function appendStrokePieceMesh(mesh: PathMesh, piece: Readonly<StrokePathPieceGe
 }
 
 function appendTriangle(mesh: PathMesh, a: number, b: number, c: number): void {
-  const ax = mesh.vertices[(a >>> 0) * 2];
-  const ay = mesh.vertices[(a >>> 0) * 2 + 1];
-  const bx = mesh.vertices[(b >>> 0) * 2];
-  const by = mesh.vertices[(b >>> 0) * 2 + 1];
-  const cx = mesh.vertices[(c >>> 0) * 2];
-  const cy = mesh.vertices[(c >>> 0) * 2 + 1];
+  const ax = mesh.vertices[a * 2];
+  const ay = mesh.vertices[a * 2 + 1];
+  const bx = mesh.vertices[b * 2];
+  const by = mesh.vertices[b * 2 + 1];
+  const cx = mesh.vertices[c * 2];
+  const cy = mesh.vertices[c * 2 + 1];
   if (Math.abs((bx - ax) * (cy - ay) - (by - ay) * (cx - ax)) <= TRIANGLE_EPSILON) {
     return;
   }
@@ -82,7 +86,7 @@ function appendTriangle(mesh: PathMesh, a: number, b: number, c: number): void {
  * Returns `undefined` if the centerline or its offset outline is pathological.
  */
 export function tessellateStrokePath(
-  path: Readonly<PathRaw>,
+  path: Readonly<Path>,
   style: Readonly<StrokeStyle>,
   tolerance?: number,
 ): PathMesh | null {

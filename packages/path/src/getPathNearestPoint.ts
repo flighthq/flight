@@ -1,7 +1,10 @@
+// Generated from crates/flight-path/src/get_path_nearest_point.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { Vector2Like } from '@flighthq/geometry/contract';
 
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * Finds the closest point on `path` to (px, py), writing the result into `out`.
@@ -9,7 +12,7 @@ import type { PathRaw } from './path.ts';
  * `out` unchanged for an empty path.
  */
 export function getPathNearestPoint(
-  path: Readonly<PathRaw>,
+  path: Readonly<Path>,
   px: number,
   py: number,
   out: Vector2Like,

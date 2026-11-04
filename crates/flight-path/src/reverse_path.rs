@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: data-union SubpathPointKind
 
 use crate::for_each_path_segment::for_each_path_segment;

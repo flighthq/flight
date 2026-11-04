@@ -1,5 +1,8 @@
+// Generated from crates/flight-path/src/get_path_curvature_at_distance.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 function curvatureAtVertex(contour: Readonly<number[]>, count: number, vertex: number): number {
   if (count < 3) {
@@ -21,7 +24,7 @@ function curvatureAtVertex(contour: Readonly<number[]>, count: number, vertex: n
  * Positive curvature is a left turn in screen space (y-down). Returns 0 for empty paths,
  * straight segments, or degenerate geometry.
  */
-export function getPathCurvatureAtDistance(path: Readonly<PathRaw>, distance: number, tolerance?: number): number {
+export function getPathCurvatureAtDistance(path: Readonly<Path>, distance: number, tolerance?: number): number {
   const tolerance_1 = tolerance ?? 0.25;
   const contours = flattenPath(path, tolerance_1);
   return samplePathCurvature(contours, distance);

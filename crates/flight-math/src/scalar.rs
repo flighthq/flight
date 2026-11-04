@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use crate::next_power_of_two;
 use crate::previous_power_of_two;
 

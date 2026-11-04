@@ -15446,10 +15446,11 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
     #[test]
     fn lowers_the_real_path_segment_constructors() {
         let path = include_str!("../../flight-path/src/path.rs");
-        let for_each_path_segment = include_str!("../../flight-path/src/for_each_path_segment.rs");
+        let for_each_path_segment = include_str!("../../flight-path/src/for_each_path_segment.rs")
+            .replacen("//! flight-compiler: target-native\n", "", 1);
 
         let output =
-            compile_typescript_with_alias_sources(for_each_path_segment, None, &[path]).unwrap();
+            compile_typescript_with_alias_sources(&for_each_path_segment, None, &[path]).unwrap();
 
         assert!(output.contains("visitor({ kind: \"moveTo\" as const, x: x, y: y });"));
         assert!(output.contains("visitor({ kind: \"lineTo\" as const, x: x, y: y });"));

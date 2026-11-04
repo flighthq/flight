@@ -1,5 +1,9 @@
+// Generated from crates/flight-path/src/tessellate_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathMesh, PathRaw } from './path.ts';
+import type { PathMesh } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 function isEar(contour: Readonly<number[]>, ring: Readonly<number[]>, a: number, b: number, c: number): boolean {
   const ax = contour[a * 2];
@@ -38,7 +42,7 @@ function isPointInTriangle(
   const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
   const hasNegative = d1 < 0.0 || d2 < 0.0 || d3 < 0.0;
   const hasPositive = d1 > 0.0 || d2 > 0.0 || d3 > 0.0;
-  return !(hasNegative && hasPositive);
+  return !hasNegative && hasPositive;
 }
 
 function tessellateContour(source: Readonly<number[]>, vertices: number[], indices: number[]): void {
@@ -62,7 +66,7 @@ function tessellateContour(source: Readonly<number[]>, vertices: number[], indic
   if (count < 3) {
     return;
   }
-  const base = Math.trunc(vertices.length / 2) >>> 0;
+  const base = Math.trunc(vertices.length / 2);
   for (let i = 0; i < count; i += 1) {
     vertices.push(pts[i * 2]);
     vertices.push(pts[i * 2 + 1]);
@@ -93,9 +97,9 @@ function tessellateContour(source: Readonly<number[]>, vertices: number[], indic
       const b = ring[i];
       const c = ring[(i + 1) % ring.length];
       if (isEar(pts, ring, a, b, c)) {
-        indices.push(base + (a >>> 0));
-        indices.push(base + (b >>> 0));
-        indices.push(base + (c >>> 0));
+        indices.push(base + a);
+        indices.push(base + b);
+        indices.push(base + c);
         let remainingRing: number[] = [...ring.slice(0, i)];
         {
           const source = ring.slice(i + 1, ring.length);
@@ -113,16 +117,16 @@ function tessellateContour(source: Readonly<number[]>, vertices: number[], indic
     }
   }
   if (ring.length === 3) {
-    indices.push(base + (ring[0] >>> 0));
-    indices.push(base + (ring[1] >>> 0));
-    indices.push(base + (ring[2] >>> 0));
+    indices.push(base + ring[0]);
+    indices.push(base + ring[1]);
+    indices.push(base + ring[2]);
   }
 }
 
 /**
  * Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
  */
-export function tessellatePath(path: Readonly<PathRaw>, tolerance?: number): PathMesh {
+export function tessellatePath(path: Readonly<Path>, tolerance?: number): PathMesh {
   const tolerance_1 = tolerance ?? 0.25;
   let vertices: number[] = [] as never[];
   let indices: number[] = [] as never[];
@@ -136,7 +140,7 @@ export function tessellatePath(path: Readonly<PathRaw>, tolerance?: number): Pat
 /**
  * Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
  */
-export function tessellatePathInto(path: Readonly<PathRaw>, out: PathMesh, tolerance?: number): void {
+export function tessellatePathInto(path: Readonly<Path>, out: PathMesh, tolerance?: number): void {
   const tolerance_1 = tolerance ?? 0.25;
   const outVertices: number[] = out.vertices;
   outVertices.length = 0;

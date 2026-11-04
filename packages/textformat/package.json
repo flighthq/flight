@@ -32,8 +32,8 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-textformat --package textformat",
-    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-textformat --package textformat --check",
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-textformat --package textformat --lenient",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-textformat --package textformat --lenient --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",

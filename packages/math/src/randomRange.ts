@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/random_range.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { RandomSource } from './random.ts';
 
 /**

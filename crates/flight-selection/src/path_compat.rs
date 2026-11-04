@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_path::{
     Path, PathWinding, append_path_close, append_path_line_to, append_path_move_to, create_path,
 };

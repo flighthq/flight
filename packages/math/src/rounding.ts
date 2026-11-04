@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/rounding.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Return `value` ceiled to the nearest multiple of `step`.
  *

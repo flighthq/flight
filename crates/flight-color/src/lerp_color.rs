@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use crate::{LinearColor, pack_linear_channels_to_color, srgb_channel_to_linear};
 
 #[cfg(all(test, feature = "object-api"))]

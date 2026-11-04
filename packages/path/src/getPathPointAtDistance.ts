@@ -1,14 +1,17 @@
+// Generated from crates/flight-path/src/get_path_point_at_distance.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { Vector2Like } from '@flighthq/geometry/contract';
 
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * Evaluates the point on the path at `distance` arc-length units from the start.
  * Returns `true` if the path has geometry; `false` for an empty path.
  */
 export function getPathPointAtDistance(
-  path: Readonly<PathRaw>,
+  path: Readonly<Path>,
   distance: number,
   out: Vector2Like,
   tolerance?: number,
@@ -22,7 +25,7 @@ export function getPathPointAtDistance(
  * Evaluates both the point and the unit tangent at `distance`.
  */
 export function getPathPositionAtDistance(
-  path: Readonly<PathRaw>,
+  path: Readonly<Path>,
   distance: number,
   pointOut: Vector2Like,
   tangentOut: Vector2Like,
@@ -39,7 +42,7 @@ export function getPathPositionAtDistance(
  * Evaluates the unit tangent direction of the path at `distance` arc-length units.
  */
 export function getPathTangentAtDistance(
-  path: Readonly<PathRaw>,
+  path: Readonly<Path>,
   distance: number,
   out: Vector2Like,
   tolerance?: number,

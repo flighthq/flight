@@ -1,7 +1,10 @@
+// Generated from crates/flight-path/src/get_path_bounds.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { RectangleLike } from '@flighthq/geometry/contract';
 
-import type { PathRaw } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * The running min/max extent of the points visited by the bounds pass.
@@ -37,8 +40,8 @@ function cubicExtremumRoots(p0: number, p1: number, p2: number, p3: number): num
     return roots;
   }
   const sqrtD = Math.sqrt(discriminant);
-  const t1 = (-b + sqrtD) / (2.0 * a);
-  const t2 = (-b - sqrtD) / (2.0 * a);
+  const t1 = ((-b + sqrtD) / 2.0) * a;
+  const t2 = ((-b - sqrtD) / 2.0) * a;
   if (t1 > 0.0 && t1 < 1.0) {
     roots.push(t1);
   }
@@ -122,7 +125,7 @@ function expandQuadraticBounds(
  * Writes the result into `out`. Returns `true` if the path contains any geometry;
  * returns `false` and sets `out` to an empty zero-rectangle for an empty path.
  */
-export function getPathBounds(path: Readonly<PathRaw>, out: RectangleLike): boolean {
+export function getPathBounds(path: Readonly<Path>, out: RectangleLike): boolean {
   const commands = path.commands;
   const data = path.data;
   let bounds = {

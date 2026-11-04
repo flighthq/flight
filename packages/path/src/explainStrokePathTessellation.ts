@@ -1,4 +1,8 @@
-import type { PathRaw, StrokePathTessellationExplanation, StrokeStyle } from './path.ts';
+// Generated from crates/flight-path/src/explain_stroke_path_tessellation.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { StrokePathTessellationExplanation, StrokeStyle } from './path.ts';
+import type { Path } from './pathCompat.ts';
 import { buildStrokePathGeometry } from './strokePathGeometry.ts';
 
 /**
@@ -6,7 +10,7 @@ import { buildStrokePathGeometry } from './strokePathGeometry.ts';
  * and mutates nothing, and returns detached plain data explaining a null mesh.
  */
 export function explainStrokePathTessellation(
-  path: Readonly<PathRaw>,
+  path: Readonly<Path>,
   style: Readonly<StrokeStyle>,
   tolerance?: number,
 ): StrokePathTessellationExplanation {

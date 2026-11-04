@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/next_power_of_two.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Return `true` if `n` is an integer power of two (i.e. 1, 2, 4, 8, ...).
  *
@@ -36,7 +39,7 @@ export function nextPowerOfTwo(n: number): number {
   v |= v >>> 4;
   v |= v >>> 8;
   v |= v >>> 16;
-  return ((v + 1) >>> 0) >>> 0;
+  return (v + 1) >>> 0;
 }
 
 /**
@@ -54,5 +57,5 @@ export function previousPowerOfTwo(n: number): number {
   v |= v >> 4;
   v |= v >> 8;
   v |= v >> 16;
-  return ((((v >>> 0) + 1) >>> 0) >>> 1) >>> 0;
+  return (((v >>> 0) + 1) >>> 0) >>> 1;
 }

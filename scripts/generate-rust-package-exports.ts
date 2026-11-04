@@ -230,6 +230,18 @@ export function collectTypeScriptExportSymbols(typescript: string): Map<string, 
     }
   }
 
+  for (const match of typescript.matchAll(/^export\s+(type\s+)?\{([^}]*)\};?$/gm)) {
+    const groupTypeOnly = match[1] !== undefined;
+    for (const item of match[2].split(',')) {
+      const declaration = item.trim();
+      if (declaration.length === 0) continue;
+      const itemTypeOnly = groupTypeOnly || declaration.startsWith('type ');
+      const fields = declaration.replace(/^type\s+/, '').split(/\s+as\s+/);
+      const name = fields.at(-1)?.trim();
+      if (name && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) add(name, itemTypeOnly, !itemTypeOnly);
+    }
+  }
+
   return symbols;
 }
 

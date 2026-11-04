@@ -1,3 +1,6 @@
+// Generated from crates/flight-clip/src/clip_region_strings.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { ClipRegionContoursReason, ClipRegionStatus } from './types.ts';
 
 /**

@@ -1,12 +1,16 @@
-import type { PathRaw, PathSegment } from './path.ts';
+// Generated from crates/flight-path/src/for_each_path_segment.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { PathSegment } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * Decodes every segment in `path` and passes each to `visitor` in order. WIDE_MOVE_TO and WIDE_LINE_TO are
  * normalized to their moveTo and lineTo equivalents (the dummy coordinate pair is dropped).
  * NO_OP verbs are skipped silently.
  */
-export function forEachPathSegment(path: Readonly<PathRaw>, visitor: (arg0: PathSegment) => void): void {
+export function forEachPathSegment(path: Readonly<Path>, visitor: (arg0: PathSegment) => void): void {
   const commands = path.commands;
   const data = path.data;
   let di: number = 0;

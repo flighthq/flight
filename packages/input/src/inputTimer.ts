@@ -1,3 +1,6 @@
+// Generated from crates/flight-input/src/input_timer.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 
 import type {

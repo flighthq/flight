@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use flight_path::{Path, flatten_path};
 
 use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel};

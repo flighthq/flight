@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_signals::contract::initialize_signal;
 use flight_signals::*;
 

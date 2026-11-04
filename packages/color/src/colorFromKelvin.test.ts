@@ -1,3 +1,6 @@
+// Generated from crates/flight-color/tests/color_from_kelvin_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { colorFromKelvin } from './contract.ts';

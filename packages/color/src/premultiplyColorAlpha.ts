@@ -1,3 +1,6 @@
+// Generated from crates/flight-color/src/premultiply_color_alpha.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Premultiplies the RGB channels of a packed sRGB `0xRRGGBBAA` color by its alpha channel
  * and returns a new packed color. Output RGB = round(RGB * alpha). The alpha channel

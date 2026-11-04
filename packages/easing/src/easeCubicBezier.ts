@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/src/ease_cubic_bezier.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { EasingFunction } from './easingTypes.ts';
 
 /**

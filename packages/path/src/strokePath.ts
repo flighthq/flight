@@ -1,10 +1,14 @@
-import type { PathRaw, StrokeStyle } from './path.ts';
+// Generated from crates/flight-path/src/stroke_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { StrokeStyle } from './path.ts';
 import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import type { Path } from './pathCompat.ts';
 import type { StrokePathPieceGeometry } from './strokePathGeometry.ts';
 import { buildStrokePathGeometry } from './strokePathGeometry.ts';
 
 function appendContour(
-  path: PathRaw,
+  path: Path,
   primary: Readonly<number[]>,
   reversePrimary: boolean,
   afterPrimary: Readonly<number[]>,
@@ -30,7 +34,7 @@ function appendContour(
   appendPathClose(path);
 }
 
-function appendPieceOutline(path: PathRaw, piece: Readonly<StrokePathPieceGeometry>): void {
+function appendPieceOutline(path: Path, piece: Readonly<StrokePathPieceGeometry>): void {
   if (piece.left.length < 4 || piece.right.length < 4) {
     return;
   }
@@ -48,7 +52,7 @@ function appendPieceOutline(path: PathRaw, piece: Readonly<StrokePathPieceGeomet
   }
 }
 
-function appendPoints(path: PathRaw, points: Readonly<number[]>, start: number, step: number): void {
+function appendPoints(path: Path, points: Readonly<number[]>, start: number, step: number): void {
   let i = start;
   while (i < points.length) {
     appendPathLineTo(path, points[i], points[i + 1]);
@@ -56,7 +60,7 @@ function appendPoints(path: PathRaw, points: Readonly<number[]>, start: number, 
   }
 }
 
-function appendPointsReverse(path: PathRaw, points: Readonly<number[]>): void {
+function appendPointsReverse(path: Path, points: Readonly<number[]>): void {
   let i = (points.length | 0) - 2;
   while (i >= 0) {
     appendPathLineTo(path, points[i >>> 0], points[(i >>> 0) + 1]);
@@ -67,7 +71,7 @@ function appendPointsReverse(path: PathRaw, points: Readonly<number[]>): void {
 /**
  * Converts a centerline Path into its fill outline.
  */
-export function strokePath(path: Readonly<PathRaw>, style: Readonly<StrokeStyle>, tolerance?: number): PathRaw {
+export function strokePath(path: Readonly<Path>, style: Readonly<StrokeStyle>, tolerance?: number): Path {
   const tolerance_1 = tolerance ?? 0.25;
   let result = createPath('nonZero');
   const geometry = buildStrokePathGeometry(path, style, tolerance_1);

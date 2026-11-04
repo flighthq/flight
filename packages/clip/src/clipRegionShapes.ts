@@ -1,3 +1,6 @@
+// Generated from crates/flight-clip/src/clip_region_shapes.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import type { Rectangle, RectangleLike } from '@flighthq/geometry/contract';

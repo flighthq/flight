@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use std::sync::{Arc, Mutex};
 
 use flight_signals::contract::initialize_signal_scope;

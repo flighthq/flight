@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_color::*;
 
 mod color_from_kelvin {

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: entity-runtime-state InputKeyRepeatTimer.cycle
 //! flight-compiler: entity-runtime-state InputManager.registry
 //! flight-compiler: string-union GamepadAxisKind=exact GamepadButtonKind=exact GamepadMapping=exact MouseWheelMode PointerType InputPointerLockExitReason=kebab-case InputPointerLockRequestReason=kebab-case

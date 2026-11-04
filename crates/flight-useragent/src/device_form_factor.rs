@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: export-name DEVICE_FORM_FACTOR_CAR DeviceFormFactorCar
 //! flight-compiler: export-name DEVICE_FORM_FACTOR_DESKTOP DeviceFormFactorDesktop
 //! flight-compiler: export-name DEVICE_FORM_FACTOR_PHONE DeviceFormFactorPhone

@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use crate::types::*;
 
 const STANDARD_BUTTON_NAMES: [Option<GamepadButtonKind>; 18] = [

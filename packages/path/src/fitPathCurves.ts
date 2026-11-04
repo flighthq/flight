@@ -1,6 +1,9 @@
+// Generated from crates/flight-path/src/fit_path_curves.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 function chordLengthParameterize(pts: Readonly<number[]>, first: number, last: number): number[] {
   let u = [0.0];
@@ -87,7 +90,7 @@ function findCorners(pts: Readonly<number[]>, n: number): number[] {
     if (len0 === 0.0 || len1 === 0.0) {
       continue;
     }
-    const dot = (dx0 * dx1 + dy0 * dy1) / (len0 * len1);
+    const dot = ((dx0 * dx1 + dy0 * dy1) / len0) * len1;
     if (dot < 0.5) {
       corners.push(i);
     }
@@ -103,7 +106,7 @@ function fitCubic(
   tHat1: readonly [number, number],
   tHat2: readonly [number, number],
   toleranceSq: number,
-  out: PathRaw,
+  out: Path,
 ): void {
   const nPts = last - first + 1;
   if (nPts === 2) {
@@ -149,12 +152,7 @@ function fitCubic(
  * Re-curves a polyline (or any flattened path) into smooth cubic bezier segments using
  * Schneider's algorithm. Alias-safe.
  */
-export function fitPathCurves(
-  source: Readonly<PathRaw>,
-  tolerance: number,
-  out: PathRaw,
-  flattenTolerance?: number,
-): void {
+export function fitPathCurves(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance?: number): void {
   const flattenTolerance_1 = flattenTolerance ?? 0.25;
   const contours = flattenPath(source, flattenTolerance_1);
   const outCommands: number[] = out.commands;
@@ -237,10 +235,13 @@ function generateBezier(
     const b0 = (1.0 - t) * (1.0 - t) * (1.0 - t);
     const b3 = t * t * t;
     const tmpx =
-      pts[(first + i) * 2] - (pts[first * 2] * b0 + pts[first * 2] * b1 + pts[last * 2] * b2 + pts[last * 2] * b3);
+      pts[(first + i) * 2] - pts[first * 2] * b0 + pts[first * 2] * b1 + pts[last * 2] * b2 + pts[last * 2] * b3;
     const tmpy =
       pts[(first + i) * 2 + 1] -
-      (pts[first * 2 + 1] * b0 + pts[first * 2 + 1] * b1 + pts[last * 2 + 1] * b2 + pts[last * 2 + 1] * b3);
+      pts[first * 2 + 1] * b0 +
+      pts[first * 2 + 1] * b1 +
+      pts[last * 2 + 1] * b2 +
+      pts[last * 2 + 1] * b3;
     x0 += a1x * tmpx + a1y * tmpy;
     x1 += a2x * tmpx + a2y * tmpy;
   }

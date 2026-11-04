@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/scalar.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { nextPowerOfTwo, previousPowerOfTwo } from './nextPowerOfTwo.ts';
 
 /**

@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use crate::flatten_path::flatten_path;
 use crate::path::{Path, PathCommand};
 

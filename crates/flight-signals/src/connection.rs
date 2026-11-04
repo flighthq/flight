@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use std::sync::Arc;
 use std::sync::RwLock;
 

@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/src/ease_elastic.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 const P: number = 0.4;
 
 const P2: number = 0.45;
@@ -14,7 +17,7 @@ export function easeInElastic(t: number): number {
     return t;
   }
   const time = t - 1.0;
-  return -(Math.pow(2.0, 10.0 * time) * Math.sin(((time - S) * (2.0 * Math.PI)) / P));
+  return -Math.pow(2.0, 10.0 * time) * Math.sin(((time - S) * 2.0 * Math.PI) / P);
 }
 
 /**
@@ -27,10 +30,10 @@ export function easeInOutElastic(t: number): number {
   let t2 = t * 2.0;
   if (t2 < 1.0) {
     const t2_1 = t2 - 1.0;
-    return -0.5 * (Math.pow(2.0, 10.0 * t2_1) * Math.sin(((t2_1 - S2) * (2.0 * Math.PI)) / P2));
+    return -0.5 * Math.pow(2.0, 10.0 * t2_1) * Math.sin(((t2_1 - S2) * 2.0 * Math.PI) / P2);
   }
   t2 = t2 - 1.0;
-  return 0.5 * Math.pow(2.0, -10.0 * t2) * Math.sin(((t2 - S2) * (2.0 * Math.PI)) / P2) + 1.0;
+  return 0.5 * Math.pow(2.0, -10.0 * t2) * Math.sin(((t2 - S2) * 2.0 * Math.PI) / P2) + 1.0;
 }
 
 /**
@@ -40,5 +43,5 @@ export function easeOutElastic(t: number): number {
   if (t === 0.0 || t === 1.0) {
     return t;
   }
-  return Math.pow(2.0, -10.0 * t) * Math.sin(((t - S) * (2.0 * Math.PI)) / P) + 1.0;
+  return Math.pow(2.0, -10.0 * t) * Math.sin(((t - S) * 2.0 * Math.PI) / P) + 1.0;
 }

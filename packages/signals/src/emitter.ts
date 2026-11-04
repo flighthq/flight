@@ -1,3 +1,6 @@
+// Generated from crates/flight-signals/src/emitter.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { compactSignalData } from './slot.ts';
 import type { SignalData, SignalRaw, SignalSlot } from './types.ts';
 

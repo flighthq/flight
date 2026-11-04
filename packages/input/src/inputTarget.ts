@@ -1,3 +1,6 @@
+// Generated from crates/flight-input/src/input_target.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 
 import type { InputTargetHandleRaw } from './types.ts';

@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -27,6 +27,7 @@ struct GenerateOptions {
     external_alias_sources: Vec<PathBuf>,
     lenient: bool,
     out: PathBuf,
+    probe_target_native: bool,
     source: PathBuf,
     visibility_sources: Vec<PathBuf>,
 }
@@ -180,6 +181,11 @@ fn discover_crate_roots<'a>(
 fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String> {
     let source = fs::read_to_string(&options.source)
         .map_err(|error| format!("{}: {error}", options.source.display()))?;
+    let source = if options.probe_target_native {
+        probe_target_native_source(&source)?
+    } else {
+        source
+    };
     let output = match kind {
         GenerateKind::Source => {
             let alias_sources = options
@@ -376,6 +382,7 @@ fn parse_generate_options(
     let mut external_alias_modules = Vec::new();
     let mut external_alias_sources = Vec::new();
     let mut lenient = false;
+    let mut probe_target_native = false;
     let mut visibility_sources = Vec::new();
     let mut out = None;
     let mut source = None;
@@ -384,6 +391,7 @@ fn parse_generate_options(
         match arguments[index].as_str() {
             "--check" => check = true,
             "--lenient" => lenient = true,
+            "--probe-target-native" => probe_target_native = true,
             "--alias-source" => {
                 index += 1;
                 let path = arguments
@@ -494,9 +502,63 @@ fn parse_generate_options(
         external_alias_sources,
         lenient,
         out: out.ok_or_else(|| format!("--out is required\n\n{USAGE}"))?,
+        probe_target_native,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         visibility_sources,
     });
+}
+
+fn probe_target_native_source(source: &str) -> Result<String, String> {
+    let mut found = false;
+    let mut output = String::with_capacity(source.len());
+    for line in source.split_inclusive('\n') {
+        let (body, ending) = line
+            .strip_suffix("\r\n")
+            .map(|body| (body, "\r\n"))
+            .or_else(|| line.strip_suffix('\n').map(|body| (body, "\n")))
+            .unwrap_or((line, ""));
+        let trimmed = body.trim();
+        if trimmed
+            .strip_prefix("//! flight-compiler: target-native")
+            .is_some_and(|suffix| suffix.is_empty() || suffix.starts_with(char::is_whitespace))
+        {
+            found = true;
+            output.push_str(ending);
+        } else {
+            output.push_str(body);
+            output.push_str(ending);
+        }
+    }
+    if !found {
+        return Err(
+            "--probe-target-native requires a `flight-compiler: target-native` source".to_string(),
+        );
+    }
+    return Ok(output);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::probe_target_native_source;
+
+    #[test]
+    fn probe_removes_target_native_directive_and_preserves_lines() {
+        assert_eq!(
+            probe_target_native_source(
+                "//! flight-compiler: target-native — native fallback\r\npub fn value() {}\r\n"
+            )
+            .unwrap(),
+            "\r\npub fn value() {}\r\n"
+        );
+    }
+
+    #[test]
+    fn probe_requires_target_native_source() {
+        assert_eq!(
+            probe_target_native_source("pub fn value() {}\n").unwrap_err(),
+            "--probe-target-native requires a `flight-compiler: target-native` source"
+        );
+    }
 }
 
 fn root_only(arguments: &[String]) -> Result<(), String> {

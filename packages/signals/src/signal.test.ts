@@ -1,3 +1,6 @@
+// Generated from crates/flight-signals/tests/signal_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { initializeSignal } from '@flighthq/signals/contract';
 import { describe, expect, it } from 'vitest';
 

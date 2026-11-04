@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_entity::throw_range_error;
 
 /// Return `value` ceiled to the nearest multiple of `step`.

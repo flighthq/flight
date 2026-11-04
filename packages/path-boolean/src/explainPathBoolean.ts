@@ -1,9 +1,12 @@
+// Generated from crates/flight-path-boolean/src/explain_path_boolean.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { createPath, flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 
-import type { PathBooleanKernelRaw } from './martinezKernel.ts';
 import { offsetPath } from './offsetPath.ts';
 import type { PathBooleanExplanation, PathBooleanOptions, PathOffsetOptions } from './pathBoolean.ts';
+import type { PathBooleanKernel } from './pathBooleanCompat.ts';
 import { simplifyPath } from './simplifyPath.ts';
 
 const DEFAULT_FLATTEN_TOLERANCE: number = 0.25;
@@ -14,7 +17,7 @@ const DEFAULT_FLATTEN_TOLERANCE: number = 0.25;
  * empty, `undefined` when the offset succeeds normally.
  */
 export function explainOffsetPath(
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   path: Readonly<Path>,
   delta: number,
   options?: Readonly<PathOffsetOptions>,
@@ -41,7 +44,7 @@ export function explainOffsetPath(
  * empty, `undefined` when simplification succeeds normally.
  */
 export function explainSimplifyPath(
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   path: Readonly<Path>,
   options?: Readonly<PathBooleanOptions>,
 ): PathBooleanExplanation | undefined {

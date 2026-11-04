@@ -1,3 +1,6 @@
+// Generated from crates/flight-color/src/oklab.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Clamps linear sRGB channels to the displayable [0, 1] gamut, writing [r, g, b] into `out`.
  * This is a channel clamp, not a perceptual gamut-mapping operation. Alias-safe.

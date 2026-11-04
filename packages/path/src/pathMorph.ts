@@ -1,11 +1,14 @@
-import type { PathMorphRaw, PathRaw } from './path.ts';
+// Generated from crates/flight-path/src/path_morph.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { Path, PathMorph } from './pathCompat.ts';
 import { allocatePathMorph, preparePathMorph } from './pathMorphGeometry.ts';
 
 /**
  * Allocates a prepared interpolation between two paths. Returns `undefined` when the paths
  * are incompatible (different winding, contour count, closedness, or orientation).
  */
-export function createPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphRaw | null {
+export function createPathMorph(start: Readonly<Path>, end: Readonly<Path>): PathMorph | null {
   const preparation = preparePathMorph(start, end);
   if (preparation.issue !== 'ok') {
     return null;
@@ -17,7 +20,7 @@ export function createPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>
  * Samples a prepared morph into `out`. Progress is not clamped: 0 and 1 are the endpoints,
  * while values outside that range permit deliberate easing overshoot.
  */
-export function samplePathMorph(out: PathRaw, morph: Readonly<PathMorphRaw>, progress: number): void {
+export function samplePathMorph(out: Path, morph: Readonly<PathMorph>, progress: number): void {
   const commands = morph.commands;
   const outCommands: number[] = out.commands;
   outCommands.length = 0;

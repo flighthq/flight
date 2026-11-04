@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 /// Formatting options for `format_svg_path_data` (TS `SvgPathDataFormatOptions`). Plain record.
 // flight-lint: allow(f64) the precision is the exponent of `10 ** precision` in f64 path-coordinate arithmetic (TS number); f64 keeps fractional/negative precision behaving as the source
 #[derive(Clone, Debug, PartialEq)]

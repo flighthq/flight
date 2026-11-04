@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/interpolation_advanced.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Frame-rate-independent exponential decay toward `target`.
  *

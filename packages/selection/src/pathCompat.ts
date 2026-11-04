@@ -1,25 +1,6 @@
-import { createPath } from '@flighthq/path/contract';
-import type { Path } from '@flighthq/path/contract';
+// Generated from crates/flight-selection/src/path_compat.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-export function appendLassoClose(path: Path): void {
-  path.commands.push(7);
-}
+export { appendLassoClose, appendLassoLineTo, appendLassoMoveTo, createLassoPath } from './pathCompat.generated.ts';
 
-export function appendLassoLineTo(path: Path, x: number, y: number): void {
-  path.commands.push(2);
-  path.data.push(x, y);
-}
-
-export function appendLassoMoveTo(path: Path, x: number, y: number): void {
-  path.commands.push(1);
-  path.data.push(x, y);
-}
-
-export function clearLassoPath(path: Path): void {
-  path.commands.length = 0;
-  path.data.length = 0;
-}
-
-export function createLassoPath(): Path {
-  return createPath('evenOdd');
-}
+export { clearLassoPath } from './pathCompat.native.ts';

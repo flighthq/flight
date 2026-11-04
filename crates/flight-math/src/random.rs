@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 

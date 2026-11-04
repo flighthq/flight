@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 //! flight-compiler: companion linearColor.ts
 //! flight-compiler: root-only allocateHslColor allocateHsvColor allocateLinearColor clampLinearRgb colorFromKelvin computeRgbHexString computeRgbaCssString getColorAlpha getColorContrastRatio getColorLuminance getColorRgb getRec2020LuminanceWeights getRec709LuminanceWeights hslToRgb hsvToRgb lerpColor lerpLinearColor linearChannelToSrgb linearRgbToOklab oklabToLinearRgb packColor packLinearChannelsToColor packLinearToColor packOpaqueColor premultiplyColorAlpha rgbToHsl rgbToHsv setColorAlpha srgbChannelToLinear unpackColorRgba unpackColorToLinear unpremultiplyColorAlpha  HslColor HsvColor LinearColor
 

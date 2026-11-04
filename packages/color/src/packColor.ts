@@ -1,3 +1,6 @@
+// Generated from crates/flight-color/src/pack_color.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 
@@ -113,7 +116,7 @@ export function packLinearChannelsToColor(r: number, g: number, b: number, a: nu
  * unchanged (alpha is linear coverage, never gamma-encoded). Channels are clamped to [0, 1].
  */
 export function packLinearToColor(color: Readonly<LinearColorRaw>): number {
-  return packLinearChannelsToColor(color.r, color.g, color.b, color.a) >>> 0;
+  return packLinearChannelsToColor(color.r, color.g, color.b, color.a);
 }
 
 /**

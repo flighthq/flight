@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 /// Return `true` if `n` is an integer power of two (i.e. 1, 2, 4, 8, ...).
 ///
 /// Returns `false` for `n <= 0`.

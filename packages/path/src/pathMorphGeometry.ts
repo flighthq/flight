@@ -1,14 +1,18 @@
+// Generated from crates/flight-path/src/path_morph_geometry.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { forEachPathSegment } from './forEachPathSegment.ts';
-import type { PathMorphCreationReason, PathMorphRaw, PathRaw, PathSegment, PathWinding } from './path.ts';
+import type { PathMorphCreationReason, PathSegment, PathWinding } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path, PathMorph } from './pathCompat.ts';
 
 export interface PathMorphBuildResult {
   contour?: number;
   issue: PathMorphCreationReason;
-  morph?: PathMorphRaw;
+  morph?: PathMorph;
 }
 
 /**
@@ -63,7 +67,7 @@ function createCubicContour(x: number, y: number): CubicContour {
 /**
  * Shared preparation used by the production constructor and its diagnostic.
  */
-export function buildPathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphBuildResult {
+export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): PathMorphBuildResult {
   const preparation = preparePathMorph(start, end);
   if (preparation.issue !== 'ok') {
     return { contour: preparation.contour, issue: preparation.issue, morph: undefined };
@@ -114,13 +118,8 @@ function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContou
   end.y = end.segments[0].y0;
 }
 
-function allocatePathMorph(preparation: PathMorphPreparation, winding: PathWinding): PathMorphRaw {
-  let morph: PathMorphRaw = Object.assign(allocateEntity<PathMorphRaw>(), {
-    commands: [],
-    endData: [],
-    startData: [],
-    winding: 'nonZero',
-  });
+function allocatePathMorph(preparation: PathMorphPreparation, winding: PathWinding): PathMorph {
+  let morph: PathMorph = allocateEntity<PathMorph>();
   initializePathMorph(morph, preparation.commands, preparation.endData, preparation.startData, winding);
   return morph;
 }
@@ -211,7 +210,7 @@ function appendQuadraticAsCubic(contour: CubicContour, cx: number, cy: number, x
 }
 
 export function initializePathMorph(
-  out: EntityConstruction<PathMorphRaw>,
+  out: EntityConstruction<PathMorph>,
   commands: number[],
   endData: number[],
   startData: number[],
@@ -238,7 +237,7 @@ function cubicControlPolygonLength(segment: Readonly<CubicSegment>): number {
   );
 }
 
-function decodeCubicContours(path: Readonly<PathRaw>): CubicContour[] {
+function decodeCubicContours(path: Readonly<Path>): CubicContour[] {
   let segments: PathSegment[] = [] as never[];
   forEachPathSegment(path, (segment) => segments.push(segment));
   let contours: CubicContour[] = [] as never[];
@@ -410,7 +409,7 @@ function pointDistance(x0: number, y0: number, x1: number, y1: number): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function preparePathMorph(start: Readonly<PathRaw>, end: Readonly<PathRaw>): PathMorphPreparation {
+function preparePathMorph(start: Readonly<Path>, end: Readonly<Path>): PathMorphPreparation {
   if (start.winding !== end.winding) {
     return { commands: [], contour: undefined, endData: [], issue: 'winding-mismatch', startData: [] };
   }

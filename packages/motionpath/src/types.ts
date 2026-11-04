@@ -1,3 +1,6 @@
+// Generated from crates/flight-motionpath/src/types.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { EntityRaw } from '@flighthq/entity/contract';
 import type { Path } from '@flighthq/path/contract';
 

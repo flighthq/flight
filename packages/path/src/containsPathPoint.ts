@@ -1,5 +1,8 @@
-import type { PathRaw } from './path.ts';
+// Generated from crates/flight-path/src/contains_path_point.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 const MAX_SUBDIVISION_DEPTH: number = 16;
 
@@ -16,7 +19,7 @@ function chordDistSq(px: number, py: number, x0: number, y0: number, x1: number,
   return (cross * cross) / lenSq;
 }
 
-function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: number, tolerance: number): number {
+function computePathWindingNumber(path: Readonly<Path>, px: number, py: number, tolerance: number): number {
   const commands = path.commands;
   const data = path.data;
   const toleranceSq = tolerance * tolerance;
@@ -135,7 +138,7 @@ function computePathWindingNumber(path: Readonly<PathRaw>, px: number, py: numbe
  * Tests whether point (px, py) lies inside the path using the path's winding rule.
  * Curves are adaptively flattened before the winding number test.
  */
-export function containsPathPoint(path: Readonly<PathRaw>, px: number, py: number, tolerance?: number): boolean {
+export function containsPathPoint(path: Readonly<Path>, px: number, py: number, tolerance?: number): boolean {
   const tolerance_1 = tolerance ?? 0.25;
   const winding = computePathWindingNumber(path, px, py, tolerance_1);
   if (path.winding === 'evenOdd') {

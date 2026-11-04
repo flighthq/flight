@@ -1,3 +1,6 @@
+// Generated from crates/flight-useragent/src/device_form_factor.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Device form-factor identifier (TS `DeviceFormFactor`): the physical class of device a host runs
  * on. An OPEN string domain, as in TS: the seven constants below are the known values, and a

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_geometry::MatrixLike;
 
 use crate::copy_path::copy_path;

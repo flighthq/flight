@@ -1,3 +1,6 @@
+// Generated from crates/flight-signals/src/slot.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { installDefaultSignalEmitter } from './signal.ts';
 import type { SignalConnectOptions, SignalData, SignalRaw, SignalSlot, SlotId } from './types.ts';
 

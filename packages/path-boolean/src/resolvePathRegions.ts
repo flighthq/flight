@@ -1,6 +1,10 @@
+// Generated from crates/flight-path-boolean/src/resolve_path_regions.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { Path } from '@flighthq/path/contract';
 
-import type { PathBooleanFillRule, PathBooleanKernelRaw } from './martinezKernel.ts';
+import type { PathBooleanFillRule } from './martinezKernel.ts';
+import type { PathBooleanKernel } from './pathBooleanCompat.ts';
 import { writePathBooleanContours } from './writePathBooleanContours.ts';
 
 /**
@@ -10,7 +14,7 @@ import { writePathBooleanContours } from './writePathBooleanContours.ts';
  */
 export function resolvePathRegions(
   out: Path,
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   rings: Readonly<number[][]>,
   fillRule: PathBooleanFillRule,
 ): void {

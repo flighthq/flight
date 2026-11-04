@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 /// Ease-in-out quadratic: slow start and end.
 pub fn ease_in_out_quadratic(t: f32) -> f32 {
     if t < 0.5 {

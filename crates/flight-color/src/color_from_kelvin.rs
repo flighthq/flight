@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 /// Converts a color temperature in Kelvin to a packed sRGB-albedo RGBA color (0xrrggbbaa).
 /// Uses the Tanner Helland piecewise approximation (accurate to within +/-1% for 1000 K-40000 K),
 /// the same algorithm used in Blender, three.js, and Filament's color-temperature helper.

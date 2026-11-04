@@ -1,3 +1,6 @@
+// Generated from crates/flight-textlayout/src/type_strings.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { TextAutoSize, TextJustification, TextVerticalAlign } from './types.ts';
 
 export function getTextAutoSizeString(value: TextAutoSize): string {

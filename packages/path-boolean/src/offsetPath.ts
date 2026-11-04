@@ -1,8 +1,11 @@
+// Generated from crates/flight-path-boolean/src/offset_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 
-import type { PathBooleanKernelRaw } from './martinezKernel.ts';
 import type { PathOffsetEnd, PathOffsetJoin, PathOffsetOptions } from './pathBoolean.ts';
+import type { PathBooleanKernel } from './pathBooleanCompat.ts';
 import { resolvePathRegions } from './resolvePathRegions.ts';
 
 const DEFAULT_ARC_TOLERANCE: number = 0.25;
@@ -114,21 +117,24 @@ function emitOffsetEndCap(
   ring.push(previousEndX);
   ring.push(previousEndY);
   switch (end) {
-    case 'square':
+    case 'square': {
       ring.push(previousEndX + radius * previousDirX);
       ring.push(previousEndY + radius * previousDirY);
       ring.push(thisStartX - radius * thisDirX);
       ring.push(thisStartY - radius * thisDirY);
       break;
-    case 'round':
+    }
+    case 'round': {
       const startAngle = Math.atan2(previousEndY - vy, previousEndX - vx);
       const midX = Math.cos(startAngle + HALF_PI);
       const midY = Math.sin(startAngle + HALF_PI);
       const sweep = (midX * previousDirX + midY * previousDirY >= 0.0 ? 1.0 : -1.0) * Math.PI;
       pushOffsetArc(ring, vx, vy, radius, startAngle, sweep, arcTolerance);
       break;
-    case 'butt':
+    }
+    case 'butt': {
       break;
+    }
   }
   ring.push(thisStartX);
   ring.push(thisStartY);
@@ -163,7 +169,7 @@ function emitOffsetJoin(
     }
   } else {
     switch (join) {
-      case 'miter':
+      case 'miter': {
         if (Math.abs(turn) > PARALLEL_EPS) {
           const advance = ((thisStartX - previousEndX) * thisDirY - (thisStartY - previousEndY) * thisDirX) / turn;
           const apexX = previousEndX + advance * previousDirX;
@@ -175,21 +181,25 @@ function emitOffsetJoin(
           }
         }
         break;
-      case 'square':
+      }
+      case 'square': {
         const squareExtent = Math.abs(signedDelta);
         ring.push(previousEndX + squareExtent * previousDirX);
         ring.push(previousEndY + squareExtent * previousDirY);
         ring.push(thisStartX - squareExtent * thisDirX);
         ring.push(thisStartY - squareExtent * thisDirY);
         break;
-      case 'round':
+      }
+      case 'round': {
         const radius = Math.abs(signedDelta);
         const startAngle = Math.atan2(previousEndY - vy, previousEndX - vx);
         const endAngle = Math.atan2(thisStartY - vy, thisStartX - vx);
         pushOffsetArc(ring, vx, vy, radius, startAngle, getShortSweep(startAngle, endAngle), arcTolerance);
         break;
-      case 'bevel':
+      }
+      case 'bevel': {
         break;
+      }
     }
   }
   ring.push(thisStartX);
@@ -320,7 +330,7 @@ function isClosedContour(contour: Readonly<number[]>, pointEpsSq: number): boole
  */
 export function offsetPath(
   out: Path,
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   path: Readonly<Path>,
   delta: number,
   options?: Readonly<PathOffsetOptions>,
@@ -389,7 +399,7 @@ function pushOffsetArc(
   const maxAngle = arcTolerance > 0.0 && arcTolerance < radius ? 2.0 * Math.acos(1.0 - arcTolerance / radius) : Math.PI;
   const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxAngle) >>> 0);
   for (let i = 1; i < steps; i += 1) {
-    const angle = startAngle + sweep * (i / steps);
+    const angle = startAngle + (sweep * i) / steps;
     ring.push(cx + radius * Math.cos(angle));
     ring.push(cy + radius * Math.sin(angle));
   }

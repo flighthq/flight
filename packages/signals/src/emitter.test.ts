@@ -1,3 +1,6 @@
+// Generated from crates/flight-signals/tests/emitter_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import * as flightEntity from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 

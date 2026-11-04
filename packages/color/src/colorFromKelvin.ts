@@ -1,3 +1,6 @@
+// Generated from crates/flight-color/src/color_from_kelvin.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Converts a color temperature in Kelvin to a packed sRGB-albedo RGBA color (0xrrggbbaa).
  * Uses the Tanner Helland piecewise approximation (accurate to within +/-1% for 1000 K-40000 K),

@@ -1,3 +1,6 @@
+// Generated from crates/flight-signals/src/throttle.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 
 import { connectSignal, disconnectSignal } from './slot.ts';
@@ -208,7 +211,7 @@ export function connectSignalThrottled<T>(
   const handlerLastArgs = lastArgs;
   const handler: SignalSlot<T> = (args: T) => {
     const now = handlerState!.nowMs;
-    const remaining = intervalMs - (now - handlerLastFiredAt.value);
+    const remaining = intervalMs - now - handlerLastFiredAt.value;
     if (remaining <= 0.0 || remaining > intervalMs) {
       {
         const $pending = handlerTrailingTimer.value;

@@ -1,8 +1,12 @@
+// Generated from crates/flight-path-boolean/src/boolean_paths.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from '@flighthq/path/contract';
 import type { Path, PathWinding } from '@flighthq/path/contract';
 
-import type { PathBooleanFillRule, PathBooleanKernelRaw, PathBooleanOperation } from './martinezKernel.ts';
+import type { PathBooleanFillRule, PathBooleanOperation } from './martinezKernel.ts';
 import type { PathBooleanOptions } from './pathBoolean.ts';
+import type { PathBooleanKernel } from './pathBooleanCompat.ts';
 import { writePathBooleanContours } from './writePathBooleanContours.ts';
 
 const DEFAULT_FLATTEN_TOLERANCE: number = 0.25;
@@ -15,7 +19,7 @@ const DEFAULT_FLATTEN_TOLERANCE: number = 0.25;
  */
 export function booleanPaths(
   out: Path,
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   subject: Readonly<Path>,
   clip: Readonly<Path>,
   operation: PathBooleanOperation,
@@ -34,7 +38,7 @@ export function booleanPaths(
  */
 export function differencePaths(
   out: Path,
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   options?: Readonly<PathBooleanOptions>,
@@ -63,7 +67,7 @@ function getPathBooleanFillRuleForWinding(winding: PathWinding): PathBooleanFill
  */
 export function intersectPaths(
   out: Path,
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   options?: Readonly<PathBooleanOptions>,
@@ -76,7 +80,7 @@ export function intersectPaths(
  */
 export function unionPaths(
   out: Path,
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   options?: Readonly<PathBooleanOptions>,
@@ -90,7 +94,7 @@ export function unionPaths(
  */
 export function xorPaths(
   out: Path,
-  pathBooleanKernel: Readonly<PathBooleanKernelRaw>,
+  pathBooleanKernel: Readonly<PathBooleanKernel>,
   a: Readonly<Path>,
   b: Readonly<Path>,
   options?: Readonly<PathBooleanOptions>,

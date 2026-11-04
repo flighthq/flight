@@ -1,6 +1,10 @@
+// Generated from crates/flight-path/src/reverse_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { forEachPathSegment } from './forEachPathSegment.ts';
-import type { PathRaw, PathSegment } from './path.ts';
+import type { PathSegment } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 type SubpathPointKind =
   | { readonly kind: 'move' }
@@ -19,7 +23,7 @@ interface Subpath {
   points: SubpathPoint[];
 }
 
-function decodeSubpaths(path: Readonly<PathRaw>): Subpath[] {
+function decodeSubpaths(path: Readonly<Path>): Subpath[] {
   let segments: PathSegment[] = [] as never[];
   forEachPathSegment(path, (segment) => segments.push(segment));
   let subpaths: Subpath[] = [] as never[];
@@ -77,7 +81,7 @@ function decodeSubpaths(path: Readonly<PathRaw>): Subpath[] {
   return subpaths;
 }
 
-function encodeReversedSubpath(subpath: Readonly<Subpath>, out: PathRaw): void {
+function encodeReversedSubpath(subpath: Readonly<Subpath>, out: Path): void {
   const pts = subpath.points;
   if (pts.length === 0) {
     return;
@@ -129,7 +133,7 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: PathRaw): void {
  * Reverses the winding direction of all contours in `source` and writes the result into `out`.
  * Alias-safe: `out` may be the same object as `source`.
  */
-export function reversePath(source: Readonly<PathRaw>, out: PathRaw): void {
+export function reversePath(source: Readonly<Path>, out: Path): void {
   const subpaths = decodeSubpaths(source);
   const outCommands: number[] = out.commands;
   outCommands.length = 0;

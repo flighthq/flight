@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: callable-parameters EasingStepsGuard count position
 //! flight-compiler: string-union StepPosition
 

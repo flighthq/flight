@@ -152,14 +152,61 @@ pub fn unsupported_value(value: &dyn std::any::Any) -> bool {
 }
 `,
     );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `export function goodValue(value: number): number { return value + 1; }
+export function unsupportedValue(_value: unknown): boolean { return true; }
+`,
+    );
 
     const run = await generateWhileScanning(true);
 
     expect(run.code).toBe(0);
     expect(run.stderr).toContain('lenient: 1 items skipped');
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
-    expect(value).toContain('export function goodValue');
-    expect(value).toContain('// [lenient] fn unsupported_value:');
+    expect(value).toContain("export { goodValue } from './value.generated.ts';");
+    expect(value).toContain("export { unsupportedValue } from './value.native.ts';");
+    expect(readFileSync(join(packageRoot, 'src', 'value.generated.ts'), 'utf8')).toContain('export function goodValue');
+    expect(readFileSync(join(packageRoot, 'src', 'value.native.ts'), 'utf8')).toContain(
+      'export function unsupportedValue',
+    );
+  }, 120_000);
+
+  it('keeps a skipped private helper in the native overlay without publishing it', async () => {
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: root-only goodValue
+
+pub fn good_value(value: i32) -> i32 {
+    if unsupported_value(&value) {
+        return value + 1;
+    }
+    return value;
+}
+
+fn unsupported_value(value: &dyn std::any::Any) -> bool {
+    return value.type_id() == std::any::TypeId::of::<u32>();
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.native.ts'),
+      `export function goodValue(value: number): number { return unsupportedValue(value) ? value + 1 : value; }
+function unsupportedValue(_value: unknown): boolean { return true; }
+`,
+    );
+
+    const run = await generateWhileScanning(true);
+
+    expect(run.code, run.stderr).toBe(0);
+    const wrapper = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(wrapper).not.toContain('unsupportedValue');
+    expect(readFileSync(join(packageRoot, 'src', 'value.generated.ts'), 'utf8')).toContain(
+      "import { unsupportedValue } from './value.native.ts';",
+    );
+    expect(readFileSync(join(packageRoot, 'src', 'value.native.ts'), 'utf8')).toContain(
+      'flight-compiler: native fallback exports\nexport { unsupportedValue };',
+    );
   }, 120_000);
 
   it('keeps test generation strict when production generation is lenient', async () => {

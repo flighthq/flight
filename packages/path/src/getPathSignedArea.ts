@@ -1,5 +1,8 @@
+// Generated from crates/flight-path/src/get_path_signed_area.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * Contour orientation result.
@@ -9,7 +12,7 @@ export type ContourOrientation = 'ccw' | 'cw' | 'degenerate';
 /**
  * Returns the orientation of the path's primary (first) contour.
  */
-export function getPathContourOrientation(path: Readonly<PathRaw>, tolerance?: number): ContourOrientation {
+export function getPathContourOrientation(path: Readonly<Path>, tolerance?: number): ContourOrientation {
   const tolerance_1 = tolerance ?? 0.25;
   const contours = flattenPath(path, tolerance_1);
   if (contours.length === 0) {
@@ -29,7 +32,7 @@ export function getPathContourOrientation(path: Readonly<PathRaw>, tolerance?: n
  * Returns the signed area of the path (summed across all contours) by applying the shoelace
  * formula to the flattened contours.
  */
-export function getPathSignedArea(path: Readonly<PathRaw>, tolerance?: number): number {
+export function getPathSignedArea(path: Readonly<Path>, tolerance?: number): number {
   const tolerance_1 = tolerance ?? 0.25;
   const contours = flattenPath(path, tolerance_1);
   let total: number = 0.0;

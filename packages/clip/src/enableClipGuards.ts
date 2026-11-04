@@ -1,3 +1,6 @@
+// Generated from crates/flight-clip/src/enable_clip_guards.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { logClipWarning } from './clipLog.ts';
 import { setClipRegionContoursGuard, setClipRegionReleaseGuard, setClipRegionUseGuard } from './clipRegion.ts';
 import { getClipRegionContoursReasonString } from './clipRegionStrings.ts';

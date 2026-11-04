@@ -1,3 +1,6 @@
+// Generated from crates/flight-textlayout/src/rich_text_query.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { Rectangle } from '@flighthq/geometry/contract';
 
 import { TEXT_LAYOUT_GUTTER } from './textLayout.ts';

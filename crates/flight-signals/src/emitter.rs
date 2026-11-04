@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use crate::slot::compact_signal_data;
 use crate::types::{Signal, SignalData, SignalSlot};
 use flight_entity::Ref;

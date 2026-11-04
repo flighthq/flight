@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/interpolation.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Return the `t` value that maps to `value` in the range `[a, b]`.
  *

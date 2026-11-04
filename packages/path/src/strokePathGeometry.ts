@@ -1,5 +1,9 @@
+// Generated from crates/flight-path/src/stroke_path_geometry.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw, StrokeCap, StrokeJoin, StrokePathTessellationReason, StrokeStyle } from './path.ts';
+import type { StrokeCap, StrokeJoin, StrokePathTessellationReason, StrokeStyle } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 export interface StrokePathPieceGeometry {
   closed: boolean;
@@ -85,7 +89,7 @@ function createArcPoints(
   return points;
 }
 
-function createStrokeSubpaths(path: Readonly<PathRaw>, tolerance: number): StrokeSubpath[] {
+function createStrokeSubpaths(path: Readonly<Path>, tolerance: number): StrokeSubpath[] {
   const contours = flattenPath(path, tolerance);
   let result: StrokeSubpath[] = [] as never[];
   for (let i = 0; i < contours.length; i += 1) {
@@ -326,7 +330,7 @@ function areFinitePoints(points: Readonly<number[]>): boolean {
  * Shared stroke kernel used by both strokePath and tessellateStrokePath.
  */
 export function buildStrokePathGeometry(
-  path: Readonly<PathRaw>,
+  path: Readonly<Path>,
   style: Readonly<StrokeStyle>,
   tolerance: number,
 ): StrokePathGeometry {

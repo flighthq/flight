@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 //! flight-compiler: nullable-options
 
 use std::sync::{Arc, RwLock};

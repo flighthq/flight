@@ -1,3 +1,6 @@
+// Generated from crates/flight-clip/tests/enable_clip_guards_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { createLogState, createMemoryLogSink, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
 import { describe, expect, it } from 'vitest';
 

@@ -1,3 +1,6 @@
+// Generated from crates/flight-color/tests/hsv_color_raw_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { allocateHsvColor, hsvToRgb, rgbToHsv } from './contract.ts';

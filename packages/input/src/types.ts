@@ -1,3 +1,6 @@
+// Generated from crates/flight-input/src/types.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { EntityRaw } from '@flighthq/entity/contract';
 import type { InputIngressSource, ProviderRef } from '@flighthq/host/contract';
 import type { SignalRaw } from '@flighthq/signals/contract';

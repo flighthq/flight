@@ -1,18 +1,16 @@
+// Generated from crates/flight-path/src/decimate_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * Decimates `source` by flattening curves and applying Douglas-Peucker point reduction.
  * Removes points that deviate less than `tolerance` from the decimated line.
  * Alias-safe: `out` may be the same object as `source`.
  */
-export function decimatePath(
-  source: Readonly<PathRaw>,
-  tolerance: number,
-  out: PathRaw,
-  flattenTolerance?: number,
-): void {
+export function decimatePath(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance?: number): void {
   const flattenTolerance_1 = flattenTolerance ?? 0.25;
   const contours = flattenPath(source, flattenTolerance_1);
   const outCommands: number[] = out.commands;

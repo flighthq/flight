@@ -1,13 +1,16 @@
+// Generated from crates/flight-path/src/clean_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { flattenPath } from './flattenPath.ts';
-import type { PathRaw } from './path.ts';
 import { PathCommand } from './path.ts';
+import type { Path } from './pathCompat.ts';
 
 /**
  * Cleans `source` by flattening curves and removing redundant vertices from each contour.
  * Removes consecutive coincident points, near-collinear vertices, and zero-area spikes.
  * Alias-safe: captures all input before writing to `out`.
  */
-export function cleanPath(source: Readonly<PathRaw>, tolerance: number, out: PathRaw, flattenTolerance?: number): void {
+export function cleanPath(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance?: number): void {
   const flattenTolerance_1 = flattenTolerance ?? 0.25;
   const contours = flattenPath(source, flattenTolerance_1);
   const winding = source.winding;

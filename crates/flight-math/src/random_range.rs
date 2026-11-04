@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_entity::throw_range_error;
 
 /// Return a random boolean with the given `probability` of being `true`.

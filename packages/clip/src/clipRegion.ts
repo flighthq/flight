@@ -1,3 +1,6 @@
+// Generated from crates/flight-clip/src/clip_region.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
@@ -366,10 +369,8 @@ function normalizedClipRegionBounds(contours: Readonly<number[][] | null>): numb
     const x = contour[index];
     const y = contour[index + 1];
     if (
-      !(
-        (Math.abs(x - minX) <= NORMALIZE_EPSILON || Math.abs(x - maxX) <= NORMALIZE_EPSILON) &&
-        (Math.abs(y - minY) <= NORMALIZE_EPSILON || Math.abs(y - maxY) <= NORMALIZE_EPSILON)
-      )
+      !(Math.abs(x - minX) <= NORMALIZE_EPSILON || Math.abs(x - maxX) <= NORMALIZE_EPSILON) &&
+      (Math.abs(y - minY) <= NORMALIZE_EPSILON || Math.abs(y - maxY) <= NORMALIZE_EPSILON)
     ) {
       axisAligned = false;
     }

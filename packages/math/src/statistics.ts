@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/src/statistics.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 function finiteAbsoluteScale(values: Readonly<number[]>): number {
   let scale = 0.0;
   let i = 0;
@@ -201,7 +204,7 @@ export function weightedAverage(values: Readonly<number[]>, weights: Readonly<nu
   let correction = 0.0;
   let i = 0;
   while (i < values.length) {
-    const term = (values[i] / valueScale) * (weights[i] / weightScale) - correction;
+    const term = ((values[i] / valueScale) * weights[i]) / weightScale - correction;
     const next = sumProduct + term;
     correction = next - sumProduct - term;
     sumProduct = next;

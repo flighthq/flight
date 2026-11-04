@@ -1,3 +1,6 @@
+// Generated from crates/flight-path-formats/src/types.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * Formatting options for `formatSvgPathData` (TS `SvgPathDataFormatOptions`). Plain record.
  */
