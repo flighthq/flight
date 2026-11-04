@@ -1,9 +1,18 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+// Generated from crates/flight-sensors/src/sensors.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import {
+  allocateEntity,
+  attachEntityBinding,
+  detachEntityBinding,
+  getEntityBindingAs,
+} from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 import type {
   AmbientLightReading,
+  HostSensorsCapability,
   MotionReading,
   OrientationReading,
   PressureReading,
@@ -11,135 +20,171 @@ import type {
   QuaternionReading,
   RotationRateReading,
   Sensors,
-  HostSensorsCapability,
-  SensorsPermissionState,
 } from '@flighthq/types/contract';
+import type { SensorsPermissionState } from '@flighthq/types/contract';
 
-// Begins delivering sensor readings to `sensors`'s signals by subscribing to the supplied provider's
-// streams. Idempotent: a prior subscription is torn down first. Pair with detachSensors/disposeSensors.
-//
-// Readings passed to signal listeners are scratch-reused objects. Listeners must not retain a
-// reference to a reading across callback boundaries — copy the values if they need to outlive the call.
+/**
+ * Exact releases held by one attached Sensors entity. The field order follows unsubscribe order.
+ */
+interface SensorsSubscription {
+  absoluteOrientation: () => void;
+  ambientLight: () => void;
+  barometer: () => void;
+  gravity: () => void;
+  linearAcceleration: () => void;
+  magnetometer: () => void;
+  motion: () => void;
+  orientation: () => void;
+  proximity: () => void;
+  quaternion: () => void;
+}
+
+/**
+ * Subscribes all ten provider streams in source order. Reattaching first consumes the prior exact
+ * release bundle. Readings are emitted by reference, so provider scratch identity is preserved.
+ */
 export function attachSensors(hostSensors: Readonly<HostSensorsCapability>, sensors: Sensors): void {
   detachSensors(sensors);
-  const backend = hostSensors;
-
-  const unsubscribeMotion = backend.subscribeMotion((acceleration, rotationRate) => {
-    emitSignal(sensors.onAccelerometer, acceleration);
-    emitSignal(sensors.onGyroscope, rotationRate);
-  });
-  const unsubscribeLinearAcceleration = backend.subscribeLinearAcceleration((reading) => {
-    emitSignal(sensors.onLinearAcceleration, reading);
-  });
-  const unsubscribeGravity = backend.subscribeGravity((reading) => {
-    emitSignal(sensors.onGravity, reading);
-  });
-  const unsubscribeOrientation = backend.subscribeOrientation((orientation) => {
-    emitSignal(sensors.onOrientation, orientation);
-  });
-  const unsubscribeAbsoluteOrientation = backend.subscribeAbsoluteOrientation((orientation) => {
-    emitSignal(sensors.onAbsoluteOrientation, orientation);
-  });
-  const unsubscribeMagnetometer = backend.subscribeMagnetometer((reading) => {
-    emitSignal(sensors.onMagnetometer, reading);
-  });
-  const unsubscribeAmbientLight = backend.subscribeAmbientLight((reading) => {
-    emitSignal(sensors.onAmbientLight, reading);
-  });
-  const unsubscribeBarometer = backend.subscribeBarometer((reading) => {
-    emitSignal(sensors.onBarometer, reading);
-  });
-  const unsubscribeProximity = backend.subscribeProximity((reading) => {
-    emitSignal(sensors.onProximity, reading);
-  });
-  const unsubscribeQuaternion = backend.subscribeQuaternion((reading) => {
-    emitSignal(sensors.onQuaternion, reading);
-  });
-
-  _subscriptions.set(sensors, () => {
-    unsubscribeAbsoluteOrientation();
-    unsubscribeAmbientLight();
-    unsubscribeBarometer();
-    unsubscribeGravity();
-    unsubscribeLinearAcceleration();
-    unsubscribeMagnetometer();
-    unsubscribeMotion();
-    unsubscribeOrientation();
-    unsubscribeProximity();
-    unsubscribeQuaternion();
+  const onAccelerometer = sensors.onAccelerometer;
+  const onGyroscope = sensors.onGyroscope;
+  const motion = hostSensors.subscribeMotion(
+    (acceleration: Readonly<MotionReading>, rotationRate: Readonly<RotationRateReading>) => {
+      emitSignal(onAccelerometer, acceleration);
+      emitSignal(onGyroscope, rotationRate);
+    },
+    undefined,
+  );
+  const onLinearAcceleration = sensors.onLinearAcceleration;
+  const linearAcceleration = hostSensors.subscribeLinearAcceleration((reading: Readonly<MotionReading>) => {
+    emitSignal(onLinearAcceleration, reading);
+  }, undefined);
+  const onGravity = sensors.onGravity;
+  const gravity = hostSensors.subscribeGravity(
+    (reading: Readonly<MotionReading>) => emitSignal(onGravity, reading),
+    undefined,
+  );
+  const onOrientation = sensors.onOrientation;
+  const orientation = hostSensors.subscribeOrientation((reading: Readonly<OrientationReading>) => {
+    emitSignal(onOrientation, reading);
+  }, undefined);
+  const onAbsoluteOrientation = sensors.onAbsoluteOrientation;
+  const absoluteOrientation = hostSensors.subscribeAbsoluteOrientation((reading: Readonly<OrientationReading>) => {
+    emitSignal(onAbsoluteOrientation, reading);
+  }, undefined);
+  const onMagnetometer = sensors.onMagnetometer;
+  const magnetometer = hostSensors.subscribeMagnetometer(
+    (reading: Readonly<MotionReading>) => emitSignal(onMagnetometer, reading),
+    undefined,
+  );
+  const onAmbientLight = sensors.onAmbientLight;
+  const ambientLight = hostSensors.subscribeAmbientLight((reading: Readonly<AmbientLightReading>) => {
+    emitSignal(onAmbientLight, reading);
+  }, undefined);
+  const onBarometer = sensors.onBarometer;
+  const barometer = hostSensors.subscribeBarometer(
+    (reading: Readonly<PressureReading>) => emitSignal(onBarometer, reading),
+    undefined,
+  );
+  const onProximity = sensors.onProximity;
+  const proximity = hostSensors.subscribeProximity(
+    (reading: Readonly<ProximityReading>) => emitSignal(onProximity, reading),
+    undefined,
+  );
+  const onQuaternion = sensors.onQuaternion;
+  const quaternion = hostSensors.subscribeQuaternion(
+    (reading: Readonly<QuaternionReading>) => emitSignal(onQuaternion, reading),
+    undefined,
+  );
+  attachEntityBinding(sensors, {
+    absoluteOrientation: absoluteOrientation,
+    ambientLight: ambientLight,
+    barometer: barometer,
+    gravity: gravity,
+    linearAcceleration: linearAcceleration,
+    magnetometer: magnetometer,
+    motion: motion,
+    orientation: orientation,
+    proximity: proximity,
+    quaternion: quaternion,
   });
 }
 
-// Extracts Euler angles (alpha/beta/gamma in degrees) from a quaternion into an OrientationReading,
-// using the ZXY convention that matches the W3C deviceorientation spec. Propagates interval,
-// timestamp, and accuracy from the quaternion. Writes into `out`.
-// Safe when `out` aliases any field of `quaternion` because all inputs are read first.
+/**
+ * Extracts ZXY Euler angles in degrees and propagates interval, timestamp and accuracy.
+ */
 export function computeEulerFromQuaternion(out: OrientationReading, quaternion: Readonly<QuaternionReading>): void {
   const x = quaternion.x;
   const y = quaternion.y;
   const z = quaternion.z;
   const w = quaternion.w;
-  // ZXY (yaw-pitch-roll) decomposition matching deviceorientation alpha/beta/gamma convention.
-  const sinBeta = 2 * (w * x - y * z);
-  const beta = Math.abs(sinBeta) >= 1 ? (Math.sign(sinBeta) * Math.PI) / 2 : Math.asin(sinBeta);
-  const alpha = Math.atan2(2 * (w * z + x * y), 1 - 2 * (x * x + z * z));
-  const gamma = Math.atan2(2 * (w * y + x * z), 1 - 2 * (x * x + y * y));
-  out.alpha = (((alpha * RAD_TO_DEG) % 360) + 360) % 360; // normalize to [0, 360)
+  const interval = quaternion.interval;
+  const timestamp = quaternion.timestamp;
+  const accuracy = quaternion.accuracy;
+  const sinBeta = 2.0 * (w * x - y * z);
+  const beta = Math.abs(sinBeta) >= 1.0 ? Math.sign(sinBeta) * (Math.PI / 2) : Math.asin(sinBeta);
+  const alpha = Math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (x * x + z * z));
+  const gamma = Math.atan2(2.0 * (w * y + x * z), 1.0 - 2.0 * (x * x + y * y));
+  out.alpha = ((n: number, m: number): number => ((n % m) + m) % m)(alpha * RAD_TO_DEG, 360.0);
   out.beta = beta * RAD_TO_DEG;
   out.gamma = gamma * RAD_TO_DEG;
-  out.interval = quaternion.interval;
-  out.timestamp = quaternion.timestamp;
-  out.accuracy = quaternion.accuracy;
+  out.interval = interval;
+  out.timestamp = timestamp;
+  out.accuracy = accuracy;
 }
 
-// Derives the gravity vector (m/s²) from Euler orientation angles (alpha/beta/gamma in degrees)
-// into a MotionReading. The result is the device-frame projection of the 9.81 m/s² downward
-// gravity vector onto each device axis. Writes into `out`.
-// Safe when `out` aliases any field of `orientation` because all inputs are read first.
+/**
+ * Computes the device-frame projection of standard gravity and propagates reading metadata.
+ */
 export function computeGravityFromOrientation(out: MotionReading, orientation: Readonly<OrientationReading>): void {
-  const b = orientation.beta * DEG_TO_RAD;
-  const g = orientation.gamma * DEG_TO_RAD;
-  // Gravity components in device frame. g is 9.81 m/s².
-  const G = 9.80665;
-  const sinG = Math.sin(g);
-  const cosG = Math.cos(g);
-  const sinB = Math.sin(b);
-  const cosB = Math.cos(b);
-  out.x = G * cosB * sinG;
-  out.y = -G * sinB;
-  out.z = G * cosB * cosG;
-  out.interval = orientation.interval;
-  out.timestamp = orientation.timestamp;
-  out.accuracy = orientation.accuracy;
+  const beta = orientation.beta * DEG_TO_RAD;
+  const gamma = orientation.gamma * DEG_TO_RAD;
+  const interval = orientation.interval;
+  const timestamp = orientation.timestamp;
+  const accuracy = orientation.accuracy;
+  const sinGamma = Math.sin(gamma);
+  const cosGamma = Math.cos(gamma);
+  const sinBeta = Math.sin(beta);
+  const cosBeta = Math.cos(beta);
+  const STANDARD_GRAVITY = 9.80665;
+  out.x = STANDARD_GRAVITY * cosBeta * sinGamma;
+  out.y = -STANDARD_GRAVITY * sinBeta;
+  out.z = STANDARD_GRAVITY * cosBeta * cosGamma;
+  out.interval = interval;
+  out.timestamp = timestamp;
+  out.accuracy = accuracy;
 }
 
-// Derives an approximate quaternion from Euler orientation angles (alpha/beta/gamma in degrees).
-// Uses the ZXY convention matching the deviceorientation spec. Writes into `out`.
-// Safe when `out` aliases any field of `orientation` because all inputs are read first.
+/**
+ * Computes a ZXY quaternion from Euler angles and propagates reading metadata.
+ */
 export function computeQuaternionFromOrientationReading(
   out: QuaternionReading,
   orientation: Readonly<OrientationReading>,
 ): void {
-  const a = orientation.alpha * DEG_TO_RAD * 0.5;
-  const b = orientation.beta * DEG_TO_RAD * 0.5;
-  const g = orientation.gamma * DEG_TO_RAD * 0.5;
-  const ca = Math.cos(a);
-  const sa = Math.sin(a);
-  const cb = Math.cos(b);
-  const sb = Math.sin(b);
-  const cg = Math.cos(g);
-  const sg = Math.sin(g);
-  out.x = sa * sb * cg - ca * cb * sg;
-  out.y = sa * cb * sg + ca * sb * cg;
-  out.z = ca * cb * sg - sa * sb * cg;
-  out.w = ca * cb * cg + sa * sb * sg;
-  out.interval = orientation.interval;
-  out.timestamp = orientation.timestamp;
-  out.accuracy = orientation.accuracy;
+  const alpha = orientation.alpha * DEG_TO_RAD * 0.5;
+  const beta = orientation.beta * DEG_TO_RAD * 0.5;
+  const gamma = orientation.gamma * DEG_TO_RAD * 0.5;
+  const interval = orientation.interval;
+  const timestamp = orientation.timestamp;
+  const accuracy = orientation.accuracy;
+  const cosAlpha = Math.cos(alpha);
+  const sinAlpha = Math.sin(alpha);
+  const cosBeta = Math.cos(beta);
+  const sinBeta = Math.sin(beta);
+  const cosGamma = Math.cos(gamma);
+  const sinGamma = Math.sin(gamma);
+  out.x = sinAlpha * sinBeta * cosGamma - cosAlpha * cosBeta * sinGamma;
+  out.y = sinAlpha * cosBeta * sinGamma + cosAlpha * sinBeta * cosGamma;
+  out.z = cosAlpha * cosBeta * sinGamma - sinAlpha * sinBeta * cosGamma;
+  out.w = cosAlpha * cosBeta * cosGamma + sinAlpha * sinBeta * sinGamma;
+  out.interval = interval;
+  out.timestamp = timestamp;
+  out.accuracy = accuracy;
 }
 
-// Converts a quaternion reading into a 3×3 rotation matrix written to `out` (column-major, 9
-// elements). Safe when `out` aliases any field of `quaternion` because all inputs are read first.
+/**
+ * Writes a column-major 3x3 rotation matrix. A short source `number[]` grows to nine entries.
+ */
 export function computeRotationMatrixFromQuaternion(out: number[], quaternion: Readonly<QuaternionReading>): void {
   const x = quaternion.x;
   const y = quaternion.y;
@@ -157,21 +202,28 @@ export function computeRotationMatrixFromQuaternion(out: number[], quaternion: R
   const wx = w * x2;
   const wy = w * y2;
   const wz = w * z2;
-  out[0] = 1 - (yy + zz);
+  if (out.length < 9) {
+    (<T>(items: T[], length: number, value: T): void => {
+      while (items.length < length) {
+        items.push(value);
+      }
+      items.length = length;
+    })(out, 9, 0.0);
+  }
+  out[0] = 1.0 - (yy + zz);
   out[1] = xy + wz;
   out[2] = xz - wy;
   out[3] = xy - wz;
-  out[4] = 1 - (xx + zz);
+  out[4] = 1.0 - (xx + zz);
   out[5] = yz + wx;
   out[6] = xz + wy;
   out[7] = yz - wx;
-  out[8] = 1 - (xx + yy);
+  out[8] = 1.0 - (xx + yy);
 }
 
-// Compensates an OrientationReading for the current screen rotation angle (in degrees, clockwise,
-// as returned by screen.orientation.angle). Raw deviceorientation angles are in device-physical
-// frame; this function rotates alpha/beta/gamma so they are relative to the current screen
-// orientation. Writes into `out`. Safe when `out` aliases `orientation` because all inputs are read first.
+/**
+ * Rotates beta and gamma into screen coordinates and propagates every other source field.
+ */
 export function computeScreenRelativeOrientation(
   out: OrientationReading,
   orientation: Readonly<OrientationReading>,
@@ -180,248 +232,318 @@ export function computeScreenRelativeOrientation(
   const alpha = orientation.alpha;
   const beta = orientation.beta;
   const gamma = orientation.gamma;
-  // Read all inputs before writing any output (alias safety).
+  const absolute = orientation.absolute;
+  const heading = orientation.heading;
+  const interval = orientation.interval;
+  const timestamp = orientation.timestamp;
+  const accuracy = orientation.accuracy;
   const angle = screenAngle * DEG_TO_RAD;
-  const sinA = Math.sin(angle);
-  const cosA = Math.cos(angle);
-  // Rotate gamma and beta components by the screen angle in the horizontal plane.
+  const sinAngle = Math.sin(angle);
+  const cosAngle = Math.cos(angle);
   out.alpha = alpha;
-  out.beta = beta * cosA - gamma * sinA;
-  out.gamma = beta * sinA + gamma * cosA;
-  out.absolute = orientation.absolute;
-  out.heading = orientation.heading;
-  out.interval = orientation.interval;
-  out.timestamp = orientation.timestamp;
-  out.accuracy = orientation.accuracy;
+  out.beta = beta * cosAngle - gamma * sinAngle;
+  out.gamma = beta * sinAngle + gamma * cosAngle;
+  out.absolute = absolute;
+  out.heading = heading;
+  out.interval = interval;
+  out.timestamp = timestamp;
+  out.accuracy = accuracy;
 }
 
-// Rotates a device-frame acceleration vector (m/s²) into the world frame using a quaternion that
-// describes the device's orientation. The quaternion represents the rotation from world to device
-// frame; this function applies the inverse (device-to-world) rotation. Writes into `out`.
-// Safe when `out` aliases `acceleration` because all inputs are read first.
+/**
+ * Applies the source quaternion vector-rotation formula and propagates acceleration metadata.
+ */
 export function computeWorldAccelerationFromDeviceAcceleration(
   out: MotionReading,
   acceleration: Readonly<MotionReading>,
   quaternion: Readonly<QuaternionReading>,
 ): void {
-  // Read all inputs before writing any output (alias safety).
-  const ax = acceleration.x;
-  const ay = acceleration.y;
-  const az = acceleration.z;
-  const qx = quaternion.x;
-  const qy = quaternion.y;
-  const qz = quaternion.z;
-  const qw = quaternion.w;
-  // Apply the inverse (conjugate) quaternion rotation: q^-1 * v * q.
-  // Using the efficient vector rotation formula: v' = v + 2*qw*(q × v) + 2*(q × (q × v)).
-  const twx = 2 * qw;
-  const cx = qy * az - qz * ay;
-  const cy = qz * ax - qx * az;
-  const cz = qx * ay - qy * ax;
-  const ccx = qy * cz - qz * cy;
-  const ccy = qz * cx - qx * cz;
-  const ccz = qx * cy - qy * cx;
-  out.x = ax + twx * cx + 2 * ccx;
-  out.y = ay + twx * cy + 2 * ccy;
-  out.z = az + twx * cz + 2 * ccz;
-  out.interval = acceleration.interval;
-  out.timestamp = acceleration.timestamp;
-  out.accuracy = acceleration.accuracy;
+  const accelerationX = acceleration.x;
+  const accelerationY = acceleration.y;
+  const accelerationZ = acceleration.z;
+  const interval = acceleration.interval;
+  const timestamp = acceleration.timestamp;
+  const accuracy = acceleration.accuracy;
+  const quaternionX = quaternion.x;
+  const quaternionY = quaternion.y;
+  const quaternionZ = quaternion.z;
+  const quaternionW = quaternion.w;
+  const twiceW = 2.0 * quaternionW;
+  const crossX = quaternionY * accelerationZ - quaternionZ * accelerationY;
+  const crossY = quaternionZ * accelerationX - quaternionX * accelerationZ;
+  const crossZ = quaternionX * accelerationY - quaternionY * accelerationX;
+  const crossCrossX = quaternionY * crossZ - quaternionZ * crossY;
+  const crossCrossY = quaternionZ * crossX - quaternionX * crossZ;
+  const crossCrossZ = quaternionX * crossY - quaternionY * crossX;
+  out.x = accelerationX + twiceW * crossX + 2.0 * crossCrossX;
+  out.y = accelerationY + twiceW * crossY + 2.0 * crossCrossY;
+  out.z = accelerationZ + twiceW * crossZ + 2.0 * crossCrossZ;
+  out.interval = interval;
+  out.timestamp = timestamp;
+  out.accuracy = accuracy;
 }
 
+/**
+ * Allocates an ambient-light reading with source sentinel values.
+ */
 export function createAmbientLightReading(): AmbientLightReading {
-  const out = allocateEntity<AmbientLightReading>();
+  let out: AmbientLightReading = allocateEntity<AmbientLightReading>();
   initializeAmbientLightReading(out);
-  return finishEntity(out);
+  return out;
 }
 
+/**
+ * Allocates a three-axis reading with source sentinel values.
+ */
 export function createMotionReading(): MotionReading {
-  const out = allocateEntity<MotionReading>();
+  let out: MotionReading = allocateEntity<MotionReading>();
   initializeMotionReading(out);
-  return finishEntity(out);
+  return out;
 }
 
+/**
+ * Allocates an Euler-orientation reading with source sentinel values.
+ */
 export function createOrientationReading(): OrientationReading {
-  const out = allocateEntity<OrientationReading>();
+  let out: OrientationReading = allocateEntity<OrientationReading>();
   initializeOrientationReading(out);
-  return finishEntity(out);
+  return out;
 }
 
+/**
+ * Allocates a pressure reading with source sentinel values.
+ */
 export function createPressureReading(): PressureReading {
-  const out = allocateEntity<PressureReading>();
+  let out: PressureReading = allocateEntity<PressureReading>();
   initializePressureReading(out);
-  return finishEntity(out);
+  return out;
 }
 
+/**
+ * Allocates a proximity reading with source sentinel values.
+ */
 export function createProximityReading(): ProximityReading {
-  const out = allocateEntity<ProximityReading>();
+  let out: ProximityReading = allocateEntity<ProximityReading>();
   initializeProximityReading(out);
-  return finishEntity(out);
+  return out;
 }
 
+/**
+ * Allocates an identity quaternion reading with source sentinel metadata.
+ */
 export function createQuaternionReading(): QuaternionReading {
-  const out = allocateEntity<QuaternionReading>();
+  let out: QuaternionReading = allocateEntity<QuaternionReading>();
   initializeQuaternionReading(out);
-  return finishEntity(out);
+  return out;
 }
 
+/**
+ * Allocates an angular-velocity reading with source sentinel values.
+ */
 export function createRotationRateReading(): RotationRateReading {
-  const out = allocateEntity<RotationRateReading>();
+  let out: RotationRateReading = allocateEntity<RotationRateReading>();
   initializeRotationRateReading(out);
-  return finishEntity(out);
+  return out;
 }
 
+/**
+ * Allocates an inert sensor event entity. Attach a host to begin delivery.
+ */
 export function createSensors(): Sensors {
-  const out = allocateEntity<Sensors>();
+  let out: Sensors = allocateEntity<Sensors>();
   initializeSensors(out);
-  return finishEntity(out);
+  return out;
 }
 
-// Stops delivery to `sensors` and forgets its subscription. Safe to call when not attached.
+/**
+ * Invokes the attached releases in the source's exact order, stopping on the first throw. The
+ * binding is forgotten only after every release returns, so a thrown release remains retryable.
+ */
 export function detachSensors(sensors: Sensors): void {
-  const unsubscribe = _subscriptions.get(sensors);
-  if (unsubscribe !== undefined) {
-    unsubscribe();
-    _subscriptions.delete(sensors);
+  let subscription: SensorsSubscription | undefined = getEntityBindingAs(sensors) ?? undefined;
+  if (subscription === undefined) {
+    return;
   }
+  subscription.absoluteOrientation();
+  subscription.ambientLight();
+  subscription.barometer();
+  subscription.gravity();
+  subscription.linearAcceleration();
+  subscription.magnetometer();
+  subscription.motion();
+  subscription.orientation();
+  subscription.proximity();
+  subscription.quaternion();
+  detachEntityBinding(sensors);
 }
 
-// Releases `sensors` for garbage collection by detaching its provider subscriptions. The signals
-// remain plain GC-managed memory afterward.
+/**
+ * Releases the provider subscriptions while leaving the signals as ordinary managed memory.
+ */
 export function disposeSensors(sensors: Sensors): void {
   detachSensors(sensors);
 }
 
-// Queries the current permission state for the given sensor without triggering a permission prompt.
-// Returns 'unsupported' when the device has no such sensor.
-export function getSensorsPermissionState(
+/**
+ * Queries a permission state without prompting and preserves provider rejection unchanged.
+ */
+export async function getSensorsPermissionState(
   hostSensors: Readonly<HostSensorsCapability>,
   sensor?: 'motion' | 'orientation' | 'magnetometer',
 ): Promise<SensorsPermissionState> {
-  return hostSensors.getPermissionState(sensor);
+  return await hostSensors.getPermissionState(sensor);
 }
 
-// True if the accelerometer (including gravity) is available on this device.
+/**
+ * True when the combined accelerometer/motion stream is available.
+ */
 export function hasAccelerometer(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isMotionSupported();
 }
 
-// True if ambient light sensing is available on this device/platform.
+/**
+ * True when ambient light sensing is available.
+ */
 export function hasAmbientLightSensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isAmbientLightSupported();
 }
 
-// True if barometric pressure sensing is available.
+/**
+ * True when barometric pressure sensing is available.
+ */
 export function hasBarometer(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isBarometerSupported();
 }
 
-// True if the gravity vector sensor (or derivation) is available on this device.
+/**
+ * True when a gravity vector stream is available.
+ */
 export function hasGravitySensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isGravitySupported();
 }
 
-// True if the gyroscope (rotation rate) sensor is available.
+/**
+ * True when a rotation-rate stream is available.
+ */
 export function hasGyroscope(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isGyroscopeSupported();
 }
 
-// True if the linear acceleration (gravity-removed) sensor is available.
+/**
+ * True when a gravity-removed acceleration stream is available.
+ */
 export function hasLinearAccelerationSensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isLinearAccelerationSupported();
 }
 
-// True if the magnetometer sensor is available.
+/**
+ * True when a magnetometer stream is available.
+ */
 export function hasMagnetometer(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isMagnetometerSupported();
 }
 
-// True if the device orientation sensor is available.
+/**
+ * True when an Euler-orientation stream is available.
+ */
 export function hasOrientationSensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isOrientationSupported();
 }
 
-// True if a proximity sensor is available.
+/**
+ * True when a proximity stream is available.
+ */
 export function hasProximitySensor(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isProximitySupported();
 }
 
-// Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
+/**
+ * Initializes an ambient-light reading to zero with unknown metadata.
+ */
 export function initializeAmbientLightReading(out: EntityConstruction<AmbientLightReading>): void {
   out.accuracy = 'unknown';
-  out.illuminance = 0;
-  out.interval = -1;
-  out.timestamp = -1;
+  out.illuminance = 0.0;
+  out.interval = -1.0;
+  out.timestamp = -1.0;
 }
 
-// Allocates a zeroed MotionReading with unknown accuracy/interval/timestamp.
-// Used for accelerometer (gravity-included), linear acceleration, gravity vector, and magnetometer readings.
+/**
+ * Initializes a three-axis reading to zero with unknown metadata.
+ */
 export function initializeMotionReading(out: EntityConstruction<MotionReading>): void {
   out.accuracy = 'unknown';
-  out.interval = -1;
-  out.timestamp = -1;
-  out.x = 0;
-  out.y = 0;
-  out.z = 0;
+  out.interval = -1.0;
+  out.timestamp = -1.0;
+  out.x = 0.0;
+  out.y = 0.0;
+  out.z = 0.0;
 }
 
-// Allocates a zeroed OrientationReading. heading is -1 (unknown) and absolute is false until
-// a reading arrives.
+/**
+ * Initializes an Euler reading to a relative zero rotation with unknown heading and metadata.
+ */
 export function initializeOrientationReading(out: EntityConstruction<OrientationReading>): void {
   out.absolute = false;
   out.accuracy = 'unknown';
-  out.alpha = 0;
-  out.beta = 0;
-  out.gamma = 0;
-  out.heading = -1;
-  out.interval = -1;
-  out.timestamp = -1;
+  out.alpha = 0.0;
+  out.beta = 0.0;
+  out.gamma = 0.0;
+  out.heading = -1.0;
+  out.interval = -1.0;
+  out.timestamp = -1.0;
 }
 
-// Allocates a zeroed PressureReading with unknown accuracy/interval/timestamp.
-// altitude is -1 when underivable from pressure alone.
+/**
+ * Initializes a pressure reading with zero pressure and unknown altitude and metadata.
+ */
 export function initializePressureReading(out: EntityConstruction<PressureReading>): void {
   out.accuracy = 'unknown';
-  out.altitude = -1;
-  out.interval = -1;
-  out.pressure = 0;
-  out.timestamp = -1;
+  out.altitude = -1.0;
+  out.interval = -1.0;
+  out.pressure = 0.0;
+  out.timestamp = -1.0;
 }
 
-// Allocates a zeroed ProximityReading with unknown accuracy/interval/timestamp.
-// distance and max are -1 when only near/far is known.
+/**
+ * Initializes a proximity reading with a far state and unknown distances and metadata.
+ */
 export function initializeProximityReading(out: EntityConstruction<ProximityReading>): void {
   out.accuracy = 'unknown';
-  out.distance = -1;
-  out.interval = -1;
-  out.max = -1;
+  out.distance = -1.0;
+  out.interval = -1.0;
+  out.max = -1.0;
   out.near = false;
-  out.timestamp = -1;
+  out.timestamp = -1.0;
 }
 
-// Allocates a zeroed QuaternionReading (identity quaternion: w=1) with unknown accuracy/interval/timestamp.
+/**
+ * Initializes a quaternion reading to identity with unknown metadata.
+ */
 export function initializeQuaternionReading(out: EntityConstruction<QuaternionReading>): void {
   out.accuracy = 'unknown';
-  out.interval = -1;
-  out.timestamp = -1;
-  out.w = 1;
-  out.x = 0;
-  out.y = 0;
-  out.z = 0;
+  out.interval = -1.0;
+  out.timestamp = -1.0;
+  out.w = 1.0;
+  out.x = 0.0;
+  out.y = 0.0;
+  out.z = 0.0;
 }
 
-// Allocates a zeroed RotationRateReading with unknown accuracy/interval/timestamp.
-// alpha/beta/gamma are angular velocity in deg/s around the device z/x/y axes respectively.
+/**
+ * Initializes an angular-velocity reading to zero with unknown metadata.
+ */
 export function initializeRotationRateReading(out: EntityConstruction<RotationRateReading>): void {
   out.accuracy = 'unknown';
-  out.alpha = 0;
-  out.beta = 0;
-  out.gamma = 0;
-  out.interval = -1;
-  out.timestamp = -1;
+  out.alpha = 0.0;
+  out.beta = 0.0;
+  out.gamma = 0.0;
+  out.interval = -1.0;
+  out.timestamp = -1.0;
 }
 
-// Allocates a Sensors event entity with inert signals; call attachSensors to start delivery.
+/**
+ * Gives a Sensors entity eleven fresh inert signals and no provider binding.
+ */
 export function initializeSensors(out: EntityConstruction<Sensors>): void {
   out.onAbsoluteOrientation = createSignal();
   out.onAccelerometer = createSignal();
@@ -434,16 +556,19 @@ export function initializeSensors(out: EntityConstruction<Sensors>): void {
   out.onOrientation = createSignal();
   out.onProximity = createSignal();
   out.onQuaternion = createSignal();
+  detachEntityBinding(out);
 }
 
-// True if any motion sensors (accelerometer or gyroscope) are available on this device.
+/**
+ * True when either member of the combined motion stream is available.
+ */
 export function isSensorsSupported(hostSensors: Readonly<HostSensorsCapability>): boolean {
   return hostSensors.isMotionSupported();
 }
 
-// Requests sensor permission where the host gates it (iOS); resolves true when granted or ungated.
-export function requestSensorsPermission(hostSensors: Readonly<HostSensorsCapability>): Promise<boolean> {
-  return hostSensors.requestPermission();
+/**
+ * Requests gated sensor permission and preserves provider rejection unchanged.
+ */
+export async function requestSensorsPermission(hostSensors: Readonly<HostSensorsCapability>): Promise<boolean> {
+  return await hostSensors.requestPermission();
 }
-
-const _subscriptions = new WeakMap<Sensors, () => void>();

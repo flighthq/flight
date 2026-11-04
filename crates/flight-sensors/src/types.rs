@@ -1,4 +1,5 @@
 //! flight-compiler: rust-only
+//! flight-compiler: string-union SensorAccuracy SensorsPermissionState SensorsPermissionSensor
 
 use std::future::Future;
 use std::pin::Pin;
@@ -245,21 +246,6 @@ pub struct Sensors {
     pub on_orientation: Signal<OrientationReading>,
     pub on_proximity: Signal<ProximityReading>,
     pub on_quaternion: Signal<QuaternionReading>,
-}
-
-/// Exact releases held by one attached Sensors entity. The field order follows unsubscribe order.
-#[derive(Clone)]
-pub(crate) struct SensorsSubscription {
-    pub(crate) absolute_orientation: SensorUnsubscribe,
-    pub(crate) ambient_light: SensorUnsubscribe,
-    pub(crate) barometer: SensorUnsubscribe,
-    pub(crate) gravity: SensorUnsubscribe,
-    pub(crate) linear_acceleration: SensorUnsubscribe,
-    pub(crate) magnetometer: SensorUnsubscribe,
-    pub(crate) motion: SensorUnsubscribe,
-    pub(crate) orientation: SensorUnsubscribe,
-    pub(crate) proximity: SensorUnsubscribe,
-    pub(crate) quaternion: SensorUnsubscribe,
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS SensorAccuracy string union

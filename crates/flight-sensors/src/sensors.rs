@@ -1,4 +1,4 @@
-//! flight-compiler: target-native
+//! flight-compiler: entity-construction initialize_ambient_light_reading initialize_motion_reading initialize_orientation_reading initialize_pressure_reading initialize_proximity_reading initialize_quaternion_reading initialize_rotation_rate_reading initialize_sensors
 
 use std::sync::Arc;
 
@@ -8,7 +8,28 @@ use flight_entity::{
 use flight_math::{DEG_TO_RAD, RAD_TO_DEG};
 use flight_signals::{create_signal, emit_signal};
 
-use crate::types::*;
+use crate::types::{
+    AmbientLightReading, HostSensorsCapability, MotionReading, OrientationReading, PressureReading,
+    ProximityReading, QuaternionReading, RotationRateReading, SensorAccuracy, Sensors,
+    SensorsPermissionRequestResult, SensorsPermissionSensor, SensorsPermissionStateResult,
+};
+#[cfg(all(test, feature = "object-api"))]
+use crate::types::{ProviderRef, SensorUnsubscribe, SensorsPermissionState};
+
+/// Exact releases held by one attached Sensors entity. The field order follows unsubscribe order.
+#[derive(Clone)]
+struct SensorsSubscription {
+    absolute_orientation: Arc<dyn Fn() + Send + Sync>,
+    ambient_light: Arc<dyn Fn() + Send + Sync>,
+    barometer: Arc<dyn Fn() + Send + Sync>,
+    gravity: Arc<dyn Fn() + Send + Sync>,
+    linear_acceleration: Arc<dyn Fn() + Send + Sync>,
+    magnetometer: Arc<dyn Fn() + Send + Sync>,
+    motion: Arc<dyn Fn() + Send + Sync>,
+    orientation: Arc<dyn Fn() + Send + Sync>,
+    proximity: Arc<dyn Fn() + Send + Sync>,
+    quaternion: Arc<dyn Fn() + Send + Sync>,
+}
 
 #[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
@@ -670,7 +691,8 @@ pub fn compute_world_acceleration_from_device_acceleration(
 /// Invokes the attached releases in the source's exact order, stopping on the first throw. The
 /// binding is forgotten only after every release returns, so a thrown release remains retryable.
 pub fn detach_sensors(sensors: &mut Sensors) {
-    let subscription = get_entity_binding_as::<SensorsSubscription, Sensors>(sensors).cloned();
+    let subscription: Option<SensorsSubscription> =
+        get_entity_binding_as::<SensorsSubscription, Sensors>(sensors).cloned();
     let Some(subscription) = subscription else {
         return;
     };
