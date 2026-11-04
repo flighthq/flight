@@ -90,7 +90,7 @@ function findCorners(pts: Readonly<number[]>, n: number): number[] {
     if (len0 === 0.0 || len1 === 0.0) {
       continue;
     }
-    const dot = ((dx0 * dx1 + dy0 * dy1) / len0) * len1;
+    const dot = (dx0 * dx1 + dy0 * dy1) / (len0 * len1);
     if (dot < 0.5) {
       corners.push(i);
     }
@@ -235,13 +235,10 @@ function generateBezier(
     const b0 = (1.0 - t) * (1.0 - t) * (1.0 - t);
     const b3 = t * t * t;
     const tmpx =
-      pts[(first + i) * 2] - pts[first * 2] * b0 + pts[first * 2] * b1 + pts[last * 2] * b2 + pts[last * 2] * b3;
+      pts[(first + i) * 2] - (pts[first * 2] * b0 + pts[first * 2] * b1 + pts[last * 2] * b2 + pts[last * 2] * b3);
     const tmpy =
       pts[(first + i) * 2 + 1] -
-      pts[first * 2 + 1] * b0 +
-      pts[first * 2 + 1] * b1 +
-      pts[last * 2 + 1] * b2 +
-      pts[last * 2 + 1] * b3;
+      (pts[first * 2 + 1] * b0 + pts[first * 2 + 1] * b1 + pts[last * 2 + 1] * b2 + pts[last * 2 + 1] * b3);
     x0 += a1x * tmpx + a1y * tmpy;
     x1 += a2x * tmpx + a2y * tmpy;
   }

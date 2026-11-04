@@ -24,7 +24,7 @@ function applyDashToContour(
   for (let i = 0; i < dash.length; i += 1) {
     if (skipped + dash[i] > offset) {
       dashIndex = i;
-      remaining = dash[i] - offset - skipped;
+      remaining = dash[i] - (offset - skipped);
       isOn = i % 2 === 0;
       break;
     }

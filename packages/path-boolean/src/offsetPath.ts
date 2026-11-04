@@ -399,7 +399,7 @@ function pushOffsetArc(
   const maxAngle = arcTolerance > 0.0 && arcTolerance < radius ? 2.0 * Math.acos(1.0 - arcTolerance / radius) : Math.PI;
   const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxAngle) >>> 0);
   for (let i = 1; i < steps; i += 1) {
-    const angle = startAngle + (sweep * i) / steps;
+    const angle = startAngle + sweep * (i / steps);
     ring.push(cx + radius * Math.cos(angle));
     ring.push(cy + radius * Math.sin(angle));
   }

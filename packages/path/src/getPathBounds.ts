@@ -40,8 +40,8 @@ function cubicExtremumRoots(p0: number, p1: number, p2: number, p3: number): num
     return roots;
   }
   const sqrtD = Math.sqrt(discriminant);
-  const t1 = ((-b + sqrtD) / 2.0) * a;
-  const t2 = ((-b - sqrtD) / 2.0) * a;
+  const t1 = (-b + sqrtD) / (2.0 * a);
+  const t2 = (-b - sqrtD) / (2.0 * a);
   if (t1 > 0.0 && t1 < 1.0) {
     roots.push(t1);
   }
