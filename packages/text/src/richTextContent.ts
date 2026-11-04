@@ -235,20 +235,14 @@ function decodeHtmlEntities(value: string): string {
   let out = '';
   let rest = value;
   for (;;) {
-    const $amp = ((value: string, pattern: string): number | undefined => {
-      const index = value.indexOf(pattern);
-      return index === -1 ? undefined : index;
-    })(rest, '&');
+    const $amp = ((i) => (i === -1 ? undefined : i))(rest.indexOf('&'));
     if ($amp === undefined) {
       break;
     }
     const amp = $amp;
     out = `${out}${rest.slice(0, amp)}`;
     const afterAmp = rest.slice(amp + 1, rest.length);
-    const semi = ((value: string, pattern: string): number | undefined => {
-      const index = value.indexOf(pattern);
-      return index === -1 ? undefined : index;
-    })(afterAmp, ';');
+    const semi = ((i) => (i === -1 ? undefined : i))(afterAmp.indexOf(';'));
     if (semi === undefined) {
       out = `${out}${rest.slice(amp, rest.length)}`;
       return out;
@@ -288,11 +282,11 @@ export function getRichTextContent(runtime: RichTextRuntime): RichTextContent {
 function isCondensedWhitespace(character: string): boolean {
   return (
     character === ' ' ||
-    character === '\u{c}' ||
+    character === '\x0c' ||
     character === '\n' ||
     character === '\r' ||
     character === '\t' ||
-    character === '\u{b}'
+    character === '\x0b'
   );
 }
 
