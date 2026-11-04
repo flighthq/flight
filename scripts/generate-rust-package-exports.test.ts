@@ -2,6 +2,7 @@ import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
 import {
+  canonicalizeGeneratedContractImports,
   collectCompanionFileNames,
   collectCrateExportSymbols,
   compilerAliasArguments,
@@ -33,6 +34,58 @@ import {
   resolveExternalContractExports,
   resolveRustExportName,
 } from './generate-rust-package-exports.ts';
+
+describe('canonicalizeGeneratedContractImports', () => {
+  it('reuses established contract owners and keeps unrelated Rust-owner imports', () => {
+    const existing = `import type {
+  BackendOperationExplanation,
+  NativeSurfaceHandle as SurfaceHandle,
+} from '@flighthq/types/contract';
+import { createHost } from '@flighthq/host/contract';
+`;
+    const generated = `import type {
+  BackendOperationExplanation,
+  Host,
+  NativeSurfaceHandle as SurfaceHandle,
+} from '@flighthq/host/contract';
+import { createHost } from '@flighthq/host/contract';
+
+export function useHost(
+  host: Host,
+  explanation: BackendOperationExplanation,
+  handle: SurfaceHandle,
+): void {
+  createHost(host, explanation, handle);
+}
+`;
+
+    expect(canonicalizeGeneratedContractImports(existing, generated)).toBe(
+      `import type { Host } from '@flighthq/host/contract';
+import type { BackendOperationExplanation, NativeSurfaceHandle as SurfaceHandle } from '@flighthq/types/contract';
+import { createHost } from '@flighthq/host/contract';
+
+export function useHost(
+  host: Host,
+  explanation: BackendOperationExplanation,
+  handle: SurfaceHandle,
+): void {
+  createHost(host, explanation, handle);
+}
+`,
+    );
+  });
+
+  it('does not guess when the existing implementation has ambiguous owners', () => {
+    const existing = `import type { Shared } from '@flighthq/alpha/contract';
+import type { Shared } from '@flighthq/beta/contract';
+`;
+    const generated = `import type { Shared } from '@flighthq/rust-owner/contract';
+export type Result = Shared;
+`;
+
+    expect(canonicalizeGeneratedContractImports(existing, generated)).toBe(generated);
+  });
+});
 
 describe('collectCrateExportSymbols', () => {
   it('reads export lists as crate-internal symbols that the public scan ignores', () => {

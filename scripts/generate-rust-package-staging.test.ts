@@ -270,6 +270,49 @@ mod strict_tests {
     expect(run.stderr).toContain('unsupported Rust method call `.type_id()`');
   }, 120_000);
 
+  it('keeps the established TypeScript contract owner for a dependency re-export', async () => {
+    rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+flight-host = "0.0.0"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'mod value;\npub mod contract;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `use flight_host::BackendOperationExplanation;
+
+pub fn echo_explanation(value: BackendOperationExplanation) -> BackendOperationExplanation {
+    return value;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { BackendOperationExplanation } from '@flighthq/types/contract';
+
+export function echoExplanation(value: BackendOperationExplanation): BackendOperationExplanation {
+  return value;
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { echoExplanation } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain("import type { BackendOperationExplanation } from '@flighthq/types/contract';");
+    expect(value).not.toContain("from '@flighthq/host/contract'");
+  }, 120_000);
+
   it('generates explicit empty modules for an intentionally empty public contract', async () => {
     rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
     rmSync(sourcePath, { force: true });

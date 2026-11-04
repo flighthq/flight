@@ -410,6 +410,66 @@ export function renderGeneratedImports(
   return output.length === 0 ? output : output + '\n';
 }
 
+// A target-native implementation may already import a dependency-owned symbol through its canonical
+// TypeScript contract even when Rust names the declaration through another crate's re-export barrel.
+// Reuse that established owner in generated output so strict promotion does not introduce a new
+// package edge or pull the re-exporting package's source across the consumer's project boundary.
+export function canonicalizeGeneratedContractImports(existingTypescript: string, generatedTypescript: string): string {
+  const canonicalOwners = new Map<string, { module: string; specifier: string }>();
+  const ambiguous = new Set<string>();
+  const importPattern = /^import\s+(?:type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm;
+
+  for (const match of existingTypescript.matchAll(importPattern)) {
+    for (const item of match[1].split(',')) {
+      const specifier = item.trim().replace(/^type\s+/, '');
+      const local = specifier
+        .split(/\s+as\s+/)
+        .at(-1)
+        ?.trim();
+      if (!local || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(local) || ambiguous.has(local)) continue;
+      const previous = canonicalOwners.get(local);
+      if (previous !== undefined && previous.module !== match[2]) {
+        canonicalOwners.delete(local);
+        ambiguous.add(local);
+        continue;
+      }
+      canonicalOwners.set(local, { module: match[2], specifier });
+    }
+  }
+
+  const generatedImportPattern =
+    /^import\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm;
+  return generatedTypescript.replace(generatedImportPattern, (_declaration, groupType, body, module: string) => {
+    const imports = new Map<string, { types: string[]; values: string[] }>();
+    for (const item of (body as string).split(',')) {
+      const declaration = item.trim();
+      if (declaration.length === 0) continue;
+      const itemTypeOnly = groupType !== undefined || declaration.startsWith('type ');
+      const generatedSpecifier = declaration.replace(/^type\s+/, '');
+      const local = generatedSpecifier
+        .split(/\s+as\s+/)
+        .at(-1)
+        ?.trim();
+      const canonical = local === undefined ? undefined : canonicalOwners.get(local);
+      const targetModule = canonical?.module ?? module;
+      const entry = imports.get(targetModule) ?? { types: [], values: [] };
+      (itemTypeOnly ? entry.types : entry.values).push(canonical?.specifier ?? generatedSpecifier);
+      imports.set(targetModule, entry);
+    }
+
+    let output = '';
+    for (const [targetModule, names] of [...imports].sort(([left], [right]) => left.localeCompare(right))) {
+      if (names.types.length > 0) {
+        output += `import type { ${names.types.sort().join(', ')} } from '${targetModule}';\n`;
+      }
+      if (names.values.length > 0) {
+        output += `import { ${names.values.sort().join(', ')} } from '${targetModule}';\n`;
+      }
+    }
+    return output.trimEnd();
+  });
+}
+
 // Imports are part of a target-native module's symbol ownership record. During strict promotion the
 // Rust source replaces that implementation, but crate-local rust-only declarations may still be owned
 // by a transitional external TypeScript contract. Retain only imports the generated body references;

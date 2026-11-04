@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import type { DependencySource, ResolvedExternalContractExports } from './generate-rust-package-exports.ts';
 import {
   collectCompanionFileNames,
+  canonicalizeGeneratedContractImports,
   compilerAliasArguments,
   compilerVisibilityArguments,
   collectTypeScriptExportSymbols,
@@ -739,9 +740,10 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     };
   }
   const outputPath = join(rawRoot, fileName);
-  const typescript = compile('generate', rustPath, outputPath, [], aliasSources);
+  const compiledTypescript = compile('generate', rustPath, outputPath, [], aliasSources);
   const originalPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(originalPath) ? readFileSync(originalPath, 'utf8') : '';
+  const typescript = canonicalizeGeneratedContractImports(existingTypescript, compiledTypescript);
   const retainedConstants = renderReferencedConstants(existingTypescript, typescript);
   const typescriptWithConstants =
     retainedConstants === '' ? typescript : `${typescript.trimEnd()}\n\n${retainedConstants}`.replace(/^\n+/, '');
