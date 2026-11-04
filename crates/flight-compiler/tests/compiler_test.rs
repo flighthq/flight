@@ -3134,6 +3134,111 @@ pub fn alias_tail(holder: &Holder, take: bool) -> i32 {
     }
 
     #[test]
+    fn lowers_rwlock_write_guards_against_their_live_cell() {
+        let source = r#"
+use std::sync::{Arc, RwLock};
+
+pub struct Bag {
+    pub items: Vec<i32>,
+}
+
+pub struct Holder {
+    pub calls: i32,
+    pub bag: Arc<RwLock<Bag>>,
+}
+
+pub fn pick(holder: &mut Holder) -> Arc<RwLock<Bag>> {
+    holder.calls += 1;
+    return holder.bag.clone();
+}
+
+pub fn bump_shared(shared: &Arc<RwLock<i32>>) -> i32 {
+    let mut guard = shared.write().unwrap();
+    *guard += 3;
+    *guard *= 2;
+    return *guard;
+}
+
+pub fn replace_then_read(holder: &Holder) -> usize {
+    let mut guard = holder.bag.write().unwrap();
+    *guard = Bag { items: vec![1, 2, 3] };
+    guard.items.push(4);
+    return guard.items.len();
+}
+
+pub fn computed_cell(holder: &mut Holder) -> usize {
+    let cell = pick(holder);
+    let mut guard = cell.write().unwrap();
+    guard.items.push(9);
+    return guard.items.len();
+}
+
+pub fn bump_in_closure(shared: &Arc<RwLock<i32>>) -> i32 {
+    let a_shared = shared.clone();
+    let bump = move || {
+        let mut guard = a_shared.write().unwrap();
+        *guard += 3;
+        return *guard;
+    };
+    let first = bump();
+    let second = bump();
+    return first * 100 + second;
+}
+
+pub fn local_cell() -> i32 {
+    let shared = Arc::new(RwLock::new(1));
+    let a_shared = shared.clone();
+    let add = move |amount: i32| {
+        let mut guard = a_shared.write().unwrap();
+        *guard += amount;
+    };
+    add(2);
+    add(5);
+    *shared.write().unwrap() *= 10;
+    let value = *shared.read().unwrap();
+    return value;
+}
+
+pub fn replace_in_closure(holder: &Holder) -> usize {
+    let bag = holder.bag.clone();
+    let reset = move || {
+        let mut guard = bag.write().unwrap();
+        *guard = Bag { items: vec![7] };
+        guard.items.push(8);
+    };
+    reset();
+    return holder.bag.read().unwrap().items.len();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        // A guard whose whole value is replaced reads and writes its cell, never a stale snapshot.
+        assert!(
+            output.contains("shared += 3;\n  shared *= 2;\n  return shared;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("holder.bag = { items: [1, 2, 3] };\n  holder.bag.items.push(4);\n  return holder.bag.items.length;"),
+            "{output}"
+        );
+        // A computed cell is evaluated once; field writes reach the shared object through it.
+        assert_eq!(output.matches("pick(holder)").count(), 1, "{output}");
+        assert!(output.contains("const cell = pick(holder);"), "{output}");
+        // In a closure, a clone written through a guard is its original cell, which stays assignable.
+        assert!(
+            output.contains("const bump = () => {\n  shared += 3;\n  return shared;"),
+            "{output}"
+        );
+        // Every use of a replaced guard reads its cell, so no snapshot binding is emitted.
+        assert!(!output.contains("let guard = shared"), "{output}");
+        assert!(!output.contains("let guard = holder.bag"), "{output}");
+        assert!(output.contains("let shared = 1;"), "{output}");
+        assert!(output.contains("shared += amount;"), "{output}");
+        assert!(output.contains("shared *= 10;"), "{output}");
+        assert!(!output.contains("aShared +="), "{output}");
+        assert!(output.contains("holder.bag = { items: [7] };"), "{output}");
+    }
+
+    #[test]
     fn evaluates_if_let_value_scrutinees_once() {
         let source = r#"
 pub fn next_id() -> Option<i32> {
@@ -17076,7 +17181,8 @@ pub fn replace_shadowed(shared: Arc<RwLock<i32>>, target: &mut i32) {
         assert!(output.contains("shared = 5;"), "{output}");
         assert!(output.contains("target = 6;"), "{output}");
         assert!(!output.contains("target.value"), "{output}");
-        assert!(output.contains("void sharedGuard;"), "{output}");
+        // The guard's whole value is replaced, so every use of it, `drop` included, reads its cell.
+        assert!(output.contains("void shared;"), "{output}");
         assert!(!output.contains(".value.value"), "{output}");
     }
 

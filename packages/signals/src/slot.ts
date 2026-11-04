@@ -7,10 +7,9 @@ import type { SignalConnectOptions, SignalData, SignalRaw, SignalSlot, SlotId } 
 const NEXT_SIGNAL_SLOT_ID: { value: number } = { value: 1 >>> 0 };
 
 export function clearSignal<T>(signal: SignalRaw<T>): void {
-  let state = signal.data!;
   signal.data = undefined;
   signal.emit = (_unused0) => {};
-  void state;
+  void signal.data;
 }
 
 /**
@@ -152,8 +151,7 @@ function countLiveSlots<T>(data: Readonly<SignalData<T>>): number {
  * when the outermost dispatch exits (D4 re-entrancy).
  */
 export function disconnectSignal<T>(signal: SignalRaw<T>, id: SlotId): void {
-  let state = signal.data!;
-  const signalData = state;
+  const signalData = signal.data;
   if (signalData === undefined) {
     return;
   }
@@ -223,12 +221,11 @@ export function hasSignalSlots<T>(signal: SignalRaw<T>): boolean {
 }
 
 function initSignalData<T>(signal: SignalRaw<T>): void {
-  let state = signal.data!;
-  if (state !== undefined) {
+  if (signal.data !== undefined) {
     return;
   }
   signal.data = { slots: [], ids: [], priorities: [], repeat: [], paused: [], cancelled: false, depth: 0 };
-  void state;
+  void signal.data;
   installDefaultSignalEmitter(signal);
 }
 

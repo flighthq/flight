@@ -221,6 +221,12 @@ const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
 const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
 
 const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
+// A binding holding an erased shared cell (`Arc<RwLock<T>>`, lowered to `T`) whose whole value a lock
+// guard replaces, so it must be declared assignable.
+const ERASED_CELL_WRITTEN_MARKER: &str = "@erased-cell-written:";
+// A direct lock guard whose whole value is replaced (`*guard = ..`, `*guard += ..`): its binding is a
+// snapshot of the old value, so every use of it reads its target cell instead.
+const DIRECT_LOCK_GUARD_REPLACED_MARKER: &str = "@direct-lock-guard-replaced:";
 
 const INTERIOR_MUTABLE_STRUCT_MARKER: &str = "@interior-mutable-struct:";
 
@@ -5330,7 +5336,10 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
 
     struct Resolver<'a> {
         context: &'a HashSet<String>,
+        declaration_counts: HashMap<String, usize>,
         dereferenced: HashSet<String>,
+        direct_guards: HashMap<String, Expr>,
+        erased_cells: HashSet<String>,
         facts: Vec<(String, BindingFact)>,
         function: String,
         mutex_guards: HashSet<String>,
@@ -5343,9 +5352,130 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         external_structs: BTreeMap<String, String>,
         shared_identities: BTreeSet<String>,
         sites: Vec<(String, String)>,
+        replaced_guards: HashSet<String>,
+        written_cell_names: HashSet<String>,
+        written_cells: HashSet<String>,
+    }
+
+    // The names of cells whose whole value a lock guard replaces, by name, before bindings resolve:
+    // `*cell.write().unwrap() op= ..`, or `*guard op= ..` for `let guard = cell.write().unwrap()`. A
+    // clone of an erased cell aliases its original only when it is one of these.
+    struct GuardWrittenNames {
+        guards: HashMap<String, String>,
+        names: HashSet<String>,
+    }
+
+    impl GuardWrittenNames {
+        fn mark(&mut self, left: &Expr) {
+            let Expr::Unary(unary) = peel_reference_and_paren(left) else {
+                return;
+            };
+            if !matches!(unary.op, UnOp::Deref(_)) {
+                return;
+            }
+            let name = match direct_lock_guard_receiver(&unary.expr) {
+                Some(receiver) => single_path_identifier(peel_reference_and_paren(receiver)),
+                None => single_path_identifier(&unary.expr)
+                    .and_then(|guard| self.guards.get(&guard).cloned()),
+            };
+            if let Some(name) = name {
+                self.names.insert(name);
+            }
+        }
+    }
+
+    impl<'ast> Visit<'ast> for GuardWrittenNames {
+        fn visit_expr_assign(&mut self, assign: &'ast syn::ExprAssign) {
+            self.mark(&assign.left);
+            syn::visit::visit_expr_assign(self, assign);
+        }
+
+        fn visit_expr_binary(&mut self, binary: &'ast syn::ExprBinary) {
+            if binary_operator_assigns(&binary.op) {
+                self.mark(&binary.left);
+            }
+            syn::visit::visit_expr_binary(self, binary);
+        }
+
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            if let Some(initializer) = &local.init
+                && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
+                && let Some(cell) = single_path_identifier(peel_reference_and_paren(receiver))
+                && let Some(guard) = local_pattern_name(&local.pat)
+            {
+                self.guards.insert(guard, cell);
+            }
+            syn::visit::visit_local(self, local);
+        }
+    }
+
+    struct DeclarationCounter {
+        counts: HashMap<String, usize>,
+    }
+
+    impl<'ast> Visit<'ast> for DeclarationCounter {
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            *self.counts.entry(pattern.ident.to_string()).or_insert(0) += 1;
+            syn::visit::visit_pat_ident(self, pattern);
+        }
     }
 
     impl Resolver<'_> {
+        // A non-`mut` binding holding an erased shared cell, declared once in the function, so its
+        // name always means this binding: a `.clone()` of it is the same cell and lowers as an alias.
+        fn erased_cell_binding(&self, expression: &Expr) -> Option<String> {
+            let name = single_path_identifier(peel_reference_and_paren(expression))?;
+            if self.declaration_counts.get(&name).copied() != Some(1) {
+                return None;
+            }
+            let id = self.binding_id(&name)?;
+            return self.erased_cells.contains(&id).then_some(id);
+        }
+
+        // Records the binding whose whole value an assignment through a lock guard replaces:
+        // `*cell.write().unwrap() = ..` or `*guard op= ..` for a guard over `cell`, following a
+        // clone alias back to its original.
+        fn mark_guard_write(&mut self, left: &Expr) {
+            let Expr::Unary(unary) = peel_reference_and_paren(left) else {
+                return;
+            };
+            if !matches!(unary.op, UnOp::Deref(_)) {
+                return;
+            }
+            let receiver = match direct_lock_guard_receiver(&unary.expr) {
+                Some(receiver) => receiver.clone(),
+                None => {
+                    let Some(id) =
+                        single_path_identifier(&unary.expr).and_then(|name| self.binding_id(&name))
+                    else {
+                        return;
+                    };
+                    let Some(receiver) = self.direct_guards.get(&id).cloned() else {
+                        return;
+                    };
+                    self.replaced_guards.insert(id);
+                    receiver
+                }
+            };
+            let Some(mut id) = single_path_identifier(peel_reference_and_paren(&receiver))
+                .and_then(|name| self.binding_id(&name))
+            else {
+                return;
+            };
+            if let Some((_, target)) = self.ref_aliases.iter().find(|(alias, _)| *alias == id) {
+                // An alias writes through to its target; only a variable target needs `let`.
+                let Some(original) = syn::parse_str::<Expr>(target)
+                    .ok()
+                    .and_then(|target| single_path_identifier(&target))
+                    .and_then(|name| self.binding_id(&name))
+                else {
+                    return;
+                };
+                id = original;
+            }
+            self.written_cells.insert(id);
+        }
+
         fn bind(&mut self, identifier: &syn::Ident, fact: BindingFact) -> String {
             let id = format!("{}#b{}", self.function, self.ordinal);
             self.ordinal += 1;
@@ -6598,6 +6728,18 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             self.scopes.pop();
         }
 
+        fn visit_expr_assign(&mut self, assign: &'ast syn::ExprAssign) {
+            self.mark_guard_write(&assign.left);
+            syn::visit::visit_expr_assign(self, assign);
+        }
+
+        fn visit_expr_binary(&mut self, binary: &'ast syn::ExprBinary) {
+            if binary_operator_assigns(&binary.op) {
+                self.mark_guard_write(&binary.left);
+            }
+            syn::visit::visit_expr_binary(self, binary);
+        }
+
         fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
             if matches!(unary.op, UnOp::Deref(_))
                 && let Some(name) = referenced_path_identifier(&unary.expr)
@@ -6615,13 +6757,27 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .init
                 .as_ref()
                 .is_some_and(|initializer| mutex_guard_receiver(&initializer.expr).is_some());
+            let erased_cell = match &local.pat {
+                Pat::Type(typed) => rust_type_is_erased_shared_cell(&typed.ty, self.context),
+                _ => local.init.as_ref().is_some_and(|initializer| {
+                    initializer.diverge.is_none()
+                        && (expression_constructs_rw_lock_cell(&initializer.expr)
+                            || matches!(initializer.expr.as_ref(), Expr::MethodCall(clone)
+                                if clone.method == "clone"
+                                    && clone.args.is_empty()
+                                    && self.erased_cell_binding(&clone.receiver).is_some()))
+                }),
+            };
             let mut ref_alias_target = None;
             let mut ref_alias_receiver_capture = None;
             if let Some(initializer) = &local.init
                 && let Expr::MethodCall(clone) = initializer.expr.as_ref()
                 && clone.method == "clone"
                 && clone.args.is_empty()
-                && self.erased_shared_cell_field(&clone.receiver)
+                && (self.erased_shared_cell_field(&clone.receiver)
+                    || (self.erased_cell_binding(&clone.receiver).is_some()
+                        && local_pattern_name(&local.pat)
+                            .is_some_and(|name| self.written_cell_names.contains(&name))))
             {
                 let target = clone.receiver.as_ref().clone();
                 if let Some(alias) = local_pattern_name(&local.pat)
@@ -6690,6 +6846,21 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             {
                 self.mutex_guards.insert(id);
             }
+            if let Some(initializer) = &local.init
+                && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
+                && expression_is_plain_place(receiver)
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.direct_guards.insert(id, receiver.clone());
+            }
+            if erased_cell
+                && !pattern_is_mutable(&local.pat)
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.erased_cells.insert(id);
+            }
         }
     }
 
@@ -6708,9 +6879,21 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     };
     reserved_identifiers.visit_item_fn(function);
     let function_name = function.sig.ident.to_string();
+    let mut declaration_counter = DeclarationCounter {
+        counts: HashMap::new(),
+    };
+    declaration_counter.visit_item_fn(function);
+    let mut guard_written_names = GuardWrittenNames {
+        guards: HashMap::new(),
+        names: HashSet::new(),
+    };
+    guard_written_names.visit_item_fn(function);
     let mut resolver = Resolver {
         context,
+        declaration_counts: declaration_counter.counts,
         dereferenced: HashSet::new(),
+        direct_guards: HashMap::new(),
+        erased_cells: HashSet::new(),
         facts: Vec::new(),
         function: match current_source(context) {
             Some(module) => format!("{module}::{function_name}"),
@@ -6726,6 +6909,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         external_structs: BTreeMap::new(),
         shared_identities: BTreeSet::new(),
         sites: Vec::new(),
+        replaced_guards: HashSet::new(),
+        written_cell_names: guard_written_names.names,
+        written_cells: HashSet::new(),
     };
     for argument in &function.sig.inputs {
         let FnArg::Typed(argument) = argument else {
@@ -6733,6 +6919,17 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         };
         let fact = resolver.typed_fact(&argument.ty);
         resolver.bind_pattern(&argument.pat, fact);
+        let cell_type = match argument.ty.as_ref() {
+            Type::Reference(reference) if reference.mutability.is_none() => reference.elem.as_ref(),
+            rust_type => rust_type,
+        };
+        if !pattern_is_mutable(&argument.pat)
+            && rust_type_is_erased_shared_cell(cell_type, context)
+            && let Some(name) = local_pattern_name(&argument.pat)
+            && let Some(id) = resolver.binding_id(&name)
+        {
+            resolver.erased_cells.insert(id);
+        }
         let shared_identity = rust_type_is_shared_identity(context, &argument.ty);
         resolver.mark_shared_identity(&argument.pat, shared_identity);
         resolver.mark_external_struct(&argument.pat, &argument.ty);
@@ -6769,6 +6966,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     }
     for (name, id) in parameters {
         markers.push(format!("{BINDING_MARKER}{name}={id}"));
+    }
+    for id in &resolver.written_cells {
+        markers.push(format!("{ERASED_CELL_WRITTEN_MARKER}{id}"));
+    }
+    for id in &resolver.replaced_guards {
+        markers.push(format!("{DIRECT_LOCK_GUARD_REPLACED_MARKER}{id}"));
     }
     for id in resolver.mutex_guards.intersection(&resolver.dereferenced) {
         markers.push(format!("{MUTEX_GUARD_BINDING_MARKER}{id}"));
@@ -8661,11 +8864,21 @@ pub(crate) fn function_expression_context(
                 self.context.insert(format!("{JSON_VALUE_MARKER}{name}"));
             }
             if let Some(initializer) = &local.init
-                && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
+                && direct_lock_guard_receiver(&initializer.expr).is_some()
                 && let Some(id) = local_pattern_binding_id(self.context, &local.pat)
             {
                 self.context
                     .insert(format!("{DIRECT_LOCK_GUARD_BINDING_MARKER}{id}"));
+            }
+            // A guard over a variable or field reads and writes that place: it is the live cell, and
+            // Rust's borrow keeps the place fixed while the guard lives. A guard over a computed cell
+            // (a call) has no place to name again, so it reads and writes its binding, which holds the
+            // cell evaluated once.
+            if let Some(initializer) = &local.init
+                && let Some(receiver) = direct_lock_guard_receiver(&initializer.expr)
+                && expression_is_plain_place(receiver)
+                && let Some(id) = local_pattern_binding_id(self.context, &local.pat)
+            {
                 self.context.insert(format!(
                     "{DIRECT_LOCK_GUARD_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}{}",
                     receiver.to_token_stream()
@@ -10976,6 +11189,15 @@ fn emit_expression_value(
             {
                 return emit_expression(&target, entities);
             }
+            if path.qself.is_none()
+                && path.path.segments.len() == 1
+                && let Some(id) =
+                    lexical_binding(entities, &path.path.segments[0].ident.to_string())
+                && entities.contains(&format!("{DIRECT_LOCK_GUARD_REPLACED_MARKER}{id}"))
+                && let Some(target) = direct_lock_guard_target(entities, &id)?
+            {
+                return emit_expression(&target, entities);
+            }
             if let Some((owner, variant)) = associated_owner_and_member(expression)
                 && is_tagged_data_union_variant(entities, &owner, &variant)
             {
@@ -12676,7 +12898,9 @@ pub(crate) fn emit_local_with_shadow_and_else(
         emit_hoisted_if_value_local(out, local, if_expr, entities, indent, shadowed, rebound)?;
         return Ok(vec![]);
     }
-    let mutable = pattern_is_mutable(&local.pat);
+    let mutable = pattern_is_mutable(&local.pat)
+        || local_pattern_binding_id(entities, &local.pat)
+            .is_some_and(|id| entities.contains(&format!("{ERASED_CELL_WRITTEN_MARKER}{id}")));
     let (pattern, rust_type, discard) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) | Pat::Slice(_) | Pat::Struct(_) => {
             (emit_pattern(&local.pat)?, None, false)
@@ -12723,6 +12947,18 @@ pub(crate) fn emit_local_with_shadow_and_else(
         .map(|id| ref_alias_target_for_id(entities, id))
         .transpose()?
         .flatten();
+    if local_binding_id.as_deref().is_some_and(|id| {
+        entities.contains(&format!("{DIRECT_LOCK_GUARD_REPLACED_MARKER}{id}"))
+            && entities.iter().any(|marker| {
+                marker.starts_with(&format!(
+                    "{DIRECT_LOCK_GUARD_TARGET_MARKER}{id}{PROVENANCE_SEPARATOR}"
+                ))
+            })
+    }) {
+        // A replaced direct lock guard over a variable or field is read as that place wherever it is
+        // used, so its snapshot binding would be unused, and reading a place has no effect to keep.
+        return Ok(vec![]);
+    }
     if local_name
         .as_deref()
         .is_some_and(|name| name.starts_with('_'))
@@ -23963,6 +24199,36 @@ fn mutex_guard_receiver(expression: &Expr) -> Option<&Expr> {
 
 // The cell whose guard is produced by an exact `cell.read().unwrap()` or
 // `cell.write().unwrap()` expression.
+// A compound assignment operator (`+=`, `<<=`, ..).
+fn binary_operator_assigns(operator: &syn::BinOp) -> bool {
+    use syn::BinOp;
+    return matches!(
+        operator,
+        BinOp::AddAssign(_)
+            | BinOp::SubAssign(_)
+            | BinOp::MulAssign(_)
+            | BinOp::DivAssign(_)
+            | BinOp::RemAssign(_)
+            | BinOp::BitXorAssign(_)
+            | BinOp::BitAndAssign(_)
+            | BinOp::BitOrAssign(_)
+            | BinOp::ShlAssign(_)
+            | BinOp::ShrAssign(_)
+    );
+}
+
+// `Arc::new(RwLock::new(..))`: a new erased shared cell.
+fn expression_constructs_rw_lock_cell(expression: &Expr) -> bool {
+    let Expr::Call(arc) = expression else {
+        return false;
+    };
+    if !expression_is_associated_path(&arc.func, "Arc", "new") || arc.args.len() != 1 {
+        return false;
+    }
+    return matches!(&arc.args[0], Expr::Call(lock)
+        if expression_is_associated_path(&lock.func, "RwLock", "new") && lock.args.len() == 1);
+}
+
 pub(super) fn direct_lock_guard_receiver(expression: &Expr) -> Option<&Expr> {
     let Expr::MethodCall(unwrap) = expression else {
         return None;
