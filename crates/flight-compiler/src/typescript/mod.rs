@@ -13976,21 +13976,10 @@ pub(crate) fn emit_local_with_shadow_and_else(
         )? {
             return Ok(vec![]);
         }
-        if reject_function_exits_in_value_position(
-            |visitor| {
-                for arm in &match_expr.arms {
-                    visitor.visit_arm(arm);
-                }
-            },
-            "",
-        )
-        .is_err()
-        {
-            emit_hoisted_match_value_local(
-                out, local, match_expr, entities, indent, shadowed, rebound,
-            )?;
-            return Ok(vec![]);
-        }
+        emit_hoisted_match_value_local(
+            out, local, match_expr, entities, indent, shadowed, rebound,
+        )?;
+        return Ok(vec![]);
     }
     if let Some(initializer) = &local.init
         && let Expr::Block(block) = initializer.expr.as_ref()
@@ -14625,7 +14614,7 @@ fn emit_hoisted_match_value_local(
     _shadowed: bool,
     _rebound: bool,
 ) -> Result<(), CompileError> {
-    let (pattern, _rust_type) = match &local.pat {
+    let (pattern, rust_type) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => (emit_pattern(&local.pat)?, None),
         Pat::Type(typed) => {
             let pattern = emit_pattern(&typed.pat)?;
@@ -14637,6 +14626,23 @@ fn emit_hoisted_match_value_local(
                 "unsupported destructuring in hoisted match-value binding",
             ));
         }
+    };
+    let mutable = pattern_is_mutable(&local.pat)
+        || local_pattern_binding_id(entities, &local.pat)
+            .is_some_and(|id| entities.contains(&format!("{ERASED_CELL_WRITTEN_MARKER}{id}")));
+    let type_annotation = rust_type.map(|ty| emit_type(ty, entities)).transpose()?;
+    let string_union_type = match &type_annotation {
+        None if mutable => {
+            expression_string_union_owner(&Expr::Match(match_expr.clone()), entities)
+                .and_then(|owner| syn::parse_str::<Type>(&owner).ok())
+                .map(|owner| emit_type(&owner, entities))
+                .transpose()?
+        }
+        _ => None,
+    };
+    let suffix = match type_annotation.as_ref().or(string_union_type.as_ref()) {
+        Some(ts_type) => format!(": {ts_type}"),
+        None => String::new(),
     };
     if let Pat::Tuple(tuple) = &local.pat {
         for element in &tuple.elems {
@@ -14660,7 +14666,7 @@ fn emit_hoisted_match_value_local(
         }
     } else {
         write_indent(out, indent);
-        writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
+        writeln!(out, "let {pattern}{suffix};").expect("writing to a String cannot fail");
     }
     emit_match_statement_with_target(out, match_expr, entities, indent, &pattern)?;
     return Ok(());

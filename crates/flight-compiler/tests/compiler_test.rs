@@ -3061,26 +3061,21 @@ pub fn called_statement_forms(counter: &mut Counter) -> i32 {
         }
         assert!(output.contains("case LIMIT:"), "{output}");
         assert!(
-            output.contains("const other = n;\n        return other * 2;"),
+            output.contains("const other = n;\n        value = other * 2;"),
             "{output}"
         );
         assert!(
-            output.contains("const other = matchValue;\n        return other * 10;"),
+            output.contains("const other = $matchValue;\n          value = other * 10;"),
             "{output}"
         );
         // A plain scrutinee is read in place.
         assert!(output.contains("switch (n) {"), "{output}");
         assert!(output.contains("const other = n;"), "{output}");
-        // A call is evaluated once: into `matchValue` in value position, into a block-scoped
-        // `$matchValue` in statement position (two in one function do not collide).
-        assert_eq!(
-            output.matches("const matchValue = bump(counter);").count(),
-            1,
-            "{output}"
-        );
+        // A call is evaluated once: into a block-scoped `$matchValue` in both value and statement
+        // positions (three in one function do not collide).
         assert_eq!(
             output.matches("const $matchValue = bump(counter);").count(),
-            2,
+            3,
             "{output}"
         );
         assert_eq!(output.matches("bump(counter)").count(), 3, "{output}");
@@ -3453,10 +3448,15 @@ pub async fn spawn_later() -> i32 {
 }
 "#;
         let output = compile_typescript(source, None).unwrap();
-        // A `match` that awaits, in value position, becomes an awaited async arrow: a plain arrow
-        // would put `await` in a non-async function, which TypeScript rejects.
+        // A `match` in local-initializer position hoists to a `let` + statement-form match,
+        // so the `await` stays in the surrounding async function — no async IIFE needed.
+        assert!(output.contains("let value;"), "{output}");
         assert!(
-            output.contains("const value = (await (async () => {"),
+            output.contains("const matchValue = await fetch();"),
+            "{output}"
+        );
+        assert!(
+            !output.contains("const value = (await (async () => {"),
             "{output}"
         );
         assert!(!output.contains("const value = (() => {"), "{output}");
@@ -5851,8 +5851,12 @@ pub fn pick_value(input: Option<f32>) -> f32 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("const value = "),
-            "outer let should keep const: {output}"
+            output.contains("let value;"),
+            "outer binding is let for hoisted match: {output}"
+        );
+        assert!(
+            output.contains("const $value = input;"),
+            "shadowed arm binding is renamed: {output}"
         );
     }
 
@@ -11115,19 +11119,16 @@ pub fn absent_first(value: Option<f64>) -> f64 {
 }
 "#;
         let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("let pattern: number[];"), "{output}");
         assert!(
-            output.contains(
-                "  const pattern: number[] = (() => {\n  if (dash !== undefined) {\n    const values = dash;\n    return values;\n  }\n  else {\n"
-            ),
+            output.contains("if (dash !== undefined) {\n      const values = dash;\n      pattern = values;\n    }\n    else"),
             "{output}"
         );
         assert!(
-            output.contains(
-                "  if (value === undefined) {\n    return -1.0;\n  }\n  else {\n    const present = value;\n    return present;\n  }\n"
-            ),
+            output.contains("if (value === undefined) {\n      resolved = -1.0;\n    }\n    else"),
             "{output}"
         );
-        assert!(!output.contains("else if (matchValue"), "{output}");
+        assert!(!output.contains("(() => {"), "{output}");
     }
 
     #[test]
@@ -11245,7 +11246,7 @@ pub fn mixed(flag: bool) -> f64 {
             output.contains("  let issue: Reason = failed ? 'failed' : 'ok';\n"),
             "{output}"
         );
-        assert!(output.contains("  let chosen: Reason = "), "{output}");
+        assert!(output.contains("  let chosen: Reason;"), "{output}");
         assert!(output.contains("  const fixed = 'ok';\n"), "{output}");
         assert!(output.contains("  let value = "), "{output}");
         assert!(!output.contains("let value: "), "{output}");
@@ -24427,7 +24428,10 @@ mod markup_results {
 
         assert!(output.contains("const result = { text: 'replacement' };"));
         assert!(output.contains("if (Object.hasOwn(result, 'text'))"));
-        assert!(output.contains("else {\n    return 'format';"), "{output}");
+        assert!(
+            output.contains("else {\n        kind = 'format';"),
+            "{output}"
+        );
         assert!(!output.contains("MarkupResult.Effect"));
     }
 
@@ -24462,7 +24466,7 @@ mod path_segments {
         assert!(output.contains("const segment = { kind: 'moveTo' as const, x: 4.0, y: 5.0 };"));
         assert!(output.contains("segment.kind === 'moveTo'"));
         assert!(output.contains("else {\n"));
-        assert!(output.contains("return 0.0;"));
+        assert!(output.contains("x = 0.0;"), "{output}");
         assert!(!output.contains("  PathSegment,"));
         assert!(!output.contains("PathSegment.MoveTo"));
     }
