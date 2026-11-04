@@ -20685,6 +20685,9 @@ fn emit_method_call(
             "portable `.weak_count()` has no TypeScript equivalent; reference counting is not modeled",
         )),
         "ptr_eq" if arguments.len() == 1 => Ok(format!("({receiver} === {})", arguments[0])),
+        // A buffer's address is its identity, which in TypeScript is the array reference itself;
+        // comparisons of it are identity comparisons (`ptr::eq`, and `toBe` in tests).
+        "as_ptr" if arguments.is_empty() => Ok(receiver),
         "unwrap"
             if arguments.is_empty()
                 && expression_contains_method(&call.receiver, "partial_cmp") =>

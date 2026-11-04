@@ -502,6 +502,13 @@ fn emit_assertion(
             )));
         }
     };
+    // Comparing `.as_ptr()` compares buffer identity, not contents: a clone has equal contents at
+    // a different address.
+    let matcher = match name.as_str() {
+        "assert_eq" if arguments.iter().take(2).any(expression_is_as_ptr) => "toBe",
+        "assert_ne" if arguments.iter().take(2).any(expression_is_as_ptr) => "not.toBe",
+        _ => matcher,
+    };
     if matches!(name.as_str(), "assert_eq" | "assert_ne") && arguments.len() >= 2 {
         // A literal `None` compares as the absent value of the other operand: `null` for a
         // `nullable-option` return or field, `undefined` otherwise.
@@ -528,6 +535,11 @@ fn emit_assertion(
             .expect("writing to a String cannot fail");
     }
     return Ok(());
+}
+
+fn expression_is_as_ptr(expression: &Expr) -> bool {
+    return matches!(unparenthesized(expression), Expr::MethodCall(call)
+        if call.method == "as_ptr" && call.args.is_empty());
 }
 
 fn emit_assertion_expression(

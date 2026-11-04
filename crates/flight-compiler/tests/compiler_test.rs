@@ -17293,6 +17293,51 @@ mod color_format {
     }
 
     #[test]
+    fn lowers_buffer_pointer_comparisons_to_identity_checks() {
+        let source = r#"
+pub struct Track {
+    pub times: Vec<f32>,
+}
+
+pub fn clone_track(track: &Track) -> Track {
+    return Track { times: track.times.clone() };
+}
+
+mod track_identity {
+    use super::*;
+
+    #[test]
+    fn keeps_and_separates_buffers() {
+        let track = Track { times: vec![0.0, 1.0] };
+        let times_ptr = track.times.as_ptr();
+        assert_eq!(track.times.as_ptr(), times_ptr);
+        let cloned = clone_track(&track);
+        assert_ne!(cloned.times.as_ptr(), track.times.as_ptr());
+        assert_eq!(cloned.times, track.times);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        // A buffer's address is the array reference, compared by identity, never by contents.
+        assert!(output.contains("const timesPtr = track.times;"), "{output}");
+        assert!(
+            output.contains("expect(track.times).toBe(timesPtr);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(cloned.times).not.toBe(track.times);"),
+            "{output}"
+        );
+        // Comparing the buffers themselves still compares contents.
+        assert!(
+            output.contains("expect(cloned.times).toEqual(track.times);"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn lowers_shared_ref_reads_writes_and_identity_checks() {
         let source = r#"
 use std::sync::{Arc, RwLock};
