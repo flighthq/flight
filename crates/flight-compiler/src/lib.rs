@@ -1000,6 +1000,9 @@ fn compile_vitest_with_contract_alias_sources_internal(
     if let Some(ref contract_su) = contract_string_unions {
         typescript::insert_string_union_context(&mut context, contract_su.styles.keys());
     }
+    for alias_program in &alias_programs {
+        typescript::insert_string_union_context(&mut context, alias_program.string_unions.keys());
+    }
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
     typescript::insert_vitest_dependency_export_name_context(
         &mut context,
