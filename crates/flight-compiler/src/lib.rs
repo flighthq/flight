@@ -2326,7 +2326,12 @@ fn validate_type_script_type_aliases(
                     )));
                 }
             }
-            None if alias.target != "unknown" => {
+            None
+                if !matches!(
+                    alias.target,
+                    "boolean" | "number" | "string" | "unknown"
+                ) =>
+            {
                 return Err(compile_error(format!(
                     "TypeScript type alias `{}` has unsupported intrinsic target `{}`",
                     alias.name, alias.target

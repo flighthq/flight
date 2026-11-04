@@ -10756,6 +10756,45 @@ pub fn initialize_marker_value(out: &mut Marker, value: f64) {
     }
 
     #[test]
+    fn applies_explicit_entity_construction_parameters() {
+        let source = r#"//! flight-compiler: entity-construction initialize_marker
+
+pub struct Marker {
+    pub value: f64,
+}
+
+pub fn initialize_marker(out: &mut Marker) {
+    out.value = 1.0;
+}
+"#;
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(
+            output.contains("import type { EntityConstruction } from '@flighthq/entity/contract';"),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "export function initializeMarker(out: EntityConstruction<Marker>): void {"
+            ),
+            "{output}"
+        );
+
+        for (invalid, expected) in [
+            (
+                "//! flight-compiler: entity-construction missing\n",
+                "`flight-compiler: entity-construction` function `missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: entity-construction build\npub fn build(out: &mut f64) {}\n",
+                "`flight-compiler: entity-construction` function `build` must be an `initialize_*` function with a leading mutable-reference parameter",
+            ),
+        ] {
+            assert_eq!(compile_typescript(invalid, None).unwrap_err().to_string(), expected);
+        }
+    }
+
+    #[test]
     fn constructs_typed_arrays_returned_from_fixed_array_functions() {
         let source = r#"pub fn coefficients(p: f64) -> [f64; 4] {
     return [p, 3.0 * p, 1.0, 0.0];
@@ -13522,6 +13561,7 @@ pub enum UnannotatedStringUnion {
             source: r#"pub fn advance(
     players: &[AnimationPlayerRef],
     target: TargetRef,
+    ready: ReadyResult,
     advanced: &mut Vec<AnimationPlayerRef>,
 ) -> TargetRef {
     return target;
@@ -13538,6 +13578,11 @@ pub enum UnannotatedStringUnion {
                 name: "TargetRef",
                 module: None,
                 target: "unknown",
+            },
+            TypeScriptTypeAlias {
+                name: "ReadyResult",
+                module: None,
+                target: "boolean",
             },
         ];
 
@@ -13581,14 +13626,17 @@ pub enum UnannotatedStringUnion {
             "{explicit}"
         );
         assert!(explicit.contains("target: unknown"), "{explicit}");
+        assert!(explicit.contains("ready: boolean"), "{explicit}");
         assert!(
             explicit.contains("advanced: AnimationPlayer[]"),
             "{explicit}"
         );
         assert!(!explicit.contains("AnimationPlayerRef"), "{explicit}");
         assert!(!explicit.contains("TargetRef"), "{explicit}");
+        assert!(!explicit.contains("ReadyResult"), "{explicit}");
         assert!(ordinary.contains("AnimationPlayerRef"), "{ordinary}");
         assert!(ordinary.contains("TargetRef"), "{ordinary}");
+        assert!(ordinary.contains("ReadyResult"), "{ordinary}");
     }
 
     #[test]

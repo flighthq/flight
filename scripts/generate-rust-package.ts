@@ -67,6 +67,7 @@ interface PackageModule {
   directPublicExports?: boolean;
   fileName: string;
   mode: SourceMode;
+  namedRepresentationArguments?: string[];
   nativePublicTypescript?: string;
   nativeTypescript?: string;
   retainedImports?: string;
@@ -282,6 +283,33 @@ try {
     // Intra-package imports also resolve crate-internal exports, owner-qualified through each module's Rust
     // paths; the public lanes keep using `symbols`.
     const crateOwners = needsGeneratedSymbols ? collectCrateExportSymbols(symbolModules) : new Map();
+    for (let index = 0; index < modules.length; index += 1) {
+      const module = modules[index];
+      if (module.mode !== 'generate') continue;
+      const generatedTypescript = module.generatedTypescript ?? module.typescript;
+      const prospectiveImports = crateImports(
+        join(crateRoot, 'src', module.rustSource),
+        module.fileName,
+        (module.retainedImports ?? '') + generatedTypescript,
+        new Map([
+          ...resolveCrateExportSymbols(
+            readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8'),
+            module.fileName,
+            crateOwners,
+          ),
+          ...symbols,
+        ]),
+      );
+      const prospectiveTypescript = `${module.retainedImports ?? ''}${prospectiveImports}${generatedTypescript}`;
+      const discoveredArguments = typeScriptStringUnionArguments(
+        prospectiveTypescript,
+        loadImportedContractSymbols(prospectiveTypescript),
+      );
+      const knownArguments = new Set(module.namedRepresentationArguments ?? []);
+      if (discoveredArguments.some((argument) => !knownArguments.has(argument))) {
+        modules[index] = loadModule(module.rustSource, aliasSources, prospectiveTypescript) ?? module;
+      }
+    }
     const generatedFiles: string[] = [];
 
     for (const module of modules) {
@@ -837,15 +865,22 @@ function dependencyVisibilityArguments(command: string): string[] {
 function entityArguments(command: string): string[] {
   if (command !== 'generate' && command !== 'generate-tests') return [];
   const specifier = options.packageName === 'entity' ? './types.ts' : '@flighthq/entity/contract';
+  const entitySourceRoot = join(repositoryRoot, 'crates', 'flight-entity', 'src');
+  const entitySources = [
+    join(entitySourceRoot, 'types.rs'),
+    ...readdirSync(entitySourceRoot)
+      .filter((name) => name !== 'types.rs' && name.endsWith('.rs'))
+      .sort()
+      .map((name) => join(entitySourceRoot, name))
+      .filter((path) => hasRustGenerationSemantics(readFileSync(path, 'utf8'))),
+  ];
   // Tests take the entity source only as an alias source, so they read its identity aliases
-  // (`NonEntityCreateResult<T>` is `T`) when resolving the record a factory returns.
+  // (`NonEntityCreateResult<T>` is `T`) when resolving the record a factory returns. Both commands
+  // also take its explicit representation sources, such as nullable target-native binding returns.
   const entityModule = command === 'generate' ? ['--entity-module', specifier] : [];
   return [
     ...entityModule,
-    '--external-alias-source',
-    join(repositoryRoot, 'crates', 'flight-entity', 'src', 'types.rs'),
-    '--external-alias-module',
-    specifier,
+    ...entitySources.flatMap((path) => ['--external-alias-source', path, '--external-alias-module', specifier]),
   ];
 }
 
@@ -1029,7 +1064,7 @@ function formatterPath(): string {
   return join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'oxfmt.cmd' : 'oxfmt');
 }
 
-function loadModule(rustSource: string, aliasSources: string[]): PackageModule | null {
+function loadModule(rustSource: string, aliasSources: string[], representationImports = ''): PackageModule | null {
   const rustPath = join(crateRoot, 'src', rustSource);
   const fileName = `${snakeToLowerCamel(rustSource.slice(0, -3))}.ts`;
   const mode = sourceMode(rustPath);
@@ -1057,7 +1092,11 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
   const contractTypescript =
     existingIsGenerated && existingNativeTypescript !== undefined ? existingNativeTypescript : existingTypescript;
   const importedContractSymbols = loadImportedContractSymbols(contractTypescript);
-  const namedRepresentationArguments = typeScriptStringUnionArguments(contractTypescript, importedContractSymbols);
+  const representationTypescript = `${contractTypescript}\n${representationImports}`;
+  const namedRepresentationArguments = typeScriptStringUnionArguments(
+    representationTypescript,
+    loadImportedContractSymbols(representationTypescript),
+  );
   let compiledTypescript = compile(
     'generate',
     rustPath,
@@ -1135,6 +1174,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     return {
       fileName,
       mode,
+      namedRepresentationArguments,
       retainedImports,
       rustSource,
       typescript: generatedTypescript,
@@ -1156,6 +1196,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     fileName,
     generatedTypescript,
     mode,
+    namedRepresentationArguments,
     nativePublicTypescript,
     nativeTypescript,
     retainedImports,

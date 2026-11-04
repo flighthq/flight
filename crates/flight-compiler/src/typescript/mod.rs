@@ -22929,7 +22929,10 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         .functions
         .iter()
         .map(|function| {
-            return initializes_readonly_entity(
+            return program
+                .entity_construction_functions
+                .contains(&function.sig.ident.to_string())
+                || initializes_readonly_entity(
                 function,
                 &program.entities,
                 &program.readonly_structs,

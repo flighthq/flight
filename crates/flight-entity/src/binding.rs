@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: nullable-option get_entity_binding get_entity_binding_as
 
 use std::any::Any;
 

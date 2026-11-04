@@ -461,11 +461,20 @@ export function typeScriptTypeAliasArguments(
     aliases.set(alias, owner);
   }
 
-  function align(existingType: Record<string, unknown>, generatedType: Record<string, unknown>): void {
+  function align(
+    existingType: Record<string, unknown>,
+    generatedType: Record<string, unknown>,
+    allowIntrinsic = true,
+  ): void {
     const generatedName = bareTypeReferenceName(generatedType);
     if (generatedName !== undefined) {
       const existingName = bareTypeReferenceName(existingType);
-      const owner = existingName === undefined ? undefined : canonicalTypes.get(existingName);
+      const owner =
+        existingName === undefined && allowIntrinsic
+          ? intrinsicTypeAliasOwner(existingType)
+          : existingName === undefined
+            ? undefined
+            : canonicalTypes.get(existingName);
       if (owner !== undefined && generatedName !== existingName) {
         record(generatedName, owner);
         return;
@@ -494,17 +503,24 @@ export function typeScriptTypeAliasArguments(
       return;
     }
     if (existingType.type === 'TSUnionType' || existingType.type === 'TSIntersectionType') {
-      alignTypeLists(existingType.types as Record<string, unknown>[], generatedType.types as Record<string, unknown>[]);
+      // A different sibling member changes the representation of the whole union. Do not infer a
+      // primitive alias from one coincidentally aligned member of such a mismatched container.
+      alignTypeLists(
+        existingType.types as Record<string, unknown>[],
+        generatedType.types as Record<string, unknown>[],
+        false,
+      );
     }
   }
 
   function alignTypeLists(
     existingTypes: readonly Record<string, unknown>[],
     generatedTypes: readonly Record<string, unknown>[],
+    allowIntrinsic = true,
   ): void {
     if (existingTypes.length !== generatedTypes.length) return;
     for (let index = 0; index < existingTypes.length; index += 1) {
-      align(existingTypes[index], generatedTypes[index]);
+      align(existingTypes[index], generatedTypes[index], allowIntrinsic);
     }
   }
 
@@ -525,6 +541,19 @@ export function typeScriptTypeAliasArguments(
       '--typescript-type-alias',
       `${alias}=${owner.module === undefined ? owner.name : `${owner.module}#${owner.name}`}`,
     ]);
+}
+
+function intrinsicTypeAliasOwner(type: Record<string, unknown>): TypeScriptTypeAliasOwner | undefined {
+  switch (type.type) {
+    case 'TSBooleanKeyword':
+      return { name: 'boolean' };
+    case 'TSNumberKeyword':
+      return { name: 'number' };
+    case 'TSStringKeyword':
+      return { name: 'string' };
+    default:
+      return undefined;
+  }
 }
 
 // Canonical imported interfaces prove the absence representation of their fields. Carry only fields
@@ -698,14 +727,14 @@ function renderTypeAliasOwner(owner: TypeScriptTypeAliasOwner): string {
 }
 
 // Existing exported signatures are the authority for unnamed TypeScript representations. Match only
-// the same exported function and the same enclosing generic types; the compiler then verifies that
-// each inferred literal set exactly represents the visible unit Rust enum before using it.
+// the same exported function position and the same enclosing generic types; the compiler then verifies
+// that each inferred literal set exactly represents the visible unit Rust enum before using it.
 export function typeScriptInlineStringUnionArguments(
   existingTypescript: string,
   generatedTypescript: string,
 ): string[] {
-  const existingFunctions = exportedFunctionReturnTypes(existingTypescript, 'existing TypeScript contract');
-  const generatedFunctions = exportedFunctionReturnTypes(generatedTypescript, 'generated TypeScript contract');
+  const existingFunctions = exportedFunctionTypesFromSource(existingTypescript, 'existing TypeScript contract');
+  const generatedFunctions = exportedFunctionTypesFromSource(generatedTypescript, 'generated TypeScript contract');
   const unions = new Map<string, string[]>();
 
   function align(existing: Record<string, unknown>, generated: Record<string, unknown>): void {
@@ -733,7 +762,13 @@ export function typeScriptInlineStringUnionArguments(
 
   for (const [name, generated] of generatedFunctions) {
     const existing = existingFunctions.get(name);
-    if (existing !== undefined) align(existing, generated);
+    if (existing === undefined || existing.parameters.length !== generated.parameters.length) continue;
+    for (let index = 0; index < existing.parameters.length; index += 1) {
+      align(existing.parameters[index], generated.parameters[index]);
+    }
+    if (existing.returnType !== undefined && generated.returnType !== undefined) {
+      align(existing.returnType, generated.returnType);
+    }
   }
 
   return [...unions]
@@ -747,24 +782,12 @@ function bareTypeReferenceName(node: Record<string, unknown>): string | undefine
   return name?.type === 'Identifier' && typeof name.name === 'string' ? name.name : undefined;
 }
 
-function exportedFunctionReturnTypes(typescript: string, identity: string): Map<string, Record<string, unknown>> {
+function exportedFunctionTypesFromSource(typescript: string, identity: string): Map<string, ExportedFunctionTypes> {
   const parsed = parseSync('contract.ts', typescript, { lang: 'ts', sourceType: 'module' });
   if (parsed.errors.length > 0) {
     throw new Error(`could not parse ${identity} while resolving inline string unions: ${parsed.errors[0]?.message}`);
   }
-  const functions = new Map<string, Record<string, unknown>>();
-  for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
-    if (statement.type !== 'ExportNamedDeclaration') continue;
-    const declaration = statement.declaration as Record<string, unknown> | null;
-    if (declaration?.type !== 'FunctionDeclaration') continue;
-    const identifier = declaration.id as Record<string, unknown> | null;
-    const annotation = declaration.returnType as Record<string, unknown> | null;
-    const returnType = annotation?.typeAnnotation as Record<string, unknown> | undefined;
-    if (identifier?.type === 'Identifier' && typeof identifier.name === 'string' && returnType !== undefined) {
-      functions.set(identifier.name, returnType);
-    }
-  }
-  return functions;
+  return exportedFunctionTypes(parsed.program.body as unknown as Record<string, unknown>[]);
 }
 
 function sameStringValues(left: readonly string[], right: readonly string[]): boolean {

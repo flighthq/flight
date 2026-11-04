@@ -22,6 +22,9 @@ pub(crate) struct Program {
     // plain object literal. Generation validates the derive and each field default before use.
     pub(crate) default_objects: BTreeSet<String>,
     pub(crate) entities: HashSet<String>,
+    // Functions whose leading mutable entity parameter uses the target's writable construction
+    // view even when that entity's canonical declaration is owned outside this Rust source graph.
+    pub(crate) entity_construction_functions: HashSet<String>,
     // Entity fields whose `Ref` cells remain shared when Rust clones the entity. TypeScript lowers
     // those fields as forwarding accessors on a fresh spread object.
     pub(crate) entity_clone_shared_fields: BTreeMap<String, BTreeSet<String>>,
@@ -1835,6 +1838,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
     let reserved_key_data_unions = data_union_metadata.reserved_key;
     let record_map_variants = parse_record_map_variants(&file.attrs, &data_unions)?;
     let entity_clone_shared_fields = parse_entity_clone_shared_fields(&file.attrs)?;
+    let entity_construction_functions = directive_names(source, "entity-construction");
     let entity_runtime_states = parse_entity_runtime_states(&file.attrs)?;
     let export_names = parse_export_names(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
@@ -2026,6 +2030,27 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         )?;
     }
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
+    for name in &entity_construction_functions {
+        let Some(function) = functions
+            .iter()
+            .find(|function| function.sig.ident == name.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-construction` function `{name}` does not exist"
+            )));
+        };
+        if !name.starts_with("initialize_")
+            || !matches!(
+                function.sig.inputs.first(),
+                Some(syn::FnArg::Typed(parameter))
+                    if matches!(parameter.ty.as_ref(), Type::Reference(reference) if reference.mutability.is_some())
+            )
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: entity-construction` function `{name}` must be an `initialize_*` function with a leading mutable-reference parameter"
+            )));
+        }
+    }
 
     return Ok(Program {
         callable_field_parameters,
@@ -2036,6 +2061,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         data_unions,
         default_objects,
         entities,
+        entity_construction_functions,
         entity_clone_shared_fields,
         entity_runtime_states,
         enums,
@@ -2491,6 +2517,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "contract"
             | "data-union"
             | "default-object"
+            | "entity-construction"
             | "entity-clone-fields"
             | "entity-runtime-state"
             | "export-name"

@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -622,17 +622,17 @@ fn parse_generate_options(
                 index += 1;
                 let specification = arguments.get(index).ok_or_else(|| {
                     format!(
-                        "--typescript-type-alias requires <rust-name>=<module>#<typescript-name>|unknown\n\n{USAGE}"
+                        "--typescript-type-alias requires <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown\n\n{USAGE}"
                     )
                 })?;
                 let (name, representation) = specification.split_once('=').ok_or_else(|| {
                     format!(
-                        "invalid --typescript-type-alias `{specification}`; expected <rust-name>=<module>#<typescript-name>|unknown\n\n{USAGE}"
+                        "invalid --typescript-type-alias `{specification}`; expected <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown\n\n{USAGE}"
                     )
                 })?;
                 if name.is_empty() || representation.is_empty() {
                     return Err(format!(
-                        "invalid --typescript-type-alias `{specification}`; expected <rust-name>=<module>#<typescript-name>|unknown\n\n{USAGE}"
+                        "invalid --typescript-type-alias `{specification}`; expected <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown\n\n{USAGE}"
                     ));
                 }
                 let (module, target) = representation
