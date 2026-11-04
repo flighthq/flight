@@ -319,7 +319,7 @@ describe('flight-compile pinned future lowering', () => {
     const lowered = compileRust('async', 'pub async fn f() -> u32 { return 1; }\n');
     expect(lowered).toEqual({
       error: '',
-      typescript: 'export async function f(): Promise<number> {\n  return (1) >>> 0;\n}\n',
+      typescript: 'export async function f(): Promise<number> {\n  return 1 >>> 0;\n}\n',
     });
     expect(strictDiagnostics('async', lowered.typescript)).toEqual([]);
   });

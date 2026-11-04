@@ -93,7 +93,7 @@ function generateTests(rust: string): string {
 describe('flight-compile generate-tests foreign imports', () => {
   it('imports a foreign function used only inside a vec! repeat', () => {
     const typescript = generateTests(VEC_REPEAT_FIXTURE);
-    expect(typescript).toContain('import { hasEntityRuntime } from "@flighthq/entity/contract";');
+    expect(typescript).toContain("import { hasEntityRuntime } from '@flighthq/entity/contract';");
     expect(typescript).not.toContain('./contract.ts');
   });
 
@@ -104,7 +104,7 @@ describe('flight-compile generate-tests foreign imports', () => {
     const result = spawnSync(compilerPath, ['generate', '--source', source, '--out', out], { encoding: 'utf8' });
     expect(result.stderr.trim()).toBe('');
     const typescript = readFileSync(out, 'utf8');
-    expect(typescript).toContain('import { decodePayload } from "@flighthq/codec/contract";');
+    expect(typescript).toContain("import { decodePayload } from '@flighthq/codec/contract';");
     const codec = join(workDirectory, 'codec-contract.ts');
     writeFileSync(
       codec,
@@ -144,7 +144,7 @@ describe('flight-compile generate-tests foreign imports', () => {
 
   it('imports a foreign function used only inside assertions from its owner', () => {
     const typescript = generateTests(ASSERTION_FIXTURE);
-    expect(typescript).toContain('import { hasEntityRuntime } from "@flighthq/entity/contract";');
+    expect(typescript).toContain("import { hasEntityRuntime } from '@flighthq/entity/contract';");
     expect(typescript).not.toContain('./contract.ts');
   });
 

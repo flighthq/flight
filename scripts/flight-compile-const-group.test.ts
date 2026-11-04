@@ -406,7 +406,7 @@ describe('flight-compile const-group lowering', () => {
       dependency,
     );
     expect(error).toBe('');
-    expect(typescript).toContain('import { KeyCode } from "@flighthq/keys/contract";');
+    expect(typescript).toContain("import { KeyCode } from '@flighthq/keys/contract';");
     expect(typescript).toContain('return code === KeyCode.A && code === KeyCode.A;');
     expect(typescript).not.toContain('KEY_CODE_');
     const owner = compileRust('keys_owner', KEYS_PACKAGE_FIXTURE);

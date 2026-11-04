@@ -69,7 +69,7 @@ function compileHub(): string {
 describe('flight-compile generic dependency entities', () => {
   it('renders the companion-owned entity by its Raw record name', () => {
     const typescript = compileHub();
-    expect(typescript).toContain('import type { SignalRaw } from "@flighthq/signals/contract";');
+    expect(typescript).toContain("import type { SignalRaw } from '@flighthq/signals/contract';");
     expect(typescript).toContain('onTick: SignalRaw<number>;');
     expect(typescript).not.toMatch(/[^w]Signal</);
   });
