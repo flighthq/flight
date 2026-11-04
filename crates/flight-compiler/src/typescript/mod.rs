@@ -23270,7 +23270,7 @@ fn emit_unary_expression(
     {
         return Ok(format!("{receiver}.length !== 0"));
     }
-    if !is_lowered_primary(&unary.expr, &operand) {
+    if !is_lowered_primary(&unary.expr, &operand) || !is_primary_expression_text(&operand) {
         return Ok(format!("{operator}({operand})"));
     }
     return Ok(format!("{operator}{operand}"));

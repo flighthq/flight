@@ -23663,3 +23663,25 @@ pub fn get_index(source: &Foo) -> Option<usize> {
         "Option .map with tuple closure should destructure: {output}"
     );
 }
+
+#[test]
+fn preserves_parens_under_negation_when_operand_contains_binary_ops() {
+    let source = r#"
+pub fn ease_in_out_sine(t: f64) -> f64 {
+    return -((std::f64::consts::PI * t).cos() - 1.0) / 2.0;
+}
+
+pub fn negate_sum(a: f64, b: f64) -> f64 {
+    return -(a + b) * 2.0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("-(Math.cos(Math.PI * t) - 1.0) / 2.0"),
+        "negated paren group should keep parens when used in division: {output}"
+    );
+    assert!(
+        output.contains("-(a + b) * 2.0"),
+        "negated paren group should keep parens when used in multiplication: {output}"
+    );
+}
