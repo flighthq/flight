@@ -40,6 +40,7 @@ import {
   resolveCrateExportSymbols,
   resolveRustExportName,
   snakeToLowerCamel,
+  typeScriptInlineStringUnionArguments,
   typeScriptStringUnionArguments,
 } from './generate-rust-package-exports.ts';
 import { collectPackageSourceFileNames } from './generate-rust-package-sources.ts';
@@ -767,15 +768,28 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
   const originalPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(originalPath) ? readFileSync(originalPath, 'utf8') : '';
   const importedContractSymbols = loadImportedContractSymbols(existingTypescript);
-  const compiledTypescript = compile(
+  const namedRepresentationArguments = typeScriptStringUnionArguments(existingTypescript, importedContractSymbols);
+  let compiledTypescript = compile(
     'generate',
     rustPath,
     outputPath,
     [],
     aliasSources,
     [],
-    typeScriptStringUnionArguments(existingTypescript, importedContractSymbols),
+    namedRepresentationArguments,
   );
+  const inlineRepresentationArguments = typeScriptInlineStringUnionArguments(existingTypescript, compiledTypescript);
+  if (inlineRepresentationArguments.length > 0) {
+    compiledTypescript = compile(
+      'generate',
+      rustPath,
+      outputPath,
+      [],
+      aliasSources,
+      [],
+      [...namedRepresentationArguments, ...inlineRepresentationArguments],
+    );
+  }
   const typescript = canonicalizeGeneratedContractImports(existingTypescript, compiledTypescript);
   const retainedConstants = renderReferencedConstants(existingTypescript, typescript);
   const typescriptWithConstants =

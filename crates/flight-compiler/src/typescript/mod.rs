@@ -77,6 +77,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub external_record_structs: &'a [ItemStruct],
     pub dependency_export_names: &'a [(BTreeMap<String, String>, &'a str)],
     pub external_string_unions: &'a BTreeSet<String>,
+    pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
     pub external_shared_identity_fields: &'a BTreeSet<String>,
     pub module_identities: Option<&'a [String]>,
     pub visibility_programs: &'a [Program],
@@ -380,6 +381,8 @@ const STRING_FIELD_MARKER: &str = "@string-field:";
 pub(super) const STRING_RETURN_MARKER: &str = "@string-return:";
 
 pub(super) const STRING_UNION_MARKER: &str = "@string-union:";
+
+const INLINE_STRING_UNION_MARKER: &str = "@inline-string-union:";
 
 pub(super) const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
 
@@ -7653,6 +7656,27 @@ pub(crate) fn insert_string_union_context<'a>(
     names: impl Iterator<Item = &'a String>,
 ) {
     context.extend(names.map(|name| format!("{STRING_UNION_MARKER}{name}")));
+}
+
+fn insert_inline_string_union_context(
+    context: &mut HashSet<String>,
+    unions: &BTreeMap<String, Vec<String>>,
+) {
+    context.extend(unions.iter().map(|(name, values)| {
+        let union = values
+            .iter()
+            .map(|value| js_string_literal(value))
+            .collect::<Vec<_>>()
+            .join(" | ");
+        return format!("{INLINE_STRING_UNION_MARKER}{name}{PROVENANCE_SEPARATOR}{union}");
+    }));
+}
+
+fn inline_string_union(context: &HashSet<String>, name: &str) -> Option<String> {
+    let prefix = format!("{INLINE_STRING_UNION_MARKER}{name}{PROVENANCE_SEPARATOR}");
+    return context
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string));
 }
 
 pub(crate) fn insert_nullable_options_context(context: &mut HashSet<String>) {
@@ -22246,6 +22270,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let external_record_structs = input.external_record_structs;
     let dependency_export_names = input.dependency_export_names;
     let external_string_unions = input.external_string_unions;
+    let inline_string_unions = input.inline_string_unions;
     let module_identities = input.module_identities;
     let visibility_programs = input.visibility_programs;
     let visibility_identities = input.visibility_identities;
@@ -22296,6 +22321,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         visibility_programs,
     )?;
     insert_string_union_context(&mut expression_context, external_string_unions.iter());
+    insert_inline_string_union_context(&mut expression_context, inline_string_unions);
     expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));
     reject_const_group_wildcard_imports(
         dependency_export_names,
@@ -23771,6 +23797,11 @@ pub(crate) fn emit_type(
                     emit_type(types[0], entities)?,
                     js_string_literal(&tag)
                 ));
+            }
+            if matches!(segment.arguments, PathArguments::None)
+                && let Some(union) = inline_string_union(entities, &name)
+            {
+                return Ok(union);
             }
             // A standard `Box` only transfers ownership, so a boxed typed-array alias is that typed
             // array; the owner is proven through the path's provenance (an aliased standard `Box`

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
@@ -29,12 +29,18 @@ struct GenerateOptions {
     out: PathBuf,
     probe_target_native: bool,
     source: PathBuf,
+    type_script_inline_string_unions: Vec<OwnedTypeScriptInlineStringUnion>,
     type_script_string_unions: Vec<OwnedTypeScriptStringUnion>,
     visibility_sources: Vec<PathBuf>,
 }
 
 struct OwnedTypeScriptStringUnion {
     module: String,
+    name: String,
+    values: Vec<String>,
+}
+
+struct OwnedTypeScriptInlineStringUnion {
     name: String,
     values: Vec<String>,
 }
@@ -265,6 +271,14 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     values: &union.values,
                 })
                 .collect::<Vec<_>>();
+            let type_script_inline_string_unions = options
+                .type_script_inline_string_unions
+                .iter()
+                .map(|union| flight_compiler::TypeScriptInlineStringUnion {
+                    name: &union.name,
+                    values: &union.values,
+                })
+                .collect::<Vec<_>>();
             flight_compiler::compile_typescript_with_options(
                 flight_compiler::ModuleSource {
                     path: &source_path,
@@ -274,6 +288,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &alias_modules,
                 &external_aliases,
                 &type_script_string_unions,
+                &type_script_inline_string_unions,
                 &visibility_source_refs,
                 &crate_root_refs,
                 options.lenient,
@@ -403,6 +418,7 @@ fn parse_generate_options(
     let mut visibility_sources = Vec::new();
     let mut out = None;
     let mut source = None;
+    let mut type_script_inline_string_unions = Vec::new();
     let mut type_script_string_unions = Vec::new();
     let mut index = 0;
     while index < arguments.len() {
@@ -500,6 +516,28 @@ fn parse_generate_options(
                     values,
                 });
             }
+            "--typescript-inline-string-union" => {
+                index += 1;
+                let specification = arguments.get(index).ok_or_else(|| {
+                    format!(
+                        "--typescript-inline-string-union requires <name>=<json-string-array>\n\n{USAGE}"
+                    )
+                })?;
+                let (name, values) = specification.split_once('=').ok_or_else(|| {
+                    format!(
+                        "invalid --typescript-inline-string-union `{specification}`; expected <name>=<json-string-array>\n\n{USAGE}"
+                    )
+                })?;
+                let values = serde_json::from_str::<Vec<String>>(values).map_err(|error| {
+                    format!(
+                        "invalid --typescript-inline-string-union literal array in `{specification}`: {error}"
+                    )
+                })?;
+                type_script_inline_string_unions.push(OwnedTypeScriptInlineStringUnion {
+                    name: name.to_string(),
+                    values,
+                });
+            }
             "--visibility-source" => {
                 index += 1;
                 let path = arguments
@@ -530,9 +568,12 @@ fn parse_generate_options(
         GenerateKind::Tests if lenient => {
             return Err(format!("--lenient is only valid for generate\n\n{USAGE}"));
         }
-        GenerateKind::Tests if !type_script_string_unions.is_empty() => {
+        GenerateKind::Tests
+            if !type_script_string_unions.is_empty()
+                || !type_script_inline_string_unions.is_empty() =>
+        {
             return Err(format!(
-                "--typescript-string-union is only valid for generate\n\n{USAGE}"
+                "TypeScript string-union options are only valid for generate\n\n{USAGE}"
             ));
         }
         GenerateKind::Source | GenerateKind::Tests => {}
@@ -555,6 +596,7 @@ fn parse_generate_options(
         out: out.ok_or_else(|| format!("--out is required\n\n{USAGE}"))?,
         probe_target_native,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
+        type_script_inline_string_unions,
         type_script_string_unions,
         visibility_sources,
     });
@@ -636,6 +678,27 @@ mod tests {
         assert_eq!(union.module, "@flighthq/types/contract");
         assert_eq!(union.name, "AccessibilityLiveness");
         assert_eq!(union.values, ["polite", "assertive"]);
+    }
+
+    #[test]
+    fn parses_inline_type_script_string_union_metadata() {
+        let options = parse_generate_options(
+            &arguments(&[
+                "--source",
+                "source.rs",
+                "--out",
+                "output.ts",
+                "--typescript-inline-string-union",
+                "AccessibilityTreeBlockReason=[\"destroyed\",\"no-dom\"]",
+            ]),
+            GenerateKind::Source,
+        )
+        .unwrap();
+
+        assert_eq!(options.type_script_inline_string_unions.len(), 1);
+        let union = &options.type_script_inline_string_unions[0];
+        assert_eq!(union.name, "AccessibilityTreeBlockReason");
+        assert_eq!(union.values, ["destroyed", "no-dom"]);
     }
 
     #[test]

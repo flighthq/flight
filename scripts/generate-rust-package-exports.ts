@@ -343,6 +343,106 @@ export function typeScriptStringUnionArguments(
     ]);
 }
 
+// Existing exported signatures are the authority for unnamed TypeScript representations. Match only
+// the same exported function and the same enclosing generic types; the compiler then verifies that
+// each inferred literal set exactly represents the visible unit Rust enum before using it.
+export function typeScriptInlineStringUnionArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+): string[] {
+  const existingFunctions = exportedFunctionReturnTypes(existingTypescript, 'existing TypeScript contract');
+  const generatedFunctions = exportedFunctionReturnTypes(generatedTypescript, 'generated TypeScript contract');
+  const unions = new Map<string, string[]>();
+
+  function align(existing: Record<string, unknown>, generated: Record<string, unknown>): void {
+    const generatedName = bareTypeReferenceName(generated);
+    const values = stringLiteralUnionValues(existing);
+    if (generatedName !== undefined && values !== undefined) {
+      const previous = unions.get(generatedName);
+      if (previous !== undefined && !sameStringValues(previous, values)) {
+        throw new Error(`inline TypeScript string union ${generatedName} has conflicting contract signatures`);
+      }
+      unions.set(generatedName, values);
+      return;
+    }
+    if (existing.type !== generated.type) return;
+    if (existing.type === 'TSTypeReference') {
+      if (typeName(existing) !== typeName(generated)) return;
+      const existingParameters = typeParameters(existing);
+      const generatedParameters = typeParameters(generated);
+      if (existingParameters.length !== generatedParameters.length) return;
+      for (let index = 0; index < existingParameters.length; index += 1) {
+        align(existingParameters[index], generatedParameters[index]);
+      }
+    }
+  }
+
+  for (const [name, generated] of generatedFunctions) {
+    const existing = existingFunctions.get(name);
+    if (existing !== undefined) align(existing, generated);
+  }
+
+  return [...unions]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([name, values]) => ['--typescript-inline-string-union', `${name}=${JSON.stringify(values)}`]);
+}
+
+function bareTypeReferenceName(node: Record<string, unknown>): string | undefined {
+  if (node.type !== 'TSTypeReference' || typeParameters(node).length !== 0) return undefined;
+  const name = node.typeName as Record<string, unknown> | undefined;
+  return name?.type === 'Identifier' && typeof name.name === 'string' ? name.name : undefined;
+}
+
+function exportedFunctionReturnTypes(typescript: string, identity: string): Map<string, Record<string, unknown>> {
+  const parsed = parseSync('contract.ts', typescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(`could not parse ${identity} while resolving inline string unions: ${parsed.errors[0]?.message}`);
+  }
+  const functions = new Map<string, Record<string, unknown>>();
+  for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'FunctionDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    const annotation = declaration.returnType as Record<string, unknown> | null;
+    const returnType = annotation?.typeAnnotation as Record<string, unknown> | undefined;
+    if (identifier?.type === 'Identifier' && typeof identifier.name === 'string' && returnType !== undefined) {
+      functions.set(identifier.name, returnType);
+    }
+  }
+  return functions;
+}
+
+function sameStringValues(left: readonly string[], right: readonly string[]): boolean {
+  return (
+    left.length === right.length && new Set(left).size === left.length && left.every((value) => right.includes(value))
+  );
+}
+
+function stringLiteralUnionValues(node: Record<string, unknown>): string[] | undefined {
+  if (node.type !== 'TSUnionType') return undefined;
+  const values: string[] = [];
+  for (const member of node.types as Record<string, unknown>[]) {
+    const literal = member.literal as Record<string, unknown> | undefined;
+    if (member.type !== 'TSLiteralType' || literal?.type !== 'Literal' || typeof literal.value !== 'string') {
+      return undefined;
+    }
+    values.push(literal.value);
+  }
+  return values.length > 0 ? values : undefined;
+}
+
+function typeName(node: Record<string, unknown>): string | undefined {
+  const name = node.typeName as Record<string, unknown> | undefined;
+  if (name?.type === 'Identifier' && typeof name.name === 'string') return name.name;
+  return undefined;
+}
+
+function typeParameters(node: Record<string, unknown>): Record<string, unknown>[] {
+  const arguments_ = node.typeArguments as Record<string, unknown> | null;
+  return (arguments_?.params as Record<string, unknown>[] | undefined) ?? [];
+}
+
 export function resolveExternalContractExports(
   uses: readonly RustPublicUse[],
   contracts: ReadonlyMap<string, ExternalContract>,

@@ -1,11 +1,12 @@
 use flight_compiler::{
-    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptStringUnion, VitestAliasSource,
-    compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
-    compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
-    compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
-    compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
-    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
-    compile_vitest_with_visibility_sources, root_only_names, source_mode,
+    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptInlineStringUnion,
+    TypeScriptStringUnion, VitestAliasSource, compile_typescript, compile_typescript_lenient,
+    compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
+    compile_typescript_with_module_sources, compile_typescript_with_options,
+    compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
+    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
+    compile_vitest_with_module_alias_sources, compile_vitest_with_visibility_sources,
+    root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -13424,6 +13425,7 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &type_script_string_unions,
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13463,6 +13465,7 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &metadata,
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13472,6 +13475,79 @@ pub enum UnannotatedStringUnion {
         assert_eq!(
             error.to_string(),
             "external TypeScript string union `AccessibilityLiveness` does not match the literals of its Rust enum"
+        );
+    }
+
+    #[test]
+    fn emits_validated_type_script_string_unions_inline() {
+        let values = vec!["destroyed".to_string(), "no-dom".to_string()];
+        let metadata = [TypeScriptInlineStringUnion {
+            name: "AccessibilityTreeBlockReason",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-accessibility/src/types.rs",
+            source: "pub enum AccessibilityTreeBlockReason { Destroyed, NoDom }\n",
+        }];
+
+        let output = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-accessibility/src/accessibility.rs",
+                source: "use crate::types::AccessibilityTreeBlockReason;\npub fn reason() -> AccessibilityTreeBlockReason { return AccessibilityTreeBlockReason::Destroyed; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &[],
+            &metadata,
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("export function reason(): 'destroyed' | 'no-dom'"),
+            "the existing unnamed TypeScript representation should stay inline: {output}"
+        );
+        assert!(output.contains("return 'destroyed';"), "{output}");
+        assert!(
+            !output.contains("AccessibilityTreeBlockReason"),
+            "the inline representation must not invent a named TypeScript API: {output}"
+        );
+    }
+
+    #[test]
+    fn rejects_inline_type_script_string_unions_that_do_not_match_rust() {
+        let values = vec!["destroyed".to_string(), "missing-dom".to_string()];
+        let metadata = [TypeScriptInlineStringUnion {
+            name: "AccessibilityTreeBlockReason",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-accessibility/src/types.rs",
+            source: "pub enum AccessibilityTreeBlockReason { Destroyed, NoDom }\n",
+        }];
+
+        let error = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-accessibility/src/accessibility.rs",
+                source: "use crate::types::AccessibilityTreeBlockReason;\npub fn reason() -> AccessibilityTreeBlockReason { return AccessibilityTreeBlockReason::Destroyed; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &[],
+            &metadata,
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "inline TypeScript string union `AccessibilityTreeBlockReason` does not match the literals of its Rust enum"
         );
     }
 

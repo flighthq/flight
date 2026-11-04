@@ -34,6 +34,7 @@ import {
   resolveCrateExportSymbols,
   resolveExternalContractExports,
   resolveRustExportName,
+  typeScriptInlineStringUnionArguments,
   typeScriptStringUnionArguments,
 } from './generate-rust-package-exports.ts';
 
@@ -199,6 +200,37 @@ import { RuntimeLiveness } from '@flighthq/types/contract';
         symbols,
       ),
     ).toEqual(['--typescript-string-union', '@flighthq/types/contract#Liveness=["polite","assertive"]']);
+  });
+
+  it('derives inline string-union representations from matching exported signatures', () => {
+    const existing = `export function clearAccessibilityTree(): AccessibilityOperationOutcome<'destroyed' | 'no-dom'> { throw 0; }
+export function removeAccessibilityNode(): AccessibilityOperationOutcome<'destroyed' | 'no-dom' | 'node-not-found'> { throw 0; }
+export function unrelated(): Promise<'unchanged'> { throw 0; }
+`;
+    const generated = `export function clearAccessibilityTree(): AccessibilityOperationOutcome<AccessibilityTreeBlockReason> { throw 0; }
+export function removeAccessibilityNode(): AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason> { throw 0; }
+export function unrelated(): AccessibilityTreeBlockReason { throw 0; }
+`;
+
+    expect(typeScriptInlineStringUnionArguments(existing, generated)).toEqual([
+      '--typescript-inline-string-union',
+      'AccessibilityRemoveNodeBlockReason=["destroyed","no-dom","node-not-found"]',
+      '--typescript-inline-string-union',
+      'AccessibilityTreeBlockReason=["destroyed","no-dom"]',
+    ]);
+  });
+
+  it('rejects conflicting inline representations of one generated Rust type', () => {
+    const existing = `export function first(): Outcome<'a' | 'b'> { throw 0; }
+export function second(): Outcome<'a' | 'c'> { throw 0; }
+`;
+    const generated = `export function first(): Outcome<Reason> { throw 0; }
+export function second(): Outcome<Reason> { throw 0; }
+`;
+
+    expect(() => typeScriptInlineStringUnionArguments(existing, generated)).toThrow(
+      'inline TypeScript string union Reason has conflicting contract signatures',
+    );
   });
 
   it('renders dependency-owned Rust uses from the dependency contract', () => {

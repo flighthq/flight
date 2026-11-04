@@ -363,6 +363,84 @@ export function defaultLiveness(): AccessibilityLiveness {
     expect(value).not.toContain('AccessibilityLiveness.Polite');
   }, 120_000);
 
+  it('preserves inline string-union representations from existing function signatures', async () => {
+    writeFileSync(
+      join(crateRoot, 'src', 'types.rs'),
+      `//! flight-compiler: rust-only
+pub struct AccessibilityOperationOutcome<R> {
+    pub blocked: bool,
+    pub reason: Option<R>,
+}
+
+pub enum AccessibilityTreeBlockReason {
+    Destroyed,
+    NoDom,
+}
+
+pub enum AccessibilityRemoveNodeBlockReason {
+    Destroyed,
+    NoDom,
+    NodeNotFound,
+}
+`,
+    );
+    writeFileSync(
+      sourcePath,
+      `use crate::types::{
+    AccessibilityOperationOutcome,
+    AccessibilityRemoveNodeBlockReason,
+    AccessibilityTreeBlockReason,
+};
+
+pub fn clear_accessibility_tree(
+    outcome: AccessibilityOperationOutcome<AccessibilityTreeBlockReason>,
+) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
+    return outcome;
+}
+
+pub fn remove_accessibility_node(
+    outcome: AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason>,
+) -> AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason> {
+    return outcome;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { AccessibilityOperationOutcome } from '@flighthq/types/contract';
+
+export function clearAccessibilityTree(
+  outcome: AccessibilityOperationOutcome<'destroyed' | 'no-dom'>,
+): AccessibilityOperationOutcome<'destroyed' | 'no-dom'> {
+  return outcome;
+}
+
+export function removeAccessibilityNode(
+  outcome: AccessibilityOperationOutcome<'destroyed' | 'no-dom' | 'node-not-found'>,
+): AccessibilityOperationOutcome<'destroyed' | 'no-dom' | 'node-not-found'> {
+  return outcome;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'contract.ts'),
+      "export { clearAccessibilityTree, removeAccessibilityNode } from './value.ts';\n",
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'index.ts'),
+      "export { clearAccessibilityTree, removeAccessibilityNode } from './contract.ts';\n",
+    );
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain("AccessibilityOperationOutcome<'destroyed' | 'no-dom'>");
+    expect(value).toContain("AccessibilityOperationOutcome<'destroyed' | 'no-dom' | 'node-not-found'>");
+    expect(value).not.toContain('AccessibilityTreeBlockReason');
+    expect(value).not.toContain('AccessibilityRemoveNodeBlockReason');
+  }, 120_000);
+
   it('generates explicit empty modules for an intentionally empty public contract', async () => {
     rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
     rmSync(sourcePath, { force: true });
