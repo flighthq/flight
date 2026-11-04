@@ -11117,13 +11117,13 @@ pub fn absent_first(value: Option<f64>) -> f64 {
         let output = compile_typescript(source, None).unwrap();
         assert!(
             output.contains(
-                "  const pattern: number[] = (() => {\n  const matchValue = dash;\n  if (matchValue !== undefined) {\n    const values = matchValue;\n    return values;\n  }\n  else {\n"
+                "  const pattern: number[] = (() => {\n  if (dash !== undefined) {\n    const values = dash;\n    return values;\n  }\n  else {\n"
             ),
             "{output}"
         );
         assert!(
             output.contains(
-                "  if (matchValue === undefined) {\n    return -1.0;\n  }\n  else {\n    const present = matchValue;\n    return present;\n  }\n"
+                "  if (value === undefined) {\n    return -1.0;\n  }\n  else {\n    const present = value;\n    return present;\n  }\n"
             ),
             "{output}"
         );

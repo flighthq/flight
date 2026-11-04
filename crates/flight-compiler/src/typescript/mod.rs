@@ -14688,6 +14688,27 @@ fn is_js_identifier(s: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$')
 }
 
+fn match_expression_scrutinee(
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+) -> Result<(String, Option<String>), CompileError> {
+    let emitted = emit_expression(&expression.expr, entities)?;
+    if is_js_identifier(&emitted) {
+        let collides = expression.arms.iter().any(|arm| {
+            provenance_pattern_bindings(&arm.pat)
+                .iter()
+                .any(|rust_name| snake_to_lower_camel(rust_name) == emitted)
+        });
+        if !collides {
+            return Ok((emitted, None));
+        }
+    }
+    return Ok((
+        "matchValue".to_string(),
+        Some(format!("  const matchValue = {emitted};\n")),
+    ));
+}
+
 fn emit_match_scrutinee(
     out: &mut String,
     expression: &syn::ExprMatch,
@@ -18490,10 +18511,12 @@ fn emit_match_expression(
     )?;
     if let Some(arms) = analyze_option_match(&expression.arms) {
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
+        let (scrutinee, declaration) = match_expression_scrutinee(expression, entities)?;
         let mut out = String::new();
-        out.push_str("(() => {\n  const matchValue = ");
-        out.push_str(&emit_expression(&expression.expr, entities)?);
-        out.push_str(";\n");
+        out.push_str("(() => {\n");
+        if let Some(decl) = declaration {
+            out.push_str(&decl);
+        }
         let absent = option_absent_value(&expression.expr, entities);
         let last = expression.arms.len() - 1;
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
@@ -18501,15 +18524,15 @@ fn emit_match_expression(
             if !has_guards && index > 0 && index == last {
                 out.push_str("  else {\n");
             } else if has_guards {
-                writeln!(out, "  if (matchValue {operator} {absent}) {{")
+                writeln!(out, "  if ({scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
             } else {
                 let prefix = if index == 0 { "if" } else { "else if" };
-                writeln!(out, "  {prefix} (matchValue {operator} {absent}) {{")
+                writeln!(out, "  {prefix} ({scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
             }
             if let Some(binding) = info.binding {
-                writeln!(out, "    const {binding} = matchValue;")
+                writeln!(out, "    const {binding} = {scrutinee};")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
