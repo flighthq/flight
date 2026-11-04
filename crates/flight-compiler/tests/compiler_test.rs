@@ -840,8 +840,8 @@ export function reader(node: Readonly<Node>): () => number {
 }
 
 export function offset(node: Readonly<Readonly<Node>>, delta: number): number {
-  const delta_1 = delta + 1;
-  return node.value + delta_1;
+  delta = delta + 1;
+  return node.value + delta;
 }
 "#
         );
@@ -26519,8 +26519,8 @@ pub fn exit_tuple_block(seed: u32, limit: u32) -> u32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("const seed_2 = seed_1 * 2"),
-        "scope-declared tuple element should get a fresh name: {output}"
+        output.contains("seed = seed * 2"),
+        "scope-declared tuple element should reassign the parameter: {output}"
     );
     assert!(
         output.contains("const extra = 1"),
@@ -26531,8 +26531,8 @@ pub fn exit_tuple_block(seed: u32, limit: u32) -> u32 {
         "should not use destructuring that redeclares the parameter: {output}"
     );
     assert!(
-        output.contains("return (seed_2 + extra)"),
-        "subsequent uses should resolve to the fresh name: {output}"
+        output.contains("return (seed + extra)"),
+        "subsequent uses should resolve to the reassigned parameter: {output}"
     );
 }
 

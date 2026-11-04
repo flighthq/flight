@@ -271,6 +271,7 @@ const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:"
 const ITER_MUT_ALIAS_MARKER: &str = "@iter-mut-alias:";
 
 const SCOPE_DECLARED_MARKER: &str = "@scope-declared:";
+const MUTABLE_PARAMETER_MARKER: &str = "@mutable-parameter:";
 const RENAME_MARKER: &str = "@rename:";
 const TRY_SUBSTITUTION_MARKER: &str = "@try-sub:";
 const TRY_COUNTER_MARKER: &str = "@try-counter:";
@@ -13397,6 +13398,7 @@ fn emit_function(
             if let Some(param_name) = local_pattern_name(&typed.pat) {
                 function_context.insert(format!("{SCOPE_DECLARED_MARKER}{param_name}"));
                 let camel = snake_to_lower_camel(&param_name);
+                function_context.insert(format!("{MUTABLE_PARAMETER_MARKER}{camel}"));
                 if camel != param_name {
                     function_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
                 }
@@ -13504,6 +13506,7 @@ fn emit_local_function(
             if let Some(param_name) = local_pattern_name(&typed.pat) {
                 function_context.insert(format!("{SCOPE_DECLARED_MARKER}{param_name}"));
                 let camel = snake_to_lower_camel(&param_name);
+                function_context.insert(format!("{MUTABLE_PARAMETER_MARKER}{camel}"));
                 if camel != param_name {
                     function_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
                 }
@@ -14247,6 +14250,11 @@ pub(crate) fn emit_local_with_shadow_and_else(
     let scope_declared = local_name
         .as_deref()
         .is_some_and(|name| entities.contains(&format!("{SCOPE_DECLARED_MARKER}{name}")));
+    let is_mutable_param = entities.contains(&format!("{MUTABLE_PARAMETER_MARKER}{pattern}"));
+    if scope_declared && rebind && !rebound && is_mutable_param {
+        writeln!(out, "{pattern} = {value};").expect("writing to a String cannot fail");
+        return Ok(vec![]);
+    }
     if scope_declared || (rebind && !(rebound && shadowed)) {
         let fresh = next_try_rename(entities, &pattern);
         let keyword = if mutable || rebound { "let" } else { "const" };
