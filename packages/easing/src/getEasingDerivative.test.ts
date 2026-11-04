@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/tests/get_easing_derivative_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { DEFAULT_EASING_DERIVATIVE_EPSILON } from '@flighthq/easing/contract';
 import { describe, expect, it } from 'vitest';
 

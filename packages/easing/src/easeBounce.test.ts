@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/tests/ease_bounce_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { easeInBounce, easeInOutBounce, easeOutBounce } from './contract.ts';

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_easing::*;
 
 mod ease_linear {

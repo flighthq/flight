@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/tests/ease_back_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { easeInBack, easeInOutBack, easeOutBack } from './contract.ts';

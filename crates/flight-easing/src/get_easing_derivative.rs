@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 /// Returns the numerical derivative (instantaneous velocity) of `ease` at the
 /// given `t` using a centered finite-difference approximation. The endpoint
 /// boundary is handled by clamping: at `t <= epsilon` a forward difference is
@@ -9,13 +5,14 @@
 /// `epsilon` defaults to `DEFAULT_EASING_DERIVATIVE_EPSILON`.
 pub fn get_easing_derivative(ease: &dyn Fn(f32) -> f32, t: f32, epsilon: Option<f32>) -> f32 {
     let epsilon = epsilon.unwrap_or(DEFAULT_EASING_DERIVATIVE_EPSILON);
+    let denominator = epsilon * 2.0;
     if t <= epsilon {
-        return (ease(epsilon * 2.0) - ease(0.0)) / (epsilon * 2.0);
+        return (ease(epsilon * 2.0) - ease(0.0)) / denominator;
     }
     if t >= 1.0 - epsilon {
-        return (ease(1.0) - ease(1.0 - epsilon * 2.0)) / (epsilon * 2.0);
+        return (ease(1.0) - ease(1.0 - epsilon * 2.0)) / denominator;
     }
-    return (ease(t + epsilon) - ease(t - epsilon)) / (2.0 * epsilon);
+    return (ease(t + epsilon) - ease(t - epsilon)) / denominator;
 }
 
 /// Default step size for numerical differentiation.

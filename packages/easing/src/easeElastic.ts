@@ -17,7 +17,7 @@ export function easeInElastic(t: number): number {
     return t;
   }
   const time = t - 1.0;
-  return -Math.pow(2.0, 10.0 * time) * Math.sin(((time - S) * 2.0 * Math.PI) / P);
+  return -(Math.pow(2.0, 10.0 * time) * Math.sin(((time - S) * 2.0 * Math.PI) / P));
 }
 
 /**

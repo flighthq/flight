@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use std::f32::consts::PI;
 
 /// Ease-in-out sine: sinusoidal acceleration and deceleration.

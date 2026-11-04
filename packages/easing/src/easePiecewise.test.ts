@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/tests/ease_piecewise_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { easeInCubic, easeLinear, easePiecewise } from './contract.ts';

@@ -1,3 +1,6 @@
+// Generated from crates/flight-easing/src/get_easing_derivative.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { EasingFunction } from './easingTypes.ts';
 
 /**
@@ -18,11 +21,12 @@ export const DEFAULT_EASING_DERIVATIVE_EPSILON: number = 1e-3;
  */
 export function getEasingDerivative(ease: EasingFunction, t: number, epsilon?: number): number {
   const epsilon_1 = epsilon ?? DEFAULT_EASING_DERIVATIVE_EPSILON;
+  const denominator = epsilon_1 * 2.0;
   if (t <= epsilon_1) {
-    return (ease(epsilon_1 * 2.0) - ease(0.0)) / (epsilon_1 * 2.0);
+    return (ease(epsilon_1 * 2.0) - ease(0.0)) / denominator;
   }
   if (t >= 1.0 - epsilon_1) {
-    return (ease(1.0) - ease(1.0 - epsilon_1 * 2.0)) / (epsilon_1 * 2.0);
+    return (ease(1.0) - ease(1.0 - epsilon_1 * 2.0)) / denominator;
   }
-  return (ease(t + epsilon_1) - ease(t - epsilon_1)) / (2.0 * epsilon_1);
+  return (ease(t + epsilon_1) - ease(t - epsilon_1)) / denominator;
 }
