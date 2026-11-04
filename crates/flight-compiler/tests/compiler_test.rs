@@ -5682,7 +5682,7 @@ pub fn shift(value: u32, n: u32) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("(value << n) >>> 0"), "{output}");
+        assert!(output.contains("value << n >>> 0"), "{output}");
     }
 
     #[test]

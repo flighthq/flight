@@ -19528,15 +19528,18 @@ fn emit_method_call(
         "wrapping_add" if arguments.len() == 1 => {
             let lhs = emit_binary_operand(&call.receiver, entities, 11, false)?;
             let rhs = emit_binary_operand(&call.args[0], entities, 11, true)?;
-            Ok(format!("({lhs} + {rhs}) >>> 0"))
+            Ok(format!("{lhs} + {rhs} >>> 0"))
         }
         "wrapping_mul" if arguments.len() == 1 => {
             Ok(format!("Math.imul({receiver}, {}) >>> 0", arguments[0]))
         }
-        "wrapping_neg" if arguments.is_empty() => Ok(format!("((-{receiver}) >>> 0)")),
+        "wrapping_neg" if arguments.is_empty() => {
+            let operand = emit_binary_operand(&call.receiver, entities, PRIMARY_PRECEDENCE, false)?;
+            Ok(format!("-{operand} >>> 0"))
+        }
         "wrapping_shl" if arguments.len() == 1 => {
             let lhs = emit_binary_operand(&call.receiver, entities, 10, false)?;
-            Ok(format!("({lhs} << {}) >>> 0", arguments[0]))
+            Ok(format!("{lhs} << {} >>> 0", arguments[0]))
         }
         "wrapping_shr" if arguments.len() == 1 => {
             let lhs = emit_binary_operand(&call.receiver, entities, 10, false)?;
@@ -19545,7 +19548,7 @@ fn emit_method_call(
         "wrapping_sub" if arguments.len() == 1 => {
             let lhs = emit_binary_operand(&call.receiver, entities, 11, false)?;
             let rhs = emit_binary_operand(&call.args[0], entities, 11, true)?;
-            Ok(format!("({lhs} - {rhs}) >>> 0"))
+            Ok(format!("{lhs} - {rhs} >>> 0"))
         }
         "windows" if arguments.len() == 1 => Ok(format!(
             "Array.from({{ length: Math.max(0, {receiver}.length - {} + 1) }}, (_, index) => {receiver}.slice(index, index + {}))",
