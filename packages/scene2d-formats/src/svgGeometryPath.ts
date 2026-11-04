@@ -1,3 +1,6 @@
+// Generated from crates/flight-scene2d-formats/src/svg_geometry_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { parseSvgPathData } from '@flighthq/path-formats/contract';
 import {
   appendPathCircle,
@@ -13,69 +16,75 @@ import {
 import type { Path, PathWinding } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
-import { svgAttribute, svgLocalName, svgNumberAttribute, parseSvgNumberList } from './svgXml.ts';
+import { parseSvgNumberList, svgAttribute, svgLocalName, svgNumberAttribute } from './svgXml.ts';
 
-/**
- * Reading one SVG geometry element — rect, circle, ellipse, line, polygon, polyline, path — into a Path.
- *
- * ★ TWO OWNERS, WHICH IS THE ONE SVG SEAM THAT IS NOT A LAYERING MISTAKE. The geometry family reads these elements to
- * draw them, and the CLIP machinery reads the very same elements inside a `<clipPath>` to build a region from them.
- * Clipping is not a family a caller can decline — `applySvgElementClip` runs for every element — so this reader is
- * live in every build that can clip, and that is honest rather than accidental. Making clip geometry its own
- * selectable family is the only thing that would change it, and that is a design decision, not a refactor.
- *
- * `null` means "not a geometry element", which is how the dispatch tells a `<rect>` from a `<g>`.
- */
 export function createSvgGeometryPath(element: Readonly<XmlElement>, winding: PathWinding): Path | null {
   const name = svgLocalName(element.name);
   if (name === 'path') {
-    const path = parseSvgPathData(svgAttribute(element, 'd') ?? '');
-    if (path !== null) path.winding = winding;
+    let path = parseSvgPathData(svgAttribute(element, 'd') ?? '');
+    if (path === undefined) {
+      return null;
+    }
+    path.winding = winding;
     return path;
   }
-
-  const path = createPath(winding);
+  let path = createPath('nonZero');
+  path.winding = winding;
   if (name === 'rect') {
-    const x = svgNumberAttribute(element, 'x', 0);
-    const y = svgNumberAttribute(element, 'y', 0);
-    const width = svgNumberAttribute(element, 'width', 0);
-    const height = svgNumberAttribute(element, 'height', 0);
-    const rx = Math.max(0, svgNumberAttribute(element, 'rx', 0));
-    const ry = Math.max(0, svgNumberAttribute(element, 'ry', rx));
-    if (width <= 0 || height <= 0) return path;
-    if (rx > 0 || ry > 0)
-      appendPathRoundedRectangle(path, x, y, width, height, Math.min(Math.max(rx, ry), width / 2, height / 2));
-    else appendPathRectangle(path, x, y, width, height);
+    const x = svgNumberAttribute(element, 'x', 0.0);
+    const y = svgNumberAttribute(element, 'y', 0.0);
+    const width = svgNumberAttribute(element, 'width', 0.0);
+    const height = svgNumberAttribute(element, 'height', 0.0);
+    const radiusX = Math.max(svgNumberAttribute(element, 'rx', 0.0), 0.0);
+    const radiusY = Math.max(svgNumberAttribute(element, 'ry', radiusX), 0.0);
+    if (width <= 0.0 || height <= 0.0) {
+      return path;
+    }
+    if (radiusX > 0.0 || radiusY > 0.0) {
+      appendPathRoundedRectangle(
+        path,
+        x,
+        y,
+        width,
+        height,
+        Math.min(Math.min(Math.max(radiusX, radiusY), width / 2.0), height / 2.0),
+      );
+    } else {
+      appendPathRectangle(path, x, y, width, height);
+    }
     return path;
   }
   if (name === 'circle') {
     appendPathCircle(
       path,
-      svgNumberAttribute(element, 'cx', 0),
-      svgNumberAttribute(element, 'cy', 0),
-      Math.max(0, svgNumberAttribute(element, 'r', 0)),
+      svgNumberAttribute(element, 'cx', 0.0),
+      svgNumberAttribute(element, 'cy', 0.0),
+      Math.max(svgNumberAttribute(element, 'r', 0.0), 0.0),
     );
     return path;
   }
   if (name === 'ellipse') {
     appendPathEllipse(
       path,
-      svgNumberAttribute(element, 'cx', 0),
-      svgNumberAttribute(element, 'cy', 0),
-      Math.max(0, svgNumberAttribute(element, 'rx', 0)),
-      Math.max(0, svgNumberAttribute(element, 'ry', 0)),
+      svgNumberAttribute(element, 'cx', 0.0),
+      svgNumberAttribute(element, 'cy', 0.0),
+      Math.max(svgNumberAttribute(element, 'rx', 0.0), 0.0),
+      Math.max(svgNumberAttribute(element, 'ry', 0.0), 0.0),
     );
     return path;
   }
   if (name === 'line') {
-    appendPathMoveTo(path, svgNumberAttribute(element, 'x1', 0), svgNumberAttribute(element, 'y1', 0));
-    appendPathLineTo(path, svgNumberAttribute(element, 'x2', 0), svgNumberAttribute(element, 'y2', 0));
+    appendPathMoveTo(path, svgNumberAttribute(element, 'x1', 0.0), svgNumberAttribute(element, 'y1', 0.0));
+    appendPathLineTo(path, svgNumberAttribute(element, 'x2', 0.0), svgNumberAttribute(element, 'y2', 0.0));
     return path;
   }
   if (name === 'polygon' || name === 'polyline') {
-    const points = parseSvgNumberList(svgAttribute(element, 'points') ?? '');
-    if (name === 'polygon') appendPathPolygon(path, points);
-    else appendPathPolyline(path, points);
+    const points = parseSvgNumberList(svgAttribute(element, 'points') ?? '').map((v) => v);
+    if (name === 'polygon') {
+      appendPathPolygon(path, points);
+    } else {
+      appendPathPolyline(path, points);
+    }
     return path;
   }
   return null;
