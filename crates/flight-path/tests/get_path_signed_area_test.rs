@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_path::contract::*;
 
 mod get_path_contour_orientation {
