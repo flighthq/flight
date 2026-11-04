@@ -12508,11 +12508,13 @@ fn emit_expression_value(
                         .fields
                         .iter()
                         .map(|field| {
-                            Ok(format!(
-                                "{}: {}",
-                                emit_member(&field.member),
-                                emit_expression(&field.expr, entities)?
-                            ))
+                            let member = emit_member(&field.member);
+                            let value = emit_expression(&field.expr, entities)?;
+                            if member == value {
+                                Ok(member)
+                            } else {
+                                Ok(format!("{member}: {value}"))
+                            }
                         })
                         .collect::<Result<Vec<_>, CompileError>>()?,
                 );
@@ -12552,7 +12554,12 @@ fn emit_expression_value(
                                 value = ordinary_option_value(&field.expr, value);
                             }
                         }
-                        Ok(format!("{}: {value}", emit_member(&field.member)))
+                        let member = emit_member(&field.member);
+                        if member == value {
+                            Ok(member)
+                        } else {
+                            Ok(format!("{member}: {value}"))
+                        }
                     })
                     .collect::<Result<Vec<_>, CompileError>>()?,
             );
@@ -12844,7 +12851,12 @@ fn emit_contextual_struct_literal_expression(
                             }
                             _ => value,
                         };
-                        Ok(format!("{}: {value}", emit_member(&field.member)))
+                        let member = emit_member(&field.member);
+                        if member == value {
+                            Ok(member)
+                        } else {
+                            Ok(format!("{member}: {value}"))
+                        }
                     })
                     .collect::<Result<Vec<_>, CompileError>>()?,
             );

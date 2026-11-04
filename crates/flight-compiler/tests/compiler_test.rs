@@ -7825,7 +7825,7 @@ pub fn required(value: Option<i32>) -> i32 {
             include_str!("../../flight-requirement/src/requirement_collector.rs");
         let requirement_output = compile_typescript(requirement_collector, None).unwrap();
         assert!(requirement_output.contains(
-            "if (sink === undefined) {\n    return;\n  }\n  sink.push({ facet: facet, key: String(key) });"
+            "if (sink === undefined) {\n    return;\n  }\n  sink.push({ facet, key: String(key) });"
         ));
         assert!(!requirement_output.contains("sink = sink;"));
     }
@@ -8623,7 +8623,7 @@ pub fn advance_decoder(bytes: Vec<u8>) -> usize {
         ));
         assert!(!output.contains("export interface DecoderState"));
         assert!(
-            output.contains("let state = { bytes: bytes, position: 0, limit: undefined };"),
+            output.contains("let state = { bytes, position: 0, limit: undefined };"),
             "{output}"
         );
         assert!(output.contains("state.position += 1;"));
@@ -15887,10 +15887,7 @@ pub fn with_count(base: Options, count: i32) -> Options {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("return { ...base, count: count };"),
-            "{output}"
-        );
+        assert!(output.contains("return { ...base, count };"), "{output}");
     }
 
     #[test]
@@ -17432,8 +17429,8 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("{ kind: 'moveTo' as const, x: x, y: y }"));
-        assert!(output.contains("{ kind: 'lineTo' as const, x: x, y: y }"));
+        assert!(output.contains("{ kind: 'moveTo' as const, x, y }"));
+        assert!(output.contains("{ kind: 'lineTo' as const, x, y }"));
         assert!(output.contains("kind: 'quadraticCurveTo' as const"));
         assert!(output.contains("kind: 'cubicCurveTo' as const"));
         assert!(output.contains("return { kind: 'close' as const };"));
@@ -17456,8 +17453,8 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
         let output =
             compile_typescript_with_alias_sources(&for_each_path_segment, None, &[path]).unwrap();
 
-        assert!(output.contains("visitor({ kind: 'moveTo' as const, x: x, y: y });"));
-        assert!(output.contains("visitor({ kind: 'lineTo' as const, x: x, y: y });"));
+        assert!(output.contains("visitor({ kind: 'moveTo' as const, x, y });"));
+        assert!(output.contains("visitor({ kind: 'lineTo' as const, x, y });"));
         assert!(output.contains("kind: 'quadraticCurveTo' as const"));
         assert!(output.contains("kind: 'cubicCurveTo' as const"));
         assert!(output.contains("visitor({ kind: 'close' as const });"));
