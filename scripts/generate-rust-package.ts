@@ -28,6 +28,7 @@ import {
   dependencyAliasArguments,
   mergeRustExportNames,
   renderPublicExports,
+  renderReferencedExports,
   renderReferencedImports,
   resolveCrateExportSymbols,
   resolveRustExportName,
@@ -739,6 +740,9 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
   const typescript = compile('generate', rustPath, outputPath, [], aliasSources);
   const originalPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(originalPath) ? readFileSync(originalPath, 'utf8') : '';
+  const retainedExports = renderReferencedExports(existingTypescript, typescript);
+  const generatedTypescript =
+    retainedExports === '' ? typescript : `${typescript.trimEnd()}\n\n${retainedExports}`.replace(/^\n+/, '');
   const retainedImports = renderReferencedImports(
     existingTypescript,
     typescript,
@@ -750,7 +754,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
       mode,
       retainedImports,
       rustSource,
-      typescript,
+      typescript: generatedTypescript,
     };
   }
   const stem = fileName.slice(0, -3);
@@ -765,11 +769,11 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
       `${relative(repositoryRoot, rustPath)} needs a native overlay, but ${relative(repositoryRoot, nativePath)} is missing`,
     );
   }
-  const nativePublicTypescript = stripExposedNativeFallbacks(storedNativeTypescript, typescript);
-  const nativeTypescript = exposeNativeFallbacks(nativePublicTypescript, typescript);
+  const nativePublicTypescript = stripExposedNativeFallbacks(storedNativeTypescript, generatedTypescript);
+  const nativeTypescript = exposeNativeFallbacks(nativePublicTypescript, generatedTypescript);
   return {
     fileName,
-    generatedTypescript: typescript,
+    generatedTypescript,
     mode,
     nativePublicTypescript,
     nativeTypescript,
@@ -777,7 +781,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     rustSource,
     // Symbol ownership is the union of the generated portion and the native fallback portion. The
     // staged public module re-exports that same union from the two implementation files.
-    typescript: `${typescript}\n${nativeTypescript}`,
+    typescript: `${generatedTypescript}\n${nativeTypescript}`,
   };
 }
 

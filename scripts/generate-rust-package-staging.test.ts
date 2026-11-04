@@ -141,9 +141,13 @@ edition = "2024"
   it('preserves the exact curated root including auxiliary compatibility exports', async () => {
     writeFileSync(
       join(crateRoot, 'src', 'lib.rs'),
-      'mod types;\nmod value;\npub mod contract;\npub use contract::{alpha_value, MissingType};\n',
+      'mod compatibility;\nmod types;\nmod value;\npub mod contract;\npub use contract::{alpha_value, MissingType};\n',
     );
-    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::types::*;\npub use super::value::*;\n');
+    writeFileSync(
+      join(crateRoot, 'src', 'contract.rs'),
+      'pub use super::compatibility::MissingType;\npub use super::value::*;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'compatibility.rs'), 'pub use crate::types::MissingType;\n');
     writeFileSync(join(crateRoot, 'src', 'types.rs'), '//! flight-compiler: rust-only\npub struct MissingType;\n');
     writeFileSync(
       sourcePath,
@@ -152,9 +156,10 @@ pub fn alpha_value() -> i32 { return 1; }
 `,
     );
     writeFileSync(join(packageRoot, 'src', 'compat.ts'), 'export interface MissingType { value: number; }\n');
+    writeFileSync(join(packageRoot, 'src', 'compatibility.ts'), "export type { MissingType } from './compat.ts';\n");
     writeFileSync(
       join(packageRoot, 'src', 'index.ts'),
-      "export type { MissingType } from './compat.ts';\nexport { alphaValue } from './contract.ts';\n",
+      "export type { MissingType } from './compatibility.ts';\nexport { alphaValue } from './contract.ts';\n",
     );
 
     const first = await generateWhileScanning();
@@ -165,7 +170,10 @@ pub fn alpha_value() -> i32 { return 1; }
     const root = readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8');
     expect(root).toContain("export { alphaValue } from './contract.ts';");
     expect(root).not.toContain('zetaValue');
-    expect(root).toContain("export type { MissingType } from './compat.ts';");
+    expect(root).toContain("export type { MissingType } from './compatibility.ts';");
+    expect(readFileSync(join(packageRoot, 'src', 'contract.ts'), 'utf8')).toContain(
+      "export type { MissingType } from './compatibility.ts';",
+    );
   }, 120_000);
 
   it('forwards lenient production generation', async () => {

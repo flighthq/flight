@@ -188,6 +188,32 @@ export function collectExportSymbols(modules: readonly ExportModule[]): Map<stri
       owner.isClass ||= kind === 'class';
       symbols.set(match[2], owner);
     }
+    for (const match of module.typescript.matchAll(/^export\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"][^'"]+['"];?/gm)) {
+      const groupTypeOnly = match[1] !== undefined;
+      for (const item of match[2].split(',')) {
+        const declaration = item.trim();
+        if (declaration.length === 0) continue;
+        const itemTypeOnly = groupTypeOnly || declaration.startsWith('type ');
+        const name = declaration
+          .replace(/^type\s+/, '')
+          .split(/\s+as\s+/)
+          .at(-1)
+          ?.trim();
+        if (!name || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) continue;
+        const owner = symbols.get(name) ?? {
+          fileName: module.fileName,
+          hasType: false,
+          hasValue: false,
+          isClass: false,
+        };
+        if (owner.fileName !== module.fileName) {
+          throw new Error(`duplicate generated symbol ${name} in ${owner.fileName} and ${module.fileName}`);
+        }
+        owner.hasType ||= itemTypeOnly;
+        owner.hasValue ||= !itemTypeOnly;
+        symbols.set(name, owner);
+      }
+    }
   }
   return symbols;
 }
@@ -451,6 +477,51 @@ export function renderReferencedImports(
     if (values.length > 0) output += `import { ${values.join(', ')} } from '${module}';\n`;
   }
   return output.length === 0 ? output : `${output}\n`;
+}
+
+// A target-native module can be a public forwarding lane rather than an implementation. The Rust
+// compiler emits no declaration for `pub use`, so strict promotion retains named TypeScript
+// re-exports whose public name is not replaced by generated output. Their original module remains the
+// symbol owner; wildcard exports stay excluded because they do not name a deterministic contract.
+export function renderReferencedExports(existingTypescript: string, generatedTypescript: string): string {
+  const generatedSymbols = collectTypeScriptExportSymbols(generatedTypescript);
+  const exports = new Map<string, Map<string, { specifier: string; typeOnly: boolean }>>();
+
+  for (const match of existingTypescript.matchAll(/^export\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"]([^'"]+)['"];?/gm)) {
+    const groupTypeOnly = match[1] !== undefined;
+    const module = match[3];
+    if (/^\.\/.+\.(?:generated|native)\.ts$/.test(module)) continue;
+    const entries = exports.get(module) ?? new Map<string, { specifier: string; typeOnly: boolean }>();
+    for (const item of match[2].split(',')) {
+      const declaration = item.trim();
+      if (declaration.length === 0) continue;
+      const typeOnly = groupTypeOnly || declaration.startsWith('type ');
+      const specifier = declaration.replace(/^type\s+/, '');
+      const exported = specifier
+        .split(/\s+as\s+/)
+        .at(-1)
+        ?.trim();
+      if (!exported || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(exported) || generatedSymbols.has(exported)) continue;
+      const previous = entries.get(exported);
+      if (previous === undefined || (previous.typeOnly && !typeOnly)) entries.set(exported, { specifier, typeOnly });
+    }
+    if (entries.size > 0) exports.set(module, entries);
+  }
+
+  let output = '';
+  for (const [module, entries] of [...exports].sort(([left], [right]) => left.localeCompare(right))) {
+    const types = [...entries.values()]
+      .filter((entry) => entry.typeOnly)
+      .map((entry) => entry.specifier)
+      .sort();
+    const values = [...entries.values()]
+      .filter((entry) => !entry.typeOnly)
+      .map((entry) => entry.specifier)
+      .sort();
+    if (types.length > 0) output += `export type { ${types.join(', ')} } from '${module}';\n`;
+    if (values.length > 0) output += `export { ${values.join(', ')} } from '${module}';\n`;
+  }
+  return output;
 }
 
 function referencedCode(typescript: string): string {

@@ -26,6 +26,7 @@ import {
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
+  renderReferencedExports,
   renderReferencedImports,
   resolveCrateExportSymbols,
   resolveExternalContractExports,
@@ -421,6 +422,23 @@ export function createWidget(): Widget { return {} as Widget; }
 `;
 
     expect(renderReferencedImports(existing, generated)).toBe('');
+  });
+});
+
+describe('renderReferencedExports', () => {
+  it('retains named forwarding exports that generated declarations do not replace', () => {
+    const existing = `export type { MissingType, ReplacedType } from './compat.ts';
+export { ImageChannel, InternalName as PublicName } from '@flighthq/types/contract';
+export { NativeFallback } from './value.native.ts';
+export * from './wildcard.ts';
+`;
+    const generated = 'export interface ReplacedType { value: number; }\n';
+
+    expect(renderReferencedExports(existing, generated)).toBe(
+      `export type { MissingType } from './compat.ts';
+export { ImageChannel, InternalName as PublicName } from '@flighthq/types/contract';
+`,
+    );
   });
 });
 
