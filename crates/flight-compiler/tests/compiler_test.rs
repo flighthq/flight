@@ -2854,6 +2854,91 @@ pub struct Capability {
     }
 
     #[test]
+    fn evaluates_if_let_value_scrutinees_once() {
+        let source = r#"
+pub fn next_id() -> Option<i32> {
+    return Some(1);
+}
+
+pub fn pair() -> Option<(i32, i32)> {
+    return Some((1, 2));
+}
+
+pub async fn fetch() -> Option<i32> {
+    return Some(1);
+}
+
+pub fn called(input: Option<i32>) -> i32 {
+    let value = if let Some(found) = next_id() { found } else { 0 };
+    let total = if let Some((a, b)) = pair() { a + b } else { 0 };
+    let plain = if let Some(found) = input { found } else { 0 };
+    return value + total + plain;
+}
+
+pub async fn awaited() -> i32 {
+    let value = if let Some(found) = fetch().await { found } else { 0 };
+    return value;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        // A call (or `.await`) is evaluated once, into `$ifLet`, then tested and bound from it.
+        assert_eq!(output.matches("nextId();").count(), 1, "{output}");
+        assert_eq!(output.matches("pair();").count(), 1, "{output}");
+        assert_eq!(output.matches("await fetch()").count(), 1, "{output}");
+        assert!(output.contains("const $ifLet = nextId();"), "{output}");
+        assert!(output.contains("const [a, b] = $ifLet;"), "{output}");
+        assert!(output.contains("const $ifLet = await fetch();"), "{output}");
+        // A plain variable is read in place.
+        assert!(output.contains("if (input !== undefined) {"), "{output}");
+    }
+
+    #[test]
+    fn awaits_value_position_wrappers_that_await() {
+        let source = r#"
+pub async fn fetch() -> Option<i32> {
+    return Some(1);
+}
+
+pub async fn read() -> i32 {
+    let value = match fetch().await {
+        Some(found) => found,
+        None => 0,
+    };
+    return value;
+}
+
+pub async fn spawn_later() -> i32 {
+    let task = {
+        let pending = async move {
+            return fetch().await;
+        };
+        pending
+    };
+    return task.await.unwrap_or(0);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        // A `match` that awaits, in value position, becomes an awaited async arrow: a plain arrow
+        // would put `await` in a non-async function, which TypeScript rejects.
+        assert!(
+            output.contains("const value = (await (async () => {"),
+            "{output}"
+        );
+        assert!(!output.contains("const value = (() => {"), "{output}");
+        // An `.await` inside a nested `async` block belongs to that block, which keeps its own
+        // async arrow; nothing around it is awaited in its place.
+        assert!(
+            output.contains("const pending = (async () => {"),
+            "{output}"
+        );
+        assert!(
+            !output.contains("(await (async () => {\n  const pending"),
+            "{output}"
+        );
+        assert!(!output.contains("const task = (await"), "{output}");
+    }
+
+    #[test]
     fn lowers_async_blocks_and_await_expressions() {
         assert_eq!(
             compile_typescript(
@@ -9443,6 +9528,79 @@ pub static ENTRY: LazyLock<Entry> = LazyLock::new(|| {
     }
 
     #[test]
+    fn allows_lazy_lock_clone_of_scalars_and_strings() {
+        let source = r#"
+use std::sync::LazyLock;
+
+pub struct Palette {
+    pub label: String,
+    pub alias: String,
+    pub scale: f64,
+    pub count: i32,
+    pub enabled: bool,
+}
+
+pub fn create_palette() -> Palette {
+    let label: String = String::new();
+    let borrowed = &label;
+    let scale: f64 = 2.0;
+    let count: i32 = 3;
+    return Palette {
+        label: label.clone(),
+        alias: borrowed.clone(),
+        scale: scale.clone() * 2.0,
+        count: count.clone(),
+        enabled: true.clone(),
+    };
+}
+
+pub static PALETTE: LazyLock<Palette> = LazyLock::new(create_palette);
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("export const PALETTE"),
+            "clone of strings, scalars and a reference to a string in a LazyLock: {output}"
+        );
+        // A cloned scalar keeps its proven type, so arithmetic on it is still proven.
+        assert!(output.contains("scale: scale * 2.0"), "{output}");
+    }
+
+    #[test]
+    fn rejects_lazy_lock_clone_of_structs_and_unproven_receivers() {
+        let unsafe_initializer = |reason: &str| {
+            format!(
+                "`LazyLock` static `TINT` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; {reason}"
+            )
+        };
+        let struct_clone = unsafe_initializer(
+            "it clones `Tint`, a struct, and a struct `.clone()` can lower to the same TypeScript object rather than a copy, so a change to either would show in both",
+        );
+        let cases = [
+            (
+                // Even a derived `Clone`: the lowered clone could share the original object.
+                "use std::sync::LazyLock;\n\n#[derive(Clone)]\npub struct Tint {\n    pub weight: f64,\n}\n\npub fn create_tint() -> Tint {\n    let base = Tint { weight: 1.0 };\n    let mut changed = base.clone();\n    changed.weight = 2.0;\n    return changed;\n}\n\npub static TINT: LazyLock<Tint> = LazyLock::new(create_tint);\n",
+                struct_clone.clone(),
+            ),
+            (
+                // A manual `impl Clone` (which could also run any code).
+                "use std::sync::LazyLock;\n\npub struct Tint {\n    pub weight: f64,\n}\n\nimpl Clone for Tint {\n    fn clone(&self) -> Self {\n        return Tint { weight: self.weight };\n    }\n}\n\npub fn create_tint() -> Tint {\n    let base = Tint { weight: 1.0 };\n    return base.clone();\n}\n\npub static TINT: LazyLock<Tint> = LazyLock::new(create_tint);\n",
+                struct_clone.clone(),
+            ),
+            (
+                // A receiver whose type is not proven.
+                "use std::sync::LazyLock;\n\npub struct Tint {\n    pub weight: f64,\n}\n\npub fn create_tint() -> Tint {\n    let weight = Some(1.0).unwrap_or(2.0).clone();\n    return Tint { weight };\n}\n\npub static TINT: LazyLock<Tint> = LazyLock::new(create_tint);\n",
+                unsafe_initializer(
+                    "it calls `.clone()` on a value whose type it cannot prove, so the clone could run any code",
+                ),
+            ),
+        ];
+        for (source, expected) in cases {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "source:\n{source}");
+        }
+    }
+
+    #[test]
     fn rejects_unsupported_lazy_lock_statics() {
         let declarations = "use std::sync::LazyLock;\n\npub struct Kernel {\n    pub scale: f64,\n}\n\npub fn create_kernel() -> Kernel {\n    return Kernel { scale: 1.0 };\n}\n";
         let unsupported_shape = |name: &str| {
@@ -9567,7 +9725,7 @@ pub static ENTRY: LazyLock<Entry> = LazyLock::new(|| {
             ),
             (
                 "use std::sync::atomic::{AtomicU32, Ordering};\n\nstatic CLONES: AtomicU32 = AtomicU32::new(0);\n\npub struct Seed {\n    pub scale: f64,\n}\n\nimpl Clone for Seed {\n    fn clone(&self) -> Seed {\n        CLONES.fetch_add(1, Ordering::SeqCst);\n        return Seed { scale: self.scale };\n    }\n}\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| {\n    let seed = Seed { scale: 1.0 };\n    return Kernel { scale: seed.clone().scale };\n});\n".to_string(),
-                unsafe_initializer("KERNEL", "it calls `.clone()`, and a method name does not prove which operation its receiver performs"),
+                unsafe_initializer("KERNEL", "it clones `Seed`, a struct, and a struct `.clone()` can lower to the same TypeScript object rather than a copy, so a change to either would show in both"),
             ),
             (
                 "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: 1 as f64 });\n".to_string(),
@@ -9652,7 +9810,7 @@ pub fn get_clones() -> u32 {
     return CLONES.fetch_add(0, Ordering::SeqCst);
 }
 "#,
-                "it calls `.clone()`, and a method name does not prove which operation its receiver performs",
+                "it clones `Seed`, a struct, and a struct `.clone()` can lower to the same TypeScript object rather than a copy, so a change to either would show in both",
             ),
         ];
         for (source, reason) in auditor_repros {

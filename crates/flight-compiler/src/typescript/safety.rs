@@ -797,6 +797,14 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
             return match expression {
                 Expr::Group(group) => self.infer(&group.expr),
                 Expr::Paren(paren) => self.infer(&paren.expr),
+                // `.clone()` keeps its receiver's type (whether the clone is safe is the visitor's
+                // proof); `.to_string()` is a `String`.
+                Expr::MethodCall(call) if call.args.is_empty() && call.method == "clone" => {
+                    self.infer(&call.receiver)
+                }
+                Expr::MethodCall(call) if call.args.is_empty() && call.method == "to_string" => {
+                    Some(EagerType::Str)
+                }
                 Expr::Lit(literal) => match &literal.lit {
                     Lit::Bool(_) => Some(EagerType::Bool),
                     Lit::Float(float) => match float.suffix() {
@@ -1726,6 +1734,28 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
             return (standard && DERIVES.contains(&name.as_str())).then(|| name.clone());
         }
 
+        // Proves `.clone()` on a value of `eager` both runs no user code and keeps Rust's meaning: the
+        // clone must be an independent value. That holds for scalars and strings (TypeScript values),
+        // and through a reference or a standard `Box`/`Arc`/`LazyLock` to one. A struct clone fails
+        // closed even under `#[derive(Clone)]`: the general lowering emits the receiver itself for an
+        // unannotated struct `.clone()`, so the "clone" and the original would be one object and a
+        // later field assignment to either would show in both.
+        fn prove_clone(&self, eager: &EagerType) -> Result<(), String> {
+            return match eager {
+                EagerType::Bool
+                | EagerType::F32
+                | EagerType::F64
+                | EagerType::FloatLiteral
+                | EagerType::Integer(_)
+                | EagerType::IntegerLiteral
+                | EagerType::Str => Ok(()),
+                EagerType::Pointer(inner) => self.prove_clone(inner),
+                EagerType::Struct(_, name) => Err(format!(
+                    "it clones `{name}`, a struct, and a struct `.clone()` can lower to the same TypeScript object rather than a copy, so a change to either would show in both"
+                )),
+            };
+        }
+
         // Walks a manual `impl Default` for `name`: its body must return one struct literal of the
         // struct, each field the generated allocation defaults set to exactly that default (with
         // `equivalent`), and every value proven like the factory.
@@ -2034,6 +2064,21 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
 
         fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
             let method = call.method.to_string();
+            if method == "clone" && call.args.is_empty() {
+                let Some(eager_type) = self.infer(&call.receiver) else {
+                    self.reject(
+                        "it calls `.clone()` on a value whose type it cannot prove, so the clone could run any code"
+                            .to_string(),
+                    );
+                    return;
+                };
+                if let Err(reason) = self.prove_clone(&eager_type) {
+                    self.reject(reason);
+                    return;
+                }
+                self.visit_expr(&call.receiver);
+                return;
+            }
             if method == "to_string" && call.args.is_empty() {
                 let receiver_is_literal = match call.receiver.as_ref() {
                     Expr::Lit(_) => true,

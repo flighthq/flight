@@ -10127,6 +10127,7 @@ pub(crate) fn emit_expression(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     let value = emit_expression_value(expression, entities)?;
+    let value = make_value_wrapper_async(expression, value);
     if current_source(entities).is_some()
         && !entities.contains(NULLABLE_OPTIONS_MARKER)
         && (expression_is_nullable_option_return(expression, entities)
@@ -10135,6 +10136,46 @@ pub(crate) fn emit_expression(
         return Ok(format!("(({value}) ?? undefined)"));
     }
     return Ok(value);
+}
+
+// A block, `if`, `loop` or `match` in value position lowers to an immediately invoked arrow,
+// `(() => { ... })()`. When the Rust expression awaits directly (not inside its own nested `async`
+// block or closure), that arrow would put `await` in a non-async function, which TypeScript rejects;
+// so it becomes an awaited async arrow, `(await (async () => { ... })())`, evaluated in the same
+// order. Rust only allows the `.await` inside an async context, so the outer `await` is valid too.
+fn make_value_wrapper_async(expression: &Expr, value: String) -> String {
+    const PREFIX: &str = "(() => {";
+    const SUFFIX: &str = "})()";
+    if !matches!(
+        expression,
+        Expr::Block(_) | Expr::Unsafe(_) | Expr::If(_) | Expr::Loop(_) | Expr::Match(_)
+    ) || !value.starts_with(PREFIX)
+        || !value.ends_with(SUFFIX)
+        || !expression_awaits_directly(expression)
+    {
+        return value;
+    }
+    let inner = &value[PREFIX.len()..value.len() - SUFFIX.len()];
+    return format!("(await (async () => {{{inner}}})())");
+}
+
+// Whether `expression` contains an `.await` that belongs to it rather than to a nested `async`
+// block or closure (whose own arrow is already async).
+fn expression_awaits_directly(expression: &Expr) -> bool {
+    struct Finder {
+        found: bool,
+    }
+    impl<'ast> Visit<'ast> for Finder {
+        fn visit_expr_await(&mut self, _: &'ast syn::ExprAwait) {
+            self.found = true;
+        }
+        fn visit_expr_async(&mut self, _: &'ast syn::ExprAsync) {}
+        fn visit_expr_closure(&mut self, _: &'ast syn::ExprClosure) {}
+        fn visit_item(&mut self, _: &'ast syn::Item) {}
+    }
+    let mut finder = Finder { found: false };
+    finder.visit_expr(expression);
+    return finder.found;
 }
 
 fn emit_expression_value(
@@ -12160,6 +12201,19 @@ fn emit_if_expression(
     return Ok(format!("{condition} ? {then_value} : {otherwise}"));
 }
 
+// Whether reading `expression` twice is the same as reading it once: a variable or a field of one,
+// possibly parenthesized or borrowed. Anything else (a call, a method call, an `.await`) runs code.
+fn expression_is_plain_place(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Path(path) => path.qself.is_none(),
+        Expr::Field(field) => expression_is_plain_place(&field.base),
+        Expr::Paren(paren) => expression_is_plain_place(&paren.expr),
+        Expr::Group(group) => expression_is_plain_place(&group.expr),
+        Expr::Reference(reference) => expression_is_plain_place(&reference.expr),
+        _ => false,
+    };
+}
+
 fn emit_if_let_value_expression(
     expression: &syn::ExprIf,
     entities: &HashSet<String>,
@@ -12189,9 +12243,19 @@ fn emit_if_let_value_expression(
     };
     let mut out = "(() => {\n".to_string();
     if let Some((name, scrutinee, absent)) = &option_binding {
+        // The scrutinee is both tested and bound, so a call (or `.await`) in it is evaluated once,
+        // into `$ifLet` as the enum-variant form does; a plain variable or field is read in place.
+        let scrutinee = match expression.cond.as_ref() {
+            Expr::Let(binding) if !expression_is_plain_place(&binding.expr) => {
+                writeln!(out, "  const $ifLet = {scrutinee};")
+                    .expect("writing to a String cannot fail");
+                "$ifLet".to_string()
+            }
+            _ => scrutinee.clone(),
+        };
         writeln!(out, "  if ({scrutinee} !== {absent}) {{")
             .expect("writing to a String cannot fail");
-        if name != scrutinee {
+        if *name != scrutinee {
             writeln!(out, "    const {name} = {scrutinee};")
                 .expect("writing to a String cannot fail");
         }
