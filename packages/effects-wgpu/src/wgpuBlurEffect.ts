@@ -6,8 +6,6 @@ import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
 import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 import { getWgpuEffectLogicalWidth, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale.ts';
 
-export { getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale.ts';
-
 // Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest vertically),
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard
 // deviations (CSS `blur(Xpx)` uses sigma = X), matching the CSS and surface Gaussian references and the
