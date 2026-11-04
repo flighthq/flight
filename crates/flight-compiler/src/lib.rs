@@ -607,6 +607,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         alias_sources,
         &[],
         &[],
+        &[],
     );
 }
 
@@ -616,6 +617,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     contract_source: Option<&str>,
     alias_sources: &[VitestAliasSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[&str],
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
@@ -652,6 +654,15 @@ fn compile_vitest_with_contract_alias_sources_internal(
     let string_unions = model::parse_string_union_metadata(source)?;
     let external_string_union_metadata =
         parse_external_string_union_metadata(external_alias_sources)?;
+    let visibility_programs = visibility_sources
+        .iter()
+        .map(|source| model::parse_visibility_program(source))
+        .collect::<Result<Vec<_>, _>>()?;
+    let type_script_string_union_metadata = resolve_type_script_string_union_metadata(
+        type_script_string_unions,
+        alias_programs.iter().chain(&visibility_programs),
+        "external TypeScript",
+    )?;
     validate_string_union_metadata(
         std::iter::once(StringUnionMetadataSource {
             identity: format!("current test source for module `{contract_module}`"),
@@ -676,6 +687,13 @@ fn compile_vitest_with_contract_alias_sources_internal(
                 styles: &external.metadata.styles,
                 values: &external.metadata.values,
             };
+        }))
+        .chain(type_script_string_union_metadata.iter().map(|external| {
+            return StringUnionMetadataSource {
+                identity: format!("external TypeScript module `{}`", external.module),
+                styles: &external.metadata.styles,
+                values: &external.metadata.values,
+            };
         })),
     )?;
     let mut context = typescript::generation_context(
@@ -693,6 +711,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     );
     let external_string_unions = external_string_union_metadata
         .iter()
+        .chain(&type_script_string_union_metadata)
         .flat_map(|external| external.metadata.styles.keys().cloned())
         .collect::<std::collections::BTreeSet<_>>();
     typescript::insert_string_union_context(&mut context, external_string_unions.iter());
@@ -787,7 +806,26 @@ fn compile_vitest_with_contract_alias_sources_internal(
         program.helpers.iter(),
     );
     typescript::insert_typed_array_constant_context(&mut context, &program.constants);
-    let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
+    let mut type_script_string_union_owners = std::collections::BTreeMap::new();
+    for external in &type_script_string_union_metadata {
+        for name in external.metadata.styles.keys() {
+            if let Some(previous) =
+                type_script_string_union_owners.insert(name.clone(), external.module)
+                && previous != external.module
+            {
+                return Err(compile_error(format!(
+                    "external TypeScript string union `{name}` has conflicting owners `{previous}` and `{}`",
+                    external.module
+                )));
+            }
+        }
+    }
+    let mut output = vitest::emit_test_program(
+        &program,
+        contract_module,
+        &type_script_string_union_owners,
+        &context,
+    )?;
     output = lower_string_union_variants(output, &string_unions.styles, &string_unions.values)?;
     for alias_program in &alias_programs {
         output = lower_string_union_variants(
@@ -798,6 +836,13 @@ fn compile_vitest_with_contract_alias_sources_internal(
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
     for external in &external_string_union_metadata {
+        output = lower_string_union_variants(
+            output,
+            &external.metadata.styles,
+            &external.metadata.values,
+        )?;
+    }
+    for external in &type_script_string_union_metadata {
         output = lower_string_union_variants(
             output,
             &external.metadata.styles,
@@ -824,6 +869,7 @@ pub fn compile_vitest_with_external_alias_sources(
         alias_sources,
         external_alias_sources,
         &[],
+        &[],
     );
 }
 
@@ -841,6 +887,7 @@ pub fn compile_vitest_with_module_alias_sources(
         alias_sources,
         &[],
         &[],
+        &[],
     );
 }
 
@@ -856,12 +903,36 @@ pub fn compile_vitest_with_visibility_sources(
     external_alias_sources: &[ExternalAliasSource<'_>],
     visibility_sources: &[&str],
 ) -> Result<String, CompileError> {
+    return compile_vitest_with_options(
+        source,
+        contract_module,
+        contract_source,
+        alias_sources,
+        external_alias_sources,
+        &[],
+        visibility_sources,
+    );
+}
+
+/// Compiles one Rust test module with production hints, dependency sources, explicit TypeScript
+/// string-union representations, and target-native visibility sources.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_options(
+    source: &str,
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
+    visibility_sources: &[&str],
+) -> Result<String, CompileError> {
     return compile_vitest_with_contract_alias_sources_internal(
         source,
         contract_module,
         contract_source,
         alias_sources,
         external_alias_sources,
+        type_script_string_unions,
         visibility_sources,
     );
 }

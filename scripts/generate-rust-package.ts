@@ -221,6 +221,12 @@ try {
         requireTargetNative(fileName, rustPath);
         continue;
       }
+      const existingPath = join(packageSourceRoot, fileName);
+      const existingTypescript = existsSync(existingPath) ? readFileSync(existingPath, 'utf8') : '';
+      const representationArguments = typeScriptStringUnionArguments(
+        existingTypescript,
+        loadImportedContractSymbols(existingTypescript),
+      );
       const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
       let typescript = compile(
         'generate-tests',
@@ -229,7 +235,9 @@ try {
         ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
         aliasSources,
         targetNativeSources,
+        representationArguments,
       );
+      typescript = canonicalizeGeneratedContractImports(existingTypescript, typescript);
       if (typescript.includes('crate.')) {
         typescript = addRustTestSupportImport(typescript);
       }
@@ -346,10 +354,10 @@ function probeNativeSource(
   const out = join(rawRoot, `${fileName}.audit.ts`);
   const existingPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(existingPath) ? readFileSync(existingPath, 'utf8') : '';
-  const representationArguments =
-    command === 'generate'
-      ? typeScriptStringUnionArguments(existingTypescript, loadImportedContractSymbols(existingTypescript))
-      : [];
+  const representationArguments = typeScriptStringUnionArguments(
+    existingTypescript,
+    loadImportedContractSymbols(existingTypescript),
+  );
   const result = spawnSync(
     compilerPath,
     [

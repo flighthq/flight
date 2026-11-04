@@ -5,7 +5,7 @@ use std::process::{self, Command};
 
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -347,12 +347,22 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<_>>();
-            flight_compiler::compile_vitest_with_visibility_sources(
+            let type_script_string_unions = options
+                .type_script_string_unions
+                .iter()
+                .map(|union| flight_compiler::TypeScriptStringUnion {
+                    module: &union.module,
+                    name: &union.name,
+                    values: &union.values,
+                })
+                .collect::<Vec<_>>();
+            flight_compiler::compile_vitest_with_options(
                 &source,
                 contract_module,
                 contract_source.as_deref(),
                 &alias_source_refs,
                 &external_aliases,
+                &type_script_string_unions,
                 &visibility_source_refs,
             )
         }
@@ -568,12 +578,9 @@ fn parse_generate_options(
         GenerateKind::Tests if lenient => {
             return Err(format!("--lenient is only valid for generate\n\n{USAGE}"));
         }
-        GenerateKind::Tests
-            if !type_script_string_unions.is_empty()
-                || !type_script_inline_string_unions.is_empty() =>
-        {
+        GenerateKind::Tests if !type_script_inline_string_unions.is_empty() => {
             return Err(format!(
-                "TypeScript string-union options are only valid for generate\n\n{USAGE}"
+                "--typescript-inline-string-union is only valid for generate\n\n{USAGE}"
             ));
         }
         GenerateKind::Source | GenerateKind::Tests => {}
@@ -659,7 +666,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_explicit_type_script_string_union_metadata() {
+    fn parses_explicit_type_script_string_union_metadata_for_generated_tests() {
         let options = parse_generate_options(
             &arguments(&[
                 "--source",
@@ -669,7 +676,7 @@ mod tests {
                 "--typescript-string-union",
                 "@flighthq/types/contract#AccessibilityLiveness=[\"polite\",\"assertive\"]",
             ]),
-            GenerateKind::Source,
+            GenerateKind::Tests,
         )
         .unwrap();
 

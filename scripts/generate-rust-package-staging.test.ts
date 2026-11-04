@@ -535,6 +535,98 @@ export function defaultLoopMode(): AnimationLoopMode {
     expect(value).not.toContain("return 'pingPong';");
   }, 120_000);
 
+  it('passes canonical string-union representation and owner metadata through generated tests', async () => {
+    rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod types;\nmod value;\npub mod contract;\npub use contract::*;\n',
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'contract.rs'),
+      'pub use super::types::ShellExternalReason;\npub use super::value::blocked_reason;\n',
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'types.rs'),
+      `//! flight-compiler: rust-only
+
+pub enum ShellExternalReason {
+    BlockedScheme,
+    Ok,
+    OperationFailed,
+    PopupBlocked,
+}
+`,
+    );
+    writeFileSync(
+      sourcePath,
+      `use crate::types::ShellExternalReason;
+
+pub fn blocked_reason() -> ShellExternalReason {
+    return ShellExternalReason::BlockedScheme;
+}
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'tests', 'value_test.rs'),
+      `use crate::contract::*;
+
+mod shell_external_reason {
+    use super::*;
+
+    #[test]
+    fn returns_the_blocked_scheme_literal() {
+        let reason: ShellExternalReason = ShellExternalReason::BlockedScheme;
+        assert_eq!(reason, ShellExternalReason::BlockedScheme);
+    }
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { ShellExternalReason } from '@flighthq/types/contract';
+
+export function blockedReason(): ShellExternalReason {
+  return 'blocked-scheme';
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.test.ts'),
+      `import type { ShellExternalReason } from '@flighthq/types/contract';
+
+describe('ShellExternalReason', () => {
+  it('returns the blocked scheme literal', () => {
+    const reason: ShellExternalReason = 'blocked-scheme';
+    expect(reason).toEqual('blocked-scheme');
+  });
+});
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { blockedReason } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { blockedReason } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+    rmSync(join(crateRoot, 'tests', 'value_test.rs'), { force: true });
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain("import type { ShellExternalReason } from '@flighthq/types/contract';");
+    expect(value).toContain("return 'blocked-scheme';");
+    const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
+    expect(test).toContain("import type { ShellExternalReason } from '@flighthq/types/contract';");
+    expect(test).toContain("const reason: ShellExternalReason = 'blocked-scheme';");
+    expect(test).toContain("expect(reason).toEqual('blocked-scheme');");
+    expect(test).not.toContain('ShellExternalReason.BlockedScheme');
+  }, 120_000);
+
   it('preserves inline string-union representations from existing function signatures', async () => {
     writeFileSync(
       join(crateRoot, 'src', 'types.rs'),

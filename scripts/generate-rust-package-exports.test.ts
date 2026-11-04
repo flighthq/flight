@@ -88,6 +88,25 @@ export type Result = Shared;
 
     expect(canonicalizeGeneratedContractImports(existing, generated)).toBe(generated);
   });
+
+  it('moves generated local-contract test types back to their canonical owner', () => {
+    const existing = `import type { ShellExternalReason } from '@flighthq/types/contract';
+import { blockedReason } from './contract.ts';
+`;
+    const generated = `import { blockedReason } from './contract.ts';
+import type { ShellExternalReason } from './contract.ts';
+
+const reason: ShellExternalReason = blockedReason();
+`;
+
+    expect(canonicalizeGeneratedContractImports(existing, generated)).toBe(
+      `import { blockedReason } from './contract.ts';
+import type { ShellExternalReason } from '@flighthq/types/contract';
+
+const reason: ShellExternalReason = blockedReason();
+`,
+    );
+  });
 });
 
 describe('collectCrateExportSymbols', () => {
@@ -316,15 +335,33 @@ describe('compilerVisibilityArguments', () => {
       '--visibility-source',
       'nested/mod.rs',
     ]);
-    expect(compilerVisibilityArguments('generate-tests', crate, ['ease.rs'], 'ease.rs')).toEqual([]);
+    expect(compilerVisibilityArguments('generate-tests', crate, ['ease.rs'], 'ease.rs')).toEqual([
+      '--visibility-source',
+      'lib.rs',
+      '--visibility-source',
+      'pool.rs',
+      '--visibility-source',
+      'ease_steps.rs',
+      '--visibility-source',
+      'nested/mod.rs',
+    ]);
     expect(compilerVisibilityArguments('source-mode', crate, [], 'ease.rs')).toEqual([]);
   });
 
-  it('passes only target-native crate sources to test generation', () => {
+  it('keeps target-native sources visible when they are also alias inputs to test generation', () => {
     const crate = ['lib.rs', 'pool.rs', 'ease.rs', 'ease_compat.rs'];
     expect(
-      compilerVisibilityArguments('generate-tests', crate, ['ease.rs'], 'tests/ease_test.rs', ['ease_compat.rs']),
-    ).toEqual(['--visibility-source', 'ease_compat.rs']);
+      compilerVisibilityArguments('generate-tests', crate, ['ease.rs', 'ease_compat.rs'], 'tests/ease_test.rs', [
+        'ease_compat.rs',
+      ]),
+    ).toEqual([
+      '--visibility-source',
+      'lib.rs',
+      '--visibility-source',
+      'pool.rs',
+      '--visibility-source',
+      'ease_compat.rs',
+    ]);
     expect(compilerVisibilityArguments('source-mode', crate, [], 'ease.rs', ['ease_compat.rs'])).toEqual([]);
   });
 });

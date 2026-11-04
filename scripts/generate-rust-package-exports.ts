@@ -61,12 +61,15 @@ export function compilerVisibilityArguments(
   source?: string,
   targetNativeSources: readonly string[] = [],
 ): string[] {
-  // Test generation reads only the crate's target-native sources, and only for their declared nullable
-  // Option parameters; they never become full alias sources.
+  // Test generation reads every non-alias crate source as visibility-only input, matching production
+  // generation. Target-native sources remain visible even when their directive metadata also makes
+  // them alias inputs: nullable parameters and explicit TypeScript representations need their actual
+  // declarations, but none of these sources become emitted test code.
   if (command === 'generate-tests') {
     const targetNative = new Set(targetNativeSources);
+    const emitted = new Set(aliasSources);
     return crateSources
-      .filter((crateSource) => targetNative.has(crateSource))
+      .filter((crateSource) => targetNative.has(crateSource) || !emitted.has(crateSource))
       .flatMap((crateSource) => ['--visibility-source', crateSource]);
   }
   if (command !== 'generate') return [];
@@ -582,10 +585,11 @@ export function renderGeneratedImports(
   return output.length === 0 ? output : output + '\n';
 }
 
-// A target-native implementation may already import a dependency-owned symbol through its canonical
-// TypeScript contract even when Rust names the declaration through another crate's re-export barrel.
-// Reuse that established owner in generated output so strict promotion does not introduce a new
-// package edge or pull the re-exporting package's source across the consumer's project boundary.
+// An established implementation or test may already import a dependency-owned symbol through its
+// canonical TypeScript contract even when Rust names the declaration through the current crate's
+// contract or another crate's re-export barrel. Reuse that established owner in generated output so
+// promotion does not introduce a new package edge or pull the re-exporting package's source across
+// the consumer's project boundary.
 export function canonicalizeGeneratedContractImports(existingTypescript: string, generatedTypescript: string): string {
   const canonicalOwners = new Map<string, { module: string; specifier: string }>();
   const ambiguous = new Set<string>();
@@ -610,7 +614,7 @@ export function canonicalizeGeneratedContractImports(existingTypescript: string,
   }
 
   const generatedImportPattern =
-    /^import\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm;
+    /^import\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract|\.\/contract(?:\.ts)?)['"];?/gm;
   return generatedTypescript.replace(generatedImportPattern, (_declaration, groupType, body, module: string) => {
     const imports = new Map<string, { types: string[]; values: string[] }>();
     for (const item of (body as string).split(',')) {

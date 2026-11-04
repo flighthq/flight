@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::Write;
 
 use syn::parse::Parser;
@@ -1291,12 +1291,26 @@ fn emit_test_constant(
 pub(crate) fn emit_test_program(
     program: &TestProgram,
     contract_module: &str,
+    external_type_owners: &BTreeMap<String, &str>,
     context: &HashSet<String>,
 ) -> Result<String, CompileError> {
     let (mut contract_symbols, mut contract_type_symbols, external_modules) =
         collect_contract_symbols(program, context);
     let (mut cross_crate_values, mut cross_crate_types) =
         crate::typescript::test_cross_crate_imports(program, context)?;
+    contract_symbols
+        .retain(|symbol| !external_type_owners.contains_key(&emit_path_name(symbol, context)));
+    contract_type_symbols.retain(|symbol| {
+        let name = emit_path_name(symbol, context);
+        let Some(module) = external_type_owners.get(&name) else {
+            return true;
+        };
+        cross_crate_types
+            .entry((*module).to_string())
+            .or_default()
+            .insert(name);
+        return false;
+    });
     let mixed_foreign_wildcards =
         crate::typescript::test_mixed_foreign_wildcard_roots(program, context);
     let mut cross_crate_local_names = cross_crate_values

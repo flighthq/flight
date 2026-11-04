@@ -5,8 +5,8 @@ use flight_compiler::{
     compile_typescript_with_module_sources, compile_typescript_with_options,
     compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
     compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
-    compile_vitest_with_module_alias_sources, compile_vitest_with_visibility_sources,
-    root_only_names, source_mode,
+    compile_vitest_with_module_alias_sources, compile_vitest_with_options,
+    compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -17076,6 +17076,68 @@ mod native_only {
         let output = compile_vitest(source, "./contract.ts").unwrap();
         assert!(!output.contains("describe('nativeOnly'"), "{output}");
         assert!(!output.contains("Rust-only"), "{output}");
+    }
+
+    #[test]
+    fn lowers_explicit_external_type_script_string_unions_in_portable_tests() {
+        let production = r#"
+pub enum ShellExternalReason {
+    BlockedScheme,
+    Ok,
+    OperationFailed,
+    PopupBlocked,
+}
+
+pub fn blocked_reason() -> ShellExternalReason {
+    return ShellExternalReason::BlockedScheme;
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod blocked_reason {
+    use super::*;
+
+    #[test]
+    fn returns_the_blocked_scheme_literal() {
+        let reason: ShellExternalReason = blocked_reason();
+        assert_eq!(reason, ShellExternalReason::BlockedScheme);
+    }
+}
+"#;
+        let aliases = [VitestAliasSource {
+            source: production,
+            module: "crates/flight-example/src/value.rs",
+        }];
+        let values = vec![
+            "blocked-scheme".to_string(),
+            "ok".to_string(),
+            "operation-failed".to_string(),
+            "popup-blocked".to_string(),
+        ];
+        let metadata = [TypeScriptStringUnion {
+            name: "ShellExternalReason",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+
+        let output = compile_vitest_with_options(
+            source,
+            "@flighthq/example/contract",
+            None,
+            &aliases,
+            &[],
+            &metadata,
+            &[],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("import type { ShellExternalReason } from '@flighthq/types/contract';")
+        );
+        assert!(output.contains("const reason: ShellExternalReason = blockedReason();"));
+        assert!(output.contains("expect(reason).toEqual('blocked-scheme');"));
+        assert!(!output.contains("ShellExternalReason.BlockedScheme"));
     }
 
     #[test]
