@@ -38,7 +38,7 @@ export function applyGamepadAxisDeadZone(value: number, deadZone: number): numbe
     return 0.0;
   }
   const sign = value < 0.0 ? -1.0 : 1.0;
-  return (sign * (abs - deadZone)) / (1.0 - deadZone);
+  return sign * ((abs - deadZone) / (1.0 - deadZone));
 }
 
 /**
@@ -58,7 +58,7 @@ export function applyGamepadStickDeadZone(out: GamepadStickOutput, x: number, y:
     out.y = 0.0;
     return;
   }
-  const scale = ((magnitude - deadZone) / (1.0 - deadZone)) * magnitude;
+  const scale = (magnitude - deadZone) / ((1.0 - deadZone) * magnitude);
   out.x = x * scale;
   out.y = y * scale;
 }
