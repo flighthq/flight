@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_geometry::create_vector2;
 use flight_path::contract::*;
 
