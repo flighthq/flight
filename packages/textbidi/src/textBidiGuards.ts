@@ -1,11 +1,15 @@
-import type { TextBidiGuard } from '@flighthq/types/contract';
+// Generated from crates/flight-textbidi/src/text_bidi_guards.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+const GUARD: { value: ((arg0: number) => void) | null } = { value: null };
 
 export function reportTextBidiCompactTableMiss(codepoint: number): void {
-  _guard?.(codepoint);
+  const guard = GUARD.value;
+  if (guard !== null) {
+    guard(codepoint);
+  }
 }
 
-export function setTextBidiGuard(guard: TextBidiGuard | null): void {
-  _guard = guard;
+export function setTextBidiGuard(guard: ((arg0: number) => void) | null): void {
+  GUARD.value = guard;
 }
-
-let _guard: TextBidiGuard | null = null;
