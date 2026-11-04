@@ -18,7 +18,7 @@ export function easeInBack(t: number): number {
 export function easeInOutBack(t: number): number {
   let t2 = t * 2.0;
   if (t2 < 1.0) {
-    return 0.5 * t2 * t2 * ((S2 + 1.0) * t2 - S2);
+    return 0.5 * (t2 * t2 * ((S2 + 1.0) * t2 - S2));
   }
   t2 = t2 - 2.0;
   return 0.5 * (t2 * t2 * ((S2 + 1.0) * t2 + S2) + 2.0);
