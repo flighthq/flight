@@ -17572,6 +17572,121 @@ mod guard_panics {
     }
 
     #[test]
+    fn lowers_caught_panic_is_err_assertions_to_to_throw() {
+        let production = r#"
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn require_positive(counter: &mut Counter, value: i32) -> i32 {
+    counter.calls += 1;
+    if value <= 0 {
+        panic!("value must be positive");
+    }
+    return value;
+}
+
+pub fn require_named(name: &str) -> usize {
+    if name.is_empty() {
+        panic!("{} needs a name", "state");
+    }
+    return name.len();
+}
+"#;
+        let source = r#"
+use crate::*;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+mod guard_is_err {
+    use super::*;
+
+    #[test]
+    fn rejects_bad_input() {
+        let mut counter = Counter { calls: 0 };
+        assert!(catch_unwind(AssertUnwindSafe(|| require_positive(&mut counter, 0))).is_err());
+        assert!(std::panic::catch_unwind(|| require_named("")).is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                require_positive(&mut counter, -1);
+            }))
+            .is_err(),
+            "negative values must panic"
+        );
+        let result = catch_unwind(|| require_named(""));
+        assert!(result.is_err());
+        let result = 5;
+        assert_eq!(result, 5);
+        assert_eq!(counter.calls, 2);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        // Each form runs its closure once, in place, and passes on any throw.
+        assert!(
+            output.contains("expect(() => requirePositive(counter, 0)).toThrow();"),
+            "{output}"
+        );
+        assert_eq!(
+            output
+                .matches("expect(() => requireNamed('')).toThrow();")
+                .count(),
+            2,
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(() => {\n  requirePositive(counter, -1);\n}, `negative values must panic`).toThrow();"),
+            "{output}"
+        );
+        // The replaced `result` is not emitted, so its later re-binding is a first declaration.
+        assert!(output.contains("const result = 5;"), "{output}");
+        assert!(
+            output.contains("expect(counter.calls).toEqual(2);"),
+            "{output}"
+        );
+        for absent in [
+            "catchUnwind",
+            "AssertUnwindSafe",
+            "isErr",
+            "result === undefined",
+        ] {
+            assert!(!output.contains(absent), "{absent}: {output}");
+        }
+    }
+
+    #[test]
+    fn refuses_caught_panic_shapes_to_throw_cannot_express() {
+        let production = r#"
+pub fn fail() -> i32 {
+    panic!("boom");
+}
+"#;
+        // A result read again, `is_ok`, a negated `is_err` and a stored `is_err` flag are not
+        // `toThrow()`; each refuses rather than emitting a call TypeScript does not have.
+        for body in [
+            "let result = std::panic::catch_unwind(|| fail());\n        assert!(result.is_err());\n        assert!(!result.is_ok());",
+            "assert!(std::panic::catch_unwind(|| fail()).is_ok());",
+            "assert!(!std::panic::catch_unwind(|| fail()).is_err());",
+            "let caught = std::panic::catch_unwind(|| fail()).is_err();\n        assert!(caught);",
+        ] {
+            let source = format!(
+                "use crate::*;\n\nmod guard_panics {{\n    use super::*;\n\n    #[test]\n    fn checks() {{\n        {body}\n    }}\n}}\n"
+            );
+            let error = compile_vitest_with_alias_sources(
+                &source,
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains("catch_unwind"), "{body}: {error}");
+        }
+    }
+
+    #[test]
     fn refuses_panic_assertions_it_cannot_express() {
         let production = r#"
 pub fn fail() {
@@ -17618,7 +17733,7 @@ mod guard_panics {
             )
             .unwrap_err()
             .to_string();
-            assert!(error.contains("unwrap_err"), "{error}");
+            assert!(error.contains("catch_unwind"), "{error}");
         }
     }
 

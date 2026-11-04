@@ -11035,6 +11035,22 @@ fn emit_expression_value(
             if expression_is_associated_path(&call.func, "Arc", "clone") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
             }
+            if let Expr::Path(path) = call.func.as_ref()
+                && path.qself.is_none()
+                && path
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| segment.ident == "catch_unwind")
+            {
+                // Tests lower the panic idioms they can express to `expect(..).toThrow(..)`; any
+                // other use has no TypeScript function to call.
+                return Err(compile_error(
+                    "portable `catch_unwind` is supported only as a panic assertion: \
+                     `assert!(catch_unwind(..).is_err())`, its `let result = ..; assert!(result.is_err())` \
+                     form, or a `&str`/`String` message `contains` check",
+                ));
+            }
             if (expression_is_associated_path(&call.func, "Arc", "ptr_eq")
                 || expression_is_associated_path(&call.func, "Rc", "ptr_eq")
                 || expression_is_associated_path(&call.func, "ptr", "eq"))
