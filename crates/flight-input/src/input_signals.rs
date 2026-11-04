@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use flight_entity::{Ref, allocate_entity};
 use flight_signals::create_signal;
 use std::sync::{Arc, RwLock};
