@@ -9092,6 +9092,9 @@ fn inject_tail_returns(statements: &[Stmt]) -> Vec<Stmt> {
             let transformed = inject_tail_returns(&unsafe_block.block.stmts);
             unsafe_block.block.stmts = transformed;
         }
+        Stmt::Expr(Expr::Match(match_expr), semi) if semi.is_none() => {
+            inject_returns_into_match_arms(match_expr);
+        }
         Stmt::Expr(expr, semi) if semi.is_none() && tail_expression_needs_return(expr) => {
             let taken = std::mem::replace(expr, Expr::Verbatim(proc_macro2::TokenStream::new()));
             *last = Stmt::Expr(
@@ -9127,6 +9130,36 @@ fn inject_returns_into_if(if_expr: &mut syn::ExprIf) {
                     expr: Some(Box::new(taken)),
                 }));
             }
+        }
+    }
+}
+
+fn inject_returns_into_match_arms(match_expr: &mut syn::ExprMatch) {
+    for arm in &mut match_expr.arms {
+        inject_return_into_arm_body(&mut arm.body);
+    }
+}
+
+fn inject_return_into_arm_body(body: &mut Expr) {
+    match body {
+        Expr::Return(_) => {}
+        Expr::Block(block) => {
+            let transformed = inject_tail_returns(&block.block.stmts);
+            block.block.stmts = transformed;
+        }
+        Expr::If(if_expr) => {
+            inject_returns_into_if(if_expr);
+        }
+        Expr::Match(match_expr) => {
+            inject_returns_into_match_arms(match_expr);
+        }
+        _ => {
+            let taken = std::mem::replace(body, Expr::Verbatim(proc_macro2::TokenStream::new()));
+            *body = Expr::Return(syn::ExprReturn {
+                attrs: Vec::new(),
+                return_token: syn::token::Return::default(),
+                expr: Some(Box::new(taken)),
+            });
         }
     }
 }
@@ -9526,25 +9559,7 @@ fn emit_closure_with_parameter_types(
     };
     let body = match closure.body.as_ref() {
         Expr::Block(block) => {
-            let stmts = &block.block.stmts;
-            let needs_tail_return = matches!(stmts.last(), Some(Stmt::Expr(expr, None)) if tail_expression_needs_return(expr));
-            let stmts = if needs_tail_return {
-                let mut owned = stmts.to_vec();
-                let last = owned.len() - 1;
-                if let Stmt::Expr(expr, None) = &owned[last] {
-                    owned[last] = Stmt::Expr(
-                        Expr::Return(syn::ExprReturn {
-                            attrs: Vec::new(),
-                            return_token: syn::token::Return::default(),
-                            expr: Some(Box::new(expr.clone())),
-                        }),
-                        None,
-                    );
-                }
-                std::borrow::Cow::Owned(owned)
-            } else {
-                std::borrow::Cow::Borrowed(stmts.as_slice())
-            };
+            let stmts = inject_tail_returns(&block.block.stmts);
             let mut body = String::new();
             body.push_str("{\n");
             emit_block(&mut body, &stmts, &closure_context, 1)?;

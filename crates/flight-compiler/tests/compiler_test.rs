@@ -23685,3 +23685,56 @@ pub fn negate_sum(a: f64, b: f64) -> f64 {
         "negated paren group should keep parens when used in multiplication: {output}"
     );
 }
+
+#[test]
+fn injects_returns_into_closure_block_body_tail_if() {
+    let source = r#"
+pub fn and_then_with_block_if(value: Option<f64>, threshold: f64) -> Option<f64> {
+    return value.and_then(|v| {
+        if v > threshold {
+            Some(v)
+        } else {
+            None
+        }
+    });
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("return v;"),
+        "closure block body if-branch should have return: {output}"
+    );
+    assert!(
+        output.contains("return undefined;"),
+        "closure block body else-branch should have return: {output}"
+    );
+    assert!(
+        !output.contains("    v;\n"),
+        "closure block body should not have bare expression statement: {output}"
+    );
+}
+
+#[test]
+fn injects_returns_into_closure_block_body_tail_match() {
+    let source = r#"
+pub enum Dir { Up, Down }
+
+pub fn offsets(dirs: &[Dir]) -> Vec<i32> {
+    return dirs.iter().map(|d| {
+        match d {
+            Dir::Up => -1,
+            Dir::Down => 1,
+        }
+    }).collect();
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("return -1;"),
+        "match arm in closure block should have return: {output}"
+    );
+    assert!(
+        output.contains("return 1;"),
+        "match arm in closure block should have return: {output}"
+    );
+}
