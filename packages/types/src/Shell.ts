@@ -7,8 +7,10 @@ export interface ShellExternalUrlPolicy {
   readonly allowedSchemes: readonly string[];
 }
 
+export type ShellExternalReason = 'blocked-scheme' | 'ok' | 'operation-failed' | 'popup-blocked';
+
 export type ShellExternalOutcome = {
-  readonly reason: 'blocked-scheme' | 'ok' | 'operation-failed' | 'popup-blocked';
+  readonly reason: ShellExternalReason;
 };
 
 export type ShellPathOpenOutcome =

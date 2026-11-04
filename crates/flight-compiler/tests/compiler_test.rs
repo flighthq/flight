@@ -13444,6 +13444,70 @@ pub enum UnannotatedStringUnion {
     }
 
     #[test]
+    fn lowers_validated_type_script_string_union_variants_in_outcome_construction() {
+        let values = vec![
+            "blocked-scheme".to_string(),
+            "ok".to_string(),
+            "operation-failed".to_string(),
+            "popup-blocked".to_string(),
+        ];
+        let metadata = [TypeScriptStringUnion {
+            name: "ShellExternalReason",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-shell/src/types.rs",
+            source: r#"
+pub enum ShellExternalReason {
+    BlockedScheme,
+    Ok,
+    OperationFailed,
+    PopupBlocked,
+}
+
+pub struct ShellExternalOutcome {
+    pub reason: ShellExternalReason,
+}
+"#,
+        }];
+
+        let output = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-shell/src/shell.rs",
+                source: r#"
+use crate::types::{ShellExternalOutcome, ShellExternalReason};
+
+pub fn blocked_outcome() -> ShellExternalOutcome {
+    return ShellExternalOutcome {
+        reason: ShellExternalReason::BlockedScheme,
+    };
+}
+"#,
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("return { reason: 'blocked-scheme' };")
+                || output.contains("return {\n    reason: 'blocked-scheme',\n  };"),
+            "the outcome discriminant should be a string literal: {output}"
+        );
+        assert!(
+            !output.contains("ShellExternalReason.BlockedScheme"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn rejects_external_type_script_string_union_metadata_that_does_not_match_rust() {
         let values = vec!["polite".to_string(), "urgent".to_string()];
         let metadata = [TypeScriptStringUnion {
