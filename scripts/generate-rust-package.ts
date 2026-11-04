@@ -28,6 +28,7 @@ import {
   dependencyAliasArguments,
   mergeRustExportNames,
   renderPublicExports,
+  renderReferencedImports,
   resolveCrateExportSymbols,
   resolveRustExportName,
   snakeToLowerCamel,
@@ -53,6 +54,7 @@ interface PackageModule {
   mode: SourceMode;
   nativePublicTypescript?: string;
   nativeTypescript?: string;
+  retainedImports?: string;
   rustSource: string;
   typescript: string;
 }
@@ -148,19 +150,22 @@ try {
     for (const module of modules) {
       if (module.mode !== 'generate') continue;
       const generatedTypescript = module.generatedTypescript ?? module.typescript;
-      const imports = crateImports(
-        join(crateRoot, 'src', module.rustSource),
-        module.fileName,
-        generatedTypescript,
-        new Map([
-          ...resolveCrateExportSymbols(
-            readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8'),
-            module.fileName,
-            crateOwners,
-          ),
-          ...symbols,
-        ]),
-      );
+      const retainedImports = module.retainedImports ?? '';
+      const imports =
+        retainedImports +
+        crateImports(
+          join(crateRoot, 'src', module.rustSource),
+          module.fileName,
+          retainedImports + generatedTypescript,
+          new Map([
+            ...resolveCrateExportSymbols(
+              readFileSync(join(crateRoot, 'src', module.rustSource), 'utf8'),
+              module.fileName,
+              crateOwners,
+            ),
+            ...symbols,
+          ]),
+        );
       if (module.nativeTypescript === undefined) {
         writeGenerated(
           join(stagingSourceRoot, module.fileName),
@@ -658,6 +663,24 @@ function loadExternalContracts(contractUses: readonly ReturnType<typeof collectR
   return contracts;
 }
 
+function loadImportedContractSymbols(
+  typescript: string,
+): Map<string, Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }>> {
+  const contracts = new Map<string, Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }>>();
+  for (const match of typescript.matchAll(/\bfrom\s+['"](@flighthq\/([^/'"]+)\/contract)['"]/g)) {
+    const module = match[1];
+    if (contracts.has(module)) continue;
+    const contractPath = join(repositoryRoot, 'packages', match[2], 'src', 'contract.ts');
+    if (!existsSync(contractPath)) {
+      throw new Error(
+        `${relative(repositoryRoot, contractPath)} is required by imported TypeScript contract ${module}`,
+      );
+    }
+    contracts.set(module, collectContractTypeScriptSymbols(contractPath));
+  }
+  return contracts;
+}
+
 function collectContractTypeScriptSymbols(
   path: string,
 ): Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }> {
@@ -714,17 +737,24 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
   }
   const outputPath = join(rawRoot, fileName);
   const typescript = compile('generate', rustPath, outputPath, [], aliasSources);
+  const originalPath = join(packageSourceRoot, fileName);
+  const existingTypescript = existsSync(originalPath) ? readFileSync(originalPath, 'utf8') : '';
+  const retainedImports = renderReferencedImports(
+    existingTypescript,
+    typescript,
+    loadImportedContractSymbols(existingTypescript),
+  );
   if ((lenientSkippedByOutput.get(outputPath) ?? 0) === 0) {
     return {
       fileName,
       mode,
+      retainedImports,
       rustSource,
       typescript,
     };
   }
   const stem = fileName.slice(0, -3);
   const nativePath = join(packageSourceRoot, `${stem}.native.ts`);
-  const originalPath = join(packageSourceRoot, fileName);
   const storedNativeTypescript = existsSync(nativePath)
     ? readFileSync(nativePath, 'utf8')
     : existsSync(originalPath) && !hasGeneratedProvenanceHeader(readFileSync(originalPath, 'utf8'))
@@ -743,6 +773,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     mode,
     nativePublicTypescript,
     nativeTypescript,
+    retainedImports,
     rustSource,
     // Symbol ownership is the union of the generated portion and the native fallback portion. The
     // staged public module re-exports that same union from the two implementation files.
@@ -904,6 +935,16 @@ function publicExports(
     ...new Set(modules.flatMap((module) => rootOnlyNames(join(crateRoot, 'src', module.rustSource)))),
   ];
   if (exactRoots.length > 0) return renderPublicExports(symbolModules, symbols, exactRoots);
+
+  // `index.ts` is the curated public-API manifest. Strict promotion replaces implementation files,
+  // not that package-level API decision: retain its exact surface while Rust-only compatibility
+  // declarations still exist outside the generated symbol set. A root-only directive remains the
+  // explicit way for Rust to replace that manifest.
+  const indexPath = join(packageSourceRoot, 'index.ts');
+  if (existsSync(indexPath)) {
+    const existingRoots = [...collectContractTypeScriptSymbols(indexPath).keys()];
+    if (existingRoots.length > 0) return renderPublicExports(symbolModules, symbols, existingRoots);
+  }
 
   const roots: string[] = [];
   for (const module of modules) {

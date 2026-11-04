@@ -26,6 +26,7 @@ import {
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
+  renderReferencedImports,
   resolveCrateExportSymbols,
   resolveExternalContractExports,
   resolveRustExportName,
@@ -369,6 +370,57 @@ describe('renderGeneratedImports', () => {
         "import { RequirementFacet } from './types.ts';\n\n",
       );
     }
+  });
+});
+
+describe('renderReferencedImports', () => {
+  it('retains only externally owned symbols referenced by the generated body', () => {
+    const existing = `import type {
+  AccessibilityLiveness,
+  AccessibilityNode,
+  AccessibilityOperationOutcome,
+  HostAccessibilityCapability,
+  StaleType,
+} from '@flighthq/types/contract';
+import { createHelper, staleHelper } from './helper.ts';
+
+export function announceAccessibility(): void {}
+`;
+    const generated = `export function announceAccessibility(
+  host: Readonly<HostAccessibilityCapability>,
+  node: Readonly<AccessibilityNode>,
+  liveness?: AccessibilityLiveness,
+): AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
+  createHelper(host, node, liveness);
+}
+`;
+    const importedContracts = new Map([
+      [
+        '@flighthq/types/contract',
+        collectTypeScriptExportSymbols(`export type AccessibilityTreeBlockReason = 'destroyed' | 'no-dom';
+export type UnusedContractType = string;
+`),
+      ],
+    ]);
+
+    expect(renderReferencedImports(existing, generated, importedContracts)).toBe(
+      `import { createHelper } from './helper.ts';
+import type { AccessibilityLiveness, AccessibilityNode, AccessibilityOperationOutcome, AccessibilityTreeBlockReason, HostAccessibilityCapability } from '@flighthq/types/contract';
+
+`,
+    );
+  });
+
+  it('does not import a name declared or already imported by generated output', () => {
+    const existing = `import type { LocalOptions, Widget } from '@flighthq/types/contract';
+import { createWidget } from './widget.ts';
+`;
+    const generated = `import type { Widget } from './types.ts';
+export interface LocalOptions { enabled: boolean; }
+export function createWidget(): Widget { return {} as Widget; }
+`;
+
+    expect(renderReferencedImports(existing, generated)).toBe('');
   });
 });
 

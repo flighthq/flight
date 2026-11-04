@@ -384,6 +384,75 @@ export function renderGeneratedImports(
   return output.length === 0 ? output : output + '\n';
 }
 
+// Imports are part of a target-native module's symbol ownership record. During strict promotion the
+// Rust source replaces that implementation, but crate-local rust-only declarations may still be owned
+// by a transitional external TypeScript contract. Retain only imports the generated body references;
+// local declarations and stale imports stay out of the generated module.
+export function renderReferencedImports(
+  existingTypescript: string,
+  generatedTypescript: string,
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>> = new Map(),
+): string {
+  const code = referencedCode(generatedTypescript);
+  const localBindings = collectLocalBindingNames(generatedTypescript);
+  const alreadyImported = collectImportedNames(generatedTypescript);
+  const valueReferences = collectValueReferenceNames(generatedTypescript);
+  const imports = new Map<string, Map<string, { specifier: string; typeOnly: boolean }>>();
+
+  for (const match of existingTypescript.matchAll(/^import\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"]([^'"]+)['"];?/gm)) {
+    const groupTypeOnly = match[1] !== undefined;
+    const module = match[3];
+    const entries = imports.get(module) ?? new Map<string, { specifier: string; typeOnly: boolean }>();
+    for (const item of match[2].split(',')) {
+      const declaration = item.trim();
+      if (declaration.length === 0) continue;
+      const typeOnly = groupTypeOnly || declaration.startsWith('type ');
+      const specifier = declaration.replace(/^type\s+/, '');
+      const local = specifier
+        .split(/\s+as\s+/)
+        .at(-1)
+        ?.trim();
+      if (!local || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(local)) continue;
+      if (localBindings.has(local) || alreadyImported.has(local) || !new RegExp(`\\b${local}\\b`).test(code)) continue;
+      const previous = entries.get(local);
+      if (previous === undefined || (previous.typeOnly && !typeOnly)) entries.set(local, { specifier, typeOnly });
+    }
+    if (entries.size > 0) imports.set(module, entries);
+  }
+
+  const inferredOwners = new Map<string, string>();
+  for (const [module, symbols] of importedContractSymbols) {
+    const entries = imports.get(module) ?? new Map<string, { specifier: string; typeOnly: boolean }>();
+    for (const [name, owner] of symbols) {
+      if (entries.has(name) || localBindings.has(name) || alreadyImported.has(name)) continue;
+      if (!new RegExp(`\\b${name}\\b`).test(code)) continue;
+      const previousModule = inferredOwners.get(name);
+      if (previousModule !== undefined && previousModule !== module) {
+        throw new Error(`generated symbol ${name} is exported by both ${previousModule} and ${module}`);
+      }
+      inferredOwners.set(name, module);
+      const typeOnly = !owner.hasValue || (owner.hasType && !valueReferences.has(name));
+      entries.set(name, { specifier: name, typeOnly });
+    }
+    if (entries.size > 0) imports.set(module, entries);
+  }
+
+  let output = '';
+  for (const [module, entries] of [...imports].sort(([left], [right]) => left.localeCompare(right))) {
+    const types = [...entries.values()]
+      .filter((entry) => entry.typeOnly)
+      .map((entry) => entry.specifier)
+      .sort();
+    const values = [...entries.values()]
+      .filter((entry) => !entry.typeOnly)
+      .map((entry) => entry.specifier)
+      .sort();
+    if (types.length > 0) output += `import type { ${types.join(', ')} } from '${module}';\n`;
+    if (values.length > 0) output += `import { ${values.join(', ')} } from '${module}';\n`;
+  }
+  return output.length === 0 ? output : `${output}\n`;
+}
+
 function referencedCode(typescript: string): string {
   return typescript
     .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -511,11 +580,17 @@ function collectLocalBindingNames(typescript: string): Set<string> {
     }
     const node = value as Record<string, unknown>;
     switch (node.type) {
+      case 'ClassDeclaration':
+      case 'TSEnumDeclaration':
+      case 'TSInterfaceDeclaration':
+      case 'TSTypeAliasDeclaration':
       case 'ArrowFunctionExpression':
       case 'FunctionDeclaration':
       case 'FunctionExpression':
         addBinding(node.id);
-        for (const parameter of node.params as unknown[]) addBinding(parameter);
+        if (Array.isArray(node.params)) {
+          for (const parameter of node.params) addBinding(parameter);
+        }
         break;
       case 'VariableDeclarator':
         addBinding(node.id);

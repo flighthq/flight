@@ -138,6 +138,32 @@ edition = "2024"
     expect(stagingEntries()).toEqual([]);
   }, 120_000);
 
+  it('preserves the existing curated root when Rust also exposes rust-only compatibility types', async () => {
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      'mod types;\nmod value;\npub mod contract;\npub use contract::{alpha_value, MissingType};\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::types::*;\npub use super::value::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'types.rs'), '//! flight-compiler: rust-only\npub struct MissingType;\n');
+    writeFileSync(
+      sourcePath,
+      `pub fn zeta_value() -> i32 { return 2; }
+pub fn alpha_value() -> i32 { return 1; }
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { alphaValue } from './contract.ts';\n");
+
+    const first = await generateWhileScanning();
+    const second = await generateWhileScanning();
+
+    expect(first.code, first.stderr).toBe(0);
+    expect(second.code, second.stderr).toBe(0);
+    const root = readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8');
+    expect(root).toContain("export { alphaValue } from './contract.ts';");
+    expect(root).not.toContain('zetaValue');
+    expect(root).not.toContain('MissingType');
+  }, 120_000);
+
   it('forwards lenient production generation', async () => {
     writeFileSync(
       sourcePath,
