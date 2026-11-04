@@ -33,6 +33,9 @@ pub(crate) struct Program {
     pub(crate) facts: SourceFacts,
     pub(crate) frozen_objects: BTreeMap<String, String>,
     pub(crate) functions: Vec<ItemFn>,
+    // Receiver methods in `impl` blocks that only forward to one free function. Impl blocks never emit
+    // TypeScript; these let method-call syntax on a resolved receiver lower to that function.
+    pub(crate) method_delegations: Vec<MethodDelegation>,
     // `#![no_std]`: the `std` root and the `std` prelude's `Box` are absent unless bound explicitly.
     pub(crate) no_std: bool,
     // `function.parameter` slice parameters TypeScript types as `ArrayLike<T>`, so typed arrays are
@@ -59,6 +62,16 @@ pub(crate) struct Program {
     // modules), so `use`-path resolution can see local shadows of standard names.
     pub(crate) type_names: BTreeSet<String>,
     pub(crate) uses: Vec<ItemUse>,
+}
+
+// One delegating method: `impl Owner { fn method(&self, a, b) { return function(self, a, b); } }`.
+// `arguments` lists the free function's arguments in order: `None` is the receiver, `Some(index)` the
+// method parameter at that index.
+pub(crate) struct MethodDelegation {
+    pub(crate) arguments: Vec<Option<usize>>,
+    pub(crate) function: String,
+    pub(crate) method: String,
+    pub(crate) owner: Type,
 }
 
 pub(crate) struct ExternalNullableOptionProgram {
@@ -580,6 +593,146 @@ fn has_entity_runtime(structure: &ItemStruct) -> bool {
     return structure.fields.iter().any(|field| {
         !is_public(&field.vis) && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot")
     });
+}
+
+fn impl_method_delegations(item: &syn::ItemImpl) -> Vec<MethodDelegation> {
+    if has_rust_only_directive(&item.attrs) || !item.generics.params.is_empty() {
+        return Vec::new();
+    }
+    let owner = delegation_owner_type(&item.self_ty);
+    return item
+        .items
+        .iter()
+        .filter_map(|impl_item| match impl_item {
+            syn::ImplItem::Fn(method) => method_delegation(owner, method),
+            _ => None,
+        })
+        .collect();
+}
+
+// The struct a facade impl targets, seen through references and the single-payload ownership
+// wrappers TypeScript erases (`impl Methods for Ref<AudioResource>` targets `AudioResource`).
+fn delegation_owner_type(rust_type: &Type) -> &Type {
+    return match rust_type {
+        Type::Group(group) => delegation_owner_type(&group.elem),
+        Type::Paren(paren) => delegation_owner_type(&paren.elem),
+        Type::Reference(reference) => delegation_owner_type(&reference.elem),
+        Type::Path(path)
+            if path.qself.is_none()
+                && let Some(segment) = path.path.segments.last()
+                && matches!(
+                    segment.ident.to_string().as_str(),
+                    "Arc" | "Box" | "Rc" | "Ref"
+                )
+                && let PathArguments::AngleBracketed(arguments) = &segment.arguments
+                && arguments.args.len() == 1
+                && let Some(GenericArgument::Type(inner)) = arguments.args.first() =>
+        {
+            delegation_owner_type(inner)
+        }
+        rust_type => rust_type,
+    };
+}
+
+fn method_delegation(owner: &Type, method: &syn::ImplItemFn) -> Option<MethodDelegation> {
+    if has_rust_only_directive(&method.attrs) || !method.sig.generics.params.is_empty() {
+        return None;
+    }
+    let mut inputs = method.sig.inputs.iter();
+    let Some(syn::FnArg::Receiver(_)) = inputs.next() else {
+        return None;
+    };
+    let parameters = inputs
+        .map(|input| match input {
+            syn::FnArg::Typed(typed) => match typed.pat.as_ref() {
+                syn::Pat::Ident(pattern) if pattern.subpat.is_none() => {
+                    Some(pattern.ident.to_string())
+                }
+                _ => None,
+            },
+            syn::FnArg::Receiver(_) => None,
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let call = delegated_call(&method.block, method.sig.asyncness.is_some())?;
+    let syn::Expr::Path(function) = call.func.as_ref() else {
+        return None;
+    };
+    if function.qself.is_some() || function.path.segments.len() != 1 {
+        return None;
+    }
+    let function_segment = &function.path.segments[0];
+    if !matches!(function_segment.arguments, PathArguments::None) {
+        return None;
+    }
+    let mut arguments = Vec::new();
+    for argument in &call.args {
+        let syn::Expr::Path(path) = delegated_argument(argument) else {
+            return None;
+        };
+        if path.qself.is_some() || path.path.segments.len() != 1 {
+            return None;
+        }
+        let name = path.path.segments[0].ident.to_string();
+        if name == "self" {
+            arguments.push(None);
+        } else {
+            arguments.push(Some(
+                parameters.iter().position(|parameter| *parameter == name)?,
+            ));
+        }
+    }
+    // The receiver must be forwarded exactly once and every parameter at most once, so the lowered
+    // call evaluates each method-call operand once, as Rust does.
+    let receiver_count = arguments
+        .iter()
+        .filter(|argument| argument.is_none())
+        .count();
+    let mut forwarded = arguments.iter().flatten().collect::<Vec<_>>();
+    forwarded.sort();
+    forwarded.dedup();
+    if receiver_count != 1 || forwarded.len() != arguments.len() - 1 {
+        return None;
+    }
+    return Some(MethodDelegation {
+        arguments,
+        function: function_segment.ident.to_string(),
+        method: method.sig.ident.to_string(),
+        owner: owner.clone(),
+    });
+}
+
+// The one call a delegating method body consists of: `return f(..);`, `f(..);`, or the tail `f(..)`,
+// awaited when the method is `async`.
+fn delegated_call(block: &syn::Block, asynchronous: bool) -> Option<&syn::ExprCall> {
+    let [statement] = block.stmts.as_slice() else {
+        return None;
+    };
+    let expression = match statement {
+        syn::Stmt::Expr(syn::Expr::Return(returned), _) => returned.expr.as_deref()?,
+        syn::Stmt::Expr(expression, _) => expression,
+        _ => return None,
+    };
+    let expression = match expression {
+        syn::Expr::Await(awaited) if asynchronous => awaited.base.as_ref(),
+        _ if asynchronous => return None,
+        expression => expression,
+    };
+    return match expression {
+        syn::Expr::Call(call) => Some(call),
+        _ => None,
+    };
+}
+
+fn delegated_argument(argument: &syn::Expr) -> &syn::Expr {
+    return match argument {
+        syn::Expr::Group(group) => delegated_argument(&group.expr),
+        syn::Expr::Paren(paren) => delegated_argument(&paren.expr),
+        syn::Expr::Reference(reference) => delegated_argument(&reference.expr),
+        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Deref(_)) => {
+            delegated_argument(&unary.expr)
+        }
+        argument => argument,
+    };
 }
 
 fn has_rust_only_directive(attributes: &[Attribute]) -> bool {
@@ -1565,6 +1718,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
     let mut entities = HashSet::new();
     let mut enums = Vec::new();
     let mut functions = Vec::new();
+    let mut method_delegations = Vec::new();
     let mut statics = Vec::new();
     let mut structs = Vec::new();
     let mut type_aliases = Vec::new();
@@ -1676,11 +1830,8 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
                 return Err(unsupported_public("union", &item.ident.to_string()));
             }
             Item::ExternCrate(item) => extern_crates.push(item),
-            Item::ForeignMod(_)
-            | Item::Impl(_)
-            | Item::Macro(_)
-            | Item::Mod(_)
-            | Item::Trait(_) => {}
+            Item::Impl(item) => method_delegations.extend(impl_method_delegations(&item)),
+            Item::ForeignMod(_) | Item::Macro(_) | Item::Mod(_) | Item::Trait(_) => {}
             _ => {}
         }
     }
@@ -1761,6 +1912,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         facts,
         frozen_objects,
         functions,
+        method_delegations,
         no_std,
         nullable_option_items,
         nullable_options,

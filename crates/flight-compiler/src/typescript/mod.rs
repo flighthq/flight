@@ -397,6 +397,10 @@ pub(super) const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 // `{struct identity}␟{field}␟{field struct identity}` for each field whose declared type is a struct of
 // a source, so a nested field read resolves its owner through the declarations.
 pub(super) const STRUCT_FIELD_TYPE_MARKER: &str = "@struct-field-type:";
+// `{owner struct identity}␟{method}␟{module}␟{function}␟{arguments}` for each impl method that only
+// forwards to a free function. `arguments` lists the forwarded operands in call order, `self` for the
+// receiver and a method parameter index otherwise (`self,0,1`).
+const METHOD_DELEGATION_MARKER: &str = "@method-delegation:";
 // `{struct identity}␟{field}␟{numeric_type}` for each field declared as a Rust numeric primitive.
 const NUMERIC_FIELD_TYPE_MARKER: &str = "@numeric-field-type:";
 // `{struct identity}␟{field}` for each field whose declared type lowers to an identity-bearing
@@ -1108,8 +1112,47 @@ fn expression_struct_identity(expression: &Expr, entities: &HashSet<String>) -> 
                 ),
             )
         }
+        Expr::Index(index) => match expression_sequence_element_fact(&index.expr, entities)? {
+            BindingFact::Structure(identity) if current_source(entities).is_some() => {
+                Some(identity)
+            }
+            _ => None,
+        },
+        Expr::MethodCall(call) if current_source(entities).is_some() => {
+            match expression_struct_identity(&call.receiver, entities).and_then(|owner| {
+                owner_method_delegation_fact(
+                    entities,
+                    &owner,
+                    &call.method.to_string(),
+                    STRUCT_RETURN_MARKER,
+                )
+            }) {
+                Some(identity) if !identity.is_empty() => Some(identity),
+                _ => expression_struct_name(expression, entities),
+            }
+        }
         expression => expression_struct_name(expression, entities),
     };
+}
+
+// The element fact of a sequence-valued local or struct field (`holder.items` for `items: Vec<Item>`).
+fn expression_sequence_element_fact(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<BindingFact> {
+    if let Expr::Field(field) = peel_reference_and_paren(expression)
+        && let syn::Member::Named(member) = &field.member
+    {
+        let owner = expression_struct_identity(&field.base, entities)?;
+        return unique_marker_suffix(
+            entities,
+            &format!(
+                "{SEQUENCE_FIELD_ELEMENT_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
+            ),
+        )
+        .map(|fact| binding_fact_from_marker(&fact));
+    }
+    return sequence_element_binding_fact(expression, entities);
 }
 
 // The typed array an expression's value is: a local, parameter, constant or struct field typed as a
@@ -5620,8 +5663,30 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
                     self.expression_structure_identity(&unary.expr)
                 }
+                Expr::MethodCall(call) => {
+                    let owner = self.expression_structure_identity(&call.receiver)?;
+                    owner_method_delegation_fact(
+                        self.context,
+                        &owner,
+                        &call.method.to_string(),
+                        STRUCT_RETURN_MARKER,
+                    )
+                    .filter(|identity| !identity.is_empty())
+                }
                 _ => None,
             };
+        }
+
+        // The return fact of a method call forwarded to a free function by a delegating impl method.
+        fn delegated_method_fact(&self, call: &syn::ExprMethodCall) -> Option<BindingFact> {
+            let owner = self.expression_structure_identity(&call.receiver)?;
+            return owner_method_delegation_fact(
+                self.context,
+                &owner,
+                &call.method.to_string(),
+                RETURN_BINDING_FACT_MARKER,
+            )
+            .map(|fact| binding_fact_from_marker(&fact));
         }
 
         fn erased_shared_cell_field(&self, expression: &Expr) -> bool {
@@ -5648,6 +5713,11 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             }
             if let Some(receiver) = direct_lock_guard_receiver(expression) {
                 return self.initializer_fact(receiver);
+            }
+            if let Expr::MethodCall(call) = expression
+                && let Some(fact) = self.delegated_method_fact(call)
+            {
+                return fact;
             }
             return match expression {
                 Expr::Array(array) => {
@@ -8035,6 +8105,24 @@ fn generation_context_with_types(
                     "{ARRAY_LIKE_ARGUMENT_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{position}"
                 ));
             }
+        }
+        for delegation in &program.method_delegations {
+            let Some(owner) = resolved_type_identity(&context, module, &delegation.owner) else {
+                continue;
+            };
+            let arguments = delegation
+                .arguments
+                .iter()
+                .map(|argument| match argument {
+                    Some(index) => index.to_string(),
+                    None => "self".to_string(),
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            context.insert(format!(
+                "{METHOD_DELEGATION_MARKER}{owner}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{arguments}",
+                delegation.method, delegation.function
+            ));
         }
         for structure in &program.structs {
             for field in &structure.fields {
@@ -18492,6 +18580,9 @@ fn emit_method_call(
     call: &syn::ExprMethodCall,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if let Some(delegated) = delegated_method_call(call, entities)? {
+        return emit_expression(&Expr::Call(delegated), entities);
+    }
     if call.method == "wrapping_add"
         && call.args.len() == 1
         && let Expr::MethodCall(fetch) = call.receiver.as_ref()
@@ -19838,10 +19929,151 @@ fn emit_method_call(
             "{receiver}.map((item, index) => [item, {}[index]] as const)",
             arguments[0]
         )),
-        _ => Err(compile_error(format!(
-            "unsupported Rust method call `.{method}()`; impl sugar is not a transpilation source"
-        ))),
+        _ => Err(compile_error(
+            match method_delegation_targets(call, entities).first() {
+                Some(target) => format!(
+                    "unsupported Rust method call `.{method}()`: it forwards to `{}` in `{}`, which this source does not import; import `{}` or call it directly",
+                    target.function, target.module, target.function
+                ),
+                None => format!(
+                    "unsupported Rust method call `.{method}()`; impl sugar is not a transpilation source"
+                ),
+            },
+        )),
     };
+}
+
+struct MethodDelegationTarget {
+    arguments: Vec<Option<usize>>,
+    function: String,
+    module: String,
+}
+
+// The free functions a method call forwards to, found through the receiver's resolved struct and
+// the delegating impl methods declared for that struct.
+fn method_delegation_targets(
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+) -> Vec<MethodDelegationTarget> {
+    if current_source(entities).is_none() {
+        return Vec::new();
+    }
+    let Some(owner) = expression_struct_identity(&call.receiver, entities) else {
+        return Vec::new();
+    };
+    return owner_method_delegation_targets(entities, &owner, &call.method.to_string());
+}
+
+fn owner_method_delegation_targets(
+    entities: &HashSet<String>,
+    owner: &str,
+    method: &str,
+) -> Vec<MethodDelegationTarget> {
+    let prefix = format!(
+        "{METHOD_DELEGATION_MARKER}{owner}{PROVENANCE_SEPARATOR}{method}{PROVENANCE_SEPARATOR}"
+    );
+    return marker_suffixes(entities, &prefix)
+        .into_iter()
+        .filter_map(|suffix| {
+            let mut fields = suffix.split(PROVENANCE_SEPARATOR);
+            let module = fields.next()?.to_string();
+            let function = fields.next()?.to_string();
+            let arguments = fields
+                .next()?
+                .split(',')
+                .map(|argument| match argument {
+                    "self" => Some(None),
+                    index => index.parse::<usize>().ok().map(Some),
+                })
+                .collect::<Option<Vec<_>>>()?;
+            Some(MethodDelegationTarget {
+                arguments,
+                function,
+                module,
+            })
+        })
+        .collect();
+}
+
+// A fact (`marker`) of the free function a method on `owner` forwards to, when every delegating impl
+// method of that name forwards to the same function.
+fn owner_method_delegation_fact(
+    entities: &HashSet<String>,
+    owner: &str,
+    method: &str,
+    marker: &str,
+) -> Option<String> {
+    let targets = owner_method_delegation_targets(entities, owner, method);
+    let target = targets.first()?;
+    if targets
+        .iter()
+        .any(|other| other.module != target.module || other.function != target.function)
+    {
+        return None;
+    }
+    return function_identity_fact(
+        entities,
+        marker,
+        &format!("{}{PROVENANCE_SEPARATOR}{}", target.module, target.function),
+    );
+}
+
+// Method-call syntax on a receiver whose struct declares a delegating impl method, rewritten as the
+// free-function call that method forwards to. The function must resolve to the same declaration
+// from the source being emitted, so the call needs no import beyond the source's own `use` items.
+fn delegated_method_call(
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+) -> Result<Option<syn::ExprCall>, CompileError> {
+    let targets = method_delegation_targets(call, entities);
+    let Some(target) = targets.first() else {
+        return Ok(None);
+    };
+    if targets.iter().any(|other| {
+        other.module != target.module
+            || other.function != target.function
+            || other.arguments != target.arguments
+    }) {
+        return Err(compile_error(format!(
+            "ambiguous Rust method call `.{}()`: the receiver's impl methods forward to different free functions",
+            call.method
+        )));
+    }
+    let Some(current) = current_source(entities) else {
+        return Ok(None);
+    };
+    if lexical_binding(entities, &target.function).is_some()
+        || resolve_owner(entities, FUNCTION_OWNER_MARKER, &current, &target.function)
+            != Some((target.module.clone(), target.function.clone()))
+    {
+        return Ok(None);
+    }
+    if target.arguments.iter().flatten().count() != call.args.len() {
+        return Err(compile_error(format!(
+            "Rust method call `.{}()` passes {} argument(s), but its delegating impl method forwards {}",
+            call.method,
+            call.args.len(),
+            target.arguments.iter().flatten().count()
+        )));
+    }
+    let arguments = target
+        .arguments
+        .iter()
+        .map(|argument| match argument {
+            Some(index) => call.args[*index].clone(),
+            None => call.receiver.as_ref().clone(),
+        })
+        .collect();
+    return Ok(Some(syn::ExprCall {
+        attrs: Vec::new(),
+        func: Box::new(Expr::Path(syn::ExprPath {
+            attrs: Vec::new(),
+            qself: None,
+            path: syn::Ident::new(&target.function, call.method.span()).into(),
+        })),
+        paren_token: syn::token::Paren::default(),
+        args: arguments,
+    }));
 }
 
 /// Splits a let-chain condition into the let-binding, pre-guards (conditions

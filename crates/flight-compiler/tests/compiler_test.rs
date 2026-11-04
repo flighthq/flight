@@ -23855,3 +23855,131 @@ pub fn add_signed(value: usize, offset: isize) -> usize {
         "saturating_sub argument with cast should be parenthesized: {output}"
     );
 }
+
+// Receiver types resolve from parameter signatures, let bindings, struct fields, sequence elements and
+// call returns; a method call on a resolved receiver lowers to the free function its delegating impl
+// method forwards to.
+mod method_delegation {
+    use super::*;
+
+    const COUNTER: &str = "pub struct Counter {\n    pub value: i32,\n}\n\npub fn add_counter_value(counter: &mut Counter, amount: i32) {\n    counter.value += amount;\n}\n\npub fn clone_counter(counter: &Counter) -> Counter {\n    return Counter { value: counter.value };\n}\n\npub fn get_counter_value(counter: &Counter) -> i32 {\n    return counter.value;\n}\n\nimpl Counter {\n    pub fn add(&mut self, amount: i32) {\n        add_counter_value(self, amount);\n    }\n\n    pub fn duplicate(&self) -> Counter {\n        return clone_counter(self);\n    }\n\n    pub fn value(&self) -> i32 {\n        return get_counter_value(self);\n    }\n}\n";
+
+    fn compile(body: &str) -> Result<String, flight_compiler::CompileError> {
+        return compile_typescript(&format!("{COUNTER}{body}"), None);
+    }
+
+    #[test]
+    fn dispatches_through_parameters_and_let_bindings() {
+        let output = compile("pub fn read(counter: &Counter) -> i32 {\n    let alias = counter;\n    let typed: &Counter = alias;\n    return counter.value() + alias.value() + typed.value();\n}\n").unwrap();
+        assert!(
+            output.contains(
+                "return getCounterValue(counter) + getCounterValue(alias) + getCounterValue(typed);"
+            ),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn dispatches_through_struct_fields_and_call_returns() {
+        let output = compile("pub struct Holder {\n    pub counter: Counter,\n}\n\npub fn get_holder_counter(holder: &Holder) -> &Counter {\n    return &holder.counter;\n}\n\npub fn bump(holder: &mut Holder, amount: i32) -> i32 {\n    holder.counter.add(amount);\n    let field = &holder.counter;\n    return field.value() + get_holder_counter(holder).value();\n}\n").unwrap();
+        assert!(
+            output.contains("addCounterValue(holder.counter, amount);"),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "return getCounterValue(field) + getCounterValue(getHolderCounter(holder));"
+            ),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn dispatches_through_sequence_elements_and_delegated_returns() {
+        let output = compile("pub struct Holder {\n    pub counters: Vec<Counter>,\n}\n\npub fn total(holder: &Holder) -> i32 {\n    let mut total = holder.counters[0].value();\n    for counter in &holder.counters {\n        let copy = counter.duplicate();\n        total += copy.value() + counter.duplicate().value();\n    }\n    return total;\n}\n").unwrap();
+        assert!(
+            output.contains("let total = getCounterValue(holder.counters[0]);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const copy = cloneCounter(counter);"),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "total += getCounterValue(copy) + getCounterValue(cloneCounter(counter));"
+            ),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn peels_shared_wrappers_from_trait_impl_owners() {
+        let source = "use flight_entity::Ref;\n\npub struct Counter {\n    pub value: i32,\n}\n\npub fn get_counter_value(counter: &Counter) -> i32 {\n    return counter.value;\n}\n\npub trait CounterMethods {\n    fn value(&self) -> i32;\n}\n\nimpl CounterMethods for Ref<Counter> {\n    fn value(&self) -> i32 {\n        return get_counter_value(self);\n    }\n}\n\npub fn read(counter: &Ref<Counter>) -> i32 {\n    return counter.value();\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("return getCounterValue(counter);"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn forwards_parameters_in_delegated_order() {
+        let source = "pub struct Counter {\n    pub value: i32,\n}\n\npub fn scale_counter_value(factor: i32, counter: &mut Counter, offset: i32) {\n    counter.value = counter.value * factor + offset;\n}\n\nimpl Counter {\n    pub fn scale(&mut self, offset: i32, factor: i32) {\n        scale_counter_value(factor, self, offset);\n    }\n}\n\npub fn run(counter: &mut Counter) {\n    counter.scale(1, 2);\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("scaleCounterValue(2, counter, 1);"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn resolves_delegations_declared_in_another_module() {
+        let module = |path, source| ModuleSource { path, source };
+        let owner = module("crates/flight-demo/src/counter.rs", COUNTER);
+        let imported = "use crate::counter::{Counter, get_counter_value};\n\npub fn read(counter: &Counter) -> i32 {\n    return counter.value();\n}\n";
+        let output = compile_typescript_with_module_sources(
+            module("crates/flight-demo/src/reader.rs", imported),
+            None,
+            &[owner],
+            &[],
+        )
+        .unwrap();
+        assert!(
+            output.contains("return getCounterValue(counter);"),
+            "{output}"
+        );
+
+        let missing = "use crate::counter::Counter;\n\npub fn read(counter: &Counter) -> i32 {\n    return counter.value();\n}\n";
+        let error = compile_typescript_with_module_sources(
+            module("crates/flight-demo/src/reader.rs", missing),
+            None,
+            &[module("crates/flight-demo/src/counter.rs", COUNTER)],
+            &[],
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "unsupported Rust method call `.value()`: it forwards to `get_counter_value` in `flight_demo::counter`, which this source does not import; import `get_counter_value` or call it directly"
+        );
+    }
+
+    #[test]
+    fn rejects_methods_that_do_more_than_forward() {
+        let source = "pub struct Counter {\n    pub value: i32,\n}\n\npub fn get_counter_value(counter: &Counter) -> i32 {\n    return counter.value;\n}\n\nimpl Counter {\n    pub fn doubled(&self) -> i32 {\n        return get_counter_value(self) * 2;\n    }\n}\n\npub fn read(counter: &Counter) -> i32 {\n    return counter.doubled();\n}\n";
+        let error = compile_typescript(source, None).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "unsupported Rust method call `.doubled()`; impl sugar is not a transpilation source"
+        );
+    }
+
+    #[test]
+    fn leaves_builtin_methods_on_unresolved_receivers_alone() {
+        let output = compile(
+            "pub fn count(values: &Vec<Counter>) -> usize {\n    return values.len();\n}\n",
+        )
+        .unwrap();
+        assert!(output.contains("return values.length;"), "{output}");
+    }
+}
