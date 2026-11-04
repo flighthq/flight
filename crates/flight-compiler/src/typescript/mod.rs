@@ -19098,7 +19098,7 @@ fn emit_method_call(
         "partial_cmp" if arguments.len() == 1 => Ok(format!("{receiver} - {}", arguments[0])),
         "pop" if arguments.is_empty() => Ok(format!("{receiver}.pop()")),
         "position" if arguments.len() == 1 => Ok(format!(
-            "(<T>(items: readonly T[], predicate: (item: T) => boolean): number | undefined => {{ const index = items.findIndex(predicate); return index === -1 ? undefined : index; }})({receiver}, {})",
+            "((i) => i === -1 ? undefined : i)({receiver}.findIndex({}))",
             arguments[0]
         )),
         "push" if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) => {

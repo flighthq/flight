@@ -3444,7 +3444,7 @@ pub fn utf16_units_to_string(values: &[u16]) -> String {
 
         assert!(output.contains("return (values[index] ?? 7);"), "{output}");
         assert!(output.contains("return (values.at(-1) ?? 8);"), "{output}");
-        assert!(output.contains("items.findIndex(predicate)"), "{output}");
+        assert!(output.contains("values.findIndex("), "{output}");
         assert!(
             output.contains("values.pop(), 9, (value) => value + 1"),
             "{output}"
