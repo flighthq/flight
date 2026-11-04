@@ -270,6 +270,24 @@ mod strict_tests {
     expect(run.stderr).toContain('unsupported Rust method call `.type_id()`');
   }, 120_000);
 
+  it('generates explicit empty modules for an intentionally empty public contract', async () => {
+    rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
+    rmSync(sourcePath, { force: true });
+    rmSync(join(crateRoot, 'src', 'compatibility.rs'), { force: true });
+    rmSync(join(crateRoot, 'src', 'types.rs'), { force: true });
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'pub mod contract;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), '');
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), 'export {};\n');
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), 'export {};\n');
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    expect(run.stderr).not.toContain('has no public root exports');
+    expect(readFileSync(join(packageRoot, 'src', 'contract.ts'), 'utf8')).toContain('export {};');
+    expect(readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8')).toContain('export {};');
+  }, 120_000);
+
   it('preserves target-native package roots and modules without resolving native root exports', async () => {
     rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
     const nativeValue = 'export function nativeValue(): number { return 7; }\n';

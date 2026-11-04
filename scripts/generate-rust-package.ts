@@ -474,7 +474,8 @@ function contractExports(
       output += `export type { ${types.join(', ')} } from './${module.fileName}';\n`;
     }
   }
-  return output + renderCompanionContractExports(symbolModules, symbols);
+  const exports = output + renderCompanionContractExports(symbolModules, symbols);
+  return exports === '' ? 'export {};\n' : exports;
 }
 
 function crateImports(
@@ -987,6 +988,10 @@ function publicExports(
     }
   }
   if (roots.length === 0) {
+    // A crate with an intentionally empty contract still has a valid public surface. Keep the
+    // generated files as explicit ES modules without inventing a root export. A non-empty symbol
+    // set with no roots remains an error because that usually means a missing Rust re-export.
+    if (symbols.size === 0) return 'export {};\n';
     throw new Error(`${relative(repositoryRoot, join(crateRoot, 'src', 'lib.rs'))} has no public root exports`);
   }
 
