@@ -1,5 +1,6 @@
 //! flight-compiler: target-native
 //! flight-compiler: string-union GeometryPoolReleaseFunction
+//! flight-compiler: nullable-option get_geometry_pool_release_guard
 
 use std::cell::RefCell;
 use std::sync::Arc;

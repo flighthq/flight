@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use std::sync::Arc;
 
 use flight_log::{LogLevel, LogStateRef, log_once};
