@@ -10718,7 +10718,7 @@ pub fn sample_count(mesh: &Mesh, extra: Box<Int16Array>) -> usize {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains(
-            "export interface Mesh {\n  vertices: Float32Array;\n  indices: Uint32Array;\n  weights: Float64Array;\n  names: Box<number[]>;\n}\n"
+            "export interface Mesh {\n  vertices: Float32Array;\n  indices: Uint32Array;\n  weights: Float64Array;\n  names: number[];\n}\n"
         ));
         assert!(output.contains(
             "export function sampleCount(mesh: Readonly<Mesh>, extra: Int16Array): number {"

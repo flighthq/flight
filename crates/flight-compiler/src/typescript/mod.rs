@@ -25470,6 +25470,12 @@ pub(crate) fn emit_type(
                         Ok(format!("Readonly<{inner}>"))
                     }
                 }
+                "Box"
+                    if resolve_type_path(&path.path, entities)
+                        .is_some_and(|owner| is_standard_type_path(&owner, "Box")) =>
+                {
+                    emit_single_generic_type(segment, entities)
+                }
                 "Ref" => emit_single_generic_type(segment, entities),
                 // An unresolved `RwLock` could be the standard cell or another type, so it fails
                 // closed; a locally declared one keeps its own name below.
