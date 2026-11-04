@@ -2854,6 +2854,91 @@ pub struct Capability {
     }
 
     #[test]
+    fn lowers_scalar_match_binding_catch_alls_as_default_arms() {
+        let source = r#"
+pub const LIMIT: i32 = 5;
+
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn bump(counter: &mut Counter) -> i32 {
+    counter.calls += 1;
+    return counter.calls;
+}
+
+pub fn value_form(n: i32) -> i32 {
+    let value = match n {
+        1 => 10,
+        LIMIT => 50,
+        other => other * 2,
+    };
+    return value;
+}
+
+pub fn called_value_form(counter: &mut Counter) -> i32 {
+    let value = match bump(counter) {
+        1 => 100,
+        other => other * 10,
+    };
+    return value;
+}
+
+pub fn statement_form(n: i32) -> i32 {
+    match n {
+        1 => return 10,
+        other => return other + 1,
+    }
+}
+
+pub fn called_statement_forms(counter: &mut Counter) -> i32 {
+    match bump(counter) {
+        1 => {}
+        first => counter.calls += first,
+    }
+    match bump(counter) {
+        1 => {}
+        second => counter.calls += second,
+    }
+    return counter.calls;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        // A binding is a default arm that binds the switched value; a SCREAMING_CASE constant is
+        // still a case label.
+        for name in ["other", "first", "second"] {
+            assert!(!output.contains(&format!("case {name}:")), "{output}");
+        }
+        assert!(output.contains("case LIMIT:"), "{output}");
+        assert!(
+            output.contains("const other = matchValue;\n        return other * 2;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const other = matchValue;\n        return other * 10;"),
+            "{output}"
+        );
+        // A plain scrutinee is read in place.
+        assert!(output.contains("switch (n) {"), "{output}");
+        assert!(output.contains("const other = n;"), "{output}");
+        // A call is evaluated once: into `matchValue` in value position, into a block-scoped
+        // `$matchValue` in statement position (two in one function do not collide).
+        assert_eq!(
+            output.matches("const matchValue = bump(counter);").count(),
+            1,
+            "{output}"
+        );
+        assert_eq!(
+            output.matches("const $matchValue = bump(counter);").count(),
+            2,
+            "{output}"
+        );
+        assert_eq!(output.matches("bump(counter)").count(), 3, "{output}");
+        assert!(output.contains("const first = $matchValue;"), "{output}");
+        assert!(output.contains("const second = $matchValue;"), "{output}");
+    }
+
+    #[test]
     fn evaluates_if_let_value_scrutinees_once() {
         let source = r#"
 pub fn next_id() -> Option<i32> {

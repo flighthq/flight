@@ -13719,13 +13719,9 @@ fn emit_match_statement_with_action(
     {
         return emit_match_as_if_else_with_action(out, expression, entities, indent, action);
     }
+    let (scrutinee, indent, scoped) = open_binding_switch(out, expression, entities, indent)?;
     write_indent(out, indent);
-    writeln!(
-        out,
-        "switch ({}) {{",
-        emit_switch_scrutinee(expression, entities)?
-    )
-    .expect("writing to a String cannot fail");
+    writeln!(out, "switch ({scrutinee}) {{").expect("writing to a String cannot fail");
     for arm in &expression.arms {
         for pattern in emit_match_patterns(&arm.pat, entities)? {
             write_indent(out, indent + 1);
@@ -13738,6 +13734,11 @@ fn emit_match_statement_with_action(
         let arm_context = lexical_pattern_context(entities, &arm.pat);
         write_indent(out, indent + 2);
         out.push_str("{\n");
+        if switch_binding_name(&arm.pat).is_some() {
+            write_indent(out, indent + 3);
+            writeln!(out, "const {} = {scrutinee};", emit_pattern(&arm.pat)?)
+                .expect("writing to a String cannot fail");
+        }
         emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 3)?;
         if matches!(action, HoistedMatchAction::Assign(_))
             && !arm_body_unconditionally_exits(&arm.body)
@@ -13750,6 +13751,7 @@ fn emit_match_statement_with_action(
     }
     write_indent(out, indent);
     out.push_str("}\n");
+    close_binding_switch(out, indent, scoped);
     return Ok(());
 }
 
@@ -17567,12 +17569,18 @@ fn emit_match_expression(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        writeln!(
-            out,
-            "      return {};",
-            emit_expression(&arm.body, &arm_context)?
-        )
-        .expect("writing to a String cannot fail");
+        let value = emit_expression(&arm.body, &arm_context)?;
+        if switch_binding_name(&arm.pat).is_some() {
+            // `matchValue` already holds the scrutinee, evaluated once; the arm binds it.
+            writeln!(
+                out,
+                "      {{\n        const {} = matchValue;\n        return {value};\n      }}",
+                emit_pattern(&arm.pat)?
+            )
+            .expect("writing to a String cannot fail");
+        } else {
+            writeln!(out, "      return {value};").expect("writing to a String cannot fail");
+        }
     }
     out.push_str("  }\n})()");
     return Ok(out);
@@ -18248,13 +18256,9 @@ pub(crate) fn emit_match_statement(
     {
         return emit_match_as_if_else(out, expression, entities, indent);
     }
+    let (scrutinee, indent, scoped) = open_binding_switch(out, expression, entities, indent)?;
     write_indent(out, indent);
-    writeln!(
-        out,
-        "switch ({}) {{",
-        emit_switch_scrutinee(expression, entities)?
-    )
-    .expect("writing to a String cannot fail");
+    writeln!(out, "switch ({scrutinee}) {{").expect("writing to a String cannot fail");
     for arm in &expression.arms {
         for pattern in emit_match_patterns(&arm.pat, entities)? {
             write_indent(out, indent + 1);
@@ -18267,6 +18271,11 @@ pub(crate) fn emit_match_statement(
         let arm_context = lexical_pattern_context(entities, &arm.pat);
         write_indent(out, indent + 2);
         out.push_str("{\n");
+        if switch_binding_name(&arm.pat).is_some() {
+            write_indent(out, indent + 3);
+            writeln!(out, "const {} = {scrutinee};", emit_pattern(&arm.pat)?)
+                .expect("writing to a String cannot fail");
+        }
         if let Some((_, guard)) = &arm.guard {
             let guard_expr = emit_expression(guard, &arm_context)?;
             write_indent(out, indent + 3);
@@ -18310,7 +18319,59 @@ pub(crate) fn emit_match_statement(
     }
     write_indent(out, indent);
     out.push_str("}\n");
+    close_binding_switch(out, indent, scoped);
     return Ok(());
+}
+
+// A match arm whose whole pattern is a binding (`other => ..`): it matches any value and binds it,
+// so it lowers to `default:` with `const other = <scrutinee>;`. Rust reads a bare identifier pattern
+// as a constant, unit struct or variant when one of that name is in scope; by Rust's naming lints
+// those are SCREAMING_CASE or UpperCamelCase, so an identifier that starts lowercase (or with `_`) is
+// a binding. `_` alone is the wildcard, and `name @ subpattern` binds only within its subpattern.
+fn switch_binding_name(pattern: &Pat) -> Option<String> {
+    let Pat::Ident(identifier) = pattern else {
+        return None;
+    };
+    let name = identifier.ident.to_string();
+    let first = name.chars().next()?;
+    return (identifier.subpat.is_none()
+        && identifier.by_ref.is_none()
+        && name != "_"
+        && (first.is_lowercase() || first == '_'))
+        .then_some(name);
+}
+
+// Opens a scalar `switch` whose arms may bind the matched value. The bound value must be the value
+// that was switched on, evaluated once: a variable or field is read again in place, but anything
+// else (a call, an `.await`) is first stored in `$matchValue`, inside its own block so two matches
+// in one scope cannot collide. Returns the switched expression, the indent to emit the switch at,
+// and whether a block was opened for `close_binding_switch`.
+fn open_binding_switch(
+    out: &mut String,
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(String, usize, bool), CompileError> {
+    let scrutinee = emit_switch_scrutinee(expression, entities)?;
+    let binds = expression
+        .arms
+        .iter()
+        .any(|arm| switch_binding_name(&arm.pat).is_some());
+    if !binds || expression_is_plain_place(&expression.expr) {
+        return Ok((scrutinee, indent, false));
+    }
+    write_indent(out, indent);
+    out.push_str("{\n");
+    write_indent(out, indent + 1);
+    writeln!(out, "const $matchValue = {scrutinee};").expect("writing to a String cannot fail");
+    return Ok(("$matchValue".to_string(), indent + 1, true));
+}
+
+fn close_binding_switch(out: &mut String, indent: usize, scoped: bool) {
+    if scoped {
+        write_indent(out, indent - 1);
+        out.push_str("}\n");
+    }
 }
 
 fn emit_match_patterns(
@@ -18409,7 +18470,7 @@ fn emit_match_patterns(
         }
         Pat::Ident(identifier) if identifier.subpat.is_none() => {
             let name = identifier.ident.to_string();
-            if name == "_" {
+            if name == "_" || switch_binding_name(pattern).is_some() {
                 Ok(vec!["default".to_string()])
             } else {
                 Ok(vec![emit_path_segment(&name)])
