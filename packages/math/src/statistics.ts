@@ -204,7 +204,7 @@ export function weightedAverage(values: Readonly<number[]>, weights: Readonly<nu
   let correction = 0.0;
   let i = 0;
   while (i < values.length) {
-    const term = ((values[i] / valueScale) * weights[i]) / weightScale - correction;
+    const term = (values[i] / valueScale) * (weights[i] / weightScale) - correction;
     const next = sumProduct + term;
     correction = next - sumProduct - term;
     sumProduct = next;
