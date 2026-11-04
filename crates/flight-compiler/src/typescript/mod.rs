@@ -18678,6 +18678,12 @@ fn emit_method_call(
         )),
         "enumerate" if arguments.is_empty() => Ok(format!("{receiver}.entries()")),
         "exp" if arguments.is_empty() => Ok(format!("Math.exp({receiver})")),
+        "expect"
+            if arguments.len() == 1
+                && expression_contains_method(&call.receiver, "partial_cmp") =>
+        {
+            Ok(receiver)
+        }
         "expect" if arguments.len() == 1 => {
             let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
                 "null"
