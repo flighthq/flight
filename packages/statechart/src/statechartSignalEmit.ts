@@ -1,9 +1,12 @@
+// Generated from crates/flight-statechart/src/statechart_signal_emit.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { emitSignal } from '@flighthq/signals/contract';
 
 import type { StatechartSignals } from './types.ts';
 
 export function emitStatechartStateChange(
-  signals: StatechartSignals,
+  signals: Readonly<StatechartSignals>,
   regionIndex: number,
   previousStateIndex: number,
   stateIndex: number,
