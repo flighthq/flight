@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: nullable-option parse_bitmap_fingerprint
 
 use flight_entity::allocate_entity;
 

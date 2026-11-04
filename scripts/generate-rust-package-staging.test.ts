@@ -313,6 +313,55 @@ export function echoExplanation(value: BackendOperationExplanation): BackendOper
     expect(value).not.toContain("from '@flighthq/host/contract'");
   }, 120_000);
 
+  it('applies dependency-owned nullable return metadata during package generation', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+flight-bitmap = "0.0.0"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'mod value;\npub mod contract;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `use flight_bitmap::parse_bitmap_fingerprint;
+
+pub fn recognizes_bitmap_fingerprint(text: &str) -> bool {
+    let Some(_fingerprint) = parse_bitmap_fingerprint(text) else {
+        return false;
+    };
+    return true;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import { parseBitmapFingerprint } from '@flighthq/bitmap/contract';
+
+export function recognizesBitmapFingerprint(text: string): boolean {
+  const fingerprint = parseBitmapFingerprint(text);
+  return fingerprint !== null;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'index.ts'),
+      "export { recognizesBitmapFingerprint } from './contract.ts';\n",
+    );
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain('parseBitmapFingerprint(text) ?? undefined');
+    expect(value).toContain('if (_fingerprint === undefined)');
+  }, 120_000);
+
   it('passes canonical type-only string-union representation metadata to the compiler', async () => {
     writeFileSync(
       join(crateRoot, 'Cargo.toml'),

@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 //! Tolerant capture fingerprint comparison (TS `captureComparison.ts`).
 
 use flight_bitmap::{compare_bitmap_fingerprints, parse_bitmap_fingerprint};

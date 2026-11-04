@@ -1,58 +1,53 @@
+// Generated from crates/flight-capture/src/capture_comparison.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { compareBitmapFingerprints, parseBitmapFingerprint } from '@flighthq/bitmap/contract';
 import type { CaptureCheckResult } from '@flighthq/types/contract';
 
-// Default parity tolerance (mean absolute per-channel difference, 0..255). Cross-backend agreement is
-// ≤ ~6.5 even for antialiasing-heavy scenes, so real divergence between two backends is well over 15.
-export const CAPTURE_PARITY_TOLERANCE = 15;
-
-// Default regression tolerance (mean absolute per-channel difference, 0..255). Same-backend run-to-run
-// noise for a stable test is well under 5, so a target that drifts past this against its own committed
-// baseline is a real visual regression, not antialiasing jitter.
-export const CAPTURE_REGRESSION_TOLERANCE = 5;
-
 /**
- * The tolerant distance between two coarse render fingerprints in `<gridSize>:<hex>` text form (see
- * formatBitmapFingerprint): the mean absolute per-channel difference (0..255), where ~0 is identical
- * and larger values mean a real visual change. Returns `Number.POSITIVE_INFINITY` as a sentinel when
- * either string fails to parse, or when the two fingerprints use different grid sizes and so are not
- * comparable — Infinity fails any finite tolerance, so a corrupt or mismatched baseline reads as a
- * failing check rather than crashing.
+ * The tolerant distance between two coarse render fingerprints in `<gridSize>:<hex>` text form:
+ * the mean absolute per-channel difference (0..255). Returns `f64::INFINITY` when either string
+ * fails to parse, or when the fingerprints use different grid sizes and are not comparable.
  */
 export function compareCaptureFingerprints(a: string, b: string): number {
-  const fa = parseBitmapFingerprint(a);
-  const fb = parseBitmapFingerprint(b);
-  if (fa === null || fb === null || fa.gridSize !== fb.gridSize) return Number.POSITIVE_INFINITY;
-  return compareBitmapFingerprints(fa, fb);
+  let first = parseBitmapFingerprint(a) ?? undefined;
+  let second = parseBitmapFingerprint(b) ?? undefined;
+  const $t0 = first;
+  const $t1 = second;
+  if ($t0 === undefined || $t1 === undefined) {
+    return Number.POSITIVE_INFINITY;
+  }
+  first = $t0;
+  second = $t1;
+  if (first.gridSize !== second.gridSize) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return compareBitmapFingerprints(first, second);
 }
 
 /**
- * Parity: whether two render backends rendering the same scene in the same run agree within
- * `tolerance`. Environment-independent — it needs no committed baseline, only the two live
- * fingerprints. `difference` is the tolerant distance (Infinity when either fingerprint is
- * unparseable); `pass` is `difference <= tolerance`.
+ * Whether two render backends rendering the same scene in the same run agree within `tolerance`.
+ * Environment-independent: it needs no committed baseline, only the two live fingerprints.
  */
-export function evaluateCaptureParity(a: string, b: string, tolerance = CAPTURE_PARITY_TOLERANCE): CaptureCheckResult {
+export function evaluateCaptureParity(a: string, b: string, tolerance?: number): CaptureCheckResult {
+  const tolerance_1 = tolerance ?? CAPTURE_PARITY_TOLERANCE;
   const difference = compareCaptureFingerprints(a, b);
-  return { pass: difference <= tolerance, difference, tolerance };
+  return { pass: difference <= tolerance_1, difference: difference, tolerance: tolerance_1 };
 }
 
 /**
- * Regression: whether a freshly captured `fingerprint` still matches its own committed
- * `baselineFingerprint` within `tolerance`. `difference` is the tolerant distance (Infinity when
- * either fingerprint is unparseable); `pass` is `difference <= tolerance`.
- *
- * ⚠ A PASS MEANS THE FINGERPRINT DID NOT MOVE, WHICH IS NOT THE SAME AS THE RENDER NOT MOVING. Each
- * cell averages the pixels beneath it, so a pattern finer than a cell — scanlines, dithering, a fine
- * periodic warp — can change completely while every cell average stays put. Three separate defects in
- * this repository passed this check while the pixels underneath disagreed, one of them by more than
- * fifty times the distance reported here. Where the subject is high-frequency, a passing regression
- * is evidence about the fingerprint and not about the image.
+ * Whether a freshly captured `fingerprint` still matches its own committed
+ * `baselineFingerprint` within `tolerance`.
  */
 export function evaluateCaptureRegression(
   fingerprint: string,
   baselineFingerprint: string,
-  tolerance = CAPTURE_REGRESSION_TOLERANCE,
+  tolerance?: number,
 ): CaptureCheckResult {
+  const tolerance_1 = tolerance ?? CAPTURE_REGRESSION_TOLERANCE;
   const difference = compareCaptureFingerprints(fingerprint, baselineFingerprint);
-  return { pass: difference <= tolerance, difference, tolerance };
+  return { pass: difference <= tolerance_1, difference: difference, tolerance: tolerance_1 };
 }
+
+export const CAPTURE_PARITY_TOLERANCE = 15;
+export const CAPTURE_REGRESSION_TOLERANCE = 5;
