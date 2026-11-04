@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 //! The accessibility command facade: six public functions that forward to the explicitly selected
 //! host provider (TS `accessibility.ts`). No native semantic tree, DOM, screen reader or focus
 //! operation lives here.
