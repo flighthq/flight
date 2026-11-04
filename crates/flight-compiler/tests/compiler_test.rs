@@ -1,11 +1,12 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptInlineStringUnion,
-    TypeScriptStringUnion, VitestAliasSource, compile_typescript, compile_typescript_lenient,
-    compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
-    compile_typescript_with_module_sources, compile_typescript_with_options,
-    compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
-    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
-    compile_vitest_with_module_alias_sources, compile_vitest_with_options,
+    TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource, compile_typescript,
+    compile_typescript_lenient, compile_typescript_with_alias_sources,
+    compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
+    compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
+    compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
+    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
+    compile_vitest_with_options,
     compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
@@ -13449,6 +13450,7 @@ pub enum UnannotatedStringUnion {
             &[],
             &type_script_string_unions,
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13464,6 +13466,68 @@ pub enum UnannotatedStringUnion {
             output.contains("return UnannotatedStringUnion.Polite;"),
             "an external type without explicit representation metadata must retain its namespace value: {output}"
         );
+    }
+
+    #[test]
+    fn lowers_only_explicit_type_script_type_alias_metadata() {
+        let source = ModuleSource {
+            path: "crates/flight-animation/src/animation_advance.rs",
+            source: r#"pub fn advance(
+    players: &[AnimationPlayerRef],
+    target: TargetRef,
+    advanced: &mut Vec<AnimationPlayerRef>,
+) -> TargetRef {
+    return target;
+}
+"#,
+        };
+        let aliases = [
+            TypeScriptTypeAlias {
+                name: "AnimationPlayerRef",
+                module: Some("@flighthq/types/contract"),
+                target: "AnimationPlayer",
+            },
+            TypeScriptTypeAlias {
+                name: "TargetRef",
+                module: None,
+                target: "unknown",
+            },
+        ];
+
+        let explicit = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &aliases,
+            &[],
+            &[],
+            false,
+        )
+        .unwrap();
+        let ordinary =
+            compile_typescript_with_options(source, None, &[], &[], &[], &[], &[], &[], &[], false)
+                .unwrap();
+
+        assert!(
+            explicit.contains("import type { AnimationPlayer } from '@flighthq/types/contract';"),
+            "{explicit}"
+        );
+        assert!(
+            explicit.contains("players: Readonly<AnimationPlayer[]>"),
+            "{explicit}"
+        );
+        assert!(explicit.contains("target: unknown"), "{explicit}");
+        assert!(
+            explicit.contains("advanced: AnimationPlayer[]"),
+            "{explicit}"
+        );
+        assert!(!explicit.contains("AnimationPlayerRef"), "{explicit}");
+        assert!(!explicit.contains("TargetRef"), "{explicit}");
+        assert!(ordinary.contains("AnimationPlayerRef"), "{ordinary}");
+        assert!(ordinary.contains("TargetRef"), "{ordinary}");
     }
 
     #[test]
@@ -13513,6 +13577,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &metadata,
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13553,6 +13618,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &metadata,
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13592,6 +13658,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &metadata,
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13624,6 +13691,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &visibility_sources,
             &[],
@@ -13662,6 +13730,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &metadata,
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13696,6 +13765,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13735,6 +13805,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -17318,6 +17389,7 @@ mod apply_hit {
             &[],
             &[],
             &[nullable_wrapper, optional_wrapper, generated_sibling],
+            &[],
         )
         .unwrap();
 
@@ -17325,6 +17397,58 @@ mod apply_hit {
         assert!(output.contains("applyOptional(undefined);"), "{output}");
         assert!(output.contains("applyGenerated(undefined);"), "{output}");
         assert!(output.contains("applyPrivateHit(undefined);"), "{output}");
+    }
+
+    #[test]
+    fn applies_explicit_type_script_type_aliases_to_portable_test_helpers() {
+        let aliases = [
+            TypeScriptTypeAlias {
+                name: "AnimationPlayerRef",
+                module: Some("@flighthq/types/contract"),
+                target: "AnimationPlayer",
+            },
+            TypeScriptTypeAlias {
+                name: "TargetRef",
+                module: None,
+                target: "unknown",
+            },
+        ];
+        let source = r#"
+use flight_animation::contract::*;
+
+fn consume(player: AnimationPlayerRef, target: TargetRef) {
+    drop(player);
+    drop(target);
+}
+
+#[test]
+fn aliases_are_external_representations() {
+    assert!(true);
+}
+"#;
+
+        let output = compile_vitest_with_visibility_sources(
+            source,
+            "./contract.ts",
+            None,
+            &[],
+            &[],
+            &[],
+            &aliases,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("import type { AnimationPlayer } from '@flighthq/types/contract';"),
+            "{output}"
+        );
+        assert!(
+            output.contains("function consume(player: AnimationPlayer, target: unknown): void"),
+            "{output}"
+        );
+        assert!(!output.contains("AnimationPlayerRef"), "{output}");
+        assert!(!output.contains("TargetRef"), "{output}");
+        assert!(!output.contains("  unknown,"), "{output}");
     }
 
     #[test]

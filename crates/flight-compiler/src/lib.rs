@@ -46,6 +46,18 @@ pub struct TypeScriptInlineStringUnion<'a> {
     pub values: &'a [String],
 }
 
+/// An explicit target-language representation for one Rust type name.
+///
+/// A module-owned target is imported as a type from that module. An intrinsic target currently
+/// supports only `unknown`, which needs no import. Callers derive this metadata from an established
+/// TypeScript signature; the compiler never infers it from alias spelling.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeScriptTypeAlias<'a> {
+    pub name: &'a str,
+    pub module: Option<&'a str>,
+    pub target: &'a str,
+}
+
 /// A Rust source file and its path. The path (`.../<crate>/src/<module path>.rs`) gives the source its
 /// full module identity (`<crate>::<module path>`), which `use` bindings resolve against.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,6 +149,7 @@ fn compile_typescript_sources(
         external_alias_sources,
         &[],
         &[],
+        &[],
         module_identities,
         source_paths,
         visibility_sources,
@@ -152,12 +165,14 @@ fn compile_typescript_sources_with_options(
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     module_identities: Option<Vec<String>>,
     source_paths: &[&str],
     visibility_sources: &[ModuleSource<'_>],
     crate_roots: &[CrateRootSource<'_>],
     lenient: bool,
 ) -> Result<String, CompileError> {
+    validate_type_script_type_aliases(type_script_type_aliases)?;
     require_generated_source(source)?;
     let program = if lenient {
         model::parse_program_lenient(source)?
@@ -339,6 +354,7 @@ fn compile_typescript_sources_with_options(
         dependency_export_names: &dependency_export_names,
         external_string_unions: &external_string_unions,
         inline_string_unions: &inline_string_unions,
+        type_script_type_aliases,
         external_shared_identity_fields: &external_shared_identity_fields(external_alias_sources)?,
         module_identities: module_identities.as_deref(),
         visibility_programs: &visibility_programs,
@@ -491,6 +507,7 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
         external_alias_sources,
         &[],
         &[],
+        &[],
         visibility_sources,
         crate_roots,
         false,
@@ -506,6 +523,7 @@ pub fn compile_typescript_with_options(
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     visibility_sources: &[ModuleSource<'_>],
     crate_roots: &[CrateRootSource<'_>],
     lenient: bool,
@@ -532,6 +550,7 @@ pub fn compile_typescript_with_options(
         external_alias_sources,
         type_script_string_unions,
         type_script_inline_string_unions,
+        type_script_type_aliases,
         identities,
         &std::iter::once(source.path)
             .chain(alias_sources.iter().map(|module| module.path))
@@ -553,6 +572,7 @@ pub fn compile_typescript_lenient(
     return compile_typescript_sources_with_options(
         source,
         entity_module,
+        &[],
         &[],
         &[],
         &[],
@@ -608,6 +628,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -619,7 +640,9 @@ fn compile_vitest_with_contract_alias_sources_internal(
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[&str],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
 ) -> Result<String, CompileError> {
+    validate_type_script_type_aliases(type_script_type_aliases)?;
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
@@ -702,6 +725,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
         &external_shared_identity_fields(external_alias_sources)?,
         contract_source,
     )?;
+    typescript::insert_type_script_type_alias_context(&mut context, type_script_type_aliases);
     typescript::insert_vitest_own_public_context(
         &mut context,
         &alias_program_refs
@@ -870,6 +894,7 @@ pub fn compile_vitest_with_external_alias_sources(
         external_alias_sources,
         &[],
         &[],
+        &[],
     );
 }
 
@@ -888,6 +913,7 @@ pub fn compile_vitest_with_module_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -902,6 +928,7 @@ pub fn compile_vitest_with_visibility_sources(
     alias_sources: &[VitestAliasSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
     visibility_sources: &[&str],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
 ) -> Result<String, CompileError> {
     return compile_vitest_with_options(
         source,
@@ -911,11 +938,12 @@ pub fn compile_vitest_with_visibility_sources(
         external_alias_sources,
         &[],
         visibility_sources,
+        type_script_type_aliases,
     );
 }
 
 /// Compiles one Rust test module with production hints, dependency sources, explicit TypeScript
-/// string-union representations, and target-native visibility sources.
+/// string-union and type-alias representations, and target-native visibility sources.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_vitest_with_options(
     source: &str,
@@ -925,6 +953,7 @@ pub fn compile_vitest_with_options(
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[&str],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
 ) -> Result<String, CompileError> {
     return compile_vitest_with_contract_alias_sources_internal(
         source,
@@ -934,6 +963,7 @@ pub fn compile_vitest_with_options(
         external_alias_sources,
         type_script_string_unions,
         visibility_sources,
+        type_script_type_aliases,
     );
 }
 
@@ -2189,6 +2219,74 @@ fn validate_string_union_metadata<'a>(
         }
     }
     return Ok(());
+}
+
+fn validate_type_script_type_aliases(
+    aliases: &[TypeScriptTypeAlias<'_>],
+) -> Result<(), CompileError> {
+    let mut by_name = std::collections::BTreeMap::new();
+    let mut target_owners = std::collections::BTreeMap::new();
+    for alias in aliases {
+        if syn::parse_str::<syn::Ident>(alias.name).is_err() {
+            return Err(compile_error(format!(
+                "TypeScript type-alias metadata has invalid Rust type name `{}`",
+                alias.name
+            )));
+        }
+        match alias.module {
+            Some(module) => {
+                if module.is_empty() {
+                    return Err(compile_error(format!(
+                        "TypeScript type alias `{}` has an empty owner module",
+                        alias.name
+                    )));
+                }
+                if !valid_type_script_identifier(alias.target) {
+                    return Err(compile_error(format!(
+                        "TypeScript type alias `{}` has invalid owner type `{}`",
+                        alias.name, alias.target
+                    )));
+                }
+            }
+            None if alias.target != "unknown" => {
+                return Err(compile_error(format!(
+                    "TypeScript type alias `{}` has unsupported intrinsic target `{}`",
+                    alias.name, alias.target
+                )));
+            }
+            None => {}
+        }
+        let representation = (alias.module, alias.target);
+        if let Some(previous) = by_name.insert(alias.name, representation)
+            && previous != representation
+        {
+            return Err(compile_error(format!(
+                "TypeScript type alias `{}` has conflicting representations",
+                alias.name
+            )));
+        }
+        if let Some(module) = alias.module
+            && let Some(previous) = target_owners.insert(alias.target, module)
+            && previous != module
+        {
+            return Err(compile_error(format!(
+                "TypeScript owner type `{}` is supplied by both `{previous}` and `{module}`",
+                alias.target
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn valid_type_script_identifier(name: &str) -> bool {
+    let mut characters = name.chars();
+    let Some(first) = characters.next() else {
+        return false;
+    };
+    return (first == '_' || first == '$' || first.is_ascii_alphabetic())
+        && characters.all(|character| {
+            character == '_' || character == '$' || character.is_ascii_alphanumeric()
+        });
 }
 
 impl fmt::Display for CompileError {

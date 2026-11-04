@@ -42,6 +42,7 @@ import {
   snakeToLowerCamel,
   typeScriptInlineStringUnionArguments,
   typeScriptStringUnionArguments,
+  typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
 import { collectPackageSourceFileNames } from './generate-rust-package-sources.ts';
 
@@ -87,6 +88,11 @@ interface NativeAuditEntry {
   typescript: string;
 }
 
+interface NativeAuditProbe {
+  entry: NativeAuditEntry;
+  typeAliasArguments: string[];
+}
+
 interface NativeOverlay {
   exports: string;
   imports: string;
@@ -104,6 +110,48 @@ const compilerPath = join(
   process.platform === 'win32' ? 'flight-compile.exe' : 'flight-compile',
 );
 const lenientSkippedByOutput = new Map<string, number>();
+const packageTypeScriptTypeAliases = new Map<string, string>();
+
+function mergedTypeScriptTypeAliasArguments(...groups: readonly string[][]): string[] {
+  const aliases = new Map<string, string>();
+  for (const group of groups) {
+    for (let index = 0; index < group.length; index += 2) {
+      if (group[index] !== '--typescript-type-alias' || group[index + 1] === undefined) {
+        throw new Error('invalid TypeScript type-alias compiler arguments');
+      }
+      const specification = group[index + 1];
+      const name = specification.split('=', 1)[0];
+      const previous = aliases.get(name);
+      if (previous !== undefined && previous !== specification) {
+        throw new Error(`Rust type alias ${name} has conflicting TypeScript representations`);
+      }
+      aliases.set(name, specification);
+    }
+  }
+  return [...aliases]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([, specification]) => ['--typescript-type-alias', specification]);
+}
+
+function rememberTypeScriptTypeAliasArguments(arguments_: string[]): void {
+  const merged = mergedTypeScriptTypeAliasArguments(
+    [...packageTypeScriptTypeAliases]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .flatMap(([, specification]) => ['--typescript-type-alias', specification]),
+    arguments_,
+  );
+  packageTypeScriptTypeAliases.clear();
+  for (let index = 0; index < merged.length; index += 2) {
+    const specification = merged[index + 1];
+    packageTypeScriptTypeAliases.set(specification.split('=', 1)[0], specification);
+  }
+}
+
+function packageTypeScriptTypeAliasArguments(): string[] {
+  return [...packageTypeScriptTypeAliases]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([, specification]) => ['--typescript-type-alias', specification]);
+}
 
 execFileSync('cargo', ['build', '--quiet', '--package', 'flight-compiler'], {
   cwd: repositoryRoot,
@@ -235,7 +283,7 @@ try {
         ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
         aliasSources,
         targetNativeSources,
-        representationArguments,
+        [...representationArguments, ...packageTypeScriptTypeAliasArguments()],
       );
       typescript = canonicalizeGeneratedContractImports(existingTypescript, typescript);
       if (typescript.includes('crate.')) {
@@ -293,33 +341,33 @@ function auditNativeSources(
   for (const { mode, rustPath } of rustSources) {
     if (mode !== 'target-native') continue;
     const fileName = `${snakeToLowerCamel(basename(rustPath, '.rs'))}.ts`;
-    entries.push(
-      probeNativeSource(
-        'generate',
-        rustPath,
-        fileName,
-        [],
-        aliasSources,
-        targetNativeSources.filter((candidate) => candidate !== rustPath),
-      ),
+    const probe = probeNativeSource(
+      'generate',
+      rustPath,
+      fileName,
+      [],
+      aliasSources,
+      targetNativeSources.filter((candidate) => candidate !== rustPath),
     );
+    entries.push(probe.entry);
+    rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
   }
   for (const rustTest of testFiles(crateRoot)) {
     const rustPath = join(crateRoot, 'tests', rustTest);
     if (sourceMode(rustPath) !== 'target-native') continue;
     const fileName = `${snakeToLowerCamel(rustTest.slice(0, -8))}.test.ts`;
     const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.audit.rs`));
-    entries.push(
-      probeNativeSource(
-        'generate-tests',
-        compilePath,
-        fileName,
-        ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
-        aliasSources,
-        targetNativeSources.filter((candidate) => candidate !== rustPath),
-        rustPath,
-      ),
+    const probe = probeNativeSource(
+      'generate-tests',
+      compilePath,
+      fileName,
+      ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
+      aliasSources,
+      targetNativeSources.filter((candidate) => candidate !== rustPath),
+      rustPath,
+      packageTypeScriptTypeAliasArguments(),
     );
+    entries.push(probe.entry);
   }
   const summary = {
     blocked: entries.filter((entry) => entry.status === 'blocked').length,
@@ -350,50 +398,70 @@ function probeNativeSource(
   aliasSources: string[],
   targetNativeSources: string[],
   reportedSource = source,
-): NativeAuditEntry {
+  knownTypeAliasArguments: string[] = [],
+): NativeAuditProbe {
   const out = join(rawRoot, `${fileName}.audit.ts`);
   const existingPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(existingPath) ? readFileSync(existingPath, 'utf8') : '';
-  const representationArguments = typeScriptStringUnionArguments(
+  const namedRepresentationArguments = typeScriptStringUnionArguments(
     existingTypescript,
     loadImportedContractSymbols(existingTypescript),
   );
-  const result = spawnSync(
-    compilerPath,
-    [
+  const compilerArguments = (typeAliasArguments: string[]): string[] => [
+    command,
+    '--source',
+    source,
+    '--out',
+    out,
+    '--probe-target-native',
+    ...entityArguments(command),
+    ...(command === 'generate' ? ['--lenient'] : []),
+    ...namedRepresentationArguments,
+    ...typeAliasArguments,
+    ...compilerAliasArguments(command, aliasSources, source),
+    ...compilerVisibilityArguments(
       command,
-      '--source',
+      crateSourcePaths(join(crateRoot, 'src')),
+      aliasSources,
       source,
-      '--out',
-      out,
-      '--probe-target-native',
-      ...entityArguments(command),
-      ...(command === 'generate' ? ['--lenient'] : []),
-      ...representationArguments,
-      ...compilerAliasArguments(command, aliasSources, source),
-      ...compilerVisibilityArguments(
-        command,
-        crateSourcePaths(join(crateRoot, 'src')),
-        aliasSources,
-        source,
-        targetNativeSources,
-      ),
-      ...dependencyAliasArguments(dependencySources(command)),
-      ...dependencyVisibilityArguments(command),
-      ...contractArguments(command, trailing),
-    ],
-    { cwd: repositoryRoot, encoding: 'utf8' },
-  );
+      targetNativeSources,
+    ),
+    ...dependencyAliasArguments(dependencySources(command)),
+    ...dependencyVisibilityArguments(command),
+    ...contractArguments(command, trailing),
+  ];
+  let result = spawnSync(compilerPath, compilerArguments(knownTypeAliasArguments), {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+  });
+  let typeAliasArguments: string[] = [];
+  if (result.status === 0 && command === 'generate') {
+    typeAliasArguments = typeScriptTypeAliasArguments(
+      existingTypescript,
+      readFileSync(out, 'utf8'),
+      loadImportedContractSymbols(existingTypescript),
+    );
+    if (typeAliasArguments.length > 0) {
+      const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments);
+      result = spawnSync(compilerPath, compilerArguments(allTypeAliasArguments), {
+        cwd: repositoryRoot,
+        encoding: 'utf8',
+      });
+    }
+  }
   const stderr = result.stderr.trim();
   const skipped = Number(/lenient: (\d+) items skipped/.exec(stderr)?.[1] ?? 0);
   const status = result.status === 0 ? (skipped === 0 ? 'compiler-clean' : 'partial') : 'blocked';
   return {
-    diagnostics: stderr === '' ? [] : stderr.split(/\r?\n/),
-    kind: command === 'generate' ? 'source' : 'test',
-    rustSource: relative(crateRoot, reportedSource),
-    skipped,
-    status,
-    typescript: fileName,
+    entry: {
+      diagnostics: stderr === '' ? [] : stderr.split(/\r?\n/),
+      kind: command === 'generate' ? 'source' : 'test',
+      rustSource: relative(crateRoot, reportedSource),
+      skipped,
+      status,
+      typescript: fileName,
+    },
+    typeAliasArguments,
   };
 }
 
@@ -797,6 +865,16 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     [],
     namedRepresentationArguments,
   );
+  const typeAliasArguments = typeScriptTypeAliasArguments(
+    contractTypescript,
+    compiledTypescript,
+    importedContractSymbols,
+  );
+  const representationArguments = [...namedRepresentationArguments, ...typeAliasArguments];
+  if (typeAliasArguments.length > 0) {
+    compiledTypescript = compile('generate', rustPath, outputPath, [], aliasSources, [], representationArguments);
+    rememberTypeScriptTypeAliasArguments(typeAliasArguments);
+  }
   const inlineRepresentationArguments = typeScriptInlineStringUnionArguments(contractTypescript, compiledTypescript);
   if (inlineRepresentationArguments.length > 0) {
     compiledTypescript = compile(
@@ -806,7 +884,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
       [],
       aliasSources,
       [],
-      [...namedRepresentationArguments, ...inlineRepresentationArguments],
+      [...representationArguments, ...inlineRepresentationArguments],
     );
   }
   const typescript = canonicalizeGeneratedContractImports(contractTypescript, compiledTypescript);

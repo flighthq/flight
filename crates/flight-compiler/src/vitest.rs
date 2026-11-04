@@ -16,9 +16,10 @@ use crate::typescript::{
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
     is_vitest_struct, js_string_literal, lexical_pattern_context, numeric_literal_spelling,
-    option_scrutinee_is_rereadable, snake_to_lower_camel, update_vitest_local_function_context,
-    update_vitest_struct_local_context, validate_vitest_function_provenance,
-    vitest_function_path_binding_name, vitest_struct_path_binding_name, write_indent,
+    option_scrutinee_is_rereadable, snake_to_lower_camel, type_script_type_aliases,
+    update_vitest_local_function_context, update_vitest_struct_local_context,
+    validate_vitest_function_provenance, vitest_function_path_binding_name,
+    vitest_struct_path_binding_name, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -1362,6 +1363,15 @@ pub(crate) fn emit_test_program(
             .insert(name);
         return false;
     });
+    for (_, target, module) in type_script_type_aliases(context) {
+        if !contract_type_symbols.contains(&target) {
+            continue;
+        }
+        contract_type_symbols.retain(|symbol| symbol != &target);
+        if let Some(module) = module {
+            cross_crate_types.entry(module).or_default().insert(target);
+        }
+    }
     let mixed_foreign_wildcards =
         crate::typescript::test_mixed_foreign_wildcard_roots(program, context);
     let mut cross_crate_local_names = cross_crate_values

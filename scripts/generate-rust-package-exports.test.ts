@@ -36,6 +36,7 @@ import {
   resolveRustExportName,
   typeScriptInlineStringUnionArguments,
   typeScriptStringUnionArguments,
+  typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
 
 describe('canonicalizeGeneratedContractImports', () => {
@@ -264,6 +265,46 @@ export function unrelated(): AccessibilityTreeBlockReason { throw 0; }
       '--typescript-inline-string-union',
       'AccessibilityTreeBlockReason=["destroyed","no-dom"]',
     ]);
+  });
+
+  it('derives explicit reference-alias metadata from matching exported signatures', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          ['AnimationPlayer', { hasType: true, hasValue: false }],
+          ['Unrelated', { hasType: true, hasValue: false }],
+        ]),
+      ],
+    ]);
+    const existing = `import type { AnimationPlayer } from '@flighthq/types/contract';
+export function advance(players: readonly AnimationPlayer[], target: unknown): AnimationPlayer[] { return []; }
+export function incompatible(value: string | null): void {}
+`;
+    const generated = `export function advance(players: readonly AnimationPlayerRef[], target: TargetRef): AnimationPlayerRef[] { return []; }
+export function incompatible(value: RealAlias | undefined): void {}
+`;
+
+    expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([
+      '--typescript-type-alias',
+      'AnimationPlayerRef=@flighthq/types/contract#AnimationPlayer',
+      '--typescript-type-alias',
+      'TargetRef=unknown',
+    ]);
+  });
+
+  it('does not infer type aliases from names or unmatched signatures', () => {
+    const symbols = new Map([
+      ['@flighthq/types/contract', new Map([['AnimationPlayer', { hasType: true, hasValue: false }]])],
+    ]);
+    const existing = `import type { AnimationPlayer } from '@flighthq/types/contract';
+export function established(player: AnimationPlayer): void {}
+`;
+    const generated = `export function other(player: AnimationPlayerRef): void {}
+export type AnimationPlayerRef = number;
+`;
+
+    expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([]);
   });
 
   it('rejects conflicting inline representations of one generated Rust type', () => {

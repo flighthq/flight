@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -31,6 +31,7 @@ struct GenerateOptions {
     source: PathBuf,
     type_script_inline_string_unions: Vec<OwnedTypeScriptInlineStringUnion>,
     type_script_string_unions: Vec<OwnedTypeScriptStringUnion>,
+    type_script_type_aliases: Vec<OwnedTypeScriptTypeAlias>,
     visibility_sources: Vec<PathBuf>,
 }
 
@@ -43,6 +44,12 @@ struct OwnedTypeScriptStringUnion {
 struct OwnedTypeScriptInlineStringUnion {
     name: String,
     values: Vec<String>,
+}
+
+struct OwnedTypeScriptTypeAlias {
+    name: String,
+    module: Option<String>,
+    target: String,
 }
 
 struct ExplicitCrateRoot {
@@ -279,6 +286,15 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     values: &union.values,
                 })
                 .collect::<Vec<_>>();
+            let type_script_type_aliases = options
+                .type_script_type_aliases
+                .iter()
+                .map(|alias| flight_compiler::TypeScriptTypeAlias {
+                    name: &alias.name,
+                    module: alias.module.as_deref(),
+                    target: &alias.target,
+                })
+                .collect::<Vec<_>>();
             flight_compiler::compile_typescript_with_options(
                 flight_compiler::ModuleSource {
                     path: &source_path,
@@ -289,6 +305,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &external_aliases,
                 &type_script_string_unions,
                 &type_script_inline_string_unions,
+                &type_script_type_aliases,
                 &visibility_source_refs,
                 &crate_root_refs,
                 options.lenient,
@@ -356,6 +373,15 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     values: &union.values,
                 })
                 .collect::<Vec<_>>();
+            let type_script_type_aliases = options
+                .type_script_type_aliases
+                .iter()
+                .map(|alias| flight_compiler::TypeScriptTypeAlias {
+                    name: &alias.name,
+                    module: alias.module.as_deref(),
+                    target: &alias.target,
+                })
+                .collect::<Vec<_>>();
             flight_compiler::compile_vitest_with_options(
                 &source,
                 contract_module,
@@ -364,6 +390,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &external_aliases,
                 &type_script_string_unions,
                 &visibility_source_refs,
+                &type_script_type_aliases,
             )
         }
     }
@@ -430,6 +457,7 @@ fn parse_generate_options(
     let mut source = None;
     let mut type_script_inline_string_unions = Vec::new();
     let mut type_script_string_unions = Vec::new();
+    let mut type_script_type_aliases = Vec::new();
     let mut index = 0;
     while index < arguments.len() {
         match arguments[index].as_str() {
@@ -548,6 +576,34 @@ fn parse_generate_options(
                     values,
                 });
             }
+            "--typescript-type-alias" => {
+                index += 1;
+                let specification = arguments.get(index).ok_or_else(|| {
+                    format!(
+                        "--typescript-type-alias requires <rust-name>=<module>#<typescript-name>|unknown\n\n{USAGE}"
+                    )
+                })?;
+                let (name, representation) = specification.split_once('=').ok_or_else(|| {
+                    format!(
+                        "invalid --typescript-type-alias `{specification}`; expected <rust-name>=<module>#<typescript-name>|unknown\n\n{USAGE}"
+                    )
+                })?;
+                if name.is_empty() || representation.is_empty() {
+                    return Err(format!(
+                        "invalid --typescript-type-alias `{specification}`; expected <rust-name>=<module>#<typescript-name>|unknown\n\n{USAGE}"
+                    ));
+                }
+                let (module, target) = representation
+                    .rsplit_once('#')
+                    .map_or((None, representation), |(module, target)| {
+                        (Some(module.to_string()), target)
+                    });
+                type_script_type_aliases.push(OwnedTypeScriptTypeAlias {
+                    name: name.to_string(),
+                    module,
+                    target: target.to_string(),
+                });
+            }
             "--visibility-source" => {
                 index += 1;
                 let path = arguments
@@ -605,6 +661,7 @@ fn parse_generate_options(
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         type_script_inline_string_unions,
         type_script_string_unions,
+        type_script_type_aliases,
         visibility_sources,
     });
 }
@@ -726,6 +783,64 @@ mod tests {
         let union = &options.type_script_inline_string_unions[0];
         assert_eq!(union.name, "AccessibilityTreeBlockReason");
         assert_eq!(union.values, ["destroyed", "no-dom"]);
+    }
+
+    #[test]
+    fn parses_explicit_type_script_type_alias_metadata_for_sources_and_tests() {
+        for kind in [GenerateKind::Source, GenerateKind::Tests] {
+            let options = parse_generate_options(
+                &arguments(&[
+                    "--source",
+                    "source.rs",
+                    "--out",
+                    "output.ts",
+                    "--typescript-type-alias",
+                    "AnimationPlayerRef=@flighthq/types/contract#AnimationPlayer",
+                    "--typescript-type-alias",
+                    "TargetRef=unknown",
+                    "--contract-module",
+                    "./contract.ts",
+                ]),
+                kind,
+            );
+            let options = match kind {
+                GenerateKind::Source => {
+                    // Contract options belong only to test generation.
+                    parse_generate_options(
+                        &arguments(&[
+                            "--source",
+                            "source.rs",
+                            "--out",
+                            "output.ts",
+                            "--typescript-type-alias",
+                            "AnimationPlayerRef=@flighthq/types/contract#AnimationPlayer",
+                            "--typescript-type-alias",
+                            "TargetRef=unknown",
+                        ]),
+                        kind,
+                    )
+                    .unwrap()
+                }
+                GenerateKind::Tests => options.unwrap(),
+            };
+
+            assert_eq!(options.type_script_type_aliases.len(), 2);
+            assert_eq!(
+                options.type_script_type_aliases[0].name,
+                "AnimationPlayerRef"
+            );
+            assert_eq!(
+                options.type_script_type_aliases[0].module.as_deref(),
+                Some("@flighthq/types/contract")
+            );
+            assert_eq!(
+                options.type_script_type_aliases[0].target,
+                "AnimationPlayer"
+            );
+            assert_eq!(options.type_script_type_aliases[1].name, "TargetRef");
+            assert_eq!(options.type_script_type_aliases[1].module, None);
+            assert_eq!(options.type_script_type_aliases[1].target, "unknown");
+        }
     }
 
     #[test]

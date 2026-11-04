@@ -78,6 +78,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub dependency_export_names: &'a [(BTreeMap<String, String>, &'a str)],
     pub external_string_unions: &'a BTreeSet<String>,
     pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
+    pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
     pub external_shared_identity_fields: &'a BTreeSet<String>,
     pub module_identities: Option<&'a [String]>,
     pub visibility_programs: &'a [Program],
@@ -153,6 +154,10 @@ pub(super) const TYPE_LOCAL_MARKER: &str = "@type-local:";
 // in TypeScript, not `Readonly<T>`: the latter turns primitive substitutions such as `number` into
 // their boxed object surface.
 const TYPE_PARAMETER_MARKER: &str = "@type-parameter:";
+
+// Explicit Rust-name to established TypeScript representation metadata. The marker stores
+// `rust␟module␟target`; an empty module is the intrinsic `unknown` representation.
+const TYPE_SCRIPT_TYPE_ALIAS_MARKER: &str = "@typescript-type-alias:";
 
 pub(super) const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
 
@@ -22571,6 +22576,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let dependency_export_names = input.dependency_export_names;
     let external_string_unions = input.external_string_unions;
     let inline_string_unions = input.inline_string_unions;
+    let type_script_type_aliases = input.type_script_type_aliases;
     let module_identities = input.module_identities;
     let visibility_programs = input.visibility_programs;
     let visibility_identities = input.visibility_identities;
@@ -22612,6 +22618,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     );
     let mut type_context = identity_context.clone();
     type_context.extend(external_shared_identity_fields.iter().cloned());
+    insert_type_script_type_alias_context(&mut type_context, type_script_type_aliases);
     let mut expression_context = generation_context_with_types(
         &program_sources,
         external_record_structs,
@@ -22647,6 +22654,14 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     insert_std_float_consts_context(&mut expression_context, program.uses.iter());
     insert_program_type_path_context(&mut expression_context, program);
     let (mut value_imports, mut type_imports) = cross_crate_imports(program, &expression_context);
+    for alias in type_script_type_aliases {
+        if let Some(module) = alias.module {
+            type_imports
+                .entry(module.to_string())
+                .or_default()
+                .insert(alias.target.to_string());
+        }
+    }
     let entity_construction_parameters = program
         .functions
         .iter()
@@ -23985,6 +24000,55 @@ fn emit_struct(
     return Ok(());
 }
 
+pub(crate) fn insert_type_script_type_alias_context(
+    context: &mut HashSet<String>,
+    aliases: &[crate::TypeScriptTypeAlias<'_>],
+) {
+    for alias in aliases {
+        context.insert(format!(
+            "{TYPE_SCRIPT_TYPE_ALIAS_MARKER}{}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+            alias.name,
+            alias.module.unwrap_or_default(),
+            alias.target
+        ));
+    }
+}
+
+fn type_script_type_alias(
+    context: &HashSet<String>,
+    name: &str,
+) -> Option<(String, Option<String>)> {
+    let prefix = format!("{TYPE_SCRIPT_TYPE_ALIAS_MARKER}{name}{PROVENANCE_SEPARATOR}");
+    return context.iter().find_map(|marker| {
+        let representation = marker.strip_prefix(&prefix)?;
+        let (module, target) = representation.split_once(PROVENANCE_SEPARATOR)?;
+        Some((
+            target.to_string(),
+            (!module.is_empty()).then(|| module.to_string()),
+        ))
+    });
+}
+
+pub(crate) fn type_script_type_aliases(
+    context: &HashSet<String>,
+) -> Vec<(String, String, Option<String>)> {
+    let mut aliases = context
+        .iter()
+        .filter_map(|marker| {
+            let representation = marker.strip_prefix(TYPE_SCRIPT_TYPE_ALIAS_MARKER)?;
+            let (name, representation) = representation.split_once(PROVENANCE_SEPARATOR)?;
+            let (module, target) = representation.split_once(PROVENANCE_SEPARATOR)?;
+            Some((
+                name.to_string(),
+                target.to_string(),
+                (!module.is_empty()).then(|| module.to_string()),
+            ))
+        })
+        .collect::<Vec<_>>();
+    aliases.sort();
+    return aliases;
+}
+
 pub(crate) fn emit_type(
     rust_type: &Type,
     entities: &HashSet<String>,
@@ -24034,6 +24098,11 @@ pub(crate) fn emit_type(
                 name = vitest_struct_path_binding_name(&path.path, entities)?.ok_or_else(|| {
                     compile_error("current-package struct/type path has no binding")
                 })?;
+            }
+            if matches!(segment.arguments, PathArguments::None)
+                && let Some((target, _)) = type_script_type_alias(entities, &name)
+            {
+                return Ok(target);
             }
             if path.path.segments.len() > 1
                 && let Some(first) = path.path.segments.first()

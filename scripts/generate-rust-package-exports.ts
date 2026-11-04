@@ -346,6 +346,175 @@ export function typeScriptStringUnionArguments(
     ]);
 }
 
+interface TypeScriptTypeAliasOwner {
+  module?: string;
+  name: string;
+}
+
+// Existing exported signatures are the authority for Rust aliases whose target-language
+// representation is already owned elsewhere. The match is deliberately structural: only a bare
+// generated type at the same position in the same exported function can become a canonical imported
+// contract type (or the intrinsic `unknown`). Alias spelling never participates in the decision.
+export function typeScriptTypeAliasArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>>,
+): string[] {
+  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving type aliases: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving type aliases: ${generated.errors[0]?.message}`,
+    );
+  }
+
+  const canonicalTypes = new Map<string, TypeScriptTypeAliasOwner>();
+  const ambiguousCanonicalTypes = new Set<string>();
+  for (const statement of existing.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ImportDeclaration') continue;
+    const source = statement.source as Record<string, unknown>;
+    const module = typeof source.value === 'string' ? source.value : undefined;
+    if (module === undefined || !/^@flighthq\/[^/]+\/contract$/.test(module)) continue;
+    const symbols = importedContractSymbols.get(module);
+    if (symbols === undefined) continue;
+    for (const specifier of statement.specifiers as Record<string, unknown>[]) {
+      if (specifier.type !== 'ImportSpecifier') continue;
+      const imported = specifier.imported as Record<string, unknown>;
+      const local = specifier.local as Record<string, unknown>;
+      const importedName = typeof imported.name === 'string' ? imported.name : undefined;
+      const localName = typeof local.name === 'string' ? local.name : undefined;
+      // Keeping renamed imports would require a second target binding in the compiler metadata. The
+      // direct-name lane covers established owners without inventing a new local public name.
+      if (
+        importedName === undefined ||
+        localName !== importedName ||
+        ambiguousCanonicalTypes.has(localName) ||
+        symbols.get(importedName)?.hasType !== true
+      ) {
+        continue;
+      }
+      const previous = canonicalTypes.get(localName);
+      if (previous !== undefined && previous.module !== module) {
+        canonicalTypes.delete(localName);
+        ambiguousCanonicalTypes.add(localName);
+      } else {
+        canonicalTypes.set(localName, { module, name: importedName });
+      }
+    }
+  }
+
+  const aliases = new Map<string, TypeScriptTypeAliasOwner>();
+  const existingFunctions = exportedFunctionTypes(existing.program.body as unknown as Record<string, unknown>[]);
+  const generatedFunctions = exportedFunctionTypes(generated.program.body as unknown as Record<string, unknown>[]);
+
+  function record(alias: string, owner: TypeScriptTypeAliasOwner): void {
+    const previous = aliases.get(alias);
+    if (previous !== undefined && (previous.module !== owner.module || previous.name !== owner.name)) {
+      throw new Error(
+        `Rust type alias ${alias} has conflicting TypeScript representations ${renderTypeAliasOwner(previous)} and ${renderTypeAliasOwner(owner)}`,
+      );
+    }
+    aliases.set(alias, owner);
+  }
+
+  function align(existingType: Record<string, unknown>, generatedType: Record<string, unknown>): void {
+    const generatedName = bareTypeReferenceName(generatedType);
+    if (generatedName !== undefined) {
+      const existingName = bareTypeReferenceName(existingType);
+      const owner = existingName === undefined ? undefined : canonicalTypes.get(existingName);
+      if (owner !== undefined && generatedName !== existingName) {
+        record(generatedName, owner);
+        return;
+      }
+      if (existingType.type === 'TSUnknownKeyword') {
+        record(generatedName, { name: 'unknown' });
+        return;
+      }
+    }
+    if (existingType.type !== generatedType.type) return;
+    if (existingType.type === 'TSTypeReference') {
+      if (typeName(existingType) !== typeName(generatedType)) return;
+      alignTypeLists(typeParameters(existingType), typeParameters(generatedType));
+      return;
+    }
+    if (existingType.type === 'TSArrayType') {
+      align(existingType.elementType as Record<string, unknown>, generatedType.elementType as Record<string, unknown>);
+      return;
+    }
+    if (existingType.type === 'TSTypeOperator' || existingType.type === 'TSParenthesizedType') {
+      if (existingType.type === 'TSTypeOperator' && existingType.operator !== generatedType.operator) return;
+      align(
+        existingType.typeAnnotation as Record<string, unknown>,
+        generatedType.typeAnnotation as Record<string, unknown>,
+      );
+      return;
+    }
+    if (existingType.type === 'TSUnionType' || existingType.type === 'TSIntersectionType') {
+      alignTypeLists(existingType.types as Record<string, unknown>[], generatedType.types as Record<string, unknown>[]);
+    }
+  }
+
+  function alignTypeLists(
+    existingTypes: readonly Record<string, unknown>[],
+    generatedTypes: readonly Record<string, unknown>[],
+  ): void {
+    if (existingTypes.length !== generatedTypes.length) return;
+    for (let index = 0; index < existingTypes.length; index += 1) {
+      align(existingTypes[index], generatedTypes[index]);
+    }
+  }
+
+  for (const [name, generatedFunction] of generatedFunctions) {
+    const existingFunction = existingFunctions.get(name);
+    if (existingFunction === undefined || existingFunction.parameters.length !== generatedFunction.parameters.length) {
+      continue;
+    }
+    alignTypeLists(existingFunction.parameters, generatedFunction.parameters);
+    if (existingFunction.returnType !== undefined && generatedFunction.returnType !== undefined) {
+      align(existingFunction.returnType, generatedFunction.returnType);
+    }
+  }
+
+  return [...aliases]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([alias, owner]) => [
+      '--typescript-type-alias',
+      `${alias}=${owner.module === undefined ? owner.name : `${owner.module}#${owner.name}`}`,
+    ]);
+}
+
+function exportedFunctionTypes(
+  body: readonly Record<string, unknown>[],
+): Map<string, { parameters: Record<string, unknown>[]; returnType?: Record<string, unknown> }> {
+  const functions = new Map<string, { parameters: Record<string, unknown>[]; returnType?: Record<string, unknown> }>();
+  for (const statement of body) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'FunctionDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    const parameters = (declaration.params as Record<string, unknown>[])
+      .map((parameter) => parameter.typeAnnotation as Record<string, unknown> | null)
+      .map((annotation) => annotation?.typeAnnotation as Record<string, unknown> | undefined);
+    if (parameters.some((parameter) => parameter === undefined)) continue;
+    const returnAnnotation = declaration.returnType as Record<string, unknown> | null;
+    functions.set(identifier.name, {
+      parameters: parameters as Record<string, unknown>[],
+      returnType: returnAnnotation?.typeAnnotation as Record<string, unknown> | undefined,
+    });
+  }
+  return functions;
+}
+
+function renderTypeAliasOwner(owner: TypeScriptTypeAliasOwner): string {
+  return owner.module === undefined ? owner.name : `${owner.module}#${owner.name}`;
+}
+
 // Existing exported signatures are the authority for unnamed TypeScript representations. Match only
 // the same exported function and the same enclosing generic types; the compiler then verifies that
 // each inferred literal set exactly represents the visible unit Rust enum before using it.

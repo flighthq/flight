@@ -627,6 +627,59 @@ describe('ShellExternalReason', () => {
     expect(test).not.toContain('ShellExternalReason.BlockedScheme');
   }, 120_000);
 
+  it('passes established TypeScript type-alias representations through the compiler CLI', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), '//! flight-compiler: target-native\nmod types;\nmod value;\n');
+    rmSync(join(crateRoot, 'src', 'contract.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'src', 'types.rs'),
+      `//! flight-compiler: rust-only
+pub type AnimationPlayerRef = usize;
+pub type TargetRef = usize;
+`,
+    );
+    writeFileSync(
+      sourcePath,
+      `use crate::types::{AnimationPlayerRef, TargetRef};
+
+pub fn advance(
+    players: &[AnimationPlayerRef],
+    target: TargetRef,
+) -> AnimationPlayerRef {
+    return players[0];
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { AnimationPlayer } from '@flighthq/types/contract';
+
+export function advance(players: readonly AnimationPlayer[], target: unknown): AnimationPlayer {
+  return players[0];
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { advance } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { advance } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain("import type { AnimationPlayer } from '@flighthq/types/contract';");
+    expect(value).toContain('players: Readonly<AnimationPlayer[]>');
+    expect(value).toContain('target: unknown');
+    expect(value).not.toContain('AnimationPlayerRef');
+    expect(value).not.toContain('TargetRef');
+  }, 120_000);
+
   it('preserves inline string-union representations from existing function signatures', async () => {
     writeFileSync(
       join(crateRoot, 'src', 'types.rs'),
