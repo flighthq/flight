@@ -524,6 +524,31 @@ export function renderReferencedExports(existingTypescript: string, generatedTyp
   return output;
 }
 
+// Rust-only compatibility sources can own public constants used by a generated sibling. Preserve
+// each existing exported const that the compiler did not replace, slicing the parsed declarator so
+// multiline initializers and type annotations remain exact. Other declaration kinds contain
+// implementation behavior and are not retained implicitly.
+export function renderReferencedConstants(existingTypescript: string, generatedTypescript: string): string {
+  const parsed = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(`could not parse existing TypeScript while resolving constants: ${parsed.errors[0]?.message}`);
+  }
+  const generatedSymbols = collectTypeScriptExportSymbols(generatedTypescript);
+  let output = '';
+  for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'VariableDeclaration' || declaration.kind !== 'const') continue;
+    for (const declarator of declaration.declarations as Record<string, unknown>[]) {
+      const identifier = declarator.id as Record<string, unknown>;
+      const name = identifier.type === 'Identifier' ? (identifier.name as string) : undefined;
+      if (name === undefined || generatedSymbols.has(name)) continue;
+      output += `export const ${existingTypescript.slice(declarator.start as number, declarator.end as number)};\n`;
+    }
+  }
+  return output;
+}
+
 function referencedCode(typescript: string): string {
   return typescript
     .replace(/\/\*[\s\S]*?\*\//g, '')

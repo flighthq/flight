@@ -28,6 +28,7 @@ import {
   dependencyAliasArguments,
   mergeRustExportNames,
   renderPublicExports,
+  renderReferencedConstants,
   renderReferencedExports,
   renderReferencedImports,
   resolveCrateExportSymbols,
@@ -740,12 +741,17 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
   const typescript = compile('generate', rustPath, outputPath, [], aliasSources);
   const originalPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(originalPath) ? readFileSync(originalPath, 'utf8') : '';
-  const retainedExports = renderReferencedExports(existingTypescript, typescript);
+  const retainedConstants = renderReferencedConstants(existingTypescript, typescript);
+  const typescriptWithConstants =
+    retainedConstants === '' ? typescript : `${typescript.trimEnd()}\n\n${retainedConstants}`.replace(/^\n+/, '');
+  const retainedExports = renderReferencedExports(existingTypescript, typescriptWithConstants);
   const generatedTypescript =
-    retainedExports === '' ? typescript : `${typescript.trimEnd()}\n\n${retainedExports}`.replace(/^\n+/, '');
+    retainedExports === ''
+      ? typescriptWithConstants
+      : `${typescriptWithConstants.trimEnd()}\n\n${retainedExports}`.replace(/^\n+/, '');
   const retainedImports = renderReferencedImports(
     existingTypescript,
-    typescript,
+    typescriptWithConstants,
     loadImportedContractSymbols(existingTypescript),
   );
   if ((lenientSkippedByOutput.get(outputPath) ?? 0) === 0) {

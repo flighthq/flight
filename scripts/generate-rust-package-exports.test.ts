@@ -26,6 +26,7 @@ import {
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
+  renderReferencedConstants,
   renderReferencedExports,
   renderReferencedImports,
   resolveCrateExportSymbols,
@@ -437,6 +438,26 @@ export * from './wildcard.ts';
     expect(renderReferencedExports(existing, generated)).toBe(
       `export type { MissingType } from './compat.ts';
 export { ImageChannel, InternalName as PublicName } from '@flighthq/types/contract';
+`,
+    );
+  });
+});
+
+describe('renderReferencedConstants', () => {
+  it('retains exported constants not replaced by generated declarations', () => {
+    const existing = `export const CAPTURE_PARITY_TOLERANCE = 15;
+export const OPTIONS: Readonly<{ value: number }> = Object.freeze({
+  value: 2,
+});
+export const replacedValue = 1;
+`;
+    const generated = 'export const replacedValue = 3;\n';
+
+    expect(renderReferencedConstants(existing, generated)).toBe(
+      `export const CAPTURE_PARITY_TOLERANCE = 15;
+export const OPTIONS: Readonly<{ value: number }> = Object.freeze({
+  value: 2,
+});
 `,
     );
   });
