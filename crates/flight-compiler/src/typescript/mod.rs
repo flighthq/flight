@@ -9013,8 +9013,16 @@ fn expression_precedence(expression: &Expr) -> u8 {
     return match expression {
         Expr::Assign(_) => 1,
         Expr::Binary(binary) => binary_precedence(&binary.op),
-        Expr::Cast(cast) if type_is_named(&cast.ty, "i32") => 5,
-        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") => 10,
+        Expr::Cast(cast) if type_is_named(&cast.ty, "i32") || type_is_named(&cast.ty, "isize") => 5,
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u8") || type_is_named(&cast.ty, "u16") => 7,
+        Expr::Cast(cast)
+            if type_is_named(&cast.ty, "u32")
+                || type_is_named(&cast.ty, "usize")
+                || type_is_named(&cast.ty, "i8")
+                || type_is_named(&cast.ty, "i16") =>
+        {
+            10
+        }
         Expr::Cast(cast) => expression_precedence(&cast.expr),
         Expr::Group(group) => expression_precedence(&group.expr),
         Expr::Paren(paren) => expression_precedence(&paren.expr),
@@ -10628,11 +10636,11 @@ fn emit_expression_value(
         }
         Expr::Cast(cast) if type_is_named(&cast.ty, "i8") => {
             let operand = emit_binary_operand(&cast.expr, entities, 10, false)?;
-            Ok(format!("({operand} << 24) >> 24"))
+            Ok(format!("{operand} << 24 >> 24"))
         }
         Expr::Cast(cast) if type_is_named(&cast.ty, "i16") => {
             let operand = emit_binary_operand(&cast.expr, entities, 10, false)?;
-            Ok(format!("({operand} << 16) >> 16"))
+            Ok(format!("{operand} << 16 >> 16"))
         }
         Expr::Cast(cast) if type_is_named(&cast.ty, "i32") || type_is_named(&cast.ty, "isize") => {
             let operand = emit_binary_operand(&cast.expr, entities, 5, false)?;

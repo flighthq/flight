@@ -6551,11 +6551,11 @@ pub fn narrow(value: i32) -> (u8, u16, i8, i16) {
             "u16 cast should mask: {output}"
         );
         assert!(
-            output.contains("<< 24) >> 24"),
+            output.contains("<< 24 >> 24"),
             "i8 cast should sign-extend: {output}"
         );
         assert!(
-            output.contains("<< 16) >> 16"),
+            output.contains("<< 16 >> 16"),
             "i16 cast should sign-extend: {output}"
         );
     }
@@ -23561,11 +23561,11 @@ pub fn same_cast(x: f64) -> u32 {
         "u16->u32 chain should elide outer >>> 0, keeping inner & 0xffff: {output}"
     );
     assert!(
-        output.contains("return (x << 24) >> 24;\n"),
+        output.contains("return x << 24 >> 24;\n"),
         "i8->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
     );
     assert!(
-        output.contains("return (x << 16) >> 16;\n"),
+        output.contains("return x << 16 >> 16;\n"),
         "i16->i32 chain should elide outer | 0, keeping inner sign-extend: {output}"
     );
     assert!(
