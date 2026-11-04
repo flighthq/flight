@@ -895,7 +895,9 @@ export function renderGeneratedImports(
 export function canonicalizeGeneratedContractImports(existingTypescript: string, generatedTypescript: string): string {
   const canonicalOwners = new Map<string, { module: string; specifier: string }>();
   const ambiguous = new Set<string>();
-  const importPattern = /^import\s+(?:type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm;
+  // A specifier list never contains braces. `[^{}]*` keeps each match inside one declaration: a lazy
+  // `[\s\S]*?` would extend across an earlier import (`vitest`) to reach a later contract module.
+  const importPattern = /^import\s+(?:type\s+)?\{([^{}]*)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm;
 
   for (const match of existingTypescript.matchAll(importPattern)) {
     for (const item of match[1].split(',')) {
@@ -916,7 +918,7 @@ export function canonicalizeGeneratedContractImports(existingTypescript: string,
   }
 
   const generatedImportPattern =
-    /^import\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract|\.\/contract(?:\.ts)?)['"];?/gm;
+    /^import\s+(type\s+)?\{([^{}]*)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract|\.\/contract(?:\.ts)?)['"];?/gm;
   return generatedTypescript.replace(generatedImportPattern, (_declaration, groupType, body, module: string) => {
     const imports = new Map<string, { types: string[]; values: string[] }>();
     for (const item of (body as string).split(',')) {

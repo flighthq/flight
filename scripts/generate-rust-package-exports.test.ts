@@ -82,6 +82,68 @@ export function useHost(
     );
   });
 
+  it('keeps each import declaration separate when a non-contract import precedes a contract import', () => {
+    const existing = `import { describe, expect, it } from 'vitest';
+
+import type { UnpackedRectangle } from '@flighthq/types/contract';
+import { packRectangles } from './contract.ts';
+`;
+    const generated = `import { describe, expect, it } from 'vitest';
+
+import {
+  explainUnpackedRectangles,
+  getUnpackedRectangleReasonString,
+  packRectangles,
+} from './contract.ts';
+
+import type {
+  UnpackedRectangle,
+} from './contract.ts';
+
+describe('explainUnpackedRectangles', () => {
+  it('explains', () => {
+    const rectangle: UnpackedRectangle = packRectangles();
+    expect(explainUnpackedRectangles(rectangle)).toEqual(getUnpackedRectangleReasonString(rectangle));
+  });
+});
+`;
+
+    const canonical = canonicalizeGeneratedContractImports(existing, generated);
+
+    // vitest helpers stay from vitest; contract values keep their module; the type keeps its
+    // established canonical owner.
+    expect(canonical).toBe(`import { describe, expect, it } from 'vitest';
+
+import { explainUnpackedRectangles, getUnpackedRectangleReasonString, packRectangles } from './contract.ts';
+
+import type { UnpackedRectangle } from '@flighthq/types/contract';
+
+describe('explainUnpackedRectangles', () => {
+  it('explains', () => {
+    const rectangle: UnpackedRectangle = packRectangles();
+    expect(explainUnpackedRectangles(rectangle)).toEqual(getUnpackedRectangleReasonString(rectangle));
+  });
+});
+`);
+    // Repeated generation is stable: canonicalizing the canonical output changes nothing.
+    expect(canonicalizeGeneratedContractImports(existing, canonical)).toBe(canonical);
+    expect(canonical).not.toMatch(/explainUnpackedRectangles[^;]*from 'vitest'/);
+  });
+
+  it('reads canonical owners only from contract import declarations', () => {
+    const existing = `import { describe, it } from 'vitest';
+import { packRectangles } from '@flighthq/binpack/contract';
+`;
+    const generated = `import { packRectangles } from './contract.ts';
+`;
+
+    // describe and it are never contract owners; packRectangles keeps its owner.
+    expect(canonicalizeGeneratedContractImports(existing, generated)).toBe(
+      `import { packRectangles } from '@flighthq/binpack/contract';
+`,
+    );
+  });
+
   it('does not guess when the existing implementation has ambiguous owners', () => {
     const existing = `import type { Shared } from '@flighthq/alpha/contract';
 import type { Shared } from '@flighthq/beta/contract';
