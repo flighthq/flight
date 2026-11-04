@@ -369,8 +369,10 @@ function normalizedClipRegionBounds(contours: Readonly<number[][] | null>): numb
     const x = contour[index];
     const y = contour[index + 1];
     if (
-      !(Math.abs(x - minX) <= NORMALIZE_EPSILON || Math.abs(x - maxX) <= NORMALIZE_EPSILON) &&
-      (Math.abs(y - minY) <= NORMALIZE_EPSILON || Math.abs(y - maxY) <= NORMALIZE_EPSILON)
+      !(
+        (Math.abs(x - minX) <= NORMALIZE_EPSILON || Math.abs(x - maxX) <= NORMALIZE_EPSILON) &&
+        (Math.abs(y - minY) <= NORMALIZE_EPSILON || Math.abs(y - maxY) <= NORMALIZE_EPSILON)
+      )
     ) {
       axisAligned = false;
     }
