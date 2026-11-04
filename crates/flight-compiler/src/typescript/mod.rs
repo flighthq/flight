@@ -9163,20 +9163,60 @@ fn tail_expression_needs_return(expression: &Expr) -> bool {
 }
 
 // Emits a block whose tail value is returned, as a closure or function body. Only a tail that needs
-// a `return` is rewritten (and so copied); see `emit_block_with_tail`.
+// a `return` is rewritten (and so copied); see `emit_block_with_tail`. The copy's binding sites are
+// given the ids the resolver found for the parsed ones (`copy_binding_sites`), so a `let` nested in
+// the returned tail keeps everything proven for it.
 fn emit_block_with_tail_returns(
     out: &mut String,
     statements: &[Stmt],
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    let tail = statements.last().and_then(|last| {
-        let rewritten = inject_tail_returns(std::slice::from_ref(last)).pop()?;
-        return (rewritten.to_token_stream().to_string() != last.to_token_stream().to_string())
-            .then_some(rewritten);
-    });
-    emit_block_with_tail(out, statements, tail.as_ref(), entities, indent)?;
+    let Some(last) = statements.last() else {
+        return Ok(());
+    };
+    let Some(rewritten) = inject_tail_returns(std::slice::from_ref(last)).pop() else {
+        return emit_block(out, statements, entities, indent);
+    };
+    if rewritten.to_token_stream().to_string() == last.to_token_stream().to_string() {
+        return emit_block(out, statements, entities, indent);
+    }
+    let mut context = entities.clone();
+    copy_binding_sites(&mut context, last, &rewritten);
+    emit_block_with_tail(out, statements, Some(&rewritten), &context, indent)?;
     return Ok(());
+}
+
+// Records, for each identifier of `copy` (a rewrite of `parsed` that only wraps expressions in
+// `return`, so both hold the same identifiers in the same order), the binding id resolved for the
+// matching identifier of `parsed`. Binding ids are keyed by an identifier's address
+// (`binding_site_key`), which a copy does not keep.
+fn copy_binding_sites(context: &mut HashSet<String>, parsed: &Stmt, copy: &Stmt) {
+    struct Identifiers<'ast>(Vec<&'ast syn::Ident>);
+    impl<'ast> Visit<'ast> for Identifiers<'ast> {
+        fn visit_ident(&mut self, identifier: &'ast syn::Ident) {
+            self.0.push(identifier);
+        }
+    }
+
+    let mut parsed_identifiers = Identifiers(Vec::new());
+    parsed_identifiers.visit_stmt(parsed);
+    let mut copied_identifiers = Identifiers(Vec::new());
+    copied_identifiers.visit_stmt(copy);
+    if parsed_identifiers.0 != copied_identifiers.0 {
+        return;
+    }
+    for (parsed, copied) in parsed_identifiers.0.iter().zip(&copied_identifiers.0) {
+        if let Some(id) = unique_marker_suffix(
+            context,
+            &format!("{BINDING_SITE_MARKER}{}=", binding_site_key(parsed)),
+        ) {
+            context.insert(format!(
+                "{BINDING_SITE_MARKER}{}={id}",
+                binding_site_key(copied)
+            ));
+        }
+    }
 }
 
 fn inject_tail_returns(statements: &[Stmt]) -> Vec<Stmt> {

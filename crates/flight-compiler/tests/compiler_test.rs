@@ -3008,6 +3008,132 @@ pub fn bump_picked(picker: &mut Picker) -> i32 {
     }
 
     #[test]
+    fn keeps_bindings_nested_in_returned_tails_resolved() {
+        let source = r#"
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex, RwLock};
+
+pub struct Picker {
+    pub calls: i32,
+    pub cells: Vec<Arc<Mutex<i32>>>,
+}
+
+pub fn pick(picker: &mut Picker) -> Arc<Mutex<i32>> {
+    picker.calls += 1;
+    return picker.cells[0].clone();
+}
+
+pub fn if_tail(cell: &Arc<Mutex<i32>>, take: bool) -> i32 {
+    let a_cell = cell.clone();
+    let read = move |take: bool| {
+        if take {
+            let mut guard = a_cell.lock().unwrap();
+            *guard += 1;
+            *guard
+        } else {
+            0
+        }
+    };
+    return read(take);
+}
+
+pub fn picked_tail(picker: &mut Picker, take: bool) -> i32 {
+    let mut read = |picker: &mut Picker, take: bool| {
+        if take {
+            let cell = pick(picker);
+            let mut guard = cell.lock().unwrap();
+            *guard += 10;
+            *guard
+        } else {
+            -1
+        }
+    };
+    let first = read(picker, true);
+    let second = read(picker, false);
+    return first + second + read(picker, true);
+}
+
+pub fn block_tail(cell: &Arc<Mutex<i32>>) -> i32 {
+    let a_cell = cell.clone();
+    let read = move || {
+        {
+            let guard = a_cell.lock().unwrap();
+            *guard * 2
+        }
+    };
+    return read();
+}
+
+pub fn fn_if_tail(cell: &Arc<Mutex<i32>>, take: bool) -> i32 {
+    if take {
+        let mut guard = cell.lock().unwrap();
+        *guard += 5;
+        *guard
+    } else {
+        -1
+    }
+}
+
+pub fn fact_tail(values: &[i32], take: bool) -> usize {
+    let count = move |take: bool| {
+        if take {
+            let mut seen = HashSet::new();
+            for value in values {
+                seen.insert(*value);
+            }
+            seen.len()
+        } else {
+            0
+        }
+    };
+    return count(take);
+}
+
+pub struct Holder {
+    pub shared: Arc<RwLock<i32>>,
+}
+
+pub fn alias_tail(holder: &Holder, take: bool) -> i32 {
+    if take {
+        let alias = holder.shared.clone();
+        *alias.write().unwrap() += 1;
+        let value = *alias.read().unwrap();
+        value
+    } else {
+        0
+    }
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        // A `return` injected into a tail `if` or block copies that statement; the `let`s nested in it
+        // keep what the resolver proved. Guards bind the cell and dereference through `.value`.
+        assert!(
+            output.contains("let guard = aCell;\n    guard.value += 1;\n    return guard.value;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const guard = aCell;\n    return guard.value * 2;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("let guard = cell;\n    guard.value += 5;\n    return guard.value;"),
+            "{output}"
+        );
+        // The guard's receiver is evaluated once, inside the taken branch only.
+        assert_eq!(output.matches("pick(picker)").count(), 1, "{output}");
+        assert!(
+            output.contains("const cell = pick(picker);\n    let guard = cell;\n    guard.value += 10;\n    return guard.value;"),
+            "{output}"
+        );
+        // A collection fact: `HashSet::new()` stays a `Set`, so `.len()` reads `.size`.
+        assert!(output.contains("let seen = new Set();"), "{output}");
+        assert!(output.contains("return seen.size;"), "{output}");
+        // A ref alias of a shared-cell field writes through to the field.
+        assert!(output.contains("holder.shared += 1;"), "{output}");
+        assert!(!output.contains("alias += 1;"), "{output}");
+    }
+
+    #[test]
     fn evaluates_if_let_value_scrutinees_once() {
         let source = r#"
 pub fn next_id() -> Option<i32> {
