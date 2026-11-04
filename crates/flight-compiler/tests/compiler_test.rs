@@ -26097,3 +26097,84 @@ export function ordinary(key: string): number {
         );
     }
 }
+
+// A crate-local target-native owner (its TypeScript is a handwritten companion) still designates its
+// enums for sibling lowering: a `string-union` declared there makes a generated sibling's variant paths
+// and match arms lower to the owner's string literals rather than enum member access.
+mod target_native_owner_provenance {
+    use super::*;
+
+    #[test]
+    fn lowers_sibling_uses_of_a_target_native_owner_string_union() {
+        let owner = r#"//! flight-compiler: target-native
+//! flight-compiler: string-union PoolRelease
+
+use std::sync::Arc;
+
+pub enum PoolRelease {
+    ReleaseMatrix,
+    ReleaseVector2,
+}
+
+pub type PoolReleaseGuard = Arc<dyn Fn(PoolRelease) + Send + Sync>;
+
+pub(crate) fn get_pool_release_guard() -> Option<PoolReleaseGuard> {
+    return None;
+}
+
+pub fn set_pool_release_guard(guard: Option<PoolReleaseGuard>) {}
+"#;
+        let source = r#"use std::sync::Arc;
+
+use crate::pool_guards::{PoolRelease, PoolReleaseGuard, get_pool_release_guard, set_pool_release_guard};
+
+pub fn install_pool_guard() {
+    let guard: PoolReleaseGuard = Arc::new(move |release| {
+        describe_release(release);
+    });
+    set_pool_release_guard(Some(guard));
+}
+
+pub fn has_pool_guard() -> bool {
+    return get_pool_release_guard().is_some();
+}
+
+fn describe_release(release: PoolRelease) -> &'static str {
+    return match release {
+        PoolRelease::ReleaseMatrix => "matrix",
+        PoolRelease::ReleaseVector2 => "vector2",
+    };
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-demo/src/enable_pool_guards.rs",
+                source,
+            },
+            None,
+            &[ModuleSource {
+                path: "crates/flight-demo/src/pool_guards.rs",
+                source: owner,
+            }],
+            &[],
+        )
+        .unwrap();
+        assert!(
+            output.contains("    case 'releaseMatrix':\n      return 'matrix';"),
+            "{output}"
+        );
+        assert!(
+            output.contains("    case 'releaseVector2':\n      return 'vector2';"),
+            "{output}"
+        );
+        assert!(
+            output.contains("function describeRelease(release: PoolRelease): string {"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const guard: PoolReleaseGuard = (release) => {"),
+            "{output}"
+        );
+        assert!(!output.contains("PoolRelease."), "{output}");
+    }
+}
