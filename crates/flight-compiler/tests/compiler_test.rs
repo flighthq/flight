@@ -1,13 +1,13 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptInlineStringUnion,
-    TypeScriptNullableOptionField, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
-    compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
-    compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
-    compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
-    compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
-    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
-    compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
-    source_mode,
+    TypeScriptNullableOptionField, TypeScriptNullableOptionReturn, TypeScriptStringUnion,
+    TypeScriptTypeAlias, VitestAliasSource, compile_typescript, compile_typescript_lenient,
+    compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
+    compile_typescript_with_module_sources, compile_typescript_with_options,
+    compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
+    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
+    compile_vitest_with_module_alias_sources, compile_vitest_with_options,
+    compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -13497,6 +13497,7 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13551,12 +13552,14 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &[],
+            &[],
             false,
         )
         .unwrap();
         let ordinary = compile_typescript_with_options(
             source,
             None,
+            &[],
             &[],
             &[],
             &[],
@@ -13627,6 +13630,7 @@ pub fn finish_transition(
             &[],
             &[],
             &fields,
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13643,6 +13647,56 @@ pub fn finish_transition(
         );
         assert!(output.contains("ordinaryParameter?: number"), "{output}");
         assert!(output.contains("): number | undefined"), "{output}");
+    }
+
+    #[test]
+    fn lowers_only_explicit_type_script_nullable_option_returns() {
+        let source = ModuleSource {
+            path: "crates/flight-scene2d-formats/src/svg_geometry_path.rs",
+            source: r#"pub fn create_svg_geometry_path(found: bool) -> Option<usize> {
+    let path = find_ordinary_path(found)?;
+    return Some(path);
+}
+
+pub fn find_ordinary_path(found: bool) -> Option<usize> {
+    if found { return Some(2); }
+    return None;
+}
+"#,
+        };
+        let returns = [TypeScriptNullableOptionReturn {
+            name: "createSvgGeometryPath",
+        }];
+
+        let output = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &returns,
+            &[],
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("function createSvgGeometryPath(found: boolean): number | null"),
+            "{output}"
+        );
+        assert!(
+            output.contains("if (path === undefined) {\n    return null;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("function findOrdinaryPath(found: boolean): number | undefined"),
+            "{output}"
+        );
+        assert!(output.contains("return undefined;"), "{output}");
     }
 
     #[test]
@@ -13694,6 +13748,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13733,6 +13788,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -13777,6 +13833,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13809,6 +13866,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -13851,6 +13909,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13885,6 +13944,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &visibility_sources,
@@ -13926,6 +13986,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &visibility_sources,
@@ -17459,6 +17520,7 @@ mod blocked_reason {
             &[],
             &[],
             &[],
+            &[],
         )
         .unwrap();
 
@@ -18970,6 +19032,50 @@ fn follows_each_returns_source_mode() {
         assert!(output.contains("expect(clonedValue === null).toBe(true);"));
         assert!(output.contains("expect(returnedValue === undefined).toBe(true);"));
         assert!(output.contains("expect(!(returnedValue !== null)).toBe(true);"));
+    }
+
+    #[test]
+    fn lowers_explicit_type_script_nullable_option_returns_in_vitest() {
+        let production = r#"
+pub fn create_svg_geometry_path(found: bool) -> Option<i32> {
+    if found { return Some(1); }
+    return None;
+}
+"#;
+        let source = r#"
+use flight_scene2d_formats::*;
+
+#[test]
+fn reports_absent_geometry() {
+    assert!(create_svg_geometry_path(false).is_none());
+}
+"#;
+        let returns = [TypeScriptNullableOptionReturn {
+            name: "createSvgGeometryPath",
+        }];
+        let aliases = [VitestAliasSource {
+            source: production,
+            module: "crates/flight-scene2d-formats/src/svg_geometry_path.rs",
+        }];
+
+        let output = compile_vitest_with_options(
+            source,
+            "@flighthq/scene2d-formats/contract",
+            None,
+            &aliases,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &returns,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("expect(createSvgGeometryPath(false) === null).toBe(true);"),
+            "{output}"
+        );
     }
 
     #[test]

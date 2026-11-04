@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -31,6 +31,7 @@ struct GenerateOptions {
     source: PathBuf,
     type_script_inline_string_unions: Vec<OwnedTypeScriptInlineStringUnion>,
     type_script_nullable_option_fields: Vec<OwnedTypeScriptNullableOptionField>,
+    type_script_nullable_option_returns: Vec<String>,
     type_script_string_unions: Vec<OwnedTypeScriptStringUnion>,
     type_script_type_aliases: Vec<OwnedTypeScriptTypeAlias>,
     visibility_sources: Vec<PathBuf>,
@@ -311,6 +312,11 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     field: &field.field,
                 })
                 .collect::<Vec<_>>();
+            let type_script_nullable_option_returns = options
+                .type_script_nullable_option_returns
+                .iter()
+                .map(|name| flight_compiler::TypeScriptNullableOptionReturn { name })
+                .collect::<Vec<_>>();
             flight_compiler::compile_typescript_with_options(
                 flight_compiler::ModuleSource {
                     path: &source_path,
@@ -323,6 +329,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &type_script_inline_string_unions,
                 &type_script_type_aliases,
                 &type_script_nullable_option_fields,
+                &type_script_nullable_option_returns,
                 &visibility_source_refs,
                 &crate_root_refs,
                 options.lenient,
@@ -408,6 +415,11 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     field: &field.field,
                 })
                 .collect::<Vec<_>>();
+            let type_script_nullable_option_returns = options
+                .type_script_nullable_option_returns
+                .iter()
+                .map(|name| flight_compiler::TypeScriptNullableOptionReturn { name })
+                .collect::<Vec<_>>();
             flight_compiler::compile_vitest_with_options(
                 &source,
                 contract_module,
@@ -418,6 +430,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &visibility_source_refs,
                 &type_script_type_aliases,
                 &type_script_nullable_option_fields,
+                &type_script_nullable_option_returns,
             )
         }
     }
@@ -484,6 +497,7 @@ fn parse_generate_options(
     let mut source = None;
     let mut type_script_inline_string_unions = Vec::new();
     let mut type_script_nullable_option_fields = Vec::new();
+    let mut type_script_nullable_option_returns = Vec::new();
     let mut type_script_string_unions = Vec::new();
     let mut type_script_type_aliases = Vec::new();
     let mut index = 0;
@@ -661,6 +675,18 @@ fn parse_generate_options(
                     field: field.to_string(),
                 });
             }
+            "--typescript-nullable-option-return" => {
+                index += 1;
+                let name = arguments.get(index).ok_or_else(|| {
+                    format!("--typescript-nullable-option-return requires <function>\n\n{USAGE}")
+                })?;
+                if !valid_type_script_identifier(name) {
+                    return Err(format!(
+                        "invalid --typescript-nullable-option-return `{name}`; expected <function>\n\n{USAGE}"
+                    ));
+                }
+                type_script_nullable_option_returns.push(name.to_string());
+            }
             "--visibility-source" => {
                 index += 1;
                 let path = arguments
@@ -718,6 +744,7 @@ fn parse_generate_options(
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         type_script_inline_string_unions,
         type_script_nullable_option_fields,
+        type_script_nullable_option_returns,
         type_script_string_unions,
         type_script_type_aliases,
         visibility_sources,
@@ -858,6 +885,8 @@ mod tests {
                     "TargetRef=unknown",
                     "--typescript-nullable-option-field",
                     "@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex",
+                    "--typescript-nullable-option-return",
+                    "createSvgGeometryPath",
                     "--contract-module",
                     "./contract.ts",
                 ]),
@@ -878,6 +907,8 @@ mod tests {
                             "TargetRef=unknown",
                             "--typescript-nullable-option-field",
                             "@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex",
+                            "--typescript-nullable-option-return",
+                            "createSvgGeometryPath",
                         ]),
                         kind,
                     )
@@ -907,6 +938,10 @@ mod tests {
             assert_eq!(field.module, "@flighthq/types/contract");
             assert_eq!(field.owner, "AnimationStateMachine");
             assert_eq!(field.field, "transitionToStateIndex");
+            assert_eq!(
+                options.type_script_nullable_option_returns,
+                ["createSvgGeometryPath"]
+            );
         }
     }
 
@@ -977,6 +1012,20 @@ fn valid_crate_name(name: &str) -> bool {
         && name
             .chars()
             .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'));
+}
+
+fn valid_type_script_identifier(name: &str) -> bool {
+    let mut characters = name.chars();
+    let Some(first) = characters.next() else {
+        return false;
+    };
+    return (first == '_' || first == '$' || first.is_ascii_alphabetic())
+        && characters.all(|character| {
+            character == '_'
+                || character == '$'
+                || character.is_ascii_alphabetic()
+                || character.is_ascii_digit()
+        });
 }
 
 fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {

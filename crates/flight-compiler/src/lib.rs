@@ -70,6 +70,16 @@ pub struct TypeScriptNullableOptionField<'a> {
     pub field: &'a str,
 }
 
+/// An established TypeScript function whose Rust `Option` return uses `null` absence.
+///
+/// The name is the emitted TypeScript function name. The compiler validates that exactly one
+/// visible public Rust function at that position returns `Option` before changing its
+/// representation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeScriptNullableOptionReturn<'a> {
+    pub name: &'a str,
+}
+
 /// A Rust source file and its path. The path (`.../<crate>/src/<module path>.rs`) gives the source its
 /// full module identity (`<crate>::<module path>`), which `use` bindings resolve against.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -163,6 +173,7 @@ fn compile_typescript_sources(
         &[],
         &[],
         &[],
+        &[],
         module_identities,
         source_paths,
         visibility_sources,
@@ -180,6 +191,7 @@ fn compile_typescript_sources_with_options(
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
     module_identities: Option<Vec<String>>,
     source_paths: &[&str],
     visibility_sources: &[ModuleSource<'_>],
@@ -188,6 +200,7 @@ fn compile_typescript_sources_with_options(
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
     validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
+    validate_type_script_nullable_option_returns(type_script_nullable_option_returns)?;
     require_generated_source(source)?;
     let program = if lenient {
         model::parse_program_lenient(source)?
@@ -371,6 +384,7 @@ fn compile_typescript_sources_with_options(
         inline_string_unions: &inline_string_unions,
         type_script_type_aliases,
         type_script_nullable_option_fields,
+        type_script_nullable_option_returns,
         external_shared_identity_fields: &external_shared_identity_fields(external_alias_sources)?,
         module_identities: module_identities.as_deref(),
         visibility_programs: &visibility_programs,
@@ -525,6 +539,7 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
         &[],
         &[],
         &[],
+        &[],
         visibility_sources,
         crate_roots,
         false,
@@ -542,6 +557,7 @@ pub fn compile_typescript_with_options(
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
     visibility_sources: &[ModuleSource<'_>],
     crate_roots: &[CrateRootSource<'_>],
     lenient: bool,
@@ -570,6 +586,7 @@ pub fn compile_typescript_with_options(
         type_script_inline_string_unions,
         type_script_type_aliases,
         type_script_nullable_option_fields,
+        type_script_nullable_option_returns,
         identities,
         &std::iter::once(source.path)
             .chain(alias_sources.iter().map(|module| module.path))
@@ -591,6 +608,7 @@ pub fn compile_typescript_lenient(
     return compile_typescript_sources_with_options(
         source,
         entity_module,
+        &[],
         &[],
         &[],
         &[],
@@ -650,6 +668,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -663,9 +682,11 @@ fn compile_vitest_with_contract_alias_sources_internal(
     visibility_sources: &[&str],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
     validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
+    validate_type_script_nullable_option_returns(type_script_nullable_option_returns)?;
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
@@ -762,6 +783,15 @@ fn compile_vitest_with_contract_alias_sources_internal(
                 .map(|(module, program)| (module.as_str(), *program)),
         ),
         type_script_nullable_option_fields,
+    )?;
+    typescript::insert_type_script_nullable_option_return_context(
+        &mut context,
+        alias_program_refs.iter().copied().chain(
+            visibility_program_refs
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_nullable_option_returns,
     )?;
     typescript::insert_vitest_own_public_context(
         &mut context,
@@ -933,6 +963,7 @@ pub fn compile_vitest_with_external_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -948,6 +979,7 @@ pub fn compile_vitest_with_module_alias_sources(
         contract_module,
         None,
         alias_sources,
+        &[],
         &[],
         &[],
         &[],
@@ -979,12 +1011,13 @@ pub fn compile_vitest_with_visibility_sources(
         visibility_sources,
         type_script_type_aliases,
         &[],
+        &[],
     );
 }
 
 /// Compiles one Rust test module with production hints, dependency sources, explicit TypeScript
-/// string-union, type-alias, and nullable field representations, plus target-native visibility
-/// sources.
+/// string-union, type-alias, and nullable field/return representations, plus target-native
+/// visibility sources.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_vitest_with_options(
     source: &str,
@@ -996,6 +1029,7 @@ pub fn compile_vitest_with_options(
     visibility_sources: &[&str],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
 ) -> Result<String, CompileError> {
     return compile_vitest_with_contract_alias_sources_internal(
         source,
@@ -1007,6 +1041,7 @@ pub fn compile_vitest_with_options(
         visibility_sources,
         type_script_type_aliases,
         type_script_nullable_option_fields,
+        type_script_nullable_option_returns,
     );
 }
 
@@ -2346,6 +2381,20 @@ fn validate_type_script_nullable_option_fields(
             return Err(compile_error(format!(
                 "TypeScript nullable Option field `{}.{}` is supplied by both `{previous}` and `{}`",
                 field.owner, field.field, field.module
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_type_script_nullable_option_returns(
+    returns: &[TypeScriptNullableOptionReturn<'_>],
+) -> Result<(), CompileError> {
+    for return_position in returns {
+        if !valid_type_script_identifier(return_position.name) {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option return has invalid function position `{}`",
+                return_position.name
             )));
         }
     }

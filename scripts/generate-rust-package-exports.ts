@@ -621,6 +621,55 @@ export function typeScriptNullableOptionFieldArguments(
   return [...positions].sort().flatMap((position) => ['--typescript-nullable-option-field', position]);
 }
 
+// The same exported function position in the established and generated modules proves its Option
+// absence representation. A direct `null`-only absence union becomes explicit metadata; functions
+// whose established contract admits `undefined` retain ordinary Option lowering.
+export function typeScriptNullableOptionReturnArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+): string[] {
+  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving nullable returns: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving nullable returns: ${generated.errors[0]?.message}`,
+    );
+  }
+
+  const existingFunctions = exportedFunctionTypes(existing.program.body as unknown as Record<string, unknown>[]);
+  const generatedFunctions = exportedFunctionTypes(generated.program.body as unknown as Record<string, unknown>[]);
+  const positions: string[] = [];
+  for (const [name, existingFunction] of existingFunctions) {
+    const generatedFunction = generatedFunctions.get(name);
+    if (
+      generatedFunction === undefined ||
+      !typeUnionHasOnlyAbsence(existingFunction.returnType, 'TSNullKeyword') ||
+      !typeUnionHasOnlyAbsence(generatedFunction.returnType, 'TSUndefinedKeyword')
+    ) {
+      continue;
+    }
+    positions.push(name);
+  }
+  return positions.sort().flatMap((name) => ['--typescript-nullable-option-return', name]);
+}
+
+function typeUnionHasOnlyAbsence(
+  type: Record<string, unknown> | undefined,
+  absence: 'TSNullKeyword' | 'TSUndefinedKeyword',
+): boolean {
+  if (type?.type !== 'TSUnionType') return false;
+  const types = type.types as Record<string, unknown>[];
+  const otherAbsence = absence === 'TSNullKeyword' ? 'TSUndefinedKeyword' : 'TSNullKeyword';
+  return (
+    types.some((candidate) => candidate.type === absence) && !types.some((candidate) => candidate.type === otherAbsence)
+  );
+}
+
 function exportedFunctionTypes(
   body: readonly Record<string, unknown>[],
 ): Map<string, { parameters: Record<string, unknown>[]; returnType?: Record<string, unknown> }> {

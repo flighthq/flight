@@ -80,6 +80,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
     pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
     pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
+    pub type_script_nullable_option_returns: &'a [crate::TypeScriptNullableOptionReturn<'a>],
     pub external_shared_identity_fields: &'a BTreeSet<String>,
     pub module_identities: Option<&'a [String]>,
     pub visibility_programs: &'a [Program],
@@ -13691,6 +13692,7 @@ fn emit_try_local(
     shadowed: bool,
     rebound: bool,
 ) -> Result<Option<(String, String)>, CompileError> {
+    let return_absent = option_return_absent_value(entities);
     let mutable = pattern_is_mutable(&local.pat);
     let pattern = emit_pattern(&local.pat)?;
     let try_context = emit_try_pre_extractions(out, &try_expr.expr, entities, indent)?;
@@ -13712,7 +13714,7 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
-        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        writeln!(out, "return {return_absent};").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
     } else if pattern == inner_value {
@@ -13722,7 +13724,7 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "if ({temp} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
-        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        writeln!(out, "return {return_absent};").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
         let keyword = if mutable || rebound { "let" } else { "const" };
@@ -13737,7 +13739,7 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "if ({fresh} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
-        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        writeln!(out, "return {return_absent};").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
         return Ok(Some((pattern, fresh)));
@@ -13749,7 +13751,7 @@ fn emit_try_local(
         write_indent(out, indent);
         writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
-        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        writeln!(out, "return {return_absent};").expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
     }
@@ -22109,6 +22111,13 @@ fn nullable_option_value(expression: &Expr, emitted: String) -> String {
     return format!("({emitted}) ?? null");
 }
 
+fn option_return_absent_value(entities: &HashSet<String>) -> &'static str {
+    if entities.contains(RETURNS_NULLABLE_MARKER) {
+        return "null";
+    }
+    return "undefined";
+}
+
 // `dyn Any [+ Send | + Sync | + 'a]` whose `Any` resolves (see `resolve_type_path`) to `std::any::Any`
 // or `core::any::Any`: an opaque value portable code never inspects, `object` in TypeScript. `object`
 // rather than `unknown` keeps `Arc::ptr_eq` (lowered to `===`) an identity comparison, and makes a
@@ -22793,6 +22802,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let inline_string_unions = input.inline_string_unions;
     let type_script_type_aliases = input.type_script_type_aliases;
     let type_script_nullable_option_fields = input.type_script_nullable_option_fields;
+    let type_script_nullable_option_returns = input.type_script_nullable_option_returns;
     let module_identities = input.module_identities;
     let visibility_programs = input.visibility_programs;
     let visibility_identities = input.visibility_identities;
@@ -22864,6 +22874,15 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                 .map(|(module, program)| (module.as_str(), *program)),
         ),
         type_script_nullable_option_fields,
+    )?;
+    insert_type_script_nullable_option_return_context(
+        &mut expression_context,
+        program_sources.iter().copied().chain(
+            visibility_modules
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_nullable_option_returns,
     )?;
     insert_string_union_context(&mut expression_context, external_string_unions.iter());
     insert_inline_string_union_context(&mut expression_context, inline_string_unions);
@@ -23915,7 +23934,8 @@ fn emit_statement(
             writeln!(out, "if ({inner} === undefined) {{")
                 .expect("writing to a String cannot fail");
             write_indent(out, indent + 1);
-            writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+            writeln!(out, "return {};", option_return_absent_value(entities))
+                .expect("writing to a String cannot fail");
             write_indent(out, indent);
             writeln!(out, "}}").expect("writing to a String cannot fail");
         }
@@ -23932,7 +23952,8 @@ fn emit_statement(
             writeln!(out, "if ({target} === undefined) {{")
                 .expect("writing to a String cannot fail");
             write_indent(out, indent + 1);
-            writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+            writeln!(out, "return {};", option_return_absent_value(entities))
+                .expect("writing to a String cannot fail");
             write_indent(out, indent);
             writeln!(out, "}}").expect("writing to a String cannot fail");
         }
@@ -24311,6 +24332,56 @@ pub(crate) fn insert_type_script_nullable_option_field_context<'a>(
         context.insert(format!(
             "{TYPE_SCRIPT_NULLABLE_OPTION_FIELD_MARKER}{}{PROVENANCE_SEPARATOR}{field_name}",
             structure.ident
+        ));
+    }
+    return Ok(());
+}
+
+pub(crate) fn insert_type_script_nullable_option_return_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
+    returns: &[crate::TypeScriptNullableOptionReturn<'_>],
+) -> Result<(), CompileError> {
+    let programs = programs.into_iter().collect::<Vec<_>>();
+    for metadata in returns {
+        let mut matches = programs
+            .iter()
+            .flat_map(|(module, program)| {
+                program.functions.iter().filter_map(move |function| {
+                    (snake_to_lower_camel(&function.sig.ident.to_string()) == metadata.name)
+                        .then_some((*module, function))
+                })
+            })
+            .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option return `{}` must resolve to exactly one visible Rust function, found {}",
+                metadata.name,
+                matches.len()
+            )));
+        }
+        let (module, function) = matches.pop().expect("one match was required");
+        let ReturnType::Type(_, rust_type) = &function.sig.output else {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option return `{}` must designate a public Rust function returning `Option`",
+                metadata.name
+            )));
+        };
+        if !is_public(&function.vis) || option_inner_type(rust_type).is_none() {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option return `{}` must designate a public Rust function returning `Option`",
+                metadata.name
+            )));
+        }
+        let function_name = function.sig.ident.to_string();
+        context.insert(owner_marker(
+            FUNCTION_OWNER_MARKER,
+            module,
+            &function_name,
+            SourceAccess::Public,
+        ));
+        context.insert(format!(
+            "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
         ));
     }
     return Ok(());
@@ -25854,7 +25925,8 @@ fn emit_try_pre_extractions(
         write_indent(out, indent);
         writeln!(out, "if ({temp} === undefined) {{").expect("writing to a String cannot fail");
         write_indent(out, indent + 1);
-        writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+        writeln!(out, "return {};", option_return_absent_value(entities))
+            .expect("writing to a String cannot fail");
         write_indent(out, indent);
         writeln!(out, "}}").expect("writing to a String cannot fail");
         context.insert(format!("{TRY_SUBSTITUTION_MARKER}{key}={temp}"));

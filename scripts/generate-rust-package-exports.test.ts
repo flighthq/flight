@@ -38,6 +38,7 @@ import {
   resolveRustExportName,
   typeScriptInlineStringUnionArguments,
   typeScriptNullableOptionFieldArguments,
+  typeScriptNullableOptionReturnArguments,
   typeScriptStringUnionArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -420,6 +421,22 @@ export function unrelated(machine: AnimationStateMachine): void {
       '@flighthq/types/contract#AnimationStateMachine.transitionFromStateIndex',
       '--typescript-nullable-option-field',
       '@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex',
+    ]);
+  });
+
+  it('derives nullable return metadata only from exact exported function positions', () => {
+    const existing = `export function createSvgGeometryPath(): PathRaw | null { return null; }
+export function findOrdinaryPath(): PathRaw | undefined { return undefined; }
+export function findMixedPath(): PathRaw | null | undefined { return undefined; }
+`;
+    const generated = `export function createSvgGeometryPath(): Path | undefined { return undefined; }
+export function findOrdinaryPath(): Path | undefined { return undefined; }
+export function renamedPath(): Path | undefined { return undefined; }
+`;
+
+    expect(typeScriptNullableOptionReturnArguments(existing, generated)).toEqual([
+      '--typescript-nullable-option-return',
+      'createSvgGeometryPath',
     ]);
   });
 

@@ -692,6 +692,11 @@ pub fn clear_transition(machine: &mut AnimationStateMachine) {
     machine.transition_from_state_index = None;
     machine.transition_to_state_index = None;
 }
+
+pub fn maybe_index(found: bool) -> Option<usize> {
+    if found { return Some(1); }
+    return None;
+}
 `,
     );
     writeFileSync(
@@ -715,6 +720,10 @@ export function advance(players: readonly AnimationPlayer[]): AnimationPlayer {
 export function clearTransition(machine: AnimationStateMachine): void {
   machine.transitionFromStateIndex = null;
   machine.transitionToStateIndex = null;
+}
+
+export function maybeIndex(found: boolean): number | null {
+  return found ? 1 : null;
 }
 `,
     );
@@ -752,6 +761,8 @@ fn keeps_the_existing_target_representation() {
     expect(value).toContain('players: Readonly<AnimationPlayer[]>');
     expect(value).toContain('machine.transitionFromStateIndex = null;');
     expect(value).toContain('machine.transitionToStateIndex = null;');
+    expect(value).toContain('function maybeIndex(found: boolean): number | null');
+    expect(value).toContain('return null;');
     expect(value).not.toContain('AnimationPlayerRef');
     expect(value).not.toContain('TargetRef');
     const test = readFileSync(join(packageRoot, 'src', 'alias.test.ts'), 'utf8');
