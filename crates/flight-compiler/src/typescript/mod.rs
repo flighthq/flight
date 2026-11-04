@@ -80,6 +80,8 @@ pub(crate) struct EmitProgramInput<'a> {
     pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
     pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
     pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
+    pub type_script_nullable_option_parameters:
+        &'a [crate::TypeScriptNullableOptionParameter<'a>],
     pub type_script_nullable_option_returns: &'a [crate::TypeScriptNullableOptionReturn<'a>],
     pub external_shared_identity_fields: &'a BTreeSet<String>,
     pub module_identities: Option<&'a [String]>,
@@ -306,6 +308,8 @@ pub(super) const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 pub(super) const NULLABLE_OPTION_BINDING_MARKER: &str = "@nullable-option-binding:";
 
 pub(super) const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
+
+const NULLABLE_OPTION_PARAMETER_MARKER: &str = "@nullable-option-parameter:";
 
 pub(super) const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:";
 
@@ -708,6 +712,26 @@ fn argument_is_nullable_guard(function: &ItemFn, argument: &FnArg) -> bool {
         && name.ends_with("_guard")
         && pattern.ident == "guard"
         && option_inner_type(&argument.ty).is_some();
+}
+
+fn argument_is_type_script_nullable_option_parameter(
+    function: &ItemFn,
+    argument: &FnArg,
+    entities: &HashSet<String>,
+) -> bool {
+    let Some(module) = current_source(entities) else {
+        return false;
+    };
+    let FnArg::Typed(argument) = argument else {
+        return false;
+    };
+    let Pat::Ident(pattern) = argument.pat.as_ref() else {
+        return false;
+    };
+    return entities.contains(&format!(
+        "{NULLABLE_OPTION_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+        function.sig.ident, pattern.ident
+    ));
 }
 
 // The `name: ArrayLike<T>` parameter an `array-like` designation gives a `&[T]` argument, or `None`.
@@ -11552,20 +11576,22 @@ fn emit_expression_value(
                 .iter()
                 .enumerate()
                 .map(|(index, argument)| {
+                    let nullable = function_name.as_ref().is_some_and(|function_name| {
+                        entities.contains(&format!(
+                            "{NULLABLE_CALL_MARKER}{function_name}:{index}"
+                        ))
+                    });
                     if expression_is_none(argument) {
-                        return Ok(
-                            if function_name.as_ref().is_some_and(|function_name| {
-                                entities.contains(&format!(
-                                    "{NULLABLE_CALL_MARKER}{function_name}:{index}"
-                                ))
-                            }) {
-                                "null".to_string()
-                            } else {
-                                "undefined".to_string()
-                            },
-                        );
+                        return Ok(if nullable {
+                            "null".to_string()
+                        } else {
+                            "undefined".to_string()
+                        });
                     }
                     let value = emit_expression(argument, entities)?;
+                    if nullable {
+                        return Ok(nullable_option_value(argument, value));
+                    }
                     let Some(function_name) = &function_name else {
                         return Ok(value);
                     };
@@ -12756,6 +12782,11 @@ fn emit_function(
         .rposition(|argument| {
             !argument_is_option(argument)
                 || argument_is_nullable_guard(function, argument)
+                || argument_is_type_script_nullable_option_parameter(
+                    function,
+                    argument,
+                    &signature_context,
+                )
                 || nullable_options
         })
         .map_or(0, |index| index + 1);
@@ -12776,6 +12807,11 @@ fn emit_function(
                     && !argument_is_nullable_guard(function, argument)
                     && !nullable_options,
                 argument_is_nullable_guard(function, argument)
+                    || argument_is_type_script_nullable_option_parameter(
+                        function,
+                        argument,
+                        &signature_context,
+                    )
                     || (nullable_options && argument_is_option(argument)),
                 entity_construction_parameter && index == 0,
             )
@@ -12823,6 +12859,11 @@ fn emit_function(
     }
     for argument in &function.sig.inputs {
         if (argument_is_nullable_guard(function, argument)
+            || argument_is_type_script_nullable_option_parameter(
+                function,
+                argument,
+                &function_context,
+            )
             || (nullable_options && argument_is_option(argument)))
             && let FnArg::Typed(argument) = argument
             && let Pat::Ident(pattern) = argument.pat.as_ref()
@@ -22808,6 +22849,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let inline_string_unions = input.inline_string_unions;
     let type_script_type_aliases = input.type_script_type_aliases;
     let type_script_nullable_option_fields = input.type_script_nullable_option_fields;
+    let type_script_nullable_option_parameters = input.type_script_nullable_option_parameters;
     let type_script_nullable_option_returns = input.type_script_nullable_option_returns;
     let module_identities = input.module_identities;
     let visibility_programs = input.visibility_programs;
@@ -22890,6 +22932,15 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         ),
         type_script_nullable_option_returns,
     )?;
+    insert_type_script_nullable_option_parameter_context(
+        &mut expression_context,
+        program_sources.iter().copied().chain(
+            visibility_modules
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_nullable_option_parameters,
+    )?;
     insert_string_union_context(&mut expression_context, external_string_unions.iter());
     insert_inline_string_union_context(&mut expression_context, inline_string_unions);
     expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));
@@ -22933,10 +22984,11 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                 .entity_construction_functions
                 .contains(&function.sig.ident.to_string())
                 || initializes_readonly_entity(
-                function,
-                &program.entities,
-                &program.readonly_structs,
-            ) || initializes_resolved_readonly_entity(function, &expression_context);
+                    function,
+                    &program.entities,
+                    &program.readonly_structs,
+                )
+                || initializes_resolved_readonly_entity(function, &expression_context);
         })
         .collect::<Vec<_>>();
     let uses_entity_construction = entity_construction_parameters.contains(&true);
@@ -24392,6 +24444,68 @@ pub(crate) fn insert_type_script_nullable_option_return_context<'a>(
         context.insert(format!(
             "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
         ));
+    }
+    return Ok(());
+}
+
+pub(crate) fn insert_type_script_nullable_option_parameter_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
+    parameters: &[crate::TypeScriptNullableOptionParameter<'_>],
+) -> Result<(), CompileError> {
+    let programs = programs.into_iter().collect::<Vec<_>>();
+    for metadata in parameters {
+        let mut matches =
+            programs
+                .iter()
+                .flat_map(|(module, program)| {
+                    program.functions.iter().flat_map(move |function| {
+                        function.sig.inputs.iter().enumerate().filter_map(
+                            move |(index, argument)| {
+                                let FnArg::Typed(argument) = argument else {
+                                    return None;
+                                };
+                                let Pat::Ident(pattern) = argument.pat.as_ref() else {
+                                    return None;
+                                };
+                                (snake_to_lower_camel(&function.sig.ident.to_string())
+                                    == metadata.owner
+                                    && snake_to_lower_camel(&pattern.ident.to_string())
+                                        == metadata.parameter)
+                                    .then_some((*module, function, argument, pattern, index))
+                            },
+                        )
+                    })
+                })
+                .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option parameter `{}.{}` must resolve to exactly one visible Rust function parameter, found {}",
+                metadata.owner,
+                metadata.parameter,
+                matches.len()
+            )));
+        }
+        let (module, function, argument, pattern, index) =
+            matches.pop().expect("one match was required");
+        if !is_public(&function.vis) || option_inner_type(&argument.ty).is_none() {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option parameter `{}.{}` must designate a public Rust function `Option` parameter",
+                metadata.owner, metadata.parameter
+            )));
+        }
+        let function_name = function.sig.ident.to_string();
+        context.insert(owner_marker(
+            FUNCTION_OWNER_MARKER,
+            module,
+            &function_name,
+            SourceAccess::Public,
+        ));
+        context.insert(format!(
+            "{NULLABLE_OPTION_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
+            pattern.ident
+        ));
+        context.insert(format!("{NULLABLE_CALL_MARKER}{function_name}:{index}"));
     }
     return Ok(());
 }

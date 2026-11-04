@@ -21,6 +21,11 @@ interface ResolvedExports {
   values: string[];
 }
 
+interface ExportedFunctionTypes {
+  parameters: Record<string, unknown>[];
+  returnType?: Record<string, unknown>;
+}
+
 export interface ExternalContract {
   exportNames: ReadonlyMap<string, string>;
   module: string;
@@ -650,6 +655,58 @@ export function typeScriptNullableOptionFieldArguments(
   return [...positions].sort().flatMap((position) => ['--typescript-nullable-option-field', position]);
 }
 
+// Exact exported function and parameter names prove the established absence representation. A
+// generated optional or `undefined`-union parameter becomes nullable only when the corresponding
+// established position directly admits `null` and not `undefined`; established optional and
+// defaulted parameters remain ordinary Options because this metadata does not encode defaults.
+export function typeScriptNullableOptionParameterArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+): string[] {
+  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving nullable parameters: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving nullable parameters: ${generated.errors[0]?.message}`,
+    );
+  }
+
+  const existingFunctions = exportedFunctionParameterTypes(
+    existing.program.body as unknown as Record<string, unknown>[],
+  );
+  const generatedFunctions = exportedFunctionParameterTypes(
+    generated.program.body as unknown as Record<string, unknown>[],
+  );
+  const positions: string[] = [];
+  for (const [owner, existingParameters] of existingFunctions) {
+    const generatedParameters = generatedFunctions.get(owner);
+    if (generatedParameters === undefined || existingParameters.length !== generatedParameters.length) continue;
+    for (let index = 0; index < existingParameters.length; index += 1) {
+      const existingParameter = existingParameters[index];
+      const generatedParameter = generatedParameters[index];
+      if (
+        existingParameter.name !== generatedParameter.name ||
+        existingParameter.optional ||
+        existingParameter.defaulted ||
+        !typeUnionHasOnlyAbsence(existingParameter.type, 'TSNullKeyword') ||
+        !(
+          (generatedParameter.optional && !typeHasAbsence(generatedParameter.type, 'TSNullKeyword')) ||
+          typeUnionHasOnlyAbsence(generatedParameter.type, 'TSUndefinedKeyword')
+        )
+      ) {
+        continue;
+      }
+      positions.push(`${owner}.${existingParameter.name}`);
+    }
+  }
+  return positions.sort().flatMap((position) => ['--typescript-nullable-option-parameter', position]);
+}
+
 // The same exported function position in the established and generated modules proves its Option
 // absence representation. A direct `null`-only absence union becomes explicit metadata; functions
 // whose established contract admits `undefined` retain ordinary Option lowering.
@@ -699,10 +756,45 @@ function typeUnionHasOnlyAbsence(
   );
 }
 
-function exportedFunctionTypes(
+function typeHasAbsence(type: Record<string, unknown> | undefined, absence: 'TSNullKeyword' | 'TSUndefinedKeyword') {
+  return (
+    type?.type === absence ||
+    (type?.type === 'TSUnionType' &&
+      (type.types as Record<string, unknown>[]).some((candidate) => candidate.type === absence))
+  );
+}
+
+function exportedFunctionParameterTypes(
   body: readonly Record<string, unknown>[],
-): Map<string, { parameters: Record<string, unknown>[]; returnType?: Record<string, unknown> }> {
-  const functions = new Map<string, { parameters: Record<string, unknown>[]; returnType?: Record<string, unknown> }>();
+): Map<string, { defaulted: boolean; name: string; optional: boolean; type?: Record<string, unknown> }[]> {
+  const functions = new Map<
+    string,
+    { defaulted: boolean; name: string; optional: boolean; type?: Record<string, unknown> }[]
+  >();
+  for (const statement of body) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'FunctionDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    const parameters = (declaration.params as Record<string, unknown>[]).map((parameter) => {
+      const pattern = parameter.type === 'AssignmentPattern' ? (parameter.left as Record<string, unknown>) : parameter;
+      const annotation = pattern.typeAnnotation as Record<string, unknown> | null;
+      return {
+        defaulted: parameter.type === 'AssignmentPattern',
+        name: pattern.type === 'Identifier' && typeof pattern.name === 'string' ? pattern.name : '',
+        optional: parameter.optional === true || pattern.optional === true,
+        type: annotation?.typeAnnotation as Record<string, unknown> | undefined,
+      };
+    });
+    if (parameters.some((parameter) => parameter.name === '' || parameter.type === undefined)) continue;
+    functions.set(identifier.name, parameters);
+  }
+  return functions;
+}
+
+function exportedFunctionTypes(body: readonly Record<string, unknown>[]): Map<string, ExportedFunctionTypes> {
+  const functions = new Map<string, ExportedFunctionTypes>();
   for (const statement of body) {
     if (statement.type !== 'ExportNamedDeclaration') continue;
     const declaration = statement.declaration as Record<string, unknown> | null;

@@ -1,13 +1,14 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptInlineStringUnion,
-    TypeScriptNullableOptionField, TypeScriptNullableOptionReturn, TypeScriptStringUnion,
-    TypeScriptTypeAlias, VitestAliasSource, compile_typescript, compile_typescript_lenient,
-    compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
-    compile_typescript_with_module_sources, compile_typescript_with_options,
-    compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
-    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
-    compile_vitest_with_module_alias_sources, compile_vitest_with_options,
-    compile_vitest_with_visibility_sources, root_only_names, source_mode,
+    TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
+    TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
+    compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
+    compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
+    compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
+    compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
+    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
+    compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
+    source_mode,
 };
 
 mod source_modes {
@@ -10790,7 +10791,10 @@ pub fn initialize_marker(out: &mut Marker) {
                 "`flight-compiler: entity-construction` function `build` must be an `initialize_*` function with a leading mutable-reference parameter",
             ),
         ] {
-            assert_eq!(compile_typescript(invalid, None).unwrap_err().to_string(), expected);
+            assert_eq!(
+                compile_typescript(invalid, None).unwrap_err().to_string(),
+                expected
+            );
         }
     }
 
@@ -13537,6 +13541,7 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13598,12 +13603,14 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &[],
+            &[],
             false,
         )
         .unwrap();
         let ordinary = compile_typescript_with_options(
             source,
             None,
+            &[],
             &[],
             &[],
             &[],
@@ -13679,6 +13686,7 @@ pub fn finish_transition(
             &[],
             &fields,
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13695,6 +13703,74 @@ pub fn finish_transition(
         );
         assert!(output.contains("ordinaryParameter?: number"), "{output}");
         assert!(output.contains("): number | undefined"), "{output}");
+    }
+
+    #[test]
+    fn lowers_only_explicit_type_script_nullable_option_parameters() {
+        let source = ModuleSource {
+            path: "crates/flight-debug/src/debug_timing.rs",
+            source: r#"pub struct LogTimer {
+    pub label: String,
+}
+
+pub fn end_debug_span(timer: Option<&LogTimer>) -> bool {
+    return timer.is_none();
+}
+
+pub fn mark_debug_frame(label: Option<&str>) -> bool {
+    return label.is_none();
+}
+
+pub fn exercise() {
+    end_debug_span(None);
+    mark_debug_frame(None);
+}
+
+pub fn forward(timer: Option<&LogTimer>, label: Option<&str>) {
+    end_debug_span(timer);
+    mark_debug_frame(label);
+}
+"#,
+        };
+        let parameters = [TypeScriptNullableOptionParameter {
+            owner: "endDebugSpan",
+            parameter: "timer",
+        }];
+
+        let output = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &parameters,
+            &[],
+            &[],
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("function endDebugSpan(timer: Readonly<LogTimer> | null): boolean"),
+            "{output}"
+        );
+        assert!(output.contains("return timer === null;"), "{output}");
+        assert!(
+            output.contains("function markDebugFrame(label?: string): boolean"),
+            "{output}"
+        );
+        assert!(output.contains("return label === undefined;"), "{output}");
+        assert!(output.contains("endDebugSpan(null);"), "{output}");
+        assert!(output.contains("markDebugFrame(undefined);"), "{output}");
+        assert!(
+            output.contains("endDebugSpan((timer) ?? null);"),
+            "{output}"
+        );
+        assert!(output.contains("markDebugFrame(label);"), "{output}");
     }
 
     #[test]
@@ -13719,6 +13795,7 @@ pub fn find_ordinary_path(found: bool) -> Option<usize> {
         let output = compile_typescript_with_options(
             source,
             None,
+            &[],
             &[],
             &[],
             &[],
@@ -13797,6 +13874,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13836,6 +13914,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -13882,6 +13961,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13914,6 +13994,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -13958,6 +14039,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13992,6 +14074,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -14034,6 +14117,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -17569,6 +17653,7 @@ mod blocked_reason {
             &[],
             &[],
             &[],
+            &[],
         )
         .unwrap();
 
@@ -19116,12 +19201,71 @@ fn reports_absent_geometry() {
             &[],
             &[],
             &[],
+            &[],
             &returns,
         )
         .unwrap();
 
         assert!(
             output.contains("expect(createSvgGeometryPath(false) === null).toBe(true);"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_explicit_type_script_nullable_option_parameters_in_vitest() {
+        let production = r#"
+pub struct LogTimer {
+    pub label: String,
+}
+
+pub fn end_debug_span(timer: Option<&LogTimer>) -> bool {
+    return timer.is_none();
+}
+
+pub fn mark_debug_frame(label: Option<&str>) -> bool {
+    return label.is_none();
+}
+"#;
+        let source = r#"
+use flight_debug::*;
+
+#[test]
+fn passes_each_absence_representation() {
+    assert!(end_debug_span(None));
+    assert!(mark_debug_frame(None));
+}
+"#;
+        let parameters = [TypeScriptNullableOptionParameter {
+            owner: "endDebugSpan",
+            parameter: "timer",
+        }];
+        let aliases = [VitestAliasSource {
+            source: production,
+            module: "crates/flight-debug/src/debug_timing.rs",
+        }];
+
+        let output = compile_vitest_with_options(
+            source,
+            "@flighthq/debug/contract",
+            None,
+            &aliases,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &parameters,
+            &[],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("expect(endDebugSpan(null)).toBe(true);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(markDebugFrame(undefined)).toBe(true);"),
             "{output}"
         );
     }

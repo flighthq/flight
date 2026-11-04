@@ -697,6 +697,14 @@ pub fn maybe_index(found: bool) -> Option<usize> {
     if found { return Some(1); }
     return None;
 }
+
+pub fn end_span(timer: Option<&AnimationPlayerRef>) -> bool {
+    return timer.is_none();
+}
+
+pub fn mark_label(label: Option<&str>) -> bool {
+    return label.is_none();
+}
 `,
     );
     writeFileSync(
@@ -724,6 +732,14 @@ export function clearTransition(machine: AnimationStateMachine): void {
 
 export function maybeIndex(found: boolean): number | null {
   return found ? 1 : null;
+}
+
+export function endSpan(timer: Readonly<AnimationPlayer> | null): boolean {
+  return timer === null;
+}
+
+export function markLabel(label?: string): boolean {
+  return label === undefined;
 }
 `,
     );
@@ -763,6 +779,10 @@ fn keeps_the_existing_target_representation() {
     expect(value).toContain('machine.transitionToStateIndex = null;');
     expect(value).toContain('function maybeIndex(found: boolean): number | null');
     expect(value).toContain('return null;');
+    expect(value).toContain('function endSpan(timer: Readonly<AnimationPlayer> | null): boolean');
+    expect(value).toContain('timer === null');
+    expect(value).toContain('function markLabel(label?: string): boolean');
+    expect(value).toContain('label === undefined');
     expect(value).not.toContain('AnimationPlayerRef');
     expect(value).not.toContain('TargetRef');
     const test = readFileSync(join(packageRoot, 'src', 'alias.test.ts'), 'utf8');

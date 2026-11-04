@@ -38,6 +38,7 @@ import {
   resolveRustExportName,
   typeScriptInlineStringUnionArguments,
   typeScriptNullableOptionFieldArguments,
+  typeScriptNullableOptionParameterArguments,
   typeScriptNullableOptionReturnArguments,
   typeScriptStringUnionArguments,
   typeScriptTypeAliasArguments,
@@ -443,6 +444,24 @@ export function renamedPath(): Path | undefined { return undefined; }
     expect(typeScriptNullableOptionReturnArguments(existing, generated)).toEqual([
       '--typescript-nullable-option-return',
       'createSvgGeometryPath',
+    ]);
+  });
+
+  it('derives nullable parameter metadata only from exact exported function positions', () => {
+    const existing = `export function beginDebugSpan(channel: string | null = null): void {}
+export function endDebugSpan(timer: Readonly<LogTimer> | null): void {}
+export function markDebugFrame(label?: string, channel: string | null = null): void {}
+export function mixed(value: string | null | undefined): void {}
+`;
+    const generated = `export function beginDebugSpan(channel?: string): void {}
+export function endDebugSpan(timer?: Readonly<LogTimer>): void {}
+export function markDebugFrame(label?: string, channel?: string): void {}
+export function renamed(value?: string): void {}
+`;
+
+    expect(typeScriptNullableOptionParameterArguments(existing, generated)).toEqual([
+      '--typescript-nullable-option-parameter',
+      'endDebugSpan.timer',
     ]);
   });
 
