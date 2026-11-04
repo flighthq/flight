@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_path::contract::*;
 
 fn path_contour_lengths(path: &Path, tolerance: Option<f64>) -> Vec<f64> {
