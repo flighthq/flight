@@ -578,7 +578,7 @@ function probeNativeSource(
     '--out',
     out,
     '--probe-target-native',
-    ...entityArguments(command),
+    ...entityArguments(command, source),
     ...(command === 'generate' ? ['--lenient'] : []),
     ...namedRepresentationArguments,
     ...typeAliasArguments,
@@ -715,7 +715,7 @@ function compile(
     source,
     '--out',
     out,
-    ...entityArguments(command),
+    ...entityArguments(command, source),
     ...(options.lenient && command === 'generate' ? ['--lenient'] : []),
     ...representationArguments,
     ...compilerAliasArguments(command, aliasSources, source),
@@ -862,25 +862,23 @@ function dependencyVisibilityArguments(command: string): string[] {
   return arguments_;
 }
 
-function entityArguments(command: string): string[] {
+function entityArguments(command: string, source: string): string[] {
   if (command !== 'generate' && command !== 'generate-tests') return [];
   const specifier = options.packageName === 'entity' ? './types.ts' : '@flighthq/entity/contract';
-  const entitySourceRoot = join(repositoryRoot, 'crates', 'flight-entity', 'src');
-  const entitySources = [
-    join(entitySourceRoot, 'types.rs'),
-    ...readdirSync(entitySourceRoot)
-      .filter((name) => name !== 'types.rs' && name.endsWith('.rs'))
-      .sort()
-      .map((name) => join(entitySourceRoot, name))
-      .filter((path) => hasRustGenerationSemantics(readFileSync(path, 'utf8'))),
-  ];
+  const rust = readFileSync(source, 'utf8');
+  const bindingSource = join(repositoryRoot, 'crates', 'flight-entity', 'src', 'binding.rs');
+  const representationSources = /\bget_entity_binding(?:_as)?\b/.test(rust) ? [bindingSource] : [];
   // Tests take the entity source only as an alias source, so they read its identity aliases
-  // (`NonEntityCreateResult<T>` is `T`) when resolving the record a factory returns. Both commands
-  // also take its explicit representation sources, such as nullable target-native binding returns.
+  // (`NonEntityCreateResult<T>` is `T`) when resolving the record a factory returns. Sources that
+  // call an entity binding query also take that canonical owner's explicit null representation.
   const entityModule = command === 'generate' ? ['--entity-module', specifier] : [];
   return [
     ...entityModule,
-    ...entitySources.flatMap((path) => ['--external-alias-source', path, '--external-alias-module', specifier]),
+    '--external-alias-source',
+    join(repositoryRoot, 'crates', 'flight-entity', 'src', 'types.rs'),
+    '--external-alias-module',
+    specifier,
+    ...representationSources.flatMap((path) => ['--external-alias-source', path, '--external-alias-module', specifier]),
   ];
 }
 
