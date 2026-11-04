@@ -9573,6 +9573,29 @@ pub fn default_reason() -> ResultReason {
     }
 
     #[test]
+    fn preserves_explicit_rust_variant_string_union_literals() {
+        let source = r#"
+//! flight-compiler: string-union AnimationLoopMode=rust-variant
+
+pub enum AnimationLoopMode {
+    PingPong,
+    Repeat,
+}
+
+pub fn default_loop_mode() -> AnimationLoopMode {
+    return AnimationLoopMode::PingPong;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export type AnimationLoopMode = 'PingPong' | 'Repeat';"));
+        assert!(output.contains("return 'PingPong';"));
+        assert!(!output.contains("'pingPong'"));
+        assert!(!output.contains("'ping-pong'"));
+    }
+
+    #[test]
     fn emits_exact_string_union_const_objects_and_rewrites_references() {
         let source = r#"
 //! flight-compiler: string-union Facet=exact
@@ -13539,6 +13562,115 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
         assert_eq!(
             error.to_string(),
             "external TypeScript string union `AccessibilityLiveness` does not match the literals of its Rust enum"
+        );
+    }
+
+    #[test]
+    fn honors_explicit_rust_variant_style_for_external_type_script_string_unions() {
+        let values = vec!["PingPong".to_string(), "Repeat".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "AnimationLoopMode",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-animation/src/types.rs",
+            source: r#"//! flight-compiler: rust-only
+//! flight-compiler: string-union AnimationLoopMode=rust-variant
+
+pub enum AnimationLoopMode { PingPong, Repeat }
+"#,
+        }];
+
+        let output = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-animation/src/animation_player.rs",
+                source: "use crate::types::AnimationLoopMode;\npub fn default_loop_mode() -> AnimationLoopMode { return AnimationLoopMode::PingPong; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(output.contains("return 'PingPong';"), "{output}");
+        assert!(!output.contains("AnimationLoopMode.PingPong"), "{output}");
+    }
+
+    #[test]
+    fn does_not_infer_rust_variant_style_from_type_script_capitalization() {
+        let values = vec!["PingPong".to_string(), "Repeat".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "AnimationLoopMode",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-animation/src/types.rs",
+            source: "pub enum AnimationLoopMode { PingPong, Repeat }\n",
+        }];
+
+        let error = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-animation/src/animation_player.rs",
+                source: "use crate::types::AnimationLoopMode;\npub fn default_loop_mode() -> AnimationLoopMode { return AnimationLoopMode::PingPong; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "external TypeScript string union `AnimationLoopMode` does not match the literals of its Rust enum"
+        );
+    }
+
+    #[test]
+    fn reports_explicit_rust_variant_string_union_mismatches() {
+        let values = vec!["pingPong".to_string(), "Repeat".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "AnimationLoopMode",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-animation/src/types.rs",
+            source: r#"//! flight-compiler: string-union AnimationLoopMode=rust-variant
+pub enum AnimationLoopMode { PingPong, Repeat }
+"#,
+        }];
+
+        let error = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-animation/src/animation_player.rs",
+                source: "use crate::types::AnimationLoopMode;\npub fn default_loop_mode() -> AnimationLoopMode { return AnimationLoopMode::PingPong; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "external TypeScript string union `AnimationLoopMode` does not match explicit Rust `rust-variant` style: expected [\"PingPong\",\"Repeat\"], received [\"pingPong\",\"Repeat\"]"
         );
     }
 

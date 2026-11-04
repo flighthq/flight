@@ -483,6 +483,58 @@ export function unsupportedProbe(_value: unknown): boolean {
     expect(value).not.toContain('ShellExternalReason.BlockedScheme');
   }, 120_000);
 
+  it('preserves an explicit Rust-variant string-union representation through the compiler CLI', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), '//! flight-compiler: target-native\nmod types;\nmod value;\n');
+    rmSync(join(crateRoot, 'src', 'contract.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'src', 'types.rs'),
+      `//! flight-compiler: rust-only
+//! flight-compiler: string-union AnimationLoopMode=rust-variant
+
+pub enum AnimationLoopMode {
+    PingPong,
+    Repeat,
+}
+`,
+    );
+    writeFileSync(
+      sourcePath,
+      `use crate::types::AnimationLoopMode;
+
+pub fn default_loop_mode() -> AnimationLoopMode {
+    return AnimationLoopMode::PingPong;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { AnimationLoopMode } from '@flighthq/types/contract';
+
+export function defaultLoopMode(): AnimationLoopMode {
+  return 'PingPong';
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { defaultLoopMode } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { defaultLoopMode } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain("import type { AnimationLoopMode } from '@flighthq/types/contract';");
+    expect(value).toContain("return 'PingPong';");
+    expect(value).not.toContain("return 'pingPong';");
+  }, 120_000);
+
   it('preserves inline string-union representations from existing function signatures', async () => {
     writeFileSync(
       join(crateRoot, 'src', 'types.rs'),

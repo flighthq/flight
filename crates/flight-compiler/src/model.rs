@@ -89,6 +89,18 @@ pub(crate) enum StringUnionStyle {
     Exact,
     KebabCase,
     LowerCamel,
+    RustVariant,
+}
+
+impl StringUnionStyle {
+    pub(crate) fn directive_name(self) -> &'static str {
+        return match self {
+            Self::Exact => "exact",
+            Self::KebabCase => "kebab-case",
+            Self::LowerCamel => "lower-camel",
+            Self::RustVariant => "rust-variant",
+        };
+    }
 }
 
 pub(crate) struct StringUnionMetadata {
@@ -2085,6 +2097,7 @@ fn parse_string_union_metadata_from_attributes(
                     "exact" => StringUnionStyle::Exact,
                     "kebab-case" => StringUnionStyle::KebabCase,
                     "lower-camel" => StringUnionStyle::LowerCamel,
+                    "rust-variant" => StringUnionStyle::RustVariant,
                     _ => {
                         return Err(compile_error(format!(
                             "`flight-compiler: string-union` enum `{name}` has unknown style `{style}`"
@@ -2321,6 +2334,9 @@ pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileE
         parse_record_map_variants(&file.attrs, &data_union_metadata.names)?;
     program.data_unions = data_union_metadata.names;
     program.reserved_key_data_unions = data_union_metadata.reserved_key;
+    let string_union_metadata = parse_string_union_metadata_from_attributes(&file.attrs)?;
+    program.string_unions = string_union_metadata.styles;
+    program.string_union_values = string_union_metadata.values;
     program.no_std = file
         .attrs
         .iter()
@@ -2372,6 +2388,11 @@ pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileE
             _ => {}
         }
     }
+    validate_string_union_directives(
+        &program.string_unions,
+        &program.string_union_values,
+        &program.enums,
+    )?;
     return Ok(program);
 }
 

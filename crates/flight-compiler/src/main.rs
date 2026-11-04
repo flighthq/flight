@@ -681,6 +681,26 @@ mod tests {
     }
 
     #[test]
+    fn preserves_rust_variant_capitalization_in_type_script_string_union_metadata() {
+        let options = parse_generate_options(
+            &arguments(&[
+                "--source",
+                "source.rs",
+                "--out",
+                "output.ts",
+                "--typescript-string-union",
+                "@flighthq/types/contract#AnimationLoopMode=[\"PingPong\",\"Repeat\"]",
+            ]),
+            GenerateKind::Source,
+        )
+        .unwrap();
+
+        let union = &options.type_script_string_unions[0];
+        assert_eq!(union.name, "AnimationLoopMode");
+        assert_eq!(union.values, ["PingPong", "Repeat"]);
+    }
+
+    #[test]
     fn parses_inline_type_script_string_union_metadata() {
         let options = parse_generate_options(
             &arguments(&[

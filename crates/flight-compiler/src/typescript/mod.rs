@@ -25879,6 +25879,9 @@ pub(crate) fn string_union_literal(name: &str, style: StringUnionStyle) -> Strin
     if style == StringUnionStyle::LowerCamel {
         return lower_camel_from_upper_camel(name);
     }
+    if style == StringUnionStyle::RustVariant {
+        return name.to_string();
+    }
     let characters = name.chars().collect::<Vec<_>>();
     let mut literal = String::new();
     for (index, character) in characters.iter().copied().enumerate() {

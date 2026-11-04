@@ -107,8 +107,9 @@ pub(crate) fn compile_error(message: impl Into<String>) -> CompileError {
 /// `Option` values represent explicit API data can use
 /// `//! flight-compiler: nullable-options` to emit `T | null`; other sources keep
 /// optional properties and `undefined` absence. String unions default to
-/// lower-camel literals and can select kebab-case per enum with
-/// `//! flight-compiler: string-union Reason=kebab-case`. Exact string unions
+/// lower-camel literals and can select kebab-case or exact Rust variant spelling per enum with
+/// `//! flight-compiler: string-union Reason=kebab-case` or
+/// `//! flight-compiler: string-union Mode=rust-variant`. Exact string unions
 /// use `Reason=exact` plus one `string-union-value` directive per variant and
 /// emit a const object alongside their value union.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
@@ -1538,10 +1539,12 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
     programs: impl IntoIterator<Item = &'program model::Program>,
     representation: &str,
 ) -> Result<Vec<ExternalStringUnionMetadata<'a>>, CompileError> {
+    let programs = programs.into_iter().collect::<Vec<_>>();
     let mut declarations = std::collections::BTreeMap::<String, Vec<(String, bool)>>::new();
     let mut ambiguous = std::collections::BTreeSet::new();
     for enumeration in programs
-        .into_iter()
+        .iter()
+        .copied()
         .flat_map(|program| program.enums.iter())
     {
         let name = enumeration.ident.to_string();
@@ -1562,6 +1565,37 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
             ambiguous.insert(name);
         } else {
             declarations.insert(name, variants);
+        }
+    }
+    let mut explicit = std::collections::BTreeMap::<
+        String,
+        (
+            model::StringUnionStyle,
+            std::collections::BTreeMap<String, String>,
+        ),
+    >::new();
+    let mut conflicting_explicit = std::collections::BTreeSet::new();
+    for program in &programs {
+        for (name, style) in &program.string_unions {
+            if conflicting_explicit.contains(name) {
+                continue;
+            }
+            let values = program
+                .string_union_values
+                .get(name)
+                .cloned()
+                .unwrap_or_default();
+            if let Some((declared_style, declared_values)) = explicit.get(name)
+                && (*declared_style != *style || declared_values != &values)
+            {
+                // The provenance-aware metadata validator below reports conflicts with both source
+                // identities. Do not replace that established diagnostic while collecting the
+                // optional TypeScript representation proof.
+                explicit.remove(name);
+                conflicting_explicit.insert(name.clone());
+                continue;
+            }
+            explicit.insert(name.clone(), (*style, values));
         }
     }
 
@@ -1614,28 +1648,65 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
                     union.name
                 )));
             }
-            let style = [
-                model::StringUnionStyle::LowerCamel,
-                model::StringUnionStyle::KebabCase,
-            ]
-            .into_iter()
-            .find(|style| {
-                let literals = variants
-                    .iter()
-                    .map(|(variant, _)| typescript::string_union_literal(variant, *style))
-                    .collect::<std::collections::BTreeSet<_>>();
-                return literals.len() == variants.len() && literals == values;
-            })
-            .ok_or_else(|| {
-                compile_error(format!(
-                    "{representation} string union `{}` does not match the literals of its Rust enum",
-                    union.name
-                ))
-            })?;
+            let (style, declared_values) = if let Some((style, declared_values)) = explicit.get(union.name) {
+                let expected = if *style == model::StringUnionStyle::Exact {
+                    variants
+                        .iter()
+                        .map(|(variant, _)| {
+                            declared_values.get(variant).cloned().ok_or_else(|| {
+                                compile_error(format!(
+                                    "exact string union `{}` has no value for variant `{variant}`",
+                                    union.name
+                                ))
+                            })
+                        })
+                        .collect::<Result<Vec<_>, _>>()?
+                } else {
+                    variants
+                        .iter()
+                        .map(|(variant, _)| typescript::string_union_literal(variant, *style))
+                        .collect::<Vec<_>>()
+                };
+                let expected_set = expected.iter().cloned().collect::<std::collections::BTreeSet<_>>();
+                if expected_set.len() != variants.len() || expected_set != values {
+                    return Err(compile_error(format!(
+                        "{representation} string union `{}` does not match explicit Rust `{}` style: expected {}, received {}",
+                        union.name,
+                        style.directive_name(),
+                        serde_json::to_string(&expected).expect("string literals serialize"),
+                        serde_json::to_string(union.values).expect("string literals serialize")
+                    )));
+                }
+                (*style, declared_values.clone())
+            } else {
+                let style = [
+                    model::StringUnionStyle::LowerCamel,
+                    model::StringUnionStyle::KebabCase,
+                ]
+                .into_iter()
+                .find(|style| {
+                    let literals = variants
+                        .iter()
+                        .map(|(variant, _)| typescript::string_union_literal(variant, *style))
+                        .collect::<std::collections::BTreeSet<_>>();
+                    return literals.len() == variants.len() && literals == values;
+                })
+                .ok_or_else(|| {
+                    compile_error(format!(
+                        "{representation} string union `{}` does not match the literals of its Rust enum",
+                        union.name
+                    ))
+                })?;
+                (style, std::collections::BTreeMap::new())
+            };
             return Ok(ExternalStringUnionMetadata {
                 metadata: model::StringUnionMetadata {
                     styles: std::collections::BTreeMap::from([(union.name.to_string(), style)]),
-                    values: std::collections::BTreeMap::new(),
+                    values: if declared_values.is_empty() {
+                        std::collections::BTreeMap::new()
+                    } else {
+                        std::collections::BTreeMap::from([(union.name.to_string(), declared_values)])
+                    },
                 },
                 module: union.module,
             });
