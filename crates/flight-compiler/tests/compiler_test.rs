@@ -14234,17 +14234,33 @@ pub fn check_bounds(index: usize, length: usize) {
 pub fn check_positive(value: i32) {
     assert!(value > 0);
 }
+
+pub fn check_nonzero(b: f64) {
+    assert!(b != 0.0);
+}
+
+pub fn check_flag(ok: bool) {
+    assert!(!ok);
+}
 "#;
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("if (!(index < length)) {"));
+        assert!(output.contains("if (index >= length) {"));
         assert!(
             output
                 .contains("throw new Error(`index ${index} out of bounds for length ${length}`);")
         );
-        assert!(output.contains("if (!(value > 0)) {"));
+        assert!(output.contains("if (value <= 0) {"));
         assert!(output.contains("throw new Error(\"assertion failed: value > 0\");"));
+        assert!(
+            output.contains("if (b === 0.0) {"),
+            "assert!(x != y) should invert to ===: {output}"
+        );
+        assert!(
+            output.contains("if (ok) {"),
+            "assert!(!x) should simplify to if (x): {output}"
+        );
     }
 
     #[test]

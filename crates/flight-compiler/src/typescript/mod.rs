@@ -14785,6 +14785,47 @@ fn emit_assert_statement(
         return Err(compile_error("portable `assert!` needs a condition"));
     };
     let condition_text = emit_expression(condition, entities)?;
+    let negated_condition = if let Expr::Binary(binary) = condition {
+        match binary.op {
+            BinOp::Ne(_) => {
+                let left = emit_expression(&binary.left, entities)?;
+                let right = emit_expression(&binary.right, entities)?;
+                Some(format!("{left} === {right}"))
+            }
+            BinOp::Eq(_) => {
+                let left = emit_expression(&binary.left, entities)?;
+                let right = emit_expression(&binary.right, entities)?;
+                Some(format!("{left} !== {right}"))
+            }
+            BinOp::Lt(_) => {
+                let left = emit_expression(&binary.left, entities)?;
+                let right = emit_expression(&binary.right, entities)?;
+                Some(format!("{left} >= {right}"))
+            }
+            BinOp::Le(_) => {
+                let left = emit_expression(&binary.left, entities)?;
+                let right = emit_expression(&binary.right, entities)?;
+                Some(format!("{left} > {right}"))
+            }
+            BinOp::Gt(_) => {
+                let left = emit_expression(&binary.left, entities)?;
+                let right = emit_expression(&binary.right, entities)?;
+                Some(format!("{left} <= {right}"))
+            }
+            BinOp::Ge(_) => {
+                let left = emit_expression(&binary.left, entities)?;
+                let right = emit_expression(&binary.right, entities)?;
+                Some(format!("{left} < {right}"))
+            }
+            _ => None,
+        }
+    } else if let Expr::Unary(unary) = condition
+        && matches!(unary.op, syn::UnOp::Not(_))
+    {
+        Some(emit_expression(&unary.expr, entities)?)
+    } else {
+        None
+    };
     let message = if arguments.len() >= 2 {
         if let Expr::Lit(literal) = &arguments[1]
             && let Lit::Str(template) = &literal.lit
@@ -14806,7 +14847,11 @@ fn emit_assert_statement(
         )
     };
     write_indent(out, indent);
-    writeln!(out, "if (!({condition_text})) {{").expect("writing to a String cannot fail");
+    if let Some(inverted) = negated_condition {
+        writeln!(out, "if ({inverted}) {{").expect("writing to a String cannot fail");
+    } else {
+        writeln!(out, "if (!({condition_text})) {{").expect("writing to a String cannot fail");
+    }
     write_indent(out, indent + 1);
     writeln!(out, "throw new Error({message});").expect("writing to a String cannot fail");
     write_indent(out, indent);
