@@ -1258,7 +1258,7 @@ fn lower_string_union_variants(
                 } else {
                     typescript::string_union_literal(variant, *style)
                 };
-                let literal = format!("{value:?}");
+                let literal = typescript::js_string_literal(&value);
                 code.replace_range(start..end, &literal);
                 cursor = start + literal.len();
             }

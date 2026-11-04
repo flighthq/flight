@@ -199,8 +199,8 @@ flight_entity::impl_entity!(Vector2);
 
         assert_eq!(
             output,
-            r#"import { allocateEntity } from "@flighthq/entity/contract";
-import type { EntityRaw } from "@flighthq/entity/contract";
+            r#"import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityRaw } from '@flighthq/entity/contract';
 
 export interface Vector2Raw extends EntityRaw {
   x: number;
@@ -267,11 +267,11 @@ pub fn update_sample(
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.starts_with(
-            r#"import { copyMatrix, createMatrix as makeMatrix } from "@flighthq/geometry/contract";
-import { ensureNodeWorldMatrix as ensureWorld } from "@flighthq/node/contract";
-import { HostMode } from "@flighthq/platform/contract";
-import type { Matrix } from "@flighthq/geometry/contract";
-import type { NodeRef, NodeRevisionState } from "@flighthq/node/contract";
+            r#"import { copyMatrix, createMatrix as makeMatrix } from '@flighthq/geometry/contract';
+import { ensureNodeWorldMatrix as ensureWorld } from '@flighthq/node/contract';
+import { HostMode } from '@flighthq/platform/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
+import type { NodeRef, NodeRevisionState } from '@flighthq/node/contract';
 
 "#
         ));
@@ -280,7 +280,7 @@ import type { NodeRef, NodeRevisionState } from "@flighthq/node/contract";
         assert!(!output.contains("import type { Float32Array"));
         assert!(!output.contains("import type { Ref"));
         assert!(!output.contains("import { throwError"));
-        assert!(output.contains("throw new Error(\"values are required\");"));
+        assert!(output.contains("throw new Error('values are required');"));
         assert!(output.contains("if (mode === HostMode.Web)"));
     }
 
@@ -623,7 +623,7 @@ pub fn same_handle(binding: &Binding, source: &Source) -> bool {
 "#;
         assert_eq!(
             compile_typescript_with_external_alias_sources(source, None, &[], &dependency).unwrap(),
-            r#"import type { ProviderRef, Source } from "@flighthq/dep/contract";
+            r#"import type { ProviderRef, Source } from '@flighthq/dep/contract';
 
 export interface Binding {
   source: Source;
@@ -646,7 +646,7 @@ pub fn same_serial(a: &Source, b: &Source) -> bool {
         assert_eq!(
             compile_typescript_with_external_alias_sources(primitive, None, &[], &dependency)
                 .unwrap(),
-            r#"import type { Source } from "@flighthq/dep/contract";
+            r#"import type { Source } from '@flighthq/dep/contract';
 
 export function sameSerial(a: Readonly<Source>, b: Readonly<Source>): boolean {
   return a.serial === b.serial;
@@ -797,7 +797,7 @@ export function fillStore(store: Store): boolean {
   (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(table, 1, 2.0);
   store.full.clear();
   const set = getSet(store);
-  return set.has("a") && (getSet(store).size === 0) && (store.other.size === 0);
+  return set.has('a') && (getSet(store).size === 0) && (store.other.size === 0);
 }
 "#
         );
@@ -1224,7 +1224,7 @@ export function isA(code: KeyCode): boolean {
         assert_eq!(
             compile_typescript_with_external_alias_sources(consumer, None, &[], &keys_package)
                 .unwrap(),
-            "import { KeyCode } from \"@flighthq/keys/contract\";\n\nexport function isA(code: number): boolean {\n  return code === KeyCode.A || code === KeyCode.B;\n}\n"
+            "import { KeyCode } from '@flighthq/keys/contract';\n\nexport function isA(code: number): boolean {\n  return code === KeyCode.A || code === KeyCode.B;\n}\n"
         );
 
         let tests = "use flight_keys::{KEY_CODE_A, KEY_CODE_B as B};\n\n#[test]\nfn compares_keys() {\n    assert_ne!(KEY_CODE_A, B);\n}\n";
@@ -1237,7 +1237,7 @@ export function isA(code: KeyCode): boolean {
                 &keys_package,
             )
             .unwrap(),
-            "import { describe, expect, it } from 'vitest';\n\nimport { KeyCode } from \"@flighthq/keys/contract\";\n\ndescribe(\"portableTests\", () => {\n  it(\"compares keys\", () => {\n    expect(KeyCode.A).not.toEqual(KeyCode.B);\n  });\n});\n"
+            "import { describe, expect, it } from 'vitest';\n\nimport { KeyCode } from '@flighthq/keys/contract';\n\ndescribe('portableTests', () => {\n  it('compares keys', () => {\n    expect(KeyCode.A).not.toEqual(KeyCode.B);\n  });\n});\n"
         );
 
         let wildcard = "use flight_keys::*;\npub fn is_a(code: i32) -> bool {\n    return code == KEY_CODE_A;\n}\n";
@@ -1413,8 +1413,8 @@ pub fn count_registry(full: bool) -> i32 {
         assert_eq!(
             compile_typescript_with_alias_sources(owner, None, &[user]).unwrap(),
             r#"enum Slot {
-  Empty = "empty",
-  Full = "full",
+  Empty = 'empty',
+  Full = 'full',
 }
 
 interface Registry {
@@ -1465,10 +1465,10 @@ mod foreign_assertions {
             compile_vitest(source, "./contract.ts").unwrap(),
             r#"import { describe, expect, it } from 'vitest';
 
-import { hasEntityRuntime } from "@flighthq/entity/contract";
+import { hasEntityRuntime } from '@flighthq/entity/contract';
 
-describe("foreignAssertions", () => {
-  it("reads foreign values inside assertions", () => {
+describe('foreignAssertions', () => {
+  it('reads foreign values inside assertions', () => {
     const value = 1;
     expect(!hasEntityRuntime(value)).toBe(true);
     expect(hasEntityRuntime(value)).toEqual(false);
@@ -1496,12 +1496,12 @@ pub fn is_label(value: i32) -> bool {
 "#;
         assert_eq!(
             compile_typescript(source, None).unwrap(),
-            r#"import { decodePayload } from "@flighthq/codec/contract";
+            r#"import { decodePayload } from '@flighthq/codec/contract';
 
 export type Payload = number | string;
 
 export function isLabel(value: number): boolean {
-  return ((value) => typeof value === "string")(decodePayload(value));
+  return ((value) => typeof value === 'string')(decodePayload(value));
 }
 "#
         );
@@ -1521,7 +1521,7 @@ mod foreign_macro_arguments {
 "#;
         let output = compile_vitest(tests, "./contract.ts").unwrap();
         assert!(
-            output.contains("import { hasEntityRuntime } from \"@flighthq/entity/contract\";"),
+            output.contains("import { hasEntityRuntime } from '@flighthq/entity/contract';"),
             "{output}"
         );
         assert!(!output.contains("./contract.ts"), "{output}");
@@ -1698,7 +1698,7 @@ pub fn read_value() -> i32 {
 
         assert_eq!(
             compile_typescript_with_external_alias_sources(source, None, &[], &signals).unwrap(),
-            "import type { SignalRaw } from \"@flighthq/signals/contract\";\n\nexport interface Hub {\n  onTick: SignalRaw<number>;\n}\n\nexport function tick(hub: Readonly<Hub>): Readonly<SignalRaw<number>> {\n  return hub.onTick;\n}\n"
+            "import type { SignalRaw } from '@flighthq/signals/contract';\n\nexport interface Hub {\n  onTick: SignalRaw<number>;\n}\n\nexport function tick(hub: Readonly<Hub>): Readonly<SignalRaw<number>> {\n  return hub.onTick;\n}\n"
         );
     }
 
@@ -1980,22 +1980,21 @@ pub fn is_closed(segment: &Segment) -> bool {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return typeof id === \"number\";"));
-        assert!(output.contains("return !(typeof id === \"string\");"));
-        assert!(output.contains(
-            "return flag && ((typeof id === \"number\") || (typeof id === \"string\"));"
-        ));
-        assert!(output.contains("return ((value) => typeof value === \"number\")(pick(id));"));
+        assert!(output.contains("return typeof id === 'number';"));
+        assert!(output.contains("return !(typeof id === 'string');"));
         assert!(
-            output.contains("return (segment.kind === \"move\" || segment.kind === \"line\");")
+            output
+                .contains("return flag && ((typeof id === 'number') || (typeof id === 'string'));")
         );
-        assert!(output.contains("return segment.kind === \"close\";"));
+        assert!(output.contains("return ((value) => typeof value === 'number')(pick(id));"));
+        assert!(output.contains("return (segment.kind === 'move' || segment.kind === 'line');"));
+        assert!(output.contains("return segment.kind === 'close';"));
 
         {
             let source = "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn check(id: &Id, value: Option<i32>) -> bool { return matches!(id, Id::Number(n) if n > 0); }\n";
             let output = compile_typescript(source, None).unwrap();
             assert!(
-                output.contains("typeof id === \"number\" && ((n) => n > 0)(id)"),
+                output.contains("typeof id === 'number' && ((n) => n > 0)(id)"),
                 "matches! with guard should emit predicate with IIFE guard: {output}"
             );
         }
@@ -2024,8 +2023,7 @@ pub fn has_text(tokens: &[Token], expected: &str) -> bool {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output
-                .contains("typeof token === \"string\" && ((value) => value === expected)(token)"),
+            output.contains("typeof token === 'string' && ((value) => value === expected)(token)"),
             "matches! with guard should combine predicate and IIFE guard: {output}"
         );
     }
@@ -2215,7 +2213,7 @@ pub fn escape(c: char) -> &'static str {
             "mixed literal+guard match must not use switch: {output}"
         );
         assert!(
-            output.contains("matchValue === \"\\\"\""),
+            output.contains("matchValue === '\"'"),
             "literal arm must check matchValue: {output}"
         );
         assert!(
@@ -2397,7 +2395,7 @@ pub fn doubled_all(values: &Vec<f32>) -> Vec<f32> {
         assert!(output.contains("return (options?.padding ?? 0.0);"));
         assert!(output.contains("return (options?.growable ?? true);"));
         assert!(output.contains("return (options?.maxWidth ?? 100.0) - 2.0 * border;"));
-        assert!(output.contains("return (options?.heuristic ?? \"bestShortSideFit\");"));
+        assert!(output.contains("return (options?.heuristic ?? 'bestShortSideFit');"));
         assert!(output.contains(
             "return (((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w - 2.0)(o.maxWidth))(options) ?? 0.0);"
         ));
@@ -2697,11 +2695,11 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains(
-            "  if (typeof a === \"number\" && typeof b === \"number\") {\n    const an = a;\n    const bn = b;\n    return an + bn;\n  } else {\n    return 0;\n  }\n"
+            "  if (typeof a === 'number' && typeof b === 'number') {\n    const an = a;\n    const bn = b;\n    return an + bn;\n  } else {\n    return 0;\n  }\n"
         ));
-        assert!(output.contains("  if (typeof a === \"string\") {\n    return true;\n  }\n"));
+        assert!(output.contains("  if (typeof a === 'string') {\n    return true;\n  }\n"));
         assert!(output.contains(
-            "  if (a.kind === \"move\" && b.kind === \"move\") {\n    const ax = a.x;\n    const bx = b.x;\n"
+            "  if (a.kind === 'move' && b.kind === 'move') {\n    const ax = a.x;\n    const bx = b.x;\n"
         ));
 
         {
@@ -3428,7 +3426,7 @@ export function drainLocal(): number[] {
         let source = "pub fn add(values: &mut Vec<u32>, index: usize, value: u32) { values.insert(index, value); }\n";
         assert_eq!(
             compile_typescript(source, None).unwrap(),
-            "export function add(values: number[], index: number, value: number): void {\n  (<T>(items: T[], index: number, value: T): void => { if (index > items.length) { throw new RangeError(\"Vec insertion index out of bounds\"); } items.splice(index, 0, value); })(values, index, value);\n}\n"
+            "export function add(values: number[], index: number, value: number): void {\n  (<T>(items: T[], index: number, value: T): void => { if (index > items.length) { throw new RangeError('Vec insertion index out of bounds'); } items.splice(index, 0, value); })(values, index, value);\n}\n"
         );
     }
 
@@ -3437,7 +3435,7 @@ export function drainLocal(): number[] {
         let source = "pub fn take(values: &mut Vec<u32>, index: usize) -> u32 { return values.remove(index); }\n";
         assert_eq!(
             compile_typescript(source, None).unwrap(),
-            "export function take(values: number[], index: number): number {\n  return (<T>(items: T[], index: number): T => { if (index >= items.length) { throw new RangeError(\"Vec removal index out of bounds\"); } return items.splice(index, 1)[0]; })(values, index) >>> 0;\n}\n"
+            "export function take(values: number[], index: number): number {\n  return (<T>(items: T[], index: number): T => { if (index >= items.length) { throw new RangeError('Vec removal index out of bounds'); } return items.splice(index, 1)[0]; })(values, index) >>> 0;\n}\n"
         );
     }
 
@@ -3507,7 +3505,7 @@ pub fn utf16_units_to_string(values: &[u16]) -> String {
             "{output}"
         );
         assert!(
-            output.contains("return value.replaceAll(\" \", \"\");"),
+            output.contains("return value.replaceAll(' ', '');"),
             "{output}"
         );
         assert!(
@@ -5255,15 +5253,15 @@ pub fn sign(x: i32) -> &'static str {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("return \"positive\""),
+            output.contains("return 'positive'"),
             "then branch should return: {output}"
         );
         assert!(
-            output.contains("return \"negative\""),
+            output.contains("return 'negative'"),
             "else-if branch should return: {output}"
         );
         assert!(
-            output.contains("return \"zero\""),
+            output.contains("return 'zero'"),
             "else branch should return: {output}"
         );
     }
@@ -5283,15 +5281,15 @@ pub fn classify(x: i32) -> &'static str {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("return \"zero\""),
+            output.contains("return 'zero'"),
             "match arm should have return: {output}"
         );
         assert!(
-            output.contains("return \"one\""),
+            output.contains("return 'one'"),
             "match arm should have return: {output}"
         );
         assert!(
-            output.contains("return \"other\""),
+            output.contains("return 'other'"),
             "default arm should have return: {output}"
         );
     }
@@ -5680,7 +5678,7 @@ pub fn string_default(value: Option<String>) -> String {
             "bool default should be false: {output}"
         );
         assert!(
-            output.contains(r#"?? """#),
+            output.contains(r#"?? ''"#),
             "String default should be empty string: {output}"
         );
     }
@@ -5720,7 +5718,7 @@ pub fn pop_flag(flags: &mut Vec<bool>) -> bool {
             "first().copied().unwrap_or_default() on f32 should resolve to ?? 0: {output}"
         );
         assert!(
-            output.contains("?? \"\""),
+            output.contains("?? ''"),
             "last().cloned().unwrap_or_default() on String should resolve to ?? \"\": {output}"
         );
         assert!(
@@ -6354,19 +6352,13 @@ pub fn as_number_check(value: &Value) -> Option<f64> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains(r#"value["name"]"#), "get(string): {output}");
+        assert!(output.contains(r#"value['name']"#), "get(string): {output}");
         assert!(
             output.contains("value === null"),
             "is_null on param: {output}"
         );
-        assert!(
-            output.contains("typeof v === \"string\""),
-            "as_str: {output}"
-        );
-        assert!(
-            output.contains("typeof v === \"number\""),
-            "as_f64: {output}"
-        );
+        assert!(output.contains("typeof v === 'string'"), "as_str: {output}");
+        assert!(output.contains("typeof v === 'number'"), "as_f64: {output}");
     }
 
     #[test]
@@ -6386,7 +6378,7 @@ pub fn get_array(value: &Value) -> Option<&Vec<Value>> {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("typeof value === \"string\""),
+            output.contains("typeof value === 'string'"),
             "Value::as_str ref: {output}"
         );
         assert!(
@@ -6420,11 +6412,11 @@ pub fn is_active(data: &Value) -> bool {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("typeof v === \"string\" ? v : undefined"),
+            output.contains("typeof v === 'string' ? v : undefined"),
             "as_str closure: {output}"
         );
         assert!(
-            output.contains("typeof v === \"number\" ? v : undefined)(v))(data[\"score\"]"),
+            output.contains("typeof v === 'number' ? v : undefined)(v))(data['score']"),
             "as_f64 closure: {output}"
         );
         assert!(
@@ -6432,7 +6424,7 @@ pub fn is_active(data: &Value) -> bool {
             "as_i64 closure: {output}"
         );
         assert!(
-            output.contains("typeof v === \"boolean\" ? v : undefined"),
+            output.contains("typeof v === 'boolean' ? v : undefined"),
             "as_bool closure: {output}"
         );
     }
@@ -6449,9 +6441,9 @@ pub fn get_nested(data: &Value) -> Option<&str> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("v[\"name\"]"), "nested get: {output}");
+        assert!(output.contains("v['name']"), "nested get: {output}");
         assert!(
-            output.contains("typeof v === \"string\" ? v : undefined"),
+            output.contains("typeof v === 'string' ? v : undefined"),
             "nested as_str: {output}"
         );
     }
@@ -6474,7 +6466,7 @@ fn rn(value: Option<&Value>, default: f32) -> f32 {
 
         assert!(output.contains("value[key]"), "option value get: {output}");
         assert!(
-            output.contains("typeof v === \"number\" ? v : undefined"),
+            output.contains("typeof v === 'number' ? v : undefined"),
             "option value as_f64: {output}"
         );
     }
@@ -6495,11 +6487,11 @@ pub fn parse_name(json: &str) -> Option<String> {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("doc[\"name\"]"),
+            output.contains("doc['name']"),
             "turbofish Value propagation to doc binding: {output}"
         );
         assert!(
-            output.contains("typeof v === \"string\" ? v : undefined"),
+            output.contains("typeof v === 'string' ? v : undefined"),
             "as_str on turbofish-propagated value: {output}"
         );
     }
@@ -6523,11 +6515,11 @@ pub fn first_token(line: &str) -> &str {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains(r#"split("?")[0]"#),
+            output.contains(r#"split('?')[0]"#),
             "split().next(): {output}"
         );
         assert!(
-            output.contains(r#"split(".").reverse()[0]"#),
+            output.contains(r#"split('.').reverse()[0]"#),
             "rsplit().next(): {output}"
         );
         assert!(
@@ -6685,7 +6677,7 @@ pub fn append_suffix(value: &mut String) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("value += \"_end\""), "{output}");
+        assert!(output.contains("value += '_end'"), "{output}");
     }
 
     #[test]
@@ -6981,7 +6973,7 @@ pub fn comma_separated(values: Vec<String>) -> String {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("values.join(\", \")"), "{output}");
+        assert!(output.contains("values.join(', ')"), "{output}");
     }
 
     #[test]
@@ -7083,13 +7075,12 @@ pub fn ascii_shout(text: String) -> String {
         )
         .unwrap();
         assert!(
-            sample_output
-                .contains("import type { Matrix } from \"@flighthq/geometry/contract\";\n"),
+            sample_output.contains("import type { Matrix } from '@flighthq/geometry/contract';\n"),
             "{sample_output}"
         );
         assert!(
             sample_output.contains(
-                "export function createVelocitySample(): NonEntityCreateResult<VelocitySample, \"descriptor\">"
+                "export function createVelocitySample(): NonEntityCreateResult<VelocitySample, 'descriptor'>"
             ),
             "{sample_output}"
         );
@@ -7102,9 +7093,9 @@ pub fn ascii_shout(text: String) -> String {
             .replacen("//! flight-compiler: target-native\n", "", 1);
         let transform_output = compile_typescript(&transform_source, None).unwrap();
         assert!(transform_output.starts_with(
-            r#"import { copyMatrix, createMatrix } from "@flighthq/geometry/contract";
-import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from "@flighthq/node/contract";
-import type { NodeRef } from "@flighthq/node/contract";
+            r#"import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
+import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from '@flighthq/node/contract';
+import type { NodeRef } from '@flighthq/node/contract';
 
 "#
         ));
@@ -7195,7 +7186,7 @@ pub fn check(input: Option<String>) -> bool {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("value.startsWith(\"hello\")"));
+        assert!(output.contains("value.startsWith('hello')"));
     }
 
     #[test]
@@ -7265,7 +7256,7 @@ pub fn check(input: Result<String, i32>) -> bool {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("value.startsWith(\"hello\")"));
+        assert!(output.contains("value.startsWith('hello')"));
     }
 
     #[test]
@@ -7296,7 +7287,7 @@ pub fn check(input: Option<HashMap<String, i32>>) -> bool {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("map.has(\"key\")"));
+        assert!(output.contains("map.has('key')"));
     }
 
     #[test]
@@ -7377,11 +7368,11 @@ pub fn check_end(name: &str) -> bool {
 "#;
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("name.startsWith(\"prefix_\")"),
+            output.contains("name.startsWith('prefix_')"),
             "starts_with with string literal argument should infer string receiver: {output}"
         );
         assert!(
-            output.contains("name.endsWith(\".json\")"),
+            output.contains("name.endsWith('.json')"),
             "ends_with with string literal argument should infer string receiver: {output}"
         );
     }
@@ -7396,7 +7387,7 @@ pub fn split_count(input: &str) -> usize {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains(r#"input.split("/").length"#));
+        assert!(output.contains(r#"input.split('/').length"#));
     }
 
     #[test]
@@ -7643,7 +7634,7 @@ pub fn get_name(name: Option<String>) -> String {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains(r#"?? """#));
+        assert!(output.contains(r#"?? ''"#));
     }
 
     #[test]
@@ -7665,7 +7656,7 @@ pub fn get_count(region: &Region) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("region.name ?? \"\""));
+        assert!(output.contains("region.name ?? ''"));
         assert!(output.contains("region.count ?? 0"));
     }
 
@@ -7761,10 +7752,10 @@ flight_entity::impl_entity!(RequirementSet);
 
         assert_eq!(
             output,
-            r#"import { allocateEntity } from "@flighthq/entity/contract";
-import type { EntityConstruction, EntityRaw } from "@flighthq/entity/contract";
+            r#"import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 
-export type RequirementFacet = "sceneNodeKind";
+export type RequirementFacet = 'sceneNodeKind';
 
 export interface Requirement {
   readonly facet: RequirementFacet;
@@ -7999,7 +7990,7 @@ pub fn is_lasso_selection_active(selection: &LassoSelection) -> bool {
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.starts_with(
-            "import { allocateEntity } from \"@flighthq/entity/contract\";\nimport type { EntityRaw } from \"@flighthq/entity/contract\";\n"
+            "import { allocateEntity } from '@flighthq/entity/contract';\nimport type { EntityRaw } from '@flighthq/entity/contract';\n"
         ));
         assert!(output.contains(
             "/**\n * Opaque freeform gesture state.\n */\nexport interface LassoSelectionRaw extends EntityRaw {\n}\n"
@@ -8065,7 +8056,7 @@ pub fn get_selection_count(state: &SelectionState) -> f64 {
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(
-            output.starts_with("import type { EntityRaw } from \"@flighthq/entity/contract\";\n")
+            output.starts_with("import type { EntityRaw } from '@flighthq/entity/contract';\n")
         );
         assert!(output.contains("export interface SelectionStateRaw extends EntityRaw {\n}\n"));
         assert!(
@@ -8126,7 +8117,7 @@ pub fn end_lasso_selection(selection: &mut LassoSelection) -> bool {
         .unwrap();
 
         assert!(output.starts_with(
-            "import { lassoSelectionStateStore } from \"./types.ts\";\n\nexport function endLassoSelection("
+            "import { lassoSelectionStateStore } from './types.ts';\n\nexport function endLassoSelection("
         ));
         assert!(
             output.contains("  const active = lassoSelectionStateStore.get(selection)!.active;\n")
@@ -8338,7 +8329,7 @@ pub fn allocate_vector2() -> Vector2 {
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
-        assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
+        assert!(output.contains("import { allocateEntity } from '@flighthq/entity/contract';"));
         assert!(output.contains(
             "const out: Vector2Raw = Object.assign(allocateEntity<Vector2Raw>(), { x: 0 });"
         ));
@@ -8374,7 +8365,7 @@ pub fn allocate_linear_color() -> LinearColor {
         )
         .unwrap();
 
-        assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
+        assert!(output.contains("import { allocateEntity } from '@flighthq/entity/contract';"));
         assert!(output.contains("export function allocateLinearColor(): LinearColorRaw"));
         assert!(
             output.contains(
@@ -8439,7 +8430,7 @@ pub fn allocate_defaults() -> Defaults {
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.contains(
-            "return Object.assign(allocateEntity<DefaultsRaw>(), { current: undefined, enabled: false, label: \"\", pair: [0, false], values: [] });"
+            "return Object.assign(allocateEntity<DefaultsRaw>(), { current: undefined, enabled: false, label: '', pair: [0, false], values: [] });"
         ));
     }
 
@@ -8919,7 +8910,7 @@ pub fn sample(random: &dyn Fn() -> f32, mean: Option<f32>) -> Option<f32> {
             "/**\n * Return a `randomSample`, or `undefined` when no mean is present.\n *\n * Throws when the mean is invalid.\n */\nexport function sample(random: RandomSource, mean?: number): number | undefined"
         ));
         assert!(output.contains(
-            "if (mean === undefined) {\n    throw new RangeError(\"sample: mean is required\");\n  }"
+            "if (mean === undefined) {\n    throw new RangeError('sample: mean is required');\n  }"
         ));
         assert!(!output.contains("(() =>"));
     }
@@ -9002,7 +8993,7 @@ static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
         assert!(output.contains(
             "export type EasingStepsGuard = (count: number, position: StepPosition) => void;"
         ));
-        assert!(output.contains("export type StepPosition = \"jumpStart\" | \"jumpEnd\";"));
+        assert!(output.contains("export type StepPosition = 'jumpStart' | 'jumpEnd';"));
         assert!(output.contains("  readonly ease: EasingFunction;"));
         assert!(output.contains("  readonly weight?: number;"));
         assert!(output.contains(
@@ -9022,7 +9013,7 @@ static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
             )
         );
         assert!(output.contains("slot.value = guard;"));
-        assert!(output.contains("guard(2, \"jumpEnd\");"));
+        assert!(output.contains("guard(2, 'jumpEnd');"));
         assert!(!output.contains("StepPosition.JumpEnd"));
     }
 
@@ -9044,10 +9035,8 @@ pub fn default_reason() -> ResultReason {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("export type ResultReason = \"no-sample\" | \"http-error\" | \"ok\";")
-        );
-        assert!(output.contains("return \"no-sample\";"));
+        assert!(output.contains("export type ResultReason = 'no-sample' | 'http-error' | 'ok';"));
+        assert!(output.contains("return 'no-sample';"));
         assert!(!output.contains("noSample"));
     }
 
@@ -9074,10 +9063,10 @@ pub fn default_facet() -> Facet {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains(
-            "export const Facet = {\n  Compression: \"compression.kind\",\n  DisplayName: \"display  name\",\n  SceneNode: \"scene.node-kind\",\n} as const;"
+            "export const Facet = {\n  Compression: 'compression.kind',\n  DisplayName: 'display  name',\n  SceneNode: 'scene.node-kind',\n} as const;"
         ));
         assert!(output.contains("export type Facet = (typeof Facet)[keyof typeof Facet];"));
-        assert!(output.contains("return \"scene.node-kind\";"));
+        assert!(output.contains("return 'scene.node-kind';"));
         assert!(!output.contains("export enum Facet"));
     }
 
@@ -9087,17 +9076,16 @@ pub fn default_facet() -> Facet {
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.contains(
-            "export const RequirementFacet = {\n  CompressionKind: \"compression.kind\",\n  DocumentFormat: \"document.format\","
+            "export const RequirementFacet = {\n  CompressionKind: 'compression.kind',\n  DocumentFormat: 'document.format',"
         ));
         assert!(
-            output
-                .contains("  SceneTextureSourceKind: \"scene.texture-source-kind\",\n} as const;")
+            output.contains("  SceneTextureSourceKind: 'scene.texture-source-kind',\n} as const;")
         );
         assert!(output.contains(
             "export type RequirementFacet = (typeof RequirementFacet)[keyof typeof RequirementFacet];"
         ));
         assert!(output.contains(
-            "case \"scene.resource-mime-type\":\n      return \"scene.resource-mime-type\";"
+            "case 'scene.resource-mime-type':\n      return 'scene.resource-mime-type';"
         ));
         assert!(!output.contains("export enum RequirementFacet"));
     }
@@ -9205,17 +9193,17 @@ pub fn default_facet() -> Facet {
         let production = include_str!("../../flight-velocity/src/velocity_explanation.rs");
         let output = compile_typescript(production, None).unwrap();
         assert!(output.contains(
-            "export type VelocityReason = \"no-sample\" | \"stale\" | \"explicit-zero\" | \"derived-zero\" | \"ok\";"
+            "export type VelocityReason = 'no-sample' | 'stale' | 'explicit-zero' | 'derived-zero' | 'ok';"
         ));
-        assert!(output.contains("case \"no-sample\":"));
-        assert!(output.contains("return \"explicit-zero\";"));
+        assert!(output.contains("case 'no-sample':"));
+        assert!(output.contains("return 'explicit-zero';"));
 
         let tests = include_str!("../../flight-velocity/tests/velocity_explanation_test.rs");
         let test_output =
             compile_vitest_with_alias_sources(tests, "@flighthq/velocity/contract", &[production])
                 .unwrap();
-        assert!(test_output.contains("getVelocityReasonString(\"no-sample\")"));
-        assert!(test_output.contains("parseVelocityReason(\"derived-zero\")"));
+        assert!(test_output.contains("getVelocityReasonString('no-sample')"));
+        assert!(test_output.contains("parseVelocityReason('derived-zero')"));
         assert!(!test_output.contains("VelocityReason.NoSample"));
     }
 
@@ -9270,18 +9258,18 @@ pub fn mode_label(mode: Mode) -> &'static str {
         assert!(output.contains(
             " * Names `Direction.Forward` and `Mode.Fast` in prose; neither is a reference.\n"
         ));
-        assert!(output.contains("if (direction === 1 && mode === \"fast\") {"));
+        assert!(output.contains("if (direction === 1 && mode === 'fast') {"));
         assert!(output.contains("return `Direction.Forward Mode.Fast ${directionValue(-1)}`;"));
         assert!(
             output
                 .contains("const label = \"Direction.Backward 'Mode.Slow' `Direction.Forward`\";")
         );
-        assert!(output.contains("return `${label} ${modeLabel(\"slow\")}`;"));
-        assert!(output.contains("return \"Direction.Forward\";"));
+        assert!(output.contains("return `${label} ${modeLabel('slow')}`;"));
+        assert!(output.contains("return 'Direction.Forward';"));
         assert!(output.contains("case 1:\n      return 1;"));
         assert!(output.contains("case -1:\n      return -1;"));
-        assert!(output.contains("case \"fast\":\n      return \"Mode.Fast\";"));
-        assert!(output.contains("case \"slow\":\n      return \"Mode.Slow\";"));
+        assert!(output.contains("case 'fast':\n      return 'Mode.Fast';"));
+        assert!(output.contains("case 'slow':\n      return 'Mode.Slow';"));
     }
 
     #[test]
@@ -10053,9 +10041,8 @@ pub fn read_marker_value(marker: &mut Marker) -> f64 {
         )
         .unwrap();
         assert!(
-            output.contains(
-                "import type { EntityConstruction } from \"@flighthq/entity/contract\";\n"
-            ),
+            output
+                .contains("import type { EntityConstruction } from '@flighthq/entity/contract';\n"),
             "{output}"
         );
         assert!(
@@ -10212,8 +10199,8 @@ pub fn first() -> Kind {
             &[],
         )
         .unwrap();
-        assert!(output.contains("  return \"secondKind\";\n"), "{output}");
-        assert!(output.contains("  return \"first\";\n"), "{output}");
+        assert!(output.contains("  return 'secondKind';\n"), "{output}");
+        assert!(output.contains("  return 'first';\n"), "{output}");
         assert!(!output.contains("crate."), "{output}");
     }
 
@@ -10276,11 +10263,11 @@ pub fn mixed(flag: bool) -> f64 {
         )
         .unwrap();
         assert!(
-            output.contains("  let issue: Reason = failed ? \"failed\" : \"ok\";\n"),
+            output.contains("  let issue: Reason = failed ? 'failed' : 'ok';\n"),
             "{output}"
         );
         assert!(output.contains("  let chosen: Reason = "), "{output}");
-        assert!(output.contains("  const fixed = \"ok\";\n"), "{output}");
+        assert!(output.contains("  const fixed = 'ok';\n"), "{output}");
         assert!(output.contains("  let value = "), "{output}");
         assert!(!output.contains("let value: "), "{output}");
         assert!(output.contains("  let count = "), "{output}");
@@ -12326,7 +12313,7 @@ pub fn ready() -> Result {
         let output = compile_typescript_with_alias_sources(source, None, &[union]).unwrap();
 
         assert!(output.contains("status: Status;"));
-        assert!(output.contains("return { status: \"ready\" };"));
+        assert!(output.contains("return { status: 'ready' };"));
         assert!(!output.contains("Status.Ready"));
 
         let velocity_reason = include_str!("../../flight-velocity/src/velocity_explanation.rs");
@@ -12338,8 +12325,8 @@ pub fn ready() -> Result {
             &[velocity_reason, velocity2d],
         )
         .unwrap();
-        assert!(velocity_output.contains("? \"explicit-zero\" : \"derived-zero\""));
-        assert!(velocity_output.contains("reason: \"no-sample\""));
+        assert!(velocity_output.contains("? 'explicit-zero' : 'derived-zero'"));
+        assert!(velocity_output.contains("reason: 'no-sample'"));
         assert!(!velocity_output.contains("VelocityReason."));
     }
 
@@ -12611,7 +12598,7 @@ mod decode_utf8 {
         );
         assert_eq!(
             compile_vitest_with_alias_sources(tests, "./contract.ts", &[utf8]).unwrap(),
-            "import { describe, expect, it } from 'vitest';\n\nimport {\n  decodeUTF8,\n  encodeUTF8,\n  maxUTF8Bytes,\n} from \"./contract.ts\";\n\ndescribe(\"decodeUTF8\", () => {\n  it(\"adds the maximum\", () => {\n    expect(decodeUTF8(1)).toEqual(1 + maxUTF8Bytes);\n    expect(encodeUTF8(1)).toEqual(10);\n  });\n});\n"
+            "import { describe, expect, it } from 'vitest';\n\nimport {\n  decodeUTF8,\n  encodeUTF8,\n  maxUTF8Bytes,\n} from './contract.ts';\n\ndescribe('decodeUTF8', () => {\n  it('adds the maximum', () => {\n    expect(decodeUTF8(1)).toEqual(1 + maxUTF8Bytes);\n    expect(encodeUTF8(1)).toEqual(10);\n  });\n});\n"
         );
     }
 
@@ -12632,7 +12619,7 @@ pub fn call_decoder(value: usize) -> usize {
         assert_eq!(
             compile_typescript_with_external_alias_sources(consumer, None, &[], &codec_package)
                 .unwrap(),
-            "import { decodeUTF8, decodeUTF8 as decode } from \"@flighthq/codec/contract\";\n\nexport function callDecoder(value: number): number {\n  return decodeUTF8(value) + decode(value);\n}\n"
+            "import { decodeUTF8, decodeUTF8 as decode } from '@flighthq/codec/contract';\n\nexport function callDecoder(value: number): number {\n  return decodeUTF8(value) + decode(value);\n}\n"
         );
 
         let production = "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n";
@@ -12661,7 +12648,7 @@ mod call_decoder {
                 &codec_package,
             )
             .unwrap(),
-            "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from \"@flighthq/codec/contract\";\n\nimport {\n  callDecoder,\n} from \"@flighthq/consumer/contract\";\n\ndescribe(\"callDecoder\", () => {\n  it(\"decodes\", () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n"
+            "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from '@flighthq/codec/contract';\n\nimport {\n  callDecoder,\n} from '@flighthq/consumer/contract';\n\ndescribe('callDecoder', () => {\n  it('decodes', () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n"
         );
         let wildcard = "use flight_codec::*;\nuse flight_consumer::*;\n\n#[test]\nfn decodes() {\n    let decoded = decode_utf8(1);\n    assert_eq!(decoded, call_decoder(1));\n}\n";
         assert_eq!(
@@ -12673,7 +12660,7 @@ mod call_decoder {
                 &codec_package,
             )
             .unwrap(),
-            "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from \"@flighthq/codec/contract\";\n\nimport {\n  callDecoder,\n} from \"@flighthq/consumer/contract\";\n\ndescribe(\"portableTests\", () => {\n  it(\"decodes\", () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n"
+            "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from '@flighthq/codec/contract';\n\nimport {\n  callDecoder,\n} from '@flighthq/consumer/contract';\n\ndescribe('portableTests', () => {\n  it('decodes', () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n"
         );
 
         let other = ExternalAliasSource {
@@ -12777,7 +12764,7 @@ pub fn is_ready(widget: &Widget) -> bool {
         assert_eq!(
             compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
                 .unwrap(),
-            "import type { WidgetRaw } from \"@flighthq/widget/contract\";\n\nexport function isReady(widget: Readonly<WidgetRaw>): boolean {\n  return widget.mode === \"ready\";\n}\n"
+            "import type { WidgetRaw } from '@flighthq/widget/contract';\n\nexport function isReady(widget: Readonly<WidgetRaw>): boolean {\n  return widget.mode === 'ready';\n}\n"
         );
     }
 
@@ -12853,7 +12840,7 @@ pub struct Consumer {
         assert_eq!(
             compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
                 .unwrap(),
-            "import type { WrapperRaw } from \"@flighthq/wrapper/contract\";\n\nexport interface Consumer {\n  wrapper: WrapperRaw<string>;\n}\n\n"
+            "import type { WrapperRaw } from '@flighthq/wrapper/contract';\n\nexport interface Consumer {\n  wrapper: WrapperRaw<string>;\n}\n\n"
         );
     }
 
@@ -13092,7 +13079,7 @@ pub fn rectangle_width(rectangle: &Rectangle) -> f32 {
         assert_eq!(
             compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
                 .unwrap(),
-            "import type { Rectangle } from \"@flighthq/geometry/contract\";\n\nexport function rectangleWidth(rectangle: Readonly<Rectangle>): number {\n  return rectangle.width;\n}\n"
+            "import type { Rectangle } from '@flighthq/geometry/contract';\n\nexport function rectangleWidth(rectangle: Readonly<Rectangle>): number {\n  return rectangle.width;\n}\n"
         );
     }
 
@@ -13106,7 +13093,7 @@ pub fn rectangle_width(rectangle: &Rectangle) -> f32 {
             source: "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n",
             module: "crates/flight-consumer/src/caller.rs",
         }];
-        let expected = "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from \"@flighthq/codec/contract\";\n\nimport {\n  callDecoder,\n} from \"@flighthq/consumer/contract\";\n\ndescribe(\"portableTests\", () => {\n  it(\"decodes\", () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n";
+        let expected = "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from '@flighthq/codec/contract';\n\nimport {\n  callDecoder,\n} from '@flighthq/consumer/contract';\n\ndescribe('portableTests', () => {\n  it('decodes', () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n";
         for uses in [
             "use {flight_codec::*, flight_consumer::*};\n",
             "use flight_codec::{*};\nuse flight_consumer::*;\n",
@@ -13244,7 +13231,7 @@ pub fn customized_spring_preset() -> SpringConfig {
                 compile_typescript_with_external_alias_sources(&source, None, &[], &status_package)
                     .unwrap();
             assert!(
-                output.contains("import { Status } from \"@flighthq/codec/contract\";"),
+                output.contains("import { Status } from '@flighthq/codec/contract';"),
                 "{output}"
             );
             assert!(output.contains("  return Status(value);\n"), "{output}");
@@ -13325,7 +13312,7 @@ pub fn customized_spring_preset() -> SpringConfig {
         let without_pi = test("", "        assert_eq!(decoded, call_decoder(1));\n");
         let output = compile("crate", &without_pi).unwrap();
         assert!(
-            output.contains("import { crate } from \"@flighthq/codec/contract\";"),
+            output.contains("import { crate } from '@flighthq/codec/contract';"),
             "{output}"
         );
         assert!(
@@ -13392,7 +13379,7 @@ pub fn customized_spring_preset() -> SpringConfig {
         let without_pi = test("", "        assert_eq!(decoded, call_decoder(1));\n");
         let output = compile("PI", &without_pi).unwrap();
         assert!(
-            output.contains("import { PI } from \"@flighthq/codec/contract\";"),
+            output.contains("import { PI } from '@flighthq/codec/contract';"),
             "{output}"
         );
         assert!(!output.contains("Math.PI"), "{output}");
@@ -13660,8 +13647,8 @@ pub fn string_values(value: u32) -> (String, String) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return [\"ready\", String(value)];"));
-        assert!(!output.contains("String(\"ready\")"));
+        assert!(output.contains("return ['ready', String(value)];"));
+        assert!(!output.contains("String('ready')"));
     }
 
     #[test]
@@ -13742,12 +13729,12 @@ pub fn local_high_byte() -> u32 {
             "return [{ ...format, tabStops: format.tabStops?.slice() }, stops.slice()];"
         ));
         assert!(output.contains("return bucket.values.slice();"));
-        assert!(output.contains("return value === \"\";"));
+        assert!(output.contains("return value === '';"));
         assert!(output.contains("return 0xffffffff >>> 0;"));
         assert!(output.contains("return (color >>> 24) >>> 0;"));
         assert!(output.contains("const color: number = 0xf00000ff;"));
-        assert!(output.contains("result.name = \"copy\";"));
-        assert!(!output.contains("String(\"copy\")"));
+        assert!(output.contains("result.name = 'copy';"));
+        assert!(!output.contains("String('copy')"));
     }
 
     #[test]
@@ -13759,7 +13746,7 @@ pub const Count: u32 = 3;
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("export const Axis = \"ital\" as const;"));
+        assert!(output.contains("export const Axis = 'ital' as const;"));
         assert!(output.contains("export const Count: number = 3;"));
     }
 
@@ -13903,20 +13890,17 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
             output.contains("return ((value >>> 0) * 3) >>> 0;"),
             "{output}"
         );
-        assert!(
-            output.contains("return `#${(color & 0xffffff).toString(16).padStart(6, \"0\")}`;")
-        );
-        assert!(output.contains("return value.startsWith(\"rgba(\");"));
-        assert!(output.contains("return value.endsWith(\")\");"));
+        assert!(output.contains("return `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;"));
+        assert!(output.contains("return value.startsWith('rgba(');"));
+        assert!(output.contains("return value.endsWith(')');"));
         assert!(output.contains("export function characters(value: string): string[]"));
         assert!(output.contains("return [...value];"));
         assert!(
-            output.contains(
-                "return [...value].filter((character) => character !== \"\\n\").join('');"
-            )
+            output
+                .contains("return [...value].filter((character) => character !== '\\n').join('');")
         );
         assert!(
-            output.contains("return [...value].filter((c) => c !== \".\").join('');"),
+            output.contains("return [...value].filter((c) => c !== '.').join('');"),
             "chars().filter().collect() without turbofish should join to string: {output}"
         );
         assert!(output.contains("value += character;"));
@@ -14111,7 +14095,7 @@ pub fn trim_padding(value: &str) -> String {
             "for (const character of text) { if (!matches(character)) break; offset += character.length; }"
         ));
         assert!(
-            output.contains("(value, (character) => character === \" \" || character === \"🙂\")"),
+            output.contains("(value, (character) => character === ' ' || character === '🙂')"),
             "{output}"
         );
     }
@@ -14214,7 +14198,7 @@ pub fn impossible_statement() {
             "throw new Error(`internal error: entered unreachable code: unexpected code ${code}`);"
         ));
         assert!(output.contains(
-            "export function impossibleStatement(): void {\n  throw new Error(\"internal error: entered unreachable code\");\n}"
+            "export function impossibleStatement(): void {\n  throw new Error('internal error: entered unreachable code');\n}"
         ));
     }
 
@@ -14247,7 +14231,7 @@ pub fn panic_in_match(code: i32) -> i32 {
 
         assert!(output.contains("throw new Error(`invalid code: ${code}`);"));
         assert!(output.contains(
-            "export function notReached(): void {\n  throw new Error(\"explicit panic\");\n}"
+            "export function notReached(): void {\n  throw new Error('explicit panic');\n}"
         ));
         assert!(output.contains("throw new Error(`something went wrong`);"));
         assert!(output.contains("(() => { throw new Error(`unexpected code`); })()"));
@@ -14272,7 +14256,7 @@ pub fn must_get(value: Option<String>) -> String {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("throw \"missing value\""),
+            output.contains("throw 'missing value'"),
             "std::panic::panic_any should emit throw: {output}"
         );
         assert!(
@@ -14309,7 +14293,7 @@ pub fn check_flag(ok: bool) {
                 .contains("throw new Error(`index ${index} out of bounds for length ${length}`);")
         );
         assert!(output.contains("if (value <= 0) {"));
-        assert!(output.contains("throw new Error(\"assertion failed: value > 0\");"));
+        assert!(output.contains("throw new Error('assertion failed: value > 0');"));
         assert!(
             output.contains("if (b === 0.0) {"),
             "assert!(x != y) should invert to ===: {output}"
@@ -14334,8 +14318,8 @@ pub fn single() -> &'static str {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("\"hello\" + \" \" + \"world\""));
-        assert!(output.contains("\"only\""));
+        assert!(output.contains("'hello' + ' ' + 'world'"));
+        assert!(output.contains("'only'"));
     }
 
     #[test]
@@ -14354,7 +14338,7 @@ pub fn build(name: &str) -> String {
         assert!(output.contains("let result = ''"));
         assert!(output.contains("result += name"));
         assert!(
-            output.contains("result += \"!\""),
+            output.contains("result += '!'"),
             "push(char) on String::with_capacity should use += not .push(): {output}"
         );
     }
@@ -14407,7 +14391,7 @@ pub fn scientific_precision(value: f64) -> String {
 
         assert!(output.contains("${JSON.stringify(items)}"));
         assert!(output.contains("${(value).toString(16).toUpperCase()}"));
-        assert!(output.contains("${(value).toString(16).toUpperCase().padStart(8, \"0\")}"));
+        assert!(output.contains("${(value).toString(16).toUpperCase().padStart(8, '0')}"));
         assert!(output.contains("${(value).toFixed(2)}"));
         assert!(output.contains("${(value).toExponential()}"));
         assert!(output.contains("${(value).toExponential(3)}"));
@@ -14519,11 +14503,11 @@ pub fn todo_value() -> i32 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("throw new Error(\"not implemented\");"),
+            output.contains("throw new Error('not implemented');"),
             "todo! statement should throw: {output}"
         );
         assert!(
-            output.contains("(() => { throw new Error(\"not implemented\"); })()"),
+            output.contains("(() => { throw new Error('not implemented'); })()"),
             "todo! expression should use IIFE: {output}"
         );
     }
@@ -14843,7 +14827,7 @@ pub fn take_boolean(name: &str) -> bool {
             "should check for undefined (Option unwrap): {output}"
         );
         assert!(
-            output.contains(".kind ===") || output.contains("=== \"boolean\""),
+            output.contains(".kind ===") || output.contains("=== 'boolean'"),
             "should check the data union variant kind: {output}"
         );
     }
@@ -15031,11 +15015,10 @@ pub fn borrow_value<'a, T>(value: Borrowed<'a, T>) -> Borrowed<'a, T> {
         .unwrap();
 
         assert!(
-            output
-                .contains("import type { EntityRaw, Marker } from \"@flighthq/entity/contract\";")
+            output.contains("import type { EntityRaw, Marker } from '@flighthq/entity/contract';")
         );
         assert!(output.contains(
-            "export function createReader(reader: Reader): Marker<Reader, \"descriptor\"> | undefined"
+            "export function createReader(reader: Reader): Marker<Reader, 'descriptor'> | undefined"
         ));
         assert!(output.contains("export function borrowValue<T>(value: Borrowed<T>): Borrowed<T>"));
         assert_eq!(output.matches("import type").count(), 1);
@@ -15177,7 +15160,7 @@ pub fn order_levels(levels: &mut Vec<LogLevel>) {
         );
         assert!(output.contains("return level <= gate && level !== LogLevel.None;"));
         assert!(output.contains("levels.sort((a, b) => a - b);"));
-        assert!(!output.contains("None = \"none\""));
+        assert!(!output.contains("None = 'none'"));
     }
 
     #[test]
@@ -15238,7 +15221,7 @@ pub enum PathSegment {
         assert!(output.contains("export type LogValue = unknown;"));
         assert!(output.contains("export type LogDataOrProvider = LogData | LogDataProvider;"));
         assert!(output.contains(
-            "export type PathSegment = { readonly kind: \"moveTo\"; readonly x: number; readonly y: number } | { readonly kind: \"lineTo\"; readonly x: number; readonly y: number } | { readonly kind: \"quadraticCurveTo\"; readonly controlX: number; readonly controlY: number; readonly x: number; readonly y: number } | { readonly kind: \"cubicCurveTo\"; readonly controlX1: number; readonly controlY1: number; readonly controlX2: number; readonly controlY2: number; readonly x: number; readonly y: number } | { readonly kind: \"close\" };"
+            "export type PathSegment = { readonly kind: 'moveTo'; readonly x: number; readonly y: number } | { readonly kind: 'lineTo'; readonly x: number; readonly y: number } | { readonly kind: 'quadraticCurveTo'; readonly controlX: number; readonly controlY: number; readonly x: number; readonly y: number } | { readonly kind: 'cubicCurveTo'; readonly controlX1: number; readonly controlY1: number; readonly controlX2: number; readonly controlY2: number; readonly x: number; readonly y: number } | { readonly kind: 'close' };"
         ));
         assert!(!output.contains("number | number"));
     }
@@ -15303,14 +15286,14 @@ pub fn normalize(result: MarkupResult) -> MarkupEffect {
 
         assert!(output.contains("export type MarkupResult = MarkupEffect | TextFormat;"));
         assert!(output.contains(
-            "if (Object.hasOwn(matchValue, \"breakBefore\") || Object.hasOwn(matchValue, \"format\") || Object.hasOwn(matchValue, \"text\"))"
+            "if (Object.hasOwn(matchValue, 'breakBefore') || Object.hasOwn(matchValue, 'format') || Object.hasOwn(matchValue, 'text'))"
         ));
-        assert!(output.contains("else {\n    return \"format\";"));
+        assert!(output.contains("else {\n    return 'format';"));
         assert!(output.contains(
-            "return Object.hasOwn(result, \"breakBefore\") || Object.hasOwn(result, \"format\") || Object.hasOwn(result, \"text\");"
+            "return Object.hasOwn(result, 'breakBefore') || Object.hasOwn(result, 'format') || Object.hasOwn(result, 'text');"
         ));
         assert!(output.contains(
-            "return !(Object.hasOwn(result, \"breakBefore\") || Object.hasOwn(result, \"format\") || Object.hasOwn(result, \"text\"));"
+            "return !(Object.hasOwn(result, 'breakBefore') || Object.hasOwn(result, 'format') || Object.hasOwn(result, 'text'));"
         ));
         assert!(output.contains("return value;"));
         assert!(output.contains("const effect = matchValue as MarkupEffect;"));
@@ -15364,9 +15347,9 @@ pub struct TextFormat {
         .unwrap();
 
         assert!(output.contains(
-            "if (Object.hasOwn(matchValue, \"format\") || Object.hasOwn(matchValue, \"text\"))"
+            "if (Object.hasOwn(matchValue, 'format') || Object.hasOwn(matchValue, 'text'))"
         ));
-        assert!(output.contains("else {\n    return \"format\";"));
+        assert!(output.contains("else {\n    return 'format';"));
     }
 
     #[test]
@@ -15498,16 +15481,14 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("{ kind: \"moveTo\" as const, x: x, y: y }"));
-        assert!(output.contains("{ kind: \"lineTo\" as const, x: x, y: y }"));
-        assert!(output.contains("kind: \"quadraticCurveTo\" as const"));
-        assert!(output.contains("kind: \"cubicCurveTo\" as const"));
-        assert!(output.contains("return { kind: \"close\" as const };"));
-        assert!(
-            output.contains("matchValue.kind === \"moveTo\" || matchValue.kind === \"lineTo\"")
-        );
-        assert!(output.contains("matchValue.kind === \"quadraticCurveTo\""));
-        assert!(output.contains("matchValue.kind === \"cubicCurveTo\""));
+        assert!(output.contains("{ kind: 'moveTo' as const, x: x, y: y }"));
+        assert!(output.contains("{ kind: 'lineTo' as const, x: x, y: y }"));
+        assert!(output.contains("kind: 'quadraticCurveTo' as const"));
+        assert!(output.contains("kind: 'cubicCurveTo' as const"));
+        assert!(output.contains("return { kind: 'close' as const };"));
+        assert!(output.contains("matchValue.kind === 'moveTo' || matchValue.kind === 'lineTo'"));
+        assert!(output.contains("matchValue.kind === 'quadraticCurveTo'"));
+        assert!(output.contains("matchValue.kind === 'cubicCurveTo'"));
         assert!(output.contains("else {\n    return 0.0;"));
         assert!(output.contains("const x = matchValue.x;"));
         assert!(output.contains("const y = matchValue.y;"));
@@ -15524,11 +15505,11 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
         let output =
             compile_typescript_with_alias_sources(&for_each_path_segment, None, &[path]).unwrap();
 
-        assert!(output.contains("visitor({ kind: \"moveTo\" as const, x: x, y: y });"));
-        assert!(output.contains("visitor({ kind: \"lineTo\" as const, x: x, y: y });"));
-        assert!(output.contains("kind: \"quadraticCurveTo\" as const"));
-        assert!(output.contains("kind: \"cubicCurveTo\" as const"));
-        assert!(output.contains("visitor({ kind: \"close\" as const });"));
+        assert!(output.contains("visitor({ kind: 'moveTo' as const, x: x, y: y });"));
+        assert!(output.contains("visitor({ kind: 'lineTo' as const, x: x, y: y });"));
+        assert!(output.contains("kind: 'quadraticCurveTo' as const"));
+        assert!(output.contains("kind: 'cubicCurveTo' as const"));
+        assert!(output.contains("visitor({ kind: 'close' as const });"));
         assert!(!output.contains("PathSegment.MoveTo"));
         assert!(!output.contains("PathSegment.Close"));
     }
@@ -15591,13 +15572,13 @@ pub fn describe(p: &Proj) -> f32 {
         )
         .unwrap();
 
-        assert!(output.contains("p.kind === \"orthographic\""));
+        assert!(output.contains("p.kind === 'orthographic'"));
         assert!(
             output.contains("return p;"),
             "entity-ref construction should pass through"
         );
-        assert!(output.contains("matchValue.kind === \"orthographic\""));
-        assert!(output.contains("matchValue.kind === \"perspective\""));
+        assert!(output.contains("matchValue.kind === 'orthographic'"));
+        assert!(output.contains("matchValue.kind === 'perspective'"));
         assert!(output.contains("const o = matchValue;"));
         assert!(output.contains("const r = matchValue;"));
     }
@@ -15736,15 +15717,15 @@ pub fn classify_shape(shape: &CollisionShape2D) -> &str {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("matchValue.kind === \"circle\""),
+            output.contains("matchValue.kind === 'circle'"),
             "should emit kind check for Circle: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === \"aabb\""),
+            output.contains("matchValue.kind === 'aabb'"),
             "should emit kind check for Aabb: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === \"obb\""),
+            output.contains("matchValue.kind === 'obb'"),
             "should emit kind check for Obb: {output}"
         );
         assert!(
@@ -15756,7 +15737,7 @@ pub fn classify_shape(shape: &CollisionShape2D) -> &str {
             "should access radius through binding: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === \"aabb\" || matchValue.kind === \"obb\""),
+            output.contains("matchValue.kind === 'aabb' || matchValue.kind === 'obb'"),
             "should emit Or pattern for box arms: {output}"
         );
         assert!(
@@ -15790,11 +15771,11 @@ pub fn apply_force(force: &ParticleForce, vx: f64, vy: f64, vz: f64, out: &mut [
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("matchValue.kind === \"windForce\""),
+            output.contains("matchValue.kind === 'windForce'"),
             "should emit kind check for WindForce: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === \"dragForce\""),
+            output.contains("matchValue.kind === 'dragForce'"),
             "should emit kind check for DragForce: {output}"
         );
         assert!(
@@ -15831,7 +15812,7 @@ pub fn get_circle_radius(shape: &CollisionShape2D) -> f64 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains(".kind === \"circle\""),
+            output.contains(".kind === 'circle'"),
             "should emit kind check for Circle let-else: {output}"
         );
         assert!(
@@ -15931,8 +15912,8 @@ pub fn append_value_kind(out: &mut Vec<String>, value: LogValue) {
         assert!(output.contains("return value;"));
         assert!(output.contains("return null;"));
         assert!(output.contains("values.map((value) => value)"));
-        assert!(output.contains("typeof matchValue === \"function\""));
-        assert!(output.contains("typeof matchValue === \"number\""));
+        assert!(output.contains("typeof matchValue === 'function'"));
+        assert!(output.contains("typeof matchValue === 'number'"));
         assert!(output.contains("Array.isArray(matchValue)"));
         assert!(output.contains("Object.getPrototypeOf(matchValue) === Object.prototype"));
         assert!(output.contains("Object.getPrototypeOf(matchValue) !== Object.prototype"));
@@ -16075,7 +16056,7 @@ pub enum Axis {
 
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("kind: \"named\""),
+            output.contains("kind: 'named'"),
             "auto-inferred data union should produce a tagged variant: {output}"
         );
     }
@@ -16114,7 +16095,7 @@ mod native_only {
 "#;
 
         let output = compile_vitest(source, "./contract.ts").unwrap();
-        assert!(!output.contains("describe(\"nativeOnly\""), "{output}");
+        assert!(!output.contains("describe('nativeOnly'"), "{output}");
         assert!(!output.contains("Rust-only"), "{output}");
     }
 
@@ -16325,7 +16306,7 @@ fn wraps_values() {
             "{output}"
         );
         assert!(
-            output.contains("import type {\n  Box2,\n} from \"./contract.ts\";"),
+            output.contains("import type {\n  Box2,\n} from './contract.ts';"),
             "{output}"
         );
         assert!(!output.contains("  T,\n"), "{output}");
@@ -16385,14 +16366,14 @@ import {
   addVector2,
   createVector2,
   equalsVector2,
-} from "@flighthq/geometry/contract";
+} from '@flighthq/geometry/contract';
 
 function assertPositive(value: number): void {
   expect(value > 0.0).toBe(true);
 }
 
-describe("addVector2", () => {
-  it("adds two coordinates", () => {
+describe('addVector2', () => {
+  it('adds two coordinates', () => {
     const a = createVector2(2.0, 10.0);
     const b = createVector2(4.0, 20.0);
     let result = createVector2(0.0, 0.0);
@@ -16402,15 +16383,15 @@ describe("addVector2", () => {
   });
 });
 
-describe("equalsVector2", () => {
-  it("accepts optional borrows", () => {
+describe('equalsVector2', () => {
+  it('accepts optional borrows', () => {
     const a = createVector2(1.0, 2.0);
     expect(equalsVector2(a, a)).toBe(true);
   });
 });
 
-describe("createVector2", () => {
-  it("creates coordinates", () => {
+describe('createVector2', () => {
+  it('creates coordinates', () => {
     const value = createVector2(1.0, 2.0);
     expect(value.x).toEqual(1.0);
   });
@@ -16436,7 +16417,7 @@ mod register_default_hit_tests {
 
         let output = compile_vitest(source, "@flighthq/interaction/contract").unwrap();
 
-        assert!(output.contains("describe(\"registerDefaultHitTests\""));
+        assert!(output.contains("describe('registerDefaultHitTests'"));
     }
 
     #[test]
@@ -16466,9 +16447,9 @@ mod sample {
 
         let output = compile_vitest(source, "@flighthq/math/contract").unwrap();
 
-        assert!(output.contains("it(\"returns 0.5 at the midpoint\""));
-        assert!(output.contains("it(\"stays in the 0 1 range\""));
-        assert!(output.contains("it(\"returns axis 0 0 1\""));
+        assert!(output.contains("it('returns 0.5 at the midpoint'"));
+        assert!(output.contains("it('stays in the 0 1 range'"));
+        assert!(output.contains("it('returns axis 0 0 1'"));
     }
 
     #[test]
@@ -16523,10 +16504,9 @@ mod color_format {
                 .unwrap();
 
         assert!(
-            output
-                .contains("`expected red near 0xbc, got 0x${(r).toString(16).padStart(2, \"0\")}`")
+            output.contains("`expected red near 0xbc, got 0x${(r).toString(16).padStart(2, '0')}`")
         );
-        assert!(output.contains("expect(s.startsWith(\"rgba(\"), `got ${s}`).toBe(true);"));
+        assert!(output.contains("expect(s.startsWith('rgba('), `got ${s}`).toBe(true);"));
     }
 
     #[test]
@@ -16561,7 +16541,7 @@ mod shared_ref {
         assert!(output.contains("value!.count = 2;"));
         assert!(output.contains("expect(value!.count).toEqual(2);"));
         assert!(output.contains("expect(value === alias).toBe(true);"));
-        assert!(output.contains("import * as flightEntity from \"@flighthq/entity/contract\";"));
+        assert!(output.contains("import * as flightEntity from '@flighthq/entity/contract';"));
         assert!(output.contains("const uid = flightEntity.getEntityUid(value);"));
     }
 
@@ -17676,7 +17656,7 @@ mod sample {
         .unwrap();
 
         assert!(output.contains(
-            "import type { OriginalSample as Sample } from \"@flighthq/example/contract\";"
+            "import type { OriginalSample as Sample } from '@flighthq/example/contract';"
         ));
         assert!(output.contains("let sample: Sample = { previous: null };"));
         assert!(output.contains("sample.previous = null;"));
@@ -19318,24 +19298,24 @@ fn keeps_explicit_owners() {
             output,
             r#"import { describe, expect, it } from 'vitest';
 
-import { createMatrix } from "@flighthq/geometry/contract";
+import { createMatrix } from '@flighthq/geometry/contract';
 
-import type { Matrix } from "@flighthq/geometry/contract";
+import type { Matrix } from '@flighthq/geometry/contract';
 
 import {
   createSample,
-} from "@flighthq/example/contract";
+} from '@flighthq/example/contract';
 
 import type {
   Sample,
-} from "@flighthq/example/contract";
+} from '@flighthq/example/contract';
 
 function readMatrixA(matrix: Readonly<Matrix>): number {
   return matrix.a;
 }
 
-describe("portableTests", () => {
-  it("keeps explicit owners", () => {
+describe('portableTests', () => {
+  it('keeps explicit owners', () => {
     const sample: Sample = createSample();
     const matrix = createMatrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
     expect(sample.previous === null).toBe(true);
@@ -19397,23 +19377,23 @@ mod explicit_geometry_aliases {
             output,
             r#"import { describe, expect, it } from 'vitest';
 
-import { createMatrix as makeMatrix } from "@flighthq/geometry/contract";
+import { createMatrix as makeMatrix } from '@flighthq/geometry/contract';
 
-import type { Matrix as GeometryMatrix } from "@flighthq/geometry/contract";
+import type { Matrix as GeometryMatrix } from '@flighthq/geometry/contract';
 
 import {
   createSample,
-} from "@flighthq/example/contract";
+} from '@flighthq/example/contract';
 
 import type {
   Sample,
-} from "@flighthq/example/contract";
+} from '@flighthq/example/contract';
 
-describe("explicitGeometryAliases", () => {
+describe('explicitGeometryAliases', () => {
   function readMatrixA(matrix: Readonly<GeometryMatrix>): number {
     return matrix.a;
   }
-  it("keeps explicit alias owners", () => {
+  it('keeps explicit alias owners', () => {
     const sample: Sample = createSample();
     const matrix = makeMatrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
     expect(sample.previous === null).toBe(true);
@@ -19463,11 +19443,11 @@ fn uses_each_wildcard_contract() {
         .unwrap();
 
         assert!(
-            output.contains("import { createMatrix } from \"@flighthq/geometry/contract\";"),
+            output.contains("import { createMatrix } from '@flighthq/geometry/contract';"),
             "{output}"
         );
         assert!(
-            output.contains("  createSample,\n} from \"@flighthq/example/contract\";"),
+            output.contains("  createSample,\n} from '@flighthq/example/contract';"),
             "{output}"
         );
         assert!(!output.contains("  createMatrix,\n"), "{output}");
@@ -19551,19 +19531,19 @@ fn uses_each_wildcard_contract_type() {
         .unwrap();
 
         assert!(
-            output.contains("import { createMatrix } from \"@flighthq/geometry/contract\";"),
+            output.contains("import { createMatrix } from '@flighthq/geometry/contract';"),
             "{output}"
         );
         assert!(
-            output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";"),
+            output.contains("import type { Matrix } from '@flighthq/geometry/contract';"),
             "{output}"
         );
         assert!(
-            output.contains("  createSample,\n} from \"@flighthq/example/contract\";"),
+            output.contains("  createSample,\n} from '@flighthq/example/contract';"),
             "{output}"
         );
         assert!(
-            output.contains("  Sample,\n} from \"@flighthq/example/contract\";"),
+            output.contains("  Sample,\n} from '@flighthq/example/contract';"),
             "{output}"
         );
         assert!(!output.contains("  Matrix,\n"), "{output}");
@@ -19859,7 +19839,7 @@ mod fixture {
         assert!(
             output.contains("const fixture: Fixture = { pairs: [], record: (pairs, values) => {")
         );
-        assert!(output.contains("pairs.push([\"left\", String(values.slice().length)]);"));
+        assert!(output.contains("pairs.push(['left', String(values.slice().length)]);"));
         assert!(output.contains("const options: Options = { ...defaultOptions(), count: 2 };"));
         assert!(!output.contains("[] as never[]"));
     }
@@ -19893,9 +19873,7 @@ mod read_sample {
             compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
                 .unwrap();
 
-        assert!(
-            output.contains("import type {\n  Sample,\n} from \"@flighthq/example/contract\";")
-        );
+        assert!(output.contains("import type {\n  Sample,\n} from '@flighthq/example/contract';"));
         assert!(output.contains("const sample: Sample = { x: 2.0 };"));
 
         let velocity2d = include_str!("../../flight-velocity/src/velocity2d.rs");
@@ -19908,7 +19886,7 @@ mod read_sample {
         .unwrap();
         assert!(
             velocity_output
-                .contains("import type {\n  Velocity2D,\n} from \"@flighthq/velocity/contract\";")
+                .contains("import type {\n  Velocity2D,\n} from '@flighthq/velocity/contract';")
         );
         assert!(velocity_output.contains("const a: Velocity2D = { x: 1.0, y: 2.0 };"));
     }
@@ -19937,15 +19915,17 @@ mod sample_velocity {
 
         let output = compile_vitest(source, "@flighthq/velocity/contract").unwrap();
 
-        assert!(output.contains(
-            "import { createMatrix as makeMatrix } from \"@flighthq/geometry/contract\";"
-        ));
-        assert!(output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";"));
         assert!(
-            output.contains("import {\n  sampleVelocity,\n} from \"@flighthq/velocity/contract\";")
+            output.contains(
+                "import { createMatrix as makeMatrix } from '@flighthq/geometry/contract';"
+            )
         );
-        assert!(!output.contains("  makeMatrix,\n} from \"@flighthq/velocity/contract\";"));
-        assert!(!output.contains("  Matrix,\n} from \"@flighthq/velocity/contract\";"));
+        assert!(output.contains("import type { Matrix } from '@flighthq/geometry/contract';"));
+        assert!(
+            output.contains("import {\n  sampleVelocity,\n} from '@flighthq/velocity/contract';")
+        );
+        assert!(!output.contains("  makeMatrix,\n} from '@flighthq/velocity/contract';"));
+        assert!(!output.contains("  Matrix,\n} from '@flighthq/velocity/contract';"));
         assert!(!output.contains("unusedValue"));
     }
 
@@ -19972,8 +19952,8 @@ mod sample_velocity {
 
         let output = compile_vitest(source, "@flighthq/velocity/contract").unwrap();
 
-        assert!(output.contains("import type { Matrix } from \"@flighthq/geometry/contract\";"));
-        assert!(!output.contains("  Matrix,\n} from \"@flighthq/velocity/contract\";"));
+        assert!(output.contains("import type { Matrix } from '@flighthq/geometry/contract';"));
+        assert!(!output.contains("  Matrix,\n} from '@flighthq/velocity/contract';"));
     }
 
     #[test]
@@ -20071,11 +20051,11 @@ mod read_status {
 
         assert!(output.contains("import type {\n  Status,\n}"));
         assert!(!output.contains("Arc.clone"));
-        assert!(output.contains("alias.value.values.push(\"ready\");"));
-        assert!(output.contains("const [, selected] = [0, \"ready\"] as const;"));
-        assert!(output.contains(
-            "const cases = [[\"ready\", \"ready\"], [\"waiting\", \"waiting\"]] as const;"
-        ));
+        assert!(output.contains("alias.value.values.push('ready');"));
+        assert!(output.contains("const [, selected] = [0, 'ready'] as const;"));
+        assert!(
+            output.contains("const cases = [['ready', 'ready'], ['waiting', 'waiting']] as const;")
+        );
         assert!(output.contains("expect(calls.value.values).toEqual([selected]);"));
     }
 
@@ -20103,7 +20083,7 @@ mod read_status {
             "import type {\n  HapticImpactStyle,\n  HapticNotificationType,\n  HapticsCapabilities,\n  HostHapticsCapability,\n}"
         ));
         assert!(!haptics_output.contains("Arc.clone"));
-        assert!(haptics_output.contains("cancelCalls.value.names.push(\"cancel\");"));
+        assert!(haptics_output.contains("cancelCalls.value.names.push('cancel');"));
         assert!(haptics_output.contains("let calls = impactCalls.value;"));
         assert!(haptics_output.contains("let [, host] = makeHost();"));
         assert!(haptics_output.contains(
@@ -20116,17 +20096,18 @@ mod read_status {
             haptics_output
                 .contains("calls.waveforms.push([timings.slice(), amplitudes.slice(), repeat]);")
         );
-        assert!(haptics_output.contains(
-            "const styles = [\"heavy\", \"light\", \"medium\", \"rigid\", \"soft\"] as const;"
-        ));
         assert!(
-            haptics_output.contains(
-                "const notificationTypes = [\"error\", \"success\", \"warning\"] as const;"
-            )
+            haptics_output
+                .contains("const styles = ['heavy', 'light', 'medium', 'rigid', 'soft'] as const;")
         );
-        assert!(types_output.contains(
-            "const cases = [[\"cancel\", \"cancel\"], [\"capabilities\", \"capabilities\"]"
-        ));
+        assert!(
+            haptics_output
+                .contains("const notificationTypes = ['error', 'success', 'warning'] as const;")
+        );
+        assert!(
+            types_output
+                .contains("const cases = [['cancel', 'cancel'], ['capabilities', 'capabilities']")
+        );
         assert_eq!(types_output.matches("]] as const;").count(), 2);
     }
 
@@ -20250,7 +20231,7 @@ mod ease_steps {
         let output = compile_vitest(source, "@flighthq/easing/contract").unwrap();
 
         assert!(!output.contains("  StepPosition,"));
-        assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
+        assert!(output.contains("easeSteps(4, 'jumpEnd')"));
         assert!(!output.contains("StepPosition.JumpEnd"));
     }
 
@@ -20282,7 +20263,7 @@ mod ease_steps {
                 .unwrap();
 
         assert!(!output.contains("  StepPosition,"));
-        assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
+        assert!(output.contains("easeSteps(4, 'jumpEnd')"));
         assert!(!output.contains("StepPosition.JumpEnd"));
     }
 
@@ -20318,8 +20299,8 @@ mod select {
             compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
                 .unwrap();
 
-        assert!(output.contains("const selected = select(\"fast\");"));
-        assert!(!output.contains("select(\"fast\") as const"));
+        assert!(output.contains("const selected = select('fast');"));
+        assert!(!output.contains("select('fast') as const"));
     }
 
     #[test]
@@ -20379,11 +20360,11 @@ mod reverse {
         .unwrap();
 
         assert!(output.contains("expect(reverse(1)).toEqual(-1);"));
-        assert!(output.contains("expect(modeLabel(\"fast\")).toEqual(\"Mode.Fast\");"));
+        assert!(output.contains("expect(modeLabel('fast')).toEqual('Mode.Fast');"));
         assert!(output.contains(
-            "expect(`Direction.Forward ${modeLabel(\"slow\")}`).toEqual(\"Direction.Forward Mode.Slow\");"
+            "expect(`Direction.Forward ${modeLabel('slow')}`).toEqual('Direction.Forward Mode.Slow');"
         ));
-        assert!(output.contains("expect(\"Direction.Backward\").toEqual(\"Direction.Backward\");"));
+        assert!(output.contains("expect('Direction.Backward').toEqual('Direction.Backward');"));
         assert!(!output.contains("  Direction,"));
     }
 
@@ -20444,7 +20425,7 @@ mod begin_lasso_selection {
         .unwrap();
 
         assert!(output.contains(
-            "import type {\n  LassoSelectionRaw,\n} from \"@flighthq/selection/contract\";"
+            "import type {\n  LassoSelectionRaw,\n} from '@flighthq/selection/contract';"
         ));
         assert!(
             output.contains("    let selection: LassoSelectionRaw = createLassoSelection();\n")
@@ -20520,9 +20501,9 @@ mod shared_kernel {
         .unwrap();
 
         assert!(output.contains(
-            "  DOUBLE_KERNEL,\n  createKernel,\n  getKernel,\n  sharedKernel,\n} from \"@flighthq/kernel/contract\";"
+            "  DOUBLE_KERNEL,\n  createKernel,\n  getKernel,\n  sharedKernel,\n} from '@flighthq/kernel/contract';"
         ));
-        assert!(output.contains("describe(\"sharedKernel\", () => {"));
+        assert!(output.contains("describe('sharedKernel', () => {"));
         assert!(output.contains("    expect(sharedKernel.scale).toEqual(1.0);\n"));
         assert!(output.contains("    expect(DOUBLE_KERNEL.scale).toEqual(2.0);\n"));
         assert!(output.contains("    expect(getKernel(undefined).scale).toEqual(1.0);\n"));
@@ -20621,11 +20602,11 @@ mod is_even_odd {
                 .unwrap();
 
         assert!(
-            output.contains("expect(isEvenOdd(\"evenOdd\")).toBe(true);"),
+            output.contains("expect(isEvenOdd('evenOdd')).toBe(true);"),
             "{output}"
         );
         assert!(
-            output.contains("expect(!isEvenOdd(\"nonZero\")).toBe(true);"),
+            output.contains("expect(!isEvenOdd('nonZero')).toBe(true);"),
             "{output}"
         );
         assert!(!output.contains("flightPairs"), "{output}");
@@ -20682,7 +20663,7 @@ mod plain_count {
             "{output}"
         );
         assert!(output.contains("{ name: undefined, count: 1 }"), "{output}");
-        assert!(output.contains("{ name: \"a\", count: 2 }"), "{output}");
+        assert!(output.contains("{ name: 'a', count: 2 }"), "{output}");
         assert!(
             output.contains("{ contour: null, label: undefined }"),
             "{output}"
@@ -20737,22 +20718,21 @@ mod pair_total {
                 .unwrap();
 
         assert!(
-            output.contains("import { shapeContour } from \"@flighthq/shapes/contract\";\n"),
+            output.contains("import { shapeContour } from '@flighthq/shapes/contract';\n"),
             "{output}"
         );
         assert!(
-            !output.contains("PairContour } from \"@flighthq/shapes"),
+            !output.contains("PairContour } from '@flighthq/shapes"),
             "{output}"
         );
         assert!(!output.contains("PAIR_LIMIT, shapeContour"), "{output}");
         assert!(output.contains("PAIR_LIMIT"), "{output}");
         assert!(
-            output
-                .contains("import type {\n  PairContour,\n} from \"@flighthq/pairs/contract\";\n"),
+            output.contains("import type {\n  PairContour,\n} from '@flighthq/pairs/contract';\n"),
             "{output}"
         );
         assert!(
-            output.contains("  PAIR_LIMIT,\n  pairTotal,\n} from \"@flighthq/pairs/contract\";\n"),
+            output.contains("  PAIR_LIMIT,\n  pairTotal,\n} from '@flighthq/pairs/contract';\n"),
             "{output}"
         );
     }
@@ -20960,7 +20940,7 @@ mod facet {
         .unwrap();
 
         assert!(!output.contains("  Facet,"));
-        assert!(output.contains("identity(\"scene.node-kind\")"));
+        assert!(output.contains("identity('scene.node-kind')"));
         assert!(!output.contains("Facet.SceneNode"));
     }
 
@@ -21041,8 +21021,8 @@ mod rectangle_ids {
                 .unwrap();
 
         assert!(output.contains("const id = 4;"));
-        assert!(output.contains("typeof matchValue === \"number\""));
-        assert!(output.contains("typeof matchValue === \"string\""));
+        assert!(output.contains("typeof matchValue === 'number'"));
+        assert!(output.contains("typeof matchValue === 'string'"));
         assert!(!output.contains("  RectangleId,"));
         assert!(!output.contains("RectangleId.Number"));
     }
@@ -21092,12 +21072,9 @@ mod markup_results {
         )
         .unwrap();
 
-        assert!(output.contains("const result = { text: \"replacement\" };"));
-        assert!(output.contains("if (Object.hasOwn(matchValue, \"text\"))"));
-        assert!(
-            output.contains("else {\n    return \"format\";"),
-            "{output}"
-        );
+        assert!(output.contains("const result = { text: 'replacement' };"));
+        assert!(output.contains("if (Object.hasOwn(matchValue, 'text'))"));
+        assert!(output.contains("else {\n    return 'format';"), "{output}");
         assert!(!output.contains("MarkupResult.Effect"));
     }
 
@@ -21129,8 +21106,8 @@ mod path_segments {
             compile_vitest_with_alias_sources(source, "@flighthq/path/contract", &[production])
                 .unwrap();
 
-        assert!(output.contains("const segment = { kind: \"moveTo\" as const, x: 4.0, y: 5.0 };"));
-        assert!(output.contains("matchValue.kind === \"moveTo\""));
+        assert!(output.contains("const segment = { kind: 'moveTo' as const, x: 4.0, y: 5.0 };"));
+        assert!(output.contains("matchValue.kind === 'moveTo'"));
         assert!(output.contains("else {\n"));
         assert!(output.contains("return 0.0;"));
         assert!(!output.contains("  PathSegment,"));
@@ -21265,7 +21242,7 @@ mod nested_helper {
 
         let output = compile_vitest(source, "@flighthq/math/contract").unwrap();
 
-        assert!(output.contains("describe(\"portableTests\""));
+        assert!(output.contains("describe('portableTests'"));
         assert!(output.contains("return value * 2;\n})()"));
         assert!(output.contains("  function doubled(value: number): number"));
         assert!(output.contains("expect(doubled(3)).toEqual(6);"));
@@ -21332,11 +21309,13 @@ mod easing_family {
             "const values: number[] = Array.from({ length: 2 - 0 + 1 }, (_, index) => 0 + index).map((index) => index);"
         ));
         assert!(output.contains("return values.map((value) => value / 2.0);"));
-        assert!(output.contains("expect(value.name).toEqual(\"Linear\");"));
+        assert!(output.contains("expect(value.name).toEqual('Linear');"));
         assert!(output.contains("const positive = samples().filter((value) => value > 0.0);"));
         assert!(output.contains("expect(positive.slice(1)).toEqual([1.0]);"));
-        assert!(output.contains("expect(curves[0][0]).toEqual(\"Linear\");"));
-        assert!(output.contains("const family = (() => { const value = curves.find((family) => family[0] === \"Linear\");"));
+        assert!(output.contains("expect(curves[0][0]).toEqual('Linear');"));
+        assert!(output.contains(
+            "const family = (() => { const value = curves.find((family) => family[0] === 'Linear');"
+        ));
         assert!(output.contains(
             "samples().reduce((left, right) => Math.min(left, right), Number.POSITIVE_INFINITY)"
         ));
@@ -21830,11 +21809,11 @@ pub fn mapping_of(value: Option<YamlValue>) -> Option<Mapping> {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("matchValue !== undefined && matchValue.kind === \"mapping\""),
+        output.contains("matchValue !== undefined && matchValue.kind === 'mapping'"),
         "should check undefined and kind for Some(Variant): {output}"
     );
     assert!(
-        output.contains("matchValue !== undefined && matchValue.kind === \"sequence\""),
+        output.contains("matchValue !== undefined && matchValue.kind === 'sequence'"),
         "should check undefined and kind for Some(Sequence): {output}"
     );
 }
@@ -21861,12 +21840,12 @@ pub fn read_value(value: Option<YamlValue>) -> Option<Mapping> {
     let output = compile_typescript(source, None).unwrap();
     assert!(
         output.contains(
-            "matchValue === undefined || matchValue !== undefined && matchValue.kind === \"null\""
+            "matchValue === undefined || matchValue !== undefined && matchValue.kind === 'null'"
         ),
         "should combine undefined check with kind check for None | Some(Variant): {output}"
     );
     assert!(
-        output.contains("matchValue !== undefined && matchValue.kind === \"mapping\""),
+        output.contains("matchValue !== undefined && matchValue.kind === 'mapping'"),
         "should check kind for Some(Mapping): {output}"
     );
 }
@@ -21894,7 +21873,7 @@ pub fn get_number(defaults: Option<EffectValue>) -> f64 {
         "should check for undefined (Option absent): {output}"
     );
     assert!(
-        output.contains("\"number\""),
+        output.contains("'number'"),
         "should check data union kind: {output}"
     );
 }
@@ -22835,7 +22814,7 @@ pub fn format_data(data: &BTreeMap<String, String>) -> String {
         "should lower serde_json::to_string_pretty to JSON.stringify with indent: {output}"
     );
     assert!(
-        output.contains("text += \"\\n\""),
+        output.contains("text += '\\n'"),
         "push on serde_json result should lower to string append: {output}"
     );
 }
@@ -22884,7 +22863,7 @@ pub fn name_or_empty(value: Option<&str>) -> String {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains(r#"?? """#),
+        output.contains(r#"?? ''"#),
         "should lower .unwrap_or_default() on Option<&str> chain to ?? \"\": {output}"
     );
 }

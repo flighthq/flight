@@ -15,7 +15,7 @@ use crate::typescript::{
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
-    is_vitest_struct, lexical_pattern_context, numeric_literal_spelling,
+    is_vitest_struct, js_string_literal, lexical_pattern_context, numeric_literal_spelling,
     option_scrutinee_is_rereadable, snake_to_lower_camel, update_vitest_local_function_context,
     update_vitest_struct_local_context, validate_vitest_function_provenance,
     vitest_function_path_binding_name, vitest_struct_path_binding_name, write_indent,
@@ -840,7 +840,8 @@ fn emit_suite(
     let name = resolve_suite_name(&suite.name, contract_symbols);
     let name =
         export_name(context, name).map_or_else(|| snake_to_lower_camel(name), str::to_string);
-    writeln!(out, "describe({name:?}, () => {{").expect("writing to a String cannot fail");
+    writeln!(out, "describe({}, () => {{", js_string_literal(&name))
+        .expect("writing to a String cannot fail");
     for helper in &suite.helpers {
         emit_helper(out, helper, &suite_context, 1)?;
     }
@@ -876,7 +877,8 @@ fn emit_test(
         )));
     }
     let name = test_display_name(function);
-    writeln!(out, "  it({name:?}, () => {{").expect("writing to a String cannot fail");
+    writeln!(out, "  it({}, () => {{", js_string_literal(&name))
+        .expect("writing to a String cannot fail");
     if test.should_panic {
         out.push_str("    expect(() => {\n");
         emit_block(out, &function.block.stmts, &context, 3)?;
@@ -1071,18 +1073,18 @@ pub(crate) fn emit_test_program(
     for (module, names) in &cross_crate_values {
         writeln!(
             out,
-            "\nimport {{ {} }} from {:?};",
+            "\nimport {{ {} }} from {};",
             names.iter().cloned().collect::<Vec<_>>().join(", "),
-            module
+            js_string_literal(module)
         )
         .expect("writing to a String cannot fail");
     }
     for (module, names) in &cross_crate_types {
         writeln!(
             out,
-            "\nimport type {{ {} }} from {:?};",
+            "\nimport type {{ {} }} from {};",
             names.iter().cloned().collect::<Vec<_>>().join(", "),
-            module
+            js_string_literal(module)
         )
         .expect("writing to a String cannot fail");
     }
@@ -1094,7 +1096,8 @@ pub(crate) fn emit_test_program(
                 .unwrap_or_else(|| emit_path_name(symbol, context));
             writeln!(out, "  {name},").expect("writing to a String cannot fail");
         }
-        writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
+        writeln!(out, "}} from {};", js_string_literal(contract_module))
+            .expect("writing to a String cannot fail");
     }
     if !contract_type_symbols.is_empty() {
         out.push_str("\nimport type {\n");
@@ -1102,7 +1105,8 @@ pub(crate) fn emit_test_program(
             writeln!(out, "  {},", emit_path_name(symbol, context))
                 .expect("writing to a String cannot fail");
         }
-        writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
+        writeln!(out, "}} from {};", js_string_literal(contract_module))
+            .expect("writing to a String cannot fail");
     }
     for module in external_modules {
         let Some(package) = module.strip_prefix("flight_") else {
@@ -1111,9 +1115,9 @@ pub(crate) fn emit_test_program(
         let package = package.replace('_', "-");
         writeln!(
             out,
-            "\nimport * as {} from {:?};",
+            "\nimport * as {} from {};",
             snake_to_lower_camel(&module),
-            format!("@flighthq/{package}/contract")
+            js_string_literal(&format!("@flighthq/{package}/contract"))
         )
         .expect("writing to a String cannot fail");
     }

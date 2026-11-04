@@ -3665,7 +3665,7 @@ pub(super) fn rust_default_expression(rust_type: &Type) -> Option<String> {
                 "bool" => Some("false".to_string()),
                 "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
                 | "u64" | "usize" => Some("0".to_string()),
-                "String" => Some(r#""""#.to_string()),
+                "String" => Some("''".to_string()),
                 "Option" => Some("undefined".to_string()),
                 "Vec" => Some("[]".to_string()),
                 "HashMap" | "BTreeMap" => Some("new Map()".to_string()),
@@ -3779,7 +3779,7 @@ pub(super) fn rust_literal_to_typescript(expression: &Expr) -> Option<String> {
                 }
             }
             Lit::Bool(flag) => Some(if flag.value { "true" } else { "false" }.to_string()),
-            Lit::Str(string) => Some(format!("\"{}\"", string.value())),
+            Lit::Str(string) => Some(js_string_literal(&string.value())),
             _ => None,
         },
         Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
@@ -9786,8 +9786,8 @@ fn emit_enum(
         for variant in &rust_enum.variants {
             let rendered = if named {
                 let mut fields = vec![format!(
-                    "readonly kind: {:?}",
-                    lower_camel_from_upper_camel(&variant.ident.to_string())
+                    "readonly kind: {}",
+                    js_string_literal(&lower_camel_from_upper_camel(&variant.ident.to_string()))
                 )];
                 if let syn::Fields::Named(named) = &variant.fields {
                     for field in &named.named {
@@ -9836,7 +9836,7 @@ fn emit_enum(
             for variant in &rust_enum.variants {
                 emit_documentation(out, &variant.attrs, 1);
                 let value = &values[&variant.ident.to_string()];
-                writeln!(out, "  {}: {value:?},", variant.ident)
+                writeln!(out, "  {}: {},", variant.ident, js_string_literal(value))
                     .expect("writing to a String cannot fail");
             }
             writeln!(out, "}} as const;").expect("writing to a String cannot fail");
@@ -9862,10 +9862,7 @@ fn emit_enum(
             .variants
             .iter()
             .map(|variant| {
-                format!(
-                    "{:?}",
-                    string_union_literal(&variant.ident.to_string(), style)
-                )
+                js_string_literal(&string_union_literal(&variant.ident.to_string(), style))
             })
             .collect::<Vec<_>>();
         writeln!(
@@ -9899,9 +9896,9 @@ fn emit_enum(
         } else {
             writeln!(
                 out,
-                "  {} = {:?},",
+                "  {} = {},",
                 variant.ident,
-                lower_camel_from_upper_camel(&variant.ident.to_string())
+                js_string_literal(&lower_camel_from_upper_camel(&variant.ident.to_string()))
             )
             .expect("writing to a String cannot fail");
         }
@@ -10753,8 +10750,8 @@ fn emit_expression_value(
                     )));
                 }
                 return Ok(format!(
-                    "{{ kind: {:?} as const }}",
-                    lower_camel_from_upper_camel(&variant)
+                    "{{ kind: {} as const }}",
+                    js_string_literal(&lower_camel_from_upper_camel(&variant))
                 ));
             }
             if let Some((owner, variant, _)) = data_union_expression_variant(expression, entities) {
@@ -10986,8 +10983,8 @@ fn emit_expression_value(
                     ));
                 }
                 let mut fields = vec![format!(
-                    "kind: {:?} as const",
-                    lower_camel_from_upper_camel(&variant)
+                    "kind: {} as const",
+                    js_string_literal(&lower_camel_from_upper_camel(&variant))
                 )];
                 fields.extend(
                     structure
@@ -12223,15 +12220,45 @@ fn emit_inclusive_comparison(
     return Ok(Some(format!("{strict_left} {operator} {strict_right}")));
 }
 
+pub(crate) fn js_string_literal(s: &str) -> String {
+    let has_single = s.contains('\'');
+    let has_double = s.contains('"');
+    let use_double = has_single && !has_double;
+    let quote = if use_double { '"' } else { '\'' };
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push(quote);
+    for c in s.chars() {
+        match c {
+            '\'' if !use_double => out.push_str("\\'"),
+            '"' if use_double => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            '\0' => out.push_str("\\0"),
+            c if c.is_control() => {
+                if (c as u32) < 0x100 {
+                    write!(out, "\\x{:02x}", c as u32).unwrap();
+                } else {
+                    write!(out, "\\u{:04x}", c as u32).unwrap();
+                }
+            }
+            c => out.push(c),
+        }
+    }
+    out.push(quote);
+    return out;
+}
+
 fn emit_literal(literal: &Lit) -> Result<String, CompileError> {
     return match literal {
         Lit::Bool(value) => Ok(value.value.to_string()),
         Lit::Byte(value) => Ok(value.value().to_string()),
         Lit::ByteStr(value) => Ok(format!("new Uint8Array({:?})", value.value())),
-        Lit::Char(value) => Ok(format!("{:?}", value.value().to_string())),
+        Lit::Char(value) => Ok(js_string_literal(&value.value().to_string())),
         Lit::Float(value) => Ok(numeric_literal_spelling(&value.to_string(), value.suffix())),
         Lit::Int(value) => Ok(numeric_literal_spelling(&value.to_string(), value.suffix())),
-        Lit::Str(value) => Ok(format!("{:?}", value.value())),
+        Lit::Str(value) => Ok(js_string_literal(&value.value())),
         _ => Err(compile_error("unsupported Rust literal")),
     };
 }
@@ -13470,8 +13497,8 @@ fn emit_match_statement_with_action(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {:?}",
-                            lower_camel_from_upper_camel(variant)
+                            "matchValue.kind === {}",
+                            js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
                     .collect::<Vec<_>>()
@@ -14295,13 +14322,13 @@ pub(crate) fn emit_format_template(
             .and_then(|value| value.strip_suffix('x'))
             .and_then(|value| value.parse::<usize>().ok())
         {
-            format!("({value}).toString(16).padStart({width}, \"0\")")
+            format!("({value}).toString(16).padStart({width}, '0')")
         } else if let Some(width) = specifier
             .strip_prefix('0')
             .and_then(|value| value.strip_suffix('X'))
             .and_then(|value| value.parse::<usize>().ok())
         {
-            format!("({value}).toString(16).toUpperCase().padStart({width}, \"0\")")
+            format!("({value}).toString(16).toUpperCase().padStart({width}, '0')")
         } else if let Some(precision) = specifier
             .strip_prefix('.')
             .and_then(|value| value.parse::<usize>().ok())
@@ -14381,7 +14408,7 @@ fn emit_macro_expression(
         return emit_concat_macro(rust_macro, entities);
     }
     if name.ident == "todo" {
-        return Ok("(() => { throw new Error(\"not implemented\"); })()".to_string());
+        return Ok("(() => { throw new Error('not implemented'); })()".to_string());
     }
     if name.ident == "json" {
         return emit_json_macro_value(
@@ -14707,7 +14734,7 @@ fn emit_unreachable_message(
         })?;
     let Some(Expr::Lit(template)) = arguments.first() else {
         if arguments.is_empty() {
-            return Ok(format!("{DEFAULT_MESSAGE:?}"));
+            return Ok(js_string_literal(DEFAULT_MESSAGE));
         }
         return Err(compile_error(
             "portable `unreachable!` needs a string literal template",
@@ -14737,7 +14764,7 @@ fn emit_panic_message(
         .map_err(|error| compile_error(format!("failed to parse `panic!` arguments: {error}")))?;
     let Some(Expr::Lit(template)) = arguments.first() else {
         if arguments.is_empty() {
-            return Ok("\"explicit panic\"".to_string());
+            return Ok("'explicit panic'".to_string());
         }
         return Err(compile_error(
             "portable `panic!` needs a string literal template",
@@ -14827,8 +14854,8 @@ fn emit_assert_statement(
         }
     } else {
         format!(
-            "\"assertion failed: {}\"",
-            condition_text.replace('"', "\\\"")
+            "'assertion failed: {}'",
+            condition_text.replace('\'', "\\'")
         )
     };
     write_indent(out, indent);
@@ -14914,7 +14941,7 @@ fn emit_concat_macro(
         .map(|arg| emit_expression(arg, entities))
         .collect::<Result<Vec<_>, _>>()?;
     if parts.is_empty() {
-        return Ok("\"\"".to_string());
+        return Ok("''".to_string());
     }
     if parts.len() == 1 {
         return Ok(parts.into_iter().next().unwrap());
@@ -15217,7 +15244,7 @@ fn analyze_reserved_key_data_union_pattern(
 fn reserved_key_data_union_keys_predicate(keys: &BTreeSet<String>, value: &str) -> String {
     return keys
         .iter()
-        .map(|key| format!("Object.hasOwn({value}, {key:?})"))
+        .map(|key| format!("Object.hasOwn({value}, {})", js_string_literal(key)))
         .collect::<Vec<_>>()
         .join(" || ");
 }
@@ -15523,7 +15550,7 @@ fn inferred_data_union_pattern_test(
                     let kind = lower_camel_from_upper_camel(&variant);
                     return Some(DataUnionPatternTest {
                         bindings,
-                        predicate: Some(format!("{value}.kind === {kind:?}")),
+                        predicate: Some(format!("{value}.kind === {}", js_string_literal(&kind))),
                     });
                 }
                 _ => return None,
@@ -15534,7 +15561,7 @@ fn inferred_data_union_pattern_test(
                     .map(|b| (b, value.to_string()))
                     .into_iter()
                     .collect(),
-                predicate: Some(format!("{value}.kind === {kind:?}")),
+                predicate: Some(format!("{value}.kind === {}", js_string_literal(&kind))),
             })
         }
         Pat::Struct(s) => {
@@ -15566,7 +15593,7 @@ fn inferred_data_union_pattern_test(
             let kind = lower_camel_from_upper_camel(&variant);
             Some(DataUnionPatternTest {
                 bindings,
-                predicate: Some(format!("{value}.kind === {kind:?}")),
+                predicate: Some(format!("{value}.kind === {}", js_string_literal(&kind))),
             })
         }
         Pat::Or(or) => {
@@ -15596,8 +15623,8 @@ fn tagged_data_union_predicate(patterns: &[TaggedDataUnionPattern], value: &str)
         .iter()
         .map(|pattern| {
             format!(
-                "{value}.kind === {:?}",
-                lower_camel_from_upper_camel(&pattern.variant)
+                "{value}.kind === {}",
+                js_string_literal(&lower_camel_from_upper_camel(&pattern.variant))
             )
         })
         .collect::<Vec<_>>()
@@ -15641,7 +15668,10 @@ fn tagged_data_union_bindings(
                     field_value(fields.last().expect("tagged match arm has a variant").1);
                 for (variant, field) in fields.iter().rev().skip(1) {
                     let fv = field_value(field);
-                    expression = format!("{value}.kind === {variant:?} ? {fv} : {expression}");
+                    expression = format!(
+                        "{value}.kind === {} ? {fv} : {expression}",
+                        js_string_literal(variant)
+                    );
                 }
                 expression
             };
@@ -16220,8 +16250,8 @@ fn emit_option_wrapped_data_union_match_body(
                 .iter()
                 .map(|variant| {
                     format!(
-                        "matchValue.kind === {:?}",
-                        lower_camel_from_upper_camel(variant)
+                        "matchValue.kind === {}",
+                        js_string_literal(&lower_camel_from_upper_camel(variant))
                     )
                 })
                 .collect::<Vec<_>>()
@@ -16245,8 +16275,8 @@ fn emit_option_wrapped_data_union_match_body(
                 .iter()
                 .map(|variant| {
                     format!(
-                        "matchValue.kind === {:?}",
-                        lower_camel_from_upper_camel(variant)
+                        "matchValue.kind === {}",
+                        js_string_literal(&lower_camel_from_upper_camel(variant))
                     )
                 })
                 .collect::<Vec<_>>()
@@ -16341,16 +16371,16 @@ fn emit_switch_scrutinee(
 fn runtime_category_predicate(category: RuntimeCategory, value: &str) -> String {
     return match category {
         RuntimeCategory::Null => format!("{value} === null"),
-        RuntimeCategory::Boolean => format!("typeof {value} === \"boolean\""),
-        RuntimeCategory::Number => format!("typeof {value} === \"number\""),
-        RuntimeCategory::String => format!("typeof {value} === \"string\""),
+        RuntimeCategory::Boolean => format!("typeof {value} === 'boolean'"),
+        RuntimeCategory::Number => format!("typeof {value} === 'number'"),
+        RuntimeCategory::String => format!("typeof {value} === 'string'"),
         RuntimeCategory::Array => format!("Array.isArray({value})"),
         RuntimeCategory::Record => format!(
-            "typeof {value} === \"object\" && {value} !== null && !Array.isArray({value}) && (Object.getPrototypeOf({value}) === Object.prototype || Object.getPrototypeOf({value}) === null)"
+            "typeof {value} === 'object' && {value} !== null && !Array.isArray({value}) && (Object.getPrototypeOf({value}) === Object.prototype || Object.getPrototypeOf({value}) === null)"
         ),
-        RuntimeCategory::Function => format!("typeof {value} === \"function\""),
+        RuntimeCategory::Function => format!("typeof {value} === 'function'"),
         RuntimeCategory::Object => format!(
-            "typeof {value} === \"object\" && {value} !== null && !Array.isArray({value}) && Object.getPrototypeOf({value}) !== Object.prototype && Object.getPrototypeOf({value}) !== null"
+            "typeof {value} === 'object' && {value} !== null && !Array.isArray({value}) && Object.getPrototypeOf({value}) !== Object.prototype && Object.getPrototypeOf({value}) !== null"
         ),
     };
 }
@@ -16514,7 +16544,7 @@ fn analyze_general_tuple_element(
     return match pattern {
         Pat::Lit(lit) => {
             let value = match &lit.lit {
-                Lit::Str(s) => format!("\"{}\"", s.value()),
+                Lit::Str(s) => js_string_literal(&s.value()),
                 Lit::Int(i) => i.base10_digits().to_string(),
                 Lit::Byte(b) => (b.value() as i64).to_string(),
                 Lit::Bool(b) => b.value.to_string(),
@@ -16766,10 +16796,10 @@ fn emit_general_tuple_element_condition(
     return match &element.condition {
         GeneralTupleElementCondition::Literal(value) => Some(format!("{temp} === {value}")),
         GeneralTupleElementCondition::EnumVariant(variant) => {
-            Some(format!("{temp} === \"{variant}\""))
+            Some(format!("{temp} === {}", js_string_literal(variant)))
         }
         GeneralTupleElementCondition::DataUnionKind(kind) => {
-            Some(format!("{temp}.kind === \"{kind}\""))
+            Some(format!("{temp}.kind === {}", js_string_literal(kind)))
         }
         GeneralTupleElementCondition::OptionSome(absent) => Some(format!("{temp} !== {absent}")),
         GeneralTupleElementCondition::OptionNone(absent) => Some(format!("{temp} === {absent}")),
@@ -17171,8 +17201,8 @@ fn emit_match_expression(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {:?}",
-                            lower_camel_from_upper_camel(variant)
+                            "matchValue.kind === {}",
+                            js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
                     .collect::<Vec<_>>()
@@ -17242,8 +17272,8 @@ fn emit_match_expression(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {:?}",
-                            lower_camel_from_upper_camel(variant)
+                            "matchValue.kind === {}",
+                            js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
                     .collect::<Vec<_>>()
@@ -17266,8 +17296,8 @@ fn emit_match_expression(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {:?}",
-                            lower_camel_from_upper_camel(variant)
+                            "matchValue.kind === {}",
+                            js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
                     .collect::<Vec<_>>()
@@ -17673,8 +17703,8 @@ pub(crate) fn emit_match_statement(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {:?}",
-                            lower_camel_from_upper_camel(variant)
+                            "matchValue.kind === {}",
+                            js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
                     .collect::<Vec<_>>()
@@ -17957,8 +17987,8 @@ pub(crate) fn emit_match_statement(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {:?}",
-                            lower_camel_from_upper_camel(variant)
+                            "matchValue.kind === {}",
+                            js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
                     .collect::<Vec<_>>()
@@ -17986,8 +18016,8 @@ pub(crate) fn emit_match_statement(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {:?}",
-                            lower_camel_from_upper_camel(variant)
+                            "matchValue.kind === {}",
+                            js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
                     .collect::<Vec<_>>()
@@ -18921,24 +18951,24 @@ fn emit_method_call(
         "get" | "get_mut" if arguments.len() == 1 => Ok(format!("{receiver}[{}]", arguments[0])),
         "as_str" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
-                "((v: unknown): string | undefined => typeof v === \"string\" ? v : undefined)({receiver})"
+                "((v: unknown): string | undefined => typeof v === 'string' ? v : undefined)({receiver})"
             ))
         }
         "as_f64" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
-                "((v: unknown): number | undefined => typeof v === \"number\" ? v : undefined)({receiver})"
+                "((v: unknown): number | undefined => typeof v === 'number' ? v : undefined)({receiver})"
             ))
         }
         "as_i64" | "as_u64"
             if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
         {
             Ok(format!(
-                "((v: unknown): number | undefined => typeof v === \"number\" && Number.isInteger(v) ? v : undefined)({receiver})"
+                "((v: unknown): number | undefined => typeof v === 'number' && Number.isInteger(v) ? v : undefined)({receiver})"
             ))
         }
         "as_bool" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
             Ok(format!(
-                "((v: unknown): boolean | undefined => typeof v === \"boolean\" ? v : undefined)({receiver})"
+                "((v: unknown): boolean | undefined => typeof v === 'boolean' ? v : undefined)({receiver})"
             ))
         }
         "as_array"
@@ -18952,23 +18982,23 @@ fn emit_method_call(
             if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
         {
             Ok(format!(
-                "((v: unknown): Record<string, unknown> | undefined => typeof v === \"object\" && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : undefined)({receiver})"
+                "((v: unknown): Record<string, unknown> | undefined => typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : undefined)({receiver})"
             ))
         }
         "is_string"
             if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
         {
-            Ok(format!("(typeof {receiver} === \"string\")"))
+            Ok(format!("(typeof {receiver} === 'string')"))
         }
         "is_number" | "is_f64" | "is_i64" | "is_u64"
             if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
         {
-            Ok(format!("(typeof {receiver} === \"number\")"))
+            Ok(format!("(typeof {receiver} === 'number')"))
         }
         "is_boolean"
             if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
         {
-            Ok(format!("(typeof {receiver} === \"boolean\")"))
+            Ok(format!("(typeof {receiver} === 'boolean')"))
         }
         "is_array"
             if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
@@ -18979,7 +19009,7 @@ fn emit_method_call(
             if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) =>
         {
             Ok(format!(
-                "(typeof {receiver} === \"object\" && {receiver} !== null && !Array.isArray({receiver}))"
+                "(typeof {receiver} === 'object' && {receiver} !== null && !Array.isArray({receiver}))"
             ))
         }
         "is_null" if arguments.is_empty() && expression_is_json_value(&call.receiver, entities) => {
@@ -19049,7 +19079,7 @@ fn emit_method_call(
         "is_eq" if arguments.is_empty() => Ok(format!("({receiver} === 0)")),
         "is_ne" if arguments.is_empty() => Ok(format!("({receiver} !== 0)")),
         "insert" if arguments.len() == 2 => Ok(format!(
-            "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError(\"Vec insertion index out of bounds\"); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
+            "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError('Vec insertion index out of bounds'); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
             arguments[0], arguments[1]
         )),
         "into" if arguments.is_empty() => Ok(receiver),
@@ -19207,13 +19237,13 @@ fn emit_method_call(
             });
             match target_type.as_deref() {
                 Some("f32" | "f64") => Ok(format!(
-                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && !Number.isNaN(v) ? v : undefined; }})({receiver})"
+                    "((s) => {{ const v = Number(s); return s.trim() !== '' && !Number.isNaN(v) ? v : undefined; }})({receiver})"
                 )),
                 Some(
                     "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32" | "u64"
                     | "u128" | "usize",
                 ) => Ok(format!(
-                    "((s) => {{ const v = Number(s); return s.trim() !== \"\" && Number.isInteger(v) ? v : undefined; }})({receiver})"
+                    "((s) => {{ const v = Number(s); return s.trim() !== '' && Number.isInteger(v) ? v : undefined; }})({receiver})"
                 )),
                 Some(other) => Err(compile_error(format!(
                     "portable `.parse::<{other}>()` has no portable lowering",
@@ -19294,7 +19324,7 @@ fn emit_method_call(
         "push_str" if arguments.len() == 1 => Ok(format!("{receiver} += {}", arguments[0])),
         "remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
             Ok(format!(
-                "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError(\"Vec removal index out of bounds\"); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
+                "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError('Vec removal index out of bounds'); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
                 arguments[0]
             ))
         }
@@ -19317,7 +19347,7 @@ fn emit_method_call(
             ))
         }
         "remove" if arguments.len() == 1 => Ok(format!(
-            "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError(\"Vec removal index out of bounds\"); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
+            "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError('Vec removal index out of bounds'); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
             arguments[0]
         )),
         "reverse" if arguments.is_empty() => Ok(format!("{receiver}.reverse()")),
@@ -19494,7 +19524,7 @@ fn emit_method_call(
         "trim_end" if arguments.is_empty() => Ok(format!("{receiver}.trimEnd()")),
         "trim_start" if arguments.is_empty() => Ok(format!("{receiver}.trimStart()")),
         "trim_end_matches" if arguments.len() == 1 => Ok(format!(
-            "((text: string, matches: (character: string) => boolean): string => {{ const chars = [...text]; let end = chars.length; while (end > 0 && matches(chars[end - 1])) {{ end -= 1; }} return chars.slice(0, end).join(\"\"); }})({receiver}, {})",
+            "((text: string, matches: (character: string) => boolean): string => {{ const chars = [...text]; let end = chars.length; while (end > 0 && matches(chars[end - 1])) {{ end -= 1; }} return chars.slice(0, end).join(''); }})({receiver}, {})",
             arguments[0]
         )),
         "trim_start_matches" if arguments.len() == 1 => Ok(format!(
@@ -20065,23 +20095,23 @@ fn json_value_function_ref_lowering(
     }
     return match method.as_str() {
         "as_str" => Some(
-            "(typeof value === \"string\" ? value : undefined)".to_string(),
+            "(typeof value === 'string' ? value : undefined)".to_string(),
         ),
         "as_f64" => Some(
-            "(typeof value === \"number\" ? value : undefined)".to_string(),
+            "(typeof value === 'number' ? value : undefined)".to_string(),
         ),
         "as_i64" | "as_u64" => Some(
-            "(typeof value === \"number\" && Number.isInteger(value) ? value : undefined)"
+            "(typeof value === 'number' && Number.isInteger(value) ? value : undefined)"
                 .to_string(),
         ),
         "as_bool" => Some(
-            "(typeof value === \"boolean\" ? value : undefined)".to_string(),
+            "(typeof value === 'boolean' ? value : undefined)".to_string(),
         ),
         "as_array" => Some(
             "(Array.isArray(value) ? value : undefined)".to_string(),
         ),
         "as_object" => Some(
-            "(typeof value === \"object\" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : undefined)".to_string(),
+            "(typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : undefined)".to_string(),
         ),
         _ => None,
     };
@@ -21906,18 +21936,18 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     for (module, names) in &value_imports {
         writeln!(
             out,
-            "import {{ {} }} from {:?};",
+            "import {{ {} }} from {};",
             names.iter().cloned().collect::<Vec<_>>().join(", "),
-            module
+            js_string_literal(module)
         )
         .expect("writing to a String cannot fail");
     }
     for (module, names) in &type_imports {
         writeln!(
             out,
-            "import type {{ {} }} from {:?};",
+            "import type {{ {} }} from {};",
             names.iter().cloned().collect::<Vec<_>>().join(", "),
-            module
+            js_string_literal(module)
         )
         .expect("writing to a String cannot fail");
     }
@@ -22730,7 +22760,7 @@ fn emit_statement(
                 .is_some_and(|name| name.ident == "todo") =>
         {
             write_indent(out, indent);
-            writeln!(out, "throw new Error(\"not implemented\");")
+            writeln!(out, "throw new Error('not implemented');")
                 .expect("writing to a String cannot fail");
         }
         Stmt::Macro(statement)
@@ -23038,8 +23068,9 @@ pub(crate) fn emit_type(
                     )));
                 }
                 return Ok(format!(
-                    "{name}<{}, {tag:?}>",
-                    emit_type(types[0], entities)?
+                    "{name}<{}, {}>",
+                    emit_type(types[0], entities)?,
+                    js_string_literal(&tag)
                 ));
             }
             // A standard `Box` only transfers ownership, so a boxed typed-array alias is that typed
@@ -24990,7 +25021,7 @@ fn option_binding_fact_default(
             if call.args.is_empty()
                 && matches!(call.method.to_string().as_str(), "as_str" | "to_str") =>
         {
-            return Some("\"\"");
+            return Some("''");
         }
         Expr::MethodCall(call)
             if call.args.is_empty()
@@ -25061,7 +25092,7 @@ fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {
         BindingFact::HashSet => Some("new Set()"),
         BindingFact::Sequence(_) => Some("[]"),
         BindingFact::Structure(name) => match name.as_str() {
-            "String" | "str" => Some("\"\""),
+            "String" | "str" => Some("''"),
             "bool" => Some("false"),
             "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16"
             | "u32" | "u64" | "u128" | "usize" => Some("0"),
