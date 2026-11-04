@@ -17991,6 +17991,163 @@ pub fn panic_message(payload: &str) -> String {
     }
 
     #[test]
+    fn lowers_proven_panic_message_helper_assertions_to_to_throw() {
+        let production = r#"
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn require_positive(counter: &mut Counter, value: i32) -> i32 {
+    counter.calls += 1;
+    if value <= 0 {
+        panic!("value must be positive");
+    }
+    return value;
+}
+
+pub fn require_named(name: &str) -> usize {
+    if name.is_empty() {
+        panic!("{} needs a name", "state");
+    }
+    return name.len();
+}
+"#;
+        let source = r#"
+use crate::*;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(message) = payload.downcast_ref::<String>() {
+        return message.clone();
+    }
+    return payload
+        .downcast_ref::<&str>()
+        .map(|s| s.to_string())
+        .unwrap_or_else(String::new);
+}
+
+fn failure_text(failure: Box<dyn std::any::Any + Send>) -> String {
+    return match failure.downcast_ref::<String>() {
+        Some(message) => message.clone(),
+        None => match failure.downcast_ref::<&str>() {
+            Some(message) => String::from(*message),
+            None => String::new(),
+        },
+    };
+}
+
+mod guard_helpers {
+    use super::*;
+
+    #[test]
+    fn reads_panic_messages() {
+        let mut counter = Counter { calls: 0 };
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            require_positive(&mut counter, 0);
+        }));
+        assert!(panic_message(result.unwrap_err()).contains("must be positive"));
+        let failure = catch_unwind(|| require_named("")).expect_err("empty name panics");
+        assert!(str::contains(&failure_text(failure), "needs a name"));
+        let failure = catch_unwind(|| require_named("")).expect_err("exact");
+        assert_eq!(failure_text(failure), "state needs a name");
+        let failure = catch_unwind(AssertUnwindSafe(|| require_positive(&mut counter, -1)))
+            .err()
+            .expect("negative panics");
+        assert_eq!(panic_message(failure), "value must be positive", "exact positive message");
+        assert_eq!(counter.calls, 2);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        // Both helper shapes are proven by structure (one is not named `panic_message`); `contains`
+        // is `toThrow(substring)` and `assert_eq!` the exact message, `toThrow(new Error(..))`.
+        for expected in [
+            "expect(() => {\n  requirePositive(counter, 0);\n}).toThrow('must be positive');",
+            "expect(() => requireNamed(''), 'empty name panics').toThrow('needs a name');",
+            "expect(() => requireNamed(''), 'exact').toThrow(new Error('state needs a name'));",
+            "expect(() => requirePositive(counter, -1), `exact positive message`).toThrow(new Error('value must be positive'));",
+            "expect(counter.calls).toEqual(2);",
+        ] {
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+        // Proven helpers have no TypeScript body, and nothing of the idiom remains.
+        for absent in [
+            "panicMessage",
+            "failureText",
+            "downcast",
+            "catchUnwind",
+            "const failure",
+            "const result",
+        ] {
+            assert!(!output.contains(absent), "{absent}: {output}");
+        }
+    }
+
+    #[test]
+    fn refuses_panic_message_helpers_it_cannot_prove() {
+        let production = r#"
+pub fn fail() -> i32 {
+    panic!("boom");
+}
+"#;
+        let site = "        let failure = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        assert!(panic_message(failure).contains(\"boom\"));";
+        // Each helper reads something other than exactly the `String`/`&str` message: a
+        // `FlightError` first, only `String`, a non-empty fallback, an extra statement, a closure
+        // instead of a payload. The last case is a proven helper used outside an assertion.
+        for (helper, body) in [
+            (
+                "fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {\n    return payload\n        .downcast_ref::<flight_entity::FlightError>()\n        .map(|error| error.message.clone())\n        .or_else(|| payload.downcast_ref::<String>().cloned())\n        .or_else(|| payload.downcast_ref::<&str>().map(|value| value.to_string()))\n        .unwrap_or_default();\n}",
+                site,
+            ),
+            (
+                "fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {\n    return payload.downcast_ref::<String>().map(|s| s.clone()).unwrap_or_default();\n}",
+                site,
+            ),
+            (
+                "fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {\n    if let Some(message) = payload.downcast_ref::<String>() {\n        return message.clone();\n    }\n    return payload.downcast_ref::<&str>().map(|s| s.to_string()).unwrap_or(\"boom\".to_string());\n}",
+                site,
+            ),
+            (
+                "fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {\n    fail();\n    if let Some(message) = payload.downcast_ref::<String>() {\n        return message.clone();\n    }\n    return payload.downcast_ref::<&str>().map(|s| s.to_string()).unwrap_or_default();\n}",
+                site,
+            ),
+            (
+                "fn panic_message(run: impl FnOnce()) -> String {\n    let payload = std::panic::catch_unwind(std::panic::AssertUnwindSafe(run)).unwrap_err();\n    return payload.downcast_ref::<String>().cloned().unwrap_or_default();\n}",
+                "        assert!(panic_message(|| { fail(); }).contains(\"boom\"));",
+            ),
+            (
+                "fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {\n    if let Some(message) = payload.downcast_ref::<String>() {\n        return message.clone();\n    }\n    return payload.downcast_ref::<&str>().map(|s| s.to_string()).unwrap_or_default();\n}",
+                "        let failure = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        let text = panic_message(failure);\n        assert!(text.contains(\"boom\"));",
+            ),
+        ] {
+            let source = format!(
+                "use crate::*;\n\n{helper}\n\nmod guard_panics {{\n    use super::*;\n\n    #[test]\n    fn checks() {{\n{body}\n    }}\n}}\n"
+            );
+            let result = compile_vitest_with_alias_sources(
+                &source,
+                "@flighthq/example/contract",
+                &[production],
+            );
+            assert!(result.is_err(), "{helper}: {}", result.unwrap_or_default());
+        }
+        // A proven helper called on anything but a caught panic's payload has no TypeScript body to
+        // call, so the call itself refuses.
+        let source = "use crate::*;\n\nfn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {\n    if let Some(message) = payload.downcast_ref::<String>() {\n        return message.clone();\n    }\n    return payload.downcast_ref::<&str>().map(|s| s.to_string()).unwrap_or_default();\n}\n\nmod guard_panics {\n    use super::*;\n\n    #[test]\n    fn checks() {\n        let text = panic_message(Box::new(\"boom\"));\n        assert_eq!(text, \"boom\");\n    }\n}\n";
+        let error =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap_err()
+                .to_string();
+        assert!(
+            error.contains("panic-message helper `panic_message`"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn refuses_caught_panic_shapes_to_throw_cannot_express() {
         let production = r#"
 pub fn fail() -> i32 {

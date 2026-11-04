@@ -233,6 +233,9 @@ const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
 const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
 
 const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
+// A test helper proven to compute a panic payload's `String`/`&str` message (else empty); its calls
+// lower into vitest `toThrow(..)` and it has no TypeScript body.
+pub(crate) const PANIC_MESSAGE_HELPER_MARKER: &str = "@panic-message-helper:";
 // A binding holding an erased shared cell (`Arc<RwLock<T>>`, lowered to `T`) whose whole value a lock
 // guard replaces, so it must be declared assignable.
 const ERASED_CELL_WRITTEN_MARKER: &str = "@erased-cell-written:";
@@ -11039,6 +11042,16 @@ fn emit_expression_value(
             }
             if expression_is_associated_path(&call.func, "Arc", "clone") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
+            }
+            if let Expr::Path(path) = call.func.as_ref()
+                && let Some(name) = path.path.get_ident()
+                && entities.contains(&format!("{PANIC_MESSAGE_HELPER_MARKER}{name}"))
+            {
+                return Err(compile_error(format!(
+                    "portable panic-message helper `{name}` is supported only in an assertion on a \
+                     caught panic: `assert!({name}(payload).contains(..))`, \
+                     `assert!(str::contains(&{name}(payload), ..))` or `assert_eq!({name}(payload), ..)`"
+                )));
             }
             if let Expr::Path(path) = call.func.as_ref()
                 && path.qself.is_none()

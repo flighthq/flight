@@ -7,6 +7,7 @@ use syn::visit::Visit;
 use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 
 use crate::model::{TestCase, TestProgram, TestSuite};
+use crate::typescript::PANIC_MESSAGE_HELPER_MARKER;
 use crate::typescript::{
     begin_option_if, begin_option_while, emit_expression, emit_expression_for_type,
     emit_for_header, emit_format_template, emit_local, emit_local_with_shadow_and_else,
@@ -488,6 +489,7 @@ fn emit_assertion(
             &PanicAssertion {
                 assertion: Some(rust_macro),
                 closure,
+                exact: false,
                 expect_message: None,
                 length: 1,
                 needle: None,
@@ -604,7 +606,7 @@ fn emit_block(
     let mut skipped = HashSet::new();
     let mut index = 0;
     while index < statements.len() {
-        let assertion = caught_panic_assertion(statements, index)
+        let assertion = caught_panic_assertion(statements, index, &block_context)
             .or_else(|| panic_is_err_assertion(statements, index));
         if let Some(assertion) = assertion {
             let length = assertion.length;
@@ -668,6 +670,10 @@ fn emit_helper(
     context: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    // A proven panic-message helper has no TypeScript body: its calls lower into `toThrow(..)`.
+    if proven_panic_message_helper(function) {
+        return Ok(());
+    }
     if function.sig.asyncness.is_some() {
         return Err(compile_error(format!(
             "async portable helper `{}` is not supported yet",
@@ -768,7 +774,8 @@ fn emit_vitest_else_chain(
 struct PanicAssertion<'a> {
     assertion: Option<&'a syn::Macro>,
     closure: &'a syn::ExprClosure,
-    expect_message: Option<&'a Expr>,
+    exact: bool,
+    expect_message: Option<Expr>,
     length: usize,
     needle: Option<Expr>,
 }
@@ -784,19 +791,29 @@ fn emit_panic_assertion(
     indent: usize,
 ) -> Result<(), CompileError> {
     let closure = emit_expression(&Expr::Closure(assertion.closure.clone()), context)?;
-    let needle = assertion
+    let mut needle = assertion
         .needle
         .as_ref()
         .map(|needle| emit_expression(needle, context))
         .transpose()?
         .unwrap_or_default();
+    if assertion.exact {
+        // `toThrow(error)` passes only when the thrown `Error`'s message equals this one.
+        needle = format!("new Error({needle})");
+    }
     let assert_message = match assertion.assertion {
         Some(assertion) => {
-            assertion_message(&parse_macro_arguments(assertion)?, "assert", context)?
+            let name = assertion
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string())
+                .unwrap_or_default();
+            assertion_message(&parse_macro_arguments(assertion)?, &name, context)?
         }
         None => None,
     };
-    let message = match (assert_message, assertion.expect_message) {
+    let message = match (assert_message, assertion.expect_message.as_ref()) {
         (Some(message), _) => Some(message),
         (None, Some(message)) => Some(emit_expression(message, context)?),
         (None, None) => None,
@@ -840,6 +857,7 @@ fn panic_is_err_assertion(statements: &[Stmt], start: usize) -> Option<PanicAsse
     return Some(PanicAssertion {
         assertion: Some(&assertion.mac),
         closure,
+        exact: false,
         expect_message: None,
         length: PANIC_IS_ERR_ASSERTION_LENGTH,
         needle: None,
@@ -870,8 +888,47 @@ fn caught_panic_is_err(expression: &Expr) -> Option<&syn::ExprClosure> {
 // `err` again, it is `expect(() => .., message).toThrow()`. A payload inspected any other way (a
 // `FlightError`, a helper, an exact comparison) is not expressible, and neither is a result or
 // payload read again later: those do not match, and their `catch_unwind` call then refuses.
-fn caught_panic_assertion(statements: &[Stmt], start: usize) -> Option<PanicAssertion<'_>> {
+fn caught_panic_assertion<'a>(
+    statements: &'a [Stmt],
+    start: usize,
+    context: &HashSet<String>,
+) -> Option<PanicAssertion<'a>> {
+    // `let result = catch_unwind(..);` then a helper assertion on `result.unwrap_err()` (or
+    // `.expect_err(..)`), with `result` not read after.
+    if let Some((result, caught)) = statements.get(start).and_then(simple_local)
+        && let Some(closure) = caught_panic_closure(caught)
+        && let Some(Stmt::Macro(assertion)) = statements.get(start + 1)
+        && let Some((payload, needle, exact)) = panic_helper_assertion(&assertion.mac, context)
+        && let Some((receiver, expect_message)) = unwrapped_panic_payload(peel_payload(&payload))
+        && expression_is_name(receiver, &result)
+        && !statements_read_name(&statements[start + 2..], &result)
+    {
+        return Some(PanicAssertion {
+            assertion: Some(&assertion.mac),
+            closure,
+            exact,
+            expect_message: expect_message.cloned(),
+            length: 2,
+            needle: Some(needle),
+        });
+    }
     let (closure, error, expect_message, prefix) = caught_panic_error(statements, start)?;
+    let message_start = start + prefix;
+    // The payload checked through a proven helper: `assert!(panic_message(err).contains(..))`.
+    if let Some(Stmt::Macro(assertion)) = statements.get(message_start)
+        && let Some((payload, needle, exact)) = panic_helper_assertion(&assertion.mac, context)
+        && expression_is_name(peel_payload(&payload), &error)
+        && !statements_read_name(&statements[message_start + 1..], &error)
+    {
+        return Some(PanicAssertion {
+            assertion: Some(&assertion.mac),
+            closure,
+            exact,
+            expect_message: expect_message.cloned(),
+            length: prefix + 1,
+            needle: Some(needle),
+        });
+    }
     let message_start = start + prefix;
     if let Some(window) = statements.get(message_start..message_start + 2)
         && let Some((message, downcast)) = simple_local(&window[0])
@@ -889,7 +946,8 @@ fn caught_panic_assertion(statements: &[Stmt], start: usize) -> Option<PanicAsse
         return Some(PanicAssertion {
             assertion: Some(&assertion.mac),
             closure,
-            expect_message,
+            exact: false,
+            expect_message: expect_message.cloned(),
             length: prefix + 2,
             needle: Some(contains.args[0].clone()),
         });
@@ -900,7 +958,8 @@ fn caught_panic_assertion(statements: &[Stmt], start: usize) -> Option<PanicAsse
     return Some(PanicAssertion {
         assertion: None,
         closure,
-        expect_message,
+        exact: false,
+        expect_message: expect_message.cloned(),
         length: prefix,
         needle: None,
     });
@@ -932,6 +991,17 @@ fn unwrapped_panic_payload(expression: &Expr) -> Option<(&Expr, Option<&Expr>)> 
     let Expr::MethodCall(call) = expression else {
         return None;
     };
+    // `.err().unwrap()` / `.err().expect(message)` are `.unwrap_err()` / `.expect_err(message)`.
+    if let Expr::MethodCall(err) = call.receiver.as_ref()
+        && err.method == "err"
+        && err.args.is_empty()
+    {
+        return match (call.method.to_string().as_str(), call.args.len()) {
+            ("unwrap", 0) => Some((&err.receiver, None)),
+            ("expect", 1) => Some((&err.receiver, Some(&call.args[0]))),
+            _ => None,
+        };
+    }
     return match (call.method.to_string().as_str(), call.args.len()) {
         ("unwrap_err", 0) => Some((&call.receiver, None)),
         ("expect_err", 1) => Some((&call.receiver, Some(&call.args[0]))),
@@ -1135,6 +1205,394 @@ fn statements_read_name(statements: &[Stmt], name: &str) -> bool {
         }
     }
     return false;
+}
+
+// The assertion on a panic payload through a proven panic-message helper: the payload expression,
+// the message (a substring, or the exact message), and whether it is exact.
+//
+//     assert!(panic_message(payload).contains(needle));
+//     assert!(str::contains(&panic_message(payload), needle));
+//     assert_eq!(panic_message(payload), message);   // either operand order
+fn panic_helper_assertion(
+    assertion: &syn::Macro,
+    context: &HashSet<String>,
+) -> Option<(Expr, Expr, bool)> {
+    let arguments = parse_macro_arguments(assertion).ok()?;
+    let helper_payload = |expression: &Expr| -> Option<Expr> {
+        let Expr::Call(call) = unparenthesized(expression) else {
+            return None;
+        };
+        let Expr::Path(path) = call.func.as_ref() else {
+            return None;
+        };
+        let name = path.path.get_ident()?.to_string();
+        return (path.qself.is_none()
+            && call.args.len() == 1
+            && context.contains(&format!("{PANIC_MESSAGE_HELPER_MARKER}{name}")))
+        .then(|| call.args[0].clone());
+    };
+    if assertion.path.is_ident("assert") {
+        return match unparenthesized(arguments.first()?) {
+            Expr::MethodCall(contains)
+                if contains.method == "contains" && contains.args.len() == 1 =>
+            {
+                Some((
+                    helper_payload(&contains.receiver)?,
+                    contains.args[0].clone(),
+                    false,
+                ))
+            }
+            Expr::Call(call)
+                if path_is(&call.func, &["str", "contains"]) && call.args.len() == 2 =>
+            {
+                let Expr::Reference(message) = unparenthesized(&call.args[0]) else {
+                    return None;
+                };
+                Some((helper_payload(&message.expr)?, call.args[1].clone(), false))
+            }
+            _ => None,
+        };
+    }
+    if assertion.path.is_ident("assert_eq") && arguments.len() >= 2 {
+        if let Some(payload) = helper_payload(&arguments[0]) {
+            return Some((payload, arguments[1].clone(), true));
+        }
+        return Some((helper_payload(&arguments[1])?, arguments[0].clone(), true));
+    }
+    return None;
+}
+
+// A payload expression as a helper receives it: `payload`, `payload.as_ref()`, `&*payload` or
+// `&payload`, each the payload itself.
+fn peel_payload(expression: &Expr) -> &Expr {
+    let expression = unparenthesized(expression);
+    if let Expr::MethodCall(as_ref) = expression
+        && as_ref.method == "as_ref"
+        && as_ref.args.is_empty()
+    {
+        return peel_payload(&as_ref.receiver);
+    }
+    if let Expr::Reference(reference) = expression {
+        return peel_payload(&reference.expr);
+    }
+    if let Expr::Unary(unary) = expression
+        && matches!(unary.op, syn::UnOp::Deref(_))
+    {
+        return peel_payload(&unary.expr);
+    }
+    return expression;
+}
+
+fn path_is(expression: &Expr, segments: &[&str]) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    return path.qself.is_none()
+        && path.path.segments.len() == segments.len()
+        && path
+            .path
+            .segments
+            .iter()
+            .zip(segments)
+            .all(|(segment, expected)| segment.ident == expected);
+}
+
+// Whether `function` is proven to compute a panic payload's message as `toThrow` reads it: the
+// `String` or `&str` payload, else the empty string. It takes one payload parameter
+// (`Box<dyn Any + Send>` or `&(dyn Any + Send)`), returns `String`, and its body is only
+//
+//     if let Some(message) = payload.downcast_ref::<T>() { return CONVERT(message); }   // any number
+//     return MESSAGE;
+//
+// where MESSAGE is the empty string, `payload.downcast_ref::<T>().map(|m| CONVERT(m))` with an
+// empty default, or `match payload.downcast_ref::<T>() { Some(m) => CONVERT(m), None => MESSAGE }`,
+// T is `String` or `&str`, and both are read. The function's name is not part of the proof.
+fn proven_panic_message_helper(function: &ItemFn) -> bool {
+    let signature = &function.sig;
+    if signature.asyncness.is_some()
+        || !signature.generics.params.is_empty()
+        || signature.inputs.len() != 1
+    {
+        return false;
+    }
+    let Some(FnArg::Typed(parameter)) = signature.inputs.first() else {
+        return false;
+    };
+    let Pat::Ident(parameter_name) = parameter.pat.as_ref() else {
+        return false;
+    };
+    let ReturnType::Type(_, returned) = &signature.output else {
+        return false;
+    };
+    if !type_is_string(returned) || !type_is_panic_payload(&parameter.ty) {
+        return false;
+    }
+    let payload = parameter_name.ident.to_string();
+    let mut read = Vec::new();
+    let Some((last, guards)) = function.block.stmts.split_last() else {
+        return false;
+    };
+    for guard in guards {
+        let Stmt::Expr(Expr::If(if_let), _) = guard else {
+            return false;
+        };
+        if if_let.else_branch.is_some() {
+            return false;
+        }
+        let Expr::Let(binding) = if_let.cond.as_ref() else {
+            return false;
+        };
+        let Some((bound, payload_type)) =
+            some_downcast_binding(&binding.pat, &binding.expr, &payload)
+        else {
+            return false;
+        };
+        let [Stmt::Expr(Expr::Return(returned), _)] = if_let.then_branch.stmts.as_slice() else {
+            return false;
+        };
+        if !returned
+            .expr
+            .as_ref()
+            .is_some_and(|value| converts_binding_to_string(value, &bound))
+        {
+            return false;
+        }
+        read.push(payload_type);
+    }
+    let Stmt::Expr(Expr::Return(returned), _) = last else {
+        return false;
+    };
+    let Some(message) = &returned.expr else {
+        return false;
+    };
+    if !panic_message_expression(message, &payload, &mut read) {
+        return false;
+    }
+    return read.contains(&PanicPayloadType::String) && read.contains(&PanicPayloadType::Str);
+}
+
+#[derive(PartialEq)]
+enum PanicPayloadType {
+    Str,
+    String,
+}
+
+fn panic_message_expression(
+    expression: &Expr,
+    payload: &str,
+    read: &mut Vec<PanicPayloadType>,
+) -> bool {
+    if expression_is_empty_string(expression) {
+        return true;
+    }
+    if let Expr::Match(choice) = expression {
+        let Some(payload_type) = payload_downcast(&choice.expr, payload) else {
+            return false;
+        };
+        let [first, second] = choice.arms.as_slice() else {
+            return false;
+        };
+        let (some, none) = if matches!(&first.pat, Pat::Ident(identifier) if identifier.ident == "None")
+            || matches!(&first.pat, Pat::Path(path) if path.path.is_ident("None"))
+        {
+            (second, first)
+        } else {
+            (first, second)
+        };
+        if some.guard.is_some() || none.guard.is_some() {
+            return false;
+        }
+        let Pat::TupleStruct(some_pattern) = &some.pat else {
+            return false;
+        };
+        let [Pat::Ident(bound)] = some_pattern.elems.iter().collect::<Vec<_>>()[..] else {
+            return false;
+        };
+        if !some_pattern.path.is_ident("Some")
+            || !converts_binding_to_string(&some.body, &bound.ident.to_string())
+        {
+            return false;
+        }
+        let none_is_none = matches!(&none.pat, Pat::Ident(identifier) if identifier.ident == "None")
+            || matches!(&none.pat, Pat::Path(path) if path.path.is_ident("None"));
+        read.push(payload_type);
+        return none_is_none && panic_message_expression(&none.body, payload, read);
+    }
+    // `payload.downcast_ref::<T>().map(|m| CONVERT(m))` with an empty default.
+    let Expr::MethodCall(default) = expression else {
+        return false;
+    };
+    let empty_default = match (default.method.to_string().as_str(), default.args.len()) {
+        ("unwrap_or_default", 0) => true,
+        ("unwrap_or", 1) => expression_is_empty_string(&default.args[0]),
+        ("unwrap_or_else", 1) => {
+            path_is(&default.args[0], &["String", "new"])
+                || path_is(&default.args[0], &["String", "default"])
+        }
+        _ => false,
+    };
+    let Expr::MethodCall(map) = default.receiver.as_ref() else {
+        return false;
+    };
+    if !empty_default || map.method != "map" || map.args.len() != 1 {
+        return false;
+    }
+    let Expr::Closure(convert) = &map.args[0] else {
+        return false;
+    };
+    let [Pat::Ident(bound)] = convert.inputs.iter().collect::<Vec<_>>()[..] else {
+        return false;
+    };
+    let Some(payload_type) = payload_downcast(&map.receiver, payload) else {
+        return false;
+    };
+    if !converts_binding_to_string(&convert.body, &bound.ident.to_string()) {
+        return false;
+    }
+    read.push(payload_type);
+    return true;
+}
+
+// `Some(bound)` matched against `payload.downcast_ref::<T>()`.
+fn some_downcast_binding(
+    pattern: &Pat,
+    expression: &Expr,
+    payload: &str,
+) -> Option<(String, PanicPayloadType)> {
+    let Pat::TupleStruct(some) = pattern else {
+        return None;
+    };
+    let [Pat::Ident(bound)] = some.elems.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    if !some.path.is_ident("Some") || bound.subpat.is_some() {
+        return None;
+    }
+    return Some((
+        bound.ident.to_string(),
+        payload_downcast(expression, payload)?,
+    ));
+}
+
+// `payload.downcast_ref::<String>()` or `payload.downcast_ref::<&str>()`.
+fn payload_downcast(expression: &Expr, payload: &str) -> Option<PanicPayloadType> {
+    let Expr::MethodCall(downcast) = unparenthesized(expression) else {
+        return None;
+    };
+    if downcast.method != "downcast_ref"
+        || !downcast.args.is_empty()
+        || !expression_is_name(&downcast.receiver, payload)
+    {
+        return None;
+    }
+    let turbofish = downcast.turbofish.as_ref()?;
+    let [syn::GenericArgument::Type(payload_type)] = turbofish.args.iter().collect::<Vec<_>>()[..]
+    else {
+        return None;
+    };
+    return match payload_type {
+        syn::Type::Reference(reference)
+            if reference.mutability.is_none()
+                && matches!(reference.elem.as_ref(), syn::Type::Path(path) if path.qself.is_none() && path.path.is_ident("str")) =>
+        {
+            Some(PanicPayloadType::Str)
+        }
+        _ if type_is_string(payload_type) => Some(PanicPayloadType::String),
+        _ => None,
+    };
+}
+
+// The bound message (`message` or `*message`) as an owned `String`: `.clone()`, `.to_string()`,
+// `.to_owned()` or `String::from(..)`.
+fn converts_binding_to_string(expression: &Expr, bound: &str) -> bool {
+    let is_bound = |expression: &Expr| {
+        let expression = unparenthesized(expression);
+        if let Expr::Unary(unary) = expression
+            && matches!(unary.op, syn::UnOp::Deref(_))
+        {
+            return expression_is_name(&unary.expr, bound);
+        }
+        return expression_is_name(expression, bound);
+    };
+    return match unparenthesized(expression) {
+        Expr::MethodCall(call) => {
+            matches!(
+                call.method.to_string().as_str(),
+                "clone" | "to_string" | "to_owned"
+            ) && call.args.is_empty()
+                && is_bound(&call.receiver)
+        }
+        Expr::Call(call) => {
+            path_is(&call.func, &["String", "from"])
+                && call.args.len() == 1
+                && is_bound(&call.args[0])
+        }
+        _ => false,
+    };
+}
+
+fn expression_is_empty_string(expression: &Expr) -> bool {
+    let empty_literal = |expression: &Expr| {
+        matches!(unparenthesized(expression), Expr::Lit(literal)
+            if matches!(&literal.lit, syn::Lit::Str(text) if text.value().is_empty()))
+    };
+    return match unparenthesized(expression) {
+        Expr::Call(call) if call.args.is_empty() => {
+            path_is(&call.func, &["String", "new"]) || path_is(&call.func, &["String", "default"])
+        }
+        Expr::Call(call) => {
+            path_is(&call.func, &["String", "from"])
+                && call.args.len() == 1
+                && empty_literal(&call.args[0])
+        }
+        Expr::MethodCall(call) => {
+            matches!(call.method.to_string().as_str(), "to_string" | "to_owned")
+                && call.args.is_empty()
+                && empty_literal(&call.receiver)
+        }
+        _ => false,
+    };
+}
+
+fn type_is_string(rust_type: &syn::Type) -> bool {
+    return matches!(rust_type, syn::Type::Path(path) if path.qself.is_none() && path.path.is_ident("String"));
+}
+
+// `Box<dyn Any + Send>` or `&(dyn Any + Send)` / `&dyn Any`, with `Any` spelled bare or as
+// `std::any::Any`.
+fn type_is_panic_payload(rust_type: &syn::Type) -> bool {
+    let trait_object_is_any = |rust_type: &syn::Type| {
+        let rust_type = match rust_type {
+            syn::Type::Paren(paren) => paren.elem.as_ref(),
+            rust_type => rust_type,
+        };
+        let syn::Type::TraitObject(object) = rust_type else {
+            return false;
+        };
+        return object.bounds.iter().any(|bound| {
+            matches!(bound, syn::TypeParamBound::Trait(bound)
+                if bound.path.segments.last().is_some_and(|segment| segment.ident == "Any"))
+        });
+    };
+    return match rust_type {
+        syn::Type::Reference(reference) => {
+            reference.mutability.is_none() && trait_object_is_any(&reference.elem)
+        }
+        syn::Type::Path(path) if path.qself.is_none() => {
+            let Some(segment) = path.path.segments.last() else {
+                return false;
+            };
+            let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return false;
+            };
+            let [syn::GenericArgument::Type(inner)] = arguments.args.iter().collect::<Vec<_>>()[..]
+            else {
+                return false;
+            };
+            segment.ident == "Box" && trait_object_is_any(inner)
+        }
+        _ => false,
+    };
 }
 
 fn emit_statement(
@@ -1346,6 +1804,18 @@ pub(crate) fn emit_test_program(
     external_type_owners: &BTreeMap<String, &str>,
     context: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    let mut panic_helper_context = context.clone();
+    for helper in program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| suite.helpers.iter()))
+    {
+        if proven_panic_message_helper(helper) {
+            panic_helper_context
+                .insert(format!("{PANIC_MESSAGE_HELPER_MARKER}{}", helper.sig.ident));
+        }
+    }
+    let context = &panic_helper_context;
     let (mut contract_symbols, mut contract_type_symbols, external_modules) =
         collect_contract_symbols(program, context);
     let (mut cross_crate_values, mut cross_crate_types) =
@@ -1591,6 +2061,9 @@ pub(crate) fn emit_test_program(
         emit_test_constant(&mut out, constant, context)?;
     }
     for helper in &program.helpers {
+        if proven_panic_message_helper(helper) {
+            continue;
+        }
         out.push('\n');
         emit_helper(&mut out, helper, context, 0)?;
     }
