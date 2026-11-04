@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use std::task::Poll;
 
 use url::Url;
