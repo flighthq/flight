@@ -26449,6 +26449,36 @@ export function ordinary(key: string): number {
 mod target_native_owner_provenance {
     use super::*;
 
+    // `nullable-option` on a target-native owner's getter designates only that call's absence as the
+    // owner's `null` slot: a sibling's `.is_some()` normalizes it, while undesignated Option returns
+    // keep the ordinary `undefined` comparison.
+    #[test]
+    fn normalizes_only_designated_target_native_owner_nullable_returns() {
+        let owner = "//! flight-compiler: target-native\n//! flight-compiler: nullable-option get_pool_release_guard\n\nuse std::sync::Arc;\n\npub type PoolReleaseGuard = Arc<dyn Fn(u32) + Send + Sync>;\n\npub(crate) fn get_pool_release_guard() -> Option<PoolReleaseGuard> {\n    return None;\n}\n\npub fn get_pool_size() -> Option<u32> {\n    return None;\n}\n";
+        let source = "use crate::pool_guards::{get_pool_release_guard, get_pool_size};\n\npub fn has_pool_guard() -> bool {\n    return get_pool_release_guard().is_some();\n}\n\npub fn has_pool_size() -> bool {\n    return get_pool_size().is_some();\n}\n";
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-demo/src/enable_pool_guards.rs",
+                source,
+            },
+            None,
+            &[ModuleSource {
+                path: "crates/flight-demo/src/pool_guards.rs",
+                source: owner,
+            }],
+            &[],
+        )
+        .unwrap();
+        assert!(
+            output.contains("  return ((getPoolReleaseGuard()) ?? undefined) !== undefined;\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  return getPoolSize() !== undefined;\n"),
+            "{output}"
+        );
+    }
+
     #[test]
     fn lowers_sibling_uses_of_a_target_native_owner_string_union() {
         let owner = r#"//! flight-compiler: target-native
