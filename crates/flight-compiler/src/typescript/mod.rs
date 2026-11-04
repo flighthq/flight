@@ -9162,6 +9162,23 @@ fn tail_expression_needs_return(expression: &Expr) -> bool {
     );
 }
 
+// Emits a block whose tail value is returned, as a closure or function body. Only a tail that needs
+// a `return` is rewritten (and so copied); see `emit_block_with_tail`.
+fn emit_block_with_tail_returns(
+    out: &mut String,
+    statements: &[Stmt],
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let tail = statements.last().and_then(|last| {
+        let rewritten = inject_tail_returns(std::slice::from_ref(last)).pop()?;
+        return (rewritten.to_token_stream().to_string() != last.to_token_stream().to_string())
+            .then_some(rewritten);
+    });
+    emit_block_with_tail(out, statements, tail.as_ref(), entities, indent)?;
+    return Ok(());
+}
+
 fn inject_tail_returns(statements: &[Stmt]) -> Vec<Stmt> {
     let mut owned = statements.to_vec();
     let Some(last) = owned.last_mut() else {
@@ -9268,14 +9285,12 @@ fn emit_function_block(
         && let Some(Stmt::Expr(expr, None)) = statements.last()
         && matches!(expr, Expr::If(_) | Expr::Block(_) | Expr::Unsafe(_))
     {
-        let owned = inject_tail_returns(statements);
-        emit_block(out, &owned, entities, indent)
+        emit_block_with_tail_returns(out, statements, entities, indent)
     } else if has_return_type
         && let Some(Stmt::Expr(expr, None)) = statements.last()
         && tail_expression_needs_return(expr)
     {
-        let owned = inject_tail_returns(statements);
-        emit_block(out, &owned, entities, indent)
+        emit_block_with_tail_returns(out, statements, entities, indent)
     } else {
         emit_block(out, statements, entities, indent)
     }
@@ -9287,6 +9302,19 @@ fn emit_function_block(
 fn emit_block_with_context(
     out: &mut String,
     statements: &[Stmt],
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<HashSet<String>, CompileError> {
+    return emit_block_with_tail(out, statements, None, entities, indent);
+}
+
+// `emit_block_with_context`, emitting `tail` in place of the last statement. The other statements
+// are emitted as parsed, not copied: binding ids are keyed by the address of a binding's identifier
+// (`binding_site_key`), so a copied `let` would lose everything the resolver proved for it.
+fn emit_block_with_tail(
+    out: &mut String,
+    statements: &[Stmt],
+    tail: Option<&Stmt>,
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<HashSet<String>, CompileError> {
@@ -9322,7 +9350,11 @@ fn emit_block_with_context(
         }
     }
     let mut declared: HashSet<String> = HashSet::new();
-    for (index, statement) in statements.iter().enumerate() {
+    for (index, parsed) in statements.iter().enumerate() {
+        let statement = match tail {
+            Some(tail) if index + 1 == statements.len() => tail,
+            _ => parsed,
+        };
         if let Stmt::Local(local) = statement
             && let Some(name) = local_pattern_name(&local.pat)
         {
@@ -9647,10 +9679,9 @@ fn emit_closure_with_parameter_types(
     };
     let body = match closure.body.as_ref() {
         Expr::Block(block) => {
-            let stmts = inject_tail_returns(&block.block.stmts);
             let mut body = String::new();
             body.push_str("{\n");
-            emit_block(&mut body, &stmts, &closure_context, 1)?;
+            emit_block_with_tail_returns(&mut body, &block.block.stmts, &closure_context, 1)?;
             body.push('}');
             body
         }

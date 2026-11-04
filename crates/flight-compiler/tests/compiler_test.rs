@@ -2939,6 +2939,75 @@ pub fn called_statement_forms(counter: &mut Counter) -> i32 {
     }
 
     #[test]
+    fn keeps_mutex_guard_bindings_inside_closure_bodies() {
+        let source = r#"
+use std::sync::{Arc, Mutex};
+
+pub struct Picker {
+    pub calls: i32,
+    pub cells: Vec<Arc<Mutex<i32>>>,
+}
+
+pub fn pick(picker: &mut Picker) -> Arc<Mutex<i32>> {
+    picker.calls += 1;
+    return picker.cells[0].clone();
+}
+
+pub fn toggle_once(added: &Arc<Mutex<bool>>) -> bool {
+    let a_added = added.clone();
+    let run = move || {
+        let mut added = a_added.lock().unwrap();
+        if !*added {
+            *added = true;
+        }
+    };
+    run();
+    return *added.lock().unwrap();
+}
+
+pub fn read_plus_one(cell: &Arc<Mutex<i32>>) -> i32 {
+    let a_cell = cell.clone();
+    let read = move || {
+        let guard = a_cell.lock().unwrap();
+        *guard + 1
+    };
+    return read();
+}
+
+pub fn bump_picked(picker: &mut Picker) -> i32 {
+    let mut bump = |picker: &mut Picker| {
+        let cell = pick(picker);
+        let mut guard = cell.lock().unwrap();
+        *guard += 10;
+        if *guard > 15 {
+            *guard -= 1;
+        }
+    };
+    bump(picker);
+    return *picker.cells[0].lock().unwrap();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        // The guard binds the cell, so each dereference reads or writes `.value` once, whether the
+        // closure ends in an `if` (no return injected) or a value (a return injected).
+        assert!(!output.contains("aAdded.value;"), "{output}");
+        assert!(
+            output.contains(
+                "let added_1 = aAdded;\n  if (!added_1.value) {\n    added_1.value = true;"
+            ),
+            "{output}"
+        );
+        assert!(!output.contains("aCell.value;"), "{output}");
+        assert!(
+            output.contains("const guard = aCell;\n  return guard.value + 1;"),
+            "{output}"
+        );
+        // The receiver is evaluated once, before the guard binds it.
+        assert_eq!(output.matches("pick(picker)").count(), 1, "{output}");
+        assert!(output.contains("let guard = cell;\n  guard.value += 10;\n  if (guard.value > 15) {\n    guard.value -= 1;"), "{output}");
+    }
+
+    #[test]
     fn evaluates_if_let_value_scrutinees_once() {
         let source = r#"
 pub fn next_id() -> Option<i32> {
