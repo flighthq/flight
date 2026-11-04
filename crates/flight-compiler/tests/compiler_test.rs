@@ -6,8 +6,8 @@ use flight_compiler::{
     compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
     compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
     compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
-    compile_vitest_with_options,
-    compile_vitest_with_visibility_sources, root_only_names, source_mode,
+    compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
+    source_mode,
 };
 
 mod source_modes {
@@ -17199,6 +17199,7 @@ mod blocked_reason {
             &aliases,
             &[],
             &metadata,
+            &[],
             &[],
         )
         .unwrap();
