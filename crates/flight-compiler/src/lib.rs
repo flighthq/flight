@@ -70,6 +70,17 @@ pub struct TypeScriptNullableOptionField<'a> {
     pub field: &'a str,
 }
 
+/// An established TypeScript function parameter whose Rust `Option` defaults to `null`.
+///
+/// The owner and parameter are their emitted TypeScript names. The compiler validates that exactly
+/// one visible public Rust function has the corresponding `Option` parameter before emitting its
+/// `T | null = null` representation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeScriptDefaultNullOptionParameter<'a> {
+    pub owner: &'a str,
+    pub parameter: &'a str,
+}
+
 /// An established TypeScript function parameter whose Rust `Option` uses `null` absence.
 ///
 /// The owner and parameter are their emitted TypeScript names. The compiler validates that exactly
@@ -186,6 +197,7 @@ fn compile_typescript_sources(
         &[],
         &[],
         &[],
+        &[],
         module_identities,
         source_paths,
         visibility_sources,
@@ -203,6 +215,7 @@ fn compile_typescript_sources_with_options(
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
     type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
     module_identities: Option<Vec<String>>,
@@ -213,6 +226,10 @@ fn compile_typescript_sources_with_options(
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
     validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
+    validate_type_script_default_null_option_parameters(
+        type_script_default_null_option_parameters,
+        type_script_nullable_option_parameters,
+    )?;
     validate_type_script_nullable_option_parameters(type_script_nullable_option_parameters)?;
     validate_type_script_nullable_option_returns(type_script_nullable_option_returns)?;
     require_generated_source(source)?;
@@ -398,6 +415,7 @@ fn compile_typescript_sources_with_options(
         inline_string_unions: &inline_string_unions,
         type_script_type_aliases,
         type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
         type_script_nullable_option_returns,
         external_shared_identity_fields: &external_shared_identity_fields(external_alias_sources)?,
@@ -556,6 +574,7 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
         &[],
         &[],
         &[],
+        &[],
         visibility_sources,
         crate_roots,
         false,
@@ -573,6 +592,7 @@ pub fn compile_typescript_with_options(
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
     type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
     visibility_sources: &[ModuleSource<'_>],
@@ -603,6 +623,7 @@ pub fn compile_typescript_with_options(
         type_script_inline_string_unions,
         type_script_type_aliases,
         type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
         type_script_nullable_option_returns,
         identities,
@@ -626,6 +647,7 @@ pub fn compile_typescript_lenient(
     return compile_typescript_sources_with_options(
         source,
         entity_module,
+        &[],
         &[],
         &[],
         &[],
@@ -689,6 +711,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -702,11 +725,16 @@ fn compile_vitest_with_contract_alias_sources_internal(
     visibility_sources: &[&str],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
     type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
     validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
+    validate_type_script_default_null_option_parameters(
+        type_script_default_null_option_parameters,
+        type_script_nullable_option_parameters,
+    )?;
     validate_type_script_nullable_option_parameters(type_script_nullable_option_parameters)?;
     validate_type_script_nullable_option_returns(type_script_nullable_option_returns)?;
     require_generated_source(source)?;
@@ -823,6 +851,15 @@ fn compile_vitest_with_contract_alias_sources_internal(
                 .map(|(module, program)| (module.as_str(), *program)),
         ),
         type_script_nullable_option_parameters,
+    )?;
+    typescript::insert_type_script_default_null_option_parameter_context(
+        &mut context,
+        alias_program_refs.iter().copied().chain(
+            visibility_program_refs
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_default_null_option_parameters,
     )?;
     typescript::insert_vitest_own_public_context(
         &mut context,
@@ -996,6 +1033,7 @@ pub fn compile_vitest_with_external_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -1011,6 +1049,7 @@ pub fn compile_vitest_with_module_alias_sources(
         contract_module,
         None,
         alias_sources,
+        &[],
         &[],
         &[],
         &[],
@@ -1046,6 +1085,7 @@ pub fn compile_vitest_with_visibility_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -1063,6 +1103,7 @@ pub fn compile_vitest_with_options(
     visibility_sources: &[&str],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
     type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
 ) -> Result<String, CompileError> {
@@ -1076,6 +1117,7 @@ pub fn compile_vitest_with_options(
         visibility_sources,
         type_script_type_aliases,
         type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
         type_script_nullable_option_returns,
     );
@@ -2439,6 +2481,40 @@ fn validate_type_script_nullable_option_parameters(
         if !positions.insert((parameter.owner, parameter.parameter)) {
             return Err(compile_error(format!(
                 "duplicate TypeScript nullable Option parameter `{}.{}`",
+                parameter.owner, parameter.parameter
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_type_script_default_null_option_parameters(
+    parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
+    nullable_parameters: &[TypeScriptNullableOptionParameter<'_>],
+) -> Result<(), CompileError> {
+    let nullable_positions = nullable_parameters
+        .iter()
+        .map(|parameter| (parameter.owner, parameter.parameter))
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut positions = std::collections::BTreeSet::new();
+    for parameter in parameters {
+        if !valid_type_script_identifier(parameter.owner)
+            || !valid_type_script_identifier(parameter.parameter)
+        {
+            return Err(compile_error(format!(
+                "TypeScript default-null Option parameter has invalid function position `{}.{}`",
+                parameter.owner, parameter.parameter
+            )));
+        }
+        if !positions.insert((parameter.owner, parameter.parameter)) {
+            return Err(compile_error(format!(
+                "duplicate TypeScript default-null Option parameter `{}.{}`",
+                parameter.owner, parameter.parameter
+            )));
+        }
+        if nullable_positions.contains(&(parameter.owner, parameter.parameter)) {
+            return Err(compile_error(format!(
+                "TypeScript Option parameter `{}.{}` cannot be both nullable and default-null",
                 parameter.owner, parameter.parameter
             )));
         }

@@ -1,5 +1,6 @@
 use flight_compiler::{
-    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptInlineStringUnion,
+    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptDefaultNullOptionParameter,
+    TypeScriptInlineStringUnion,
     TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
     compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
@@ -13542,6 +13543,7 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13604,12 +13606,14 @@ pub enum UnannotatedStringUnion {
             &[],
             &[],
             &[],
+            &[],
             false,
         )
         .unwrap();
         let ordinary = compile_typescript_with_options(
             source,
             None,
+            &[],
             &[],
             &[],
             &[],
@@ -13687,6 +13691,7 @@ pub fn finish_transition(
             &fields,
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13746,6 +13751,7 @@ pub fn forward(timer: Option<&LogTimer>, label: Option<&str>) {
             &[],
             &[],
             &[],
+            &[],
             &parameters,
             &[],
             &[],
@@ -13774,6 +13780,78 @@ pub fn forward(timer: Option<&LogTimer>, label: Option<&str>) {
     }
 
     #[test]
+    fn lowers_only_explicit_type_script_default_null_option_parameters() {
+        let source = ModuleSource {
+            path: "crates/flight-debug/src/debug_timing.rs",
+            source: r#"pub fn begin_debug_span(channel: Option<String>) -> bool {
+    return channel.is_none();
+}
+
+pub fn mark_debug_frame(label: Option<&str>, channel: Option<String>) -> bool {
+    return label.is_none() && channel.is_none();
+}
+
+pub fn exercise(channel: Option<String>) {
+    begin_debug_span(None);
+    begin_debug_span(channel);
+    mark_debug_frame(None, None);
+}
+"#,
+        };
+        let parameters = [
+            TypeScriptDefaultNullOptionParameter {
+                owner: "beginDebugSpan",
+                parameter: "channel",
+            },
+            TypeScriptDefaultNullOptionParameter {
+                owner: "markDebugFrame",
+                parameter: "channel",
+            },
+        ];
+
+        let output = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &parameters,
+            &[],
+            &[],
+            &[],
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("function beginDebugSpan(channel: string | null = null): boolean"),
+            "{output}"
+        );
+        assert!(output.contains("return channel === null;"), "{output}");
+        assert!(
+            output.contains(
+                "function markDebugFrame(label?: string, channel: string | null = null): boolean"
+            ),
+            "{output}"
+        );
+        assert!(output.contains("label === undefined"), "{output}");
+        assert!(output.contains("channel === null"), "{output}");
+        assert!(output.contains("beginDebugSpan(null);"), "{output}");
+        assert!(
+            output.contains("beginDebugSpan((channel) ?? null);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("markDebugFrame(undefined, null);"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn lowers_only_explicit_type_script_nullable_option_returns() {
         let source = ModuleSource {
             path: "crates/flight-scene2d-formats/src/svg_geometry_path.rs",
@@ -13795,6 +13873,7 @@ pub fn find_ordinary_path(found: bool) -> Option<usize> {
         let output = compile_typescript_with_options(
             source,
             None,
+            &[],
             &[],
             &[],
             &[],
@@ -13875,6 +13954,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13919,6 +13999,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13957,6 +14038,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -14046,6 +14128,7 @@ pub enum PlatformName { Web, MacOs, Unknown }
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -14082,6 +14165,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -14125,6 +14209,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -14164,6 +14249,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
@@ -17701,6 +17787,7 @@ mod blocked_reason {
             &[],
             &[],
             &[],
+            &[],
         )
         .unwrap();
 
@@ -19249,6 +19336,7 @@ fn reports_absent_geometry() {
             &[],
             &[],
             &[],
+            &[],
             &returns,
         )
         .unwrap();
@@ -19302,6 +19390,7 @@ fn passes_each_absence_representation() {
             &[],
             &[],
             &[],
+            &[],
             &parameters,
             &[],
         )
@@ -19313,6 +19402,67 @@ fn passes_each_absence_representation() {
         );
         assert!(
             output.contains("expect(markDebugFrame(undefined)).toBe(true);"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_explicit_type_script_default_null_option_parameters_in_vitest() {
+        let production = r#"
+pub fn begin_debug_span(channel: Option<String>) -> bool {
+    return channel.is_none();
+}
+
+pub fn mark_debug_frame(label: Option<&str>, channel: Option<String>) -> bool {
+    return label.is_none() && channel.is_none();
+}
+"#;
+        let source = r#"
+use flight_debug::*;
+
+#[test]
+fn passes_each_absence_representation() {
+    assert!(begin_debug_span(None));
+    assert!(mark_debug_frame(None, None));
+}
+"#;
+        let parameters = [
+            TypeScriptDefaultNullOptionParameter {
+                owner: "beginDebugSpan",
+                parameter: "channel",
+            },
+            TypeScriptDefaultNullOptionParameter {
+                owner: "markDebugFrame",
+                parameter: "channel",
+            },
+        ];
+        let aliases = [VitestAliasSource {
+            source: production,
+            module: "crates/flight-debug/src/debug_timing.rs",
+        }];
+
+        let output = compile_vitest_with_options(
+            source,
+            "@flighthq/debug/contract",
+            None,
+            &aliases,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &parameters,
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("expect(beginDebugSpan(null)).toBe(true);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(markDebugFrame(undefined, null)).toBe(true);"),
             "{output}"
         );
     }

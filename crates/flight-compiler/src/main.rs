@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -30,6 +30,7 @@ struct GenerateOptions {
     probe_target_native: bool,
     source: PathBuf,
     type_script_inline_string_unions: Vec<OwnedTypeScriptInlineStringUnion>,
+    type_script_default_null_option_parameters: Vec<OwnedTypeScriptNullableOptionParameter>,
     type_script_nullable_option_fields: Vec<OwnedTypeScriptNullableOptionField>,
     type_script_nullable_option_parameters: Vec<OwnedTypeScriptNullableOptionParameter>,
     type_script_nullable_option_returns: Vec<String>,
@@ -318,6 +319,16 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     field: &field.field,
                 })
                 .collect::<Vec<_>>();
+            let type_script_default_null_option_parameters = options
+                .type_script_default_null_option_parameters
+                .iter()
+                .map(
+                    |parameter| flight_compiler::TypeScriptDefaultNullOptionParameter {
+                        owner: &parameter.owner,
+                        parameter: &parameter.parameter,
+                    },
+                )
+                .collect::<Vec<_>>();
             let type_script_nullable_option_parameters = options
                 .type_script_nullable_option_parameters
                 .iter()
@@ -345,6 +356,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &type_script_inline_string_unions,
                 &type_script_type_aliases,
                 &type_script_nullable_option_fields,
+                &type_script_default_null_option_parameters,
                 &type_script_nullable_option_parameters,
                 &type_script_nullable_option_returns,
                 &visibility_source_refs,
@@ -432,6 +444,16 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     field: &field.field,
                 })
                 .collect::<Vec<_>>();
+            let type_script_default_null_option_parameters = options
+                .type_script_default_null_option_parameters
+                .iter()
+                .map(
+                    |parameter| flight_compiler::TypeScriptDefaultNullOptionParameter {
+                        owner: &parameter.owner,
+                        parameter: &parameter.parameter,
+                    },
+                )
+                .collect::<Vec<_>>();
             let type_script_nullable_option_parameters = options
                 .type_script_nullable_option_parameters
                 .iter()
@@ -457,6 +479,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &visibility_source_refs,
                 &type_script_type_aliases,
                 &type_script_nullable_option_fields,
+                &type_script_default_null_option_parameters,
                 &type_script_nullable_option_parameters,
                 &type_script_nullable_option_returns,
             )
@@ -524,6 +547,7 @@ fn parse_generate_options(
     let mut out = None;
     let mut source = None;
     let mut type_script_inline_string_unions = Vec::new();
+    let mut type_script_default_null_option_parameters = Vec::new();
     let mut type_script_nullable_option_fields = Vec::new();
     let mut type_script_nullable_option_parameters = Vec::new();
     let mut type_script_nullable_option_returns = Vec::new();
@@ -743,6 +767,33 @@ fn parse_generate_options(
                     },
                 );
             }
+            "--typescript-default-null-option-parameter" => {
+                index += 1;
+                let specification = arguments.get(index).ok_or_else(|| {
+                    format!(
+                        "--typescript-default-null-option-parameter requires <function>.<parameter>\n\n{USAGE}"
+                    )
+                })?;
+                let (owner, parameter) = specification.split_once('.').ok_or_else(|| {
+                    format!(
+                        "invalid --typescript-default-null-option-parameter `{specification}`; expected <function>.<parameter>\n\n{USAGE}"
+                    )
+                })?;
+                if !valid_type_script_identifier(owner)
+                    || !valid_type_script_identifier(parameter)
+                    || parameter.contains('.')
+                {
+                    return Err(format!(
+                        "invalid --typescript-default-null-option-parameter `{specification}`; expected <function>.<parameter>\n\n{USAGE}"
+                    ));
+                }
+                type_script_default_null_option_parameters.push(
+                    OwnedTypeScriptNullableOptionParameter {
+                        owner: owner.to_string(),
+                        parameter: parameter.to_string(),
+                    },
+                );
+            }
             "--visibility-source" => {
                 index += 1;
                 let path = arguments
@@ -799,6 +850,7 @@ fn parse_generate_options(
         probe_target_native,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         type_script_inline_string_unions,
+        type_script_default_null_option_parameters,
         type_script_nullable_option_fields,
         type_script_nullable_option_parameters,
         type_script_nullable_option_returns,
@@ -942,6 +994,8 @@ mod tests {
                     "TargetRef=unknown",
                     "--typescript-nullable-option-field",
                     "@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex",
+                    "--typescript-default-null-option-parameter",
+                    "beginDebugSpan.channel",
                     "--typescript-nullable-option-parameter",
                     "endDebugSpan.timer",
                     "--typescript-nullable-option-return",
@@ -966,6 +1020,8 @@ mod tests {
                             "TargetRef=unknown",
                             "--typescript-nullable-option-field",
                             "@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex",
+                            "--typescript-default-null-option-parameter",
+                            "beginDebugSpan.channel",
                             "--typescript-nullable-option-parameter",
                             "endDebugSpan.timer",
                             "--typescript-nullable-option-return",
@@ -999,6 +1055,11 @@ mod tests {
             assert_eq!(field.module, "@flighthq/types/contract");
             assert_eq!(field.owner, "AnimationStateMachine");
             assert_eq!(field.field, "transitionToStateIndex");
+            assert_eq!(options.type_script_default_null_option_parameters.len(), 1);
+            let default_null_parameter =
+                &options.type_script_default_null_option_parameters[0];
+            assert_eq!(default_null_parameter.owner, "beginDebugSpan");
+            assert_eq!(default_null_parameter.parameter, "channel");
             assert_eq!(options.type_script_nullable_option_parameters.len(), 1);
             let parameter = &options.type_script_nullable_option_parameters[0];
             assert_eq!(parameter.owner, "endDebugSpan");
