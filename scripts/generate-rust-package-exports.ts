@@ -707,6 +707,58 @@ export function typeScriptNullableOptionParameterArguments(
   return positions.sort().flatMap((position) => ['--typescript-nullable-option-parameter', position]);
 }
 
+// A literal `null` default is a distinct established contract from both an optional parameter and a
+// required nullable parameter. Match the exact exported function position, require its type to admit
+// only `null`, and require the generated position to be an ordinary Option before preserving it.
+export function typeScriptDefaultNullOptionParameterArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+): string[] {
+  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving default-null parameters: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving default-null parameters: ${generated.errors[0]?.message}`,
+    );
+  }
+
+  const existingFunctions = exportedFunctionParameterTypes(
+    existing.program.body as unknown as Record<string, unknown>[],
+  );
+  const generatedFunctions = exportedFunctionParameterTypes(
+    generated.program.body as unknown as Record<string, unknown>[],
+  );
+  const positions: string[] = [];
+  for (const [owner, existingParameters] of existingFunctions) {
+    const generatedParameters = generatedFunctions.get(owner);
+    if (generatedParameters === undefined || existingParameters.length !== generatedParameters.length) continue;
+    for (let index = 0; index < existingParameters.length; index += 1) {
+      const existingParameter = existingParameters[index];
+      const generatedParameter = generatedParameters[index];
+      if (
+        existingParameter.name !== generatedParameter.name ||
+        existingParameter.optional ||
+        !existingParameter.defaultNull ||
+        !typeUnionHasOnlyAbsence(existingParameter.type, 'TSNullKeyword') ||
+        generatedParameter.defaulted ||
+        !(
+          (generatedParameter.optional && !typeHasAbsence(generatedParameter.type, 'TSNullKeyword')) ||
+          typeUnionHasOnlyAbsence(generatedParameter.type, 'TSUndefinedKeyword')
+        )
+      ) {
+        continue;
+      }
+      positions.push(`${owner}.${existingParameter.name}`);
+    }
+  }
+  return positions.sort().flatMap((position) => ['--typescript-default-null-option-parameter', position]);
+}
+
 // The same exported function position in the established and generated modules proves its Option
 // absence representation. A direct `null`-only absence union becomes explicit metadata; functions
 // whose established contract admits `undefined` retain ordinary Option lowering.
@@ -766,10 +818,13 @@ function typeHasAbsence(type: Record<string, unknown> | undefined, absence: 'TSN
 
 function exportedFunctionParameterTypes(
   body: readonly Record<string, unknown>[],
-): Map<string, { defaulted: boolean; name: string; optional: boolean; type?: Record<string, unknown> }[]> {
+): Map<
+  string,
+  { defaulted: boolean; defaultNull: boolean; name: string; optional: boolean; type?: Record<string, unknown> }[]
+> {
   const functions = new Map<
     string,
-    { defaulted: boolean; name: string; optional: boolean; type?: Record<string, unknown> }[]
+    { defaulted: boolean; defaultNull: boolean; name: string; optional: boolean; type?: Record<string, unknown> }[]
   >();
   for (const statement of body) {
     if (statement.type !== 'ExportNamedDeclaration') continue;
@@ -782,6 +837,10 @@ function exportedFunctionParameterTypes(
       const annotation = pattern.typeAnnotation as Record<string, unknown> | null;
       return {
         defaulted: parameter.type === 'AssignmentPattern',
+        defaultNull:
+          parameter.type === 'AssignmentPattern' &&
+          (parameter.right as Record<string, unknown> | undefined)?.type === 'Literal' &&
+          (parameter.right as Record<string, unknown>).value === null,
         name: pattern.type === 'Identifier' && typeof pattern.name === 'string' ? pattern.name : '',
         optional: parameter.optional === true || pattern.optional === true,
         type: annotation?.typeAnnotation as Record<string, unknown> | undefined,

@@ -36,6 +36,7 @@ import {
   resolveCrateExportSymbols,
   resolveExternalContractExports,
   resolveRustExportName,
+  typeScriptDefaultNullOptionParameterArguments,
   typeScriptInlineStringUnionArguments,
   typeScriptNullableOptionFieldArguments,
   typeScriptNullableOptionParameterArguments,
@@ -462,6 +463,12 @@ export function renamed(value?: string): void {}
     expect(typeScriptNullableOptionParameterArguments(existing, generated)).toEqual([
       '--typescript-nullable-option-parameter',
       'endDebugSpan.timer',
+    ]);
+    expect(typeScriptDefaultNullOptionParameterArguments(existing, generated)).toEqual([
+      '--typescript-default-null-option-parameter',
+      'beginDebugSpan.channel',
+      '--typescript-default-null-option-parameter',
+      'markDebugFrame.channel',
     ]);
   });
 
