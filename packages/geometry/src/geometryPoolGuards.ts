@@ -1,4 +1,4 @@
-type GeometryPoolReleaseFunction =
+export type GeometryPoolReleaseFunction =
   | 'releaseMatrix'
   | 'releaseMatrix3'
   | 'releaseMatrix4'
@@ -8,11 +8,15 @@ type GeometryPoolReleaseFunction =
   | 'releaseVector3'
   | 'releaseVector4';
 
-type GeometryPoolReleaseGuard = (releaseFunction: GeometryPoolReleaseFunction) => void;
+export type GeometryPoolReleaseGuard = (releaseFunction: GeometryPoolReleaseFunction) => void;
 
 // Internal callback slot shared by the pool modules. Warning prose and @flighthq/log stay in the
 // separately importable enableGeometryPoolGuards module.
 export let geometryPoolReleaseGuard: GeometryPoolReleaseGuard | null = null;
+
+export function getGeometryPoolReleaseGuard(): GeometryPoolReleaseGuard | null {
+  return geometryPoolReleaseGuard;
+}
 
 export function setGeometryPoolReleaseGuard(guard: GeometryPoolReleaseGuard | null): void {
   geometryPoolReleaseGuard = guard;

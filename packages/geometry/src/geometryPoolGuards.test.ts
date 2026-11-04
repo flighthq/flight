@@ -1,7 +1,20 @@
-import { geometryPoolReleaseGuard, setGeometryPoolReleaseGuard } from './geometryPoolGuards.ts';
+import {
+  geometryPoolReleaseGuard,
+  getGeometryPoolReleaseGuard,
+  setGeometryPoolReleaseGuard,
+} from './geometryPoolGuards.ts';
 
 afterEach(() => {
   setGeometryPoolReleaseGuard(null);
+});
+
+describe('getGeometryPoolReleaseGuard', () => {
+  it('reads the installed release callback, or null when none is installed', () => {
+    expect(getGeometryPoolReleaseGuard()).toBeNull();
+    const guard = (): void => {};
+    setGeometryPoolReleaseGuard(guard);
+    expect(getGeometryPoolReleaseGuard()).toBe(guard);
+  });
 });
 
 describe('setGeometryPoolReleaseGuard', () => {
