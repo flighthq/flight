@@ -2300,7 +2300,7 @@ pub fn first_big(values: &[u32]) -> u32 {
             "match with binding + break must not lower to switch: {output}"
         );
         assert!(
-            output.contains("const other = matchValue"),
+            output.contains("const other = value"),
             "binding catch-all must declare const: {output}"
         );
         assert!(
@@ -2330,8 +2330,8 @@ pub fn classify(value: f64, threshold: f64) -> &'static str {
             "guarded match must use $matched tracking: {output}"
         );
         assert!(
-            output.contains("const v = matchValue"),
-            "binding pattern must declare const from matchValue: {output}"
+            output.contains("const v = value"),
+            "binding pattern must declare const from scrutinee: {output}"
         );
         assert!(
             output.contains("if (v < -threshold)"),
@@ -17686,7 +17686,7 @@ pub fn classify_shape(shape: &CollisionShape2D) -> &str {
             "should access radius through binding: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === 'aabb' || matchValue.kind === 'obb'"),
+            output.contains("shape.kind === 'aabb' || shape.kind === 'obb'"),
             "should emit Or pattern for box arms: {output}"
         );
         assert!(
