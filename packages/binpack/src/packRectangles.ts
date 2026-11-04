@@ -1,3 +1,6 @@
+// Generated from crates/flight-binpack/src/pack_rectangles.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 /**
  * The heuristic used by the MaxRects bin packing algorithm.
  */

@@ -1,6 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
 //! flight-compiler: data-union RectangleId
 //! flight-compiler: string-union BinPackHeuristic
 

@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_binpack::contract::*;
 
 // D24 out collector: each call fills a fresh caller-owned Vec.

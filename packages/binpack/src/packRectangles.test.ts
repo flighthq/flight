@@ -1,3 +1,6 @@
+// Generated from crates/flight-binpack/tests/pack_rectangles_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -80,7 +83,8 @@ describe('getPackResultOccupancy', () => {
     options.powerOfTwo = true;
     const rounded = packRectangles([{ id: 'a', width: 24.0, height: 24.0 }], options);
     expect(rounded.width).toEqual(32.0);
-    const expectedOccupancy = (24.0 * 24.0) / (32.0 * 32.0);
+    const roundedArea = 32.0 * 32.0;
+    const expectedOccupancy = (24.0 * 24.0) / roundedArea;
     const actualOccupancy = getPackResultOccupancy(rounded);
     const diff = Math.abs(actualOccupancy - expectedOccupancy);
     expect(diff < 0.5e-10, `expected ${expectedOccupancy}, got ${actualOccupancy} (diff: ${diff})`).toBe(true);
@@ -217,7 +221,8 @@ describe('packRectangles', () => {
     const b = placements.find((p) => p.id === 'b')!;
     expect(a).toEqual({ id: 'a', x: 4.0, y: 4.0, width: 10.0, height: 10.0, rotated: false });
     expect(b).toEqual({ id: 'b', x: 16.0, y: 4.0, width: 10.0, height: 10.0, rotated: false });
-    expect(b.x - (a.x + a.width)).toEqual(2.0);
+    const aRight = a.x + a.width;
+    expect(b.x - aRight).toEqual(2.0);
     placements = result.placements;
     for (const placement of placements) {
       expect(placement.x >= 4.0).toBe(true);

@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use flight_binpack::contract::*;
 
 fn is_power_of_two(value: f32) -> bool {
@@ -105,7 +101,8 @@ mod get_pack_result_occupancy {
             Some(&options),
         );
         assert_eq!(rounded.width, 32.0);
-        let expected_occupancy = (24.0 * 24.0) / (32.0 * 32.0);
+        let rounded_area = 32.0 * 32.0;
+        let expected_occupancy = (24.0 * 24.0) / rounded_area;
         let actual_occupancy = get_pack_result_occupancy(&rounded);
         let diff = (actual_occupancy - expected_occupancy).abs();
         // TS `toBeCloseTo(expected, 10)`: abs diff < 0.5e-10.
@@ -358,7 +355,8 @@ mod pack_rectangles {
             }
         );
 
-        assert_eq!(b.x - (a.x + a.width), 2.0);
+        let a_right = a.x + a.width;
+        assert_eq!(b.x - a_right, 2.0);
 
         let placements: &[PackedRectangle] = &result.placements;
         for placement in placements {
