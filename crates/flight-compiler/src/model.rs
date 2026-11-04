@@ -18,6 +18,9 @@ pub(crate) struct Program {
     pub(crate) const_groups: BTreeMap<String, String>,
     pub(crate) auto_data_unions: HashSet<String>,
     pub(crate) data_unions: HashSet<String>,
+    // Public record structs whose standard derived `Default` construction TypeScript lowers to a
+    // plain object literal. Generation validates the derive and each field default before use.
+    pub(crate) default_objects: BTreeSet<String>,
     pub(crate) entities: HashSet<String>,
     // Entity fields whose `Ref` cells remain shared when Rust clones the entity. TypeScript lowers
     // those fields as forwarding accessors on a fresh spread object.
@@ -1743,6 +1746,74 @@ fn parse_numeric_unions(attributes: &[Attribute]) -> Result<BTreeSet<String>, Co
     return Ok(names);
 }
 
+fn parse_default_objects(attributes: &[Attribute]) -> Result<BTreeSet<String>, CompileError> {
+    let mut names = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("default-object") {
+            continue;
+        }
+        let Some(name) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: default-object` requires one struct name",
+            ));
+        };
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: default-object {name}` accepts exactly one struct name"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: default-object` struct name `{name}` is not a valid identifier"
+            )));
+        }
+        if !names.insert(name.to_string()) {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: default-object` directive for struct `{name}`"
+            )));
+        }
+    }
+    return Ok(names);
+}
+
+fn validate_default_objects(
+    default_objects: &BTreeSet<String>,
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for name in default_objects {
+        let Some(structure) = structs.iter().find(|structure| structure.ident == name) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: default-object` struct `{name}` does not exist"
+            )));
+        };
+        if !is_public(&structure.vis) {
+            return Err(compile_error(format!(
+                "`flight-compiler: default-object` struct `{name}` must be public"
+            )));
+        }
+        if !structure.generics.params.is_empty() {
+            return Err(compile_error(format!(
+                "`flight-compiler: default-object` struct `{name}` cannot be generic"
+            )));
+        }
+        let Fields::Named(fields) = &structure.fields else {
+            return Err(compile_error(format!(
+                "`flight-compiler: default-object` struct `{name}` must have named fields"
+            )));
+        };
+        if fields.named.iter().any(|field| !is_public(&field.vis)) {
+            return Err(compile_error(format!(
+                "`flight-compiler: default-object` struct `{name}` must expose every field"
+            )));
+        }
+    }
+    return Ok(());
+}
+
 pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     return parse_program_with_options(source, false);
 }
@@ -1760,6 +1831,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let data_union_metadata = parse_data_unions(&file.attrs)?;
     let mut data_unions = data_union_metadata.names;
+    let default_objects = parse_default_objects(&file.attrs)?;
     let reserved_key_data_unions = data_union_metadata.reserved_key;
     let record_map_variants = parse_record_map_variants(&file.attrs, &data_unions)?;
     let entity_clone_shared_fields = parse_entity_clone_shared_fields(&file.attrs)?;
@@ -1904,6 +1976,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         &enums,
         &string_unions,
     )?;
+    validate_default_objects(&default_objects, &structs)?;
     validate_entity_runtime_states(&entity_runtime_states, &structs)?;
     validate_entity_clone_shared_fields(&entity_clone_shared_fields, &entities, &structs)?;
     validate_array_like_parameters(&array_like_parameters, &functions)?;
@@ -1961,6 +2034,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         const_groups,
         auto_data_unions,
         data_unions,
+        default_objects,
         entities,
         entity_clone_shared_fields,
         entity_runtime_states,
@@ -2416,6 +2490,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "const-group"
             | "contract"
             | "data-union"
+            | "default-object"
             | "entity-clone-fields"
             | "entity-runtime-state"
             | "export-name"

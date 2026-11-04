@@ -70,6 +70,13 @@ mod source_modes {
         );
         assert_eq!(
             source_mode(
+                "//! flight-compiler: default-object SpringConfig\npub struct SpringConfig { pub frequency: f32 }\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
+        assert_eq!(
+            source_mode(
                 "//! flight-compiler: target-native\n//! flight-compiler: identity-alias Marker descriptor\npub type Marker<T> = T;\n"
             )
             .unwrap(),
@@ -14339,6 +14346,93 @@ pub fn customized_spring_preset() -> SpringConfig {
     }
 
     #[test]
+    fn lowers_explicit_structural_defaults_to_plain_objects() {
+        let source = r#"
+//! flight-compiler: default-object SpringConfig
+
+#[derive(Default)]
+pub struct SpringConfig {
+    pub damping_ratio: f32,
+    pub frequency: f32,
+}
+
+pub fn create_spring_config() -> SpringConfig {
+    let mut out = SpringConfig::default();
+    out.frequency = 2.0;
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "let out = { dampingRatio: 0, frequency: 0 };\n  out.frequency = 2.0;"
+        ));
+        assert!(!output.contains("SpringConfig.default_()"));
+    }
+
+    #[test]
+    fn leaves_unmarked_runtime_defaults_as_calls() {
+        let source = r#"
+pub struct RuntimeConfig {
+    pub value: f32,
+}
+
+impl RuntimeConfig {
+    pub fn default() -> Self {
+        return Self { value: 4.0 };
+    }
+}
+
+pub fn runtime_config() -> RuntimeConfig {
+    return RuntimeConfig::default();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return RuntimeConfig.default_();"));
+        assert!(!output.contains("{ value: 0 }"));
+    }
+
+    #[test]
+    fn rejects_runtime_or_unrepresentable_default_object_designations() {
+        for (source, expected) in [
+            (
+                r#"
+//! flight-compiler: default-object Config
+#[derive(Default)]
+pub struct Config { pub value: f32 }
+impl Config { pub fn default() -> Self { return Self { value: 4.0 }; } }
+pub fn config() -> Config { return Config::default(); }
+"#,
+                "cannot replace the inherent runtime method `Config::default`",
+            ),
+            (
+                r#"
+//! flight-compiler: default-object Config
+pub struct Config { pub value: f32 }
+impl Default for Config { fn default() -> Self { return Self { value: 4.0 }; } }
+pub fn config() -> Config { return Config::default(); }
+"#,
+                "requires the standard `#[derive(Default)]`; manual or runtime defaults are not structural",
+            ),
+            (
+                r#"
+//! flight-compiler: default-object Config
+#[derive(Default)]
+pub struct Config { pub value: String }
+pub fn config() -> Config { return Config::default(); }
+"#,
+                "field `value` of type `String` has no proven structural TypeScript default",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert!(error.to_string().contains(expected), "{error}");
+        }
+    }
+
+    #[test]
     fn rejects_dependency_export_names_colliding_with_any_emitted_binding() {
         let owner = |target: &str| {
             format!(
@@ -14742,6 +14836,54 @@ pub fn customized_spring_preset() -> SpringConfig {
             assert_eq!(
                 compile_typescript(source, None).unwrap_err().to_string(),
                 expected
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_default_object_directives() {
+        for (source, expected) in [
+            (
+                "//! flight-compiler: default-object\n",
+                "`flight-compiler: default-object` requires one struct name",
+            ),
+            (
+                "//! flight-compiler: default-object Config Extra\n",
+                "`flight-compiler: default-object Config` accepts exactly one struct name",
+            ),
+            (
+                "//! flight-compiler: default-object Con-fig\n",
+                "`flight-compiler: default-object` struct name `Con-fig` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: default-object Config\n//! flight-compiler: default-object Config\npub struct Config { pub value: f32 }\n",
+                "duplicate `flight-compiler: default-object` directive for struct `Config`",
+            ),
+            (
+                "//! flight-compiler: default-object Missing\n",
+                "`flight-compiler: default-object` struct `Missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: default-object Config\nstruct Config { pub value: f32 }\n",
+                "`flight-compiler: default-object` struct `Config` must be public",
+            ),
+            (
+                "//! flight-compiler: default-object Config\npub struct Config<T> { pub value: T }\n",
+                "`flight-compiler: default-object` struct `Config` cannot be generic",
+            ),
+            (
+                "//! flight-compiler: default-object Config\npub struct Config(pub f32);\n",
+                "unsupported struct `Config`: only named fields can be transpiled",
+            ),
+            (
+                "//! flight-compiler: default-object Config\npub struct Config { value: f32 }\n",
+                "`flight-compiler: default-object` struct `Config` must expose every field",
+            ),
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected,
+                "{source}"
             );
         }
     }

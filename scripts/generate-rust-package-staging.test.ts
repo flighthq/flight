@@ -127,6 +127,33 @@ edition = "2024"
     expect(value.indexOf('export function alphaValue')).toBeLessThan(value.indexOf('export function zetaValue'));
   }, 120_000);
 
+  it('carries explicit structural default construction through package generation', async () => {
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: default-object SpringConfig
+
+#[derive(Default)]
+pub struct SpringConfig {
+    pub damping_ratio: f32,
+    pub frequency: f32,
+}
+
+pub fn create_spring_config() -> SpringConfig {
+    let mut out = SpringConfig::default();
+    out.frequency = 2.0;
+    return out;
+}
+`,
+    );
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain('let out = { dampingRatio: 0, frequency: 0 };');
+    expect(value).not.toContain('SpringConfig.default_()');
+  }, 120_000);
+
   it('removes the staging tree when generation fails', async () => {
     writeFileSync(sourcePath, valueSource('missingValue'));
 
