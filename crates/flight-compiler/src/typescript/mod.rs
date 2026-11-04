@@ -3671,13 +3671,9 @@ fn explicit_default_object(call: &syn::ExprCall, entities: &HashSet<String>) -> 
         return None;
     };
     if function.qself.is_some()
-        || !function
-            .path
-            .segments
-            .last()
-            .is_some_and(|segment| {
-                segment.ident == "default" && matches!(segment.arguments, PathArguments::None)
-            })
+        || !function.path.segments.last().is_some_and(|segment| {
+            segment.ident == "default" && matches!(segment.arguments, PathArguments::None)
+        })
     {
         return None;
     }
@@ -8456,13 +8452,8 @@ fn generation_context_with_types(
                 .iter()
                 .find(|structure| structure.ident == name)
                 .expect("default-object validation resolved the struct");
-            let literal = default_object_literal(
-                module,
-                program,
-                structure,
-                &type_path_context,
-                &context,
-            )?;
+            let literal =
+                default_object_literal(module, program, structure, &type_path_context, &context)?;
             context.insert(format!(
                 "{DEFAULT_OBJECT_MARKER}{module}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}{literal}"
             ));
@@ -10017,15 +10008,12 @@ fn emit_block_with_tail(
             if let Some(tuple) = tuple_pat
                 && local.init.is_some()
             {
-                let elem_rust_names: Vec<Option<String>> = tuple
-                    .elems
+                // Every identifier the (possibly nested) tuple pattern binds, with its index path, so a
+                // shadowing or self-referencing binding at any depth is decomposed through the temp.
+                let tuple_bindings = tuple_pattern_bindings(tuple);
+                let elem_rust_names: Vec<Option<String>> = tuple_bindings
                     .iter()
-                    .map(|elem| match elem {
-                        Pat::Ident(ident) if ident.ident != "_" && ident.ident != "None" => {
-                            Some(ident.ident.to_string())
-                        }
-                        _ => None,
-                    })
+                    .map(|binding| Some(binding.name.clone()))
                     .collect();
                 let any_rebound = elem_rust_names.iter().any(|n| {
                     n.as_ref()
@@ -10061,28 +10049,35 @@ fn emit_block_with_tail(
                     });
                 let needs_decompose = any_shadowed || any_scope_declared || any_self_ref;
                 if needs_decompose {
-                    let value = emit_expression(&init.expr, &block_context)?;
+                    let mut value = emit_expression(&init.expr, &block_context)?;
+                    // A nested tuple literal widens to `(T | T[])[]` without a const assertion, which
+                    // the nested element reads (`__dt0[0][1]`) cannot index.
+                    if matches!(peel_reference_and_paren(&init.expr), Expr::Tuple(_))
+                        && tuple_bindings.iter().any(|binding| binding.path.len() > 1)
+                    {
+                        value = format!("{value} as const");
+                    }
                     let temp = format!("__dt{index}");
                     write_indent(out, indent);
                     writeln!(out, "const {temp} = {value};")
                         .expect("writing to a String cannot fail");
-                    for (i, _elem) in tuple.elems.iter().enumerate() {
-                        let Some(rust_name) = &elem_rust_names[i] else {
-                            continue;
-                        };
+                    for binding in &tuple_bindings {
+                        let rust_name = &binding.name;
+                        let element = binding
+                            .path
+                            .iter()
+                            .map(|index| format!("[{index}]"))
+                            .collect::<String>();
                         let js_name = snake_to_lower_camel(rust_name);
                         let is_shadowed = declared.contains(rust_name);
                         let is_scope_declared =
                             block_context.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
                         let is_self_ref = expression_contains_identifier(&init.expr, rust_name);
-                        let is_mutable = matches!(
-                            tuple.elems[i],
-                            Pat::Ident(ref id) if id.mutability.is_some()
-                        );
+                        let is_mutable = binding.mutable;
                         let is_rebound = declaration_counts.get(rust_name).is_some_and(|c| *c > 1);
                         if is_shadowed {
                             write_indent(out, indent);
-                            writeln!(out, "{js_name} = {temp}[{i}];")
+                            writeln!(out, "{js_name} = {temp}{element};")
                                 .expect("writing to a String cannot fail");
                         } else if is_scope_declared || is_self_ref {
                             let fresh = next_try_rename(&block_context, &js_name);
@@ -10092,7 +10087,7 @@ fn emit_block_with_tail(
                                 "const"
                             };
                             write_indent(out, indent);
-                            writeln!(out, "{keyword} {fresh} = {temp}[{i}];")
+                            writeln!(out, "{keyword} {fresh} = {temp}{element};")
                                 .expect("writing to a String cannot fail");
                             let rename_prefix = format!("{RENAME_MARKER}{js_name}=");
                             block_context.retain(|m| !m.starts_with(&rename_prefix));
@@ -10104,7 +10099,7 @@ fn emit_block_with_tail(
                                 "const"
                             };
                             write_indent(out, indent);
-                            writeln!(out, "{keyword} {js_name} = {temp}[{i}];")
+                            writeln!(out, "{keyword} {js_name} = {temp}{element};")
                                 .expect("writing to a String cannot fail");
                         }
                     }
@@ -15338,6 +15333,17 @@ pub(crate) fn emit_format_template(
             };
             value_index += 1;
             emit_expression(value, entities)?
+        } else if let Ok(identifier) = syn::parse_str::<syn::Ident>(name) {
+            // An implicitly captured argument (`{name}`) reads the binding in scope, so it resolves
+            // through the same path as `name` written in code: a shadowing destructure's rename applies.
+            emit_expression(
+                &Expr::Path(syn::ExprPath {
+                    attrs: Vec::new(),
+                    qself: None,
+                    path: identifier.into(),
+                }),
+                entities,
+            )?
         } else {
             snake_to_lower_camel(name)
         };
@@ -25515,6 +25521,42 @@ fn entity_runtime_state_store_imports(
         }
     }
     return Ok(imports);
+}
+
+struct TuplePatternBinding {
+    mutable: bool,
+    name: String,
+    path: Vec<usize>,
+}
+
+// The identifiers a tuple pattern binds, depth first, each with the element index path that reads it
+// (`((a, b), c)` binds `a` at `[0][0]`, `b` at `[0][1]` and `c` at `[1]`).
+fn tuple_pattern_bindings(tuple: &syn::PatTuple) -> Vec<TuplePatternBinding> {
+    fn collect(pattern: &Pat, path: &mut Vec<usize>, out: &mut Vec<TuplePatternBinding>) {
+        match pattern {
+            Pat::Ident(ident) if ident.ident != "_" && ident.ident != "None" => {
+                out.push(TuplePatternBinding {
+                    mutable: ident.mutability.is_some(),
+                    name: ident.ident.to_string(),
+                    path: path.clone(),
+                });
+            }
+            Pat::Paren(paren) => collect(&paren.pat, path, out),
+            Pat::Tuple(tuple) => {
+                for (index, element) in tuple.elems.iter().enumerate() {
+                    path.push(index);
+                    collect(element, path, out);
+                    path.pop();
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for (index, element) in tuple.elems.iter().enumerate() {
+        collect(element, &mut vec![index], &mut out);
+    }
+    return out;
 }
 
 fn resolve_rename(entities: &HashSet<String>, js_name: &str) -> String {

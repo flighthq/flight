@@ -14426,9 +14426,9 @@ pub fn create_spring_config() -> SpringConfig {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains(
-            "let out = { dampingRatio: 0, frequency: 0 };\n  out.frequency = 2.0;"
-        ));
+        assert!(
+            output.contains("let out = { dampingRatio: 0, frequency: 0 };\n  out.frequency = 2.0;")
+        );
         assert!(!output.contains("SpringConfig.default_()"));
     }
 
@@ -26282,5 +26282,53 @@ fn describe_release(release: PoolRelease) -> &'static str {
             "{output}"
         );
         assert!(!output.contains("PoolRelease."), "{output}");
+    }
+}
+
+// A tuple destructure that shadows a binding still in scope decomposes through a temp and renames the
+// shadowing binding; every later read, including an implicit `format!` capture and bindings inside
+// nested tuple patterns, resolves to the rename. Plain destructuring keeps its direct form.
+mod shadowing_tuple_destructure {
+    use super::*;
+
+    #[test]
+    fn implicit_format_captures_read_the_renamed_shadow_binding() {
+        let output = compile_typescript(
+            "pub fn describe_release(kind: u32) -> String {\n    let (kind, label) = match kind {\n        0 => (10, \"zero\"),\n        _ => (20, \"other\"),\n    };\n    return format!(\"{kind}:{label}\");\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(output.contains("  const kind_1 = __dt0[0];\n  const label = __dt0[1];\n  return `${kind_1}:${label}`;\n"), "{output}");
+    }
+
+    #[test]
+    fn nested_shadowing_patterns_decompose_by_index_path() {
+        let output = compile_typescript(
+            "pub fn scale_nested(value: i32) -> i32 {\n    let ((value, extra), scale) = ((value + 1, 2), 3);\n    return (value + extra) * scale;\n}\n",
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            output,
+            "export function scaleNested(value: number): number {\n  const __dt0 = [[value + 1, 2], 3] as const;\n  const value_1 = __dt0[0][0];\n  const extra = __dt0[0][1];\n  const scale = __dt0[1];\n  return (value_1 + extra) * scale;\n}\n"
+        );
+    }
+
+    #[test]
+    fn plain_destructuring_keeps_its_direct_form() {
+        let output = compile_typescript(
+            "pub fn sum_pair(pair: (i32, i32)) -> i32 {\n    let (left, right) = pair;\n    return left + right;\n}\n\npub fn sum_nested(pair: ((i32, i32), i32)) -> i32 {\n    let ((left, right), last) = pair;\n    return left + right + last;\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(
+            output.contains("  const [left, right] = pair;\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  const [[left, right], last] = pair;\n"),
+            "{output}"
+        );
+        assert!(!output.contains("__dt"), "{output}");
     }
 }
