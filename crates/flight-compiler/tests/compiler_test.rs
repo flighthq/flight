@@ -23738,3 +23738,21 @@ pub fn offsets(dirs: &[Dir]) -> Vec<i32> {
         "match arm in closure block should have return: {output}"
     );
 }
+
+#[test]
+fn partial_cmp_unwrap_does_not_emit_non_null_assertion() {
+    let source = r#"
+pub fn sort_abs(values: &mut [f64]) {
+    values.sort_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap());
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("abs()!"),
+        "partial_cmp().unwrap() should not emit non-null assertion: {output}"
+    );
+    assert!(
+        output.contains("Math.abs(a) - Math.abs(b)"),
+        "partial_cmp().unwrap() should lower to subtraction: {output}"
+    );
+}

@@ -19637,6 +19637,12 @@ fn emit_method_call(
             "portable `.weak_count()` has no TypeScript equivalent; reference counting is not modeled",
         )),
         "ptr_eq" if arguments.len() == 1 => Ok(format!("({receiver} === {})", arguments[0])),
+        "unwrap"
+            if arguments.is_empty()
+                && expression_contains_method(&call.receiver, "partial_cmp") =>
+        {
+            Ok(receiver)
+        }
         "unwrap" if arguments.is_empty() => Ok(if receiver.ends_with('!') {
             receiver
         } else {
