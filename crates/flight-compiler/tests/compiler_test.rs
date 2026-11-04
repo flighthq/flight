@@ -3061,7 +3061,7 @@ pub fn called_statement_forms(counter: &mut Counter) -> i32 {
         }
         assert!(output.contains("case LIMIT:"), "{output}");
         assert!(
-            output.contains("const other = matchValue;\n        return other * 2;"),
+            output.contains("const other = n;\n        return other * 2;"),
             "{output}"
         );
         assert!(
@@ -24374,8 +24374,8 @@ mod rectangle_ids {
                 .unwrap();
 
         assert!(output.contains("const id = 4;"));
-        assert!(output.contains("typeof matchValue === 'number'"));
-        assert!(output.contains("typeof matchValue === 'string'"));
+        assert!(output.contains("typeof id === 'number'"));
+        assert!(output.contains("typeof id === 'string'"));
         assert!(!output.contains("  RectangleId,"));
         assert!(!output.contains("RectangleId.Number"));
     }
@@ -24426,7 +24426,7 @@ mod markup_results {
         .unwrap();
 
         assert!(output.contains("const result = { text: 'replacement' };"));
-        assert!(output.contains("if (Object.hasOwn(matchValue, 'text'))"));
+        assert!(output.contains("if (Object.hasOwn(result, 'text'))"));
         assert!(output.contains("else {\n    return 'format';"), "{output}");
         assert!(!output.contains("MarkupResult.Effect"));
     }
@@ -24460,7 +24460,7 @@ mod path_segments {
                 .unwrap();
 
         assert!(output.contains("const segment = { kind: 'moveTo' as const, x: 4.0, y: 5.0 };"));
-        assert!(output.contains("matchValue.kind === 'moveTo'"));
+        assert!(output.contains("segment.kind === 'moveTo'"));
         assert!(output.contains("else {\n"));
         assert!(output.contains("return 0.0;"));
         assert!(!output.contains("  PathSegment,"));
