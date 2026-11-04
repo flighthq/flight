@@ -42,7 +42,7 @@ function isPointInTriangle(
   const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
   const hasNegative = d1 < 0.0 || d2 < 0.0 || d3 < 0.0;
   const hasPositive = d1 > 0.0 || d2 > 0.0 || d3 > 0.0;
-  return !hasNegative && hasPositive;
+  return !(hasNegative && hasPositive);
 }
 
 function tessellateContour(source: Readonly<number[]>, vertices: number[], indices: number[]): void {
