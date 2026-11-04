@@ -18183,6 +18183,45 @@ mod blocked_reason {
     }
 
     #[test]
+    fn lowers_contract_source_string_union_variants_to_literals() {
+        let contract = r#"
+//! flight-compiler: string-union Heuristic
+
+pub enum Heuristic {
+    BestFit,
+    WorstFit,
+}
+
+pub fn default_heuristic() -> Heuristic {
+    return Heuristic::BestFit;
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod default_heuristic {
+    use super::*;
+
+    #[test]
+    fn returns_best_fit() {
+        assert_eq!(default_heuristic(), Heuristic::BestFit);
+    }
+}
+"#;
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[],
+        )
+        .unwrap();
+
+        assert!(output.contains("expect(defaultHeuristic()).toEqual('bestFit')"));
+        assert!(!output.contains("Heuristic.BestFit"));
+        assert!(!output.contains("  Heuristic,"));
+    }
+
+    #[test]
     fn keeps_unknown_crate_root_functions_in_the_target_native_test_support_lane() {
         let production = r#"
 pub fn selected_value() -> i32 {

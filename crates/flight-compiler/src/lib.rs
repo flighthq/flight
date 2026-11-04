@@ -848,6 +848,9 @@ fn compile_vitest_with_contract_alias_sources_internal(
         .map(|(source, program)| (source.module, program))
         .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
+    let contract_string_unions = contract_source
+        .map(|source| model::parse_string_union_metadata(source))
+        .transpose()?;
     let external_string_union_metadata =
         parse_external_string_union_metadata(external_alias_sources)?;
     let visibility_programs = visibility_sources
@@ -865,6 +868,13 @@ fn compile_vitest_with_contract_alias_sources_internal(
             styles: &string_unions.styles,
             values: &string_unions.values,
         })
+        .chain(contract_string_unions.iter().map(|contract_su| {
+            return StringUnionMetadataSource {
+                identity: format!("contract source for module `{contract_module}`"),
+                styles: &contract_su.styles,
+                values: &contract_su.values,
+            };
+        }))
         .chain(
             alias_sources
                 .iter()
@@ -987,6 +997,9 @@ fn compile_vitest_with_contract_alias_sources_internal(
     );
     vitest::resolve_test_support_wildcards(&mut program, &support_program_refs, &context)?;
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
+    if let Some(ref contract_su) = contract_string_unions {
+        typescript::insert_string_union_context(&mut context, contract_su.styles.keys());
+    }
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
     typescript::insert_vitest_dependency_export_name_context(
         &mut context,
@@ -1066,6 +1079,9 @@ fn compile_vitest_with_contract_alias_sources_internal(
         &context,
     )?;
     output = lower_string_union_variants(output, &string_unions.styles, &string_unions.values)?;
+    if let Some(ref contract_su) = contract_string_unions {
+        output = lower_string_union_variants(output, &contract_su.styles, &contract_su.values)?;
+    }
     for alias_program in &alias_programs {
         output = lower_string_union_variants(
             output,
