@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_math::*;
 
 fn assert_close_f64(actual: f64, expected: f64, digits: i32) {

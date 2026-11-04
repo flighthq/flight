@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_math::*;
 
 fn assert_approx(actual: f32, expected: f32) {
@@ -211,10 +209,9 @@ mod random_gaussian {
     fn matches_a_deterministic_box_muller_vector_with_mean_and_scale() {
         let standard = (-2.0 * 0.5_f32.ln()).sqrt();
         let random = crate::sequence_random(&[0.5, 0.0]);
-        assert!(
-            (random_gaussian(&random, Some(10.0), Some(2.0)) - (10.0 + standard * 2.0)).abs()
-                < 5e-13
-        );
+        let actual = random_gaussian(&random, Some(10.0), Some(2.0));
+        let expected = 10.0 + standard * 2.0;
+        assert!((actual - expected).abs() < 5e-13);
     }
 }
 
@@ -238,7 +235,8 @@ mod random_gaussian_pair {
             let (z0, z1) = random_gaussian_pair(random.as_ref(), Some(10.0), None);
             sum += z0 + z1;
         }
-        let avg = sum / (n * 2) as f32;
+        let sample_count = n * 2;
+        let avg = sum / sample_count as f32;
         assert!((avg - 10.0).abs() < 0.5);
     }
 

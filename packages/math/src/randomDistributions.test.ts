@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/tests/random_distributions_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -158,7 +161,9 @@ describe('randomGaussian', () => {
   it('matches a deterministic box muller vector with mean and scale', () => {
     const standard = Math.sqrt(-2.0 * Math.log(0.5));
     const random = crate.sequenceRandom([0.5, 0.0]);
-    expect(Math.abs(randomGaussian(random, 10.0, 2.0) - (10.0 + standard * 2.0)) < 5e-13).toBe(true);
+    const actual = randomGaussian(random, 10.0, 2.0);
+    const expected = 10.0 + standard * 2.0;
+    expect(Math.abs(actual - expected) < 5e-13).toBe(true);
   });
 });
 
@@ -177,7 +182,8 @@ describe('randomGaussianPair', () => {
       const [z0, z1] = randomGaussianPair(random, 10.0, undefined);
       sum += z0 + z1;
     }
-    const avg = sum / (n * 2);
+    const sampleCount = n * 2;
+    const avg = sum / sampleCount;
     expect(Math.abs(avg - 10.0) < 0.5).toBe(true);
   });
   it('substitutes epsilon when the first random sample is zero', () => {

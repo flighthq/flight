@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_math::*;
 
 mod random_bool {

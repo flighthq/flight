@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/tests/number_theory_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { factorial, gcd, hypot2, isEven, isOdd, lcm } from './contract.ts';

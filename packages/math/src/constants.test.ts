@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/tests/constants_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { CIRCLE_KAPPA, DEG_TO_RAD, EPSILON, HALF_PI, RAD_TO_DEG, TAU } from './contract.ts';

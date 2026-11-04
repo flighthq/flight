@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/tests/hash_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { createRandomSourceFromHash, hash2D, hash3D, hashCombine, hashUint32 } from './contract.ts';

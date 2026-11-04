@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_math::*;
 
 mod is_power_of_two {

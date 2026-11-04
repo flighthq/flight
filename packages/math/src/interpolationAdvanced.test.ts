@@ -1,3 +1,6 @@
+// Generated from crates/flight-math/tests/interpolation_advanced_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { damp, lerpAngle, moveTowards, pingPong, repeat, smootherStep } from './contract.ts';

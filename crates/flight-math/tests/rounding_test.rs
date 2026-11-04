@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_math::*;
 
 fn assert_approx(actual: f32, expected: f32) {
