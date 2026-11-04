@@ -9474,7 +9474,7 @@ fn emit_binary_operand(
     let value = emit_expression(expression, entities)?;
     let precedence = expression_precedence(expression);
     if precedence < parent_precedence
-        || (right && precedence == parent_precedence && matches!(expression, Expr::Binary(_)))
+        || (right && precedence == parent_precedence)
         || !is_lowered_primary(expression, &value)
     {
         return Ok(format!("({value})"));

@@ -361,6 +361,44 @@ pub fn negated_flag(flag: bool) -> bool {
         assert!(output.contains("return !flag;"));
     }
 
+    #[test]
+    fn preserves_grouped_right_binary_operands() {
+        let source = r#"
+pub fn divide_by_product(damping: f64, stiffness: f64, mass: f64) -> f64 {
+    return damping / (2.0 * (stiffness * mass).sqrt());
+}
+
+pub fn divide_by_quotient(value: f64, divisor: f64, scale: f64) -> f64 {
+    return value / (divisor / scale);
+}
+
+pub fn multiply_by_quotient(value: f64, divisor: f64, scale: f64) -> f64 {
+    return value * (divisor / scale);
+}
+
+pub fn add_difference(value: f64, left: f64, right: f64) -> f64 {
+    return value + (left - right);
+}
+
+pub fn subtract_sum(value: f64, left: f64, right: f64) -> f64 {
+    return value - (left + right);
+}
+
+pub fn left_associative(value: f64, divisor: f64, scale: f64) -> f64 {
+    return value / divisor * scale;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return damping / (2.0 * Math.sqrt(stiffness * mass));"));
+        assert!(output.contains("return value / (divisor / scale);"));
+        assert!(output.contains("return value * (divisor / scale);"));
+        assert!(output.contains("return value + (left - right);"));
+        assert!(output.contains("return value - (left + right);"));
+        assert!(output.contains("return value / divisor * scale;"));
+    }
+
     // A proven standard `RwLock<T>`, under its own or a renamed import, is the shared cell `Ref<T>`
     // erases to `T` in parameters and locals; a locally declared `RwLock` keeps its name, and an
     // unresolved one fails closed.
