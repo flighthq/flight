@@ -34,9 +34,9 @@ describe('createRequirementSet', () => {
   });
   it('orders keys by utf16 code unit across planes', () => {
     const covers: RequirementFacet[] = ['scene.node-kind'];
-    const facts: Requirement[] = [requirement('scene.node-kind', '\u{e000}'), requirement('scene.node-kind', '𐀀')];
+    const facts: Requirement[] = [requirement('scene.node-kind', ''), requirement('scene.node-kind', '𐀀')];
     const result = createRequirementSet(covers, facts);
-    const expected: Requirement[] = [requirement('scene.node-kind', '𐀀'), requirement('scene.node-kind', '\u{e000}')];
+    const expected: Requirement[] = [requirement('scene.node-kind', '𐀀'), requirement('scene.node-kind', '')];
     expect(result.requirements).toEqual(expected);
   });
   it('orders bmp keys by code unit with uppercase first', () => {
