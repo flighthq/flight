@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 //! flight-compiler: data-union LogData LogValue LogDataOrProvider
+//! flight-compiler: record-map LogData::Record LogValue::Record
 //! flight-compiler: companion fileLogSink.ts
 // flight-lint: allow-file(f64) D1: log timestamps, timer instants and throttle intervals are millisecond durations
 use std::collections::{HashMap, HashSet};

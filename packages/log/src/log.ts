@@ -18,6 +18,8 @@ import type {
 } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+export type { LogData } from '@flighthq/types/contract';
+
 // Logging is split into two faces of one contract so each consumer tree-shakes its half:
 //
 //   Emit side  — log and the log* wrappers. Featherweight: each checks the level gate and
