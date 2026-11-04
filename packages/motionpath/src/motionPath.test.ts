@@ -1,3 +1,6 @@
+// Generated from crates/flight-motionpath/tests/motion_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { createVector2 } from '@flighthq/geometry/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';

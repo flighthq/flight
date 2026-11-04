@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! flight-compiler: string-union PathWinding
 
 use std::sync::{Arc, RwLock};
