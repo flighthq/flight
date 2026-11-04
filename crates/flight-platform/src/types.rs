@@ -1,4 +1,12 @@
 //! flight-compiler: rust-only
+//! flight-compiler: string-union PlatformEndianness PlatformEngine PlatformKind PlatformName=exact PlatformRuntime
+//! flight-compiler: string-union-value PlatformName Web "web"
+//! flight-compiler: string-union-value PlatformName Windows "windows"
+//! flight-compiler: string-union-value PlatformName MacOs "macos"
+//! flight-compiler: string-union-value PlatformName Linux "linux"
+//! flight-compiler: string-union-value PlatformName Ios "ios"
+//! flight-compiler: string-union-value PlatformName Android "android"
+//! flight-compiler: string-union-value PlatformName Unknown "unknown"
 
 use std::sync::Arc;
 

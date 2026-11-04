@@ -1009,7 +1009,14 @@ export function renderGeneratedImports(
   symbols: ReadonlyMap<string, ExportSymbolOwner>,
 ): string {
   const code = referencedCode(typescript);
-  const importedNames = new Set(collectReferencedExportNames(typescript, ownFileName, symbols));
+  // The compiler emits TypeScript's intrinsic `Record<K, V>` for `flight_entity::Record`. A
+  // crate-local compatibility type with the same name is not its owner in that explicit case.
+  const usesIntrinsicRecord = /^use flight_entity::Record;$/m.test(rust);
+  const importedNames = new Set(
+    collectReferencedExportNames(typescript, ownFileName, symbols).filter(
+      (name) => name !== 'Record' || !usesIntrinsicRecord,
+    ),
+  );
   const valueReferences = collectValueReferenceNames(typescript);
   const rustImports = new Set<string>();
   for (const match of rust.matchAll(/^use crate::(?:[A-Za-z0-9_]+::)?([A-Za-z0-9_]+);$/gm)) {

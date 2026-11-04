@@ -727,6 +727,19 @@ describe('renderGeneratedImports crate-internal symbols', () => {
       "import type { Registry } from './owner.ts';\nimport { createRegistry } from './owner.ts';\n\n",
     );
   });
+
+  it('keeps intrinsic Record global unless Rust explicitly imports a sibling Record', () => {
+    const symbols = new Map([['Record', { fileName: 'userAgentNative.ts', hasType: true, hasValue: false }]]);
+    const typescript = 'export function parse(win?: Readonly<Record<string, unknown>>): void { void win; }\n';
+
+    expect(renderGeneratedImports('use flight_entity::Record;\n', typescript, 'userAgent.ts', symbols)).toBe('');
+    expect(renderGeneratedImports('use crate::user_agent_native::Record;\n', typescript, 'userAgent.ts', symbols)).toBe(
+      "import type { Record } from './userAgentNative.ts';\n\n",
+    );
+    expect(renderGeneratedImports('', typescript, 'userAgent.ts', symbols)).toBe(
+      "import type { Record } from './userAgentNative.ts';\n\n",
+    );
+  });
 });
 
 describe('renderGeneratedImports', () => {

@@ -13973,6 +13973,48 @@ pub enum AnimationLoopMode { PingPong, Repeat }
     }
 
     #[test]
+    fn honors_explicit_exact_values_for_external_type_script_string_unions() {
+        let values = vec!["web".to_string(), "macos".to_string(), "unknown".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "PlatformName",
+            module: "./userAgentNative.ts",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-platform/src/types.rs",
+            source: r#"//! flight-compiler: string-union PlatformName=exact
+//! flight-compiler: string-union-value PlatformName Web "web"
+//! flight-compiler: string-union-value PlatformName MacOs "macos"
+//! flight-compiler: string-union-value PlatformName Unknown "unknown"
+
+pub enum PlatformName { Web, MacOs, Unknown }
+"#,
+        }];
+
+        let output = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-useragent/src/user_agent.rs",
+                source: "use flight_platform::PlatformName;\npub fn mac_name() -> PlatformName { return PlatformName::MacOs; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &[],
+            &[],
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(output.contains("return 'macos';"), "{output}");
+        assert!(!output.contains("PlatformName.MacOs"), "{output}");
+    }
+
+    #[test]
     fn does_not_infer_rust_variant_style_from_type_script_capitalization() {
         let values = vec!["PingPong".to_string(), "Repeat".to_string()];
         let metadata = [TypeScriptStringUnion {
