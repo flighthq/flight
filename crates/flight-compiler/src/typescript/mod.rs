@@ -25426,6 +25426,28 @@ fn apply_acronym_casing(name: &mut String) {
             result.push(bytes[i]);
             result.push(b'D');
             i += 2;
+        } else if bytes[i] == b'X'
+            && i + 2 < len
+            && bytes[i + 1] == b'y'
+            && bytes[i + 2] == b'z'
+            && (i + 3 >= len
+                || bytes[i + 3].is_ascii_uppercase()
+                || !bytes[i + 3].is_ascii_alphabetic())
+        {
+            result.push(b'X');
+            result.push(b'Y');
+            result.push(b'Z');
+            i += 3;
+        } else if bytes[i] == b'X'
+            && i + 1 < len
+            && bytes[i + 1] == b'y'
+            && (i + 2 >= len
+                || bytes[i + 2].is_ascii_uppercase()
+                || !bytes[i + 2].is_ascii_alphabetic())
+        {
+            result.push(b'X');
+            result.push(b'Y');
+            i += 2;
         } else {
             result.push(bytes[i]);
             i += 1;

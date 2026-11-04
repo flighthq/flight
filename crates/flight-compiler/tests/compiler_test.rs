@@ -23771,3 +23771,33 @@ pub fn sort_abs(values: &mut [f64]) {
         "partial_cmp().unwrap() should lower to subtraction: {output}"
     );
 }
+
+#[test]
+fn uppercases_xy_and_xyz_acronyms_in_camel_case() {
+    let source = r#"
+pub fn contains_point_xy(x: f64, y: f64) -> bool {
+    return x >= 0.0 && y >= 0.0;
+}
+
+pub fn set_position_xyz(x: f64, y: f64, z: f64) -> f64 {
+    return x + y + z;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("containsPointXY"),
+        "xy should be uppercased to XY: {output}"
+    );
+    assert!(
+        !output.contains("containsPointXy"),
+        "Xy should not appear: {output}"
+    );
+    assert!(
+        output.contains("setPositionXYZ"),
+        "xyz should be uppercased to XYZ: {output}"
+    );
+    assert!(
+        !output.contains("setPositionXyz"),
+        "Xyz should not appear: {output}"
+    );
+}
