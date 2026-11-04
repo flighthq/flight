@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 mod decode_image;
 mod detect_image_mime_type;
 mod encode_image;

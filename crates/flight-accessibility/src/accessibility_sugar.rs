@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 //! D18 sugar for the accessibility public lane: methods on the host capability record delegate to
 //! the six public functions. Sugar contains no logic and no synthetic property behavior.
 

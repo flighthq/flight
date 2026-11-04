@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 use std::sync::Arc;
 
 use flight_clipboard::contract::*;

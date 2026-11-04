@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 mod clipboard;
 mod clipboard_watch;
 mod host_explain;

@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 // Sniffs the MIME type of encoded image bytes from their magic-number header, or None when the
 // header is too short or unrecognized.
 pub fn detect_image_mime_type(data: &[u8]) -> Option<String> {

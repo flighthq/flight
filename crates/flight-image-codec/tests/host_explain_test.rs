@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 use flight_host::{HostCapabilityGroupExplanation, HostExplanation};
 use flight_image_codec::contract::*;
 

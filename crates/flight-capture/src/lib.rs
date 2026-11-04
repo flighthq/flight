@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! Capture verification: tolerant fingerprint comparison and the canonical committed baseline
 //! record. No filesystem, browser, screenshot or hash computation lives here.
 

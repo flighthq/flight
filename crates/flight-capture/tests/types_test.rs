@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 use flight_capture::contract::*;
 
 mod get_capture_baseline_field_string {

@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 use flight_image_codec::*;
 
 fn file_type_box(major_brand: &str, compatible_brands: &[&str]) -> Vec<u8> {

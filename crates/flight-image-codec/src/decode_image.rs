@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 use flight_entity::Uint8Array;
 
 use crate::detect_image_mime_type::detect_image_mime_type;

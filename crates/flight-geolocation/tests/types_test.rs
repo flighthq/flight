@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 use flight_geolocation::*;
 
 mod get_geolocation_access_reason_string {

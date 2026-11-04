@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 use std::sync::{Arc, Mutex};
 
 use flight_image_codec::*;

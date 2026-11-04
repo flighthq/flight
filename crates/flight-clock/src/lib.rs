@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 mod clock;
 mod clock_signals;
 mod sugar;

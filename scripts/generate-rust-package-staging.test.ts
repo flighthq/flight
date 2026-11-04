@@ -26,7 +26,7 @@ interface GenerationRun {
 
 // Runs the generator as a child while this process scans packages/ the way repository scanners do,
 // recording every entry that appears there and whether the child's private staging tree was observed.
-function generateWhileScanning(): Promise<GenerationRun> {
+function generateWhileScanning(lenient = false): Promise<GenerationRun> {
   const baseline = new Set(readdirSync(packagesRoot));
   const transient = new Set<string>();
   let sawStaging = false;
@@ -43,6 +43,7 @@ function generateWhileScanning(): Promise<GenerationRun> {
       packageName,
       '--package-root',
       packageRoot,
+      ...(lenient ? ['--lenient'] : []),
     ],
     {
       cwd: repositoryRoot,
@@ -135,5 +136,75 @@ edition = "2024"
     expect(run.stderr).toContain('root export missingValue has no TypeScript contract symbol');
     expect(run.transientPackageEntries).toEqual([]);
     expect(stagingEntries()).toEqual([]);
+  }, 120_000);
+
+  it('forwards lenient production generation', async () => {
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: root-only goodValue
+
+pub fn good_value(value: i32) -> i32 {
+    return value + 1;
+}
+
+pub fn unsupported_value(value: &dyn std::any::Any) -> bool {
+    return value.type_id() == std::any::TypeId::of::<u32>();
+}
+`,
+    );
+
+    const run = await generateWhileScanning(true);
+
+    expect(run.code).toBe(0);
+    expect(run.stderr).toContain('lenient: 1 items skipped');
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain('export function goodValue');
+    expect(value).toContain('// [lenient] fn unsupported_value:');
+  }, 120_000);
+
+  it('keeps test generation strict when production generation is lenient', async () => {
+    writeFileSync(
+      join(crateRoot, 'tests', 'strict_test.rs'),
+      `use crate::contract::*;
+
+mod strict_tests {
+    use super::*;
+
+    #[test]
+    fn unsupported_test() {
+        let value: &dyn std::any::Any = &1_u32;
+        assert!(value.type_id() == std::any::TypeId::of::<u32>());
+    }
+}
+`,
+    );
+
+    const run = await generateWhileScanning(true);
+
+    expect(run.code).not.toBe(0);
+    expect(run.stderr).toContain('unsupported Rust method call `.type_id()`');
+  }, 120_000);
+
+  it('preserves target-native package roots and modules', async () => {
+    rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
+    const nativeValue = 'export function nativeValue(): number { return 7; }\n';
+    const nativeContract = "export { nativeValue } from './value.ts';\n";
+    const nativeIndex = "export { nativeValue } from './contract.ts';\n";
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod value;\npub mod contract;\npub use contract::*;\n',
+    );
+    writeFileSync(sourcePath, '//! flight-compiler: target-native\npub fn native_value() -> i32 { 7 }\n');
+    writeFileSync(join(packageRoot, 'src', 'value.ts'), nativeValue);
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), nativeContract);
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), nativeIndex);
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    expect(run.stderr).not.toContain('Error');
+    expect(readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8')).toBe(nativeValue);
+    expect(readFileSync(join(packageRoot, 'src', 'contract.ts'), 'utf8')).toBe(nativeContract);
+    expect(readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8')).toBe(nativeIndex);
   }, 120_000);
 });

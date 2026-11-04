@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! Accessibility capability seam: plain node/state descriptors, operation outcomes and a
 //! provider-backed command facade. No native semantic tree, DOM, screen reader or focus operation
 //! lives here; every command is forwarded to the caller's explicit host provider.

@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 use crate::types::*;
 
 /// Raises the platform's own location-access prompt through the host provider (TS

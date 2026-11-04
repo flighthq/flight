@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 mod geolocation;
 mod geolocation_access;
 mod host_explain;

@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 //! Tilemap-owned declarations: the Tilemap kind struct, its data and runtime (TS `Tilemap`,
 //! `TilemapData`, `TilemapRuntime`, `TilemapSignals`).
 

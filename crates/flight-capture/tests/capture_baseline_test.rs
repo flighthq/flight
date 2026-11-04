@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 use flight_capture::contract::*;
 use flight_entity::set_record_value;
 

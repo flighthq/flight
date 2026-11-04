@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! The canonical committed capture baseline record (TS `captureBaseline.ts`).
 
 use std::cmp::Ordering;

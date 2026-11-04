@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 //! Capture verification types (TS `types/src/CaptureBaseline.ts`, `CaptureColumnBaseline.ts`,
 //! `CaptureBaselineProvenance.ts`, `CaptureBaselineField.ts`, `CaptureBaselineProvenanceField.ts`,
 //! `CaptureCheckResult.ts`).

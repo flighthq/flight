@@ -1,3 +1,4 @@
+//! flight-compiler: rust-only
 //! The accessibility contract types: open roles, plain node/state descriptors, operation outcomes
 //! and the provider capability seam (TS `types/src/Accessibility.ts`,
 //! `types/src/AccessibilityDescriptor.ts`, `Host.ts` `HostAccessibilityCapabilities`).

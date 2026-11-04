@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 use flight_capture::contract::*;
 
 // Short 1x1 fingerprints: `1:<rr><gg><bb>`, three RGB bytes as six hex chars. The per-channel mean

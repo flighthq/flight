@@ -32,11 +32,13 @@ import {
   resolveRustExportName,
   snakeToLowerCamel,
 } from './generate-rust-package-exports.ts';
+import { collectPackageSourceFileNames } from './generate-rust-package-sources.ts';
 
 interface Options {
   check: boolean;
   crateName: string;
   crateRoot?: string;
+  lenient: boolean;
   packageName: string;
   packageRoot?: string;
 }
@@ -86,6 +88,8 @@ mkdirSync(stagingSourceRoot, { recursive: true });
 mkdirSync(rawRoot, { recursive: true });
 
 try {
+  const rootRustPath = join(crateRoot, 'src', 'lib.rs');
+  const rootMode = sourceMode(rootRustPath);
   const rustSources = sourceFiles(crateRoot);
   const rustSourceModes = rustSources.map((rustSource) => {
     const rustPath = join(crateRoot, 'src', rustSource);
@@ -163,28 +167,37 @@ try {
     generatedFiles.push(fileName);
   }
 
-  writeGenerated(
-    join(stagingSourceRoot, 'contract.ts'),
-    contractExports(crateRoot, modules, symbolModules, symbols) + externalExports.output,
-    join(crateRoot, 'src', 'lib.rs'),
-  );
-  writeGenerated(
-    join(stagingSourceRoot, 'index.ts'),
-    publicExports(crateRoot, modules, symbolModules, publicSymbols),
-    join(crateRoot, 'src', 'lib.rs'),
-  );
-  generatedFiles.push('contract.ts', 'index.ts');
+  if (rootMode === 'generate') {
+    writeGenerated(
+      join(stagingSourceRoot, 'contract.ts'),
+      contractExports(crateRoot, modules, symbolModules, symbols) + externalExports.output,
+      rootRustPath,
+    );
+    writeGenerated(
+      join(stagingSourceRoot, 'index.ts'),
+      publicExports(crateRoot, modules, symbolModules, publicSymbols),
+      rootRustPath,
+    );
+    generatedFiles.push('contract.ts', 'index.ts');
+  } else if (rootMode === 'target-native') {
+    requireTargetNative('contract.ts', rootRustPath);
+    requireTargetNative('index.ts', rootRustPath);
+  } else {
+    throw new Error(`${relative(repositoryRoot, rootRustPath)} cannot be rust-only`);
+  }
 
-  formatStagedSources();
-  execFileSync(
-    tsxPath(),
-    [join(repositoryRoot, 'scripts', 'order.ts'), '--fix', `--root=${stagingRoot}`, stagingSourceRoot],
-    {
-      cwd: repositoryRoot,
-      stdio: 'inherit',
-    },
-  );
-  formatStagedSources();
+  if (generatedFiles.length > 0) {
+    formatStagedSources();
+    execFileSync(
+      tsxPath(),
+      [join(repositoryRoot, 'scripts', 'order.ts'), '--fix', `--root=${stagingRoot}`, stagingSourceRoot],
+      {
+        cwd: repositoryRoot,
+        stdio: 'inherit',
+      },
+    );
+    formatStagedSources();
+  }
 
   finishGeneration(generatedFiles);
 } finally {
@@ -218,6 +231,7 @@ function compile(
       '--out',
       out,
       ...entityArguments(command),
+      ...(options.lenient && command === 'generate' ? ['--lenient'] : []),
       ...compilerAliasArguments(command, aliasSources, source),
       ...compilerVisibilityArguments(
         command,
@@ -539,16 +553,21 @@ function parseOptions(arguments_: string[]): Options {
   const values = new Map<string, string>();
   const allowed = new Set(['--crate', '--crate-root', '--package', '--package-root']);
   let check = false;
+  let lenient = false;
   for (let index = 0; index < arguments_.length; index += 1) {
     const key = arguments_[index];
     if (key === '--check') {
       check = true;
       continue;
     }
+    if (key === '--lenient') {
+      lenient = true;
+      continue;
+    }
     const value = arguments_[index + 1];
     if (!key || !allowed.has(key) || !value) {
       throw new Error(
-        'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check]',
+        'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check] [--lenient]',
       );
     }
     values.set(key, value);
@@ -558,13 +577,14 @@ function parseOptions(arguments_: string[]): Options {
   const packageName = values.get('--package');
   if (!crateName || !packageName) {
     throw new Error(
-      'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check]',
+      'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check] [--lenient]',
     );
   }
   return {
     check,
     crateName,
     crateRoot: values.get('--crate-root'),
+    lenient,
     packageName,
     packageRoot: values.get('--package-root'),
   };
@@ -649,10 +669,12 @@ function crateSourcePaths(root: string): string[] {
 }
 
 function sourceFiles(crateRoot: string): string[] {
-  return readdirSync(join(crateRoot, 'src'))
-    .filter((fileName) => fileName.endsWith('.rs'))
-    .filter((fileName) => !['contract.rs', 'lib.rs', 'sugar.rs'].includes(fileName))
-    .sort();
+  const sourceRoot = join(crateRoot, 'src');
+  return collectPackageSourceFileNames({
+    availableFileNames: readdirSync(sourceRoot).filter((fileName) => fileName.endsWith('.rs')),
+    libSource: readFileSync(join(sourceRoot, 'lib.rs'), 'utf8'),
+    manifestSource: readFileSync(join(crateRoot, 'Cargo.toml'), 'utf8'),
+  });
 }
 
 function sourceMode(path: string): SourceMode {
