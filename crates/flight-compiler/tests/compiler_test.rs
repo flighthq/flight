@@ -13974,7 +13974,11 @@ pub enum AnimationLoopMode { PingPong, Repeat }
 
     #[test]
     fn honors_explicit_exact_values_for_external_type_script_string_unions() {
-        let values = vec!["web".to_string(), "macos".to_string(), "unknown".to_string()];
+        let values = vec![
+            "web".to_string(),
+            "macos".to_string(),
+            "unknown".to_string(),
+        ];
         let metadata = [TypeScriptStringUnion {
             name: "PlatformName",
             module: "./userAgentNative.ts",
@@ -14000,6 +14004,7 @@ pub enum PlatformName { Web, MacOs, Unknown }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &[],
