@@ -15217,22 +15217,28 @@ fn emit_match_statement_with_action(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        write_indent(out, indent + 2);
-        out.push_str("{\n");
+        let needs_block = switch_arm_needs_block(arm);
+        let body_indent = if needs_block { indent + 3 } else { indent + 2 };
+        if needs_block {
+            write_indent(out, indent + 2);
+            out.push_str("{\n");
+        }
         if switch_binding_name(&arm.pat).is_some() {
-            write_indent(out, indent + 3);
+            write_indent(out, body_indent);
             writeln!(out, "const {} = {scrutinee};", emit_pattern(&arm.pat)?)
                 .expect("writing to a String cannot fail");
         }
-        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 3)?;
+        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
         if matches!(action, HoistedMatchAction::Assign(_))
             && !arm_body_unconditionally_exits(&arm.body)
         {
-            write_indent(out, indent + 3);
+            write_indent(out, body_indent);
             out.push_str("break;\n");
         }
-        write_indent(out, indent + 2);
-        out.push_str("}\n");
+        if needs_block {
+            write_indent(out, indent + 2);
+            out.push_str("}\n");
+        }
     }
     write_indent(out, indent);
     out.push_str("}\n");
@@ -19754,53 +19760,59 @@ pub(crate) fn emit_match_statement(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        write_indent(out, indent + 2);
-        out.push_str("{\n");
+        let needs_block = switch_arm_needs_block(arm);
+        let body_indent = if needs_block { indent + 3 } else { indent + 2 };
+        if needs_block {
+            write_indent(out, indent + 2);
+            out.push_str("{\n");
+        }
         if switch_binding_name(&arm.pat).is_some() {
-            write_indent(out, indent + 3);
+            write_indent(out, body_indent);
             writeln!(out, "const {} = {scrutinee};", emit_pattern(&arm.pat)?)
                 .expect("writing to a String cannot fail");
         }
         if let Some((_, guard)) = &arm.guard {
             let guard_expr = emit_expression(guard, &arm_context)?;
-            write_indent(out, indent + 3);
+            write_indent(out, body_indent);
             writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
             match arm.body.as_ref() {
                 Expr::Block(block) => {
-                    emit_block(out, &block.block.stmts, &arm_context, indent + 4)?
+                    emit_block(out, &block.block.stmts, &arm_context, body_indent + 1)?
                 }
                 expression => emit_statement(
                     out,
                     &Stmt::Expr(expression.clone(), None),
                     &arm_context,
-                    indent + 4,
+                    body_indent + 1,
                 )?,
             }
             if !arm_body_unconditionally_exits(&arm.body) {
-                write_indent(out, indent + 4);
+                write_indent(out, body_indent + 1);
                 out.push_str("break;\n");
             }
-            write_indent(out, indent + 3);
+            write_indent(out, body_indent);
             out.push_str("}\n");
         } else {
             match arm.body.as_ref() {
                 Expr::Block(block) => {
-                    emit_block(out, &block.block.stmts, &arm_context, indent + 3)?
+                    emit_block(out, &block.block.stmts, &arm_context, body_indent)?
                 }
                 expression => emit_statement(
                     out,
                     &Stmt::Expr(expression.clone(), None),
                     &arm_context,
-                    indent + 3,
+                    body_indent,
                 )?,
             }
             if !arm_body_unconditionally_exits(&arm.body) {
-                write_indent(out, indent + 3);
+                write_indent(out, body_indent);
                 out.push_str("break;\n");
             }
         }
-        write_indent(out, indent + 2);
-        out.push_str("}\n");
+        if needs_block {
+            write_indent(out, indent + 2);
+            out.push_str("}\n");
+        }
     }
     write_indent(out, indent);
     out.push_str("}\n");
@@ -19813,6 +19825,20 @@ pub(crate) fn emit_match_statement(
 // as a constant, unit struct or variant when one of that name is in scope; by Rust's naming lints
 // those are SCREAMING_CASE or UpperCamelCase, so an identifier that starts lowercase (or with `_`) is
 // a binding. `_` alone is the wildcard, and `name @ subpattern` binds only within its subpattern.
+fn switch_arm_needs_block(arm: &syn::Arm) -> bool {
+    if switch_binding_name(&arm.pat).is_some() {
+        return true;
+    }
+    if let Expr::Block(block) = &*arm.body {
+        for stmt in &block.block.stmts {
+            if matches!(stmt, Stmt::Local(_)) {
+                return true;
+            }
+        }
+    }
+    return expression_contains_unconditional_try(&arm.body);
+}
+
 fn switch_binding_name(pattern: &Pat) -> Option<String> {
     let Pat::Ident(identifier) = pattern else {
         return None;

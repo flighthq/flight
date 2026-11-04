@@ -9937,7 +9937,7 @@ pub fn default_facet() -> Facet {
             "export type RequirementFacet = (typeof RequirementFacet)[keyof typeof RequirementFacet];"
         ));
         assert!(output.contains(
-            "case 'scene.resource-mime-type':\n      {\n        return 'scene.resource-mime-type';"
+            "case 'scene.resource-mime-type':\n      return 'scene.resource-mime-type';"
         ));
         assert!(!output.contains("export enum RequirementFacet"));
     }
