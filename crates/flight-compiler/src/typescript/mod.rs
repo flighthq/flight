@@ -186,6 +186,12 @@ const RESERVED_KEY_DATA_UNION_VARIANT_MARKER: &str = "@reserved-key-data-union-v
 const RESERVED_KEY_DATA_UNION_VARIANT_TYPE_MARKER: &str = "@reserved-key-data-union-variant-type:";
 
 const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
+// `{owner}:{variant}` for a `record-map` data-union variant, whose string-keyed `HashMap` payload is a
+// plain object record in TypeScript.
+const RECORD_MAP_VARIANT_MARKER: &str = "@record-map-variant:";
+// A local passed directly as a record-map variant payload in the function being emitted, so its
+// `HashMap` construction, `insert`, `get` and index reads lower to a plain object record.
+const RECORD_MAP_LOCAL_MARKER: &str = "@record-map-local:";
 
 // A field an `allocate_entity` local may leave out of its default object because the construction
 // initializer called on it in the very next statement definitely assigns it (`type:field`).
@@ -5197,10 +5203,39 @@ fn insert_data_union_context(
     programs: &[&Program],
     external_record_structs: &[ItemStruct],
 ) -> Result<(), CompileError> {
-    for program in programs {
+    return insert_data_union_context_for(
+        context,
+        programs,
+        programs,
+        external_record_structs,
+        false,
+    );
+}
+
+// Data unions declared by `owners`, resolving payload types through `programs`. Dependency owners
+// (`tolerant`) contribute only the unions this crate can lower exactly: one whose payload does not
+// classify, a reserved-key union, or a name this crate declares itself is left unlowered instead of
+// failing the dependent's compilation.
+fn insert_data_union_context_for(
+    context: &mut HashSet<String>,
+    owners: &[&Program],
+    programs: &[&Program],
+    external_record_structs: &[ItemStruct],
+    tolerant: bool,
+) -> Result<(), CompileError> {
+    for program in owners {
         for rust_enum in &program.enums {
             let owner = rust_enum.ident.to_string();
             if !program.data_unions.contains(&owner) {
+                continue;
+            }
+            if tolerant
+                && (program.reserved_key_data_unions.contains(&owner)
+                    || programs
+                        .iter()
+                        .filter(|other| !owners.iter().any(|owner| std::ptr::eq(*owner, **other)))
+                        .any(|local| local.type_names.contains(&owner)))
+            {
                 continue;
             }
             if !transparent_data_union(rust_enum) || entity_ref_data_union(rust_enum, programs) {
@@ -5272,9 +5307,24 @@ fn insert_data_union_context(
                 continue;
             }
             let mut skip_enum = false;
+            let mut variant_markers = Vec::new();
             for variant in &rust_enum.variants {
+                let variant_name = variant.ident.to_string();
+                let record_map = program
+                    .record_map_variants
+                    .contains(&(owner.clone(), variant_name.clone()));
                 let categories = match &variant.fields {
                     syn::Fields::Unit => BTreeSet::from([RuntimeCategory::Null]),
+                    syn::Fields::Unnamed(fields) if record_map => {
+                        if !is_string_keyed_hash_map(&fields.unnamed[0].ty) {
+                            return Err(compile_error(format!(
+                                "`flight-compiler: record-map {owner}::{variant_name}` requires a `HashMap<String, V>` payload"
+                            )));
+                        }
+                        variant_markers
+                            .push(format!("{RECORD_MAP_VARIANT_MARKER}{owner}:{variant_name}"));
+                        BTreeSet::from([RuntimeCategory::Record])
+                    }
                     syn::Fields::Unnamed(fields) => {
                         match runtime_categories_for_type(
                             &fields.unnamed[0].ty,
@@ -5286,7 +5336,7 @@ fn insert_data_union_context(
                                 let is_auto = programs
                                     .iter()
                                     .any(|program| program.auto_data_unions.contains(&owner));
-                                if is_auto {
+                                if is_auto || tolerant {
                                     skip_enum = true;
                                     break;
                                 }
@@ -5298,18 +5348,21 @@ fn insert_data_union_context(
                         unreachable!("transparent data union changed after directive validation")
                     }
                 };
-                let variant_name = variant.ident.to_string();
-                context.insert(data_union_variant_marker(
+                variant_markers.push(data_union_variant_marker(
                     &owner,
                     &variant_name,
                     &categories,
                 ));
                 if matches!(variant.fields, syn::Fields::Unit) {
-                    context.insert(format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant_name}"));
+                    variant_markers.push(format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant_name}"));
                 }
             }
             if skip_enum {
-                context.insert(format!("@data-union-skip:{owner}"));
+                if !tolerant {
+                    context.insert(format!("@data-union-skip:{owner}"));
+                }
+            } else {
+                context.extend(variant_markers);
             }
         }
     }
@@ -7822,6 +7875,19 @@ fn generation_context_with_types(
         .map(|(_, program)| *program)
         .collect::<Vec<_>>();
     insert_data_union_context(&mut context, &program_refs, external_record_structs)?;
+    let visibility_refs = visibility_programs.iter().collect::<Vec<_>>();
+    let resolution_refs = program_refs
+        .iter()
+        .copied()
+        .chain(visibility_refs.iter().copied())
+        .collect::<Vec<_>>();
+    insert_data_union_context_for(
+        &mut context,
+        &visibility_refs,
+        &resolution_refs,
+        external_record_structs,
+        true,
+    )?;
     let entity_types: HashSet<String> = programs
         .iter()
         .flat_map(|(_, program)| &program.entities)
@@ -8953,6 +9019,7 @@ pub(crate) fn function_expression_context(
 
     let mut context = base.clone();
     insert_lexical_binding_context(function, &mut context);
+    insert_record_map_local_context(function, &mut context);
     let function_name = function.sig.ident.to_string();
     let vec_prefix = format!("{VEC_CLONE_ARGUMENT_MARKER}{function_name}:");
     let vec_markers = context
@@ -10456,6 +10523,189 @@ fn data_union_expression_variant(
     return Some((owner, variant, categories));
 }
 
+// `HashMap<String, V>` as the owner declares it (read syntactically: the owner's own `use` items are
+// not in scope where a dependent lowers the union).
+fn is_string_keyed_hash_map(rust_type: &Type) -> bool {
+    let Type::Path(path) = rust_type else {
+        return false;
+    };
+    let Some(segment) = path.path.segments.last() else {
+        return false;
+    };
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return false;
+    };
+    return segment.ident == "HashMap"
+        && arguments.args.len() == 2
+        && matches!(arguments.args.first(), Some(GenericArgument::Type(key)) if named_type(key).as_deref() == Some("String"));
+}
+
+fn is_record_map_variant(entities: &HashSet<String>, owner: &str, variant: &str) -> bool {
+    return entities.contains(&format!("{RECORD_MAP_VARIANT_MARKER}{owner}:{variant}"));
+}
+
+fn is_record_map_local(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return referenced_path_identifier(expression)
+        .is_some_and(|name| entities.contains(&format!("{RECORD_MAP_LOCAL_MARKER}{name}")));
+}
+
+// Marks the locals of `function` passed directly as a record-map variant payload
+// (`LogData::Record(fields)`), so their construction and map operations lower to a plain object.
+fn insert_record_map_local_context(function: &ItemFn, context: &mut HashSet<String>) {
+    struct Collector<'a> {
+        context: &'a HashSet<String>,
+        locals: BTreeSet<String>,
+    }
+    impl<'ast> Visit<'ast> for Collector<'_> {
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            if call.args.len() == 1
+                && let Some((owner, variant)) = associated_owner_and_member(&call.func)
+                && is_record_map_variant(self.context, &owner, &variant)
+                && let Some(name) = referenced_path_identifier(&call.args[0])
+            {
+                self.locals.insert(name);
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+    }
+    let mut collector = Collector {
+        context,
+        locals: BTreeSet::new(),
+    };
+    collector.visit_item_fn(function);
+    for local in collector.locals {
+        context.insert(format!("{RECORD_MAP_LOCAL_MARKER}{local}"));
+    }
+}
+
+// A record-map payload: an inline `HashMap` construction becomes an object literal, and any other
+// value (a record-map local, a parameter) is already a plain object record.
+fn emit_record_map_payload(
+    payload: &Expr,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    if let Some(record) = emit_record_map_construction(payload, entities) {
+        return record;
+    }
+    return emit_expression(payload, entities);
+}
+
+// `HashMap::new()` / `HashMap::with_capacity(n)` as `{}` and `HashMap::from([(key, value), ...])` as an
+// object literal, keyed by a plain property name when the key is an identifier-shaped string literal.
+fn emit_record_map_construction(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<Result<String, CompileError>> {
+    let Expr::Call(call) = peel_reference_and_paren(expression) else {
+        return None;
+    };
+    if (expression_is_associated_path(&call.func, "HashMap", "new") && call.args.is_empty())
+        || (expression_is_associated_path(&call.func, "HashMap", "with_capacity")
+            && call.args.len() == 1)
+    {
+        return Some(Ok("{}".to_string()));
+    }
+    if !expression_is_associated_path(&call.func, "HashMap", "from") || call.args.len() != 1 {
+        return None;
+    }
+    let Expr::Array(entries) = peel_reference_and_paren(&call.args[0]) else {
+        return Some(Err(compile_error(
+            "portable record-map `HashMap::from` requires an array literal of `(key, value)` pairs",
+        )));
+    };
+    let mut properties = Vec::new();
+    for entry in &entries.elems {
+        let Expr::Tuple(pair) = entry else {
+            return Some(Err(compile_error(
+                "portable record-map `HashMap::from` requires `(key, value)` tuple entries",
+            )));
+        };
+        if pair.elems.len() != 2 {
+            return Some(Err(compile_error(
+                "portable record-map `HashMap::from` requires `(key, value)` tuple entries",
+            )));
+        }
+        let value = match emit_expression(&pair.elems[1], entities) {
+            Ok(value) => value,
+            Err(error) => return Some(Err(error)),
+        };
+        let key = match record_map_literal_key(&pair.elems[0]) {
+            Some(key) => key,
+            None => match emit_expression(&pair.elems[0], entities) {
+                Ok(key) => format!("[{key}]"),
+                Err(error) => return Some(Err(error)),
+            },
+        };
+        properties.push(if key == value {
+            key
+        } else {
+            format!("{key}: {value}")
+        });
+    }
+    if properties.is_empty() {
+        return Some(Ok("{}".to_string()));
+    }
+    return Some(Ok(format!("{{ {} }}", properties.join(", "))));
+}
+
+// An identifier-shaped string-literal key (`"message"`, `"message".to_string()`,
+// `String::from("message")`) as a plain property name.
+fn record_map_literal_key(key: &Expr) -> Option<String> {
+    let literal = match peel_reference_and_paren(key) {
+        Expr::Lit(syn::ExprLit {
+            lit: Lit::Str(literal),
+            ..
+        }) => literal.value(),
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "to_string" | "to_owned" | "into"
+                ) =>
+        {
+            return record_map_literal_key(&call.receiver);
+        }
+        Expr::Call(call)
+            if call.args.len() == 1
+                && (expression_is_associated_path(&call.func, "String", "from")) =>
+        {
+            return record_map_literal_key(&call.args[0]);
+        }
+        _ => return None,
+    };
+    let mut characters = literal.chars();
+    let first = characters.next()?;
+    if !(first.is_ascii_alphabetic() || first == '_' || first == '$')
+        || !characters.all(|character| {
+            character.is_ascii_alphanumeric() || character == '_' || character == '$'
+        })
+    {
+        return Some(js_string_literal(&literal));
+    }
+    return Some(literal);
+}
+
+// `insert`, `get`, `contains_key` and `remove` on a record-map local as plain object operations.
+fn emit_record_map_method(
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let arguments = call
+        .args
+        .iter()
+        .map(|argument| emit_expression(argument, entities))
+        .collect::<Result<Vec<_>, _>>()?;
+    return match (call.method.to_string().as_str(), arguments.as_slice()) {
+        ("insert", [key, value]) => Ok(format!("{receiver}[{key}] = {value}")),
+        ("get", [key]) => Ok(format!("{receiver}[{key}]")),
+        ("contains_key", [key]) => Ok(format!("Object.hasOwn({receiver}, {key})")),
+        (method, _) => Err(compile_error(format!(
+            "portable record-map `.{method}()` has no plain-object lowering; use `insert`, `get`, `contains_key` or index reads"
+        ))),
+    };
+}
+
 fn data_union_unit(entities: &HashSet<String>, owner: &str, variant: &str) -> bool {
     return entities.contains(&format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant}"));
 }
@@ -10751,6 +11001,9 @@ fn emit_expression_value(
                     return Err(compile_error(format!(
                         "transparent data union constructor `{owner}::{variant}` expects exactly one payload"
                     )));
+                }
+                if is_record_map_variant(entities, &owner, &variant) {
+                    return emit_record_map_payload(&call.args[0], entities);
                 }
                 return emit_expression(&call.args[0], entities);
             }
@@ -11147,6 +11400,11 @@ fn emit_expression_value(
             }
         }
         Expr::Group(group) => emit_expression(&group.expr, entities),
+        Expr::Index(index) if is_record_map_local(&index.expr, entities) => Ok(format!(
+            "{}[{}]",
+            emit_expression(&index.expr, entities)?,
+            emit_expression(&index.index, entities)?
+        )),
         Expr::Index(index) => {
             let receiver = emit_expression(&index.expr, entities)?;
             if let Expr::Range(range) = index.index.as_ref() {
@@ -12837,6 +13095,25 @@ pub(crate) fn emit_local_with_shadow_and_else(
     rebound: bool,
     emit_else_block: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
 ) -> Result<Vec<(String, String)>, CompileError> {
+    if !shadowed
+        && !rebound
+        && let Pat::Ident(identifier) = &local.pat
+        && identifier.subpat.is_none()
+        && entities.contains(&format!("{RECORD_MAP_LOCAL_MARKER}{}", identifier.ident))
+        && let Some(initializer) = &local.init
+        && initializer.diverge.is_none()
+        && let Some(record) = emit_record_map_construction(&initializer.expr, entities)
+    {
+        write_indent(out, indent);
+        writeln!(
+            out,
+            "const {}: Record<string, unknown> = {};",
+            emit_pattern(&local.pat)?,
+            record?
+        )
+        .expect("writing to a String cannot fail");
+        return Ok(Vec::new());
+    }
     if local
         .init
         .as_ref()
@@ -19073,6 +19350,9 @@ fn emit_method_call(
 ) -> Result<String, CompileError> {
     if let Some(delegated) = delegated_method_call(call, entities)? {
         return emit_expression(&Expr::Call(delegated), entities);
+    }
+    if is_record_map_local(&call.receiver, entities) {
+        return emit_record_map_method(call, entities);
     }
     if call.method == "wrapping_add"
         && call.args.len() == 1
@@ -26600,9 +26880,12 @@ impl CrossCrateUsageCollector<'_> {
 impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
     fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
         if expression.qself.is_none() {
-            if let Some((owner, _)) = path_owner_and_member(&expression.path)
-                && is_string_union(self.context, &owner)
+            if let Some((owner, member)) = path_owner_and_member(&expression.path)
+                && (is_string_union(self.context, &owner)
+                    || is_transparent_data_union_variant(self.context, &owner, &member))
             {
+                // A transparent data-union variant erases to its payload, so its owner is never
+                // referenced as a value.
                 return;
             }
             self.record_value_path(&expression.path);
@@ -26637,8 +26920,9 @@ impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
 
     fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
         if pattern.qself.is_none() {
-            if let Some((owner, _)) = path_owner_and_member(&pattern.path)
-                && is_string_union(self.context, &owner)
+            if let Some((owner, member)) = path_owner_and_member(&pattern.path)
+                && (is_string_union(self.context, &owner)
+                    || is_transparent_data_union_variant(self.context, &owner, &member))
             {
                 self.record_type_path(&pattern.path);
             } else {

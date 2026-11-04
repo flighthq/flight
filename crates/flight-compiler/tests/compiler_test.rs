@@ -24767,3 +24767,133 @@ mod method_delegation {
         assert!(output.contains("return values.length;"), "{output}");
     }
 }
+
+// A `record-map` data-union variant from a dependency lowers its string-keyed `HashMap` payload to a
+// plain object record at the use site, the dependency's transparent variants erase to their payloads,
+// and every other `HashMap` keeps its `Map` lowering.
+mod record_map {
+    use super::*;
+
+    const OWNER: &str = r#"//! flight-compiler: target-native
+//! flight-compiler: data-union LogData LogValue
+//! flight-compiler: record-map LogData::Record LogValue::Record
+
+use std::collections::HashMap;
+
+pub enum LogData {
+    Message(String),
+    Record(HashMap<String, LogValue>),
+}
+
+pub enum LogValue {
+    Null,
+    Bool(bool),
+    Number(f64),
+    Str(String),
+    Record(HashMap<String, LogValue>),
+}
+
+pub fn log_data(data: LogData) {}
+"#;
+
+    fn compile(source: &str, owner: &str) -> Result<String, flight_compiler::CompileError> {
+        return compile_typescript_with_visibility_sources(
+            ModuleSource {
+                path: "crates/flight-demo/src/report.rs",
+                source,
+            },
+            None,
+            &[ModuleSource {
+                path: "crates/flight-log/src/log.rs",
+                source: owner,
+            }],
+            &[],
+            &[],
+        );
+    }
+
+    #[test]
+    fn lowers_dependency_record_map_payloads_to_plain_objects() {
+        let source = r#"use std::collections::HashMap;
+
+use flight_log::{LogData, LogValue, log_data};
+
+pub fn inline(message: &str) {
+    log_data(LogData::Record(HashMap::from([
+        ("message".to_string(), LogValue::Str(message.to_string())),
+        ("max-count".to_string(), LogValue::Number(2.0)),
+    ])));
+}
+
+pub fn built(key: &str, enabled: bool) -> bool {
+    let mut fields = HashMap::new();
+    fields.insert("enabled".to_string(), LogValue::Bool(enabled));
+    fields.insert(key.to_string(), LogValue::Null);
+    let present = fields.contains_key(key) && fields.get("enabled").is_some();
+    let first = &fields["enabled"];
+    log_data(LogData::Record(fields));
+    return present;
+}
+
+pub fn message(text: &str) {
+    log_data(LogData::Message(text.to_string()));
+}
+
+pub fn ordinary(key: &str) -> usize {
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    counts.insert(key.to_string(), 1);
+    return counts.len();
+}
+"#;
+        assert_eq!(
+            compile(source, OWNER).unwrap(),
+            r#"import { logData } from '@flighthq/log/contract';
+
+export function inline(message: string): void {
+  logData({ message: String(message), 'max-count': 2.0 });
+}
+
+export function built(key: string, enabled: boolean): boolean {
+  const fields: Record<string, unknown> = {};
+  fields['enabled'] = enabled;
+  fields[String(key)] = null;
+  const present = Object.hasOwn(fields, key) && (fields['enabled'] !== undefined);
+  const first = fields['enabled'];
+  logData(fields);
+  return present;
+}
+
+export function message(text: string): void {
+  logData(String(text));
+}
+
+export function ordinary(key: string): number {
+  let counts: Map<string, number> = new Map();
+  (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(counts, String(key), 1);
+  return counts.size;
+}
+"#
+        );
+    }
+
+    #[test]
+    fn rejects_record_map_directives_without_a_string_keyed_hash_map_payload() {
+        let source = "use flight_log::{LogData, log_data};\n\npub fn message(text: &str) {\n    log_data(LogData::Message(text.to_string()));\n}\n";
+        let vector_payload = OWNER.replace(
+            "    Record(HashMap<String, LogValue>),\n}\n\npub enum LogValue",
+            "    Record(Vec<LogValue>),\n}\n\npub enum LogValue",
+        );
+        assert_eq!(
+            compile(source, &vector_payload).unwrap_err().to_string(),
+            "`flight-compiler: record-map LogData::Record` requires a `HashMap<String, V>` payload"
+        );
+        let undeclared_owner = OWNER.replace(
+            "record-map LogData::Record LogValue::Record",
+            "record-map LogEntry::Record",
+        );
+        assert_eq!(
+            compile(source, &undeclared_owner).unwrap_err().to_string(),
+            "`flight-compiler: record-map LogEntry::Record` names no `data-union` enum of this source"
+        );
+    }
+}

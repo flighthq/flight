@@ -51,6 +51,9 @@ pub(crate) struct Program {
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) readonly_structs: HashSet<String>,
+    // `record-map Owner::Variant` directives: data-union variants whose string-keyed `HashMap` payload
+    // TypeScript represents as a plain object record rather than a `Map`.
+    pub(crate) record_map_variants: BTreeSet<(String, String)>,
     pub(crate) source_mode: SourceMode,
     // Transparent data unions that distinguish their first record payload from the final fallback
     // payload by declaration-derived property names (`data-union Name=reserved-key`).
@@ -1225,6 +1228,48 @@ fn parse_data_unions(attributes: &[Attribute]) -> Result<DataUnionMetadata, Comp
     });
 }
 
+// `record-map Owner::Variant ...`: each named variant belongs to a `data-union` of the same source and
+// carries a string-keyed `HashMap` payload that TypeScript represents as a plain object record.
+fn parse_record_map_variants(
+    attributes: &[Attribute],
+    data_unions: &HashSet<String>,
+) -> Result<BTreeSet<(String, String)>, CompileError> {
+    let mut variants = BTreeSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("record-map") {
+            continue;
+        }
+        let names = fields.collect::<Vec<_>>();
+        if names.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: record-map` requires at least one `Owner::Variant`",
+            ));
+        }
+        for specification in names {
+            let Some((owner, variant)) = specification.split_once("::") else {
+                return Err(compile_error(format!(
+                    "`flight-compiler: record-map` entry `{specification}` must name `Owner::Variant`"
+                )));
+            };
+            if !data_unions.contains(owner) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: record-map {specification}` names no `data-union` enum of this source"
+                )));
+            }
+            if !variants.insert((owner.to_string(), variant.to_string())) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: record-map` entry `{specification}`"
+                )));
+            }
+        }
+    }
+    return Ok(variants);
+}
+
 fn parse_entity_clone_shared_fields(
     attributes: &[Attribute],
 ) -> Result<BTreeMap<String, BTreeSet<String>>, CompileError> {
@@ -1704,6 +1749,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
     let data_union_metadata = parse_data_unions(&file.attrs)?;
     let mut data_unions = data_union_metadata.names;
     let reserved_key_data_unions = data_union_metadata.reserved_key;
+    let record_map_variants = parse_record_map_variants(&file.attrs, &data_unions)?;
     let entity_clone_shared_fields = parse_entity_clone_shared_fields(&file.attrs)?;
     let entity_runtime_states = parse_entity_runtime_states(&file.attrs)?;
     let export_names = parse_export_names(&file.attrs)?;
@@ -1921,6 +1967,7 @@ fn parse_program_with_options(source: &str, lenient: bool) -> Result<Program, Co
         statics,
         structs,
         readonly_structs,
+        record_map_variants,
         source_mode,
         reserved_key_data_unions,
         string_unions,
@@ -2267,6 +2314,13 @@ pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileE
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
     let mut program = parse_program("")?;
     program.facts = collect_source_facts(&file);
+    // Dependency data unions are lowered at their use sites in this crate, so their designations
+    // (and record-map payload representations) travel with the visibility source.
+    let data_union_metadata = parse_data_unions(&file.attrs)?;
+    program.record_map_variants =
+        parse_record_map_variants(&file.attrs, &data_union_metadata.names)?;
+    program.data_unions = data_union_metadata.names;
+    program.reserved_key_data_unions = data_union_metadata.reserved_key;
     program.no_std = file
         .attrs
         .iter()
@@ -2351,6 +2405,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "nullable-options"
             | "numeric-union"
             | "readonly-fields"
+            | "record-map"
             | "root"
             | "root-only"
             | "string-union"
