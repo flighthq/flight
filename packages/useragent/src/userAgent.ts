@@ -1,3 +1,6 @@
+// Generated from crates/flight-useragent/src/user_agent.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import {
   captureAfter,
   charsOf,
@@ -8,14 +11,15 @@ import {
   matchesAt,
   positions,
 } from './jsPattern.ts';
-import type { PlatformEndianness, PlatformRuntime, Record, Unknown } from './userAgentNative.ts';
-import {
+import type {
+  PlatformEndianness,
   PlatformEngine,
   PlatformKind,
   PlatformName,
-  detectEndiannessNative,
-  parseUserAgentRuntimeNative,
+  PlatformRuntime,
+  Unknown,
 } from './userAgentNative.ts';
+import { detectEndiannessNative, parseUserAgentRuntimeNative } from './userAgentNative.ts';
 import { parseUserAgentOsVersion } from './userAgentParse.ts';
 
 /**
@@ -102,21 +106,21 @@ export function parseUserAgentArch(ua: string, uadPlatform?: string): string {
 export function parseUserAgentEngine(ua: string): PlatformEngine {
   const t = charsOf(ua);
   if (containsAny(t, ['iphone', 'ipad', 'ipod'])) {
-    return PlatformEngine.Webkit;
+    return 'webkit';
   }
   if (contains(t, 'firefox')) {
-    return PlatformEngine.Gecko;
+    return 'gecko';
   }
   if (positions(t, 'edge/').some((at) => at + 5 < t.length && isAsciiDigit(t[at + 5]))) {
-    return PlatformEngine.Unknown;
+    return 'unknown';
   }
   if (containsAny(t, ['chrome', 'chromium', 'edg', 'opr', 'samsung'])) {
-    return PlatformEngine.Blink;
+    return 'blink';
   }
   if (containsAny(t, ['safari', 'webkit'])) {
-    return PlatformEngine.Webkit;
+    return 'webkit';
   }
-  return PlatformEngine.Unknown;
+  return 'unknown';
 }
 
 /**
@@ -126,7 +130,7 @@ export function parseUserAgentEngine(ua: string): PlatformEngine {
  */
 export function parseUserAgentEngineVersion(ua: string, engine: PlatformEngine): string {
   const t = charsOf(ua);
-  if (engine === PlatformEngine.Gecko) {
+  if (engine === 'gecko') {
     const firefox = captureAfter(t, 'firefox/', isDigitOrDot);
     if (firefox !== undefined) {
       const value = firefox;
@@ -134,7 +138,7 @@ export function parseUserAgentEngineVersion(ua: string, engine: PlatformEngine):
     }
     return '';
   }
-  if (engine === PlatformEngine.Blink) {
+  if (engine === 'blink') {
     const edge = captureAfter(t, 'edg/', isDigitOrDot);
     if (edge !== undefined) {
       const value = edge;
@@ -152,7 +156,7 @@ export function parseUserAgentEngineVersion(ua: string, engine: PlatformEngine):
     }
     return '';
   }
-  if (engine === PlatformEngine.Webkit) {
+  if (engine === 'webkit') {
     const version = captureAfter(t, 'version/', isDigitOrDot);
     if (version !== undefined) {
       const value = version;
@@ -171,10 +175,10 @@ export function parseUserAgentEngineVersion(ua: string, engine: PlatformEngine):
  * The platform kind derived from a name: iOS and Android are `Mobile`; everything else is `Web`.
  */
 export function parseUserAgentKind(name: PlatformName): PlatformKind {
-  if (name === PlatformName.Ios || name === PlatformName.Android) {
-    return PlatformKind.Mobile;
+  if (name === 'ios' || name === 'android') {
+    return 'mobile';
   }
-  return PlatformKind.Web;
+  return 'web';
 }
 
 /**
@@ -184,21 +188,21 @@ export function parseUserAgentKind(name: PlatformName): PlatformKind {
 export function parseUserAgentName(ua: string): PlatformName {
   const t = charsOf(ua);
   if (contains(t, 'android')) {
-    return PlatformName.Android;
+    return 'android';
   }
   if (containsAny(t, ['iphone', 'ipad', 'ipod'])) {
-    return PlatformName.Ios;
+    return 'ios';
   }
   if (contains(t, 'win')) {
-    return PlatformName.Windows;
+    return 'windows';
   }
   if (contains(t, 'mac')) {
-    return PlatformName.MacOs;
+    return 'macos';
   }
   if (contains(t, 'linux')) {
-    return PlatformName.Linux;
+    return 'linux';
   }
-  return PlatformName.Web;
+  return 'web';
 }
 
 /**
@@ -222,7 +226,7 @@ export function parseUserAgentPointerWidth(arch: string): UserAgentPointerWidth 
  * `Capacitor` when `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see
  * `isTruthy`): a nested object is a `Record<Unknown>` stored in the `Unknown`.
  */
-export function parseUserAgentRuntime(win?: Readonly<Record<Unknown>>): PlatformRuntime {
+export function parseUserAgentRuntime(win?: Readonly<Record<string, Unknown>>): PlatformRuntime {
   return parseUserAgentRuntimeNative(win);
 }
 
@@ -232,7 +236,7 @@ export function parseUserAgentRuntime(win?: Readonly<Record<Unknown>>): Platform
  * `parseUserAgentOsVersion`.
  */
 export function parseUserAgentVersion(ua: string, name: PlatformName): string {
-  if (name === PlatformName.Linux || name === PlatformName.Web) {
+  if (name === 'linux' || name === 'web') {
     return '';
   }
   if (parseUserAgentName(ua) !== name) {

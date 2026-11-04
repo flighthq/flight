@@ -1,6 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
 //!
 //! Browser user-agent parsing to platform identity tokens (TS `userAgent.ts`). Pure functions over
 //! the UA string and optional hints; no DOM, navigator or OS queries.
@@ -14,10 +11,11 @@
 
 use crate::js_pattern::*;
 use crate::user_agent_native::{
-    PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime, Record,
-    Unknown, detect_endianness_native, parse_user_agent_runtime_native,
+    PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime, Unknown,
+    detect_endianness_native, parse_user_agent_runtime_native,
 };
 use crate::user_agent_parse::parse_user_agent_os_version;
+use flight_entity::Record;
 
 /// Pointer width in bits, or `Unknown` when the architecture does not identify one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
