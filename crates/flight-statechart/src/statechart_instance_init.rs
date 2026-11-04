@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_entity::Ref;
 
 use crate::statechart::initialize_statechart_instance_portable;
