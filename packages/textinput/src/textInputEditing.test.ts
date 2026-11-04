@@ -466,7 +466,7 @@ describe('deleteTextInputBackward', () => {
     expect(getTextInputCaretIndex(text)).toEqual(1);
   });
   it('deletes the previous grapheme without splitting utf16', () => {
-    const text = createInput(textData('a👨\u{200d}👩\u{200d}👧\u{200d}👦b'), inputOptions());
+    const text = createInput(textData('a👨‍👩‍👧‍👦b'), inputOptions());
     setTextInputSelection(text, 12, 12);
     deleteTextInputBackward(text);
     expect(text!.data.text).toEqual('ab');

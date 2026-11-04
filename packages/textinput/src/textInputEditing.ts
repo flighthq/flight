@@ -54,7 +54,7 @@ function createTextSelectionRectangle(): TextSelectionRectangle {
 }
 
 function addSigned(value: number, offset: number): number {
-  return offset < 0 ? Math.max(0, (value - -offset) >>> 0) : value + (offset >>> 0);
+  return offset < 0 ? Math.max(0, value - (-offset >>> 0)) : value + (offset >>> 0);
 }
 
 function adjustTextFormatRanges(
@@ -1113,10 +1113,9 @@ export function selectWordAtTextInputIndex(source: RichText, index: number): voi
     return;
   }
   const lookup = clamped === length ? Math.max(0, clamped - 1) : clamped;
-  let segmentIndex = (<T>(items: readonly T[], predicate: (item: T) => boolean): number | undefined => {
-    const index = items.findIndex(predicate);
-    return index === -1 ? undefined : index;
-  })(segments, (segment) => lookup >= segment.start && lookup < segment.end);
+  let segmentIndex = ((i) => (i === -1 ? undefined : i))(
+    segments.findIndex((segment) => lookup >= segment.start && lookup < segment.end),
+  );
   if (segmentIndex === undefined) {
     setTextInputSelection(source, clamped | 0, clamped | 0);
     return;
@@ -1127,11 +1126,7 @@ export function selectWordAtTextInputIndex(source: RichText, index: number): voi
     segmentIndex -= 1;
     start = segments[segmentIndex].start;
   }
-  segmentIndex =
-    (<T>(items: readonly T[], predicate: (item: T) => boolean): number | undefined => {
-      const index = items.findIndex(predicate);
-      return index === -1 ? undefined : index;
-    })(segments, (segment) => segment.start === start) ?? 0;
+  segmentIndex = ((i) => (i === -1 ? undefined : i))(segments.findIndex((segment) => segment.start === start)) ?? 0;
   while (segmentIndex + 1 < segments.length && segments[segmentIndex + 1].isWordLike !== true) {
     segmentIndex += 1;
     end = segments[segmentIndex].end;
