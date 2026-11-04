@@ -313,6 +313,56 @@ export function echoExplanation(value: BackendOperationExplanation): BackendOper
     expect(value).not.toContain("from '@flighthq/host/contract'");
   }, 120_000);
 
+  it('passes canonical type-only string-union representation metadata to the compiler', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), '//! flight-compiler: target-native\nmod types;\nmod value;\n');
+    rmSync(join(crateRoot, 'src', 'contract.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'src', 'types.rs'),
+      `//! flight-compiler: rust-only
+pub enum AccessibilityLiveness {
+    Polite,
+    Assertive,
+}
+`,
+    );
+    writeFileSync(
+      sourcePath,
+      `use crate::types::AccessibilityLiveness;
+
+pub fn default_liveness() -> AccessibilityLiveness {
+    return AccessibilityLiveness::Polite;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { AccessibilityLiveness } from '@flighthq/types/contract';
+
+export function defaultLiveness(): AccessibilityLiveness {
+  return 'polite';
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { defaultLiveness } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { defaultLiveness } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain("import type { AccessibilityLiveness } from '@flighthq/types/contract';");
+    expect(value).toContain("return 'polite';");
+    expect(value).not.toContain('AccessibilityLiveness.Polite');
+  }, 120_000);
+
   it('generates explicit empty modules for an intentionally empty public contract', async () => {
     rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
     rmSync(sourcePath, { force: true });

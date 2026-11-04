@@ -12,6 +12,7 @@ export interface ExportSymbolOwner {
   hasType: boolean;
   hasValue: boolean;
   isClass?: boolean;
+  stringUnionValues?: string[];
 }
 
 interface ResolvedExports {
@@ -269,6 +270,77 @@ export function collectTypeScriptExportSymbols(typescript: string): Map<string, 
   }
 
   return symbols;
+}
+
+// Pure string-literal aliases have a type binding but no runtime value. Return only direct exported
+// declarations: barrels are traversed by the package generator, which keeps the canonical module
+// owner alongside these representation facts.
+export function collectTypeScriptStringUnions(typescript: string): Map<string, string[]> {
+  const parsed = parseSync('contract.ts', typescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(`could not parse TypeScript contract while resolving string unions: ${parsed.errors[0]?.message}`);
+  }
+  const unions = new Map<string, string[]>();
+  for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'TSTypeAliasDeclaration') continue;
+    const annotation = declaration.typeAnnotation as Record<string, unknown>;
+    if (annotation.type !== 'TSUnionType') continue;
+    const values: string[] = [];
+    for (const member of annotation.types as Record<string, unknown>[]) {
+      const literal = member.literal as Record<string, unknown> | undefined;
+      if (member.type !== 'TSLiteralType' || literal?.type !== 'Literal' || typeof literal.value !== 'string') {
+        values.length = 0;
+        break;
+      }
+      values.push(literal.value);
+    }
+    const identifier = declaration.id as Record<string, unknown>;
+    if (values.length > 0 && identifier.type === 'Identifier') {
+      unions.set(identifier.name as string, values);
+    }
+  }
+  return unions;
+}
+
+// Existing imports identify the canonical external contract owner. Only that owner's direct,
+// type-only string-union declaration becomes compiler representation metadata; ordinary type aliases
+// and runtime enums produce no argument.
+export function typeScriptStringUnionArguments(
+  existingTypescript: string,
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>>,
+): string[] {
+  const unions = new Map<string, { module: string; values: string[] }>();
+  for (const match of existingTypescript.matchAll(
+    /^import\s+(?:type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm,
+  )) {
+    const module = match[2];
+    const symbols = importedContractSymbols.get(module);
+    if (symbols === undefined) continue;
+    for (const item of match[1].split(',')) {
+      const fields = item
+        .trim()
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/);
+      const imported = fields[0]?.trim();
+      const local = fields.at(-1)?.trim();
+      if (!imported || !local) continue;
+      const owner = symbols.get(imported);
+      if (owner?.hasType !== true || owner.hasValue || owner.stringUnionValues === undefined) continue;
+      const previous = unions.get(local);
+      if (previous !== undefined && previous.module !== module) {
+        throw new Error(`TypeScript string union ${local} is imported from both ${previous.module} and ${module}`);
+      }
+      unions.set(local, { module, values: owner.stringUnionValues });
+    }
+  }
+  return [...unions]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([name, union]) => [
+      '--typescript-string-union',
+      `${union.module}#${name}=${JSON.stringify(union.values)}`,
+    ]);
 }
 
 export function resolveExternalContractExports(

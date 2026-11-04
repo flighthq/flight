@@ -4,13 +4,18 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DependencySource, ResolvedExternalContractExports } from './generate-rust-package-exports.ts';
+import type {
+  DependencySource,
+  ExportSymbolOwner,
+  ResolvedExternalContractExports,
+} from './generate-rust-package-exports.ts';
 import {
   collectCompanionFileNames,
   canonicalizeGeneratedContractImports,
   compilerAliasArguments,
   compilerVisibilityArguments,
   collectTypeScriptExportSymbols,
+  collectTypeScriptStringUnions,
   collectCrateExportSymbols,
   collectExportSymbols,
   collectFlightDependencyCrates,
@@ -35,6 +40,7 @@ import {
   resolveCrateExportSymbols,
   resolveRustExportName,
   snakeToLowerCamel,
+  typeScriptStringUnionArguments,
 } from './generate-rust-package-exports.ts';
 import { collectPackageSourceFileNames } from './generate-rust-package-sources.ts';
 
@@ -68,6 +74,8 @@ interface SymbolOwner {
   hasValue: boolean;
   isClass?: boolean;
 }
+
+type ContractSymbol = Omit<ExportSymbolOwner, 'fileName'>;
 
 interface NativeAuditEntry {
   diagnostics: string[];
@@ -335,6 +343,12 @@ function probeNativeSource(
   reportedSource = source,
 ): NativeAuditEntry {
   const out = join(rawRoot, `${fileName}.audit.ts`);
+  const existingPath = join(packageSourceRoot, fileName);
+  const existingTypescript = existsSync(existingPath) ? readFileSync(existingPath, 'utf8') : '';
+  const representationArguments =
+    command === 'generate'
+      ? typeScriptStringUnionArguments(existingTypescript, loadImportedContractSymbols(existingTypescript))
+      : [];
   const result = spawnSync(
     compilerPath,
     [
@@ -346,6 +360,7 @@ function probeNativeSource(
       '--probe-target-native',
       ...entityArguments(command),
       ...(command === 'generate' ? ['--lenient'] : []),
+      ...representationArguments,
       ...compilerAliasArguments(command, aliasSources, source),
       ...compilerVisibilityArguments(
         command,
@@ -390,6 +405,7 @@ function compile(
   trailing: string[] = [],
   aliasSources: string[] = [],
   targetNativeSources: string[] = [],
+  representationArguments: string[] = [],
 ): string {
   const arguments_ = [
     command,
@@ -399,6 +415,7 @@ function compile(
     out,
     ...entityArguments(command),
     ...(options.lenient && command === 'generate' ? ['--lenient'] : []),
+    ...representationArguments,
     ...compilerAliasArguments(command, aliasSources, source),
     ...compilerVisibilityArguments(
       command,
@@ -667,10 +684,8 @@ function loadExternalContracts(contractUses: readonly ReturnType<typeof collectR
   return contracts;
 }
 
-function loadImportedContractSymbols(
-  typescript: string,
-): Map<string, Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }>> {
-  const contracts = new Map<string, Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }>>();
+function loadImportedContractSymbols(typescript: string): Map<string, Map<string, ContractSymbol>> {
+  const contracts = new Map<string, Map<string, ContractSymbol>>();
   for (const match of typescript.matchAll(/\bfrom\s+['"](@flighthq\/([^/'"]+)\/contract)['"]/g)) {
     const module = match[1];
     if (contracts.has(module)) continue;
@@ -685,21 +700,30 @@ function loadImportedContractSymbols(
   return contracts;
 }
 
-function collectContractTypeScriptSymbols(
-  path: string,
-): Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }> {
-  const symbols = new Map<string, { hasType: boolean; hasValue: boolean; isClass?: boolean }>();
+function collectContractTypeScriptSymbols(path: string): Map<string, ContractSymbol> {
+  const symbols = new Map<string, ContractSymbol>();
   const visited = new Set<string>();
 
   function visit(currentPath: string): void {
     if (visited.has(currentPath)) return;
     visited.add(currentPath);
     const typescript = readFileSync(currentPath, 'utf8');
+    const stringUnions = collectTypeScriptStringUnions(typescript);
     for (const [name, owner] of collectTypeScriptExportSymbols(typescript)) {
       const existing = symbols.get(name) ?? { hasType: false, hasValue: false, isClass: false };
       existing.hasType ||= owner.hasType;
       existing.hasValue ||= owner.hasValue;
       existing.isClass ||= owner.isClass;
+      const values = stringUnions.get(name);
+      if (values !== undefined) {
+        if (
+          existing.stringUnionValues !== undefined &&
+          JSON.stringify(existing.stringUnionValues) !== JSON.stringify(values)
+        ) {
+          throw new Error(`TypeScript string union ${name} has conflicting canonical declarations`);
+        }
+        existing.stringUnionValues = values;
+      }
       symbols.set(name, existing);
     }
     for (const match of typescript.matchAll(/^export\s+\*\s+from\s+['"](\.[^'"]+)['"];?/gm)) {
@@ -740,9 +764,18 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     };
   }
   const outputPath = join(rawRoot, fileName);
-  const compiledTypescript = compile('generate', rustPath, outputPath, [], aliasSources);
   const originalPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(originalPath) ? readFileSync(originalPath, 'utf8') : '';
+  const importedContractSymbols = loadImportedContractSymbols(existingTypescript);
+  const compiledTypescript = compile(
+    'generate',
+    rustPath,
+    outputPath,
+    [],
+    aliasSources,
+    [],
+    typeScriptStringUnionArguments(existingTypescript, importedContractSymbols),
+  );
   const typescript = canonicalizeGeneratedContractImports(existingTypescript, compiledTypescript);
   const retainedConstants = renderReferencedConstants(existingTypescript, typescript);
   const typescriptWithConstants =
@@ -752,11 +785,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     retainedExports === ''
       ? typescriptWithConstants
       : `${typescriptWithConstants.trimEnd()}\n\n${retainedExports}`.replace(/^\n+/, '');
-  const retainedImports = renderReferencedImports(
-    existingTypescript,
-    typescriptWithConstants,
-    loadImportedContractSymbols(existingTypescript),
-  );
+  const retainedImports = renderReferencedImports(existingTypescript, typescriptWithConstants, importedContractSymbols);
   if ((lenientSkippedByOutput.get(outputPath) ?? 0) === 0) {
     return {
       fileName,

@@ -16,6 +16,7 @@ import {
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   collectTypeScriptExportSymbols,
+  collectTypeScriptStringUnions,
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
   hasRustConstGroup,
@@ -33,6 +34,7 @@ import {
   resolveCrateExportSymbols,
   resolveExternalContractExports,
   resolveRustExportName,
+  typeScriptStringUnionArguments,
 } from './generate-rust-package-exports.ts';
 
 describe('canonicalizeGeneratedContractImports', () => {
@@ -139,6 +141,64 @@ export { RuntimeValue, type RuntimeType } from './runtime.ts';
       ['RuntimeValue', { hasType: false, hasValue: true, isClass: false }],
       ['RuntimeType', { hasType: true, hasValue: false, isClass: false }],
     ]);
+  });
+
+  it('collects only exported type-only string-literal unions as representation metadata', () => {
+    expect(
+      collectTypeScriptStringUnions(`
+export type AccessibilityLiveness = 'polite' | 'assertive';
+export type Mixed = 'known' | string;
+type Private = 'private-a' | 'private-b';
+export enum RuntimeLiveness { Polite = 'polite', Assertive = 'assertive' }
+`),
+    ).toEqual(new Map([['AccessibilityLiveness', ['polite', 'assertive']]]));
+  });
+
+  it('passes only explicitly imported type-only string unions to the compiler', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          [
+            'AccessibilityLiveness',
+            {
+              hasType: true,
+              hasValue: false,
+              stringUnionValues: ['polite', 'assertive'],
+            },
+          ],
+          ['AccessibilityNode', { hasType: true, hasValue: false }],
+          [
+            'RuntimeLiveness',
+            {
+              hasType: true,
+              hasValue: true,
+              stringUnionValues: ['polite', 'assertive'],
+            },
+          ],
+          [
+            'UnimportedStringUnion',
+            {
+              hasType: true,
+              hasValue: false,
+              stringUnionValues: ['first', 'second'],
+            },
+          ],
+        ]),
+      ],
+    ]);
+
+    expect(
+      typeScriptStringUnionArguments(
+        `import type {
+  AccessibilityLiveness as Liveness,
+  AccessibilityNode,
+} from '@flighthq/types/contract';
+import { RuntimeLiveness } from '@flighthq/types/contract';
+`,
+        symbols,
+      ),
+    ).toEqual(['--typescript-string-union', '@flighthq/types/contract#Liveness=["polite","assertive"]']);
   });
 
   it('renders dependency-owned Rust uses from the dependency contract', () => {

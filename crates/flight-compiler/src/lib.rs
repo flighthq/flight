@@ -24,6 +24,18 @@ pub struct ExternalAliasSource<'a> {
     pub module: &'a str,
 }
 
+/// A type-only string-literal union proven by an existing external TypeScript contract.
+///
+/// The compiler still verifies that the literals exactly represent a visible unit Rust enum before
+/// it uses this metadata to lower variant expressions. TypeScript runtime enums must not be supplied
+/// through this lane.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeScriptStringUnion<'a> {
+    pub name: &'a str,
+    pub module: &'a str,
+    pub values: &'a [String],
+}
+
 /// A Rust source file and its path. The path (`.../<crate>/src/<module path>.rs`) gives the source its
 /// full module identity (`<crate>::<module path>`), which `use` bindings resolve against.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -112,6 +124,7 @@ fn compile_typescript_sources(
         entity_module,
         alias_sources,
         external_alias_sources,
+        &[],
         module_identities,
         source_paths,
         visibility_sources,
@@ -125,6 +138,7 @@ fn compile_typescript_sources_with_options(
     entity_module: Option<&str>,
     alias_sources: &[&str],
     external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
     module_identities: Option<Vec<String>>,
     source_paths: &[&str],
     visibility_sources: &[ModuleSource<'_>],
@@ -188,6 +202,12 @@ fn compile_typescript_sources_with_options(
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
     let external_string_union_metadata =
         parse_external_string_union_metadata(external_alias_sources)?;
+    let type_script_string_union_metadata = resolve_type_script_string_union_metadata(
+        type_script_string_unions,
+        std::iter::once(&program)
+            .chain(&alias_programs)
+            .chain(&visibility_programs),
+    )?;
     validate_string_union_metadata(
         std::iter::once(StringUnionMetadataSource {
             identity: module_identities
@@ -229,10 +249,18 @@ fn compile_typescript_sources_with_options(
                 styles: &external.metadata.styles,
                 values: &external.metadata.values,
             };
+        }))
+        .chain(type_script_string_union_metadata.iter().map(|external| {
+            return StringUnionMetadataSource {
+                identity: format!("external TypeScript module `{}`", external.module),
+                styles: &external.metadata.styles,
+                values: &external.metadata.values,
+            };
         })),
     )?;
     let external_string_unions = external_string_union_metadata
         .iter()
+        .chain(&type_script_string_union_metadata)
         .flat_map(|external| external.metadata.styles.keys().cloned())
         .collect::<std::collections::BTreeSet<_>>();
     let all_source_paths = (0..=alias_sources.len())
@@ -271,6 +299,13 @@ fn compile_typescript_sources_with_options(
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
     for external in &external_string_union_metadata {
+        output = lower_string_union_variants(
+            output,
+            &external.metadata.styles,
+            &external.metadata.values,
+        )?;
+    }
+    for external in &type_script_string_union_metadata {
         output = lower_string_union_variants(
             output,
             &external.metadata.styles,
@@ -388,6 +423,7 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
         entity_module,
         alias_sources,
         external_alias_sources,
+        &[],
         visibility_sources,
         crate_roots,
         false,
@@ -401,6 +437,7 @@ pub fn compile_typescript_with_options(
     entity_module: Option<&str>,
     alias_sources: &[ModuleSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[ModuleSource<'_>],
     crate_roots: &[CrateRootSource<'_>],
     lenient: bool,
@@ -425,6 +462,7 @@ pub fn compile_typescript_with_options(
         entity_module,
         &alias_source_texts,
         external_alias_sources,
+        type_script_string_unions,
         identities,
         &std::iter::once(source.path)
             .chain(alias_sources.iter().map(|module| module.path))
@@ -446,6 +484,7 @@ pub fn compile_typescript_lenient(
     return compile_typescript_sources_with_options(
         source,
         entity_module,
+        &[],
         &[],
         &[],
         None,
@@ -1420,6 +1459,115 @@ fn parse_external_string_union_metadata<'a>(
             return Ok(ExternalStringUnionMetadata {
                 metadata: model::parse_string_union_metadata(external.source)?,
                 module: external.module,
+            });
+        })
+        .collect();
+}
+
+fn resolve_type_script_string_union_metadata<'a, 'program>(
+    unions: &[TypeScriptStringUnion<'a>],
+    programs: impl IntoIterator<Item = &'program model::Program>,
+) -> Result<Vec<ExternalStringUnionMetadata<'a>>, CompileError> {
+    let mut declarations = std::collections::BTreeMap::<String, Vec<(String, bool)>>::new();
+    let mut ambiguous = std::collections::BTreeSet::new();
+    for enumeration in programs
+        .into_iter()
+        .flat_map(|program| program.enums.iter())
+    {
+        let name = enumeration.ident.to_string();
+        let variants = enumeration
+            .variants
+            .iter()
+            .map(|variant| {
+                (
+                    variant.ident.to_string(),
+                    matches!(variant.fields, syn::Fields::Unit),
+                )
+            })
+            .collect::<Vec<_>>();
+        if declarations
+            .get(&name)
+            .is_some_and(|declared| declared != &variants)
+        {
+            ambiguous.insert(name);
+        } else {
+            declarations.insert(name, variants);
+        }
+    }
+
+    return unions
+        .iter()
+        .map(|union| {
+            if union.module.is_empty() {
+                return Err(compile_error(
+                    "external TypeScript string-union module cannot be empty",
+                ));
+            }
+            if union.name.is_empty()
+                || !union
+                    .name
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || character == '_')
+                || union
+                    .name
+                    .chars()
+                    .next()
+                    .is_some_and(|character| character.is_ascii_digit())
+            {
+                return Err(compile_error(format!(
+                    "external TypeScript string-union name `{}` is not a valid identifier",
+                    union.name
+                )));
+            }
+            if ambiguous.contains(union.name) {
+                return Err(compile_error(format!(
+                    "external TypeScript string union `{}` matches conflicting Rust enum declarations",
+                    union.name
+                )));
+            }
+            let Some(variants) = declarations.get(union.name) else {
+                return Err(compile_error(format!(
+                    "external TypeScript string union `{}` has no visible Rust enum declaration",
+                    union.name
+                )));
+            };
+            if variants.is_empty() || variants.iter().any(|(_, unit)| !unit) {
+                return Err(compile_error(format!(
+                    "external TypeScript string union `{}` must match a non-empty unit Rust enum",
+                    union.name
+                )));
+            }
+            let values = union.values.iter().cloned().collect::<std::collections::BTreeSet<_>>();
+            if values.len() != union.values.len() || values.is_empty() {
+                return Err(compile_error(format!(
+                    "external TypeScript string union `{}` must have distinct literal values",
+                    union.name
+                )));
+            }
+            let style = [
+                model::StringUnionStyle::LowerCamel,
+                model::StringUnionStyle::KebabCase,
+            ]
+            .into_iter()
+            .find(|style| {
+                let literals = variants
+                    .iter()
+                    .map(|(variant, _)| typescript::string_union_literal(variant, *style))
+                    .collect::<std::collections::BTreeSet<_>>();
+                return literals.len() == variants.len() && literals == values;
+            })
+            .ok_or_else(|| {
+                compile_error(format!(
+                    "external TypeScript string union `{}` does not match the literals of its Rust enum",
+                    union.name
+                ))
+            })?;
+            return Ok(ExternalStringUnionMetadata {
+                metadata: model::StringUnionMetadata {
+                    styles: std::collections::BTreeMap::from([(union.name.to_string(), style)]),
+                    values: std::collections::BTreeMap::new(),
+                },
+                module: union.module,
             });
         })
         .collect();

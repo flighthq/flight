@@ -1,11 +1,11 @@
 use flight_compiler::{
-    ExternalAliasSource, ModuleSource, SourceMode, VitestAliasSource, compile_typescript,
-    compile_typescript_lenient, compile_typescript_with_alias_sources,
+    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptStringUnion, VitestAliasSource,
+    compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
     compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
-    compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
-    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
-    compile_vitest_with_module_alias_sources, compile_vitest_with_visibility_sources,
-    root_only_names, source_mode,
+    compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
+    compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
+    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
+    compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -13369,6 +13369,109 @@ pub fn is_ready(widget: &Widget) -> bool {
             compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
                 .unwrap(),
             "import type { WidgetRaw } from '@flighthq/widget/contract';\n\nexport function isReady(widget: Readonly<WidgetRaw>): boolean {\n  return widget.mode === 'ready';\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_only_variants_proven_to_be_external_type_script_string_unions() {
+        let source = ModuleSource {
+            path: "crates/flight-accessibility/src/accessibility.rs",
+            source: r#"use crate::types::{AccessibilityLiveness, RuntimeLiveness, UnannotatedStringUnion};
+
+pub fn default_liveness() -> AccessibilityLiveness {
+    return AccessibilityLiveness::Polite;
+}
+
+pub fn default_runtime_liveness() -> RuntimeLiveness {
+    return RuntimeLiveness::Polite;
+}
+
+pub fn default_unannotated_string_union() -> UnannotatedStringUnion {
+    return UnannotatedStringUnion::Polite;
+}
+"#,
+        };
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-accessibility/src/types.rs",
+            source: r#"//! flight-compiler: rust-only
+
+pub enum AccessibilityLiveness {
+    Polite,
+    Assertive,
+}
+
+pub enum RuntimeLiveness {
+    Polite,
+    Assertive,
+}
+
+pub enum UnannotatedStringUnion {
+    Polite,
+    Assertive,
+}
+"#,
+        }];
+        let values = vec!["polite".to_string(), "assertive".to_string()];
+        let type_script_string_unions = [TypeScriptStringUnion {
+            name: "AccessibilityLiveness",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+
+        let output = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &type_script_string_unions,
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(output.contains("return 'polite';"), "{output}");
+        assert!(
+            output.contains("return RuntimeLiveness.Polite;"),
+            "a runtime enum without type-only string-union metadata must retain its namespace value: {output}"
+        );
+        assert!(
+            output.contains("return UnannotatedStringUnion.Polite;"),
+            "an external type without explicit representation metadata must retain its namespace value: {output}"
+        );
+    }
+
+    #[test]
+    fn rejects_external_type_script_string_union_metadata_that_does_not_match_rust() {
+        let values = vec!["polite".to_string(), "urgent".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "AccessibilityLiveness",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-accessibility/src/types.rs",
+            source: "pub enum AccessibilityLiveness { Polite, Assertive }\n",
+        }];
+
+        let error = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-accessibility/src/accessibility.rs",
+                source: "use crate::types::AccessibilityLiveness;\npub fn value() -> AccessibilityLiveness { return AccessibilityLiveness::Polite; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "external TypeScript string union `AccessibilityLiveness` does not match the literals of its Rust enum"
         );
     }
 
