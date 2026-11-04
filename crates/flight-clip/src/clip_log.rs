@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use std::collections::HashMap;
 
 use flight_log::{LogData, LogLevel, LogValue, log_once};
