@@ -24504,20 +24504,10 @@ fn emit_statement(
             out.push_str("continue;\n");
         }
         Stmt::Expr(Expr::Return(return_expression), _)
-            if return_expression.expr.as_deref().is_some_and(|v| {
-                matches!(v, Expr::Match(_))
-                    && reject_function_exits_in_value_position(
-                        |visitor| {
-                            if let Expr::Match(m) = v {
-                                for arm in &m.arms {
-                                    visitor.visit_arm(arm);
-                                }
-                            }
-                        },
-                        "",
-                    )
-                    .is_err()
-            }) =>
+            if return_expression
+                .expr
+                .as_deref()
+                .is_some_and(|v| matches!(v, Expr::Match(_))) =>
         {
             let Expr::Match(match_expr) = return_expression.expr.as_deref().unwrap() else {
                 unreachable!()

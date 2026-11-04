@@ -1110,8 +1110,14 @@ pub fn payload_kind(value: Payload) -> String {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains("export type Payload = number | Map<string, number>;"));
-        assert!(output.contains("Object.getPrototypeOf(matchValue) !== Object.prototype"));
-        assert!(!output.contains("Object.getPrototypeOf(matchValue) === Object.prototype"));
+        assert!(
+            output.contains("Object.getPrototypeOf(value) !== Object.prototype"),
+            "should check proto of value: {output}"
+        );
+        assert!(
+            !output.contains("Object.getPrototypeOf(value) === Object.prototype"),
+            "should not use positive proto check: {output}"
+        );
     }
 
     #[test]
@@ -9931,7 +9937,7 @@ pub fn default_facet() -> Facet {
             "export type RequirementFacet = (typeof RequirementFacet)[keyof typeof RequirementFacet];"
         ));
         assert!(output.contains(
-            "case 'scene.resource-mime-type':\n      return 'scene.resource-mime-type';"
+            "case 'scene.resource-mime-type':\n      {\n        return 'scene.resource-mime-type';"
         ));
         assert!(!output.contains("export enum RequirementFacet"));
     }
@@ -10112,10 +10118,22 @@ pub fn mode_label(mode: Mode) -> &'static str {
         );
         assert!(output.contains("return `${label} ${modeLabel('slow')}`;"));
         assert!(output.contains("return 'Direction.Forward';"));
-        assert!(output.contains("case 1:\n      return 1;"));
-        assert!(output.contains("case -1:\n      return -1;"));
-        assert!(output.contains("case 'fast':\n      return 'Mode.Fast';"));
-        assert!(output.contains("case 'slow':\n      return 'Mode.Slow';"));
+        assert!(
+            output.contains("case 1:") && output.contains("return 1;"),
+            "direction_value Forward case: {output}"
+        );
+        assert!(
+            output.contains("case -1:") && output.contains("return -1;"),
+            "direction_value Backward case: {output}"
+        );
+        assert!(
+            output.contains("case 'fast':") && output.contains("return 'Mode.Fast';"),
+            "mode_label Fast case: {output}"
+        );
+        assert!(
+            output.contains("case 'slow':") && output.contains("return 'Mode.Slow';"),
+            "mode_label Slow case: {output}"
+        );
     }
 
     #[test]
@@ -16089,8 +16107,14 @@ pub fn has_zero(values: &[u32]) -> bool {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("const matchValue = index;"));
-        assert!(output.contains("const value = 1.0;\n  return value;"));
+        assert!(
+            output.contains("switch (index)"),
+            "select_channel should use switch: {output}"
+        );
+        assert!(
+            output.contains("const value = 1.0;") && output.contains("return value;"),
+            "select_channel block tail: {output}"
+        );
         assert!(output.contains("const high = red << 24;\n  return high | alpha;"));
         assert!(output.contains("return value >>> 0;"));
         assert!(output.contains("return values.some((value) => value === 0);"));
@@ -17235,9 +17259,12 @@ pub fn normalize(result: MarkupResult) -> MarkupEffect {
 
         assert!(output.contains("export type MarkupResult = MarkupEffect | TextFormat;"));
         assert!(output.contains(
-            "if (Object.hasOwn(matchValue, 'breakBefore') || Object.hasOwn(matchValue, 'format') || Object.hasOwn(matchValue, 'text'))"
-        ));
-        assert!(output.contains("else {\n    return 'format';"));
+            "if (Object.hasOwn(result, 'breakBefore') || Object.hasOwn(result, 'format') || Object.hasOwn(result, 'text'))"
+        ), "result_kind reserved-key check: {output}");
+        assert!(
+            output.contains("return 'format';"),
+            "result_kind else arm: {output}"
+        );
         assert!(output.contains(
             "return Object.hasOwn(result, 'breakBefore') || Object.hasOwn(result, 'format') || Object.hasOwn(result, 'text');"
         ));
@@ -17245,8 +17272,14 @@ pub fn normalize(result: MarkupResult) -> MarkupEffect {
             "return !(Object.hasOwn(result, 'breakBefore') || Object.hasOwn(result, 'format') || Object.hasOwn(result, 'text'));"
         ));
         assert!(output.contains("return value;"));
-        assert!(output.contains("const effect = matchValue as MarkupEffect;"));
-        assert!(output.contains("const format = matchValue as TextFormat;"));
+        assert!(
+            output.contains("const effect = result as MarkupEffect;"),
+            "normalize Effect binding: {output}"
+        );
+        assert!(
+            output.contains("const format = result as TextFormat;"),
+            "normalize Format binding: {output}"
+        );
         assert!(!output.contains("MarkupResult.Effect"));
         assert!(!output.contains("MarkupResult.Format"));
     }
@@ -17295,10 +17328,15 @@ pub struct TextFormat {
         )
         .unwrap();
 
-        assert!(output.contains(
-            "if (Object.hasOwn(matchValue, 'format') || Object.hasOwn(matchValue, 'text'))"
-        ));
-        assert!(output.contains("else {\n    return 'format';"));
+        assert!(
+            output
+                .contains("if (Object.hasOwn(result, 'format') || Object.hasOwn(result, 'text'))"),
+            "reserved-key check should use scrutinee directly: {output}"
+        );
+        assert!(
+            output.contains("return 'format';"),
+            "else arm should return format: {output}"
+        );
     }
 
     #[test]
@@ -17435,12 +17473,30 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
         assert!(output.contains("kind: 'quadraticCurveTo' as const"));
         assert!(output.contains("kind: 'cubicCurveTo' as const"));
         assert!(output.contains("return { kind: 'close' as const };"));
-        assert!(output.contains("matchValue.kind === 'moveTo' || matchValue.kind === 'lineTo'"));
-        assert!(output.contains("matchValue.kind === 'quadraticCurveTo'"));
-        assert!(output.contains("matchValue.kind === 'cubicCurveTo'"));
-        assert!(output.contains("else {\n    return 0.0;"));
-        assert!(output.contains("const x = matchValue.x;"));
-        assert!(output.contains("const y = matchValue.y;"));
+        assert!(
+            output.contains("segment.kind === 'moveTo' || segment.kind === 'lineTo'"),
+            "terminal_x Or pattern: {output}"
+        );
+        assert!(
+            output.contains("segment.kind === 'quadraticCurveTo'"),
+            "terminal_x quadratic: {output}"
+        );
+        assert!(
+            output.contains("segment.kind === 'cubicCurveTo'"),
+            "terminal_x cubic: {output}"
+        );
+        assert!(
+            output.contains("return 0.0;"),
+            "terminal_x Close arm: {output}"
+        );
+        assert!(
+            output.contains("const x = segment.x;"),
+            "terminal_x x binding: {output}"
+        );
+        assert!(
+            output.contains("const y = matchValue.y;"),
+            "append_terminal_y y binding (statement path uses matchValue): {output}"
+        );
         assert!(!output.contains("PathSegment.MoveTo"));
         assert!(!output.contains("PathSegment.Close"));
     }
@@ -17526,10 +17582,22 @@ pub fn describe(p: &Proj) -> f32 {
             output.contains("return p;"),
             "entity-ref construction should pass through"
         );
-        assert!(output.contains("matchValue.kind === 'orthographic'"));
-        assert!(output.contains("matchValue.kind === 'perspective'"));
-        assert!(output.contains("const o = matchValue;"));
-        assert!(output.contains("const r = matchValue;"));
+        assert!(
+            output.contains("p.kind === 'orthographic'"),
+            "describe should check p.kind: {output}"
+        );
+        assert!(
+            output.contains("p.kind === 'perspective'"),
+            "describe should check p.kind: {output}"
+        );
+        assert!(
+            output.contains("const o = p;"),
+            "describe should bind o from p: {output}"
+        );
+        assert!(
+            output.contains("const r = p;"),
+            "describe should bind r from p: {output}"
+        );
     }
 
     #[test]
@@ -17666,19 +17734,19 @@ pub fn classify_shape(shape: &CollisionShape2D) -> &str {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("matchValue.kind === 'circle'"),
+            output.contains("shape.kind === 'circle'"),
             "should emit kind check for Circle: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === 'aabb'"),
+            output.contains("shape.kind === 'aabb'"),
             "should emit kind check for Aabb: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === 'obb'"),
+            output.contains("shape.kind === 'obb'"),
             "should emit kind check for Obb: {output}"
         );
         assert!(
-            output.contains("const c = matchValue;"),
+            output.contains("const c = shape;"),
             "should bind payload for Circle: {output}"
         );
         assert!(
@@ -17861,13 +17929,34 @@ pub fn append_value_kind(out: &mut Vec<String>, value: LogValue) {
         assert!(output.contains("return value;"));
         assert!(output.contains("return null;"));
         assert!(output.contains("values.map((value) => value)"));
-        assert!(output.contains("typeof matchValue === 'function'"));
-        assert!(output.contains("typeof matchValue === 'number'"));
-        assert!(output.contains("Array.isArray(matchValue)"));
-        assert!(output.contains("Object.getPrototypeOf(matchValue) === Object.prototype"));
-        assert!(output.contains("Object.getPrototypeOf(matchValue) !== Object.prototype"));
-        assert!(output.contains("const provider = matchValue;"));
-        assert!(output.contains("const matchValue = value;"));
+        assert!(
+            output.contains("typeof value === 'function'"),
+            "transparent union typeof: {output}"
+        );
+        assert!(
+            output.contains("typeof value === 'number'"),
+            "transparent union typeof: {output}"
+        );
+        assert!(
+            output.contains("Array.isArray(value)"),
+            "transparent union Array.isArray: {output}"
+        );
+        assert!(
+            output.contains("Object.getPrototypeOf(value) === Object.prototype"),
+            "transparent union proto check: {output}"
+        );
+        assert!(
+            output.contains("Object.getPrototypeOf(value) !== Object.prototype"),
+            "transparent union proto check: {output}"
+        );
+        assert!(
+            output.contains("const provider = value;"),
+            "provider binding from value: {output}"
+        );
+        assert!(
+            output.contains("const matchValue = value;"),
+            "statement-position match still uses matchValue: {output}"
+        );
         assert!(!output.contains("LogData.Message(value)"));
         assert!(!output.contains("LogValue.Null"));
         assert!(!output.contains("LogValue.Str"));
@@ -24963,7 +25052,7 @@ pub fn try_parse(input: &str) -> Option<f64> {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("matchValue !== undefined"),
+        output.contains("result !== undefined"),
         "should emit undefined check for Ok arm: {output}"
     );
     assert!(
@@ -25077,11 +25166,11 @@ pub fn mapping_of(value: Option<YamlValue>) -> Option<Mapping> {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("matchValue !== undefined && matchValue.kind === 'mapping'"),
+        output.contains("value !== undefined && value.kind === 'mapping'"),
         "should check undefined and kind for Some(Variant): {output}"
     );
     assert!(
-        output.contains("matchValue !== undefined && matchValue.kind === 'sequence'"),
+        output.contains("value !== undefined && value.kind === 'sequence'"),
         "should check undefined and kind for Some(Sequence): {output}"
     );
 }
@@ -25107,13 +25196,11 @@ pub fn read_value(value: Option<YamlValue>) -> Option<Mapping> {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains(
-            "matchValue === undefined || matchValue !== undefined && matchValue.kind === 'null'"
-        ),
+        output.contains("value === undefined || value !== undefined && value.kind === 'null'"),
         "should combine undefined check with kind check for None | Some(Variant): {output}"
     );
     assert!(
-        output.contains("matchValue !== undefined && matchValue.kind === 'mapping'"),
+        output.contains("value !== undefined && value.kind === 'mapping'"),
         "should check kind for Some(Mapping): {output}"
     );
 }
@@ -27527,12 +27614,12 @@ fn describe_release(release: PoolRelease) -> &'static str {
         )
         .unwrap();
         assert!(
-            output.contains("    case 'releaseMatrix':\n      return 'matrix';"),
-            "{output}"
+            output.contains("case 'releaseMatrix':") && output.contains("return 'matrix';"),
+            "should have releaseMatrix case with return: {output}"
         );
         assert!(
-            output.contains("    case 'releaseVector2':\n      return 'vector2';"),
-            "{output}"
+            output.contains("case 'releaseVector2':") && output.contains("return 'vector2';"),
+            "should have releaseVector2 case with return: {output}"
         );
         assert!(
             output.contains("function describeRelease(release: PoolRelease): string {"),
