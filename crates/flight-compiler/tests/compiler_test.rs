@@ -8935,6 +8935,67 @@ pub fn create_bounds() -> Bounds {
         );
     }
 
+    // A generic entity field allocates its `Raw` record with the field's declared type arguments, so
+    // `Signal<KeyData>` prefills `allocateEntity<SignalRaw<KeyData>>()` rather than a bare generic.
+    #[test]
+    fn allocates_generic_entity_field_defaults_with_declared_type_arguments() {
+        let visibility = r#"
+pub struct Signal<T> {
+    runtime: EntityRuntimeSlot,
+    pub enabled: bool,
+    pub queued: Vec<T>,
+}
+"#;
+        let source = r#"
+use flight_entity::Ref;
+
+use crate::Signal;
+
+pub struct KeyData {
+    pub code: i32,
+}
+
+pub struct Keys {
+    runtime: EntityRuntimeSlot,
+    pub on_key: Signal<KeyData>,
+    pub on_shared_key: Ref<Signal<KeyData>>,
+}
+
+pub fn create_keys() -> Keys {
+    let mut out: Keys = flight_entity::allocate_entity();
+    return out;
+}
+"#;
+
+        let output = compile_typescript_with_visibility_sources(
+            ModuleSource {
+                path: "src/keys.rs",
+                source,
+            },
+            Some("@flighthq/entity/contract"),
+            &[ModuleSource {
+                path: "src/signal.rs",
+                source: visibility,
+            }],
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("onKey: allocateEntity<SignalRaw<KeyData>>()"),
+            "generic entity field allocation: {output}"
+        );
+        assert!(
+            output.contains("onSharedKey: allocateEntity<SignalRaw<KeyData>>()"),
+            "wrapped generic entity field allocation: {output}"
+        );
+        assert!(
+            !output.contains("allocateEntity<SignalRaw>()"),
+            "no bare generic allocation: {output}"
+        );
+    }
+
     #[test]
     fn resolves_enum_default_variant_as_entity_field_default() {
         let source = r#"

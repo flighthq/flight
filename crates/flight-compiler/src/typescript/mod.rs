@@ -3780,7 +3780,9 @@ fn entity_field_default(
             let name = segment.ident.to_string();
             if entity_types.contains(&name) {
                 let ts_type = format!("{name}Raw");
-                return entity_allocation(&ts_type, entities).ok();
+                let arguments = emit_path_type_arguments(segment, entities).ok()?;
+                return entity_allocation_of(&ts_type, &format!("{ts_type}{arguments}"), entities)
+                    .ok();
             }
             let enum_prefix = format!("{ENUM_DEFAULT_VARIANT_MARKER}{name}:");
             if let Some(variant) = entities
@@ -3902,6 +3904,17 @@ fn entity_allocation(
     typescript_type: &str,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    return entity_allocation_of(typescript_type, typescript_type, entities);
+}
+
+// The `allocate_entity` default for the entity `typescript_type`, allocated as `allocated_type`: the
+// same `Raw` record carrying the declared generic arguments of the field it fills
+// (`Signal<KeyData>` allocates `SignalRaw<KeyData>`), while default fields resolve by the bare name.
+fn entity_allocation_of(
+    typescript_type: &str,
+    allocated_type: &str,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
     let unsupported_prefix = format!("{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{typescript_type}:");
     let mut unsupported_fields = entities
         .iter()
@@ -3928,7 +3941,7 @@ fn entity_allocation(
         .map(|(field, value)| format!("{field}: {value}"))
         .collect::<Vec<_>>();
     fields.sort();
-    let allocation = format!("allocateEntity<{typescript_type}>()");
+    let allocation = format!("allocateEntity<{allocated_type}>()");
     if fields.is_empty() {
         return Ok(allocation);
     }
@@ -8469,7 +8482,29 @@ fn generation_context_with_types(
             {
                 continue;
             }
-            let Ok(value) = entity_allocation(&inner_ts_type, &context) else {
+            let arguments = syn::parse_str::<Type>(rust_type)
+                .ok()
+                .and_then(|parsed| {
+                    let mut inner = &parsed;
+                    while let Type::Path(path) = inner
+                        && let Some(segment) = path.path.segments.last()
+                        && segment.ident != entity_name
+                        && let PathArguments::AngleBracketed(wrapped) = &segment.arguments
+                        && let Some(GenericArgument::Type(next)) = wrapped.args.first()
+                    {
+                        inner = next;
+                    }
+                    let Type::Path(path) = inner else {
+                        return None;
+                    };
+                    emit_path_type_arguments(path.path.segments.last()?, &context).ok()
+                })
+                .unwrap_or_default();
+            let Ok(value) = entity_allocation_of(
+                &inner_ts_type,
+                &format!("{inner_ts_type}{arguments}"),
+                &context,
+            ) else {
                 continue;
             };
             to_remove.push(format!(
