@@ -14091,6 +14091,7 @@ pub enum PlatformName { Web, MacOs, Unknown }
             &[],
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
