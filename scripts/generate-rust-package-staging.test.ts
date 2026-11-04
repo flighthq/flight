@@ -636,8 +636,11 @@ version = "0.0.0"
 edition = "2024"
 `,
     );
-    writeFileSync(join(crateRoot, 'src', 'lib.rs'), '//! flight-compiler: target-native\nmod types;\nmod value;\n');
-    rmSync(join(crateRoot, 'src', 'contract.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\npub mod contract;\nmod native_target;\nmod types;\nmod value;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::types::*;\npub use super::value::*;\n');
     writeFileSync(
       join(crateRoot, 'src', 'types.rs'),
       `//! flight-compiler: rust-only
@@ -647,13 +650,20 @@ pub type TargetRef = usize;
     );
     writeFileSync(
       sourcePath,
-      `use crate::types::{AnimationPlayerRef, TargetRef};
+      `use crate::types::AnimationPlayerRef;
 
-pub fn advance(
-    players: &[AnimationPlayerRef],
-    target: TargetRef,
-) -> AnimationPlayerRef {
+pub fn advance(players: &[AnimationPlayerRef]) -> AnimationPlayerRef {
     return players[0];
+}
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'native_target.rs'),
+      `//! flight-compiler: target-native
+use crate::types::TargetRef;
+
+pub fn echo_target(target: TargetRef) -> TargetRef {
+    return target;
 }
 `,
     );
@@ -661,8 +671,30 @@ pub fn advance(
       join(packageRoot, 'src', 'value.ts'),
       `import type { AnimationPlayer } from '@flighthq/types/contract';
 
-export function advance(players: readonly AnimationPlayer[], target: unknown): AnimationPlayer {
+export function advance(players: readonly AnimationPlayer[]): AnimationPlayer {
   return players[0];
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'nativeTarget.ts'),
+      `export function echoTarget(target: unknown): unknown {
+  return target;
+}
+`,
+    );
+    const aliasTestPath = join(crateRoot, 'tests', 'alias_test.rs');
+    writeFileSync(
+      aliasTestPath,
+      `use flight_staging_fixture::contract::*;
+
+fn consume_target(target: TargetRef) {
+    drop(target);
+}
+
+#[test]
+fn keeps_the_existing_target_representation() {
+    assert!(true);
 }
 `,
     );
@@ -670,14 +702,17 @@ export function advance(players: readonly AnimationPlayer[], target: unknown): A
     writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { advance } from './contract.ts';\n");
 
     const run = await generateWhileScanning();
+    rmSync(aliasTestPath, { force: true });
 
     expect(run.code, run.stderr).toBe(0);
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
     expect(value).toContain("import type { AnimationPlayer } from '@flighthq/types/contract';");
     expect(value).toContain('players: Readonly<AnimationPlayer[]>');
-    expect(value).toContain('target: unknown');
     expect(value).not.toContain('AnimationPlayerRef');
     expect(value).not.toContain('TargetRef');
+    const test = readFileSync(join(packageRoot, 'src', 'alias.test.ts'), 'utf8');
+    expect(test).toContain('function consumeTarget(target: unknown): void');
+    expect(test).not.toContain('TargetRef');
   }, 120_000);
 
   it('preserves inline string-union representations from existing function signatures', async () => {

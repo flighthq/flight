@@ -20,6 +20,7 @@ import {
   collectExportSymbols,
   collectFlightDependencyCrates,
   collectRustExportNames,
+  collectRustPublicTypeAliasNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
@@ -260,6 +261,15 @@ try {
       generatedFiles.push(module.fileName, generatedFileName, nativeFileName);
     }
 
+    discoverTargetNativeTypeAliasesForTests(
+      testFiles(crateRoot)
+        .map((rustTest) => join(crateRoot, 'tests', rustTest))
+        .filter((rustPath) => sourceMode(rustPath) === 'generate'),
+      rustSourceModes.map(({ rustPath }) => rustPath),
+      aliasSources,
+      targetNativeSources,
+    );
+
     for (const rustTest of testFiles(crateRoot)) {
       const rustPath = join(crateRoot, 'tests', rustTest);
       const fileName = `${snakeToLowerCamel(rustTest.slice(0, -8))}.test.ts`;
@@ -329,6 +339,39 @@ try {
   }
 } finally {
   rmSync(stagingRoot, { force: true, recursive: true });
+}
+
+function discoverTargetNativeTypeAliasesForTests(
+  generatedTests: string[],
+  rustSources: string[],
+  aliasSources: string[],
+  targetNativeSources: string[],
+): void {
+  if (generatedTests.length === 0 || targetNativeSources.length === 0) return;
+  const declaredAliases = new Set(
+    rustSources.flatMap((rustPath) => collectRustPublicTypeAliasNames(readFileSync(rustPath, 'utf8'))),
+  );
+  const testSources = generatedTests.map((rustPath) => readFileSync(rustPath, 'utf8'));
+  const requiredAliases = new Set(
+    [...declaredAliases].filter((alias) => testSources.some((source) => new RegExp(`\\b${alias}\\b`).test(source))),
+  );
+  for (const known of packageTypeScriptTypeAliases.keys()) requiredAliases.delete(known);
+  if (requiredAliases.size === 0) return;
+
+  for (const rustPath of targetNativeSources) {
+    const fileName = `${snakeToLowerCamel(basename(rustPath, '.rs'))}.ts`;
+    const probe = probeNativeSource(
+      'generate',
+      rustPath,
+      fileName,
+      [],
+      aliasSources,
+      targetNativeSources.filter((candidate) => candidate !== rustPath),
+    );
+    rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
+    for (const known of packageTypeScriptTypeAliases.keys()) requiredAliases.delete(known);
+    if (requiredAliases.size === 0) return;
+  }
 }
 
 function auditNativeSources(

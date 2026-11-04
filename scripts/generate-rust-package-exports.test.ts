@@ -13,6 +13,7 @@ import {
   collectReferencedExportNames,
   collectPublicRootNames,
   collectRustExportNames,
+  collectRustPublicTypeAliasNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   collectTypeScriptExportSymbols,
@@ -472,6 +473,11 @@ describe('hasRustPublicTypeAlias', () => {
     expect(hasRustPublicTypeAlias('pub type ProviderRef = Arc<dyn Any + Send + Sync>;\n')).toBe(true);
     expect(hasRustPublicTypeAlias('type Local = i32;\n')).toBe(false);
     expect(hasRustPublicTypeAlias('pub(crate) type Internal = i32;\n')).toBe(false);
+    expect(
+      collectRustPublicTypeAliasNames(
+        'pub type AnimationPlayerRef = Ref<AnimationPlayer>;\npub type TargetRef = Unknown;',
+      ),
+    ).toEqual(['AnimationPlayerRef', 'TargetRef']);
   });
 });
 
