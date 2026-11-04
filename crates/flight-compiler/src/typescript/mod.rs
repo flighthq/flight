@@ -11047,8 +11047,9 @@ fn emit_expression_value(
                 // other use has no TypeScript function to call.
                 return Err(compile_error(
                     "portable `catch_unwind` is supported only as a panic assertion: \
-                     `assert!(catch_unwind(..).is_err())`, its `let result = ..; assert!(result.is_err())` \
-                     form, or a `&str`/`String` message `contains` check",
+                     `assert!(catch_unwind(..).is_err())` (or through an unread `let result`), or \
+                     `.expect_err(..)`/`.unwrap_err()` whose payload is unread or checked with a \
+                     `&str`/`String` message `contains`",
                 ));
             }
             if (expression_is_associated_path(&call.func, "Arc", "ptr_eq")

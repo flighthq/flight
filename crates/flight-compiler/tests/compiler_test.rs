@@ -17720,6 +17720,114 @@ mod guard_is_err {
     }
 
     #[test]
+    fn lowers_caught_panic_expect_err_to_to_throw() {
+        let production = r#"
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn require_positive(counter: &mut Counter, value: i32) -> i32 {
+    counter.calls += 1;
+    if value <= 0 {
+        panic!("value must be positive");
+    }
+    return value;
+}
+
+pub fn require_named(name: &str) -> usize {
+    if name.is_empty() {
+        panic!("{} needs a name", "state");
+    }
+    return name.len();
+}
+"#;
+        let source = r#"
+use crate::*;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+mod guard_expect_err {
+    use super::*;
+
+    #[test]
+    fn rejects_bad_input() {
+        let mut counter = Counter { calls: 0 };
+        catch_unwind(AssertUnwindSafe(|| require_positive(&mut counter, 0))).expect_err("zero must panic");
+        let _ = std::panic::catch_unwind(|| require_named("")).expect_err("empty name must panic");
+        let payload = catch_unwind(|| require_named("")).expect_err("bound payload");
+        let result = catch_unwind(AssertUnwindSafe(|| require_positive(&mut counter, -2)));
+        let err = result.expect_err("negative must panic");
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("must be positive"));
+        let err = catch_unwind(|| require_named("")).expect_err("named must panic");
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("state needs"), "message names the state");
+        assert_eq!(counter.calls, 2);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        // The `expect_err` message is what Rust reports when the closure does not panic, so it is
+        // the vitest failure message; an `assert!` message takes its place when there is one.
+        for expected in [
+            "expect(() => requirePositive(counter, 0), 'zero must panic').toThrow();",
+            "expect(() => requireNamed(''), 'empty name must panic').toThrow();",
+            "expect(() => requireNamed(''), 'bound payload').toThrow();",
+            "expect(() => requirePositive(counter, -2), 'negative must panic').toThrow('must be positive');",
+            "expect(() => requireNamed(''), `message names the state`).toThrow('state needs');",
+            "expect(counter.calls).toEqual(2);",
+        ] {
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+        for absent in [
+            "catchUnwind",
+            "expectErr",
+            "const payload",
+            "const err",
+            "const msg",
+            "const result",
+        ] {
+            assert!(!output.contains(absent), "{absent}: {output}");
+        }
+    }
+
+    #[test]
+    fn refuses_caught_panic_payloads_to_throw_cannot_express() {
+        let production = r#"
+pub fn fail() -> i32 {
+    panic!("boom");
+}
+
+pub fn panic_message(payload: &str) -> String {
+    return payload.to_string();
+}
+"#;
+        // A payload read again, a `FlightError` payload, a result reused after `expect_err`, and a
+        // payload inspected by a helper are not `toThrow(..)`; each refuses at its `catch_unwind`.
+        for body in [
+            "let payload = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        assert!(payload.downcast_ref::<()>().is_some());",
+            "let payload = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        let error = payload.downcast_ref::<FlightError>().unwrap();\n        assert!(error.message.contains(\"boom\"));",
+            "let result = std::panic::catch_unwind(|| fail());\n        let err = result.expect_err(\"panics\");\n        assert!(result.is_err());",
+            "let failure = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        assert_eq!(panic_message(failure), \"boom\");",
+        ] {
+            let source = format!(
+                "use crate::*;\n\nmod guard_panics {{\n    use super::*;\n\n    #[test]\n    fn checks() {{\n        {body}\n    }}\n}}\n"
+            );
+            let error = compile_vitest_with_alias_sources(
+                &source,
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains("catch_unwind"), "{body}: {error}");
+        }
+    }
+
+    #[test]
     fn refuses_caught_panic_shapes_to_throw_cannot_express() {
         let production = r#"
 pub fn fail() -> i32 {

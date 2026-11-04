@@ -482,7 +482,18 @@ fn emit_assertion(
     if name == "assert"
         && let Some(closure) = arguments.first().and_then(caught_panic_is_err)
     {
-        return emit_panic_assertion(out, closure, None, &arguments, context, indent);
+        return emit_panic_assertion(
+            out,
+            &PanicAssertion {
+                assertion: Some(rust_macro),
+                closure,
+                expect_message: None,
+                length: 1,
+                needle: None,
+            },
+            context,
+            indent,
+        );
     }
     let (mut actual, matcher, mut expected) = match name.as_str() {
         "assert" if !arguments.is_empty() => (
@@ -592,7 +603,7 @@ fn emit_block(
     let mut skipped = HashSet::new();
     let mut index = 0;
     while index < statements.len() {
-        let assertion = panic_message_assertion(statements, index)
+        let assertion = caught_panic_assertion(statements, index)
             .or_else(|| panic_is_err_assertion(statements, index));
         if let Some(assertion) = assertion {
             let length = assertion.length;
@@ -616,14 +627,7 @@ fn emit_block(
     let mut declared = HashSet::new();
     for (index, statement) in statements.iter().enumerate() {
         if let Some(assertion) = panic_assertions.get(&index) {
-            emit_panic_assertion(
-                out,
-                assertion.closure,
-                assertion.needle.as_ref(),
-                &parse_macro_arguments(assertion.assertion)?,
-                &block_context,
-                indent,
-            )?;
+            emit_panic_assertion(out, assertion, &block_context, indent)?;
             continue;
         }
         if skipped.contains(&index) {
@@ -758,34 +762,46 @@ fn emit_vitest_else_chain(
 }
 
 // A Rust panic test that lowers to `expect(() => ..).toThrow(..)`: the statements it spans, the
-// closure that must panic, the message substring it requires (if any), and the `assert!` it ends
-// with, whose optional failure message carries over.
+// closure that must panic, the message substring it requires (if any), the `assert!` it ends with
+// (if any), and the `expect_err` message (if any). Either message becomes the vitest failure message.
 struct PanicAssertion<'a> {
-    assertion: &'a syn::Macro,
+    assertion: Option<&'a syn::Macro>,
     closure: &'a syn::ExprClosure,
+    expect_message: Option<&'a Expr>,
     length: usize,
     needle: Option<Expr>,
 }
 
-const PANIC_MESSAGE_ASSERTION_LENGTH: usize = 4;
-
 // `expect(() => .., message).toThrow(needle)`. The closure runs once, where the Rust test runs it;
-// `toThrow()` passes on any throw, and `toThrow(needle)` when the message contains `needle`.
+// `toThrow()` passes on any throw, and `toThrow(needle)` when the message contains `needle`. The
+// message is the `assert!` message, else the `expect_err` message: what Rust reports when the
+// closure does not panic.
 fn emit_panic_assertion(
     out: &mut String,
-    closure: &syn::ExprClosure,
-    needle: Option<&Expr>,
-    arguments: &Punctuated<Expr, Token![,]>,
+    assertion: &PanicAssertion<'_>,
     context: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    let closure = emit_expression(&Expr::Closure(closure.clone()), context)?;
-    let needle = needle
+    let closure = emit_expression(&Expr::Closure(assertion.closure.clone()), context)?;
+    let needle = assertion
+        .needle
+        .as_ref()
         .map(|needle| emit_expression(needle, context))
         .transpose()?
         .unwrap_or_default();
+    let assert_message = match assertion.assertion {
+        Some(assertion) => {
+            assertion_message(&parse_macro_arguments(assertion)?, "assert", context)?
+        }
+        None => None,
+    };
+    let message = match (assert_message, assertion.expect_message) {
+        (Some(message), _) => Some(message),
+        (None, Some(message)) => Some(emit_expression(message, context)?),
+        (None, None) => None,
+    };
     write_indent(out, indent);
-    match assertion_message(arguments, "assert", context)? {
+    match message {
         Some(message) => writeln!(out, "expect({closure}, {message}).toThrow({needle});"),
         None => writeln!(out, "expect({closure}).toThrow({needle});"),
     }
@@ -821,8 +837,9 @@ fn panic_is_err_assertion(statements: &[Stmt], start: usize) -> Option<PanicAsse
         return None;
     }
     return Some(PanicAssertion {
-        assertion: &assertion.mac,
+        assertion: Some(&assertion.mac),
         closure,
+        expect_message: None,
         length: PANIC_IS_ERR_ASSERTION_LENGTH,
         needle: None,
     });
@@ -840,66 +857,100 @@ fn caught_panic_is_err(expression: &Expr) -> Option<&syn::ExprClosure> {
     return caught_panic_closure(&is_err.receiver);
 }
 
-// The Rust panic-message test idiom, starting at `statements[start]`:
+// A caught panic followed by what the test checks of it:
 //
-//     let result = std::panic::catch_unwind(AssertUnwindSafe(|| ..));  // or catch_unwind(|| ..)
-//     let err = result.unwrap_err();
+//     let err = catch_unwind(|| ..).expect_err("..");       // or .unwrap_err()
+//     // or: let result = catch_unwind(|| ..); let err = result.expect_err("..");  (or .unwrap_err())
 //     let msg = err.downcast_ref::<&str>().copied().unwrap();
 //            // or err.downcast_ref::<String>().map(|s| s.as_str()).unwrap()
 //     assert!(msg.contains(needle));
 //
-// It is `expect(() => ..).toThrow(needle)`: the closure runs once, where the idiom runs it, and
-// `toThrow` with a string passes when the thrown message contains it. Returns the closure and the
-// needle. A `FlightError` payload is not a message and does not match; nor does the idiom when a
-// later statement reads `result`, `err` or `msg` (a later `let` of the same name is a new binding).
-fn panic_message_assertion(statements: &[Stmt], start: usize) -> Option<PanicAssertion<'_>> {
-    let window = statements.get(start..start + PANIC_MESSAGE_ASSERTION_LENGTH)?;
-    let (result, caught) = simple_local(&window[0])?;
-    let closure = caught_panic_closure(caught)?;
-    let (error, unwrapped) = simple_local(&window[1])?;
-    let Expr::MethodCall(unwrap_err) = unwrapped else {
-        return None;
-    };
-    if unwrap_err.method != "unwrap_err"
-        || !unwrap_err.args.is_empty()
-        || !expression_is_name(&unwrap_err.receiver, &result)
+// is `expect(() => .., message).toThrow(needle)`; without the last two statements, when nothing reads
+// `err` again, it is `expect(() => .., message).toThrow()`. A payload inspected any other way (a
+// `FlightError`, a helper, an exact comparison) is not expressible, and neither is a result or
+// payload read again later: those do not match, and their `catch_unwind` call then refuses.
+fn caught_panic_assertion(statements: &[Stmt], start: usize) -> Option<PanicAssertion<'_>> {
+    let (closure, error, expect_message, prefix) = caught_panic_error(statements, start)?;
+    let message_start = start + prefix;
+    if let Some(window) = statements.get(message_start..message_start + 2)
+        && let Some((message, downcast)) = simple_local(&window[0])
+        && panic_message_downcast(downcast, &error)
+        && let Stmt::Macro(assertion) = &window[1]
+        && assertion.mac.path.is_ident("assert")
+        && let Ok(arguments) = parse_macro_arguments(&assertion.mac)
+        && let Some(Expr::MethodCall(contains)) = arguments.first().map(unparenthesized)
+        && contains.method == "contains"
+        && contains.args.len() == 1
+        && expression_is_name(&contains.receiver, &message)
+        && !statements_read_name(&statements[message_start + 2..], &error)
+        && !statements_read_name(&statements[message_start + 2..], &message)
     {
-        return None;
+        return Some(PanicAssertion {
+            assertion: Some(&assertion.mac),
+            closure,
+            expect_message,
+            length: prefix + 2,
+            needle: Some(contains.args[0].clone()),
+        });
     }
-    let (message, downcast) = simple_local(&window[2])?;
-    if !panic_message_downcast(downcast, &error) {
-        return None;
-    }
-    let Stmt::Macro(assertion) = &window[3] else {
-        return None;
-    };
-    if !assertion.mac.path.is_ident("assert") {
-        return None;
-    }
-    let arguments = parse_macro_arguments(&assertion.mac).ok()?;
-    let Expr::MethodCall(contains) = unparenthesized(arguments.first()?) else {
-        return None;
-    };
-    if contains.method != "contains"
-        || contains.args.len() != 1
-        || !expression_is_name(&contains.receiver, &message)
-    {
-        return None;
-    }
-    let needle = contains.args[0].clone();
-    let later = &statements[start + PANIC_MESSAGE_ASSERTION_LENGTH..];
-    if [&result, &error, &message]
-        .iter()
-        .any(|name| statements_read_name(later, name))
-    {
+    if error != "_" && statements_read_name(&statements[message_start..], &error) {
         return None;
     }
     return Some(PanicAssertion {
-        assertion: &assertion.mac,
+        assertion: None,
         closure,
-        length: PANIC_MESSAGE_ASSERTION_LENGTH,
-        needle: Some(needle),
+        expect_message,
+        length: prefix,
+        needle: None,
     });
+}
+
+// The caught panic's payload binding at `statements[start]`: the closure, the payload's name (`_`
+// for `let _ = ..`), the `expect_err` message, and how many statements bind it. One statement
+// (`let err = catch_unwind(..).expect_err(..)`) or two (`let result = catch_unwind(..);` then
+// `let err = result.expect_err(..)` or `.unwrap_err()`, with `result` not read after).
+fn caught_panic_error(
+    statements: &[Stmt],
+    start: usize,
+) -> Option<(&syn::ExprClosure, String, Option<&Expr>, usize)> {
+    let (name, initializer) = payload_local(statements.get(start)?)?;
+    if let Some((caught, expect_message)) = unwrapped_panic_payload(initializer) {
+        return Some((caught_panic_closure(caught)?, name, expect_message, 1));
+    }
+    let closure = caught_panic_closure(initializer)?;
+    let (error, unwrapped) = payload_local(statements.get(start + 1)?)?;
+    let (result, expect_message) = unwrapped_panic_payload(unwrapped)?;
+    if !expression_is_name(result, &name) || statements_read_name(&statements[start + 2..], &name) {
+        return None;
+    }
+    return Some((closure, error, expect_message, 2));
+}
+
+// `receiver.unwrap_err()` or `receiver.expect_err(message)`: the receiver and the message.
+fn unwrapped_panic_payload(expression: &Expr) -> Option<(&Expr, Option<&Expr>)> {
+    let Expr::MethodCall(call) = expression else {
+        return None;
+    };
+    return match (call.method.to_string().as_str(), call.args.len()) {
+        ("unwrap_err", 0) => Some((&call.receiver, None)),
+        ("expect_err", 1) => Some((&call.receiver, Some(&call.args[0]))),
+        _ => None,
+    };
+}
+
+// `let name = init;` or `let _ = init;`, or the expression statement `init;` (named `_`).
+fn payload_local(statement: &Stmt) -> Option<(String, &Expr)> {
+    if let Stmt::Expr(expression, Some(_)) = statement {
+        return Some(("_".to_string(), expression));
+    }
+    if let Stmt::Local(local) = statement
+        && matches!(local.pat, Pat::Wild(_))
+        && let Some(initializer) = &local.init
+        && initializer.diverge.is_none()
+    {
+        return Some(("_".to_string(), &initializer.expr));
+    }
+    return simple_local(statement);
 }
 
 // `let name = init;` with a plain, non-`mut` identifier pattern and no `else`.
