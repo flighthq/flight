@@ -17494,8 +17494,8 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
             "terminal_x x binding: {output}"
         );
         assert!(
-            output.contains("const y = matchValue.y;"),
-            "append_terminal_y y binding (statement path uses matchValue): {output}"
+            output.contains("const y = segment.y;"),
+            "append_terminal_y y binding: {output}"
         );
         assert!(!output.contains("PathSegment.MoveTo"));
         assert!(!output.contains("PathSegment.Close"));
@@ -17788,27 +17788,27 @@ pub fn apply_force(force: &ParticleForce, vx: f64, vy: f64, vz: f64, out: &mut [
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("matchValue.kind === 'windForce'"),
+            output.contains("force.kind === 'windForce'"),
             "should emit kind check for WindForce: {output}"
         );
         assert!(
-            output.contains("matchValue.kind === 'dragForce'"),
+            output.contains("force.kind === 'dragForce'"),
             "should emit kind check for DragForce: {output}"
         );
         assert!(
-            output.contains("const x = matchValue.x;"),
+            output.contains("const x = force.x;"),
             "should emit field binding for x: {output}"
         );
         assert!(
-            output.contains("const y = matchValue.y;"),
+            output.contains("const y = force.y;"),
             "should emit field binding for y: {output}"
         );
         assert!(
-            output.contains("const z = matchValue.z;"),
+            output.contains("const z = force.z;"),
             "should emit field binding for z: {output}"
         );
         assert!(
-            output.contains("const strength = matchValue.strength;"),
+            output.contains("const strength = force.strength;"),
             "should emit field binding for strength: {output}"
         );
     }
@@ -17952,10 +17952,6 @@ pub fn append_value_kind(out: &mut Vec<String>, value: LogValue) {
         assert!(
             output.contains("const provider = value;"),
             "provider binding from value: {output}"
-        );
-        assert!(
-            output.contains("const matchValue = value;"),
-            "statement-position match still uses matchValue: {output}"
         );
         assert!(!output.contains("LogData.Message(value)"));
         assert!(!output.contains("LogValue.Null"));
@@ -25077,7 +25073,7 @@ pub fn handle_result(result: Result<f64, String>, out: &mut f64) {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("matchValue !== undefined"),
+        output.contains("result !== undefined"),
         "should emit undefined check for Ok arm: {output}"
     );
     assert!(

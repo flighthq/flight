@@ -19105,13 +19105,7 @@ pub(crate) fn emit_match_statement(
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
-        write_indent(out, indent + 1);
-        writeln!(
-            out,
-            "const matchValue = {};",
-            emit_expression(&expression.expr, entities)?
-        )
-        .expect("writing to a String cannot fail");
+        let scrutinee = emit_match_scrutinee(out, expression, entities, indent + 1)?;
         if has_guards {
             write_indent(out, indent + 1);
             out.push_str("let $matched = false;\n");
@@ -19121,16 +19115,16 @@ pub(crate) fn emit_match_statement(
             write_indent(out, indent + 1);
             let operator = if info.present { "!==" } else { "===" };
             if has_guards {
-                writeln!(out, "if (!$matched && matchValue {operator} {absent}) {{")
+                writeln!(out, "if (!$matched && {scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
             } else {
                 let prefix = if index == 0 { "if" } else { "else if" };
-                writeln!(out, "{prefix} (matchValue {operator} {absent}) {{")
+                writeln!(out, "{prefix} ({scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
             }
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
-                writeln!(out, "const {binding} = matchValue;")
+                writeln!(out, "const {binding} = {scrutinee};")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
@@ -19174,13 +19168,7 @@ pub(crate) fn emit_match_statement(
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
-        write_indent(out, indent + 1);
-        writeln!(
-            out,
-            "const matchValue = {};",
-            emit_expression(&expression.expr, entities)?
-        )
-        .expect("writing to a String cannot fail");
+        let scrutinee = emit_match_scrutinee(out, expression, entities, indent + 1)?;
         if has_guards {
             write_indent(out, indent + 1);
             out.push_str("let $matched = false;\n");
@@ -19196,7 +19184,7 @@ pub(crate) fn emit_match_statement(
                     out.push_str("else {\n");
                 }
             } else {
-                let predicate = tagged_data_union_predicate(&info.variants, "matchValue");
+                let predicate = tagged_data_union_predicate(&info.variants, &scrutinee);
                 if has_guards {
                     writeln!(out, "if (!$matched && {predicate}) {{")
                         .expect("writing to a String cannot fail");
@@ -19208,10 +19196,10 @@ pub(crate) fn emit_match_statement(
             }
             if let Some(binding) = info.catch_all_binding {
                 write_indent(out, indent + 2);
-                writeln!(out, "const {binding} = matchValue;")
+                writeln!(out, "const {binding} = {scrutinee};")
                     .expect("writing to a String cannot fail");
             }
-            for (binding, value) in tagged_data_union_bindings(&info.variants, "matchValue") {
+            for (binding, value) in tagged_data_union_bindings(&info.variants, &scrutinee) {
                 write_indent(out, indent + 2);
                 writeln!(out, "const {binding} = {value};")
                     .expect("writing to a String cannot fail");
@@ -19257,13 +19245,7 @@ pub(crate) fn emit_match_statement(
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
-        write_indent(out, indent + 1);
-        writeln!(
-            out,
-            "const matchValue = {};",
-            emit_expression(&expression.expr, entities)?
-        )
-        .expect("writing to a String cannot fail");
+        let scrutinee = emit_match_scrutinee(out, expression, entities, indent + 1)?;
         if has_guards {
             write_indent(out, indent + 1);
             out.push_str("let $matched = false;\n");
@@ -19280,9 +19262,9 @@ pub(crate) fn emit_match_statement(
                 }
             } else {
                 let predicate = if info.reserved_key_variants.is_empty() {
-                    runtime_categories_predicate(&info.categories, "matchValue")
+                    runtime_categories_predicate(&info.categories, &scrutinee)
                 } else {
-                    reserved_key_data_union_predicate(&info.reserved_key_variants, "matchValue")
+                    reserved_key_data_union_predicate(&info.reserved_key_variants, &scrutinee)
                 };
                 if has_guards {
                     writeln!(out, "if (!$matched && {predicate}) {{")
@@ -19296,8 +19278,8 @@ pub(crate) fn emit_match_statement(
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
                 let value = info.binding_type.map_or_else(
-                    || "matchValue".to_string(),
-                    |rust_type| format!("matchValue as {rust_type}"),
+                    || scrutinee.clone(),
+                    |rust_type| format!("{scrutinee} as {rust_type}"),
                 );
                 writeln!(out, "const {binding} = {value};")
                     .expect("writing to a String cannot fail");
@@ -19345,13 +19327,7 @@ pub(crate) fn emit_match_statement(
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);
         out.push_str("{\n");
-        write_indent(out, indent + 1);
-        writeln!(
-            out,
-            "const matchValue = {};",
-            emit_expression(&expression.expr, entities)?
-        )
-        .expect("writing to a String cannot fail");
+        let scrutinee = emit_match_scrutinee(out, expression, entities, indent + 1)?;
         if has_guards {
             write_indent(out, indent + 1);
             out.push_str("let $matched = false;\n");
@@ -19372,7 +19348,7 @@ pub(crate) fn emit_match_statement(
                     .iter()
                     .map(|variant| {
                         format!(
-                            "matchValue.kind === {}",
+                            "{scrutinee}.kind === {}",
                             js_string_literal(&lower_camel_from_upper_camel(variant))
                         )
                     })
@@ -19389,12 +19365,12 @@ pub(crate) fn emit_match_statement(
             }
             if let Some(binding) = info.binding {
                 write_indent(out, indent + 2);
-                writeln!(out, "const {binding} = matchValue;")
+                writeln!(out, "const {binding} = {scrutinee};")
                     .expect("writing to a String cannot fail");
             }
             for (binding_name, source_field) in &info.field_bindings {
                 write_indent(out, indent + 2);
-                writeln!(out, "const {binding_name} = matchValue.{source_field};")
+                writeln!(out, "const {binding_name} = {scrutinee}.{source_field};")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
