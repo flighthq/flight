@@ -1,3 +1,6 @@
+// Generated from crates/flight-input/src/input_binding.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import type { InputIngressSource } from '@flighthq/host/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 
@@ -124,68 +127,68 @@ export function attachWheelInput(
 function buildInputIngressSink(manager: InputManagerRaw): InputIngressSink {
   const captured = manager;
   const gamepadAxisMove: (arg0: Readonly<InputGamepadAxisData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputGamepadAxisData>) => emitGamepadAxisMove(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputGamepadAxisData>) => emitGamepadAxisMove(manager_1, data);
   })();
   const gamepadButtonDown: (arg0: Readonly<InputGamepadButtonData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputGamepadButtonData>) => emitGamepadButtonDown(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputGamepadButtonData>) => emitGamepadButtonDown(manager_1, data);
   })();
   const gamepadButtonUp: (arg0: Readonly<InputGamepadButtonData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputGamepadButtonData>) => emitGamepadButtonUp(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputGamepadButtonData>) => emitGamepadButtonUp(manager_1, data);
   })();
   const gamepadConnect: (arg0: Readonly<InputGamepadConnectData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputGamepadConnectData>) => emitGamepadConnect(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputGamepadConnectData>) => emitGamepadConnect(manager_1, data);
   })();
   const gamepadDisconnect: (arg0: Readonly<InputGamepadConnectData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputGamepadConnectData>) => emitGamepadDisconnect(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputGamepadConnectData>) => emitGamepadDisconnect(manager_1, data);
   })();
   const keyDown: (arg0: Readonly<InputKeyboardData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputKeyboardData>) => emitKeyDown(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputKeyboardData>) => emitKeyDown(manager_1, data);
   })();
   const keyUp: (arg0: Readonly<InputKeyboardData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputKeyboardData>) => emitKeyUp(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputKeyboardData>) => emitKeyUp(manager_1, data);
   })();
   const pointerCancel: (arg0: Readonly<InputPointerData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputPointerData>) => emitPointerCancel(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputPointerData>) => emitPointerCancel(manager_1, data);
   })();
   const pointerDown: (arg0: Readonly<InputPointerData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputPointerData>) => emitPointerDown(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputPointerData>) => emitPointerDown(manager_1, data);
   })();
   const pointerMove: (arg0: Readonly<InputPointerData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputPointerData>) => emitPointerMove(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputPointerData>) => emitPointerMove(manager_1, data);
   })();
   const pointerMoveRelative: (arg0: Readonly<InputPointerData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputPointerData>) => emitPointerMoveRelative(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputPointerData>) => emitPointerMoveRelative(manager_1, data);
   })();
   const pointerUp: (arg0: Readonly<InputPointerData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputPointerData>) => emitPointerUp(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputPointerData>) => emitPointerUp(manager_1, data);
   })();
   const textEdit: (arg0: Readonly<InputTextData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputTextData>) => emitTextEdit(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputTextData>) => emitTextEdit(manager_1, data);
   })();
   const textInput: (arg0: Readonly<InputTextData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputTextData>) => emitTextInput(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputTextData>) => emitTextInput(manager_1, data);
   })();
   const wheel: (arg0: Readonly<InputPointerData>) => void = (() => {
-    const manager = captured;
-    return (data: Readonly<InputPointerData>) => emitWheel(manager, data);
+    const manager_1 = captured;
+    return (data: Readonly<InputPointerData>) => emitWheel(manager_1, data);
   })();
   const isEnabled: () => boolean = (() => {
-    const manager = captured;
-    return () => isManagerEnabled(manager);
+    const manager_1 = captured;
+    return () => isManagerEnabled(manager_1);
   })();
   return {
     gamepadAxisMove: gamepadAxisMove,
