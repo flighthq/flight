@@ -19161,7 +19161,10 @@ fn emit_method_call(
                 )
             }
         }
-        "partial_cmp" if arguments.len() == 1 => Ok(format!("{receiver} - {}", arguments[0])),
+        "partial_cmp" if arguments.len() == 1 => Ok(format!(
+            "{receiver} - {}",
+            parenthesize_compound(&arguments[0])
+        )),
         "pop" if arguments.is_empty() => Ok(format!("{receiver}.pop()")),
         "position" if arguments.len() == 1 => Ok(format!(
             "((i) => i === -1 ? undefined : i)({receiver}.findIndex({}))",
@@ -19295,14 +19298,18 @@ fn emit_method_call(
         )),
         "saturating_add" if arguments.len() == 1 => Ok(format!(
             "Math.min(0x7FFFFFFF, {receiver} + {})",
-            arguments[0]
+            parenthesize_compound(&arguments[0])
         )),
         "saturating_mul" if arguments.len() == 1 => Ok(format!(
             "Math.min(0x7FFFFFFF, {receiver} * {})",
             arguments[0]
         )),
         "saturating_sub" if arguments.len() == 1 => {
-            Ok(format!("Math.max(0, {receiver} - {})", arguments[0]))
+            let arg = &arguments[0];
+            Ok(format!(
+                "Math.max(0, {receiver} - {})",
+                parenthesize_compound(arg)
+            ))
         }
         "set" if arguments.len() == 1 => Ok(format!("{receiver}.value = {}", arguments[0])),
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
@@ -25454,6 +25461,35 @@ fn apply_acronym_casing(name: &mut String) {
         }
     }
     *name = String::from_utf8(result).expect("ASCII transform preserves UTF-8");
+}
+
+fn parenthesize_compound(expr: &str) -> std::borrow::Cow<'_, str> {
+    let trimmed = expr.trim();
+    if trimmed.starts_with('(') && trimmed.ends_with(')') {
+        return std::borrow::Cow::Borrowed(expr);
+    }
+    let bytes = trimmed.as_bytes();
+    let len = bytes.len();
+    let mut depth = 0i32;
+    let mut i = 0;
+    while i < len {
+        match bytes[i] {
+            b'(' | b'[' => depth += 1,
+            b')' | b']' => depth -= 1,
+            b'>' if depth == 0 && i + 1 < len && bytes[i + 1] == b'>' => {
+                return std::borrow::Cow::Owned(format!("({expr})"));
+            }
+            b'<' if depth == 0 && i + 1 < len && bytes[i + 1] == b'<' => {
+                return std::borrow::Cow::Owned(format!("({expr})"));
+            }
+            b'?' if depth == 0 => {
+                return std::borrow::Cow::Owned(format!("({expr})"));
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    return std::borrow::Cow::Borrowed(expr);
 }
 
 fn throw_call(call: &syn::ExprCall) -> Option<(&'static str, &Expr)> {

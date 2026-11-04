@@ -23801,3 +23801,21 @@ pub fn set_position_xyz(x: f64, y: f64, z: f64) -> f64 {
         "Xyz should not appear: {output}"
     );
 }
+
+#[test]
+fn parenthesizes_cast_in_saturating_sub_argument() {
+    let source = r#"
+pub fn add_signed(value: usize, offset: isize) -> usize {
+    return if offset < 0 {
+        value.saturating_sub((-offset) as usize)
+    } else {
+        value + offset as usize
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("- (-offset >>> 0)"),
+        "saturating_sub argument with cast should be parenthesized: {output}"
+    );
+}
