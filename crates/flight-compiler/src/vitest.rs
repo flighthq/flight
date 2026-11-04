@@ -101,7 +101,11 @@ fn collect_contract_symbols(
             if !self.declared.contains(&name)
                 && !self.helper_names.contains(&name)
                 && !self.standard_constants.contains(&name)
-                && !matches!(name.as_str(), "None" | "Some" | "drop")
+                // `std::panic` names that the panic-message assertion lowering consumes.
+                && !matches!(
+                    name.as_str(),
+                    "None" | "Some" | "drop" | "AssertUnwindSafe" | "catch_unwind"
+                )
                 && !self.symbols.contains(&name)
             {
                 self.symbols.push(name);
@@ -577,16 +581,47 @@ fn emit_block(
 ) -> Result<(), CompileError> {
     let mut block_context = context.clone();
     insert_vitest_rebound_struct_context(statements, &mut block_context);
+    // Panic-message assertions, by the index of their first statement; their three locals are not
+    // emitted, so they do not count as declarations.
+    let mut panic_assertions = HashMap::new();
+    let mut index = 0;
+    while index < statements.len() {
+        if let Some(assertion) = panic_message_assertion(statements, index) {
+            panic_assertions.insert(index, assertion);
+            index += PANIC_MESSAGE_ASSERTION_LENGTH;
+        } else {
+            index += 1;
+        }
+    }
+    let skipped = |index: usize| {
+        (index.saturating_sub(PANIC_MESSAGE_ASSERTION_LENGTH - 1)..=index)
+            .any(|start| panic_assertions.contains_key(&start))
+    };
     let mut declaration_counts = HashMap::new();
-    for statement in statements {
-        if let Stmt::Local(local) = statement
+    for (index, statement) in statements.iter().enumerate() {
+        if !skipped(index)
+            && let Stmt::Local(local) = statement
             && let Some(name) = local_name(&local.pat)
         {
             *declaration_counts.entry(name).or_insert(0_usize) += 1;
         }
     }
     let mut declared = HashSet::new();
-    for statement in statements {
+    for (index, statement) in statements.iter().enumerate() {
+        if let Some((closure, needle)) = panic_assertions.get(&index) {
+            write_indent(out, indent);
+            writeln!(
+                out,
+                "expect({}).toThrow({});",
+                emit_expression(&Expr::Closure((*closure).clone()), &block_context)?,
+                emit_expression(needle, &block_context)?
+            )
+            .expect("writing to a String cannot fail");
+            continue;
+        }
+        if skipped(index) {
+            continue;
+        }
         if let Stmt::Local(local) = statement
             && let Some(name) = local_name(&local.pat)
         {
@@ -713,6 +748,251 @@ fn emit_vitest_else_chain(
         }
     }
     Ok(())
+}
+
+const PANIC_MESSAGE_ASSERTION_LENGTH: usize = 4;
+
+// The Rust panic-message test idiom, starting at `statements[start]`:
+//
+//     let result = std::panic::catch_unwind(AssertUnwindSafe(|| ..));  // or catch_unwind(|| ..)
+//     let err = result.unwrap_err();
+//     let msg = err.downcast_ref::<&str>().copied().unwrap();
+//            // or err.downcast_ref::<String>().map(|s| s.as_str()).unwrap()
+//     assert!(msg.contains(needle));
+//
+// It is `expect(() => ..).toThrow(needle)`: the closure runs once, where the idiom runs it, and
+// `toThrow` with a string passes when the thrown message contains it. Returns the closure and the
+// needle. A `FlightError` payload is not a message and does not match; nor does the idiom when a
+// later statement reads `result`, `err` or `msg` (a later `let` of the same name is a new binding).
+fn panic_message_assertion(statements: &[Stmt], start: usize) -> Option<(&syn::ExprClosure, Expr)> {
+    let window = statements.get(start..start + PANIC_MESSAGE_ASSERTION_LENGTH)?;
+    let (result, caught) = simple_local(&window[0])?;
+    let closure = caught_panic_closure(caught)?;
+    let (error, unwrapped) = simple_local(&window[1])?;
+    let Expr::MethodCall(unwrap_err) = unwrapped else {
+        return None;
+    };
+    if unwrap_err.method != "unwrap_err"
+        || !unwrap_err.args.is_empty()
+        || !expression_is_name(&unwrap_err.receiver, &result)
+    {
+        return None;
+    }
+    let (message, downcast) = simple_local(&window[2])?;
+    if !panic_message_downcast(downcast, &error) {
+        return None;
+    }
+    let Stmt::Macro(assertion) = &window[3] else {
+        return None;
+    };
+    if !assertion.mac.path.is_ident("assert") {
+        return None;
+    }
+    let arguments = parse_macro_arguments(&assertion.mac).ok()?;
+    if arguments.len() != 1 {
+        return None;
+    }
+    let Expr::MethodCall(contains) = unparenthesized(&arguments[0]) else {
+        return None;
+    };
+    if contains.method != "contains"
+        || contains.args.len() != 1
+        || !expression_is_name(&contains.receiver, &message)
+    {
+        return None;
+    }
+    let needle = contains.args[0].clone();
+    let later = &statements[start + PANIC_MESSAGE_ASSERTION_LENGTH..];
+    if [&result, &error, &message]
+        .iter()
+        .any(|name| statements_read_name(later, name))
+    {
+        return None;
+    }
+    return Some((closure, needle));
+}
+
+// `let name = init;` with a plain, non-`mut` identifier pattern and no `else`.
+fn simple_local(statement: &Stmt) -> Option<(String, &Expr)> {
+    let Stmt::Local(local) = statement else {
+        return None;
+    };
+    let Pat::Ident(identifier) = &local.pat else {
+        return None;
+    };
+    let initializer = local.init.as_ref()?;
+    if identifier.mutability.is_some()
+        || identifier.subpat.is_some()
+        || initializer.diverge.is_some()
+    {
+        return None;
+    }
+    return Some((identifier.ident.to_string(), &initializer.expr));
+}
+
+// The parameterless closure of `catch_unwind(|| ..)` or `catch_unwind(AssertUnwindSafe(|| ..))`,
+// with either spelled bare or as `std::panic::..`.
+fn caught_panic_closure(expression: &Expr) -> Option<&syn::ExprClosure> {
+    let Expr::Call(call) = expression else {
+        return None;
+    };
+    if !path_is_std_panic(&call.func, "catch_unwind") || call.args.len() != 1 {
+        return None;
+    }
+    let mut argument = &call.args[0];
+    if let Expr::Call(wrapper) = argument
+        && path_is_std_panic(&wrapper.func, "AssertUnwindSafe")
+        && wrapper.args.len() == 1
+    {
+        argument = &wrapper.args[0];
+    }
+    let Expr::Closure(closure) = argument else {
+        return None;
+    };
+    return (closure.inputs.is_empty() && closure.asyncness.is_none()).then_some(closure);
+}
+
+fn path_is_std_panic(expression: &Expr, name: &str) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    let segments = path
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    return path.qself.is_none()
+        && (segments == [name]
+            || segments == ["std", "panic", name]
+            || segments == ["panic", name]);
+}
+
+// `error.downcast_ref::<&str>().copied().unwrap()` or
+// `error.downcast_ref::<String>().map(|s| s.as_str()).unwrap()`.
+fn panic_message_downcast(expression: &Expr, error: &str) -> bool {
+    let Expr::MethodCall(unwrap) = expression else {
+        return false;
+    };
+    if unwrap.method != "unwrap" || !unwrap.args.is_empty() {
+        return false;
+    }
+    let Expr::MethodCall(adapter) = unwrap.receiver.as_ref() else {
+        return false;
+    };
+    let Expr::MethodCall(downcast) = adapter.receiver.as_ref() else {
+        return false;
+    };
+    if downcast.method != "downcast_ref"
+        || !downcast.args.is_empty()
+        || !expression_is_name(&downcast.receiver, error)
+    {
+        return false;
+    }
+    let Some(turbofish) = &downcast.turbofish else {
+        return false;
+    };
+    let [syn::GenericArgument::Type(payload)] = turbofish.args.iter().collect::<Vec<_>>()[..]
+    else {
+        return false;
+    };
+    return match payload {
+        syn::Type::Reference(reference) => {
+            matches!(reference.elem.as_ref(), syn::Type::Path(path) if path.qself.is_none() && path.path.is_ident("str"))
+                && adapter.method == "copied"
+                && adapter.args.is_empty()
+        }
+        syn::Type::Path(path) if path.qself.is_none() && path.path.is_ident("String") => {
+            adapter.method == "map"
+                && adapter.args.len() == 1
+                && closure_returns_parameter_as_str(&adapter.args[0])
+        }
+        _ => false,
+    };
+}
+
+// `|s| s.as_str()`.
+fn closure_returns_parameter_as_str(expression: &Expr) -> bool {
+    let Expr::Closure(closure) = expression else {
+        return false;
+    };
+    let [Pat::Ident(parameter)] = closure.inputs.iter().collect::<Vec<_>>()[..] else {
+        return false;
+    };
+    let Expr::MethodCall(as_str) = closure.body.as_ref() else {
+        return false;
+    };
+    return as_str.method == "as_str"
+        && as_str.args.is_empty()
+        && expression_is_name(&as_str.receiver, &parameter.ident.to_string());
+}
+
+fn expression_is_name(expression: &Expr, name: &str) -> bool {
+    return matches!(unparenthesized(expression), Expr::Path(path)
+        if path.qself.is_none() && path.path.is_ident(name));
+}
+
+// Whether `statements` read `name` before a `let` of it starts a new binding. Macro arguments
+// (`assert!(name ..)`) are read as expressions; a macro whose tokens cannot be parsed counts as a
+// read when they mention the name.
+fn statements_read_name(statements: &[Stmt], name: &str) -> bool {
+    struct NameReader<'a> {
+        name: &'a str,
+        found: bool,
+    }
+
+    impl<'ast> Visit<'ast> for NameReader<'_> {
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if path.qself.is_none() && path.path.is_ident(self.name) {
+                self.found = true;
+            }
+            syn::visit::visit_expr_path(self, path);
+        }
+
+        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            match parse_macro_arguments(rust_macro) {
+                Ok(arguments) => {
+                    for argument in &arguments {
+                        self.visit_expr(argument);
+                    }
+                }
+                Err(_) => {
+                    if rust_macro
+                        .tokens
+                        .clone()
+                        .into_iter()
+                        .any(|token| token.to_string() == self.name)
+                    {
+                        self.found = true;
+                    }
+                }
+            }
+        }
+    }
+
+    for statement in statements {
+        let mut reader = NameReader { name, found: false };
+        match statement {
+            Stmt::Local(local) => {
+                if let Some(initializer) = &local.init {
+                    reader.visit_local_init(initializer);
+                }
+                if reader.found {
+                    return true;
+                }
+                if local_name(&local.pat).as_deref() == Some(name) {
+                    return false;
+                }
+            }
+            statement => {
+                reader.visit_stmt(statement);
+                if reader.found {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 fn emit_statement(

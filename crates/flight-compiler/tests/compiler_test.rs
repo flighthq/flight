@@ -17293,6 +17293,140 @@ mod color_format {
     }
 
     #[test]
+    fn lowers_panic_message_assertions_to_to_throw() {
+        let production = r#"
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn require_positive(counter: &mut Counter, value: i32) -> i32 {
+    counter.calls += 1;
+    if value <= 0 {
+        panic!("value must be positive");
+    }
+    return value;
+}
+
+pub fn require_named(name: &str) -> usize {
+    if name.is_empty() {
+        panic!("{} needs a name", "state");
+    }
+    return name.len();
+}
+"#;
+        let source = r#"
+use crate::*;
+
+mod guard_panics {
+    use super::*;
+    use std::panic::AssertUnwindSafe;
+
+    #[test]
+    fn rejects_with_messages() {
+        let mut counter = Counter { calls: 0 };
+        let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+            require_positive(&mut counter, 0);
+        }));
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("must be positive"));
+        assert_eq!(counter.calls, 1);
+
+        let result = std::panic::catch_unwind(|| {
+            require_named("");
+        });
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("state needs a name"));
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        // The closure runs once, in place; `toThrow` with a string matches a message containing it.
+        assert!(
+            output.contains(
+                "expect(() => {\n  requirePositive(counter, 0);\n}).toThrow('must be positive');"
+            ),
+            "{output}"
+        );
+        assert!(
+            output
+                .contains("expect(() => {\n  requireNamed('');\n}).toThrow('state needs a name');"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(counter.calls).toEqual(1);"),
+            "{output}"
+        );
+        // The idiom's locals and `std::panic` names are not emitted or imported.
+        for absent in [
+            "unwrapErr",
+            "downcastRef",
+            "const msg",
+            "const err",
+            "AssertUnwindSafe",
+            "catchUnwind",
+        ] {
+            assert!(!output.contains(absent), "{absent}: {output}");
+        }
+    }
+
+    #[test]
+    fn refuses_panic_assertions_it_cannot_express() {
+        let production = r#"
+pub fn fail() {
+    panic!("boom");
+}
+"#;
+        let prelude = r#"
+use crate::*;
+
+mod guard_panics {
+    use super::*;
+
+    #[test]
+    fn checks_the_payload() {
+"#;
+        // A `FlightError` payload, a message read again later, and an exact-message comparison
+        // are not `toThrow(substring)`; each still refuses rather than dropping the assertion.
+        for body in [
+            r#"
+        let result = std::panic::catch_unwind(|| fail());
+        let err = result.unwrap_err();
+        let error = err.downcast_ref::<FlightError>().unwrap();
+        assert!(error.message.contains("boom"));
+"#,
+            r#"
+        let result = std::panic::catch_unwind(|| fail());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("boom"));
+        assert_eq!(msg.len(), 4);
+"#,
+            r#"
+        let result = std::panic::catch_unwind(|| fail());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert_eq!(msg, "boom");
+"#,
+        ] {
+            let source = format!("{prelude}{body}    }}\n}}\n");
+            let error = compile_vitest_with_alias_sources(
+                &source,
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains("unwrap_err"), "{error}");
+        }
+    }
+
+    #[test]
     fn lowers_buffer_pointer_comparisons_to_identity_checks() {
         let source = r#"
 pub struct Track {
