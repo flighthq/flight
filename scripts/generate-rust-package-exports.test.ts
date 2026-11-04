@@ -141,6 +141,33 @@ describe('collectCrateExportSymbols', () => {
       ['readValue', { hasType: false, hasValue: true, isClass: false }],
     ]);
   });
+
+  it('rejects a sibling forwarding re-export as a second owner of a declared symbol', () => {
+    const modules = [
+      {
+        fileName: 'texelScale.ts',
+        mode: 'target-native' as const,
+        typescript: 'export function getTexelScale(width: number): number {}\n',
+      },
+      {
+        fileName: 'blurEffect.ts',
+        mode: 'target-native' as const,
+        typescript: "export { getTexelScale } from './texelScale.ts';\nexport function runBlurEffect(): void {}\n",
+      },
+    ];
+    expect(() => collectExportSymbols(modules)).toThrow(
+      'duplicate generated symbol getTexelScale in texelScale.ts and blurEffect.ts',
+    );
+    expect([
+      ...collectExportSymbols([
+        modules[0],
+        { ...modules[1], typescript: 'export function runBlurEffect(): void {}\n' },
+      ]),
+    ]).toEqual([
+      ['getTexelScale', { fileName: 'texelScale.ts', hasType: false, hasValue: true, isClass: false }],
+      ['runBlurEffect', { fileName: 'blurEffect.ts', hasType: false, hasValue: true, isClass: false }],
+    ]);
+  });
 });
 
 describe('dependency contract exports', () => {
