@@ -2168,6 +2168,63 @@ pub fn first_big(values: &[u32]) -> u32 {
     }
 
     #[test]
+    fn lowers_match_with_guards_to_if_else_not_switch() {
+        let source = r#"
+pub fn classify(value: f64, threshold: f64) -> &'static str {
+    match value {
+        v if v < -threshold => "very_negative",
+        v if v < 0.0 => "negative",
+        _ => "positive",
+    }
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            !output.contains("switch"),
+            "match with guards must not lower to switch: {output}"
+        );
+        assert!(
+            output.contains("$matched"),
+            "guarded match must use $matched tracking: {output}"
+        );
+        assert!(
+            output.contains("const v = matchValue"),
+            "binding pattern must declare const from matchValue: {output}"
+        );
+        assert!(
+            output.contains("if (v < -threshold)"),
+            "guard must appear as inner if condition: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_mixed_literal_and_guarded_match_to_if_else() {
+        let source = r#"
+pub fn escape(c: char) -> &'static str {
+    match c {
+        '"' => "quote",
+        '\\' => "backslash",
+        c if (c as u32) < 0x20 => "control",
+        _ => "other",
+    }
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            !output.contains("switch"),
+            "mixed literal+guard match must not use switch: {output}"
+        );
+        assert!(
+            output.contains("matchValue === \"\\\"\""),
+            "literal arm must check matchValue: {output}"
+        );
+        assert!(
+            output.contains("const c = matchValue"),
+            "guarded binding must declare const: {output}"
+        );
+    }
+
+    #[test]
     fn switch_arm_with_conditional_return_still_emits_break() {
         let source = r#"
 pub fn decode(kind: u32, data: &[u8], pos: &mut usize) -> u32 {

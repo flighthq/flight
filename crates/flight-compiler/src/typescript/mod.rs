@@ -13535,7 +13535,9 @@ fn emit_match_statement_with_action(
         )?;
         return Ok(());
     }
-    if match_arms_contain_loop_break(&expression.arms) {
+    if match_arms_contain_loop_break(&expression.arms)
+        || expression.arms.iter().any(|arm| arm.guard.is_some())
+    {
         return emit_match_as_if_else_with_action(out, expression, entities, indent, action);
     }
     write_indent(out, indent);
@@ -13557,25 +13559,8 @@ fn emit_match_statement_with_action(
         let arm_context = lexical_pattern_context(entities, &arm.pat);
         write_indent(out, indent + 2);
         out.push_str("{\n");
-        let body_indent = if let Some((_, guard)) = &arm.guard {
-            let guard_expr = emit_expression(guard, &arm_context)?;
-            write_indent(out, indent + 3);
-            writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
-            indent + 4
-        } else {
-            indent + 3
-        };
-        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
-        if arm.guard.is_some() {
-            if matches!(action, HoistedMatchAction::Assign(_))
-                && !arm_body_unconditionally_exits(&arm.body)
-            {
-                write_indent(out, body_indent);
-                out.push_str("break;\n");
-            }
-            write_indent(out, indent + 3);
-            out.push_str("}\n");
-        } else if matches!(action, HoistedMatchAction::Assign(_))
+        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 3)?;
+        if matches!(action, HoistedMatchAction::Assign(_))
             && !arm_body_unconditionally_exits(&arm.body)
         {
             write_indent(out, indent + 3);
@@ -17335,6 +17320,57 @@ fn emit_match_expression(
         return Ok(out);
     }
     let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
+    if has_guards {
+        let mut out = String::new();
+        out.push_str("(() => {\n  const matchValue = ");
+        out.push_str(&emit_expression(&expression.expr, entities)?);
+        out.push_str(";\n  let $matched = false;\n");
+        for arm in &expression.arms {
+            let patterns = emit_match_patterns(&arm.pat, entities)?;
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let is_default = (patterns.len() == 1 && patterns[0] == "default")
+                || is_match_binding_pattern(&arm.pat);
+            if is_default {
+                out.push_str("  if (!$matched) {\n");
+            } else {
+                let conditions: Vec<String> = patterns
+                    .iter()
+                    .map(|p| format!("matchValue === {p}"))
+                    .collect();
+                writeln!(out, "  if (!$matched && ({})) {{", conditions.join(" || "))
+                    .expect("writing to a String cannot fail");
+            }
+            if is_match_binding_pattern(&arm.pat) {
+                if let Some(binding) = match_binding_name(&arm.pat) {
+                    writeln!(out, "    const {binding} = matchValue;")
+                        .expect("writing to a String cannot fail");
+                }
+            }
+            if let Some((_, guard)) = &arm.guard {
+                let guard_expr = emit_expression(guard, &arm_context)?;
+                writeln!(out, "    if ({guard_expr}) {{").expect("writing to a String cannot fail");
+                out.push_str("      $matched = true;\n");
+                writeln!(
+                    out,
+                    "      return {};",
+                    emit_expression(&arm.body, &arm_context)?
+                )
+                .expect("writing to a String cannot fail");
+                out.push_str("    }\n");
+            } else {
+                out.push_str("    $matched = true;\n");
+                writeln!(
+                    out,
+                    "    return {};",
+                    emit_expression(&arm.body, &arm_context)?
+                )
+                .expect("writing to a String cannot fail");
+            }
+            out.push_str("  }\n");
+        }
+        out.push_str("})()");
+        return Ok(out);
+    }
     let mut out = String::new();
     out.push_str("(() => {\n  const matchValue = ");
     out.push_str(&emit_switch_scrutinee(expression, entities)?);
@@ -17349,28 +17385,12 @@ fn emit_match_expression(
             }
         }
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        if let Some((_, guard)) = &arm.guard {
-            let guard_expr = emit_expression(guard, &arm_context)?;
-            writeln!(out, "      if ({guard_expr}) {{").expect("writing to a String cannot fail");
-            writeln!(
-                out,
-                "        return {};",
-                emit_expression(&arm.body, &arm_context)?
-            )
-            .expect("writing to a String cannot fail");
-            if has_guards {
-                out.push_str("      }\n      break;\n");
-            } else {
-                out.push_str("      }\n");
-            }
-        } else {
-            writeln!(
-                out,
-                "      return {};",
-                emit_expression(&arm.body, &arm_context)?
-            )
-            .expect("writing to a String cannot fail");
-        }
+        writeln!(
+            out,
+            "      return {};",
+            emit_expression(&arm.body, &arm_context)?
+        )
+        .expect("writing to a String cannot fail");
     }
     out.push_str("  }\n})()");
     return Ok(out);
@@ -18041,7 +18061,9 @@ pub(crate) fn emit_match_statement(
         out.push_str("}\n");
         return Ok(());
     }
-    if match_arms_contain_loop_break(&expression.arms) {
+    if match_arms_contain_loop_break(&expression.arms)
+        || expression.arms.iter().any(|arm| arm.guard.is_some())
+    {
         return emit_match_as_if_else(out, expression, entities, indent);
     }
     write_indent(out, indent);
@@ -18240,6 +18262,7 @@ fn emit_match_as_if_else(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
     write_indent(out, indent);
     out.push_str("{\n");
     write_indent(out, indent + 1);
@@ -18249,6 +18272,10 @@ fn emit_match_as_if_else(
         emit_expression(&expression.expr, entities)?
     )
     .expect("writing to a String cannot fail");
+    if has_guards {
+        write_indent(out, indent + 1);
+        out.push_str("let $matched = false;\n");
+    }
     let mut first = true;
     for arm in &expression.arms {
         let patterns = emit_match_patterns(&arm.pat, entities)?;
@@ -18256,7 +18283,18 @@ fn emit_match_as_if_else(
         let is_default =
             (patterns.len() == 1 && patterns[0] == "default") || is_match_binding_pattern(&arm.pat);
         write_indent(out, indent + 1);
-        if is_default {
+        if has_guards {
+            if is_default {
+                out.push_str("if (!$matched) {\n");
+            } else {
+                let conditions: Vec<String> = patterns
+                    .iter()
+                    .map(|p| format!("matchValue === {p}"))
+                    .collect();
+                writeln!(out, "if (!$matched && ({})) {{", conditions.join(" || "))
+                    .expect("writing to a String cannot fail");
+            }
+        } else if is_default {
             if first {
                 out.push_str("{\n");
             } else {
@@ -18272,22 +18310,39 @@ fn emit_match_as_if_else(
                 .expect("writing to a String cannot fail");
         }
         first = false;
-        if let Pat::Ident(identifier) = &arm.pat {
-            if identifier.ident != "_" && identifier.subpat.is_none() {
-                let binding = snake_to_lower_camel(&identifier.ident.to_string());
+        if is_match_binding_pattern(&arm.pat) {
+            if let Some(binding) = match_binding_name(&arm.pat) {
                 write_indent(out, indent + 2);
                 writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
         }
+        let body_indent = if let Some((_, guard)) = &arm.guard {
+            let guard_expr = emit_expression(guard, &arm_context)?;
+            write_indent(out, indent + 2);
+            writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+            write_indent(out, indent + 3);
+            out.push_str("$matched = true;\n");
+            indent + 3
+        } else {
+            if has_guards {
+                write_indent(out, indent + 2);
+                out.push_str("$matched = true;\n");
+            }
+            indent + 2
+        };
         match arm.body.as_ref() {
-            Expr::Block(block) => emit_block(out, &block.block.stmts, &arm_context, indent + 2)?,
+            Expr::Block(block) => emit_block(out, &block.block.stmts, &arm_context, body_indent)?,
             expression => emit_statement(
                 out,
                 &Stmt::Expr(expression.clone(), None),
                 &arm_context,
-                indent + 2,
+                body_indent,
             )?,
+        }
+        if arm.guard.is_some() {
+            write_indent(out, indent + 2);
+            out.push_str("}\n");
         }
         write_indent(out, indent + 1);
         out.push_str("}\n");
@@ -18297,6 +18352,16 @@ fn emit_match_as_if_else(
     return Ok(());
 }
 
+fn match_binding_name(pattern: &Pat) -> Option<String> {
+    return match pattern {
+        Pat::Ident(identifier) if identifier.ident != "_" && identifier.subpat.is_none() => {
+            Some(snake_to_lower_camel(&identifier.ident.to_string()))
+        }
+        Pat::Reference(reference) => match_binding_name(&reference.pat),
+        _ => None,
+    };
+}
+
 fn emit_match_as_if_else_with_action(
     out: &mut String,
     expression: &syn::ExprMatch,
@@ -18304,6 +18369,7 @@ fn emit_match_as_if_else_with_action(
     indent: usize,
     action: &HoistedMatchAction<'_>,
 ) -> Result<(), CompileError> {
+    let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
     write_indent(out, indent);
     out.push_str("{\n");
     write_indent(out, indent + 1);
@@ -18313,6 +18379,10 @@ fn emit_match_as_if_else_with_action(
         emit_expression(&expression.expr, entities)?
     )
     .expect("writing to a String cannot fail");
+    if has_guards {
+        write_indent(out, indent + 1);
+        out.push_str("let $matched = false;\n");
+    }
     let mut first = true;
     for arm in &expression.arms {
         let patterns = emit_match_patterns(&arm.pat, entities)?;
@@ -18320,7 +18390,18 @@ fn emit_match_as_if_else_with_action(
         let is_default =
             (patterns.len() == 1 && patterns[0] == "default") || is_match_binding_pattern(&arm.pat);
         write_indent(out, indent + 1);
-        if is_default {
+        if has_guards {
+            if is_default {
+                out.push_str("if (!$matched) {\n");
+            } else {
+                let conditions: Vec<String> = patterns
+                    .iter()
+                    .map(|p| format!("matchValue === {p}"))
+                    .collect();
+                writeln!(out, "if (!$matched && ({})) {{", conditions.join(" || "))
+                    .expect("writing to a String cannot fail");
+            }
+        } else if is_default {
             if first {
                 out.push_str("{\n");
             } else {
@@ -18336,15 +18417,32 @@ fn emit_match_as_if_else_with_action(
                 .expect("writing to a String cannot fail");
         }
         first = false;
-        if let Pat::Ident(identifier) = &arm.pat {
-            if identifier.ident != "_" && identifier.subpat.is_none() {
-                let binding = snake_to_lower_camel(&identifier.ident.to_string());
+        if is_match_binding_pattern(&arm.pat) {
+            if let Some(binding) = match_binding_name(&arm.pat) {
                 write_indent(out, indent + 2);
                 writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
         }
-        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, indent + 2)?;
+        let body_indent = if let Some((_, guard)) = &arm.guard {
+            let guard_expr = emit_expression(guard, &arm_context)?;
+            write_indent(out, indent + 2);
+            writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
+            write_indent(out, indent + 3);
+            out.push_str("$matched = true;\n");
+            indent + 3
+        } else {
+            if has_guards {
+                write_indent(out, indent + 2);
+                out.push_str("$matched = true;\n");
+            }
+            indent + 2
+        };
+        emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
+        if arm.guard.is_some() {
+            write_indent(out, indent + 2);
+            out.push_str("}\n");
+        }
         write_indent(out, indent + 1);
         out.push_str("}\n");
     }
