@@ -627,7 +627,7 @@ describe('ShellExternalReason', () => {
     expect(test).not.toContain('ShellExternalReason.BlockedScheme');
   }, 120_000);
 
-  it('passes established TypeScript type-alias representations through the compiler CLI', async () => {
+  it('passes established TypeScript position representations through the compiler CLI', async () => {
     writeFileSync(
       join(crateRoot, 'Cargo.toml'),
       `[package]
@@ -646,14 +646,24 @@ edition = "2024"
       `//! flight-compiler: rust-only
 pub type AnimationPlayerRef = usize;
 pub type TargetRef = usize;
+
+pub struct AnimationStateMachine {
+    pub transition_from_state_index: Option<usize>,
+    pub transition_to_state_index: Option<usize>,
+}
 `,
     );
     writeFileSync(
       sourcePath,
-      `use crate::types::AnimationPlayerRef;
+      `use crate::types::{AnimationPlayerRef, AnimationStateMachine};
 
 pub fn advance(players: &[AnimationPlayerRef]) -> AnimationPlayerRef {
     return players[0];
+}
+
+pub fn clear_transition(machine: &mut AnimationStateMachine) {
+    machine.transition_from_state_index = None;
+    machine.transition_to_state_index = None;
 }
 `,
     );
@@ -669,10 +679,15 @@ pub fn echo_target(target: TargetRef) -> TargetRef {
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { AnimationPlayer } from '@flighthq/types/contract';
+      `import type { AnimationPlayer, AnimationStateMachine } from '@flighthq/types/contract';
 
 export function advance(players: readonly AnimationPlayer[]): AnimationPlayer {
   return players[0];
+}
+
+export function clearTransition(machine: AnimationStateMachine): void {
+  machine.transitionFromStateIndex = null;
+  machine.transitionToStateIndex = null;
 }
 `,
     );
@@ -708,6 +723,8 @@ fn keeps_the_existing_target_representation() {
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
     expect(value).toContain("import type { AnimationPlayer } from '@flighthq/types/contract';");
     expect(value).toContain('players: Readonly<AnimationPlayer[]>');
+    expect(value).toContain('machine.transitionFromStateIndex = null;');
+    expect(value).toContain('machine.transitionToStateIndex = null;');
     expect(value).not.toContain('AnimationPlayerRef');
     expect(value).not.toContain('TargetRef');
     const test = readFileSync(join(packageRoot, 'src', 'alias.test.ts'), 'utf8');

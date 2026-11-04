@@ -1,7 +1,7 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptInlineStringUnion,
-    TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource, compile_typescript,
-    compile_typescript_lenient, compile_typescript_with_alias_sources,
+    TypeScriptNullableOptionField, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
+    compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
     compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
     compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
     compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
@@ -13489,6 +13489,7 @@ pub enum UnannotatedStringUnion {
             &type_script_string_unions,
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13542,12 +13543,24 @@ pub enum UnannotatedStringUnion {
             &aliases,
             &[],
             &[],
+            &[],
             false,
         )
         .unwrap();
-        let ordinary =
-            compile_typescript_with_options(source, None, &[], &[], &[], &[], &[], &[], &[], false)
-                .unwrap();
+        let ordinary = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            false,
+        )
+        .unwrap();
 
         assert!(
             explicit.contains("import type { AnimationPlayer } from '@flighthq/types/contract';"),
@@ -13566,6 +13579,63 @@ pub enum UnannotatedStringUnion {
         assert!(!explicit.contains("TargetRef"), "{explicit}");
         assert!(ordinary.contains("AnimationPlayerRef"), "{ordinary}");
         assert!(ordinary.contains("TargetRef"), "{ordinary}");
+    }
+
+    #[test]
+    fn lowers_only_explicit_type_script_nullable_option_fields() {
+        let source = ModuleSource {
+            path: "crates/flight-animation/src/animation_state_machine_advance.rs",
+            source: r#"use crate::types::AnimationStateMachine;
+
+pub fn finish_transition(
+    machine: &mut AnimationStateMachine,
+    ordinary_parameter: Option<usize>,
+) -> Option<usize> {
+    machine.transition_to_state_index = None;
+    machine.ordinary_index = None;
+    return ordinary_parameter;
+}
+"#,
+        };
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-animation/src/types.rs",
+            source: r#"pub struct AnimationStateMachine {
+    pub transition_to_state_index: Option<usize>,
+    pub ordinary_index: Option<usize>,
+}
+"#,
+        }];
+        let fields = [TypeScriptNullableOptionField {
+            module: "@flighthq/types/contract",
+            owner: "AnimationStateMachine",
+            field: "transitionToStateIndex",
+        }];
+
+        let output = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &fields,
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("machine.transitionToStateIndex = null;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("machine.ordinaryIndex = undefined;"),
+            "{output}"
+        );
+        assert!(output.contains("ordinaryParameter?: number"), "{output}");
+        assert!(output.contains("): number | undefined"), "{output}");
     }
 
     #[test]
@@ -13616,6 +13686,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &metadata,
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13655,6 +13726,7 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &visibility_sources,
@@ -13697,6 +13769,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &metadata,
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13729,6 +13802,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &[],
             &visibility_sources,
@@ -13769,6 +13843,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &metadata,
             &[],
             &[],
+            &[],
             &visibility_sources,
             &[],
             false,
@@ -13803,6 +13878,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &visibility_sources,
             &[],
@@ -13843,6 +13919,7 @@ pub enum AnimationLoopMode { PingPong, Repeat }
             &[],
             &[],
             &metadata,
+            &[],
             &[],
             &visibility_sources,
             &[],
@@ -17237,6 +17314,7 @@ mod blocked_reason {
             &aliases,
             &[],
             &metadata,
+            &[],
             &[],
             &[],
         )

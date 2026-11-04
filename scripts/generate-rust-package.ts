@@ -15,6 +15,7 @@ import {
   compilerAliasArguments,
   compilerVisibilityArguments,
   collectTypeScriptExportSymbols,
+  collectTypeScriptNullableOptionFields,
   collectTypeScriptStringUnions,
   collectCrateExportSymbols,
   collectExportSymbols,
@@ -42,6 +43,7 @@ import {
   resolveRustExportName,
   snakeToLowerCamel,
   typeScriptInlineStringUnionArguments,
+  typeScriptNullableOptionFieldArguments,
   typeScriptStringUnionArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -91,6 +93,7 @@ interface NativeAuditEntry {
 
 interface NativeAuditProbe {
   entry: NativeAuditEntry;
+  nullableOptionFieldArguments: string[];
   typeAliasArguments: string[];
 }
 
@@ -111,7 +114,47 @@ const compilerPath = join(
   process.platform === 'win32' ? 'flight-compile.exe' : 'flight-compile',
 );
 const lenientSkippedByOutput = new Map<string, number>();
+const packageTypeScriptNullableOptionFields = new Map<string, string>();
 const packageTypeScriptTypeAliases = new Map<string, string>();
+
+function mergedTypeScriptNullableOptionFieldArguments(...groups: readonly string[][]): string[] {
+  const fields = new Map<string, string>();
+  for (const group of groups) {
+    for (let index = 0; index < group.length; index += 2) {
+      if (group[index] !== '--typescript-nullable-option-field' || group[index + 1] === undefined) {
+        throw new Error('invalid TypeScript nullable Option field compiler arguments');
+      }
+      const specification = group[index + 1];
+      const position = specification.slice(specification.lastIndexOf('#') + 1);
+      const previous = fields.get(position);
+      if (previous !== undefined && previous !== specification) {
+        throw new Error(`TypeScript nullable Option field ${position} has conflicting owners`);
+      }
+      fields.set(position, specification);
+    }
+  }
+  return [...fields]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([, specification]) => ['--typescript-nullable-option-field', specification]);
+}
+
+function rememberTypeScriptNullableOptionFieldArguments(arguments_: string[]): void {
+  const merged = mergedTypeScriptNullableOptionFieldArguments(
+    packageTypeScriptNullableOptionFieldArguments(),
+    arguments_,
+  );
+  packageTypeScriptNullableOptionFields.clear();
+  for (let index = 0; index < merged.length; index += 2) {
+    const specification = merged[index + 1];
+    packageTypeScriptNullableOptionFields.set(specification.slice(specification.lastIndexOf('#') + 1), specification);
+  }
+}
+
+function packageTypeScriptNullableOptionFieldArguments(): string[] {
+  return [...packageTypeScriptNullableOptionFields]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([, specification]) => ['--typescript-nullable-option-field', specification]);
+}
 
 function mergedTypeScriptTypeAliasArguments(...groups: readonly string[][]): string[] {
   const aliases = new Map<string, string>();
@@ -293,7 +336,11 @@ try {
         ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
         aliasSources,
         targetNativeSources,
-        [...representationArguments, ...packageTypeScriptTypeAliasArguments()],
+        [
+          ...representationArguments,
+          ...packageTypeScriptTypeAliasArguments(),
+          ...packageTypeScriptNullableOptionFieldArguments(),
+        ],
       );
       typescript = canonicalizeGeneratedContractImports(existingTypescript, typescript);
       if (typescript.includes('crate.')) {
@@ -369,6 +416,7 @@ function discoverTargetNativeTypeAliasesForTests(
       targetNativeSources.filter((candidate) => candidate !== rustPath),
     );
     rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
+    rememberTypeScriptNullableOptionFieldArguments(probe.nullableOptionFieldArguments);
     for (const known of packageTypeScriptTypeAliases.keys()) requiredAliases.delete(known);
     if (requiredAliases.size === 0) return;
   }
@@ -394,6 +442,7 @@ function auditNativeSources(
     );
     entries.push(probe.entry);
     rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
+    rememberTypeScriptNullableOptionFieldArguments(probe.nullableOptionFieldArguments);
   }
   for (const rustTest of testFiles(crateRoot)) {
     const rustPath = join(crateRoot, 'tests', rustTest);
@@ -409,6 +458,7 @@ function auditNativeSources(
       targetNativeSources.filter((candidate) => candidate !== rustPath),
       rustPath,
       packageTypeScriptTypeAliasArguments(),
+      packageTypeScriptNullableOptionFieldArguments(),
     );
     entries.push(probe.entry);
   }
@@ -442,6 +492,7 @@ function probeNativeSource(
   targetNativeSources: string[],
   reportedSource = source,
   knownTypeAliasArguments: string[] = [],
+  knownNullableOptionFieldArguments: string[] = [],
 ): NativeAuditProbe {
   const out = join(rawRoot, `${fileName}.audit.ts`);
   const existingPath = join(packageSourceRoot, fileName);
@@ -450,7 +501,7 @@ function probeNativeSource(
     existingTypescript,
     loadImportedContractSymbols(existingTypescript),
   );
-  const compilerArguments = (typeAliasArguments: string[]): string[] => [
+  const compilerArguments = (typeAliasArguments: string[], nullableOptionFieldArguments: string[]): string[] => [
     command,
     '--source',
     source,
@@ -461,6 +512,7 @@ function probeNativeSource(
     ...(command === 'generate' ? ['--lenient'] : []),
     ...namedRepresentationArguments,
     ...typeAliasArguments,
+    ...nullableOptionFieldArguments,
     ...compilerAliasArguments(command, aliasSources, source),
     ...compilerVisibilityArguments(
       command,
@@ -473,11 +525,12 @@ function probeNativeSource(
     ...dependencyVisibilityArguments(command),
     ...contractArguments(command, trailing),
   ];
-  let result = spawnSync(compilerPath, compilerArguments(knownTypeAliasArguments), {
+  let result = spawnSync(compilerPath, compilerArguments(knownTypeAliasArguments, knownNullableOptionFieldArguments), {
     cwd: repositoryRoot,
     encoding: 'utf8',
   });
   let typeAliasArguments: string[] = [];
+  let nullableOptionFieldArguments: string[] = [];
   if (result.status === 0 && command === 'generate') {
     typeAliasArguments = typeScriptTypeAliasArguments(
       existingTypescript,
@@ -486,10 +539,28 @@ function probeNativeSource(
     );
     if (typeAliasArguments.length > 0) {
       const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments);
-      result = spawnSync(compilerPath, compilerArguments(allTypeAliasArguments), {
+      result = spawnSync(compilerPath, compilerArguments(allTypeAliasArguments, knownNullableOptionFieldArguments), {
         cwd: repositoryRoot,
         encoding: 'utf8',
       });
+    }
+    if (result.status === 0) {
+      nullableOptionFieldArguments = typeScriptNullableOptionFieldArguments(
+        existingTypescript,
+        readFileSync(out, 'utf8'),
+        loadImportedContractSymbols(existingTypescript),
+      );
+      if (nullableOptionFieldArguments.length > 0) {
+        const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments);
+        const allNullableOptionFieldArguments = mergedTypeScriptNullableOptionFieldArguments(
+          knownNullableOptionFieldArguments,
+          nullableOptionFieldArguments,
+        );
+        result = spawnSync(compilerPath, compilerArguments(allTypeAliasArguments, allNullableOptionFieldArguments), {
+          cwd: repositoryRoot,
+          encoding: 'utf8',
+        });
+      }
     }
   }
   const stderr = result.stderr.trim();
@@ -504,6 +575,7 @@ function probeNativeSource(
       status,
       typescript: fileName,
     },
+    nullableOptionFieldArguments,
     typeAliasArguments,
   };
 }
@@ -829,6 +901,7 @@ function collectContractTypeScriptSymbols(path: string): Map<string, ContractSym
     visited.add(currentPath);
     const typescript = readFileSync(currentPath, 'utf8');
     const stringUnions = collectTypeScriptStringUnions(typescript);
+    const nullableFields = collectTypeScriptNullableOptionFields(typescript);
     for (const [name, owner] of collectTypeScriptExportSymbols(typescript)) {
       const existing = symbols.get(name) ?? { hasType: false, hasValue: false, isClass: false };
       existing.hasType ||= owner.hasType;
@@ -843,6 +916,10 @@ function collectContractTypeScriptSymbols(path: string): Map<string, ContractSym
           throw new Error(`TypeScript string union ${name} has conflicting canonical declarations`);
         }
         existing.stringUnionValues = values;
+      }
+      const fields = nullableFields.get(name);
+      if (fields !== undefined) {
+        existing.nullableFields = [...new Set([...(existing.nullableFields ?? []), ...fields])].sort();
       }
       symbols.set(name, existing);
     }
@@ -918,6 +995,24 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     compiledTypescript = compile('generate', rustPath, outputPath, [], aliasSources, [], representationArguments);
     rememberTypeScriptTypeAliasArguments(typeAliasArguments);
   }
+  const nullableOptionFieldArguments = typeScriptNullableOptionFieldArguments(
+    contractTypescript,
+    compiledTypescript,
+    importedContractSymbols,
+  );
+  const positionalRepresentationArguments = [...representationArguments, ...nullableOptionFieldArguments];
+  if (nullableOptionFieldArguments.length > 0) {
+    compiledTypescript = compile(
+      'generate',
+      rustPath,
+      outputPath,
+      [],
+      aliasSources,
+      [],
+      positionalRepresentationArguments,
+    );
+    rememberTypeScriptNullableOptionFieldArguments(nullableOptionFieldArguments);
+  }
   const inlineRepresentationArguments = typeScriptInlineStringUnionArguments(contractTypescript, compiledTypescript);
   if (inlineRepresentationArguments.length > 0) {
     compiledTypescript = compile(
@@ -927,7 +1022,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
       [],
       aliasSources,
       [],
-      [...representationArguments, ...inlineRepresentationArguments],
+      [...positionalRepresentationArguments, ...inlineRepresentationArguments],
     );
   }
   const typescript = canonicalizeGeneratedContractImports(contractTypescript, compiledTypescript);

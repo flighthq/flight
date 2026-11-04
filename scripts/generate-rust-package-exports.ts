@@ -12,6 +12,7 @@ export interface ExportSymbolOwner {
   hasType: boolean;
   hasValue: boolean;
   isClass?: boolean;
+  nullableFields?: string[];
   stringUnionValues?: string[];
 }
 
@@ -307,6 +308,44 @@ export function collectTypeScriptStringUnions(typescript: string): Map<string, s
   return unions;
 }
 
+// Direct exported interface fields whose contract admits `null` but not `undefined`. Optional fields
+// are excluded: their absence representation remains `undefined` even when their payload also admits
+// `null`.
+export function collectTypeScriptNullableOptionFields(typescript: string): Map<string, string[]> {
+  const parsed = parseSync('contract.ts', typescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(
+      `could not parse TypeScript contract while resolving nullable fields: ${parsed.errors[0]?.message}`,
+    );
+  }
+  const owners = new Map<string, string[]>();
+  for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'TSInterfaceDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown>;
+    if (identifier.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    const body = declaration.body as Record<string, unknown>;
+    const fields: string[] = [];
+    for (const member of body.body as Record<string, unknown>[]) {
+      if (member.type !== 'TSPropertySignature' || member.optional === true || member.computed === true) continue;
+      const key = member.key as Record<string, unknown>;
+      const annotation = member.typeAnnotation as Record<string, unknown> | null;
+      const fieldType = annotation?.typeAnnotation as Record<string, unknown> | undefined;
+      if (key.type !== 'Identifier' || typeof key.name !== 'string' || fieldType?.type !== 'TSUnionType') continue;
+      const members = fieldType.types as Record<string, unknown>[];
+      if (
+        members.some((candidate) => candidate.type === 'TSNullKeyword') &&
+        !members.some((candidate) => candidate.type === 'TSUndefinedKeyword')
+      ) {
+        fields.push(key.name);
+      }
+    }
+    if (fields.length > 0) owners.set(identifier.name, fields.sort());
+  }
+  return owners;
+}
+
 // Existing imports identify the canonical external contract owner. Only that owner's direct,
 // type-only string-union declaration becomes compiler representation metadata; ordinary type aliases
 // and runtime enums produce no argument.
@@ -486,6 +525,100 @@ export function typeScriptTypeAliasArguments(
       '--typescript-type-alias',
       `${alias}=${owner.module === undefined ? owner.name : `${owner.module}#${owner.name}`}`,
     ]);
+}
+
+// Canonical imported interfaces prove the absence representation of their fields. Carry only fields
+// the generated function actually reads or writes through a parameter of that exact owner type; no
+// owner or field spelling is inferred from Rust names.
+export function typeScriptNullableOptionFieldArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>>,
+): string[] {
+  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving nullable fields: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving nullable fields: ${generated.errors[0]?.message}`,
+    );
+  }
+
+  const canonicalOwners = new Map<string, { fields: ReadonlySet<string>; module: string; owner: string }>();
+  const ambiguous = new Set<string>();
+  for (const statement of existing.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ImportDeclaration') continue;
+    const source = statement.source as Record<string, unknown>;
+    const module = typeof source.value === 'string' ? source.value : undefined;
+    if (module === undefined || !/^@flighthq\/[^/]+\/contract$/.test(module)) continue;
+    const symbols = importedContractSymbols.get(module);
+    if (symbols === undefined) continue;
+    for (const specifier of statement.specifiers as Record<string, unknown>[]) {
+      if (specifier.type !== 'ImportSpecifier') continue;
+      const imported = specifier.imported as Record<string, unknown>;
+      const local = specifier.local as Record<string, unknown>;
+      const owner = typeof imported.name === 'string' ? imported.name : undefined;
+      const localName = typeof local.name === 'string' ? local.name : undefined;
+      const fields = owner === undefined ? undefined : symbols.get(owner)?.nullableFields;
+      if (owner === undefined || localName !== owner || fields === undefined || ambiguous.has(localName)) continue;
+      const previous = canonicalOwners.get(localName);
+      if (previous !== undefined && previous.module !== module) {
+        canonicalOwners.delete(localName);
+        ambiguous.add(localName);
+      } else {
+        canonicalOwners.set(localName, { fields: new Set(fields), module, owner });
+      }
+    }
+  }
+
+  const positions = new Set<string>();
+  for (const statement of generated.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'FunctionDeclaration') continue;
+    const parameters = new Map<string, { fields: ReadonlySet<string>; module: string; owner: string }>();
+    for (const parameter of declaration.params as Record<string, unknown>[]) {
+      const pattern = (parameter.pattern as Record<string, unknown> | undefined) ?? parameter;
+      const annotation =
+        (parameter.typeAnnotation as Record<string, unknown> | null) ??
+        (pattern.typeAnnotation as Record<string, unknown> | null);
+      const rustType = annotation?.typeAnnotation as Record<string, unknown> | undefined;
+      const owner = rustType === undefined ? undefined : bareTypeReferenceName(rustType);
+      const canonical = owner === undefined ? undefined : canonicalOwners.get(owner);
+      if (pattern.type === 'Identifier' && typeof pattern.name === 'string' && canonical !== undefined) {
+        parameters.set(pattern.name, canonical);
+      }
+    }
+    const visit = (value: unknown): void => {
+      if (Array.isArray(value)) {
+        for (const item of value) visit(item);
+        return;
+      }
+      if (value === null || typeof value !== 'object') return;
+      const node = value as Record<string, unknown>;
+      if (node.type === 'StaticMemberExpression' || node.type === 'MemberExpression') {
+        const object = node.object as Record<string, unknown> | undefined;
+        const property = node.property as Record<string, unknown> | undefined;
+        if (object?.type === 'Identifier' && property?.type === 'Identifier') {
+          const canonical = parameters.get(object.name as string);
+          const field = property.name as string;
+          if (canonical?.fields.has(field)) {
+            positions.add(`${canonical.module}#${canonical.owner}.${field}`);
+          }
+        }
+      }
+      for (const [key, child] of Object.entries(node)) {
+        if (key !== 'type' && key !== 'span') visit(child);
+      }
+    };
+    visit(declaration.body);
+  }
+
+  return [...positions].sort().flatMap((position) => ['--typescript-nullable-option-field', position]);
 }
 
 function exportedFunctionTypes(

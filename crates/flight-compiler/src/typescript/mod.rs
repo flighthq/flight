@@ -79,6 +79,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub external_string_unions: &'a BTreeSet<String>,
     pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
     pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
+    pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
     pub external_shared_identity_fields: &'a BTreeSet<String>,
     pub module_identities: Option<&'a [String]>,
     pub visibility_programs: &'a [Program],
@@ -320,6 +321,7 @@ const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
 // `{source}␟{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is declared or
 // built by literal.
 pub(super) const NULLABLE_OPTION_LITERAL_FIELD_MARKER: &str = "@nullable-option-literal-field:";
+const TYPE_SCRIPT_NULLABLE_OPTION_FIELD_MARKER: &str = "@typescript-nullable-option-field:";
 // `{module}` for each source declaring module-wide `nullable-options`: every `Option` its structs
 // declare is `T | null`.
 const NULLABLE_OPTIONS_SOURCE_MARKER: &str = "@nullable-options-source:";
@@ -2148,9 +2150,22 @@ fn is_nullable_literal_field(
     return entities.contains(&format!(
         "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}"
     )) || !entities.contains(NULLABLE_OPTIONS_MARKER)
-        && entities.contains(&format!(
+        && (entities.contains(&format!(
             "{NULLABLE_OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}"
-        ));
+        )) || is_type_script_nullable_option_field(entities, identity, field));
+}
+
+fn is_type_script_nullable_option_field(
+    entities: &HashSet<String>,
+    identity: &str,
+    field: &syn::Ident,
+) -> bool {
+    let owner = identity
+        .rsplit_once(PROVENANCE_SEPARATOR)
+        .map_or(identity, |(_, owner)| owner);
+    return entities.contains(&format!(
+        "{TYPE_SCRIPT_NULLABLE_OPTION_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field}"
+    ));
 }
 
 fn nullable_type(inner: String) -> String {
@@ -21589,7 +21604,7 @@ fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<Str
     };
     return entities.contains(&format!(
         "{NULLABLE_OPTION_FIELD_MARKER}{structure}{PROVENANCE_SEPARATOR}{field_name}"
-    ));
+    )) || is_type_script_nullable_option_field(entities, &structure, field_name);
 }
 
 fn emit_receiver_preserving_optional_call(
@@ -22590,6 +22605,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let external_string_unions = input.external_string_unions;
     let inline_string_unions = input.inline_string_unions;
     let type_script_type_aliases = input.type_script_type_aliases;
+    let type_script_nullable_option_fields = input.type_script_nullable_option_fields;
     let module_identities = input.module_identities;
     let visibility_programs = input.visibility_programs;
     let visibility_identities = input.visibility_identities;
@@ -22639,6 +22655,28 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         None,
         false,
         visibility_programs,
+    )?;
+    let visibility_modules = visibility_programs
+        .iter()
+        .enumerate()
+        .map(|(index, program)| {
+            (
+                visibility_identities
+                    .get(index)
+                    .and_then(Option::as_deref)
+                    .map_or_else(|| format!("typescript-visibility/{index}"), str::to_string),
+                program,
+            )
+        })
+        .collect::<Vec<_>>();
+    insert_type_script_nullable_option_field_context(
+        &mut expression_context,
+        program_sources.iter().copied().chain(
+            visibility_modules
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_nullable_option_fields,
     )?;
     insert_string_union_context(&mut expression_context, external_string_unions.iter());
     insert_inline_string_union_context(&mut expression_context, inline_string_unions);
@@ -24025,6 +24063,70 @@ pub(crate) fn insert_type_script_type_alias_context(
             alias.target
         ));
     }
+}
+
+pub(crate) fn insert_type_script_nullable_option_field_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
+    fields: &[crate::TypeScriptNullableOptionField<'_>],
+) -> Result<(), CompileError> {
+    let programs = programs.into_iter().collect::<Vec<_>>();
+    for metadata in fields {
+        let mut matches = programs
+            .iter()
+            .flat_map(|(module, program)| {
+                program.structs.iter().flat_map(move |structure| {
+                    structure.fields.iter().filter_map(move |field| {
+                        let field_name = field.ident.as_ref()?;
+                        (structure.ident == metadata.owner
+                            && snake_to_lower_camel(&field_name.to_string()) == metadata.field)
+                            .then_some((*module, structure, field, field_name))
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option field `{}#{}.{}` must resolve to exactly one visible Rust field, found {}",
+                metadata.module,
+                metadata.owner,
+                metadata.field,
+                matches.len()
+            )));
+        }
+        let (module, structure, field, field_name) = matches.pop().expect("one match was required");
+        if !is_public(&structure.vis)
+            || !is_public(&field.vis)
+            || option_inner_type(&field.ty).is_none()
+        {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option field `{}#{}.{}` must designate a public Rust `Option` field",
+                metadata.module, metadata.owner, metadata.field
+            )));
+        }
+        context.insert(owner_marker(
+            STRUCT_OWNER_MARKER,
+            module,
+            &structure.ident.to_string(),
+            SourceAccess::Public,
+        ));
+        for identity in [
+            format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident),
+            structure.ident.to_string(),
+        ] {
+            context.insert(format!(
+                "{NULLABLE_OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+            ));
+            context.insert(format!(
+                "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+            ));
+        }
+        context.insert(format!(
+            "{TYPE_SCRIPT_NULLABLE_OPTION_FIELD_MARKER}{}{PROVENANCE_SEPARATOR}{field_name}",
+            structure.ident
+        ));
+    }
+    return Ok(());
 }
 
 fn type_script_type_alias(

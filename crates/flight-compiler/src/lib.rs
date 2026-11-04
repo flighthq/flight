@@ -58,6 +58,18 @@ pub struct TypeScriptTypeAlias<'a> {
     pub target: &'a str,
 }
 
+/// An established TypeScript contract field whose Rust `Option` uses `null` absence.
+///
+/// The module and owner identify the canonical TypeScript declaration; the field is its emitted
+/// TypeScript name. The compiler validates that exactly one visible Rust owner has a corresponding
+/// public `Option` field before changing that position's representation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeScriptNullableOptionField<'a> {
+    pub module: &'a str,
+    pub owner: &'a str,
+    pub field: &'a str,
+}
+
 /// A Rust source file and its path. The path (`.../<crate>/src/<module path>.rs`) gives the source its
 /// full module identity (`<crate>::<module path>`), which `use` bindings resolve against.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -150,6 +162,7 @@ fn compile_typescript_sources(
         &[],
         &[],
         &[],
+        &[],
         module_identities,
         source_paths,
         visibility_sources,
@@ -166,6 +179,7 @@ fn compile_typescript_sources_with_options(
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
     module_identities: Option<Vec<String>>,
     source_paths: &[&str],
     visibility_sources: &[ModuleSource<'_>],
@@ -173,6 +187,7 @@ fn compile_typescript_sources_with_options(
     lenient: bool,
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
+    validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
     require_generated_source(source)?;
     let program = if lenient {
         model::parse_program_lenient(source)?
@@ -355,6 +370,7 @@ fn compile_typescript_sources_with_options(
         external_string_unions: &external_string_unions,
         inline_string_unions: &inline_string_unions,
         type_script_type_aliases,
+        type_script_nullable_option_fields,
         external_shared_identity_fields: &external_shared_identity_fields(external_alias_sources)?,
         module_identities: module_identities.as_deref(),
         visibility_programs: &visibility_programs,
@@ -508,6 +524,7 @@ pub fn compile_typescript_with_visibility_sources_and_crate_roots(
         &[],
         &[],
         &[],
+        &[],
         visibility_sources,
         crate_roots,
         false,
@@ -524,6 +541,7 @@ pub fn compile_typescript_with_options(
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
     visibility_sources: &[ModuleSource<'_>],
     crate_roots: &[CrateRootSource<'_>],
     lenient: bool,
@@ -551,6 +569,7 @@ pub fn compile_typescript_with_options(
         type_script_string_unions,
         type_script_inline_string_unions,
         type_script_type_aliases,
+        type_script_nullable_option_fields,
         identities,
         &std::iter::once(source.path)
             .chain(alias_sources.iter().map(|module| module.path))
@@ -572,6 +591,7 @@ pub fn compile_typescript_lenient(
     return compile_typescript_sources_with_options(
         source,
         entity_module,
+        &[],
         &[],
         &[],
         &[],
@@ -629,6 +649,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -641,8 +662,10 @@ fn compile_vitest_with_contract_alias_sources_internal(
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[&str],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
+    validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
@@ -726,6 +749,20 @@ fn compile_vitest_with_contract_alias_sources_internal(
         contract_source,
     )?;
     typescript::insert_type_script_type_alias_context(&mut context, type_script_type_aliases);
+    let visibility_program_refs = visibility_programs
+        .iter()
+        .enumerate()
+        .map(|(index, program)| (format!("vitest-visibility/{index}"), program))
+        .collect::<Vec<_>>();
+    typescript::insert_type_script_nullable_option_field_context(
+        &mut context,
+        alias_program_refs.iter().copied().chain(
+            visibility_program_refs
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_nullable_option_fields,
+    )?;
     typescript::insert_vitest_own_public_context(
         &mut context,
         &alias_program_refs
@@ -895,6 +932,7 @@ pub fn compile_vitest_with_external_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -910,6 +948,7 @@ pub fn compile_vitest_with_module_alias_sources(
         contract_module,
         None,
         alias_sources,
+        &[],
         &[],
         &[],
         &[],
@@ -939,11 +978,13 @@ pub fn compile_vitest_with_visibility_sources(
         &[],
         visibility_sources,
         type_script_type_aliases,
+        &[],
     );
 }
 
 /// Compiles one Rust test module with production hints, dependency sources, explicit TypeScript
-/// string-union and type-alias representations, and target-native visibility sources.
+/// string-union, type-alias, and nullable field representations, plus target-native visibility
+/// sources.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_vitest_with_options(
     source: &str,
@@ -954,6 +995,7 @@ pub fn compile_vitest_with_options(
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[&str],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
 ) -> Result<String, CompileError> {
     return compile_vitest_with_contract_alias_sources_internal(
         source,
@@ -964,6 +1006,7 @@ pub fn compile_vitest_with_options(
         type_script_string_unions,
         visibility_sources,
         type_script_type_aliases,
+        type_script_nullable_option_fields,
     );
 }
 
@@ -2272,6 +2315,37 @@ fn validate_type_script_type_aliases(
             return Err(compile_error(format!(
                 "TypeScript owner type `{}` is supplied by both `{previous}` and `{module}`",
                 alias.target
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_type_script_nullable_option_fields(
+    fields: &[TypeScriptNullableOptionField<'_>],
+) -> Result<(), CompileError> {
+    let mut owners = std::collections::BTreeMap::new();
+    for field in fields {
+        if field.module.is_empty() {
+            return Err(compile_error(
+                "TypeScript nullable Option field has an empty owner module",
+            ));
+        }
+        if syn::parse_str::<syn::Ident>(field.owner).is_err()
+            || !valid_type_script_identifier(field.field)
+        {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option field has invalid owner position `{}.{}`",
+                field.owner, field.field
+            )));
+        }
+        let position = (field.owner, field.field);
+        if let Some(previous) = owners.insert(position, field.module)
+            && previous != field.module
+        {
+            return Err(compile_error(format!(
+                "TypeScript nullable Option field `{}.{}` is supplied by both `{previous}` and `{}`",
+                field.owner, field.field, field.module
             )));
         }
     }

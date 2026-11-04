@@ -17,6 +17,7 @@ import {
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   collectTypeScriptExportSymbols,
+  collectTypeScriptNullableOptionFields,
   collectTypeScriptStringUnions,
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
@@ -36,6 +37,7 @@ import {
   resolveExternalContractExports,
   resolveRustExportName,
   typeScriptInlineStringUnionArguments,
+  typeScriptNullableOptionFieldArguments,
   typeScriptStringUnionArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -203,6 +205,20 @@ export enum RuntimeLiveness { Polite = 'polite', Assertive = 'assertive' }
     ).toEqual(new Map([['AccessibilityLiveness', ['polite', 'assertive']]]));
   });
 
+  it('collects required-null fields without widening optional or undefined fields', () => {
+    expect(
+      collectTypeScriptNullableOptionFields(`
+export interface AnimationStateMachine {
+  transitionFromStateIndex: number | null;
+  transitionToStateIndex: number | null;
+  optionalIndex?: number | null;
+  undefinedIndex: number | undefined;
+}
+interface PrivateState { index: number | null; }
+`),
+    ).toEqual(new Map([['AnimationStateMachine', ['transitionFromStateIndex', 'transitionToStateIndex']]]));
+  });
+
   it('passes only explicitly imported type-only string unions to the compiler', () => {
     const symbols = new Map([
       [
@@ -306,6 +322,43 @@ export type AnimationPlayerRef = number;
 `;
 
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([]);
+  });
+
+  it('derives nullable field metadata from canonical owner positions used by generated functions', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          [
+            'AnimationStateMachine',
+            {
+              hasType: true,
+              hasValue: false,
+              nullableFields: ['transitionFromStateIndex', 'transitionToStateIndex'],
+            },
+          ],
+        ]),
+      ],
+    ]);
+    const existing = `import type { AnimationStateMachine } from '@flighthq/types/contract';
+export function advance(machine: AnimationStateMachine): void {}
+`;
+    const generated = `export function advance(machine: AnimationStateMachine): void {
+  if (machine.transitionToStateIndex === undefined) return;
+  machine.transitionFromStateIndex = undefined;
+  machine.transitionToStateIndex = undefined;
+}
+export function unrelated(machine: AnimationStateMachine): void {
+  machine.transitionWeight = 0;
+}
+`;
+
+    expect(typeScriptNullableOptionFieldArguments(existing, generated, symbols)).toEqual([
+      '--typescript-nullable-option-field',
+      '@flighthq/types/contract#AnimationStateMachine.transitionFromStateIndex',
+      '--typescript-nullable-option-field',
+      '@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex',
+    ]);
   });
 
   it('rejects conflicting inline representations of one generated Rust type', () => {
