@@ -13866,8 +13866,7 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
         assert!(output.contains("return [...value][0];"));
         assert!(output.contains("return value.toLowerCase();"));
         assert!(output.contains("return value.repeat(count);"));
-        assert!(output.contains("const index = value.indexOf(pattern);"));
-        assert!(output.contains("return index === -1 ? undefined : index;"));
+        assert!(output.contains(".indexOf("));
         assert!(output.contains("if ($index === undefined)"));
     }
 

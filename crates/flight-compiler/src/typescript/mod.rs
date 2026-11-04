@@ -18697,7 +18697,7 @@ fn emit_method_call(
         }
         "find" if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) => {
             Ok(format!(
-                "((value: string, pattern: string): number | undefined => {{ const index = value.indexOf(pattern); return index === -1 ? undefined : index; }})({receiver}, {})",
+                "((i) => i === -1 ? undefined : i)({receiver}.indexOf({}))",
                 arguments[0]
             ))
         }
@@ -19222,7 +19222,7 @@ fn emit_method_call(
                 "undefined"
             };
             Ok(format!(
-                "((value: string, pattern: string): number | {absent} => {{ const index = value.lastIndexOf(pattern); return index === -1 ? {absent} : index; }})({receiver}, {})",
+                "((i) => i === -1 ? {absent} : i)({receiver}.lastIndexOf({}))",
                 arguments[0]
             ))
         }
