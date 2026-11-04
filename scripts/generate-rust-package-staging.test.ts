@@ -412,6 +412,77 @@ export function defaultLiveness(): AccessibilityLiveness {
     expect(value).not.toContain('AccessibilityLiveness.Polite');
   }, 120_000);
 
+  it('passes type-only string-union metadata through outcome construction', async () => {
+    rmSync(join(packageRoot, 'src', 'value.generated.ts'), { force: true });
+    rmSync(join(packageRoot, 'src', 'value.native.ts'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), '//! flight-compiler: target-native\nmod types;\nmod value;\n');
+    rmSync(join(crateRoot, 'src', 'contract.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'src', 'types.rs'),
+      `//! flight-compiler: rust-only
+pub enum ShellExternalReason {
+    BlockedScheme,
+    Ok,
+    OperationFailed,
+    PopupBlocked,
+}
+
+pub struct ShellExternalOutcome {
+    pub reason: ShellExternalReason,
+}
+`,
+    );
+    writeFileSync(
+      sourcePath,
+      `use crate::types::{ShellExternalOutcome, ShellExternalReason};
+
+pub fn blocked_outcome() -> ShellExternalOutcome {
+    return ShellExternalOutcome {
+        reason: ShellExternalReason::BlockedScheme,
+    };
+}
+
+pub fn unsupported_probe(value: &dyn std::any::Any) -> bool {
+    return value.type_id() == std::any::TypeId::of::<u32>();
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { ShellExternalOutcome, ShellExternalReason } from '@flighthq/types/contract';
+
+export function blockedOutcome(): ShellExternalOutcome {
+  return { reason: 'blocked-scheme' as ShellExternalReason };
+}
+
+export function unsupportedProbe(_value: unknown): boolean {
+  return true;
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { blockedOutcome } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { blockedOutcome } from './contract.ts';\n");
+
+    const first = await generateWhileScanning(true);
+    const second = await generateWhileScanning(true);
+
+    expect(first.code, first.stderr).toBe(0);
+    expect(second.code, second.stderr).toBe(0);
+    expect(first.stderr).toContain('lenient: 1 items skipped');
+    expect(second.stderr).toContain('lenient: 1 items skipped');
+    const value = readFileSync(join(packageRoot, 'src', 'value.generated.ts'), 'utf8');
+    expect(value).toContain("return { reason: 'blocked-scheme' };");
+    expect(value).not.toContain('ShellExternalReason.BlockedScheme');
+  }, 120_000);
+
   it('preserves inline string-union representations from existing function signatures', async () => {
     writeFileSync(
       join(crateRoot, 'src', 'types.rs'),

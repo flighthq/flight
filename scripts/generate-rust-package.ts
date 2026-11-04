@@ -767,8 +767,19 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
   const outputPath = join(rawRoot, fileName);
   const originalPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(originalPath) ? readFileSync(originalPath, 'utf8') : '';
-  const importedContractSymbols = loadImportedContractSymbols(existingTypescript);
-  const namedRepresentationArguments = typeScriptStringUnionArguments(existingTypescript, importedContractSymbols);
+  const stem = fileName.slice(0, -3);
+  const nativePath = join(packageSourceRoot, `${stem}.native.ts`);
+  const existingNativeTypescript = existsSync(nativePath) ? readFileSync(nativePath, 'utf8') : undefined;
+  const source = relative(repositoryRoot, rustPath).replaceAll('\\', '/');
+  const generatedProvenanceHeader = `// Generated from ${source} by flight-compiler.\n// Rust is authoritative; run \`npm run generate\` after changing it.\n`;
+  const existingIsGenerated = existingTypescript.startsWith(generatedProvenanceHeader);
+  // Once a lenient module has an overlay, its generated public file is only a router. The retained
+  // native implementation remains the established TypeScript contract whose imports, signatures,
+  // and explicit representation metadata must drive every later generation pass.
+  const contractTypescript =
+    existingIsGenerated && existingNativeTypescript !== undefined ? existingNativeTypescript : existingTypescript;
+  const importedContractSymbols = loadImportedContractSymbols(contractTypescript);
+  const namedRepresentationArguments = typeScriptStringUnionArguments(contractTypescript, importedContractSymbols);
   let compiledTypescript = compile(
     'generate',
     rustPath,
@@ -778,7 +789,7 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
     [],
     namedRepresentationArguments,
   );
-  const inlineRepresentationArguments = typeScriptInlineStringUnionArguments(existingTypescript, compiledTypescript);
+  const inlineRepresentationArguments = typeScriptInlineStringUnionArguments(contractTypescript, compiledTypescript);
   if (inlineRepresentationArguments.length > 0) {
     compiledTypescript = compile(
       'generate',
@@ -790,16 +801,16 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
       [...namedRepresentationArguments, ...inlineRepresentationArguments],
     );
   }
-  const typescript = canonicalizeGeneratedContractImports(existingTypescript, compiledTypescript);
-  const retainedConstants = renderReferencedConstants(existingTypescript, typescript);
+  const typescript = canonicalizeGeneratedContractImports(contractTypescript, compiledTypescript);
+  const retainedConstants = renderReferencedConstants(contractTypescript, typescript);
   const typescriptWithConstants =
     retainedConstants === '' ? typescript : `${typescript.trimEnd()}\n\n${retainedConstants}`.replace(/^\n+/, '');
-  const retainedExports = renderReferencedExports(existingTypescript, typescriptWithConstants);
+  const retainedExports = renderReferencedExports(contractTypescript, typescriptWithConstants);
   const generatedTypescript =
     retainedExports === ''
       ? typescriptWithConstants
       : `${typescriptWithConstants.trimEnd()}\n\n${retainedExports}`.replace(/^\n+/, '');
-  const retainedImports = renderReferencedImports(existingTypescript, typescriptWithConstants, importedContractSymbols);
+  const retainedImports = renderReferencedImports(contractTypescript, typescriptWithConstants, importedContractSymbols);
   if ((lenientSkippedByOutput.get(outputPath) ?? 0) === 0) {
     return {
       fileName,
@@ -809,11 +820,9 @@ function loadModule(rustSource: string, aliasSources: string[]): PackageModule |
       typescript: generatedTypescript,
     };
   }
-  const stem = fileName.slice(0, -3);
-  const nativePath = join(packageSourceRoot, `${stem}.native.ts`);
-  const storedNativeTypescript = existsSync(nativePath)
-    ? readFileSync(nativePath, 'utf8')
-    : existsSync(originalPath) && !hasGeneratedProvenanceHeader(readFileSync(originalPath, 'utf8'))
+  const storedNativeTypescript = existingNativeTypescript
+    ? existingNativeTypescript
+    : existsSync(originalPath) && !existingIsGenerated
       ? readFileSync(originalPath, 'utf8')
       : undefined;
   if (storedNativeTypescript === undefined) {
