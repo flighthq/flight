@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! scene2d-owned declarations: the Node2D family fields, runtime tier and trait, the concrete 2D
 //! kinds, the Scene2D presentation context and its records (TS `Node2D.ts`, `DisplayObject.ts`,
 //! `Sprite.ts`, `Scale9Sprite.ts`, `HtmlView.ts`, `Scene2D*.ts`, `Node2DAnimation*.ts`).

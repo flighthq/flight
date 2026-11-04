@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/tests/ease_sine_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { easeInOutSine, easeInSine, easeOutSine } from './contract.ts';

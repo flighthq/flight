@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene2d::contract::{Node2DRef, create_display_object};
 
 use crate::svg_document::{

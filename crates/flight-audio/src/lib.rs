@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod audio_buffer;
 mod audio_decode_slot;
 mod audio_format;

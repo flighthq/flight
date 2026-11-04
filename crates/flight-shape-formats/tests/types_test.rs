@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_shape_formats::contract::*;
 
 mod get_shape_command_schema_argument_type_string {

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_schema::GltfDocument;
 use flight_entity::Ref;
 

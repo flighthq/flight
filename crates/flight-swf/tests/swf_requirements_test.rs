@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_compression::SDK_HOST_DECOMPRESS_DEFLATE;
 use flight_requirement::{Requirement, RequirementFacet};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod capsule_contact2d;
 mod collide_contact_manifold2d;
 mod collide_contact_manifold3d;

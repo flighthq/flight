@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_animation::contract::*;
 
 mod create_state_ref_from_index {

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_geometry::create_matrix;
 use flight_skeleton2d::contract::*;
 

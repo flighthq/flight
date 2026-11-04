@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{
     Matrix, create_matrix, create_vector2, inverse_matrix_transform_point_xy,
     matrix_transform_point_xy,

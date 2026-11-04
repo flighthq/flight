@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! BitmapText construction, data mutation, bounds, pages and stale-layout queries.
 
 use std::sync::Arc;

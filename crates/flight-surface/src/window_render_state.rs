@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Window-bound render-state surface sizing (TS `attachWindowRenderState` /
 //! `detachWindowRenderState`, moved app -> surface by Principal 2197d2fb).
 

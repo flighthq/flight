@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{Scene3D, scene_node::as_node3d};
 use flight_entity::{EntityRuntimeSlot, Kind, allocate_entity};
 use flight_node::NodeRef;

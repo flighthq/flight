@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock, OnceLock};
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::atomic::Ordering;
 
 use flight_font::contract::*;

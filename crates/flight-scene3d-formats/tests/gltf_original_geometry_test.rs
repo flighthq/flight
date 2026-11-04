@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_original_test_helper::*;
 use flight_entity::Unknown;
 use flight_geometry::{create_vector2, create_vector3, create_vector4};

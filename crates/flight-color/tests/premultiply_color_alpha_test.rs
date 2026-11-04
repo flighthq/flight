@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_color::*;
 
 mod premultiply_color_alpha {

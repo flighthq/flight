@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use super::awd2_test_helper::*;
 use flight_compression::SDK_HOST_DECOMPRESS_DEFLATE;
 use flight_entity::Ref;

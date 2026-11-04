@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_skeleton2d::contract::create_skeleton_2d;

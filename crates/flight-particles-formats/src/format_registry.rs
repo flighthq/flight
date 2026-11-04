@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The caller-owned particle format registry (TS `formatRegistry.ts`, whose module-level Map is
 //! replaced by explicit D5 state).
 

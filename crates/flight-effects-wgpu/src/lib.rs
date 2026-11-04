@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! WebGPU shader recipes for render effects (TS `@flighthq/effects-wgpu`) over native `wgpu`
 //! (D17): the substrate-agnostic post-process pipeline, the per-state effect registry, and one
 //! runner per effect kind.

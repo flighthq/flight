@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Node-owned declarations: the common node fields and feature groups, the open node family
 //! traits, and the private runtime tiers (TS `Node.ts`, `Node2D.ts`, `Node3D.ts`, `Has*.ts`).
 //!

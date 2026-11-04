@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::STANDARD_MATERIAL_KIND;
 use flight_node::{NodeRef, RendererDataRef};
 use flight_render::{

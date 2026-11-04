@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::shared::{CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, create_external_texture_ref};
 use crate::three_ds_parse::{
     pack_three_ds_color, read_chunk_end, read_chunk_length, read_null_terminated_string,

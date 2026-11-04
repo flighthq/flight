@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Contact shadows share the local-occlusion realization used by SSAO until the effect pipeline
 //! exposes a sampleable depth attachment. Keeping the mapping in its own leaf gives the public

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 sugar for the camera-controls public lane: constructors and receiver methods that delegate
 //! to the free functions. Sugar contains no logic.
 

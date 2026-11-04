@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 Rust-only delegates; the free functions remain the canonical contract.
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::contract::*;

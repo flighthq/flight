@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_parse::report_collada_diagnostic;
 use crate::collada_scene_shared::build_collada_node_world_matrices;
 use crate::collada_types::*;

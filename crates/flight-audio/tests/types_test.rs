@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_audio::*;
 
 mod get_audio_channel_state_string {

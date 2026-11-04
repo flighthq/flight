@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the renderer seams take the open Material family
 //! The built-in SpecularGlossiness forward-lit renderer (TS
 //! `wgpuSpecularGlossinessPbrMeshMaterialRenderer.ts`): the legacy spec-gloss workflow converted on

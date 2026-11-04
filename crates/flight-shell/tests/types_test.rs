@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_shell::contract::*;
 
 mod get_shell_external_reason_string {

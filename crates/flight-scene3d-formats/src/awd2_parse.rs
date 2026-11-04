@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_block_dispatch::{create_awd2_parse_state, expand_awd2_block_dispatch};
 use crate::awd2_schema::*;
 use crate::awd2_types::Awd2RehydratedBody;

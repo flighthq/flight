@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_font_formats::*;
 
 mod read_cff_dict {

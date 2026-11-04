@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 quad-batch writer contracts carry native wgpu handles and render-wgpu state
 //! The shared instanced quad batch every 2D leaf renderer writes into (TS `wgpuQuadBatchWriter.ts`):
 //! the base 13-float instance record, the WGSL prelude material shaders build on, the per-flush

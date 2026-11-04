@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::skin_vertices::{read_array, write_array};
 use crate::{
     Skeleton3DBindPoseGuard, Skeleton3DGuardStateRef, Skeleton3DJointCloner,

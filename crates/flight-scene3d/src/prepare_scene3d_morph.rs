@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{scene_node::as_node3d, update_mesh_morph};
 use flight_node::NodeRef;
 

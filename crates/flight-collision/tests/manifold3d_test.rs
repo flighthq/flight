@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 mod clear_collision_manifold3d {

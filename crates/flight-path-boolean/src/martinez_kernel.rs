@@ -1,3 +1,6 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! flight-compiler: export-name MARTINEZ_PATH_BOOLEAN_KERNEL martinezPathBooleanKernel
 //! flight-compiler: string-union PathBooleanFillRule PathBooleanOperation
 

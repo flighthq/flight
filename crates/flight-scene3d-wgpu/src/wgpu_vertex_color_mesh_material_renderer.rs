@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in VertexColor forward renderer (TS `wgpuVertexColorMeshMaterialRenderer.ts`): the material's
 //! linear tint through the shared unlit pipeline. The canonical 48-byte vertex has no color0 slot on

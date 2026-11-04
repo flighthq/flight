@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashMap;
 
 use flight_clip::contract::{

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The Tilemap renderer (TS `wgpuTilemap.ts`): one affine instance per non-empty cell, with
 //! per-tile tints overriding the node-level one.

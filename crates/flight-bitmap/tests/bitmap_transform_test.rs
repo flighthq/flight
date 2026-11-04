@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::contract::*;
 use flight_materials::ColorScaleBias;
 use flight_materials::contract::create_color_scale_bias;

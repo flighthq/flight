@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::dragon_bones_parse_helpers::skip_crumb_dragon_bones_group;
 use crate::types::{DragonBonesSectionContext, DragonBonesTimelineContext, JsonRecord};
 

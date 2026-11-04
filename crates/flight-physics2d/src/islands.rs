@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Island sleeping and the per-island solve lists (TS `islands.ts`).
 
 use std::collections::HashMap;

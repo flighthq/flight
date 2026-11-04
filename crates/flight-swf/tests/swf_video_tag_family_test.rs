@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_swf::{SWF_VIDEO_HANDLER, SWF_VIDEO_TAG_FAMILY};

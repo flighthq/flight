@@ -185,17 +185,23 @@ mod strict_tests {
     expect(run.stderr).toContain('unsupported Rust method call `.type_id()`');
   }, 120_000);
 
-  it('preserves target-native package roots and modules', async () => {
+  it('preserves target-native package roots and modules without resolving native root exports', async () => {
     rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
     const nativeValue = 'export function nativeValue(): number { return 7; }\n';
     const nativeContract = "export { nativeValue } from './value.ts';\n";
     const nativeIndex = "export { nativeValue } from './contract.ts';\n";
     writeFileSync(
       join(crateRoot, 'src', 'lib.rs'),
-      '//! flight-compiler: target-native\nmod value;\npub mod contract;\npub use contract::*;\n',
+      '//! flight-compiler: target-native\nmod other;\nmod value;\npub mod contract;\npub use contract::*;\n',
     );
+    rmSync(join(crateRoot, 'src', 'contract.rs'));
     writeFileSync(sourcePath, '//! flight-compiler: target-native\npub fn native_value() -> i32 { 7 }\n');
+    writeFileSync(
+      join(crateRoot, 'src', 'other.rs'),
+      '//! flight-compiler: target-native\npub fn native_value() -> i32 { 8 }\n',
+    );
     writeFileSync(join(packageRoot, 'src', 'value.ts'), nativeValue);
+    writeFileSync(join(packageRoot, 'src', 'other.ts'), nativeValue);
     writeFileSync(join(packageRoot, 'src', 'contract.ts'), nativeContract);
     writeFileSync(join(packageRoot, 'src', 'index.ts'), nativeIndex);
 
@@ -204,6 +210,7 @@ mod strict_tests {
     expect(run.code, run.stderr).toBe(0);
     expect(run.stderr).not.toContain('Error');
     expect(readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8')).toBe(nativeValue);
+    expect(readFileSync(join(packageRoot, 'src', 'other.ts'), 'utf8')).toBe(nativeValue);
     expect(readFileSync(join(packageRoot, 'src', 'contract.ts'), 'utf8')).toBe(nativeContract);
     expect(readFileSync(join(packageRoot, 'src', 'index.ts'), 'utf8')).toBe(nativeIndex);
   }, 120_000);

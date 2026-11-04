@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 mod collide_contact_manifold2d {

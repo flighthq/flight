@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_materials::transmission_volume_pbr_extension::create_transmission_volume_pbr_extension;
 use flight_materials::{PbrExtension, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND};

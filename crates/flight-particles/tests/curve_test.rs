@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles::*;
 
 mod build_particle_color_curve {

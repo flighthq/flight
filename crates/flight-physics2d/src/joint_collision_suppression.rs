@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Contact suppression between jointed bodies (TS `jointCollisionSuppression.ts`).
 
 use std::collections::HashMap;

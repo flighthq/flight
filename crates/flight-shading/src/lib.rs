@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod animated_normal_modifier;
 mod dissolve_modifier;
 mod emissive_modifier;

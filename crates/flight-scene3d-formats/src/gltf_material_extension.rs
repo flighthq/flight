@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_materials::contract::{
     create_extended_pbr_material, create_standard_pbr_material_properties,

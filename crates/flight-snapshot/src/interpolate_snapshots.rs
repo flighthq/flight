@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashSet;
 
 use crate::snapshot_schema::{compile_snapshot_schema, get_snapshot_path};

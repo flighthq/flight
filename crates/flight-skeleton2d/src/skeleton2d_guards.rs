@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The report seams the skeleton's silent coercions report through (TS `skeleton2dGuards.ts`).
 
 use crate::types::*;

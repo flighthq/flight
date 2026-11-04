@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! flight-node's generic feature functions over the flat 2D fields (Principal 939e24d3 borrowed
 //! views), across built-in and caller-declared 2D kinds.
 

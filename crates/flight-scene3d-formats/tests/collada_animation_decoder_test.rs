@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_animation::AnimationInterpolation;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_scene3d::Scene3DAnimationPath;

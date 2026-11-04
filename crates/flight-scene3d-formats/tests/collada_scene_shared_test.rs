@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_geometry::contract::create_transform3d;
 use flight_meshgeometry::{MeshGeometryOptions, create_mesh_geometry};

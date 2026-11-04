@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene3d_format_requirements::THREE_DS_REQUIREMENT_KEY_NAMESPACE;
 use crate::three_ds_chunk_census::{collect_three_ds_chunk_counts, get_three_ds_chunk_name};
 use crate::three_ds_chunk_requirements::THREE_DS_CHUNK_SCENE_REQUIREMENTS;

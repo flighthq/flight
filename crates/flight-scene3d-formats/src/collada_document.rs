@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_decoder_family::COLLADA_ALL_ELEMENT_DECODERS;
 use crate::collada_parse::parse_collada_with_decoders;
 use crate::collada_types::{ColladaImportOptions, ColladaParseResult};

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 #![cfg(feature = "object-api")]
 
 use std::sync::{Arc, RwLock};

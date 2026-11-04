@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Portable readers and synthetic producers for CFF, SFNT, WOFF and WOFF2.
 //!
 //! The construction initializer remains in the full contract lane.

@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! Target-specific byte-order probe used by the otherwise portable user-agent parser.
 
 use flight_entity::get_record_value;

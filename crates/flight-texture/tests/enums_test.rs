@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_texture::contract::*;
 
 mod get_alpha_type_string {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: readonly-fields EasingSegment
 
 use std::sync::Arc;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_collision::{
     CollisionColliderShape3D, CollisionShape3D, write_collision_convex_hull_faces3d,
 };

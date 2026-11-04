@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Scene2D <-> Flight document (TS `sceneDocumentScene2DMaterialization.ts`): writes a live 2D scene
 //! as a document scene entry, materializes a selected 2D entry into a live Scene2D with inert
 //! interactive-state and layout bindings, and explains every refusal.

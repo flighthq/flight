@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render textures use open texture traits, Rc/RefCell target ownership, callbacks, and Result diagnostics
 
 use flight_render::RenderTargetClear;

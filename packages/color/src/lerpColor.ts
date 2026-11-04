@@ -1,6 +1,3 @@
-// Generated from crates/flight-color/src/lerp_color.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { LinearColorRaw } from './packColor.ts';
 import { packLinearChannelsToColor } from './packColor.ts';
 import { srgbChannelToLinear } from './srgbTransfer.ts';

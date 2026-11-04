@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 pub fn create_collision_contact_manifold2d() -> CollisionContactManifold2D {

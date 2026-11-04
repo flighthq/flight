@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::LazyLock;
 
 use crate::{SWF_JPEG_BITMAP_HANDLER, SWF_LOSSLESS_BITMAP_HANDLER, SwfTagHandlerRef};

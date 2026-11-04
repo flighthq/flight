@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::contract::*;
 use flight_entity::{allocate_entity, get_entity_uid, set_entity_uid};
 

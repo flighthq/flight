@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_lighting::contract::*;
 
 fn close(actual: f32, expected: f32, tolerance: f32) {

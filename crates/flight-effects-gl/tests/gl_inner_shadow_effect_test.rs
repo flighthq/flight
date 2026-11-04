@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render_gl::{GlTextureRenderTarget, create_gl_texture_render_target_pool};
 
 use crate::gl_test_helper::{MockGlDrawState, clear_calls, draws, make_state, make_texture_target};

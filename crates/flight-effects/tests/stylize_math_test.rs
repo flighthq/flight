@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 mod compute_crt_mask_params {

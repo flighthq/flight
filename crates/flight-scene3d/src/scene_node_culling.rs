@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene_node::as_node3d;
 use flight_geometry::{
     Aabb, Frustum, Matrix4, create_aabb, is_frustum_intersecting_aabb, set_frustum_from_matrix4,

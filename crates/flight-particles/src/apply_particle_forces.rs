@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     ForceFalloff, PARTICLE_VELOCITY_STRIDE, ParticleEmitterState, ParticleForce, ParticleObject,
     ParticleObjectsState,

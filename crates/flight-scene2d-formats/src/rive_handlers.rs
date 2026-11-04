@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path_boolean::PathBooleanKernel;
 
 use crate::rive_animation::register_rive_animation_handlers;

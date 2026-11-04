@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::contract::{create_clearcoat_pbr_extension, create_sheen_pbr_extension};
 use flight_materials::extended_pbr_material::*;
 use flight_materials::*;

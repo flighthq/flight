@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_entity::Ref;

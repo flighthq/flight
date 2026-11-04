@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/tests/get_path_length_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath, getPathLength } from './contract.ts';

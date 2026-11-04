@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::{Scene3DAnimationPath, Scene3DMetadata};
 use flight_animation::AnimationTrack;
 use flight_camera::Projection;

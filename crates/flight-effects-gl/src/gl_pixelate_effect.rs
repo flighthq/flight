@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Pixelate: snap uv to the center of `size`-pixel blocks before sampling, producing hard mosaic blocks.
 

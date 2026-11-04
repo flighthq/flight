@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::md2_test_helper::*;
 use flight_animation::{AnimationInterpolation, sample_animation_track};
 use flight_entity::Ref;

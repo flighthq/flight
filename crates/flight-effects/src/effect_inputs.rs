@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::{EffectInput, EffectRef};
 
 pub static EFFECT_KINDS: &[&str] = &[

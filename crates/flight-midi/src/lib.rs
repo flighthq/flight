@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod host_explain;
 mod midi_access;
 mod midi_operations;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 pub mod contract;
 mod enable_swf_guards;
 mod expand_swf_tag_handler_dispatch;

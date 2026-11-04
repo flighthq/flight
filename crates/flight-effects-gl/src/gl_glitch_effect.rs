@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh
 //! tear), separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.

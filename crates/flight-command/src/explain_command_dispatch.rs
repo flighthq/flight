@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The shakeable query that says WHICH kind a dispatch would fail to resolve (TS
 //! `explainCommandDispatch.ts`).
 

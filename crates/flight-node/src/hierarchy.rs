@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Node graph hierarchy: attachment, ordering, traversal of ancestors and child lists
 //! (TS `hierarchy.ts`).
 

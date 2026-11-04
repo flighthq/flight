@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Substitution of resolved token values into a scene's node fields (TS
 //! `substituteFlightDocumentSceneTokens.ts`).
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then
 //! composite the source over the glow. Full-frame realization: acquires the recipe's three scratch

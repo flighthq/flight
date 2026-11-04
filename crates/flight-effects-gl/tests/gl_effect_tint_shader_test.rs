@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects_gl::contract::{apply_gl_effect_invert_tint_pass, apply_gl_effect_tint_pass};
 
 use crate::assert_close;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::three_ds_test_helper::*;
 use flight_scene3d_formats::*;
 use std::sync::{Arc, RwLock};

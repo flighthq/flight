@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod kind_map;
 mod ordinal_table;
 mod sugar;

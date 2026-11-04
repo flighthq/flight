@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::symmetric_tensor::{apply_symmetric_tensor, rotate_symmetric_tensor};
 use crate::{Physics3DBodyType, RigidBody3D};
 

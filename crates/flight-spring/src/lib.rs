@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 mod spring;
 mod spring2d;
 mod spring3d;

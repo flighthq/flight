@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_interaction::register_default_hit_tests::*;
 
 mod register_default_hit_tests {

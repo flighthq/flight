@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::SWF_KNOWN_TAG_MASKS;
 
 pub fn is_known_swf_tag(code: i32) -> bool {

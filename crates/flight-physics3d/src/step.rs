@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5: collision registry and diagnostics guards are explicit caller-owned state
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 

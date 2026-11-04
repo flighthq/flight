@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene2d_formats::*;
 use flight_xml::{XmlElement, parse_xml_document};
 

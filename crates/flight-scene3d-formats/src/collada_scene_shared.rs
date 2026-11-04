@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_xml::{collada_child, collada_children};
 use flight_entity::Ref;
 use flight_geometry::contract::{

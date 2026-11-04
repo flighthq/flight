@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Constructors and construction initializers for the built-in command kinds (TS `command.ts`).
 //!
 //! Each constructor captures what undo will need AT CREATION TIME — the child's current index for

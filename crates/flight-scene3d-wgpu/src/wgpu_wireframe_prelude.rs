@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the wireframe family seams take and return native wgpu values
 //! The Wgpu wireframe prelude (TS `wgpuWireframePrelude.ts`): a minimal module reusing the shared
 //! `vs_main` and outputting one flat linear line color; the pipeline is line-list and cull-none.

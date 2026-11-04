@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(test-default-call) Native option and realization scaffolding uses Rust defaults.
 mod apply_gl_blend_mode {
     use crate::gl_test_helper::{calls_named, make_state};

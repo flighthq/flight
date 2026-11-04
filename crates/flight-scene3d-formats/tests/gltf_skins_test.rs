@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_test_helper::minimal_gltf_document;
 use flight_scene3d_formats::contract::*;
 use std::sync::{Arc, RwLock};

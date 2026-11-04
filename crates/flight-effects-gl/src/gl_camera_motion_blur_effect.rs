@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Camera3D motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
 //! toward the screen center. A legitimate 2D effect on its own. Two richer variants are 2D-native

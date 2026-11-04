@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Stateful orbit / arcball camera controller (TS `orbitCameraController.ts`).
 
 use flight_camera::contract::{Camera3D, set_camera_3d_view_matrix4_from_look_at};

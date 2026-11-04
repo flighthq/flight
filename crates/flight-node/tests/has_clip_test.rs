@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_clip::create_clip_region_from_rectangle;

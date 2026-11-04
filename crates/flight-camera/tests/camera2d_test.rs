@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_camera::contract::*;
 
 use crate::common::*;

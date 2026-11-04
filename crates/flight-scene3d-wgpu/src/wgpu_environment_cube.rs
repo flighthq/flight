@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the source cube upload returns the native wgpu cube view
 //! Uploads an environment's source radiance cubemap (TS `wgpuEnvironmentCube.ts`): the WGSL mirror of
 //! scene3d-gl's `ensure_gl_environment_source_cube`. Each face uploads through the representation it

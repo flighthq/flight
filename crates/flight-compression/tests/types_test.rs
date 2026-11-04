@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_compression::contract::get_compression_framing_string;
 use flight_compression::contract::parse_compression_framing;
 use flight_compression::*;

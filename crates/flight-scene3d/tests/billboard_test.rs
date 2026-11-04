@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_entity::Ref;
 use flight_materials::contract::{Material3D, create_standard_pbr_material};

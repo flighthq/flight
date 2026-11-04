@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_textlayout::contract::*;
 
 mod create_text_metrics {

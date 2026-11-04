@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Per-channel median denoise: each output pixel is the median of its (2·radius+1)² neighborhood.
 //! Preserves edges while removing salt-and-pepper noise. A single GPU pass — no scratch targets.

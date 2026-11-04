@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(createByteReader, hasByteReaderBytes, readByteReaderU8, readByteReaderU16, readByteReaderU24, readByteReaderU24BigEndian, readByteReaderU32, readByteReaderU32BigEndian, readByteReaderU64, skipByteReader) D8: defined once in flight-buffer (generic byte cursor); re-exported here, not redefined
 
 mod detect_texture_container;

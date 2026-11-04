@@ -1,6 +1,3 @@
-// Generated from crates/flight-input/src/input_binding.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { InputIngressSource } from '@flighthq/host/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 

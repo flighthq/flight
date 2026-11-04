@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_vignette_effect_to_gl {
     use flight_effects::create_vignette_effect;
     use flight_effects_gl::contract::apply_vignette_effect_to_gl;

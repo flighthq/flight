@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Sphere framing for orbit controllers and camera projections (TS `framing.ts`).
 
 use flight_camera::contract::{OrthographicProjection, PerspectiveProjection, Projection};

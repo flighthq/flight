@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The nine-slice sprite renderer (TS `wgpuScale9Sprite.ts`): nine affine instances whose corners
 //! keep their texel size while the center stretches.

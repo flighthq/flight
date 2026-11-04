@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in Emissive forward renderer (TS `wgpuEmissiveMeshMaterialRenderer.ts`): the linear emissive
 //! color scaled by `emissive_strength` through the shared unlit pipeline (values above 1 drive bloom).

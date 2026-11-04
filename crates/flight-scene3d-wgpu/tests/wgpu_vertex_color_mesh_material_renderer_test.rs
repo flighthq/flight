@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::VERTEX_COLOR_MATERIAL_KIND;
 use flight_materials::contract::create_vertex_color_material;
 use flight_meshgeometry::create_box_mesh_geometry;

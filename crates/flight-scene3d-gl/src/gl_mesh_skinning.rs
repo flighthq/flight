@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the skinning capability binds glow palette textures over thread-bound render-gl state
 
 //! The opt-in GPU mesh-skinning capability: the palette binding AND the vertex GLSL the HAS_SKIN

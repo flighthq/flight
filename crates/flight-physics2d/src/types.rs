@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! physics2d-owned declarations (TS `Physics2D.ts`): rigid bodies, colliders, contacts, the world,
 //! the open joint family and its solver records, queries, explanations and debug geometry.
 //!

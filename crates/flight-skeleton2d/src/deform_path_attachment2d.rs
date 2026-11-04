@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Path attachment deformation (TS `deformPathAttachment2D.ts`).
 
 use flight_path::Path;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_node::{NodeRef, get_node_children};
 use flight_scene3d::{Node3DRef, as_node3d_ref};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_node::NodeRef;
 use flight_node::contract::{get_node_world_matrix, invalidate_node_local_bounds};

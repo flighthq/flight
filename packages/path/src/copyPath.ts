@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/copy_path.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { allocateEntity } from '@flighthq/entity/contract';
 
 import type { PathRaw } from './path.ts';

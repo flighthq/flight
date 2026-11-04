@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::IndexBuffer;
 use crate::IndexBufferU32;
 use crate::MeshGeometry;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_meshgeometry::*;
 use flight_skeleton3d::*;

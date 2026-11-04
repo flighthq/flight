@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! Source-kind texture resolution (TS `wgpuTextureResolver.ts`): one keyed lookup by the source's
 //! declared kind. Resolution may realize, upload and cache the GPU entry, but binds no pass state;

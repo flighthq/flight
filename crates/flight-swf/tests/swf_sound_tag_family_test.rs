@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_swf::{SWF_SOUND_HANDLER, SWF_SOUND_TAG_FAMILY};

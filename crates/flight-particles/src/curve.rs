@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{ColorKeyframe, CurveKeyframe};
 
 struct KeyframeSegment {

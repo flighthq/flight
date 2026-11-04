@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_glyphatlas::contract::*;
 
 mod get_glyph_atlas_entry_block_reason_string {

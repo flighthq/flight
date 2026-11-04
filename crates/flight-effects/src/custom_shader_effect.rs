@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::{CustomShaderUniformValue, initialize_effect};
 use flight_entity::{Ref, allocate_entity};
 use std::collections::HashMap;

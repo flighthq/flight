@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex};
 
 use flight_audio::{AudioChannelState, AudioPlayOptions, create_audio_resource};

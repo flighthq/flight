@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::audio_format::{
     can_play_audio_type, get_audio_mime_type_essence, infer_audio_mime_type,
 };

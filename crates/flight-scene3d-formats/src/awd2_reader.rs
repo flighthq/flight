@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_schema::*;
 use crate::shared::convert_transform_lh_to_rh;
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16, read_three_ds_u32};

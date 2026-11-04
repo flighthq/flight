@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::font_options;
 use flight_font_formats::*;
 use flight_path::{Path, PathWinding, create_path};

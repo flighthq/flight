@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_host::{BackendOperationExplanation, BackendOperationExplanationLayer};
 use flight_textformat::TextFormat;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 
 fn apply_morphological(out: &mut [u8], source: &BitmapRegion, radius: i32, dilate: bool) {

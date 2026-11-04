@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::{
     ParticleEmitterConfig, ParticleObject, ParticleObjectsState, ParticleObjectsUpdateOptions,
     ensure_particle_objects_state_capacity, sample_particle_curve, write_particle_spawn_offset,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Display object tree for composited 2D rendering (TS `@flighthq/scene2d`): the Node2D family
 //! fields, runtime tier and trait, display objects, sprites, nine-slice sprites, html views and the
 //! Scene2D presentation context.

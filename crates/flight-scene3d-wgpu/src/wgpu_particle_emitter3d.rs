@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the particle pass records native wgpu resources and takes the typed 3D pass signature
 //! The 3D particle emitter pass (TS `wgpuParticleEmitter3D.ts`), the WGSL mirror of scene3d-gl's
 //! particle pass: every enabled ParticleEmitter3D draws as one instanced, camera-facing billboard

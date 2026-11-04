@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: root-only computeRichTextCharIndexAtPoint computeRichTextLineMetrics getRichTextCharBoundaries getRichTextFirstCharInParagraph getRichTextLineIndexAtPoint getRichTextLineIndexOfChar getRichTextLineLength getRichTextLineOffset getRichTextLineText getRichTextLinkAtPoint getRichTextParagraphLength getRichTextSelectionRectangles
 //! flight-compiler: nullable-option compute_rich_text_line_metrics get_rich_text_link_at_point rich_text_get_group_containing_index
 

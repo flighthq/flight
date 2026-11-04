@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary, enum-payload-named, file-structure, sugar-delegates) GL backend contracts mirror the pinned structural WebGL types and D17 ownership model
 
 use std::cell::RefCell;

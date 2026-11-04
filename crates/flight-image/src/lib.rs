@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod host_explain;
 mod image_resource;
 mod image_resource_from;

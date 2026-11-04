@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! MovieClip-owned declarations (TS `MovieClip.ts`, `MovieClipSignals.ts`,
 //! `SpritesheetTimelineSourceExplanation.ts`): the clip's typed kind data and runtime extras, and the
 //! spritesheet timeline-source explanation/guard records.

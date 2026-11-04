@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::specular_pbr_extension::*;
 use flight_materials::*;
 

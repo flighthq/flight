@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 // flight-lint: allow(f64) validated input is the measured 1e15 polygon storage domain retained for SAT

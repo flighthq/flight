@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex};
 
 use crate::support::font_options;

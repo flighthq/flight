@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 pub type AdvancedBlendMode = String;
 pub type CompositeOperator = String;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::{AudioMimeTypeData, HostAudioCodecCapability};
 
 // The contract file-structure rule requires modules before functions and impls.

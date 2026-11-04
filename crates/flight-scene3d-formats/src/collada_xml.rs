@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::obj_features::is_obj_whitespace;
 use crate::stl_features::parse_stl_number;
 use flight_entity::Ref;

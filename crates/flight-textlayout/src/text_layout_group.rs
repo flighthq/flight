@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! flight-compiler: root-only createTextLayoutGroup
 
 use flight_entity::{Ref, allocate_entity};

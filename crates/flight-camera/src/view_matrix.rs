@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The 2D camera world-to-screen affine (TS `viewMatrix.ts`).
 
 use flight_geometry::{Matrix, set_transform_matrix, translate_matrix_by_vector_xy};

@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/src/lib.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 export { createRichTextContent, initializeRichTextContent } from './richTextContent.ts';
 export {
   computeRichTextCharIndexAtPoint,

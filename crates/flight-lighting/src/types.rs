@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::fmt;
 
 use flight_entity::{Entity, EntityRuntimeSlot, Float32Array, Kind, Ref};

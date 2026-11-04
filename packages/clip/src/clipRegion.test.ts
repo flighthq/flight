@@ -1,6 +1,3 @@
-// Generated from crates/flight-clip/tests/clip_region_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';

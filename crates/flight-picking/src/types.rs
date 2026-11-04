@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! picking-owned declarations (TS `Scene3DHit.ts`, `Scene3DPickOptions.ts`).
 
 // flight-lint: allow-file(contract-vocabulary) D16 native NodeRef retains the original open Mesh allocation; the predicate is a canonical Arc callback

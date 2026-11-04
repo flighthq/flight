@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::{BLEND_MODE_ADD, BLEND_MODE_NORMAL};
 use flight_render::RenderProxy2D;
 use flight_render_wgpu::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the particle pass draws through native glow handles on thread-bound render-gl state
 
 use std::sync::Arc;

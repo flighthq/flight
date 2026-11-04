@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 color passes accept native glow targets and Result diagnostics
 //! Generic pointwise color-matrix pass — the single fold-in realization for the whole matrix-tier
 //! Adjustment family. A run of consecutive matrix-tier adjustments fuses to ONE 4×5 matrix (linear

@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-boolean/tests/resolve_path_regions_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { createPath, flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';

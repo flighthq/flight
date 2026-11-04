@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 clip helpers drive glow scissor state over thread-bound render-gl state
 
 use flight_geometry::{Matrix, Rectangle};

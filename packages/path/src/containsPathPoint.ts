@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/contains_path_point.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { PathRaw } from './path.ts';
 import { PathCommand } from './path.ts';
 

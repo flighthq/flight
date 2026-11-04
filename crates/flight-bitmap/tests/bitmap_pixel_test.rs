@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::contract::*;
 
 mod get_bitmap_pixel {

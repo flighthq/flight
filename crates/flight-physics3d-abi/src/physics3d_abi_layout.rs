@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The Physics3D ABI wire layout (TS `physics3DAbiLayout.ts`). Each TS `as const` group is a set
 //! of flat, group-prefixed constants (the `BITMAP_NOISE_CHANNEL_*` convention): wire words are `u32`,
 //! byte lengths, offsets and strides are `usize`.

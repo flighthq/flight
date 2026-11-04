@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: cached pipelines hold host-supplied wgpu resources
 //! Per-state cache of compiled effect pipelines keyed by a stable string (TS
 //! `wgpuEffectProgramCache.ts`). Recipes call `get_wgpu_effect_pipeline` with their own key and

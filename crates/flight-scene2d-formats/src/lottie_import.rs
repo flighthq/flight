@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_importdiagnostics::contract::ImportDiagnostic;
 use serde_json::Value;
 

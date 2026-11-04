@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::enums::AssetLoadStatus;
 use crate::types::{AssetLibrary, AssetLoadExplanation};
 use flight_entity::Ref;

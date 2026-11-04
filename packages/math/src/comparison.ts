@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/src/comparison.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { EPSILON } from './constants.ts';
 
 /**

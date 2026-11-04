@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Tone map (TS `wgpuToneMapEffect.ts`): compresses HDR to the displayable range through the
 //! selected operator. The operator's tonemap body is compiled into the fragment once per state,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: command payloads are little-endian IEEE doubles on the wire (TS DataView.setFloat64)
 //! Physics2D ABI command writers (TS `physics2DAbiCommand.ts`). Each writer appends one
 //! length-delimited little-endian record, or returns false without changing the stream when the

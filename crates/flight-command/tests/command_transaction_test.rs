@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_command::contract::*;
 use flight_node::contract::get_node_child_count;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The 3D camera lifecycle: allocation, view placement, aspect/jitter setters, view-projection
 //! composition and the inverse-view-projection cache (TS `camera.ts`).
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashMap;
 
 use crate::bitmap_font_record::{

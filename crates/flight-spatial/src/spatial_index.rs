@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{SpatialIndexingExplanation, SpatialObjectId, create_uniform_grid_spatial_backend_2d};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 use std::sync::Arc;

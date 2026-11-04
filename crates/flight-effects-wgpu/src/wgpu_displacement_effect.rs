@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Displacement / heat-haze: warps the sample uv by an animated sine field for a refractive wobble. (TS `wgpuDisplacementEffect.ts`).
 

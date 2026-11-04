@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-boolean/tests/offset_path_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import {
   PathCommand,
   appendPathClose,

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::EntityRuntimeSlot;
 use flight_requirement::Requirement;
 use flight_requirement_catalog::RequirementCatalogEntryRef;

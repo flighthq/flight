@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_camera::create_camera_2d;
 use flight_geometry::{create_rectangle, create_vector2};
 use flight_gizmo::*;

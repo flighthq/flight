@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Renderer-neutral Scene2D document acquisition, import, slot resolution, and resource loading.
 
 mod built_in_scene2d_document_importers;

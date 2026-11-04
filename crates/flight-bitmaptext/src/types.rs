@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! BitmapText-owned declarations from the pinned `BitmapText.ts` and diagnostics seams.
 
 use std::sync::Arc;

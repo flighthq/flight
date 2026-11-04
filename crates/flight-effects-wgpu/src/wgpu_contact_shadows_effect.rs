@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Contact shadows (TS `wgpuContactShadowsEffect.ts`): mirrors the GL contact-shadow leaf through
 //! the existing local-occlusion (SSAO) realization. The runner stays independently replaceable for

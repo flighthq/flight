@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Per-object motion blur (TS `wgpuMotionBlurEffect.ts`): the velocity-driven analog of the depth
 //! consumers. With a per-pixel velocity buffer (rgba16f screen-space velocity in pixels in RG) each

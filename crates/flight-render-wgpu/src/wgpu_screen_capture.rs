@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! Opt-in capture of a screen target's frame to a CPU Bitmap (TS `wgpuScreenCapture.ts`). The frame
 //! renders into an offscreen COPY_SRC texture the target owns, the frame's own submit copies it

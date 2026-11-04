@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// The IEC 61966-2-1 linear-to-sRGB inverse OETF for a single channel in [0, 1].
 /// The canonical linear-to-sRGB channel transfer for the whole SDK; the packed form is
 /// `pack_linear_to_color`. Does not clamp -- callers that need HDR clamping do so explicitly.

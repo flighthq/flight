@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera::contract::*;
 
 use crate::common::*;

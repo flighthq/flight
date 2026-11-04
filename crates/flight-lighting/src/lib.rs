@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod ambient_light;
 mod area_light;
 mod directional_light;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The warning every feature's host guard emits for an absent capability (D26; TS
 //! `enableHostGuards.ts`'s per-capability warning, redistributed from the former aggregate host).
 

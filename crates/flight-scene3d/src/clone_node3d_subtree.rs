@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     Node3DFields, clone_mesh, create_node3d, publish_node3d,
     scene_node::{as_node3d, as_node3d_mut},

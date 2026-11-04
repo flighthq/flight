@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/tests/get_path_point_at_distance_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { createVector2 } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 

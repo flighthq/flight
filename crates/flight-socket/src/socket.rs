@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The framed socket lifecycle: allocation, connection commands, delivery gating and the
 //! provider-to-entity event sink (TS `socket.ts`).
 

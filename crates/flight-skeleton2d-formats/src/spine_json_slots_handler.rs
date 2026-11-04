@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_skeleton2d::contract::Slot2D;
 use serde_json::Value;
 

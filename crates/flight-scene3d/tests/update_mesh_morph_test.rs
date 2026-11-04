@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_meshgeometry::contract::*;
 use flight_scene3d::*;
 use std::sync::{Arc, RwLock};

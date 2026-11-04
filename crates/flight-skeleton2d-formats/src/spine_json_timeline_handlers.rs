@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use crate::spine_json_bone_timeline_handler::spine_json_bone_timeline_handler;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Generic matrix-kernel convolution (TS `wgpuConvolutionEffect.ts`): each output pixel is the
 //! weighted sum of its matrixX x matrixY neighborhood, normalized by `divisor` (defaults to the

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary, enum-payload-named) D17 native GL effect contracts carry borrowed glow targets, native texture names, Result diagnostics and the open Effect/Adjustment family references
 
 use std::sync::Arc;

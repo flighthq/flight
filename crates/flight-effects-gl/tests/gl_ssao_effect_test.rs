@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_ssao_effect_to_gl {
     use flight_effects::create_ssao_effect;
     use flight_effects_gl::contract::apply_ssao_effect_to_gl;

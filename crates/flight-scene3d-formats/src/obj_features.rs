@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::LazyLock;
 
 pub struct ObjFeatureDirectives {

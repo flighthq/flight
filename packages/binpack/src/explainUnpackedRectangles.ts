@@ -1,6 +1,3 @@
-// Generated from crates/flight-binpack/src/explain_unpacked_rectangles.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { BinPackOptions, PackableRectangle, RectangleId } from './packRectangles.ts';
 import { BIN_PACK_DEFAULT_MAX_EXTENT, packRectangles } from './packRectangles.ts';
 

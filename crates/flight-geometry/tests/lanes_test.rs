@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! flight-compiler: rust-only — reads the TS and Rust lane sources from disk.
 
 use std::collections::BTreeSet;

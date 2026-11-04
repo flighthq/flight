@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17: scene2d-wgpu contracts carry native wgpu values, host handles and the Rust callback/trait-object forms of the TS closure and CanvasRenderingContext2D types
 // flight-lint: allow-file(file-structure, sugar-delegates) D16 renderer-data trait implementations are required plumbing beside the declarations
 //! The scene2d-wgpu contract types (TS `types/src/Wgpu*.ts` owned by scene2d-wgpu), the

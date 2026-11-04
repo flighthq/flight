@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! God rays (TS `wgpuGodRaysEffect.ts`): radial light scattering from a screen-space light position.
 //! Marches the sample count along the ray from each fragment toward the light, accumulating color

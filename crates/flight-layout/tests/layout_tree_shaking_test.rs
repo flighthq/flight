@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // These tests verify that layout resolvers are independently registerable,
 // matching the TS tree-shaking tests that verify esbuild can independently
 // bundle each resolver. In Rust, the module system provides this separation

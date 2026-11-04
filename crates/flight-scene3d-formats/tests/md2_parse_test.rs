@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::md2_test_helper::*;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_meshgeometry::{get_mesh_geometry_index_count, get_mesh_geometry_vertex_count};

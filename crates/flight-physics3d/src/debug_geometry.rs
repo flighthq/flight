@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D9b: native geometry writer keeps the output parameter first
 use flight_collision::{
     CollisionColliderShape3D, CollisionShape3D, write_collision_convex_hull_faces3d,

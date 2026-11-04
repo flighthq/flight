@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::fmt;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 

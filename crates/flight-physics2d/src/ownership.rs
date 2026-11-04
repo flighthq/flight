@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Exclusive world ownership and the stepping boundary (TS `ownership.ts`). The source's module
 //! WeakMaps and WeakSet are private per-entity links to the owner's durable identity token.
 

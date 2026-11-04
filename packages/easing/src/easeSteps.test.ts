@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/tests/ease_steps_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { getStepPositionString, parseStepPosition, setEasingStepsGuard } from '@flighthq/easing/contract';
 import { describe, expect, it } from 'vitest';
 

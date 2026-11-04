@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Reversible command history: D16 data-only kind-tagged commands, behaviour bound per kind through a
 //! caller-owned registry, an undo/redo stack with fork/prune/merge, and transaction brackets. The
 //! package stores no closures on the history stack and reads no clock of its own.

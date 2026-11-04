@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Drop shadow (TS `wgpuDropShadowEffect.ts`): tint the scene silhouette, blur it, offset it by
 //! angle/distance, then apply sourceMode compositing. Acquires the recipe's three scratch targets

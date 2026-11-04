@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The state-wide default bitmap shader (TS `wgpuShaderRegistry.ts`).
 
 use crate::types::*;

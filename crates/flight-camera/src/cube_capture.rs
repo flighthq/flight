@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Cube-map capture face cameras (TS `cubeCapture.ts`).
 
 use flight_geometry::{Vector3, create_vector3, set_matrix4_look_at};

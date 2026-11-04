@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::obj_blinn_phong_material_handler::OBJ_BLINN_PHONG_MATERIAL_HANDLER;
 use crate::obj_standard_pbr_material_handler::OBJ_STANDARD_PBR_MATERIAL_HANDLER;
 use crate::obj_types::ObjMaterialHandler;

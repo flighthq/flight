@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_meshgeometry::{IndexBuffer, MeshGeometry, MeshSubset, PrimitiveTopology};
 use flight_scene3d_formats::contract::*;
 

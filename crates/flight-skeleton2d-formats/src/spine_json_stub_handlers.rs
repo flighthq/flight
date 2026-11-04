@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::spine_parse_helpers::skip_crumb_spine_timeline_group;
 use crate::types::{JsonRecord, SpineJsonSectionContext, SpineJsonTimelineContext};
 

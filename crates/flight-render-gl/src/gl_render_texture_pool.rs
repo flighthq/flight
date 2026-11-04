@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 pooled render textures retain native callback and Result ownership contracts
 
 use std::any::Any;

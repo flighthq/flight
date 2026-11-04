@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::{EffectInput, EffectRef, get_effect_inputs};
 
 pub fn validate_effect_list(

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 pub const COLLADA_REQUIREMENT_KEY_NAMESPACE: &str = "dae";
 pub const GLTF_REQUIREMENT_KEY_NAMESPACE: &str = "gltf";
 pub const MD2_REQUIREMENT_KEY_NAMESPACE: &str = "md2";

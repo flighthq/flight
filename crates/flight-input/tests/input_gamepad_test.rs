@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_input::contract::*;
 
 fn close(actual: f32, expected: f32) {

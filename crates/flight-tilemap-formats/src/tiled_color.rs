@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Tiled color literals (`#RRGGBB` or `#AARRGGBB`) converted to/from Flight's packed-RGBA
 //! convention (`0xRRGGBBAA`, alpha in the low byte). TS `tiledColor.ts`.
 

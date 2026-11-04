@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Planar-reflection camera and oblique near-clip-plane helpers (TS `reflection.ts`).
 
 use flight_geometry::{Matrix4, Plane, create_matrix4, multiply_matrix4, set_matrix4};

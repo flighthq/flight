@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_shading::contract::*;
 
 mod is_built_in_modifier_slot {

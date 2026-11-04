@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! FXAA: luminance edge detection plus a directional blend along the detected edge. A physical raster kernel: the texel size is the actual source resolution. (TS `wgpuFxaaEffect.ts`).
 

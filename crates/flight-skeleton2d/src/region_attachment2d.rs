@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Rigid region attachment corners (TS `regionAttachment2D.ts`).
 
 use flight_geometry::{

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_adjustments::contract::*;
 use flight_entity::allocate_entity;
 

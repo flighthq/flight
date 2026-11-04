@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Publishing body bounds to the spatial broadphase (TS `broadphase.ts`).
 
 use flight_spatial::SpatialAabb2D;

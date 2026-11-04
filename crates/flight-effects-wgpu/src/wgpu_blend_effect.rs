@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and borrowed backdrop targets
 //! Advanced-blend composite pass (TS `wgpuBlendEffect.ts`): reads the incoming layer and an
 //! explicitly registered backdrop, applies the same W3C straight-color blend math as the GL blend

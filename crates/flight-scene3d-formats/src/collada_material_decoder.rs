@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_material::append_collada_materials;
 use crate::collada_types::*;
 use flight_entity::Ref;

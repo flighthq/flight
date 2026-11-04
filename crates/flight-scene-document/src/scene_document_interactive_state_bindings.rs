@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Inert interactive-state bindings between live nodes and their authored phases (TS
 //! `sceneDocumentInteractiveStateBindings.ts`). The source's object-identity maps and sets key by
 //! the live node's entity uid (D15 object-keyed caches).

@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! Rust keeps Clip's module state thread-local, matching JavaScript's per-execution-thread module
 //! binding. The TypeScript counterpart uses one lazy package-private binding.

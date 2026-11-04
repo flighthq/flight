@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The ShadedMaterial renderer (TS `wgpuShadedMeshMaterialRenderer.ts`): selects one composed
 //! `shaded:` pipeline from the material's ordered modifier feature set, writes the shared frame and
 //! light block, then binds the base surface and modifier data as one group(2). Its draw half reuses

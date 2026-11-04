@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     SwfMorphBounds, SwfReader, SwfTagParseState, merge_swf_rectangles, read_swf_rectangle,
 };

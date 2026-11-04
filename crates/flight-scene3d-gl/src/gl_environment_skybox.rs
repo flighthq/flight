@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the skybox pass draws through native glow handles on thread-bound render-gl state
 
 use flight_camera::{Camera3D, update_camera_3d_inverse_view_projection};

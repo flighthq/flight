@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{GlitchEffect, create_glitch_effect};
 use flight_effects_gl::contract::{
     apply_glitch_effect_to_gl, evaluate_glsl_scalar_expression, extract_glsl_expression,

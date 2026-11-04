@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) shape and path command lanes are canonically f64; SWF wire coordinates remain exact i32 twips until append boundaries
 use std::collections::HashMap;
 use std::sync::Arc;

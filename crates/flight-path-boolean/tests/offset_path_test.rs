@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use flight_path::*;
 use flight_path_boolean::contract::*;
 

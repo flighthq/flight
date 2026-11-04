@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::contract::*;
 
 fn mesh_area(mesh: &PathMesh) -> f64 {

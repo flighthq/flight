@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Drawable surface entity: an opaque host-native handle retained on the private runtime, a D16
 //! surface trait preserving derived-object identity through `Ref<dyn Surface>`, the surface-owned
 //! canvas context seam, and explicit display/resize capabilities. No renderer, native context or

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::contract::*;
 
 mod create_bitmap_region {

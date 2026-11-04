@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Float32Array;
 
 pub(crate) fn read_array(values: &[f32], index: usize) -> f32 {

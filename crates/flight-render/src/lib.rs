@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Backend-neutral render contracts: generic state/renderer dispatch, caller-owned proxy stores,
 //! render queues and targets, diagnostics, and 2D/3D scene preparation.
 

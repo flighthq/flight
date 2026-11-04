@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets, hold native texture names and return Result diagnostics
 //! Backdrop-aware advanced blend: composites the layer over a registered backdrop texture with one of
 //! the separable or HSL advanced blend modes. Backdrops are registered per render state by key.

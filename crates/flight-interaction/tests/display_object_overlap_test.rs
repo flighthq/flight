@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::create_rectangle;
 
 use crate::interaction_fixture;

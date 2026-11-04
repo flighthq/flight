@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_types::{MD5_MATERIAL_FEATURE, Md5SectionHandler};
 use crate::shared::create_external_texture_ref;
 use flight_entity::Ref;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{Effect, EffectStateOptions};
 use flight_effects_wgpu::contract::*;
 use flight_log::{LogValue, MemoryLogSink, clear_log_once_keys};

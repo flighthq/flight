@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the no-effects 3D present drives thread-bound render-gl targets
 
 use flight_render::RenderTargetClear;

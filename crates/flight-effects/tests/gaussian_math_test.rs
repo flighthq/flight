@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 mod compute_gaussian_radius_from_sigma {

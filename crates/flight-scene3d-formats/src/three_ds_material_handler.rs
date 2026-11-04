@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::three_ds_parse::{parse_color_chunk, read_chunk_end, read_null_terminated_string};
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16};
 use crate::three_ds_schema::*;

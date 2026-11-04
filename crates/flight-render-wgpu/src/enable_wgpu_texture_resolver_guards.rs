@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in diagnostics for texture resolution (TS `enableWgpuTextureResolverGuards.ts`): the render
 //! registry guards plus a once-per-log warning when mipmaps degrade to a single level.
 

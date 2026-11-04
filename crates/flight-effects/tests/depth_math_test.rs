@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 mod compute_depth_of_field_coc {

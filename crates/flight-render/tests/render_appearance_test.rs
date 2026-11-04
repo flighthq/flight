@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::{BLEND_MODE_MULTIPLY, BLEND_MODE_SCREEN};
 use flight_node::{NodeRef, invalidate_node_appearance};
 use flight_render::*;

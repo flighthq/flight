@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::contract::*;
 
 fn axis_values(path: &Path, axis: usize) -> Vec<f64> {

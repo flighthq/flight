@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shape renderer data retains opaque host surfaces and shared renderer-data handles
 
 use std::sync::{Arc, RwLock};

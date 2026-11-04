@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_scene2d::{Node2DRef, SPRITE_KIND, create_display_object};

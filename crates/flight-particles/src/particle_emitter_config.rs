@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{ParticleEmitterConfig, ParticleEmitterConfigOptions};
 
 pub fn create_particle_emitter_config(

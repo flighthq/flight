@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 const CUBE: [f32; 24] = [

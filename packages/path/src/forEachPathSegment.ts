@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/for_each_path_segment.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { PathRaw, PathSegment } from './path.ts';
 import { PathCommand } from './path.ts';
 

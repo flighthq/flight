@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::feature_requirements::Scene3DFormatFeatureRequirements;
 use flight_requirement::{Requirement, RequirementFacet};
 use flight_shading::SHADED_MATERIAL_KIND;

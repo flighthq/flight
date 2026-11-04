@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::cell::RefCell;
 
 use flight_spatial::contract::initialize_uniform_grid_spatial_backend_3d;

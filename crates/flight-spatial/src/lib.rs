@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod bvh_3d;
 mod explain_spatial_indexing_2d;
 mod explain_spatial_indexing_3d;

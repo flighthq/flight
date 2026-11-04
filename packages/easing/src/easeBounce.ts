@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/ease_bounce.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 function bounceOut(t: number): number {
   if (t < 1.0 / 2.75) {
     return 7.5625 * t * t;

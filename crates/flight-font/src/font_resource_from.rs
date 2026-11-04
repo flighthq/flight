@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_buffer::ArrayBufferView;
 use flight_entity::Unknown;
 

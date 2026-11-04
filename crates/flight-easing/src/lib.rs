@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Easing functions and caller-owned sample buffers.
 //!
 //! D24 replaces the allocating sample producer with `write_easing_samples(out, ease)`.

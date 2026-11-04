@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera::Camera3D;
 use flight_entity::Ref;
 use flight_lighting::Scene3DLightBlock;

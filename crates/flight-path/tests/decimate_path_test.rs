@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::contract::*;
 
 fn flattened_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {

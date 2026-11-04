@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 scoped native state brackets use FnOnce to enforce exactly-once restoration
 
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};

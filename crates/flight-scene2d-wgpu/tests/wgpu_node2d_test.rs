@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::NodeRef;
 use flight_render::{RenderProxies2D, prepare_scene_2d_render, register_node_renderer};
 use flight_render_wgpu::*;

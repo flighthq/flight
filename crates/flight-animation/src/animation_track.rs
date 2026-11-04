@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: data-union AnimationTrackSamplePosition
 
 use crate::types::*;

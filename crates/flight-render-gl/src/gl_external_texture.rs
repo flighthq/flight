@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 external textures intentionally expose borrowed native glow names
 
 use std::any::Any;

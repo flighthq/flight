@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Stateful camera controllers: orbit and fly intent controllers with damped goals, 2D follow with
 //! deadzone and world bounds, sphere framing for projections, and deterministic trauma-based shake.
 //! Input-agnostic pure math; no hardware, OS or render operation lives here.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_feature_requirements::COLLADA_FEATURE_SCENE_REQUIREMENTS;
 use crate::collada_xml::{collada_local_name, walk_collada_element};
 use crate::scene3d_format_requirements::COLLADA_REQUIREMENT_KEY_NAMESPACE;

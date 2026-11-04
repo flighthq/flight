@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Re-emits parsed Tiled documents as TMX/TSX XML (TS `tiledTmxFormat.ts`).
 
 use crate::tiled_color::format_tiled_color;

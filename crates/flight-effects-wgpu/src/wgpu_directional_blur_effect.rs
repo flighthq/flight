@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Directional blur: accumulates samples stepped along `angle` (degrees) over `length` texels, normalized by the sample count; `u_resolution` converts the texel length into UV space. (TS `wgpuDirectionalBlurEffect.ts`).
 

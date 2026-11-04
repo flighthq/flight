@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_test_helper::authored_translation_gltf;
 use flight_scene3d::Scene3DAnimationPath;
 use flight_scene3d_formats::contract::*;

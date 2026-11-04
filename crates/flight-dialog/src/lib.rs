@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod dialog;
 mod file_dialog;
 mod host_explain;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{Physics3DJoint, Physics3DJointRef, Physics3DJointSolver, Physics3DWorld};
 use flight_entity::Ref;
 use std::sync::Arc;

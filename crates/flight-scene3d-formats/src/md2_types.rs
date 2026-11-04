@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{Float32Array, Ref, Uint8Array};
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_meshgeometry::MeshMorph;

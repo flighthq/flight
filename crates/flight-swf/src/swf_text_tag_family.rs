@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::LazyLock;
 
 use crate::{SWF_EDIT_TEXT_HANDLER, SWF_STATIC_TEXT_HANDLER, SwfTagHandlerRef};

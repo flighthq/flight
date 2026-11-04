@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_image::contract::*;
 
 mod get_image_cross_origin_string {

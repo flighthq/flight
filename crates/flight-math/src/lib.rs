@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod angle;
 mod clamp;
 mod comparison;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_image::ImageResourceReference;
 use flight_node::{NodeRef, get_node_child_count};
 use flight_path_boolean::MARTINEZ_PATH_BOOLEAN_KERNEL;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_anim_features::collect_md5_anim_features;
 use crate::scene3d_format_requirements::MD5_REQUIREMENT_KEY_NAMESPACE;
 use flight_requirement::{Requirement, RequirementFacet, RequirementSet, create_requirement_set};

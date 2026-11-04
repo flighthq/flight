@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_log::LogStateRef;
 use flight_render::{are_render_registries_guards_enabled, enable_render_registries_guards};
 

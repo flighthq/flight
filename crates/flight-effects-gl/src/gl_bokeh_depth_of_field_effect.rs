@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets, take native texture names and return Result diagnostics
 //! Bokeh depth-of-field: a disc-shaped blur. When the scene supplied a sampleable depth texture
 //! (`ctx.scene_depth_texture`), it computes a per-pixel circle of confusion from

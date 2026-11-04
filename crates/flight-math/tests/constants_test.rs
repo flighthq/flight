@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_math::*;
 use std::f32::consts::PI;
 

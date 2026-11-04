@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_diagnostics::{GltfDropTally, gltf_diagnostic_numbers, tally_gltf_numbers};
 use crate::gltf_json::{GltfJsonMetadata, gltf_original_number};
 use crate::gltf_schema::*;

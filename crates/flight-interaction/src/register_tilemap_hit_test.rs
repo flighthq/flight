@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_geometry::{create_vector2, inverse_matrix_transform_point_xy};

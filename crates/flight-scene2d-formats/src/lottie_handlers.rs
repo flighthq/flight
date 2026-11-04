@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::lottie_layer_handlers::register_lottie_layer_handlers;
 use crate::lottie_mask_handlers::register_lottie_mask_handlers;
 use crate::lottie_shape_item_handlers::register_lottie_shape_item_handlers;

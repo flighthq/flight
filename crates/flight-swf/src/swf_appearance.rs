@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, LazyLock, RwLock};
 
 use flight_adjustments::contract::create_color_scale_bias_adjustment;

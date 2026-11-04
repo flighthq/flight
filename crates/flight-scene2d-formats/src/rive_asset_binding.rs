@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, LazyLock, Mutex, RwLock, Weak};
 
 use flight_entity::Ref;

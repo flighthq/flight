@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene3d_gl::contract::*;
 
 mod gl_mesh_fragment_tail {

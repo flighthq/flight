@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_camera_handler::AWD2_CAMERA_HANDLER;
 use crate::awd2_geometry_handler::AWD2_TRIANGLE_GEOMETRY_HANDLER;
 use crate::awd2_lighting_handler::{AWD2_LIGHT_HANDLER, AWD2_LIGHT_PICKER_HANDLER};

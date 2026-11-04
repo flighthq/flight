@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Timeline playback (TS `timeline.ts`): creation, frame scripts, labels, seeking, play/stop and the
 //! explicit-delta update loop.
 

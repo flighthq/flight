@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_lighting::{AmbientLight, DirectionalLight, PointLight, SpotLight};
 use flight_scene3d_formats::*;

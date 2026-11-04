@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_permissions::HostPreferencesPersistenceQueryCapability;
 use flight_permissions::HostPreferencesPersistenceRequestCapability;
 use flight_permissions::StoragePersistenceProviderResult;

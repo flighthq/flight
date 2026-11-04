@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in SWF import guards (TS `enableSwfGuards.ts`). The core parser's safe-stop behavior is
 //! unconditional; enabling guards only adds an unknown-filter warning.
 

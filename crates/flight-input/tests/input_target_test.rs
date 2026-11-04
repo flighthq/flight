@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::has_entity_runtime;
 use flight_input::contract::*;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::snapshot_value::{clone_snapshot_value, freeze_snapshot_deep};
 use crate::types::*;
 

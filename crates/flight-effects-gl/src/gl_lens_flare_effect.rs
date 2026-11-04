@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Lens flare: a single-pass approximation. On each fragment, sample the source's bright spots
 //! along the vector from the pixel toward the center, adding `ghosts` evenly spaced ghost samples

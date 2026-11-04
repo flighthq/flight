@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::classic_materials::create_phong_material;
 use flight_materials::material::*;
 use flight_materials::standard_material::create_standard_material;

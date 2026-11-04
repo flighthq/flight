@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::PbrExtension;
 
 pub(crate) fn get_pbr_extension_kind(extension: &PbrExtension) -> &str {

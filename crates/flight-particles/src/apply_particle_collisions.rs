@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     ColliderMode, PARTICLE_VELOCITY_STRIDE, ParticleCollider, ParticleEmitterState, ParticleObject,
     ParticleObjectsState,

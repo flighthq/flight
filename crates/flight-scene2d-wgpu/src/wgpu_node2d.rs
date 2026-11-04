@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the render walk is generic dispatch over render-wgpu state and caller-owned proxies
 //! The 2D render walk and the plain display-object renderer (TS `wgpuNode2D.ts`).
 

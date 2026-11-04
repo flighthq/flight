@@ -1,6 +1,3 @@
-// Generated from crates/flight-input/src/input_gamepad.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { GamepadAxisKind, GamepadButtonKind, GamepadMapping, GamepadStickOutput } from './types.ts';
 
 const STANDARD_BUTTON_NAMES: (GamepadButtonKind | undefined)[] = [

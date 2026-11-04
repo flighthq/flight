@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 upload helpers intentionally accept glow Context and native Result diagnostics
 
 use std::sync::Arc;

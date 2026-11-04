@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Host capability explanations for the capability groups this crate owns (`canvas`, `gl`,
 //! `surface`, `wgpu`), redistributed from the former aggregate host (D26; TS `hostExplain.ts`).
 //! Each explainer appends to a caller-owned explanation, so a host provider composes its own host's

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use glow::HasContext;
 
 use crate::gl_test_helper::{call_names, make_gl_scene3d_state, take_gl_error};

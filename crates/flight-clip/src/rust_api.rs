@@ -1,4 +1,6 @@
 //! flight-compiler: rust-only
+
+//! flight-compiler: rust-only
 //!
 //! Rust keeps its string conversion and ergonomic method helpers. They are not part of Clip's
 //! established TypeScript contract or root export lanes.

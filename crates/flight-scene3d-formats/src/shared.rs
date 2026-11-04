@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Float32Array, Float64Array, Ref, Uint8Array};
 use flight_image::{
     EmbeddedImageResourceReferenceValue, ExternalImageResourceReferenceValue,

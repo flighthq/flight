@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_movieclip::contract::*;
 
 mod get_spritesheet_timeline_source_unsupported_field_string {

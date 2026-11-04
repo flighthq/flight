@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md2_schema::{MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION};
 use flight_entity::Uint8Array;
 

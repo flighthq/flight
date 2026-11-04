@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
 pub fn compute_gaussian_kernel_weights(out: &mut Vec<f32>, sigma: f32) {
     let size = get_gaussian_kernel_size(sigma);

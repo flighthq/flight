@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::*;
 
 pub fn register_built_in_physics_3d_joint_solvers(world: &mut Physics3DWorld) {

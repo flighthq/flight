@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Projects one Tiled tile layer into runtime `TilemapData`, split by tileset
 //! (TS `tiledProject.ts`).
 

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_sensors::contract::*;
 
 mod get_sensor_accuracy_string {

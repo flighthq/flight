@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::StandardPbrMaterialProperties;
 
 pub fn clamp_standard_pbr_material_properties(

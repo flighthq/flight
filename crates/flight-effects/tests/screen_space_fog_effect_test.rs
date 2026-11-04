@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 mod create_screen_space_fog_effect {

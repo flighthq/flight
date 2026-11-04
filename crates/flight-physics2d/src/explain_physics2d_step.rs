@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The step's precondition flags as data (TS `explainPhysics2DStep.ts`).
 
 use crate::step_validation::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use crate::texture::{clone_texture, copy_texture, equals_texture};

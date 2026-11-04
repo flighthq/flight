@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/tests/dash_path_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { PathCommand, appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, dashPath } from './contract.ts';

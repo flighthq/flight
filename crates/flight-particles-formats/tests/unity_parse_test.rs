@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles_formats::contract::*;
 
 const UNITY: &str = "{\"name\":\"spark\",\"duration\":5,\"looping\":true,\"prewarm\":true,\"maxParticles\":100,\"startLifetime\":{\"mode\":\"twoConstants\",\"constantMin\":1,\"constantMax\":2},\"startSpeed\":{\"mode\":\"constant\",\"constant\":5},\"startSize\":{\"mode\":\"constant\",\"constant\":1},\"startRotation\":{\"mode\":\"constant\",\"constant\":0},\"startColor\":{\"r\":1,\"g\":0,\"b\":0,\"a\":1},\"gravityModifier\":1,\"physicsGravity\":9.81,\"emission\":{\"rateOverTime\":{\"mode\":\"constant\",\"constant\":10},\"bursts\":[{\"time\":0,\"count\":5,\"cycleCount\":2,\"repeatInterval\":1},{\"time\":1,\"count\":2}]},\"shape\":{\"enabled\":true,\"shapeType\":\"Cone\",\"radius\":1,\"angle\":25,\"scale\":{\"x\":1,\"y\":1,\"z\":1}},\"colorOverLifetime\":{\"enabled\":false},\"sizeOverLifetime\":{\"enabled\":false},\"rotationOverLifetime\":{\"enabled\":false},\"noise\":{\"enabled\":true},\"textureSheetAnimation\":{\"enabled\":true}}";

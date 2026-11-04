@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::three_ds_camera_handler::THREE_DS_CAMERA_FAMILY;
 use crate::three_ds_keyframe_handler::THREE_DS_KEYFRAME_FAMILY;
 use crate::three_ds_light_handler::THREE_DS_LIGHT_FAMILY;

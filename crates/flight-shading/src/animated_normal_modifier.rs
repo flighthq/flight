@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::{Vector2, create_vector2};
 use flight_texture::Texture;

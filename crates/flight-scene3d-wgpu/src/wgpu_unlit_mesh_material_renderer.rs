@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in Unlit forward renderer (TS `wgpuUnlitMeshMaterialRenderer.ts`): lighting-independent flat
 //! color through the shared unlit pipeline, with the optional base-color map.

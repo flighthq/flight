@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::{
     SwfBitWriter, TAG_DEFINE_SHAPE, TAG_END, TAG_SHOW_FRAME, block_on, bytes_ref,
     create_bitmap_shape_bytes, create_box_glyph_bytes, create_color_transform,

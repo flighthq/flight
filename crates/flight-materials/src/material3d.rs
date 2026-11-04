@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{Kind, allocate_entity};
 
 use crate::{BLEND_MODE_NORMAL, Material3D, Material3DFields, MaterialAlphaMode};

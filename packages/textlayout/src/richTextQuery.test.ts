@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/tests/rich_text_query_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { createRectangle } from '@flighthq/geometry/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat, TextFormatRangeRaw } from '@flighthq/textformat/contract';

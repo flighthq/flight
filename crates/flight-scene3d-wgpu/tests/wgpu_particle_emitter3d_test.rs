@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_node::{NodeRef, add_node_child, invalidate_node_local_transform};
 use flight_particleemitter::{

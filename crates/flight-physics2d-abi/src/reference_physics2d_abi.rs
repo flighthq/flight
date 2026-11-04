@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: wire records are IEEE doubles (TS DataView/Float64Array) and the step dt is flight-physics2d's f64 timestep
 //! The executable specification for the Physics2D ABI (TS `referencePhysics2DAbi.ts`): a real
 //! `Physics2DWorld` behind persistent handles, caller-chosen ids and packed buffers. It exists to

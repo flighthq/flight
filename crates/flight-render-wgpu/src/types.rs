@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 // flight-lint: allow-file(contract-vocabulary, file-structure, sugar-delegates) D17 native wgpu binding: the backend's contract types hold host-supplied wgpu resources, and the render-state trait implementations are required plumbing
 //! The WebGPU backend contract types (TS `types/src/Wgpu*.ts` owned by render-wgpu). Native GPU

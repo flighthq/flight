@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 

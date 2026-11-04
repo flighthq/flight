@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_signals::emit_signal;
 
 use crate::internal::initialize_tween;

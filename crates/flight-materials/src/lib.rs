@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 pub mod types;
 pub use types::*;
 

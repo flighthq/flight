@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the 3D draw walk dispatches backend-typed renderers over thread-bound render-gl state
 
 use std::collections::HashMap;

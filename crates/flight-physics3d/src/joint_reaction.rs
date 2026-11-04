@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D9b: native result writers keep the output parameter first
 use flight_entity::allocate_entity;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::contract::create_blinn_phong_material;
 use flight_materials::{BLINN_PHONG_MATERIAL_KIND, Material};
 use flight_meshgeometry::create_box_mesh_geometry;

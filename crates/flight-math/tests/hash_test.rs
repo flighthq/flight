@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_math::*;
 
 mod create_random_source_from_hash {

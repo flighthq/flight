@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, RwLock};
 
 use flight_clip::contract::create_clip_region_from_path;

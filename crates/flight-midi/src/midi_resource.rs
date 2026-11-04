@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Entity, Ref, allocate_entity, attach_entity_binding, get_entity_binding_as};

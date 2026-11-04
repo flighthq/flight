@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render::RenderProxy2D;
 use flight_render_gl::{
     GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlPbrExtensionShaderContribution,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 fn summary_data() -> BitmapFontData {

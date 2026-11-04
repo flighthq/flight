@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod capture_snapshot;
 mod enable_snapshot_guards;
 mod equals_snapshot;

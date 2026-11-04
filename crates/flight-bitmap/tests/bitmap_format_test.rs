@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::contract::*;
 
 mod convert_bitmap_pixel_order {

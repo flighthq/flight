@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state and opaque host surfaces
 //! The RichText renderer (TS `wgpuRichText.ts`): the field lays out, rasterizes its background,
 //! border, glyph runs and decorations (plus an optional editable-input overlay) into a per-node 2D

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_materials::specular_pbr_extension::create_specular_pbr_extension;
 use flight_materials::{PbrExtension, SPECULAR_PBR_EXTENSION_KIND};

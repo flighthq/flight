@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::RwLock;
 
 use flight_entity::Ref;

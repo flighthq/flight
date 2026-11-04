@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_scene3d_formats::contract::*;
 
 mod scene3d_format_requirements {

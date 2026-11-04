@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The caret/selection overlay drawn onto a RichText's offscreen field canvas when its input slot is
 //! present (TS `wgpuTextInput.ts`). Identical to the GL overlay: both backends rasterize the field to
 //! a 2D canvas before uploading, so the chrome is plain Canvas 2D drawing.

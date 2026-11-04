@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_platform::PlatformEndianness;
 use flight_render_wgpu::*;
 

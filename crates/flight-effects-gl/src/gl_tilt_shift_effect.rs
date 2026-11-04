@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered
 //! at `center` on Y with height `width`; blur strength ramps with distance outside the band.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_extension_test_helper::parse_extension_source;
 use flight_entity::Ref;
 use flight_importdiagnostics::{

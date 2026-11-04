@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 #[derive(Clone, Copy)]
 struct RiveCoreTypeRow {
     key: i32,

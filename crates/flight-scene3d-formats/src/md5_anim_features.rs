@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::stl_features::is_stl_whitespace;
 
 pub const MD5_ANIM_FEATURE_NAMES: [&str; 2] = ["Hierarchy", "Animation"];

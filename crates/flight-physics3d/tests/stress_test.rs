@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 #![cfg(feature = "stress-tests")]
 
 use std::sync::{Arc, RwLock};

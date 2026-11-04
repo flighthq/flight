@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::obj_material_helpers::{external_obj_texture, pack_obj_color};
 use crate::obj_material_model::has_obj_pbr_directives;
 use crate::obj_schema::ObjMaterial;

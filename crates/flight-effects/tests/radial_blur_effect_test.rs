@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 mod create_radial_blur_effect {

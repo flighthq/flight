@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 

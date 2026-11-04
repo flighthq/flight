@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_schema::*;
 use flight_entity::{Record, Ref, Unknown, set_record_value};
 use serde_json::Value;

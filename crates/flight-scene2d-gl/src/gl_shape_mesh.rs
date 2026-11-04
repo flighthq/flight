@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 mesh draw contracts expose glow native handles and thread-bound render-gl state
 
 use flight_entity::throw_error;

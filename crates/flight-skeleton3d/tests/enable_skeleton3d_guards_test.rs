@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_log::{
     LogData, LogEntry, LogLevel, LogStateRef, LogValue, create_log_state, set_log_sink,

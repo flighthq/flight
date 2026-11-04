@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::{Material, MaterialAlphaMode};
 use flight_scene3d_wgpu::contract::*;
 use flight_shading::{SHADED_MATERIAL_KIND, create_shaded_material};

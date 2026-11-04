@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{ConvolutionEffect, create_convolution_effect};
 use flight_entity::Ref;
 

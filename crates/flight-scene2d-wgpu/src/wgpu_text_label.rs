@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state and opaque host surfaces
 //! The TextLabel renderer (TS `wgpuTextLabel.ts`): the label lays out through the text layout,
 //! rasterizes its glyph runs into a per-node 2D surface at device-pixel density, and draws the

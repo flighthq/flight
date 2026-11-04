@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_mesh_feature_requirements::MD5_MESH_FEATURE_SCENE_REQUIREMENTS;
 use crate::md5_mesh_features::collect_md5_mesh_features;
 use crate::scene3d_format_requirements::MD5_REQUIREMENT_KEY_NAMESPACE;

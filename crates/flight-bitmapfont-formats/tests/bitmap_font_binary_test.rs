@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_bitmapfont::{get_bitmap_font_glyph, get_bitmap_font_kerning};

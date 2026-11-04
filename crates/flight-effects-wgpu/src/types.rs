@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary, enum-payload-named) D17 native wgpu effect contracts carry host-supplied wgpu resources, Rust callback forms of the TS closure types, and the open Effect/Adjustment family references
 //! The WebGPU effect contract types (TS `types/src/WgpuEffect*.ts` and
 //! `WgpuColorLutTextureCache.ts` owned by effects-wgpu). The runner seam itself

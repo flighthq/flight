@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_render_wgpu::*;
 
 const KNOWN_FORMATS: [(&str, wgpu::TextureFormat); 7] = [

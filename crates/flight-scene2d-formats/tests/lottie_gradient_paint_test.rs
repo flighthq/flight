@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene2d_formats::contract::*;
 
 mod create_lottie_gradient_matrix {

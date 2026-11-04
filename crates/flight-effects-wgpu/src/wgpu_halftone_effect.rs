@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Halftone: samples luminance, then carves a rotated dot grid whose dot radius tracks darkness. `scale` sets the cell size in pixels, `angle` (degrees) rotates the grid. (TS `wgpuHalftoneEffect.ts`).
 

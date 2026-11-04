@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/tessellate_stroke_path.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { PathMesh, PathRaw, StrokeStyle } from './path.ts';
 import type { StrokePathPieceGeometry } from './strokePathGeometry.ts';
 import { buildStrokePathGeometry } from './strokePathGeometry.ts';

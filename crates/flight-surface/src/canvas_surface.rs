@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Canvas 2D surface allocation and context acquisition (TS `canvasSurface.ts`).
 
 use flight_app::contract::AppWindow;

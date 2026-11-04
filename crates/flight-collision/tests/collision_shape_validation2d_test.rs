@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 mod get_collision_polygon_validation_status2d {

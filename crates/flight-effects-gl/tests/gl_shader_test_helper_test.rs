@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod evaluate_glsl_scalar_expression {
     use flight_effects_gl::contract::evaluate_glsl_scalar_expression;
 

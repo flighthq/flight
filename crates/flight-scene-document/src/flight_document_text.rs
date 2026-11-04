@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The Flight document text codec (TS `flightDocumentText.ts`): formats a logical document into the
 //! accepted YAML subset and reads subset text back into the logical model, explaining the first
 //! refusal.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::{OutlineEffect, SketchEffect};
 
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first

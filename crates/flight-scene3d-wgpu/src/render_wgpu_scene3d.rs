@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Draws a prepared 3D scene on the wgpu backend (TS `renderWgpuScene3D.ts`), the WGSL mirror of
 //! scene3d-gl's `render_gl_scene3d`.
 

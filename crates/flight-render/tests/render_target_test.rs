@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{create_matrix, create_rectangle, multiply_matrix};
 use flight_node::get_node_local_matrix;
 use flight_render::*;

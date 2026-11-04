@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Native receiver conveniences; the free-function contract remains authoritative.
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 // flight-lint: allow-file(contract-vocabulary) D16 receiver plumbing retains the original open Node and Material EntityRefs

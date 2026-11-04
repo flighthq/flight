@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Locale-aware list joining (TS `list.ts`).
 
 use crate::cache::{FormatterCache, get_cache_key, get_cached};

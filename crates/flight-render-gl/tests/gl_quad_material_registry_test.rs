@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::{Material2D, MaterialData};
 use flight_render_gl::{GlQuadMaterialRenderer, GlRenderState};
 

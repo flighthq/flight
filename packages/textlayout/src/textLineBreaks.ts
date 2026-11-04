@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/src/text_line_breaks.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { findUtf16Unit } from './textUnits.ts';
 
 export function getTextLineBreakIndex(lineBreaks: Readonly<number[]>, startIndex?: number): number {

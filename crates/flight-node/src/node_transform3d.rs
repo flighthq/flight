@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! 3D local/world transform resolution (TS `nodeTransform3d.ts`).
 
 // flight-lint: allow-file(contract-vocabulary) D16 open node trait objects are contract dispatch

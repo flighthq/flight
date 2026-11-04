@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Gradient bevel (TS `wgpuGradientBevelEffect.ts`): a bevel whose highlight→shadow band color is
 //! looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth, then

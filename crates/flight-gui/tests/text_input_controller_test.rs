@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_gui::contract::*;
 use flight_text::create_rich_text;
 use std::sync::{Arc, RwLock};

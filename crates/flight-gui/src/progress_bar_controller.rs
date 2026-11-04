@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gui_controller::*;
 use flight_entity::{Ref, allocate_entity};
 use flight_scene2d::Node2DRef;

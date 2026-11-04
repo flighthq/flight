@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_compression::*;
 
 mod compress_deflate {

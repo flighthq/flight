@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! God rays: radial light scattering from a screen-space light position (centerX, centerY). Marches
 //! SAMPLES steps along the ray from each fragment toward the light, accumulating color with per-step

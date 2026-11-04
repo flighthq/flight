@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_node::{NodeRef, add_node_child, get_node_parent};

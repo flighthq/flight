@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Ref, get_entity_id};
 use flight_surface::{CanvasSurface, HostCanvasCapability};
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The debug umbrella (TS `debug.ts`): a registry of diagnostic subsystems and one debug session
 //! over a caller-owned log state. Enabling installs a dev sink, raises the global and per-channel log
 //! levels, and runs each selected subsystem's guard enabler; disabling undoes exactly that. The

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! QuadBatch construction, instance-buffer operations, signals and bounds (TS `quadBatch.ts`).
 
 use std::sync::{Arc, RwLock};

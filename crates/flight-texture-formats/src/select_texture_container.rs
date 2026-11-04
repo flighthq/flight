@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::{TextureContainer, TextureContainerFormat};
 
 pub fn select_texture_container<'a>(

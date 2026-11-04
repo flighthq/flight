@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::rc::Rc;
 
 use flight_entity::{Ref, get_entity_id};

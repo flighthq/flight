@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod upload_gl_texture_video_frame {
     use std::sync::Arc;
 

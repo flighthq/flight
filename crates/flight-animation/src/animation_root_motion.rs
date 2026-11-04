@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 
 use crate::animation_track::sample_animation_track_ref;

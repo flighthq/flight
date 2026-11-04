@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::flight_physics2d_support_test::*;
 
 // Every assertion in this file is a STATICS check, not a comparison against the formula under test. A

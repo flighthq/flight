@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_compression::{HostDecompressDeflateCapability, HostDecompressLzmaCapability};
 use flight_entity::{Ref, Uint8Array};
 

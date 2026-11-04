@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render passes accept native target traits and preserve source Result diagnostics
 
 use flight_render::RenderTargetClear;

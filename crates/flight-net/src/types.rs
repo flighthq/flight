@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::enums::*;
 use flight_buffer::{ArrayBuffer, ArrayBufferView, Blob};
 use flight_entity::{FlightError, Record, Ref, Unknown};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_adjustments::contract::*;
 use flight_entity::allocate_entity;
 use flight_materials::color_scale_bias::{create_color_scale_bias, initialize_color_scale_bias};

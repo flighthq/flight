@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Unity particle system JSON serialization (TS `unitySerialize.ts`).
 
 use flight_math::RAD_TO_DEG;

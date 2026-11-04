@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod draw_gl_linear_to_srgb_pass {
     use crate::gl_test_helper::{
         calls_named, calls_with, clear_calls, make_state, make_texture_target,

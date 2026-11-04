@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod color_tween;
 mod internal;
 mod timer;

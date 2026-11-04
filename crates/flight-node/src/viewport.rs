@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The passive drawable rectangle a scene renders into (TS `viewport.ts`).
 
 use flight_entity::allocate_entity;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Skeletal palettes, CPU skinning and source-defined posed bounds.
 //! Initializers and the guard installation seam are contract-only.
 //! ```compile_fail

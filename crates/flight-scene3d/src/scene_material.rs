@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene_node::as_node3d;
 use flight_entity::Ref;
 use flight_materials::Material3D;

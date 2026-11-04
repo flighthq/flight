@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 mod collision_collider_shape3d {
     use std::sync::{Arc, RwLock};
 

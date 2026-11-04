@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Per-frame GPU draw statistics (TS `wgpuRenderStats.ts`). The source's module WeakMap keyed by
 //! state is the state's own package record (D5).
 

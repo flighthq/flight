@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the pipeline state holds host-supplied wgpu targets and textures
 //! The opt-in post-process pipeline (TS `wgpuEffectState.ts`), the WebGPU mirror of effects-gl's
 //! effect state. The caller opens a pass on the screen, then:

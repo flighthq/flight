@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::billboard_camera::{BillboardCameraBasisGuard, set_billboard_camera_basis_guard};
 use flight_camera::Camera3D;
 use flight_entity::Ref;

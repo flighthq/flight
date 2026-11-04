@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use regex::Regex;
 use serde_json::Value;
 

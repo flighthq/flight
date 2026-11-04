@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
 #[derive(Clone, Debug)]

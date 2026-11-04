@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance,
 //! then composite the source over the shadow. Full-frame realization: acquires the recipe's three

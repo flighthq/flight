@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod present_gl_render_target {
     use crate::gl_test_helper::{
         calls_named, calls_with, clear_calls, make_state, make_texture_target,

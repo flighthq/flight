@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5/D9b: collision registry is explicit and native result writers keep output first
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 

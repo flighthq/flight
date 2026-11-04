@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{EntityRuntimeSlot, allocate_entity, get_entity_runtime};

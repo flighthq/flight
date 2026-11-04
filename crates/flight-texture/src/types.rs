@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::any::Any;
 use std::fmt;
 use std::ops::{Deref, DerefMut};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod read_gl_render_target_pixels {
     use crate::gl_test_helper::{
         calls_named, calls_with, clear_calls, last_call, make_state, make_texture_target,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod calculate_gl_matrix_from_values {
     use flight_render_gl::calculate_gl_matrix_from_values;
 

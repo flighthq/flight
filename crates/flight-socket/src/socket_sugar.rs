@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 sugar for the socket public lane: entity lifecycle methods, capability operations and
 //! connection commands, each a thin delegate to its free function. Sugar contains no logic.
 

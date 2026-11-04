@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Fragment-stage bind-group layout entries the mesh-material families declare their group(2)
 //! layouts from (the source writes these inline per family).
 

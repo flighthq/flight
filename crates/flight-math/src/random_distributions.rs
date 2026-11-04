@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::throw_range_error;
 
 // TypeScript Number.EPSILON is exactly 2^-52, also representable in f32.

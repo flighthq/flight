@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! Rust verifies the implicit module binding through public operations; TypeScript reflects the
 //! lazy binding object itself in the target-native companion.

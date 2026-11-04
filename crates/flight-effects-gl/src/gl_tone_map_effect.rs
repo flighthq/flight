@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Tone map: compress HDR to displayable range via the selected operator. Single-pass reference
 //! recipe. Each operator compiles its own program, keyed `toneMap.<operator>`.

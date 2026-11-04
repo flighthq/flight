@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-boolean/tests/boolean_paths_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { appendPathRectangle, clonePath, createPath, flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';

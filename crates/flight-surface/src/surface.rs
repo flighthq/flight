@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Surface allocation, private runtime and handle access (TS `surface.ts`).
 
 use std::sync::RwLock;

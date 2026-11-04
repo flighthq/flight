@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Record, entries, set_record_value};
 use flight_spritesheet::{
     SpritesheetAnimationData, SpritesheetAnimationDirection, SpritesheetData, SpritesheetFrameData,

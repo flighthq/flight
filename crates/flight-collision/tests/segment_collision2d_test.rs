@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 fn segment(x0: f32, y0: f32, x1: f32, y1: f32) -> CollisionSegment2D {

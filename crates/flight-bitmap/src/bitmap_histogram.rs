@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::bitmap::invalidate_bitmap;
 use crate::bitmap_palette_map::apply_bitmap_palette_map;
 use crate::types::*;

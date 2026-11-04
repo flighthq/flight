@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! SSAO (TS `wgpuSsaoEffect.ts`): an ambient-occlusion stand-in. Real SSAO reconstructs view-space
 //! positions from a sampleable depth texture; WebGPU has no depth G-buffer yet, so this darkens

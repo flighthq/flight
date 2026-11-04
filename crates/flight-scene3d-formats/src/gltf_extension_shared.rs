@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_schema::{GltfMaterial, GltfTextureInfoRef};
 use crate::gltf_types::GltfExtensionContext;
 use flight_entity::Ref;

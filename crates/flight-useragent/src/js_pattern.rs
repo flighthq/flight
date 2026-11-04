@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! Exact JS-regex building blocks for the source's UA patterns, written out instead of using a Rust
 //! regex engine because the observable semantics differ:
 //! - JS `/i` without the `u` flag folds case only where both sides are ASCII (a non-ASCII character

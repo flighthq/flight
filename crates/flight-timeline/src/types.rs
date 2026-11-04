@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Timeline-owned declarations (TS `Timeline.ts`, `TimelineSource.ts`, `TimelineLabel.ts`,
 //! `TimelineSignals.ts`, `TimelineFrameEvent.ts`, `TimelinePlayMode.ts`, `TimelineCue.ts`).
 //!

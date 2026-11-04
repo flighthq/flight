@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod built_in_requirement_catalog_entries;
 mod requirement_catalog;
 mod types;

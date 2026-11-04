@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-array) D9: borrowed native row workspaces are slices instead of owned arrays
 // flight-lint: allow-file(conform-params) D5/D9b: hidden source scratch is explicit and output parameters stay first
 use crate::*;

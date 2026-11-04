@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_layout::*;
 
 fn node(parent_index: i32, item_style: Option<AnchorLayoutItemStyle>) -> LayoutNode {

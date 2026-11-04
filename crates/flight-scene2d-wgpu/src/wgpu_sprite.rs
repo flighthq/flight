@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The sprite renderer (TS `wgpuSprite.ts`): a textured quad through the shared batch, or an
 //! immediate draw through a bound bitmap shader.

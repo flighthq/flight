@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/tests/statistics_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { mean, median, standardDeviation, variance, weightedAverage } from './contract.ts';

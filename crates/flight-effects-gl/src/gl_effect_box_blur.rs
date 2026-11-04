@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shared GL effect passes draw native glow targets and return Result diagnostics
 //! Iterative separable box blur, the cheap building block for soft spreads (glow, drop shadow).
 

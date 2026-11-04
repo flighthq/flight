@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::unlit_materials::*;
 use flight_materials::*;
 

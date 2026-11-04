@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::shared::create_external_texture_ref;
 use flight_entity::Ref;
 use flight_scene3d::Scene3DDocument;

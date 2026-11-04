@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::common::*;
 use flight_net::contract::*;
 use flight_signals::emit_signal;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_skeleton2d_formats::contract::*;
 
 mod register_all_spine_binary_handlers {

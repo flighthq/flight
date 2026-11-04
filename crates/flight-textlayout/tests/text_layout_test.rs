@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use crate::common::*;
 use flight_textformat::{TextFormatAlign, TextFormatListMarker};
 use flight_textlayout::contract::*;

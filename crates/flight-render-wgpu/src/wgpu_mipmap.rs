@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! GPU mip-chain generation by repeated downsampling (TS `wgpuMipmap.ts`). WebGPU has no
 //! generateMipmap, so each level is rendered from the one above through a cached fullscreen

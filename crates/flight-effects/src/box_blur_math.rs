@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 fn compute_box_blur_lower_pass_count(sigma: f32, passes: f32, lower_width: f32) -> f32 {
     let value = (12.0 * sigma * sigma
         - passes * (lower_width * lower_width + 4.0 * lower_width + 3.0))

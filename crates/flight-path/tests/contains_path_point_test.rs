@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::contract::*;
 
 fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {

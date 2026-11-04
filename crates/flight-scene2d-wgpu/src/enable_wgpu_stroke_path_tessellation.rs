@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in closed-ring stroke tessellation (TS `enableWgpuStrokePathTessellation.ts`).
 
 use flight_path::{Path, PathMesh, StrokeStyle, tessellate_stroke_path};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::EntityRuntimeSlot;
 use flight_entity::allocate_entity;
 

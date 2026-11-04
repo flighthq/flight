@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_core_shared::{gltf_component_values, gltf_core_index, report_gltf_core_values};
 use crate::gltf_types::{GltfCoreFeatureContext, GltfCoreFeatureHandler};
 use flight_animation::{AnimationInterpolation, create_animation_track};

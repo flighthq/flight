@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Tiled global tile ID decoding and tileset ref lookup (TS `tiledGid.ts`).
 
 use crate::types::{TiledGid, TiledMap, TiledTilesetRef};

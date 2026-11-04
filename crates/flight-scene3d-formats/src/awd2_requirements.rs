@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_block_census::collect_awd2_block_counts;
 use flight_compression::{HostDecompressDeflateCapability, HostDecompressLzmaCapability};
 use flight_entity::Uint8Array;

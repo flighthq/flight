@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod device_form_factor;
 mod js_pattern;
 mod user_agent;

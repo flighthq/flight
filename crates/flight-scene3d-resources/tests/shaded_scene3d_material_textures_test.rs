@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene3d_resources::contract::*;
 use flight_shading::contract::create_shaded_material;
 

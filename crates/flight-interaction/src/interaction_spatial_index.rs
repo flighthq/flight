@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 use flight_spatial::{
     SpatialAabb2D, clear_spatial_index_2d, insert_spatial_object_2d, query_spatial_point_2d,

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::fmt;
 
 use serde::de::{MapAccess, SeqAccess, Visitor};

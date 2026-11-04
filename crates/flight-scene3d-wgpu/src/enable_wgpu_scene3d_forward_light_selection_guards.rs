@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The opt-in forward-light truncation guard (TS `enableWgpuScene3DForwardLightSelectionGuards.ts`):
 //! when punctual lights exceed the forward budget without a prepared selection, the render warns once
 //! with actionable guidance.

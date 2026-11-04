@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::enums::{NetGuardOperation, NetGuardReason, NetResponseExplanationReason};
 use crate::types::*;
 use flight_entity::Ref;

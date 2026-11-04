@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_meshgeometry::{MeshGeometryOptions, create_mesh_geometry};
 use flight_node::{NodeRef, add_node_child};

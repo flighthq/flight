@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::PoisonError;
 
 use flight_entity::Ref;

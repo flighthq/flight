@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_layout::*;
 
 fn root(container_style: GridLayoutContainerStyle) -> LayoutNode {

@@ -1,6 +1,3 @@
-// Generated from crates/flight-input/tests/input_target_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { hasEntityRuntime } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 

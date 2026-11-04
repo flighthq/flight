@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: registry seams take the open Effect family as `&dyn Effect` and render-wgpu runner/resolver function values
 //! Per-state registry mapping an effect `kind` to its WebGPU runner (TS `wgpuEffectRegistry.ts`):
 //! the material-renderer pattern one tier up. Registration is opt-in and dispatch is a map lookup,

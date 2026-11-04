@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/src/hash.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { RandomSource } from './random.ts';
 import { createRandomSource } from './random.ts';
 

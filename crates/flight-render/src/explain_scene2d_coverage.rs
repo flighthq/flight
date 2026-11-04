@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_requirement::RequirementFacet;
 use flight_scene2d::Scene2DKindUsage;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The proactive WebGPU 3D coverage seam (TS `explainWgpuScene3DCoverage.ts`): which of the kinds a
 //! document uses this state's registries can serve, the WebGPU twin of the GL explanation.
 

@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/tests/angle_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { degToRad, deltaAngle, normalizeAngle, radToDeg } from './contract.ts';

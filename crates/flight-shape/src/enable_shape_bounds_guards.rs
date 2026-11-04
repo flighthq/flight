@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in missing-command diagnostics (TS `enableShapeBoundsGuards.ts`) over caller-owned state.
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 

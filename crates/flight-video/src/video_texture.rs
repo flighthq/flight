@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D16 general closed-family texture traits, as in flight-texture; the moved video functions take the same TextureVariant/TextureUvTransform views
 
 use std::any::Any;

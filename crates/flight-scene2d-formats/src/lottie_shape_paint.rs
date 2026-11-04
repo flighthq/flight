@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) Flight path coordinates and dash measurements use the approved D1 f64 path lane
 
 use flight_entity::Ref;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The forward-light selection diagnostic (TS `explainWgpuScene3DForwardLightSelection.ts`), the
 //! pure twin of scene3d-gl's explanation.
 

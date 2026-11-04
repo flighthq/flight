@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{CustomShaderEffect, create_custom_shader_effect};
 use flight_entity::Ref;
 

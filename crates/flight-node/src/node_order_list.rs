@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Reusable child ordering over the node graph (TS `nodeOrderList.ts`).
 
 use std::cmp::Ordering;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
 pub fn create_bayer_matrix(out: &mut [f32], order: f32) -> usize {
     let exponent = (order + 0.5).floor().max(1.0) as u32;

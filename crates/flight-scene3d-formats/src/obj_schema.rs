@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 pub struct ObjMaterial {
     pub ambient: [f32; 3],
     pub anisotropy: Option<f32>,

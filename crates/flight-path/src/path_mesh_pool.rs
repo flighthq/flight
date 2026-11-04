@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! flight-compiler: contract acquirePathMesh acquirePathMeshTyped releasePathMesh releasePathMeshTyped
 use crate::path::{Path, PathMesh, PathMeshTyped};
 use crate::tessellate_path::tessellate_path_into;

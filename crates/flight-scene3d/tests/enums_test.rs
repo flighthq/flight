@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_scene3d::*;
 
 mod get_billboard_mode_string {

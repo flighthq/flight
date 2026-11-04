@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;

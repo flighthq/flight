@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_log::{LogData, LogEntry, LogLevel, LogValue, create_log_state, set_log_sink};
 use flight_scene3d::contract::*;

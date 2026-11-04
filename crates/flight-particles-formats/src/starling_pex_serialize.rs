@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Starling / Sparrow PEX XML serialization (TS `starlingPexSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;

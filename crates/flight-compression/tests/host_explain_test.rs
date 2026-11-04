@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_compression::contract::*;
 use flight_host::{HostCapabilityGroupExplanation, HostExplanation};
 

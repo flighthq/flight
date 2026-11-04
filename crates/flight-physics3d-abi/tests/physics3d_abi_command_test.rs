@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: command scalars are the wire's IEEE doubles
 use flight_collision::{CollisionColliderShape3D, CollisionShape3D, CollisionSphere3D};
 use flight_physics3d::{Physics3DBodyType, create_physics_3d_solver_config};

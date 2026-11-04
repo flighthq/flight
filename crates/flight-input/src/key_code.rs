@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The numeric key-code table (TS `KeyCode` const object and value union).
 //! flight-compiler: const-group KeyCode KEY_CODE_
 

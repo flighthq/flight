@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Glitch: splits the frame into horizontal blocks, displaces each by a per-block hash, separates the RGB channels, and corrupts the occasional block to white; `seed` animates it. (TS `wgpuGlitchEffect.ts`).
 

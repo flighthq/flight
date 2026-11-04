@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::future::ready;
 use std::sync::Arc;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The end position of one shape geometry command (TS `shapeCommandGeometry.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens and path geometry use the canonical f64 Path lane
 

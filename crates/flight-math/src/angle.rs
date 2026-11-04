@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::DEG_TO_RAD;
 use crate::RAD_TO_DEG;
 use crate::TAU;

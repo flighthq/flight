@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::collision_shape_validation2d::*;
 use crate::convex_vertices2d::*;
 use crate::manifold2d::*;

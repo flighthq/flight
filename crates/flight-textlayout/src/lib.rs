@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Renderer-agnostic text layout, bounds, metrics, and rich-text hit queries.
 //!
 //! Runtime-dependent rich-text content operations, `richTextMetrics`, and `textLayoutRuntime` move

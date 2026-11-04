@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_node::NodeRef;
 use flight_render::RenderProxy2D;

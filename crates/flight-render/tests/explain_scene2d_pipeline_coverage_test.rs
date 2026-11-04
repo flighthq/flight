@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::add_node_child;
 use flight_render::*;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the color-adjustment fold carries native wgpu modules, pipelines and render-wgpu runtime state
 //! The opt-in color-adjustment accumulator and inline fold (TS
 //! `wgpuColorAdjustmentMaterialFeature.ts`): a color adjustment folds into the quad batch as

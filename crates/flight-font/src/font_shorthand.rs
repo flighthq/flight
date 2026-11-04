@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Produces the exact quoted CSS font shorthand used by the host loading capability.
 pub fn get_font_shorthand(family: &str, style: Option<&str>) -> String {
     let mut escaped = String::with_capacity(family.len());

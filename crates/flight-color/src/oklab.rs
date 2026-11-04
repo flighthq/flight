@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Clamps linear sRGB channels to the displayable [0, 1] gamut, writing [r, g, b] into `out`.
 /// This is a channel clamp, not a perceptual gamut-mapping operation. Alias-safe.
 #[allow(clippy::manual_clamp)] // max/min is the portable source form for TypeScript generation

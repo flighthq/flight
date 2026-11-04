@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Spine particle effect JSON serialization (TS `spineSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;

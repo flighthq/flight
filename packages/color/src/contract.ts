@@ -1,6 +1,3 @@
-// Generated from crates/flight-color/src/lib.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 export { colorFromKelvin } from './colorFromKelvin.ts';
 export { allocateHslColor, hslToRgb, rgbToHsl } from './hslColorRaw.ts';
 export type { HslColorRaw } from './hslColorRaw.ts';

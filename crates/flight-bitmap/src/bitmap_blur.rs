@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::bitmap_composite::extract_bitmap_pixels;
 use crate::types::*;
 use flight_entity::Uint8Array;

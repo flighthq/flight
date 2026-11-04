@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The one fragment tail every built-in mesh prelude returns through (TS `wgpuMeshFragmentTail.ts`):
 //! a mesh fragment shader hands the blend unit premultiplied color. Every term that can change alpha
 //! (the mask discard, material coverage, color adjustments and node alpha) must be folded in before

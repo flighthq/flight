@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Entity, EntityRuntimeSlot};
 use flight_geometry::{BoundingSphere, create_bounding_sphere, create_vector3};
 use flight_lighting::contract::*;

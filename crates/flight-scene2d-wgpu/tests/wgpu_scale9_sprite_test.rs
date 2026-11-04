@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{create_matrix, create_rectangle};
 use flight_node::NodeRef;
 use flight_render::RenderProxy2D;

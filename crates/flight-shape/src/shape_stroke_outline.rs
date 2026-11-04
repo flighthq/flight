@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Stroke OUTLINE regions for the direct-fill path (TS `shapeStrokeOutline.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 

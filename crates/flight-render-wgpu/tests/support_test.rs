@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The source's `wgpuHost.test.ts` and `wgpuTestHelper.test.ts`, ported against the Rust test
 //! doubles in `support.rs` (the test host, test surface and the real noop device that replaces the
 //! source's GPU mock).

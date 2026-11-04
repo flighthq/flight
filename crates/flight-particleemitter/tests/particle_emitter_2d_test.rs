@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow(test-default-call) ParticleEmitterConfigOptions is an input option bag with no create function
 use flight_geometry::{create_rectangle, create_vector2};
 use flight_node::{NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! libGDX 2D Particle Editor `.p` serialization (TS `libgdxSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;

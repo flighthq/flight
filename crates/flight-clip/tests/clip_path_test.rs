@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! Rust exercises the public path constructor; the TypeScript companion locks the target-native
 //! return-to-out-parameter adapter itself.

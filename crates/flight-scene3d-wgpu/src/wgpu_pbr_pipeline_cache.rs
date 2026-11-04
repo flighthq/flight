@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the PBR pipeline builders take native wgpu formats and render-wgpu's color-adjustment seam
 //! The PBR pipeline compile and per-state cache (TS `wgpuPbrPipelineCache.ts`).
 

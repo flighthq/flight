@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::skin_vertices::{read_float_index, write_float_index};
 use crate::{skin_tangents, skin_vertices};
 use flight_geometry::create_vector4;

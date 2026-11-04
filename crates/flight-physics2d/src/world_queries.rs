@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Point, ray, region and swept-shape queries over the world (TS `worldQueries.ts`). Candidates come
 //! from the broadphase in ascending body order; reusable results keep a valid `hit_count` prefix.
 

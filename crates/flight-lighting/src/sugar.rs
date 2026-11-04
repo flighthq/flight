@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 method conveniences delegate to the contract free functions. Inline tests compare both paths.
 
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::classic_materials::create_phong_material;
 use flight_materials::explain_material_conversion::*;
 use flight_materials::pbr_materials::create_specular_glossiness_pbr_material;

@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+//! flight-compiler: target-native
+
 use flight_entity::{
     attach_entity_binding, get_entity_binding, has_entity_runtime, set_entity_uid,
 };

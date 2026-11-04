@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::path::{Path, PathMorphCreationExplanation, PathMorphCreationReason};
 use crate::path_morph_geometry::build_path_morph;
 

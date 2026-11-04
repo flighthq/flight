@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_spritesheet_formats::*;
 
 use crate::support::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The skeleton rig: creation, cloning, world/bind/palette buffers, skins and validation
 //! (TS `skeleton2d.ts`).
 

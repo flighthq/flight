@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The spritesheet side of the timeline frame-source contract (TS
 //! `spritesheetTimelineSource.ts`): a spritesheet animation exposed as a `TimelineSource` that
 //! lazily realizes one reused sprite child per target.

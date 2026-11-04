@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Porter-Duff coverage composite over the same named backdrop registry as the blend effect (TS
 //! `wgpuCompositeEffect.ts`). Both inputs are premultiplied, so one Fa/Fb pair applies to RGB and

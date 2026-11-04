@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_materials::{Material, Material3D};
 use flight_meshgeometry::{

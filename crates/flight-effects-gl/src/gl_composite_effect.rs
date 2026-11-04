@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Porter-Duff composite pass: sample the incoming layer (`u_texture0`) and a registered backdrop
 //! (`u_texture1`), combine them with the coverage factors of the effect's `operator`

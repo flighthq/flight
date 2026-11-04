@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Locale-aware number, currency, percent, unit and compact formatting (TS `number.ts`).
 
 use std::sync::Arc;

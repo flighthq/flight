@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_spatial::SpatialAabb3D;
 
 use crate::collider_transform::{

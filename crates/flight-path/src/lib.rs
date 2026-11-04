@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod clean_path;
 mod contains_path_point;
 mod copy_path;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_color::contract::*;
 
 mod contract_re_exports {

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Free-function contract for methods declared directly on the final-owner MIDI operation records.
 
 use flight_entity::Uint8Array;

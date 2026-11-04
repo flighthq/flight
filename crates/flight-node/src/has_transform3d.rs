@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! 3D local transform field group initialization (TS `hasTransform3d.ts`).
 
 use flight_geometry::{clone_quaternion, clone_vector3, create_quaternion, create_vector3};

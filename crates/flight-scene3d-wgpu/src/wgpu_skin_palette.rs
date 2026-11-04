@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the skinning seams take and return native wgpu values
 //! GPU skinning (TS `wgpuSkinPalette.ts`): the per-frame joint and normal palette arenas, the skinned
 //! draw bind groups and layouts for the shadow and mesh paths, the skinned WGSL prelude extensions,

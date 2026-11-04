@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/ease_elastic.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 const P: number = 0.4;
 
 const P2: number = 0.45;

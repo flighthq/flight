@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The canvas-only shape strategy (TS `wgpuRasterShapeRenderer.ts`): the shape's whole command
 //! stream replays into an offscreen 2D canvas through the registered rasterizer, and the result

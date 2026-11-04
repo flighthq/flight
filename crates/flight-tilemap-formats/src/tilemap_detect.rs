@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Format detection and registry: maps text to its Tiled format kind, and manages the
 //! two registries (map formats, tileset formats) with lazy built-in seeding
 //! (TS `tilemapDetect.ts`).

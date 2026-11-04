@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::collada_scene_shared::ColladaIndexEntry;
 use flight_entity::Ref;
 use flight_importdiagnostics::ImportDiagnostic;

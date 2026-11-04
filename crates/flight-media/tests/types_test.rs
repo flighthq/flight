@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use super::*;
 
 mod get_audio_bus_mixer_operation_string {

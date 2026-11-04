@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17: scene3d-wgpu contracts carry native wgpu values and the Rust fn forms of the TS guard closures
 // flight-lint: allow-file(file-structure) D12 entity plumbing sits beside the pipeline declaration
 //! The scene3d-wgpu contract types (TS `types/src/Wgpu*Pipeline.ts`, `WgpuScene3DRuntime.ts` and

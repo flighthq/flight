@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary, sugar-delegates) D16 structural Surface trait and Deref accessors preserve the derived surface family and are contract dispatch, not convenience methods
 //! The surface contract types: opaque native handle, D16 surface fields and trait, the canonical
 //! canvas surface, and the host capabilities (TS `Surface.ts`, `HostSurface.ts`, `HostCanvas.ts`,

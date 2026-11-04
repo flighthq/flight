@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in camera guards (TS `enableCameraGuards.ts`). Installing them adds warnings for camera
 //! inputs that leave a computation with no answer; the core modules stay message-free.
 

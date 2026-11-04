@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! Foreign GPU textures adopted by a WebGPU state (TS `wgpuExternalTexture.ts`). The native handle
 //! is borrowed: the state caches an entry over it, keyed by the source's entity id (D12), and the

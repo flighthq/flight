@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::LazyLock;
 
 use flight_path_boolean::PathBooleanKernel;

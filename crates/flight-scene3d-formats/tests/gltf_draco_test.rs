@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_test_helper::{gltf_data_uri, minimal_gltf_document};
 use flight_buffer::{
     ArrayBufferView, ArrayBufferViewKind, create_array_buffer_from_bytes, create_array_buffer_view,

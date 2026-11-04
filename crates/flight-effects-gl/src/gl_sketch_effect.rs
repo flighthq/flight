@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Sketch: detect luminance edges and invert them into dark pencil strokes over a light page; `strength`
 //! scales how dark the strokes get.

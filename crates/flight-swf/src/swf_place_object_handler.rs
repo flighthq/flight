@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, LazyLock};
 
 use flight_materials::BLEND_MODE_NORMAL;

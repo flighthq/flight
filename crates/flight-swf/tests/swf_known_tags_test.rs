@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_swf::*;
 
 mod is_known_swf_tag {

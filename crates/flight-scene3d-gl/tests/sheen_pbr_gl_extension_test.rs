@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_materials::sheen_pbr_extension::create_sheen_pbr_extension;
 use flight_materials::{PbrExtension, SHEEN_PBR_EXTENSION_KIND};

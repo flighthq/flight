@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_parse::set_collada_index;
 use crate::collada_scene_shared::ColladaIndexEntry;
 use crate::collada_xml::parse_collada_floats;

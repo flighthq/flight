@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod compile_gl_shader {
     use flight_render_gl::compile_gl_shader;
 

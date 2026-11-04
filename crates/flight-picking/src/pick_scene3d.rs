@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Camera-ray and world-ray scene selection (TS `pickScene3D.ts`): per-node world AABB broad-phase,
 //! then a brute-force ray↔triangle narrow-phase over each candidate Mesh's current geometry.
 //!

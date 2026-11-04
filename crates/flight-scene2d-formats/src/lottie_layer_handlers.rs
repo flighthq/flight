@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, LazyLock};
 
 use crate::lottie_image_layer::lottie_image_layer_handler;

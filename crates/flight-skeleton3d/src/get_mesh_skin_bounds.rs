@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::skin_vertices;
 use crate::skin_vertices::{read_array, read_float_index};
 use flight_geometry::{Aabb, set_aabb};

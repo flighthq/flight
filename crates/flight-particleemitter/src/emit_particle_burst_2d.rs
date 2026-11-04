@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles::contract::{
     ensure_particle_emitter_state_capacity, write_particle_spawn_offset,
 };

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The built-in classic BlinnPhong forward-lit mesh-material renderer (TS
 //! `wgpuBlinnPhongMeshMaterialRenderer.ts`), the WGSL mirror of scene3d-gl's BlinnPhong renderer: Lambert diffuse plus a half-vector
 //! specular lobe (smoother highlights than reflection-vector Phong).

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Camera motion blur (TS `wgpuCameraMotionBlurEffect.ts`): a single-pass radial/zoom blur scaled by
 //! intensity that smears each sample toward the screen center, the mirror of the GL runner.

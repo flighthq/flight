@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Per-instance 2D compositing field group initialization (TS `hasBlendMode.ts`).
 
 use crate::types::*;

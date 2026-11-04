@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Radial blur (TS `wgpuRadialBlurEffect.ts`): samples stepped from each uv toward the center,
 //! scaled by `strength` and normalized by the sample count. The WebGPU mirror of effects-gl's radial

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_scene_document::contract::*;
 
 mod get_flight_document_refusal_reason_string {

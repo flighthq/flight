@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashMap;
 
 use flight_entity::{Record, entries, get_record_value, set_record_value};

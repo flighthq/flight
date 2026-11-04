@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 pub fn get_collision_convex_validation_status3d(points: &Vec<f32>) -> Option<CollisionTestStatus> {

@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use flight_path::{Path, PathCommand, PathSegment, create_path, for_each_path_segment};
 use flight_path_formats::contract::*;
 

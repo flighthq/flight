@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_command::contract::*;
 use flight_entity::allocate_entity;
 use flight_node::contract::{add_node_child, get_node_child_count, get_node_child_index};

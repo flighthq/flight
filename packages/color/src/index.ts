@@ -1,6 +1,3 @@
-// Generated from crates/flight-color/src/lib.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 export {
   allocateHslColor,
   allocateHsvColor,

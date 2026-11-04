@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::STANDARD_PBR_MATERIAL_KIND;
 use flight_materials::contract::create_standard_pbr_material;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};

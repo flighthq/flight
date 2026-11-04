@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/src/lib.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 export {
   TEXT_BOUNDS_GUTTER,
   TEXT_LAYOUT_GUTTER,

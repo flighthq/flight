@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_easing::ease_out_exponential;
 use flight_entity::allocate_entity;
 

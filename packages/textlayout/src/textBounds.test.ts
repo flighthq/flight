@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/tests/text_bounds_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { createRectangle } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 

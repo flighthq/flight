@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The shape bounds traversal: fill and ink contributions through a stateful pen (TS
 //! `shapeBounds.ts`).
 // flight-lint: allow-file(contract-vocabulary) D16 open shape family: ShapeNode bounds and structural node dispatch on the shape command/bounds surface are contract dispatch, not arbitrary vocabulary types

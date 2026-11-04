@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_test_helper::{
     minimal_gltf_document, optional_gltf_features, optional_gltf_features_glb,
 };

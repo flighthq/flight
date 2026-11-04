@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use flight_buffer::get_array_buffer_storage;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Spine 4.x particle effect JSON parsing (TS `spineParse.ts`).
 
 use flight_importdiagnostics::{

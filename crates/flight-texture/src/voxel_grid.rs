@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::VoxelGrid;
 
 pub fn invalidate_voxel_grid(voxel_grid: &mut VoxelGrid) {

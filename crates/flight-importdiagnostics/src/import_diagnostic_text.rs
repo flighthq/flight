@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::ImportDiagnostic;
 use crate::types::ImportDiagnosticDetailValue;
 use crate::types::get_import_diagnostic_severity_string;

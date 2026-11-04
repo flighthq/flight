@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_geometry::{create_vector2, create_vector3};
 use flight_image::ImageResourceReference;

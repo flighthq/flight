@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) flight-path stores geometry as f64 under the approved D1 path candidate
 
 use std::collections::HashMap;

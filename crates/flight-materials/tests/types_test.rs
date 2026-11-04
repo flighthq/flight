@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{Entity, Ref, allocate_entity, get_entity_uid, set_entity_uid};
 use flight_materials::color_scale_bias::*;
 use flight_materials::material3d::create_material3d;

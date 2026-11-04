@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_font_formats::*;
 
 fn font_records(records: &[(&str, u32, u32)]) -> Vec<u8> {

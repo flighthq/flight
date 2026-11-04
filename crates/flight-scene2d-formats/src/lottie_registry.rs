@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 
 pub fn create_lottie_registry() -> LottieRegistry {

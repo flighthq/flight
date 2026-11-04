@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_font_formats::*;
 
 fn format3(ranges: &[(u16, u8)], sentinel: u16) -> Vec<u8> {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: query values are the wire's IEEE doubles and circle scalars are flight-collision's f64 shape fields
 use flight_collision::{CollisionAabb2D, CollisionCircle2D, CollisionShape2D};
 use flight_physics2d::{Physics2DBodyType, Physics2DMaterial};

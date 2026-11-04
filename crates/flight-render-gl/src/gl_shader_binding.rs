@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shader resolution returns native Result diagnostics
 
 use std::sync::Arc;

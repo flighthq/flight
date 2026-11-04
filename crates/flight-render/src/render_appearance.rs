@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::get_node_appearance_revision;
 
 use crate::{RenderProxy, RenderState};

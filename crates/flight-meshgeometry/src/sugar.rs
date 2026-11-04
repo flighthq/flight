@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use crate::*;
 use flight_geometry::Matrix4;

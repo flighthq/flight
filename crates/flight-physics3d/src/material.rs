@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Combines Coulomb friction coefficients with the geometric mean.
 pub fn mix_physics_3d_friction(first: f32, second: f32) -> f32 {
     return first.sqrt() * second.sqrt();

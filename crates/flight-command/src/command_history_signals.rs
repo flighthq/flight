@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in change signal for a command history (TS `commandHistorySignals.ts`). A history that never
 //! enables it pays no signal allocation or dispatch cost.
 

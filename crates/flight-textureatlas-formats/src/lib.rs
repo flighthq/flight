@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod json;
 mod sugar;
 mod texture_atlas_aseprite_parse;

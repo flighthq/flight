@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The rectangular-clip scissor stack (TS `wgpuScissor.ts`). Rects are logical; the live pass
 //! encoder receives them scaled by the bound target's supersample factor.
 

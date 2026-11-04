@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::path::Path;
 mod gui_tree_shaking {
     use super::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::*;
 
 pub fn break_physics_3d_joint(world: &mut Physics3DWorld, joint: &Physics3DJointRef) {

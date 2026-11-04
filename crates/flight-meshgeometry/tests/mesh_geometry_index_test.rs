@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_meshgeometry::contract::*;
 
 fn canonical_layout() -> flight_entity::Ref<VertexAttributeLayout> {

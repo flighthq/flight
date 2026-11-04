@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The WebGPU display-object renderers (TS `@flighthq/scene2d-wgpu`) over the native wgpu render
 //! backend (D17): the shared quad-batch writer, node renderers for bitmaps, shapes, sprites, text,
 //! tilemaps and particles, clips, render caches, the opt-in color-adjustment fold and velocity.

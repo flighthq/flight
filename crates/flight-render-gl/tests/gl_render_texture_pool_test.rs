@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(test-default-call) Pool descriptors use their canonical Rust defaults.
 mod acquire_gl_render_texture {
     use crate::gl_test_helper::{make_state, make_target_descriptor};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! BitmapText layout, retained page rebuilding and glyph-placement version refresh.
 
 use std::collections::HashMap;

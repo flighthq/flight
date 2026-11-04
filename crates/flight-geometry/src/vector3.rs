@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::Matrix3;
 use crate::Vector2;
 use crate::Vector4;

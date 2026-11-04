@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::AdjustmentSignatureValue;
 use crate::contract::ColorTransformFunction;
 

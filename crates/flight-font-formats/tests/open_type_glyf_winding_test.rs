@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::{font_options, font_view};
 use flight_compression::SDK_HOST_DECOMPRESS_DEFLATE;
 use flight_font_formats::*;

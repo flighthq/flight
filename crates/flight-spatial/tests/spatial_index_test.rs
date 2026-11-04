@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_spatial::contract::initialize_spatial_index_2d;
 use flight_spatial::*;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::uniform_grid_3d::DEFAULT_SPATIAL_CELL_SIZE_3D;
 use crate::{
     SpatialAabb3D, SpatialIndexingExplanation, SpatialObjectId, SpatialPair,

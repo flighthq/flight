@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{Aabb, BoundingSphere, Ray3D, Vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 

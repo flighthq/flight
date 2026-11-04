@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::Uint8Array;
 
 #[derive(Clone, Debug, PartialEq)]

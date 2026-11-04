@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_node::contract::*;
 
 use crate::support::create_test_node_2d;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: string-union UnpackedRectangleReason
 //! flight-compiler: readonly-fields UnpackedRectangleExplanation
 

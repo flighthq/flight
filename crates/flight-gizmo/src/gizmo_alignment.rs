@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Selection alignment and deterministic edge/center smart guides (TS `gizmoAlignment.ts`).
 
 use flight_geometry::{

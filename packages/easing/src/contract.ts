@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/lib.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 export { easeInBack, easeInOutBack, easeOutBack } from './easeBack.ts';
 export { easeInBounce, easeInOutBounce, easeOutBounce } from './easeBounce.ts';
 export { easeInCircular, easeInOutCircular, easeOutCircular } from './easeCircular.ts';

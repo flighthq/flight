@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: the step dt is flight-physics2d's f64 timestep (TS number)
 //! The ABI's world lifecycle, execution, step and readback entry points (TS `physics2DAbi.ts`):
 //! thin free functions over the backend seam, so every caller is backend-neutral.

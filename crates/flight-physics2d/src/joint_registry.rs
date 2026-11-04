@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Joint insertion, removal, invalidation and the per-world solver registry (TS
 //! `jointRegistry.ts`).
 

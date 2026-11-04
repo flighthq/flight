@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::contract::*;
 use std::any::Any;
 use std::sync::{Arc, RwLock};

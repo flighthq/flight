@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::interaction_fixture;
 use flight_interaction::node_interaction_state::*;
 

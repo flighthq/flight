@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_extension_test_helper::*;
 use flight_materials::{
     EXTENDED_PBR_MATERIAL_KIND, Material, Material3D, MaterialAlphaMode,

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_camera_controls::contract::*;
 
 mod option_defaults {

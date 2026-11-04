@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_meshgeometry::{MeshMorph, MeshMorphTarget};
 use flight_node::{NodeRef, invalidate_node_local_transform};

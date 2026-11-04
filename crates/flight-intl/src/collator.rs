@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Locale-aware string comparison and sorting (TS `collator.ts`).
 
 use std::cmp::Ordering;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Format sniffing (TS `detect.ts`): detection is provided solely by the registered codecs.
 
 use crate::format_registry::{ParticleFormatRegistry, detect_registered_particle_format};

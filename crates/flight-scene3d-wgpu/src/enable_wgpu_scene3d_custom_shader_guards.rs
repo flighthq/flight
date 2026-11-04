@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The opt-in CustomShaderMaterial ABI guards (TS `enableWgpuScene3DCustomShaderGuards.ts`): warn-once
 //! diagnostics for uniform shapes, the fixed capacities and the reserved WGSL bindings, so the renderer
 //! itself carries no logging unless a caller enables them.

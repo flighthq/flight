@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::common::*;
 use crate::mock_host::MockHost;
 use flight_assets::contract::*;

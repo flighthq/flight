@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_compression::contract::*;
 
 mod compute_adler32 {

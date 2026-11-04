@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shape-mesh draw contracts carry native wgpu buffers, bind groups and pipelines
 //! The tessellated solid-fill path for Shape (TS `wgpuShapeMesh.ts`), the counterpart to the GL
 //! shape mesh: each fill region is tessellated to a triangle mesh (cached by content version in the

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::contract::get_node_local_content_revision;
 use flight_path::PathCommand;
 use flight_shape::contract::*;

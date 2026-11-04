@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{Float32Array, Uint16Array, Uint32Array};
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use std::collections::HashMap;

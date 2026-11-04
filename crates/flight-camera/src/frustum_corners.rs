@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The eight world-space frustum corners (TS `frustumCorners.ts`).
 
 use flight_geometry::{Vector3, create_matrix4, inverse_matrix4};

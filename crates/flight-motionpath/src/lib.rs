@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Arc-length motion-path markers over a `Path`: position, heading and progress queries, direction
 //! and distance seeking, and clamp/loop/pingpong stepping. Pure math over the path package; no
 //! animation loop, timer or device operation lives here.

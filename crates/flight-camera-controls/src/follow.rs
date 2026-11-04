@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! 2D camera target following with a deadzone, damping and world-bounds clamping (TS `follow.ts`).
 
 use flight_camera::contract::{

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
 use crate::types::*;
 use flight_entity::Uint8Array;

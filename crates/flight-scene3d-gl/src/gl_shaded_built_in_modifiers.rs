@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 modifier snippets are backend-typed GLSL registrations over thread-bound render-gl state; D16 snippets narrow the open Modifier family
 
 use std::any::Any;

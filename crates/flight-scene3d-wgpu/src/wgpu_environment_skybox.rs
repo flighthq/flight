@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Draws the environment's radiance cubemap as the scene backdrop (TS `wgpuEnvironmentSkybox.ts`),
 //! the WGSL mirror of scene3d-gl's skybox: a screen-filling triangle that reconstructs each pixel's
 //! world-space view ray from the inverse view-projection and samples the cube. The pipeline writes no

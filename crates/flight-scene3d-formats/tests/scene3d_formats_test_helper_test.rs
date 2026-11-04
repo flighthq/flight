@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_image::ImageResourceReference;
 use flight_scene3d_formats::*;
 use std::sync::Arc;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 state ownership intentionally exposes thread-bound Rc/RefCell glow context and explicit teardown callbacks
 
 use std::cell::{Ref, RefMut};

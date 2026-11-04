@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_pixelate_effect_to_gl {
     use flight_effects::create_pixelate_effect;
     use flight_effects_gl::contract::apply_pixelate_effect_to_gl;

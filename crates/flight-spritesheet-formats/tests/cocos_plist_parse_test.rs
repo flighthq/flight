@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{entries, get_record_value};
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_spritesheet_formats::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 
 /// Pixelates (mosaics) `source` into `out`.

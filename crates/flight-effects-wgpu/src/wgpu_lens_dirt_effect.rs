@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Lens dirt (TS `wgpuLensDirtEffect.ts`): isolate bright energy, spread it spatially, then admit
 //! it through a procedural smudge mask. The bright branch must blur before the mask: masking only

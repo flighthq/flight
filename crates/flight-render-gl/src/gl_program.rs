@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shader compilation intentionally exposes glow Context, native program names, and Result diagnostics
 
 use glow::{HasContext, NativeProgram, NativeShader};

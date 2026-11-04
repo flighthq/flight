@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 //! flight-compiler: nullable-option get_path_segment_curvature_at_parameter
 
 use flight_geometry::Vector2Like;

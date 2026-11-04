@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod connectivity;
 mod host_explain;
 mod types;

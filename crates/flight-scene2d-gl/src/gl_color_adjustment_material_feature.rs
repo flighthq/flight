@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the color-adjustment fold drives glow native handles over thread-bound render-gl state
 
 use flight_entity::throw_error;

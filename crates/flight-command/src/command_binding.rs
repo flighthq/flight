@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Kind-registry behaviour for commands (TS `commandBinding.ts`).
 //!
 //! Bindings are registered per kind, never stored on a command. An unregistered kind is an expected

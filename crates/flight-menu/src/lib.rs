@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod host_explain;
 mod menu;
 mod menu_templates;

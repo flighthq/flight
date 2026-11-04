@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{
     create_crt_effect, create_directional_blur_effect, create_displacement_effect,
     create_dither_effect, create_fxaa_effect, create_glitch_effect, create_kuwahara_effect,

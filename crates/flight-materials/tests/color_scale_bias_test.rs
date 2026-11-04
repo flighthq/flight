@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::color_scale_bias::*;
 
 mod clone_color_scale_bias {

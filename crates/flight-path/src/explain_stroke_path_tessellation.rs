@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::path::{
     Path, StrokePathTessellationExplanation, StrokePathTessellationReason, StrokeStyle,
 };

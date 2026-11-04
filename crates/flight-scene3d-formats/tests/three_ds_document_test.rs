@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::three_ds_test_helper::*;
 use flight_importdiagnostics::ImportDiagnosticSeverity;
 use flight_node::{NodeRef, get_node_children};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::create_lens_flare_effect;
 use flight_effects_gl::contract::apply_lens_flare_effect_to_gl;
 use flight_regexp::{create_reg_exp, exec_reg_exp};

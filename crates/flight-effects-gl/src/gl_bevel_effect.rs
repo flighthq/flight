@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Bevel composite effect: blur the silhouette into a height field, then light it from the
 //! angle/distance offset with the highlight and shadow colors, clipped by bevel type. Full-frame

@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/get_path_length.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { flattenPath } from './flattenPath.ts';
 import type { PathRaw } from './path.ts';
 

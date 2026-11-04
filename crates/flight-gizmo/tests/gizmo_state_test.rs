@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_camera::{Camera2D, create_camera_2d, project_camera_2d_point};

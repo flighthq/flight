@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_material_handler::MD5_MATERIAL_FAMILY;
 use crate::md5_skeleton_handler::MD5_SKELETON_FAMILY;
 use crate::md5_types::Md5SectionHandler;

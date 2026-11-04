@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render::{RenderTargetAxes, RenderTargetDepth, RenderTargetFormat};
 use flight_texture::RenderTargetColorSpace;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: string-union MotionPathLoopMode
 //! flight-compiler: numeric-union MotionPathDirection
 //! The motion-path contract types: the arc-length marker entity, its closed loop-mode and direction

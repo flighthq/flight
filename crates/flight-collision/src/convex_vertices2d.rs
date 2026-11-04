@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 pub fn write_aabb_vertices(aabb: &CollisionAabb2D, out: &mut [f32; 8]) {

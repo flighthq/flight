@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Kind;
 use flight_registry::{KindMap, get_kind_map_keys};
 use flight_scene2d_gl::gl_scene2d_render_preset;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Rust convenience methods for the curated Physics3D public lane. Every method delegates to the
 //! free-function contract so both call styles have one implementation.
 

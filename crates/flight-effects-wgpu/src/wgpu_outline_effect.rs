@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Outline (TS `wgpuOutlineEffect.ts`): Sobel edge detection on luminance; where the gradient
 //! magnitude exceeds `threshold`, the pixel mixes toward the outline color by `thickness`. The color

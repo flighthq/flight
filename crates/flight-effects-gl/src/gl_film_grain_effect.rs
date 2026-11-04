@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Film grain: add per-pixel hash noise scaled by intensity, with grain cell size and a seed so the
 //! noise can be animated frame to frame.

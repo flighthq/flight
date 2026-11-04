@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render_gl::GlRenderState;
 use flight_scene2d_gl::contract::{GL_SHAPE_RENDERER, register_gl_shape_rasterizer};
 

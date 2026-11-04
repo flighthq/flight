@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_shading::contract::*;
 
 mod get_emissive_modifier_facing_string {

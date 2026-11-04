@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The state-scoped WGSL modifier compiler registry (TS `wgpuShadedModifierSnippet.ts`):
 //! last-write-wins, and an unknown kind is an expected miss that contributes nothing.
 

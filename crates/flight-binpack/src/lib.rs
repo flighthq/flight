@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod explain_unpacked_rectangles;
 mod pack_rectangles;
 

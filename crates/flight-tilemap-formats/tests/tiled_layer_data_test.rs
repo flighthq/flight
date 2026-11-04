@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_tilemap_formats::*;
 
 mod create_tiled_guard_state {

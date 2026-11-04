@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_draco::GltfDracoRegistry;
 use crate::gltf_schema::{GltfDocument, GltfTextureInfoRef};
 use flight_buffer::ArrayBufferView;

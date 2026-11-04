@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shaders expose glow Context callbacks and native Result diagnostics on the GL thread
 
 use std::sync::Arc;

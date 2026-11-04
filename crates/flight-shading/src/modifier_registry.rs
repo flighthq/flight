@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Modifier family callback receives &dyn Modifier without erased reflection
 
 use std::fmt;

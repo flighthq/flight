@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! ECMA-402 option records owned by this package: field names mirror the platform option names,
 //! closed string unions are enums with exact platform strings, open identifiers stay String, every
 //! field is optional, and numeric properties keep the JS number domain (f64).

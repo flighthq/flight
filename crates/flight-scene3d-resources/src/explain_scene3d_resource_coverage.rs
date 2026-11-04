@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Kind, Ref};
 use flight_render::{
     CatalogRegistration, RenderRegistryTable, SceneCoverage, SceneCoverageCatalog,

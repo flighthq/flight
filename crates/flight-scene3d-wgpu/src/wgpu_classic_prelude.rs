@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the classic family seams take and return native wgpu values
 //! The classic (Lambert / Phong / BlinnPhong) uber-shader family (TS `wgpuClassicPrelude.ts`): the
 //! define key, the WGSL module assembly (per-map and the shaded family's shared-sampler contract),

@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use std::f32::consts::PI;
 use std::sync::Arc;
 

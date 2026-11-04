@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md2_feature_requirements::MD2_FEATURE_SCENE_REQUIREMENTS;
 use crate::md2_features::collect_md2_features;
 use crate::scene3d_format_requirements::MD2_REQUIREMENT_KEY_NAMESPACE;

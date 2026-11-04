@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The bounded formatter cache and stable cache keys (TS `cache.ts`).
 //!
 //! The source keeps one module-level `Map` of immutable `Intl.*` formatter instances. The Rust port

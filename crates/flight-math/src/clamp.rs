@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Clamp `value` to the inclusive range `[min, max]`.
 ///
 /// When `min > max` the result is `min`. NaN propagates unchanged.

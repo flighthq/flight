@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! Texture realization caches and the immediate 2D quad draw path (TS `wgpuDraw.ts`). Uploaded
 //! textures are keyed by the source's identity (an entity's numeric id, or the exact host image),

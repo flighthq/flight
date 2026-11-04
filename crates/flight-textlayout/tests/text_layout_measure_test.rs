@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use crate::common::empty_text_format;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{EntityRuntimeSlot, get_entity_id};
 use flight_geometry::create_matrix;
 use flight_node::{

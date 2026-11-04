@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_original_test_helper::*;
 use flight_animation::AnimationInterpolation;
 use flight_camera::Projection;

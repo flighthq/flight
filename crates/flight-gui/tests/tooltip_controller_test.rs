@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_gui::contract::*;
 use flight_interaction::contract::InteractionSignalName;
 #[path = "gui_timer_fixture.rs"]

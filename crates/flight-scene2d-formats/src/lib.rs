@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Display-object authoring format codecs (TS `@flighthq/scene2d-formats`).
 
 mod lottie_bezier_path;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{EffectRef, create_directional_blur_effect};
 use flight_effects_wgpu::contract::*;
 use flight_render_wgpu::*;

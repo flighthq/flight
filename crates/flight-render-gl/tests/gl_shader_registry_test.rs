@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod register_gl_bitmap_shader {
     use std::sync::Arc;
 

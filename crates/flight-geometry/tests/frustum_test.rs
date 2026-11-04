@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::contract::*;
 
 fn create_test_view_projection() -> Matrix4 {

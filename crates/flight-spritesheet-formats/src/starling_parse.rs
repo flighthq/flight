@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };

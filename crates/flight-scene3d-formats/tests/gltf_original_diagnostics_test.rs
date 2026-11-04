@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_original_test_helper::*;
 use crate::gltf_test_helper::gltf_data_uri;
 use flight_geometry::create_vector3;

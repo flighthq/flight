@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 pub const MD2_MAGIC: i32 = 0x32504449;
 
 pub const MD2_VERSION: i32 = 8;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 pub const SWF_KNOWN_TAG_MASKS: [u32; 3] = [0x15fefff7, 0xff016abf, 0x6fdc7fe7];
 
 pub const SWF_NON_CONTENT_TAGS: &[u32] = &[23, 24, 41, 58, 63, 64, 65, 66, 69, 73, 74, 77, 88, 93];

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     ParticleCollider, ParticleEmitterConfig, ParticleForce, ParticleObject, ParticleObjectsState,
     ParticleObjectsUpdateOptions, apply_particle_object_collisions, apply_particle_object_forces,

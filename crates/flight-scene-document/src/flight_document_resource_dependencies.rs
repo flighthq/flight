@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The document's direct resource dependency list (TS `flightDocumentResourceDependencies.ts`).
 
 use crate::types::*;

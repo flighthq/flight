@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 /// A square collider as a flat convex polygon, corners CCW from the min corner.

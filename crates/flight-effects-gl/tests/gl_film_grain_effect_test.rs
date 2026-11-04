@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_film_grain_effect_to_gl {
     use flight_effects::create_film_grain_effect;
     use flight_effects_gl::contract::apply_film_grain_effect_to_gl;

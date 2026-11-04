@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles::contract::*;
 use flight_signals::{connect_signal, emit_signal};
 use std::sync::Arc;

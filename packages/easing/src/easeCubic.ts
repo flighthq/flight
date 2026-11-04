@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/ease_cubic.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 /**
  * Ease-in cubic: slow start, accelerating.
  */

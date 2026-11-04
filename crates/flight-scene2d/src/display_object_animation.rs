@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! 2D display animation binding (TS `displayObjectAnimation.ts`): channels whose opaque target is
 //! a `Node2DAnimationTarget` drive that node's transform and appearance fields.
 

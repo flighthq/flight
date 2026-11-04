@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Physics3D ABI buffers (TS `physics3DAbiBuffer.ts`): the command stream and the readback records.
 //! Every array is a fixed-length typed array sized by its capacity; nothing here grows.
 

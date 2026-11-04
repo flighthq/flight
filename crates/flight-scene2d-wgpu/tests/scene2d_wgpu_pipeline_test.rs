@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmaptext::BITMAP_TEXT_KIND;
 use flight_materials::STANDARD_MATERIAL_KIND;
 use flight_particleemitter::PARTICLE_EMITTER_2D_KIND;

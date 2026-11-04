@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod create_gl_render_view_resources {
     use crate::gl_test_helper::make_context_state;
     use flight_render_gl::create_gl_render_view_resources;

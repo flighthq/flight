@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Path-following constraint solving (TS `pathConstraint2D.ts`).
 
 use flight_geometry::create_vector2;

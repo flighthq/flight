@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::create_matrix4;
 use flight_scene3d_formats::*;
 

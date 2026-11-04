@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_intl::contract::*;
 
 use crate::test_support::*;

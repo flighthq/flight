@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Native receiver conveniences; only the public export lane receives sugar.
 use crate::contract::*;
 use flight_entity::{Float32Array, Ref};

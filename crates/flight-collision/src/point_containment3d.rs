@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::convex_hull3d::write_collision_convex_hull_faces3d;
 use crate::types::*;
 

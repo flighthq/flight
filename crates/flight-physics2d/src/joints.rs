@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The built-in joint kinds and their sequential-impulse solvers (TS `joints.ts`). Each solver
 //! reaches its kind's fields by narrowing the joint to its concrete struct; a joint of another
 //! struct registered under a built-in kind is skipped by that kind's callbacks.

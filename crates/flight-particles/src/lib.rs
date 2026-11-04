@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_particle_collisions;
 mod apply_particle_forces;
 mod curve;

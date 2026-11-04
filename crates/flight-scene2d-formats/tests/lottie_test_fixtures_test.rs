@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::contract::{NodeRef, add_node_child};
 use flight_scene2d::contract::{Node2DRef, create_display_object};
 use flight_scene2d_formats::contract::*;

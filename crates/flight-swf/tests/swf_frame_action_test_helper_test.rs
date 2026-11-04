@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_swf::contract::*;
 
 mod build_frame_script_abc {

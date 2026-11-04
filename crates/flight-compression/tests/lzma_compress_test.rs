@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_compression::*;
 use flight_entity::FlightError;
 use flight_entity::FlightErrorKind;

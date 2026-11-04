@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(test-default-call) Clear records use their canonical Rust defaults.
 mod clear_gl_render_target {
     use crate::gl_test_helper::{

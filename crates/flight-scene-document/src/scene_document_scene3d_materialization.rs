@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Scene3D <-> Flight document (TS `sceneDocumentScene3DMaterialization.ts`): writes a live 3D scene
 //! with its document cameras and lights as a scene entry, materializes a selected 3D entry into a
 //! live Scene3D with runtime cameras, lights and inert bindings, and explains every refusal.

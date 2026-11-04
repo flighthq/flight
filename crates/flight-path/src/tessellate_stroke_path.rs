@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 //! flight-compiler: nullable-option tessellate_stroke_path
 
 use crate::path::{Path, PathMesh, StrokePathTessellationReason, StrokeStyle};

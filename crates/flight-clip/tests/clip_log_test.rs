@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! The TypeScript companion exercises the target-native LogData adapter directly. Rust locks the
 //! same observable envelope through the public guard that calls it.

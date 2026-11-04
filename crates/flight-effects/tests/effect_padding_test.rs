@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 use flight_entity::UnknownValue;
 use flight_render::{EffectPaddingResolver, RenderRegistryTable, enable_render_registry_signals};

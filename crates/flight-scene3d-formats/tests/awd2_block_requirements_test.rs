@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_requirement::RequirementFacet;
 use flight_scene3d_formats::*;
 use flight_shading::SHADED_MATERIAL_KIND;

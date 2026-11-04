@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_geometry::Rectangle;
 pub use flight_particles::ParticleEmitterCallbacks;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 #![allow(clippy::needless_return)]
 #![allow(clippy::too_many_arguments)]
 

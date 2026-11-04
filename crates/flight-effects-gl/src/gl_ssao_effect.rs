@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! SSAO: ambient-occlusion approximation. Real SSAO reconstructs view-space position/normals from a
 //! sampleable DEPTH texture and accumulates occlusion over `samples` kernel offsets within `radius`,

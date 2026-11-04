@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 fn channel_of(color: u32, index: u32) -> u32 {

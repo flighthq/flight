@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+//! flight-compiler: target-native
+
 use flight_entity::{Float32Array, Int16Array, Uint16Array};
 
 pub fn reserve_float32_array(array: Box<Float32Array>, capacity: usize) -> Box<Float32Array> {

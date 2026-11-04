@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 clip helpers drive wgpu stencil state over native buffers and render-wgpu state
 //! Contour clips via stencil nesting (TS `wgpuClipContours.ts`). A path ClipRegion is realized by
 //! stamping its covered pixels into the stencil buffer; content then draws in the 'masked' stencil

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Uint8Array, allocate_entity};
 
 use crate::bitmap::invalidate_bitmap;

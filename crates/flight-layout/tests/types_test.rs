@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_layout::contract::*;
 
 mod get_flex_layout_align_string {

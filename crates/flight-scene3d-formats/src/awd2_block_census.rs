@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_header::parse_awd2_header;
 use crate::awd2_parse::rehydrate_awd2_body;
 use crate::awd2_schema::*;

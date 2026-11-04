@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::obj_test_helper::*;
 use flight_scene3d_formats::*;
 

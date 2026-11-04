@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_buffer::{ArrayBufferView, ArrayBufferViewKind};
 use flight_entity::{Uint8Array, throw_range_error, throw_type_error};
 

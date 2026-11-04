@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{
     Rectangle, compute_rectangle_intersection, contains_rectangle_point_xy, encloses_rectangle,
     intersects_rectangle,

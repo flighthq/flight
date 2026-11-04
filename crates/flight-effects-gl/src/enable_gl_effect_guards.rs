@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Diagnostics for the effect-chain sentinels that are indistinguishable from working code: an
 //! unregistered chain returns false having never written `dest`, a partially registered chain
 //! succeeds while silently dropping effects, re-registered shader source never reaches the GPU, and

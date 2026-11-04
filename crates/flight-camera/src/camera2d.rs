@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The plain-data 2D camera lifecycle (TS `camera2d.ts`).
 
 use flight_entity::allocate_entity;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_texture::contract::*;
 
 mod get_texture_sample_color_space {

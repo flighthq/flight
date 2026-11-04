@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The opt-in socket misuse guard (TS `enableSocketGuards.ts`). Installing it adds warnings for
 //! unsupported creation and commands issued after terminal disposal; the core module stays silent
 //! unless a guard is installed.

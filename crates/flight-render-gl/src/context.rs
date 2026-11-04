@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17 native glow ownership deliberately uses thread-bound host pointers and Result diagnostics outside the portable contract vocabulary
 //! The host-token to thread-bound glow context seam (D17/D26).
 

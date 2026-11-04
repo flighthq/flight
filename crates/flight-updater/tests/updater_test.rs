@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex, RwLock};
 

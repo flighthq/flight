@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! On-demand surface attributes of a Scene3DHit (TS `sceneHitAttributes.ts`): the hit subset and
 //! material, and barycentric uv0/normal/tangent read from the hit Mesh's current geometry. Every
 //! query leaves its caller-owned output unchanged and returns its sentinel when the hit is empty or

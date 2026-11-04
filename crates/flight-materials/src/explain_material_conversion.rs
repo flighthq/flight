@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     MaterialConversionDropReason, MaterialConversionExplanation, PhongMaterial,
     SpecularGlossinessPbrMaterial,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex};
 
 use flight_log::{LogData, LogEntry, LogStateRef, create_log_state, set_log_sink};

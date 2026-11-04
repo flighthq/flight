@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The fixed WebGPU custom-material ABI capacities (TS `wgpuCustomMaterialAbi.ts`). Every logical
 //! scalar/vector uniform consumes one vec4-aligned slot; every texture consumes sampler (binding 2N)
 //! plus texture (binding 2N+1) in group(3).

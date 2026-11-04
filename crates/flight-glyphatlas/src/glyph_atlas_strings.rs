@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::{GlyphAtlasEntryBlockReason, GlyphAtlasEntryGuardReason, GlyphAtlasGuardLogKey};
 
 // flight-lint: allow(conform-extra) D9e exact Rust string table for the TS block-reason union

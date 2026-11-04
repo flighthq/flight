@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_parse::{report_collada_diagnostic, set_collada_index};
 use crate::collada_types::*;
 use crate::collada_xml::{collada_child, collada_descendants, collada_id_of, collada_numbers};

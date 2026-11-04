@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! TypeScript reflects the WeakMap-backed private aggregate in the companion. Rust verifies its
 //! public acquire/release behavior because the runtime module itself is crate-private.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_requirement::contract::RequirementFacet;
 use flight_skeleton2d_formats::contract::*;
 

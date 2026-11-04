@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod asset_library;
 mod enable_asset_guards;
 mod enums;

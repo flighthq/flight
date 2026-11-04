@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The caller-owned shape bounds command registry (TS `shapeBoundsRegistry.ts`, module state
 //! replaced by explicit D5 state).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32

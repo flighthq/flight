@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 targets expose native glow ownership, open render-target traits, and Result diagnostics
 
 use std::rc::Rc;

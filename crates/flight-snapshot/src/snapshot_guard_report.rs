@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::collections::BTreeSet;
 
 use flight_log::{LogLevel, LogStateRef, log_once};

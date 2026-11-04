@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::Matrix;
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Native GL (glow) shader recipes for render effects and the MSAA-aware post-process pipeline,
 //! mirroring `@flighthq/effects-gl`. The GL path is thread-bound like render-gl (D17).
 

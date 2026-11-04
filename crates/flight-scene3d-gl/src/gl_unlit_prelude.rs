@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 unlit program compile and bind drive glow native handles over thread-bound render-gl state
 
 use std::cell::Cell;

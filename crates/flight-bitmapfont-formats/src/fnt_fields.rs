@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::collections::HashMap;
 
 pub(crate) fn f32_to_i32(value: f32) -> i32 {

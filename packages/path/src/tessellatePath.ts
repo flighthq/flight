@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/tessellate_path.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { flattenPath } from './flattenPath.ts';
 import type { PathMesh, PathRaw } from './path.ts';
 

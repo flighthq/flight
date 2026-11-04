@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_importdiagnostics::{ImportDiagnostic, ImportDiagnosticSeverity};
 use flight_scene2d::{Node2DRef, create_display_object};
 use flight_scene2d_formats::contract::*;

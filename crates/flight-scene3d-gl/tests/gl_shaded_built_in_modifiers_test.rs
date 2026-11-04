@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::num::NonZeroU32;
 use std::sync::{Arc, RwLock};
 

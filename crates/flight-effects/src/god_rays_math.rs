@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::GodRaysEffect;
 
 pub fn compute_god_rays_accumulation_scale(effect: &GodRaysEffect) -> f32 {

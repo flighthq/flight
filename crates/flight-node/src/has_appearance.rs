@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Hierarchical appearance field group initialization (TS `hasAppearance.ts`).
 
 use crate::types::*;

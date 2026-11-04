@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! WebGPU render-state construction, the shared device tier, derived offscreen states, samplers and
 //! teardown (TS `wgpuRenderState.ts`). The device is the host-supplied native `wgpu` device and

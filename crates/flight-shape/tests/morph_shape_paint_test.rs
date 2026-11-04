@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_shape::contract::*;
 
 use crate::support::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::{
     create_rectangle_record, create_test_parse_state, join_bytes, reader, uint16,
 };

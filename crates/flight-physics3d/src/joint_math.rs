@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D9b: native writers keep outputs first and scalar component names compact
 use crate::*;
 

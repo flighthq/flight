@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_physics3d_abi::contract::*;
 
 // Every variant with its exact TS string-union member; the parsers invert the tables and refuse

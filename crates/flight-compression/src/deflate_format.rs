@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Uint8Array;
 
 // Format facts shared by the DEFLATE decoder and encoder. They live here rather than beside either one

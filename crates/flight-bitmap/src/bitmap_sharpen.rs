@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::bitmap_blur::box_blur_bitmap;
 use crate::bitmap_pixel::to_clamped_u8;
 use crate::types::*;

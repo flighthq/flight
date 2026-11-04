@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Particle Designer plist parsing (TS `particleDesignerParse.ts`).
 
 use flight_importdiagnostics::{

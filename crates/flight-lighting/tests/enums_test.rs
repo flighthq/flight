@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_lighting::contract::*;
 
 mod get_light_unit_string {

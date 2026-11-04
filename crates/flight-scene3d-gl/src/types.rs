@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary, file-structure, sugar-delegates) D17 scene3d-gl records hold glow native handles, thread-bound render-gl state and composed program families
 
 use std::any::Any;

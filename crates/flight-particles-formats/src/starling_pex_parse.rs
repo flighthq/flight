@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Starling / Sparrow PEX XML parsing (TS `starlingPexParse.ts`).
 
 use flight_importdiagnostics::{

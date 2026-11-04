@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::CollisionShape2D;
 use flight_entity::Ref;
 use flight_physics2d::contract::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_materials::{IRIDESCENCE_PBR_EXTENSION_KIND, PbrExtension};

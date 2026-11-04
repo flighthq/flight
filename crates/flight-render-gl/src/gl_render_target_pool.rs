@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 target-pool ownership uses native handles and Result diagnostics
 
 use flight_entity::EntityRuntimeSlot;

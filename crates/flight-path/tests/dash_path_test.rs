@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::contract::*;
 
 fn count_commands(path: &Path, command: PathCommand) -> usize {

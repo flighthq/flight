@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::three_ds_schema::{
     ThreeDsCamera, ThreeDsDropTally, ThreeDsLight, ThreeDsMaterial, ThreeDsMesh,
 };

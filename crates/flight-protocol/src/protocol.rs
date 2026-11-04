@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_entity::{Record, allocate_entity, entries, set_record_value};

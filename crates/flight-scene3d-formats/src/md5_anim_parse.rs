@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_number::{is_md5_whitespace, parse_md5_float, parse_md5_integer};
 use crate::md5_parse::tally_md5_drop;
 use crate::md5_types::Md5DropTallyEntry;

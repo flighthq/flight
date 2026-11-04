@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Ease-in circular: slow start with a circular arc.
 pub fn ease_in_circular(t: f32) -> f32 {
     return 1.0 - (1.0 - t * t).sqrt();

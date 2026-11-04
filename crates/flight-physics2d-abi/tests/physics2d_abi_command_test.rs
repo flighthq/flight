@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: command scalars are the wire's IEEE doubles and circle/polygon scalars are flight-collision's f64 shape fields
 use flight_collision::{
     CollisionAabb2D, CollisionCapsule2D, CollisionCircle2D, CollisionObb2D, CollisionPoint2D,

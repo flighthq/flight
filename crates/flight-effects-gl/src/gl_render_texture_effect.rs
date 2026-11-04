@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render-texture effect application borrows render-gl's Rc/RefCell target entries and returns Result diagnostics
 //! The explicit per-node target-to-target path: applies the registered members of an effect chain
 //! from one RenderTexture to another over render-gl's leases, separate from the pipeline.

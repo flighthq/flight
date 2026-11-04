@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::{block, file};
 use flight_requirement::{Requirement, RequirementFacet};
 use flight_scene3d_formats::contract::*;

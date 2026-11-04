@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 const MAX_BLUR_SIGMA_PER_LEVEL: f32 = 4.0;
 
 pub fn get_blur_downsample_level(sigma: f32) -> u32 {

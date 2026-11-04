@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! TypeScript reflects its object representation in the target-native companion. Rust verifies the
 //! same public geometry surface while its private runtime remains compile-time inaccessible here.

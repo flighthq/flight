@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_texture_formats::contract::*;
 
 mod get_texture_container_format_string {

@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/src/random_distributions.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { RandomSource } from './random.ts';
 
 const ZERO_SAMPLE_EPSILON: number = 1.0 / 4_503_599_627_370_496.0;

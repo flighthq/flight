@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_geometry::create_aabb;
 use flight_meshgeometry::MeshSkinBindPose;

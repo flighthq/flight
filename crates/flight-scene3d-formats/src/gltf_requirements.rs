@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_feature_requirements::GLTF_FEATURE_SCENE_REQUIREMENTS;
 use crate::gltf_features::{collect_glb_features, collect_gltf_features};
 use crate::gltf_source::GltfSource;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{Record, Ref, Unknown, get_record_value, set_record_value};
 use flight_scene3d_formats::contract::*;
 use std::sync::{Arc, RwLock};

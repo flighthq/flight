@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The bundled default quad material (TS `wgpuStandardMaterial.ts`): a textured quad with
 //! per-instance alpha and no other effect. The batch holds no shader of its own, so even the plain
 //! path is a registered material; a user can copy this module and register their own default.

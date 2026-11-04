@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_meshgeometry::get_mesh_geometry_skin_bind_pose;
 use flight_node::{NodeRef, add_node_child, invalidate_node_local_transform};

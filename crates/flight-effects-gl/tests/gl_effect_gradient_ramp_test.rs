@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod create_gl_effect_gradient_ramp_texture {
     use flight_effects_gl::contract::create_gl_effect_gradient_ramp_texture;
 

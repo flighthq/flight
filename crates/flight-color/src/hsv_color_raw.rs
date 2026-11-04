@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: companion hsvColor.ts
 
 use flight_entity::EntityRuntimeSlot;

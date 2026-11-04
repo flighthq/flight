@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Kuwahara: edge-preserving smoothing. Over a fixed small radius split the neighborhood into four
 //! overlapping quadrants, compute each mean and variance, and emit the lowest-variance mean — flattens

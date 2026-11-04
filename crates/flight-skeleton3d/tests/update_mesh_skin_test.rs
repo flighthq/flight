@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_meshgeometry::contract::{
     ensure_mesh_geometry_bounds, get_mesh_geometry_skin_bind_pose,

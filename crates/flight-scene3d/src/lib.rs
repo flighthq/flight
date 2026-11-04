@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Portable scene documents, flat 3D nodes, and source-defined scene operations.
 //!
 //! Runtime access and construction initializers are available through `contract`.

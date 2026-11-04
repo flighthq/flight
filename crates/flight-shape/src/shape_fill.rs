@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Solid fill-region resolution and shared geometry expansion (TS `shapeFill.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 

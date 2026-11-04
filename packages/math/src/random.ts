@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/src/random.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 /**
  * A callable random source. Cloning it shares the stream, as a TS function reference does.
  */

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Screen-space fog (TS `wgpuScreenSpaceFogEffect.ts`): blends the scene toward the unpacked fog color
 //! by a depth proxy. WebGPU has no depth G-buffer yet, so this color-only fallback uses the

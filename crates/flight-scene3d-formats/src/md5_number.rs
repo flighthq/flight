@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 pub(crate) fn is_md5_whitespace(value: char) -> bool {
     return matches!(
         value,

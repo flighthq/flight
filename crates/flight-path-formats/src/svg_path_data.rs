@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use flight_path::{
     Path, PathSegment, append_path_close, append_path_cubic_curve_to,
     append_path_elliptical_arc_to, append_path_line_to, append_path_move_to,

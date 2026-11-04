@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Contact surface mixing (TS `material.ts`).
 
 /// JS `Math.max` over two numbers: NaN when either is NaN.

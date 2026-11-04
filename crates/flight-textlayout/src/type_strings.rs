@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::{TextAutoSize, TextJustification, TextVerticalAlign};
 
 // flight-lint: allow(conform-extra) D9 exact string table for types/TextAutoSize.ts; no source helper function exists

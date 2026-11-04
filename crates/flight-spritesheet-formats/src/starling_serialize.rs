@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_spritesheet::{SpritesheetData, SpritesheetFrameData};
 
 use crate::types::*;

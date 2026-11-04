@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Explicit mode resolution and substitution for flight document scene tokens (TS
 //! `@flighthq/tokens`): a scene's token table resolved for one mode through an open per-kind
 //! resolver registry, then substituted into its node fields as a new scene entry.

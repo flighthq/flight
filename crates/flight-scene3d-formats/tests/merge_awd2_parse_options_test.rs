@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::handler;
 use flight_compression::{HostDecompressDeflateCapability, HostDecompressLzmaCapability};
 use flight_scene3d_formats::*;

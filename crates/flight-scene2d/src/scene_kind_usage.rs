@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! What a scene uses that some consumer must be registered for (TS `sceneKindUsage.ts`): one walk,
 //! no registry, no backend.
 

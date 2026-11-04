@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! flight-compiler: string-union ClipRegionStatus=exact
 //! flight-compiler: string-union-value ClipRegionStatus Active "active"
 //! flight-compiler: string-union-value ClipRegionStatus Released "released"

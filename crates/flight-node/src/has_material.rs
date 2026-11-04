@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! 2D material field group initialization (TS `hasMaterial.ts`).
 
 use flight_entity::Ref;

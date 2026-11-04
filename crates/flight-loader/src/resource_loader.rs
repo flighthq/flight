@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::enums::{ResourceLoadItemStatus, ResourceLoadReportStatus, ResourceLoaderErrorPolicy};
 use crate::types::*;
 use flight_entity::{

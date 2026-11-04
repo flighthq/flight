@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::RiveFieldType;
 
 /// Returns the wire width of a property from Rive's built-in object model.

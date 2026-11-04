@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over native wgpu resources and render-wgpu state
 //! The 2D particle emitter renderer (TS `wgpuParticleEmitter2D.ts`): one instanced draw per emitter
 //! from a per-state instance storage buffer, outside the quad batch.

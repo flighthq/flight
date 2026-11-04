@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::spine_binary_parse_helpers::report_spine_binary_crumb;
 use crate::spine_binary_reader::*;
 use flight_buffer::ByteReader;

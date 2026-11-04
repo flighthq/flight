@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::{Path, PathMesh, StrokeStyle, tessellate_stroke_path};
 use flight_render_gl::GlRenderState;
 

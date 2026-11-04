@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{Matrix, Rectangle, create_rectangle, matrix_transform_rectangle};
 use flight_node::{NodeRef, Viewport, get_node_world_bounds_rectangle};
 

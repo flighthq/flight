@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod create_gl_skin_palette_texture {
     use crate::gl_test_helper::make_state;
     use flight_render_gl::create_gl_skin_palette_texture;

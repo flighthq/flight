@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_collision::{
     create_collision_contact_manifold3d, create_collision_raycast_hit3d,
     create_collision_time_of_impact3d,

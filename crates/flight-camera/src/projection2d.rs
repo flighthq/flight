@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! 2D camera point projection and unprojection (TS `projection2d.ts`).
 
 use flight_geometry::{

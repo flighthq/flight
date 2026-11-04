@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Bounds extent field group and runtime initialization (TS `hasBoundsRectangle.ts`).
 
 use flight_geometry::Rectangle;

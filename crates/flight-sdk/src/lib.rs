@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The Flight SDK (TS `@flighthq/sdk`, D21): one dependency that re-exports every SDK crate's public
 //! lane, one glob per crate as in `sdk/src/index.ts`. Contract lanes stay out; sugar travels with the
 //! types. Host adapters are not included (D26: apps add the providers they want). Each crate is also

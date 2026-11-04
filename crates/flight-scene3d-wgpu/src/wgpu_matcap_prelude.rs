@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the matcap family seams take and return native wgpu values
 //! The Wgpu matcap prelude (TS `wgpuMatcapPrelude.ts`): a lighting-independent material-capture
 //! module whose matcap is sampled by the view-space normal. The matcap texture is not sampled on wgpu

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_assets::contract::*;
 mod get_asset_load_status_string {
     use super::*;

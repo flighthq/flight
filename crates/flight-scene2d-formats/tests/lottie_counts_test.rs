@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashMap;
 
 use flight_scene2d_formats::{collect_lottie_counts, get_lottie_feature_names};

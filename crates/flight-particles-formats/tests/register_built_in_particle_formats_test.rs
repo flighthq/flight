@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles_formats::contract::*;
 
 fn detect_probe(kind: &str) -> String {

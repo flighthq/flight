@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The atlas-backed QuadBatch renderer (TS `wgpuQuadBatch.ts`): one affine instance per quad, with
 //! per-quad tints overriding the node-level one.

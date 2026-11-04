@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Directional-light shadow camera fitting (TS `shadowCamera.ts`). Backend-agnostic CPU math.
 
 use flight_geometry::{Aabb, Vector3, create_vector3};

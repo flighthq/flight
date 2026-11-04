@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles::*;
 
 mod normalize_particle_emitter_config {

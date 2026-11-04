@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{create_matrix, create_rectangle};
 use flight_render_gl::GlViewportRect;
 use flight_scene2d_gl::contract::*;

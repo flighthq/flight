@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_scene3d_formats::contract::*;
 use flight_xml::{XmlElement, parse_xml_document};

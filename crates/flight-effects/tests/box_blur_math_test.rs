@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 fn pass_radii(sigma: f32, passes: usize) -> Vec<f32> {

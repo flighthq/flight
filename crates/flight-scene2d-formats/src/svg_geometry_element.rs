@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) SVG paint feeds the canonical f64 retained path and shape-command lanes
 
 use std::collections::HashMap;

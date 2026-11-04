@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{RenderProxy, RenderState};
 
 pub fn update_render_proxy_material<S: RenderState>(

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 pub fn compute_depth_of_field_coc(
     depth: f32,
     focus_distance: f32,

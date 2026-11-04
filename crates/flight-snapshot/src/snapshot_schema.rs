@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::collections::HashSet;
 
 use crate::types::SnapshotSchema;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The opt-in color-adjustment guard (TS `enableWgpuColorAdjustmentGuards.ts`): when a node carries a
 //! color adjustment but the fold was never registered, the batch reaches this guard through its
 //! optional registry slot and warns once; the tint is skipped and drawn untinted, never a throw.

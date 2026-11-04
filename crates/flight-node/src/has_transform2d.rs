@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! 2D local transform field group initialization (TS `hasTransform2d.ts`).
 
 use crate::types::*;

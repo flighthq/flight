@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_animation::contract::*;
 use flight_entity::Ref;

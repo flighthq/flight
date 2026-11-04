@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/easing_types.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 /**
  * A scalar easing function over the normalized unit interval.
  */

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Per-node bitmap shader bindings (TS `wgpuShaderBinding.ts`). The source's module WeakMap keyed
 //! by render proxy becomes a state-local table keyed by the proxy's source node id (D5, D12): one
 //! proxy exists per node per state.

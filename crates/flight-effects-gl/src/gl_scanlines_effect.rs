@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Scanlines: darken by a vertical sine band; `count` sets the line density, `intensity` the
 //! darkening.

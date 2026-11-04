@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_core_feature_registry::register_gltf_core_feature_handler;
 use crate::gltf_skins::GLTF_SKINS_CORE_FEATURE_HANDLER;
 use crate::gltf_types::GltfCoreFeatureHandler;

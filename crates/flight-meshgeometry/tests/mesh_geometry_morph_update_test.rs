@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_meshgeometry::contract::*;
 
 fn geometry() -> MeshGeometry {

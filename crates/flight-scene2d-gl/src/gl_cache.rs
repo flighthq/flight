@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render caches own thread-bound render-gl targets and caller-owned proxy stores
 
 use std::cell::RefCell;

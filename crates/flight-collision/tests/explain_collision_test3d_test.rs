@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 fn sphere(x: f32, radius: f32) -> CollisionShape3D {

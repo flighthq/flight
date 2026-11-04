@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Node allocation, runtime, signals and disposal (TS `node.ts`).
 
 // flight-lint: allow-file(contract-vocabulary) D16 open node trait objects are contract dispatch, not vocabulary types

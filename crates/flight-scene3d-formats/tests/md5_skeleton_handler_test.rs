@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::md5_test_helper::*;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_scene3d_formats::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{Node3DRef, Scene3DAnimationPath};
 use flight_animation::AnimationClip;
 use flight_animation::contract::sample_animation_track_ref;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod upload_gl_texture_data {
     use crate::gl_test_helper::{last_call, make_gl};
     use flight_render_gl::upload_gl_texture_data;

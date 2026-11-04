@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Command-owned declarations (TS `types/src/Command.ts`): the data-only kind-tagged command family,
 //! the binding record and table, the history entity, and the dispatch explanation.
 //!

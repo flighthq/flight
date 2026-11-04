@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::common::*;
 use flight_buffer::{
     ArrayBufferViewKind, create_array_buffer, create_array_buffer_from_bytes,

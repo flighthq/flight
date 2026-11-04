@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_texture_formats::*;
 
 mod detect_texture_container {

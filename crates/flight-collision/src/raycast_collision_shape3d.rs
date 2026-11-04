@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::convex_hull3d::write_collision_convex_hull_faces3d;
 use crate::point_containment3d::get_collision_shape_contains_point3d;
 use crate::types::*;

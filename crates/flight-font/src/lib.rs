@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod _font_face_load;
 mod font_format;
 mod font_resource;

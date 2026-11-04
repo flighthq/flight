@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod build_gl_render_registries {
     use std::sync::Arc;
 

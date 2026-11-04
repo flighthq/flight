@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, RwLock};
 
 use flight_materials::contract::create_standard_pbr_material;

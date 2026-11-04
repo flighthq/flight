@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::contract::*;
 use std::f32::consts::PI;
 

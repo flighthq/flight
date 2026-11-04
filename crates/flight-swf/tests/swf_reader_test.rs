@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::{bytes_ref, reader};
 use flight_swf::contract::*;
 

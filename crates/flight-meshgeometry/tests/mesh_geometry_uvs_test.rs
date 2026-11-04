@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_meshgeometry::contract::*;
 
 mod offset_mesh_geometry_uvs {

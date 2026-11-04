@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 const HULL_EPSILON: f32 = 1e-10;
 
 fn add_point_to_hull(points: &[f32], pi: usize, faces: &mut Vec<[usize; 3]>) {

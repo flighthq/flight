@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect registry dispatches over the open Effect family through the render-gl registration slot
 //! Per-state registry mapping an effect `kind` string to its GL runner — the material-renderer
 //! pattern one tier up. Registration is opt-in and dispatch is a map lookup, so there is no

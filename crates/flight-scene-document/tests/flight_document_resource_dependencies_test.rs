@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{allocate_entity, set_record_value};
 use flight_registry::with_kind_map_entry;
 use flight_scene_document::contract::*;

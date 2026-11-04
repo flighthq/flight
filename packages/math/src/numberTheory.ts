@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/src/number_theory.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 /**
  * Return the factorial of non-negative integer `n`.
  *

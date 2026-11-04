@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 /// TS `TrayDestroyCapabilityResult`: the exact outcome union; failure arms carry a `TrayFailure`.

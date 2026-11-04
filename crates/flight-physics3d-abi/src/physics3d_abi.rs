@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The ABI's world lifecycle, execution, step and readback entry points (TS `physics3DAbi.ts`):
 //! thin free functions over the backend seam, so every caller is backend-neutral.
 

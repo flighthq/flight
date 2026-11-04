@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_lighting::{
     MAX_FORWARD_LIGHTS, Scene3DForwardLightSelectionExplanation,
     Scene3DForwardLightSelectionReason, Scene3DLightsLike,

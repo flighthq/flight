@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene2d_formats::{SvgColor, parse_svg_color, resolve_svg_color};
 
 mod parse_svg_color {

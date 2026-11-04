@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_test_helper::minimal_gltf_document;
 use flight_camera::Projection;
 use flight_importdiagnostics::ImportDiagnosticSeverity;

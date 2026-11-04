@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Uint8Array;
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_path_boolean::PathBooleanKernel;

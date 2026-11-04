@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The BitmapText renderer (TS `wgpuBitmapText.ts`): one batched sprite pass per glyph-atlas page.
 //! The node's resolved color adjustment folds in as a whole-node tint on every glyph — the same

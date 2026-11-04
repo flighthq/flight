@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::LazyLock;
 
 use flight_entity::{Record, get_record_value, set_record_value};

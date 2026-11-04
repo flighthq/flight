@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::collision_face3d::*;
 use crate::contact_manifold3d::*;
 use crate::test_collision3d::*;

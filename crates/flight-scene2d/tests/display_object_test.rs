@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_adjustments::{Adjustment, create_color_matrix_adjustment, create_tint_adjustment};

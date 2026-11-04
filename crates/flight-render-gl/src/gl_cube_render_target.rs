@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 cube targets expose native glow handles, Rc context ownership, and Result diagnostics
 
 use std::rc::Rc;

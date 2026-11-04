@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextureContainer {
     pub format: TextureContainerFormat,

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! scene-document-owned declarations (TS `FlightDocument*.ts`, `NodeInteractiveStateBinding.ts`): the
 //! logical document model, its schemas and registries, refusal diagnostics, and the inert
 //! materialization records.

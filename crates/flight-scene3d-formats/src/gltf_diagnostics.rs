@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_types::GltfAccessorFault;
 use flight_entity::{Record, Ref, entries, set_record_value};
 use flight_importdiagnostics::{

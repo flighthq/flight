@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Vertex view format specifiers for interleaved mesh geometry.
 ///
 /// Each variant names a WebGPU-style vertex format: the component type, optional

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 // flight-lint: allow-file(f64) D1: command scalars are the wire's IEEE doubles
 //! Rust convenience methods for the public physics3d-abi lane (D18): each delegates to its free

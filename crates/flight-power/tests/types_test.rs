@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_power::*;
 
 mod make_power_battery_health {

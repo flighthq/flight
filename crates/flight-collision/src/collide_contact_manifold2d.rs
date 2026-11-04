@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::capsule_contact2d::*;
 use crate::contact_manifold2d::*;
 use crate::shape_contact2d::*;

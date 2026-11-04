@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Float32Array, throw_error};
 
 // flight-lint: conform-skip(createEasingSamples) D24 Principal4dc5429b: user-approved replacement is write_easing_samples(out, ease), count from output length; no allocating form

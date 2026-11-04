@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_swf::*;
 
 mod swf_define_morph_shape_handler {

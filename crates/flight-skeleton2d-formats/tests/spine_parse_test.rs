@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::allocate_entity;
 use flight_skeleton2d::contract::Slot2D;
 use flight_skeleton2d_formats::contract::*;

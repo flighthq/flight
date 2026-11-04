@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-formats/src/svg_path_data.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import {
   appendPathClose,
   appendPathCubicCurveTo,

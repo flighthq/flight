@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 color conversion passes accept the native target trait and Result diagnostics
 
 use crate::{

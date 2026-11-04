@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Deterministic send-failure diagnosis (TS `explainSocketSendFailure.ts`).
 
 use flight_entity::Ref;

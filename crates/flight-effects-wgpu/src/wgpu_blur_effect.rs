@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Plain separable Gaussian blur (TS `wgpuBlurEffect.ts`): two axis passes (source → temp
 //! horizontally, temp → dest vertically), each one weighted fullscreen pass with radius ⌈3σ⌉.

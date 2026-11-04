@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! flight-compiler: string-union TextDirection=exact
 //! flight-compiler: string-union-value TextDirection LeftToRight "LeftToRight"
 //! flight-compiler: string-union-value TextDirection RightToLeft "RightToLeft"

@@ -1,6 +1,3 @@
-// Generated from crates/flight-input/tests/input_signals_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { SignalRaw } from '@flighthq/signals/contract';
 import { describe, expect, it } from 'vitest';
 

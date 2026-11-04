@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary, enum-payload-named) D17 readback exposes borrowed native typed-array analogs whose enum payload preserves buffer identity
 
 use glow::{HasContext, PixelPackData};

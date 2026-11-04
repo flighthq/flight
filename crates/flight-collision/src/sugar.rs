@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Rust convenience methods for the public collision lane (D18).
 
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]

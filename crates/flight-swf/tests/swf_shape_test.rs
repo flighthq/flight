@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_importdiagnostics::{

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render::{CreateExternalTextureOptions, EXTERNAL_TEXTURE_SOURCE_KIND, ExternalTexture};
 use flight_render_wgpu::*;
 use flight_texture::get_texture_source_kind;

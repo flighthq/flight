@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_font::contract::*;
 
 mod get_font_shorthand {

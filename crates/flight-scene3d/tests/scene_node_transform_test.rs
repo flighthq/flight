@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::{as_node_ref, node3d};
 use flight_geometry::create_vector3;
 use flight_node::contract::{get_node_local_matrix4, is_node_local_matrix4_detached};

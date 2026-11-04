@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::marker::PhantomData;
 use std::sync::{Arc, Mutex, RwLock};
 

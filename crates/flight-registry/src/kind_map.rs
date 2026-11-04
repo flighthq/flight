@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! `KindMap<T>` is the Rust IR carrier for the JavaScript built-in `Map<Kind, T>`: Rust tracks the
 //! insertion order a JS Map keeps natively. The TypeScript twin (`kindMap.ts`) operates on the built-in

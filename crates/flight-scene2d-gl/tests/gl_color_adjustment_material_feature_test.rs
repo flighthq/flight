@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::num::NonZeroU32;
 
 use flight_render::are_color_adjustments_enabled;

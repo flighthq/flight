@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The explicit world step (TS `step.ts`): contact intake, sleep and islands, the sequential-impulse
 //! velocity solve over contacts and joints, integration (with chronological CCD for bullets), the
 //! position pass, and break detection. The source's step scratch pool is a per-step local; its

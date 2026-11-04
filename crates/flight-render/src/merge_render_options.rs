@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_registry::concat_kind_map;
 
 use crate::{RenderState, RenderStateOptions};

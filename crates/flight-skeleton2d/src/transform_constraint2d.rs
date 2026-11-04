@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! World-space transform-copy constraint solving (TS `transformConstraint2D.ts`).
 
 use flight_math::RAD_TO_DEG;

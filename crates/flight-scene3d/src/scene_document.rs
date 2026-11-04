@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     Node3DFields, Node3DRef, Scene3D, Scene3DAnimationTarget, Scene3DDocument,
     Scene3DDocumentMaterial, Scene3DDocumentNode, Skeleton3D, Skin, create_mesh, create_node3d,

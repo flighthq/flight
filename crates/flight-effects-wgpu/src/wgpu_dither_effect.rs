@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Dither: quantizes each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro banded-but-textured look. (TS `wgpuDitherEffect.ts`).
 

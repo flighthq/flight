@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_skeleton2d_formats::contract::*;
 
 mod register_dragon_bones_section_handlers {

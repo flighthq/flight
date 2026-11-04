@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_render::SCENE2D_WORKING_COLOR_SPACE;
 use flight_texture::RenderTargetColorSpace;
 

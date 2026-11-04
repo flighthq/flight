@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! World and body lifecycle (TS `world.ts`): insertion, removal, collider topology, body controls
 //! and actions. Topology changes keep every derived structure coherent immediately: they discard
 //! stale constraints, wake affected bodies and republish bounds.

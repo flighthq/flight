@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]

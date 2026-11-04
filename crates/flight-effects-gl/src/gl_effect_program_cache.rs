@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 program cache returns native glow programs, uniform locations and Result diagnostics
 //! Per-context cache of compiled effect fragment programs, keyed by a stable string. Effect recipes
 //! call `get_gl_effect_program` with their own key + fragment source so each program compiles once

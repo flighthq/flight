@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_importdiagnostics::contract::*;
 
 mod get_import_diagnostic_severity_string {

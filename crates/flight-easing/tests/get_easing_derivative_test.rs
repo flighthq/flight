@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_easing::contract::DEFAULT_EASING_DERIVATIVE_EPSILON;
 use flight_easing::*;
 

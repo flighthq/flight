@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in Matcap forward renderer (TS `wgpuMatcapMeshMaterialRenderer.ts`): lighting-independent
 //! material-capture shading binding the linear tint; the matcap texture is not sampled on wgpu yet.

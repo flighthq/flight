@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_buffer::{
     ArrayBufferViewKind, create_array_buffer_from_bytes, create_array_buffer_view,
     get_array_buffer_storage,

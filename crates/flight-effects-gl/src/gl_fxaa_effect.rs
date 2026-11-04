@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! FXAA: luminance edge detection + directional blend along the detected edge. Single-pass reference
 //! recipe. Reads u_texture0; u_resolution gives the texel size; u_edgeThreshold gates edge detection.

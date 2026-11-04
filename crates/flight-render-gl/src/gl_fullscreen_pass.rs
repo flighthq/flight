@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 fullscreen passes accept native targets, glow names, closures, and Result diagnostics
 
 use flight_geometry::Rectangle;

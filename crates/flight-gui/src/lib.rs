@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Controllers operate on caller-owned visuals; runtime access stays on the contract lane.
 mod gui_controller;
 mod gui_test_helper;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Shared particle-format declarations (TS `types/src/ParticleFormat*.ts`, `ParticleConfigParse.ts`,
 //! `ParticleSerializeResult.ts`, `ParticleFormatKind.ts`).
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Color-matrix math: preset builders, combinators, and evaluation for 4x5 RGBA color matrices.
 ///
 /// A color-matrix is a 4x5 affine transform applied to premultiplied RGBA color vectors:

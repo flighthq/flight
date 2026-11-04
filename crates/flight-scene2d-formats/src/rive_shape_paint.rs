@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) Flight path geometry, lengths, and shape command numbers use the approved D1 f64 lane
 
 use std::collections::HashMap;

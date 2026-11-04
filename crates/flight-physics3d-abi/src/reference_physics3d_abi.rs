@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: wire records are IEEE doubles (TS DataView/Float64Array)
 //! The executable specification for the Physics3D ABI (TS `referencePhysics3DAbi.ts`): a real
 //! `Physics3DWorld` behind persistent handles, caller-chosen ids and packed buffers. It exists to

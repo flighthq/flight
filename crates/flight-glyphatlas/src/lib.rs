@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod enable_glyph_atlas_guards;
 mod explain_glyph_atlas_entry;
 mod glyph_atlas;

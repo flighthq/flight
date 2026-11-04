@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: string-union ContourOrientation
 
 use crate::flatten_path::flatten_path;

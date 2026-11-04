@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_extension_test_helper::*;
 use flight_importdiagnostics::ImportDiagnosticSeverity;
 use flight_materials::{ExtendedPbrMaterial, StandardPbrMaterial};

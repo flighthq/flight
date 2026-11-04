@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::{LightUnit, PhotometricLightLike};
 
 // flight-lint: allow-file(contract-vocabulary) D16 structural PhotometricLightLike matches the open two-field TS interface

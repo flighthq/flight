@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_render::{RenderTargetDepth, RenderTargetFormat};
 
 /// Scene-target configuration shared by the backend effect pipelines (TS `EffectStateOptions`,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::deflate_format::{
     DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA, compute_adler32,
 };

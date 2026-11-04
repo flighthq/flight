@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-boolean/tests/write_path_boolean_contours_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { PathCommand, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 

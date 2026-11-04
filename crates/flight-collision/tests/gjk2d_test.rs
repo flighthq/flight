@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 /// The widest gap between the generic core's normal and the incumbent's over this corpus, measured

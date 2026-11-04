@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Open-kind document lights (Principal 68e645eb C2). The source reads an authored light as a plain
 //! `{ kind, ...fields }` object and writes any Light by reflecting its own fields. Here the text
 //! codec reads every light as a `FlightDocumentLightDescriptor` that keeps its kind and all of its

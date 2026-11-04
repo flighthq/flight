@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16/D17: the shaded family reads the open Modifier family through `&dyn Modifier` and carries native wgpu values
 //! The ShadedMaterial composition (TS `wgpuShadedPrelude.ts`): the ordered modifier plan, the
 //! composed WGSL over the classic shared-sampler module, the composed pipeline and surface binding,

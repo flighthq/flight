@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_geometry::contract::{create_transform3d, create_vector3};
 use flight_lighting::contract::*;

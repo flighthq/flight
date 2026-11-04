@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in Normal forward renderer (TS `wgpuNormalMeshMaterialRenderer.ts`): the debug pipeline in
 //! normal mode, encoding the world-space normal as `n * 0.5 + 0.5`. The tangent-space normal map is not

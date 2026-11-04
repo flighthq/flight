@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashMap;
 
 use flight_spatial::contract::{UniformGrid2D, initialize_uniform_grid_spatial_backend_2d};

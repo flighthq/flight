@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::three_ds_types::{ThreeDsChunkDispatch, ThreeDsChunkDispatchEntry, ThreeDsChunkHandler};
 use flight_entity::Ref;
 

@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/transform_path.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { MatrixLike } from '@flighthq/geometry/contract';
 
 import { copyPath } from './copyPath.ts';

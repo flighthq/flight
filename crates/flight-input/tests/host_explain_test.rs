@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+//! flight-compiler: rust-only
+
 use std::sync::{Arc, RwLock};
 
 use flight_host::{

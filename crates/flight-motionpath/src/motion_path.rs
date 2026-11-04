@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+//!
 //! Arc-length motion-path markers over a `Path` (TS `motionPath.ts`).
 
 use flight_entity::{Ref, allocate_entity};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_median_effect_to_gl {
     use flight_effects::create_median_effect;
     use flight_effects_gl::contract::{MAX_MEDIAN_EFFECT_GL_RADIUS, apply_median_effect_to_gl};

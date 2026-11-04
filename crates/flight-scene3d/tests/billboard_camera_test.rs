@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_geometry::{create_quaternion, create_vector3, set_quaternion_from_axis_angle};
 use flight_node::contract::get_node_world_matrix4;

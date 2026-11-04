@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{BillboardMode, Scene3DGuardStateRef, scene_node::as_node3d};
 use flight_camera::Camera3D;
 use flight_geometry::{

@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use flight_binpack::contract::*;
 
 fn is_power_of_two(value: f32) -> bool {

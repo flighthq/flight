@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::support::font_options;
 use flight_font_formats::*;
 

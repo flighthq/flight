@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_spritesheet::{SpritesheetData, SpritesheetFrameData};
 
 pub fn format_libgdx_atlas(data: &SpritesheetData) -> String {

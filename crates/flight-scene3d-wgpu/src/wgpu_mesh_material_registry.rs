@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the resolver reads any material through `&dyn Material`, as the 2D quad registry does
 //! The 3D mesh-material renderer table (TS `wgpuMeshMaterialRegistry.ts`): the scene analog of the
 //! quad-material registry, sharing render-wgpu's `material_renderers` table (a material kind is

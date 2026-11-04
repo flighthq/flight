@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::{LightUnit, Scene3DForwardLightSelectionReason};
 
 // flight-lint: allow(conform-extra) D9 Rust string-table helper for the TS LightUnit string union

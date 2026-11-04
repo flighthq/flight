@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary, file-structure) D17 GL renderer contracts carry thread-bound render-gl state, opaque host handles and backend-typed callbacks
 //! The types scene2d-gl owns (TS `GlShapeRendererData.ts`, `GlRichTextOverlay.ts` and the
 //! renderer-private scratch records). The color-adjustment feature contract and `GlShapeMesh` live

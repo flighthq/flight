@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod boolean_paths;
 mod explain_path_boolean;
 mod martinez_kernel;

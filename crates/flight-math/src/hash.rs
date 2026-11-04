@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use crate::RandomSource;
 use crate::create_random_source;
 

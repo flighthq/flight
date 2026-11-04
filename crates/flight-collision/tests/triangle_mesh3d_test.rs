@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 fn collision_registry3d_with_supports_and_faces() -> CollisionRegistry3D {

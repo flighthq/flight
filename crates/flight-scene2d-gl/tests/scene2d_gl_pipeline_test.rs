@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::BITMAP_TEXTURE_SOURCE_KIND;
 use flight_bitmaptext::BITMAP_TEXT_KIND;
 use flight_image::IMAGE_TEXTURE_SOURCE_KIND;

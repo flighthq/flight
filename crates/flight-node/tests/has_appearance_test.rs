@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::contract::*;
 
 mod init_appearance_runtime_trait {

@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex};
 
 use flight_entity::{Ref, allocate_entity};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::Effect;
 use flight_effects_gl::contract::{GlEffectContext, GlEffectRegistration};
 use flight_render_gl::GlRenderState;

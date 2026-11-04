@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_extension_shared::{gltf_extension_materials, resolve_gltf_extension_texture};
 use crate::gltf_material::pack_gltf_linear_color;
 use crate::gltf_schema::GltfTextureInfoRef;

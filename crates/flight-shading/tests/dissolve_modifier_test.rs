@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::Arc;
 
 use flight_entity::{get_entity_uid, set_entity_uid};

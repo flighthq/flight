@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{LensDirtEffect, create_lens_dirt_effect};
 use flight_entity::Ref;
 

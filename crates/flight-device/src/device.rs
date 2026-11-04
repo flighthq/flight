@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::NonEntityCreateResult;
 use flight_useragent::DEVICE_FORM_FACTOR_UNKNOWN;
 

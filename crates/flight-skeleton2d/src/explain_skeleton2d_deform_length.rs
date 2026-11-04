@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Deform-length explanations (TS `explainSkeleton2DDeformLength.ts`).
 
 use crate::types::*;

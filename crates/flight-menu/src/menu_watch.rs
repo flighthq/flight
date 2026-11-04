@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{
     allocate_entity, attach_entity_binding, detach_entity_binding, get_entity_binding_as,
 };

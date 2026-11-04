@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Unknown;
 use flight_path::{
     Path, append_path_cubic_curve_to, append_path_line_to, append_path_move_to, create_path,

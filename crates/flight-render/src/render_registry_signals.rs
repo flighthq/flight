@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Kind;
 use flight_signals::{create_signal, emit_signal};
 

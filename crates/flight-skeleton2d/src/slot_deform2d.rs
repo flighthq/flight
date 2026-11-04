@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Slot deform offsets and their attachment identity (TS `slotDeform2D.ts`).
 
 use crate::types::*;

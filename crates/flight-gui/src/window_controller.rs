@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::button_controller::{ButtonController, get_button_controller_signals};
 use crate::gui_controller::*;
 use flight_entity::{Ref, allocate_entity};

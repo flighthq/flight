@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_diagnostics::gltf_diagnostic_values;
 use crate::gltf_types::{GltfComponentArray, GltfCoreFeatureContext};
 use flight_entity::Ref;

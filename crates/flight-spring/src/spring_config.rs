@@ -1,3 +1,4 @@
+//! flight-compiler: target-native
 //! flight-compiler: frozen-object SPRING_PRESET_BOUNCY SpringPresetBouncy
 //! flight-compiler: frozen-object SPRING_PRESET_GENTLE SpringPresetGentle
 //! flight-compiler: frozen-object SPRING_PRESET_STIFF SpringPresetStiff

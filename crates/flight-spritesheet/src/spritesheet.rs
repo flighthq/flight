@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Ref, allocate_entity, get_record_value};
 
 use crate::spritesheet_frame::create_spritesheet_frame;

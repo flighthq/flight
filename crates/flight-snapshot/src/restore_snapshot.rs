@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::snapshot_value::*;
 use crate::types::*;
 

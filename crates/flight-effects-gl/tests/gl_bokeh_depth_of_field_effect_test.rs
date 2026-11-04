@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_bokeh_depth_of_field_effect_to_gl {
     use flight_effects::create_bokeh_depth_of_field_effect;
     use flight_effects_gl::contract::apply_bokeh_depth_of_field_effect_to_gl;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(beginWgpuScreenRenderPassForTest, createReadyImageElementForTest, createTestWgpuSurface, createWgpuRenderStateForTest, createWgpuScreenRenderTargetForTest, installWgpuMock) browser test scaffolding (wgpuHost.ts, wgpuTestHelper.ts) is ported as the crate's Rust test doubles in tests/support.rs, never as public API
 // flight-lint: conform-skip(initializeWgpuHostAcquisition) D8/D23 (principal): one owner; flight-surface defines initialize_wgpu_host_acquisition beside the WgpuHostAcquisition type it initializes, and create_wgpu_acquisition assigns the acquired handles and caller ownership inline
 //! The WebGPU render backend (TS `@flighthq/render-wgpu`) over host-supplied native `wgpu` devices

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 fn bounce_out(t: f32) -> f32 {
     if t < 1.0 / 2.75 {
         return 7.5625 * t * t;

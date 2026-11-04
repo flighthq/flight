@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! SMAA: a single-pass edge-aware blur approximation. Full SMAA needs separate edge-detection and
 //! blend-weight passes against precomputed area/search lookup textures; this single-pass approximation

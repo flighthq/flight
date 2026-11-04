@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::allocate_entity;
 use flight_math::{RandomSource, create_random_source};
 

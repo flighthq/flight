@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::get_gaussian_kernel_size;
 
 // flight-lint: allow(conform-params) D24 requires caller-owned outputs first

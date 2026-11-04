@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_core_shared::gltf_core_index;
 use crate::gltf_material::pack_gltf_linear_color;
 use crate::gltf_schema::GltfPunctualLight;

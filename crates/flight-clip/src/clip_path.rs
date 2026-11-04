@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+//! flight-compiler: target-native
+
 use flight_path::{Path, flatten_path};
 
 // flight-lint: allow(f64) flattened contours retain Path.data precision

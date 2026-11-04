@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_connectivity::contract::*;
 use flight_host::{HostCapabilityGroupExplanation, HostExplanation};
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: effect passes take host-supplied wgpu resources and borrowed uniform-writer callbacks
 //! Fullscreen effect passes (TS `wgpuEffectPass.ts`): the shared vertex shader, effect pipelines
 //! in the three compositing blend modes, and single- and dual-source draws through a per-state

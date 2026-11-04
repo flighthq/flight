@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Which collider kinds generate no contacts (TS `explainPhysics2DCollision.ts`).
 
 use flight_collision::CollisionShape2D;

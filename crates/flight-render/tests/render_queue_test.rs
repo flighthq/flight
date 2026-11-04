@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::get_entity_id;
 use flight_node::{NodeRef, add_node_child};
 use flight_render::*;

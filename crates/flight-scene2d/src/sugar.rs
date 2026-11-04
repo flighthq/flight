@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 Rust conveniences: each method delegates to one public free function. Shared-handle
 //! receivers (`Ref<dyn Node2D>`, `Ref<HtmlView>`, `Ref<Scene2D>`) take their methods through
 //! extension traits.

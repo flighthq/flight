@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Mass properties derived from collider geometry (TS `massProperties.ts`). A body's mass is never
 //! assigned, only derived, so its inertia cannot disagree with its shape.
 

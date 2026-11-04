@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_anim_parse::parse_md5_anim;
 use crate::md5_parse::parse_md5_mesh_with_section_handlers;
 use crate::md5_section_registry::MD5_ALL_SECTION_HANDLERS;

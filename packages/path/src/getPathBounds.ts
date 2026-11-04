@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/get_path_bounds.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { RectangleLike } from '@flighthq/geometry/contract';
 
 import type { PathRaw } from './path.ts';

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Record, set_record_value};
 use flight_spritesheet::contract::*;
 

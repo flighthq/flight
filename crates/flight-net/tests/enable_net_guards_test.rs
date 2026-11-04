@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::common::*;
 use flight_entity::Ref;
 use flight_log::{

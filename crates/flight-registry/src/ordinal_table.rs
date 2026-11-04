@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Kind, NonEntityCreateResult};
 
 /// A dense table indexed by an ordinal already present in the wire format.

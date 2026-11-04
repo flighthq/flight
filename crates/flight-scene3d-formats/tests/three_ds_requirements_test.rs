@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::three_ds_test_helper::*;
 use flight_materials::BLINN_PHONG_MATERIAL_KIND;
 use flight_requirement::{Requirement, RequirementFacet};

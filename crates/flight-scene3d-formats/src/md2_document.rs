@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md2_parse::parse_md2_with_section_handlers;
 use crate::md2_section_registry::MD2_ALL_SECTION_HANDLERS;
 use crate::md2_types::Md2ImportOptions;

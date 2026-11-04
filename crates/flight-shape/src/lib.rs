@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Vector shape nodes: retained command streams, fill/stroke region resolution, the bounds
 //! traversal, morph shapes and nine-slice command mapping. No renderer, canvas or provider lives
 //! here; the public lane mirrors TS `shape/src/index.ts`.

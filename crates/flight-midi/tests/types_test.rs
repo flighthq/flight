@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_midi::contract::*;
 
 mod get_midi_access_dispose_reason_string {

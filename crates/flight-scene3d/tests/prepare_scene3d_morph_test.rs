@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_meshgeometry::contract::*;
 use flight_node::add_node_child;

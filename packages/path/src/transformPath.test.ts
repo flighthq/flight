@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/tests/transform_path_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { createMatrix } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 

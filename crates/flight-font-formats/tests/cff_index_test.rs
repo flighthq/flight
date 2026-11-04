@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_font_formats::*;
 
 fn build_index(entries: &[&str], off_size: usize) -> Vec<u8> {

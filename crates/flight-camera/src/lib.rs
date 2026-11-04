@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Mathematical 2D/3D cameras: projection descriptors, view matrices, aspect/jitter setters,
 //! culling, picking, reflection, shadow-camera fitting and the 2D world/screen transforms. No
 //! render backend, device capture or OS operation lives here.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_composite_effect_to_gl {
     use flight_effects::{COMPOSITE_OPERATOR_DESTINATION_OUT, create_composite_effect};
     use flight_effects_gl::contract::apply_composite_effect_to_gl;

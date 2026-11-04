@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The 2D camera's visible world rectangle and its degenerate-zoom guard (TS `visibleBounds.ts`).
 
 use flight_geometry::{Rectangle, create_matrix, inverse_matrix, matrix_transform_bounds};

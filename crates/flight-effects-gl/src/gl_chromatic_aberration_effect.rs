@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
 //! apart. When radial, the offset scales with distance from the optical center; otherwise it is a

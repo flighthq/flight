@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod bitmap_font;
 mod bitmap_font_from_glyph_atlas;
 mod bitmap_font_glyph_source;

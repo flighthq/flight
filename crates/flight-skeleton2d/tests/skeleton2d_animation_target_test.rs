@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_animation::contract::{

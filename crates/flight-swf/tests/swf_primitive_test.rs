@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::{SwfBitWriter, create_rectangle_record, reader};
 use flight_swf::contract::*;
 

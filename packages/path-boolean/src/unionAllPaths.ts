@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-boolean/src/union_all_paths.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 

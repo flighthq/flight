@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod abc_file;
 mod abc_instruction;
 mod types;

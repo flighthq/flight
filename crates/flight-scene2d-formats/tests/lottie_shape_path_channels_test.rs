@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};

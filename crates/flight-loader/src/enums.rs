@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceLoadItemStatus {
     Cancelled,

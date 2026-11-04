@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The contact velocity solver (TS `solver.ts`): warm starting and one projected Gauss-Seidel pass
 //! over contact points.
 

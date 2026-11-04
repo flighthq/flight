@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in diagnostic guards for the skeleton's silent behaviours (TS `enableSkeleton2DGuards.ts`).
 
 use std::sync::Arc;

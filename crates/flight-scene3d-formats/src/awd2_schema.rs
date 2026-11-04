@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 pub const AWD2_MAGIC_0: u8 = 0x41;
 pub const AWD2_MAGIC_1: u8 = 0x57;
 pub const AWD2_MAGIC_2: u8 = 0x44;

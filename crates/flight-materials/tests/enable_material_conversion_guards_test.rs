@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_log::create_log_state;
 use flight_materials::enable_material_conversion_guards::*;
 use flight_materials::pbr_materials::report_material_conversion_drop;

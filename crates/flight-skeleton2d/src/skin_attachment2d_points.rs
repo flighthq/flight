@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The shared attachment-skinning primitive (TS `skinAttachment2DPoints.ts`).
 
 use flight_entity::Ref;

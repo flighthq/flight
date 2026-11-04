@@ -1,6 +1,3 @@
-// Generated from crates/flight-signals/src/connection.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { connectSignal, disconnectSignal, isSlotConnected, setSlotPaused } from './slot.ts';
 import type {
   SignalConnectOptions,

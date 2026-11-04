@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod acquire_gl_texture_render_target {
     use crate::gl_test_helper::{make_state, make_target_descriptor};
     use flight_render_gl::{

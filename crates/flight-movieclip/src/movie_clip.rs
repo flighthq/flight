@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! MovieClip construction and playback delegation to its timeline (TS `movieClip.ts`). The clip's
 //! timeline owns the playhead; this module keeps the node and the engine together and preserves the
 //! source's null-timeline no-ops.

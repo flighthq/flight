@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17: the recorded descriptors carry native wgpu values
 //! Exact command recording for the device's queue writes and render-pass attachments (Principal
 //! cafc5d6b, item D). A noop or headless device validates every call but keeps no texture

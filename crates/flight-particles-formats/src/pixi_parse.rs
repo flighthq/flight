@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Pixi.js / pixi-particle-emitter JSON parsing (TS `pixiParse.ts`, parse-only).
 
 use flight_importdiagnostics::{

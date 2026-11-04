@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene3d_formats::contract::*;
 
 mod convert_positions_z_up_to_y_up {

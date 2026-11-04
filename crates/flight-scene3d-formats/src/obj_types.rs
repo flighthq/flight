@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::obj_schema::ObjMaterial;
 use flight_entity::Ref;
 use flight_importdiagnostics::ImportDiagnostic;

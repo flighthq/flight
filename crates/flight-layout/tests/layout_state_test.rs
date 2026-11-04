@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_layout::contract::*;
 
 fn noop_resolver(

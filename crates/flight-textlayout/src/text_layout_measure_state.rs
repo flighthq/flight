@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! flight-compiler: rust-only — caller-owned Rust state replaces the target-native module slot.
 
 use flight_textshaper::TextMeasureFunction;

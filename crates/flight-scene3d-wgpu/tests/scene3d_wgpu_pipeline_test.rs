@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Kind;
 use flight_materials::{
     BLINN_PHONG_MATERIAL_KIND, CUSTOM_SHADER_MATERIAL_KIND, DEPTH_MATERIAL_KIND,

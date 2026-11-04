@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Channel-interpolation explanations (TS `explainSkeleton2DChannel.ts`).
 
 use flight_animation::{AnimationChannel, AnimationInterpolation};

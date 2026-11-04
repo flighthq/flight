@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_animation_decoder::COLLADA_ANIMATION_DECODER;
 use crate::collada_camera_decoder::COLLADA_CAMERA_DECODER;
 use crate::collada_controller_decoder::COLLADA_CONTROLLER_DECODER;

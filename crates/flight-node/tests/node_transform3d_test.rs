@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_geometry::{acquire_matrix4, clear_matrix4_pool, release_matrix4};
 use flight_node::contract::*;
 

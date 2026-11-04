@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Skeleton2D animation targets and the binder registry (TS `skeleton2dAnimationTarget.ts`).
 
 use std::collections::HashMap;

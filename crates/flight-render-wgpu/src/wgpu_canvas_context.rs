@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17/D26 Principal 1180c6be: the native payload of WgpuSurfaceContext is a trait object mirroring the GPUCanvasContext members the source uses
 //! The native payload behind a `flight_host::WgpuSurfaceContext` (D17 wgpu native narrowing,
 //! Principal 1180c6be): `Arc<dyn WgpuCanvasContext>`, a trait mirroring the three `GPUCanvasContext`

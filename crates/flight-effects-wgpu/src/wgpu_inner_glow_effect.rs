@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Inner glow (TS `wgpuInnerGlowEffect.ts`): tint the inverted silhouette, blur inward, clip to the
 //! source alpha, then apply draw/hide source compositing. Acquires three scratch targets from the

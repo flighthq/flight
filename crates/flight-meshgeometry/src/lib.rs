@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod mesh_geometry;
 mod mesh_geometry_attributes;
 mod mesh_geometry_builders;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 use crate::common::rigid_body;
 

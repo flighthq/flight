@@ -1,6 +1,3 @@
-// Generated from crates/flight-useragent/src/user_agent_parse.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { DeviceFormFactor } from './deviceFormFactor.ts';
 import {
   DeviceFormFactorCar,

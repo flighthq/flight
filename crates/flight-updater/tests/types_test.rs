@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_updater::contract::*;
 
 // Every metadata field unknown: the state a fresh or reset handle carries.

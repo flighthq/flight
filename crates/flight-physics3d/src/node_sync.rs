@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene3d::Node3DRef;
 
 use crate::RigidBody3D;

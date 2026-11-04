@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the scene runtime lives in render-gl's opaque per-state slot and lends RefMut views of thread-bound GL resources
 
 //! scene3d-gl's per-state and per-context records (the source's module WeakMap keyed by

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod anchor_layout;
 mod enable_layout_guards;
 mod flex_layout;

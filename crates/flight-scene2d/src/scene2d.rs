@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The Scene2D presentation context: its display root and back-pointer, view size, signals and
 //! closed string tables (TS `scene2d.ts`).
 

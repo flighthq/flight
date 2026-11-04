@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Per-channel median denoise (TS `wgpuMedianEffect.ts`): each output pixel is the median of its
 //! (2·radius+1)² neighborhood. Preserves edges while removing salt-and-pepper noise. A single GPU

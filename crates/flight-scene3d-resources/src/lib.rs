@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Renderer-neutral scene-document URL acquisition and caller-driven resolution of scene texture
 //! references into live image resources.
 

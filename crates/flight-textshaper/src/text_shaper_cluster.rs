@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 
 /// The run's caret x-positions in pixels, `glyph_count + 1` entries from 0 to the total advance: the

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::NodeRef;
 
 use crate::node_interaction_state::{is_node_focusable, is_node_hit_test_enabled};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Validated scene selection shared by both dimension entrypoints (TS
 //! `sceneDocumentMaterializationSelection.ts`).
 

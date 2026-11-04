@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::get_entity_id;
 use flight_render::{RenderProxies2D, get_or_create_render_proxy_2d};
 use flight_render_wgpu::*;

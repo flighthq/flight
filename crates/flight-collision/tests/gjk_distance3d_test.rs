@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 const CLOSE_TO_SIX_DIGITS: f32 = 5e-7;

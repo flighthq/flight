@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::LazyLock;
 
 use crate::{SWF_DEFINE_MORPH_SHAPE_HANDLER, SWF_DEFINE_SHAPE_HANDLER, SwfTagHandlerRef};

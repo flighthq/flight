@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) path geometry, shape commands, gradient stops, and morph progress use canonical f64 lanes; SWF matrices remain f32
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

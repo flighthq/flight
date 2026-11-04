@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Nine-slice sprites (TS `scale9Sprite.ts`).
 
 use std::sync::{Arc, RwLock};

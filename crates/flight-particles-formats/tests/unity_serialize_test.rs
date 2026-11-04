@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles::contract::{
     ColorKeyframe, CurveKeyframe, particle_color_curve_from_keyframes,
     particle_curve_from_keyframes, sample_particle_color_curve, sample_particle_curve,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 //! sample count. Single-pass reference recipe. u_resolution converts the texel length into UV space.

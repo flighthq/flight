@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Trauma-based deterministic camera shake (TS `cameraShake.ts`).
 
 use flight_entity::allocate_entity;

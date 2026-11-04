@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene2d_formats::{is_readable_lottie, parse_lottie_requirements};
 use serde_json::json;
 

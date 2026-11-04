@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_shape::contract::*;
 
 mod explain_morph_shape_gradient_endpoints {

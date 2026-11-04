@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Deform animation target registration and binding (TS `deformAnimationTarget2D.ts`).
 
 use std::sync::Arc;

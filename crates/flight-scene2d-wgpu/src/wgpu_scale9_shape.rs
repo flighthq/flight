@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state and opaque host surfaces
 //! The nine-slice shape renderer (TS `wgpuScale9Shape.ts`): remapped shape commands rasterize into
 //! a per-node 2D surface at the scaled size; the surface's image uploads through the shared texture

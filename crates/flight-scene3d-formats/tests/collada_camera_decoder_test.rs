@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_camera::Projection;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_scene3d_formats::*;

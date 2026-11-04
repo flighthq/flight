@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_spritesheet::{
     SpritesheetAnimationData, SpritesheetAnimationDirection, SpritesheetFrameData,
     create_spritesheet_animation_data, create_spritesheet_frame_data,

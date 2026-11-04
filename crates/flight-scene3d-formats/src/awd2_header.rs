@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_schema::*;
 use crate::awd2_types::Awd2Header;
 use crate::three_ds_read::{read_three_ds_u16, read_three_ds_u32};

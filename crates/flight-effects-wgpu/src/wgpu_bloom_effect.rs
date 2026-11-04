@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Bloom (TS `wgpuBloomEffect.ts`): bright-pass, blur the bright branch with the shared separable
 //! Gaussian, then additively composite it back. The multi-pass reference recipe: it acquires

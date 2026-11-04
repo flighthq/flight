@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera::contract::*;
 use flight_geometry::{
     create_matrix4, create_perspective_matrix4, set_orthographic_matrix4, set_perspective_matrix4,

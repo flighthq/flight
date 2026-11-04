@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Socket capability seam: framed connection lifecycle, opt-in event signals and raw TCP byte
 //! streams, all routed through explicit host providers. No WebSocket, TCP or browser transport
 //! lives here; every connection, event sink and stream comes from the caller's host.

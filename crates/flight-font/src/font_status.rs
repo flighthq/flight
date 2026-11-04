@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Unknown;
 
 use crate::font_shorthand::get_font_shorthand;

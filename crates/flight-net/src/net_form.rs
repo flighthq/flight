@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Record, entries};
 
 pub const NET_FORM_CONTENT_TYPE: &str = "application/x-www-form-urlencoded;charset=UTF-8";

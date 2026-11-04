@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::create_path;
 use flight_shape::contract::*;
 

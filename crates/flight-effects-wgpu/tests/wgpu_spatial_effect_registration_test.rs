@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render_wgpu::{WgpuEffectRunner, WgpuRenderState};
 
 use crate::support::*;

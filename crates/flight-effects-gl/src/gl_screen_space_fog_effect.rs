@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets, sample native depth textures and return Result diagnostics
 //! Screen-space fog: depth-aware distance fog when the scene wrote a depth attachment, otherwise a
 //! vertical proxy fog that thickens toward the top of the image.

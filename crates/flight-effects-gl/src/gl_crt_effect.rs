@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and
 //! split the channels outward (chromatic aberration) for a tube-monitor look.

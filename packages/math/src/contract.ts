@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/src/lib.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 export { degToRad, deltaAngle, normalizeAngle, radToDeg } from './angle.ts';
 export { clamp, inRange, saturate } from './clamp.ts';
 export { approxEqual, approxEqualRelative, approxZero } from './comparison.ts';

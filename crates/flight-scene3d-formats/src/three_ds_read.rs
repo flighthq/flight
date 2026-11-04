@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::{Uint8Array, throw_range_error};
 
 pub(crate) fn read_three_ds_f32(view: &Uint8Array, offset: usize) -> f32 {

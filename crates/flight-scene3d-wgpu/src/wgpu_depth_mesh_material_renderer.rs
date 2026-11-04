@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in Depth forward renderer (TS `wgpuDepthMeshMaterialRenderer.ts`): the debug pipeline in
 //! depth mode, writing eye-space depth over the material's [near, far] range as grayscale linear color.

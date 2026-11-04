@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{create_matrix3, create_matrix4, set_matrix3_normal_from_matrix4};
 use flight_skeleton3d::*;
 fn identity() -> Vec<f32> {

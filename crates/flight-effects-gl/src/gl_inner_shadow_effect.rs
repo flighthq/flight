@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance,
 //! clip to the source alpha, then composite over the source. Full-frame realization: acquires the

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Ease-in exponential: very slow start, then rapid acceleration.
 pub fn ease_in_exponential(t: f32) -> f32 {
     if t == 0.0 {

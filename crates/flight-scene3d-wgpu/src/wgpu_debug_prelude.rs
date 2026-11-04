@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the debug family seams take and return native wgpu values
 //! The Wgpu debug prelude (TS `wgpuDebugPrelude.ts`): one module serving the Depth (eye-space depth
 //! as grayscale) and Normal (world-space normal as color) utility materials, selected by a `MODE`

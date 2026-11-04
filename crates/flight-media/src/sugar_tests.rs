@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll, Waker};
 

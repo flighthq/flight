@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the shared mesh pipeline seams take and return native wgpu values
 //! The shared mesh-pipeline machinery every mesh-material family routes through (TS
 //! `wgpuMeshPipeline.ts`): the shared Frame/Draw layouts and uniforms, the pipeline factory and

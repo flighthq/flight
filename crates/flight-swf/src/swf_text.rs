@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) path geometry and shape command coordinates use the canonical f64 lane; font metrics and SWF scalar state remain f32
 use std::collections::HashMap;
 use std::sync::Arc;

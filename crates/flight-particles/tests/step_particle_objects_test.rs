@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles::contract::ensure_particle_objects_state_capacity;
 use flight_particles::*;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::contract::create_phong_material;
 use flight_materials::{Material, PHONG_MATERIAL_KIND};
 use flight_meshgeometry::create_box_mesh_geometry;

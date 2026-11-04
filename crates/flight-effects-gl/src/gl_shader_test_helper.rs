@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Test support for evaluating the arithmetic inside the fragment shader an effect actually ships.
 //!
 //! A text assertion on a shader is a claim about a spelling; substituting values into the shipped

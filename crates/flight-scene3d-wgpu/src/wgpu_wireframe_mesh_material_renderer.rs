@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in Wireframe forward renderer (TS `wgpuWireframeMeshMaterialRenderer.ts`): the triangle
 //! edges as line-list primitives in one flat linear color. Unlike the triangle families it binds the

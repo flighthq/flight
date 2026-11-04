@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::{Bitmap, create_bitmap};
 use flight_compression::{CompressionFraming, HostDecompressDeflateCapability};
 use flight_entity::Uint8Array;

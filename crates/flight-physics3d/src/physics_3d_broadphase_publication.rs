@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5: published membership is world-owned rather than module-owned hidden state
 use std::collections::HashSet;
 

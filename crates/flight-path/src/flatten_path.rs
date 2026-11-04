@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::path::{Path, PathCommand};
 
 #[cfg(all(test, feature = "object-api"))]

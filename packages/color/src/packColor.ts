@@ -1,6 +1,3 @@
-// Generated from crates/flight-color/src/pack_color.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_adjustments::multiply_color_matrix;
 use flight_materials::ColorScaleBias;
 use flight_materials::color_scale_bias::{concat_color_scale_bias, create_color_scale_bias};

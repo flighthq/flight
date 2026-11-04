@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::feature_requirements::Scene3DFormatFeatureRequirements;
 use crate::three_ds_chunk_census::get_three_ds_chunk_name;
 use crate::three_ds_schema::THREE_DS_MATERIAL;

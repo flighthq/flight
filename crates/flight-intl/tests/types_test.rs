@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_intl::contract::*;
 
 mod get_intl_plural_category_string {

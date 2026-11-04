@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Plain-data diagnosis of the camera view matrix orthonormality precondition (TS
 //! `explainCamera3DView.ts`).
 

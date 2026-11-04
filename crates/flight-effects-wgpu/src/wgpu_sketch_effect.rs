@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Sketch (TS `wgpuSketchEffect.ts`): luminance edges inverted into dark pencil strokes over a
 //! light page; `strength` scales how dark the strokes get.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::EPSILON;
 
 /// Return `true` if `|a - b| <= epsilon`.

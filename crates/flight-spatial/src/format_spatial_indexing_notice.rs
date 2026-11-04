@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     SpatialIndexingMode, SpatialIndexingNotice, uniform_grid::MAX_INDEXED_CELLS_PER_OBJECT,
 };

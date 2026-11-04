@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SpineDrawOrderMove {
     pub offset: i32,

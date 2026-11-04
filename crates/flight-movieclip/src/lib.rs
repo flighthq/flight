@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! MovieClip display node: a Node2D whose frames are driven by a timeline, plus the spritesheet
 //! timeline source that feeds it and the opt-in guards for authored spritesheet semantics the
 //! timeline source cannot carry.

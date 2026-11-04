@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render presets hold backend-typed renderer tables over thread-bound render-gl state
 
 use std::collections::HashMap;

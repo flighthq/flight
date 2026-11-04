@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::enums::AssetLoadStatus;
 use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
 use flight_loader::{ResourceLoadFuture, ResourceLoadResult, ResourceLoaderContext};

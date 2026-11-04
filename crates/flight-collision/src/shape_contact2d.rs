@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::contact_feature_id::*;
 use crate::contact_manifold2d::*;
 use crate::convex_vertices2d::*;

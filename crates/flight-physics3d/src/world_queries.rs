@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5/D9b: collision registry is explicit and native query outputs stay first
 use flight_collision::{
     CollisionColliderShape3D, CollisionRegistry3D, CollisionShape3D,

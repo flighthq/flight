@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::SvgColor;
 
 fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> u32 {

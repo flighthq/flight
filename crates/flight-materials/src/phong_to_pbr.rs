@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_color::get_color_luminance;
 
 use crate::{

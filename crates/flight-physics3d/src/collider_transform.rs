@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D12: collision enum variants carry the kind instead of a separate string
 use std::sync::{Arc, RwLock};
 

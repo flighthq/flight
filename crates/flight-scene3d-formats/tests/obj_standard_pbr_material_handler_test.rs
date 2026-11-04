@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::obj_test_helper::*;
 use flight_importdiagnostics::ImportDiagnosticSeverity;
 use flight_materials::{Material, Material3D, MaterialAlphaMode, STANDARD_PBR_MATERIAL_KIND};

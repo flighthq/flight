@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_materials::wrapped_diffuse_pbr_extension::create_wrapped_diffuse_pbr_extension;
 use flight_materials::{PbrExtension, WRAPPED_DIFFUSE_PBR_EXTENSION_KIND};

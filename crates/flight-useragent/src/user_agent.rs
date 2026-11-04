@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+//!
 //! Browser user-agent parsing to platform identity tokens (TS `userAgent.ts`). Pure functions over
 //! the UA string and optional hints; no DOM, navigator or OS queries.
 //! flight-compiler: contract detectEndianness parseUserAgentArch parseUserAgentEngine

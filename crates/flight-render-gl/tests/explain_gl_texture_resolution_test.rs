@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod explain_gl_texture_resolution {
     use crate::gl_test_helper::{make_render_texture, make_state};
     use flight_render::TextureResolutionStatus;

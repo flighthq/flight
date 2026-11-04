@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_clip::{ClipRegion, clip_region_contains_point};
 use flight_entity::{FlightError, Ref};
 use flight_importdiagnostics::{ImportDiagnostic, ImportDiagnosticSeverity};

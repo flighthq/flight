@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Poses a skeleton from an animation clip (TS `applyAnimationClipToSkeleton2D.ts`).
 
 use flight_animation::contract::{AnimationChannel, AnimationClip};

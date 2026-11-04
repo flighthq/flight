@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in diagnostics for graph operations that decline rather than invent a result
 //! (TS `enableNodeGuards.ts`).
 

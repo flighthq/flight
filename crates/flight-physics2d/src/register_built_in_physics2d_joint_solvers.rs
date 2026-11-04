@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Registering the built-in joint kinds (TS `registerBuiltInPhysics2DJointSolvers.ts`).
 
 use crate::joint_registry::register_physics2d_joint_solver;

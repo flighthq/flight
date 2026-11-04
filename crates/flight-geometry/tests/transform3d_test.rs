@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_geometry::contract::*;
 
 fn assert_close(actual: f32, expected: f32) {

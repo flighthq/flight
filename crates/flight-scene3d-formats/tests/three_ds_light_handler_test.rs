@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::three_ds_test_helper::*;
 use flight_geometry::{create_vector3, rotate_vector3_by_quaternion};
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};

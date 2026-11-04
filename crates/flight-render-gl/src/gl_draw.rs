@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 draw code intentionally exposes native glow handles, entity ids, open texture variants, and Result diagnostics
 
 use std::collections::HashMap;

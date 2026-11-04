@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Atlas-backed batches of independently transformed quads (TS `@flighthq/quadbatch`).
 
 mod quad_batch;

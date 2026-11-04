@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! SWF display-node construction and authored bounds (TS `swfNode.ts`).
 
 use std::sync::Arc;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::{LoadOptions, LoadProgress};
 use flight_buffer::{
     ArrayBuffer, ArrayBufferView, ArrayBufferViewKind, create_array_buffer_view,

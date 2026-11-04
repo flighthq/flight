@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/ease_smoothstep.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { ScalarRemap } from './easingTypes.ts';
 
 /**

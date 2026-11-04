@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Soft constraint rows (TS `jointRows.ts`).
 
 const TAU: f32 = 2.0 * std::f32::consts::PI;

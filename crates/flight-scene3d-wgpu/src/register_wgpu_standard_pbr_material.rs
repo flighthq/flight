@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in registration of the built-in StandardPbr renderer (TS
 //! `registerWgpuStandardPbrMaterial.ts`).
 

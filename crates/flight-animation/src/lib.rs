@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod animation_advance;
 mod animation_blend;
 mod animation_blend_tree;

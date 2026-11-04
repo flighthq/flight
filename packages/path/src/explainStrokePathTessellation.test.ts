@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/tests/explain_stroke_path_tessellation_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import {

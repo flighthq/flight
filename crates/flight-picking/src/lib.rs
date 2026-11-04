@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! 3D picking (TS `@flighthq/picking`): camera-ray scene selection, a world AABB broad-phase plus a
 //! brute-force ray↔triangle narrow-phase, and on-demand hit surface attributes.
 //!

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Private access to the command stream of the shape-family kinds the shape renderers accept (TS
 //! reads `(renderProxy.source as Shape).data.commands` for Shape, MorphShape and Scale9Shape alike).
 

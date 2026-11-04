@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod auto_exposure_effect;
 mod barrel_distortion_effect;
 mod bevel_effect;

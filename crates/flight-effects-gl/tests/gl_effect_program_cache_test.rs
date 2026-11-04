@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod get_gl_effect_program {
     use flight_effects_gl::contract::get_gl_effect_program;
     use flight_render_gl::create_gl_render_state;

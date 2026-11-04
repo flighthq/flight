@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 /// Returns the numerical derivative (instantaneous velocity) of `ease` at the
 /// given `t` using a centered finite-difference approximation. The endpoint
 /// boundary is handled by clamping: at `t <= epsilon` a forward difference is

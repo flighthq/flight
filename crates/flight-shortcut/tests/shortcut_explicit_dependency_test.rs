@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::future::{Future, poll_fn};
 use std::pin::{Pin, pin};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};

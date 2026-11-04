@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera::contract::*;
 use flight_geometry::{create_aabb, create_bounding_sphere, create_frustum, create_vector3};
 

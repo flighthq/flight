@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 // flight-lint: allow-file(contract-vocabulary) D16 open Modifier family uses Ref<dyn Modifier> for heterogeneous stacks
 

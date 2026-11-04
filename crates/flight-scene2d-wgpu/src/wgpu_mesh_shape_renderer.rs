@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The GPU-only shape strategy (TS `wgpuMeshShapeRenderer.ts`): every fill and stroke is
 //! tessellated, nothing is rasterized, and this module never references the canvas replay. A fill

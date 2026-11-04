@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Backing-store resize and logical display size (TS `surfaceDisplay.ts`).
 
 use crate::types::*;

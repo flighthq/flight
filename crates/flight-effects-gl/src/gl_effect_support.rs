@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) crate-private D15 runtime-slot caches and glow uniform helpers shared by every effect recipe
 //! Crate-private support shared by every effect recipe: the D15 runtime slots that replace the TS
 //! module-level WeakMaps (per GL context: compiled programs and uniform locations; per render state:

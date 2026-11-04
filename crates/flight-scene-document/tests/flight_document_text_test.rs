@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: document numbers are JS Numbers
 use std::sync::{Arc, RwLock};
 

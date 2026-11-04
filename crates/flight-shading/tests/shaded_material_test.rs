@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::{Arc, PoisonError};
 
 use flight_entity::{Entity, get_entity_uid, set_entity_uid};

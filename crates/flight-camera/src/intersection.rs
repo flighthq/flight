@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Camera ray companions: rays through bounding spheres and ray-plane hits (TS `intersection.ts`).
 
 use flight_geometry::{BoundingSphere, Plane, Ray3D, Vector3, create_vector3};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera::{Camera3D, Projection, apply_oblique_near_clip_plane};
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_geometry::{

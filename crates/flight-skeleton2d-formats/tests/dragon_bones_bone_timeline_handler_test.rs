@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_skeleton2d_formats::contract::*;
 
 use crate::support::with_empty_dragon_bones_timeline;

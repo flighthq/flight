@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
 //! pinches inward (pincushion); scale re-frames the result so corners stay in view.

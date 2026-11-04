@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: crate-private per-state caches hold host-supplied wgpu resources
 //! The per-render-state runtime effects-wgpu keeps in the state's `effect_runtime` slot (D15). It
 //! replaces the source's module WeakMaps keyed by `WgpuRenderState`: the effect-pass

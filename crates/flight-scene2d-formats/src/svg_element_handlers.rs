@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, LazyLock};
 
 use crate::svg_container_element::svg_container_element_handler;

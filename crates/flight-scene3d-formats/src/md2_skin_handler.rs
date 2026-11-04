@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md2_parse::{md2_numeric_detail, read_md2_name};
 use crate::md2_schema::MD2_SKIN_SIZE;
 use crate::md2_types::{Md2ParseContext, Md2SectionHandler};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: readback values are the wire's IEEE doubles, the step dt is flight-physics2d's f64 timestep and circle scalars are f64 shape fields
 use flight_collision::{CollisionAabb2D, CollisionCircle2D, CollisionShape2D};
 use flight_entity::Ref;

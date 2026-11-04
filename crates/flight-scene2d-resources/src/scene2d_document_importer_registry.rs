@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene2d_resource_diagnostics::report_scene2d_resource_failure;
 use crate::types::*;
 

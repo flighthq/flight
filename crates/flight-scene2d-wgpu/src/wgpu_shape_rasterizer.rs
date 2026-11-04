@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The shape-rasterizer registration (TS `wgpuShapeRasterizer.ts`): the fallback that draws fills
 //! the mesh path cannot express, held in render-wgpu's typed `ShapeRasterizer<WgpuRenderState>`
 //! slot.

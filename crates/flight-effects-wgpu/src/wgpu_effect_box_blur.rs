@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: blur passes take host-supplied wgpu targets
 //! Iterative separable box blur shared by the glow and shadow recipes (TS `wgpuEffectBoxBlur.ts`).
 

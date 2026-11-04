@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! Block-compressed texture upload (TS `wgpuCompressedTexture.ts`). A container uploads natively when
 //! the device enables its family; otherwise an optional CPU decoder supplies RGBA8 per level for

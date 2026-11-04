@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::NodeRef;
 
 use crate::hit_tests::hit_test_graph_local_bounds;

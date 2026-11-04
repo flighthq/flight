@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! This package's per-state and per-context records (the source's module WeakMaps keyed by
 //! `GlRenderState` / `GlContext`), held in render-gl's opaque `scene2d_runtime` /
 //! `scene2d_context_runtime` slots (D5: explicit state, no hidden globals).

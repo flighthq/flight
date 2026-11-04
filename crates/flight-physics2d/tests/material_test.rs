@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_physics2d::*;
 
 mod mix_physics2d_friction {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::feature_requirements::Scene3DFormatFeatureRequirements;
 use flight_materials::{
     SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND, STANDARD_PBR_MATERIAL_KIND, UNLIT_MATERIAL_KIND,

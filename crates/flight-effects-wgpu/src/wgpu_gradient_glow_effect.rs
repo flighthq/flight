@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Gradient glow (TS `wgpuGradientGlowEffect.ts`): an outer glow whose color is looked up from a
 //! colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha, then sourceMode

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 captures render into a native glow cube target on thread-bound render-gl state
 
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Control-point distance, as a fraction of the radius, for approximating a quarter circle with one
 /// cubic Bezier: `4 * (sqrt(2) - 1) / 3`.
 pub const CIRCLE_KAPPA: f32 = 0.5522848;

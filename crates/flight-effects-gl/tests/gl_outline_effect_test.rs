@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_outline_effect_to_gl {
     use flight_effects::create_outline_effect;
     use flight_effects_gl::contract::apply_outline_effect_to_gl;

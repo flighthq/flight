@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene3d_formats::*;
 
 mod collect_glb_features {

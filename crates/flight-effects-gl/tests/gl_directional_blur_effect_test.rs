@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_directional_blur_effect_to_gl {
     use flight_effects::create_directional_blur_effect;
     use flight_effects_gl::contract::apply_directional_blur_effect_to_gl;

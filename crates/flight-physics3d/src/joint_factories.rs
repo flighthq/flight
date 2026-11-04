@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::*;
 use flight_entity::{Ref, allocate_entity};
 use std::sync::{Arc, RwLock};

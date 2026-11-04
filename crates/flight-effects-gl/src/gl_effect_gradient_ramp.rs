@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the ramp is a native glow texture name with Result diagnostics
 //! Builds 256-entry RGBA gradient ramps on the GPU for the gradient bevel/glow recipes.
 

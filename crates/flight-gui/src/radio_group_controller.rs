@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gui_controller::*;
 use crate::toggle_controller::{
     ToggleController, get_toggle_controller_signals, set_checked_runtime,

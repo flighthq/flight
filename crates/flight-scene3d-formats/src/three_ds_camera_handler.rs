@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::shared::convert_positions_z_up_to_y_up;
 use crate::three_ds_parse::{read_chunk_end, tally_three_ds_drop};
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16};

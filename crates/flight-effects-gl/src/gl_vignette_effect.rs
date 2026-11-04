@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
 //! falls off over `softness` and the color is blended toward the (unpacked) vignette color by intensity.

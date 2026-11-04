@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_lens_distortion_effect_to_gl {
     use flight_effects::create_lens_distortion_effect;
     use flight_effects_gl::contract::apply_lens_distortion_effect_to_gl;

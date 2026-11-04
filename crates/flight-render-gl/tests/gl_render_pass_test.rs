@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod acquire_gl_render_pass_handle {
     use std::rc::Rc;
 

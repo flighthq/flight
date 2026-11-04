@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Runs a user-authored fragment shader as a fullscreen post-process pass. The descriptor carries a
 //! `shader_key` — a reference into the per-state custom-shader registry populated by

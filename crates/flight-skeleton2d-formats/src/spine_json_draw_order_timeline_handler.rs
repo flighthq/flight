@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::spine_parse::parse_spine_draw_order_timeline;
 use crate::types::{JsonRecord, SpineJsonTimelineContext};
 

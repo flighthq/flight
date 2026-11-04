@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Film grain: adds per-pixel hash noise scaled by intensity, with a grain cell size and a seed so the noise can be animated frame to frame. (TS `wgpuFilmGrainEffect.ts`).
 

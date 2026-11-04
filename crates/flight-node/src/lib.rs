@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Scene node graph: the D16 common node fields and feature groups, private runtime tiers,
 //! hierarchy, traversal, 2D/3D transform resolution and revision counters. Kind families compose
 //! these fields; family composition and the scene2d back-pointer are owned by scene2d.

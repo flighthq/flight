@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/reverse_path.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { forEachPathSegment } from './forEachPathSegment.ts';
 import type { PathRaw, PathSegment } from './path.ts';
 import { PathCommand } from './path.ts';

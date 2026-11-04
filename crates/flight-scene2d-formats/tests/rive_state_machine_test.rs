@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_scene2d_formats::contract::*;
 

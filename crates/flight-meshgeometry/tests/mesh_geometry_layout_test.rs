@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_meshgeometry::contract::*;
 
 mod canonical_mesh_geometry_layout {

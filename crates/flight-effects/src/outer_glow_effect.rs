@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D12/D17 approved generic RenderState dispatch keeps padding and capture logic backend-neutral
 use crate::contract::{
     EffectSourceMode, get_gaussian_effect_padding, initialize_effect,

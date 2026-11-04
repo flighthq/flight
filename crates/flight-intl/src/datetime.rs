@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Locale-aware date, date-time and time formatting (TS `datetime.ts`).
 
 use crate::cache::{FormatterCache, get_cache_key, get_cached};

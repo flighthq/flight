@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_font::contract::*;
 
 mod font_contract_types {

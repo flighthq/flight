@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The undo/redo stack and its bindings (TS `commandHistory.ts`).
 //!
 //! `index` counts APPLIED entries: everything before it is applied, everything from it on is

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::md5_test_helper::*;
 use flight_entity::Ref;
 use flight_importdiagnostics::{

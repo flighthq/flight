@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! QuadBatch declarations (TS `QuadBatch.ts`, `QuadBatchSignals.ts`, `QuadTransformType.ts`).
 
 // flight-lint: allow-file(contract-vocabulary) D16 canonical MaterialData is an open entity family retained through Ref<dyn MaterialData>

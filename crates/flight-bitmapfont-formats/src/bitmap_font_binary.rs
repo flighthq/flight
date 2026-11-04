@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmapfont::{BitmapFont, BitmapFontEncoding, BitmapFontGuardStateRef};
 use flight_entity::{Ref, Uint8Array};
 use flight_importdiagnostics::ImportDiagnostic;

@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/tests/ease_circular_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { easeInCircular, easeInOutCircular, easeOutCircular } from './contract.ts';

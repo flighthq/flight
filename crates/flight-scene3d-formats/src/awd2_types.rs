@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_compression::{HostDecompressDeflateCapability, HostDecompressLzmaCapability};
 use flight_entity::{EntityRuntimeSlot, Float64Array, Ref, Uint8Array};
 use flight_importdiagnostics::ImportDiagnostic;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Uint8Array;
 
 use crate::texture_level_layout::compute_texture_container_levels;

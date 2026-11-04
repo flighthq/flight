@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera_controls::contract::*;
 use flight_entity::{
     allocate_entity, get_entity_id, get_entity_runtime, get_entity_uid, set_entity_uid,

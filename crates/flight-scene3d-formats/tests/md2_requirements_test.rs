@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::flight_scene3d_formats_md2_features_test::build_md2_header;
 use flight_materials::BLINN_PHONG_MATERIAL_KIND;
 use flight_requirement::{Requirement, RequirementFacet};

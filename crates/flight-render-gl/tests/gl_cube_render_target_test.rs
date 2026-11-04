@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod begin_gl_cube_render_face {
     use crate::gl_test_helper::{calls_with, clear_calls, make_state};
     use flight_render_gl::{

@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/tests/ease_quartic_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { easeInOutQuartic, easeInQuartic, easeOutQuartic } from './contract.ts';

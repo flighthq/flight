@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 presentation accepts native target traits and Result diagnostics
 
 use flight_texture::RenderTargetColorSpace;

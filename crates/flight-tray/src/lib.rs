@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod enable_tray_guards;
 mod host_explain;
 mod results;

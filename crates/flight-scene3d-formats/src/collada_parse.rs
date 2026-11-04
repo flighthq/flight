@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::collada_scene_shared::{
     ColladaIndexEntry, apply_collada_bind_material, parse_collada_bind_material,
 };

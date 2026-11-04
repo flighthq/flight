@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod aabb;
 mod bounding_sphere;
 mod capsule;

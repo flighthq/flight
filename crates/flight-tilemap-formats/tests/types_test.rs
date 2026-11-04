@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_tilemap_formats::*;
 
 mod get_tiled_compression_str {

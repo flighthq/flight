@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! Rust exercises the same nine geometry operations with their concrete storage types. The
 //! target-native TypeScript companion locks their established structural public signatures and

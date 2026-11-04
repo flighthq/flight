@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: token values are document (JavaScript Number) values
 //! Explicit mode resolution of a scene's token table (TS `flightDocumentSceneTokens.ts`).
 

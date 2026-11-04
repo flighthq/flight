@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_requirement::RequirementFacet;
 use flight_requirement_catalog::*;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_parse::tally_md5_drop;
 use crate::md5_types::{MD5_SKELETON_FEATURE, Md5DropTallyEntry, Md5Joint, Md5SectionHandler};
 use crate::shared::{convert_positions_z_up_to_y_up, convert_quaternions_z_up_to_y_up};

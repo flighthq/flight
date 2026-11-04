@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashSet;
 
 use crate::animation_blend::blend_animation_samples;

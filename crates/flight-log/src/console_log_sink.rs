@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //!
 //! The console write is a host API: natively stdout/stderr, in TS `console[method]`. Everything the
 //! sink formats stays in the generated log module; only the write itself is target-native.

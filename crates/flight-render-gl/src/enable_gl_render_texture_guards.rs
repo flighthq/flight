@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_log::{LogLevel, LogStateRef, log_once};
 use flight_texture::TextureVariant;
 

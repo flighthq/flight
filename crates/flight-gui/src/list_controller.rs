@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gui_controller::*;
 use crate::scroll_bar_controller::{ScrollBarController, get_scroll_bar_controller_signals};
 use flight_entity::{Ref, allocate_entity};

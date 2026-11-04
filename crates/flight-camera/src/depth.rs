@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! NDC-to-view-space depth conversion (TS `depth.ts`).
 
 use crate::projection::is_orthographic_projection;

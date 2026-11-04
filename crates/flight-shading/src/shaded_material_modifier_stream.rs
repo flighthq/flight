@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! `ShadedMaterial`'s `Material` base impl, which exposes its modifier stack through the
 //! materials-owned `MaterialModifierStream` read view (len + kind_at only, per the Principal), so
 //! scene3d reads the stack without a materials -> shading dependency and without a projection copy.

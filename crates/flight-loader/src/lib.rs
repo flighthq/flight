@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod enums;
 mod load;
 mod resource_loader;

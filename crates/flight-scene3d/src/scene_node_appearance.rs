@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5 explicit caller-owned appearance revision source replaces the TS module counter
 use crate::scene_node::{as_node3d, as_node3d_mut};
 use flight_node::{NodeRef, invalidate_node_appearance};

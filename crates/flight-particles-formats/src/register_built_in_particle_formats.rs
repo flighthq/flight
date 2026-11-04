@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The built-in particle format descriptors and the explicit install step (TS
 //! `registerBuiltInParticleFormats.ts`).
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Lens dirt: isolate bright energy, spread it spatially, then admit it through a procedural smudge
 //! mask. The bright branch must blur before the mask: masking only the source pixel cannot carry any

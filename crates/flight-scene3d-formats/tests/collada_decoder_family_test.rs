@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera::Projection;
 use flight_entity::Ref;
 use flight_materials::StandardPbrMaterial;

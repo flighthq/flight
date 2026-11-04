@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene_node::initialize_node3d;
 use crate::{
     BILLBOARD_KIND, BillboardMode, Mesh, MeshMaterials, MeshRuntime, Node3D, Node3DFields,

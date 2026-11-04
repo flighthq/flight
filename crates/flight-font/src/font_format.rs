@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_buffer::get_array_buffer_storage;
 
 use crate::types::*;

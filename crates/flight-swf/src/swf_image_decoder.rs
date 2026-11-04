@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::convert_bitmap_alpha_type;
 use flight_compression::HostDecompressDeflateCapability;
 use flight_entity::{Uint8Array, throw_error};

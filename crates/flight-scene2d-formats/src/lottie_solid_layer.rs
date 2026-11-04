@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::contract::{NodeRef, add_node_child};
 use flight_path::contract::{append_path_rectangle, create_path};
 use flight_shape::contract::{

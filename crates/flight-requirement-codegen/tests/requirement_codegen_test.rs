@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_entity::{Entity, get_entity_uid, has_entity_runtime, set_entity_uid};

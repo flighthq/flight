@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_gl_effect_box_blur {
     use flight_effects_gl::contract::{GlEffectBoxBlurOptions, apply_gl_effect_box_blur};
 

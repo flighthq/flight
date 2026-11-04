@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5: collision registry and diagnostics state are explicit caller-owned inputs
 use flight_collision::{
     CollisionContactManifold3D, CollisionRegistry3D, create_collision_contact_manifold3d,

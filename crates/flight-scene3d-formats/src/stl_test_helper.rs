@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::stl_features::{
     BINARY_STL_COUNT_OFFSET, BINARY_STL_HEADER_SIZE, BINARY_STL_TRIANGLE_SIZE,
 };

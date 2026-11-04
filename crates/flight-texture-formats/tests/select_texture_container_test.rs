@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_texture_formats::*;
 
 fn container(format: TextureContainerFormat) -> TextureContainer {

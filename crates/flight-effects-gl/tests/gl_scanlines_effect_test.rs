@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{ScanlinesEffect, create_scanlines_effect};
 use flight_effects_gl::contract::{
     apply_scanlines_effect_to_gl, evaluate_glsl_scalar_expression, extract_glsl_expression,

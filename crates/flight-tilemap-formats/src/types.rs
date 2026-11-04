@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Tiled document model types: faithful representations of TMX/TMJ/TSX/TSJ
 //! documents and the format registry entries that detect and parse them.
 

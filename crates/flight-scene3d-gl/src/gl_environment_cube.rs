@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the source cube is a native glow texture handle owned by thread-bound render-gl state
 
 use std::any::Any;

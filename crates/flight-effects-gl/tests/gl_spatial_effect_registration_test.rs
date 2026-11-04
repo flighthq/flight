@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! TS `glSpatialEffectRegistration.test.ts`: every public `register_gl_<kind>_effect` installs its
 //! public default runner on only the supplied state.
 

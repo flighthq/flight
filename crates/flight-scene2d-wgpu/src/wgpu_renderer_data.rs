@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 renderer-private scratch is generic over the open RendererData family, erased behind the RendererData trait object
 //! Renderer-private scratch as `RendererData` (TS `wgpuRendererData.ts`). In Rust a scratch record
 //! composes `RendererDataFields` and implements the trait (`flight_node::impl_renderer_data!`), so

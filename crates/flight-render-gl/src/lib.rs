@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(createGlState, makeGL, makeShaderLoc) source-only fake WebGL helpers are implemented in the native integration-test harness rather than exported from production
 //! Native GL renderer substrate. The public state is deliberately thread-bound: every live
 //! `glow::Context` is retained through `Rc`, while cross-thread drops communicate only numeric

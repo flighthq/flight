@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod aseprite_parse;
 mod aseprite_serialize;
 mod cocos_plist_parse;

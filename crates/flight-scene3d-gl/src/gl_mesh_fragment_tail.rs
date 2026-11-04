@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // The one fragment tail every built-in GL mesh prelude ends with, and the single place the output
 // contract is stated: a mesh fragment shader hands the blend unit PREMULTIPLIED color. Every blend
 // equation in render-gl's table is a premultiplied one.

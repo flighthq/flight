@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_math::*;
 
 fn assert_approx_f64(actual: f64, expected: f64) {

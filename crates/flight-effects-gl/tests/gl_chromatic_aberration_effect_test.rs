@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::create_chromatic_aberration_effect;
 use flight_effects_gl::contract::apply_chromatic_aberration_effect_to_gl;
 use flight_regexp::{create_reg_exp, exec_reg_exp};

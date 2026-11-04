@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{EffectRef, GodRaysEffect, create_god_rays_effect};
 use flight_effects_wgpu::contract::*;
 use flight_entity::Ref;

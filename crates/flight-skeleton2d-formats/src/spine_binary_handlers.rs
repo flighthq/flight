@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::spine_binary_section_handlers::register_spine_binary_section_handlers;
 use crate::spine_binary_timeline_handlers::register_spine_binary_timeline_handlers;
 use crate::types::SpineBinaryRegistry;

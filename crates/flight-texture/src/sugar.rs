@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 Rust conveniences for the texture public lane. Every method delegates to a public free
 //! function; sampling, source identity and dirty-version behavior remain in the contract layer.
 

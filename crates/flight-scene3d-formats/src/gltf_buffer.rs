@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_container::decode_gltf_base64;
 use crate::gltf_diagnostics::{
     GltfDiagnosticDetail, GltfDiagnosticValues, GltfDropTally, gltf_diagnostic_values,

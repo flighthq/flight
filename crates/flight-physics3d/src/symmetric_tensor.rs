@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D9b: native tensor writers keep the output parameter first
 pub const TENSOR_XX: usize = 0;
 pub const TENSOR_YY: usize = 1;

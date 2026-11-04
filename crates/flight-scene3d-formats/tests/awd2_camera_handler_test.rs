@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::{block, file, property_list, scene_header};
 use flight_camera::Projection;
 use flight_entity::Ref;

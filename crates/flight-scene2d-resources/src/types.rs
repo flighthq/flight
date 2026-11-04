@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;

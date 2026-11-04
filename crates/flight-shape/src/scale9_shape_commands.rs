@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Nine-slice command-stream rewriting (TS `scale9ShapeCommands.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 

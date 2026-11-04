@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md5_number::{is_md5_whitespace, parse_md5_float, parse_md5_integer};
 use crate::md5_types::{
     MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE, Md5DropTally, Md5DropTallyEntry, Md5Joint, Md5Mesh,

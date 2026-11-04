@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod svg_path_data;
 mod types;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D9e string tables for the scene-document closed string unions.
 
 use crate::types::*;

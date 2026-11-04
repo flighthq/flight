@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::{BlurEffect, create_blur_effect};
 use flight_entity::Ref;
 

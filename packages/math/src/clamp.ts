@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/src/clamp.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 /**
  * Clamp `value` to the inclusive range `[min, max]`.
  *

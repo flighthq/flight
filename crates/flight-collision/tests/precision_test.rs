@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::*;
 
 fn polygon_square(origin: f64, x: f64) -> CollisionPolygon2D {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::update_mesh_skin::{cached_bind_pose, mesh_inputs, mesh_mut};
 use crate::{compute_skeleton3d_joint_matrices, get_mesh_skin_conservative_bounds};
 use flight_geometry::create_aabb;

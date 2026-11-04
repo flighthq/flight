@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::BevelEffect;
 use flight_effects_gl::contract::apply_bevel_effect_to_gl;
 use flight_render_gl::create_gl_texture_render_target_pool;

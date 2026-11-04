@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Node revision counters and invalidation (TS `revision.ts`).
 //!
 //! Each revision is a wrapping 32-bit counter. `-1` marks a derived value that has never been

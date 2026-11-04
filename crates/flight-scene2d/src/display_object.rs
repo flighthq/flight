@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The Node2D family constructor, its runtime tier and the plain display object (TS
 //! `displayObject.ts`).
 

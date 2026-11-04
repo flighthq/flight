@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 
 fn clear_layout_failure(state: &mut LayoutState) {

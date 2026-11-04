@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::layout_state::register_layout_resolver;
 use crate::types::*;
 

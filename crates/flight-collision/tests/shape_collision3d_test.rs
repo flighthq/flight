@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {

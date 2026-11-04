@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets, borrow render-gl render-texture entries and return Result diagnostics
 //! Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest
 //! vertically), each a single weighted fullscreen pass with radius ⌈3σ⌉. `blur_x`/`blur_y` are the

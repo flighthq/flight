@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_net::contract::*;
 
 mod get_net_credentials_string {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Per-visible-mesh forward light selection (TS `prepareWgpuScene3DForwardLights.ts`), the WebGPU
 //! twin of `prepare_gl_scene3d_forward_lights`.
 

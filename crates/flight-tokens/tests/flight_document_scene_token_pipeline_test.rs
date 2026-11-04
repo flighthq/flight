@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: document numbers are JavaScript Numbers
 use std::collections::HashMap;
 use std::sync::Arc;

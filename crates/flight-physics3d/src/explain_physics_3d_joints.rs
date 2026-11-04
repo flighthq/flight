@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::*;
 
 // flight-lint: allow(conform-params) D24 (Principal 21f7557f): the explanations fill a caller-owned out, cleared first

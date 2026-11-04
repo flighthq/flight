@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 compressed uploads intentionally expose glow Context and native Result diagnostics
 
 use flight_image::CompressedImageResource;

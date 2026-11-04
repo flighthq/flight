@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::update_mesh_skin::{mesh_ref, update_mesh_skin_with_refresh};
 use flight_node::NodeRef;
 // flight-lint: allow(conform-params) D5 caller-owned canonical node transform revision source; D16 original NodeRef permits hierarchy-safe palette resolution after releasing the mesh borrow

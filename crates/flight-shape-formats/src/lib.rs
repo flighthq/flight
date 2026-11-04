@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Native retained-shape JSON and the shared built-in command schema table (TS
 //! `@flighthq/shape-formats`).
 

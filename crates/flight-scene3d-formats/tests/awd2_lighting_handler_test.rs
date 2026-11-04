@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::{awd_string, block, file, property_list, scene_header};
 use flight_entity::Ref;
 use flight_geometry::{create_vector3, rotate_vector3_by_quaternion};

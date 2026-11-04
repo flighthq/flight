@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 use crate::path::{Path, PathMeshTyped};
 use crate::tessellate_path::tessellate_path;
 

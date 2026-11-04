@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path_boolean::MARTINEZ_PATH_BOOLEAN_KERNEL;
 use flight_scene2d_formats::contract::*;
 

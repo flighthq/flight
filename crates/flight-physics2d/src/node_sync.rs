@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Copying a body's pose onto a 2D display node (TS `nodeSync.ts`).
 
 use flight_math::RAD_TO_DEG;

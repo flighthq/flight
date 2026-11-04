@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Timeline playback: a playhead over a shareable source, with labels, per-frame scripts and
 //! lifecycle signals. The source is what a frame is; playback state is per timeline.
 

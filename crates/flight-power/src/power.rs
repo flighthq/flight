@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex, Weak};
 
 use flight_entity::allocate_entity;

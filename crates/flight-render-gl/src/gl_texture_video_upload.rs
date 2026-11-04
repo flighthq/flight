@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 video uploads intentionally accept glow Context on the owning GL thread
 
 use flight_image::ImageResource;

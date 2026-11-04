@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 Rust conveniences for the image public lane. Every method delegates directly to one public
 //! free-function contract; loading, resolution and source-binding behavior remain in that layer.
 

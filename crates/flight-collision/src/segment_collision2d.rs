@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::collision_shape_validation2d::get_collision_polygon_validation_status2d;
 use crate::types::*;
 

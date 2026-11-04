@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 pub fn create_collision_manifold3d() -> CollisionManifold3D {

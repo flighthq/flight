@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{SwfParseOptions, SwfTagHandlerRef};
 
 pub fn merge_swf_parse_options(options: &[&SwfParseOptions]) -> SwfParseOptions {

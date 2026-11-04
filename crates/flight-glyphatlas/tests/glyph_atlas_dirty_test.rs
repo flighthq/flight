@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_glyphatlas::contract::*;
 
 use crate::support::{atlas_options, mock_rasterizer, null_backend};

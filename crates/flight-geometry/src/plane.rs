@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::Vector3;
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_color::compute_rgba_css_string;
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_collision::contract::*;
 
 /// A wide, shallow ground slab every resting-contact case sits on.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(attachAppRenderView, createAppRenderView, detachAppRenderView, initializeAppRenderView, synchronizeAppRenderView) final ownership (Principal 2197d2fb, D8) moves appRenderView and the AppRenderView types to flight-render; the GL-specific AppRenderView types and functions move to flight-render-gl
 // flight-lint: conform-skip(attachWindowRenderContext, detachWindowRenderContext) final ownership (Principal 2197d2fb, D8) moves the HostGl context-loss window wiring to flight-render-gl
 // flight-lint: conform-skip(attachWindowRenderState, detachWindowRenderState) final ownership (Principal 2197d2fb, D8) moves the render-state surface sizing to flight-surface

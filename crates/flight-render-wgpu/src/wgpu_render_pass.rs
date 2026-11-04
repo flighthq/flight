@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! The render-pass bracket (TS `wgpuRenderPass.ts`). A pass handle borrows its state, so a nested
 //! pass reborrows the enclosing one and brackets close innermost first by construction; the pass

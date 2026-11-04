@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::obj_features::is_obj_whitespace;
 use crate::obj_number::{parse_obj_float, parse_obj_integer};
 use crate::obj_schema::ObjMaterialLibrary;

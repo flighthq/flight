@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, RwLock};
 
 use flight_materials::SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND;

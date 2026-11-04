@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(makeWgpuScene3DState, makeWgpuSkinningAdapter) source test scaffolding (wgpuScene3DTestHelper.ts) is ported as the crate's Rust test doubles in tests/support.rs over a real noop device, never as public API
 //! The WebGPU 3D scene renderer (TS `@flighthq/scene3d-wgpu`) over the native wgpu render backend
 //! (D17): mesh-material renderers and their WGSL families, the shared mesh pipeline, environment

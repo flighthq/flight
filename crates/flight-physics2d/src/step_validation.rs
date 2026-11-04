@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Step preconditions (TS `stepValidation.ts`). The source's `typeof` and `Number.isSafeInteger`
 //! checks always hold for typed Rust fields (D15), so only the numeric range checks remain.
 

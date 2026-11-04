@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets, own a transient ramp texture and return Result diagnostics
 //! Gradient-glow composite effect: blur the silhouette, map the blurred coverage through a
 //! 256-entry color ramp, then composite with the source. Full-frame realization: acquires the

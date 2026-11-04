@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! Opt-in 2x-per-axis supersampling for screen targets (TS `wgpuScreenAntialias.ts`): the frame
 //! draws into a 2x texture and one fullscreen linear-sampling pass resolves it into the

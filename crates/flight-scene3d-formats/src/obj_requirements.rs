@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::obj_feature_requirements::OBJ_FEATURE_SCENE_REQUIREMENTS;
 use crate::obj_features::{OBJ_MATERIAL_FEATURE, collect_obj_features};
 use crate::obj_material_model::collect_obj_material_models;

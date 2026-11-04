@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 Rust conveniences for the permissions public lane. Methods contain no behavior: capability
 //! methods and enum string helpers delegate to the corresponding free functions.
 

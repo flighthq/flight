@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     Awd2StringRead, awd_transform_to_matrix4, has_non_unit_scale, read_awd_data_value,

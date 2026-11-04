@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::f32::consts::PI;
 
 use flight_effects::{EffectRef, HalftoneEffect, create_halftone_effect};

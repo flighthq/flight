@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::NodeRef;
 use flight_render::{
     BatchFormat, RenderRegistriesMiss, RenderRegistryTable, enable_render_registries_guards,

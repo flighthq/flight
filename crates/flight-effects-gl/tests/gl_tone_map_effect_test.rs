@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_tone_map_effect_to_gl {
     use flight_effects::{ToneMapOperator, create_tone_map_effect};
     use flight_effects_gl::contract::apply_tone_map_effect_to_gl;

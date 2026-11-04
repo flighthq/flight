@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::Mesh;
 use flight_meshgeometry::update_mesh_geometry_morph;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects_gl::contract::apply_gl_effect_blit_offset_pass;
 
 use crate::gl_test_helper::{clear_calls, make_state, make_texture_target, uniform_values};

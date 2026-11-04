@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_physics2d::*;
 
 // flight-lint: allow(f64) D1: the independent reference derivation runs in f64, as the source does

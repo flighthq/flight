@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Shared runner plumbing: the checked narrowing of a registered effect to its intent type.
 
 use flight_effects::Effect;

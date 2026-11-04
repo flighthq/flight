@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_notification::*;
 
 mod get_notification_cancel_reason_string {

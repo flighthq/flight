@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
 pub fn create_gaussian_kernel_weights(out: &mut [f32], radius: f32, sigma: f32) -> usize {
     let r = radius.ceil().max(0.0) as usize;

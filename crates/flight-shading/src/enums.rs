@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::Kind;
 
 pub type ModifierKind = Kind;

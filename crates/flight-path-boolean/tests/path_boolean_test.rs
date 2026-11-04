@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path_boolean::contract::*;
 
 mod get_path_boolean_explanation_operation_string {

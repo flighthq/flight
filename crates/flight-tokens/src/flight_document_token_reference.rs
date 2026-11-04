@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! What a token reference IS (TS `flightDocumentTokenReference.ts`), shared by token-value
 //! resolution and node-field substitution. Two copies would drift, and the copy that drifted would
 //! be whichever a later change forgot.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_adjustments::ColorLut;
 use flight_effects_gl::contract::{
     GlColorLutTextureCache, apply_color_lut_pass_to_gl, evaluate_glsl_scalar_expression,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_stream::create_abort_controller;
 
 use crate::scene2d_document_importer_registry::create_scene2d_document_from_bytes;

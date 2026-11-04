@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
 pub fn compute_color_temperature_rgb(out: &mut [f32; 3], kelvin: f32) {
     let temp = kelvin.clamp(1000.0, 40000.0) / 100.0;

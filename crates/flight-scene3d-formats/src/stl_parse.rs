@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::shared::{CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT};
 use crate::stl_features::{
     BINARY_STL_HEADER_SIZE, BINARY_STL_TRIANGLE_SIZE, count_ascii_stl_facets, is_stl_whitespace,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::NodeRef;
 use flight_render::BatchFormat;
 use flight_render_wgpu::*;

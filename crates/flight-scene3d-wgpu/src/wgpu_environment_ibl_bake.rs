@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the bake renders into native wgpu textures and pipelines
 //! Bakes an environment's source cube into the split-sum image-based-lighting set (TS
 //! `wgpuEnvironmentIblBake.ts`), the WGSL mirror of scene3d-gl's bake: a diffuse irradiance cube, a

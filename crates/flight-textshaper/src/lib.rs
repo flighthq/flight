@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod enable_text_shaper_guards;
 mod host_explain;
 mod sugar;

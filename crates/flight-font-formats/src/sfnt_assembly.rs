@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Uint8Array;
 
 use crate::binary::{to_uint32, write16, write32};

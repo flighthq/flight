@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Caller-facing guard installation: warns when a compressed tile layer cannot be decoded
 //! (TS `enableTilemapFormatsGuards.ts`).
 

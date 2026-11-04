@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(test-default-call) Render texture option records use canonical defaults.
 fn texture(width: u32, height: u32) -> flight_render::RenderTexture {
     return crate::gl_test_helper::make_render_texture(width, height);

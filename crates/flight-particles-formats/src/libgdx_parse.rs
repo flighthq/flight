@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! libGDX 2D Particle Editor `.p` parsing (TS `libgdxParse.ts`).
 
 use flight_importdiagnostics::{

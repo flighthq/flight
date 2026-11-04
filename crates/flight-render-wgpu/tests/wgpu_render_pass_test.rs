@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render::RenderTargetClear;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, RwLock};

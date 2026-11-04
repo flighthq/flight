@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Flat, open 3D family declarations and their source-owned records.
 // flight-lint: allow-file(contract-vocabulary, sugar-delegates) D16 family dispatch borrows actual flat fields and private runtime tiers, preserving the single Entity allocation
 use flight_entity::{EntityRuntimeSlot, Float32Array, Ref};

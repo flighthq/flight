@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{SwfTagHandlerDispatch, SwfTagHandlerRef};
 
 pub fn expand_swf_tag_handler_dispatch(tags: &[SwfTagHandlerRef]) -> SwfTagHandlerDispatch {

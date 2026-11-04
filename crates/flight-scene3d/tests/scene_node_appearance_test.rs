@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::*;
 use flight_node::{add_node_child, invalidate_node_appearance};
 use flight_scene3d::contract::*;

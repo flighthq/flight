@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Ref, Uint8Array};
 use flight_stream::{AbortSignal, throw_if_aborted};
 

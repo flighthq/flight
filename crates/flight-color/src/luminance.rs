@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::srgb_channel_to_linear;
 
 /// WCAG 2.x contrast ratio between two packed sRGB `0xRRGGBBAA` colors (alpha ignored).

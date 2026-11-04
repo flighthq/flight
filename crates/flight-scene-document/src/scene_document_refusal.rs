@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Logical document validation and the refusal constructors (TS `sceneDocumentRefusal.ts`): field
 //! schemas, interactive states and registered node kinds, each refusal qualified by its scene.
 

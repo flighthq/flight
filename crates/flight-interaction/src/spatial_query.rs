@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{Rectangle, intersects_rectangle};
 use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 

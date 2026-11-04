@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::font_options;
 use flight_buffer::{
     ArrayBufferView, ArrayBufferViewKind, create_array_buffer_from_bytes, create_array_buffer_view,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Debug timing spans and frame markers (TS `debugTiming.ts`), gated on an active debug session so
 //! instrumentation left in shipping code costs one boolean check. Timestamps are injected (D5).
 

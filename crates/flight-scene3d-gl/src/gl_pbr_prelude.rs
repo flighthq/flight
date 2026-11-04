@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // The shared GL PBR prelude: the GLSL 300 es vertex + fragment uber-shader for the StandardPbr
 // forward-lit path and every PBR-extension variant. One source string is specialized per material
 // at compile time by prepending a define block (see GlPbrDefineKey / build_gl_pbr_define_source), so

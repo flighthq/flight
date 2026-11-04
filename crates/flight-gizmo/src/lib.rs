@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Screen-space 2D transform gizmos, deterministic alignment and smart-guide helpers, and the
 //! Node2D adapter used to project scene graph features into the gizmo controller.
 

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Skeleton2D-owned declarations: the rig, bones, slots, attachment and constraint families, skins,
 //! slot deforms and the guard report records (TS `Skeleton2D.ts`, `Bone2D.ts`, `Slot2D.ts`,
 //! `Attachment2D.ts` and the concrete attachment/constraint/skin declarations).

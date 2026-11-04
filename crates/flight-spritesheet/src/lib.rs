@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod spritesheet;
 mod spritesheet_animation;
 mod spritesheet_data;

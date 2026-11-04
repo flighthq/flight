@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Node2D graph feature adapter (TS `node2dGizmoFeatures.ts`).
 
 use std::sync::Arc;

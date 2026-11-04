@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! flight-compiler: string-union TextAutoSize TextJustification TextVerticalAlign
 
 use flight_entity::{EntityRuntimeSlot, Ref};

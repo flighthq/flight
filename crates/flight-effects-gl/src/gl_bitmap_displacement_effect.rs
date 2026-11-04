@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets, resolve open texture variants and return Result diagnostics
 //! Flash-style bitmap displacement: a displacement map texture's selected channels offset where the
 //! source is sampled. A missing or unresolvable map copies the input through unchanged.

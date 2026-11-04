@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The camera contract types: 2D/3D camera entities, projection descriptors, options,
 //! explanation data and caller-owned guard state (TS `Camera2D.ts`, `Camera3D.ts`,
 //! `Camera3DOptions.ts`, `Camera3DViewExplanation.ts`, `*ProjectionOptions.ts`).

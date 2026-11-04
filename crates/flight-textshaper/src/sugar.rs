@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 Rust conveniences: each method delegates to one public free function.
 
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use super::*;
 
 mod get_bitmap_text_align_string {

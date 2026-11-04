@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_meshgeometry::contract::*;
 
 mod get_vertex_format_byte_length {

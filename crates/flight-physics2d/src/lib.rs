@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Portable 2D rigid-body dynamics (TS `@flighthq/physics2d`): an explicitly stepped
 //! sequential-impulse solver with island sleeping, an open joint family, continuous collision for
 //! bullets, world queries and debug geometry, over flight-spatial's broadphase and flight-collision's

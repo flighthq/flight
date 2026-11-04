@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_meshgeometry::contract::*;
 
 fn normal_offset(geometry: &MeshGeometry) -> usize {

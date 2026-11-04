@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::PbrUvSet;
 use flight_meshgeometry::{MeshGeometry, VertexSemantic};
 

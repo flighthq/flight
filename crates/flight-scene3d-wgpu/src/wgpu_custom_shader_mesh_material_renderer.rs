@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17/D16: the renderer reads any material through `&dyn Material` and binds native wgpu groups
 //! The CustomShaderMaterial mesh renderer (TS `wgpuCustomShaderMeshMaterialRenderer.ts`). The shader
 //! is a complete caller-authored WGSL module; scene3d-wgpu supplies the fixed Frame group(0) and Draw

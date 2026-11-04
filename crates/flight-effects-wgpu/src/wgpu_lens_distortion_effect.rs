@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Lens distortion: remaps uv by a radial polynomial; positive amount bulges outward (barrel), negative pinches inward (pincushion); scale re-frames the result. (TS `wgpuLensDistortionEffect.ts`).
 

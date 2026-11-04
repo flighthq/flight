@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The node-level pointwise color-adjustment stack (TS `nodeColorAdjustment.ts`).
 
 use std::sync::{Arc, RwLock};

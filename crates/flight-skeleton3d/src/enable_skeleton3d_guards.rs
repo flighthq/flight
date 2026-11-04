@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::skeleton3d::set_skeleton3d_bind_pose_guard;
 use crate::{Skeleton3DGuardClock, Skeleton3DGuardStateRef};
 use flight_log::{LogData, LogLevel, LogStateRef, LogValue, log_once};

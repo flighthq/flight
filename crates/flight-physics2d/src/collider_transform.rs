@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Local-to-world collider shapes and their bounds (TS `colliderTransform.ts`). World shapes are
 //! plain collision shapes (D12 recorded exception), so the `kind` parameter of each source
 //! initializer is the enum variant itself.

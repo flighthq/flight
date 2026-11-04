@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::audio_format::get_audio_mime_type_essence;
 use crate::types::{HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability};
 

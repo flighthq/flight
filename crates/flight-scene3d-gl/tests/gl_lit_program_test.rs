@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::create_matrix4;
 use flight_lighting::{SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock};
 use flight_render_gl::GlRenderState;

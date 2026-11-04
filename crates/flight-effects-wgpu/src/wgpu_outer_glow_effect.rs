@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Outer glow (TS `wgpuOuterGlowEffect.ts`): tint the scene silhouette, blur it centered (no
 //! offset), then apply sourceMode compositing. Acquires three scratch targets from the effect pool,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_layout::*;
 
 fn tree(nodes: Vec<LayoutNode>) -> LayoutTree {

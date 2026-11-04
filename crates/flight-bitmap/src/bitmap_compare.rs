@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::bitmap::create_bitmap;
 use crate::types::*;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Glyph-source-backed bitmap text layout and its Node2D display node.
 
 mod bitmap_text;

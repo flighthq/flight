@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::contract::{AgxToneMapOptions, FilmicToneMapOptions};
 
 fn agx_default_contrast_approx(x: f32) -> f32 {

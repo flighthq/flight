@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_color::{LinearColor, allocate_linear_color};
 use flight_render_wgpu::*;
 use flight_scene3d_wgpu::contract::*;

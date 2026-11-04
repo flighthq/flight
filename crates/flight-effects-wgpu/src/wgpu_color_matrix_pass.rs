@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the pass takes host-supplied wgpu targets
 //! The generic pointwise color-matrix pass (TS `wgpuColorMatrixPass.ts`): the single fold-in
 //! realization for the whole matrix-tier adjustment family on WebGPU. A run of consecutive

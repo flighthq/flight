@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_net::{HostNetCapability, NetState};
 use flight_scene3d::Scene3DDocument;

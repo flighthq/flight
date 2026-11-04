@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_registry::KindMap;
 use flight_tilemap_formats::*;
 

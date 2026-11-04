@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::allocate_entity;
 use flight_geometry::{clone_vector3, create_vector3, set_vector3};
 

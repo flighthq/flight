@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Point attachment world position and direction (TS `pointAttachment2D.ts`).
 
 use flight_geometry::Vector2;

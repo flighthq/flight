@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Inverse-kinematics constraint solving (TS `ikConstraint2D.ts`).
 
 use flight_math::RAD_TO_DEG;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Local, parent-space and world bounds resolution for spatial 2D nodes
 //! (TS `boundsRectangle.ts`).
 

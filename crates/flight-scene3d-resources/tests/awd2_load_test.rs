@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, RwLock};
 
 use flight_scene3d_formats::{AWD2_ALL_BLOCK_HANDLERS, Awd2ParseOptions, parse_awd2};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::stl_features::is_stl_whitespace;
 
 pub const MD5_MESH_FEATURE_NAMES: [&str; 3] = ["Skeleton", "Mesh", "Material"];

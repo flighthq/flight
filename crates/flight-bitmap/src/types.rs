@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;

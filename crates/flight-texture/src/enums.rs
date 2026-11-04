@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 // flight-lint: allow-file(conform-extra) D9 enum-string conversions for reviewed texture-owned TS string unions

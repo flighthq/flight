@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::support::create_rectangle_record;
 use flight_swf::contract::*;
 

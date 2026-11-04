@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render caches bind native wgpu texture targets over render-wgpu state and caller-owned proxies
 //! Render caches on the WebGPU backend (TS `wgpuCache.ts`): a subtree bakes into an offscreen
 //! texture target owned by the screen state, keyed by the cache handle, and composites back as one

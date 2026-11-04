@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Transaction brackets for operations whose sub-commands are not known upfront (TS
 //! `commandTransaction.ts`).
 //!

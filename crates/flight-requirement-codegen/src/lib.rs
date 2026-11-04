@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod requirement_codegen;
 mod types;
 

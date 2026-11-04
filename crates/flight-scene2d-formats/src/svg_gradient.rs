@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::cmp::Ordering;
 use std::collections::HashMap;
 

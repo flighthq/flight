@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::flight_physics2d_support_test::*;
 
 use std::collections::HashMap;

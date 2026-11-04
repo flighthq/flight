@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Particle format detection, parsing and serialization across the built-in formats. The format
 //! registry is caller-owned state (D5).
 

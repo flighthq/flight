@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: tint passes take host-supplied wgpu targets
 //! Alpha-mask tint passes shared by the glow and shadow recipes (TS `wgpuEffectTintShader.ts`).
 

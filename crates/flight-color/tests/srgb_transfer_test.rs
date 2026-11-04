@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_color::*;
 
 fn assert_approx(actual: f32, expected: f32) {

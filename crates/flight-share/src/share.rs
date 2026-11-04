@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 use flight_entity::{Ref, allocate_entity, get_entity_uid};
 use flight_signals::{clear_signal, create_signal, emit_signal};

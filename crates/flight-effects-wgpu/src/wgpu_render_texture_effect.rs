@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: applications run over render-wgpu render textures and pools
 //! Effect chains applied from one completed render texture into another (TS
 //! `wgpuRenderTextureEffect.ts`).

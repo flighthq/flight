@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::ColorScaleBias;
 
 use crate::bitmap::invalidate_bitmap;

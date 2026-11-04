@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_animation::contract::AnimationInterpolation;
 use flight_skeleton2d_formats::contract::*;
 use serde_json::{Value, json};

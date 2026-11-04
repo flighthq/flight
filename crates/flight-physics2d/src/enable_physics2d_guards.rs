@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in step diagnostics (TS `enablePhysics2DGuards.ts`). The source's module flag and installed
 //! guards are the caller's `Physics2DGuardState` (D5); messages go through flight-log's `log_once`.
 

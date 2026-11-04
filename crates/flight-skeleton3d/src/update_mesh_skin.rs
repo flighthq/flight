@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     capture_mesh_skin_bind_pose, compute_skeleton3d_joint_matrices, skin_mesh_geometry,
     update_mesh_skin_bind_pose_deform_input,

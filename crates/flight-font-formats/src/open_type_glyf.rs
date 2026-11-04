@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Int32Array, Uint8Array, Uint32Array};
 use flight_path::{Path, PathCommand, PathWinding};
 

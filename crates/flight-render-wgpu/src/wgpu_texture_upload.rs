@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! Texel-upload primitives for one texture region (TS `wgpuTextureUpload.ts`), the wgpu mirror of
 //! render-gl's texture upload. The caller owns texture creation and format.

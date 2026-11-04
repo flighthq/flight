@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_collision::{CollisionAabb3D, CollisionColliderShape3D, CollisionShape3D};
 
 use super::*;

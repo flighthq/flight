@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shared GL effect passes draw native glow targets and return Result diagnostics
 //! Shared tint and inverted-tint mask passes used by the glow/shadow family.
 

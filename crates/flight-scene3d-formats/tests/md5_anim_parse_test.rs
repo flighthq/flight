@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::md5_test_helper::*;
 use flight_animation::{AnimationChannel, AnimationInterpolation, sample_animation_track};
 use flight_importdiagnostics::{

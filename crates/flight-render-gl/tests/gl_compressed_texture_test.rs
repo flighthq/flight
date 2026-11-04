@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(test-default-call) Compressed capability records intentionally use Rust defaults.
 mod detect_gl_compressed_texture_support {
     use crate::gl_test_helper::{make_compressed_support, make_gl};

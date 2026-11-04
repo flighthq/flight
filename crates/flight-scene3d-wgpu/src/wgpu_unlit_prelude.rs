@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the unlit family seams take and return native wgpu values
 //! The shared Wgpu unlit prelude (TS `wgpuUnlitPrelude.ts`): the unlit material bind group and
 //! uniform, the define key, the pipeline compiler and cache, and the WGSL module. Shared by the Unlit,

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(f64) source-number GJK2D/EPA scratch is required by the restored seeded differential corpus; public supports and manifolds remain f32
 use crate::collision_support2d::*;
 use crate::manifold2d::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::any::Any;
 use std::future::ready;
 use std::panic::{AssertUnwindSafe, catch_unwind};

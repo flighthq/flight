@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Private plumbing shared by the quad-batch node renderers (the source inlines it per renderer).
 
 use std::sync::{Arc, RwLock};

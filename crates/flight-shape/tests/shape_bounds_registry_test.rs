@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_shape::contract::*;
 
 mod clear_shape_bounds_commands {

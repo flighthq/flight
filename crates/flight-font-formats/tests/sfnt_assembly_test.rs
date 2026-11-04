@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_font_formats::*;
 
 fn word(bytes: &[u8], offset: usize) -> u32 {

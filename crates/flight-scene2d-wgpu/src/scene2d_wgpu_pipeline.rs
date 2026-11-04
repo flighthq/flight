@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render presets hold backend-typed renderer tables over render-wgpu state
 //! The standard 2D WebGPU render presets (TS `scene2DWgpuPipeline.ts`): the infrastructure every
 //! build needs whatever the content is, and the full preset with every standard node renderer.

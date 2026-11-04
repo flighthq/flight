@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The socket contract types: framed connection lifecycle, opt-in signal group, raw TCP byte
 //! streams and the swappable host transport seam (TS `types/src/Socket.ts`).
 

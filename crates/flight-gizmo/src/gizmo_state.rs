@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Interactive 2D transform gizmo state and retained overlay assembly (TS `gizmoState.ts`).
 // flight-lint: allow-file(f64) Shape commands use their canonical f64 path-coordinate lane; gizmo public values remain f32
 

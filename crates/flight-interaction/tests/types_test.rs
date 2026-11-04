@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_interaction::types::*;
 
 mod create_focus_manager_options {

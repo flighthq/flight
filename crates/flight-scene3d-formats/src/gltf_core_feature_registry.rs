@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_types::GltfCoreFeatureHandler;
 use flight_entity::Ref;
 

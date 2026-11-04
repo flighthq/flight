@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Pure 9-slice coordinate mapping (TS `wgpuScale9Mapper.ts`): maps unscaled shape coordinates into
 //! the scaled field, leaving the grid corners fixed and stretching the center. An exact copy of the
 //! GL mapper, duplicated per backend to keep each render package self-contained.

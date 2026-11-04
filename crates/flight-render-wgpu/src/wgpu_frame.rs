@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! The frame bracket: one command encoder per frame, deferred retirement of replaced resources, the
 //! submit, and borrowing another state's live frame (TS `wgpuFrame.ts`).

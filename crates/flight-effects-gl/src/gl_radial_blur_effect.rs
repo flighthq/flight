@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Radial blur: accumulate samples stepped from the current uv toward (centerX, centerY) scaled by
 //! `strength`, normalized by the sample count. Single-pass reference recipe.

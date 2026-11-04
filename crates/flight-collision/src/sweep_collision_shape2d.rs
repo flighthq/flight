@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::collide_contact_manifold2d::*;
 use crate::collision_shape_validation2d::*;
 use crate::contact_manifold2d::*;

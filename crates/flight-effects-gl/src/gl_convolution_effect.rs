@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Generic matrix-kernel convolution: each output pixel is the weighted sum of its
 //! matrix_x×matrix_y neighborhood, normalized by `divisor` (defaults to the matrix sum) and offset by

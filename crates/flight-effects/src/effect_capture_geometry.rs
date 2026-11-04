@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D12/D17 approved generic RenderState dispatch keeps padding and capture logic backend-neutral
 use flight_geometry::{Matrix, Rectangle, copy_matrix, copy_rectangle, is_empty_rectangle};
 use flight_node::{NodeRef, compute_node_root_local_bounds_rectangle};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The scene-scoped time ShadedMaterial's animated modifiers read (TS `wgpuScene3DTime.ts`), kept
 //! per state so independent canvases do not share animation.
 

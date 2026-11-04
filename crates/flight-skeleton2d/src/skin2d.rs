@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Weighted mesh skin binding (TS `skin2D.ts`).
 
 use flight_entity::allocate_entity;

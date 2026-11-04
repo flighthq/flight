@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in diagnostics for the effect-chain sentinels that are indistinguishable from working code
 //! (TS `enableWgpuEffectGuards.ts`): an unregistered chain returns `false` having never written
 //! `dest`, and a partially registered chain succeeds while silently dropping the effects it could

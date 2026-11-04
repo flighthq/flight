@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 skin-palette allocation and uploads expose native Result diagnostics
 
 use flight_entity::EntityRuntimeSlot;

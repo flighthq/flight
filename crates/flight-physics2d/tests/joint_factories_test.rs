@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Entity, allocate_entity};
 use flight_physics2d::contract::*;
 

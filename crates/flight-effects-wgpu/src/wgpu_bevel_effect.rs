@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pools
 //! Bevel (TS `wgpuBevelEffect.ts`): the directional gradient of the blurred silhouette drives a
 //! highlight/shadow edge band, clipped by bevelType, then sourceMode decides source compositing.

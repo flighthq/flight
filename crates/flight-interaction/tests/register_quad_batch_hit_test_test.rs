@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_interaction::hit_tests::find_graph_hit_target_precise;
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,

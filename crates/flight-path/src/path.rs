@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 //! flight-compiler: array-like append_path_polygon.points append_path_polyline.points
 //! flight-compiler: nullable-option get_path_last_point PathMorphCreationExplanation.contour StrokePathTessellationExplanation.subpath
 //! flight-compiler: readonly-fields PathMorph PathMorphCreationExplanation StrokePathTessellationExplanation

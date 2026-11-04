@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Camera frustum extraction and culling tests (TS `culling.ts`).
 
 use flight_geometry::{

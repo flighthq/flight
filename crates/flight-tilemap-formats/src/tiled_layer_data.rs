@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Base64 and CSV tile layer data decoding, guard seam, and explanation
 //! (TS `tiledLayerData.ts`).
 

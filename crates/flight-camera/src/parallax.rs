@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! 2D parallax-layer scroll offsets (TS `parallax.ts`).
 
 use flight_geometry::{Vector2, create_matrix};

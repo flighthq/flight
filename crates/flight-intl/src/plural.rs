@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Locale-aware cardinal and ordinal plural selection (TS `plural.ts`).
 
 use std::sync::Arc;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The uniform-ring byte-order diagnostic (TS `explainWgpuUniformEndianness.ts`).
 
 use flight_platform::PlatformEndianness;

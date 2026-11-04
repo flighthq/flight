@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_accessor::{GltfAccessorReader, gltf_integer_field};
 use crate::gltf_container::decode_gltf_base64;
 use crate::gltf_diagnostics::tally_gltf_numbers;

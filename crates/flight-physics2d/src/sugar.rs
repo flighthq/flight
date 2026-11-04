@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Rust convenience methods for the public physics2d lane (D18): each delegates to its free
 //! function.
 

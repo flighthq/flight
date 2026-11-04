@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod adjustment;
 mod brightness_contrast_adjustment;
 mod channel_mixer_adjustment;

@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+//! flight-compiler: target-native
+
 use std::cell::RefCell;
 
 use flight_entity::Entity;

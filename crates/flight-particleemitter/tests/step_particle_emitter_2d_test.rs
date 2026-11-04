@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 use flight_particles::{ParticleCollider, ParticleForce};
 

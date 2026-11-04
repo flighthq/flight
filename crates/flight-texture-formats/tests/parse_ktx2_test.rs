@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_texture_formats::*;
 
 const KTX2_MAGIC: [u8; 12] = [

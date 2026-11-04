@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5 makes owner-world state explicit; Rust also names the source's `type` parameters `body_type`
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: export-name PATH_MORPH_ISSUE_NONE PathMorphIssueNone
 //! flight-compiler: export-name PATH_MORPH_ISSUE_WINDING_MISMATCH PathMorphIssueWindingMismatch
 //! flight-compiler: export-name PATH_MORPH_ISSUE_CONTOUR_COUNT_MISMATCH PathMorphIssueContourCountMismatch

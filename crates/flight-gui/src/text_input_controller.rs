@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gui_controller::*;
 use flight_entity::{Ref, allocate_entity, throw_type_error};
 use flight_input::InputKeyboardData;

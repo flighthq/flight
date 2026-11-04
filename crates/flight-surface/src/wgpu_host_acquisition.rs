@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Construction of the WGPU acquisition Entity a host provider returns (TS `WgpuHostAcquisition`).
 
 use flight_entity::allocate_entity;

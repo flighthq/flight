@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Unity Shuriken particle system JSON parsing (TS `unityParse.ts`).
 
 use std::collections::HashMap;

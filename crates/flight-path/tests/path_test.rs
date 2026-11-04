@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::get_entity_id;
 use flight_path::contract::*;
 

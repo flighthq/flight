@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Depth-first descendant traversal and sibling queries (TS `traversal.ts`).
 
 // flight-lint: allow-file(contract-vocabulary) D16 open node trait objects are contract dispatch, not vocabulary types

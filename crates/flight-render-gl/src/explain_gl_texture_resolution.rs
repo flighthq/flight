@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 texture dispatch consumes the native open TextureVariant contract
 
 use flight_render::{TextureResolutionExplanation, TextureResolutionStatus};

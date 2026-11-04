@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The built-in classic Lambert forward-lit mesh-material renderer (TS
 //! `wgpuLambertMeshMaterialRenderer.ts`), the WGSL mirror of scene3d-gl's Lambert renderer: diffuse-only Lambertian shading, so
 //! the classic prelude compiles out its specular branch (the specular color it binds is unused).

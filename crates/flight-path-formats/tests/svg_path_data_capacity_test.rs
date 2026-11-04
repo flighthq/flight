@@ -1,4 +1,6 @@
 //! flight-compiler: rust-only
+
+//! flight-compiler: rust-only
 //!
 //! Rust locks that appending reuses the destination's reserved command buffer. TypeScript arrays
 //! have no observable capacity, so only the winding half of this check has a generated twin.

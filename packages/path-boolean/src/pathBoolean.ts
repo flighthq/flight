@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-boolean/src/path_boolean.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { PathWinding } from '@flighthq/path/contract';
 
 /**

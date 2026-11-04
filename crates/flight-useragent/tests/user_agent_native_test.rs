@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+
+//! flight-compiler: target-native
 //! Detailed byte-order and window-global boundary cases for `userAgentNative.test.ts`.
 
 use std::sync::Arc;

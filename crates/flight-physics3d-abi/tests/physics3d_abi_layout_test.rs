@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_collision::MAX_COLLISION_CONTACT_POINTS_3D;
 use flight_physics3d_abi::contract::*;
 

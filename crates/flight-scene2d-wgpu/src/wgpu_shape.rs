@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over render-wgpu state
 //! The hybrid shape strategy (TS `wgpuShape.ts`): tessellates what it can and rasterizes the rest.
 //! The GPU mesh path is tried first; a shape with a fill that has no tessellated form falls through

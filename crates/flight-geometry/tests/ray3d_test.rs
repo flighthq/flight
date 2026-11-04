@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_geometry::contract::*;
 
 fn assert_approx(actual: f32, expected: f32) {

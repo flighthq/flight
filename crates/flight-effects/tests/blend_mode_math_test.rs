@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::*;
 
 fn luma(rgb: &[f32; 3]) -> f32 {

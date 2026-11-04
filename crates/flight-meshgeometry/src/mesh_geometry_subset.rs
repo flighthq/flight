@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::MeshGeometry;
 use crate::MeshSubset;
 use crate::PrimitiveTopology;

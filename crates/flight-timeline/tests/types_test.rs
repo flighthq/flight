@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_timeline::contract::*;
 
 mod create_timeline_cue_fields {

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::MeshGeometry;
 use crate::MeshMorph;
 use crate::blend_mesh_geometry_morph;

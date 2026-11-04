@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Bounding-box world polygon (TS `boundingBoxAttachment2D.ts`).
 
 use crate::skeleton2d_guards::Skeleton2DGuardState;

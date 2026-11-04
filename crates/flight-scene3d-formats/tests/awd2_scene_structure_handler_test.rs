@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::{block, empty_document, file, scene_header};
 use flight_entity::Ref;
 use flight_geometry::contract::create_transform3d;

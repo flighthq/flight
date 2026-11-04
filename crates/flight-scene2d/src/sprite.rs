@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Texture-backed sprites (TS `sprite.ts`).
 
 use std::sync::{Arc, RwLock};

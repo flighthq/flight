@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Inert layout bindings between authored layout trees and live nodes (TS
 //! `sceneDocumentLayoutBindings.ts`). Live node identity keys by entity uid; authored document node
 //! identity keys by the borrowed record's address (D15 object-keyed maps).

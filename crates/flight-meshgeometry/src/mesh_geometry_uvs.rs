@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::MeshGeometry;
 use crate::VertexSemantic;
 use crate::get_vertex_attribute_float_offset;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! The WebGPU texture-format names host contracts carry (TS `GPUTextureFormat` strings) and the
 //! native `wgpu` formats render-wgpu allocates with.

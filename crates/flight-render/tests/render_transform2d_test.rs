@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_node::NodeRef;
 use flight_render::*;
 

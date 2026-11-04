@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Flight scene documents (TS `@flighthq/scene-document`): the closed YAML subset and text codec,
 //! logical validation and refusal diagnostics, resource dependencies, and 2D/3D scene
 //! materialization with inert interactive-state and layout bindings.

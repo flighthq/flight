@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::manifold3d::*;
 use crate::types::*;
 

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The intl contract types: the locale input union and the closed
 //! plural-category and relative-time-unit domains (TS `types/src/LocaleInput.ts` and the external
 //! `Intl.*` option domains).

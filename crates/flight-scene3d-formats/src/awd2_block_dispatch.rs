@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_types::{
     Awd2BlockDispatch, Awd2BlockDispatchEntry, Awd2BlockHandler, Awd2ParseState,
 };

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 

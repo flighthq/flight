@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod enable_net_guards;
 mod enums;
 mod host_explain;

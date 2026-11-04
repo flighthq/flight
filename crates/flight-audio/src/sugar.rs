@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 Rust conveniences for the audio public lane. Every method delegates directly to one
 //! public free-function contract; this module contains no independent audio behavior.
 

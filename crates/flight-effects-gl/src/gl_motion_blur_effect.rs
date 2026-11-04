@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets, take native texture names and return Result diagnostics
 //! Motion blur (per-object): when the scene produced a per-pixel velocity buffer (screen-space
 //! velocity in pixels in the RG channels), read each fragment's velocity, scale it by `intensity`,

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::Ref;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_meshgeometry::{IndexBuffer, PrimitiveTopology, get_mesh_geometry_vertex_count};

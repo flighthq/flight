@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_camera::contract::set_camera_3d_view_matrix4_from_look_at;

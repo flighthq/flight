@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Locale-aware relative-time phrasing (TS `relativeTime.ts`).
 
 use crate::cache::{FormatterCache, get_cache_key, get_cached};

@@ -1,4 +1,6 @@
 //! flight-compiler: rust-only
+
+//! flight-compiler: rust-only
 //!
 //! Rust locks the exact diagnostic envelope. The generated guard tests exercise the same three
 //! callbacks in TypeScript without importing log implementation-only representation types.

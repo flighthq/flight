@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Remaining per-format source assertions from the pinned `particles-formats` tests, kept together
 //! so each format's source cases read next to their fixture. Function-level modules live in their
 //! own files.

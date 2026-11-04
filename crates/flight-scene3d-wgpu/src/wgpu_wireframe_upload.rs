@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The wireframe GPU upload (TS `wgpuWireframeUpload.ts`): the geometry's shared vertex buffer plus a
 //! derived line-list index buffer (three edges per triangle), cached per state keyed by the geometry.
 

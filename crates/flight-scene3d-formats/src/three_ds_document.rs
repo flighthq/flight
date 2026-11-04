@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::three_ds_chunk_dispatch::build_three_ds_chunk_dispatch;
 use crate::three_ds_chunk_registry::THREE_DS_ALL_CHUNK_HANDLERS;
 use crate::three_ds_parse::parse_three_ds_document_with_dispatch;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{ParticleConfigIssue, ParticleEmitterConfig};
 
 fn check_finite(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 // flight-lint: allow(conform-extra) D9e: Rust canonical string table for the TS ShortcutDigitKeyName literal subset

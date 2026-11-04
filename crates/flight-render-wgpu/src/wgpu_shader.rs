@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! The 2D bitmap shader, blend states, bind-group layouts, pipeline cache and per-draw uniform ring
 //! writes (TS `wgpuShader.ts`). The WGSL is the source text verbatim.

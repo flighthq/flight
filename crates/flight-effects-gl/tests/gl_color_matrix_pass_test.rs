@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects_gl::contract::{
     apply_color_matrix_pass_to_gl, evaluate_glsl_scalar_expression, extract_glsl_expression,
 };

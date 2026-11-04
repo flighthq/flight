@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/ease_back.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 const S: number = 1.70158;
 
 const S2: number = 1.70158 * 1.525;

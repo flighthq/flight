@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The target-neutral Physics3D execution boundary (TS `@flighthq/physics3d-abi`): a
 //! little-endian command stream, structure-of-arrays readback buffers, and the executable
 //! reference backend over a real `Physics3DWorld`.

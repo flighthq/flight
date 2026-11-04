@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_node::contract::*;
 
 mod init_transform2d_runtime_trait {

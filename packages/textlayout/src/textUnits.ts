@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/src/text_units.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 export function findUtf16Unit(units: Readonly<number[]>, unit: number, start: number): number | undefined {
   let index = start;
   while (index < units.length) {

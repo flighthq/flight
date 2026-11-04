@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/tests/get_path_contour_lengths_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import * as flightPath from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Opt-in diagnostics for spritesheet playback semantics the timeline source cannot carry (TS
 //! `enableMovieClipGuards.ts`). The ordinary adapter stays logger-free; only this module installs the
 //! reporting guard.

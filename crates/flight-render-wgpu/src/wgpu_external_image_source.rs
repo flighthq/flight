@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17/D26 Principal 1180c6be: the native payload of HostImageSource is a trait object mirroring the GPUCopyExternalImageSource use
 //! External host-image upload (TS `wgpuExternalImageSource.ts`). Native wgpu has no
 //! `copyExternalImageToTexture`, so a `HostImageSource` narrows to `Arc<dyn WgpuExternalImageSource>`

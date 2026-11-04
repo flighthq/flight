@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::enums::{get_net_guard_operation_string, get_net_guard_reason_string};
 use crate::net::set_net_guard;
 use crate::{NetClock, NetGuardOperation, NetGuardReason, NetState};

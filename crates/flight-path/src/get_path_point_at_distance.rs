@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::Vector2Like;
 
 use crate::flatten_path::flatten_path;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_extension_test_helper::*;
 use flight_entity::Ref;
 use flight_materials::{

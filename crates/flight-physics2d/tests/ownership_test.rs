@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::flight_physics2d_support_test::*;
 
 // The source drives these through its module stepping set; that set is a private per-world flag

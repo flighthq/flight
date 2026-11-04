@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! JavaScript text/number compatibility helpers shared by the format parsers.
 
 /// Formats a number the way `JSON.stringify`/`String(value)` would for the values particle

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_spatial::*;
 
 mod explain_spatial_indexing_2d {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 fn shader(
     state: &flight_render_gl::GlRenderState,
 ) -> std::sync::Arc<flight_render_gl::GlBitmapShader> {

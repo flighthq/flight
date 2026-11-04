@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 use flight_geometry::Aabb;
 use flight_geometry::create_aabb;

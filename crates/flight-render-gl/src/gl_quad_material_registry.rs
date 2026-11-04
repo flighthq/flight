@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 material renderer registration uses the open native trait contract
 
 use std::sync::Arc;

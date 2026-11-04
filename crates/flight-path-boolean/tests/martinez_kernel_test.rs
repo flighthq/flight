@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path_boolean::contract::*;
 
 fn compute_empty_test_path_boolean(

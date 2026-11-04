@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 #![allow(async_fn_in_trait, clippy::items_after_test_module)]
 

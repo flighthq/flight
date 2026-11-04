@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The constraint solver registry (TS `skeleton2dConstraint.ts`).
 
 use crate::types::*;

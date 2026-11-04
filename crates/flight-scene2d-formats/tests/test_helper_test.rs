@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_scene2d_formats::contract::*;
 
 mod create_ready_image_resource_for_test {

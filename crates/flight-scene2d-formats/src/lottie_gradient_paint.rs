@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::cmp::Ordering;
 
 use flight_geometry::{Matrix, create_gradient_transform_matrix};

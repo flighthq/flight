@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_preferences::*;
 
 mod get_storage_clear_failure_reason_string {

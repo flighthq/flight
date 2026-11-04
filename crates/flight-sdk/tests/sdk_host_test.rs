@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // TS `sdk/src/sdkHost.test.ts`. Function identity (`toBe`) is checked by function pointer equality.
 use flight_sdk::*;
 

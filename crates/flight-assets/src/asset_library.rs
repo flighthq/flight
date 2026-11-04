@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::enums::AssetLoadStatus;
 use crate::types::*;
 use flight_entity::{FlightError, FlightErrorKind, unknown_from_panic};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Float32Array, Ref, allocate_entity, throw_error};
 use flight_geometry::{Aabb, Vector3, create_aabb, create_vector3};
 

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gjk_distance3d::*;
 use crate::types::*;
 

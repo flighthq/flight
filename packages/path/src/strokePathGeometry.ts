@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/stroke_path_geometry.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { flattenPath } from './flattenPath.ts';
 import type { PathRaw, StrokeCap, StrokeJoin, StrokePathTessellationReason, StrokeStyle } from './path.ts';
 

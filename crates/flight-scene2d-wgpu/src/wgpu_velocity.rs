@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 velocity production records native wgpu passes over render-wgpu state
 //! Velocity-buffer production on the WebGPU backend (TS `wgpuVelocity.ts`), the mirror of the GL
 //! velocity pass. Velocity is tied to the draw, so production is per kind: the velocity pass walks

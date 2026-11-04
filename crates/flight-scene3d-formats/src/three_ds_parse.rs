@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16, read_three_ds_u32};
 use crate::three_ds_schema::*;
 use crate::three_ds_types::{ThreeDsChunkDispatch, ThreeDsDropTallyEntry, ThreeDsParseState};

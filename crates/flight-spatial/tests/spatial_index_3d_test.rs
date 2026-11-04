@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_spatial::contract::{DEFAULT_SPATIAL_CELL_SIZE_3D, initialize_spatial_index_3d};
 use flight_spatial::*;
 

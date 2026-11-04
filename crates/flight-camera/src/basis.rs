@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Camera basis and eye extraction from the view matrix (TS `basis.ts`).
 
 use flight_geometry::Vector3;

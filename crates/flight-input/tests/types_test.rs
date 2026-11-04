@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_input::contract::*;
 
 mod get_gamepad_axis_kind_string {

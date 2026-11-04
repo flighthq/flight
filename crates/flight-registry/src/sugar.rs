@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Rust-side sugar for the ordinal table: an inherent constructor that delegates to the free-function
 //! contract.
 

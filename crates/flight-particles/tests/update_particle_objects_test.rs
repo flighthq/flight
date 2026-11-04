@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow(test-default-call) ParticleEmitterConfigOptions is an input option bag with no create function
 use std::cell::RefCell;
 use std::sync::Arc;

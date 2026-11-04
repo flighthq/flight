@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::create_vector3;
 use flight_lighting::contract::*;
 

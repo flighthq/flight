@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_permissions::contract::*;
 
 mod get_permission_query_failure_reason_string {

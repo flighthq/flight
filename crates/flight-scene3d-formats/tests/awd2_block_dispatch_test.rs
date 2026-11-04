@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::{empty_document, handler};
 use flight_entity::{allocate_entity, get_entity_uid, has_entity_runtime};
 use flight_scene3d_formats::contract::*;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::*;
 
 /// Applies a median filter to `source`, writing into `out`.

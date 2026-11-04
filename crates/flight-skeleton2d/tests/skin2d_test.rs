@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_skeleton2d::contract::*;
 
 mod create_skin_2d {

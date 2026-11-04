@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::types::*;
 
 // flight-lint: allow(f64) measured 1e9 raycast domain needs double precision to distinguish origin from shape

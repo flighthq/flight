@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! scene3d-wgpu's private per-state record (TS `wgpuScene3DRuntime.ts`), held in render-wgpu's
 //! opaque `scene3d_runtime` slot (D5: state-owned, never module-global).
 

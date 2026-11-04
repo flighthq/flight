@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Built-in joint construction (TS `jointFactories.ts`). Each factory allocates the kind's entity
 //! and fills the shared base fields before its own.
 

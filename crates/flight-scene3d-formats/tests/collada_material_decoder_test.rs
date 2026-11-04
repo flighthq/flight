@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::Ref;
 use flight_materials::{Material3D, MaterialAlphaMode, StandardPbrMaterial};
 use flight_scene3d::Scene3DDocumentMaterial;

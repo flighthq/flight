@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 texture resolution dispatches the open native TextureVariant contract and glow names
 
 use std::any::Any;

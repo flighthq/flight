@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod audio_channel;
 mod audio_mixer;
 mod enable_audio_mixer_guards;

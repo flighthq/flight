@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: render-wgpu contracts carry native wgpu values and Rust callback/trait-object forms of the TS GPU* and closure types
 //! An app-level lease pool of render textures (TS `wgpuRenderTexturePool.ts`), locked to the first
 //! device that uses it.

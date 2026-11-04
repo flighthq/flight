@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 // flight-lint: allow-file(contract-vocabulary, enum-payload-named, file-structure, sugar-delegates) D12/D17 generic dispatch types, scalar-array unions, and required trait implementations form one backend-neutral contract module
 
 use std::collections::HashMap;

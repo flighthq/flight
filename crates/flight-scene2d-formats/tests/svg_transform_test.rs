@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::contract::{Matrix, create_transform2d};
 use flight_scene2d::contract::create_display_object;
 use flight_scene2d_formats::contract::*;

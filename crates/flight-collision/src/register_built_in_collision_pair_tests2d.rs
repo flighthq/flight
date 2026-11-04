@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::Arc;
 
 use crate::collision_support2d::register_collision_pair_test2d;

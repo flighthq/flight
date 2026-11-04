@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use crate::dragon_bones_bone_timeline_handler::dragon_bones_bone_timeline_handler;

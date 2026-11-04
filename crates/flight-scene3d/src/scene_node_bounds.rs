@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene_node::as_node3d;
 use flight_geometry::{Aabb, create_aabb, set_aabb, transform_aabb_by_matrix4, union_aabb};
 use flight_meshgeometry::contract::ensure_mesh_geometry_bounds;

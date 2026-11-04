@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 /// Open source method domain, including vendor-defined verbs without normalization.
 pub type NetMethod = String;
 

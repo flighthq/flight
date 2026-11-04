@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{Vector3, create_matrix4};
 use flight_node::contract::{NodeRef, set_node_local_matrix4};
 

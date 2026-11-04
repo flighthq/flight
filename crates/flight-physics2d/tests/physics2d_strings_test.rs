@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_physics2d::contract::*;
 
 mod get_physics2d_body_type_string {

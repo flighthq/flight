@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/get_path_point_at_distance.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { Vector2Like } from '@flighthq/geometry/contract';
 
 import { flattenPath } from './flattenPath.ts';

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(createGlState) source-only jsdom WebGL test helper is implemented in the native integration-test harness rather than exported from production
 //! Native glow-backed display-object renderers for the 2D scene graph (TS `@flighthq/scene2d-gl`).
 //! The GL path is thread-bound (D17): every renderer receives the backend-typed `GlRenderState`.

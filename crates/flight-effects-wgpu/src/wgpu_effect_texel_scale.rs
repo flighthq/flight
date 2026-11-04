@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Logical-versus-texel density of effect targets (TS `wgpuEffectTexelScale.ts`).
 
 use flight_render_wgpu::{WgpuRenderState, WgpuTextureRenderTarget, get_wgpu_active_render_pass};

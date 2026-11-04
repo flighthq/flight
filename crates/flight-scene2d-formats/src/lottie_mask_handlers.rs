@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, LazyLock};
 
 use crate::lottie_mask::lottie_additive_mask_handler;

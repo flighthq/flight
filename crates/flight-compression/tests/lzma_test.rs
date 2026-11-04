@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_compression::*;
 
 fn decode_base64(input: &str) -> Vec<u8> {

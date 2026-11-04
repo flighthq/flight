@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::contract::*;
 
 mod init_blend_mode_trait {

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::common::*;
 use crate::mock_host::MockHost;
 use flight_entity::Unknown;

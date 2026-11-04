@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmapfont_formats::*;
 
 fn kind(text: &str) -> Option<BitmapFontFormatKind> {

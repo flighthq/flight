@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/stroke_path.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { PathRaw, StrokeStyle } from './path.ts';
 import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 import type { StrokePathPieceGeometry } from './strokePathGeometry.ts';

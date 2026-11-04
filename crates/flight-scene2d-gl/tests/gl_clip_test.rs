@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_clip::{create_clip_region_from_contours, create_clip_region_from_rectangle};
 use flight_geometry::create_rectangle;
 use flight_node::NodeRef;

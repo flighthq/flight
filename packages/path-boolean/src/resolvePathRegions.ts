@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-boolean/src/resolve_path_regions.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { Path } from '@flighthq/path/contract';
 
 import type { PathBooleanFillRule, PathBooleanKernelRaw } from './martinezKernel.ts';

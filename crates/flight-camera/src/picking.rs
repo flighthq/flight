@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Screen-to-world rays and world-to-screen projection (TS `picking.ts`).
 
 use flight_geometry::{

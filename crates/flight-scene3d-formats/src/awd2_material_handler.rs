@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     read_awd_properties, read_awd_property_float32, read_awd_property_number,

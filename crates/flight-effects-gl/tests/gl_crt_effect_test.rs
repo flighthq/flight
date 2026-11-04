@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects::create_crt_effect;
 use flight_effects_gl::contract::{
     apply_crt_effect_to_gl, evaluate_glsl_scalar_expression, extract_glsl_expression,

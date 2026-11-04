@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::fmt;
 use std::sync::Arc;
 

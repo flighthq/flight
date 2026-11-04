@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{EmitterShape, ParticleEmitterConfig};
 
 const TWO_PI: f32 = std::f32::consts::PI * 2.0;

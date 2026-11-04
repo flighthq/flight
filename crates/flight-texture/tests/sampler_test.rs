@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_texture::contract::*;
 
 fn configured_sampler() -> Sampler {

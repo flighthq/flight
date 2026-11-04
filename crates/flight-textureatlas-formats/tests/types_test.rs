@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_textureatlas_formats::*;
 
 mod get_texture_atlas_frame_tag_direction_string {

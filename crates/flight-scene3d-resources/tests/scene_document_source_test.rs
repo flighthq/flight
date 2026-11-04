@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_buffer::{create_array_buffer_from_bytes, get_array_buffer_storage};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_gui::contract::*;
 use flight_interaction::contract::{InteractionSignalName, create_node_interactive_state_binding};
 use flight_scene_document::{

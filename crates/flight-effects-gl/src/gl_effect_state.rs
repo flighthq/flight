@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 effect passes own native glow targets, pass handles, texture names and Result diagnostics
 //! Opt-in post-process pipeline. The scene renders into the pipeline's (optionally MSAA / HDR)
 //! target between begin/end; end resolves MSAA, runs the agnostic effect list through the

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Entity, EntityRuntimeSlot, Ref, allocate_entity, throw_type_error};
 use flight_interaction::contract::{
     FocusEventData, HitArea, InteractionSignalName, KeyboardEventData, PointerEventData,

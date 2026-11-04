@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_dither_effect_to_gl {
     use flight_effects::create_dither_effect;
     use flight_effects_gl::contract::apply_dither_effect_to_gl;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::common::{empty_text_format, format_ref};
 use flight_geometry::create_rectangle;
 use flight_textlayout::contract::*;

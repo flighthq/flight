@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::support::*;
 use flight_geometry::{create_matrix4, create_transform3d};
 use flight_node::contract::get_node_transform3d;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::contract::create_standard_pbr_material;
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_scene3d_gl::contract::*;

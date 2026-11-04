@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_extension_shared::gltf_extension_materials;
 use crate::gltf_types::{GltfExtensionContext, GltfExtensionHandler};
 use flight_entity::Ref;

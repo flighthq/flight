@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 clip helpers drive wgpu scissor state over render-wgpu state
 //! Rectangle clips realized as nested scissor rectangles (TS `wgpuClipRectangle.ts`).
 

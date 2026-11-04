@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_halftone_effect_to_gl {
     use flight_effects::create_halftone_effect;
     use flight_effects_gl::contract::apply_halftone_effect_to_gl;

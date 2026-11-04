@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_skeleton2d_formats::contract::*;
 
 use crate::support::{minimal_spine_binary, spine_binary_with_bones};

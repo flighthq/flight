@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) D1: YAML subset numbers are JS Numbers
 use flight_scene_document::contract::*;
 

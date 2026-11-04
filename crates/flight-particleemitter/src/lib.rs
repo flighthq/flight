@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod emit_particle_burst_2d;
 mod emit_particle_burst_3d;
 mod particle_emitter;

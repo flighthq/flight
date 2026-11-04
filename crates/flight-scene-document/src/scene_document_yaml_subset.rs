@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The deliberately closed YAML subset underlying Flight document text (TS
 //! `sceneDocumentYamlSubset.ts`). It yields syntax values only; it does not claim or materialize a
 //! scene schema.

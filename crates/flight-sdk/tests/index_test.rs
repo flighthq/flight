@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // TS `sdk/src/index.test.ts` ("package exports"): each check that an export is a function becomes a
 // typed function binding, so the test also pins the export's signature.
 use flight_sdk::*;

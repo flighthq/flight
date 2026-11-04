@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: blit passes take host-supplied wgpu targets
 //! Blit, offset-blit and erase passes shared by the composite recipes (TS
 //! `wgpuEffectBlitShader.ts`).

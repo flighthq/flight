@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_particles::*;
 
 // flight-lint: allow(test-method-call) calls the free function particle_blend_mode_as_str, not the impl method; lint matches substring

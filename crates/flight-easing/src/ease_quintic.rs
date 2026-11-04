@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Ease-in-out quintic: slow start and end.
 pub fn ease_in_out_quintic(t: f32) -> f32 {
     if t < 0.5 {

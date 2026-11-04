@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Material family: the renderer reads any material through `&dyn Material`
 //! The built-in Toon (cel-shading) forward-lit renderer (TS `wgpuToonMeshMaterialRenderer.ts`): the
 //! diffuse N·L quantized into stepped bands over the base color, shadow-mapped like the classic and

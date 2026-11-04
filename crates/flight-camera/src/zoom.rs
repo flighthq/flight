@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Zoom-to-cursor for the 2D camera (TS `zoom.ts`).
 
 use flight_geometry::create_vector2;

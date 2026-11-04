@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_accessor::{
     GltfAccessorReader, gltf_accessor_fault, gltf_integer_field, read_gltf_accessor,
 };

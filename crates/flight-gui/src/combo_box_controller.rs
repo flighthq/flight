@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::button_controller::{ButtonController, get_button_controller_signals};
 use crate::gui_controller::*;
 use crate::list_controller::{ListController, get_list_controller_signals, set_visible_runtime};

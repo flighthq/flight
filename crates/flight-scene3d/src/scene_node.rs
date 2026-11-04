@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D16 open Node3D dispatch retains the original node and flat fields
 use crate::{NODE3D_KIND, NODE3D_TRAITS_KEY, Node3D, Node3DNarrow, Node3DRef, Node3DRuntime};
 use flight_entity::{Kind, Ref, allocate_entity};

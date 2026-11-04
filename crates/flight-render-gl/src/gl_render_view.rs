@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 render-view resources use Rc native context ownership and Result diagnostics
 
 use std::rc::Rc;

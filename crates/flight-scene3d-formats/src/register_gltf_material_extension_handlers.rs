@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_anisotropy::GLTF_ANISOTROPY_EXTENSION_HANDLER;
 use crate::gltf_clearcoat::GLTF_CLEARCOAT_EXTENSION_HANDLER;
 use crate::gltf_emissive_strength::GLTF_EMISSIVE_STRENGTH_EXTENSION_HANDLER;

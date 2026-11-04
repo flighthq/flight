@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_swf::{SWF_BITMAP_TAG_FAMILY, SWF_JPEG_BITMAP_HANDLER, SWF_LOSSLESS_BITMAP_HANDLER};

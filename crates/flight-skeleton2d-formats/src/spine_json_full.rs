@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_importdiagnostics::ImportDiagnostic;
 
 use crate::spine_json_handlers::register_all_spine_json_handlers;

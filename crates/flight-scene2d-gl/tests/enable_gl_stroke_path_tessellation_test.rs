@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::create_gl_state;

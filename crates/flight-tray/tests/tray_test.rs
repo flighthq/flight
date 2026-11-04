@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::future::{Future, ready};
 use std::pin::Pin;
 use std::sync::{Arc, Mutex, RwLock};

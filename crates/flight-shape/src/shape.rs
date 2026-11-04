@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The plain shape kind (TS `shape.ts`): creation, retained stream edits, and bounds integration.
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 // flight-lint: allow-file(contract-vocabulary) D16 open shape family: ShapeNode bounds and structural node dispatch on the shape command/bounds surface are contract dispatch, not arbitrary vocabulary types

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Mesh attachment deformation (TS `deformMeshAttachment2D.ts`).
 
 use crate::skeleton2d_guards::Skeleton2DGuardState;

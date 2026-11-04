@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene_node::initialize_node3d;
 use crate::{MESH_KIND, MeshDeformer, Node3D, Node3DFields, Skin, publish_node3d};
 use flight_entity::{Ref, Unknown, allocate_entity};

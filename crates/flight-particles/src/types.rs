@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::EntityRuntimeSlot;
 use flight_math::{RandomSource, create_random_source};
 use flight_signals::Signal;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_swf::SWF_JPEG_BITMAP_HANDLER;
 
 #[test]

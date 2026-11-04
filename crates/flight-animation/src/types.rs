@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! flight-compiler: data-union StateRef
 
 use std::sync::{Arc, RwLock};

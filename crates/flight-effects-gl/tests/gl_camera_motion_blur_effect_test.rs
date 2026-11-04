@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_camera_motion_blur_effect_to_gl {
     use flight_effects::create_camera_motion_blur_effect;
     use flight_effects_gl::contract::apply_camera_motion_blur_effect_to_gl;

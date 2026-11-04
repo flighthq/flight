@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The debug umbrella (TS `@flighthq/debug`): a registry of diagnostic subsystems, one debug session
 //! that installs a dev sink, raises log levels and runs subsystem guard enablers, and debug-gated
 //! timing spans. All state is caller-owned (D5): a `DebugState` for the registry and session, and

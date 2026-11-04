@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_entity::allocate_entity;
 

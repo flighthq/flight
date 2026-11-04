@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Joint reaction forces (TS `jointReactions.ts`).
 
 use flight_entity::allocate_entity;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::spine_json_section_handlers::register_spine_json_section_handlers;
 use crate::spine_json_timeline_handlers::register_spine_json_timeline_handlers;
 use crate::types::SpineJsonRegistry;

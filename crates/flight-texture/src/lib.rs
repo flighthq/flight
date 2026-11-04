@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(advanceVideoTexture, cloneVideoTexture, copyVideoTexture, createVideoTexture, destroyVideoTexture, getVideoTextureHeight, getVideoTextureInverseUvMatrix, getVideoTextureUvMatrix, getVideoTextureWidth, initializeVideoImageResource, isVideoTextureFrameReady, resetVideoTextureFrame, setVideoTextureSource) final ownership moves video textures to flight-video
 // flight-lint: conform-skip(createRenderTexture, initializeRenderTextureTarget) final ownership moves render textures to flight-render
 

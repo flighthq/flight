@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use super::*;
 
 fn expect_coplanar_along(vertices: &[f32], count: usize, axis: usize, value: f32) {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::mtl_parse::parse_obj_material_library;
 use crate::obj_schema::ObjMaterial;
 use crate::obj_types::{OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE};

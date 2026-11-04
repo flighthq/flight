@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene3d_formats::contract::*;
 
 pub(crate) fn build_md2_header(skins: i32, triangles: i32, frames: i32) -> Vec<u8> {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::material_validation::*;
 use flight_materials::pbr_materials::create_standard_pbr_material_properties;
 

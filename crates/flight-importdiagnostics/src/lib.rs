@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod import_diagnostic_collector;
 mod import_diagnostic_text;
 mod types;

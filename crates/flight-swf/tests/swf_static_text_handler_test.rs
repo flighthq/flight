@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_swf::*;
 
 mod swf_static_text_handler {

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::collision_support2d::*;
 use crate::gjk2d::*;
 use crate::types::*;

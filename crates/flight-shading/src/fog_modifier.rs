@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::allocate_entity;
 
 use crate::contract::{FogModifierMode, MODIFIER_SLOT_EFFECT, ModifierFields, initialize_modifier};

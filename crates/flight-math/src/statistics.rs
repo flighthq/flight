@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+
+//! flight-compiler: target-native
+
 use flight_entity::throw_range_error;
 
 // flight-lint: allow(f64) normalization must represent the full finite double input range

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod compress;
 mod deflate;
 mod deflate_format;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;

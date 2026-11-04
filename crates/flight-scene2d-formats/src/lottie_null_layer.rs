@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::LottieLayerContext;
 
 /// Handles a Lottie null layer. The document walk has already applied the layer's transform,

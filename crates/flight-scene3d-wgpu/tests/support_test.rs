@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The source's `wgpuScene3DTestHelper.test.ts`, ported against the real noop device in
 //! `support.rs`: the source's fake re-implemented WebGPU's synchronous queue and pass validation,
 //! which the real device performs itself, so each rejection is asserted as the device's validation

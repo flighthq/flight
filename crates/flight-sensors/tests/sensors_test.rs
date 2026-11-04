@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::future::Future;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};

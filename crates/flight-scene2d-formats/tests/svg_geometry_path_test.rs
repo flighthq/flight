@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_path::PathWinding;
 use flight_scene2d_formats::contract::*;
 use flight_xml::{XmlElement, parse_xml_document};

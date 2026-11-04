@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The debug contract types (TS `types/src/Debug.ts`) and the caller-owned debug state (D5).
 
 use std::sync::Arc;

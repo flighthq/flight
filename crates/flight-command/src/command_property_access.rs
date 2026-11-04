@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Explicit-context property access for `SetNodePropertyCommand` (Principal db87e24b).
 //!
 //! The TS source reads and writes node fields through dynamic `NodeAny[property]`. Native D16 nodes

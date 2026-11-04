@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Shape-owned declarations (TS `Shape.ts`, `ShapeCommand.ts`, `ShapeBounds.ts`, `MorphShape.ts`,
 //! `Scale9Shape.ts`): the heterogeneous retained command stream, the open shape node families and
 //! their typed kind data, paint/morph bindings, and the caller-owned bounds registry state.

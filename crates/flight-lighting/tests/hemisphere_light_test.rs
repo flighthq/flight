@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_lighting::contract::*;
 
 mod clone_hemisphere_light {

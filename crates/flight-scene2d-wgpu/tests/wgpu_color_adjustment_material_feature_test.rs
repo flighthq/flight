@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render::are_color_adjustments_enabled;
 use flight_render_wgpu::*;
 use flight_scene2d_wgpu::contract::*;

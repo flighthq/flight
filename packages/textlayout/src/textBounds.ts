@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/src/text_bounds.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { Rectangle } from '@flighthq/geometry/contract';
 
 import { TEXT_LAYOUT_GUTTER } from './textLayout.ts';

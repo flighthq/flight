@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_textlayout::contract::*;
 
 mod get_text_line_break_index {

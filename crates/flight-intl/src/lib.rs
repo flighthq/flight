@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Locale-aware formatting seam: explicit locale input, ordered Intl option records, a bounded
 //! caller-owned formatter cache, and the format/compare/select wrappers. Every platform `Intl.*`
 //! operation is supplied by the explicit host capability; no ambient locale, OS or clock access

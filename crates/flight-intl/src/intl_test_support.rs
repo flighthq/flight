@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Inline-sugar test host: trivial deterministic callbacks, no locale data.
 
 use std::sync::Arc;

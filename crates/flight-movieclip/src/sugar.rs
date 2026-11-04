@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 sugar for the MovieClip public-lane receiver: every method delegates to its free function.
 
 use flight_entity::Ref;

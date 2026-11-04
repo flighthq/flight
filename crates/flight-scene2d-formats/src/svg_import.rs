@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_importdiagnostics::contract::ImportDiagnostic;
 use flight_scene2d::contract::DisplayObject;

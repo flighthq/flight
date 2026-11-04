@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_audio::AudioResourceReference;
 use flight_image::ImageResourceReference;
 use flight_resource::ResourceResolutionState;

@@ -1,6 +1,3 @@
-// Generated from crates/flight-path/src/explain_path_morph_creation.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { PathMorphCreationExplanation, PathRaw } from './path.ts';
 import { buildPathMorph } from './pathMorphGeometry.ts';
 

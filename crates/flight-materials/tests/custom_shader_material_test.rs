@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::custom_shader_material::*;
 use flight_materials::*;
 

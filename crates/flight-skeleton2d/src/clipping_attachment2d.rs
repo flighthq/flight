@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Clipping polygon and draw-order range (TS `clippingAttachment2D.ts`).
 
 use crate::skeleton2d_guards::Skeleton2DGuardState;

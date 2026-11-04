@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_registry::*;
 
 mod clone_ordinal_table {

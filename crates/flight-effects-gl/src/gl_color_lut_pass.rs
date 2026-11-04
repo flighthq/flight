@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 color passes accept native glow targets, texture names and Result diagnostics
 //! Generic pointwise color-LUT pass — the single fold-in realization for the whole LUT-tier
 //! Adjustment family. A run of consecutive pointwise adjustments containing any nonlinear member

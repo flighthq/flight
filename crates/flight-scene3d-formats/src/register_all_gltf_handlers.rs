@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_types::{GltfCoreFeatureHandler, GltfExtensionHandler};
 use crate::register_gltf_animation_handlers::register_gltf_animation_handlers;
 use crate::register_gltf_camera_handlers::register_gltf_camera_handlers;

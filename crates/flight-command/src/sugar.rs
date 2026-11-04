@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 sugar for a shared command history: thin delegates over the free-function contract.
 
 use flight_entity::Ref;

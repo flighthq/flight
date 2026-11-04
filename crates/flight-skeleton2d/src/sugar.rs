@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D18 sugar: thin receiver methods delegating to the free-function contract.
 
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]

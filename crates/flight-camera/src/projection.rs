@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Projection descriptors: allocation, projection-matrix composition and union narrowing (TS
 //! `projection.ts`).
 

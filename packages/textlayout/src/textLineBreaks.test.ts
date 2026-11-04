@@ -1,6 +1,3 @@
-// Generated from crates/flight-textlayout/tests/text_line_breaks_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { getTextLineBreakIndex, getTextLineBreaks } from './contract.ts';

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{Matrix, Rectangle, inverse_matrix, multiply_matrix};
 use flight_node::{NodeRef, get_node_local_matrix};
 

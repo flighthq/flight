@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Rust method sugar over the free functions (D18): inherent convenience methods and the `*Methods`
 //! traits on the shared handles. TypeScript keeps the free functions only.
 //! flight-compiler: rust-only

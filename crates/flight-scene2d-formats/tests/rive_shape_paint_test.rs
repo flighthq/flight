@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) Shape command tokens and canonical path-length measurements use the approved D1 f64 lane
 
 use flight_entity::Ref;

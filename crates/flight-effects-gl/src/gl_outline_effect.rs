@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Outline: Sobel edge detection on luminance; where the gradient magnitude exceeds `threshold`, mix
 //! the pixel toward the outline color by `thickness`. Color arrives packed RGBA, unpacked to 0..1 here.

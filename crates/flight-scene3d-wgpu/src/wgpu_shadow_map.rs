@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the shadow pass records native wgpu values
 //! The directional shadow map (TS `wgpuShadowMap.ts`), the WGSL mirror of scene3d-gl's shadow map:
 //! a depth-only pass from the light's orthographic camera into a sampleable depth32float map, which

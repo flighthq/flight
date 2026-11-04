@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md2_schema::MD2_FRAME_FPS;
 use crate::md2_types::{Md2Frame, Md2SectionHandler};
 use crate::stl_features::is_stl_whitespace;

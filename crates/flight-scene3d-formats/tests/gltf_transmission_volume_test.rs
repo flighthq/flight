@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_extension_test_helper::*;
 use flight_materials::{ExtendedPbrMaterial, PbrExtension, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND};
 use flight_scene3d_formats::contract::*;

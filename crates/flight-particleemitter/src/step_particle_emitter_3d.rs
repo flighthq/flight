@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_particles::contract::{apply_particle_collisions, apply_particle_forces};
 use flight_particles::{

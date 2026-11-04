@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Kind, allocate_entity};
 
 use crate::{Material, MaterialFields};

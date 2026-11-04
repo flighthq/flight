@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! D9e string tables for the Physics3D ABI string unions: the strings match TS exactly.
 
 use crate::types::*;

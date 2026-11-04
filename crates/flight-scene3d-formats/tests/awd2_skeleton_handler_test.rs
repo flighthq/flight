@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::*;
 use flight_animation::sample_animation_track;
 use flight_compression::{

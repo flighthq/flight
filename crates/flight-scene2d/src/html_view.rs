@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Host-element views (TS `htmlView.ts`). The element is an opaque host value; scene2d only sizes
 //! the node.
 

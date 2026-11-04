@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Native retained-shape JSON (TS `shapeJson.ts`).
 // flight-lint: allow-file(f64) D1: retained ShapeCommandToken scalars and JSON numbers use the canonical f64 shape/path lane; Matrix remains f32
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! XML front-end of the Tiled codec: TMX maps and standalone TSX tilesets
 //! (TS `tiledXmlParse.ts`).
 

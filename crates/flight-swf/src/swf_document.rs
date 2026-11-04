@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(f64) SWF timelines and clip contours bridge the canonical f64 cadence and path lanes
 
 use std::collections::{HashMap, HashSet};

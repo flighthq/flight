@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Scene2D scale-and-align fit math over a structural fit context (TS `stageFit.ts`).
 
 // flight-lint: allow-file(contract-vocabulary) the structural fit context is the node-owned Viewport/Scene2DFitContext contract, not a foreign family

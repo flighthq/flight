@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Joint resolution as data (TS `explainPhysics2DJoints.ts`).
 
 use crate::types::*;

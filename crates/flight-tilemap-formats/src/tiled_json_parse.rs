@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! JSON front-end of the Tiled codec: TMJ maps and standalone TSJ tilesets
 //! (TS `tiledJsonParse.ts`).
 

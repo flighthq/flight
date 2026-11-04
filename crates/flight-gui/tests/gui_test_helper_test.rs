@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_gui::contract::*;
 use flight_interaction::contract::{InteractionSignalName, enable_interaction_signals};
 use flight_scene2d::Node2DRef;

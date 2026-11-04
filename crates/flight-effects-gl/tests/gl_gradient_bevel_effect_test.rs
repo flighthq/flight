@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod apply_gradient_bevel_effect_to_gl {
     use flight_effects::create_gradient_bevel_effect;
     use flight_effects_gl::contract::apply_gradient_bevel_effect_to_gl;

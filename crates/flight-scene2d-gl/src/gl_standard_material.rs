@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 material renderers implement render-gl's open native trait contract
 
 use flight_materials::{Material2D, STANDARD_MATERIAL_KIND};

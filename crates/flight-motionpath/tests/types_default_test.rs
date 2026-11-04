@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! flight-compiler: rust-only — asserts the Rust `Default` bootstrap state of an uninitialized marker (a TS `allocateEntity` has no field values until its initializer runs) and the Rust-only numeric entity id.
 
 use std::sync::{Arc, RwLock};

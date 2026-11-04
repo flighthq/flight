@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render::ShapeRasterizer;
 use flight_render_gl::GlRenderState;
 

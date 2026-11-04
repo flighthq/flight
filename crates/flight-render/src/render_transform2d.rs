@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_geometry::{copy_matrix, multiply_matrix};
 use flight_node::{get_node_local_matrix, get_node_local_transform_revision};
 

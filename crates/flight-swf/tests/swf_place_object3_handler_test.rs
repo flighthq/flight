@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, RwLock};
 
 use crate::support::{create_test_parse_state, join_bytes, reader, uint16, uint32};

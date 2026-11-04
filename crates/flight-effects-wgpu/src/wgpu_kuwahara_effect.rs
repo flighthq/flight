@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Kuwahara: edge-preserving smoothing; emits the lowest-variance mean of four overlapping quadrants over a small radius. (TS `wgpuKuwaharaEffect.ts`).
 

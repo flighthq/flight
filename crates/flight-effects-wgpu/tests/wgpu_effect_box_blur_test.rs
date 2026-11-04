@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_effects_wgpu::contract::*;
 
 use crate::support::*;

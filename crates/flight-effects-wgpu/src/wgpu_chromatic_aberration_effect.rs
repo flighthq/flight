@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Chromatic aberration: samples the R/G/B channels at progressively larger offsets so colors fringe apart. When radial, the offset scales with distance from the optical center; otherwise it is a uniform horizontal split. (TS `wgpuChromaticAberrationEffect.ts`).
 

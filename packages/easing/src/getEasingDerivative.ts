@@ -1,6 +1,3 @@
-// Generated from crates/flight-easing/src/get_easing_derivative.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import type { EasingFunction } from './easingTypes.ts';
 
 /**

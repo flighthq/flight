@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Tessellation status and blocker reports (TS `explainShapeTessellation.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_camera::contract::{
     OrthographicProjection, Projection, create_orthographic_projection,
     create_perspective_projection,

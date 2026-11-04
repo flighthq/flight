@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_tilemap_formats::{format_tiled_color, parse_tiled_color};
 
 mod format_tiled_color {

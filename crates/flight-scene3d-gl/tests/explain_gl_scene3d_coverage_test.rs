@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::STANDARD_MATERIAL_KIND;
 use flight_render::{
     CatalogEntry, CatalogRegistration, RenderRegistryTable, SceneCoverage, SceneCoverageCatalog,

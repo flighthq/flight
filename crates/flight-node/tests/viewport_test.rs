@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_node::contract::*;
 
 // D23 (B): a viewport is created at the zero rect, then assigned (Principal 21f7557f).

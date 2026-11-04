@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 
 use crate::emitter::signal_data_cancelled;

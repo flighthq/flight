@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets and pipelines
 //! Bitmap displacement (TS `wgpuBitmapDisplacementEffect.ts`): a map texture's channels offset the
 //! source lookup. A map that cannot resolve copies the input through unchanged.

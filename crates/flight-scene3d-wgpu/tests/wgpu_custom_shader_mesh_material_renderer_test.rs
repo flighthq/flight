@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

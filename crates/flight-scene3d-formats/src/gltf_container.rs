@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_json::{GltfJsonDocument, decode_gltf_json, empty_gltf_json_metadata};
 use crate::gltf_source::GltfSource;
 use flight_buffer::{ArrayBufferView, ArrayBufferViewKind, get_array_buffer_storage};

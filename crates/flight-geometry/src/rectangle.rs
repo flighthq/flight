@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: export-name contains_rectangle_point_xy containsRectanglePointXY
 
 use crate::Vector2;

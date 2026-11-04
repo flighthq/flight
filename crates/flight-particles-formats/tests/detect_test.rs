@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_particles_formats::contract::*;
 
 const PLIST_SNIPPET: &str = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<plist version=\"1.0\">\n<dict>\n  <key>maxParticles</key><integer>200</integer>\n</dict>\n</plist>";

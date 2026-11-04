@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DependencySource } from './generate-rust-package-exports.ts';
+import type { DependencySource, ResolvedExternalContractExports } from './generate-rust-package-exports.ts';
 import {
   collectCompanionFileNames,
   compilerAliasArguments,
@@ -108,15 +108,19 @@ try {
   const modules = rustSources
     .map((rustSource) => loadModule(rustSource, aliasSources))
     .filter((module): module is PackageModule => module !== null);
-  const companions = loadCompanions(modules);
+  const needsGeneratedSymbols = rootMode === 'generate' || modules.some((module) => module.mode === 'generate');
+  const companions = needsGeneratedSymbols ? loadCompanions(modules) : [];
   const symbolModules = [...modules, ...companions];
-  const symbols = collectExportSymbols(symbolModules);
-  const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
-  const externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
+  const symbols = needsGeneratedSymbols ? collectExportSymbols(symbolModules) : new Map<string, SymbolOwner>();
+  let externalExports: ResolvedExternalContractExports = { output: '', symbols: new Map() };
+  if (rootMode === 'generate') {
+    const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
+    externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
+  }
   const publicSymbols = new Map([...symbols, ...externalExports.symbols]);
   // Intra-package imports also resolve crate-internal exports, owner-qualified through each module's Rust
   // paths; the public lanes keep using `symbols`.
-  const crateOwners = collectCrateExportSymbols(symbolModules);
+  const crateOwners = needsGeneratedSymbols ? collectCrateExportSymbols(symbolModules) : new Map();
   const generatedFiles: string[] = [];
 
   for (const module of modules) {

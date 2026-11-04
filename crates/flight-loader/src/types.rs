@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::enums::{
     ResourceLoadReportStatus, ResourceLoaderErrorPolicy, ResourceLoaderRetryBackoff,
 };

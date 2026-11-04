@@ -1,6 +1,3 @@
-// Generated from crates/flight-math/tests/next_power_of_two_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { describe, expect, it } from 'vitest';
 
 import { isPowerOfTwo, nextMultipleOf, nextPowerOfTwo, previousPowerOfTwo } from './contract.ts';

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::{Matrix4, Quaternion, Vector3, create_quaternion, create_vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 

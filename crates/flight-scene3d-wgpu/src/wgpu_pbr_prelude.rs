@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the module source builders take render-wgpu's skinning and color-adjustment seams
 //! The shared PBR prelude (TS `wgpuPbrPrelude.ts`): the WGSL Cook-Torrance uber-shader for the
 //! StandardPbr forward-lit path and every PBR-extension variant, specialized per material by a

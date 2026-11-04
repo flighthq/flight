@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the PBR bind seams take native wgpu pipelines and the open Material3D family
 //! The built-in StandardPbr forward-lit mesh-material renderer (TS
 //! `wgpuStandardPbrMeshMaterialRenderer.ts`) and the shared standard-block helpers every PBR

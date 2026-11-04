@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Installs the standard shape geometry into a caller-owned bounds registry (TS
 //! `registerDefaultShapeBoundsCommands.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32

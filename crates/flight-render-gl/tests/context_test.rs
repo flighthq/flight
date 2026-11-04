@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 mod create_gl_context {
     use std::sync::Arc;
 

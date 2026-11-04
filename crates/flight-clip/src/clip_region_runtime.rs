@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: nullable-options
 //! flight-compiler: entity-runtime-state ClipRegionState.state
 

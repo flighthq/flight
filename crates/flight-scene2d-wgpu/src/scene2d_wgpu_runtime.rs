@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Access to this package's per-state record (the source's module WeakMaps keyed by state), held in
 //! render-wgpu's opaque `scene2d_runtime` slot (D5).
 

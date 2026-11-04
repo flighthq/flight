@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_camera::contract::*;
 use flight_geometry::{create_matrix4, set_matrix4};
 

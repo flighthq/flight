@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Draw-order animation targets and their binder (TS `skeleton2dDrawOrderTarget.ts`).
 
 use std::sync::{Arc, RwLock};

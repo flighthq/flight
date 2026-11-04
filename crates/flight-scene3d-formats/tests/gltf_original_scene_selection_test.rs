@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::gltf_original_test_helper::*;
 use flight_entity::Unknown;
 use flight_scene3d::is_mesh;

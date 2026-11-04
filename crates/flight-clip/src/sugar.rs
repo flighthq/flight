@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+//! flight-compiler: rust-only
+
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]
 use flight_entity::Ref;
 use flight_geometry::{Matrix, Rectangle};

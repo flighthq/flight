@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::contract::*;
 use flight_host::HostImageSource;
 use std::sync::Arc;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::BLINN_PHONG_MATERIAL_KIND;
 use flight_requirement::{Requirement, RequirementFacet};
 use flight_scene3d_formats::contract::*;

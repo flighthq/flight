@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! The camera-control contract types: trauma-based shake state and offset, orbital and fly
 //! controller entities with their plain option records (TS `CameraShake.ts`,
 //! `FlyCameraController.ts`, `OrbitCameraController.ts`).

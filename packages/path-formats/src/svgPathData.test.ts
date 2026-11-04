@@ -1,6 +1,3 @@
-// Generated from crates/flight-path-formats/tests/svg_path_data_test.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { PathCommand, createPath, forEachPathSegment } from '@flighthq/path/contract';
 import type { Path, PathSegment } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
@@ -15,22 +12,7 @@ function collectSegments(path: Readonly<Path>): PathSegment[] {
 }
 
 function kinds(segments: Readonly<PathSegment[]>): string[] {
-  return segments.map((segment) =>
-    (() => {
-      const matchValue = segment;
-      if (matchValue.kind === 'moveTo') {
-        return 'moveTo';
-      } else if (matchValue.kind === 'lineTo') {
-        return 'lineTo';
-      } else if (matchValue.kind === 'quadraticCurveTo') {
-        return 'quadraticCurveTo';
-      } else if (matchValue.kind === 'cubicCurveTo') {
-        return 'cubicCurveTo';
-      } else if (matchValue.kind === 'close') {
-        return 'close';
-      }
-    })(),
-  );
+  return segments.map((segment) => segment.kind);
 }
 
 function values(segment: Readonly<PathSegment>): number[] {
@@ -57,6 +39,7 @@ function values(segment: Readonly<PathSegment>): number[] {
     } else if (matchValue.kind === 'close') {
       return [];
     }
+    throw new Error('unknown path segment');
   })();
 }
 
@@ -245,47 +228,56 @@ describe('formatSvgPathData', () => {
 describe('parseSvgPathData', () => {
   it('parses absolute moveto and lineto', () => {
     expect(parsed('M0 0 L10 10')).toEqual([
-      { x: 0.0, y: 0.0 },
-      { x: 10.0, y: 10.0 },
+      { kind: 'moveTo', x: 0.0, y: 0.0 },
+      { kind: 'lineTo', x: 10.0, y: 10.0 },
     ]);
   });
   it('treats repeated moveto operands as implicit lineto', () => {
     expect(parsed('M0 0 1 1 2 2')).toEqual([
-      { x: 0.0, y: 0.0 },
-      { x: 1.0, y: 1.0 },
-      { x: 2.0, y: 2.0 },
+      { kind: 'moveTo', x: 0.0, y: 0.0 },
+      { kind: 'lineTo', x: 1.0, y: 1.0 },
+      { kind: 'lineTo', x: 2.0, y: 2.0 },
     ]);
   });
   it('resolves relative commands against the current point', () => {
     expect(parsed('m10 10 l5 5 l-5 0')).toEqual([
-      { x: 10.0, y: 10.0 },
-      { x: 15.0, y: 15.0 },
-      { x: 10.0, y: 15.0 },
+      { kind: 'moveTo', x: 10.0, y: 10.0 },
+      { kind: 'lineTo', x: 15.0, y: 15.0 },
+      { kind: 'lineTo', x: 10.0, y: 15.0 },
     ]);
   });
   it('treats repeated relative moveto operands as relative lineto', () => {
     expect(parsed('m1 1 2 2')).toEqual([
-      { x: 1.0, y: 1.0 },
-      { x: 3.0, y: 3.0 },
+      { kind: 'moveTo', x: 1.0, y: 1.0 },
+      { kind: 'lineTo', x: 3.0, y: 3.0 },
     ]);
   });
   it('maps horizontal and vertical lineto absolute and relative', () => {
     expect(parsed('M0 0 H10 V20 h5 v-5')).toEqual([
-      { x: 0.0, y: 0.0 },
-      { x: 10.0, y: 0.0 },
-      { x: 10.0, y: 20.0 },
-      { x: 15.0, y: 20.0 },
-      { x: 15.0, y: 15.0 },
+      { kind: 'moveTo', x: 0.0, y: 0.0 },
+      { kind: 'lineTo', x: 10.0, y: 0.0 },
+      { kind: 'lineTo', x: 10.0, y: 20.0 },
+      { kind: 'lineTo', x: 15.0, y: 20.0 },
+      { kind: 'lineTo', x: 15.0, y: 15.0 },
     ]);
   });
   it('parses cubic curves', () => {
     expect(parsed('M0 0 C1 2 3 4 5 6')).toEqual([
-      { x: 0.0, y: 0.0 },
-      { controlX1: 1.0, controlY1: 2.0, controlX2: 3.0, controlY2: 4.0, x: 5.0, y: 6.0 },
+      { kind: 'moveTo', x: 0.0, y: 0.0 },
+      {
+        kind: 'cubicCurveTo',
+        controlX1: 1.0,
+        controlY1: 2.0,
+        controlX2: 3.0,
+        controlY2: 4.0,
+        x: 5.0,
+        y: 6.0,
+      },
     ]);
   });
   it('reflects the previous cubic control for the s shorthand', () => {
     expect(parsed('M0 0 C1 2 3 4 5 6 S3 3 4 4')[2]).toEqual({
+      kind: 'cubicCurveTo',
       controlX1: 7.0,
       controlY1: 8.0,
       controlX2: 3.0,
@@ -296,6 +288,7 @@ describe('parseSvgPathData', () => {
   });
   it('uses the current point as the s control when the previous command was not a cubic', () => {
     expect(parsed('M0 0 L2 2 S3 3 4 4')[2]).toEqual({
+      kind: 'cubicCurveTo',
       controlX1: 2.0,
       controlY1: 2.0,
       controlX2: 3.0,
@@ -306,8 +299,8 @@ describe('parseSvgPathData', () => {
   });
   it('parses quadratic curves', () => {
     expect(parsed('M0 0 Q1 1 2 2')).toEqual([
-      { x: 0.0, y: 0.0 },
-      { controlX: 1.0, controlY: 1.0, x: 2.0, y: 2.0 },
+      { kind: 'moveTo', x: 0.0, y: 0.0 },
+      { kind: 'quadraticCurveTo', controlX: 1.0, controlY: 1.0, x: 2.0, y: 2.0 },
     ]);
   });
   it('preserves the quadratic command numeric value in the parsed path', () => {
@@ -316,10 +309,22 @@ describe('parseSvgPathData', () => {
     expect(path.commands).toEqual([PathCommand.MOVE_TO & 0xff, 3]);
   });
   it('reflects the previous quadratic control for the t shorthand', () => {
-    expect(parsed('M0 0 Q1 1 2 2 T4 4')[2]).toEqual({ controlX: 3.0, controlY: 3.0, x: 4.0, y: 4.0 });
+    expect(parsed('M0 0 Q1 1 2 2 T4 4')[2]).toEqual({
+      kind: 'quadraticCurveTo',
+      controlX: 3.0,
+      controlY: 3.0,
+      x: 4.0,
+      y: 4.0,
+    });
   });
   it('uses the current point as the t control when the previous command was not a quadratic', () => {
-    expect(parsed('M0 0 L2 2 T4 4')[2]).toEqual({ controlX: 2.0, controlY: 2.0, x: 4.0, y: 4.0 });
+    expect(parsed('M0 0 L2 2 T4 4')[2]).toEqual({
+      kind: 'quadraticCurveTo',
+      controlX: 2.0,
+      controlY: 2.0,
+      x: 4.0,
+      y: 4.0,
+    });
   });
   it('appends an arc as cubic segments ending at the arc endpoint', () => {
     const segments = parsed('M0 0 A5 5 0 0 1 10 0');
@@ -335,36 +340,36 @@ describe('parseSvgPathData', () => {
   it('closes contours and returns the current point to the subpath start', () => {
     const segments = parsed('M0 0 L10 0 L10 10 Z L5 5');
     expect(kinds(segments)).toEqual(['moveTo', 'lineTo', 'lineTo', 'close', 'lineTo']);
-    expect(segments[4]).toEqual({ x: 5.0, y: 5.0 });
-    expect(parsed('M1 1 L9 9 z l1 0')[3]).toEqual({ x: 2.0, y: 1.0 });
+    expect(segments[4]).toEqual({ kind: 'lineTo', x: 5.0, y: 5.0 });
+    expect(parsed('M1 1 L9 9 z l1 0')[3]).toEqual({ kind: 'lineTo', x: 2.0, y: 1.0 });
   });
   it('tokenizes numbers with no space before a negative sign', () => {
     expect(parsed('M0 0L10-5')).toEqual([
-      { x: 0.0, y: 0.0 },
-      { x: 10.0, y: -5.0 },
+      { kind: 'moveTo', x: 0.0, y: 0.0 },
+      { kind: 'lineTo', x: 10.0, y: -5.0 },
     ]);
   });
   it('tokenizes scientific notation and comma separators', () => {
     expect(parsed('M1e1,1e1 L2E1,-1.5e1')).toEqual([
-      { x: 10.0, y: 10.0 },
-      { x: 20.0, y: -15.0 },
+      { kind: 'moveTo', x: 10.0, y: 10.0 },
+      { kind: 'lineTo', x: 20.0, y: -15.0 },
     ]);
   });
   it('tokenizes leading dots packed decimals explicit plus signs and trailing dots', () => {
     expect(parsed('M.5.5 L+2 +3 L10. 20.')).toEqual([
-      { x: 0.5, y: 0.5 },
-      { x: 2.0, y: 3.0 },
-      { x: 10.0, y: 20.0 },
+      { kind: 'moveTo', x: 0.5, y: 0.5 },
+      { kind: 'lineTo', x: 2.0, y: 3.0 },
+      { kind: 'lineTo', x: 10.0, y: 20.0 },
     ]);
   });
   it('tokenizes a trailing dot before an exponent and every separator', () => {
-    expect(parsed('M1.e1\t\n\r\u{c}2e+1')).toEqual([{ x: 10.0, y: 20.0 }]);
+    expect(parsed('M1.e1\t\n\r\u{c}2e+1')).toEqual([{ kind: 'moveTo', x: 10.0, y: 20.0 }]);
   });
   it('rejects a dangling exponent after backtracking the numeric token', () => {
     expect(parseSvgPathData('M1e 0') === undefined).toBe(true);
   });
   it('accepts large finite coordinates at both signs', () => {
-    expect(parsed('M1e308 -1e308')).toEqual([{ x: 1e308, y: -1e308 }]);
+    expect(parsed('M1e308 -1e308')).toEqual([{ kind: 'moveTo', x: 1e308, y: -1e308 }]);
   });
   it('accepts an underflowing token as signed zero', () => {
     const segments = parsed('M1e-400 -1e-400');
@@ -374,7 +379,7 @@ describe('parseSvgPathData', () => {
     }
     const x = $letElse.x;
     const y = $letElse.y;
-    expect([x, y]).toEqual([0.0, 0.0]);
+    expect(x === 0.0 && y === 0.0).toBe(true);
     expect((x > 0 || Object.is(x, 0)) && (y < 0 || Object.is(y, -0))).toBe(true);
   });
   it('returns null when a numeric token overflows at either sign', () => {

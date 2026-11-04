@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::panic::{AssertUnwindSafe, resume_unwind};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};

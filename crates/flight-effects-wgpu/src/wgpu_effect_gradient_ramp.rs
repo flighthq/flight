@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the cached ramp is a host-supplied wgpu texture
 //! Cached 256-entry gradient ramp textures for the gradient recipes (TS
 //! `wgpuEffectGradientRamp.ts`).

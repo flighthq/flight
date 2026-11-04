@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The built-in classic Phong forward-lit mesh-material renderer (TS
 //! `wgpuPhongMeshMaterialRenderer.ts`), the WGSL mirror of scene3d-gl's Phong renderer: Lambert diffuse plus a reflection-vector
 //! specular lobe; the material binds its linear diffuse and specular colors and shininess.

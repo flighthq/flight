@@ -1,6 +1,3 @@
-// Generated from crates/flight-motionpath/src/motion_path.rs by flight-compiler.
-// Rust is authoritative; run `npm run generate` after changing it.
-
 import { allocateEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
 import type { Vector2Like } from '@flighthq/geometry/contract';

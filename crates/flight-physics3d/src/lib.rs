@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Portable three-dimensional rigid-body dynamics and constraint solving.
 
 mod broadphase;

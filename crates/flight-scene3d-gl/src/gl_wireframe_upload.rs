@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 wireframe uploads expose glow native handles over thread-bound render-gl state
 
 use flight_entity::{get_entity_id, throw_error};

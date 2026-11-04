@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::animation_advance::advance_animation_players;
 use crate::types::*;
 

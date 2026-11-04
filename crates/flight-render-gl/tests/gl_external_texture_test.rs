@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(test-default-call) Rust allocation scaffolding has no source constructor.
 mod create_external_gl_texture {
     use crate::gl_test_helper::{make_external_options, make_state};

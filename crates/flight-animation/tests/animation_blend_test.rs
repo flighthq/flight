@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_animation::contract::*;
 
 mod accumulate_animation_sample {

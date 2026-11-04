@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::{Ref, throw_error};
 use flight_image::ImageResourceReference;
 use flight_texture::Texture;

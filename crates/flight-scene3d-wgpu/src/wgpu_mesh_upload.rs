@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Lazy GPU upload of a mesh geometry's vertex and index buffers (TS `wgpuMeshUpload.ts`), cached
 //! per device in the device tier's scene-mesh upload cache keyed by the geometry's entity id.
 

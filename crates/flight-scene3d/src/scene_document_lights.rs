@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::Scene3DDocument;
 use flight_geometry::{Transform3D, Vector3, rotate_vector3_by_quaternion};
 use flight_lighting::{

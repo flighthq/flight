@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary, enum-payload-named, file-structure, sugar-delegates) D16 open Effect entity-family reflection uses erased heterogeneous values and trait plumbing that are not transpiled as ordinary contract methods
 use std::any::Any;
 use std::collections::HashMap;

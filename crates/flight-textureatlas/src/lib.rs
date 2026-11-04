@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod enable_texture_atlas_guards;
 mod sugar;
 mod texture_atlas;

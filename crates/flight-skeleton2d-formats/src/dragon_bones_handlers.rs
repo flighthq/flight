@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::dragon_bones_section_handlers::register_dragon_bones_section_handlers;
 use crate::dragon_bones_timeline_handlers::register_dragon_bones_timeline_handlers;
 use crate::types::DragonBonesRegistry;

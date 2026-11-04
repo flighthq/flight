@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use super::awd2_test_helper::{awd_string, block, empty_document, file, property_list};
 use flight_entity::Ref;
 use flight_image::ImageResourceReference;

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::future::Future;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Uint8Array;
 use flight_requirement::contract::{
     Requirement, RequirementFacet, RequirementSet, create_requirement_set,

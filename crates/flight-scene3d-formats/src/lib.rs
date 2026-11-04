@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod awd2_block_census;
 mod awd2_block_dispatch;
 mod awd2_block_registry;

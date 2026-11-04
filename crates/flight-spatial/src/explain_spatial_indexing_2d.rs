@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{
     SpatialIndex2D, SpatialIndexingExplanation, SpatialObjectId, spatial_index::explain_index_2d,
 };

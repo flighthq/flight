@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod are_gl_render_texture_guards_enabled {
     use flight_render_gl::{are_gl_render_texture_guards_enabled, enable_gl_render_texture_guards};
 

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 prepared forward-light lists share packed blocks by Rc identity within thread-bound render-gl state
 
 use std::rc::Rc;

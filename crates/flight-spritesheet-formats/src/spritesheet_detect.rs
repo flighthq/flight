@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
 use flight_registry::{get_kind_map_keys, with_kind_map_entry, without_kind_map_entry};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_collision::contract::*;
 use std::collections::HashMap;
 

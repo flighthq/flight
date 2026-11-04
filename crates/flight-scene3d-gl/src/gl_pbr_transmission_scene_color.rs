@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render_gl::GlRenderState;
 
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;

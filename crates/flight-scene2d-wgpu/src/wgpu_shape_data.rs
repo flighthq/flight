@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 shape renderer data retains opaque host surfaces, native wgpu buffers and shared renderer-data handles
 //! The per-node shape cache shared by the three shape strategies (TS `wgpuShapeData.ts`): the
 //! tessellated half (meshes and their GPU buffers) and the rasterized half (surface and image),

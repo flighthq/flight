@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
 //! additively composite back. The multi-pass reference recipe — it acquires intermediate targets

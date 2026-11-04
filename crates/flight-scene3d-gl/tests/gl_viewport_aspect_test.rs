@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_render_gl::GlViewportRect;
 use flight_scene3d_gl::contract::*;
 

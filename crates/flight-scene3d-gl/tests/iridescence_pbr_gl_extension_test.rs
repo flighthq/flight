@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Ref;
 use flight_materials::iridescence_pbr_extension::create_iridescence_pbr_extension;
 use flight_materials::{IRIDESCENCE_PBR_EXTENSION_KIND, PbrExtension};

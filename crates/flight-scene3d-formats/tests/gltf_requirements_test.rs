@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_test_helper::{build_json_glb, full_gltf_document, minimal_gltf_document};
 use flight_materials::{
     SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND, STANDARD_PBR_MATERIAL_KIND, UNLIT_MATERIAL_KIND,

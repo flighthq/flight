@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 //! Rust convenience methods for the public picking lane (D18): each delegates to its free function.
 
 #![cfg_attr(not(feature = "object-api"), allow(unused_imports))]

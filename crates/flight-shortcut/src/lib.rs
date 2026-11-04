@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod host_explain;
 mod shortcut;
 mod shortcut_explicit_dependency;

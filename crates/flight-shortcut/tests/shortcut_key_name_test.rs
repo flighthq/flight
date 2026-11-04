@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_shortcut::contract::*;
 
 macro_rules! digit_cases {

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Format-agnostic parsing (TS `parseParticleConfig.ts`).
 
 use std::panic::{AssertUnwindSafe, catch_unwind};

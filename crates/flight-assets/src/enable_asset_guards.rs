@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::asset_library::set_asset_acquire_guard;
 use crate::enums::{AssetLoadStatus, get_asset_load_status_string};
 use crate::types::{AssetAcquireGuard, AssetLibrary, AssetLoadExplanation};

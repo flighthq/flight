@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::md2_animation_handler::MD2_ANIMATION_FAMILY;
 use crate::md2_skin_handler::MD2_SKIN_FAMILY;
 use crate::md2_types::Md2SectionHandler;

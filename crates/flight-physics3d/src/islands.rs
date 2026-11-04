@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(conform-params) D5: diagnostics guard state is explicit caller-owned state
 use std::collections::HashMap;
 

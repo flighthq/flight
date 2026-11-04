@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::scene3d_format_requirements::STL_REQUIREMENT_KEY_NAMESPACE;
 use crate::stl_features::{STL_MESH_FEATURE, StlFeatures, StlVariant, collect_stl_features};
 use flight_entity::Uint8Array;

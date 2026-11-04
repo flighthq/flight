@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::common::*;
 use flight_share::contract::*;
 

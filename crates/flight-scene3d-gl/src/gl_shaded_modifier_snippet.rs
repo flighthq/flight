@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 modifier snippets are backend-typed GLSL registrations over thread-bound render-gl state
 
 use std::sync::Arc;

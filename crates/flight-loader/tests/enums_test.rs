@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_loader::contract::*;
 
 mod get_resource_load_item_status_string {

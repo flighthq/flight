@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Lens flare (TS `wgpuLensFlareEffect.ts`): a single-pass approximation. Each fragment samples the
 //! source's bright spots along the vector toward the center, adding `ghosts` evenly spaced ghost

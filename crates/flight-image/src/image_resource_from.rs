@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_bitmap::{Bitmap, HostBitmapReadbackCapability, create_bitmap_from_image_source};
 use flight_buffer::{Blob, get_array_buffer_storage, read_blob_array_buffer};
 use flight_entity::{FlightError, FlightErrorKind, Ref, Uint8Array};

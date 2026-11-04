@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 clip hooks are backend-typed dispatch tables over render-wgpu state
 //! Clip support (TS `wgpuClip.ts`). Masks are retired — a former mask is a path ClipRegion. A clip
 //! is a scissor (rect) or stencil-then-cover (contour); the two are independent gates that AND when

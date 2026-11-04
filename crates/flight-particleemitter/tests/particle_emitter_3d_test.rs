@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow(test-default-call) ParticleEmitterConfigOptions is an input option bag with no create function
 use flight_geometry::{create_aabb, create_matrix4};
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_extension_shared::{gltf_extension_materials, resolve_gltf_extension_texture};
 use crate::gltf_material_extension::attach_gltf_pbr_extension;
 use crate::gltf_schema::GltfTextureInfoRef;

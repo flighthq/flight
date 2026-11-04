@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::{Node3DFields, Node3DRef, Scene3DMetadata, create_node3d, publish_node3d};
 use flight_animation::AnimationClip;
 use flight_entity::{EntityRuntimeSlot, Ref};

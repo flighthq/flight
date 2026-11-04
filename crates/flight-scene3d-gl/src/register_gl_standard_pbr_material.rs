@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_materials::STANDARD_PBR_MATERIAL_KIND;
 use flight_render_gl::GlRenderState;
 

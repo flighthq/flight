@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Renderer-neutral debug primitives for a world (TS `debugGeometry.ts`).
 
 use flight_collision::CollisionShape2D;

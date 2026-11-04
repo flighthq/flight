@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 GL effect recipes draw native glow targets and return Result diagnostics
 //! Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
 //! banded-but-textured look.

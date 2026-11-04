@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::types::{ClipRegionContoursReason, ClipRegionStatus};
 
 /// The canonical TypeScript string for a contour validation reason.

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Clip field group initialization (TS `hasClip.ts`).
 
 use flight_clip::ClipRegion;

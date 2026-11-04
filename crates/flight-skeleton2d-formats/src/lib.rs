@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod dragon_bones_animations_handler;
 mod dragon_bones_bone_timeline_handler;
 mod dragon_bones_bones_handler;

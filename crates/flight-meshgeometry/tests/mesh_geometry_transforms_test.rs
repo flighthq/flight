@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::{Matrix4, create_aabb, create_matrix4, create_matrix4_from_values};
 use flight_meshgeometry::contract::*;
 

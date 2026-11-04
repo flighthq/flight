@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_bitmapfont_formats::*;
 
 #[test]

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_menu::contract::*;
 
 mod get_menu_item_type_string {

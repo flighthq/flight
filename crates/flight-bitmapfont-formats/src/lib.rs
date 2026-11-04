@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 mod bitmap_font_binary;
 mod bitmap_font_detect;
 mod bitmap_font_fnt;

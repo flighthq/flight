@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::collections::HashSet;
 
 use flight_path_boolean::MARTINEZ_PATH_BOOLEAN_KERNEL;

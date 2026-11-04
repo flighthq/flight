@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 /// Frame-rate-independent exponential decay toward `target`.
 ///
 /// Equivalent to `lerp(current, target, 1 - exp(-lambda * delta_time))`.

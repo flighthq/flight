@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_importdiagnostics::ImportDiagnostic;
 
 use crate::dragon_bones_handlers::register_all_dragon_bones_handlers;

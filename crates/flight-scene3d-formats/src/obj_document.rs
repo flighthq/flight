@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::obj_material_registry::OBJ_ALL_MATERIAL_HANDLERS;
 use crate::obj_parse::parse_obj_with_material_handlers;
 use crate::obj_schema::ObjMaterialLibrary;

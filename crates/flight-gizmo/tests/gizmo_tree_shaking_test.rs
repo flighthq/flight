@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_gizmo::create_node2d_gizmo_features;
 
 mod gizmo_feature_tree_shaking {

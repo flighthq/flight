@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_adjustments::contract::*;
 
 const WHITE: u32 = 0xffffffff;

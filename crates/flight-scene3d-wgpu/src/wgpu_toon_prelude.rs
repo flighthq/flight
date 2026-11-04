@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17: the toon family seams take and return native wgpu values
 //! The Wgpu toon (cel-shading) prelude (TS `wgpuToonPrelude.ts`): the material bind group and uniform,
 //! the define key, the pipeline compiler and cache (with the shared group(3) shadow layout), and the

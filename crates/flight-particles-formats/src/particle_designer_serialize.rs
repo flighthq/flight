@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! Particle Designer plist serialization (TS `particleDesignerSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;

@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_entity::Ref;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,

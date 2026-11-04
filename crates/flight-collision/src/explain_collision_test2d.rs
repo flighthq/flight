@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use crate::collision_support2d::*;
 use crate::manifold2d::*;
 use crate::test_collision2d::*;

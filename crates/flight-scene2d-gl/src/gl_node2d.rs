@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 the render walk is generic dispatch over thread-bound render-gl state and caller-owned proxies
 
 use flight_entity::get_entity_id;

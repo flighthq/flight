@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! The ABI's world queries (TS `physics2DAbiQuery.ts`): thin free functions over the backend seam
 //! that pack hits into a caller-owned query buffer. Query scalars are Physics2D's f32.
 

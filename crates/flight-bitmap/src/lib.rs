@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: conform-skip(captureBitmapFromImageResource) final ownership (Principal b9fdd18d, D8) moves it to flight-image beside the image-owned ImageResource; bitmap never depends on image
 mod bitmap;
 mod bitmap_affine;

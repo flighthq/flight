@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_collision::{
     CollisionAabb3D, CollisionBox3D, CollisionCapsule3D, CollisionColliderShape3D, CollisionCone3D,
     CollisionConvex3D, CollisionCylinder3D, CollisionShape3D, CollisionSphere3D,

@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use crate::gltf_source::GltfSource;
 use flight_encoding::decode_utf8;
 use flight_entity::Uint8Array;

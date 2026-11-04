@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! flight-compiler: string-union PathOffsetEnd PathOffsetJoin PathBooleanExplanationOperation PathBooleanExplanationReason=kebab-case
 //! flight-compiler: readonly-fields PathBooleanExplanation
 //! The option and explanation records of the boolean, offset and simplify operations. They name no

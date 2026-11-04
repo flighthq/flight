@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 // flight-lint: allow-file(contract-vocabulary) D17 lit-program helpers drive glow native handles over thread-bound render-gl state
 
 use flight_lighting::{

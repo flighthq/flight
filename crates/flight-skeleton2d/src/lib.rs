@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 //! 2D skeletal rig: the skeleton's bones, slots, attachment and constraint families, skinning,
 //! deformations, guards and explanations. Animation-target modules wait on the animation
 //! TargetRef->Unknown migration and are absent from this slice.
