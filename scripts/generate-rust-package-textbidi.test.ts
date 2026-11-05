@@ -71,11 +71,60 @@ function generationError(): string {
   }
 }
 
+// The package's target-native runtime sources: every TypeScript module except the generated export lanes
+// and modules the generator itself owns (a source promoted to generation carries the provenance header).
 function handwrittenSources(): Map<string, string> {
   return new Map(
     readdirSync(packageSourceRoot)
       .filter((fileName) => fileName.endsWith('.ts') && !['contract.ts', 'index.ts'].includes(fileName))
-      .map((fileName) => [fileName, readFileSync(join(packageSourceRoot, fileName), 'utf8')]),
+      .map((fileName) => [fileName, readFileSync(join(packageSourceRoot, fileName), 'utf8')] as const)
+      .filter(([, contents]) => !contents.startsWith('// Generated from ')),
+  );
+}
+
+// The copied crate inherits package metadata, lints and dependencies from the repository workspace, so
+// the fixture root becomes a minimal workspace carrying those sections: the repository's
+// `[workspace.package]` and `[workspace.lints*]` tables verbatim, plus each inherited dependency with its
+// path resolved back into the repository. Cargo target discovery then reads the copy as it reads the
+// original crate.
+function writeFixtureWorkspace(): void {
+  const rootManifest = readFileSync(join(repositoryRoot, 'Cargo.toml'), 'utf8');
+  const crateManifest = readFileSync(join(crateRoot, 'Cargo.toml'), 'utf8');
+  const sections = new Map<string, string[]>();
+  let current = '';
+  for (const line of rootManifest.split('\n')) {
+    const header = /^\[([^\]]+)\]\s*$/.exec(line);
+    if (header) current = header[1];
+    const lines = sections.get(current) ?? [];
+    lines.push(line);
+    sections.set(current, lines);
+  }
+  const inherited = [...sections.keys()]
+    .filter((name) => name === 'workspace.package' || name.startsWith('workspace.lints'))
+    .map((name) => (sections.get(name) ?? []).join('\n').trimEnd());
+  const dependencyNames = [...crateManifest.matchAll(/^([A-Za-z0-9_-]+)\s*=\s*\{[^}]*\bworkspace\s*=\s*true\b/gm)].map(
+    (match) => match[1],
+  );
+  const dependencies = dependencyNames.map((name) => {
+    const entry = (sections.get('workspace.dependencies') ?? []).find((line) => line.startsWith(`${name} =`));
+    if (entry === undefined) throw new Error(`workspace dependency ${name} is not declared in the repository manifest`);
+    return entry.replace(
+      /path\s*=\s*"([^"]+)"/,
+      (_match, path: string) => `path = ${JSON.stringify(join(repositoryRoot, path))}`,
+    );
+  });
+  writeFileSync(
+    join(fixtureRoot, 'Cargo.toml'),
+    [
+      '[workspace]',
+      'members = ["crate"]',
+      'resolver = "2"',
+      '',
+      ...inherited.flatMap((section) => [section, '']),
+      '[workspace.dependencies]',
+      ...dependencies,
+      '',
+    ].join('\n'),
   );
 }
 
@@ -90,6 +139,7 @@ describe('Textbidi export-only package generation', () => {
     cpSync(join(repositoryRoot, 'crates', 'flight-textbidi', 'Cargo.toml'), join(crateRoot, 'Cargo.toml'));
     cpSync(join(repositoryRoot, 'crates', 'flight-textbidi', 'src'), join(crateRoot, 'src'), { recursive: true });
     cpSync(join(repositoryRoot, 'crates', 'flight-textbidi', 'tests'), join(crateRoot, 'tests'), { recursive: true });
+    writeFixtureWorkspace();
     cpSync(join(repositoryRoot, 'packages', 'textbidi', 'src'), packageSourceRoot, { recursive: true });
   });
 
@@ -112,15 +162,26 @@ describe('Textbidi export-only package generation', () => {
     );
   }, 120_000);
 
-  it('rejects drift in either generated lane and repairs it deterministically', () => {
+  it('retains an edited curated package root verbatim instead of reporting it stale', () => {
     generate();
-    const contractPath = join(packageSourceRoot, 'contract.ts');
     const indexPath = join(packageSourceRoot, 'index.ts');
 
-    writeFileSync(indexPath, `${readFileSync(indexPath, 'utf8')}\n// stale root\n`);
-    expect(generationError()).toContain('generated output is stale: index.ts');
-
+    // The package root is a curated manifest: generation retains an existing root's export routes
+    // verbatim (the staging suite pins this), so an edited root is neither stale nor rewritten.
+    const generatedRoot = readFileSync(indexPath, 'utf8');
+    const curatedRoot = generatedRoot.replace('  resolveBidiLevels,\n', '');
+    writeFileSync(indexPath, curatedRoot);
+    expect(() => generate(true)).not.toThrow();
     generate();
+    expect(readFileSync(indexPath, 'utf8')).toBe(curatedRoot);
+    writeFileSync(indexPath, generatedRoot);
+  }, 120_000);
+
+  it('rejects contract lane drift and repairs it deterministically', () => {
+    generate();
+    const contractPath = join(packageSourceRoot, 'contract.ts');
+
+    // The contract lane is fully generated, so any drift there is stale and regeneration repairs it.
     writeFileSync(contractPath, `${readFileSync(contractPath, 'utf8')}\n// stale contract\n`);
     expect(generationError()).toContain('generated output is stale: contract.ts');
 
