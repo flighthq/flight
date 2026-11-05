@@ -1,8 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
-import type { Entity, EntityConstruction, Node2D, Scene2D, Scene2DKindUsage } from '@flighthq/types/contract';
+import type { Entity, EntityConstruction } from '@flighthq/types/contract';
 import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
+
+import type { Node2D, Scene2D, Scene2DKindUsage } from './contract.scene2d-types.ts';
 
 export function createScene2DKindUsage(): Scene2DKindUsage & Entity {
   const out = allocateEntity<Scene2DKindUsage & Entity>();

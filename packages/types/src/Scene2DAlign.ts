@@ -1,1 +1,1 @@
-export type Scene2DAlign = 'bottom' | 'bottomleft' | 'bottomright' | 'left' | 'right' | 'top' | 'topleft' | 'topright';
+export type { Scene2DAlign } from '@flighthq/scene2d/contract';

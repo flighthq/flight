@@ -1,16 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { getNodeRoot, getNodeRuntime } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  EntityConstruction,
-  Node2D,
-  Node2DRuntime,
-  Scene2D,
-  Scene2DRuntime,
-  Scene2DSignals,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
+import type { Node2D, Node2DRuntime, Scene2D, Scene2DRuntime, Scene2DSignals } from './contract.scene2d-types.ts';
 import { createDisplayObject } from './displayObject.ts';
 
 // Allocates a Scene2D: a presentation-context Entity that owns a display-object `root` (allocated here), not a

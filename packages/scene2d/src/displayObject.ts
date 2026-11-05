@@ -13,20 +13,17 @@ import {
   initTransform2DTrait,
   invalidateNodeAppearance,
 } from '@flighthq/node/contract';
+import type { ClipRegion, Kind, MethodsOf, NodeAny, NodeRuntimeFactory } from '@flighthq/types/contract';
+
 import type {
-  ClipRegion,
   DisplayObject,
   DisplayObjectRuntime,
   Node2D,
   Node2DDataFactory,
   Node2DRuntime,
   Node2DRuntimeFactory,
-  Kind,
-  MethodsOf,
-  NodeAny,
-  NodeRuntimeFactory,
-} from '@flighthq/types/contract';
-import { DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
+} from './contract.scene2d-types.ts';
+import { DisplayObjectKind, Node2DFieldsKey } from './contract.scene2d-types.ts';
 
 export function createDisplayObject(): DisplayObject {
   return createNode2D(DisplayObjectKind, undefined, createDisplayObjectRuntime) as DisplayObject;

@@ -1,6 +1,8 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { invalidateNodeAppearance, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import type { AnimationClip, Node2DAnimationTarget } from '@flighthq/types/contract';
+import type { AnimationClip } from '@flighthq/types/contract';
+
+import type { Node2DAnimationTarget } from './contract.scene2d-types.ts';
 
 // Samples a target-free clip and applies channels carrying Node2DAnimationTarget descriptors.
 // Unknown target refs and paths are ignored, matching the scene/skeleton binding layers. Transform

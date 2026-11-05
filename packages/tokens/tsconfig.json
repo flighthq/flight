@@ -22,7 +22,7 @@
       "path": "../scene-document"
     },
     {
-      "path": "../scene2d"
+      "path": "../scene2d/tsconfig.runtime.json"
     },
     {
       "path": "../types"

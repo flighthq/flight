@@ -1,4 +1,5 @@
 import type { AudioResourceReference } from '@flighthq/audio/contract';
+import type { Scene2DSlotReference } from '@flighthq/scene2d/contract';
 
 import type { Entity } from './Entity.ts';
 import type { ImageResourceReference } from './ImageResourceReference.ts';
@@ -7,15 +8,7 @@ import type { Node2D } from './Node2D.ts';
 // A named place in the authored graph where the application supplies content the document does not carry.
 // The document knows the slot exists and where it goes; only the application knows what belongs in it, so
 // this is the one reference whose resolution produces a Node2D.
-export interface Scene2DSlotReference extends Entity {
-  content: Node2D | null;
-  // The authoring-time class/symbol name a format recorded for this slot, when it recorded one. A resolver
-  // dispatching on an exported symbol reads this rather than matching on `name`.
-  linkage: string | null;
-  name: string;
-  required: boolean;
-  target: Node2D;
-}
+export type { Scene2DSlotReference } from '@flighthq/scene2d/contract';
 
 // A static, renderer-neutral named-graph document. `root` is the complete authored hierarchy: an importer
 // decides the graph's shape at parse, so nothing downstream can change what a node IS — only what a slot

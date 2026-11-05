@@ -1,1 +1,1 @@
-export type Scene2DQuality = 'best' | 'high' | 'low' | 'medium';
+export type { Scene2DQuality } from '@flighthq/scene2d/contract';

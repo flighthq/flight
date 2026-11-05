@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".scene2d-types",
       ".interaction-types",
       ".texture-types",
       ".bitmap-types",
@@ -72,6 +73,9 @@
     },
     {
       "path": "../interaction/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -108,7 +112,7 @@
     "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
     "src/Node.node-types.ts",
-    "src/Node2D.ts",
+    "src/Node2D.scene2d-types.ts",
     "src/NodeInteraction.interaction-types.ts",
     "src/NodeInteractionState.interaction-types.ts",
     "src/NodeRenderer.ts",
@@ -123,9 +127,9 @@
     "src/RenderState.ts",
     "src/RendererData.node-types.ts",
     "src/Sampler.ts",
-    "src/Scene2D.ts",
+    "src/Scene2D.scene2d-types.ts",
     "src/Scene2DRenderer.ts",
-    "src/Scene2DSignals.ts",
+    "src/Scene2DSignals.scene2d-types.ts",
     "src/ShapeBounds.ts",
     "src/ShapeCommand.ts",
     "src/ShapeRasterizer.ts",

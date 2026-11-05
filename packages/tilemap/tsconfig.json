@@ -22,7 +22,7 @@
       "path": "../quadbatch"
     },
     {
-      "path": "../scene2d"
+      "path": "../scene2d/tsconfig.runtime.json"
     },
     {
       "path": "../signals"

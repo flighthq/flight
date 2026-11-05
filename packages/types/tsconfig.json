@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".scene2d-types",
       ".interaction-types",
       ".texture-types",
       ".bitmap-types",
@@ -230,6 +231,9 @@
     },
     {
       "path": "../interaction/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

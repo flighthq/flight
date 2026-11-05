@@ -1,13 +1,8 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    "composite": true
   },
+  "files": [],
   "references": [
     {
       "path": "../adjustments/tsconfig.runtime.json"
@@ -16,10 +11,16 @@
       "path": "../animation"
     },
     {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
       "path": "../entity"
     },
     {
       "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../layout"
     },
     {
       "path": "../materials/tsconfig.runtime.json"
@@ -35,7 +36,12 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
     }
-  ],
-  "include": ["src"]
+  ]
 }

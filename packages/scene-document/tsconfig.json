@@ -28,7 +28,7 @@
       "path": "../registry"
     },
     {
-      "path": "../scene2d"
+      "path": "../scene2d/tsconfig.runtime.json"
     },
     {
       "path": "../scene3d"

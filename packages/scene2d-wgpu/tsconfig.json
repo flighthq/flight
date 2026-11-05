@@ -14,7 +14,7 @@
       "path": "../entity"
     },
     {
-      "path": "../scene2d"
+      "path": "../scene2d/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d-canvas"

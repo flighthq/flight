@@ -1,3 +1,4 @@
+export * from './contract.scene2d-types.ts';
 export * from './scale9Sprite.ts';
 export * from './sprite.ts';
 export * from './displayObject.ts';

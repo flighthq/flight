@@ -26,7 +26,7 @@
       "path": "../path/tsconfig.runtime.json"
     },
     {
-      "path": "../scene2d"
+      "path": "../scene2d/tsconfig.runtime.json"
     },
     {
       "path": "../types"

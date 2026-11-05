@@ -42,7 +42,10 @@
   "dependencies": {
     "@flighthq/adjustments": "*",
     "@flighthq/animation": "*",
+    "@flighthq/clip": "*",
     "@flighthq/entity": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/layout": "*",
     "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
@@ -50,7 +53,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/geometry": "*",
     "typescript": "^7.0.2"
   },
   "description": "Display object tree for composited 2D rendering: bitmaps, containers, stages, videos, html views, render views",

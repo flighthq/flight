@@ -1,1 +1,1 @@
-export type Scene2DScaleMode = 'exactfit' | 'noborder' | 'noscale' | 'showall';
+export type { Scene2DScaleMode } from '@flighthq/scene2d/contract';

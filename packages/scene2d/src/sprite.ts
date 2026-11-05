@@ -4,18 +4,20 @@ import type {
   BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node2DFields,
   Rectangle,
   NodeAny,
   RendererData,
   RenderState,
+} from '@flighthq/types/contract';
+
+import type {
+  Node2DFields,
   Sprite,
   SpriteData,
   SpriteIdentityRendererData,
   SpriteRuntime,
-} from '@flighthq/types/contract';
-import { SpriteKind } from '@flighthq/types/contract';
-
+} from './contract.scene2d-types.ts';
+import { SpriteKind } from './contract.scene2d-types.ts';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject.ts';
 
 export function cloneSprite(source: Readonly<Sprite>): Sprite {
