@@ -619,15 +619,16 @@ function discoverTargetNativeMetadataForTests(
   for (const known of packageTypeScriptTypeAliases.keys()) requiredAliases.delete(known);
   for (const rustPath of targetNativeSources) {
     const fileName = `${snakeToLowerCamel(basename(rustPath, '.rs'))}.ts`;
-    const declaresRequiredAlias = collectRustPublicTypeAliasNames(readFileSync(rustPath, 'utf8')).some((alias) =>
-      requiredAliases.has(alias),
-    );
+    // A target-native module may expose an established representation for an alias declared by a
+    // rust-only sibling. Probe in source order until every alias needed by generated tests has an
+    // owner, then keep scanning only modules with other explicit positional boundaries.
+    const requiresAliasMetadata = requiredAliases.size > 0;
     const existingPath = join(packageSourceRoot, fileName);
     const hasNullableBoundary =
       existsSync(existingPath) && hasTypeScriptNullableOptionFunctionBoundary(readFileSync(existingPath, 'utf8'));
     const hasArrayBoundary =
       existsSync(existingPath) && hasTypeScriptArrayParameterFunctionBoundary(readFileSync(existingPath, 'utf8'));
-    if (!declaresRequiredAlias && !hasNullableBoundary && !hasArrayBoundary) continue;
+    if (!requiresAliasMetadata && !hasNullableBoundary && !hasArrayBoundary) continue;
     const probe = probeNativeSource(
       'generate',
       rustPath,
@@ -636,7 +637,7 @@ function discoverTargetNativeMetadataForTests(
       aliasSources,
       targetNativeSources.filter((candidate) => candidate !== rustPath),
     );
-    if (requiredAliases.size > 0) rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
+    if (requiresAliasMetadata) rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
     rememberTypeScriptArrayParameterArguments(probe.arrayParameterArguments, rustPath);
     rememberTypeScriptNullableOptionFieldArguments(probe.nullableOptionFieldArguments);
     rememberTypeScriptNullableOptionParameterArguments(probe.nullableOptionParameterArguments, rustPath);

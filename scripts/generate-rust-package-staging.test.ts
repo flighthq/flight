@@ -950,7 +950,7 @@ edition = "2024"
     );
     writeFileSync(
       join(crateRoot, 'src', 'lib.rs'),
-      '//! flight-compiler: target-native\npub mod contract;\nmod native_target;\nmod types;\nmod value;\n',
+      '//! flight-compiler: target-native\npub mod contract;\nmod native_target;\nmod types;\nmod value;\nmod zz_native_only;\n',
     );
     writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::types::*;\npub use super::value::*;\n');
     writeFileSync(
@@ -1007,6 +1007,12 @@ pub fn echo_target(target: TargetRef) -> TargetRef {
 `,
     );
     writeFileSync(
+      join(crateRoot, 'src', 'zz_native_only.rs'),
+      `//! flight-compiler: target-native
+compile_error!("unrelated target-native modules must not be probed for resolved alias metadata");
+`,
+    );
+    writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
       `import type { AnimationPlayer, AnimationStateMachine } from '@flighthq/types/contract';
 
@@ -1043,6 +1049,7 @@ export function markLabel(label?: string, channel: string | null = null): boolea
 }
 `,
     );
+    writeFileSync(join(packageRoot, 'src', 'zzNativeOnly.ts'), 'export const nativeOnly = true;\n');
     const aliasTestPath = join(crateRoot, 'tests', 'alias_test.rs');
     writeFileSync(
       aliasTestPath,
