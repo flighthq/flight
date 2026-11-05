@@ -24893,6 +24893,15 @@ fn emit_statement(
                 && emit_entry_or_default_assign(out, binary, entities, indent)? => {}
         Stmt::Expr(Expr::MethodCall(call), _)
             if emit_entry_or_default_method(out, call, entities, indent)? => {}
+        Stmt::Expr(Expr::Call(call), _)
+            if expression_is_path(&call.func, "drop") && call.args.len() == 1 =>
+        {
+            if !expression_is_reusable(&call.args[0]) {
+                let value = emit_expression(&call.args[0], entities)?;
+                write_indent(out, indent);
+                writeln!(out, "{value};").expect("writing to a String cannot fail");
+            }
+        }
         Stmt::Expr(expression, _) if expression_contains_unconditional_try(expression) => {
             let try_context = emit_try_pre_extractions(out, expression, entities, indent)?;
             let value =

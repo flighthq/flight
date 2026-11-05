@@ -19685,8 +19685,7 @@ pub fn replace_shadowed(shared: Arc<RwLock<i32>>, target: &mut i32) {
         assert!(output.contains("shared = 5;"), "{output}");
         assert!(output.contains("target = 6;"), "{output}");
         assert!(!output.contains("target.value"), "{output}");
-        // The guard's whole value is replaced, so every use of it, `drop` included, reads its cell.
-        assert!(output.contains("void shared;"), "{output}");
+        assert!(!output.contains("void shared"), "{output}");
         assert!(!output.contains(".value.value"), "{output}");
     }
 
