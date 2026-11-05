@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
 
+use quote::ToTokens;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
@@ -506,6 +507,261 @@ fn explicit_import_names<'a>(uses: impl Iterator<Item = &'a ItemUse>) -> BTreeSe
         collect(&item_use.tree, &mut names);
     }
     return names;
+}
+
+// Whether a parameter type formats identically under Rust `Display` and a JavaScript template:
+// a string (`&str`, `String`, `&String`) or an integer no wider than 32 bits.
+fn panic_display_parameter(rust_type: &Type) -> bool {
+    let rust_type = match rust_type {
+        Type::Reference(reference) if reference.mutability.is_none() => reference.elem.as_ref(),
+        rust_type => rust_type,
+    };
+    let Type::Path(path) = rust_type else {
+        return false;
+    };
+    if path.qself.is_some() || path.path.segments.len() != 1 {
+        return false;
+    }
+    let segment = &path.path.segments[0];
+    return segment.arguments.is_empty()
+        && matches!(
+            segment.ident.to_string().as_str(),
+            "String" | "i8" | "i16" | "i32" | "str" | "u8" | "u16" | "u32"
+        );
+}
+
+// Whether a macro is the standard `panic!` (`panic!`, `std::panic!` or `core::panic!`).
+fn panic_macro_is_std(rust_macro: &syn::Macro) -> bool {
+    let segments = rust_macro
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    return rust_macro.path.leading_colon.is_none()
+        && matches!(
+            segments
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            ["panic"] | ["std" | "core", "panic"]
+        );
+}
+
+// Proves a `panic!` message renders exactly as Rust would: no arguments (`explicit panic`), or a
+// string literal whose placeholders are bare `{}` or `{name}` (no format specifier, positional
+// index or named argument) filled only by string literals or by `Display`-faithful parameters, each
+// evaluated once in order.
+fn panic_message_is_representable(
+    rust_macro: &syn::Macro,
+    parameters: &BTreeSet<String>,
+) -> Result<(), CompileError> {
+    let refuse = |reason: &str| {
+        return Err(compile_error(format!(
+            "portable test `panic!` refuses {reason}: its message would not render exactly as Rust formats it"
+        )));
+    };
+    let arguments = parse_macro_arguments(rust_macro)?;
+    let Some(first) = arguments.first() else {
+        return Ok(());
+    };
+    let Some(template) = string_literal_value(first) else {
+        return refuse("a non-literal or `Any` payload");
+    };
+    let value_is_faithful = |value: &Expr| match unparenthesized(value) {
+        Expr::Lit(literal) => matches!(literal.lit, syn::Lit::Str(_)),
+        Expr::Path(path) => path
+            .path
+            .get_ident()
+            .is_some_and(|name| parameters.contains(&name.to_string())),
+        _ => false,
+    };
+    let mut positional = 0;
+    let mut characters = template.chars().peekable();
+    while let Some(character) = characters.next() {
+        match character {
+            '{' if characters.peek() == Some(&'{') => {
+                characters.next();
+            }
+            '}' if characters.peek() == Some(&'}') => {
+                characters.next();
+            }
+            '{' => {
+                let mut placeholder = String::new();
+                loop {
+                    match characters.next() {
+                        Some('}') => break,
+                        Some(character) => placeholder.push(character),
+                        None => return refuse("an unterminated placeholder"),
+                    }
+                }
+                if placeholder.is_empty() {
+                    positional += 1;
+                } else if syn::parse_str::<syn::Ident>(&placeholder).is_err()
+                    || !parameters.contains(&placeholder)
+                {
+                    return refuse(&format!("the placeholder `{{{placeholder}}}`"));
+                }
+            }
+            '}' => return refuse("an unmatched `}`"),
+            _ => {}
+        }
+    }
+    let values = arguments.iter().skip(1).collect::<Vec<_>>();
+    if values.len() != positional {
+        return refuse("formatting values that do not match its placeholders");
+    }
+    if !values.iter().all(|value| value_is_faithful(value)) {
+        return refuse(
+            "a formatting value other than a string literal or a string or 32-bit integer parameter",
+        );
+    }
+    return Ok(());
+}
+
+// The `panic!` statements the portable test emitter itself reaches: those of the function body and
+// of its `if`/`else`, plain-block and loop bodies. A panic in expression position (a closure, a
+// `match` arm, a `let`-`else` block) keeps the expression lowering it already had.
+fn panic_statement_reached(statements: &[Stmt]) -> bool {
+    return statements.iter().any(|statement| match statement {
+        Stmt::Macro(statement) => panic_macro_is_std(&statement.mac),
+        Stmt::Expr(Expr::If(branch), _) => {
+            let mut branch = branch;
+            loop {
+                if panic_statement_reached(&branch.then_branch.stmts) {
+                    return true;
+                }
+                match branch
+                    .else_branch
+                    .as_ref()
+                    .map(|(_, otherwise)| otherwise.as_ref())
+                {
+                    Some(Expr::If(next)) => branch = next,
+                    Some(Expr::Block(otherwise)) => {
+                        return panic_statement_reached(&otherwise.block.stmts);
+                    }
+                    _ => return false,
+                }
+            }
+        }
+        Stmt::Expr(Expr::Block(block), _) => panic_statement_reached(&block.block.stmts),
+        Stmt::Expr(Expr::ForLoop(body), _) => panic_statement_reached(&body.body.stmts),
+        Stmt::Expr(Expr::Loop(body), _) => panic_statement_reached(&body.body.stmts),
+        Stmt::Expr(Expr::While(body), _) => panic_statement_reached(&body.body.stmts),
+        _ => false,
+    });
+}
+
+// Proves every `panic!` statement the portable test emitter reaches (see `panic_statement_reached`)
+// is an explicit throw TypeScript reproduces faithfully: reached only through `if`/`else` and plain
+// blocks of a synchronous function, never from a loop; with no `let` or `if let` binding in scope
+// and no by-value lock or borrow guard parameter, so no Rust unwind drop (or mutex poisoning) is
+// observable; and with a representable message (see `panic_message_is_representable`). Such a panic
+// was previously refused outright, so this proof only admits statements, never retracts one.
+fn panic_statements_are_proven(function: &ItemFn) -> Result<(), CompileError> {
+    if !panic_statement_reached(&function.block.stmts) {
+        return Ok(());
+    }
+    let name = &function.sig.ident;
+    if function.sig.asyncness.is_some() {
+        return Err(compile_error(format!(
+            "portable test `panic!` in async `{name}` is not an immediate throw"
+        )));
+    }
+    let mut parameters = BTreeSet::new();
+    for argument in &function.sig.inputs {
+        let FnArg::Typed(argument) = argument else {
+            continue;
+        };
+        if !matches!(argument.ty.as_ref(), Type::Reference(_))
+            && argument.ty.to_token_stream().into_iter().any(|token| {
+                matches!(&token, proc_macro2::TokenTree::Ident(identifier)
+                    if identifier.to_string().ends_with("Guard") || *identifier == "RefMut")
+            })
+        {
+            return Err(compile_error(format!(
+                "portable test `panic!` in `{name}` would unwind a by-value guard parameter, whose drop TypeScript does not reproduce"
+            )));
+        }
+        if let Pat::Ident(identifier) = argument.pat.as_ref()
+            && panic_display_parameter(&argument.ty)
+        {
+            parameters.insert(identifier.ident.to_string());
+        }
+    }
+    return panic_statements_in_block(&function.block.stmts, false, &parameters, name);
+}
+
+fn panic_statements_in_block(
+    statements: &[Stmt],
+    mut locals_in_scope: bool,
+    parameters: &BTreeSet<String>,
+    function: &syn::Ident,
+) -> Result<(), CompileError> {
+    for statement in statements {
+        match statement {
+            Stmt::Macro(statement) if panic_macro_is_std(&statement.mac) => {
+                if locals_in_scope {
+                    return Err(compile_error(format!(
+                        "portable test `panic!` in `{function}` would unwind live locals, whose drop TypeScript does not reproduce"
+                    )));
+                }
+                panic_message_is_representable(&statement.mac, parameters)?;
+            }
+            Stmt::Expr(Expr::If(branch), _) => {
+                panic_statements_in_if(branch, locals_in_scope, parameters, function)?;
+            }
+            Stmt::Expr(Expr::Block(block), _) => {
+                panic_statements_in_block(
+                    &block.block.stmts,
+                    locals_in_scope,
+                    parameters,
+                    function,
+                )?;
+            }
+            Stmt::Expr(Expr::ForLoop(_) | Expr::Loop(_) | Expr::While(_), _)
+                if panic_statement_reached(std::slice::from_ref(statement)) =>
+            {
+                return Err(compile_error(format!(
+                    "portable test `panic!` in `{function}` is inside a loop, whose control flow it would escape"
+                )));
+            }
+            Stmt::Local(_) => locals_in_scope = true,
+            _ => {}
+        }
+    }
+    return Ok(());
+}
+
+fn panic_statements_in_if(
+    branch: &syn::ExprIf,
+    locals_in_scope: bool,
+    parameters: &BTreeSet<String>,
+    function: &syn::Ident,
+) -> Result<(), CompileError> {
+    // An `if let` binds its pattern for the `then` branch.
+    let binds = matches!(branch.cond.as_ref(), Expr::Let(_));
+    panic_statements_in_block(
+        &branch.then_branch.stmts,
+        locals_in_scope || binds,
+        parameters,
+        function,
+    )?;
+    return match branch
+        .else_branch
+        .as_ref()
+        .map(|(_, otherwise)| otherwise.as_ref())
+    {
+        Some(Expr::If(next)) => panic_statements_in_if(next, locals_in_scope, parameters, function),
+        Some(Expr::Block(otherwise)) => panic_statements_in_block(
+            &otherwise.block.stmts,
+            locals_in_scope,
+            parameters,
+            function,
+        ),
+        _ => Ok(()),
+    };
 }
 
 fn test_support_item_is_visible(visibility: &syn::Visibility) -> bool {
@@ -2678,8 +2934,7 @@ fn proven_flight_error_helper(function: &ItemFn) -> Option<FlightErrorHelper> {
             kind = Some(found);
         } else if exact_message.is_none()
             && let Some(found) = pairs.iter().find_map(|(field, value)| {
-                error_field_is(field, &error_ref, "message")
-                    .then(|| string_literal_value(value))?
+                error_field_is(field, &error_ref, "message").then(|| string_literal_value(value))?
             })
         {
             exact_message = Some(found);
@@ -3132,6 +3387,16 @@ fn emit_statement(
             writeln!(out, "{};", emit_expression(expression, context)?)
                 .expect("writing to a String cannot fail");
         }
+        // `panic_statements_are_proven` admitted this panic before any function was emitted.
+        Stmt::Macro(statement) if panic_macro_is_std(&statement.mac) => {
+            write_indent(out, indent);
+            writeln!(
+                out,
+                "throw new Error({});",
+                crate::typescript::emit_panic_message(&statement.mac, context)?
+            )
+            .expect("writing to a String cannot fail");
+        }
         Stmt::Macro(statement) => emit_assertion(out, &statement.mac, indent, context)?,
         Stmt::Item(syn::Item::Use(item_use))
             if portable_test_current_contract_use(&item_use.tree, context) => {}
@@ -3282,6 +3547,18 @@ pub(crate) fn emit_test_program(
         if let Some(proof) = proven_flight_error_helper(helper) {
             panic_helper_context.insert(proof.marker(&helper.sig.ident.to_string()));
         }
+    }
+    for function in program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| {
+            suite
+                .helpers
+                .iter()
+                .chain(suite.tests.iter().map(|test| &test.function))
+        }))
+    {
+        panic_statements_are_proven(function)?;
     }
     let context = &panic_helper_context;
     let (mut contract_symbols, mut contract_type_symbols, external_modules) =

@@ -17327,7 +17327,7 @@ fn emit_unreachable_message(
     );
 }
 
-fn emit_panic_message(
+pub(crate) fn emit_panic_message(
     rust_macro: &syn::Macro,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {

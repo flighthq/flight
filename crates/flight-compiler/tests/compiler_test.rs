@@ -21011,8 +21011,15 @@ mod helpers {
             ),
             "{output}"
         );
-        assert_eq!(output.matches("readOffset(counter, -1)").count(), 1, "{output}");
-        assert!(output.contains("expect(counter.calls).toEqual(1);"), "{output}");
+        assert_eq!(
+            output.matches("readOffset(counter, -1)").count(),
+            1,
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(counter.calls).toEqual(1);"),
+            "{output}"
+        );
         for absent in [
             "assertRangeError",
             "catchUnwind",
@@ -21083,7 +21090,136 @@ pub fn fail() -> i32 {
         )
         .unwrap_err()
         .to_string();
-        assert!(production_error.contains("unwrap_err"), "{production_error}");
+        assert!(
+            production_error.contains("unwrap_err"),
+            "{production_error}"
+        );
+    }
+
+    #[test]
+    fn lowers_only_proven_explicit_test_panics_to_thrown_errors() {
+        let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+fn record(name: &'static str, count: u32, fail: bool) {
+    if fail {
+        panic!("{name} failed after {} calls", count);
+    } else if count > 9 {
+        panic!();
+    }
+}
+
+fn refuse(code: i32) {
+    if code < 0 {
+        panic!("negative {{code}} {code}");
+    }
+}
+
+fn pick(name: &str) -> u32 {
+    let count = name.len() as u32;
+    return match name {
+        "a" => count,
+        _ => panic!("unknown {name}"),
+    };
+}
+
+mod panics {
+    use super::*;
+
+    #[test]
+    fn throws_from_a_helper() {
+        let result = catch_unwind(AssertUnwindSafe(|| record("gravity", 2, true)));
+        assert!(result.is_err());
+        record("gravity", 2, false);
+        refuse(1);
+        assert_eq!(pick("a"), 1);
+    }
+}
+"#;
+        let output = compile_vitest(source, "./contract.ts").unwrap();
+        assert!(
+            output.contains("throw new Error(`${name} failed after ${count} calls`);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("throw new Error('explicit panic');"),
+            "{output}"
+        );
+        assert!(
+            output.contains("throw new Error(`negative {code} ${code}`);"),
+            "{output}"
+        );
+        // A `match` arm panic keeps its existing expression lowering, live locals and all.
+        assert!(
+            output.contains("throw new Error(`unknown ${name}`);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(() => record('gravity', 2, true)).toThrow();"),
+            "{output}"
+        );
+
+        for (helper, reason) in [
+            (
+                "fn helper(name: &str) {\n    let count = 1;\n    if count > 0 {\n        panic!(\"{name}\");\n    }\n}",
+                "live locals",
+            ),
+            (
+                "fn helper(name: &str) {\n    for _ in 0..1 {\n        panic!(\"{name}\");\n    }\n}",
+                "loop",
+            ),
+            (
+                "fn helper(name: &str) {\n    while name.is_empty() {\n        if name.is_empty() {\n            panic!(\"{name}\");\n        }\n    }\n}",
+                "loop",
+            ),
+            (
+                "fn helper(value: Option<u32>) {\n    if let Some(found) = value {\n        panic!(\"{}\", found);\n    }\n}",
+                "live locals",
+            ),
+            (
+                "fn helper(name: &str) {\n    panic!(\"{:?}\", name);\n}",
+                "placeholder",
+            ),
+            (
+                "fn helper(value: f32) {\n    panic!(\"{value}\");\n}",
+                "placeholder",
+            ),
+            (
+                "fn helper(value: u64) {\n    panic!(\"{}\", value);\n}",
+                "formatting value",
+            ),
+            (
+                "fn helper(name: &str) {\n    panic!(\"{}\", name.len());\n}",
+                "formatting value",
+            ),
+            (
+                "fn helper(name: &str) {\n    panic!(\"{}\", 1.5);\n}",
+                "formatting value",
+            ),
+            (
+                "fn helper(name: &str) {\n    panic!(\"{0}\", name);\n}",
+                "placeholder",
+            ),
+            (
+                "async fn helper(name: &str) {\n    panic!(\"{name}\");\n}",
+                "async",
+            ),
+            (
+                "fn helper(guard: std::sync::MutexGuard<'static, i32>) {\n    panic!(\"held\");\n}",
+                "guard",
+            ),
+        ] {
+            let source = format!(
+                "{helper}\n\nmod panics {{\n    use super::*;\n\n    #[test]\n    fn calls() {{\n        let _ = helper;\n    }}\n}}\n"
+            );
+            let error = compile_vitest(&source, "./contract.ts")
+                .unwrap_err()
+                .to_string();
+            assert!(
+                error.contains("portable test `panic!`") && error.contains(reason),
+                "{helper}\n{error}"
+            );
+        }
     }
 
     #[test]
@@ -23076,9 +23212,7 @@ mod enable_layout_guards {
 
         let output = compile(contract).unwrap();
         assert!(
-            output.contains(
-                "import {\n  enableLayoutGuards,\n} from './contract.ts';"
-            ),
+            output.contains("import {\n  enableLayoutGuards,\n} from './contract.ts';"),
             "{output}"
         );
         assert!(output.contains("enableLayoutGuards(state);"), "{output}");
