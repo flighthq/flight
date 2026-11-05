@@ -14231,6 +14231,10 @@ pub(crate) fn emit_local_with_shadow_and_else(
     if value == "[] as never[]" && !rebind && typescript_type.is_some() {
         value = "[]".to_string();
     }
+    let stripped = strip_value_position_parens(&value);
+    if stripped.len() != value.len() {
+        value = stripped.to_string();
+    }
     write_indent(out, indent);
     if discard {
         writeln!(out, "{value};").expect("writing to a String cannot fail");
@@ -14537,6 +14541,7 @@ fn emit_hoisted_match_arm_value(
     indent: usize,
 ) {
     write_indent(out, indent);
+    let value_str = strip_value_position_parens(value_str);
     match action {
         HoistedMatchAction::Assign(target) => {
             writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
@@ -24584,6 +24589,7 @@ fn emit_statement(
             if entities.contains(RETURNS_NULLABLE_MARKER) {
                 emitted = nullable_option_value(value, emitted);
             }
+            let emitted = strip_value_position_parens(&emitted);
             writeln!(out, "return {emitted};").expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::Return(return_expression), _) => {
@@ -24621,6 +24627,7 @@ fn emit_statement(
                 if entities.contains(RETURNS_NULLABLE_MARKER) {
                     value = nullable_option_value(returned, value);
                 }
+                let value = strip_value_position_parens(&value);
                 writeln!(out, "return {value};").expect("writing to a String cannot fail");
             } else {
                 out.push_str("return;\n");
@@ -26541,6 +26548,44 @@ fn is_primary_expression_text(text: &str) -> bool {
         }
     }
     return true;
+}
+
+fn strip_value_position_parens(text: &str) -> &str {
+    let bytes = text.as_bytes();
+    if bytes.len() < 3 || bytes[0] != b'(' || bytes[bytes.len() - 1] != b')' {
+        return text;
+    }
+    let inner = &text[1..text.len() - 1];
+    let mut depth: i32 = 0;
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    for c in inner.chars() {
+        if let Some(open) = quote {
+            if escaped {
+                escaped = false;
+            } else if c == '\\' {
+                escaped = true;
+            } else if c == open {
+                quote = None;
+            }
+            continue;
+        }
+        match c {
+            '"' | '\'' | '`' => quote = Some(c),
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => {
+                depth -= 1;
+                if depth < 0 {
+                    return text;
+                }
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return text;
+    }
+    return inner;
 }
 
 fn pattern_binds_identifier(pattern: &Pat, expected: &str) -> bool {

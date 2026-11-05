@@ -1019,7 +1019,7 @@ export function countTracker(tracker: Readonly<Tracker>, id: number): number {
   if (!tracker.counts.has(id)) {
     return -1.0;
   }
-  return (tracker.counts.get(id) ?? 0.0);
+  return tracker.counts.get(id) ?? 0.0;
 }
 
 export function markTracker(tracker: Tracker, label: string): boolean {
@@ -2137,7 +2137,7 @@ pub fn is_closed(segment: &Segment) -> bool {
                 .contains("return flag && ((typeof id === 'number') || (typeof id === 'string'));")
         );
         assert!(output.contains("return ((value) => typeof value === 'number')(pick(id));"));
-        assert!(output.contains("return (segment.kind === 'move' || segment.kind === 'line');"));
+        assert!(output.contains("return segment.kind === 'move' || segment.kind === 'line';"));
         assert!(output.contains("return segment.kind === 'close';"));
 
         {
@@ -2542,20 +2542,32 @@ pub fn doubled_all(values: &Vec<f32>) -> Vec<f32> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return (options?.padding ?? 0.0);"));
-        assert!(output.contains("return (options?.growable ?? true);"));
-        assert!(output.contains("return (options?.maxWidth ?? 100.0) - 2.0 * border;"));
-        assert!(output.contains("return (options?.heuristic ?? 'bestShortSideFit');"));
+        assert!(output.contains("return options?.padding ?? 0.0;"));
+        assert!(
+            output.contains("return options?.growable ?? true;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("return (options?.maxWidth ?? 100.0) - 2.0 * border;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("return options?.heuristic ?? 'bestShortSideFit';"),
+            "{output}"
+        );
         assert!(output.contains(
-            "return (((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w - 2.0)(o.maxWidth))(options) ?? 0.0);"
-        ));
-        assert!(output.contains("return (pick(options, counter)?.padding ?? 0.0);"));
+            "return ((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w - 2.0)(o.maxWidth))(options) ?? 0.0;"
+        ), "{output}");
+        assert!(
+            output.contains("return pick(options, counter)?.padding ?? 0.0;"),
+            "{output}"
+        );
         assert!(output.contains(
-            "return (((border) => border === undefined ? undefined : ((p) => p === undefined ? undefined : p + extra)(border.padding))(border) ?? 0.0);"
-        ));
+            "return ((border) => border === undefined ? undefined : ((p) => p === undefined ? undefined : p + extra)(border.padding))(border) ?? 0.0;"
+        ), "{output}");
         assert!(output.contains(
-            "return (((o) => o === undefined ? undefined : enabled ? o.padding : undefined)(options) ?? 7.0);"
-        ));
+            "return ((o) => o === undefined ? undefined : enabled ? o.padding : undefined)(options) ?? 7.0;"
+        ), "{output}");
         assert!(output.contains(
             "const scaled: number | undefined = ((w) => w === undefined ? undefined : w * 2.0)(value);"
         ));
@@ -2579,19 +2591,17 @@ pub fn widened(value: Option<f32>) -> f32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(
-            output.contains("return (((o) => o === null ? null : o.padding)(options) ?? 0.0);")
-        );
-        assert!(output.contains("return (((w) => w === null ? null : w + 1.0)(value) ?? 0.0);"));
+        assert!(output.contains("return ((o) => o === null ? null : o.padding)(options) ?? 0.0;"));
+        assert!(output.contains("return ((w) => w === null ? null : w + 1.0)(value) ?? 0.0;"));
 
         let source = "pub fn inferred(value: f32) -> f32 { let local = Some(value); return local.and_then(|v| Some(v)).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
-        assert!(output.contains("(((v) => v === undefined ? undefined : v)(local) ?? 0.0)"));
+        assert!(output.contains("((v) => v === undefined ? undefined : v)(local) ?? 0.0"));
 
         let source = "pub fn typed_closure(value: Option<f32>) -> f32 { return value.map(|v: f32| v * 2.0).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("(((v) => v === undefined ? undefined : v * 2.0)(value) ?? 0.0)"),
+            output.contains("((v) => v === undefined ? undefined : v * 2.0)(value) ?? 0.0"),
             "typed closure parameter should compile: {output}"
         );
 
@@ -4117,8 +4127,8 @@ pub fn utf16_units_to_string(values: &[u16]) -> String {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return (values[index] ?? 7);"), "{output}");
-        assert!(output.contains("return (values.at(-1) ?? 8);"), "{output}");
+        assert!(output.contains("return values[index] ?? 7;"), "{output}");
+        assert!(output.contains("return values.at(-1) ?? 8;"), "{output}");
         assert!(output.contains("values.findIndex("), "{output}");
         assert!(
             output.contains("values.pop(), 9, (value) => value + 1"),
@@ -4700,7 +4710,7 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         )
         .unwrap();
         assert!(output.contains(
-            "return (((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w * 2.0)(o.width))(options) ?? 0.0);"
+            "return ((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w * 2.0)(o.width))(options) ?? 0.0;"
         ));
         let error = compile(
             module(current, option_source),
@@ -5328,7 +5338,7 @@ pub fn fallback(a: Option<i32>, b: Option<i32>) -> Option<i32> {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("(a ?? b)"),
+            output.contains("return a ?? b;"),
             "or should use nullish coalescing: {output}"
         );
     }
@@ -5788,7 +5798,10 @@ pub fn lazy(cell: &mut Option<i32>, init: fn() -> i32) -> i32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("(cell = cell ?? (init)())"), "{output}");
+        assert!(
+            output.contains("return cell = cell ?? (init)();"),
+            "{output}"
+        );
     }
 
     #[test]
@@ -7426,7 +7439,10 @@ pub fn when_true(flag: bool, value: i32) -> Option<i32> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("(flag ? value : undefined)"), "{output}");
+        assert!(
+            output.contains("return flag ? value : undefined;"),
+            "{output}"
+        );
     }
 
     #[test]
@@ -10201,7 +10217,7 @@ pub fn get_kernel(kernel: Option<&Kernel>) -> &Kernel {
             output.contains("export const DOUBLE_KERNEL: KernelRaw = createScaledKernel(2.0);\n")
         );
         assert!(output.contains("  return createScaledKernel(DEFAULT_SCALE);\n"));
-        assert!(output.contains("  return (kernel ?? sharedKernel);\n"));
+        assert!(output.contains("  return kernel ?? sharedKernel;\n"));
         assert!(!output.contains("LazyLock"));
         assert!(!output.contains("SHARED_KERNEL"));
         let shared = output.find("export const sharedKernel").unwrap();
@@ -10835,7 +10851,7 @@ pub fn wide_present(wide: &Wide) -> bool {
         for expected in [
             "  return (({ contour: (value) ?? null }.contour) ?? undefined) !== undefined;\n",
             "  return { inner: { contour: (value) ?? null }, label: 1.0 };\n",
-            "  return (((outer.inner.contour) ?? undefined) ?? -1.0);\n",
+            "  return ((outer.inner.contour) ?? undefined) ?? -1.0;\n",
             "  return ((outer.inner.contour) ?? undefined) !== undefined;\n",
             "  outer.inner.contour = (value) ?? null;\n",
         ] {
@@ -10908,7 +10924,7 @@ pub fn alias_present(inner: &Chained) -> bool {
             "{output}"
         );
         assert!(
-            output.contains("  return (((outer.shared.contour) ?? undefined) ?? -1.0);\n"),
+            output.contains("  return ((outer.shared.contour) ?? undefined) ?? -1.0;\n"),
             "{output}"
         );
         assert!(
@@ -11307,7 +11323,7 @@ pub fn shared_present(shared: &Arc<Inner>) -> bool {
             "{output}"
         );
         assert!(
-            output.contains("  return (((holder.qualified.contour) ?? undefined) ?? -1.0);\n"),
+            output.contains("  return ((holder.qualified.contour) ?? undefined) ?? -1.0;\n"),
             "{output}"
         );
         assert!(
@@ -11565,7 +11581,7 @@ pub fn present_through_argument(values: &[f64]) -> i32 {
         assert!(output.contains("    out.contour = (findScale(values)) ?? null;\n"));
         assert!(output.contains("    out.detail = lookup(values);\n"));
         assert!(output.contains("  return (lookup(values)) ?? null;\n"));
-        assert!(output.contains("  return ((findScale(values)) ?? undefined);\n"));
+        assert!(output.contains("  return (findScale(values)) ?? undefined;\n"));
         assert!(output.contains("  return countPresent(((findScale(values)) ?? undefined));\n"));
         assert!(output.contains("  return values[0];\n"));
         assert!(!output.contains("!== null"));
@@ -11696,9 +11712,7 @@ pub fn contour_or_zero(values: &[f64]) -> f64 {
             )
         );
         assert!(output.contains("  return undefined;\n"));
-        assert!(
-            output.contains("  const scale = ((findScale(values, undefined)) ?? undefined);\n")
-        );
+        assert!(output.contains("  const scale = (findScale(values, undefined)) ?? undefined;\n"));
         assert!(output.contains("  if (scale !== undefined) {\n"));
         assert!(output.contains(
             "return { supported: value > 0.0, contour: (found) ?? null, detail: undefined };"
@@ -11718,9 +11732,9 @@ pub fn contour_or_zero(values: &[f64]) -> f64 {
             &[],
         )
         .unwrap();
-        assert!(sibling.contains("  const scale = ((findScale(values, 0.5)) ?? undefined);\n"));
+        assert!(sibling.contains("  const scale = (findScale(values, 0.5)) ?? undefined;\n"));
         assert!(sibling.contains("  return scale !== undefined;\n"));
-        assert!(sibling.contains("  return (((explanation.contour) ?? undefined) ?? 0.0);\n"));
+        assert!(sibling.contains("  return ((explanation.contour) ?? undefined) ?? 0.0;\n"));
     }
 
     #[test]
@@ -15887,7 +15901,7 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
 
         assert_eq!(
             compile_typescript(source, None).unwrap(),
-            "export function fraction(value: number): number {\n  return (value % 1);\n}\n"
+            "export function fraction(value: number): number {\n  return value % 1;\n}\n"
         );
     }
 
