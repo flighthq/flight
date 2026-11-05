@@ -1,4 +1,5 @@
-//! flight-compiler: target-native
+//! flight-compiler: export-name decode_utf8 decodeUTF8
+//! flight-compiler: export-name encode_utf8 encodeUTF8
 
 use flight_entity::Uint8Array;
 

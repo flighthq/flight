@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_encoding::*;
 
 mod decode_utf8 {
