@@ -833,10 +833,10 @@ pub fn offset(node: &Arc<Node>, delta: i32) -> i32 {
 
 export function reader(node: Readonly<Node>): () => number {
   return (() => {
-  return () => {
-  return node.value;
-};
-})();
+    return () => {
+    return node.value;
+  };
+  })();
 }
 
 export function offset(node: Readonly<Readonly<Node>>, delta: number): number {
@@ -3148,18 +3148,18 @@ pub fn bump_picked(picker: &mut Picker) -> i32 {
         assert!(!output.contains("aAdded.value;"), "{output}");
         assert!(
             output.contains(
-                "let added_1 = aAdded;\n  if (!added_1.value) {\n    added_1.value = true;"
+                "let added_1 = aAdded;\n    if (!added_1.value) {\n      added_1.value = true;"
             ),
             "{output}"
         );
         assert!(!output.contains("aCell.value;"), "{output}");
         assert!(
-            output.contains("const guard = aCell;\n  return guard.value + 1;"),
+            output.contains("const guard = aCell;\n    return guard.value + 1;"),
             "{output}"
         );
         // The receiver is evaluated once, before the guard binds it.
         assert_eq!(output.matches("pick(picker)").count(), 1, "{output}");
-        assert!(output.contains("let guard = cell;\n  guard.value += 10;\n  if (guard.value > 15) {\n    guard.value -= 1;"), "{output}");
+        assert!(output.contains("let guard = cell;\n    guard.value += 10;\n    if (guard.value > 15) {\n      guard.value -= 1;"), "{output}");
     }
 
     #[test]
@@ -3263,11 +3263,12 @@ pub fn alias_tail(holder: &Holder, take: bool) -> i32 {
         // A `return` injected into a tail `if` or block copies that statement; the `let`s nested in it
         // keep what the resolver proved. Guards bind the cell and dereference through `.value`.
         assert!(
-            output.contains("let guard = aCell;\n    guard.value += 1;\n    return guard.value;"),
+            output
+                .contains("let guard = aCell;\n      guard.value += 1;\n      return guard.value;"),
             "{output}"
         );
         assert!(
-            output.contains("const guard = aCell;\n    return guard.value * 2;"),
+            output.contains("const guard = aCell;\n      return guard.value * 2;"),
             "{output}"
         );
         assert!(
@@ -3277,7 +3278,7 @@ pub fn alias_tail(holder: &Holder, take: bool) -> i32 {
         // The guard's receiver is evaluated once, inside the taken branch only.
         assert_eq!(output.matches("pick(picker)").count(), 1, "{output}");
         assert!(
-            output.contains("const cell = pick(picker);\n    let guard = cell;\n    guard.value += 10;\n    return guard.value;"),
+            output.contains("const cell = pick(picker);\n      let guard = cell;\n      guard.value += 10;\n      return guard.value;"),
             "{output}"
         );
         // A collection fact: `HashSet::new()` stays a `Set`, so `.len()` reads `.size`.
@@ -3380,7 +3381,7 @@ pub fn replace_in_closure(holder: &Holder) -> usize {
         assert!(output.contains("const cell = pick(holder);"), "{output}");
         // In a closure, a clone written through a guard is its original cell, which stays assignable.
         assert!(
-            output.contains("const bump = () => {\n  shared += 3;\n  return shared;"),
+            output.contains("const bump = () => {\n    shared += 3;\n    return shared;"),
             "{output}"
         );
         // Every use of a replaced guard reads its cell, so no snapshot binding is emitted.
@@ -3739,7 +3740,7 @@ pub fn keep_even(values: &mut Vec<u32>) {
             )
             .unwrap(),
             format!(
-                "export function keepEvenInValueBlock(values: number[]): number {{\n  return (() => {{\n  const items: number[] = values;\n  {retain}(items, (value) => value % 2 === 0);\n  return 0;\n}})() >>> 0;\n}}\n"
+                "export function keepEvenInValueBlock(values: number[]): number {{\n  return (() => {{\n    const items: number[] = values;\n    {retain}(items, (value) => value % 2 === 0);\n    return 0;\n  }})() >>> 0;\n}}\n"
             )
         );
 
@@ -16130,7 +16131,7 @@ pub fn has_zero(values: &[u32]) -> bool {
             output.contains("const value = 1.0;") && output.contains("return value;"),
             "select_channel block tail: {output}"
         );
-        assert!(output.contains("const high = red << 24;\n  return high | alpha;"));
+        assert!(output.contains("const high = red << 24;\n    return high | alpha;"));
         assert!(output.contains("return value >>> 0;"));
         assert!(output.contains("return values.some((value) => value === 0);"));
     }

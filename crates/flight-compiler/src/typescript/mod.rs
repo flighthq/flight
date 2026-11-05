@@ -14235,6 +14235,9 @@ pub(crate) fn emit_local_with_shadow_and_else(
     if stripped.len() != value.len() {
         value = stripped.to_string();
     }
+    if value.contains('\n') {
+        value = indent_continuation_lines(&value, indent);
+    }
     write_indent(out, indent);
     if discard {
         writeln!(out, "{value};").expect("writing to a String cannot fail");
@@ -24626,6 +24629,7 @@ fn emit_statement(
                 emitted = nullable_option_value(value, emitted);
             }
             let emitted = strip_value_position_parens(&emitted);
+            let emitted = indent_continuation_lines(&emitted, indent);
             writeln!(out, "return {emitted};").expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::Return(return_expression), _) => {
@@ -24664,6 +24668,7 @@ fn emit_statement(
                     value = nullable_option_value(returned, value);
                 }
                 let value = strip_value_position_parens(&value);
+                let value = indent_continuation_lines(&value, indent);
                 writeln!(out, "return {value};").expect("writing to a String cannot fail");
             } else {
                 out.push_str("return;\n");
@@ -28245,6 +28250,26 @@ fn vitest_type_is_shared_identity(
         }
     }
     return rust_type_is_shared_identity(context, rust_type);
+}
+
+fn indent_continuation_lines(text: &str, indent: usize) -> String {
+    if indent == 0 || !text.contains('\n') {
+        return text.to_string();
+    }
+    let prefix = "  ".repeat(indent);
+    let mut result = String::with_capacity(text.len() + indent * 2 * text.matches('\n').count());
+    let mut first = true;
+    for line in text.split('\n') {
+        if !first {
+            result.push('\n');
+            if !line.is_empty() {
+                result.push_str(&prefix);
+            }
+        }
+        result.push_str(line);
+        first = false;
+    }
+    return result;
 }
 
 pub(crate) fn write_indent(out: &mut String, indent: usize) {
