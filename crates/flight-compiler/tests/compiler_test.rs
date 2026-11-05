@@ -21405,6 +21405,144 @@ mod panics {
     }
 
     #[test]
+    fn lowers_only_proven_block_on_test_calls_to_await() {
+        let production = r#"
+use flight_entity::FlightError;
+
+pub type ReadResult = Result<u32, FlightError>;
+
+pub async fn read_next(value: u32) -> u32 {
+    return value + 1;
+}
+
+pub async fn read_checked(value: u32) -> ReadResult {
+    return Ok(value);
+}
+
+pub fn read_now(value: u32) -> u32 {
+    return value;
+}
+"#;
+        let imported = "use std::future::Future;\nuse std::task::{Context, Poll, Waker};\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = Box::pin(future);\n    let mut context = Context::from_waker(Waker::noop());\n    loop {\n        match future.as_mut().poll(&mut context) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => std::thread::yield_now(),\n        }\n    }\n}";
+        let qualified = "pub(crate) fn block_on<F: std::future::Future>(future: F) -> F::Output {\n    let mut future = Box::pin(future);\n    let mut context = std::task::Context::from_waker(std::task::Waker::noop());\n    loop {\n        match future.as_mut().poll(&mut context) {\n            std::task::Poll::Ready(value) => return value,\n            std::task::Poll::Pending => std::thread::yield_now(),\n        }\n    }\n}";
+        let module = |helper: &str, extra: &str, body: &str, attribute: &str| {
+            return format!(
+                "use crate::*;\n{helper}\n\n{extra}\n\nmod reads {{\n    use super::*;\n\n    #[test]\n    {attribute}\n    fn awaits() {{\n        {body}\n    }}\n\n    #[test]\n    fn stays_synchronous() {{\n        assert_eq!(read_now(1), 1);\n    }}\n}}\n"
+            );
+        };
+        let body = "let next = block_on(read_next(1));\n        assert_eq!(next, 2);\n        assert_eq!(block_on(read_next(next)), 3);";
+        for helper in [imported, qualified] {
+            let output = compile_vitest_with_alias_sources(
+                &module(helper, "", body, ""),
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap();
+            for expected in [
+                "it('awaits', async () => {",
+                "const next = await readNext(1);",
+                "expect((await readNext(next))).toEqual(3);",
+                "it('stays synchronous', () => {",
+            ] {
+                assert!(output.contains(expected), "{expected}\n{output}");
+            }
+            for absent in ["blockOn", "poll", "Waker", "Context", "Poll", "yieldNow"] {
+                assert!(!output.contains(absent), "{absent}\n{output}");
+            }
+        }
+
+        for (extra, body, attribute, reason) in [
+            (
+                "",
+                "let read = || block_on(read_next(1));\n        assert_eq!(read(), 2);",
+                "",
+                "closure",
+            ),
+            (
+                "",
+                "assert_eq!(block_on(read_now(1)), 1);",
+                "",
+                "production `async fn`",
+            ),
+            (
+                "",
+                "assert_eq!(block_on(async { 1 }), 1);",
+                "",
+                "production `async fn`",
+            ),
+            (
+                "",
+                "assert_eq!(block_on(read_next(block_on(read_next(1)))), 3);",
+                "",
+                "nested",
+            ),
+            (
+                "",
+                "let run = block_on::<std::future::Ready<u32>>;\n        let _ = run;",
+                "",
+                "value",
+            ),
+            (
+                "fn read() -> u32 {\n    return block_on(read_next(1));\n}",
+                "assert_eq!(read(), 2);",
+                "",
+                "helper `read`",
+            ),
+            (
+                "",
+                "block_on(read_next(1));",
+                "#[should_panic]",
+                "should_panic",
+            ),
+            (
+                "",
+                "assert_eq!(block_on(read_checked(1)), Ok(1));",
+                "",
+                "`Result` future",
+            ),
+            (
+                "fn pending() -> bool {\n    return matches!(Poll::<u32>::Pending, Poll::Pending);\n}",
+                "assert!(pending());\n        block_on(read_next(1));",
+                "",
+                "tests `Poll`",
+            ),
+            (
+                "fn read_next(value: u32) -> u32 {\n    return value;\n}",
+                "block_on(read_next(1));",
+                "",
+                "shadows",
+            ),
+        ] {
+            let error = compile_vitest_with_alias_sources(
+                &module(imported, extra, body, attribute),
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(
+                error.contains("executor refuses") && error.contains(reason),
+                "{body}\n{error}"
+            );
+        }
+
+        // A custom executor, or one whose `Context` the file redeclares, is not the canonical
+        // helper: it keeps its body, whose polling has no TypeScript lowering.
+        for helper in [
+            imported.replace("std::thread::yield_now()", "{ std::thread::yield_now(); }"),
+            format!("{imported}\n\nstruct Context;"),
+        ] {
+            let error = compile_vitest_with_alias_sources(
+                &module(&helper, "", body, ""),
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(!error.contains("executor refuses"), "{helper}\n{error}");
+        }
+    }
+    #[test]
     fn refuses_flight_error_helpers_and_calls_it_cannot_prove() {
         let production = r#"
 pub fn fail() -> i32 {
@@ -24729,7 +24867,10 @@ fn calls_the_selected_target_native_function() {
             output.contains("} from '@flighthq/example/contract';"),
             "{output}"
         );
-        assert!(output.contains("expect(applyValue(2)).toEqual(3);"), "{output}");
+        assert!(
+            output.contains("expect(applyValue(2)).toEqual(3);"),
+            "{output}"
+        );
         assert!(!output.contains("flightExample"), "{output}");
     }
 
@@ -24741,8 +24882,10 @@ fn calls_a_function() {
     assert_eq!(flight_example::contract::apply_value(2), 3);
 }
 "#;
-        let public = "//! flight-compiler: target-native\npub fn apply_value(value: i32) -> i32 { value }\n";
-        let private = "//! flight-compiler: target-native\nfn apply_value(value: i32) -> i32 { value }\n";
+        let public =
+            "//! flight-compiler: target-native\npub fn apply_value(value: i32) -> i32 { value }\n";
+        let private =
+            "//! flight-compiler: target-native\nfn apply_value(value: i32) -> i32 { value }\n";
         let cases = [
             (
                 "pub use crate::private::apply_value;\n",

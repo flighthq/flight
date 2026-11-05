@@ -1121,6 +1121,10 @@ fn compile_vitest_with_contract_alias_sources_internal(
         typescript::insert_string_union_context(&mut context, alias_program.string_unions.keys());
     }
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
+    vitest::insert_async_function_context(
+        &mut context,
+        alias_programs.iter().chain(&visibility_programs),
+    );
     typescript::insert_vitest_own_export_name_context(&mut context, &program, &alias_programs)?;
     typescript::insert_vitest_dependency_export_name_context(
         &mut context,

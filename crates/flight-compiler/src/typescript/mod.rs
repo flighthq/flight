@@ -260,6 +260,14 @@ const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
 const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
 
 const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
+// A production `async fn` (`name`) a portable test may await through a proven `block_on` helper.
+pub(crate) const ASYNC_FUNCTION_MARKER: &str = "@async-function:";
+// A production `async fn` (`name`) whose output is `Result<T, FlightError>`: nothing proves its `Err`
+// is the TypeScript promise's rejection, so a test never awaits it through `block_on`.
+pub(crate) const ASYNC_RESULT_FUNCTION_MARKER: &str = "@async-result-function:";
+// The proven canonical noop-waker `block_on` test helper (`name`): it has no TypeScript body and
+// each proven call lowers to one `await` of its future inside an async test.
+pub(crate) const BLOCK_ON_HELPER_MARKER: &str = "@block-on-helper:";
 // A test helper proven to compute a panic payload's `String`/`&str` message (else empty); its calls
 // lower into vitest `toThrow(..)` and it has no TypeScript body.
 pub(crate) const PANIC_MESSAGE_HELPER_MARKER: &str = "@panic-message-helper:";
@@ -12116,6 +12124,14 @@ pub(crate) fn emit_expression(
     expression: &Expr,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if let Expr::Call(call) = expression
+        && let Expr::Path(path) = call.func.as_ref()
+        && let Some(helper) = path.path.get_ident()
+        && entities.contains(&format!("{BLOCK_ON_HELPER_MARKER}{helper}"))
+        && let [future] = call.args.iter().collect::<Vec<_>>().as_slice()
+    {
+        return Ok(format!("(await {})", emit_expression(future, entities)?));
+    }
     let value = emit_expression_value(expression, entities)?;
     let value = make_value_wrapper_async(expression, value);
     if current_source(entities).is_some()

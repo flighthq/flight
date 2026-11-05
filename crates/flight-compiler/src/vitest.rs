@@ -10,7 +10,10 @@ use syn::{
 };
 
 use crate::model::{Program, TestCase, TestProgram, TestSuite};
-use crate::typescript::{FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER};
+use crate::typescript::{
+    ASYNC_FUNCTION_MARKER, ASYNC_RESULT_FUNCTION_MARKER, BLOCK_ON_HELPER_MARKER,
+    FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER,
+};
 use crate::typescript::{
     ProvenanceImportRule, begin_option_if, begin_option_while, emit_block_with_tail_returns,
     emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
@@ -57,6 +60,336 @@ fn assertion_message(
         "portable assertion message",
     )
     .map(Some);
+}
+
+// The production `async fn` a `block_on` argument awaits: one direct, unqualified call of it.
+fn block_on_awaited_function(argument: &Expr, context: &HashSet<String>) -> Option<String> {
+    let Expr::Call(call) = unparenthesized(argument) else {
+        return None;
+    };
+    let Expr::Path(path) = call.func.as_ref() else {
+        return None;
+    };
+    let name = path.path.get_ident()?.to_string();
+    return context
+        .contains(&format!("{ASYNC_FUNCTION_MARKER}{name}"))
+        .then_some(name);
+}
+
+// Proves the file's canonical noop-waker executor (see `block_on_helper_is_canonical`) and every use
+// of it, returning the helper's name. A call lowers to one `await` of its future, which evaluates the
+// future once and rethrows what it throws, exactly as the executor returns its output or unwinds
+// its panic; so a call is admitted only where an `await` keeps that meaning:
+// - in a `#[test]` body (not a `should_panic` test), outside any closure or async block, never
+//   from a helper and never as a value;
+// - around exactly one direct call of a production `async fn` that no test helper shadows, whose
+//   arguments do not call the executor again;
+// - never for a `Result<T, FlightError>` future: no lowering proves its `Err` is the TypeScript
+//   promise's rejection (a production `return Err(..)` does not reject), so `await` could not
+//   reproduce the returned `Err`.
+// A file that otherwise names `Waker`, `RawWaker`, `Poll` or `poll` tests wake or poll behavior,
+// which `await` does not reproduce, so it refuses.
+// flight-lint: allow(hashmap-iteration) program items are Vecs in Rust source order and only a refusal reason is kept
+fn block_on_calls_are_proven(
+    program: &TestProgram,
+    context: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    // Walks one test body for its uses of the proven `block_on` executor `helper`, recording the first
+    // reason one cannot lower to `await` (see `block_on_calls_are_proven`).
+    struct BlockOnUses<'a> {
+        context: &'a HashSet<String>,
+        error: Option<String>,
+        // Closures and async blocks entered: an `await` inside one would not suspend the test.
+        escaping: usize,
+        helper: &'a str,
+        shadowed: &'a dyn Fn(&str) -> bool,
+    }
+
+    impl BlockOnUses<'_> {
+        fn check_call(&mut self, call: &syn::ExprCall) {
+            if self.escaping > 0 {
+                return self.fail("a call inside a closure or async block");
+            }
+            let [argument] = call.args.iter().collect::<Vec<_>>()[..] else {
+                return self.fail("a call without exactly one future");
+            };
+            let Some(function) = block_on_awaited_function(argument, self.context) else {
+                return self.fail(
+                    "an argument other than one direct call of a production `async fn` (a custom or local future)",
+                );
+            };
+            if (self.shadowed)(&function) {
+                return self.fail(&format!("`{function}`, which a test helper shadows"));
+            }
+            if block_on_tokens_name(argument.to_token_stream(), self.helper) {
+                return self.fail("a nested call");
+            }
+            if self
+                .context
+                .contains(&format!("{ASYNC_RESULT_FUNCTION_MARKER}{function}"))
+            {
+                return self.fail(&format!(
+                    "the `Result` future of `{function}`: no lowering proves its `Err` is the TypeScript promise's rejection, so an `await` could not reproduce the returned `Err`"
+                ));
+            }
+            self.visit_expr(argument);
+        }
+
+        fn fail(&mut self, reason: &str) {
+            self.error.get_or_insert_with(|| reason.to_string());
+        }
+    }
+
+    impl<'ast> Visit<'ast> for BlockOnUses<'_> {
+        fn visit_expr_async(&mut self, block: &'ast syn::ExprAsync) {
+            self.escaping += 1;
+            syn::visit::visit_expr_async(self, block);
+            self.escaping -= 1;
+        }
+
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            if let Expr::Path(path) = call.func.as_ref()
+                && path.path.is_ident(self.helper)
+            {
+                return self.check_call(call);
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            self.escaping += 1;
+            syn::visit::visit_expr_closure(self, closure);
+            self.escaping -= 1;
+        }
+
+        // Any other mention, with or without a turbofish, uses the executor as a value.
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if let [segment] = path.path.segments.iter().collect::<Vec<_>>()[..]
+                && segment.ident == self.helper
+            {
+                self.fail("its use as a value");
+            }
+        }
+
+        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            let Ok(arguments) = parse_macro_arguments(rust_macro) else {
+                if block_on_tokens_name(rust_macro.tokens.clone(), self.helper) {
+                    self.fail("a call inside a macro whose arguments are not expressions");
+                }
+                return;
+            };
+            for argument in &arguments {
+                self.visit_expr(argument);
+            }
+        }
+    }
+
+    let canonical = program
+        .helpers
+        .iter()
+        .filter(|helper| block_on_helper_is_canonical(helper, program))
+        .collect::<Vec<_>>();
+    let helper = match canonical.as_slice() {
+        [] => return Ok(None),
+        [helper] => helper.sig.ident.to_string(),
+        _ => {
+            return Err(compile_error(
+                "portable test declares more than one `block_on` executor",
+            ));
+        }
+    };
+    let refuse = |reason: String| {
+        return Err(compile_error(format!(
+            "portable test `{helper}` executor refuses {reason}; only a test call awaiting one production future lowers to `await`"
+        )));
+    };
+    let helper_functions = program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| suite.helpers.iter()))
+        .filter(|function| function.sig.ident != helper.as_str())
+        .collect::<Vec<_>>();
+    let tests = program
+        .suites
+        .iter()
+        .flat_map(|suite| suite.tests.iter())
+        .collect::<Vec<_>>();
+    let other_tokens = helper_functions
+        .iter()
+        .map(|function| function.to_token_stream())
+        .chain(tests.iter().map(|test| test.function.to_token_stream()))
+        .chain(program.structs.iter().map(ToTokens::to_token_stream))
+        .chain(program.constants.iter().map(ToTokens::to_token_stream))
+        .collect::<Vec<_>>();
+    for tokens in &other_tokens {
+        for name in ["Waker", "RawWaker", "Poll", "poll"] {
+            if block_on_tokens_name(tokens.clone(), name) {
+                return refuse(format!("a file that tests `{name}` behavior"));
+            }
+        }
+    }
+    for function in helper_functions {
+        if block_on_tokens_name(function.block.to_token_stream(), &helper) {
+            return refuse(format!(
+                "its use in helper `{}`, where an `await` would escape the test",
+                function.sig.ident
+            ));
+        }
+    }
+    let shadowed = |name: &str| {
+        return program
+            .helpers
+            .iter()
+            .chain(program.suites.iter().flat_map(|suite| suite.helpers.iter()))
+            .any(|function| function.sig.ident == name);
+    };
+    for test in tests {
+        if !block_on_tokens_name(test.function.block.to_token_stream(), &helper) {
+            continue;
+        }
+        if test.should_panic {
+            return refuse(
+                "a `should_panic` test, whose synchronous `toThrow` cannot await".into(),
+            );
+        }
+        let mut uses = BlockOnUses {
+            context,
+            error: None,
+            escaping: 0,
+            helper: &helper,
+            shadowed: &shadowed,
+        };
+        uses.visit_block(&test.function.block);
+        if let Some(reason) = uses.error {
+            return refuse(reason);
+        }
+    }
+    return Ok(Some(helper));
+}
+
+// Whether `function` is exactly the canonical noop-waker executor
+//
+//     fn block_on<F: Future>(future: F) -> F::Output {
+//         let mut future = Box::pin(future);
+//         let mut context = Context::from_waker(Waker::noop());
+//         loop {
+//             match future.as_mut().poll(&mut context) {
+//                 Poll::Ready(value) => return value,
+//                 Poll::Pending => std::thread::yield_now(),
+//             }
+//         }
+//     }
+//
+// (any name and visibility), which polls its future to completion with no observable effect but
+// the future's own. `Future`, `Context`, `Waker` and `Poll` must each be spelled through `std`, or
+// imported unrenamed from `std::future`/`std::task` and not redeclared by the file.
+fn block_on_helper_is_canonical(function: &ItemFn, program: &TestProgram) -> bool {
+    const STANDARD: [(&str, &str); 4] = [
+        ("Future", "std :: future :: Future"),
+        ("Context", "std :: task :: Context"),
+        ("Waker", "std :: task :: Waker"),
+        ("Poll", "std :: task :: Poll"),
+    ];
+    if !function.attrs.is_empty() {
+        return false;
+    }
+    let name = &function.sig.ident;
+    let actual = format!(
+        "{} {}",
+        function.sig.to_token_stream(),
+        function.block.to_token_stream()
+    );
+    let Ok(canonical) = syn::parse_str::<ItemFn>(&format!(
+        "fn {name}<F: Future>(future: F) -> F::Output {{ let mut future = Box::pin(future); let mut context = Context::from_waker(Waker::noop()); loop {{ match future.as_mut().poll(&mut context) {{ Poll::Ready(value) => return value, Poll::Pending => std::thread::yield_now(), }} }} }}"
+    )) else {
+        return false;
+    };
+    let canonical = format!(
+        "{} {}",
+        canonical.sig.to_token_stream(),
+        canonical.block.to_token_stream()
+    );
+    let mut normalized = actual.clone();
+    for (short, path) in STANDARD {
+        normalized = normalized.replace(path, short);
+    }
+    if normalized != canonical {
+        return false;
+    }
+    let declared = program
+        .structs
+        .iter()
+        .map(|structure| structure.ident.to_string())
+        .chain(
+            program
+                .type_aliases
+                .iter()
+                .map(|alias| alias.ident.to_string()),
+        )
+        .chain(
+            program
+                .helpers
+                .iter()
+                .map(|helper| helper.sig.ident.to_string()),
+        )
+        .collect::<HashSet<_>>();
+    let imported = program
+        .uses
+        .iter()
+        .flat_map(|item_use| block_on_std_imports(&item_use.tree, &mut Vec::new()))
+        .collect::<HashSet<_>>();
+    return STANDARD.iter().all(|(short, path)| {
+        let unqualified = actual.matches(&format!(" {short} ")).count()
+            + usize::from(actual.starts_with(&format!("{short} ")))
+            > actual.matches(*path).count();
+        return !unqualified
+            || (!declared.contains(*short) && imported.contains(&path.replace(" :: ", "::")));
+    });
+}
+
+// The `std::future`/`std::task` paths a `use` tree imports unrenamed, a glob importing every one.
+fn block_on_std_imports(tree: &UseTree, prefix: &mut Vec<String>) -> Vec<String> {
+    let module = prefix.join("::");
+    let paths = match tree {
+        UseTree::Path(path) => {
+            prefix.push(path.ident.to_string());
+            let paths = block_on_std_imports(&path.tree, prefix);
+            prefix.pop();
+            paths
+        }
+        UseTree::Name(name) => vec![format!("{module}::{}", name.ident)],
+        UseTree::Glob(_) => ["Future", "Context", "Waker", "Poll"]
+            .iter()
+            .map(|name| format!("{module}::{name}"))
+            .collect(),
+        UseTree::Group(group) => group
+            .items
+            .iter()
+            .flat_map(|tree| block_on_std_imports(tree, prefix))
+            .collect(),
+        UseTree::Rename(_) => Vec::new(),
+    };
+    return paths
+        .into_iter()
+        .filter(|path| {
+            matches!(
+                path.as_str(),
+                "std::future::Future"
+                    | "std::task::Context"
+                    | "std::task::Waker"
+                    | "std::task::Poll"
+            )
+        })
+        .collect();
+}
+
+// Whether any identifier token in `tokens`, at any group depth, is `name`.
+fn block_on_tokens_name(tokens: proc_macro2::TokenStream, name: &str) -> bool {
+    return tokens.into_iter().any(|token| match token {
+        proc_macro2::TokenTree::Ident(identifier) => identifier == name,
+        proc_macro2::TokenTree::Group(group) => block_on_tokens_name(group.stream(), name),
+        _ => false,
+    });
 }
 
 fn collect_contract_symbols(
@@ -430,6 +763,10 @@ fn collect_contract_symbols(
     for function in program
         .helpers
         .iter()
+        // The proven `block_on` executor has no TypeScript body, so it imports nothing.
+        .filter(|helper| {
+            !context.contains(&format!("{BLOCK_ON_HELPER_MARKER}{}", helper.sig.ident))
+        })
         .chain(program.suites.iter().flat_map(|suite| {
             suite
                 .helpers
@@ -537,6 +874,50 @@ fn explicit_import_names<'a>(uses: impl Iterator<Item = &'a ItemUse>) -> BTreeSe
         collect(&item_use.tree, &mut names);
     }
     return names;
+}
+
+// Records the production `async fn`s a portable test may await through a proven `block_on`
+// executor, and which of them resolve to `Result<T, FlightError>` (directly or through a type alias
+// any source declares), which a test must not await.
+pub(crate) fn insert_async_function_context<'a>(
+    context: &mut HashSet<String>,
+    production: impl Iterator<Item = &'a Program> + Clone,
+) {
+    let flight_error_result = |rust_type: &Type| {
+        let Type::Path(path) = rust_type else {
+            return false;
+        };
+        let Some(segment) = path.path.segments.last() else {
+            return false;
+        };
+        let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+            return false;
+        };
+        return segment.ident == "Result"
+            && arguments.args.len() == 2
+            && matches!(&arguments.args[1], syn::GenericArgument::Type(Type::Path(error))
+                if error.path.segments.last().is_some_and(|segment| segment.ident == "FlightError"));
+    };
+    let result_aliases = production
+        .clone()
+        .flat_map(|program| &program.type_aliases)
+        .filter(|alias| alias.generics.params.is_empty() && flight_error_result(&alias.ty))
+        .map(|alias| alias.ident.to_string())
+        .collect::<HashSet<_>>();
+    for function in production.flat_map(|program| &program.functions) {
+        if function.sig.asyncness.is_none() {
+            continue;
+        }
+        let name = &function.sig.ident;
+        context.insert(format!("{ASYNC_FUNCTION_MARKER}{name}"));
+        if let ReturnType::Type(_, rust_type) = &function.sig.output
+            && (flight_error_result(rust_type)
+                || matches!(rust_type.as_ref(), Type::Path(path)
+                    if path.path.get_ident().is_some_and(|alias| result_aliases.contains(&alias.to_string()))))
+        {
+            context.insert(format!("{ASYNC_RESULT_FUNCTION_MARKER}{name}"));
+        }
+    }
 }
 
 // Whether a parameter type formats identically under Rust `Display` and a JavaScript template:
@@ -1761,6 +2142,10 @@ fn emit_helper(
 ) -> Result<(), CompileError> {
     // A proven panic-message helper has no TypeScript body: its calls lower into `toThrow(..)`.
     if proven_panic_message_helper(function) || proven_flight_error_helper(function).is_some() {
+        return Ok(());
+    }
+    // The proven `block_on` executor has no TypeScript body: its calls lower to `await`.
+    if context.contains(&format!("{BLOCK_ON_HELPER_MARKER}{}", function.sig.ident)) {
         return Ok(());
     }
     if function.sig.asyncness.is_some() {
@@ -3984,6 +4369,7 @@ fn emit_suite(
     return Ok(());
 }
 
+// flight-lint: allow(hashmap-iteration) markers are only tested with `any`, so visit order is unobservable
 fn emit_test(
     out: &mut String,
     test: &TestCase,
@@ -4005,7 +4391,13 @@ fn emit_test(
         )));
     }
     let name = test_display_name(function);
-    writeln!(out, "  it({}, () => {{", js_string_literal(&name))
+    // A test that awaits through the proven `block_on` executor is an async test.
+    let awaits = context
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(BLOCK_ON_HELPER_MARKER))
+        .any(|helper| block_on_tokens_name(function.block.to_token_stream(), helper));
+    let arrow = if awaits { "async () =>" } else { "() =>" };
+    writeln!(out, "  it({}, {arrow} {{", js_string_literal(&name))
         .expect("writing to a String cannot fail");
     if test.should_panic {
         out.push_str("    expect(() => {\n");
@@ -4065,6 +4457,9 @@ pub(crate) fn emit_test_program(
         }))
     {
         panic_statements_are_proven(function)?;
+    }
+    if let Some(helper) = block_on_calls_are_proven(program, &panic_helper_context)? {
+        panic_helper_context.insert(format!("{BLOCK_ON_HELPER_MARKER}{helper}"));
     }
     let context = &panic_helper_context;
     let (mut contract_symbols, mut contract_type_symbols, external_modules) =
