@@ -10,14 +10,16 @@ import type {
   ImageResourceReference,
   ImportDiagnostic,
   Node2D,
-  RiveArtboardImport,
-  RiveDocumentImportResult,
-  RiveScene2DDocumentResult,
   Scene2DSlotReference,
   Texture,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type {
+  RiveArtboardImport,
+  RiveDocumentImportResult,
+  RiveScene2DDocumentResult,
+} from './contract.scene2d-formats-types.ts';
 import { getRiveImageAssetIndex, getRiveImageTexture, getRiveNestedArtboardIndex } from './riveAssetBinding.ts';
 import { createScene2DFromRiveDocument } from './riveImport.ts';
 

@@ -1,6 +1,7 @@
-import type { ImportDiagnostic, RiveCoreObject } from '@flighthq/types/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
+import type { RiveCoreObject } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
 import { createRiveStateMachines, registerRiveStateMachineHandlers } from './riveStateMachine.ts';
 

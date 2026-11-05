@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { RiveArtboardGraph, RiveCoreObject, RiveImportRegistry } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveCoreObject, RiveImportRegistry } from './contract.scene2d-formats-types.ts';
 import {
   applyRiveArtboardHandlers,
   applyRiveDocumentHandlers,

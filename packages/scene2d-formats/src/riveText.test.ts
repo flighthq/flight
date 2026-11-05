@@ -1,7 +1,9 @@
 import { packColor } from '@flighthq/color/contract';
-import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveCoreObject } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
 import { createRiveRichText, importRiveTextComponent, registerRiveTextHandlers } from './riveText.ts';
 

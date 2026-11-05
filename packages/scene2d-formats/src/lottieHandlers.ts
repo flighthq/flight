@@ -1,5 +1,4 @@
-import type { LottieRegistry } from '@flighthq/types/contract';
-
+import type { LottieRegistry } from './contract.scene2d-formats-types.ts';
 import { registerLottieLayerHandlers } from './lottieLayerHandlers.ts';
 import { registerLottieMaskHandlers } from './lottieMaskHandlers.ts';
 import { registerLottieShapeItemHandlers } from './lottieShapeItemHandlers.ts';

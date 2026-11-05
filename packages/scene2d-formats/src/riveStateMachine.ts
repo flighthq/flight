@@ -1,6 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
   RiveCoreObject,
   RiveImportRegistry,
   RiveStateMachineDescriptor,
@@ -8,9 +10,7 @@ import type {
   RiveStateMachineLayer,
   RiveStateMachineState,
   RiveStateMachineTransition,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 

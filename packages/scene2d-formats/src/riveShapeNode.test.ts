@@ -1,14 +1,15 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Shape } from '@flighthq/shape/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveProperty,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { createRiveArtboardImportContext, createRiveImportRegistry } from './riveImportRegistry.ts';
 import {
   importRiveNSlicedNodeComponent,

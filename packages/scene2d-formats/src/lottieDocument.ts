@@ -17,6 +17,13 @@ import type {
   DisplayObject,
   EntityConstruction,
   ImportDiagnostic,
+  Node2D,
+  Node2DAnimationPath,
+  Node2DAnimationTarget,
+} from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import type {
   LottieAdvancedBlend,
   LottieAnimatable,
   LottieBezierHandle,
@@ -31,12 +38,7 @@ import type {
   LottiePositionProperty,
   LottieRegistry,
   LottieTransform,
-  Node2D,
-  Node2DAnimationPath,
-  Node2DAnimationTarget,
-} from '@flighthq/types/contract';
-import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { getLottieLayerHandler, getLottieMaskHandler } from './lottieRegistry.ts';
 
 /**

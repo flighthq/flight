@@ -1,6 +1,7 @@
-import type { ImportDiagnostic, RiveCoreObject, RiveDocument } from '@flighthq/types/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
+import type { RiveCoreObject, RiveDocument } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { createRiveObjectGraph, initializeRiveObjectGraph } from './riveObjectGraph.ts';
 
 // The index base here was settled against real files, not chosen: numbering the artboard as index 0

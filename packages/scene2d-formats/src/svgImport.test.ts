@@ -7,8 +7,9 @@ import type { RichText, TextLabel } from '@flighthq/text/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Sprite, ImportDiagnostic, Matrix, Node2D } from '@flighthq/types/contract';
-import { SpriteKind, DisplayObjectKind, ImportDiagnosticSeverity, SvgElementKind } from '@flighthq/types/contract';
+import { SpriteKind, DisplayObjectKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { SvgElementKind } from './contract.scene2d-formats-types.ts';
 import { svgContainerElementHandler } from './svgContainerElement.ts';
 import { svgGeometryElementHandler } from './svgGeometryElement.ts';
 import { svgImageElementHandler } from './svgImageElement.ts';

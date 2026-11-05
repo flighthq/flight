@@ -1,6 +1,5 @@
-import type { LottieMaskHandler, LottieRegistry } from '@flighthq/types/contract';
-import { LottieMaskKind } from '@flighthq/types/contract';
-
+import type { LottieMaskHandler, LottieRegistry } from './contract.scene2d-formats-types.ts';
+import { LottieMaskKind } from './contract.scene2d-formats-types.ts';
 import { lottieAdditiveMaskHandler } from './lottieMask.ts';
 import { registerLottieMaskHandler } from './lottieRegistry.ts';
 

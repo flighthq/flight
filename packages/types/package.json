@@ -58,6 +58,7 @@
     "@flighthq/registry": "*",
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
+    "@flighthq/scene2d-formats": "*",
     "@flighthq/selection": "*",
     "@flighthq/shape-formats": "*",
     "@flighthq/shape": "*",

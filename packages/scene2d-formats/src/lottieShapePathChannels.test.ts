@@ -1,6 +1,6 @@
-import type { LottieLayer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { LottieLayer } from './contract.scene2d-formats-types.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';
 import { createLottieTestDocument, lottieTestSquarePath } from './lottieTestFixtures.ts';
 

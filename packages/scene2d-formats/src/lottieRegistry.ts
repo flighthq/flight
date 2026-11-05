@@ -1,3 +1,5 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
+
 import type {
   LottieLayerHandler,
   LottieLayerKind,
@@ -6,8 +8,7 @@ import type {
   LottieRegistry,
   LottieShapeItemHandler,
   LottieShapeItemKind,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+} from './contract.scene2d-formats-types.ts';
 
 export function createLottieRegistry(): NonEntityCreateResult<LottieRegistry, 'descriptor'> {
   return { layerHandlers: [], maskHandlers: [], shapeItemHandlers: [] };

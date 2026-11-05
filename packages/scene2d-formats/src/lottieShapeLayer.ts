@@ -3,8 +3,9 @@ import type { Path } from '@flighthq/path/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
+import type { DisplayObject } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
   LottieImportContext,
   LottieLayerContext,
   LottieShapeGroup,
@@ -12,8 +13,7 @@ import type {
   LottieShapeModifier,
   LottieShapePainter,
   LottieTransform,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { applyLottieTransform, reportLottieExpression, reportLottieSkip } from './lottieDocument.ts';
 import { getLottieShapeItemHandler } from './lottieRegistry.ts';
 import { appendLottieShapePaths } from './lottieShapePaint.ts';

@@ -1,6 +1,6 @@
-import { SvgClipKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { SvgClipKind } from './contract.scene2d-formats-types.ts';
 import { svgPathClipHandler } from './svgClip.ts';
 import { registerSvgClipHandlers, svgAllClipHandlers } from './svgClipHandlers.ts';
 import { createSvgRegistry } from './svgRegistry.ts';

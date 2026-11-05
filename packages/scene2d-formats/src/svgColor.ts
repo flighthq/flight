@@ -1,6 +1,6 @@
 import { clamp } from '@flighthq/math/contract';
-import type { SvgColor } from '@flighthq/types/contract';
 
+import type { SvgColor } from './contract.scene2d-formats-types.ts';
 import {} from './svgXml.ts';
 
 /**

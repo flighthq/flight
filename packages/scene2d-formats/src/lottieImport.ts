@@ -1,14 +1,14 @@
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
   LottieDocument,
   LottieDocumentImportOptions,
   LottieDocumentImportResult,
   LottieLayerHandlerEntry,
   LottieMaskHandlerEntry,
   LottieShapeItemHandlerEntry,
-} from '@flighthq/types/contract';
-import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
+import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from './contract.scene2d-formats-types.ts';
 import { createScene2DFromLottieDocumentWithRegistry } from './lottieDocument.ts';
 import { lottieEllipseShapeItemHandler } from './lottieEllipseShapeItem.ts';
 import { lottieFillShapeItemHandler } from './lottieFillShapeItem.ts';

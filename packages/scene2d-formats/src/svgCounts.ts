@@ -1,6 +1,7 @@
-import { SvgClipKind, SvgElementKind } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
+
+import { SvgClipKind, SvgElementKind } from './contract.scene2d-formats-types.ts';
 
 export function collectSvgCounts(source: string): Map<string, number> | null {
   const document = parseXmlDocument(source);

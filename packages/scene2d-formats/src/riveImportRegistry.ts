@@ -4,14 +4,16 @@ import type {
   EntityConstruction,
   ImportDiagnostic,
   NonEntityCreateResult,
+} from '@flighthq/types/contract';
+
+import type {
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveCoreObjectHandler,
   RiveDocumentImportContext,
   RiveImportRegistry,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { getRiveCoreTypeParent } from './riveCoreTypes.ts';
 
 /**

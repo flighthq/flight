@@ -1,6 +1,5 @@
-import type { LottieRegistry, LottieShapeItemHandler } from '@flighthq/types/contract';
-import { LottieShapeItemKind } from '@flighthq/types/contract';
-
+import type { LottieRegistry, LottieShapeItemHandler } from './contract.scene2d-formats-types.ts';
+import { LottieShapeItemKind } from './contract.scene2d-formats-types.ts';
 import { lottieEllipseShapeItemHandler } from './lottieEllipseShapeItem.ts';
 import { lottieFillShapeItemHandler } from './lottieFillShapeItem.ts';
 import {

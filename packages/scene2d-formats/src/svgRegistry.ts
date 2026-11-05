@@ -1,11 +1,12 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
+
 import type {
-  NonEntityCreateResult,
   SvgClipHandler,
   SvgClipKind,
   SvgElementHandler,
   SvgElementKind,
   SvgRegistry,
-} from '@flighthq/types/contract';
+} from './contract.scene2d-formats-types.ts';
 
 export function createSvgRegistry(): NonEntityCreateResult<SvgRegistry, 'descriptor'> {
   return { clipHandlers: [], elementHandlers: [] };

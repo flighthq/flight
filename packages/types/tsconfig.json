@@ -17,6 +17,7 @@
       ".path-boolean-types",
       ".path-types",
       ".preferences-types",
+      ".scene2d-formats-types",
       ".selection-types",
       ".shape-formats-types",
       ".shape-types",
@@ -96,6 +97,9 @@
     },
     {
       "path": "../resource"
+    },
+    {
+      "path": "../scene2d-formats/tsconfig.contract.json"
     },
     {
       "path": "../selection/tsconfig.contract.json"

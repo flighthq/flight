@@ -1,6 +1,5 @@
-import type { LottieLayerHandler, LottieShapeItemHandler } from '@flighthq/types/contract';
-import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from '@flighthq/types/contract';
-
+import type { LottieLayerHandler, LottieShapeItemHandler } from './contract.scene2d-formats-types.ts';
+import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from './contract.scene2d-formats-types.ts';
 import {
   createLottieRegistry,
   getLottieLayerHandler,

@@ -9,10 +9,11 @@ import { clamp } from '@flighthq/math/contract';
 import { getPathBounds } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import type { SpreadMethod } from '@flighthq/shape/contract';
-import type { Matrix, SvgGradient, SvgGradientStop, SvgImportContext } from '@flighthq/types/contract';
+import type { Matrix } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
+import type { SvgGradient, SvgGradientStop, SvgImportContext } from './contract.scene2d-formats-types.ts';
 import { resolveSvgColor } from './svgColor.ts';
 import { parseStyleDeclarations, resolveSvgDefinitionStyle } from './svgStyle.ts';
 import { multiplySvgMatrices, parseSvgTransform } from './svgTransform.ts';

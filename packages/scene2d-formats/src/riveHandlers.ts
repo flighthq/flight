@@ -1,5 +1,6 @@
-import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
+import type { PathBooleanKernel } from '@flighthq/types/contract';
 
+import type { RiveImportRegistry } from './contract.scene2d-formats-types.ts';
 import { registerRiveAnimationHandlers } from './riveAnimation.ts';
 import { registerRiveAssetHandlers } from './riveAssets.ts';
 import { registerRiveClippingHandlers } from './riveClipping.ts';

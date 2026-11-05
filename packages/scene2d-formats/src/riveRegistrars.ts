@@ -1,12 +1,11 @@
+import type { NonEntityCreateResult, PathBooleanKernel } from '@flighthq/types/contract';
+
 import type {
-  NonEntityCreateResult,
-  PathBooleanKernel,
   RiveImportOptions,
   RiveImportRegistry,
   RivePathBooleanRegistrar,
   RiveRegistrar,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { registerRiveAnimationHandlers } from './riveAnimation.ts';
 import { registerRiveAssetHandlers } from './riveAssets.ts';
 import { registerRiveClippingHandlers } from './riveClipping.ts';

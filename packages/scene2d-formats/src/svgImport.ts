@@ -1,12 +1,11 @@
+import type { DisplayObject, ImportDiagnostic } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
-  ImportDiagnostic,
   SvgClipHandlerEntry,
   SvgDocumentImportOptions,
   SvgElementHandlerEntry,
-} from '@flighthq/types/contract';
-import { SvgClipKind, SvgElementKind } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
+import { SvgClipKind, SvgElementKind } from './contract.scene2d-formats-types.ts';
 import { svgPathClipHandler } from './svgClip.ts';
 import { svgContainerElementHandler } from './svgContainerElement.ts';
 import { createScene2DFromSvgDocumentWithRegistry } from './svgDocument.ts';

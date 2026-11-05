@@ -1,15 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
-  ImportDiagnostic,
   RiveArtboardGraph,
   RiveCoreObject,
   RiveDocument,
   RiveObjectGraph,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 
 export function createRiveObjectGraph(

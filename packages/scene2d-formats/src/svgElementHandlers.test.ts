@@ -1,6 +1,6 @@
-import { SvgElementKind as Kind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { SvgElementKind as Kind } from './contract.scene2d-formats-types.ts';
 import { svgContainerElementHandler } from './svgContainerElement.ts';
 import { svgAllElementHandlers, registerSvgElementHandlers } from './svgElementHandlers.ts';
 import { svgGeometryElementHandler } from './svgGeometryElement.ts';

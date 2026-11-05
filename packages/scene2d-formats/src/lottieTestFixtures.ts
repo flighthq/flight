@@ -1,11 +1,7 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import type {
-  LottieDocument,
-  LottieLayer,
-  LottieShapePath,
-  NonEntityCreateResult,
-  Node2D,
-} from '@flighthq/types/contract';
+import type { NonEntityCreateResult, Node2D } from '@flighthq/types/contract';
+
+import type { LottieDocument, LottieLayer, LottieShapePath } from './contract.scene2d-formats-types.ts';
 
 export function animatedLottieTestScalar(start: number, end: number) {
   return {

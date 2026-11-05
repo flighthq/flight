@@ -2,10 +2,11 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { DisplayObject, Node2D, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
+import type { DisplayObject, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
+import type { SvgElementContext, SvgImportContext, SvgStyle } from './contract.scene2d-formats-types.ts';
 import { applySvgElementClipFamily } from './svgDocument.ts';
 import {
   appendSvgChildren,

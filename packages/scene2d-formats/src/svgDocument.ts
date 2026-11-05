@@ -2,20 +2,18 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { registerDefaultShapeBoundsCommands } from '@flighthq/shape/contract';
+import type { DisplayObject, Node2D, ImportDiagnostic, Matrix } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
+import { parseXmlDocument } from '@flighthq/xml/contract';
+
 import type {
-  DisplayObject,
-  Node2D,
-  ImportDiagnostic,
-  Matrix,
   SvgDocumentImportOptions,
   SvgImportContext,
   SvgRegistry,
   SvgStyle,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SvgClipKind, SvgElementKind } from '@flighthq/types/contract';
-import type { XmlElement } from '@flighthq/xml/contract';
-import { parseXmlDocument } from '@flighthq/xml/contract';
-
+} from './contract.scene2d-formats-types.ts';
+import { SvgClipKind, SvgElementKind } from './contract.scene2d-formats-types.ts';
 import { parseSvgGradient } from './svgGradient.ts';
 import { getSvgClipHandler, getSvgElementHandler } from './svgRegistry.ts';
 import { collectCssRules, defaultSvgStyle, resolveSvgStyle } from './svgStyle.ts';

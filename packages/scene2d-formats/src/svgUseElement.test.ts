@@ -1,10 +1,10 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { SvgElementHandler, SvgElementKind } from '@flighthq/types/contract';
-import { SvgElementKind as Kind } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { SvgElementHandler, SvgElementKind } from './contract.scene2d-formats-types.ts';
+import { SvgElementKind as Kind } from './contract.scene2d-formats-types.ts';
 import { registerSvgElementHandlers } from './svgElementHandlers.ts';
 import { createScene2DFromSvgDocument } from './svgImport.ts';
 import { createSvgRegistry, getSvgElementHandler } from './svgRegistry.ts';

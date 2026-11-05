@@ -1,16 +1,16 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import { TextLabelKind } from '@flighthq/text/contract';
+import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
+import { SpriteKind } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
   LottieAnimatable,
   LottieDocument,
   LottieLayer,
   LottieShapePath,
-  Node2D,
-} from '@flighthq/types/contract';
-import { LottieLayerKind, SpriteKind } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
+import { LottieLayerKind } from './contract.scene2d-formats-types.ts';
 import {
   applyAnimationClipToLottieDocument,
   bindMutableLottieNumericProperty,

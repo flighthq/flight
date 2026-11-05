@@ -2,10 +2,11 @@ import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Node2D, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
+import type { SvgElementContext, SvgImportContext, SvgStyle } from './contract.scene2d-formats-types.ts';
 import { applySvgElementClipFamily } from './svgDocument.ts';
 import { applySvgElementAppearance } from './svgDocument.ts';
 import { createSvgViewBoxMatrix } from './svgTransform.ts';

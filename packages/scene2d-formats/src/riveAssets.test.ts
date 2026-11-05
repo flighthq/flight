@@ -1,12 +1,8 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  ImportDiagnostic,
-  RiveArtboardGraph,
-  RiveArtboardImportContext,
-  RiveCoreObject,
-} from '@flighthq/types/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveArtboardImportContext, RiveCoreObject } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { getRiveNestedArtboardIndex } from './riveAssetBinding.ts';
 import {
   createRiveFileAssets,

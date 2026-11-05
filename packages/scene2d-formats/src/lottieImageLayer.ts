@@ -1,15 +1,15 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
+import type { DisplayObject } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
   LottieAsset,
   LottieImageAsset,
   LottieImportContext,
   LottieLayer,
   LottieLayerContext,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { reportLottieDrop, reportLottieSkip } from './lottieDocument.ts';
 
 /**

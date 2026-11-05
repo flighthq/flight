@@ -1,7 +1,7 @@
-import type { LottieLayer, LottieMaskHandler } from '@flighthq/types/contract';
-import { LottieMaskKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { LottieLayer, LottieMaskHandler } from './contract.scene2d-formats-types.ts';
+import { LottieMaskKind } from './contract.scene2d-formats-types.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';
 import { lottieAdditiveMaskHandler } from './lottieMask.ts';
 import { registerLottieMaskHandlers } from './lottieMaskHandlers.ts';

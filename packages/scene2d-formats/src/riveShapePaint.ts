@@ -13,15 +13,15 @@ import {
 } from '@flighthq/shape/contract';
 import type { CapsStyle } from '@flighthq/shape/contract';
 import type { JointStyle, Shape } from '@flighthq/shape/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
   RiveArtboardGraph,
   RiveCoreObject,
   RiveImportRegistry,
   RivePathRecord,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 

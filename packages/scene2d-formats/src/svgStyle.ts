@@ -1,8 +1,8 @@
 import { clamp } from '@flighthq/math/contract';
 import type { PathWinding } from '@flighthq/path/contract';
-import type { SvgCssRule, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
+import type { SvgCssRule, SvgImportContext, SvgStyle } from './contract.scene2d-formats-types.ts';
 import { svgAttribute, svgLocalName, parseSvgCssNumber, parseSvgLength, visitSvgElements } from './svgXml.ts';
 
 /**

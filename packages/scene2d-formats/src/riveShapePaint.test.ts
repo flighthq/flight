@@ -1,9 +1,11 @@
 import { createPath, getPathLength } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
 import { createShape } from '@flighthq/shape/contract';
-import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject, RivePathRecord } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveCoreObject, RivePathRecord } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
 import { appendRiveShapeGeometry, appendRiveShapePaint, registerRivePaintHandlers } from './riveShapePaint.ts';
 

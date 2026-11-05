@@ -8,18 +8,14 @@ import {
   setNodeOrderListEntryBelow,
   setNodeOrderListFromNodeChildren,
 } from '@flighthq/node/contract';
+import type { DisplayObject, ImportDiagnostic, Node2D, Node2DFields, NodeOrderList } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
-  ImportDiagnostic,
-  Node2D,
-  Node2DFields,
-  NodeOrderList,
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveImportRegistry,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**

@@ -1,12 +1,12 @@
+import type { DisplayObject } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
   LottieAsset,
   LottieImportContext,
   LottieLayer,
   LottieLayerContext,
   LottiePrecompositionAsset,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { appendLottieLayers, reportLottieDrop } from './lottieDocument.ts';
 
 /**

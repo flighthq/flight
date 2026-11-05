@@ -1,5 +1,5 @@
-import type { RiveFieldType } from '@flighthq/types/contract';
-import { RiveFieldType as RiveFieldTypeValue } from '@flighthq/types/contract';
+import type { RiveFieldType } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType as RiveFieldTypeValue } from './contract.scene2d-formats-types.ts';
 
 /**
  * The wire width of every property key Rive's own object model defines, which is what a reader needs

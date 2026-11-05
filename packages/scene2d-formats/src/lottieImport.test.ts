@@ -1,7 +1,8 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import type { LottieDocument, LottieLayer, Node2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { LottieDocument, LottieLayer } from './contract.scene2d-formats-types.ts';
 import { registerAllLottieHandlers } from './lottieHandlers.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';
 import { createLottieRegistry } from './lottieRegistry.ts';

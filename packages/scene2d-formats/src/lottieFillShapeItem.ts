@@ -1,6 +1,6 @@
 import { appendShapeBeginFill, appendShapeEndFill } from '@flighthq/shape/contract';
-import type { LottieFillPaint, LottieFillShapeItem, LottieShapeItemContext } from '@flighthq/types/contract';
 
+import type { LottieFillPaint, LottieFillShapeItem, LottieShapeItemContext } from './contract.scene2d-formats-types.ts';
 import {
   bindMutableLottieNumericProperty,
   initialLottieValue,

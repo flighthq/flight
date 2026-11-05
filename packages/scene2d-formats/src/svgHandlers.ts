@@ -1,5 +1,4 @@
-import type { SvgRegistry } from '@flighthq/types/contract';
-
+import type { SvgRegistry } from './contract.scene2d-formats-types.ts';
 import { registerSvgClipHandlers } from './svgClipHandlers.ts';
 import { registerSvgElementHandlers } from './svgElementHandlers.ts';
 

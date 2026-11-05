@@ -1,5 +1,4 @@
-import { RiveFieldType } from '@flighthq/types/contract';
-
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { getRiveCorePropertyFieldType, isRiveCoreBytesProperty } from './riveCoreProperties.ts';
 
 describe('getRiveCorePropertyFieldType', () => {

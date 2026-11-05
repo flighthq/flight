@@ -5,16 +5,15 @@ import type { RichText } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type { FontVariation, TextFormat } from '@flighthq/textformat/contract';
+import type { ImportDiagnostic, DisplayObject } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
-  DisplayObject,
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveImportRegistry,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 

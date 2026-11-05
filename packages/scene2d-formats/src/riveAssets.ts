@@ -1,15 +1,14 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { DisplayObject, ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
-  ImportDiagnostic,
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveFileAsset,
   RiveImportRegistry,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { createRiveImageSprite, markRiveNestedArtboard } from './riveAssetBinding.ts';
 import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';

@@ -1,14 +1,14 @@
 import { packColor } from '@flighthq/color/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createTextLabel } from '@flighthq/text/contract';
+import type { DisplayObject } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
   LottieImportContext,
   LottieLayer,
   LottieLayerContext,
   LottieTextDocument,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { reportLottieDrop } from './lottieDocument.ts';
 
 /**

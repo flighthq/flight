@@ -12,14 +12,16 @@ import type {
   GridLayoutTrack,
   ImportDiagnostic,
   LayoutNode,
+} from '@flighthq/types/contract';
+import { FlexLayoutKind, GridLayoutKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import type {
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveImportRegistry,
   RiveLayoutImport,
-} from '@flighthq/types/contract';
-import { FlexLayoutKind, GridLayoutKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 

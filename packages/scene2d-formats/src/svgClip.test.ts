@@ -1,10 +1,10 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
-import { SvgClipKind } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';
 
+import { SvgClipKind } from './contract.scene2d-formats-types.ts';
 import { svgPathClipHandler, usesSvgObjectBoundingBoxUnits } from './svgClip.ts';
 import { registerSvgClipHandlers } from './svgClipHandlers.ts';
 import { createScene2DFromSvgDocument } from './svgImport.ts';

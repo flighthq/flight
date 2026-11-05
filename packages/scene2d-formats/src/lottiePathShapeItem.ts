@@ -1,5 +1,4 @@
-import type { LottieShapeItemContext, LottieShapePathItem } from '@flighthq/types/contract';
-
+import type { LottieShapeItemContext, LottieShapePathItem } from './contract.scene2d-formats-types.ts';
 import {
   createLottieBezierPath,
   flattenLottieShapePath,

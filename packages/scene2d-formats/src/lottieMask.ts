@@ -1,6 +1,6 @@
 import { createClipRegionFromPath } from '@flighthq/clip/contract';
-import type { LottieMaskContext } from '@flighthq/types/contract';
 
+import type { LottieMaskContext } from './contract.scene2d-formats-types.ts';
 import {
   createLottieBezierPath,
   flattenLottieShapePath,

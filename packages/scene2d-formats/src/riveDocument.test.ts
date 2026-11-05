@@ -1,6 +1,6 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
 
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { parseRiveDocument } from './riveDocument.ts';
 
 // WHAT THESE TESTS PROVE. The fixtures here are bytes this suite writes, which on its own would

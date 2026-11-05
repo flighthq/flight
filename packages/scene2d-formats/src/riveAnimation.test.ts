@@ -5,15 +5,11 @@ import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type {
-  DisplayObject,
-  ImportDiagnostic,
-  Node2D,
-  RiveArtboardGraph,
-  RiveCoreObject,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
+import type { DisplayObject, ImportDiagnostic, Node2D } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveCoreObject } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import {
   applyAnimationClipToRiveDocument,
   createRiveAnimationClips,

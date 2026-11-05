@@ -1,15 +1,16 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
   RiveCoreObject,
   RiveDocument,
   RiveDocumentHeader,
   RiveProperty,
   RivePropertyFieldType,
   RiveValue,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { getRiveCorePropertyFieldType, isRiveCoreBytesProperty } from './riveCoreProperties.ts';
 
 /**

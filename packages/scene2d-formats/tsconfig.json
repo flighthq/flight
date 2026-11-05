@@ -1,14 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
-  },
+  "compilerOptions": { "composite": true },
+  "files": [],
   "references": [
     { "path": "../animation" },
     { "path": "../clip" },
@@ -32,7 +24,8 @@
     { "path": "../texture" },
     { "path": "../entity" },
     { "path": "../types" },
-    { "path": "../xml" }
-  ],
-  "include": ["src"]
+    { "path": "../xml" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

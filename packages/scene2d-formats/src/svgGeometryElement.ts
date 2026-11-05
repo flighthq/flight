@@ -12,10 +12,11 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
-import type { Node2D, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
+import type { SvgElementContext, SvgImportContext, SvgStyle } from './contract.scene2d-formats-types.ts';
 import { resolveSvgColor } from './svgColor.ts';
 import { applySvgElementClipFamily } from './svgDocument.ts';
 import { applySvgElementAppearance } from './svgDocument.ts';

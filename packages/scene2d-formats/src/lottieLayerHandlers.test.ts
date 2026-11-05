@@ -1,6 +1,6 @@
-import { LottieLayerKind as Kind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { LottieLayerKind as Kind } from './contract.scene2d-formats-types.ts';
 import { lottieImageLayerHandler } from './lottieImageLayer.ts';
 import { lottieAllLayerHandlers, registerLottieLayerHandlers } from './lottieLayerHandlers.ts';
 import { lottieNullLayerHandler } from './lottieNullLayer.ts';

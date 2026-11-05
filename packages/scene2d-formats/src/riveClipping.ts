@@ -4,18 +4,15 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { intersectPaths, simplifyPath } from '@flighthq/path-boolean/contract';
 import { createPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
+import type { DisplayObject, PathBooleanKernel, ImportDiagnostic, Matrix } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
-  PathBooleanKernel,
-  ImportDiagnostic,
-  Matrix,
   RiveArtboardGraph,
   RiveCoreObject,
   RiveImportRegistry,
   RivePathRecord,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 

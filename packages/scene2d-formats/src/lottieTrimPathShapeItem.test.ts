@@ -1,15 +1,15 @@
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { describe, expect, it } from 'vitest';
+
 import type {
-  ImportDiagnostic,
   LottieLayer,
   LottieRegistry,
   LottieShapeItemHandler,
   LottieShapeItemKind,
-} from '@flighthq/types/contract';
-import { LottieLayerKind, LottieShapeItemKind as Kind } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
-
+} from './contract.scene2d-formats-types.ts';
+import { LottieLayerKind, LottieShapeItemKind as Kind } from './contract.scene2d-formats-types.ts';
 import { createScene2DFromLottieDocumentWithRegistry } from './lottieDocument.ts';
 import { lottieFillShapeItemHandler } from './lottieFillShapeItem.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';

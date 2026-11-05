@@ -1,0 +1,212 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [
+      ".app-types",
+      ".flow-types",
+      ".geometry-types",
+      ".font-types",
+      ".host-types",
+      ".menu-types",
+      ".path-boolean-types",
+      ".path-types",
+      ".selection-types",
+      ".shape-formats-types",
+      ".shape-types",
+      ".spatial-types",
+      ".statechart-types",
+      ".text-types",
+      ".textlayout-types",
+      ".textshaper-types",
+      ".velocity-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-formats-types"
+  },
+  "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../binpack"
+    },
+    {
+      "path": "../buffer"
+    },
+    {
+      "path": "../clock"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../flow/tsconfig.contract.json"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../haptics"
+    },
+    {
+      "path": "../host/tsconfig.contract.json"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../layout"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../path-boolean/tsconfig.contract.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../requirement"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../selection/tsconfig.contract.json"
+    },
+    {
+      "path": "../shape-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../shape/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../spatial/tsconfig.contract.json"
+    },
+    {
+      "path": "../statechart/tsconfig.contract.json"
+    },
+    {
+      "path": "../text/tsconfig.contract.json"
+    },
+    {
+      "path": "../textformat"
+    },
+    {
+      "path": "../textlayout/tsconfig.contract.json"
+    },
+    {
+      "path": "../textshaper/tsconfig.contract.json"
+    },
+    {
+      "path": "../useragent"
+    },
+    {
+      "path": "../velocity/tsconfig.contract.json"
+    },
+    {
+      "path": "../xml"
+    }
+  ],
+  "files": [
+    "src/Adjustment.ts",
+    "src/AdjustmentKind.ts",
+    "src/AdvancedBlendMode.ts",
+    "src/AlphaType.ts",
+    "src/AnimationChannel.ts",
+    "src/AnimationClip.ts",
+    "src/AnimationClipEvent.ts",
+    "src/AnimationInterpolation.ts",
+    "src/AnimationTrack.ts",
+    "src/Attachment2D.ts",
+    "src/AttachmentSkin2D.ts",
+    "src/AudioResource.ts",
+    "src/AudioResourceReference.ts",
+    "src/Bitmap.ts",
+    "src/BlendMode.ts",
+    "src/Bone2D.ts",
+    "src/ClipRegion.ts",
+    "src/ColorAdjustmentRuntime.ts",
+    "src/ColorScaleBias.ts",
+    "src/Cursor.ts",
+    "src/DecodedImage.ts",
+    "src/DisplayObject.ts",
+    "src/EasingFunction.ts",
+    "src/Entity.ts",
+    "src/FocusEventData.ts",
+    "src/HasAppearance.ts",
+    "src/HasBlendMode.ts",
+    "src/HasBoundsRectangle.ts",
+    "src/HasClip.ts",
+    "src/HasMaterial.ts",
+    "src/HasTransform2D.ts",
+    "src/HostImageDecode.ts",
+    "src/HostImageSource.ts",
+    "src/ImageBitmapComposition.ts",
+    "src/ImageDecodeOptions.ts",
+    "src/ImageResource.ts",
+    "src/ImageResourceReference.ts",
+    "src/ImportDiagnostic.ts",
+    "src/InteractionSignals.ts",
+    "src/KeyboardEventData.ts",
+    "src/Layout.ts",
+    "src/Material.ts",
+    "src/Material2D.ts",
+    "src/Matrix.ts",
+    "src/Node.ts",
+    "src/Node2D.ts",
+    "src/NodeInteraction.ts",
+    "src/NodeInteractionState.ts",
+    "src/NodeSignals.ts",
+    "src/PathBooleanKernel.ts",
+    "src/PixelFormat.ts",
+    "src/PointerEventData.ts",
+    "src/Rectangle.ts",
+    "src/ResourceResolutionState.ts",
+    "src/Sampler.ts",
+    "src/Scene2D.ts",
+    "src/Scene2DDocument.ts",
+    "src/Scene2DSignals.ts",
+    "src/Shape.ts",
+    "src/ShapeCommand.ts",
+    "src/Signal.ts",
+    "src/Skeleton2D.ts",
+    "src/Skeleton2DSlotDeform.ts",
+    "src/Slot2D.ts",
+    "src/Surface.ts",
+    "src/Texture.ts",
+    "src/TextureSource.ts",
+    "src/TextureSourceKind.ts",
+    "src/TextureUvTransform.ts",
+    "src/TransformInherit2D.ts",
+    "src/Vector2.ts",
+    "src/ViewportAlign.ts",
+    "src/ViewportScaleMode.ts",
+    "src/VoxelGrid.ts",
+    "src/XmlElement.ts",
+    "src/contract.scene2d-formats-types.ts"
+  ],
+  "include": []
+}

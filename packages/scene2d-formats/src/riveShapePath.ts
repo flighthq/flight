@@ -13,19 +13,16 @@ import {
   createPath,
 } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
+import type { DisplayObject, ImportDiagnostic, Matrix, NonEntityCreateResult } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
-  ImportDiagnostic,
-  Matrix,
-  NonEntityCreateResult,
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveImportRegistry,
   RivePathRecord,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 

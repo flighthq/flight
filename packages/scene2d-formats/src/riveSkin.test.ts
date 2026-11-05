@@ -1,6 +1,7 @@
-import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject, RiveWeightedPoint } from '@flighthq/types/contract';
-import { RiveFieldType, RiveWeightedPointKind } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveCoreObject, RiveWeightedPoint } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType, RiveWeightedPointKind } from './contract.scene2d-formats-types.ts';
 import { createRiveSkin2D } from './riveSkin.ts';
 
 // Rive packs FOUR influences into one uint apiece — a weight byte 0-255 and a tendon byte — read low

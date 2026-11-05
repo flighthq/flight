@@ -1,6 +1,6 @@
 import { createPath, dashPath, getPathLength } from '@flighthq/path/contract';
-import type { LottieShapeItemContext, LottieTrimPathShapeItem } from '@flighthq/types/contract';
 
+import type { LottieShapeItemContext, LottieTrimPathShapeItem } from './contract.scene2d-formats-types.ts';
 import {
   initialLottieValue,
   isAnimatedLottieProperty,

@@ -4,13 +4,13 @@ import {
   appendShapeLineGradientStyle,
   appendShapeLineStyle,
 } from '@flighthq/shape/contract';
+
 import type {
   LottieGradientPaint,
   LottieGradientShapeItem,
   LottieShapeItemContext,
   LottieShapePainter,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import {
   bindMutableLottieNumericProperty,
   initialLottieValue,

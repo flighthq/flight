@@ -1,11 +1,11 @@
 import { createAnimationChannel } from '@flighthq/animation/contract';
+
 import type {
   LottieImportContext,
   LottieKeyframe,
   LottieMutableAnimationTarget,
   LottieShapePath,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { flattenLottieShapePath, toLottieShapePath } from './lottieBezierPath.ts';
 import { createLottieTrack, hasComponentSpecificLottieEasing, reportLottieDrop } from './lottieDocument.ts';
 

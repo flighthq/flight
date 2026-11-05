@@ -1,4 +1,4 @@
-import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from '@flighthq/types/contract';
+import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from './contract.scene2d-formats-types.ts';
 
 export function collectLottieCounts(json: string): Map<string, number> | null {
   let doc: unknown;

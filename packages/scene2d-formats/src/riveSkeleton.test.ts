@@ -1,7 +1,7 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveCoreObject } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
 import { createRiveSkeleton2D, initializeRiveSkeleton2DImport, registerRiveSkeletonHandlers } from './riveSkeleton.ts';
 

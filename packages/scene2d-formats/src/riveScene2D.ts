@@ -3,10 +3,10 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { DisplayObject, EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
 import type {
-  DisplayObject,
-  EntityConstruction,
-  ImportDiagnostic,
   RiveAdvancedBlend,
   RiveArtboardGraph,
   RiveArtboardImport,
@@ -14,9 +14,7 @@ import type {
   RiveCoreObject,
   RiveDocumentImportResult,
   RiveImportRegistry,
-} from '@flighthq/types/contract';
-import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { parseRiveDocument } from './riveDocument.ts';
 import {

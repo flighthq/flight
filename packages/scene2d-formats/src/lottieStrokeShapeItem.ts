@@ -1,6 +1,10 @@
 import { appendShapeLineStyle } from '@flighthq/shape/contract';
-import type { LottieShapeItemContext, LottieStrokePaint, LottieStrokeShapeItem } from '@flighthq/types/contract';
 
+import type {
+  LottieShapeItemContext,
+  LottieStrokePaint,
+  LottieStrokeShapeItem,
+} from './contract.scene2d-formats-types.ts';
 import {
   bindMutableLottieNumericProperty,
   initialLottieValue,

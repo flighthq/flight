@@ -1,8 +1,8 @@
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { LottieShapeItemHandler, LottieShapeItemKind } from '@flighthq/types/contract';
-import { LottieShapeItemKind as Kind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { LottieShapeItemHandler, LottieShapeItemKind } from './contract.scene2d-formats-types.ts';
+import { LottieShapeItemKind as Kind } from './contract.scene2d-formats-types.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';
 import { createLottieRegistry, getLottieShapeItemHandler } from './lottieRegistry.ts';
 import { registerLottieShapeItemHandlers } from './lottieShapeItemHandlers.ts';

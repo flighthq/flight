@@ -1,7 +1,9 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { appendPathRectangle, createPath } from '@flighthq/path/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapePath, createShape } from '@flighthq/shape/contract';
-import type { DisplayObject, LottieLayer, LottieLayerContext } from '@flighthq/types/contract';
+import type { DisplayObject } from '@flighthq/types/contract';
+
+import type { LottieLayer, LottieLayerContext } from './contract.scene2d-formats-types.ts';
 
 /**
  * The solid layer: one opaque rectangle the size the layer declares.

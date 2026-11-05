@@ -1,6 +1,5 @@
-import type { LottieLayerHandler, LottieRegistry } from '@flighthq/types/contract';
-import { LottieLayerKind } from '@flighthq/types/contract';
-
+import type { LottieLayerHandler, LottieRegistry } from './contract.scene2d-formats-types.ts';
+import { LottieLayerKind } from './contract.scene2d-formats-types.ts';
 import { lottieImageLayerHandler } from './lottieImageLayer.ts';
 import { lottieNullLayerHandler } from './lottieNullLayer.ts';
 import { lottiePrecompositionLayerHandler } from './lottiePrecompositionLayer.ts';

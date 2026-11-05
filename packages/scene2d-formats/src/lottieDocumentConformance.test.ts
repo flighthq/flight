@@ -3,9 +3,10 @@ import { PathCommand } from '@flighthq/path/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import { TextLabelKind } from '@flighthq/text/contract';
-import type { Node2D, ImportDiagnostic, LottieDocument, LottieLayer, LottieShapePath } from '@flighthq/types/contract';
+import type { Node2D, ImportDiagnostic } from '@flighthq/types/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
+import type { LottieDocument, LottieLayer, LottieShapePath } from './contract.scene2d-formats-types.ts';
 import { applyAnimationClipToLottieDocument } from './lottieDocument.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';
 import { createReadyImageResourceForTest } from './testHelper.ts';

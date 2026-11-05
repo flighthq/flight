@@ -10,28 +10,26 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
-import {
-  RiveAnimationLoop as RiveAnimationLoopValue,
-  ImportDiagnosticSeverity,
-  RiveFieldType,
-  Skeleton2DAnimationPath,
-} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, Skeleton2DAnimationPath } from '@flighthq/types/contract';
 import type {
   AnimationChannel,
   AnimationClip,
-  RiveArtboardGraph,
-  RiveAnimationClip,
-  RiveAnimationLoop,
-  RiveSkeleton2DImport,
   Bone2D,
   ImportDiagnostic,
   DisplayObject,
   Node2DAnimationPath,
   Node2DAnimationTarget,
-  RiveCoreObject,
-  RiveImportRegistry,
 } from '@flighthq/types/contract';
 
+import { RiveAnimationLoop as RiveAnimationLoopValue, RiveFieldType } from './contract.scene2d-formats-types.ts';
+import type {
+  RiveArtboardGraph,
+  RiveAnimationClip,
+  RiveAnimationLoop,
+  RiveSkeleton2DImport,
+  RiveCoreObject,
+  RiveImportRegistry,
+} from './contract.scene2d-formats-types.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 

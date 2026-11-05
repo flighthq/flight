@@ -1,4 +1,4 @@
-import type { LottieLayerContext } from '@flighthq/types/contract';
+import type { LottieLayerContext } from './contract.scene2d-formats-types.ts';
 
 /**
  * The null layer: a transform with no content of its own.

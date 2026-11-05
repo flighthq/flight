@@ -2,14 +2,11 @@ import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import { PathCommand } from '@flighthq/path/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  ImportDiagnostic,
-  RiveArtboardGraph,
-  RiveArtboardImportContext,
-  RiveCoreObject,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { RiveArtboardGraph, RiveArtboardImportContext, RiveCoreObject } from './contract.scene2d-formats-types.ts';
+import { RiveFieldType } from './contract.scene2d-formats-types.ts';
 import {
   createRiveArtboardImportContext,
   createRiveImportRegistry,

@@ -1,3 +1,4 @@
+export * from './contract.scene2d-formats-types.ts';
 export * from './lottieBezierPath.ts';
 export * from './lottieCounts.ts';
 export * from './lottieDocument.ts';

@@ -1,6 +1,5 @@
-import type { SvgElementHandler, SvgRegistry } from '@flighthq/types/contract';
-import { SvgElementKind } from '@flighthq/types/contract';
-
+import type { SvgElementHandler, SvgRegistry } from './contract.scene2d-formats-types.ts';
+import { SvgElementKind } from './contract.scene2d-formats-types.ts';
 import { svgContainerElementHandler } from './svgContainerElement.ts';
 import { svgGeometryElementHandler } from './svgGeometryElement.ts';
 import { svgImageElementHandler } from './svgImageElement.ts';
