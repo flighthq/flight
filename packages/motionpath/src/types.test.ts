@@ -47,10 +47,10 @@ describe('parseMotionPathLoopMode', () => {
 describe('pathIdentity', () => {
   it('retains the source path object reference', () => {
     let path = createPath('nonZero');
-    appendPathMoveTo(path, 0.0, 0.0);
-    appendPathLineTo(path, 10.0, 0.0);
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 10, 0);
     const handle: Path = path;
-    const marker = createMotionPath(handle, 0.0, undefined, undefined);
+    const marker = createMotionPath(handle, 0, undefined, undefined);
     expect(marker.path === handle).toBe(true);
   });
 });

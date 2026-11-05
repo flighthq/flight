@@ -36,31 +36,25 @@ export interface MotionPathRaw extends EntityRaw {
 }
 
 export function getMotionPathLoopModeString(value: MotionPathLoopMode): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'clamp':
-        return 'clamp';
-      case 'loop':
-        return 'loop';
-      case 'pingpong':
-        return 'pingpong';
-    }
-  })();
+  switch (value) {
+    case 'clamp':
+      return 'clamp';
+    case 'loop':
+      return 'loop';
+    case 'pingpong':
+      return 'pingpong';
+  }
 }
 
 export function parseMotionPathLoopMode(value: string): MotionPathLoopMode | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'clamp':
-        return 'clamp';
-      case 'loop':
-        return 'loop';
-      case 'pingpong':
-        return 'pingpong';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'clamp':
+      return 'clamp';
+    case 'loop':
+      return 'loop';
+    case 'pingpong':
+      return 'pingpong';
+    default:
+      return undefined;
+  }
 }

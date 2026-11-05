@@ -1,4 +1,7 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+// Generated from crates/flight-motionpath/src/motion_path.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
 import type { Vector2Like } from '@flighthq/geometry/contract';
 import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path/contract';
@@ -20,9 +23,9 @@ export function createMotionPath(
   loopMode?: MotionPathLoopMode,
   tolerance?: number,
 ): MotionPathRaw {
-  let out: MotionPathRaw = Object.assign(allocateEntity<MotionPathRaw>(), { distance: 0, length: 0, speed: 0 });
+  let out: MotionPathRaw = allocateEntity<MotionPathRaw>();
   initializeMotionPath(out, path, speed, loopMode, tolerance);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -31,7 +34,7 @@ export function createMotionPath(
  * path tangent's `(1, 0)` default, giving a heading of 0.
  */
 export function getMotionPathHeading(mp: MotionPathRaw): number {
-  let tangent = createVector2(0.0, 0.0);
+  let tangent = createVector2(0, 0);
   getPathTangentAtDistance(mp.path!, mp.distance, tangent, undefined);
   return Math.atan2(tangent.y, tangent.x);
 }
@@ -48,17 +51,17 @@ function applyMotionPathLoopMode(mp: MotionPathRaw, movement: number, length: nu
   const direction = (mp.direction << 24) >> 24;
   if (loopMode === 'loop') {
     let wrapped = (distance + direction * movement) % length;
-    if (wrapped < 0.0) {
+    if (wrapped < 0) {
       wrapped += length;
     }
     mp.distance = wrapped;
     return;
   }
   if (loopMode === 'pingpong') {
-    const period = 2.0 * length;
-    const phase = direction < 0.0 ? period - distance : distance;
+    const period = 2 * length;
+    const phase = direction < 0 ? period - distance : distance;
     let advanced = (phase + movement) % period;
-    if (advanced < 0.0) {
+    if (advanced < 0) {
       advanced += period;
     }
     if (advanced <= length) {
@@ -71,12 +74,10 @@ function applyMotionPathLoopMode(mp: MotionPathRaw, movement: number, length: nu
     return;
   }
   let clamped = distance + direction * movement;
-  if (clamped < 0.0) {
-    clamped = 0.0;
-  } else {
-    if (clamped > length) {
-      clamped = length;
-    }
+  if (clamped < 0) {
+    clamped = 0;
+  } else if (clamped > length) {
+    clamped = length;
   }
   mp.distance = clamped;
 }
@@ -95,7 +96,7 @@ export function getMotionPathPosition(mp: MotionPathRaw, pointOut: Vector2Like, 
  * `getMotionPathProgress`). A zero-length path reports 0.
  */
 export function getMotionPathProgress(mp: MotionPathRaw): number {
-  return mp.length > 0.0 ? mp.distance / mp.length : 0.0;
+  return mp.length > 0 ? mp.distance / mp.length : 0;
 }
 
 /**
@@ -111,11 +112,11 @@ export function initializeMotionPath(
   tolerance?: number,
 ): void {
   out.direction = 1;
-  out.distance = 0.0;
+  out.distance = 0;
   out.length = getPathLength(path!, tolerance);
   out.loopMode = loopMode ?? 'clamp';
   out.path = path;
-  out.speed = speed ?? 0.0;
+  out.speed = speed ?? 0;
 }
 
 /**
@@ -123,15 +124,12 @@ export function initializeMotionPath(
  * `isMotionPathAtEnd`).
  */
 export function isMotionPathAtEnd(mp: MotionPathRaw): boolean {
-  return (() => {
-    const matchValue = mp.direction;
-    switch (matchValue) {
-      case 1:
-        return mp.distance >= mp.length;
-      case -1:
-        return mp.distance <= 0.0;
-    }
-  })();
+  switch (mp.direction) {
+    case 1:
+      return mp.distance >= mp.length;
+    case -1:
+      return mp.distance <= 0;
+  }
 }
 
 /**
@@ -147,12 +145,10 @@ export function setMotionPathDirection(mp: MotionPathRaw, direction: MotionPathD
  */
 export function setMotionPathDistance(mp: MotionPathRaw, distance: number): void {
   let clamped = distance;
-  if (clamped < 0.0) {
-    clamped = 0.0;
-  } else {
-    if (clamped > mp.length) {
-      clamped = mp.length;
-    }
+  if (clamped < 0) {
+    clamped = 0;
+  } else if (clamped > mp.length) {
+    clamped = mp.length;
   }
   mp.distance = clamped;
 }
@@ -163,12 +159,10 @@ export function setMotionPathDistance(mp: MotionPathRaw, distance: number): void
  */
 export function setMotionPathProgress(mp: MotionPathRaw, t: number): void {
   let clamped = t;
-  if (clamped < 0.0) {
-    clamped = 0.0;
-  } else {
-    if (clamped > 1.0) {
-      clamped = 1.0;
-    }
+  if (clamped < 0) {
+    clamped = 0;
+  } else if (clamped > 1) {
+    clamped = 1;
   }
   mp.distance = clamped * mp.length;
 }
@@ -179,11 +173,11 @@ export function setMotionPathProgress(mp: MotionPathRaw, t: number): void {
  * zero-length path is a no-op. All inputs are read before any write.
  */
 export function updateMotionPath(mp: MotionPathRaw, deltaTime: number): void {
-  if (deltaTime <= 0.0) {
+  if (deltaTime <= 0) {
     return;
   }
   const length = mp.length;
-  if (length <= 0.0) {
+  if (length <= 0) {
     return;
   }
   const movement = mp.speed * deltaTime;
