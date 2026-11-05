@@ -65,6 +65,7 @@
     "@flighthq/resource": "*",
     "@flighthq/scene2d-dom": "*",
     "@flighthq/scene2d-formats": "*",
+    "@flighthq/scene2d-wgpu": "*",
     "@flighthq/selection": "*",
     "@flighthq/shape-formats": "*",
     "@flighthq/shape": "*",

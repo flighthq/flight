@@ -12,9 +12,9 @@ import type {
   WgpuShapeMeshBuffers,
   WgpuShapeMeshPipeline,
 } from '@flighthq/types/contract';
-import type { WgpuShapeMesh } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
+import type { WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import { drawWgpuShapeMeshBatch, drawWgpuShapeMeshes } from './wgpuShapeMesh.ts';
 

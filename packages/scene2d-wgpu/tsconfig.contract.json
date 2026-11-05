@@ -1,0 +1,68 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["@webgpu/types"],
+    "moduleSuffixes": [
+      ".scene2d-wgpu-types",
+      ".app-types",
+      ".geometry-types",
+      ".path-types",
+      ".shape-types",
+      ".text-types",
+      ".textlayout-types",
+      ".textshaper-types",
+      ".velocity-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../layout"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../shape/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../text/tsconfig.contract.json"
+    },
+    {
+      "path": "../textlayout/tsconfig.contract.json"
+    },
+    {
+      "path": "../textshaper/tsconfig.contract.json"
+    },
+    {
+      "path": "../velocity/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.scene2d-wgpu-types.json"
+    }
+  ],
+  "include": ["src/contract.scene2d-wgpu-types.ts", "src/types/**/*.ts"]
+}

@@ -24,8 +24,8 @@ import {
 } from '@flighthq/scene2d-canvas';
 import { wgpuScale9ShapeRenderer, registerWgpuShapeRasterizer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
-import { createWgpuSurface } from '@flighthq/surface';
 import { Scale9ShapeKind } from '@flighthq/shape';
+import { createWgpuSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

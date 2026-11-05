@@ -6,13 +6,9 @@ import {
 } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type {
-  CanvasSurface,
-  HostCanvasCapability,
-  HostImageCapability,
-  WgpuShapeRendererData,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
 
+import type { WgpuShapeRendererData } from './contract.scene2d-wgpu-types.ts';
 import {
   acquireWgpuShapeRasterSurface,
   createWgpuShapeData,

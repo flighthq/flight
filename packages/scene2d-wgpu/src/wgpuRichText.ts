@@ -29,9 +29,9 @@ import type {
   RenderState,
   Scene2DRenderer,
   WgpuRenderState,
-  WgpuRichTextOverlay,
 } from '@flighthq/types/contract';
 
+import type { WgpuRichTextOverlay } from './contract.scene2d-wgpu-types.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';
 

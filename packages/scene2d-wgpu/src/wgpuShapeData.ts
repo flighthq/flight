@@ -8,9 +8,9 @@ import type {
   RendererData,
   RenderState,
   WgpuRenderState,
-  WgpuShapeRendererData,
 } from '@flighthq/types/contract';
 
+import type { WgpuShapeRendererData } from './contract.scene2d-wgpu-types.ts';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';
 
 // Allocates the rasterization surface on first use, matching scene2d-gl. A shape whose fills all

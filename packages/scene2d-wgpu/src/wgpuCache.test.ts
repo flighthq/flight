@@ -10,8 +10,6 @@ import {
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
-  WgpuColorAdjustmentMaterialFeature,
-  WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuQuadMaterialRenderer,
   WgpuRenderState,
   RenderRootGuard,
@@ -19,6 +17,10 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type {
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuColorAdjustmentMaterialFeatureGuard,
+} from './contract.scene2d-wgpu-types.ts';
 import {
   createWgpuCacheState,
   wgpuRenderCacheRenderer,

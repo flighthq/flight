@@ -22,6 +22,7 @@
       ".preferences-types",
       ".scene2d-dom-types",
       ".scene2d-formats-types",
+      ".scene2d-wgpu-types",
       ".selection-types",
       ".shape-formats-types",
       ".shape-types",
@@ -122,6 +123,9 @@
     },
     {
       "path": "../scene2d-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d-wgpu/tsconfig.contract.json"
     },
     {
       "path": "../selection/tsconfig.contract.json"

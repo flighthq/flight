@@ -1,4 +1,6 @@
-import type { WgpuRenderState, WgpuRenderStats } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
+
+import type { WgpuRenderStats } from './contract.scene2d-wgpu-types.ts';
 
 /**
  * Returns a snapshot of the current frame's GPU draw statistics for `state`. The returned object

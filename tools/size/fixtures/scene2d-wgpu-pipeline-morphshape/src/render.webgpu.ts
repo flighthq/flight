@@ -24,8 +24,8 @@ import {
   createMorphShape,
   setMorphShapeProgress,
 } from '@flighthq/shape';
-import { createWgpuSurface } from '@flighthq/surface';
 import { MorphShapeKind } from '@flighthq/shape';
+import { createWgpuSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

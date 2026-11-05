@@ -8,11 +8,11 @@ import {
 import type {
   RenderProxy2D,
   WgpuRenderState,
-  WgpuShapeMesh,
   WgpuShapeMeshBuffers,
   WgpuShapeMeshPipeline,
 } from '@flighthq/types/contract';
 
+import type { WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 // Wgpu tessellated solid-fill path for Shape — the counterpart to webglShapeMesh, replacing the

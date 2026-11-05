@@ -17,8 +17,8 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { wgpuShapeRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import { createWgpuSurface } from '@flighthq/surface';
 import { ShapeKind } from '@flighthq/shape';
+import { createWgpuSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

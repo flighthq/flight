@@ -4,15 +4,14 @@ import type {
   ColorScaleBias,
   RenderProxy2D,
   WgpuColorAdjustmentFlush,
-  WgpuColorAdjustmentMaterialFeature,
   WgpuRenderState,
   WgpuRenderStateRuntime,
-  WgpuShapeMesh,
   WgpuShapeMeshBuffers,
   WgpuShapeMeshPipeline,
   TintMaterialData,
 } from '@flighthq/types/contract';
 
+import type { WgpuColorAdjustmentMaterialFeature, WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter.ts';
 import { drawWgpuShapeMeshBatch } from './wgpuShapeMesh.ts';
 

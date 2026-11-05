@@ -1,3 +1,4 @@
+export * from './contract.scene2d-wgpu-types.ts';
 export * from './enableWgpuColorAdjustmentGuards.ts';
 export * from './enableWgpuStrokePathTessellation.ts';
 export * from './scene2DWgpuPipeline.ts';
