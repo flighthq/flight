@@ -24896,12 +24896,15 @@ fn calls_unit_helpers() {
     }
 
     #[test]
-    fn lowers_an_empty_thread_local_test_collector_to_module_state() {
+    fn lowers_synchronous_thread_local_test_cells_to_module_state() {
         let source = r#"
 use std::cell::RefCell;
 
 thread_local! {
     static CALLS: RefCell<Vec<i32>> = RefCell::new(Vec::new());
+    static CURRENT: RefCell<Option<i32>> = const { RefCell::new(None) };
+    static COUNT: RefCell<usize> = const { RefCell::new(0) };
+    static PIXELS: RefCell<[u8; 4]> = const { RefCell::new([0; 4]) };
 }
 
 fn record(value: i32) {
@@ -24913,23 +24916,54 @@ fn resets_and_reads_calls_in_order() {
     CALLS.with(|calls| calls.borrow_mut().clear());
     record(2);
     record(1);
+    CURRENT.with(|current| *current.borrow_mut() = Some(3));
+    let current = CURRENT.with(|current| *current.borrow()).unwrap();
+    COUNT.with(|count| {
+        let mut count = count.borrow_mut();
+        *count += 1;
+    });
+    PIXELS.with(|pixels| pixels.borrow_mut()[0] = 7);
     CALLS.with(|calls| {
         let calls = calls.borrow();
         assert_eq!(calls.len(), 2);
         assert_eq!(calls[0], 2);
         assert_eq!(calls[1], 1);
     });
+    assert_eq!(current, 3);
+    assert_eq!(COUNT.with(|count| *count.borrow()), 1);
+    assert_eq!(PIXELS.with(|pixels| pixels.borrow()[0]), 7);
 }
 "#;
 
         let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
 
         assert!(
-            output.contains("const CALLS: number[] = [] as never[];"),
+            output.contains("let CALLS = [] as never[];"),
             "{output}"
         );
-        assert!(output.contains("calls.length = 0;"), "{output}");
-        assert!(output.contains("calls.push(value);"), "{output}");
+        assert!(output.contains("let CURRENT = undefined;"), "{output}");
+        assert!(output.contains("let COUNT = 0;"), "{output}");
+        assert!(
+            output.contains("let PIXELS = new Uint8Array(4).fill(0);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("__threadLocalCalls.length = 0;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("__threadLocalCalls.push(value);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("__threadLocalCurrent = 3;"),
+            "{output}"
+        );
+        assert!(output.contains("__threadLocalCount++;"), "{output}");
+        assert!(
+            output.contains("__threadLocalPixels[0] = 7;"),
+            "{output}"
+        );
         assert!(output.contains("if (calls[0] !== 2)"), "{output}");
         assert!(output.contains("if (calls[1] !== 1)"), "{output}");
         assert!(!output.contains("thread_local"), "{output}");
@@ -24937,29 +24971,14 @@ fn resets_and_reads_calls_in_order() {
     }
 
     #[test]
-    fn refuses_nonempty_or_value_position_thread_local_test_collectors() {
-        let nonempty = r#"
-use std::cell::RefCell;
-
+    fn refuses_non_cell_or_escaping_thread_local_test_state() {
+        let non_cell = r#"
 thread_local! {
-    static CALLS: RefCell<Vec<i32>> = RefCell::new(vec![1]);
+    static COUNT: usize = 0;
 }
 
 #[test]
-fn reads_calls() {}
-"#;
-        let value_position = r#"
-use std::cell::RefCell;
-
-thread_local! {
-    static CALLS: RefCell<Vec<i32>> = RefCell::new(Vec::new());
-}
-
-#[test]
-fn reads_calls() {
-    let count = CALLS.with(|calls| calls.borrow().len());
-    assert_eq!(count, 0);
-}
+fn reads_count() {}
 "#;
         let direct_binding = r#"
 use std::cell::RefCell;
@@ -24976,21 +24995,28 @@ fn reads_calls() {
     });
 }
 "#;
+        let shadowed_binding = r#"
+use std::cell::RefCell;
 
-        let nonempty_error = compile_vitest(nonempty, "@flighthq/example/contract")
+thread_local! {
+    static CALLS: RefCell<Vec<i32>> = RefCell::new(Vec::new());
+}
+
+#[test]
+fn shadows_the_cell_binding() {
+    CALLS.with(|calls| {
+        let calls = Vec::<i32>::new();
+        assert!(calls.is_empty());
+    });
+}
+"#;
+
+        let non_cell_error = compile_vitest(non_cell, "@flighthq/example/contract")
             .unwrap_err()
             .to_string();
         assert!(
-            nonempty_error.contains("exactly one empty `RefCell<Vec<T>>` collector"),
-            "{nonempty_error}"
-        );
-        let value_error = compile_vitest(value_position, "@flighthq/example/contract")
-            .unwrap_err()
-            .to_string();
-        assert!(
-            value_error
-                .contains("may only be used by a statement-position `.with(|binding| ...)` call"),
-            "{value_error}"
+            non_cell_error.contains("one or more private `RefCell<T>` cells"),
+            "{non_cell_error}"
         );
         let direct_error = compile_vitest(direct_binding, "@flighthq/example/contract")
             .unwrap_err()
@@ -24999,6 +25025,14 @@ fn reads_calls() {
             direct_error
                 .contains("may only be used through zero-argument `.borrow()` or `.borrow_mut()`"),
             "{direct_error}"
+        );
+        let shadowed_error = compile_vitest(shadowed_binding, "@flighthq/example/contract")
+            .unwrap_err()
+            .to_string();
+        assert!(
+            shadowed_error
+                .contains("may only be used through zero-argument `.borrow()` or `.borrow_mut()`"),
+            "{shadowed_error}"
         );
     }
 

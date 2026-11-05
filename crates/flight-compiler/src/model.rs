@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use syn::ext::IdentExt;
-use syn::parse::Parser;
+use syn::parse::{Parse, ParseStream, Parser};
 use syn::visit_mut::{self, VisitMut};
 use syn::{
     Attribute, Expr, Fields, GenericArgument, Item, ItemConst, ItemEnum, ItemFn, ItemStatic,
@@ -157,6 +157,7 @@ pub(crate) struct TestProgram {
     pub(crate) standard_constants: HashSet<String>,
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) suites: Vec<TestSuite>,
+    pub(crate) thread_local_cells: HashSet<String>,
     pub(crate) type_aliases: Vec<ItemType>,
     pub(crate) uses: Vec<ItemUse>,
 }
@@ -2408,7 +2409,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
     if let Some(error) = test_cfg_rewriter.error {
         return Err(error);
     }
-    lower_test_local_collectors(&mut file)?;
+    let thread_local_cells = lower_test_local_collectors(&mut file)?;
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
     let mut constants = Vec::new();
     let mut helpers = Vec::new();
@@ -2491,52 +2492,66 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
         standard_constants,
         structs,
         suites,
+        thread_local_cells,
         type_aliases,
         uses,
     });
 }
 
-// Portable tests may use one deliberately narrow `thread_local!` shape as a synchronous collector:
-// an empty `RefCell<Vec<T>>`, accessed only by statement-position `.with(|binding| ...)` calls. A
-// Vitest module runs those calls synchronously in source order, so the collector is the same module-
-// local array and each `.with` is an immediate closure call. No other thread-local behavior is
-// modeled here.
-fn lower_test_local_collectors(file: &mut syn::File) -> Result<(), CompileError> {
+// Portable tests model private `thread_local!` `RefCell<T>` declarations as synchronous module
+// state. Vitest runs each `.with` closure immediately on one JavaScript thread, so this models the
+// synchronous state uses without pretending to provide threads or dynamic borrow checks. The cell
+// may never escape: every use must remain a `.with` closure whose parameter is read only through
+// `borrow` / `borrow_mut` (or a direct alias of one).
+fn lower_test_local_collectors(file: &mut syn::File) -> Result<HashSet<String>, CompileError> {
+    struct ThreadLocalItems(Vec<ItemStatic>);
+
+    impl Parse for ThreadLocalItems {
+        fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
+            let mut items = Vec::new();
+            while !input.is_empty() {
+                items.push(input.parse()?);
+            }
+            return Ok(Self(items));
+        }
+    }
+
     let mut collectors = BTreeMap::new();
-    for item in &mut file.items {
-        let Item::Macro(item_macro) = item else {
+    let mut lowered_items = Vec::new();
+    for item in std::mem::take(&mut file.items) {
+        let Item::Macro(item_macro) = &item else {
+            lowered_items.push(item);
             continue;
         };
         if !item_macro.mac.path.is_ident("thread_local") {
+            lowered_items.push(item);
             continue;
         }
-        let item_static = syn::parse2::<ItemStatic>(item_macro.mac.tokens.clone()).map_err(|_| {
-            compile_error(
-                "portable test `thread_local!` supports exactly one empty `RefCell<Vec<T>>` collector",
-            )
-        })?;
-        let Some(vector_type) = empty_thread_local_vector_type(&item_static) else {
-            return Err(compile_error(
-                "portable test `thread_local!` supports exactly one empty `RefCell<Vec<T>>` collector",
-            ));
-        };
-        let name = item_static.ident.to_string();
-        if collectors
-            .insert(name.clone(), vector_type.clone())
-            .is_some()
-        {
-            return Err(compile_error(format!(
-                "duplicate portable test thread-local collector `{name}`"
-            )));
+        let thread_locals = syn::parse2::<ThreadLocalItems>(item_macro.mac.tokens.clone())
+            .map_err(|_| portable_test_thread_local_declaration_error())?;
+        if thread_locals.0.is_empty() {
+            return Err(portable_test_thread_local_declaration_error());
         }
-        let identifier = &item_static.ident;
-        let constant: ItemConst = syn::parse_quote! {
-            const #identifier: #vector_type = Vec::new();
-        };
-        *item = Item::Const(constant);
+        for item_static in thread_locals.0 {
+            let Some((cell_type, initializer)) = test_thread_local_cell(&item_static) else {
+                return Err(portable_test_thread_local_declaration_error());
+            };
+            let name = item_static.ident.to_string();
+            if collectors.insert(name.clone(), cell_type.clone()).is_some() {
+                return Err(compile_error(format!(
+                    "duplicate portable test thread-local cell `{name}`"
+                )));
+            }
+            let identifier = &item_static.ident;
+            let constant: ItemConst = syn::parse_quote! {
+                const #identifier: #cell_type = #initializer;
+            };
+            lowered_items.push(Item::Const(constant));
+        }
     }
+    file.items = lowered_items;
     if collectors.is_empty() {
-        return Ok(());
+        return Ok(HashSet::new());
     }
     let mut rewriter = TestLocalCollectorRewriter {
         collectors: &collectors,
@@ -2546,10 +2561,16 @@ fn lower_test_local_collectors(file: &mut syn::File) -> Result<(), CompileError>
     if let Some(error) = rewriter.error {
         return Err(error);
     }
-    return Ok(());
+    return Ok(collectors.into_keys().collect());
 }
 
-fn empty_thread_local_vector_type(item: &ItemStatic) -> Option<Type> {
+fn portable_test_thread_local_declaration_error() -> CompileError {
+    return compile_error(
+        "portable test `thread_local!` supports one or more private `RefCell<T>` cells with portable initializers",
+    );
+}
+
+fn test_thread_local_cell(item: &ItemStatic) -> Option<(Type, Expr)> {
     if !item.attrs.is_empty()
         || !matches!(item.vis, Visibility::Inherited)
         || !matches!(item.mutability, syn::StaticMutability::None)
@@ -2568,19 +2589,19 @@ fn empty_thread_local_vector_type(item: &ItemStatic) -> Option<Type> {
     let PathArguments::AngleBracketed(arguments) = &ref_cell.arguments else {
         return None;
     };
-    let [GenericArgument::Type(vector_type)] = arguments.args.iter().collect::<Vec<_>>()[..] else {
+    let [GenericArgument::Type(cell_type)] = arguments.args.iter().collect::<Vec<_>>()[..] else {
         return None;
     };
-    let Type::Path(vector) = vector_type else {
-        return None;
+    let initializer = match item.expr.as_ref() {
+        Expr::Const(constant) => {
+            let [syn::Stmt::Expr(initializer, None)] = constant.block.stmts.as_slice() else {
+                return None;
+            };
+            initializer
+        }
+        initializer => initializer,
     };
-    let [vector] = vector.path.segments.iter().collect::<Vec<_>>()[..] else {
-        return None;
-    };
-    if vector.ident != "Vec" || !matches!(vector.arguments, PathArguments::AngleBracketed(_)) {
-        return None;
-    }
-    let Expr::Call(initializer) = item.expr.as_ref() else {
+    let Expr::Call(initializer) = initializer else {
         return None;
     };
     if !expression_is_associated_call(&initializer.func, "RefCell", "new")
@@ -2588,15 +2609,7 @@ fn empty_thread_local_vector_type(item: &ItemStatic) -> Option<Type> {
     {
         return None;
     }
-    let Expr::Call(vector_initializer) = &initializer.args[0] else {
-        return None;
-    };
-    if !expression_is_associated_call(&vector_initializer.func, "Vec", "new")
-        || !vector_initializer.args.is_empty()
-    {
-        return None;
-    }
-    return Some(vector_type.clone());
+    return Some((cell_type.clone(), initializer.args[0].clone()));
 }
 
 fn expression_is_associated_call(expression: &Expr, owner: &str, member: &str) -> bool {
@@ -2619,13 +2632,12 @@ struct TestLocalCollectorRewriter<'a> {
 }
 
 impl VisitMut for TestLocalCollectorRewriter<'_> {
-    fn visit_stmt_mut(&mut self, statement: &mut syn::Stmt) {
+    fn visit_expr_mut(&mut self, expression: &mut Expr) {
         if self.error.is_some() {
             return;
         }
-        if let syn::Stmt::Expr(expression, Some(_)) = statement
-            && let Expr::MethodCall(call) = expression
-            && let Some((name, vector_type)) = test_local_collector(&call.receiver, self.collectors)
+        if let Expr::MethodCall(call) = expression
+            && let Some((name, cell_type)) = test_local_collector(&call.receiver, self.collectors)
         {
             if call.method != "with" || call.args.len() != 1 {
                 self.error = Some(test_local_collector_use_error(&name));
@@ -2643,31 +2655,43 @@ impl VisitMut for TestLocalCollectorRewriter<'_> {
                 self.error = Some(test_local_collector_use_error(&name));
                 return;
             }
-            let identifier = binding.ident.clone();
-            self.visit_expr_mut(&mut closure.body);
+            let identifier = binding.ident.to_string();
+            let receiver = call.receiver.as_ref().clone();
+            let local_identifier: syn::Ident = syn::parse_str(&format!(
+                "__thread_local_{}",
+                name.to_ascii_lowercase()
+            ))
+            .expect("a Rust identifier plus an ASCII identifier is a Rust identifier");
+            let target: Expr = syn::parse_quote! { #local_identifier };
+            let mut body = closure.body.as_ref().clone();
+            self.visit_expr_mut(&mut body);
             if self.error.is_some() {
                 return;
             }
             let mut borrow_rewriter = TestLocalCollectorBorrowRewriter {
-                binding: &identifier.to_string(),
+                aliases: BTreeSet::new(),
+                binding: &identifier,
+                target,
                 error: false,
             };
-            borrow_rewriter.visit_expr_mut(&mut closure.body);
+            borrow_rewriter.visit_expr_mut(&mut body);
             if borrow_rewriter.error {
                 self.error = Some(compile_error(format!(
                     "portable test thread-local collector binding `{identifier}` may only be used through zero-argument `.borrow()` or `.borrow_mut()`"
                 )));
                 return;
             }
-            let body = closure.body.as_ref().clone();
-            let receiver = call.receiver.as_ref().clone();
-            *expression = syn::parse_quote! {{
-                let #identifier: #vector_type = #receiver;
-                #body;
-            }};
+            *expression = syn::parse_quote! {
+                {
+                    let mut #local_identifier: #cell_type = #receiver;
+                    let __thread_local_result = { #body };
+                    #receiver = #local_identifier;
+                    __thread_local_result
+                }
+            };
             return;
         }
-        visit_mut::visit_stmt_mut(self, statement);
+        visit_mut::visit_expr_mut(self, expression);
     }
 
     fn visit_expr_path_mut(&mut self, path: &mut syn::ExprPath) {
@@ -2680,48 +2704,140 @@ impl VisitMut for TestLocalCollectorRewriter<'_> {
         }
         visit_mut::visit_expr_path_mut(self, path);
     }
+
+    fn visit_macro_mut(&mut self, rust_macro: &mut syn::Macro) {
+        let parser =
+            syn::punctuated::Punctuated::<Expr, syn::Token![,]>::parse_terminated;
+        let Ok(mut arguments) = parser.parse2(rust_macro.tokens.clone()) else {
+            visit_mut::visit_macro_mut(self, rust_macro);
+            return;
+        };
+        for argument in &mut arguments {
+            self.visit_expr_mut(argument);
+        }
+        rust_macro.tokens = quote::quote!(#arguments);
+    }
 }
 
 struct TestLocalCollectorBorrowRewriter<'a> {
+    aliases: BTreeSet<String>,
     binding: &'a str,
+    target: Expr,
     error: bool,
 }
 
 impl VisitMut for TestLocalCollectorBorrowRewriter<'_> {
+    fn visit_block_mut(&mut self, block: &mut syn::Block) {
+        let outer_aliases = self.aliases.clone();
+        for statement in &mut block.stmts {
+            let alias = match statement {
+                syn::Stmt::Local(local) => {
+                    let syn::Pat::Ident(binding) = &local.pat else {
+                        self.visit_stmt_mut(statement);
+                        continue;
+                    };
+                    let name = binding.ident.to_string();
+                    let borrowed = local
+                        .init
+                        .as_ref()
+                        .and_then(|initializer| match initializer.expr.as_ref() {
+                            Expr::MethodCall(call) => Some(call),
+                            _ => None,
+                        })
+                        .and_then(|call| {
+                            let source = expression_name(&call.receiver)?;
+                            ((source == self.binding || self.aliases.contains(&source))
+                                && matches!(
+                                    call.method.to_string().as_str(),
+                                    "borrow" | "borrow_mut"
+                                )
+                                && call.args.is_empty())
+                            .then_some(())
+                        })
+                        .is_some();
+                    if borrowed {
+                        Some(name)
+                    } else {
+                        if name == self.binding || self.aliases.contains(&name) {
+                            self.error = true;
+                            return;
+                        }
+                        None
+                    }
+                }
+                _ => None,
+            };
+            self.visit_stmt_mut(statement);
+            if let Some(alias) = alias {
+                self.aliases.insert(alias);
+            }
+            if self.error {
+                return;
+            }
+        }
+        self.aliases = outer_aliases;
+    }
+
     fn visit_expr_mut(&mut self, expression: &mut Expr) {
         if self.error {
             return;
         }
+        if let Expr::Unary(unary) = expression
+            && matches!(unary.op, syn::UnOp::Deref(_))
+        {
+            let direct = expression_name(&unary.expr)
+                .is_some_and(|name| name == self.binding || self.aliases.contains(&name));
+            let borrowed = match unary.expr.as_ref() {
+                Expr::MethodCall(call)
+                    if matches!(call.method.to_string().as_str(), "borrow" | "borrow_mut")
+                        && call.args.is_empty() => expression_name(&call.receiver)
+                    .is_some_and(|name| name == self.binding || self.aliases.contains(&name)),
+                _ => false,
+            };
+            if direct || borrowed {
+                *expression = self.target.clone();
+                return;
+            }
+        }
         if let Expr::MethodCall(call) = expression
             && matches!(call.method.to_string().as_str(), "borrow" | "borrow_mut")
             && call.args.is_empty()
-            && expression_is_name(&call.receiver, self.binding)
+            && expression_name(&call.receiver)
+                .is_some_and(|name| name == self.binding || self.aliases.contains(&name))
         {
-            *expression = call.receiver.as_ref().clone();
+            *expression = self.target.clone();
             return;
         }
         visit_mut::visit_expr_mut(self, expression);
     }
 
     fn visit_expr_path_mut(&mut self, path: &mut syn::ExprPath) {
-        if path.qself.is_none()
-            && path.path.segments.len() == 1
-            && path.path.segments[0].ident == self.binding
-        {
-            self.error = true;
-            return;
+        if path.qself.is_none() && path.path.segments.len() == 1 {
+            let name = path.path.segments[0].ident.to_string();
+            if self.aliases.contains(&name) {
+                let Expr::Path(target) = &self.target else {
+                    unreachable!("a thread-local collector target is a path")
+                };
+                *path = target.clone();
+                return;
+            }
+            if name == self.binding {
+                self.error = true;
+                return;
+            }
         }
         visit_mut::visit_expr_path_mut(self, path);
     }
 }
 
-fn expression_is_name(expression: &Expr, expected: &str) -> bool {
+fn expression_name(expression: &Expr) -> Option<String> {
     let Expr::Path(path) = expression else {
-        return false;
+        return None;
     };
-    return path.qself.is_none()
+    return (path.qself.is_none()
         && path.path.segments.len() == 1
-        && path.path.segments[0].ident == expected;
+        && matches!(path.path.segments[0].arguments, PathArguments::None))
+    .then(|| path.path.segments[0].ident.to_string());
 }
 
 fn test_local_collector<'a>(

@@ -4891,8 +4891,19 @@ fn emit_test(
 fn emit_test_constant(
     out: &mut String,
     constant: &syn::ItemConst,
+    mutable: bool,
     context: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    if mutable {
+        writeln!(
+            out,
+            "let {} = {};",
+            constant.ident,
+            emit_expression_for_type(&constant.expr, &constant.ty, context)?
+        )
+        .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     writeln!(
         out,
         "const {}: {} = {};",
@@ -5384,7 +5395,14 @@ pub(crate) fn emit_test_program(
     }
     for constant in &program.constants {
         out.push('\n');
-        emit_test_constant(&mut out, constant, context)?;
+        emit_test_constant(
+            &mut out,
+            constant,
+            program
+                .thread_local_cells
+                .contains(&constant.ident.to_string()),
+            context,
+        )?;
     }
     for helper in &program.helpers {
         if proven_panic_message_helper(helper) || proven_flight_error_helper(helper).is_some() {
