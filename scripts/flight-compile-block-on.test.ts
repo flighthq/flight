@@ -201,7 +201,7 @@ describe('flight-compile block_on test executor', () => {
   it('refuses uses whose meaning an await would change', () => {
     for (const [body, reason] of [
       ['let read = || block_on(read_positive(1));\n        assert_eq!(read(), 1);', 'closure'],
-      ['assert_eq!(block_on(read_checked(1)), Ok(1));', '`Result` future'],
+      ['let checked = block_on(read_checked(1));\n        assert_eq!(checked, Ok(1));', 'D15 `Result` future'],
       ['assert_eq!(block_on(read_positive(block_on(read_positive(1)))), 1);', 'nested'],
       ['assert_eq!(block_on(async { 1 }), 1);', 'production `async fn`'],
     ]) {

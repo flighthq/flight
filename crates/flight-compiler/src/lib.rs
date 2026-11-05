@@ -1270,6 +1270,11 @@ fn compile_vitest_with_contract_alias_sources_internal(
         &mut context,
         alias_programs.iter().chain(&visibility_programs),
     );
+    vitest::insert_d15_future_field_context(
+        &mut context,
+        alias_programs.iter().chain(&visibility_programs),
+        &program.structs,
+    );
     typescript::insert_vitest_own_export_name_context(&mut context, &program, &alias_programs)?;
     typescript::insert_vitest_dependency_export_name_context(
         &mut context,

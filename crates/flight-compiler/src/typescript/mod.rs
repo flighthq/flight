@@ -262,10 +262,24 @@ const MUTEX_GUARD_BINDING_MARKER: &str = "@mutex-guard-binding:";
 const DIRECT_LOCK_GUARD_BINDING_MARKER: &str = "@direct-lock-guard-binding:";
 
 const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
+// An `async fn` (`name`) whose output is a proven D15 `Result<T, FlightError>` (see
+// `flight_error_result_type`): its promise resolves `Ok` and rejects with the canonical error of `Err`.
+pub(crate) const ASYNC_FLIGHT_ERROR_FUNCTION_MARKER: &str = "@async-flight-error-function:";
+// Inside such a function's own body (never a closure): each proven `return Err(e)` lowers to
+// `throw e`, which rejects the promise exactly as Rust resolves `Err(e)`.
+const FLIGHT_ERROR_RETURNS_MARKER: &str = "@flight-error-returns";
+// `{Struct}.{field}` for a callable field whose declared output is a pinned boxed future of a proven
+// D15 `Result<T, FlightError>` (`Arc<dyn Fn(..) -> Pin<Box<dyn Future<Output = Result<..>>>>>`, through
+// unambiguous aliases): the closure a struct literal stores there returns that promise.
+pub(crate) const D15_FUTURE_FIELD_MARKER: &str = "@d15-future-field:";
+// Set on the value of such a field while it is emitted; only the field's own closure consumes it.
+const D15_FUTURE_CLOSURE_MARKER: &str = "@d15-future-closure";
+// Inside that closure's own body (never a nested closure): its D15 provider tail may lower.
+const D15_FUTURE_RETURN_MARKER: &str = "@d15-future-return";
 // A production `async fn` (`name`) a portable test may await through a proven `block_on` helper.
 pub(crate) const ASYNC_FUNCTION_MARKER: &str = "@async-function:";
-// A production `async fn` (`name`) whose output is `Result<T, FlightError>`: nothing proves its `Err`
-// is the TypeScript promise's rejection, so a test never awaits it through `block_on`.
+// A production `async fn` (`name`) whose output is a proven D15 `Result<T, FlightError>`: a test
+// checks it only through `Ok`/`Err` assertions, since its `Err` rejects the TypeScript promise.
 pub(crate) const ASYNC_RESULT_FUNCTION_MARKER: &str = "@async-result-function:";
 // The proven canonical noop-waker `block_on` test helper (`name`): it has no TypeScript body and
 // each proven call lowers to one `await` of its future inside an async test.
@@ -891,6 +905,391 @@ fn array_like_parameter(
         snake_to_lower_camel(&pattern.ident.to_string()),
         emit_type(&slice.elem, entities)?
     )));
+}
+
+// Whether a D15 future field's value is the closure it stores: `Arc::new(|..| ..)` or `|..| ..`.
+fn d15_future_field_closure(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Closure(_) => true,
+        Expr::Call(call) => {
+            expression_is_associated_path(&call.func, "Arc", "new")
+                && matches!(call.args.iter().collect::<Vec<_>>()[..], [Expr::Closure(_)])
+        }
+        _ => false,
+    };
+}
+
+// The canonical D15 provider tail of a future-returning closure body:
+//
+//     let result = <value>;
+//     return Box::pin(async move { result });   // or the same tail without `return`
+//
+// where `value` resolves only through `Ok(..)`/`Err(..)` tails of `match` arms and `if`/`else`
+// branches (see `d15_result_tails`) and nothing else names `result`. Returns the statements before
+// the `let` and `value`.
+fn d15_future_provider(statements: &[Stmt]) -> Option<(&[Stmt], &Expr)> {
+    let [preceding @ .., Stmt::Local(local), last] = statements else {
+        return None;
+    };
+    let returned = match last {
+        Stmt::Expr(Expr::Return(returned), _) => returned.expr.as_deref()?,
+        Stmt::Expr(expression, None) => expression,
+        _ => return None,
+    };
+    let Expr::Call(pin) = returned else {
+        return None;
+    };
+    let Expr::Path(function) = pin.func.as_ref() else {
+        return None;
+    };
+    let segments = function
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    if !matches!(
+        segments.iter().map(String::as_str).collect::<Vec<_>>()[..],
+        ["Box", "pin"] | ["std" | "alloc", "boxed", "Box", "pin"]
+    ) {
+        return None;
+    }
+    let [Expr::Async(future)] = pin.args.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    let [Stmt::Expr(Expr::Path(output), None)] = &future.block.stmts[..] else {
+        return None;
+    };
+    let Pat::Ident(binding) = &local.pat else {
+        return None;
+    };
+    let initializer = local.init.as_ref()?;
+    if initializer.diverge.is_some()
+        || binding.by_ref.is_some()
+        || binding.subpat.is_some()
+        || !output.path.is_ident(&binding.ident)
+        || !d15_result_tails(&initializer.expr)
+    {
+        return None;
+    }
+    return Some((preceding, &initializer.expr));
+}
+
+// Whether `expression` produces a `Result` only through `Ok(payload)`/`Err(payload)` tails of `match`
+// arms, `if`/`else` branches and blocks, each payload naming neither `Ok` nor `Err`, with no other
+// `Err` anywhere: then rewriting its tails as `return`s keeps every evaluation and its order.
+fn d15_result_tails(expression: &Expr) -> bool {
+    fn names(tokens: proc_macro2::TokenStream, name: &str) -> bool {
+        return tokens.into_iter().any(|token| match token {
+            proc_macro2::TokenTree::Ident(identifier) => identifier == name,
+            proc_macro2::TokenTree::Group(group) => names(group.stream(), name),
+            _ => false,
+        });
+    }
+    fn variant_tail(expression: &Expr) -> bool {
+        return match expression {
+            Expr::Call(call) => {
+                matches!(call.func.as_ref(), Expr::Path(path)
+                    if path.path.is_ident("Ok") || path.path.is_ident("Err"))
+                    && call.args.len() == 1
+                    && !names(call.args.to_token_stream(), "Ok")
+                    && !names(call.args.to_token_stream(), "Err")
+            }
+            Expr::Block(block) if block.label.is_none() => match block.block.stmts.split_last() {
+                Some((Stmt::Expr(tail, None), preceding)) => {
+                    variant_tail(tail)
+                        && preceding.iter().all(|statement| {
+                            !names(statement.to_token_stream(), "Err")
+                                && !names(statement.to_token_stream(), "Ok")
+                        })
+                }
+                _ => false,
+            },
+            Expr::If(branch) => {
+                !names(branch.cond.to_token_stream(), "Err")
+                    && variant_tail(&Expr::Block(syn::ExprBlock {
+                        attrs: Vec::new(),
+                        label: None,
+                        block: branch.then_branch.clone(),
+                    }))
+                    && branch
+                        .else_branch
+                        .as_ref()
+                        .is_some_and(|(_, otherwise)| variant_tail(otherwise))
+            }
+            Expr::Match(choice) => {
+                !names(choice.expr.to_token_stream(), "Err")
+                    && choice.arms.iter().all(|arm| {
+                        arm.guard
+                            .as_ref()
+                            .is_none_or(|(_, guard)| !names(guard.to_token_stream(), "Err"))
+                            && !names(arm.pat.to_token_stream(), "Err")
+                            && variant_tail(&arm.body)
+                    })
+            }
+            Expr::Paren(paren) => variant_tail(&paren.expr),
+            _ => false,
+        };
+    }
+    return variant_tail(expression);
+}
+
+// Emits a proven D15 provider tail (see `d15_future_provider`) as the promise of an async arrow
+// called at once. The arrow runs synchronously up to its first `await` (it has none), so `value`
+// evaluates exactly when Rust computes `result`; its `Ok` tails return and its `Err` tails throw
+// the canonical error, which rejects the promise exactly as the Rust future resolves `Err`.
+fn emit_d15_future_provider(
+    out: &mut String,
+    preceding: &[Stmt],
+    value: &Expr,
+    entities: &HashSet<String>,
+) -> Result<(), CompileError> {
+    let mut context = emit_block_with_context(out, preceding, entities, 1)?;
+    let rewritten = inject_tail_returns(&[Stmt::Expr(value.clone(), None)]);
+    let [returned] = &rewritten[..] else {
+        unreachable!("one tail statement rewrites to one statement")
+    };
+    copy_expression_binding_sites(&mut context, value, returned);
+    context.insert(FLIGHT_ERROR_RETURNS_MARKER.to_string());
+    write_indent(out, 1);
+    out.push_str("return (async () => {\n");
+    emit_block(out, &rewritten, &context, 2)?;
+    write_indent(out, 1);
+    out.push_str("})();\n");
+    return Ok(());
+}
+
+// The non-generic type aliases the loaded sources declare as `Result<T, FlightError>`. A name two
+// sources declare differently is ambiguous and left out, so nothing proves it.
+pub(crate) fn flight_error_result_aliases<'a>(
+    programs: impl Iterator<Item = &'a Program>,
+) -> BTreeSet<String> {
+    let mut alias_definitions: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for alias in programs.flat_map(|program| &program.type_aliases) {
+        alias_definitions
+            .entry(alias.ident.to_string())
+            .or_default()
+            .insert(if alias.generics.params.is_empty() {
+                alias.ty.to_token_stream().to_string()
+            } else {
+                String::new()
+            });
+    }
+    return alias_definitions
+        .into_iter()
+        .filter(|(_, spellings)| {
+            spellings.len() == 1
+                && spellings.iter().all(|spelling| {
+                    syn::parse_str::<Type>(spelling).is_ok_and(|definition| {
+                        flight_error_result_type(&definition, &BTreeSet::new())
+                    })
+                })
+        })
+        .map(|(name, _)| name)
+        .collect();
+}
+
+// Whether `rust_type` is `Result<T, FlightError>`, spelled out or through one proven alias (see
+// `flight_error_result_aliases`): the D15 shape of a TypeScript promise that resolves `T` and rejects
+// with the canonical `FlightError` error object.
+pub(crate) fn flight_error_result_type(rust_type: &Type, d15_aliases: &BTreeSet<String>) -> bool {
+    let Type::Path(path) = rust_type else {
+        return false;
+    };
+    if path.qself.is_some() {
+        return false;
+    }
+    if let Some(alias) = path.path.get_ident() {
+        return d15_aliases.contains(&alias.to_string());
+    }
+    let Some(segment) = path.path.segments.last() else {
+        return false;
+    };
+    let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return false;
+    };
+    let result = path.path.segments.len() == 1
+        || path
+            .path
+            .segments
+            .iter()
+            .map(|segment| segment.ident.to_string())
+            .collect::<Vec<_>>()
+            .join("::")
+            .ends_with("result::Result");
+    return segment.ident == "Result"
+        && result
+        && arguments.args.len() == 2
+        && matches!(&arguments.args[1], syn::GenericArgument::Type(Type::Path(error))
+            if error.qself.is_none()
+                && error.path.segments.last().is_some_and(|segment| {
+                    segment.ident == "FlightError" && segment.arguments.is_empty()
+                })
+                && (error.path.segments.len() == 1
+                    || error.path.segments.first().is_some_and(|first| first.ident == "flight_entity")));
+}
+
+// Proves every `Err` of a D15 async function (see `flight_error_result_type`) is one the function
+// returns: a `return Err(..)` statement, or the tail of its body or of an `if`/`else` or plain
+// block in tail position, reached without entering a closure, async block, loop or `match`. Only
+// there does `throw` reject the promise exactly as Rust resolves `Err`; any other `Err` (a value, a
+// pattern, a `match` arm) refuses, as does a `?` that would propagate through the function.
+fn flight_error_return_positions_are_proven(function: &ItemFn) -> Result<(), CompileError> {
+    fn count_err(tokens: proc_macro2::TokenStream) -> usize {
+        return tokens
+            .into_iter()
+            .map(|token| match token {
+                proc_macro2::TokenTree::Ident(identifier) => usize::from(identifier == "Err"),
+                proc_macro2::TokenTree::Group(group) => count_err(group.stream()),
+                _ => 0,
+            })
+            .sum();
+    }
+    fn returned_err(expression: &Expr) -> bool {
+        return matches!(expression, Expr::Call(call)
+            if matches!(call.func.as_ref(), Expr::Path(path) if path.path.is_ident("Err"))
+                && call.args.len() == 1
+                && count_err(call.args.to_token_stream()) == 0);
+    }
+    fn tail(expression: &Expr) -> usize {
+        return match expression {
+            expression if returned_err(expression) => 1,
+            Expr::If(branch) => {
+                block(&branch.then_branch.stmts, true)
+                    + branch
+                        .else_branch
+                        .as_ref()
+                        .map_or(0, |(_, otherwise)| tail(otherwise))
+            }
+            Expr::Block(nested) if nested.label.is_none() => block(&nested.block.stmts, true),
+            _ => 0,
+        };
+    }
+    fn block(statements: &[Stmt], in_tail: bool) -> usize {
+        let mut proven = 0;
+        for (index, statement) in statements.iter().enumerate() {
+            proven += match statement {
+                Stmt::Expr(Expr::Return(returned), _) => returned
+                    .expr
+                    .as_deref()
+                    .map_or(0, |value| usize::from(returned_err(value))),
+                Stmt::Expr(expression, None) if in_tail && index + 1 == statements.len() => {
+                    tail(expression)
+                }
+                Stmt::Expr(Expr::If(branch), _) => {
+                    let mut proven = block(&branch.then_branch.stmts, false);
+                    let mut otherwise = branch
+                        .else_branch
+                        .as_ref()
+                        .map(|(_, otherwise)| otherwise.as_ref());
+                    while let Some(next) = otherwise {
+                        match next {
+                            Expr::If(next) => {
+                                proven += block(&next.then_branch.stmts, false);
+                                otherwise = next
+                                    .else_branch
+                                    .as_ref()
+                                    .map(|(_, otherwise)| otherwise.as_ref());
+                            }
+                            Expr::Block(next) => {
+                                proven += block(&next.block.stmts, false);
+                                otherwise = None;
+                            }
+                            _ => otherwise = None,
+                        }
+                    }
+                    proven
+                }
+                Stmt::Expr(Expr::Block(nested), _) if nested.label.is_none() => {
+                    block(&nested.block.stmts, false)
+                }
+                _ => 0,
+            };
+        }
+        return proven;
+    }
+    struct Tries {
+        found: bool,
+    }
+    impl<'ast> Visit<'ast> for Tries {
+        fn visit_expr_try(&mut self, _: &'ast syn::ExprTry) {
+            self.found = true;
+        }
+    }
+    let name = &function.sig.ident;
+    let mut tries = Tries { found: false };
+    tries.visit_block(&function.block);
+    if tries.found {
+        return Err(compile_error(format!(
+            "D15 async `{name}` uses `?` on a `Result`, whose `Err` would not reject the promise through a proven return"
+        )));
+    }
+    if count_err(function.block.to_token_stream()) != block(&function.block.stmts, true) {
+        return Err(compile_error(format!(
+            "D15 async `{name}` uses `Err` outside a proven `return Err(..)` or tail, where it is a value TypeScript cannot reject with"
+        )));
+    }
+    return Ok(());
+}
+
+// The canonical TypeScript error object of a `FlightError` value: a `FlightError { kind, message }`
+// literal whose kind is a literal `Error`, `RangeError`, `TypeError` or `SyntaxError` constructs
+// that error class (`new RangeError(message)`), whose `name` and `message` carry exactly what Rust
+// compares. A DOMException kind lowers without its name, and a computed kind has no static class, so
+// both refuse. Any other `FlightError` expression already holds such an object.
+fn flight_error_value(
+    literal: &syn::ExprStruct,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let mut kind = None;
+    let mut message = None;
+    for field in &literal.fields {
+        match &field.member {
+            Member::Named(name) if name == "kind" => kind = Some(&field.expr),
+            Member::Named(name) if name == "message" => message = Some(&field.expr),
+            _ => {}
+        }
+    }
+    let (Some(kind), Some(message), None, 2) = (kind, message, &literal.rest, literal.fields.len())
+    else {
+        return Err(compile_error(
+            "portable `FlightError` needs exactly a literal `kind` and a `message`",
+        ));
+    };
+    let variant_path = |path: &syn::ExprPath| {
+        let segments = path.path.segments.iter().collect::<Vec<_>>();
+        return path.qself.is_none()
+            && segments.len() >= 2
+            && segments[segments.len() - 2].ident == "FlightErrorKind";
+    };
+    let constructor = match kind {
+        Expr::Path(path) if variant_path(path) => match path
+            .path
+            .segments
+            .last()
+            .map(|segment| segment.ident.to_string())
+            .as_deref()
+        {
+            Some(constructor @ ("Error" | "RangeError" | "TypeError" | "SyntaxError")) => {
+                constructor.to_string()
+            }
+            Some(kind) => {
+                return Err(compile_error(format!(
+                    "portable `FlightError` kind `{kind}` is unrepresentable: a DOMException lowers without its name"
+                )));
+            }
+            None => unreachable!("a path has a last segment"),
+        },
+        _ => {
+            return Err(compile_error(
+                "portable `FlightError` kind must be a literal `FlightErrorKind` variant",
+            ));
+        }
+    };
+    return Ok(format!(
+        "new {constructor}({})",
+        emit_expression(message, entities)?
+    ));
 }
 
 fn float32_array_parameter(
@@ -11590,10 +11989,6 @@ pub(super) fn emit_block_with_tail_returns(
     return Ok(());
 }
 
-// Records, for each identifier of `copy` (a rewrite of `parsed` that only wraps expressions in
-// `return`, so both hold the same identifiers in the same order), the binding id resolved for the
-// matching identifier of `parsed`. Binding ids are keyed by an identifier's address
-// (`binding_site_key`), which a copy does not keep.
 fn copy_binding_sites(context: &mut HashSet<String>, parsed: &Stmt, copy: &Stmt) {
     struct Identifiers<'ast>(Vec<&'ast syn::Ident>);
     impl<'ast> Visit<'ast> for Identifiers<'ast> {
@@ -11604,6 +11999,39 @@ fn copy_binding_sites(context: &mut HashSet<String>, parsed: &Stmt, copy: &Stmt)
 
     let mut parsed_identifiers = Identifiers(Vec::new());
     parsed_identifiers.visit_stmt(parsed);
+    let mut copied_identifiers = Identifiers(Vec::new());
+    copied_identifiers.visit_stmt(copy);
+    if parsed_identifiers.0 != copied_identifiers.0 {
+        return;
+    }
+    for (parsed, copied) in parsed_identifiers.0.iter().zip(&copied_identifiers.0) {
+        if let Some(id) = unique_marker_suffix(
+            context,
+            &format!("{BINDING_SITE_MARKER}{}=", binding_site_key(parsed)),
+        ) {
+            context.insert(format!(
+                "{BINDING_SITE_MARKER}{}={id}",
+                binding_site_key(copied)
+            ));
+        }
+    }
+}
+
+// Records, for each identifier of `copy` (a rewrite of `parsed` that only wraps expressions in
+// `return`, so both hold the same identifiers in the same order), the binding id resolved for the
+// matching identifier of `parsed`. Binding ids are keyed by an identifier's address
+// (`binding_site_key`), which a copy does not keep.
+// `copy_binding_sites` for a statement `copy` rewritten from the expression `parsed`.
+fn copy_expression_binding_sites(context: &mut HashSet<String>, parsed: &Expr, copy: &Stmt) {
+    struct Identifiers<'ast>(Vec<&'ast syn::Ident>);
+    impl<'ast> Visit<'ast> for Identifiers<'ast> {
+        fn visit_ident(&mut self, identifier: &'ast syn::Ident) {
+            self.0.push(identifier);
+        }
+    }
+
+    let mut parsed_identifiers = Identifiers(Vec::new());
+    parsed_identifiers.visit_expr(parsed);
     let mut copied_identifiers = Identifiers(Vec::new());
     copied_identifiers.visit_stmt(copy);
     if parsed_identifiers.0 != copied_identifiers.0 {
@@ -12059,11 +12487,17 @@ fn emit_closure_with_parameter_types(
                 && !marker.starts_with(RETURNS_TYPED_ARRAY_MARKER)
                 && !marker.starts_with(RETURNS_CONTRACT_TYPED_ARRAY_MARKER)
                 && !marker.starts_with(FINISH_ENTITY_RETURN_MARKER)
+                && marker.as_str() != FLIGHT_ERROR_RETURNS_MARKER
+                && marker.as_str() != D15_FUTURE_CLOSURE_MARKER
+                && marker.as_str() != D15_FUTURE_RETURN_MARKER
                 && marker.as_str() != RETURNS_U32_MARKER
                 && marker.as_str() != RETURNS_NULLABLE_MARKER
         })
         .cloned()
         .collect::<HashSet<_>>();
+    if entities.contains(D15_FUTURE_CLOSURE_MARKER) {
+        closure_context.insert(D15_FUTURE_RETURN_MARKER.to_string());
+    }
     if let ReturnType::Type(_, rust_type) = &closure.output {
         closure_context.insert(format!(
             "{RETURN_TYPE_MARKER}{}",
@@ -12151,6 +12585,16 @@ fn emit_closure_with_parameter_types(
         ReturnType::Type(_, rust_type) => format!(": {}", emit_type(rust_type, entities)?),
     };
     let body = match closure.body.as_ref() {
+        Expr::Block(block)
+            if closure_context.contains(D15_FUTURE_RETURN_MARKER)
+                && let Some((preceding, value)) = d15_future_provider(&block.block.stmts) =>
+        {
+            let mut body = String::new();
+            body.push_str("{\n");
+            emit_d15_future_provider(&mut body, preceding, value, &closure_context)?;
+            body.push('}');
+            body
+        }
         Expr::Block(block) => {
             let mut body = String::new();
             body.push_str("{\n");
@@ -12816,6 +13260,23 @@ pub(crate) fn emit_expression(
     expression: &Expr,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if let Expr::Struct(literal) = expression
+        && literal.qself.is_none()
+        && literal
+            .path
+            .segments
+            .last()
+            .is_some_and(|segment| segment.ident == "FlightError")
+    {
+        return flight_error_value(literal, entities);
+    }
+    if let Expr::Call(call) = expression
+        && matches!(call.func.as_ref(), Expr::Path(path) if path.path.is_ident("Err"))
+    {
+        return Err(compile_error(
+            "portable `Err(..)` is a value outside a proven D15 async return, which TypeScript cannot represent",
+        ));
+    }
     if let Expr::Call(call) = expression
         && let Expr::Path(path) = call.func.as_ref()
         && let Some(helper) = path.path.get_ident()
@@ -14041,6 +14502,17 @@ fn emit_expression_value(
                     .map(|field| {
                         let mut value = if expression_is_empty_vec(&field.expr, entities) {
                             "[]".to_string()
+                        } else if let syn::Member::Named(field_name) = &field.member
+                            && let Some(owner) = structure.path.segments.last()
+                            && entities.contains(&format!(
+                                "{D15_FUTURE_FIELD_MARKER}{}.{field_name}",
+                                owner.ident
+                            ))
+                            && d15_future_field_closure(&field.expr)
+                        {
+                            let mut field_context = entities.clone();
+                            field_context.insert(D15_FUTURE_CLOSURE_MARKER.to_string());
+                            emit_expression(&field.expr, &field_context)?
                         } else {
                             emit_expression(&field.expr, entities)?
                         };
@@ -15072,6 +15544,10 @@ fn emit_function(
     }
     let mut function_context = function_expression_context(function, &function_context);
     function_context.insert(format!("{RETURN_TYPE_MARKER}{inner_return_type}"));
+    if entities.contains(&format!("{ASYNC_FLIGHT_ERROR_FUNCTION_MARKER}{rust_name}")) {
+        flight_error_return_positions_are_proven(function)?;
+        function_context.insert(FLIGHT_ERROR_RETURNS_MARKER.to_string());
+    }
     if let Some(binding) = finish_entity_return {
         let Stmt::Local(local) = function
             .block
@@ -15120,7 +15596,10 @@ pub(crate) fn emit_local_function(
     let type_parameters = emit_type_parameters(&function.sig.generics);
     let mut signature_context = entities
         .iter()
-        .filter(|marker| !marker.starts_with(FINISH_ENTITY_RETURN_MARKER))
+        .filter(|marker| {
+            !marker.starts_with(FINISH_ENTITY_RETURN_MARKER)
+                && marker.as_str() != FLIGHT_ERROR_RETURNS_MARKER
+        })
         .cloned()
         .collect::<HashSet<_>>();
     insert_type_parameter_context(&mut signature_context, &function.sig.generics);
@@ -25960,6 +26439,22 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             Err(error) => return Err(error),
         }
     }
+    let flight_error_aliases = flight_error_result_aliases(
+        std::iter::once(program)
+            .chain(input.alias_programs)
+            .chain(input.visibility_programs),
+    );
+    for function in &program.functions {
+        if function.sig.asyncness.is_some()
+            && let ReturnType::Type(_, rust_type) = &function.sig.output
+            && flight_error_result_type(rust_type, &flight_error_aliases)
+        {
+            source_context.insert(format!(
+                "{ASYNC_FLIGHT_ERROR_FUNCTION_MARKER}{}",
+                function.sig.ident
+            ));
+        }
+    }
     for (index, function) in program.functions.iter().enumerate() {
         let entity_construction_parameter = entity_construction_parameters[index];
         let finish_entity_return = finish_entity_returns[index].as_deref();
@@ -26775,6 +27270,18 @@ fn emit_statement(
             let emitted = strip_value_position_parens(&emitted);
             let emitted = indent_continuation_lines(&emitted, indent);
             writeln!(out, "return {emitted};").expect("writing to a String cannot fail");
+        }
+        Stmt::Expr(Expr::Return(return_expression), _)
+            if entities.contains(FLIGHT_ERROR_RETURNS_MARKER)
+                && let Some(Expr::Call(call)) = return_expression.expr.as_deref()
+                && matches!(call.func.as_ref(), Expr::Path(path) if path.path.is_ident("Err"))
+                && let [error] = call.args.iter().collect::<Vec<_>>()[..] =>
+        {
+            // `flight_error_return_positions_are_proven` admitted this `Err` as the async function's
+            // own result: rejecting its promise is how TypeScript resolves it.
+            write_indent(out, indent);
+            writeln!(out, "throw {};", emit_expression(error, entities)?)
+                .expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::Return(return_expression), _) => {
             write_indent(out, indent);
@@ -28021,6 +28528,29 @@ pub(crate) fn emit_type(
                         Ok(format!("AsyncIterable<{}>", emit_type(item, entities)?))
                     }
                 };
+            }
+            // D15: `Err` is the canonical error object a promise rejects with (or a function throws),
+            // and `Ok` is the plain value, so `Result<T, FlightError>` is `T` and `FlightError` is the
+            // `Error` it constructs.
+            if flight_error_result_type(rust_type, &BTreeSet::new())
+                && let Some(segment) = path.path.segments.last()
+                && let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments
+                && let Some(syn::GenericArgument::Type(output)) = arguments.args.first()
+            {
+                return emit_type(output, entities);
+            }
+            if path.qself.is_none()
+                && path.path.segments.last().is_some_and(|segment| {
+                    segment.ident == "FlightError" && segment.arguments.is_empty()
+                })
+                && (path.path.segments.len() == 1
+                    || path
+                        .path
+                        .segments
+                        .first()
+                        .is_some_and(|first| first.ident == "flight_entity"))
+            {
+                return Ok("Error".to_string());
             }
             if let Some(kind) = hash_collection_type(rust_type, entities) {
                 let segment = path

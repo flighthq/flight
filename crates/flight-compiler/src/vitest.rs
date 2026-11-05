@@ -12,7 +12,7 @@ use syn::{
 use crate::model::{Program, TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     ASYNC_FUNCTION_MARKER, ASYNC_RESULT_FUNCTION_MARKER, BLOCK_ON_HELPER_MARKER,
-    FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER,
+    D15_FUTURE_FIELD_MARKER, FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER,
     RETURNS_CONTRACT_TYPED_ARRAY_MARKER,
 };
 use crate::typescript::{
@@ -21,7 +21,8 @@ use crate::typescript::{
     emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
     emit_iter_mut_loop_if_supported, emit_local_function, emit_local_with_shadow_and_else, emit_match_statement,
     emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
-    emit_vec_extend_statement, export_name, frozen_object_name, function_expression_context,
+    emit_vec_extend_statement, export_name, flight_error_result_aliases, flight_error_result_type,
+    frozen_object_name, function_expression_context,
     function_returns_uint8_array, exact_mutable_scalar_reference, exact_portable_scalar_type,
     insert_type_parameter_context, lexical_binding_names,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
@@ -68,6 +69,20 @@ fn assertion_message(
     .map(Some);
 }
 
+// The single argument of a call to the `block_on` helper `helper`.
+fn block_on_argument<'a>(expression: &'a Expr, helper: &str) -> Option<&'a Expr> {
+    let Expr::Call(call) = unparenthesized(expression) else {
+        return None;
+    };
+    let Expr::Path(path) = call.func.as_ref() else {
+        return None;
+    };
+    if !path.path.is_ident(helper) || call.args.len() != 1 {
+        return None;
+    }
+    return call.args.first();
+}
+
 // The production `async fn` a `block_on` argument awaits: one direct, unqualified call of it.
 fn block_on_awaited_function(argument: &Expr, context: &HashSet<String>) -> Option<String> {
     let Expr::Call(call) = unparenthesized(argument) else {
@@ -90,9 +105,9 @@ fn block_on_awaited_function(argument: &Expr, context: &HashSet<String>) -> Opti
 //   from a helper and never as a value;
 // - around exactly one direct call of a production `async fn` that no test helper shadows, whose
 //   arguments do not call the executor again;
-// - never for a `Result<T, FlightError>` future: no lowering proves its `Err` is the TypeScript
-//   promise's rejection (a production `return Err(..)` does not reject), so `await` could not
-//   reproduce the returned `Err`.
+// - for a D15 `Result<T, FlightError>` future, whose promise rejects with the canonical error of
+//   `Err`, only as a statement `assert_eq!(block_on(call), Ok(expected))` (`expect(await call)`) or
+//   `assert_eq!(block_on(call), Err(expected))` (`await expect(call).rejects`), each awaiting once.
 // A file that otherwise names `Waker`, `RawWaker`, `Poll` or `poll` tests wake or poll behavior,
 // which `await` does not reproduce, so it refuses.
 // flight-lint: allow(hashmap-iteration) program items are Vecs in Rust source order and only a refusal reason is kept
@@ -108,11 +123,13 @@ fn block_on_calls_are_proven(
         // Closures and async blocks entered: an `await` inside one would not suspend the test.
         escaping: usize,
         helper: &'a str,
+        // The test body's own statement `assert_eq!(block_on(call), Ok(..) | Err(..))` assertions.
+        result_assertions: HashSet<*const syn::Macro>,
         shadowed: &'a dyn Fn(&str) -> bool,
     }
 
     impl BlockOnUses<'_> {
-        fn check_call(&mut self, call: &syn::ExprCall) {
+        fn check_call(&mut self, call: &syn::ExprCall, result_assertion: bool) {
             if self.escaping > 0 {
                 return self.fail("a call inside a closure or async block");
             }
@@ -130,12 +147,13 @@ fn block_on_calls_are_proven(
             if block_on_tokens_name(argument.to_token_stream(), self.helper) {
                 return self.fail("a nested call");
             }
-            if self
-                .context
-                .contains(&format!("{ASYNC_RESULT_FUNCTION_MARKER}{function}"))
+            if !result_assertion
+                && self
+                    .context
+                    .contains(&format!("{ASYNC_RESULT_FUNCTION_MARKER}{function}"))
             {
                 return self.fail(&format!(
-                    "the `Result` future of `{function}`: no lowering proves its `Err` is the TypeScript promise's rejection, so an `await` could not reproduce the returned `Err`"
+                    "the D15 `Result` future of `{function}` outside a statement `assert_eq!(.., Ok(..))` or `assert_eq!(.., Err(..))`, where its rejection would throw instead of returning `Err`"
                 ));
             }
             self.visit_expr(argument);
@@ -157,7 +175,7 @@ fn block_on_calls_are_proven(
             if let Expr::Path(path) = call.func.as_ref()
                 && path.path.is_ident(self.helper)
             {
-                return self.check_call(call);
+                return self.check_call(call, false);
             }
             syn::visit::visit_expr_call(self, call);
         }
@@ -184,6 +202,19 @@ fn block_on_calls_are_proven(
                 }
                 return;
             };
+            if self
+                .result_assertions
+                .contains(&std::ptr::from_ref(rust_macro))
+            {
+                let Expr::Call(call) = unparenthesized(&arguments[0]) else {
+                    unreachable!("a result assertion's first argument is a `block_on` call")
+                };
+                self.check_call(call, true);
+                for argument in arguments.iter().skip(1) {
+                    self.visit_expr(argument);
+                }
+                return;
+            }
             for argument in &arguments {
                 self.visit_expr(argument);
             }
@@ -258,11 +289,26 @@ fn block_on_calls_are_proven(
                 "a `should_panic` test, whose synchronous `toThrow` cannot await".into(),
             );
         }
+        let result_assertions = test
+            .function
+            .block
+            .stmts
+            .iter()
+            .filter_map(|statement| match statement {
+                Stmt::Macro(statement)
+                    if block_on_result_assertion(&statement.mac, &helper).is_some() =>
+                {
+                    Some(std::ptr::from_ref(&statement.mac))
+                }
+                _ => None,
+            })
+            .collect();
         let mut uses = BlockOnUses {
             context,
             error: None,
             escaping: 0,
             helper: &helper,
+            result_assertions,
             shadowed: &shadowed,
         };
         uses.visit_block(&test.function.block);
@@ -351,6 +397,44 @@ fn block_on_helper_is_canonical(function: &ItemFn, program: &TestProgram) -> boo
         return !unqualified
             || (!declared.contains(*short) && imported.contains(&path.replace(" :: ", "::")));
     });
+}
+
+// The proven `block_on` executors of a test program (see `block_on_calls_are_proven`), in name order.
+// flight-lint: allow(hashmap-iteration) markers are collected into an ordered set
+fn block_on_helper_names(context: &HashSet<String>) -> BTreeSet<String> {
+    return context
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(BLOCK_ON_HELPER_MARKER))
+        .map(str::to_string)
+        .collect();
+}
+
+// `assert_eq!(block_on(future), Ok(expected))` (true) or `assert_eq!(block_on(future), Err(expected))`
+// (false) with no message: the future, which side it expects and the expected payload.
+fn block_on_result_assertion(rust_macro: &syn::Macro, helper: &str) -> Option<(Expr, bool, Expr)> {
+    if !rust_macro.path.is_ident("assert_eq") {
+        return None;
+    }
+    let arguments = parse_macro_arguments(rust_macro).ok()?;
+    let [actual, expected] = arguments.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    let future = block_on_argument(actual, helper)?.clone();
+    let Expr::Call(expected) = unparenthesized(expected) else {
+        return None;
+    };
+    let Expr::Path(variant) = expected.func.as_ref() else {
+        return None;
+    };
+    let ok = match variant.path.get_ident()?.to_string().as_str() {
+        "Ok" => true,
+        "Err" => false,
+        _ => return None,
+    };
+    let [payload] = expected.args.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    return Some((future, ok, payload.clone()));
 }
 
 // The `std::future`/`std::task` paths a `use` tree imports unrenamed, a glob importing every one.
@@ -448,10 +532,18 @@ fn collect_contract_symbols(
             if !self.declared.contains(&name)
                 && !self.helper_names.contains(&name)
                 && !self.standard_constants.contains(&name)
-                // `std::panic` names that the panic-message assertion lowering consumes.
+                // Prelude variants (`Ok` erases and a D15 `Err` throws, so neither is ever a value),
+                // and `std::panic` names that the panic-message assertion lowering consumes.
                 && !matches!(
                     name.as_str(),
-                    "None" | "Some" | "drop" | "AssertUnwindSafe" | "catch_unwind" | "get_entity_id"
+                    "Err"
+                        | "None"
+                        | "Ok"
+                        | "Some"
+                        | "drop"
+                        | "AssertUnwindSafe"
+                        | "catch_unwind"
+                        | "get_entity_id"
                 )
                 && !is_lowered_cross_crate_value(&name)
                 && !self.symbols.contains(&name)
@@ -731,6 +823,15 @@ fn collect_contract_symbols(
         }
 
         fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            // A proven `block_on` result assertion emits only its future and expected payload.
+            if let Some((future, _, expected)) = block_on_helper_names(self.context)
+                .iter()
+                .find_map(|helper| block_on_result_assertion(rust_macro, helper))
+            {
+                self.collect_expression(&future);
+                self.collect_expression(&expected);
+                return;
+            }
             if let Ok(arguments) = parse_macro_arguments(rust_macro) {
                 for argument in &arguments {
                     self.collect_expression(argument);
@@ -883,31 +984,18 @@ fn explicit_import_names<'a>(uses: impl Iterator<Item = &'a ItemUse>) -> BTreeSe
 }
 
 // Records the production `async fn`s a portable test may await through a proven `block_on`
-// executor, and which of them resolve to `Result<T, FlightError>` (directly or through a type alias
-// any source declares), which a test must not await.
+// executor, marking those whose output is a proven D15 `Result<T, FlightError>` (see
+// `flight_error_result_type`). An async function whose output is any other `Result`, spelled out or
+// through a loaded alias, is not recorded at all: no lowering gives its `Err` a TypeScript meaning.
 pub(crate) fn insert_async_function_context<'a>(
     context: &mut HashSet<String>,
     production: impl Iterator<Item = &'a Program> + Clone,
 ) {
-    let flight_error_result = |rust_type: &Type| {
-        let Type::Path(path) = rust_type else {
-            return false;
-        };
-        let Some(segment) = path.path.segments.last() else {
-            return false;
-        };
-        let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
-            return false;
-        };
-        return segment.ident == "Result"
-            && arguments.args.len() == 2
-            && matches!(&arguments.args[1], syn::GenericArgument::Type(Type::Path(error))
-                if error.path.segments.last().is_some_and(|segment| segment.ident == "FlightError"));
-    };
+    let flight_error_aliases = flight_error_result_aliases(production.clone());
     let result_aliases = production
         .clone()
         .flat_map(|program| &program.type_aliases)
-        .filter(|alias| alias.generics.params.is_empty() && flight_error_result(&alias.ty))
+        .filter(|alias| block_on_tokens_name(alias.ty.to_token_stream(), "Result"))
         .map(|alias| alias.ident.to_string())
         .collect::<HashSet<_>>();
     for function in production.flat_map(|program| &program.functions) {
@@ -915,13 +1003,150 @@ pub(crate) fn insert_async_function_context<'a>(
             continue;
         }
         let name = &function.sig.ident;
-        context.insert(format!("{ASYNC_FUNCTION_MARKER}{name}"));
-        if let ReturnType::Type(_, rust_type) = &function.sig.output
-            && (flight_error_result(rust_type)
-                || matches!(rust_type.as_ref(), Type::Path(path)
-                    if path.path.get_ident().is_some_and(|alias| result_aliases.contains(&alias.to_string()))))
+        let output = match &function.sig.output {
+            ReturnType::Default => None,
+            ReturnType::Type(_, rust_type) => Some(rust_type.as_ref()),
+        };
+        if output
+            .is_some_and(|rust_type| flight_error_result_type(rust_type, &flight_error_aliases))
         {
+            context.insert(format!("{ASYNC_FUNCTION_MARKER}{name}"));
             context.insert(format!("{ASYNC_RESULT_FUNCTION_MARKER}{name}"));
+        } else if !output.is_some_and(|rust_type| {
+            block_on_tokens_name(rust_type.to_token_stream(), "Result")
+                || result_aliases
+                    .iter()
+                    .any(|alias| block_on_tokens_name(rust_type.to_token_stream(), alias))
+        }) {
+            context.insert(format!("{ASYNC_FUNCTION_MARKER}{name}"));
+        }
+    }
+}
+
+// Records each callable struct field whose declared output is a pinned boxed future of a proven D15
+// `Result<T, FlightError>`: `Arc<dyn Fn(..) -> R>` (or `Box<dyn Fn(..) -> R>`) where `R` is, directly
+// or through one unambiguous alias, `Pin<Box<dyn Future<Output = O> [+ Send]>>` and `O` is proven D15.
+// A struct name more than one source declares, or one the test file redeclares, is left out.
+pub(crate) fn insert_d15_future_field_context<'a>(
+    context: &mut HashSet<String>,
+    production: impl Iterator<Item = &'a Program> + Clone,
+    local_structs: &[syn::ItemStruct],
+) {
+    let flight_error_aliases = flight_error_result_aliases(production.clone());
+    let mut alias_definitions: BTreeMap<String, Vec<Type>> = BTreeMap::new();
+    for alias in production.clone().flat_map(|program| &program.type_aliases) {
+        if alias.generics.params.is_empty() {
+            alias_definitions
+                .entry(alias.ident.to_string())
+                .or_default()
+                .push((*alias.ty).clone());
+        }
+    }
+    let resolve = |rust_type: &Type| -> Option<Type> {
+        if let Type::Path(path) = rust_type
+            && let Some(alias) = path.path.get_ident()
+        {
+            let spellings = alias_definitions.get(&alias.to_string())?;
+            let first = spellings.first()?.to_token_stream().to_string();
+            return spellings
+                .iter()
+                .all(|spelling| spelling.to_token_stream().to_string() == first)
+                .then(|| spellings[0].clone());
+        }
+        return Some(rust_type.clone());
+    };
+    let generic_argument = |rust_type: &Type, name: &str| -> Option<Type> {
+        let Type::Path(path) = rust_type else {
+            return None;
+        };
+        let segment = path.path.segments.last()?;
+        let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+            return None;
+        };
+        if segment.ident != name || arguments.args.len() != 1 {
+            return None;
+        }
+        let syn::GenericArgument::Type(argument) = &arguments.args[0] else {
+            return None;
+        };
+        return Some(argument.clone());
+    };
+    let trait_object_bound = |rust_type: &Type, name: &str| -> Option<syn::PathSegment> {
+        let Type::TraitObject(object) = rust_type else {
+            return None;
+        };
+        return object.bounds.iter().find_map(|bound| match bound {
+            syn::TypeParamBound::Trait(bound)
+                if bound
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| segment.ident == name) =>
+            {
+                bound.path.segments.last().cloned()
+            }
+            _ => None,
+        });
+    };
+    let d15_future = |rust_type: &Type| -> bool {
+        let Some(future) = resolve(rust_type) else {
+            return false;
+        };
+        let Some(boxed) = generic_argument(&future, "Pin") else {
+            return false;
+        };
+        let Some(object) = generic_argument(&boxed, "Box") else {
+            return false;
+        };
+        let Some(future_trait) = trait_object_bound(&object, "Future") else {
+            return false;
+        };
+        let syn::PathArguments::AngleBracketed(arguments) = &future_trait.arguments else {
+            return false;
+        };
+        let [syn::GenericArgument::AssocType(output)] =
+            &arguments.args.iter().collect::<Vec<_>>()[..]
+        else {
+            return false;
+        };
+        return output.ident == "Output"
+            && flight_error_result_type(&output.ty, &flight_error_aliases);
+    };
+    let mut struct_declarations: BTreeMap<String, usize> = BTreeMap::new();
+    for structure in production.clone().flat_map(|program| &program.structs) {
+        *struct_declarations
+            .entry(structure.ident.to_string())
+            .or_default() += 1;
+    }
+    for structure in production.flat_map(|program| &program.structs) {
+        let name = structure.ident.to_string();
+        if struct_declarations.get(&name) != Some(&1)
+            || local_structs
+                .iter()
+                .any(|local| local.ident == name.as_str())
+        {
+            continue;
+        }
+        for field in &structure.fields {
+            let Some(field_name) = &field.ident else {
+                continue;
+            };
+            let callable =
+                generic_argument(&field.ty, "Arc").or_else(|| generic_argument(&field.ty, "Box"));
+            let Some(function) = callable
+                .as_ref()
+                .and_then(|object| trait_object_bound(object, "Fn"))
+            else {
+                continue;
+            };
+            let syn::PathArguments::Parenthesized(signature) = &function.arguments else {
+                continue;
+            };
+            if let ReturnType::Type(_, output) = &signature.output
+                && d15_future(output)
+            {
+                context.insert(format!("{D15_FUTURE_FIELD_MARKER}{name}.{field_name}"));
+            }
         }
     }
 }
@@ -1437,6 +1662,22 @@ fn emit_assertion(
     else {
         return Err(compile_error("assertion macro has an empty path"));
     };
+    for helper in block_on_helper_names(context) {
+        let Some((future, ok, expected)) = block_on_result_assertion(rust_macro, &helper) else {
+            continue;
+        };
+        // A D15 future resolves `Ok` and rejects with the canonical error of `Err`, each awaited once.
+        let future = emit_expression(&future, context)?;
+        let expected = emit_assertion_expression(&expected, context)?;
+        write_indent(out, indent);
+        if ok {
+            writeln!(out, "expect(await {future}).toEqual({expected});")
+        } else {
+            writeln!(out, "await expect({future}).rejects.toEqual({expected});")
+        }
+        .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     let arguments = parse_macro_arguments(rust_macro)?;
     if matches!(name.as_str(), "assert_eq" | "assert_ne")
         && arguments.len() >= 2
@@ -4849,7 +5090,6 @@ fn emit_suite(
     return Ok(());
 }
 
-// flight-lint: allow(hashmap-iteration) markers are only tested with `any`, so visit order is unobservable
 fn emit_test(
     out: &mut String,
     test: &TestCase,
@@ -4872,9 +5112,8 @@ fn emit_test(
     }
     let name = test_display_name(function);
     // A test that awaits through the proven `block_on` executor is an async test.
-    let awaits = context
+    let awaits = block_on_helper_names(&context)
         .iter()
-        .filter_map(|marker| marker.strip_prefix(BLOCK_ON_HELPER_MARKER))
         .any(|helper| block_on_tokens_name(function.block.to_token_stream(), helper));
     let arrow = if awaits { "async () =>" } else { "() =>" };
     writeln!(out, "  it({}, {arrow} {{", js_string_literal(&name))

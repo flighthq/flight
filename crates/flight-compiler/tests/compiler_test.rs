@@ -22373,9 +22373,9 @@ pub fn read_now(value: u32) -> u32 {
             ),
             (
                 "",
-                "assert_eq!(block_on(read_checked(1)), Ok(1));",
+                "let checked = block_on(read_checked(1));\n        assert_eq!(checked, 1);",
                 "",
-                "`Result` future",
+                "D15 `Result` future",
             ),
             (
                 "fn pending() -> bool {\n    return matches!(Poll::<u32>::Pending, Poll::Pending);\n}",
@@ -22419,6 +22419,172 @@ pub fn read_now(value: u32) -> u32 {
             assert!(!error.contains("executor refuses"), "{helper}\n{error}");
         }
     }
+    #[test]
+    fn lowers_proven_d15_results_to_promise_resolution_and_rejection() {
+        let production = r#"
+use flight_entity::{FlightError, FlightErrorKind};
+
+pub type ReadResult = Result<u32, FlightError>;
+
+pub async fn read_checked(value: u32, error: &FlightError) -> ReadResult {
+    if value == 0 {
+        return Err(error.clone());
+    }
+    if value > 9 {
+        return Err(FlightError {
+            kind: FlightErrorKind::RangeError,
+            message: "value is too large".to_string(),
+        });
+    }
+    Ok(value)
+}
+"#;
+        let output = compile_typescript(production, Some("@flighthq/entity/contract")).unwrap();
+        for expected in [
+            "export type ReadResult = number;",
+            "export async function readChecked(value: number, error: Readonly<Error>): Promise<ReadResult> {",
+            "    throw error;",
+            "    throw new RangeError('value is too large');",
+            "  return value;",
+        ] {
+            assert!(output.contains(expected), "{expected}\n{output}");
+        }
+        assert!(!output.contains("Err("), "{output}");
+
+        for (function, reason) in [
+            (
+                "pub async fn f(v: u32) -> Result<u32, FlightError> {\n    let e = Err(FlightError { kind: FlightErrorKind::Error, message: String::new() });\n    return e;\n}",
+                "outside a proven",
+            ),
+            (
+                "pub async fn f(v: Option<u32>) -> Result<u32, FlightError> {\n    return match v {\n        Some(v) => Ok(v),\n        None => Err(FlightError { kind: FlightErrorKind::Error, message: String::new() }),\n    };\n}",
+                "outside a proven",
+            ),
+            (
+                "pub async fn f(v: Result<u32, FlightError>) -> Result<u32, FlightError> {\n    let value = v?;\n    return Ok(value);\n}",
+                "`?`",
+            ),
+            (
+                "pub fn f(v: u32) -> Result<u32, FlightError> {\n    if v == 0 {\n        return Err(FlightError { kind: FlightErrorKind::Error, message: String::new() });\n    }\n    return Ok(v);\n}",
+                "is a value",
+            ),
+            (
+                "pub async fn f(v: u32) -> Result<u32, String> {\n    if v == 0 {\n        return Err(String::new());\n    }\n    return Ok(v);\n}",
+                "is a value",
+            ),
+            (
+                "pub async fn f(v: u32) -> Result<u32, FlightError> {\n    return Err(FlightError { kind: FlightErrorKind::NotReadableError, message: String::new() });\n}",
+                "DOMException",
+            ),
+            (
+                "pub async fn f(kind: FlightErrorKind) -> Result<u32, FlightError> {\n    return Err(FlightError { kind, message: String::new() });\n}",
+                "literal `FlightErrorKind`",
+            ),
+        ] {
+            let error = compile_typescript(
+                &format!("use flight_entity::{{FlightError, FlightErrorKind}};\n\n{function}\n"),
+                Some("@flighthq/entity/contract"),
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains(reason), "{function}\n{error}");
+        }
+
+        let ambiguous = compile_typescript_with_visibility_sources(
+            ModuleSource {
+                path: "crates/flight-example/src/read.rs",
+                source: "use flight_entity::{FlightError, FlightErrorKind};\n\npub type ReadResult = Result<u32, FlightError>;\n\npub async fn f(v: u32) -> ReadResult {\n    return Err(FlightError { kind: FlightErrorKind::Error, message: String::new() });\n}\n",
+            },
+            Some("@flighthq/entity/contract"),
+            &[],
+            &[],
+            &[ModuleSource {
+                path: "crates/flight-example/src/other.rs",
+                source: "pub type ReadResult = Result<u32, String>;\n",
+            }],
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(ambiguous.contains("is a value"), "{ambiguous}");
+
+        let capability = r#"
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+
+use flight_entity::{FlightError, FlightErrorKind};
+
+pub type ReadResult = Result<u32, FlightError>;
+
+pub type ReadFuture = Pin<Box<dyn Future<Output = ReadResult> + Send>>;
+
+pub struct Reader {
+    pub read: Arc<dyn Fn(u32) -> ReadFuture + Send + Sync>,
+}
+
+pub async fn read_from(reader: &Reader, value: u32) -> ReadResult {
+    return (reader.read)(value).await;
+}
+"#;
+        let executor = "use std::future::Future;\nuse std::task::{Context, Poll, Waker};\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = Box::pin(future);\n    let mut context = Context::from_waker(Waker::noop());\n    loop {\n        match future.as_mut().poll(&mut context) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => std::thread::yield_now(),\n        }\n    }\n}";
+        let provider = |body: &str| {
+            return format!(
+                "use crate::*;\n{executor}\n\nfn reader() -> Reader {{\n    return Reader {{\n        read: Arc::new(move |value: u32| {{\n{body}\n        }}),\n    }};\n}}\n\nmod reads {{\n    use super::*;\n\n    #[test]\n    fn reads() {{\n        let error = FlightError {{\n            kind: FlightErrorKind::TypeError,\n            message: \"empty\".to_string(),\n        }};\n        assert_eq!(block_on(read_from(&reader(), 2)), Ok(2));\n        assert_eq!(block_on(read_from(&reader(), 0)), Err(error));\n    }}\n}}\n"
+            );
+        };
+        let canonical = "            let result = if value == 0 {\n                Err(FlightError {\n                    kind: FlightErrorKind::TypeError,\n                    message: \"empty\".to_string(),\n                })\n            } else {\n                Ok(value)\n            };\n            return Box::pin(async move { result });";
+        let output = compile_vitest_with_alias_sources(
+            &provider(canonical),
+            "@flighthq/example/contract",
+            &[capability],
+        )
+        .unwrap();
+        for expected in [
+            "return (async () => {",
+            "throw new TypeError('empty');",
+            "})();",
+            "expect(await readFrom(reader(), 2)).toEqual(2);",
+            "await expect(readFrom(reader(), 0)).rejects.toEqual(error);",
+            "const error = new TypeError('empty');",
+        ] {
+            assert!(output.contains(expected), "{expected}\n{output}");
+        }
+        for absent in ["Ok", "Err(", "FlightErrorKind", "blockOn"] {
+            assert!(!output.contains(absent), "{absent}\n{output}");
+        }
+
+        for body in [
+            // The result is read again, so it is a value and not the future's output.
+            "            let result = if value == 0 { Err(FlightError { kind: FlightErrorKind::TypeError, message: String::new() }) } else { Ok(value) };\n            let again = result.clone();\n            return Box::pin(async move { again });",
+            // The `Result` comes from a called closure, not from `Ok`/`Err` tails of the expression.
+            "            let result = (|| Err(FlightError { kind: FlightErrorKind::TypeError, message: String::new() }))();\n            return Box::pin(async move { result });",
+        ] {
+            let error = compile_vitest_with_alias_sources(
+                &provider(body),
+                "@flighthq/example/contract",
+                &[capability],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(
+                error.contains("outside a proven D15 async return"),
+                "{body}\n{error}"
+            );
+        }
+        // A field whose future is not proven D15 gives its closure no provider lowering.
+        let unproven = compile_vitest_with_alias_sources(
+            &provider(canonical),
+            "@flighthq/example/contract",
+            &[&capability.replace("Output = ReadResult", "Output = Result<u32, String>")],
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(
+            unproven.contains("outside a proven D15 async return"),
+            "{unproven}"
+        );
+    }
+
     #[test]
     fn refuses_flight_error_helpers_and_calls_it_cannot_prove() {
         let production = r#"
