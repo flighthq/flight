@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { describe, expect, it, vi } from 'vitest';
+
+import { getStoragePersistence, requestStoragePersistence } from './storagePersistence.ts';
 import type {
   HostPreferencesPersistenceQueryCapability,
   HostPreferencesPersistenceRequestCapability,
   StoragePersistenceOutcome,
-} from '@flighthq/types/contract';
-import { describe, expect, it, vi } from 'vitest';
-
-import { getStoragePersistence, requestStoragePersistence } from './storagePersistence.ts';
+} from './types.ts';
 
 describe('getStoragePersistence', () => {
   it.each([

@@ -2,7 +2,7 @@ import type {
   HostPreferencesPersistenceQueryCapability,
   HostPreferencesPersistenceRequestCapability,
   StoragePersistenceOutcome,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function getStoragePersistence(
   hostPreferencesPersistenceQuery: Readonly<HostPreferencesPersistenceQueryCapability>,

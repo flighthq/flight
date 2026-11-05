@@ -47,9 +47,9 @@ export type StorageJsonOrResult<Value> = StorageFallbackOutcome<Value | null>;
 export type StorageNumberOrResult = StorageFallbackOutcome<number>;
 export type StorageJsonResult<Value> = StorageValueOutcome<Value | null, StorageReadFailureReason>;
 
-// One coherent observation of two independent platform facts. `outcome` reports bucket policy;
-// `permissionState` reports the separately observed Permissions API state. A missing observation is
-// null, never a fabricated prompt, and neither field may be inferred from the other.
+// Multi-key queries return no partial payload: the first failed provider read identifies its key, while
+// a keys-enumeration failure has failedKey null. This differs deliberately from mutations, whose already
+// completed writes are world state and therefore must be reported rather than hidden.
 export type StorageQueryOutcome<Value> =
   | { readonly failedKey: null; readonly reason: 'ok'; readonly value: Value }
   | {
@@ -87,6 +87,50 @@ export interface HostPreferencesCapability {
 export interface HostPreferencesChangeCapability {
   destroy(): void;
   subscribe(listener: (change: Readonly<StorageChange>) => void): (() => void) | null;
+}
+
+// One coherent observation of two independent platform facts. `outcome` reports bucket policy;
+// `permissionState` reports the separately observed Permissions API state. A missing observation is
+// null, never a fabricated prompt, and neither field may be inferred from the other.
+export interface StoragePersistenceOutcome {
+  readonly outcome: 'persistent' | 'best-effort' | 'operation-failed';
+  readonly permissionState: 'granted' | 'denied' | 'prompt' | null;
+}
+
+export interface HostPreferencesPersistenceQueryCapability {
+  getPersistence(): Promise<StoragePersistenceOutcome>;
+}
+
+export interface HostPreferencesPersistenceRequestCapability {
+  requestPersistence(): Promise<StoragePersistenceOutcome>;
+}
+
+/** The complete preferences capability group. An omitted slot is capability absence. */
+export interface HostPreferencesCapabilities {
+  readonly change?: HostPreferencesChangeCapability;
+  readonly local?: HostPreferencesCapability;
+  readonly persistenceQuery?: HostPreferencesPersistenceQueryCapability;
+  readonly persistenceRequest?: HostPreferencesPersistenceRequestCapability;
+}
+
+// Injected Web surfaces keep platform access at the host composition boundary. Window adds persist();
+// Worker intentionally cannot manufacture the request slot.
+export interface WebWorkerStoragePersistenceApi {
+  getPermissionState(): Promise<'granted' | 'denied' | 'prompt'>;
+  persisted(): Promise<boolean>;
+}
+
+export interface WebWindowStoragePersistenceApi extends WebWorkerStoragePersistenceApi {
+  persist(): Promise<boolean>;
+}
+
+export interface WebWorkerStoragePersistenceCapabilities {
+  readonly persistenceQuery: HostPreferencesPersistenceQueryCapability;
+}
+
+export interface WebWindowStoragePersistenceCapabilities {
+  readonly persistenceQuery: HostPreferencesPersistenceQueryCapability;
+  readonly persistenceRequest: HostPreferencesPersistenceRequestCapability;
 }
 
 // A single observed storage mutation. A null key with all-null values denotes a full clear.

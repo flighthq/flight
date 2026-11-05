@@ -4,6 +4,7 @@ import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
@@ -124,12 +125,6 @@ import type {
   HostStatusBarStyleCapability,
   HostStatusBarVisibilityCapability,
 } from './StatusBar.ts';
-import type {
-  HostPreferencesCapability,
-  HostPreferencesChangeCapability,
-  HostPreferencesPersistenceQueryCapability,
-  HostPreferencesPersistenceRequestCapability,
-} from './Storage.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
 import type {
@@ -335,13 +330,6 @@ export interface HostPowerCapabilities {
   readonly status?: HostPowerStatusCapability;
   readonly suspension?: HostPowerSuspensionCapability;
   readonly thermal?: HostPowerThermalCapability;
-}
-
-export interface HostPreferencesCapabilities {
-  readonly change?: HostPreferencesChangeCapability;
-  readonly local?: HostPreferencesCapability;
-  readonly persistenceQuery?: HostPreferencesPersistenceQueryCapability;
-  readonly persistenceRequest?: HostPreferencesPersistenceRequestCapability;
 }
 
 export interface HostProtocolCapabilities {

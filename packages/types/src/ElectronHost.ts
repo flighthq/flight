@@ -1,6 +1,7 @@
 import type { HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { ElectronMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 
 import type { ElectronIpcTarget } from './ElectronApi.ts';
 import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor.ts';
@@ -11,7 +12,6 @@ import type {
   HostDialogCapabilities,
   HostIpcCapabilities,
   HostPlatformCapabilities,
-  HostPreferencesCapabilities,
   HostScreenCapabilities,
   HostShellCapabilities,
   HostShortcutCapabilities,
