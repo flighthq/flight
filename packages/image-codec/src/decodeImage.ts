@@ -1,10 +1,5 @@
-import type {
-  DecodedImage,
-  HostImageDecodeCapabilities,
-  HostImageDecodeFormatCapability,
-} from '@flighthq/types/contract';
-
 import { detectImageMimeType } from './detectImageMimeType.ts';
+import type { DecodedImage, HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from './types.ts';
 
 export async function decodeImage(
   imageDecode: Readonly<HostImageDecodeCapabilities>,

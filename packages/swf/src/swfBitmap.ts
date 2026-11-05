@@ -1,10 +1,6 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import type {
-  Bitmap,
-  DecodedImage,
-  HostDecompressDeflateCapability,
-  SwfJpegAlphaPayload,
-} from '@flighthq/types/contract';
+import type { DecodedImage } from '@flighthq/image-codec/contract';
+import type { Bitmap, HostDecompressDeflateCapability, SwfJpegAlphaPayload } from '@flighthq/types/contract';
 import { CompressionFraming } from '@flighthq/types/contract';
 
 // Joins a decoded JPEG colour plane with the separately-compressed alpha plane retained from its SWF

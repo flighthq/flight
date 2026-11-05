@@ -1,8 +1,8 @@
+import type { HostImageDecodeCapabilities } from '@flighthq/image-codec/contract';
 import { resolveImageResourceReference } from '@flighthq/image/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
 import type {
-  HostImageDecodeCapabilities,
   ImageResourceFetch,
   ImageResourceReference,
   LoadScene2DImageResourcesOptions,

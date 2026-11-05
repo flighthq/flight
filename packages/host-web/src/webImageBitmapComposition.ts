@@ -1,11 +1,7 @@
 import { decodeImage } from '@flighthq/image-codec/contract';
+import type { HostImageDecodeCapabilities } from '@flighthq/image-codec/contract';
 import { registerImageBitmapCompositionResolver } from '@flighthq/image/contract';
-import type {
-  Bitmap,
-  EmbeddedImageResourceReference,
-  HostImageDecodeCapabilities,
-  ImageBitmapComposer,
-} from '@flighthq/types/contract';
+import type { Bitmap, EmbeddedImageResourceReference, ImageBitmapComposer } from '@flighthq/types/contract';
 
 export function clearWebImageBitmapComposers(): void {
   composers.clear();

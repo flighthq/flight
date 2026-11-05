@@ -1,11 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
 import { createEmbeddedImageResourceReference, resolveImageResourceReference } from '@flighthq/image/contract';
-import type {
-  Bitmap,
-  HostImageDecodeCapabilities,
-  HostImageDecodeFormatCapability,
-  ImageBitmapComposer,
-} from '@flighthq/types/contract';
+import type { Bitmap, ImageBitmapComposer } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageResourceFailureKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 

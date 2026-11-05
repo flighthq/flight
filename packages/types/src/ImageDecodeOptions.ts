@@ -1,6 +1,5 @@
-// Options for an ImageDecoder. premultiplyAlpha requests premultiplied RGBA output: a decoder able to
-// premultiply in one pass (e.g. createImageBitmap({ premultiplyAlpha: 'premultiply' })) should do so,
-// otherwise the caller premultiplies the straight result. Straight alpha is the default when omitted.
-export interface ImageDecodeOptions {
-  premultiplyAlpha?: boolean;
-}
+// Owned by `@flighthq/image-codec`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/image-codec/contract`. */
+export type { ImageDecodeOptions } from '@flighthq/image-codec/contract';

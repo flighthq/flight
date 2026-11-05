@@ -53,6 +53,9 @@
   },
   "references": [
     {
+      "path": "../image-codec"
+    },
+    {
       "path": "../texture/tsconfig.contract.json"
     },
     {

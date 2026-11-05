@@ -3,7 +3,7 @@ import type {
   HostImageEncodeCapabilities,
   HostImageEncodeFormatCapability,
   ImageEncodeOptions,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export async function encodeImage(
   imageEncode: Readonly<HostImageEncodeCapabilities>,

@@ -1,5 +1,6 @@
 import { convertBitmapAlphaType } from '@flighthq/bitmap/contract';
-import type { DecodedImage, HostDecompressDeflateCapability, ImageDecodeOptions } from '@flighthq/types/contract';
+import type { DecodedImage, ImageDecodeOptions } from '@flighthq/image-codec/contract';
+import type { HostDecompressDeflateCapability } from '@flighthq/types/contract';
 
 import { createSwfLosslessBitmap } from './swfBitmap.ts';
 import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType.ts';

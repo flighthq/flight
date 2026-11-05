@@ -1,11 +1,7 @@
-import type {
-  DecodedImage,
-  HostImageEncodeCapabilities,
-  HostImageEncodeFormatCapability,
-} from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { encodeImage } from './encodeImage.ts';
+import type { DecodedImage, HostImageEncodeCapabilities, HostImageEncodeFormatCapability } from './types.ts';
 
 function fakeImage(): DecodedImage {
   return { data: new Uint8Array([1, 2, 3, 4]), width: 1, height: 1 };

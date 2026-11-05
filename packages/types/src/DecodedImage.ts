@@ -1,10 +1,5 @@
-// Raw decoded image: straight (non-premultiplied) RGBA8 pixels plus dimensions. The output of an
-// ImageDecoder and the input to an ImageEncoder. `data` is row-major, 4 bytes per pixel, width*height*4
-// bytes long, matching @flighthq/bitmap. Canvas adapters expose the same storage through a zero-copy
-// Uint8ClampedArray view at the ImageData boundary. decodeImagePremultiplied returns the premultiplied
-// variant of this same shape.
-export interface DecodedImage {
-  data: Uint8Array<ArrayBuffer>;
-  width: number;
-  height: number;
-}
+// Owned by `@flighthq/image-codec`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/image-codec/contract`. */
+export type { DecodedImage } from '@flighthq/image-codec/contract';

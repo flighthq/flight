@@ -1,15 +1,10 @@
+import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
 // @vitest-environment jsdom
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type {
-  HostImageDecodeCapabilities,
-  HostImageDecodeFormatCapability,
-  ImageResource,
-  ImageResourceReference,
-  Scene2DImageResourceLoadProgress,
-} from '@flighthq/types/contract';
+import type { ImageResource, ImageResourceReference, Scene2DImageResourceLoadProgress } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DImageResources } from './loadScene2DImageResources.ts';

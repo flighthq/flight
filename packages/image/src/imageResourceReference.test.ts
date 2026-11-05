@@ -1,10 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  Bitmap,
-  HostImageDecodeCapabilities,
-  HostImageDecodeFormatCapability,
-  ImageResource,
-} from '@flighthq/types/contract';
+import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
+import type { Bitmap, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey, ResourceResolutionState } from '@flighthq/types/contract';
 
 import {

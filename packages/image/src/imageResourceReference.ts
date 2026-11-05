@@ -1,12 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { decodeImage, decodeImagePremultiplied } from '@flighthq/image-codec/contract';
+import type { HostImageDecodeCapabilities, ImageDecodeFallback } from '@flighthq/image-codec/contract';
 import type {
   AlphaType,
   Bitmap,
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
-  HostImageDecodeCapabilities,
-  ImageDecodeFallback,
   ImageResourceFailure,
   ImageResourceFetch,
   ImageResourceReference,

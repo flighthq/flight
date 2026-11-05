@@ -3,7 +3,7 @@ import type {
   HostImageDecodeCapabilities,
   HostImageDecodeFormatCapability,
   ImageDecodeOptions,
-} from '@flighthq/types/contract';
+} from '@flighthq/image-codec/contract';
 
 const decodeWithCanvas: HostImageDecodeFormatCapability = {
   async decode(bytes: Readonly<Uint8Array>, options?: Readonly<ImageDecodeOptions>): Promise<DecodedImage> {

@@ -43,6 +43,7 @@
     "@flighthq/audio": "*",
     "@flighthq/entity": "*",
     "@flighthq/image": "*",
+    "@flighthq/image-codec": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/scene2d-formats": "*",
@@ -51,7 +52,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/image-codec": "*",
     "@flighthq/path-boolean": "*",
     "@flighthq/scene2d": "*",
     "typescript": "^7.0.2"

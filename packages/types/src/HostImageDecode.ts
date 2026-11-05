@@ -1,15 +1,5 @@
-import type { DecodedImage } from './DecodedImage.ts';
-import type { ImageDecodeOptions } from './ImageDecodeOptions.ts';
+// Owned by `@flighthq/image-codec`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
 
-export interface HostImageDecodeFormatCapability {
-  decode(bytes: Readonly<Uint8Array>, options?: Readonly<ImageDecodeOptions>): Promise<DecodedImage>;
-}
-
-export interface HostImageDecodeCapabilities {
-  readonly avif?: HostImageDecodeFormatCapability;
-  readonly bmp?: HostImageDecodeFormatCapability;
-  readonly gif?: HostImageDecodeFormatCapability;
-  readonly jpeg?: HostImageDecodeFormatCapability;
-  readonly png?: HostImageDecodeFormatCapability;
-  readonly webp?: HostImageDecodeFormatCapability;
-}
+/** @deprecated Import from `@flighthq/image-codec/contract`. */
+export type { HostImageDecodeFormatCapability, HostImageDecodeCapabilities } from '@flighthq/image-codec/contract';

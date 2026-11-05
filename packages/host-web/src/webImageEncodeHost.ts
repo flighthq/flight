@@ -3,7 +3,7 @@ import type {
   HostImageEncodeCapabilities,
   HostImageEncodeFormatCapability,
   ImageEncodeOptions,
-} from '@flighthq/types/contract';
+} from '@flighthq/image-codec/contract';
 
 function createCanvasEncoder(mimeType: string): HostImageEncodeFormatCapability {
   return {
