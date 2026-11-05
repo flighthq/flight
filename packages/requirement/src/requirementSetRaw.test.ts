@@ -13,7 +13,7 @@ import {
 import type { Requirement, RequirementFacet } from './contract.ts';
 
 function requirement(facet: RequirementFacet, key: string): Requirement {
-  return { facet: facet, key: String(key) };
+  return { facet, key };
 }
 
 describe('createRequirementSet', () => {

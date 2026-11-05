@@ -29,7 +29,7 @@ describe('collectScene2DRequirements', () => {
 
 describe('reportRequirement', () => {
   it('records only when a collector is engaged', () => {
-    let sink: Requirement[] = [] as never[];
+    let sink: Requirement[] = [];
     reportRequirement(undefined, 'scene.node-kind', 'Ignored');
     reportRequirement(sink, 'scene.node-kind', 'Shape');
     expect(sink).toEqual([{ facet: 'scene.node-kind', key: 'Shape' }]);

@@ -1,7 +1,7 @@
 // Generated from crates/flight-requirement/src/requirement_set_raw.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 
 import type { Requirement, RequirementFacet } from './types.ts';
@@ -19,9 +19,9 @@ export function createRequirementSet(
   covers: Readonly<RequirementFacet[]>,
   requirements: Readonly<Requirement[]>,
 ): RequirementSetRaw {
-  let out: RequirementSetRaw = Object.assign(allocateEntity<RequirementSetRaw>(), { covers: [], requirements: [] });
+  let out: RequirementSetRaw = allocateEntity<RequirementSetRaw>();
   initializeRequirementSet(out, covers, requirements);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -32,7 +32,7 @@ export function diffRequirementSets(
   baseline: Readonly<RequirementSetRaw>,
 ): RequirementSetRaw {
   const covers = intersectSorted(requirements.covers, baseline.covers);
-  let difference: Requirement[] = [] as never[];
+  let difference: Requirement[] = [];
   for (const requirement of requirements.requirements) {
     if (covers.includes(requirement.facet) && findRequirement(baseline.requirements, requirement) === undefined) {
       difference.push(requirement);
@@ -55,7 +55,7 @@ export function initializeRequirementSet(
 }
 
 function distinctSorted(values: Readonly<RequirementFacet[]>): RequirementFacet[] {
-  let ordered: RequirementFacet[] = [] as never[];
+  let ordered: RequirementFacet[] = [];
   for (const value of values) {
     if (!ordered.includes(value)) {
       ordered.push(value);
@@ -70,7 +70,7 @@ function distinctSorted(values: Readonly<RequirementFacet[]>): RequirementFacet[
 }
 
 function distinctSortedRequirements(requirements: Readonly<Requirement[]>): Requirement[] {
-  let ordered: Requirement[] = [] as never[];
+  let ordered: Requirement[] = [];
   for (const requirement of requirements) {
     let replaced = false;
     let index: number = 0;
@@ -80,7 +80,7 @@ function distinctSortedRequirements(requirements: Readonly<Requirement[]>): Requ
         replaced = true;
         break;
       }
-      index += 1;
+      index++;
     }
     if (!replaced) {
       ordered.push(copyRequirement(requirement));
@@ -101,7 +101,7 @@ function distinctSortedRequirements(requirements: Readonly<Requirement[]>): Requ
       if (leftUnit !== rightUnit) {
         return leftUnit < rightUnit ? -1 : leftUnit > rightUnit ? 1 : 0;
       }
-      index += 1;
+      index++;
     }
     const leftLength: number = leftUnits.length;
     const rightLength: number = rightUnits.length;
@@ -116,7 +116,7 @@ function findRequirement(requirements: Readonly<Requirement[]>, probe: Readonly<
     if (requirements[index].facet === probe.facet && requirements[index].key === probe.key) {
       return index;
     }
-    index += 1;
+    index++;
   }
   return undefined;
 }
@@ -125,7 +125,7 @@ function intersectSorted(
   first: Readonly<RequirementFacet[]>,
   second: Readonly<RequirementFacet[]>,
 ): RequirementFacet[] {
-  let intersection: RequirementFacet[] = [] as never[];
+  let intersection: RequirementFacet[] = [];
   for (const value of first) {
     if (second.includes(value)) {
       intersection.push(value);
@@ -143,7 +143,7 @@ export function mergeRequirementSets(requirementSets: Readonly<Readonly<Requirem
     return createRequirementSet([], []);
   }
   let covers = distinctSorted(first.covers);
-  let requirements: Requirement[] = [] as never[];
+  let requirements: Requirement[] = [];
   for (const requirementSet of requirementSets) {
     covers = intersectSorted(covers, requirementSet.covers);
     for (const requirement of requirementSet.requirements) {

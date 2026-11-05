@@ -27,59 +27,53 @@ export interface Requirement {
 }
 
 export function getRequirementFacetString(value: RequirementFacet): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'compression.kind':
-        return 'compression.kind';
-      case 'document.format':
-        return 'document.format';
-      case 'physics2d.joint-kind':
-        return 'physics2d.joint-kind';
-      case 'scene.blend-mode':
-        return 'scene.blend-mode';
-      case 'scene.material-kind':
-        return 'scene.material-kind';
-      case 'scene.modifier-kind':
-        return 'scene.modifier-kind';
-      case 'scene.node-kind':
-        return 'scene.node-kind';
-      case 'scene.resource-mime-type':
-        return 'scene.resource-mime-type';
-      case 'scene.shape-command':
-        return 'scene.shape-command';
-      case 'scene.texture-source-kind':
-        return 'scene.texture-source-kind';
-    }
-  })();
+  switch (value) {
+    case 'compression.kind':
+      return 'compression.kind';
+    case 'document.format':
+      return 'document.format';
+    case 'physics2d.joint-kind':
+      return 'physics2d.joint-kind';
+    case 'scene.blend-mode':
+      return 'scene.blend-mode';
+    case 'scene.material-kind':
+      return 'scene.material-kind';
+    case 'scene.modifier-kind':
+      return 'scene.modifier-kind';
+    case 'scene.node-kind':
+      return 'scene.node-kind';
+    case 'scene.resource-mime-type':
+      return 'scene.resource-mime-type';
+    case 'scene.shape-command':
+      return 'scene.shape-command';
+    case 'scene.texture-source-kind':
+      return 'scene.texture-source-kind';
+  }
 }
 
 export function parseRequirementFacet(value: string): RequirementFacet | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'compression.kind':
-        return 'compression.kind';
-      case 'document.format':
-        return 'document.format';
-      case 'physics2d.joint-kind':
-        return 'physics2d.joint-kind';
-      case 'scene.blend-mode':
-        return 'scene.blend-mode';
-      case 'scene.material-kind':
-        return 'scene.material-kind';
-      case 'scene.modifier-kind':
-        return 'scene.modifier-kind';
-      case 'scene.node-kind':
-        return 'scene.node-kind';
-      case 'scene.resource-mime-type':
-        return 'scene.resource-mime-type';
-      case 'scene.shape-command':
-        return 'scene.shape-command';
-      case 'scene.texture-source-kind':
-        return 'scene.texture-source-kind';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'compression.kind':
+      return 'compression.kind';
+    case 'document.format':
+      return 'document.format';
+    case 'physics2d.joint-kind':
+      return 'physics2d.joint-kind';
+    case 'scene.blend-mode':
+      return 'scene.blend-mode';
+    case 'scene.material-kind':
+      return 'scene.material-kind';
+    case 'scene.modifier-kind':
+      return 'scene.modifier-kind';
+    case 'scene.node-kind':
+      return 'scene.node-kind';
+    case 'scene.resource-mime-type':
+      return 'scene.resource-mime-type';
+    case 'scene.shape-command':
+      return 'scene.shape-command';
+    case 'scene.texture-source-kind':
+      return 'scene.texture-source-kind';
+    default:
+      return undefined;
+  }
 }

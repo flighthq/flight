@@ -10,7 +10,7 @@ import type { Requirement, RequirementFacet } from './types.ts';
  * optional array-sink seam; it has no dependency on a Scene2D engine.
  */
 export function collectScene2DRequirements(run: (arg0: Requirement[]) => void): RequirementSetRaw {
-  let requirements: Requirement[] = [] as never[];
+  let requirements: Requirement[] = [];
   run(requirements);
   return createRequirementSet(
     ['scene.blend-mode', 'scene.material-kind', 'scene.node-kind', 'scene.shape-command'],
@@ -25,5 +25,5 @@ export function reportRequirement(sink: Requirement[] | undefined, facet: Requir
   if (sink === undefined) {
     return;
   }
-  sink.push({ facet: facet, key: String(key) });
+  sink.push({ facet, key });
 }
