@@ -82,19 +82,19 @@ mod mark_debug_frame {
 
     #[test]
     fn is_a_no_op_when_debug_is_disabled() {
-        let (state, log_state) = states();
+        let (mut state, log_state) = states();
         let memory = create_memory_log_sink(4);
         add_log_sink(&log_state, memory.sink.clone());
-        mark_debug_frame(&state, &log_state, 0.0, None, None);
+        mark_debug_frame(&mut state, &log_state, 0.0, None, None);
         assert!(entries(&memory).is_empty());
     }
 
     #[test]
     fn emits_a_labeled_frame_marker_when_debug_is_enabled() {
-        let (state, log_state) = states();
+        let (mut state, log_state) = states();
         let memory = create_memory_log_sink(16);
         enable_debug(&state, &log_state, Some(&options(&memory.sink)));
-        mark_debug_frame(&state, &log_state, 0.0, Some("level-load"), None);
+        mark_debug_frame(&mut state, &log_state, 0.0, Some("level-load"), None);
         assert!(
             matches!(field(&entry_data(&memory)[0], "frame"), LogValue::Str(frame) if frame == "level-load")
         );
@@ -102,11 +102,11 @@ mod mark_debug_frame {
 
     #[test]
     fn tags_an_unlabeled_marker_with_an_ascending_counter() {
-        let (state, log_state) = states();
+        let (mut state, log_state) = states();
         let memory = create_memory_log_sink(16);
         enable_debug(&state, &log_state, Some(&options(&memory.sink)));
-        mark_debug_frame(&state, &log_state, 0.0, None, None);
-        mark_debug_frame(&state, &log_state, 0.0, None, None);
+        mark_debug_frame(&mut state, &log_state, 0.0, None, None);
+        mark_debug_frame(&mut state, &log_state, 0.0, None, None);
         let data = entry_data(&memory);
         let (LogValue::Number(a), LogValue::Number(b)) =
             (field(&data[0], "frame"), field(&data[1], "frame"))

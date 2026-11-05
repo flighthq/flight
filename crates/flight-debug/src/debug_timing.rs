@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 //! Debug timing spans and frame markers (TS `debugTiming.ts`), gated on an active debug session so
 //! instrumentation left in shipping code costs one boolean check. Timestamps are injected (D5).
 
@@ -15,7 +13,8 @@ use crate::debug::is_debug_enabled;
 use crate::types::DebugStateRef;
 
 /// Opens a named timing span only while a debug session is active (TS `beginDebugSpan`): a running
-/// `LogTimer` to hand to `end_debug_span`, or `None` when debug is disabled (nothing is allocated).
+/// `LogTimer` to hand to `end_debug_span`, or TypeScript `null` when debug is disabled (nothing is
+/// allocated).
 // flight-lint: allow(conform-params, f64) D5: the caller-owned debug state and injected now_ms replace the source module global and clock; D1: a JS-number millisecond timestamp
 pub fn begin_debug_span(
     state: &DebugStateRef,
@@ -30,8 +29,8 @@ pub fn begin_debug_span(
 }
 
 /// Closes a span opened by `begin_debug_span` (TS `endDebugSpan`), emitting its elapsed-time Debug
-/// entry and returning the elapsed milliseconds. A `None` timer (debug was disabled when the span
-/// opened) is a no-op returning -1, the "not measured" sentinel.
+/// entry and returning the elapsed milliseconds. A TypeScript `null` timer (debug was disabled when
+/// the span opened) is a no-op returning -1, the "not measured" sentinel.
 // flight-lint: allow(conform-params, f64) D5: caller-owned log state and injected now_ms replace the source singleton and clock; D1: JS-number milliseconds
 pub fn end_debug_span(log_state: &LogStateRef, now_ms: f64, timer: Option<&LogTimer>) -> f64 {
     let Some(timer) = timer else {
@@ -45,7 +44,7 @@ pub fn end_debug_span(log_state: &LogStateRef, now_ms: f64, timer: Option<&LogTi
 /// new session does not reset. A no-op, with no counter advance, when debug is disabled.
 // flight-lint: allow(conform-params, f64) D5: caller-owned debug and log state and injected now_ms replace the source module globals and clock; D1: a JS-number millisecond timestamp
 pub fn mark_debug_frame(
-    state: &DebugStateRef,
+    state: &mut DebugStateRef,
     log_state: &LogStateRef,
     now_ms: f64,
     label: Option<&str>,
