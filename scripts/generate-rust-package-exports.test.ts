@@ -17,7 +17,9 @@ import {
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   collectTypeScriptExportSymbols,
+  collectTypeScriptNullableCallableReturns,
   collectTypeScriptNullableOptionFields,
+  collectTypeScriptReferencedTypes,
   collectTypeScriptStringUnions,
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
@@ -567,8 +569,10 @@ export function advance(machine: AnimationStateMachine): void {}
 `;
     const generated = `export function advance(machine: AnimationStateMachine): void {
   if (machine.transitionToStateIndex === undefined) return;
-  machine.transitionFromStateIndex = undefined;
   machine.transitionToStateIndex = undefined;
+}
+function clear(machine: Readonly<AnimationStateMachine>): void {
+  if (machine.transitionFromStateIndex !== undefined) return;
 }
 export function unrelated(machine: AnimationStateMachine): void {
   machine.transitionWeight = 0;
@@ -581,6 +585,41 @@ export function unrelated(machine: AnimationStateMachine): void {
       '--typescript-nullable-option-field',
       '@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex',
     ]);
+  });
+
+  it('refuses nullable field metadata for wrapped or locally shadowed owners', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          [
+            'LayoutState',
+            {
+              hasType: true,
+              hasValue: false,
+              nullableFields: ['guard'],
+            },
+          ],
+        ]),
+      ],
+    ]);
+    const existing = `import type { LayoutState } from '@flighthq/types/contract';`;
+
+    expect(
+      typeScriptNullableOptionFieldArguments(
+        existing,
+        `export function inspect(state: Box<LayoutState>): void { state.guard = undefined; }`,
+        symbols,
+      ),
+    ).toEqual([]);
+    expect(
+      typeScriptNullableOptionFieldArguments(
+        existing,
+        `interface LayoutState { guard?: number; }
+export function inspect(state: LayoutState): void { state.guard = undefined; }`,
+        symbols,
+      ),
+    ).toEqual([]);
   });
 
   it('derives nullable return metadata only from exact exported function positions', () => {
@@ -599,6 +638,68 @@ export function renamedPath(): Path | undefined { return undefined; }
     ]);
   });
 
+  it('derives nullable callable returns from exact aliases and canonical owner references', () => {
+    const existing = `import type { LayoutState } from '@flighthq/types/contract';
+export type LocalResolver = () => Failure | null;
+export type OrdinaryResolver = () => Failure | undefined;
+export type MixedResolver = () => Failure | null | undefined;
+export function resolve(state: LayoutState): void {}
+`;
+    const generated = `export type LocalResolver = () => Failure | undefined;
+export type OrdinaryResolver = () => Failure | undefined;
+export type MixedResolver = () => Failure | undefined;
+`;
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          ['LayoutState', { hasType: true, hasValue: false, referencedTypes: ['LayoutResolver', 'UnrelatedResolver'] }],
+          ['LayoutResolver', { hasType: true, hasValue: false, nullableCallableReturn: true }],
+          ['UnrelatedResolver', { hasType: true, hasValue: false, nullableCallableReturn: false }],
+        ]),
+      ],
+    ]);
+
+    expect(typeScriptNullableOptionReturnArguments(existing, generated, symbols)).toEqual([
+      '--typescript-nullable-option-return',
+      'LayoutResolver',
+      '--typescript-nullable-option-return',
+      'LocalResolver',
+    ]);
+    expect(collectTypeScriptNullableCallableReturns(existing)).toEqual(new Set(['LocalResolver']));
+    expect(
+      collectTypeScriptReferencedTypes(`export interface LayoutState {
+  resolvers: Map<string, LayoutResolver>;
+  failure: Failure | null;
+}`),
+    ).toEqual(new Map([['LayoutState', ['Failure', 'LayoutResolver', 'Map']]]));
+  });
+
+  it('refuses conflicting nullable callable return owners', () => {
+    const existing = `import type { FirstState } from '@flighthq/first/contract';
+import type { SecondState } from '@flighthq/second/contract';`;
+    const symbols = new Map([
+      [
+        '@flighthq/first/contract',
+        new Map([
+          ['FirstState', { hasType: true, hasValue: false, referencedTypes: ['Resolver'] }],
+          ['Resolver', { hasType: true, hasValue: false, nullableCallableReturn: true }],
+        ]),
+      ],
+      [
+        '@flighthq/second/contract',
+        new Map([
+          ['SecondState', { hasType: true, hasValue: false, referencedTypes: ['Resolver'] }],
+          ['Resolver', { hasType: true, hasValue: false, nullableCallableReturn: true }],
+        ]),
+      ],
+    ]);
+
+    expect(() => typeScriptNullableOptionReturnArguments(existing, '', symbols)).toThrow(
+      /nullable Option return Resolver has conflicting owners/,
+    );
+  });
+
   it('discovers only exported null-represented function boundaries', () => {
     expect(
       hasTypeScriptNullableOptionFunctionBoundary(`export function findValue(): string | null { return null; }
@@ -613,6 +714,7 @@ export function setDefault(value: string | null = 'value'): void {}
 function privateValue(): string | null { return null; }
 `),
     ).toBe(false);
+    expect(hasTypeScriptNullableOptionFunctionBoundary(`export type Resolver = () => string | null;`)).toBe(true);
   });
 
   it('derives nullable parameter metadata only from exact exported function positions', () => {

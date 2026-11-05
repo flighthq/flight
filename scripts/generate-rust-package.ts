@@ -15,7 +15,9 @@ import {
   compilerAliasArguments,
   compilerVisibilityArguments,
   collectTypeScriptExportSymbols,
+  collectTypeScriptNullableCallableReturns,
   collectTypeScriptNullableOptionFields,
+  collectTypeScriptReferencedTypes,
   collectTypeScriptStringUnions,
   collectCrateExportSymbols,
   collectExportSymbols,
@@ -320,11 +322,18 @@ function rememberTypeScriptNullableOptionReturnArguments(arguments_: string[], r
   );
   const names = new Set(arguments_.filter((_, index) => index % 2 === 1));
   for (const name of names) {
+    const aliasOwners = crateSourcePaths(join(crateRoot, 'src')).filter((candidate) =>
+      collectRustPublicTypeAliasNames(readFileSync(candidate, 'utf8')).includes(name),
+    );
+    if (aliasOwners.length > 1) {
+      throw new Error(`TypeScript nullable Option return ${name} has conflicting Rust callable owners`);
+    }
+    const ownerSource = aliasOwners[0] ?? rustSource;
     const previous = packageTypeScriptNullableOptionReturns.get(name);
-    if (previous !== undefined && previous !== rustSource) {
+    if (previous !== undefined && previous !== ownerSource) {
       throw new Error(`TypeScript nullable Option return ${name} has conflicting Rust owners`);
     }
-    packageTypeScriptNullableOptionReturns.set(name, rustSource);
+    packageTypeScriptNullableOptionReturns.set(name, ownerSource);
   }
   if (merged.length / 2 !== packageTypeScriptNullableOptionReturns.size) {
     throw new Error('TypeScript nullable Option return metadata lost its Rust owner');
@@ -940,6 +949,7 @@ function probeNativeSource(
       nullableOptionReturnArguments = typeScriptNullableOptionReturnArguments(
         existingTypescript,
         readFileSync(out, 'utf8'),
+        loadImportedContractSymbols(existingTypescript),
       );
       if (nullableOptionReturnArguments.length > 0) {
         const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments);
@@ -1357,7 +1367,9 @@ function collectContractTypeScriptSymbols(path: string): Map<string, ContractSym
     visited.add(currentPath);
     const typescript = readFileSync(currentPath, 'utf8');
     const stringUnions = collectTypeScriptStringUnions(typescript);
+    const nullableCallableReturns = collectTypeScriptNullableCallableReturns(typescript);
     const nullableFields = collectTypeScriptNullableOptionFields(typescript);
+    const referencedTypes = collectTypeScriptReferencedTypes(typescript);
     for (const [name, owner] of collectTypeScriptExportSymbols(typescript)) {
       const existing = symbols.get(name) ?? { hasType: false, hasValue: false, isClass: false };
       existing.hasType ||= owner.hasType;
@@ -1376,6 +1388,11 @@ function collectContractTypeScriptSymbols(path: string): Map<string, ContractSym
       const fields = nullableFields.get(name);
       if (fields !== undefined) {
         existing.nullableFields = [...new Set([...(existing.nullableFields ?? []), ...fields])].sort();
+      }
+      existing.nullableCallableReturn ||= nullableCallableReturns.has(name);
+      const references = referencedTypes.get(name);
+      if (references !== undefined) {
+        existing.referencedTypes = [...new Set([...(existing.referencedTypes ?? []), ...references])].sort();
       }
       symbols.set(name, existing);
     }
@@ -1523,7 +1540,11 @@ function loadModule(rustSource: string, aliasSources: string[], representationIm
     );
     rememberTypeScriptDefaultNullOptionParameterArguments(defaultNullOptionParameterArguments, rustPath);
   }
-  const nullableOptionReturnArguments = typeScriptNullableOptionReturnArguments(contractTypescript, compiledTypescript);
+  const nullableOptionReturnArguments = typeScriptNullableOptionReturnArguments(
+    contractTypescript,
+    compiledTypescript,
+    importedContractSymbols,
+  );
   const nullableRepresentationArguments = [
     ...defaultNullParameterRepresentationArguments,
     ...nullableOptionReturnArguments,

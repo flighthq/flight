@@ -473,6 +473,42 @@ export function recognizesBitmapFingerprint(text: string): boolean {
     expect(value).toContain('if (_fingerprint === undefined)');
   }, 120_000);
 
+  it('preserves an established nullable callable alias while ordinary callables remain undefined', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'mod value;\npub mod contract;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `pub type Resolver = fn() -> Option<i32>;
+pub type OrdinaryResolver = fn() -> Option<i32>;
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `export type Resolver = () => number | null;
+export type OrdinaryResolver = () => number | undefined;
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'index.ts'),
+      "export type { OrdinaryResolver, Resolver } from './contract.ts';\n",
+    );
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain('export type Resolver = () => number | null;');
+    expect(value).toContain('export type OrdinaryResolver = () => number | undefined;');
+  }, 120_000);
+
   it('preserves target-native nullable return ownership through generated tests', async () => {
     writeFileSync(
       join(crateRoot, 'Cargo.toml'),

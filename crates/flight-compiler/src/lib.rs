@@ -112,11 +112,12 @@ pub struct TypeScriptNullableOptionParameter<'a> {
     pub parameter: &'a str,
 }
 
-/// An established TypeScript function whose Rust `Option` return uses `null` absence.
+/// An established TypeScript function or callable type whose Rust `Option` return uses `null`
+/// absence.
 ///
-/// The name is the emitted TypeScript function name. The compiler validates that exactly one
-/// visible public Rust function at that position returns `Option` before changing its
-/// representation.
+/// The name is the emitted TypeScript function or callable-alias name. The compiler validates that
+/// exactly one visible public Rust function or callable alias at that position returns `Option`
+/// before changing its representation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TypeScriptNullableOptionReturn<'a> {
     pub name: &'a str,
@@ -2828,10 +2829,17 @@ fn validate_type_script_default_null_option_parameters(
 fn validate_type_script_nullable_option_returns(
     returns: &[TypeScriptNullableOptionReturn<'_>],
 ) -> Result<(), CompileError> {
+    let mut positions = std::collections::BTreeSet::new();
     for return_position in returns {
         if !valid_type_script_identifier(return_position.name) {
             return Err(compile_error(format!(
                 "TypeScript nullable Option return has invalid function position `{}`",
+                return_position.name
+            )));
+        }
+        if !positions.insert(return_position.name) {
+            return Err(compile_error(format!(
+                "duplicate TypeScript nullable Option return `{}`",
                 return_position.name
             )));
         }

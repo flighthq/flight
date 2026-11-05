@@ -13,7 +13,9 @@ export interface ExportSymbolOwner {
   hasType: boolean;
   hasValue: boolean;
   isClass?: boolean;
+  nullableCallableReturn?: boolean;
   nullableFields?: string[];
+  referencedTypes?: string[];
   stringUnionValues?: string[];
 }
 
@@ -402,6 +404,69 @@ export function collectTypeScriptNullableOptionFields(typescript: string): Map<s
   return owners;
 }
 
+// Direct exported callable aliases establish a return sentinel just as exported functions do. Keep
+// the fact on the canonical declaration so consumers can follow an imported owner type to the
+// callable aliases embedded in its fields without guessing from a coincidental local spelling.
+export function collectTypeScriptNullableCallableReturns(typescript: string): Set<string> {
+  const parsed = parseSync('contract.ts', typescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(
+      `could not parse TypeScript contract while resolving nullable callable returns: ${parsed.errors[0]?.message}`,
+    );
+  }
+  const callables = new Set<string>();
+  for (const [name, returnType] of exportedCallableReturnTypes(
+    parsed.program.body as unknown as Record<string, unknown>[],
+  )) {
+    if (typeUnionHasOnlyAbsence(returnType, 'TSNullKeyword')) callables.add(name);
+  }
+  return callables;
+}
+
+// Record direct type references made by each exported type declaration. Package traversal merges
+// these edges with the canonical symbol, allowing nullable callable ownership to be reached through
+// types such as LayoutState -> LayoutResolver while unrelated aliases remain out of scope.
+export function collectTypeScriptReferencedTypes(typescript: string): Map<string, string[]> {
+  const parsed = parseSync('contract.ts', typescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(
+      `could not parse TypeScript contract while resolving referenced types: ${parsed.errors[0]?.message}`,
+    );
+  }
+  const references = new Map<string, string[]>();
+  for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'TSInterfaceDeclaration' && declaration?.type !== 'TSTypeAliasDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    const names = new Set<string>();
+    const visit = (value: unknown): void => {
+      if (Array.isArray(value)) {
+        for (const item of value) visit(item);
+        return;
+      }
+      if (value === null || typeof value !== 'object') return;
+      const node = value as Record<string, unknown>;
+      if (node.type === 'TSTypeReference') {
+        const name = typeName(node);
+        if (name !== undefined && name !== identifier.name) names.add(name);
+      }
+      for (const [key, child] of Object.entries(node)) {
+        if (key !== 'type' && key !== 'span' && key !== 'id') visit(child);
+      }
+    };
+    if (declaration.type === 'TSInterfaceDeclaration') {
+      visit(declaration.body);
+      visit(declaration.extends);
+    } else {
+      visit(declaration.typeAnnotation);
+    }
+    if (names.size > 0) references.set(identifier.name, [...names].sort());
+  }
+  return references;
+}
+
 // Existing imports identify the canonical external contract owner. Only that owner's direct,
 // type-only string-union declaration becomes compiler representation metadata; ordinary type aliases
 // and runtime enums produce no argument.
@@ -754,8 +819,9 @@ function intrinsicTypeAliasOwner(type: Record<string, unknown>): TypeScriptTypeA
 }
 
 // Canonical imported interfaces prove the absence representation of their fields. Carry only fields
-// the generated function actually reads or writes through a parameter of that exact owner type; no
-// owner or field spelling is inferred from Rust names.
+// a generated function actually reads or writes through a parameter of that exact owner type (or
+// Readonly<Owner>); no owner or field spelling is inferred from Rust names. Private helpers are part
+// of the lowering surface, but a generated declaration of the same type name invalidates ownership.
 export function typeScriptNullableOptionFieldArguments(
   existingTypescript: string,
   generatedTypescript: string,
@@ -801,10 +867,41 @@ export function typeScriptNullableOptionFieldArguments(
     }
   }
 
+  const locallyDeclaredTypes = new Set<string>();
+  for (const statement of generated.program.body as unknown as Record<string, unknown>[]) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration'
+        ? (statement.declaration as Record<string, unknown> | null)
+        : statement;
+    if (
+      declaration?.type !== 'TSInterfaceDeclaration' &&
+      declaration?.type !== 'TSTypeAliasDeclaration' &&
+      declaration?.type !== 'ClassDeclaration' &&
+      declaration?.type !== 'TSEnumDeclaration'
+    ) {
+      continue;
+    }
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type === 'Identifier' && typeof identifier.name === 'string') {
+      locallyDeclaredTypes.add(identifier.name);
+    }
+  }
+  for (const name of locallyDeclaredTypes) canonicalOwners.delete(name);
+
+  function canonicalOwnerName(type: Record<string, unknown>): string | undefined {
+    const bare = bareTypeReferenceName(type);
+    if (bare !== undefined) return bare;
+    if (type.type !== 'TSTypeReference' || typeName(type) !== 'Readonly') return undefined;
+    const parameters = typeParameters(type);
+    return parameters.length === 1 ? bareTypeReferenceName(parameters[0]) : undefined;
+  }
+
   const positions = new Set<string>();
   for (const statement of generated.program.body as unknown as Record<string, unknown>[]) {
-    if (statement.type !== 'ExportNamedDeclaration') continue;
-    const declaration = statement.declaration as Record<string, unknown> | null;
+    const declaration =
+      statement.type === 'ExportNamedDeclaration'
+        ? (statement.declaration as Record<string, unknown> | null)
+        : statement;
     if (declaration?.type !== 'FunctionDeclaration') continue;
     const parameters = new Map<string, { fields: ReadonlySet<string>; module: string; owner: string }>();
     for (const parameter of declaration.params as Record<string, unknown>[]) {
@@ -813,7 +910,7 @@ export function typeScriptNullableOptionFieldArguments(
         (parameter.typeAnnotation as Record<string, unknown> | null) ??
         (pattern.typeAnnotation as Record<string, unknown> | null);
       const rustType = annotation?.typeAnnotation as Record<string, unknown> | undefined;
-      const owner = rustType === undefined ? undefined : bareTypeReferenceName(rustType);
+      const owner = rustType === undefined ? undefined : canonicalOwnerName(rustType);
       const canonical = owner === undefined ? undefined : canonicalOwners.get(owner);
       if (pattern.type === 'Identifier' && typeof pattern.name === 'string' && canonical !== undefined) {
         parameters.set(pattern.name, canonical);
@@ -1045,12 +1142,13 @@ export function typeScriptDefaultNullOptionParameterArguments(
   return positions.sort().flatMap((position) => ['--typescript-default-null-option-parameter', position]);
 }
 
-// The same exported function position in the established and generated modules proves its Option
-// absence representation. A direct `null`-only absence union becomes explicit metadata; functions
-// whose established contract admits `undefined` retain ordinary Option lowering.
+// The same exported function or callable-alias position in the established and generated modules
+// proves its Option absence representation. Canonical imported owner types also carry the callable
+// aliases reachable from their declared type graph. A spelling claimed by two owners is refused.
 export function typeScriptNullableOptionReturnArguments(
   existingTypescript: string,
   generatedTypescript: string,
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>> = new Map(),
 ): string[] {
   const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
@@ -1067,7 +1165,14 @@ export function typeScriptNullableOptionReturnArguments(
 
   const existingFunctions = exportedFunctionTypes(existing.program.body as unknown as Record<string, unknown>[]);
   const generatedFunctions = exportedFunctionTypes(generated.program.body as unknown as Record<string, unknown>[]);
-  const positions: string[] = [];
+  const positions = new Map<string, string>();
+  const remember = (name: string, owner: string): void => {
+    const previous = positions.get(name);
+    if (previous !== undefined && previous !== owner) {
+      throw new Error(`TypeScript nullable Option return ${name} has conflicting owners ${previous} and ${owner}`);
+    }
+    positions.set(name, owner);
+  };
   for (const [name, existingFunction] of existingFunctions) {
     const generatedFunction = generatedFunctions.get(name);
     if (
@@ -1077,9 +1182,55 @@ export function typeScriptNullableOptionReturnArguments(
     ) {
       continue;
     }
-    positions.push(name);
+    remember(name, 'local function');
   }
-  return positions.sort().flatMap((name) => ['--typescript-nullable-option-return', name]);
+
+  const existingCallables = exportedCallableReturnTypes(existing.program.body as unknown as Record<string, unknown>[]);
+  const generatedCallables = exportedCallableReturnTypes(
+    generated.program.body as unknown as Record<string, unknown>[],
+  );
+  for (const [name, existingReturn] of existingCallables) {
+    const generatedReturn = generatedCallables.get(name);
+    if (
+      generatedReturn !== undefined &&
+      typeUnionHasOnlyAbsence(existingReturn, 'TSNullKeyword') &&
+      typeUnionHasOnlyAbsence(generatedReturn, 'TSUndefinedKeyword')
+    ) {
+      remember(name, 'local callable');
+    }
+  }
+
+  for (const statement of existing.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ImportDeclaration') continue;
+    const source = statement.source as Record<string, unknown>;
+    const module = typeof source.value === 'string' ? source.value : undefined;
+    const symbols = module === undefined ? undefined : importedContractSymbols.get(module);
+    if (module === undefined || symbols === undefined) continue;
+    for (const specifier of statement.specifiers as Record<string, unknown>[]) {
+      if (specifier.type !== 'ImportSpecifier') continue;
+      const imported = specifier.imported as Record<string, unknown>;
+      const local = specifier.local as Record<string, unknown>;
+      const importedName = typeof imported.name === 'string' ? imported.name : undefined;
+      const localName = typeof local.name === 'string' ? local.name : undefined;
+      if (importedName === undefined || localName !== importedName || symbols.get(importedName)?.hasType !== true) {
+        continue;
+      }
+      const pending = [importedName];
+      const visited = new Set<string>();
+      while (pending.length > 0) {
+        const name = pending.pop()!;
+        if (visited.has(name)) continue;
+        visited.add(name);
+        const owner = symbols.get(name);
+        if (owner?.nullableCallableReturn === true) remember(name, module);
+        for (const referenced of owner?.referencedTypes ?? []) {
+          if (symbols.has(referenced)) pending.push(referenced);
+        }
+      }
+    }
+  }
+
+  return [...positions.keys()].sort().flatMap((name) => ['--typescript-nullable-option-return', name]);
 }
 
 // Target-native modules are not ordinarily compiler alias inputs. Their established TypeScript
@@ -1097,6 +1248,13 @@ export function hasTypeScriptNullableOptionFunctionBoundary(typescript: string):
   if (
     [...exportedFunctionTypes(body).values()].some((function_) =>
       typeUnionHasOnlyAbsence(function_.returnType, 'TSNullKeyword'),
+    )
+  ) {
+    return true;
+  }
+  if (
+    [...exportedCallableReturnTypes(body).values()].some((returnType) =>
+      typeUnionHasOnlyAbsence(returnType, 'TSNullKeyword'),
     )
   ) {
     return true;
@@ -1213,6 +1371,31 @@ function exportedFunctionTypes(body: readonly Record<string, unknown>[]): Map<st
     });
   }
   return functions;
+}
+
+function exportedCallableReturnTypes(body: readonly Record<string, unknown>[]): Map<string, Record<string, unknown>> {
+  const callables = new Map<string, Record<string, unknown>>();
+  for (const statement of body) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'TSTypeAliasDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    let callable = declaration.typeAnnotation as Record<string, unknown>;
+    while (callable.type === 'TSParenthesizedType') {
+      callable = callable.typeAnnotation as Record<string, unknown>;
+    }
+    if (
+      identifier?.type !== 'Identifier' ||
+      typeof identifier.name !== 'string' ||
+      callable.type !== 'TSFunctionType'
+    ) {
+      continue;
+    }
+    const annotation = callable.returnType as Record<string, unknown> | null;
+    const returnType = annotation?.typeAnnotation as Record<string, unknown> | undefined;
+    if (returnType !== undefined) callables.set(identifier.name, returnType);
+  }
+  return callables;
 }
 
 function renderTypeAliasOwner(owner: TypeScriptTypeAliasOwner): string {

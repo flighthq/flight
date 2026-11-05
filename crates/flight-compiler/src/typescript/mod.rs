@@ -328,6 +328,24 @@ const DEFAULT_NULL_OPTION_PARAMETER_MARKER: &str = "@default-null-option-paramet
 
 pub(super) const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:";
 
+// A function whose exact TypeScript contract, rather than a source-wide Rust directive, proves
+// that its Option return retains `null` through internal expression paths.
+const TYPE_SCRIPT_NULLABLE_OPTION_RETURN_MARKER: &str =
+    "@typescript-nullable-option-return:";
+
+// A public callable type alias whose exact Rust return is `Option` and whose established
+// TypeScript contract uses `null` absence: `{source} SEP {alias}`.
+const NULLABLE_OPTION_CALLABLE_RETURN_MARKER: &str = "@nullable-option-callable-return:";
+
+// A struct `HashMap`/`BTreeMap` field whose values use such a callable alias:
+// `{struct source} SEP {Struct} SEP {field}`.
+const NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER: &str =
+    "@nullable-option-callable-map-field:";
+
+// The BindingId of a local proven to hold a callable whose Option result uses `null`.
+const NULLABLE_OPTION_CALLABLE_BINDING_MARKER: &str =
+    "@nullable-option-callable-binding:";
+
 pub(super) const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
 
 // `{source}␟{function}␟{position}` for each `array-like` slice parameter, by its argument position, so
@@ -6063,6 +6081,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         facts: Vec<(String, BindingFact)>,
         function: String,
         mutex_guards: HashSet<String>,
+        nullable_callable_bindings: HashSet<String>,
+        nullable_callable_options: HashSet<String>,
         nullable_option_bindings: HashSet<String>,
         ordinal: usize,
         ref_aliases: Vec<(String, String)>,
@@ -6538,6 +6558,19 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 }
                 _ => None,
             };
+        }
+
+        fn expression_is_type_script_nullable_option_field(&self, expression: &Expr) -> bool {
+            let Expr::Field(field) = expression else {
+                return false;
+            };
+            let syn::Member::Named(field_name) = &field.member else {
+                return false;
+            };
+            let Some(structure) = self.expression_structure_identity(&field.base) else {
+                return false;
+            };
+            return is_type_script_nullable_option_field(self.context, &structure, field_name);
         }
 
         // The return fact of a method call forwarded to a free function by a delegating impl method.
@@ -7080,25 +7113,28 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn initializer_retains_nullable_option(&self, expression: &Expr) -> bool {
-            if current_source(self.context).is_some() {
-                return false;
-            }
             return match expression {
                 Expr::Call(call) => {
                     let Expr::Path(path) = call.func.as_ref() else {
                         return false;
                     };
-                    path.qself.is_none()
-                        && single_path_identifier(&call.func)
-                            .is_none_or(|name| self.fact_of(&name).is_none())
-                        && call_fact(self.context, NULLABLE_OPTION_RETURN_MARKER, &path.path)
-                            .is_some()
+                    if path.qself.is_some() {
+                        return false;
+                    }
+                    if let Some(name) = single_path_identifier(&call.func)
+                        && let Some(id) = self.binding_id(&name)
+                    {
+                        return self.nullable_callable_bindings.contains(&id);
+                    }
+                    return call_fact(self.context, NULLABLE_OPTION_RETURN_MARKER, &path.path)
+                        .is_some();
                 }
                 Expr::Group(group) => self.initializer_retains_nullable_option(&group.expr),
                 Expr::MethodCall(call) if call.args.is_empty() && call.method == "clone" => {
                     self.initializer_retains_nullable_option(&call.receiver)
                 }
                 Expr::Paren(paren) => self.initializer_retains_nullable_option(&paren.expr),
+                Expr::Field(_) => self.expression_is_type_script_nullable_option_field(expression),
                 Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => self
                     .binding_id(&path.path.segments[0].ident.to_string())
                     .is_some_and(|id| self.nullable_option_bindings.contains(&id)),
@@ -7107,6 +7143,56 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 }
                 _ => false,
             };
+        }
+
+        fn initializer_is_nullable_callable_return(&self, expression: &Expr) -> bool {
+            let Expr::Call(call) = peel_reference_and_paren(expression) else {
+                return false;
+            };
+            let Some(name) = single_path_identifier(&call.func) else {
+                return false;
+            };
+            return self
+                .binding_id(&name)
+                .is_some_and(|id| self.nullable_callable_bindings.contains(&id));
+        }
+
+        fn initializer_is_nullable_callable_option(&self, expression: &Expr) -> bool {
+            let expression = peel_reference_and_paren(expression);
+            let expression = match expression {
+                Expr::MethodCall(call)
+                    if call.args.is_empty()
+                        && matches!(call.method.to_string().as_str(), "cloned" | "copied") =>
+                {
+                    peel_reference_and_paren(call.receiver.as_ref())
+                }
+                expression => expression,
+            };
+            let Expr::MethodCall(get) = expression else {
+                return false;
+            };
+            if get.method != "get" {
+                return false;
+            }
+            let Expr::Field(field) = peel_reference_and_paren(get.receiver.as_ref()) else {
+                return false;
+            };
+            let syn::Member::Named(field_name) = &field.member else {
+                return false;
+            };
+            let Some(identity) = self.expression_structure_identity(&field.base) else {
+                return false;
+            };
+            let marker = |owner: &str| {
+                format!(
+                    "{NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field_name}"
+                )
+            };
+            return self.context.contains(&marker(&identity))
+                || identity
+                    .rsplit(PROVENANCE_SEPARATOR)
+                    .next()
+                    .is_some_and(|owner| self.context.contains(&marker(owner)));
         }
 
         // A field of a lexically known structure declared as `HashSet` / `HashMap`.
@@ -7426,6 +7512,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
 
         fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
             self.visit_expr(&expression.expr);
+            let nullable_callable_option = single_path_identifier(&expression.expr)
+                .and_then(|name| self.binding_id(&name))
+                .is_some_and(|id| self.nullable_callable_options.contains(&id));
             let fact = match self.initializer_fact(&expression.expr) {
                 BindingFact::Unknown => BindingFact::UnresolvedPattern,
                 fact => fact,
@@ -7433,6 +7522,15 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             for arm in &expression.arms {
                 self.scopes.push(BTreeMap::new());
                 self.bind_pattern(&arm.pat, fact.clone());
+                if nullable_callable_option
+                    && let Pat::TupleStruct(tuple) = &arm.pat
+                    && tuple.path.segments.last().is_some_and(|segment| segment.ident == "Some")
+                    && tuple.elems.len() == 1
+                    && let Pat::Ident(binding) = tuple.elems.first().expect("one element")
+                    && let Some(id) = self.binding_id(&binding.ident.to_string())
+                {
+                    self.nullable_callable_bindings.insert(id);
+                }
                 if let Some((_, guard)) = &arm.guard {
                     self.visit_expr(guard);
                 }
@@ -7473,6 +7571,10 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         fn visit_item_fn(&mut self, _function: &'ast ItemFn) {}
 
         fn visit_local(&mut self, local: &'ast syn::Local) {
+            let nullable_callable_option = local.init.as_ref().is_some_and(|initializer| {
+                initializer.diverge.is_none()
+                    && self.initializer_is_nullable_callable_option(&initializer.expr)
+            });
             let mutex_guard = local
                 .init
                 .as_ref()
@@ -7520,8 +7622,16 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 }
                 fact = self.initializer_fact(&initializer.expr);
                 if initializer.diverge.is_none() {
-                    retains_nullable_option = matches!(&fact, BindingFact::Option(_))
-                        && self.initializer_retains_nullable_option(&initializer.expr);
+                    let retains = self.initializer_retains_nullable_option(&initializer.expr);
+                    retains_nullable_option = if current_source(self.context).is_some() {
+                        expression_is_type_script_nullable_option_return(
+                            &initializer.expr,
+                            self.context,
+                        ) || self.expression_is_type_script_nullable_option_field(&initializer.expr)
+                            || self.initializer_is_nullable_callable_return(&initializer.expr)
+                    } else {
+                        matches!(&fact, BindingFact::Option(_)) && retains
+                    };
                 }
             }
             if matches!(fact, BindingFact::Unknown)
@@ -7547,6 +7657,12 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     .flatten()
             });
             self.bind_pattern(&local.pat, fact);
+            if nullable_callable_option
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.nullable_callable_options.insert(id);
+            }
             self.mark_shared_identity(&local.pat, shared_identity);
             if let Pat::Type(typed) = &local.pat {
                 self.mark_external_struct(&typed.pat, &typed.ty);
@@ -7632,6 +7748,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             None => function_name,
         },
         mutex_guards: HashSet::new(),
+        nullable_callable_bindings: HashSet::new(),
+        nullable_callable_options: HashSet::new(),
         nullable_option_bindings: HashSet::new(),
         ordinal: 0,
         ref_aliases: Vec::new(),
@@ -7710,6 +7828,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     }
     for id in resolver.nullable_option_bindings {
         markers.push(format!("{NULLABLE_OPTION_BINDING_MARKER}{id}"));
+    }
+    for id in resolver.nullable_callable_bindings {
+        markers.push(format!("{NULLABLE_OPTION_CALLABLE_BINDING_MARKER}{id}"));
     }
     context.extend(markers);
 }
@@ -11647,11 +11768,10 @@ fn data_union_unit(entities: &HashSet<String>, owner: &str, variant: &str) -> bo
     return entities.contains(&format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant}"));
 }
 
-// Emits `expression`. In emitted production code a per-item nullable `Option` (`T | null`) exists
-// only at its declaration boundary: a call to a `nullable-option` function or a read of a nullable
-// field is normalized to the ordinary absent form here (`?? undefined`, which keeps `false`, `0` and
-// `""`), so every other flow (bindings, arguments, ordinary returns and fields, `Option` methods)
-// sees one representation; nullable returns, fields and defaults convert back with `?? null`.
+// Emits `expression`. Source-directed nullable Options are normalized to the ordinary absent form
+// (`?? undefined`, preserving `false`, `0` and `""`) outside their declaration boundary. Exact
+// TypeScript contract metadata instead preserves `null` through reads, bindings and Option methods;
+// ordinary Options continue to use `undefined`.
 pub(crate) fn emit_expression(
     expression: &Expr,
     entities: &HashSet<String>,
@@ -11662,6 +11782,8 @@ pub(crate) fn emit_expression(
         && !entities.contains(NULLABLE_OPTIONS_MARKER)
         && (expression_is_nullable_option_return(expression, entities)
             || expression_is_nullable_option_field(expression, entities))
+        && !expression_is_type_script_nullable_option_return(expression, entities)
+        && !expression_is_type_script_nullable_option_field(expression, entities)
     {
         return Ok(format!("(({value}) ?? undefined)"));
     }
@@ -13919,10 +14041,7 @@ fn emit_function_trait_type_with_parameter_names(
         };
         let parameter_types = arguments.inputs.iter().collect::<Vec<_>>();
         let parameters = emit_callable_parameters(&parameter_types, entities, parameter_names)?;
-        let output = match &arguments.output {
-            ReturnType::Default => "void".to_string(),
-            ReturnType::Type(_, rust_type) => emit_type(rust_type, entities)?,
-        };
+        let output = emit_callable_return_type(&arguments.output, entities)?;
         return Ok(format!("({}) => {output}", parameters.join(", ")));
     }
     return Ok("object".to_string());
@@ -22908,6 +23027,8 @@ fn expression_struct_name(expression: &Expr, entities: &HashSet<String>) -> Opti
 pub(crate) fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
     let normalized = current_source(entities).is_some();
     if entities.contains(NULLABLE_OPTIONS_MARKER)
+        || expression_is_type_script_nullable_option_field(expression, entities)
+        || expression_is_type_script_nullable_option_return(expression, entities)
         || !normalized && expression_is_nullable_option_field(expression, entities)
         || !normalized && expression_is_nullable_option_return(expression, entities)
         || referenced_path_identifier(expression)
@@ -22915,10 +23036,27 @@ pub(crate) fn option_absent_value(expression: &Expr, entities: &HashSet<String>)
             .is_some_and(|id| entities.contains(&format!("{NULLABLE_OPTION_BINDING_MARKER}{id}")))
         || referenced_path_identifier(expression)
             .is_some_and(|name| entities.contains(&format!("{NULLABLE_BINDING_MARKER}{name}")))
+        || expression_is_nullable_callable_return(expression, entities)
     {
         return "null";
     }
     return "undefined";
+}
+
+fn expression_is_nullable_callable_return(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> bool {
+    let Expr::Call(call) = peel_reference_and_paren(expression) else {
+        return false;
+    };
+    let Some(name) = referenced_path_identifier(&call.func) else {
+        return false;
+    };
+    return lexical_binding(entities, &name).is_some_and(|id| {
+        !id.is_empty()
+            && entities.contains(&format!("{NULLABLE_OPTION_CALLABLE_BINDING_MARKER}{id}"))
+    });
 }
 
 fn expression_is_nullable_option_return(expression: &Expr, entities: &HashSet<String>) -> bool {
@@ -22929,6 +23067,24 @@ fn expression_is_nullable_option_return(expression: &Expr, entities: &HashSet<St
         return false;
     };
     return call_fact(entities, NULLABLE_OPTION_RETURN_MARKER, &path.path).is_some();
+}
+
+fn expression_is_type_script_nullable_option_return(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> bool {
+    let Expr::Call(call) = expression else {
+        return false;
+    };
+    let Expr::Path(path) = call.func.as_ref() else {
+        return false;
+    };
+    return call_fact(
+        entities,
+        TYPE_SCRIPT_NULLABLE_OPTION_RETURN_MARKER,
+        &path.path,
+    )
+    .is_some();
 }
 
 // Whether `expression` reads a nullable `Option` field: one designated `nullable-option` or declared
@@ -22952,6 +23108,22 @@ fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<Str
     return entities.contains(&format!(
         "{NULLABLE_OPTION_FIELD_MARKER}{structure}{PROVENANCE_SEPARATOR}{field_name}"
     )) || is_type_script_nullable_option_field(entities, &structure, field_name);
+}
+
+fn expression_is_type_script_nullable_option_field(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> bool {
+    let Expr::Field(field) = expression else {
+        return false;
+    };
+    let syn::Member::Named(field_name) = &field.member else {
+        return false;
+    };
+    let Some(structure) = expression_struct_identity(&field.base, entities) else {
+        return false;
+    };
+    return is_type_script_nullable_option_field(entities, &structure, field_name);
 }
 
 fn emit_receiver_preserving_optional_call(
@@ -25830,49 +26002,194 @@ pub(crate) fn insert_type_script_nullable_option_return_context<'a>(
     programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
     returns: &[crate::TypeScriptNullableOptionReturn<'_>],
 ) -> Result<(), CompileError> {
+    enum ReturnOwner<'a> {
+        Function(&'a str, &'a ItemFn),
+        Callable(&'a str, &'a syn::ItemType),
+    }
+
     let programs = programs.into_iter().collect::<Vec<_>>();
     for metadata in returns {
         let mut matches = programs
             .iter()
             .flat_map(|(module, program)| {
-                program.functions.iter().filter_map(move |function| {
-                    (snake_to_lower_camel(&function.sig.ident.to_string()) == metadata.name)
-                        .then_some((*module, function))
-                })
+                program
+                    .functions
+                    .iter()
+                    .filter_map(move |function| {
+                        (snake_to_lower_camel(&function.sig.ident.to_string()) == metadata.name)
+                            .then_some(ReturnOwner::Function(*module, function))
+                    })
+                    .chain(program.type_aliases.iter().filter_map(move |alias| {
+                        (alias.ident == metadata.name)
+                            .then_some(ReturnOwner::Callable(*module, alias))
+                    }))
             })
             .collect::<Vec<_>>();
         if matches.len() != 1 {
             return Err(compile_error(format!(
-                "TypeScript nullable Option return `{}` must resolve to exactly one visible Rust function, found {}",
+                "TypeScript nullable Option return `{}` must resolve to exactly one visible Rust function or callable alias, found {}",
                 metadata.name,
                 matches.len()
             )));
         }
-        let (module, function) = matches.pop().expect("one match was required");
-        let ReturnType::Type(_, rust_type) = &function.sig.output else {
-            return Err(compile_error(format!(
-                "TypeScript nullable Option return `{}` must designate a public Rust function returning `Option`",
-                metadata.name
-            )));
-        };
-        if !is_public(&function.vis) || option_inner_type(rust_type).is_none() {
-            return Err(compile_error(format!(
-                "TypeScript nullable Option return `{}` must designate a public Rust function returning `Option`",
-                metadata.name
-            )));
+        match matches.pop().expect("one match was required") {
+            ReturnOwner::Function(module, function) => {
+                let ReturnType::Type(_, rust_type) = &function.sig.output else {
+                    return Err(compile_error(format!(
+                        "TypeScript nullable Option return `{}` must designate a public Rust function or callable alias returning `Option`",
+                        metadata.name
+                    )));
+                };
+                if !is_public(&function.vis) || option_inner_type(rust_type).is_none() {
+                    return Err(compile_error(format!(
+                        "TypeScript nullable Option return `{}` must designate a public Rust function or callable alias returning `Option`",
+                        metadata.name
+                    )));
+                }
+                let function_name = function.sig.ident.to_string();
+                context.insert(owner_marker(
+                    FUNCTION_OWNER_MARKER,
+                    module,
+                    &function_name,
+                    SourceAccess::Public,
+                ));
+                context.insert(format!(
+                    "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+                ));
+                context.insert(format!(
+                    "{TYPE_SCRIPT_NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+                ));
+            }
+            ReturnOwner::Callable(module, alias) => {
+                if !is_public(&alias.vis) || callable_option_return_type(&alias.ty).is_none() {
+                    return Err(compile_error(format!(
+                        "TypeScript nullable Option return `{}` must designate a public Rust function or callable alias returning `Option`",
+                        metadata.name
+                    )));
+                }
+                context.insert(owner_marker(
+                    TYPE_ALIAS_OWNER_MARKER,
+                    module,
+                    &alias.ident.to_string(),
+                    SourceAccess::Public,
+                ));
+                context.insert(format!(
+                    "{NULLABLE_OPTION_CALLABLE_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{}",
+                    alias.ident
+                ));
+                let alias_name = alias.ident.to_string();
+                for (field_module, program) in &programs {
+                    for structure in &program.structs {
+                        for field in &structure.fields {
+                            let Some(field_name) = &field.ident else {
+                                continue;
+                            };
+                            if map_value_type_path(&field.ty).is_some_and(|value| {
+                                resolve_path_owner(
+                                    context,
+                                    TYPE_ALIAS_OWNER_MARKER,
+                                    field_module,
+                                    &value.path,
+                                )
+                                .is_some_and(|(owner, declaration)| {
+                                    owner == *module && declaration == alias_name
+                                })
+                            }) {
+                                for identity in [
+                                    format!(
+                                        "{field_module}{PROVENANCE_SEPARATOR}{}",
+                                        structure.ident
+                                    ),
+                                    structure.ident.to_string(),
+                                ] {
+                                    context.insert(format!(
+                                        "{NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-        let function_name = function.sig.ident.to_string();
-        context.insert(owner_marker(
-            FUNCTION_OWNER_MARKER,
-            module,
-            &function_name,
-            SourceAccess::Public,
-        ));
-        context.insert(format!(
-            "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
-        ));
     }
     return Ok(());
+}
+
+fn callable_option_return_type(rust_type: &Type) -> Option<&Type> {
+    return match rust_type {
+        Type::BareFn(function) => match &function.output {
+            ReturnType::Type(_, output) => option_inner_type(output),
+            ReturnType::Default => None,
+        },
+        Type::Paren(paren) => callable_option_return_type(&paren.elem),
+        Type::Path(path) => {
+            let segment = path.path.segments.last()?;
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Arc" | "Box" | "Option" | "Ref"
+            ) {
+                return None;
+            }
+            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return None;
+            };
+            let mut types = arguments.args.iter().filter_map(|argument| match argument {
+                GenericArgument::Type(rust_type) => Some(rust_type),
+                _ => None,
+            });
+            let inner = types.next()?;
+            if types.next().is_some() {
+                return None;
+            }
+            callable_option_return_type(inner)
+        }
+        Type::TraitObject(object) => object.bounds.iter().find_map(|bound| {
+            let syn::TypeParamBound::Trait(bound) = bound else {
+                return None;
+            };
+            let segment = bound.path.segments.last()?;
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Fn" | "FnMut" | "FnOnce"
+            ) {
+                return None;
+            }
+            let PathArguments::Parenthesized(arguments) = &segment.arguments else {
+                return None;
+            };
+            let ReturnType::Type(_, output) = &arguments.output else {
+                return None;
+            };
+            option_inner_type(output)
+        }),
+        _ => None,
+    };
+}
+
+fn map_value_type_path(rust_type: &Type) -> Option<&syn::TypePath> {
+    let Type::Path(path) = rust_type else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    if !matches!(segment.ident.to_string().as_str(), "HashMap" | "BTreeMap") {
+        return None;
+    }
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    let value = arguments
+        .args
+        .iter()
+        .filter_map(|argument| match argument {
+            GenericArgument::Type(rust_type) => Some(rust_type),
+            _ => None,
+        })
+        .nth(1)?;
+    let Type::Path(path) = value else {
+        return None;
+    };
+    return Some(path);
 }
 
 pub(crate) fn insert_type_script_nullable_option_parameter_context<'a>(
@@ -26438,6 +26755,14 @@ fn emit_type_alias(
     };
     let mut type_context = entities.clone();
     insert_type_parameter_context(&mut type_context, &type_alias.generics);
+    if current_source(entities).is_some_and(|module| {
+        entities.contains(&format!(
+            "{NULLABLE_OPTION_CALLABLE_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{}",
+            type_alias.ident
+        ))
+    }) {
+        type_context.insert(RETURNS_NULLABLE_MARKER.to_string());
+    }
     let rendered = if let Some(parameter_names) = parameter_names {
         emit_named_callable_type(&type_alias.ty, &type_context, parameter_names)?
     } else {
@@ -26465,11 +26790,26 @@ fn emit_bare_function_type(
         .map(|argument| &argument.ty)
         .collect::<Vec<_>>();
     let parameters = emit_callable_parameters(&parameter_types, entities, parameter_names)?;
-    let output = match &function.output {
-        ReturnType::Default => "void".to_string(),
-        ReturnType::Type(_, rust_type) => emit_type(rust_type, entities)?,
-    };
+    let output = emit_callable_return_type(&function.output, entities)?;
     return Ok(format!("({}) => {output}", parameters.join(", ")));
+}
+
+fn emit_callable_return_type(
+    output: &ReturnType,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    return match output {
+        ReturnType::Default => Ok("void".to_string()),
+        ReturnType::Type(_, rust_type) if entities.contains(RETURNS_NULLABLE_MARKER) => {
+            let Some(inner) = option_inner_type(rust_type) else {
+                return Err(compile_error(
+                    "nullable callable return metadata no longer designates an `Option` return",
+                ));
+            };
+            Ok(nullable_type(emit_type(inner, entities)?))
+        }
+        ReturnType::Type(_, rust_type) => emit_type(rust_type, entities),
+    };
 }
 
 fn emit_named_callable_type(

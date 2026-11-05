@@ -11867,7 +11867,10 @@ pub fn contour_or_zero(values: &[f64]) -> f64 {
         );
         assert!(output.contains("  return undefined;\n"));
         assert!(output.contains("  const scale = (findScale(values, undefined)) ?? undefined;\n"));
-        assert!(output.contains("  if (scale !== undefined) {\n"));
+        assert!(
+            output.contains("  if (scale !== undefined) {\n"),
+            "{output}"
+        );
         assert!(output.contains(
             "return { supported: value > 0, contour: (found) ?? null, detail: undefined };"
         ));
@@ -14262,6 +14265,12 @@ pub fn finish_transition(
     machine.ordinary_index = None;
     return ordinary_parameter;
 }
+
+pub fn transition_is_absent(machine: &AnimationStateMachine) -> bool {
+    let transition = machine.transition_to_state_index;
+    let ordinary = machine.ordinary_index;
+    return transition.is_none() && ordinary.is_none();
+}
 "#,
         };
         let visibility_sources = [ModuleSource {
@@ -14306,6 +14315,8 @@ pub fn finish_transition(
         );
         assert!(output.contains("ordinaryParameter?: number"), "{output}");
         assert!(output.contains("): number | undefined"), "{output}");
+        assert!(output.contains("transition === null"), "{output}");
+        assert!(output.contains("ordinary === undefined"), "{output}");
     }
 
     #[test]
@@ -14462,6 +14473,11 @@ pub fn find_ordinary_path(found: bool) -> Option<usize> {
     if found { return Some(2); }
     return None;
 }
+
+pub fn paths_are_absent() -> bool {
+    return create_svg_geometry_path(false).is_none()
+        && find_ordinary_path(false).is_none();
+}
 "#,
         };
         let returns = [TypeScriptNullableOptionReturn {
@@ -14499,6 +14515,144 @@ pub fn find_ordinary_path(found: bool) -> Option<usize> {
             "{output}"
         );
         assert!(output.contains("return undefined;"), "{output}");
+        assert!(
+            output.contains("createSvgGeometryPath(false) === null"),
+            "{output}"
+        );
+        assert!(
+            output.contains("findOrdinaryPath(false) === undefined"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn lowers_only_explicit_type_script_nullable_callable_returns() {
+        let source = ModuleSource {
+            path: "crates/flight-layout/src/resolve.rs",
+            source: r#"
+use std::collections::HashMap;
+
+pub enum Failure { Rejected }
+pub type Resolver = fn() -> Option<Failure>;
+pub type OrdinaryResolver = fn() -> Option<Failure>;
+
+pub struct State {
+    pub resolvers: HashMap<String, Resolver>,
+    pub ordinary_resolvers: HashMap<String, OrdinaryResolver>,
+}
+
+pub fn resolve(state: &State) -> bool {
+    let resolver = state.resolvers.get("layout").copied();
+    match resolver {
+        Some(resolver_fn) => {
+            let failure = resolver_fn();
+            if let Some(_) = failure { return false; }
+        }
+        None => {},
+    }
+    let ordinary = state.ordinary_resolvers.get("layout").copied();
+    match ordinary {
+        Some(ordinary_fn) => {
+            let failure = ordinary_fn();
+            if let Some(_) = failure { return false; }
+        }
+        None => {},
+    }
+    return true;
+}
+"#,
+        };
+        let returns = [TypeScriptNullableOptionReturn { name: "Resolver" }];
+
+        let output = compile_typescript_with_options(
+            source,
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &returns,
+            &[],
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("export type Resolver = () => Failure | null;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("export type OrdinaryResolver = () => Failure | undefined;"),
+            "{output}"
+        );
+        assert!(output.contains("if ($ifLet !== null)"), "{output}");
+        assert!(output.contains("if ($ifLet !== undefined)"), "{output}");
+
+        for (declaration, expected) in [
+            (
+                "pub type Invalid = fn() -> bool;",
+                "public Rust function or callable alias returning `Option`",
+            ),
+            (
+                "type Invalid = fn() -> Option<bool>;",
+                "public Rust function or callable alias returning `Option`",
+            ),
+        ] {
+            let metadata = [TypeScriptNullableOptionReturn { name: "Invalid" }];
+            let error = compile_typescript_with_options(
+                ModuleSource {
+                    path: "crates/flight-layout/src/types.rs",
+                    source: declaration,
+                },
+                None,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &metadata,
+                &[],
+                &[],
+                false,
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains(expected), "{error}");
+        }
+
+        let conflict = [
+            TypeScriptNullableOptionReturn { name: "Resolver" },
+            TypeScriptNullableOptionReturn { name: "Resolver" },
+        ];
+        assert!(
+            compile_typescript_with_options(
+                source,
+                None,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &conflict,
+                &[],
+                &[],
+                false,
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("duplicate TypeScript nullable Option return `Resolver`")
+        );
     }
 
     #[test]
