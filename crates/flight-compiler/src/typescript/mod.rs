@@ -9734,6 +9734,182 @@ fn emit_block(
     return Ok(());
 }
 
+// A production `catch_unwind` has a direct TypeScript equivalent only while its `Result` remains
+// an implementation detail. Recognize the transaction Rust spells as an immediately consumed
+// `let result = catch_unwind(..); if let Err(error) = result { ..; resume_unwind(error); }` and
+// preserve the caught closure as an IIFE so a `return` inside it cannot escape the outer function.
+fn caught_panic_transaction<'a>(
+    statement: &'a Stmt,
+    handler: &'a Stmt,
+    remaining: &[Stmt],
+) -> Option<(&'a syn::ExprClosure, &'a Pat, &'a syn::Block)> {
+    let Stmt::Local(local) = statement else {
+        return None;
+    };
+    let Pat::Ident(result_pattern) = &local.pat else {
+        return None;
+    };
+    if result_pattern.by_ref.is_some()
+        || result_pattern.mutability.is_some()
+        || result_pattern.subpat.is_some()
+    {
+        return None;
+    }
+    let initializer = local.init.as_ref()?;
+    if initializer.diverge.is_some() {
+        return None;
+    }
+    let closure = production_caught_panic_closure(&initializer.expr)?;
+    let Stmt::Expr(Expr::If(handler), _) = handler else {
+        return None;
+    };
+    if handler.else_branch.is_some() {
+        return None;
+    }
+    let Expr::Let(binding) = handler.cond.as_ref() else {
+        return None;
+    };
+    let Pat::TupleStruct(error_variant) = binding.pat.as_ref() else {
+        return None;
+    };
+    if !error_variant.path.is_ident("Err") || error_variant.elems.len() != 1 {
+        return None;
+    }
+    let error_pattern = &error_variant.elems[0];
+    let Pat::Ident(error) = error_pattern else {
+        return None;
+    };
+    if error.by_ref.is_some() || error.mutability.is_some() || error.subpat.is_some() {
+        return None;
+    }
+    let Expr::Path(result) = binding.expr.as_ref() else {
+        return None;
+    };
+    if !result.path.is_ident(&result_pattern.ident) {
+        return None;
+    }
+    if remaining
+        .iter()
+        .any(|statement| statement_contains_identifier(statement, &result_pattern.ident.to_string()))
+    {
+        return None;
+    }
+    let Stmt::Expr(Expr::Call(resume), _) = handler.then_branch.stmts.last()? else {
+        return None;
+    };
+    if !production_std_panic_path(&resume.func, "resume_unwind") || resume.args.len() != 1 {
+        return None;
+    }
+    let Expr::Path(resumed) = &resume.args[0] else {
+        return None;
+    };
+    if !resumed.path.is_ident(&error.ident) {
+        return None;
+    }
+    return Some((closure, error_pattern, &handler.then_branch));
+}
+
+fn ignored_caught_panic(local: &syn::Local) -> Option<&syn::ExprClosure> {
+    if !matches!(local.pat, Pat::Wild(_)) {
+        return None;
+    }
+    let initializer = local.init.as_ref()?;
+    if initializer.diverge.is_some() {
+        return None;
+    }
+    return production_caught_panic_closure(&initializer.expr);
+}
+
+fn production_caught_panic_closure(expression: &Expr) -> Option<&syn::ExprClosure> {
+    let Expr::Call(caught) = expression else {
+        return None;
+    };
+    if !production_std_panic_path(&caught.func, "catch_unwind") || caught.args.len() != 1 {
+        return None;
+    }
+    let mut argument = &caught.args[0];
+    if let Expr::Call(wrapper) = argument
+        && production_std_panic_path(&wrapper.func, "AssertUnwindSafe")
+        && wrapper.args.len() == 1
+    {
+        argument = &wrapper.args[0];
+    }
+    let Expr::Closure(closure) = argument else {
+        return None;
+    };
+    return (closure.inputs.is_empty() && closure.asyncness.is_none()).then_some(closure);
+}
+
+fn production_std_panic_path(expression: &Expr, name: &str) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    let segments = path
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    return path.qself.is_none()
+        && (segments == [name]
+            || segments == ["std", "panic", name]
+            || segments == ["panic", name]);
+}
+
+fn emit_caught_panic_call(
+    out: &mut String,
+    closure: &syn::ExprClosure,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    write_indent(out, indent);
+    writeln!(out, "({})();", emit_closure(closure, entities)?)
+        .expect("writing to a String cannot fail");
+    return Ok(());
+}
+
+fn emit_ignored_caught_panic(
+    out: &mut String,
+    closure: &syn::ExprClosure,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    write_indent(out, indent);
+    out.push_str("try {\n");
+    emit_caught_panic_call(out, closure, entities, indent + 1)?;
+    write_indent(out, indent);
+    out.push_str("} catch {}\n");
+    return Ok(());
+}
+
+fn emit_caught_panic_transaction(
+    out: &mut String,
+    closure: &syn::ExprClosure,
+    error_pattern: &Pat,
+    handler: &syn::Block,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let error = emit_pattern(error_pattern)?;
+    write_indent(out, indent);
+    out.push_str("try {\n");
+    emit_caught_panic_call(out, closure, entities, indent + 1)?;
+    write_indent(out, indent);
+    writeln!(out, "}} catch ({error}) {{").expect("writing to a String cannot fail");
+    let catch_context = lexical_pattern_context(entities, error_pattern);
+    emit_block(
+        out,
+        &handler.stmts[..handler.stmts.len() - 1],
+        &catch_context,
+        indent + 1,
+    )?;
+    write_indent(out, indent + 1);
+    writeln!(out, "throw {error};").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
 fn tail_expression_needs_return(expression: &Expr) -> bool {
     return !matches!(
         expression,
@@ -9976,7 +10152,31 @@ fn emit_block_with_tail(
         }
     }
     let mut declared: HashSet<String> = HashSet::new();
+    let mut skip_next = false;
     for (index, parsed) in statements.iter().enumerate() {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if (tail.is_none() || index + 2 < statements.len())
+            && let Some(next) = statements.get(index + 1)
+            && let Some((closure, error_pattern, handler)) = caught_panic_transaction(
+                parsed,
+                next,
+                statements.get(index + 2..).unwrap_or_default(),
+            )
+        {
+            emit_caught_panic_transaction(
+                out,
+                closure,
+                error_pattern,
+                handler,
+                &block_context,
+                indent,
+            )?;
+            skip_next = true;
+            continue;
+        }
         let statement = match tail {
             Some(tail) if index + 1 == statements.len() => tail,
             _ => parsed,
@@ -23466,6 +23666,14 @@ fn emit_statement(
     indent: usize,
 ) -> Result<(), CompileError> {
     match statement {
+        Stmt::Local(local) if ignored_caught_panic(local).is_some() => {
+            emit_ignored_caught_panic(
+                out,
+                ignored_caught_panic(local).expect("guarded by the match condition"),
+                entities,
+                indent,
+            )?;
+        }
         Stmt::Local(local)
             if local.init.as_ref().is_some_and(|init| {
                 !matches!(init.expr.as_ref(), Expr::Try(_))
@@ -25891,6 +26099,29 @@ fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
         found: false,
     };
     syn::visit::Visit::visit_expr(&mut finder, expression);
+    return finder.found;
+}
+
+fn statement_contains_identifier(statement: &Stmt, expected: &str) -> bool {
+    struct IdentifierFinder<'a> {
+        expected: &'a str,
+        found: bool,
+    }
+
+    impl<'ast> Visit<'ast> for IdentifierFinder<'_> {
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if path.path.is_ident(self.expected) {
+                self.found = true;
+            }
+            syn::visit::visit_expr_path(self, path);
+        }
+    }
+
+    let mut finder = IdentifierFinder {
+        expected,
+        found: false,
+    };
+    finder.visit_stmt(statement);
     return finder.found;
 }
 

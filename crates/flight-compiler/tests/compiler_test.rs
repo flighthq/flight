@@ -24650,6 +24650,59 @@ pub fn bad(x: &dyn std::any::Any) -> bool {
 }
 
 #[test]
+fn lowers_immediately_consumed_caught_panic_transactions() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+pub fn transact(values: &mut Vec<i32>, fail: bool) {
+    let enabled = catch_unwind(AssertUnwindSafe(|| {
+        values.push(1);
+        if fail {
+            panic!("enable failed");
+        }
+    }));
+    if let Err(error) = enabled {
+        let _ = catch_unwind(AssertUnwindSafe(|| values.push(2)));
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            return values.push(3);
+        }));
+        resume_unwind(error);
+    }
+    values.push(4);
+}
+"#;
+
+    let output = compile_typescript(source, None).unwrap();
+
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("} catch (error) {"), "{output}");
+    assert_eq!(output.matches("} catch {}").count(), 2, "{output}");
+    assert!(output.contains("return values.push(3);"), "{output}");
+    assert!(output.contains("throw error;"), "{output}");
+    assert!(output.contains("values.push(4);"), "{output}");
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("AssertUnwindSafe"), "{output}");
+}
+
+#[test]
+fn rejects_caught_panic_results_that_escape_the_transaction_shape() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+pub fn measure(run: fn() -> i32) -> i32 {
+    let result = catch_unwind(AssertUnwindSafe(run));
+    return match result {
+        Ok(value) => value,
+        Err(error) => resume_unwind(error),
+    };
+}
+"#;
+
+    let error = compile_typescript(source, None).unwrap_err().to_string();
+    assert!(error.contains("catch_unwind"), "{error}");
+}
+
+#[test]
 fn parse_ok_returns_undefined_not_null() {
     let source = r#"
 pub fn try_parse(s: &str) -> Option<f32> {

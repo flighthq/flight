@@ -210,7 +210,16 @@ pub fn alpha_value() -> i32 { return 1; }
       sourcePath,
       `//! flight-compiler: root-only beginSpan
 
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
 pub fn begin_span(channel: Option<String>) -> bool {
+    let started = catch_unwind(AssertUnwindSafe(|| {}));
+    if let Err(error) = started {
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            return channel.is_none();
+        }));
+        resume_unwind(error);
+    }
     return channel.is_none();
 }
 
@@ -252,6 +261,11 @@ export function measureSpan(_value: unknown): boolean {
     expect(readFileSync(join(packageRoot, 'src', 'value.generated.ts'), 'utf8')).toContain(
       'export function beginSpan(channel: string | null = null): boolean',
     );
+    const generated = readFileSync(join(packageRoot, 'src', 'value.generated.ts'), 'utf8');
+    expect(generated).toContain('try {');
+    expect(generated).toContain('} catch (error) {');
+    expect(generated).toContain('} catch {}');
+    expect(generated).toContain('throw error;');
     const native = readFileSync(join(packageRoot, 'src', 'value.native.ts'), 'utf8');
     expect(native).toContain('export function measureSpan');
   }, 120_000);
