@@ -29,7 +29,7 @@ describe('getXmlElementAttribute', () => {
 describe('getXmlElementAttributeNumber', () => {
   it('parses a numeric attribute', () => {
     const root = parseXmlDocument('<node x="10" scale="1.5"/>')!;
-    expect(getXmlElementAttributeNumber(root, 'x')).toEqual(10.0);
+    expect(getXmlElementAttributeNumber(root, 'x')).toEqual(10);
     expect(getXmlElementAttributeNumber(root, 'scale')).toEqual(1.5);
   });
   it('returns none when the attribute is absent', () => {

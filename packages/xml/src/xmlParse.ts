@@ -47,7 +47,7 @@ function parseElement(source: string, scanner: Readonly<XmlScanner>, state: Pars
   if (state.pos >= len || xmlScannerUnitAt(scanner, state.pos) !== 60) {
     return null;
   }
-  state.pos += 1;
+  state.pos++;
   if (state.pos < len && xmlScannerUnitAt(scanner, state.pos) === 63) {
     const instructionEnd = xmlScannerFind(scanner, '?>', state.pos);
     if (instructionEnd !== null) {
@@ -60,7 +60,7 @@ function parseElement(source: string, scanner: Readonly<XmlScanner>, state: Pars
   }
   const nameStart = state.pos;
   while (state.pos < len && !isTagNameEnd(xmlScannerUnitAt(scanner, state.pos))) {
-    state.pos += 1;
+    state.pos++;
   }
   const name = xmlUtf16Slice(source, nameStart, state.pos);
   if (name.length === 0) {
@@ -75,30 +75,26 @@ function parseElement(source: string, scanner: Readonly<XmlScanner>, state: Pars
       if (unit === quote) {
         quote = 0;
       }
-    } else {
-      if (unit === 34 || unit === 39) {
-        quote = unit;
-      } else {
-        if (unit === 62 || (unit === 47 && state.pos + 1 < len && xmlScannerUnitAt(scanner, state.pos + 1) === 62)) {
-          break;
-        }
-      }
+    } else if (unit === 34 || unit === 39) {
+      quote = unit;
+    } else if (unit === 62 || (unit === 47 && state.pos + 1 < len && xmlScannerUnitAt(scanner, state.pos + 1) === 62)) {
+      break;
     }
-    state.pos += 1;
+    state.pos++;
   }
   const attributesSource = xmlUtf16Slice(source, attributesStart, state.pos);
   const selfClosing = state.pos < len && xmlScannerUnitAt(scanner, state.pos) === 47;
   state.pos += selfClosing ? 2 : 1;
   const attributes = parseXmlAttributes(attributesSource);
-  let children: XmlElement[] = [] as never[];
-  let content: XmlContent[] = [] as never[];
+  let children: XmlElement[] = [];
+  let content: XmlContent[] = [];
   let text = '';
   if (!selfClosing) {
     while (state.pos < len) {
       if (xmlScannerUnitAt(scanner, state.pos) !== 60) {
         const textStart = state.pos;
         while (state.pos < len && xmlScannerUnitAt(scanner, state.pos) !== 60) {
-          state.pos += 1;
+          state.pos++;
         }
         const decoded = decodeXmlEntitiesNative(xmlUtf16Slice(source, textStart, state.pos));
         text += xmlTrim(decoded);
@@ -130,16 +126,16 @@ function parseElement(source: string, scanner: Readonly<XmlScanner>, state: Pars
       }
       if (state.pos + 1 < len && xmlScannerUnitAt(scanner, state.pos + 1) === 47) {
         while (state.pos < len && xmlScannerUnitAt(scanner, state.pos) !== 62) {
-          state.pos += 1;
+          state.pos++;
         }
         if (state.pos < len) {
-          state.pos += 1;
+          state.pos++;
         }
         break;
       }
-      state.depth += 1;
+      state.depth++;
       const parsedChild = parseElement(source, scanner, state);
-      state.depth -= 1;
+      state.depth--;
       if (state.depthExceeded) {
         return null;
       }
@@ -151,7 +147,7 @@ function parseElement(source: string, scanner: Readonly<XmlScanner>, state: Pars
       }
     }
   }
-  return { attributes: attributes, children: children, content: content, name: name, text: text };
+  return { attributes, children, content, name, text };
 }
 
 /**
@@ -180,7 +176,7 @@ export function parseXmlDocument(xml: string): XmlElement | null {
 function skipWhitespace(scanner: Readonly<XmlScanner>, position: number): number {
   const len = xmlScannerLength(scanner);
   while (position < len && xmlIsWhitespace(xmlScannerUnitAt(scanner, position))) {
-    position += 1;
+    position++;
   }
   return position;
 }

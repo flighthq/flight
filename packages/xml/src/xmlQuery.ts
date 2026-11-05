@@ -51,7 +51,7 @@ export function getXmlElementChildByName(element: Readonly<XmlElement>, name: st
  * Returns cloned shared handles, so the caller keeps the nodes alive independently.
  */
 export function getXmlElementChildrenByName(element: Readonly<XmlElement>, name: string): XmlElement[] {
-  let out: XmlElement[] = [] as never[];
+  let out: XmlElement[] = [];
   for (const child of element.children) {
     if (child!.name === name) {
       out.push(child);

@@ -239,7 +239,7 @@ describe('parseXmlDocumentInternalDtdEntities', () => {
   });
   it('does not expand a nested entity without bound', () => {
     let subset = '<!ENTITY e0 "aaaaaaaaaa">';
-    for (let level = 1; level <= 6; level += 1) {
+    for (let level = 1; level <= 6; level++) {
       const prevRef = `&e${level - 1};`;
       const references = repeated(prevRef, 10);
       subset += `<!ENTITY e${level} "${references}">`;
