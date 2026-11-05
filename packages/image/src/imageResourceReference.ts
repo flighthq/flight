@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { decodeImage, decodeImagePremultiplied } from '@flighthq/image-codec/contract';
 import type { HostImageDecodeCapabilities, ImageDecodeFallback } from '@flighthq/image-codec/contract';
+import type { AlphaType, Bitmap, TextureSource, EntityConstruction } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
+
 import type {
-  AlphaType,
-  Bitmap,
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   ImageResourceFailure,
@@ -11,11 +12,7 @@ import type {
   ImageResourceReference,
   ImageBitmapCompositionResolver,
   ImageResourceReferenceResolutionExplanation,
-  TextureSource,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
-
+} from './types.ts';
 import { ImageResourceFailureKind, ImageResourceReferenceKind } from './types.ts';
 
 export function createEmbeddedImageResourceReference(

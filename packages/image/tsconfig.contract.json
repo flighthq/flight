@@ -7,8 +7,34 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
+    "moduleSuffixes": [".app-types", ".bitmap-types", ".geometry-types", ".surface-types", ".texture-types", ""]
   },
-  "references": [],
+  "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    }
+  ],
   "include": ["src/contract.image-types.ts", "src/types.ts"]
 }

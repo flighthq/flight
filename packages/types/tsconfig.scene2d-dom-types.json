@@ -21,6 +21,7 @@
       ".path-types",
       ".shape-types",
       ".surface-types",
+      ".image-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-dom-types"
@@ -76,6 +77,15 @@
     },
     {
       "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../image-codec"
     }
   ],
   "files": [

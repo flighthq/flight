@@ -1,5 +1,7 @@
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap, HostImageCapability, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap } from '@flighthq/types/contract';
+
+import type { HostImageCapability, ImageResource } from './types.ts';
 
 export function createImageResourceFromBitmap(
   hostImage: Readonly<HostImageCapability>,

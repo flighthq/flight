@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
-import type { Bitmap, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey, ResourceResolutionState } from '@flighthq/types/contract';
 
 import {
@@ -14,6 +14,7 @@ import {
   resetFailedImageResourceReference,
   resolveImageResourceReference,
 } from './imageResourceReference.ts';
+import type { ImageResource } from './types.ts';
 import { ImageResourceFailureKind } from './types.ts';
 
 const fakeSlot: HostImageDecodeFormatCapability = {

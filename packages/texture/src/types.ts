@@ -1,8 +1,9 @@
 // The texture-owned contracts in an acyclic lane: they import nothing from @flighthq/types, which now
 // re-exports them. Contract-only projects select this file through the `.texture-types` module suffix.
 
-import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Vector2 } from '@flighthq/geometry/contract';
 
 interface TextureEntity extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
@@ -87,3 +88,108 @@ export interface TextureSource extends TextureEntity {
   /** Pixel width. */
   width: number;
 }
+
+// Texture-coordinate wrap behavior on one axis, mirroring the GL/Wgpu address modes.
+export type TextureWrap = 'clamp-to-edge' | 'mirror-repeat' | 'repeat';
+
+// Minification/magnification filtering, mirroring the GL/Wgpu filter modes. The mip-aware
+// modes apply only when `mipmaps` is true on the Sampler.
+export type TextureFilter =
+  | 'linear'
+  | 'linear-mipmap-linear'
+  | 'linear-mipmap-nearest'
+  | 'nearest'
+  | 'nearest-mipmap-linear'
+  | 'nearest-mipmap-nearest';
+
+// Sampling state shared by a Texture: per-axis wrap, min/mag filters, anisotropy, and whether
+// a mip chain is generated and sampled. Plain data; the backend translates it to a GL sampler
+// / GPUSampler. `anisotropy` of 1 disables anisotropic filtering.
+export interface Sampler extends TextureEntity {
+  anisotropy: number;
+  magFilter: TextureFilter;
+  minFilter: TextureFilter;
+  mipmaps: boolean;
+  wrapU: TextureWrap;
+  wrapV: TextureWrap;
+}
+
+export type SamplerLike = EntityWithoutRuntime<Sampler>;
+
+// The KHR_texture_transform fields shared by every uv-carrying Texture source. `uvOffset`/`uvScale`
+// shift and tile the sampled coordinates
+// and `uvRotation` (radians) spins them, applied scale → rotate → translate before sampling. This is
+// the structural uv-carrier the uv-matrix helpers (`getTextureUvMatrix`, `hasTextureUvTransform`)
+// accept, so every backing routes through one uv-transform path.
+//
+// `flipX`/`flipY` mirror the sampled coordinate on that axis (`u → 1 - u`, `v → 1 - v`), applied
+// *before* scale/rotate/translate. This is a sampler-space flip — free on every backend (it folds
+// into the uv matrix, no pixel copy and no per-backend upload flag), and the right layer for the
+// common "the image or render-target reads upside-down" case rather than flipping geometry uvs.
+export interface TextureUvTransform {
+  flipX: boolean;
+  flipY: boolean;
+  uvOffset: Vector2;
+  uvRotation: number;
+  uvScale: Vector2;
+}
+
+// CPU source for a 3D voxel lattice. Bitmap remains the bytes-guaranteed two-dimensional pixel API;
+// voxel grids carry their own depth, byte layout, and revision counter.
+export interface VoxelGrid extends TextureSource {
+  data: Uint8Array<ArrayBuffer>;
+  depth: number;
+  format: PixelFormat;
+  readonly kind: typeof VoxelGridTextureSourceKind;
+}
+
+// How the texture's pixels are interpreted at sample time. baseColor/emissive maps are 'srgb'
+// (decoded to linear on read); data maps — normal, metallic-roughness, occlusion — are
+// 'linear' and must not be gamma-decoded. GPU realizers consume this field by choosing the matching
+// sample format; shaders therefore receive linear values without per-material decode branches.
+export type TextureColorSpace = 'linear' | 'srgb';
+
+// Six source slots in canonical GPU cube-face order (+X, -X, +Y, -Y, +Z, -Z). Null remains a
+// transitional incomplete-face sentinel until the named non-null loader stage.
+export type TextureSourceCubeFaces = readonly [
+  TextureSource | null,
+  TextureSource | null,
+  TextureSource | null,
+  TextureSource | null,
+  TextureSource | null,
+  TextureSource | null,
+];
+
+// Common sampling-view fields. Texture's content variants stay flat because dimension is a closed
+// GPU family and the source entity is the sharing/cache seam.
+interface TextureCommon extends TextureEntity, TextureUvTransform {
+  colorSpace: TextureColorSpace;
+  sampler: Sampler;
+  // Integer dirty-bit for view changes. GPU handles remain render-state-owned and compare this
+  // revision when deciding whether the texture needs resolving again.
+  version: number;
+}
+
+export interface Texture2D extends TextureCommon {
+  readonly dimension: '2d';
+  source: TextureSource | null;
+}
+
+export type Texture =
+  | Texture2D
+  | (TextureCommon & {
+      readonly dimension: '2d-array';
+      sources: readonly (TextureSource | null)[];
+    })
+  | (TextureCommon & {
+      readonly dimension: '3d';
+      source: VoxelGrid | null;
+    })
+  | (TextureCommon & {
+      readonly dimension: 'cube';
+      sources: TextureSourceCubeFaces;
+    });
+
+type TextureLikeFrom<Type extends Texture> = Type extends Texture ? EntityWithoutRuntime<Type> : never;
+
+export type TextureLike = TextureLikeFrom<Texture>;

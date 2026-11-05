@@ -7,11 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
+    "moduleSuffixes": [".geometry-types", ""]
   },
   "references": [
     {
       "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.texture-types.ts", "src/types.ts"]

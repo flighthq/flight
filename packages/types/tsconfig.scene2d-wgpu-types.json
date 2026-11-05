@@ -28,6 +28,7 @@
       ".textlayout-types",
       ".textshaper-types",
       ".velocity-types",
+      ".image-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -96,6 +97,15 @@
     },
     {
       "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../image-codec"
     }
   ],
   "files": [

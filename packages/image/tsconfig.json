@@ -1,10 +1,32 @@
 {
   "files": [],
   "references": [
-    { "path": "../entity" },
-    { "path": "../image-codec" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" },
-    { "path": "./tsconfig.runtime.json" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
+    }
   ]
 }

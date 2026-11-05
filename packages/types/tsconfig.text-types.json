@@ -19,6 +19,8 @@
       ".geometry-types",
       ".path-types",
       ".surface-types",
+      ".app-types",
+      ".image-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.text-types"
@@ -68,6 +70,18 @@
     },
     {
       "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../image-codec"
     }
   ],
   "files": [

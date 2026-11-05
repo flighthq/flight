@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, HostImageCapability, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createImageResource } from './imageResource.ts';
@@ -12,6 +12,7 @@ import {
   loadImageResourceFromUrl,
 } from './imageResourceFrom.ts';
 import { registerTestImageDimensionResolver, unregisterTestImageDimensionResolver } from './imageTestHelper.ts';
+import type { HostImageCapability, ImageResource } from './types.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

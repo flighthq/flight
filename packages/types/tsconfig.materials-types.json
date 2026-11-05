@@ -38,6 +38,7 @@
       ".textlayout-types",
       ".textshaper-types",
       ".velocity-types",
+      ".image-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.materials-types"
@@ -57,6 +58,18 @@
     },
     {
       "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../image-codec"
     }
   ],
   "files": [
