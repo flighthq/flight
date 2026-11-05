@@ -21552,6 +21552,11 @@ fn emit_method_call(
         "to_uppercase" if arguments.is_empty() => Err(compile_error(
             "portable `.to_uppercase()` requires a receiver known to be `String` or `str`",
         )),
+        "to_string"
+            if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(receiver)
+        }
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "to_owned" if arguments.is_empty() => Ok(receiver),
         "to_string_lossy" if arguments.is_empty() => Ok(receiver),

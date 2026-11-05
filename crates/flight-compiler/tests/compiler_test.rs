@@ -7867,7 +7867,7 @@ pub fn required(value: Option<i32>) -> i32 {
             include_str!("../../flight-requirement/src/requirement_collector.rs");
         let requirement_output = compile_typescript(requirement_collector, None).unwrap();
         assert!(requirement_output.contains(
-            "if (sink === undefined) {\n    return;\n  }\n  sink.push({ facet, key: String(key) });"
+            "if (sink === undefined) {\n    return;\n  }\n  sink.push({ facet, key });"
         ));
         assert!(!requirement_output.contains("sink = sink;"));
     }
@@ -27504,13 +27504,13 @@ pub fn ordinary(key: &str) -> usize {
             r#"import { logData } from '@flighthq/log/contract';
 
 export function inline(message: string): void {
-  logData({ message: String(message), 'max-count': 2.0 });
+  logData({ message, 'max-count': 2.0 });
 }
 
 export function built(key: string, enabled: boolean): boolean {
   const fields: Record<string, unknown> = {};
   fields['enabled'] = enabled;
-  fields[String(key)] = null;
+  fields[key] = null;
   const present = Object.hasOwn(fields, key) && (fields['enabled'] !== undefined);
   const first = fields['enabled'];
   logData(fields);
@@ -27518,12 +27518,12 @@ export function built(key: string, enabled: boolean): boolean {
 }
 
 export function message(text: string): void {
-  logData(String(text));
+  logData(text);
 }
 
 export function ordinary(key: string): number {
   let counts: Map<string, number> = new Map();
-  (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(counts, String(key), 1);
+  (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(counts, key, 1);
   return counts.size;
 }
 "#
