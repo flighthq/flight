@@ -27771,4 +27771,25 @@ pub fn constants() -> (u32, u8, i32, i8) {
             "filter_map should keep the filter: {output}"
         );
     }
+
+    #[test]
+    fn emits_else_for_last_option_match_arm() {
+        let source = r#"
+pub fn describe(value: Option<f64>) -> String {
+    return match value {
+        Some(v) => format!("{:.2}", v),
+        None => "N/A".to_string(),
+    };
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("} else {"),
+            "last arm of option match should use bare else: {output}"
+        );
+        assert!(
+            !output.contains("else if"),
+            "two-arm option match should not produce else-if: {output}"
+        );
+    }
 }

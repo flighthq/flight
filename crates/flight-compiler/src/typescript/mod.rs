@@ -14821,6 +14821,8 @@ fn emit_match_statement_with_action(
                 write_indent(out, inner);
                 writeln!(out, "if ({scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
+            } else if index == expression.arms.len() - 1 {
+                join_closing_brace_with(out, "else {\n");
             } else {
                 join_closing_brace_with(
                     out,
@@ -19237,6 +19239,8 @@ pub(crate) fn emit_match_statement(
             if has_guards {
                 writeln!(out, "if (!$matched && {scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
+            } else if index > 0 && index == expression.arms.len() - 1 {
+                out.push_str("else {\n");
             } else {
                 let prefix = if index == 0 { "if" } else { "else if" };
                 writeln!(out, "{prefix} ({scrutinee} {operator} {absent}) {{")
