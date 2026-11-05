@@ -349,11 +349,16 @@ describe('flight-compile const-group lowering', () => {
     }
   });
 
-  it('fails closed when the owner collides with an injected or provided binding', () => {
+  it('keeps a group owner named like an injected std float constant, which lowers to Math', () => {
     buildRustSource('injected_pi', INJECTED_PI_FIXTURE);
-    expect(compileRust('injected-pi', INJECTED_PI_FIXTURE).error).toBe(
-      'error: `const-group PI` collides with another emitted value binding named `PI`',
-    );
+    const { error, typescript } = compileRust('injected-pi', INJECTED_PI_FIXTURE);
+    // `std::f32::consts::PI` lowers to `Math.PI`, so no other emitted value binding is named `PI`.
+    expect(error).toBe('');
+    expect(typescript).toContain('export const PI = {\n  A: 1,\n};');
+    expect(typescript).toContain('return Math.PI * radius * radius;');
+  });
+
+  it('fails closed when the owner collides with a provided import binding', () => {
     const debug = join(repositoryRoot, 'target', 'debug');
     buildRustSource('provided_import', PROVIDED_IMPORT_FIXTURE, [
       '-L',
