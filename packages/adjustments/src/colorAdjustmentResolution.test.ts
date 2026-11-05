@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Adjustment, ColorMatrixAdjustment, ColorScaleBias } from '@flighthq/types/contract';
 
 import {
   COLOR_ADJUSTMENT_AFFINE,
@@ -11,6 +10,7 @@ import {
 } from './colorAdjustmentResolution.ts';
 import { createColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
 import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath.ts';
+import type { Adjustment, ColorMatrixAdjustment, ColorScaleBias } from './types.ts';
 
 function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBias {
   const out = allocateEntity<any>();

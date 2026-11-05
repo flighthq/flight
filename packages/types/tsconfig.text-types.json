@@ -7,16 +7,31 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".geometry-types", ".path-types", ""],
+    "moduleSuffixes": [".adjustments-types", ".geometry-types", ".path-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.text-types"
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.contract.json" },
-    { "path": "../input" },
-    { "path": "../layout" },
-    { "path": "../path/tsconfig.contract.json" },
-    { "path": "../signals" }
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../layout"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    }
   ],
   "files": [
     "src/Adjustment.ts",

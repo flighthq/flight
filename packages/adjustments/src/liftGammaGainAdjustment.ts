@@ -1,12 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorTransformFunction,
-  EntityRuntimeKey,
-  LiftGammaGainAdjustment,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
+import type { ColorTransformFunction, LiftGammaGainAdjustment } from './types.ts';
 
 export function createLiftGammaGainAdjustment(
   options: Readonly<Omit<LiftGammaGainAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},

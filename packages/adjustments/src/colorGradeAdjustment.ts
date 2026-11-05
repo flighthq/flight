@@ -1,12 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorGradeAdjustment,
-  ColorTransformFunction,
-  EntityRuntimeKey,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
+import type { ColorGradeAdjustment, ColorTransformFunction } from './types.ts';
 
 export function createColorGradeAdjustment(
   options: Readonly<Omit<ColorGradeAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},

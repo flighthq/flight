@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../adjustments" },
+    { "path": "../adjustments/tsconfig.runtime.json" },
     { "path": "../animation" },
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },

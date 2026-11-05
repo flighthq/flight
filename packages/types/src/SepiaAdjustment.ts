@@ -1,6 +1,2 @@
-import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment.ts';
-
-export interface SepiaAdjustment extends ColorMatrixAdjustment {
-  kind: 'SepiaAdjustment';
-  intensity?: number; // 0..1 mix toward the sepia tone. Default 1.
-}
+/** @deprecated Import adjustment contracts from `@flighthq/adjustments/contract`. */
+export type { SepiaAdjustment } from '@flighthq/adjustments/contract';

@@ -1,4 +1,4 @@
-import type { ColorLut, ColorTransformFunction } from '@flighthq/types/contract';
+import type { ColorLut, ColorTransformFunction } from './types.ts';
 
 /**
  * Baked-LUT math: compose a stack of pointwise rgb→rgb transforms into ONE 3D color lookup table, and

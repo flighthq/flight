@@ -36,6 +36,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/app": "*",
     "@flighthq/binpack": "*",
     "@flighthq/buffer": "*",

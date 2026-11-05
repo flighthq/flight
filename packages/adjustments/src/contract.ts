@@ -18,3 +18,4 @@ export * from './liftGammaGainAdjustment.ts';
 export * from './lookupTableGradeAdjustment.ts';
 export * from './sepiaAdjustment.ts';
 export * from './tintAdjustment.ts';
+export type * from './types.ts';

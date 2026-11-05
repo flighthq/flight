@@ -1,12 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorTransformFunction,
-  EntityRuntimeKey,
-  HueSaturationAdjustment,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
+import type { ColorTransformFunction, HueSaturationAdjustment } from './types.ts';
 
 export function createHueSaturationAdjustment(
   options: Readonly<Omit<HueSaturationAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},

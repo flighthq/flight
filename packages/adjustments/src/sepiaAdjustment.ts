@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityRuntimeKey, SepiaAdjustment, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
+import type { SepiaAdjustment } from './types.ts';
 
 export function createSepiaAdjustment(
   options: Readonly<Omit<SepiaAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},

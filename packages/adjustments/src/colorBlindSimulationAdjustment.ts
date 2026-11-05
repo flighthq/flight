@@ -1,12 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorBlindSimulationAdjustment,
-  ColorBlindType,
-  EntityRuntimeKey,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
+import type { ColorBlindSimulationAdjustment, ColorBlindType } from './types.ts';
 
 export function createColorBlindSimulationAdjustment(
   options: Readonly<Omit<ColorBlindSimulationAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},

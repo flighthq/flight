@@ -11,6 +11,7 @@
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
       ".scene2d-wgpu-types",
+      ".adjustments-types",
       ".app-types",
       ".geometry-types",
       ".path-types",
@@ -25,6 +26,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-wgpu-types"
   },
   "references": [
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
     {
       "path": "../app/tsconfig.contract.json"
     },

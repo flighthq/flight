@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AdjustmentKind, ColorMatrixAdjustment, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeAdjustment } from './adjustment.ts';
 import { COLOR_MATRIX_LENGTH } from './colorMatrixMath.ts';
+import type { AdjustmentKind, ColorMatrixAdjustment } from './types.ts';
 
 export function createColorMatrixAdjustment(colorMatrix: Readonly<Float32Array>): ColorMatrixAdjustment {
   if (colorMatrix.length !== COLOR_MATRIX_LENGTH) {

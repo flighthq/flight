@@ -1,13 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorTransformFunction,
-  EntityRuntimeKey,
-  LookupTableGradeAdjustment,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { sampleColorLut } from './colorLut.ts';
 import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
+import type { ColorTransformFunction, LookupTableGradeAdjustment } from './types.ts';
 
 export function createLookupTableGradeAdjustment(
   options: Readonly<Omit<LookupTableGradeAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},

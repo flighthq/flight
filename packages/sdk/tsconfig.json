@@ -16,7 +16,7 @@
       "path": "../accessibility"
     },
     {
-      "path": "../adjustments"
+      "path": "../adjustments/tsconfig.runtime.json"
     },
     {
       "path": "../animation"

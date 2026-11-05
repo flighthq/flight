@@ -1,6 +1,2 @@
-import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment.ts';
-
-export interface GrayscaleAdjustment extends ColorMatrixAdjustment {
-  kind: 'GrayscaleAdjustment';
-  intensity?: number; // 0..1 mix toward luma (ITU-R BT.709). Default 1.
-}
+/** @deprecated Import adjustment contracts from `@flighthq/adjustments/contract`. */
+export type { GrayscaleAdjustment } from '@flighthq/adjustments/contract';

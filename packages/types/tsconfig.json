@@ -10,6 +10,7 @@
     "moduleSuffixes": [
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
+      ".adjustments-types",
       ".app-types",
       ".flow-types",
       ".geometry-types",
@@ -39,6 +40,9 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
     {
       "path": "../app/tsconfig.contract.json"
     },

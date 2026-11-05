@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".adjustments-types",
       ".app-types",
       ".flow-types",
       ".geometry-types",
@@ -30,6 +31,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-formats-types"
   },
   "references": [
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
     {
       "path": "../app/tsconfig.contract.json"
     },
@@ -76,10 +80,10 @@
       "path": "../menu/tsconfig.contract.json"
     },
     {
-      "path": "../path/tsconfig.contract.json"
+      "path": "../path-boolean/tsconfig.contract.json"
     },
     {
-      "path": "../path-boolean/tsconfig.contract.json"
+      "path": "../path/tsconfig.contract.json"
     },
     {
       "path": "../registry"

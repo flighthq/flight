@@ -10,6 +10,7 @@
     "moduleSuffixes": [
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
+      ".adjustments-types",
       ".app-types",
       ".flow-types",
       ".geometry-types",
@@ -40,6 +41,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-wgpu-types"
   },
   "references": [
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
     {
       "path": "../app/tsconfig.contract.json"
     },

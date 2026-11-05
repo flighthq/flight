@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { TintAdjustment, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
+import type { TintAdjustment } from './types.ts';
 
 export function createTintAdjustment(rgba: number): TintAdjustment {
   const out = allocateEntity<TintAdjustment>();

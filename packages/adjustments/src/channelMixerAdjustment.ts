@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ChannelMixerAdjustment, EntityRuntimeKey, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
 import { createChannelMixerColorMatrix } from './colorMatrixMath.ts';
+import type { ChannelMixerAdjustment } from './types.ts';
 
 export function createChannelMixerAdjustment(
   options: Readonly<Omit<ChannelMixerAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {

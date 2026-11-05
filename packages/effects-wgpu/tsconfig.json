@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../adjustments" },
+    { "path": "../adjustments/tsconfig.runtime.json" },
     { "path": "../color" },
     { "path": "../effects" },
     { "path": "../entity" },

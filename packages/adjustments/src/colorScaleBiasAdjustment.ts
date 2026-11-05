@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ColorScaleBiasAdjustment, ColorScaleBiasLike, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
+import type { ColorScaleBiasAdjustment, ColorScaleBiasLike } from './types.ts';
 
 export function createColorScaleBiasAdjustment(colorScaleBias: Readonly<ColorScaleBiasLike>): ColorScaleBiasAdjustment {
   const out = allocateEntity<ColorScaleBiasAdjustment>();
