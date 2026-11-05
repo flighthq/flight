@@ -16,10 +16,15 @@ import {
   endCanvasRenderPass,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
-import { appendMorphShapeBeginFill, appendMorphShapePath, appendShapeEndFill, createMorphShape } from '@flighthq/shape';
+import {
+  appendMorphShapeBeginFill,
+  appendMorphShapePath,
+  appendShapeEndFill,
+  createMorphShape,
+  MorphShapeKind,
+} from '@flighthq/shape';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import type { CanvasShapeCommand, Kind } from '@flighthq/types';
-import { MorphShapeKind } from '@flighthq/shape';
 
 // REQUIRED WIRING for one interpolated vector shape, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate
