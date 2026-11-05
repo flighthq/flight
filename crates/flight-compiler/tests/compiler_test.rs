@@ -11138,11 +11138,11 @@ pub fn absent_first(value: Option<f64>) -> f64 {
         let output = compile_typescript(source, None).unwrap();
         assert!(output.contains("let pattern: number[];"), "{output}");
         assert!(
-            output.contains("if (dash !== undefined) {\n    const values = dash;\n    pattern = values;\n  }\n  else"),
+            output.contains("if (dash !== undefined) {\n    const values = dash;\n    pattern = values;\n  } else"),
             "{output}"
         );
         assert!(
-            output.contains("if (value === undefined) {\n    resolved = -1.0;\n  }\n  else"),
+            output.contains("if (value === undefined) {\n    resolved = -1.0;\n  } else"),
             "{output}"
         );
         assert!(!output.contains("(() => {"), "{output}");

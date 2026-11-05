@@ -14801,15 +14801,20 @@ fn emit_match_statement_with_action(
         }
         let absent = option_absent_value(&expression.expr, entities);
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            write_indent(out, inner);
             let operator = if info.present { "!==" } else { "===" };
             if has_guards {
+                write_indent(out, inner);
                 writeln!(out, "if (!$matched && {scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
-            } else {
-                let prefix = if index == 0 { "if" } else { "else if" };
-                writeln!(out, "{prefix} ({scrutinee} {operator} {absent}) {{")
+            } else if index == 0 {
+                write_indent(out, inner);
+                writeln!(out, "if ({scrutinee} {operator} {absent}) {{")
                     .expect("writing to a String cannot fail");
+            } else {
+                join_closing_brace_with(
+                    out,
+                    &format!("else if ({scrutinee} {operator} {absent}) {{\n"),
+                );
             }
             let assign_target = match action {
                 HoistedMatchAction::Assign(t) => Some(*t),
@@ -14877,24 +14882,27 @@ fn emit_match_statement_with_action(
             out.push_str("let $matched = false;\n");
         }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            write_indent(out, inner);
             if info.otherwise {
                 if has_guards {
+                    write_indent(out, inner);
                     out.push_str("if (!$matched) {\n");
                 } else if index == 0 {
+                    write_indent(out, inner);
                     out.push_str("{\n");
                 } else {
-                    out.push_str("else {\n");
+                    join_closing_brace_with(out, "else {\n");
                 }
             } else {
                 let predicate = tagged_data_union_predicate(&info.variants, &scrutinee);
                 if has_guards {
+                    write_indent(out, inner);
                     writeln!(out, "if (!$matched && {predicate}) {{")
                         .expect("writing to a String cannot fail");
+                } else if index == 0 {
+                    write_indent(out, inner);
+                    writeln!(out, "if ({predicate}) {{").expect("writing to a String cannot fail");
                 } else {
-                    let prefix = if index == 0 { "if" } else { "else if" };
-                    writeln!(out, "{prefix} ({predicate}) {{")
-                        .expect("writing to a String cannot fail");
+                    join_closing_brace_with(out, &format!("else if ({predicate}) {{\n"));
                 }
             }
             if let Some(binding) = info.catch_all_binding {
@@ -14950,14 +14958,15 @@ fn emit_match_statement_with_action(
             out.push_str("let $matched = false;\n");
         }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            write_indent(out, inner);
             if info.catch_all {
                 if has_guards {
+                    write_indent(out, inner);
                     out.push_str("if (!$matched) {\n");
                 } else if index == 0 {
+                    write_indent(out, inner);
                     out.push_str("{\n");
                 } else {
-                    out.push_str("else {\n");
+                    join_closing_brace_with(out, "else {\n");
                 }
             } else {
                 let predicate = if info.reserved_key_variants.is_empty() {
@@ -14966,12 +14975,14 @@ fn emit_match_statement_with_action(
                     reserved_key_data_union_predicate(&info.reserved_key_variants, &scrutinee)
                 };
                 if has_guards {
+                    write_indent(out, inner);
                     writeln!(out, "if (!$matched && {predicate}) {{")
                         .expect("writing to a String cannot fail");
+                } else if index == 0 {
+                    write_indent(out, inner);
+                    writeln!(out, "if ({predicate}) {{").expect("writing to a String cannot fail");
                 } else {
-                    let prefix = if index == 0 { "if" } else { "else if" };
-                    writeln!(out, "{prefix} ({predicate}) {{")
-                        .expect("writing to a String cannot fail");
+                    join_closing_brace_with(out, &format!("else if ({predicate}) {{\n"));
                 }
             }
             if let Some(binding) = info.binding {
@@ -28276,6 +28287,14 @@ pub(crate) fn write_indent(out: &mut String, indent: usize) {
     for _ in 0..indent {
         out.push_str("  ");
     }
+}
+
+fn join_closing_brace_with(out: &mut String, continuation: &str) {
+    if out.ends_with("}\n") {
+        out.pop();
+        out.push(' ');
+    }
+    out.push_str(continuation);
 }
 
 impl BindingFact {
