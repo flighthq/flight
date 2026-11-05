@@ -156,7 +156,7 @@ function pushFlowStateCore(
     const current = stack!;
     return current.states.length === 0 ? null : current.states[current.states.length - 1];
   })();
-  const previousOnPause = getFlowStateOnPause(previousTop);
+  const previousOnPause = getFlowStateOnPause(previousTop ?? null);
   const maybeOnEnter = state!.onEnter;
   previousOnPause();
   stack!.states.push(state);
