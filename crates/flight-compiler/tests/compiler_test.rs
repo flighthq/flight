@@ -7394,11 +7394,11 @@ pub fn unique_sorted(values: &mut Vec<i32>) {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("items[read] !== items[read - 1]"),
+            output.contains("values[read] !== values[read - 1]"),
             "{output}"
         );
         assert!(
-            output.contains("items.length = Math.min(write, items.length)"),
+            output.contains("values.length = Math.min(write, values.length)"),
             "{output}"
         );
     }

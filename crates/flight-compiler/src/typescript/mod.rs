@@ -21314,10 +21314,16 @@ fn emit_method_call(
         "repeat" if arguments.len() == 1 => Err(compile_error(
             "portable `.repeat()` requires a receiver known to be `String`, `str`, `Vec`, slice, or a fixed-size array",
         )),
-        "rem_euclid" if arguments.len() == 1 => Ok(format!(
-            "((n: number, m: number): number => ((n % m) + m) % m)({receiver}, {})",
-            arguments[0]
-        )),
+        "rem_euclid" if arguments.len() == 1 => {
+            let m = &arguments[0];
+            if expression_is_reusable(&call.args[0]) {
+                Ok(format!("(({receiver} % {m}) + {m}) % {m}"))
+            } else {
+                Ok(format!(
+                    "((n: number, m: number): number => ((n % m) + m) % m)({receiver}, {m})"
+                ))
+            }
+        }
         "reserve" | "reserve_exact" if arguments.len() == 1 => Ok(String::new()),
         "resize" if arguments.len() == 2 => Ok(format!(
             "(<T>(items: T[], length: number, value: T): void => {{ while (items.length < length) {{ items.push(value); }} items.length = length; }})({receiver}, {}, {})",
@@ -24679,6 +24685,13 @@ fn emit_statement(
             emit_retain_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "dedup"
+                && call.args.is_empty()
+                && expression_is_sequence(&call.receiver, entities) =>
+        {
+            emit_dedup_statement(out, call, entities, indent)?;
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
             if call.method == "insert"
                 && call.args.len() == 1
                 && matches!(
@@ -26631,6 +26644,60 @@ fn emit_retain_statement(
         .expect("writing to a String cannot fail");
     write_indent(out, bi);
     out.push_str("}\n");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
+fn emit_dedup_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let bind_receiver = !expression_is_reusable(&call.receiver);
+    let mut used = receiver
+        .split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '$'))
+        .map(str::to_string)
+        .collect::<HashSet<_>>();
+    let items = if bind_receiver {
+        fresh_identifier("items", &mut used)
+    } else {
+        receiver.clone()
+    };
+    let write = fresh_identifier("write", &mut used);
+    let read = fresh_identifier("read", &mut used);
+    write_indent(out, indent);
+    out.push_str("{\n");
+    let bi = indent + 1;
+    if bind_receiver {
+        write_indent(out, bi);
+        writeln!(out, "const {items} = {receiver};").expect("writing to a String cannot fail");
+    }
+    write_indent(out, bi);
+    writeln!(out, "let {write} = 1;").expect("writing to a String cannot fail");
+    write_indent(out, bi);
+    writeln!(
+        out,
+        "for (let {read} = 1; {read} < {items}.length; {read} += 1) {{"
+    )
+    .expect("writing to a String cannot fail");
+    let fi = bi + 1;
+    write_indent(out, fi);
+    writeln!(out, "if ({items}[{read}] !== {items}[{read} - 1]) {{")
+        .expect("writing to a String cannot fail");
+    write_indent(out, fi + 1);
+    writeln!(out, "{items}[{write}] = {items}[{read}];").expect("writing to a String cannot fail");
+    write_indent(out, fi + 1);
+    writeln!(out, "{write} += 1;").expect("writing to a String cannot fail");
+    write_indent(out, fi);
+    out.push_str("}\n");
+    write_indent(out, bi);
+    out.push_str("}\n");
+    write_indent(out, bi);
+    writeln!(out, "{items}.length = Math.min({write}, {items}.length);")
+        .expect("writing to a String cannot fail");
     write_indent(out, indent);
     out.push_str("}\n");
     return Ok(());
