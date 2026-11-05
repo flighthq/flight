@@ -1,20 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ClipboardBookmark,
-  HostClipboardBookmarkCapability,
-  HostClipboardChangeCapability,
-  HostClipboardFormatsCapability,
-  HostClipboardImageCapability,
-  HostClipboardTextCapability,
-} from '@flighthq/types/contract';
-import {
-  ClipboardFormatBookmark,
-  ClipboardFormatHtml,
-  ClipboardFormatImage,
-  ClipboardFormatRtf,
-  ClipboardFormatText,
-  EntityRuntimeKey,
-} from '@flighthq/types/contract';
+import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
 
 import {
   attachClipboardWatch,
@@ -45,6 +29,21 @@ import {
   writeClipboardRTF,
   writeClipboardText,
 } from './clipboard.ts';
+import type {
+  ClipboardBookmark,
+  HostClipboardBookmarkCapability,
+  HostClipboardChangeCapability,
+  HostClipboardFormatsCapability,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
+} from './types.ts';
+import {
+  ClipboardFormatBookmark,
+  ClipboardFormatHtml,
+  ClipboardFormatImage,
+  ClipboardFormatRtf,
+  ClipboardFormatText,
+} from './types.ts';
 
 describe('attachClipboardWatch', () => {
   it('is exported', () => expect(attachClipboardWatch).toBeTypeOf('function'));

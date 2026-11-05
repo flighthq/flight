@@ -43,6 +43,7 @@
     "@flighthq/binpack": "*",
     "@flighthq/buffer": "*",
     "@flighthq/clip": "*",
+    "@flighthq/clipboard": "*",
     "@flighthq/clock": "*",
     "@flighthq/compression": "*",
     "@flighthq/dialog": "*",

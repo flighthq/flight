@@ -1,18 +1,12 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostAudioCodecCapability, HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
+import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
-import type {
-  HostClipboardBookmarkCapability,
-  HostClipboardChangeCapability,
-  HostClipboardFormatsCapability,
-  HostClipboardImageCapability,
-  HostClipboardTextCapability,
-} from './Clipboard.ts';
 import type {
   HostCompressDeflateCapability,
   HostCompressLzmaCapability,
@@ -228,14 +222,6 @@ export interface HostAudioCapabilities {
 export interface HostBitmapCapabilities {
   readonly encode?: HostBitmapEncodeCapability;
   readonly readback?: HostBitmapReadbackCapability;
-}
-
-export interface HostClipboardCapabilities {
-  readonly bookmark?: HostClipboardBookmarkCapability;
-  readonly change?: HostClipboardChangeCapability;
-  readonly formats?: HostClipboardFormatsCapability;
-  readonly image?: HostClipboardImageCapability;
-  readonly text?: HostClipboardTextCapability;
 }
 
 export interface HostCompressCapabilities {

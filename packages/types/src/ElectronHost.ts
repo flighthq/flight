@@ -1,4 +1,5 @@
 import type { HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { ElectronMenuCapabilities } from '@flighthq/menu/contract';
 
 import type { ElectronIpcTarget } from './ElectronApi.ts';
@@ -7,7 +8,6 @@ import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilitie
 import type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor.ts';
 import type {
   Host,
-  HostClipboardCapabilities,
   HostDialogCapabilities,
   HostIpcCapabilities,
   HostPlatformCapabilities,

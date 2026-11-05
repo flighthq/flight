@@ -17,6 +17,7 @@
       ".audio-types",
       ".app-types",
       ".clip-types",
+      ".clipboard-types",
       ".flow-types",
       ".geometry-types",
       ".font-types",
@@ -71,6 +72,9 @@
     },
     {
       "path": "../clip/tsconfig.contract.json"
+    },
+    {
+      "path": "../clipboard/tsconfig.contract.json"
     },
     {
       "path": "../compression"

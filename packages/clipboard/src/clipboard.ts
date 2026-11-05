@@ -1,17 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   ClipboardBookmark,
   ClipboardWatch,
   ClipboardWriteItem,
-  EntityConstruction,
   HostClipboardBookmarkCapability,
   HostClipboardChangeCapability,
   HostClipboardFormatsCapability,
   HostClipboardImageCapability,
   HostClipboardTextCapability,
-} from '@flighthq/types/contract';
-import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
+} from './types.ts';
+import { ClipboardFormatHtml, ClipboardFormatRtf } from './types.ts';
 
 // Attaches watch to the explicitly supplied host's clipboard change subscription. Attaching the
 // same watch again first releases its prior subscription, even when the new host is different.

@@ -58,7 +58,7 @@
       "path": "../clip/tsconfig.runtime.json"
     },
     {
-      "path": "../clipboard"
+      "path": "../clipboard/tsconfig.runtime.json"
     },
     {
       "path": "../clock"

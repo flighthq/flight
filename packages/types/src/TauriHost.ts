@@ -1,9 +1,9 @@
 import type { HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { TauriMenuCapabilities } from '@flighthq/menu/contract';
 
 import type {
   Host,
-  HostClipboardCapabilities,
   HostDialogCapabilities,
   HostPlatformCapabilities,
   HostShellCapabilities,

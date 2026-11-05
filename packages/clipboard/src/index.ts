@@ -26,3 +26,22 @@ export {
   writeClipboardRTF,
   writeClipboardText,
 } from './contract.ts';
+export {
+  ClipboardFormatBookmark,
+  ClipboardFormatHtml,
+  ClipboardFormatImage,
+  ClipboardFormatRtf,
+  ClipboardFormatText,
+  ClipboardFormatUriList,
+} from './contract.ts';
+export type {
+  ClipboardBookmark,
+  ClipboardWatch,
+  ClipboardWriteItem,
+  HostClipboardBookmarkCapability,
+  HostClipboardCapabilities,
+  HostClipboardChangeCapability,
+  HostClipboardFormatsCapability,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
+} from './contract.ts';

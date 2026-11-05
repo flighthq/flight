@@ -1,4 +1,5 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 
 import type { HostHapticsCapabilities } from './Haptics.ts';
@@ -7,7 +8,6 @@ import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
   HostBitmapCapabilities,
-  HostClipboardCapabilities,
   HostConnectivityCapabilities,
   HostDeviceCapabilities,
   HostDialogCapabilities,

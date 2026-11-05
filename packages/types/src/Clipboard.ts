@@ -1,55 +1,11 @@
-// A title/URL pair captured from the clipboard's bookmark format (a hyperlink with a display title).
-export interface ClipboardBookmark {
-  title: string;
-  url: string;
-}
-
-// A single format/data pair for an atomic multi-format write. `format` is a MIME/flavor string
-// (e.g. 'text/plain', 'image/png'); `data` is its string payload (data URL for image formats).
-export interface ClipboardWriteItem {
-  format: string;
-  data: string;
-}
-
-// Bookmark transport is a distinct capability because only native hosts with a bookmark pasteboard
-// format can provide it.
-export interface HostClipboardBookmarkCapability {
-  readBookmark(): Promise<ClipboardBookmark | null>;
-  writeBookmark(title: string, url: string): Promise<boolean>;
-}
-
-// Clipboard change delivery is optional at the method level so a consumer can require the complete
-// subscription-and-release obligation as one eligibility edge.
-export interface HostClipboardChangeCapability {
-  subscribe?(callback: () => void): () => void;
-}
-
-// Rich and arbitrary flavored clipboard transport. HTML and RTF share this slot with the generic
-// format/item operations because provider coverage varies as one unit.
-export interface HostClipboardFormatsCapability {
-  getFormats(): Promise<readonly string[]>;
-  hasFormat(format: string): Promise<boolean>;
-  readFormat(format: string): Promise<string>;
-  readHtml(): Promise<string>;
-  readItems(formats: readonly string[]): Promise<Readonly<Record<string, string>>>;
-  readRTF(): Promise<string>;
-  writeFormat(format: string, data: string): Promise<boolean>;
-  writeHtml(html: string): Promise<boolean>;
-  writeItems(items: readonly Readonly<ClipboardWriteItem>[]): Promise<boolean>;
-  writeRTF(rtf: string): Promise<boolean>;
-}
-
-// Image clipboard transport uses data URLs at Flight's host boundary.
-export interface HostClipboardImageCapability {
-  hasImage(): Promise<boolean>;
-  readImage(): Promise<string>;
-  writeImage(dataUrl: string): Promise<boolean>;
-}
-
-// Plain-text transport and clearing vary together across every shipped provider.
-export interface HostClipboardTextCapability {
-  clear(): Promise<boolean>;
-  hasText(): Promise<boolean>;
-  readText(): Promise<string>;
-  writeText(text: string): Promise<boolean>;
-}
+/** @deprecated Import clipboard-owned contracts from `@flighthq/clipboard/contract`. */
+export type {
+  ClipboardBookmark,
+  ClipboardWriteItem,
+  HostClipboardBookmarkCapability,
+  HostClipboardCapabilities,
+  HostClipboardChangeCapability,
+  HostClipboardFormatsCapability,
+  HostClipboardImageCapability,
+  HostClipboardTextCapability,
+} from '@flighthq/clipboard/contract';
