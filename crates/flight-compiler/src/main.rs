@@ -1056,8 +1056,7 @@ mod tests {
             assert_eq!(field.owner, "AnimationStateMachine");
             assert_eq!(field.field, "transitionToStateIndex");
             assert_eq!(options.type_script_default_null_option_parameters.len(), 1);
-            let default_null_parameter =
-                &options.type_script_default_null_option_parameters[0];
+            let default_null_parameter = &options.type_script_default_null_option_parameters[0];
             assert_eq!(default_null_parameter.owner, "beginDebugSpan");
             assert_eq!(default_null_parameter.parameter, "channel");
             assert_eq!(options.type_script_nullable_option_parameters.len(), 1);
