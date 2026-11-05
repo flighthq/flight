@@ -20457,6 +20457,106 @@ mod flight_errors {
     }
 
     #[test]
+    fn lowers_test_entity_id_comparisons_to_object_identity() {
+        let production = r#"
+pub struct Buffer {
+    pub capacity: u32,
+}
+
+pub fn create_buffer(capacity: u32) -> Buffer {
+    return Buffer { capacity };
+}
+
+pub fn initialize_buffer(out: &mut Buffer, capacity: u32) {
+    out.capacity = capacity;
+}
+"#;
+        let source = r#"
+use crate::*;
+use flight_entity::get_entity_id;
+
+mod initialize_buffer {
+    use super::*;
+
+    #[test]
+    fn keeps_the_allocation() {
+        let mut buffer = create_buffer(1);
+        let id = get_entity_id(&buffer);
+        initialize_buffer(&mut buffer, 2);
+        assert_eq!(get_entity_id(&buffer), id);
+        let other = create_buffer(1);
+        assert_ne!(get_entity_id(&other), flight_entity::get_entity_id(&buffer), "a new allocation");
+        let first = get_entity_id(&other);
+        let second = get_entity_id(&buffer);
+        assert_ne!(first, second);
+        assert_eq!(buffer.capacity, 2);
+    }
+}
+"#;
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+        // An entity id is allocation identity, which TypeScript compares by reference.
+        for expected in [
+            "const id = buffer;",
+            "expect(buffer).toBe(id);",
+            "expect(other, `a new allocation`).not.toBe(buffer);",
+            "const first = other;",
+            "const second = buffer;",
+            "expect(first).not.toBe(second);",
+        ] {
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+        assert!(!output.contains("getEntityId"), "{output}");
+    }
+
+    #[test]
+    fn refuses_entity_id_uses_beyond_identity_comparison() {
+        let production = r#"
+pub struct Buffer {
+    pub capacity: u32,
+}
+
+pub fn create_buffer(capacity: u32) -> Buffer {
+    return Buffer { capacity };
+}
+"#;
+        // An id has no TypeScript value: arithmetic, ordering, formatting, a literal comparison, a map
+        // key, or a binding read outside an identity assertion each refuse at the call.
+        for body in [
+            "let id = get_entity_id(&buffer);\n        let next = id + 1;\n        assert_eq!(next, 2);",
+            "let other = create_buffer(2);\n        assert!(get_entity_id(&buffer) < get_entity_id(&other));",
+            "let text = format!(\"{}\", get_entity_id(&buffer));\n        assert_eq!(text, \"1\");",
+            "assert_eq!(get_entity_id(&buffer), 1);",
+            "let mut seen = std::collections::HashSet::new();\n        seen.insert(get_entity_id(&buffer));\n        assert_eq!(seen.len(), 1);",
+            "let id = get_entity_id(&buffer);\n        assert_eq!(get_entity_id(&buffer), id);\n        let copy = id;\n        assert_eq!(copy, id);",
+        ] {
+            let source = format!(
+                "use crate::*;\nuse flight_entity::get_entity_id;\n\nmod checks {{\n    use super::*;\n\n    #[test]\n    fn checks() {{\n        let buffer = create_buffer(1);\n        {body}\n    }}\n}}\n"
+            );
+            let error = compile_vitest_with_alias_sources(
+                &source,
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains("get_entity_id"), "{body}: {error}");
+        }
+        // Production code has no TypeScript entity id at all.
+        let error = compile_typescript(
+            "use flight_entity::get_entity_id;\npub struct Buffer {\n    pub capacity: u32,\n}\npub fn buffer_id(buffer: &Buffer) -> u64 {\n    return get_entity_id(buffer);\n}\n",
+            None,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(
+            error.contains("portable `get_entity_id` is Rust-only"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn refuses_flight_error_checks_to_throw_cannot_express() {
         let production = r#"
 pub fn fail() -> i32 {
@@ -22754,18 +22854,12 @@ fn reads_helper_results() {
         )
         .unwrap();
 
-        assert!(output.contains(
-            "function tailSample(): Sample {\n  return { value: 1 };\n}"
-        ));
-        assert!(output.contains(
-            "function explicitSample(): Sample {\n  return { value: 2 };\n}"
-        ));
-        assert!(output.contains(
-            "function aliasedSample(): SampleAlias {\n  return { value: 3 };\n}"
-        ));
-        assert!(output.contains(
-            "function forwardedSample(): Sample {\n  return tailSample();\n}"
-        ));
+        assert!(output.contains("function tailSample(): Sample {\n  return { value: 1 };\n}"));
+        assert!(output.contains("function explicitSample(): Sample {\n  return { value: 2 };\n}"));
+        assert!(
+            output.contains("function aliasedSample(): SampleAlias {\n  return { value: 3 };\n}")
+        );
+        assert!(output.contains("function forwardedSample(): Sample {\n  return tailSample();\n}"));
     }
 
     #[test]
@@ -22904,14 +22998,16 @@ fn reads_calls() {
             .unwrap_err()
             .to_string();
         assert!(
-            value_error.contains("may only be used by a statement-position `.with(|binding| ...)` call"),
+            value_error
+                .contains("may only be used by a statement-position `.with(|binding| ...)` call"),
             "{value_error}"
         );
         let direct_error = compile_vitest(direct_binding, "@flighthq/example/contract")
             .unwrap_err()
             .to_string();
         assert!(
-            direct_error.contains("may only be used through zero-argument `.borrow()` or `.borrow_mut()`"),
+            direct_error
+                .contains("may only be used through zero-argument `.borrow()` or `.borrow_mut()`"),
             "{direct_error}"
         );
     }

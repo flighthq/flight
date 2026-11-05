@@ -4,7 +4,9 @@ use std::fmt::Write;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
-use syn::{BinOp, Expr, Fields, FnArg, ItemFn, ItemUse, Pat, ReturnType, Stmt, Token, Type, UseTree};
+use syn::{
+    BinOp, Expr, Fields, FnArg, ItemFn, ItemUse, Pat, ReturnType, Stmt, Token, Type, UseTree,
+};
 
 use crate::model::{Program, TestCase, TestProgram, TestSuite};
 use crate::typescript::{FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER};
@@ -108,7 +110,7 @@ fn collect_contract_symbols(
                 // `std::panic` names that the panic-message assertion lowering consumes.
                 && !matches!(
                     name.as_str(),
-                    "None" | "Some" | "drop" | "AssertUnwindSafe" | "catch_unwind"
+                    "None" | "Some" | "drop" | "AssertUnwindSafe" | "catch_unwind" | "get_entity_id"
                 )
                 && !is_lowered_cross_crate_value(&name)
                 && !self.symbols.contains(&name)
@@ -763,6 +765,29 @@ fn emit_assertion(
         return Err(compile_error("assertion macro has an empty path"));
     };
     let arguments = parse_macro_arguments(rust_macro)?;
+    if matches!(name.as_str(), "assert_eq" | "assert_ne")
+        && arguments.len() >= 2
+        && let (Some(left), Some(right)) = (
+            entity_identity_operand(&arguments[0], context),
+            entity_identity_operand(&arguments[1], context),
+        )
+    {
+        // Entity ids are allocation identity, which TypeScript compares by reference.
+        let matcher = if name == "assert_eq" {
+            "toBe"
+        } else {
+            "not.toBe"
+        };
+        let left = emit_expression(left, context)?;
+        let right = emit_expression(right, context)?;
+        write_indent(out, indent);
+        match assertion_message(&arguments, &name, context)? {
+            Some(message) => writeln!(out, "expect({left}, {message}).{matcher}({right});"),
+            None => writeln!(out, "expect({left}).{matcher}({right});"),
+        }
+        .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     if name == "assert"
         && let Some(closure) = arguments.first().and_then(caught_panic_is_err)
     {
@@ -912,6 +937,7 @@ fn emit_block(
             *declaration_counts.entry(name).or_insert(0_usize) += 1;
         }
     }
+    let entity_id_bindings = proven_entity_id_bindings(statements);
     let mut declared = HashSet::new();
     for (index, statement) in statements.iter().enumerate() {
         if let Some(assertion) = panic_assertions.get(&index) {
@@ -927,11 +953,27 @@ fn emit_block(
             let rebound = declaration_counts
                 .get(&name)
                 .is_some_and(|count| *count > 1);
+            let marker = format!("{ENTITY_ID_BINDING_MARKER}{name}");
             let shadowed = !declared.insert(name);
+            // A proven entity-id binding holds the allocation itself: `const id = object;`.
+            let identity_local = entity_id_bindings.contains(&index).then(|| {
+                let mut identity = local.clone();
+                if let Some(initializer) = &mut identity.init
+                    && let Some(object) = entity_id_operand(&initializer.expr)
+                {
+                    initializer.expr = Box::new(object.clone());
+                }
+                identity
+            });
+            if identity_local.is_some() {
+                block_context.insert(marker);
+            } else {
+                block_context.remove(&marker);
+            }
             emit_local_with_shadow_and_else(
                 out,
                 &block_context,
-                local,
+                identity_local.as_ref().unwrap_or(local),
                 indent,
                 shadowed,
                 rebound,
@@ -1013,7 +1055,12 @@ fn helper_has_proven_object_result(function: &ItemFn, context: &HashSet<String>)
     let Type::Path(path) = rust_type.as_ref() else {
         return false;
     };
-    let Some(name) = path.path.segments.last().map(|segment| segment.ident.to_string()) else {
+    let Some(name) = path
+        .path
+        .segments
+        .last()
+        .map(|segment| segment.ident.to_string())
+    else {
         return false;
     };
     if !is_vitest_struct(context, &name) {
@@ -1035,7 +1082,11 @@ fn statement_proves_object_result(statement: &Stmt) -> bool {
 
 fn expression_proves_object_result(expression: &Expr) -> bool {
     return match expression {
-        Expr::Block(block) => block.block.stmts.last().is_some_and(statement_proves_object_result),
+        Expr::Block(block) => block
+            .block
+            .stmts
+            .last()
+            .is_some_and(statement_proves_object_result),
         Expr::Group(group) => expression_proves_object_result(&group.expr),
         Expr::If(branch) => {
             branch
@@ -1043,9 +1094,10 @@ fn expression_proves_object_result(expression: &Expr) -> bool {
                 .stmts
                 .last()
                 .is_some_and(statement_proves_object_result)
-                && branch.else_branch.as_ref().is_some_and(|(_, otherwise)| {
-                    expression_proves_object_result(otherwise)
-                })
+                && branch
+                    .else_branch
+                    .as_ref()
+                    .is_some_and(|(_, otherwise)| expression_proves_object_result(otherwise))
         }
         Expr::Match(branch) => {
             !branch.arms.is_empty()
@@ -1060,7 +1112,11 @@ fn expression_proves_object_result(expression: &Expr) -> bool {
             .as_deref()
             .is_some_and(expression_proves_object_result),
         Expr::Struct(_) => true,
-        Expr::Unsafe(block) => block.block.stmts.last().is_some_and(statement_proves_object_result),
+        Expr::Unsafe(block) => block
+            .block
+            .stmts
+            .last()
+            .is_some_and(statement_proves_object_result),
         _ => false,
     };
 }
@@ -1075,7 +1131,11 @@ fn statement_proves_value_result(statement: &Stmt) -> bool {
 
 fn expression_proves_value_result(expression: &Expr) -> bool {
     return match expression {
-        Expr::Block(block) => block.block.stmts.last().is_some_and(statement_proves_value_result),
+        Expr::Block(block) => block
+            .block
+            .stmts
+            .last()
+            .is_some_and(statement_proves_value_result),
         Expr::Group(group) => expression_proves_value_result(&group.expr),
         Expr::If(branch) => {
             branch
@@ -1083,9 +1143,10 @@ fn expression_proves_value_result(expression: &Expr) -> bool {
                 .stmts
                 .last()
                 .is_some_and(statement_proves_value_result)
-                && branch.else_branch.as_ref().is_some_and(|(_, otherwise)| {
-                    expression_proves_value_result(otherwise)
-                })
+                && branch
+                    .else_branch
+                    .as_ref()
+                    .is_some_and(|(_, otherwise)| expression_proves_value_result(otherwise))
         }
         Expr::Match(branch) => {
             !branch.arms.is_empty()
@@ -1097,7 +1158,11 @@ fn expression_proves_value_result(expression: &Expr) -> bool {
         Expr::Paren(paren) => expression_proves_value_result(&paren.expr),
         Expr::Return(returned) => returned.expr.is_some(),
         Expr::Tuple(tuple) => !tuple.elems.is_empty(),
-        Expr::Unsafe(block) => block.block.stmts.last().is_some_and(statement_proves_value_result),
+        Expr::Unsafe(block) => block
+            .block
+            .stmts
+            .last()
+            .is_some_and(statement_proves_value_result),
         Expr::Break(_) | Expr::Continue(_) | Expr::ForLoop(_) | Expr::Loop(_) | Expr::While(_) => {
             false
         }
@@ -2423,6 +2488,9 @@ fn string_literal_value(expression: &Expr) -> Option<String> {
 
 const FLIGHT_ERROR_HELPER_SEPARATOR: char = '\u{1f}';
 
+// A proven entity-id test binding, which holds its allocation (`proven_entity_id_bindings`).
+const ENTITY_ID_BINDING_MARKER: &str = "@entity-id-binding:";
+
 // A test helper proven to run its closure once under `catch_unwind`, require a canonical
 // `FlightError` payload of one kind, and (when it returns `String`) return its message:
 //
@@ -2698,6 +2766,125 @@ fn flight_error_helper_assertion<'a>(
     return assertion(closure, &helper, None, 1);
 }
 
+// A test's entity-id comparison: `get_entity_id(..)` is Rust-only identity machinery (D12; its
+// `flight-entity` source is rust-only), the id of one allocation. TypeScript compares allocations by
+// reference, so a test whose ids serve only identity assertions lowers to object identity:
+//
+//     let id = get_entity_id(&buffer);               // const id = buffer;
+//     initialize_buffer(&mut buffer, 2);
+//     assert_eq!(get_entity_id(&buffer), id);        // expect(buffer).toBe(id);
+//     assert_ne!(get_entity_id(&copy), id);          // expect(copy).not.toBe(id);
+//
+// Any other use (arithmetic, ordering, printing, a map key, a read outside such an assertion, or
+// production code) has no TypeScript value and refuses at the call.
+fn entity_id_operand(expression: &Expr) -> Option<&Expr> {
+    let Expr::Call(call) = unparenthesized(expression) else {
+        return None;
+    };
+    if call.args.len() != 1
+        || !(path_is(&call.func, &["get_entity_id"])
+            || path_is(&call.func, &["flight_entity", "get_entity_id"]))
+    {
+        return None;
+    }
+    let mut object = unparenthesized(&call.args[0]);
+    while let Expr::Reference(reference) = object {
+        object = unparenthesized(&reference.expr);
+    }
+    return Some(object);
+}
+
+// An identity operand of an entity-id assertion: `get_entity_id(object)`'s object, or a proven
+// entity-id binding (which already holds its object).
+fn entity_identity_operand<'a>(
+    expression: &'a Expr,
+    context: &HashSet<String>,
+) -> Option<&'a Expr> {
+    if let Some(object) = entity_id_operand(expression) {
+        return Some(object);
+    }
+    let Expr::Path(path) = unparenthesized(expression) else {
+        return None;
+    };
+    let name = path.path.get_ident()?.to_string();
+    return context
+        .contains(&format!("{ENTITY_ID_BINDING_MARKER}{name}"))
+        .then_some(unparenthesized(expression));
+}
+
+// The indices of `let id = get_entity_id(..);` statements in `statements` whose binding is read only
+// as an operand of a top-level `assert_eq!`/`assert_ne!` between identity operands (other such
+// bindings or `get_entity_id(..)` calls), up to the next `let` of its name. A binding read anywhere
+// else is not proven, and neither is one compared with an unproven binding.
+fn proven_entity_id_bindings(statements: &[Stmt]) -> HashSet<usize> {
+    let mut candidates = statements
+        .iter()
+        .enumerate()
+        .filter_map(|(index, statement)| {
+            let (name, initializer) = simple_local(statement)?;
+            entity_id_operand(initializer).map(|_| (index, name))
+        })
+        .collect::<Vec<_>>();
+    loop {
+        let names = candidates
+            .iter()
+            .map(|(_, name)| name.clone())
+            .collect::<HashSet<_>>();
+        let identity_operand = |expression: &Expr| {
+            entity_id_operand(expression).is_some()
+                || matches!(unparenthesized(expression), Expr::Path(path)
+                    if path.path.get_ident().is_some_and(|name| names.contains(&name.to_string())))
+        };
+        let before = candidates.len();
+        candidates.retain(|(index, name)| {
+            for statement in &statements[index + 1..] {
+                if let Stmt::Local(local) = statement
+                    && local_name(&local.pat).as_deref() == Some(name.as_str())
+                {
+                    // Its initializer still sees this binding.
+                    return !statements_read_name(std::slice::from_ref(statement), name);
+                }
+                if !statements_read_name(std::slice::from_ref(statement), name) {
+                    continue;
+                }
+                let Stmt::Macro(assertion) = statement else {
+                    return false;
+                };
+                if !(assertion.mac.path.is_ident("assert_eq")
+                    || assertion.mac.path.is_ident("assert_ne"))
+                {
+                    return false;
+                }
+                let Ok(arguments) = parse_macro_arguments(&assertion.mac) else {
+                    return false;
+                };
+                if arguments.len() < 2
+                    || !identity_operand(&arguments[0])
+                    || !identity_operand(&arguments[1])
+                    || statements_read_name_in(arguments.iter().skip(2), name)
+                {
+                    return false;
+                }
+            }
+            return true;
+        });
+        if candidates.len() == before {
+            break;
+        }
+    }
+    return candidates.into_iter().map(|(index, _)| index).collect();
+}
+
+// Whether any of `expressions` reads `name` (an assertion's message arguments).
+fn statements_read_name_in<'a>(expressions: impl Iterator<Item = &'a Expr>, name: &str) -> bool {
+    return expressions.into_iter().any(|expression| {
+        statements_read_name(
+            &[Stmt::Expr(expression.clone(), Some(Default::default()))],
+            name,
+        )
+    });
+}
+
 fn emit_statement(
     out: &mut String,
     statement: &Stmt,
@@ -2931,6 +3118,12 @@ pub(crate) fn emit_test_program(
         collect_contract_symbols(program, context);
     let (mut cross_crate_values, mut cross_crate_types) =
         crate::typescript::test_cross_crate_imports(program, context)?;
+    // `get_entity_id` is Rust-only: every test use lowers to object identity or refuses, so its
+    // binding is never imported.
+    for specifiers in cross_crate_values.values_mut() {
+        specifiers.retain(|specifier| specifier.split(" as ").next() != Some("getEntityId"));
+    }
+    cross_crate_values.retain(|_, specifiers| !specifiers.is_empty());
     contract_symbols
         .retain(|symbol| !external_type_owners.contains_key(&emit_path_name(symbol, context)));
     contract_type_symbols.retain(|symbol| {

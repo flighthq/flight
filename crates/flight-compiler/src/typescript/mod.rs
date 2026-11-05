@@ -12107,6 +12107,24 @@ fn emit_expression_value(
                 return emit_expression(&call.args[0], entities);
             }
             if let Expr::Path(path) = call.func.as_ref()
+                && path.qself.is_none()
+                && path
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| segment.ident == "get_entity_id")
+                && (path.path.segments.len() == 1
+                    || (path.path.segments.len() == 2
+                        && path.path.segments[0].ident == "flight_entity"))
+            {
+                // The numeric entity id is Rust-only identity machinery (D12; `entity_id.rs` is
+                // rust-only). Tests that only compare ids lower to object identity in vitest.
+                return Err(compile_error(
+                    "portable `get_entity_id` is Rust-only; a test may bind it and compare it only with \
+                     `assert_eq!`/`assert_ne!` against another entity id, which lowers to object identity",
+                ));
+            }
+            if let Expr::Path(path) = call.func.as_ref()
                 && let Some(name) = path.path.get_ident()
                 && entities.iter().any(|marker| {
                     marker.starts_with(&format!("{FLIGHT_ERROR_HELPER_MARKER}{name}\u{1f}"))
