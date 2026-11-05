@@ -1,4 +1,4 @@
-import type { ImportDiagnostic, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic, ImportDiagnosticSeverity } from './types.ts';
 
 // The collector seam for importer diagnostics: where crumbs are recorded, and the opt-in that engages
 // the recording. An `ImportDiagnostic[]` sink IS the collector — parsers write to it through
