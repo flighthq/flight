@@ -1,6 +1,5 @@
-import type { HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from '@flighthq/types/contract';
-
 import { getAudioDecodeSlot, hasAudioDecodeSlot } from './audioDecodeSlot.ts';
+import type { HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from './types.ts';
 
 describe('getAudioDecodeSlot', () => {
   it('routes each standard container to its own slot', () => {

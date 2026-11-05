@@ -1,16 +1,16 @@
 import { sendNetRequest } from '@flighthq/net/contract';
+import type { HostNetCapability } from '@flighthq/types/contract';
+
+import { canPlayAudioType, getAudioMimeTypeEssence, inferAudioMimeType } from './audioFormat.ts';
+import { createAudioResource } from './audioResource.ts';
+import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
 import type {
   AudioDecoderRegistry,
   AudioResource,
   AudioResourceUrl,
   HostAudioCodecCapability,
   HostAudioDecodeCapabilities,
-  HostNetCapability,
-} from '@flighthq/types/contract';
-
-import { canPlayAudioType, getAudioMimeTypeEssence, inferAudioMimeType } from './audioFormat.ts';
-import { createAudioResource } from './audioResource.ts';
-import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
+} from './types.ts';
 
 // Builds a resource from raw PCM channel data without needing an AudioContext. Each entry in
 // `channels` holds one channel's Float32 samples; all are expected to share the first channel's

@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioResource, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { AudioResource } from './types.ts';
 
 // Allocates a new resource identity over the SAME underlying AudioBuffer. The buffer is shared by
 // reference, not duplicated — clone gives an independent resource object over the same decoded PCM,

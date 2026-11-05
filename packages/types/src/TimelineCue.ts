@@ -1,4 +1,5 @@
-import type { AudioResource } from './AudioResource.ts';
+import type { AudioResource } from '@flighthq/audio/contract';
+
 import type { Entity } from './Entity.ts';
 import type { Timeline } from './Timeline.ts';
 

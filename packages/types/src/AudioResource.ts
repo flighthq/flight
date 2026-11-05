@@ -1,8 +1,8 @@
+import type { AudioChannelState, AudioResource } from '@flighthq/audio/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
-import type { Entity } from './Entity.ts';
-
-export type AudioChannelState = 'complete' | 'paused' | 'playing' | 'stopped';
+/** @deprecated Import audio-owned contracts from `@flighthq/audio/contract`. */
+export type { AudioChannelState, AudioPlayOptions, AudioResource, AudioResourceUrl } from '@flighthq/audio/contract';
 
 export interface AudioChannel {
   currentTime: number;
@@ -23,20 +23,4 @@ export interface AudioChannel {
   source: AudioResource;
   state: AudioChannelState;
   onComplete: Signal<void>;
-}
-
-export interface AudioPlayOptions {
-  currentTime?: number;
-  gain?: number;
-  loops?: number;
-  playbackRate?: number;
-}
-
-export interface AudioResource extends Entity {
-  buffer: AudioBuffer | null;
-}
-
-export interface AudioResourceUrl {
-  url: string;
-  type?: string;
 }

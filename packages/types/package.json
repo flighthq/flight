@@ -39,6 +39,7 @@
     "@flighthq/adjustments": "*",
     "@flighthq/animation": "*",
     "@flighthq/app": "*",
+    "@flighthq/audio": "*",
     "@flighthq/binpack": "*",
     "@flighthq/buffer": "*",
     "@flighthq/clock": "*",

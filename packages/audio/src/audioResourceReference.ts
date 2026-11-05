@@ -1,4 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
+
+import { createAudioResource } from './audioResource.ts';
+import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
 import type {
   AudioDecoderRegistry,
   AudioResource,
@@ -7,18 +12,10 @@ import type {
   AudioResourceReference,
   AudioResourceReferenceResolutionExplanation,
   EmbeddedAudioResourceReference,
-  EntityConstruction,
   ExternalAudioResourceReference,
   HostAudioDecodeCapabilities,
-} from '@flighthq/types/contract';
-import {
-  AudioResourceFailureKind,
-  AudioResourceReferenceKind,
-  ResourceResolutionState,
-} from '@flighthq/types/contract';
-
-import { createAudioResource } from './audioResource.ts';
-import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
+} from './types.ts';
+import { AudioResourceFailureKind, AudioResourceReferenceKind } from './types.ts';
 
 // Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.

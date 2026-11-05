@@ -1,11 +1,6 @@
-import type {
-  AudioDecoder,
-  HostAudioDecodeCapabilities,
-  HostAudioDecodeFormatCapability,
-} from '@flighthq/types/contract';
-
 import { createAudioResource } from './audioResource.ts';
 import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
+import type { AudioDecoder, HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from './types.ts';
 
 describe('decodeAudioResourceBytes', () => {
   it('dispatches a parameterized MIME type through the decoder the caller supplied', async () => {

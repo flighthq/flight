@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostAudioCodecCapability, Entity } from '@flighthq/types/contract';
 
 import {
   canPlayAudioType,
@@ -8,6 +7,7 @@ import {
   getAudioMimeTypeParameter,
   inferAudioMimeType,
 } from './audioFormat.ts';
+import type { HostAudioCodecCapability } from './types.ts';
 
 function hostWith(canPlay: (type: string) => boolean): {
   readonly media: { readonly audioCodec: HostAudioCodecCapability };

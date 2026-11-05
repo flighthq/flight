@@ -1,7 +1,11 @@
+import type {
+  AudioDecoderRegistry,
+  AudioResourceFetch,
+  AudioResourceReference,
+  HostAudioDecodeCapabilities,
+} from '@flighthq/audio/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
-import type { AudioDecoderRegistry, AudioResourceFetch, AudioResourceReference } from './AudioResourceReference.ts';
-import type { HostAudioDecodeCapabilities } from './HostAudioDecode.ts';
 import type { ImageDecodeFallback } from './ImageDecoder.ts';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference.ts';
 import type { Node2D } from './Node2D.ts';

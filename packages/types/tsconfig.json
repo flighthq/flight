@@ -12,6 +12,7 @@
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
       ".adjustments-types",
+      ".audio-types",
       ".app-types",
       ".clip-types",
       ".flow-types",
@@ -44,6 +45,9 @@
   "references": [
     {
       "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../audio/tsconfig.contract.json"
     },
     {
       "path": "../app/tsconfig.contract.json"

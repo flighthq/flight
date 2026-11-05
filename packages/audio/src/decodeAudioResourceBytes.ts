@@ -1,13 +1,12 @@
+import { getAudioDecodeSlot } from './audioDecodeSlot.ts';
+import { detectAudioMimeType, getAudioMimeTypeEssence } from './audioFormat.ts';
+import { createAudioResource } from './audioResource.ts';
 import type {
   AudioDecoderRegistry,
   AudioResource,
   HostAudioDecodeCapabilities,
   HostAudioDecodeFormatCapability,
-} from '@flighthq/types/contract';
-
-import { getAudioDecodeSlot } from './audioDecodeSlot.ts';
-import { detectAudioMimeType, getAudioMimeTypeEssence } from './audioFormat.ts';
-import { createAudioResource } from './audioResource.ts';
+} from './types.ts';
 
 // The one encoded-byte decode path for both public loaders and embedded references.
 //

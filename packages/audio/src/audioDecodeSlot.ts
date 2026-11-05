@@ -1,6 +1,5 @@
-import type { HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from '@flighthq/types/contract';
-
 import { getAudioMimeTypeEssence } from './audioFormat.ts';
+import type { HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from './types.ts';
 
 // Maps a container's MIME type onto the host slot that decodes it, and answers whether anything can.
 // The mapping lives here rather than in the header because it is a fact about MIME registrations rather

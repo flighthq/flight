@@ -1,11 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  AudioDecoder,
-  HostAudioCodecCapability,
-  HostAudioDecodeCapabilities,
-  HostAudioDecodeFormatCapability,
-  HostNetCapability,
-} from '@flighthq/types/contract';
+import type { HostNetCapability } from '@flighthq/types/contract';
 
 import { createAudioResource } from './audioResource.ts';
 import {
@@ -17,6 +11,12 @@ import {
   loadAudioResourceFromUrls,
   selectAudioResourceUrl,
 } from './audioResourceFrom.ts';
+import type {
+  AudioDecoder,
+  HostAudioCodecCapability,
+  HostAudioDecodeCapabilities,
+  HostAudioDecodeFormatCapability,
+} from './types.ts';
 
 function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
   readonly media: { readonly audioCodec: HostAudioCodecCapability };

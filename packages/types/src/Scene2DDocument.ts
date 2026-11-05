@@ -1,4 +1,5 @@
-import type { AudioResourceReference } from './AudioResourceReference.ts';
+import type { AudioResourceReference } from '@flighthq/audio/contract';
+
 import type { Entity } from './Entity.ts';
 import type { ImageResourceReference } from './ImageResourceReference.ts';
 import type { Node2D } from './Node2D.ts';

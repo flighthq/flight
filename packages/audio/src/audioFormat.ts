@@ -1,4 +1,4 @@
-import type { HostAudioCodecCapability } from '@flighthq/types/contract';
+import type { HostAudioCodecCapability } from './types.ts';
 
 export function canPlayAudioType(hostAudioCodec: Readonly<HostAudioCodecCapability>, mimeType: string): boolean {
   if (mimeType === '') return false;

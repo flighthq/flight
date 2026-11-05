@@ -1,6 +1,5 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDecoder, AudioResourceFetch, HostAudioDecodeCapabilities } from '@flighthq/types/contract';
-import { EntityRuntimeKey, ResourceResolutionState } from '@flighthq/types/contract';
+import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 
 import { createAudioResource } from './audioResource.ts';
 import {
@@ -14,6 +13,7 @@ import {
   resetFailedAudioResourceReference,
   resolveAudioResourceReference,
 } from './audioResourceReference.ts';
+import type { AudioDecoder, AudioResourceFetch, HostAudioDecodeCapabilities } from './types.ts';
 
 describe('createAudioResourceFailure', () => {
   it('keeps an Error’s name and message without retaining the Error', () => {
