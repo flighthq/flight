@@ -10,7 +10,7 @@
  * Returns `current` when `deltaTime <= 0` or `lambda <= 0`.
  */
 export function damp(current: number, target: number, lambda: number, deltaTime: number): number {
-  if (deltaTime <= 0.0 || lambda <= 0.0) {
+  if (deltaTime <= 0 || lambda <= 0) {
     return current;
   }
   return target + (current - target) * Math.exp(-lambda * deltaTime);
@@ -24,7 +24,7 @@ export function damp(current: number, target: number, lambda: number, deltaTime:
  * normalize call on the output.
  */
 export function lerpAngle(a: number, b: number, t: number): number {
-  const tau = Math.PI * 2.0;
+  const tau = Math.PI * 2;
   let diff = (((b - a) % tau) + tau) % tau;
   if (diff > Math.PI) {
     diff -= tau;
@@ -52,7 +52,7 @@ export function moveTowards(current: number, target: number, maxDelta: number): 
  * `pingPong(t, 1)` cycles: 0 -> 1 -> 0 -> 1 -> ...
  */
 export function pingPong(t: number, length: number): number {
-  const cycle = 2.0 * length;
+  const cycle = 2 * length;
   const modulo = ((t % cycle) + cycle) % cycle;
   return modulo <= length ? modulo : cycle - modulo;
 }
@@ -75,6 +75,6 @@ export function repeat(t: number, length: number): number {
  */
 export function smootherStep(edge0: number, edge1: number, x: number): number {
   const t = (x - edge0) / (edge1 - edge0);
-  const s = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
-  return s * s * s * (s * (s * 6.0 - 15.0) + 10.0);
+  const s = t < 0 ? 0 : t > 1 ? 1 : t;
+  return s * s * s * (s * (s * 6 - 15) + 10);
 }

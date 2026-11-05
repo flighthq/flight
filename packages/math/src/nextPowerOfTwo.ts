@@ -16,11 +16,11 @@ export function isPowerOfTwo(n: number): boolean {
  * `nextMultipleOf(7.0, 4.0)` -> `8.0`. When `multiple <= 0` the result is `value`.
  */
 export function nextMultipleOf(value: number, multiple: number): number {
-  if (multiple <= 0.0) {
+  if (multiple <= 0) {
     return value;
   }
   const remainder = value % multiple;
-  return remainder === 0.0 ? value : value + multiple - remainder;
+  return remainder === 0 ? value : value + multiple - remainder;
 }
 
 /**
@@ -31,7 +31,7 @@ export function nextMultipleOf(value: number, multiple: number): number {
  */
 export function nextPowerOfTwo(n: number): number {
   if (n <= 1) {
-    return 1 >>> 0;
+    return 1;
   }
   let v = (n - 1) >>> 0;
   v |= v >>> 1;
@@ -49,7 +49,7 @@ export function nextPowerOfTwo(n: number): number {
  */
 export function previousPowerOfTwo(n: number): number {
   if (n <= 1) {
-    return 1 >>> 0;
+    return 1;
   }
   let v = n;
   v |= v >> 1;

@@ -7,44 +7,44 @@ import { approxEqual, approxEqualRelative, approxZero } from './contract.ts';
 
 describe('approxEqual', () => {
   it('returns true for identical values', () => {
-    expect(approxEqual(1.0, 1.0, undefined)).toBe(true);
+    expect(approxEqual(1, 1, undefined)).toBe(true);
   });
   it('returns true when values are within the default epsilon', () => {
-    expect(approxEqual(1.0, 1.0 + 1e-7, undefined)).toBe(true);
+    expect(approxEqual(1, 1 + 1e-7, undefined)).toBe(true);
   });
   it('returns false when values differ by more than the default epsilon', () => {
-    expect(!approxEqual(1.0, 1.0 + 1e-5, undefined)).toBe(true);
+    expect(!approxEqual(1, 1 + 1e-5, undefined)).toBe(true);
   });
   it('accepts a custom epsilon', () => {
-    expect(approxEqual(1.0, 1.1, 0.2)).toBe(true);
-    expect(!approxEqual(1.0, 1.3, 0.2)).toBe(true);
+    expect(approxEqual(1, 1.1, 0.2)).toBe(true);
+    expect(!approxEqual(1, 1.3, 0.2)).toBe(true);
   });
   it('returns true for zero and near zero', () => {
-    expect(approxEqual(0.0, 1e-7, undefined)).toBe(true);
+    expect(approxEqual(0, 1e-7, undefined)).toBe(true);
   });
   it('works with negative values', () => {
-    expect(approxEqual(-1.0, -1.0 - 1e-7, undefined)).toBe(true);
+    expect(approxEqual(-1, -1 - 1e-7, undefined)).toBe(true);
   });
 });
 
 describe('approxEqualRelative', () => {
   it('returns true for identical values', () => {
-    expect(approxEqualRelative(1000.0, 1000.0, undefined)).toBe(true);
+    expect(approxEqualRelative(1000, 1000, undefined)).toBe(true);
   });
   it('returns true for large values within relative epsilon', () => {
-    expect(approxEqualRelative(1e8, 1e8 + 1.0, undefined)).toBe(true);
+    expect(approxEqualRelative(1e8, 1e8 + 1, undefined)).toBe(true);
   });
   it('returns false when large values differ beyond relative epsilon', () => {
-    expect(!approxEqualRelative(1e8, 1e8 * 2.0, undefined)).toBe(true);
+    expect(!approxEqualRelative(1e8, 1e8 * 2, undefined)).toBe(true);
   });
   it('returns true for near zero values within absolute epsilon', () => {
-    expect(approxEqualRelative(0.0, 1e-7, undefined)).toBe(true);
+    expect(approxEqualRelative(0, 1e-7, undefined)).toBe(true);
   });
 });
 
 describe('approxZero', () => {
   it('returns true for exact zero', () => {
-    expect(approxZero(0.0, undefined)).toBe(true);
+    expect(approxZero(0, undefined)).toBe(true);
   });
   it('returns true for values within epsilon', () => {
     expect(approxZero(1e-7, undefined)).toBe(true);

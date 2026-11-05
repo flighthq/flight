@@ -9,8 +9,8 @@ import type { RandomSource } from './random.ts';
  * Values outside `[0, 1]` behave like the nearest endpoint; `0.5` is a fair coin flip.
  */
 export function randomBool(random: RandomSource, probability?: number): boolean {
-  const probability_1 = probability ?? 0.5;
-  return random() < probability_1;
+  probability = probability ?? 0.5;
+  return random() < probability;
 }
 
 /**
@@ -36,5 +36,5 @@ export function randomRange(random: RandomSource, min: number, max: number): num
  * Return a random sign: either `1` or `-1` with equal probability.
  */
 export function randomSign(random: RandomSource): number {
-  return random() < 0.5 ? -1.0 : 1.0;
+  return random() < 0.5 ? -1 : 1;
 }

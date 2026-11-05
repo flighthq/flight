@@ -649,8 +649,8 @@ mod shuffle {
     #[test]
     fn is_deterministic_for_the_same_seed() {
         let items = [1, 2, 3, 4, 5, 6, 7, 8];
-        let mut a = Vec::new();
-        let mut b = Vec::new();
+        let mut a: Vec<i32> = Vec::new();
+        let mut b: Vec<i32> = Vec::new();
         shuffle(&mut a, create_random_source(0xabcdef).as_ref(), &items);
         shuffle(&mut b, create_random_source(0xabcdef).as_ref(), &items);
         assert_eq!(a, b);

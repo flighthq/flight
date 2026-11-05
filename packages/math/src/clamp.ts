@@ -26,7 +26,7 @@ export function inRange(value: number, min: number, max: number): boolean {
  */
 export function saturate(value: number): number {
   if (Number.isNaN(value)) {
-    return 0.0;
+    return 0;
   }
-  return value < 0.0 ? 0.0 : value > 1.0 ? 1.0 : value;
+  return value < 0 ? 0 : value > 1 ? 1 : value;
 }

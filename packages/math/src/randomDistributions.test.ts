@@ -22,7 +22,7 @@ import { rustTestSupport as crate } from './rustTestSupport.ts';
 
 function assertApprox(actual: number, expected: number): void {
   const diff = Math.abs(actual - expected);
-  const limit = Math.max(5e-9, 4.0 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1.0));
+  const limit = Math.max(5e-9, 4 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1));
   expect(diff <= limit, `expected ${expected}, got ${actual} (diff: ${diff}, limit: ${limit})`).toBe(true);
 }
 
@@ -39,7 +39,7 @@ describe('pick', () => {
   it('returns an element from the slice', () => {
     const items = [1, 2, 3, 4, 5];
     const random = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 50; _ += 1) {
+    for (let _ = 0; _ < 50; _++) {
       const result = pick(random, items);
       expect(result !== undefined).toBe(true);
       expect(items.includes(result!)).toBe(true);
@@ -51,7 +51,7 @@ describe('pick', () => {
   });
   it('always returns the only element in a single item slice', () => {
     const random = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 20; _ += 1) {
+    for (let _ = 0; _ < 20; _++) {
       expect(pick(random, [42])).toEqual(42);
     }
   });
@@ -59,7 +59,7 @@ describe('pick', () => {
     const items = ['a', 'b', 'c', 'd'];
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 20; _ += 1) {
+    for (let _ = 0; _ < 20; _++) {
       expect(pick(a, items)).toEqual(pick(b, items));
     }
   });
@@ -71,38 +71,38 @@ describe('pick', () => {
 describe('randomExponential', () => {
   it('returns a non negative value', () => {
     const random = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 200; _ += 1) {
-      expect(randomExponential(random, undefined) >= 0.0).toBe(true);
+    for (let _ = 0; _ < 200; _++) {
+      expect(randomExponential(random, undefined) >= 0).toBe(true);
     }
   });
   it('mean approximates 1 over rate for rate 1', () => {
     const random = createRandomSource(0xabcdef);
-    let sum = 0.0;
+    let sum = 0;
     const n = 5000;
-    for (let _ = 0; _ < n; _ += 1) {
+    for (let _ = 0; _ < n; _++) {
       sum += randomExponential(random, undefined);
     }
     const avg = sum / n;
-    expect(Math.abs(avg - 1.0) < 0.2).toBe(true);
+    expect(Math.abs(avg - 1) < 0.2).toBe(true);
   });
   it('mean approximates 1 over rate for rate 2', () => {
     const random = createRandomSource(0xabcdef);
-    let sum = 0.0;
+    let sum = 0;
     const n = 5000;
-    for (let _ = 0; _ < n; _ += 1) {
-      sum += randomExponential(random, 2.0);
+    for (let _ = 0; _ < n; _++) {
+      sum += randomExponential(random, 2);
     }
     const avg = sum / n;
     expect(Math.abs(avg - 0.5) < 0.2).toBe(true);
   });
   it('throws for rate zero', () => {
     crate.assertRangeError(() => {
-      randomExponential(createRandomSource(0xabcdef), 0.0);
+      randomExponential(createRandomSource(0xabcdef), 0);
     }, 'randomExponential: rate must be finite and > 0');
   });
   it('throws for negative rate', () => {
     crate.assertRangeError(() => {
-      randomExponential(createRandomSource(0xabcdef), -1.0);
+      randomExponential(createRandomSource(0xabcdef), -1);
     }, 'randomExponential: rate must be finite and > 0');
   });
   it('rejects nan rate', () => {
@@ -118,51 +118,51 @@ describe('randomExponential', () => {
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 20; _ += 1) {
+    for (let _ = 0; _ < 20; _++) {
       expect(randomExponential(a, undefined)).toEqual(randomExponential(b, undefined));
     }
   });
   it('substitutes epsilon when the random source returns zero', () => {
-    expect(randomExponential(() => 0.0, undefined)).toEqual(-Math.log(2.220446049250313e-16));
+    expect(randomExponential(() => 0, undefined)).toEqual(-Math.log(2.220446049250313e-16));
   });
 });
 
 describe('randomGaussian', () => {
   it('produces finite values', () => {
     const random = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 100; _ += 1) {
+    for (let _ = 0; _ < 100; _++) {
       expect(Number.isFinite(randomGaussian(random, undefined, undefined))).toBe(true);
     }
   });
   it('centers around the mean', () => {
     const random = createRandomSource(0xabcdef);
-    let sum = 0.0;
+    let sum = 0;
     const n = 2000;
-    for (let _ = 0; _ < n; _ += 1) {
-      sum += randomGaussian(random, 5.0, undefined);
+    for (let _ = 0; _ < n; _++) {
+      sum += randomGaussian(random, 5, undefined);
     }
     const avg = sum / n;
-    expect(Math.abs(avg - 5.0) < 0.5).toBe(true);
+    expect(Math.abs(avg - 5) < 0.5).toBe(true);
   });
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 20; _ += 1) {
+    for (let _ = 0; _ < 20; _++) {
       expect(randomGaussian(a, undefined, undefined)).toEqual(randomGaussian(b, undefined, undefined));
     }
   });
   it('substitutes epsilon when the first random sample is zero', () => {
-    const random = crate.sequenceRandom([0.0, 0.25]);
+    const random = crate.sequenceRandom([0, 0.25]);
     const actual = randomGaussian(random, undefined, undefined);
     expect(Math.abs(actual) < 5e-11, `TS zero-sample value should be close to 0 at 10 digits, got ${actual}`).toBe(
       true,
     );
   });
   it('matches a deterministic box muller vector with mean and scale', () => {
-    const standard = Math.sqrt(-2.0 * Math.log(0.5));
-    const random = crate.sequenceRandom([0.5, 0.0]);
-    const actual = randomGaussian(random, 10.0, 2.0);
-    const expected = 10.0 + standard * 2.0;
+    const standard = Math.sqrt(-2 * Math.log(0.5));
+    const random = crate.sequenceRandom([0.5, 0]);
+    const actual = randomGaussian(random, 10, 2);
+    const expected = 10 + standard * 2;
     expect(Math.abs(actual - expected) < 5e-13).toBe(true);
   });
 });
@@ -176,46 +176,46 @@ describe('randomGaussianPair', () => {
   });
   it('produces values matching the requested mean', () => {
     const random = createRandomSource(0xabcdef);
-    let sum = 0.0;
+    let sum = 0;
     const n = 2000;
-    for (let _ = 0; _ < n; _ += 1) {
-      const [z0, z1] = randomGaussianPair(random, 10.0, undefined);
+    for (let _ = 0; _ < n; _++) {
+      const [z0, z1] = randomGaussianPair(random, 10, undefined);
       sum += z0 + z1;
     }
     const sampleCount = n * 2;
     const avg = sum / sampleCount;
-    expect(Math.abs(avg - 10.0) < 0.5).toBe(true);
+    expect(Math.abs(avg - 10) < 0.5).toBe(true);
   });
   it('substitutes epsilon when the first random sample is zero', () => {
-    const random = crate.sequenceRandom([0.0, 0.25]);
+    const random = crate.sequenceRandom([0, 0.25]);
     const [z0, z1] = randomGaussianPair(random, undefined, undefined);
     expect(Math.abs(z0) < 5e-11, `TS zero-sample first component should be close to 0 at 10 digits, got ${z0}`).toBe(
       true,
     );
-    expect(Math.abs(z1 - Math.sqrt(-2.0 * Math.log(2.220446049250313e-16))) < 5e-11).toBe(true);
+    expect(Math.abs(z1 - Math.sqrt(-2 * Math.log(2.220446049250313e-16))) < 5e-11).toBe(true);
   });
   it('matches both values of a deterministic box muller pair', () => {
-    const component = Math.sqrt(-2.0 * Math.log(0.5)) * Math.SQRT1_2;
+    const component = Math.sqrt(-2 * Math.log(0.5)) * Math.SQRT1_2;
     const random = crate.sequenceRandom([0.5, 0.125]);
-    expect(randomGaussianPair(random, 3.0, 2.0)).toEqual([3.0 + component * 2.0, 3.0 + component * 2.0]);
+    expect(randomGaussianPair(random, 3, 2)).toEqual([3 + component * 2, 3 + component * 2]);
   });
 });
 
 describe('randomInsideUnitDisc', () => {
   it('produces points inside the unit disc', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(2).fill(0.0);
-    for (let _ = 0; _ < 200; _ += 1) {
+    let out = new Float32Array(2).fill(0);
+    for (let _ = 0; _ < 200; _++) {
       randomInsideUnitDisc(out, random);
-      expect(out[0] * out[0] + out[1] * out[1] <= 1.0 + 1e-9).toBe(true);
+      expect(out[0] * out[0] + out[1] * out[1] <= 1 + 1e-9).toBe(true);
     }
   });
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    let outA = new Float32Array(2).fill(0.0);
-    let outB = new Float32Array(2).fill(0.0);
-    for (let _ = 0; _ < 20; _ += 1) {
+    let outA = new Float32Array(2).fill(0);
+    let outB = new Float32Array(2).fill(0);
+    for (let _ = 0; _ < 20; _++) {
       randomInsideUnitDisc(outA, a);
       randomInsideUnitDisc(outB, b);
       expect(outA[0]).toEqual(outB[0]);
@@ -224,34 +224,34 @@ describe('randomInsideUnitDisc', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0);
     randomInsideUnitDisc(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
   });
   it('accepts and preserves a deterministic boundary point', () => {
-    const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5]);
-    let out = new Float32Array(2).fill(0.0);
+    const random = crate.sequenceRandom([1, 0.5, 0.5, 0.5]);
+    let out = new Float32Array(2).fill(0);
     randomInsideUnitDisc(out, random);
-    expect(Array.from(out)).toEqual([1.0, 0.0]);
+    expect(Array.from(out)).toEqual([1, 0]);
   });
 });
 
 describe('randomInsideUnitSphere', () => {
   it('produces points with radius less than or equal to 1', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(3).fill(0.0);
-    for (let _ = 0; _ < 200; _ += 1) {
+    let out = new Float32Array(3).fill(0);
+    for (let _ = 0; _ < 200; _++) {
       randomInsideUnitSphere(out, random);
-      expect(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] <= 1.0 + 1e-9).toBe(true);
+      expect(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] <= 1 + 1e-9).toBe(true);
     }
   });
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    let outA = new Float32Array(3).fill(0.0);
-    let outB = new Float32Array(3).fill(0.0);
-    for (let _ = 0; _ < 20; _ += 1) {
+    let outA = new Float32Array(3).fill(0);
+    let outB = new Float32Array(3).fill(0);
+    for (let _ = 0; _ < 20; _++) {
       randomInsideUnitSphere(outA, a);
       randomInsideUnitSphere(outB, b);
       expect(outA[0]).toEqual(outB[0]);
@@ -261,35 +261,35 @@ describe('randomInsideUnitSphere', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0);
     randomInsideUnitSphere(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
     expect(Number.isFinite(out[2])).toBe(true);
   });
   it('accepts and preserves a deterministic boundary point', () => {
-    const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5, 0.5, 0.5]);
-    let out = new Float32Array(3).fill(0.0);
+    const random = crate.sequenceRandom([1, 0.5, 0.5, 0.5, 0.5, 0.5]);
+    let out = new Float32Array(3).fill(0);
     randomInsideUnitSphere(out, random);
-    expect(Array.from(out)).toEqual([1.0, 0.0, 0.0]);
+    expect(Array.from(out)).toEqual([1, 0, 0]);
   });
 });
 
 describe('randomOnUnitCircle', () => {
   it('produces points on the unit circle', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(2).fill(0.0);
-    for (let _ = 0; _ < 100; _ += 1) {
+    let out = new Float32Array(2).fill(0);
+    for (let _ = 0; _ < 100; _++) {
       randomOnUnitCircle(out, random);
-      assertApprox(out[0] * out[0] + out[1] * out[1], 1.0);
+      assertApprox(out[0] * out[0] + out[1] * out[1], 1);
     }
   });
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    let outA = new Float32Array(2).fill(0.0);
-    let outB = new Float32Array(2).fill(0.0);
-    for (let _ = 0; _ < 20; _ += 1) {
+    let outA = new Float32Array(2).fill(0);
+    let outB = new Float32Array(2).fill(0);
+    for (let _ = 0; _ < 20; _++) {
       randomOnUnitCircle(outA, a);
       randomOnUnitCircle(outB, b);
       expect(outA[0]).toEqual(outB[0]);
@@ -298,35 +298,35 @@ describe('randomOnUnitCircle', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0);
     randomOnUnitCircle(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
   });
   it('maps a quarter turn sample to the top of the circle', () => {
-    let out = new Float32Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0);
     randomOnUnitCircle(out, () => 0.25);
     expect(Math.abs(out[0]) < 5e-13, `TS quarter-turn x should be close to 0 at 12 digits, got ${out[0]}`).toBe(true);
-    expect(Math.abs(out[1] - 1.0) < 5e-13).toBe(true);
+    expect(Math.abs(out[1] - 1) < 5e-13).toBe(true);
   });
 });
 
 describe('randomOnUnitSphere', () => {
   it('produces points on the unit sphere', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(3).fill(0.0);
-    for (let _ = 0; _ < 100; _ += 1) {
+    let out = new Float32Array(3).fill(0);
+    for (let _ = 0; _ < 100; _++) {
       randomOnUnitSphere(out, random);
       const len2 = out[0] * out[0] + out[1] * out[1] + out[2] * out[2];
-      assertApprox(len2, 1.0);
+      assertApprox(len2, 1);
     }
   });
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    let outA = new Float32Array(3).fill(0.0);
-    let outB = new Float32Array(3).fill(0.0);
-    for (let _ = 0; _ < 20; _ += 1) {
+    let outA = new Float32Array(3).fill(0);
+    let outB = new Float32Array(3).fill(0);
+    for (let _ = 0; _ < 20; _++) {
       randomOnUnitSphere(outA, a);
       randomOnUnitSphere(outB, b);
       expect(outA[0]).toEqual(outB[0]);
@@ -336,33 +336,33 @@ describe('randomOnUnitSphere', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(0xabcdef);
-    let out = new Float32Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0);
     randomOnUnitSphere(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
     expect(Number.isFinite(out[2])).toBe(true);
   });
   it('projects a deterministic disc sample onto the sphere', () => {
-    let out = new Float32Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0);
     const random = crate.sequenceRandom([0.75, 0.5]);
     randomOnUnitSphere(out, random);
-    expect(Math.abs(out[0] - Math.fround(Math.sqrt(3.0) / 2.0)) < 5e-13).toBe(true);
-    expect(out[1]).toEqual(0.0);
+    expect(Math.abs(out[0] - Math.fround(Math.sqrt(3) / 2)) < 5e-13).toBe(true);
+    expect(out[1]).toEqual(0);
     expect(out[2]).toEqual(0.5);
   });
   it('rejects a disc boundary sample before projecting', () => {
-    let out = new Float32Array(3).fill(0.0);
-    const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5]);
+    let out = new Float32Array(3).fill(0);
+    const random = crate.sequenceRandom([1, 0.5, 0.5, 0.5]);
     randomOnUnitSphere(out, random);
-    expect(Array.from(out)).toEqual([0.0, 0.0, 1.0]);
+    expect(Array.from(out)).toEqual([0, 0, 1]);
   });
 });
 
 describe('randomPoisson', () => {
   it('returns a non negative integer', () => {
     const random = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 200; _ += 1) {
-      const k = randomPoisson(random, 3.0);
+    for (let _ = 0; _ < 200; _++) {
+      const k = randomPoisson(random, 3);
       expect(k >= 0).toBe(true);
     }
   });
@@ -370,30 +370,30 @@ describe('randomPoisson', () => {
     const random = createRandomSource(0xabcdef);
     let sum = 0;
     const n = 5000;
-    for (let _ = 0; _ < n; _ += 1) {
+    for (let _ = 0; _ < n; _++) {
       sum += randomPoisson(random, undefined);
     }
     const avg = sum / n;
-    expect(Math.abs(avg - 1.0) < 0.2).toBe(true);
+    expect(Math.abs(avg - 1) < 0.2).toBe(true);
   });
   it('mean approximates lambda 5', () => {
     const random = createRandomSource(0xabcdef);
     let sum = 0;
     const n = 5000;
-    for (let _ = 0; _ < n; _ += 1) {
-      sum += randomPoisson(random, 5.0);
+    for (let _ = 0; _ < n; _++) {
+      sum += randomPoisson(random, 5);
     }
     const avg = sum / n;
-    expect(Math.abs(avg - 5.0) < 0.5).toBe(true);
+    expect(Math.abs(avg - 5) < 0.5).toBe(true);
   });
   it('throws for lambda zero', () => {
     crate.assertRangeError(() => {
-      randomPoisson(createRandomSource(0xabcdef), 0.0);
+      randomPoisson(createRandomSource(0xabcdef), 0);
     }, 'randomPoisson: lambda must be finite and > 0');
   });
   it('throws for negative lambda', () => {
     crate.assertRangeError(() => {
-      randomPoisson(createRandomSource(0xabcdef), -1.0);
+      randomPoisson(createRandomSource(0xabcdef), -1);
     }, 'randomPoisson: lambda must be finite and > 0');
   });
   it('rejects nan lambda', () => {
@@ -409,21 +409,21 @@ describe('randomPoisson', () => {
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 20; _ += 1) {
-      expect(randomPoisson(a, 3.0)).toEqual(randomPoisson(b, 3.0));
+    for (let _ = 0; _ < 20; _++) {
+      expect(randomPoisson(a, 3)).toEqual(randomPoisson(b, 3));
     }
   });
   it('stops when the product exactly reaches the limit', () => {
     const random = crate.sequenceRandom([0.5, 0.5]);
-    expect(randomPoisson(random, Math.log(2.0))).toEqual(0);
+    expect(randomPoisson(random, Math.log(2))).toEqual(0);
   });
 });
 
 describe('randomWeighted', () => {
   it('returns indices within the weights slice', () => {
     const random = createRandomSource(0xabcdef);
-    const weights = [1.0, 2.0, 3.0];
-    for (let _ = 0; _ < 100; _ += 1) {
+    const weights = [1, 2, 3];
+    for (let _ = 0; _ < 100; _++) {
       const idx = randomWeighted(random, weights);
       expect(idx >= 0).toBe(true);
       expect(idx >>> 0 < weights.length).toBe(true);
@@ -433,27 +433,27 @@ describe('randomWeighted', () => {
     expect(randomWeighted(createRandomSource(0xabcdef), [])).toEqual(-1);
   });
   it('returns negative 1 for an all zero weight slice', () => {
-    expect(randomWeighted(createRandomSource(0xabcdef), [0.0, 0.0, 0.0])).toEqual(-1);
+    expect(randomWeighted(createRandomSource(0xabcdef), [0, 0, 0])).toEqual(-1);
   });
   it('always returns the only non zero index when all others are zero', () => {
     const random = createRandomSource(0xabcdef);
-    for (let _ = 0; _ < 20; _ += 1) {
-      expect(randomWeighted(random, [0.0, 10.0, 0.0])).toEqual(1);
+    for (let _ = 0; _ < 20; _++) {
+      expect(randomWeighted(random, [0, 10, 0])).toEqual(1);
     }
   });
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(0xabcdef);
     const b = createRandomSource(0xabcdef);
-    const weights = [1.0, 2.0, 3.0, 4.0];
-    for (let _ = 0; _ < 20; _ += 1) {
+    const weights = [1, 2, 3, 4];
+    for (let _ = 0; _ < 20; _++) {
       expect(randomWeighted(a, weights)).toEqual(randomWeighted(b, weights));
     }
   });
   it('falls back to the final bucket for an out of range random source', () => {
-    expect(randomWeighted(() => 1.1, [1.0, 2.0, 7.0])).toEqual(2);
+    expect(randomWeighted(() => 1.1, [1, 2, 7])).toEqual(2);
   });
   it('selects the earlier bucket when the sample lands exactly on its boundary', () => {
-    expect(randomWeighted(() => 1.0 / 3.0, [1.0, 2.0])).toEqual(0);
+    expect(randomWeighted(() => 1 / 3, [1, 2])).toEqual(0);
   });
 });
 
@@ -468,8 +468,8 @@ describe('shuffle', () => {
   });
   it('is deterministic for the same seed', () => {
     const items = [1, 2, 3, 4, 5, 6, 7, 8];
-    let a = [] as never[];
-    let b = [] as never[];
+    let a: number[] = [];
+    let b: number[] = [];
     shuffle(a, createRandomSource(0xabcdef), items);
     shuffle(b, createRandomSource(0xabcdef), items);
     expect(a).toEqual(b);

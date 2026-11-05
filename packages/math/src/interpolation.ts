@@ -9,7 +9,7 @@
  */
 export function inverseLerp(a: number, b: number, value: number): number {
   const range = b - a;
-  return range === 0.0 ? 0.0 : (value - a) / range;
+  return range === 0 ? 0 : (value - a) / range;
 }
 
 /**
@@ -30,7 +30,7 @@ export function lerp(a: number, b: number, t: number): number {
  */
 export function remap(value: number, inMin: number, inMax: number, outMin: number, outMax: number): number {
   const inRange = inMax - inMin;
-  if (inRange === 0.0) {
+  if (inRange === 0) {
     return outMin;
   }
   return outMin + ((value - inMin) / inRange) * (outMax - outMin);
@@ -44,13 +44,13 @@ export function remap(value: number, inMin: number, inMax: number, outMin: numbe
  */
 export function smoothStep(edge0: number, edge1: number, x: number): number {
   const t = (x - edge0) / (edge1 - edge0);
-  const s = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
-  return s * s * (3.0 - 2.0 * s);
+  const s = t < 0 ? 0 : t > 1 ? 1 : t;
+  return s * s * (3 - 2 * s);
 }
 
 /**
  * Returns 0 if `x < edge`, otherwise 1. The scalar step function from GLSL.
  */
 export function step(edge: number, x: number): number {
-  return x < edge ? 0.0 : 1.0;
+  return x < edge ? 0 : 1;
 }

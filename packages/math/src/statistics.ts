@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 function finiteAbsoluteScale(values: Readonly<number[]>): number {
-  let scale = 0.0;
+  let scale = 0;
   let i = 0;
   while (i < values.length) {
     const v = Math.abs(values[i]);
@@ -12,7 +12,7 @@ function finiteAbsoluteScale(values: Readonly<number[]>): number {
     if (v > scale) {
       scale = v;
     }
-    i += 1;
+    i++;
   }
   return scale;
 }
@@ -30,8 +30,8 @@ export function mean(values: Readonly<number[]>): number {
   if (!Number.isFinite(scale)) {
     return unscaledMean(values);
   }
-  if (scale === 0.0) {
-    return 0.0;
+  if (scale === 0) {
+    return 0;
   }
   return (scaledSum(values, scale) / values.length) * scale;
 }
@@ -54,35 +54,35 @@ export function median(values: Readonly<number[]>): number {
 
 function midpoint(a: number, b: number): number {
   if (!Number.isFinite(a) || !Number.isFinite(b)) {
-    return (a + b) / 2.0;
+    return (a + b) / 2;
   }
   if (Object.is(a, b)) {
     return a;
   }
-  if ((a >= 0.0 && b >= 0.0) || (a <= 0.0 && b <= 0.0)) {
-    return a + (b - a) / 2.0;
+  if ((a >= 0 && b >= 0) || (a <= 0 && b <= 0)) {
+    return a + (b - a) / 2;
   }
-  return a / 2.0 + b / 2.0;
+  return a / 2 + b / 2;
 }
 
 function scaledSum(values: Readonly<number[]>, scale: number): number {
-  let sum = 0.0;
-  let correction = 0.0;
+  let sum = 0;
+  let correction = 0;
   let i = 0;
   while (i < values.length) {
     const term = values[i] / scale - correction;
     const next = sum + term;
     correction = next - sum - term;
     sum = next;
-    i += 1;
+    i++;
   }
   return sum;
 }
 
 function scaledVariance(values: Readonly<number[]>, scale: number): number {
   const normalizedMean = scaledSum(values, scale) / values.length;
-  let sum = 0.0;
-  let correction = 0.0;
+  let sum = 0;
+  let correction = 0;
   let i = 0;
   while (i < values.length) {
     const difference = values[i] / scale - normalizedMean;
@@ -90,9 +90,9 @@ function scaledVariance(values: Readonly<number[]>, scale: number): number {
     const next = sum + term;
     correction = next - sum - term;
     sum = next;
-    i += 1;
+    i++;
   }
-  return sum / values.length > 0.0 ? sum / values.length : 0.0;
+  return sum / values.length > 0 ? sum / values.length : 0;
 }
 
 /**
@@ -108,44 +108,44 @@ export function standardDeviation(values: Readonly<number[]>): number {
   if (!Number.isFinite(scale)) {
     return Math.sqrt(unscaledVariance(values));
   }
-  if (scale === 0.0) {
-    return 0.0;
+  if (scale === 0) {
+    return 0;
   }
   return Math.sqrt(scaledVariance(values, scale)) * scale;
 }
 
 function unscaledMean(values: Readonly<number[]>): number {
-  let sum = 0.0;
+  let sum = 0;
   let i = 0;
   while (i < values.length) {
     sum += values[i];
-    i += 1;
+    i++;
   }
   return sum / values.length;
 }
 
 function unscaledVariance(values: Readonly<number[]>): number {
   const average = unscaledMean(values);
-  let sum = 0.0;
+  let sum = 0;
   let i = 0;
   while (i < values.length) {
     const difference = values[i] - average;
     sum += difference * difference;
-    i += 1;
+    i++;
   }
   return sum / values.length;
 }
 
 function unscaledWeightedAverage(values: Readonly<number[]>, weights: Readonly<number[]>): number {
-  let sumWeights = 0.0;
-  let sumProduct = 0.0;
+  let sumWeights = 0;
+  let sumProduct = 0;
   let i = 0;
   while (i < values.length) {
     sumWeights += weights[i];
     sumProduct += values[i] * weights[i];
-    i += 1;
+    i++;
   }
-  return sumWeights === 0.0 ? Number.NaN : sumProduct / sumWeights;
+  return sumWeights === 0 ? Number.NaN : sumProduct / sumWeights;
 }
 
 /**
@@ -161,12 +161,12 @@ export function variance(values: Readonly<number[]>): number {
   if (!Number.isFinite(scale)) {
     return unscaledVariance(values);
   }
-  if (scale === 0.0) {
-    return 0.0;
+  if (scale === 0) {
+    return 0;
   }
   const normalized = scaledVariance(values, scale);
-  if (normalized === 0.0) {
-    return 0.0;
+  if (normalized === 0) {
+    return 0;
   }
   return normalized * scale * scale;
 }
@@ -190,25 +190,25 @@ export function weightedAverage(values: Readonly<number[]>, weights: Readonly<nu
   if (!Number.isFinite(valueScale) || !Number.isFinite(weightScale)) {
     return unscaledWeightedAverage(values, weights);
   }
-  if (weightScale === 0.0) {
+  if (weightScale === 0) {
     return Number.NaN;
   }
   const sumWeights = scaledSum(weights, weightScale);
-  if (sumWeights === 0.0) {
+  if (sumWeights === 0) {
     return Number.NaN;
   }
-  if (valueScale === 0.0) {
-    return 0.0;
+  if (valueScale === 0) {
+    return 0;
   }
-  let sumProduct = 0.0;
-  let correction = 0.0;
+  let sumProduct = 0;
+  let correction = 0;
   let i = 0;
   while (i < values.length) {
     const term = (values[i] / valueScale) * (weights[i] / weightScale) - correction;
     const next = sumProduct + term;
     correction = next - sumProduct - term;
     sumProduct = next;
-    i += 1;
+    i++;
   }
   return (sumProduct / sumWeights) * valueScale;
 }

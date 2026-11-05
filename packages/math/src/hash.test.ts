@@ -8,17 +8,17 @@ import { createRandomSourceFromHash, hash2D, hash3D, hashCombine, hashUint32 } f
 describe('createRandomSourceFromHash', () => {
   it('returns a random source that produces values in 0 1', () => {
     const rng = createRandomSourceFromHash(3, 7);
-    for (let _ = 0; _ < 20; _ += 1) {
+    for (let _ = 0; _ < 20; _++) {
       const v = rng();
-      expect(v >= 0.0).toBe(true);
-      expect(v < 1.0).toBe(true);
+      expect(v >= 0).toBe(true);
+      expect(v < 1).toBe(true);
     }
   });
   it('produces different sequences for different positions', () => {
     const a = createRandomSourceFromHash(0, 0);
     const b = createRandomSourceFromHash(1, 0);
     let differs = false;
-    for (let _ = 0; _ < 10; _ += 1) {
+    for (let _ = 0; _ < 10; _++) {
       if (a() !== b()) {
         differs = true;
       }
@@ -28,7 +28,7 @@ describe('createRandomSourceFromHash', () => {
   it('produces the same sequence for the same position', () => {
     const a = createRandomSourceFromHash(5, 9);
     const b = createRandomSourceFromHash(5, 9);
-    for (let _ = 0; _ < 20; _ += 1) {
+    for (let _ = 0; _ < 20; _++) {
       expect(a()).toEqual(b());
     }
   });

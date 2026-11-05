@@ -12,13 +12,13 @@ export function factorial(n: number): number {
     throw new RangeError('factorial: n must be a non-negative integer');
   }
   if (n <= 1) {
-    return 1.0;
+    return 1;
   }
-  let result = 1.0;
+  let result = 1;
   let i = 2;
   while (i <= n) {
     result *= i;
-    i += 1;
+    i++;
   }
   return result;
 }
@@ -31,17 +31,17 @@ export function factorial(n: number): number {
  * is undefined).
  */
 export function gcd(a: number, b: number): number {
-  let a_1 = Math.abs(a);
-  let b_1 = Math.abs(b);
-  if (a_1 === 0 && b_1 === 0) {
+  a = Math.abs(a);
+  b = Math.abs(b);
+  if (a === 0 && b === 0) {
     throw new RangeError('gcd: both arguments must not be 0');
   }
-  while (b_1 !== 0) {
-    const t = b_1;
-    b_1 = a_1 % b_1;
-    a_1 = t;
+  while (b !== 0) {
+    const t = b;
+    b = a % b;
+    a = t;
   }
-  return a_1;
+  return a;
 }
 
 /**
@@ -76,5 +76,5 @@ export function isOdd(n: number): boolean {
  */
 export function lcm(a: number, b: number): number {
   const g = gcd(a, b);
-  return (Math.abs(a) / g) * Math.abs(b);
+  return Math.trunc(Math.abs(a) / g) * Math.abs(b);
 }

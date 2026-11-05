@@ -7,7 +7,7 @@ import { ceilPowerOfTwo, floorPowerOfTwo, quantize, sign } from './contract.ts';
 
 function assertApprox(actual: number, expected: number): void {
   const diff = Math.abs(actual - expected);
-  const limit = Math.max(5e-11, 4.0 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1.0));
+  const limit = Math.max(5e-11, 4 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1));
   expect(diff <= limit, `expected ${expected}, got ${actual} (diff: ${diff}, limit: ${limit})`).toBe(true);
 }
 
@@ -34,36 +34,36 @@ describe('floorPowerOfTwo', () => {
 
 describe('quantize', () => {
   it('quantizes to the nearest step', () => {
-    assertApprox(quantize(0.7, 4.0, 0.0, 1.0), 0.75);
+    assertApprox(quantize(0.7, 4, 0, 1), 0.75);
   });
   it('returns min at the lower bound', () => {
-    assertApprox(quantize(0.0, 4.0, 0.0, 1.0), 0.0);
+    assertApprox(quantize(0, 4, 0, 1), 0);
   });
   it('returns max at the upper bound', () => {
-    assertApprox(quantize(1.0, 4.0, 0.0, 1.0), 1.0);
+    assertApprox(quantize(1, 4, 0, 1), 1);
   });
   it('returns min when steps is 0', () => {
-    expect(quantize(0.5, 0.0, 0.0, 1.0)).toEqual(0.0);
+    expect(quantize(0.5, 0, 0, 1)).toEqual(0);
   });
   it('returns min when min equals max', () => {
-    expect(quantize(5.0, 4.0, 5.0, 5.0)).toEqual(5.0);
+    expect(quantize(5, 4, 5, 5)).toEqual(5);
   });
   it('clamps values outside the range', () => {
-    assertApprox(quantize(-1.0, 4.0, 0.0, 1.0), 0.0);
-    assertApprox(quantize(2.0, 4.0, 0.0, 1.0), 1.0);
+    assertApprox(quantize(-1, 4, 0, 1), 0);
+    assertApprox(quantize(2, 4, 0, 1), 1);
   });
 });
 
 describe('sign', () => {
   it('returns 1 for positive values', () => {
-    expect(sign(5.0)).toEqual(1.0);
-    expect(sign(0.001)).toEqual(1.0);
+    expect(sign(5)).toEqual(1);
+    expect(sign(0.001)).toEqual(1);
   });
   it('returns negative 1 for negative values', () => {
-    expect(sign(-5.0)).toEqual(-1.0);
-    expect(sign(-0.001)).toEqual(-1.0);
+    expect(sign(-5)).toEqual(-1);
+    expect(sign(-0.001)).toEqual(-1);
   });
   it('returns 0 for zero', () => {
-    expect(sign(0.0)).toEqual(0.0);
+    expect(sign(0)).toEqual(0);
   });
 });

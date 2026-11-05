@@ -29,17 +29,17 @@ describe('isPowerOfTwo', () => {
 
 describe('nextMultipleOf', () => {
   it('rounds up to the next multiple', () => {
-    expect(nextMultipleOf(7.0, 4.0)).toEqual(8.0);
+    expect(nextMultipleOf(7, 4)).toEqual(8);
   });
   it('leaves an exact multiple unchanged', () => {
-    expect(nextMultipleOf(8.0, 4.0)).toEqual(8.0);
+    expect(nextMultipleOf(8, 4)).toEqual(8);
   });
   it('returns value when multiple is 0', () => {
-    expect(nextMultipleOf(7.0, 0.0)).toEqual(7.0);
+    expect(nextMultipleOf(7, 0)).toEqual(7);
   });
   it('works with small values', () => {
-    expect(nextMultipleOf(1.0, 16.0)).toEqual(16.0);
-    expect(nextMultipleOf(0.0, 4.0)).toEqual(0.0);
+    expect(nextMultipleOf(1, 16)).toEqual(16);
+    expect(nextMultipleOf(0, 4)).toEqual(0);
   });
 });
 

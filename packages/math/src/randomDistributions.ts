@@ -3,7 +3,7 @@
 
 import type { RandomSource } from './random.ts';
 
-const ZERO_SAMPLE_EPSILON: number = 1.0 / 4_503_599_627_370_496.0;
+const ZERO_SAMPLE_EPSILON: number = 1 / 4_503_599_627_370_496;
 
 /**
  * Pick a random element from `items`, returning `undefined` when `items` is empty.
@@ -27,13 +27,13 @@ export function pick<T>(random: RandomSource, items: Readonly<T[]>): T | undefin
  * positive.
  */
 export function randomExponential(random: RandomSource, rate?: number): number {
-  const rate_1 = rate ?? 1.0;
-  if (!Number.isFinite(rate_1) || rate_1 <= 0.0) {
+  rate = rate ?? 1;
+  if (!Number.isFinite(rate) || rate <= 0) {
     throw new RangeError('randomExponential: rate must be finite and > 0');
   }
   const u = random();
-  const safeU = u === 0.0 ? ZERO_SAMPLE_EPSILON : u;
-  return -Math.log(safeU) / rate_1;
+  const safeU = u === 0 ? ZERO_SAMPLE_EPSILON : u;
+  return -Math.log(safeU) / rate;
 }
 
 /**
@@ -43,14 +43,14 @@ export function randomExponential(random: RandomSource, rate?: number): number {
  * Each call consumes two values from `random` and discards one.
  */
 export function randomGaussian(random: RandomSource, mean?: number, standardDeviation?: number): number {
-  const mean_1 = mean ?? 0.0;
-  const standardDeviation_1 = standardDeviation ?? 1.0;
+  mean = mean ?? 0;
+  standardDeviation = standardDeviation ?? 1;
   const u1 = random();
   const u2 = random();
-  const safeU1 = u1 === 0.0 ? ZERO_SAMPLE_EPSILON : u1;
+  const safeU1 = u1 === 0 ? ZERO_SAMPLE_EPSILON : u1;
   const angle = Math.PI * 2 * u2;
-  const z = Math.sqrt(-2.0 * Math.log(safeU1)) * Math.cos(angle);
-  return mean_1 + z * standardDeviation_1;
+  const z = Math.sqrt(-2 * Math.log(safeU1)) * Math.cos(angle);
+  return mean + z * standardDeviation;
 }
 
 /**
@@ -65,15 +65,15 @@ export function randomGaussianPair(
   mean?: number,
   standardDeviation?: number,
 ): readonly [number, number] {
-  const mean_1 = mean ?? 0.0;
-  const standardDeviation_1 = standardDeviation ?? 1.0;
+  mean = mean ?? 0;
+  standardDeviation = standardDeviation ?? 1;
   const u1 = random();
   const u2 = random();
-  const safeU1 = u1 === 0.0 ? ZERO_SAMPLE_EPSILON : u1;
-  const mag = Math.sqrt(-2.0 * Math.log(safeU1));
+  const safeU1 = u1 === 0 ? ZERO_SAMPLE_EPSILON : u1;
+  const mag = Math.sqrt(-2 * Math.log(safeU1));
   const angle = Math.PI * 2 * u2;
-  const z0 = mean_1 + mag * Math.cos(angle) * standardDeviation_1;
-  const z1 = mean_1 + mag * Math.sin(angle) * standardDeviation_1;
+  const z0 = mean + mag * Math.cos(angle) * standardDeviation;
+  const z1 = mean + mag * Math.sin(angle) * standardDeviation;
   return [z0, z1];
 }
 
@@ -86,9 +86,9 @@ export function randomGaussianPair(
  */
 export function randomInsideUnitDisc(out: Float32Array, random: RandomSource): void {
   for (;;) {
-    const x = random() * 2.0 - 1.0;
-    const y = random() * 2.0 - 1.0;
-    if (x * x + y * y <= 1.0) {
+    const x = random() * 2 - 1;
+    const y = random() * 2 - 1;
+    if (x * x + y * y <= 1) {
       out[0] = x;
       out[1] = y;
       return;
@@ -104,10 +104,10 @@ export function randomInsideUnitDisc(out: Float32Array, random: RandomSource): v
  */
 export function randomInsideUnitSphere(out: Float32Array, random: RandomSource): void {
   for (;;) {
-    const x = random() * 2.0 - 1.0;
-    const y = random() * 2.0 - 1.0;
-    const z = random() * 2.0 - 1.0;
-    if (x * x + y * y + z * z <= 1.0) {
+    const x = random() * 2 - 1;
+    const y = random() * 2 - 1;
+    const z = random() * 2 - 1;
+    if (x * x + y * y + z * z <= 1) {
       out[0] = x;
       out[1] = y;
       out[2] = z;
@@ -139,17 +139,17 @@ export function randomOnUnitSphere(out: Float32Array, random: RandomSource): voi
   let y: number;
   let s: number;
   for (;;) {
-    x = random() * 2.0 - 1.0;
-    y = random() * 2.0 - 1.0;
+    x = random() * 2 - 1;
+    y = random() * 2 - 1;
     s = x * x + y * y;
-    if (s < 1.0) {
+    if (s < 1) {
       break;
     }
   }
-  const f = 2.0 * Math.sqrt(1.0 - s);
+  const f = 2 * Math.sqrt(1 - s);
   const rx = x * f;
   const ry = y * f;
-  const rz = 1.0 - 2.0 * s;
+  const rz = 1 - 2 * s;
   out[0] = rx;
   out[1] = ry;
   out[2] = rz;
@@ -162,15 +162,15 @@ export function randomOnUnitSphere(out: Float32Array, random: RandomSource): voi
  * lambda (lambda <= ~30). Throws if `lambda` is not finite or not positive.
  */
 export function randomPoisson(random: RandomSource, lambda?: number): number {
-  const lambda_1 = lambda ?? 1.0;
-  if (!Number.isFinite(lambda_1) || lambda_1 <= 0.0) {
+  lambda = lambda ?? 1;
+  if (!Number.isFinite(lambda) || lambda <= 0) {
     throw new RangeError('randomPoisson: lambda must be finite and > 0');
   }
-  const limit = Math.exp(-lambda_1);
+  const limit = Math.exp(-lambda);
   let k = 0;
   let product = random();
   while (product > limit) {
-    k += 1;
+    k++;
     product *= random();
   }
   return k;
@@ -183,25 +183,25 @@ export function randomPoisson(random: RandomSource, lambda?: number): number {
  * Returns `-1` for an empty or all-zero weight array.
  */
 export function randomWeighted(random: RandomSource, weights: Readonly<number[]>): number {
-  let total = 0.0;
+  let total = 0;
   let i = 0;
   while (i < weights.length) {
     total += weights[i];
-    i += 1;
+    i++;
   }
-  if (total <= 0.0) {
+  if (total <= 0) {
     return -1;
   }
   let r = random() * total;
   i = 0;
   while (i < weights.length) {
     r -= weights[i];
-    if (r <= 0.0) {
+    if (r <= 0) {
       return i | 0;
     }
-    i += 1;
+    i++;
   }
-  return (weights.length - 1) | 0;
+  return weights.length - 1;
 }
 
 /**
@@ -230,6 +230,6 @@ export function shuffleInPlace<T>(random: RandomSource, items: T[]): void {
   while (i > 0) {
     const j = Math.floor(random() * (i + 1)) >>> 0;
     [items[i], items[j]] = [items[j], items[i]];
-    i -= 1;
+    i--;
   }
 }

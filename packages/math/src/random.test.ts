@@ -10,21 +10,21 @@ describe('createRandomSource', () => {
   it('keeps the half open endpoint when a seeded sample rounds up', () => {
     const random = createRandomSource(52078625);
     const sample = random();
-    expect(sample).toEqual(1.0 - Math.pow(2, -23) / 2.0);
-    expect(sample < 1.0).toBe(true);
+    expect(sample).toEqual(1 - Math.pow(2, -23) / 2);
+    expect(sample < 1).toBe(true);
   });
   it('produces values in 0 1', () => {
     const rng = createRandomSource(1);
-    for (let _ = 0; _ < 1000; _ += 1) {
+    for (let _ = 0; _ < 1000; _++) {
       const v = rng();
-      expect(v >= 0.0).toBe(true);
-      expect(v < 1.0).toBe(true);
+      expect(v >= 0).toBe(true);
+      expect(v < 1).toBe(true);
     }
   });
   it('is deterministic same seed yields the same sequence', () => {
     const a = createRandomSource(0xc0ffee);
     const b = createRandomSource(0xc0ffee);
-    for (let _ = 0; _ < 100; _ += 1) {
+    for (let _ = 0; _ < 100; _++) {
       expect(a()).toEqual(b());
     }
   });
@@ -32,7 +32,7 @@ describe('createRandomSource', () => {
     const a = createRandomSource(1);
     const b = createRandomSource(2);
     let differs = false;
-    for (let _ = 0; _ < 10; _ += 1) {
+    for (let _ = 0; _ < 10; _++) {
       if (a() !== b()) {
         differs = true;
       }
@@ -54,8 +54,8 @@ describe('createRandomSource', () => {
     const rng = createRandomSource(0);
     const v1 = rng();
     const v2 = rng();
-    expect(v1 >= 0.0 && v1 < 1.0).toBe(true);
-    expect(v2 >= 0.0 && v2 < 1.0).toBe(true);
+    expect(v1 >= 0 && v1 < 1).toBe(true);
+    expect(v2 >= 0 && v2 < 1).toBe(true);
     expect(v1).not.toEqual(v2);
   });
   it('cloned callables advance the same stream', () => {

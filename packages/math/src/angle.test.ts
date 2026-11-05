@@ -7,44 +7,44 @@ import { degToRad, deltaAngle, normalizeAngle, radToDeg } from './contract.ts';
 
 function assertClose(actual: number, expected: number, digits: number): void {
   const diff = Math.abs(actual - expected);
-  const tsBound = 0.5 * Math.pow(10.0, -digits);
-  const limit = Math.max(tsBound, 4.0 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1.0));
+  const tsBound = 0.5 * Math.pow(10, -digits);
+  const limit = Math.max(tsBound, 4 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1));
   expect(diff <= limit, `expected ${expected}, got ${actual} (diff: ${diff}, limit: ${limit})`).toBe(true);
 }
 
 describe('degToRad', () => {
   it('converts 0 degrees to 0 radians', () => {
-    expect(degToRad(0.0)).toEqual(0.0);
+    expect(degToRad(0)).toEqual(0);
   });
   it('converts 180 degrees to pi', () => {
-    assertClose(degToRad(180.0), Math.PI, 10);
+    assertClose(degToRad(180), Math.PI, 10);
   });
   it('converts 360 degrees to two pi', () => {
-    assertClose(degToRad(360.0), Math.PI * 2.0, 10);
+    assertClose(degToRad(360), Math.PI * 2, 10);
   });
   it('converts 90 degrees to pi over 2', () => {
-    assertClose(degToRad(90.0), Math.PI / 2.0, 10);
+    assertClose(degToRad(90), Math.PI / 2, 10);
   });
   it('converts negative degrees', () => {
-    assertClose(degToRad(-90.0), -Math.PI / 2.0, 10);
+    assertClose(degToRad(-90), -Math.PI / 2, 10);
   });
 });
 
 describe('deltaAngle', () => {
   it('returns 0 for identical angles', () => {
-    assertClose(deltaAngle(1.0, 1.0), 0.0, 10);
+    assertClose(deltaAngle(1, 1), 0, 10);
   });
   it('returns the shortest arc when crossing 0', () => {
     assertClose(deltaAngle(Math.PI - 0.1, -(Math.PI - 0.1)), 0.2, 5);
   });
   it('returns a positive delta when the target is ahead', () => {
-    assertClose(deltaAngle(0.0, Math.PI / 2.0), Math.PI / 2.0, 10);
+    assertClose(deltaAngle(0, Math.PI / 2), Math.PI / 2, 10);
   });
   it('returns a negative delta when the target is behind', () => {
-    assertClose(deltaAngle(Math.PI / 2.0, 0.0), -Math.PI / 2.0, 10);
+    assertClose(deltaAngle(Math.PI / 2, 0), -Math.PI / 2, 10);
   });
   it('keeps the positive half turn in range', () => {
-    expect(deltaAngle(0.0, Math.PI)).toEqual(Math.PI);
+    expect(deltaAngle(0, Math.PI)).toEqual(Math.PI);
   });
   it('result is always within range', () => {
     let i = -10;
@@ -59,19 +59,19 @@ describe('deltaAngle', () => {
 
 describe('normalizeAngle', () => {
   it('normalizes 0 to 0', () => {
-    assertClose(normalizeAngle(0.0), 0.0, 10);
+    assertClose(normalizeAngle(0), 0, 10);
   });
   it('normalizes pi to negative pi', () => {
     assertClose(normalizeAngle(Math.PI), -Math.PI, 5);
   });
   it('wraps two pi to 0', () => {
-    assertClose(normalizeAngle(Math.PI * 2.0), 0.0, 10);
+    assertClose(normalizeAngle(Math.PI * 2), 0, 10);
   });
   it('wraps values above pi to the negative side', () => {
-    assertClose(normalizeAngle(Math.PI + 1.0), -(Math.PI - 1.0), 10);
+    assertClose(normalizeAngle(Math.PI + 1), -(Math.PI - 1), 10);
   });
   it('wraps negative values into range', () => {
-    assertClose(normalizeAngle(-Math.PI * 3.0), -Math.PI, 5);
+    assertClose(normalizeAngle(-Math.PI * 3), -Math.PI, 5);
   });
   it('result is always in range', () => {
     let i = -20;
@@ -86,15 +86,15 @@ describe('normalizeAngle', () => {
 
 describe('radToDeg', () => {
   it('converts 0 radians to 0 degrees', () => {
-    expect(radToDeg(0.0)).toEqual(0.0);
+    expect(radToDeg(0)).toEqual(0);
   });
   it('converts pi to 180 degrees', () => {
-    assertClose(radToDeg(Math.PI), 180.0, 10);
+    assertClose(radToDeg(Math.PI), 180, 10);
   });
   it('converts two pi to 360 degrees', () => {
-    assertClose(radToDeg(Math.PI * 2.0), 360.0, 10);
+    assertClose(radToDeg(Math.PI * 2), 360, 10);
   });
   it('is the inverse of deg to rad', () => {
-    assertClose(radToDeg(degToRad(45.0)), 45.0, 10);
+    assertClose(radToDeg(degToRad(45)), 45, 10);
   });
 });

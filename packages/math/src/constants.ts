@@ -15,19 +15,19 @@ export const EPSILON: number = 1e-6;
 /**
  * Full circle in radians (2pi).
  */
-export const TAU: number = Math.PI * 2.0;
+export const TAU: number = Math.PI * 2;
 
 /**
  * Half of pi (pi / 2).
  */
-export const HALF_PI: number = Math.PI / 2.0;
+export const HALF_PI: number = Math.PI / 2;
 
 /**
  * Multiply degrees by this constant to get radians.
  */
-export const DEG_TO_RAD: number = Math.PI / 180.0;
+export const DEG_TO_RAD: number = Math.PI / 180;
 
 /**
  * Multiply radians by this constant to get degrees.
  */
-export const RAD_TO_DEG: number = 180.0 / Math.PI;
+export const RAD_TO_DEG: number = 180 / Math.PI;

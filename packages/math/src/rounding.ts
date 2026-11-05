@@ -7,7 +7,7 @@
  * `ceilTo(7.0, 5.0)` -> `10.0`. When `step <= 0` the result is `value`.
  */
 export function ceilTo(value: number, step: number): number {
-  if (step <= 0.0) {
+  if (step <= 0) {
     return value;
   }
   return Math.ceil(value / step) * step;
@@ -20,7 +20,7 @@ export function ceilTo(value: number, step: number): number {
  * regardless of the sign of `value`. Throws when `divisor == 0`.
  */
 export function euclideanMod(value: number, divisor: number): number {
-  if (divisor === 0.0) {
+  if (divisor === 0) {
     throw new RangeError('euclideanMod: divisor must not be 0');
   }
   return ((value % divisor) + divisor) % divisor;
@@ -32,7 +32,7 @@ export function euclideanMod(value: number, divisor: number): number {
  * `floorTo(7.0, 5.0)` -> `5.0`. When `step <= 0` the result is `value`.
  */
 export function floorTo(value: number, step: number): number {
-  if (step <= 0.0) {
+  if (step <= 0) {
     return value;
   }
   return Math.floor(value / step) * step;
@@ -55,12 +55,12 @@ export function fract(value: number): number {
  * the result is `value`.
  */
 export function roundTo(value: number, step: number): number {
-  if (step <= 0.0) {
+  if (step <= 0) {
     return value;
   }
-  const magnitude = Math.sign(Math.abs(value) / step) * Math.round(Math.abs(Math.abs(value) / step)) * step;
-  if (magnitude === 0.0) {
-    return 0.0;
+  const magnitude = ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(Math.abs(value) / step) * step;
+  if (magnitude === 0) {
+    return 0;
   }
-  return value < 0.0 ? -magnitude : magnitude;
+  return value < 0 ? -magnitude : magnitude;
 }

@@ -31,17 +31,17 @@ export function floorPowerOfTwo(n: number): number {
  * the result is `min`.
  */
 export function quantize(value: number, steps: number, min: number, max: number): number {
-  if (steps <= 0.0 || min === max) {
+  if (steps <= 0 || min === max) {
     return min;
   }
   const t = (value - min) / (max - min);
-  const clamped = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
-  return min + ((Math.sign(clamped * steps) * Math.round(Math.abs(clamped * steps))) / steps) * (max - min);
+  const clamped = t < 0 ? 0 : t > 1 ? 1 : t;
+  return min + (((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(clamped * steps) / steps) * (max - min);
 }
 
 /**
  * Zero-aware sign: returns `1` for positive, `-1` for negative, `0` for zero.
  */
 export function sign(value: number): number {
-  return value > 0.0 ? 1.0 : value < 0.0 ? -1.0 : 0.0;
+  return value > 0 ? 1 : value < 0 ? -1 : 0;
 }

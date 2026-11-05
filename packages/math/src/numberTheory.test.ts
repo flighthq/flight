@@ -13,14 +13,14 @@ function assertApproxF64(actual: number, expected: number): void {
 
 describe('factorial', () => {
   it('returns 1 for 0', () => {
-    expect(factorial(0)).toEqual(1.0);
+    expect(factorial(0)).toEqual(1);
   });
   it('returns 1 for 1', () => {
-    expect(factorial(1)).toEqual(1.0);
+    expect(factorial(1)).toEqual(1);
   });
   it('computes common factorials', () => {
-    expect(factorial(5)).toEqual(120.0);
-    expect(factorial(10)).toEqual(3628800.0);
+    expect(factorial(5)).toEqual(120);
+    expect(factorial(10)).toEqual(3628800);
   });
   it('throws for negative integers', () => {
     crate.assertRangeError(() => {
@@ -56,14 +56,14 @@ describe('gcd', () => {
 
 describe('hypot2', () => {
   it('returns x squared plus y squared', () => {
-    expect(hypot2(3.0, 4.0)).toEqual(25.0);
+    expect(hypot2(3, 4)).toEqual(25);
   });
   it('returns 0 for zero inputs', () => {
-    expect(hypot2(0.0, 0.0)).toEqual(0.0);
+    expect(hypot2(0, 0)).toEqual(0);
   });
   it('matches hypot squared', () => {
-    const h = Math.sqrt(5.0 * 5.0 + 12.0 * 12.0);
-    assertApproxF64(hypot2(5.0, 12.0), h * h);
+    const h = Math.sqrt(5 * 5 + 12 * 12);
+    assertApproxF64(hypot2(5, 12), h * h);
   });
 });
 
