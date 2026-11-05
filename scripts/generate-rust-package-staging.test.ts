@@ -330,6 +330,57 @@ mod strict_tests {
     expect(run.stderr).toContain('unsupported Rust method call `.type_id()`');
   }, 120_000);
 
+  it('selects only referenced helpers from an explicitly owned crate-local test support wildcard', async () => {
+    rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'mod value;\npub mod contract;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(sourcePath, 'pub fn fixture_value() -> i32 { return 1; }\n');
+    const supportPath = join(crateRoot, 'tests', 'support.rs');
+    const testPath = join(crateRoot, 'tests', 'support_selection_test.rs');
+    writeFileSync(
+      supportPath,
+      `pub fn selected_helper() -> i32 { return 3; }
+pub fn shadowed_helper() -> i32 { return 99; }
+pub fn unused_unsupported(value: &dyn std::any::Any) -> bool {
+    return value.type_id() == std::any::TypeId::of::<u32>();
+}
+`,
+    );
+    writeFileSync(
+      testPath,
+      `use crate::support::*;
+
+#[test]
+fn selects_only_unshadowed_helpers() {
+    let shadowed_helper = 7;
+    assert_eq!(shadowed_helper, 7);
+    assert_eq!(selected_helper(), 3);
+}
+`,
+    );
+
+    try {
+      const run = await generateWhileScanning();
+
+      expect(run.code, run.stderr).toBe(0);
+      const test = readFileSync(join(packageRoot, 'src', 'supportSelection.test.ts'), 'utf8');
+      expect(test).toContain('function selectedHelper(): number');
+      expect(test).not.toContain('function shadowedHelper');
+      expect(test).not.toContain('unusedUnsupported');
+    } finally {
+      rmSync(testPath, { force: true });
+      rmSync(supportPath, { force: true });
+    }
+  }, 120_000);
+
   it('keeps the established TypeScript contract owner for a dependency re-export', async () => {
     rmSync(join(crateRoot, 'tests', 'strict_test.rs'), { force: true });
     writeFileSync(

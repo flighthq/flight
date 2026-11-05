@@ -5,7 +5,7 @@ use std::process::{self, Command};
 
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-internal-type-export <name> ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--test-support-source <rust-file> --test-support-module <crate-local-module> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -29,6 +29,8 @@ struct GenerateOptions {
     out: PathBuf,
     probe_target_native: bool,
     source: PathBuf,
+    test_support_modules: Vec<String>,
+    test_support_sources: Vec<PathBuf>,
     type_script_inline_string_unions: Vec<OwnedTypeScriptInlineStringUnion>,
     type_script_internal_type_exports: Vec<String>,
     type_script_default_null_option_parameters: Vec<OwnedTypeScriptNullableOptionParameter>,
@@ -389,6 +391,18 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .zip(&alias_modules)
                 .map(|(source, module)| flight_compiler::VitestAliasSource { source, module })
                 .collect::<Vec<_>>();
+            let test_support_sources = options
+                .test_support_sources
+                .iter()
+                .map(|path| {
+                    fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let test_support_source_refs = test_support_sources
+                .iter()
+                .zip(&options.test_support_modules)
+                .map(|(source, module)| flight_compiler::VitestSupportSource { source, module })
+                .collect::<Vec<_>>();
             let contract_module = options
                 .contract_module
                 .as_deref()
@@ -489,6 +503,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &type_script_default_null_option_parameters,
                 &type_script_nullable_option_parameters,
                 &type_script_nullable_option_returns,
+                &test_support_source_refs,
             )
         }
     }
@@ -553,6 +568,8 @@ fn parse_generate_options(
     let mut visibility_sources = Vec::new();
     let mut out = None;
     let mut source = None;
+    let mut test_support_modules = Vec::new();
+    let mut test_support_sources = Vec::new();
     let mut type_script_inline_string_unions = Vec::new();
     let mut type_script_internal_type_exports = Vec::new();
     let mut type_script_default_null_option_parameters = Vec::new();
@@ -628,6 +645,20 @@ fn parse_generate_options(
             "--source" => {
                 index += 1;
                 source = arguments.get(index).map(PathBuf::from);
+            }
+            "--test-support-module" => {
+                index += 1;
+                let module = arguments.get(index).cloned().ok_or_else(|| {
+                    format!("--test-support-module requires a crate-local module\n\n{USAGE}")
+                })?;
+                test_support_modules.push(module);
+            }
+            "--test-support-source" => {
+                index += 1;
+                let path = arguments
+                    .get(index)
+                    .ok_or_else(|| format!("--test-support-source requires a path\n\n{USAGE}"))?;
+                test_support_sources.push(PathBuf::from(path));
             }
             "--typescript-string-union" => {
                 index += 1;
@@ -856,9 +887,21 @@ fn parse_generate_options(
         }
         GenerateKind::Source | GenerateKind::Tests => {}
     }
+    if matches!(kind, GenerateKind::Source)
+        && (!test_support_sources.is_empty() || !test_support_modules.is_empty())
+    {
+        return Err(format!(
+            "test-support options are only valid for generate-tests\n\n{USAGE}"
+        ));
+    }
     if external_alias_sources.len() != external_alias_modules.len() {
         return Err(format!(
             "--external-alias-source and --external-alias-module must be provided the same number of times\n\n{USAGE}"
+        ));
+    }
+    if test_support_sources.len() != test_support_modules.len() {
+        return Err(format!(
+            "--test-support-source and --test-support-module must be provided the same number of times\n\n{USAGE}"
         ));
     }
     return Ok(GenerateOptions {
@@ -874,6 +917,8 @@ fn parse_generate_options(
         out: out.ok_or_else(|| format!("--out is required\n\n{USAGE}"))?,
         probe_target_native,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
+        test_support_modules,
+        test_support_sources,
         type_script_inline_string_unions,
         type_script_internal_type_exports,
         type_script_default_null_option_parameters,

@@ -2,6 +2,7 @@ use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptDefaultNullOptionParameter,
     TypeScriptInlineStringUnion, TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
+    VitestSupportSource,
     compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
     compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
     compile_typescript_with_options, compile_typescript_with_options_and_internal_type_exports,
@@ -18050,6 +18051,7 @@ mod blocked_reason {
             &[],
             &[],
             &[],
+            &[],
         )
         .unwrap();
 
@@ -19643,6 +19645,7 @@ fn reports_absent_geometry() {
             &[],
             &[],
             &returns,
+            &[],
         )
         .unwrap();
 
@@ -19697,6 +19700,7 @@ fn passes_each_absence_representation() {
             &[],
             &[],
             &parameters,
+            &[],
             &[],
         )
         .unwrap();
@@ -19757,6 +19761,7 @@ fn passes_each_absence_representation() {
             &[],
             &[],
             &parameters,
+            &[],
             &[],
             &[],
         )
@@ -22274,6 +22279,152 @@ fn ambiguous_foreign_wildcard_value() {
         assert_eq!(first, compile());
         assert!(first.contains("flight_geometry, flight_math"), "{first}");
         assert!(first.contains("use explicit Rust imports"), "{first}");
+    }
+
+    #[test]
+    fn resolves_only_referenced_helpers_from_an_owned_crate_local_support_wildcard() {
+        let support = r#"
+pub fn transitive_helper() -> i32 {
+    return 3;
+}
+
+pub fn used_helper() -> i32 {
+    return transitive_helper();
+}
+
+pub fn shadowed() -> i32 {
+    return 99;
+}
+
+pub fn unused_unsupported(value: &dyn std::any::Any) -> bool {
+    return value.type_id() == std::any::TypeId::of::<u32>();
+}
+"#;
+        let source = r#"
+use flight_example::*;
+use crate::support::*;
+
+#[test]
+fn uses_only_the_unshadowed_support_helper() {
+    let shadowed = 7;
+    assert_eq!(shadowed, 7);
+    assert_eq!(used_helper(), 3);
+}
+"#;
+        let support_sources = [VitestSupportSource {
+            source: support,
+            module: "support",
+        }];
+
+        let output = compile_vitest_with_options(
+            source,
+            "@flighthq/example/contract",
+            Some(""),
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &support_sources,
+        )
+        .unwrap();
+
+        assert!(output.contains("function usedHelper(): number"), "{output}");
+        assert!(
+            output.contains("function transitiveHelper(): number"),
+            "{output}"
+        );
+        assert!(!output.contains("function shadowed"), "{output}");
+        assert!(!output.contains("unusedUnsupported"), "{output}");
+    }
+
+    #[test]
+    fn refuses_owned_support_helpers_competing_with_a_foreign_wildcard() {
+        let support = "pub fn support_value() -> i32 { return 3; }\n";
+        let source = r#"
+use flight_example::*;
+use flight_geometry::*;
+use crate::support::*;
+
+#[test]
+fn reads_an_ambiguous_helper() {
+    assert_eq!(support_value(), 3);
+}
+"#;
+        let support_sources = [VitestSupportSource {
+            source: support,
+            module: "support",
+        }];
+        let compile = || {
+            compile_vitest_with_options(
+                source,
+                "@flighthq/example/contract",
+                Some(""),
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &support_sources,
+            )
+            .unwrap_err()
+            .to_string()
+        };
+
+        let first = compile();
+        assert_eq!(first, compile());
+        assert!(first.contains("test-support value `support_value`"), "{first}");
+        assert!(first.contains("foreign wildcard crates flight_geometry"), "{first}");
+    }
+
+    #[test]
+    fn preserves_an_explicit_foreign_import_shadowing_an_owned_support_export() {
+        let support = "pub fn support_value() -> i32 { return 3; }\n";
+        let source = r#"
+use flight_example::*;
+use flight_math::support_value;
+use crate::support::*;
+
+#[test]
+fn reads_the_explicit_owner() {
+    assert_eq!(support_value(), 3);
+}
+"#;
+        let support_sources = [VitestSupportSource {
+            source: support,
+            module: "support",
+        }];
+
+        let output = compile_vitest_with_options(
+            source,
+            "@flighthq/example/contract",
+            Some(""),
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &support_sources,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("import { supportValue } from '@flighthq/math/contract';"),
+            "{output}"
+        );
+        assert!(!output.contains("function supportValue"), "{output}");
     }
 
     #[test]

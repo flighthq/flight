@@ -1167,7 +1167,7 @@ pub(crate) fn validate_vitest_function_provenance(
     return Ok(());
 }
 
-pub(super) fn vitest_current_path_prefix(context: &HashSet<String>, local: &str) -> Option<String> {
+pub(crate) fn vitest_current_path_prefix(context: &HashSet<String>, local: &str) -> Option<String> {
     if marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER).contains(local) {
         return Some(local.to_string());
     }

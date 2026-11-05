@@ -128,6 +128,17 @@ pub struct VitestAliasSource<'a> {
     pub module: &'a str,
 }
 
+/// A crate-local test-support module whose public items may satisfy an explicit wildcard import.
+///
+/// The module identity is caller-owned proof: unlike production aliases, test-support sources are
+/// never part of the package contract and only the helpers a portable test actually references are
+/// emitted into that test.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VitestSupportSource<'a> {
+    pub source: &'a str,
+    pub module: &'a str,
+}
+
 /// A source construct that cannot yet be lowered mechanically.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompileError {
@@ -769,6 +780,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -785,6 +797,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
     type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
+    support_sources: &[VitestSupportSource<'_>],
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
     validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
@@ -795,12 +808,21 @@ fn compile_vitest_with_contract_alias_sources_internal(
     validate_type_script_nullable_option_parameters(type_script_nullable_option_parameters)?;
     validate_type_script_nullable_option_returns(type_script_nullable_option_returns)?;
     require_generated_source(source)?;
-    let program = model::parse_test_program(source)?;
+    let mut program = model::parse_test_program(source)?;
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
     let mut alias_programs = alias_sources
         .iter()
         .map(|alias_source| model::parse_program_lenient(alias_source.source))
         .collect::<Result<Vec<_>, _>>()?;
+    let support_programs = support_sources
+        .iter()
+        .map(|support_source| model::parse_program_lenient(support_source.source))
+        .collect::<Result<Vec<_>, _>>()?;
+    let support_program_refs = support_sources
+        .iter()
+        .zip(&support_programs)
+        .map(|(source, program)| (source.module, program))
+        .collect::<Vec<_>>();
     // A test reads a factory's result as the record it is: an identity alias such as
     // `NonEntityCreateResult<T>` classifies the production signature and is `T` for every value a test
     // binds. Tests emit no production signatures, so the alias peels here, before return provenance.
@@ -963,6 +985,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
         contract_module,
         alias_sources.iter().map(|source| source.module),
     );
+    vitest::resolve_test_support_wildcards(&mut program, &support_program_refs, &context)?;
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
     typescript::insert_vitest_dependency_export_name_context(
@@ -1091,6 +1114,7 @@ pub fn compile_vitest_with_external_alias_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -1106,6 +1130,7 @@ pub fn compile_vitest_with_module_alias_sources(
         contract_module,
         None,
         alias_sources,
+        &[],
         &[],
         &[],
         &[],
@@ -1143,6 +1168,7 @@ pub fn compile_vitest_with_visibility_sources(
         &[],
         &[],
         &[],
+        &[],
     );
 }
 
@@ -1163,6 +1189,7 @@ pub fn compile_vitest_with_options(
     type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
     type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
+    support_sources: &[VitestSupportSource<'_>],
 ) -> Result<String, CompileError> {
     return compile_vitest_with_contract_alias_sources_internal(
         source,
@@ -1177,6 +1204,7 @@ pub fn compile_vitest_with_options(
         type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
         type_script_nullable_option_returns,
+        support_sources,
     );
 }
 

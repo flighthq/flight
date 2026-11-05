@@ -1,12 +1,12 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
 
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
-use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
+use syn::{BinOp, Expr, Fields, FnArg, ItemFn, ItemUse, Pat, ReturnType, Stmt, Token, UseTree};
 
-use crate::model::{TestCase, TestProgram, TestSuite};
+use crate::model::{Program, TestCase, TestProgram, TestSuite};
 use crate::typescript::PANIC_MESSAGE_HELPER_MARKER;
 use crate::typescript::{
     begin_option_if, begin_option_while, emit_expression, emit_expression_for_type,
@@ -18,9 +18,10 @@ use crate::typescript::{
     is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
     is_vitest_struct, js_string_literal, lexical_pattern_context, numeric_literal_spelling,
     option_scrutinee_is_rereadable, snake_to_lower_camel, type_script_type_aliases,
+    provenance_import_rules, ProvenanceImportRule,
     update_vitest_local_function_context, update_vitest_struct_local_context,
     validate_vitest_function_provenance, vitest_function_path_binding_name,
-    vitest_struct_path_binding_name, write_indent,
+    vitest_current_path_prefix, vitest_struct_path_binding_name, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -454,6 +455,276 @@ fn collect_contract_symbols(
     external_modules.sort();
     external_modules.dedup();
     return (symbols, type_symbols, external_modules);
+}
+
+fn crate_local_wildcard_module(item_use: &ItemUse) -> Option<String> {
+    fn collect(tree: &UseTree, path: &mut Vec<String>) -> Option<String> {
+        return match tree {
+            UseTree::Path(segment) => {
+                path.push(segment.ident.to_string());
+                let module = collect(&segment.tree, path);
+                path.pop();
+                module
+            }
+            UseTree::Glob(_) if path.first().is_some_and(|root| root == "crate") && path.len() > 1 => {
+                Some(path[1..].join("::"))
+            }
+            UseTree::Glob(_)
+            | UseTree::Group(_)
+            | UseTree::Name(_)
+            | UseTree::Rename(_) => None,
+        };
+    }
+
+    return collect(&item_use.tree, &mut Vec::new());
+}
+
+fn explicit_import_names<'a>(uses: impl Iterator<Item = &'a ItemUse>) -> BTreeSet<String> {
+    fn collect(tree: &UseTree, names: &mut BTreeSet<String>) {
+        match tree {
+            UseTree::Name(name) if name.ident != "self" => {
+                names.insert(name.ident.to_string());
+            }
+            UseTree::Rename(rename) => {
+                names.insert(rename.rename.to_string());
+            }
+            UseTree::Path(path) => collect(&path.tree, names),
+            UseTree::Group(group) => {
+                for tree in &group.items {
+                    collect(tree, names);
+                }
+            }
+            UseTree::Glob(_) | UseTree::Name(_) => {}
+        }
+    }
+
+    let mut names = BTreeSet::new();
+    for item_use in uses {
+        collect(&item_use.tree, &mut names);
+    }
+    return names;
+}
+
+fn test_support_item_is_visible(visibility: &syn::Visibility) -> bool {
+    return !matches!(visibility, syn::Visibility::Inherited);
+}
+
+/// Resolves an explicitly-owned `crate::<module>::*` test-support import into only the helpers the
+/// portable test actually reads. The ordinary contract-symbol collector supplies lexical shadowing:
+/// parameters, locals, closures, patterns, and test-local helpers never become support candidates.
+pub(crate) fn resolve_test_support_wildcards(
+    program: &mut TestProgram,
+    support_sources: &[(&str, &Program)],
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    let mut sources = BTreeMap::new();
+    for (module, support) in support_sources {
+        if module.is_empty()
+            || module
+                .split("::")
+                .any(|segment| syn::parse_str::<syn::Ident>(segment).is_err())
+        {
+            return Err(compile_error(format!(
+                "portable test-support module owner `{module}` is not a valid crate-local module path"
+            )));
+        }
+        if sources.insert((*module).to_string(), *support).is_some() {
+            return Err(compile_error(format!(
+                "portable test-support module `{module}` has more than one explicit source owner"
+            )));
+        }
+    }
+    if sources.is_empty() {
+        return Ok(());
+    }
+
+    let test_uses = program
+        .uses
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| &suite.uses))
+        .collect::<Vec<_>>();
+    let active_modules = test_uses
+        .iter()
+        .filter_map(|item_use| crate_local_wildcard_module(item_use))
+        .filter(|module| sources.contains_key(module))
+        .collect::<BTreeSet<_>>();
+    if active_modules.is_empty() {
+        return Ok(());
+    }
+
+    let explicit_names = explicit_import_names(test_uses.iter().copied());
+    let mut foreign_wildcards = BTreeSet::new();
+    for rule in provenance_import_rules(test_uses.iter().copied(), None) {
+        let ProvenanceImportRule::Wildcard { module } = rule else {
+            continue;
+        };
+        if active_modules.contains(&module) {
+            continue;
+        }
+        let root = module.split("::").next().unwrap_or_default();
+        if vitest_current_path_prefix(context, root).is_none() {
+            foreign_wildcards.insert(root.to_string());
+        }
+    }
+
+    let mut value_items = BTreeMap::<String, Vec<(String, TestSupportValue)>>::new();
+    let mut type_items = BTreeMap::<String, Vec<(String, TestSupportType)>>::new();
+    for module in &active_modules {
+        let support = sources
+            .get(module)
+            .expect("an active support module has an explicit source owner");
+        for function in &support.functions {
+            if test_support_item_is_visible(&function.vis) {
+                value_items
+                    .entry(function.sig.ident.to_string())
+                    .or_default()
+                    .push((module.clone(), TestSupportValue::Function(function.clone())));
+            }
+        }
+        for constant in &support.constants {
+            if test_support_item_is_visible(&constant.vis) {
+                value_items
+                    .entry(constant.ident.to_string())
+                    .or_default()
+                    .push((module.clone(), TestSupportValue::Constant(constant.clone())));
+            }
+        }
+        for structure in &support.structs {
+            if test_support_item_is_visible(&structure.vis) {
+                type_items
+                    .entry(structure.ident.to_string())
+                    .or_default()
+                    .push((module.clone(), TestSupportType::Structure(structure.clone())));
+            }
+        }
+        for type_alias in &support.type_aliases {
+            if test_support_item_is_visible(&type_alias.vis) {
+                type_items
+                    .entry(type_alias.ident.to_string())
+                    .or_default()
+                    .push((module.clone(), TestSupportType::Alias(type_alias.clone())));
+            }
+        }
+        for rust_enum in &support.enums {
+            if test_support_item_is_visible(&rust_enum.vis) {
+                type_items
+                    .entry(rust_enum.ident.to_string())
+                    .or_default()
+                    .push((module.clone(), TestSupportType::UnsupportedEnum));
+            }
+        }
+    }
+
+    let mut selected_values = BTreeSet::new();
+    let mut selected_types = BTreeSet::new();
+    let mut selected_modules = BTreeSet::new();
+    loop {
+        let (referenced_values, referenced_types, _) = collect_contract_symbols(program, context);
+        let mut changed = false;
+        for name in referenced_values {
+            if explicit_names.contains(&name) || selected_values.contains(&name) {
+                continue;
+            }
+            let Some(candidates) = value_items.get(&name) else {
+                continue;
+            };
+            if is_vitest_own_public(context, &name) || candidates.len() != 1 {
+                let owners = candidates
+                    .iter()
+                    .map(|(module, _)| module.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                return Err(compile_error(format!(
+                    "portable test-support value `{name}` is ambiguous between crate contract or support owners {owners}; import it explicitly"
+                )));
+            }
+            if !foreign_wildcards.is_empty() {
+                return Err(compile_error(format!(
+                    "portable test-support value `{name}` is ambiguous with foreign wildcard crates {}; import the used items explicitly",
+                    foreign_wildcards.iter().cloned().collect::<Vec<_>>().join(", ")
+                )));
+            }
+            let (module, item) = &candidates[0];
+            match item {
+                TestSupportValue::Function(function) => program.helpers.push(function.clone()),
+                TestSupportValue::Constant(constant) => program.constants.push(constant.clone()),
+            }
+            selected_values.insert(name);
+            selected_modules.insert(module.clone());
+            changed = true;
+        }
+        for name in referenced_types {
+            if explicit_names.contains(&name) || selected_types.contains(&name) {
+                continue;
+            }
+            let Some(candidates) = type_items.get(&name) else {
+                continue;
+            };
+            if is_vitest_own_public(context, &name) || candidates.len() != 1 {
+                let owners = candidates
+                    .iter()
+                    .map(|(module, _)| module.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                return Err(compile_error(format!(
+                    "portable test-support type `{name}` is ambiguous between crate contract or support owners {owners}; import it explicitly"
+                )));
+            }
+            if !foreign_wildcards.is_empty() {
+                return Err(compile_error(format!(
+                    "portable test-support type `{name}` is ambiguous with foreign wildcard crates {}; import the used items explicitly",
+                    foreign_wildcards.iter().cloned().collect::<Vec<_>>().join(", ")
+                )));
+            }
+            let (module, item) = &candidates[0];
+            match item {
+                TestSupportType::Structure(structure) => program.structs.push(structure.clone()),
+                TestSupportType::Alias(type_alias) => program.type_aliases.push(type_alias.clone()),
+                TestSupportType::UnsupportedEnum => {
+                    return Err(compile_error(format!(
+                        "portable test-support enum `{name}` cannot be emitted as a local test helper type"
+                    )));
+                }
+            }
+            selected_types.insert(name);
+            selected_modules.insert(module.clone());
+            changed = true;
+        }
+        if !changed {
+            break;
+        }
+    }
+
+    program.uses.retain(|item_use| {
+        crate_local_wildcard_module(item_use)
+            .is_none_or(|module| !active_modules.contains(&module))
+    });
+    for suite in &mut program.suites {
+        suite.uses.retain(|item_use| {
+            crate_local_wildcard_module(item_use)
+                .is_none_or(|module| !active_modules.contains(&module))
+        });
+    }
+    for module in selected_modules {
+        let support = sources
+            .get(&module)
+            .expect("a selected support module has an explicit source owner");
+        program.uses.extend(support.uses.iter().cloned());
+    }
+    return Ok(());
+}
+
+#[derive(Clone)]
+enum TestSupportValue {
+    Constant(syn::ItemConst),
+    Function(ItemFn),
+}
+
+#[derive(Clone)]
+enum TestSupportType {
+    Alias(syn::ItemType),
+    Structure(syn::ItemStruct),
+    UnsupportedEnum,
 }
 
 fn collect_declared_names(function: &ItemFn) -> HashSet<String> {

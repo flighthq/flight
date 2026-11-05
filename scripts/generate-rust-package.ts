@@ -489,6 +489,7 @@ try {
         [...new Set([...aliasSources, ...nullableParameterOwners])],
         targetNativeSources.filter((candidate) => !nullableParameterOwners.includes(candidate)),
         [
+          ...testSupportArguments(rustPath),
           ...representationArguments,
           ...packageTypeScriptTypeAliasArguments(),
           ...packageTypeScriptNullableOptionFieldArguments(),
@@ -701,6 +702,7 @@ function probeNativeSource(
     ...entityArguments(command, source),
     ...(command === 'generate' ? ['--lenient'] : []),
     ...namedRepresentationArguments,
+    ...(command === 'generate-tests' ? testSupportArguments(reportedSource) : []),
     ...typeAliasArguments,
     ...nullableOptionFieldArguments,
     ...nullableOptionParameterArguments,
@@ -1762,6 +1764,17 @@ function testSourceWithSupport(rustPath: string, out: string): string {
   const testSource = source.replace(/^use crate::common(?:::[^;]+)?;\r?\n/gm, '');
   writeFileSync(out, `${readFileSync(supportPath, 'utf8')}\n${testSource}`);
   return out;
+}
+
+function testSupportArguments(rustPath: string): string[] {
+  const source = readFileSync(rustPath, 'utf8');
+  if (!/^use\s+crate::support::\*;\s*$/m.test(source)) return [];
+
+  const supportPath = join(dirname(rustPath), 'support.rs');
+  if (!existsSync(supportPath)) {
+    throw new Error(`${relative(repositoryRoot, rustPath)} imports crate::support::* but tests/support.rs is missing`);
+  }
+  return ['--test-support-source', supportPath, '--test-support-module', 'support'];
 }
 
 function tsxPath(): string {
