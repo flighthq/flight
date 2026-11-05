@@ -1,10 +1,11 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Camera2D } from './Camera2D.ts';
 import type { Entity } from './Entity.ts';
 import type { HierarchyNodeAny } from './HierarchyNode.ts';
 import type { Rectangle } from './Rectangle.ts';
 import type { Scene2D } from './Scene2D.ts';
 import type { SelectionState } from './SelectionState.ts';
-import type { Signal } from './Signal.ts';
 import type { Vector2Like } from './Vector2.ts';
 
 declare const GizmoStateNodeTypeKey: unique symbol;

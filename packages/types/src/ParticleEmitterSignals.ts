@@ -1,5 +1,6 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
 /** Payload of `onParticleDeath`: last-known world-space position. 2D emitters pass z = 0. */
 export interface ParticleDeathEvent {
   x: number;

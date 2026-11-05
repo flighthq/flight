@@ -1,6 +1,7 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity, Kind } from './Entity.ts';
 import type { NodeAny } from './Node.ts';
-import type { Signal } from './Signal.ts';
 
 // A recorded, reversible intent — PLAIN KIND-TAGGED DATA, never an object carrying execute/undo methods.
 //

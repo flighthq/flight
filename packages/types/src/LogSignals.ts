@@ -1,6 +1,7 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
 import type { LogEntry } from './Log.ts';
-import type { Signal } from './Signal.ts';
 
 // Log emission event entity. Enable delivery with enableLogSignals; the signals stay inert until
 // then. onLogEntry fires for every emitted entry; onLogError fires only for Error-level entries.

@@ -1,9 +1,10 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
 import type { GuiControllerOptions } from './GuiController.ts';
 import type { InputKeyboardData } from './InputKeyboardData.ts';
 import type { Node2D } from './Node2D.ts';
 import type { RichText } from './RichText.ts';
-import type { Signal } from './Signal.ts';
 import type { TextInputManager, TextInputSource } from './TextInputManager.ts';
 
 declare const TextInputControllerTypeKey: unique symbol;

@@ -1,6 +1,7 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
 import type { HostImageSource } from './HostImageSource.ts';
-import type { Signal } from './Signal.ts';
 
 export type VideoChannelState = 'complete' | 'paused' | 'playing' | 'stopped';
 

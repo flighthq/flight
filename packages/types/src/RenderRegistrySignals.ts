@@ -1,5 +1,6 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Kind } from './Entity.ts';
-import type { Signal } from './Signal.ts';
 
 // Numeric registry identifiers keep diagnostic policy and human-readable messages out of render core.
 // Guard modules translate these values only after the opt-in signal seam is enabled. The values are

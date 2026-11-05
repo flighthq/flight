@@ -1,6 +1,7 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
 import type { ResourceLoadReport } from './ResourceLoadReport.ts';
-import type { Signal } from './Signal.ts';
 
 export interface ResourceLoader extends Entity {
   onCancel: Signal<void>;

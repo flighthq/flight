@@ -1,7 +1,8 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Accelerator } from './Accelerator.ts';
 import type { AcceleratorParseError } from './AcceleratorParseError.ts';
 import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
 
 // One caller-owned global-hotkey registration. The normalized accelerator is durable value data; the
 // signal, native subscription token, provider origin, and attachment state are runtime-only.

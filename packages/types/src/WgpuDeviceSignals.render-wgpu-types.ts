@@ -1,4 +1,4 @@
-import type { Signal } from './Signal.ts';
+import type { Signal } from '@flighthq/signals/contract';
 
 // Loss notification for one physical GPUDevice, armed by enableWgpuDeviceSignals. The group lives on
 // the device tier, not on a render state, because a device is shared by every state derived from it

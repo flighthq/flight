@@ -1,8 +1,9 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { AnimationClip } from './AnimationClip.ts';
 import type { AnimationClipEvent } from './AnimationClipEvent.ts';
 import type { AnimationLoopMode } from './AnimationLoopMode.ts';
 import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
 
 // The explicit time driver for an AnimationClip — the app advances it each frame
 // (advanceAnimationPlayer); nothing auto-runs. `time` is the playhead in seconds, `speed` scales the

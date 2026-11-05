@@ -1,8 +1,8 @@
 import type { MenuItemTemplate } from '@flighthq/menu/contract';
+import type { Signal } from '@flighthq/signals/contract';
 
 import type { Entity } from './Entity.ts';
 import type { RectangleLike } from './Rectangle.ts';
-import type { Signal } from './Signal.ts';
 import type { Vector2Like } from './Vector2.ts';
 
 // Host construction receives this target explicitly. A native host never reads process.platform or

@@ -1,4 +1,5 @@
-import type { Signal } from './Signal.ts';
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { TimelineFrameEvent } from './TimelineFrameEvent.ts';
 
 // Per-frame lifecycle signals for a Timeline, armed by enableTimelineSignals. The per-frame signals

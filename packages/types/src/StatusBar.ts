@@ -1,5 +1,6 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
 
 // Mobile status bar seam. Operations consume narrow explicit Host capability slots. Web owns only the
 // theme-color command; native hosts may supply the independent snapshot, style, visibility, overlay,

@@ -1,4 +1,4 @@
-import type { Signal } from './Signal.ts';
+import type { Signal } from '@flighthq/signals/contract';
 export interface LoadProgress {
   readonly url: string;
   readonly loaded: number;

@@ -1,6 +1,7 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
 import type { NodeAny } from './Node.ts';
-import type { Signal } from './Signal.ts';
 
 export interface NodeSignals extends Entity {
   onChildAdded: Signal<NodeAny>;

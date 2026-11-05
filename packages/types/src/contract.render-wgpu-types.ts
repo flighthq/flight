@@ -30,7 +30,7 @@ export type { SamplerLike } from './Sampler.ts';
 export type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
 export type { Scene3DLightsLike } from './Scene3DLights.ts';
 export type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
-export type { Signal } from './Signal.ts';
+export type { Signal } from '@flighthq/signals/contract';
 export type { NativeSurfaceHandle, Surface } from './Surface.ts';
 export type { TextureColorSpace, TextureLike } from './Texture.ts';
 export type { TextureContainerFormat } from './TextureContainerFormat.ts';

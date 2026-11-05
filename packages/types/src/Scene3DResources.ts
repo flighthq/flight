@@ -1,3 +1,5 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { EasingFunction } from './EasingFunction.ts';
 import type { Entity, Kind } from './Entity.ts';
 import type { GltfCoreFeatureHandler, GltfExtensionHandler } from './GltfExtension.ts';
@@ -8,7 +10,6 @@ import type { Material } from './Material.ts';
 import type { PbrExtension } from './PbrExtension.ts';
 import type { ResourceLoader } from './ResourceLoader.ts';
 import type { Scene3D } from './Scene3D.ts';
-import type { Signal } from './Signal.ts';
 import type { Texture } from './Texture.ts';
 import type { TextureSource } from './TextureSource.ts';
 

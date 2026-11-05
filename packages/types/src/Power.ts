@@ -1,7 +1,8 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
 import type { HostPowerCapabilities } from './Host.ts';
 import type { PowerBatteryHealth } from './PowerBatteryHealth.ts';
-import type { Signal } from './Signal.ts';
 
 // System idle state at a given inactivity threshold, or 'Unknown' when the host cannot report it.
 export type PowerIdleState = 'Active' | 'Idle' | 'Unknown';

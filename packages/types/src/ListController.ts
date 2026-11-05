@@ -1,8 +1,9 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
 import type { GuiControllerOptions } from './GuiController.ts';
 import type { Node2D } from './Node2D.ts';
 import type { ScrollBarController } from './ScrollBarController.ts';
-import type { Signal } from './Signal.ts';
 
 declare const ListControllerTypeKey: unique symbol;
 

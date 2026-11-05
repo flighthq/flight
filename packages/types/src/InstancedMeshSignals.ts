@@ -1,5 +1,6 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
 
 // Opt-in observation of an InstancedMesh's instance list, enabled per node by
 // enableInstancedMeshSignals and costing nothing until it is.

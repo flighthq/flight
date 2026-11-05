@@ -1,5 +1,6 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { Entity } from './Entity.ts';
-import type { Signal } from './Signal.ts';
 
 export interface ResourceLoaderItemSignals extends Entity {
   onItemComplete: Signal<readonly [string, unknown]>;

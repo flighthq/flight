@@ -1,10 +1,11 @@
+import type { Signal } from '@flighthq/signals/contract';
+
 import type { AudioDecoderRegistry, AudioResourceFetch, AudioResourceReference } from './AudioResourceReference.ts';
 import type { HostAudioDecodeCapabilities } from './HostAudioDecode.ts';
 import type { ImageDecodeFallback } from './ImageDecoder.ts';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference.ts';
 import type { Node2D } from './Node2D.ts';
 import type { Scene2DDocument, Scene2DSlotReference } from './Scene2DDocument.ts';
-import type { Signal } from './Signal.ts';
 
 export interface Scene2DDocumentFetchProgress {
   loaded: number;

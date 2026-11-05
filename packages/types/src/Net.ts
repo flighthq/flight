@@ -1,4 +1,4 @@
-import type { Signal } from './Signal.ts';
+import type { Signal } from '@flighthq/signals/contract';
 
 // HTTP(S) transport seam — the Flight home for what OpenFL/Lime expose as URLLoader/URLRequest.
 // Free functions in @flighthq/net delegate to the active HostNetCapability (a fetch-based web default, or a
