@@ -17020,9 +17020,10 @@ pub fn empty_string() -> String {
         assert!(output.contains(
             "return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index));"
         ));
-        assert!(output.contains(
-            "return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index)).length;"
-        ));
+        assert!(
+            output.contains("return value.length;"),
+            "encode_utf16().count() should simplify to .length: {output}"
+        );
         assert!(output.contains("return values.filter((value) => value % 2 === 0).length;"));
         assert!(output.contains("return value.slice(start, end);"));
         assert!(output.contains("return '';"));
@@ -24604,9 +24605,7 @@ mod write_easing_samples {
         assert!(output.contains("writeEasingSamples(out, ease);"));
         assert!(output.contains("const samples = [0.0, 0.5, 1.0];"));
         assert!(output.contains("readEasingSamples(samples);"));
-        assert!(output.contains(
-            "const measure = (text: string) => Array.from({ length: text.length }, (_, index) => text.charCodeAt(index)).length;"
-        ));
+        assert!(output.contains("const measure = (text: string) => text.length;"));
         assert!(output.contains("measureText(measure);"));
         assert!(!output.contains("const samples = new Float32Array"));
     }

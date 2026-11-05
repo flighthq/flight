@@ -20683,7 +20683,15 @@ fn emit_method_call(
             Ok(format!("{receiver}.join('')"))
         }
         "collect" if arguments.is_empty() => Ok(receiver),
-        "count" if arguments.is_empty() => Ok(format!("{receiver}.length")),
+        "count" if arguments.is_empty() => {
+            if let Expr::MethodCall(inner) = call.receiver.as_ref() {
+                if inner.method == "encode_utf16" && inner.args.is_empty() {
+                    let string = emit_expression(&inner.receiver, entities)?;
+                    return Ok(format!("{string}.length"));
+                }
+            }
+            Ok(format!("{receiver}.length"))
+        }
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
         "contains_key" if arguments.len() == 1 => Ok(format!("{receiver}.has({})", arguments[0])),
         "dedup" if arguments.is_empty() => Ok(format!(
