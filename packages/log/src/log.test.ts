@@ -1,17 +1,7 @@
 import { allocateEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
-import type {
-  BufferedLogSink,
-  LogContext,
-  LogData,
-  LogEntry,
-  LogSignals,
-  LogSpan,
-  MemoryLogSink,
-  RateLimitedLogSink,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey, LogLevel } from '@flighthq/types/contract';
 
 import { createConsoleCaptureSink } from './consoleLogSink.ts';
 import type { LogState } from './log.ts';
@@ -82,6 +72,17 @@ import {
   setLogSink,
   startLogTimer,
 } from './log.ts';
+import type {
+  BufferedLogSink,
+  LogContext,
+  LogData,
+  LogEntry,
+  LogSignals,
+  LogSpan,
+  MemoryLogSink,
+  RateLimitedLogSink,
+} from './types.ts';
+import { LogLevel } from './types.ts';
 
 function contextOf(channel: string | null, fields: Readonly<Record<string, unknown>> = {}): LogContext {
   const context = createLogContext();

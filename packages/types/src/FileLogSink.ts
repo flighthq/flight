@@ -1,17 +1,5 @@
-import type { Entity } from './Entity.ts';
-import type { LogSink, LogTransportDestroyOutcome, LogTransportFlushOutcome } from './Log.ts';
+// Log contracts are owned by `@flighthq/log`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-/**
- * Owned file-sink entity returned by createFileLogSink. Install `sink` with addLogSink and await
- * destroyFileLogSink to stop admission, unregister it, flush its pinned transport, and release it.
- */
-export interface FileLogSink extends Entity {
-  readonly sink: LogSink;
-}
-
-/** The preserved flush and destroy results for terminal FileLogSink teardown. */
-export interface FileLogSinkDestroyOutcome {
-  readonly reason: 'destroyed' | 'already-destroyed' | 'operation-failed';
-  readonly flush: LogTransportFlushOutcome;
-  readonly destroy: LogTransportDestroyOutcome;
-}
+/** @deprecated Import from `@flighthq/log/contract`. */
+export type { FileLogSink, FileLogSinkDestroyOutcome } from '@flighthq/log/contract';

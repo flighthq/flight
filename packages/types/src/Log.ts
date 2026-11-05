@@ -1,110 +1,31 @@
-import type { Entity } from './Entity.ts';
+// Log contracts are owned by `@flighthq/log`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-// Severity doubles as a verbosity threshold. Console output shows an entry when the configured
-// console level is at or above the entry's level (so Error surfaces first, Verbose only at the top);
-// None disables console output. The capture sink, by contrast, receives every level regardless of
-// the console threshold — the machine record is always complete; the console is the human-facing
-// subset. See @flighthq/log.
-export enum LogLevel {
-  None = 0,
-  Error = 1,
-  Warn = 2,
-  Info = 3,
-  Debug = 4,
-  Verbose = 5,
-}
-
-// A log payload: a plain message string, or a structured record for machine-readable capture.
-export type LogData = string | Readonly<Record<string, unknown>>;
-
-// A bound logging context: a channel plus base fields merged into every entry emitted through it.
-// createLogContext returns an empty context to assign; createChildLogContext derives one. Consumed by
-// logWith and the *With wrappers.
-export interface LogContext extends Entity {
-  channel: string | null;
-  fields: Readonly<Record<string, unknown>>;
-}
-
-// A deferred log payload. The thunk is invoked only when the entry passes the level gate, so a
-// suppressed verbose call allocates nothing.
-export type LogDataProvider = () => LogData;
-
-// Renders an entry to a single line of text (JSON envelope or human-readable). Used by sinks and
-// transports.
-export type LogFormatter = (entry: Readonly<LogEntry>) => string;
-
-// A named tracing span — a plain value, inert until enterLogSpan. While active, its fields merge
-// into every emitted entry (lower priority than the entry's own fields).
-// `id` comes from the owning LogState and is what exitLogSpan matches on.
-export interface LogSpan extends Entity {
-  id: number;
-  name: string;
-  fields: Readonly<Record<string, unknown>>;
-  channel: string | null;
-}
-
-// A running timer started with startLogTimer. Pass to endLogTimer to record elapsed time.
-// `startedAt` is a high-resolution timestamp in milliseconds.
-export interface LogTimer {
-  label: string;
-  channel: string | null;
-  startedAt: number;
-}
-
-/** The FIFO admission result returned synchronously for one complete log line. */
-export type LogTransportWriteOutcome =
-  | { readonly reason: 'accepted' }
-  | { readonly reason: 'backpressure'; readonly retryAfterMs?: number }
-  | { readonly reason: 'destroyed' }
-  | { readonly reason: 'operation-failed'; readonly message: string };
-
-/** The strongest delivery boundary reached by every accepted line covered by a successful flush. */
-export type LogTransportDeliveryBoundary =
-  | 'process-buffer'
-  | 'operating-system'
-  | 'durable-storage'
-  | 'remote-acknowledged';
-
-/** The result of settling all lines accepted before the flush call against a named delivery boundary. */
-export type LogTransportFlushOutcome =
-  | { readonly reason: 'drained'; readonly delivery: LogTransportDeliveryBoundary }
-  | { readonly reason: 'destroyed' }
-  | { readonly reason: 'operation-failed'; readonly message: string };
-
-/** The terminal result of releasing a transport's owned resource. */
-export type LogTransportDestroyOutcome =
-  | { readonly reason: 'destroyed' }
-  | { readonly reason: 'already-destroyed' }
-  | { readonly reason: 'operation-failed'; readonly message: string };
-
-/**
- * A configured, line-oriented destination owned by one FileLogSink.
- *
- * `write` is a synchronous admission method. An `accepted` result means the complete supplied line
- * entered this transport's FIFO in call order; it does not claim persistence or any external delivery.
- * Other results mean that line was not admitted. `flush` settles every line accepted before that call
- * and names the strongest boundary reached without implying a stronger one. `destroy` is awaited,
- * terminal, and idempotent; writes after teardown report `destroyed`.
- */
-export interface LogTransport extends Entity {
-  write(line: string): LogTransportWriteOutcome;
-  flush(): Promise<LogTransportFlushOutcome>;
-  destroy(): Promise<LogTransportDestroyOutcome>;
-}
-
-// One emitted log entry. `channel` is a free categorization tag (for example 'batch', 'shader',
-// 'user') used to filter captured output; null when uncategorized. `timestampMs` is the caller's
-// clock reading at emit time, injected rather than sampled, so formatters and rate limits read it
-// instead of a hidden clock.
-export interface LogEntry {
-  level: LogLevel;
-  channel: string | null;
-  data: LogData;
-  timestampMs: number;
-}
-
-// Receives every emitted entry regardless of the console verbosity threshold. The capture harness
-// installs one to record structured output; tests install one to assert. A free function (not a
-// class) so it stays trivially swappable and portable. Installed via setLogSink in
-// @flighthq/log.
-export type LogSink = (entry: Readonly<LogEntry>) => void;
+// A structural copy, not a re-export: a core package may not import `@flighthq/log` values outside its
+// guard modules. `LogLevel` is a plain numeric const object in both places, so the two are interchangeable.
+/** @deprecated Import `LogLevel` from `@flighthq/log/contract`. */
+export const LogLevel = {
+  None: 0,
+  Error: 1,
+  Warn: 2,
+  Info: 3,
+  Debug: 4,
+  Verbose: 5,
+} as const;
+export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
+/** @deprecated Import from `@flighthq/log/contract`. */
+export type {
+  LogData,
+  LogContext,
+  LogDataProvider,
+  LogFormatter,
+  LogSpan,
+  LogTimer,
+  LogTransportWriteOutcome,
+  LogTransportDeliveryBoundary,
+  LogTransportFlushOutcome,
+  LogTransportDestroyOutcome,
+  LogTransport,
+  LogEntry,
+  LogSink,
+} from '@flighthq/log/contract';

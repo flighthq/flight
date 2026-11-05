@@ -1,11 +1,5 @@
-import type { Signal } from '@flighthq/signals/contract';
+// Log contracts are owned by `@flighthq/log`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-import type { Entity } from './Entity.ts';
-import type { LogEntry } from './Log.ts';
-
-// Log emission event entity. Enable delivery with enableLogSignals; the signals stay inert until
-// then. onLogEntry fires for every emitted entry; onLogError fires only for Error-level entries.
-export interface LogSignals extends Entity {
-  onLogEntry: Signal<Readonly<LogEntry>>;
-  onLogError: Signal<Readonly<LogEntry>>;
-}
+/** @deprecated Import from `@flighthq/log/contract`. */
+export type { LogSignals } from '@flighthq/log/contract';

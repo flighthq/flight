@@ -1,3 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
+import type { LogState } from './log.ts';
+import { createJsonLogFormatter, removeLogSink } from './log.ts';
 import type {
   FileLogSink,
   FileLogSinkDestroyOutcome,
@@ -7,11 +11,7 @@ import type {
   LogTransport,
   LogTransportDestroyOutcome,
   LogTransportFlushOutcome,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
-import type { LogState } from './log.ts';
-import { createJsonLogFormatter, removeLogSink } from './log.ts';
+} from './types.ts';
 
 // A TS-only companion of the log module (declared on crates/flight-log/src/log.rs): the transport's
 // lifecycle is Promise-based, which the Rust contract does not model.

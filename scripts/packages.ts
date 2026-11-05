@@ -245,6 +245,24 @@ function getStaticModuleSpecifiers(filePath: string): string[] {
   ];
 }
 
+// Module specifiers that survive type erasure: an import or re-export with at least one value entry (or a
+// bare side-effect import). Type-only statements cannot add a module to the runtime graph.
+function getRuntimeModuleSpecifiers(filePath: string): string[] {
+  const parsed = getCheckedOxcSource(filePath);
+  if (parsed === null) return [];
+  const { module } = parsed;
+  return [
+    ...module.staticImports
+      .filter((statement) => statement.entries.length === 0 || statement.entries.some((entry) => !entry.isType))
+      .map((statement) => statement.moduleRequest.value),
+    ...module.staticExports.flatMap((statement) =>
+      statement.entries.flatMap((entry) =>
+        entry.moduleRequest === null || entry.isType ? [] : [entry.moduleRequest.value],
+      ),
+    ),
+  ];
+}
+
 function getModuleSpecifiers(filePath: string): string[] {
   const parsed = getCheckedOxcSource(filePath);
   if (parsed === null) return [];
@@ -288,10 +306,12 @@ function scanLocalImportsByFile(files: string[]): Map<string, string[]> {
   return byFile;
 }
 
-function scanFlightImportsByFile(files: string[]): Map<string, string[]> {
+// The core guard check only cares about runtime imports: a type-only `@flighthq/log` import or re-export is
+// erased, so it cannot put the logger in a core package's always-loaded graph.
+function scanRuntimeFlightImportsByFile(files: string[]): Map<string, string[]> {
   const byFile = new Map<string, string[]>();
   for (const filePath of files) {
-    const specifiers = [...scanFlightImportSpecifiers([filePath])];
+    const specifiers = getRuntimeModuleSpecifiers(filePath).filter((specifier) => specifier.startsWith('@flighthq/'));
     if (specifiers.length > 0) byFile.set(relative(root, filePath), specifiers);
   }
   return byFile;
@@ -706,7 +726,7 @@ for (const pkgDir of packageDirs) {
 
   // The core guard exception is file-scoped: a core package may import @flighthq/log, but only from an
   // enable*Guards module. Without this the manifest allowance would silently become a blanket one.
-  errors.push(...getCoreGuardImportViolations(name, scanFlightImportsByFile(srcFiles)));
+  errors.push(...getCoreGuardImportViolations(name, scanRuntimeFlightImportsByFile(srcFiles)));
   // ...and that no core runtime file pulls its own guard module into the always-loaded graph.
   errors.push(...getCoreGuardRuntimeImportViolations(name, scanLocalImportsByFile(srcFiles)));
 

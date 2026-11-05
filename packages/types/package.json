@@ -53,6 +53,7 @@
     "@flighthq/importdiagnostics": "*",
     "@flighthq/input": "*",
     "@flighthq/layout": "*",
+    "@flighthq/log": "*",
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
     "@flighthq/midi": "*",
@@ -62,14 +63,16 @@
     "@flighthq/permissions": "*",
     "@flighthq/preferences": "*",
     "@flighthq/registry": "*",
+    "@flighthq/render-wgpu": "*",
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
     "@flighthq/scene2d-dom": "*",
     "@flighthq/scene2d-formats": "*",
     "@flighthq/scene2d-wgpu": "*",
+    "@flighthq/scene3d-wgpu": "*",
     "@flighthq/selection": "*",
-    "@flighthq/shape-formats": "*",
     "@flighthq/shape": "*",
+    "@flighthq/shape-formats": "*",
     "@flighthq/share": "*",
     "@flighthq/signals": "*",
     "@flighthq/spatial": "*",
@@ -80,9 +83,7 @@
     "@flighthq/textshaper": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
-    "@flighthq/xml": "*",
-    "@flighthq/render-wgpu": "*",
-    "@flighthq/scene3d-wgpu": "*"
+    "@flighthq/xml": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

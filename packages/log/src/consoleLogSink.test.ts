@@ -1,9 +1,8 @@
-import type { LogData, LogEntry } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
-
 import { createConsoleCaptureSink, createConsoleLogSink } from './consoleLogSink.ts';
 import type { LogState } from './log.ts';
 import { beginLogGroup, createLogState, log, setLogConsoleLevel, setLogSink } from './log.ts';
+import type { LogData, LogEntry } from './types.ts';
+import { LogLevel } from './types.ts';
 
 function entryOf(level: LogLevel, channel: string | null, data: LogData, timestampMs = 0): LogEntry {
   return { level, channel, data, timestampMs };

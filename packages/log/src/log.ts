@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   BufferedLogSink,
-  Entity,
   LogContext,
   LogData,
   LogDataProvider,
@@ -15,10 +16,8 @@ import type {
   LogTimer,
   MemoryLogSink,
   RateLimitedLogSink,
-} from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
-
-export type { LogData } from '@flighthq/types/contract';
+} from './types.ts';
+import { LogLevel } from './types.ts';
 
 // Logging is split into two faces of one contract so each consumer tree-shakes its half:
 //
@@ -52,7 +51,8 @@ export type LogSerializer = (value: Readonly<Record<string, unknown>>) => Record
 // Everything logging needs between calls, owned by the caller: sinks, levels, once keys, redaction
 // paths, serializers, group depth, active spans and the signals group. Pass it to every stateful
 // function. Share one state to share one log; create another to isolate (a test, a worker, a tool).
-export interface LogState extends Entity {
+export interface LogState extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   sinks: LogSink[];
   level: LogLevel;
   consoleLevel: LogLevel;

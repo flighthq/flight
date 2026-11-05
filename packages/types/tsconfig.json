@@ -58,6 +58,9 @@
       "path": "../dialog"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../entity"
     },
     {

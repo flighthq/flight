@@ -1,0 +1,157 @@
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Signal } from '@flighthq/signals/contract';
+
+// The runtime-slotted entity shape these log records extend. Log owns its contracts, so it no longer
+// borrows the deprecated `Entity` from @flighthq/types (which re-exports these types instead).
+interface LogEntity extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
+
+// Severity doubles as a verbosity threshold. Console output shows an entry when the configured
+// console level is at or above the entry's level (so Error surfaces first, Verbose only at the top);
+// None disables console output. The capture sink, by contrast, receives every level regardless of
+// the console threshold — the machine record is always complete; the console is the human-facing
+// subset. See @flighthq/log.
+export const LogLevel = {
+  None: 0,
+  Error: 1,
+  Warn: 2,
+  Info: 3,
+  Debug: 4,
+  Verbose: 5,
+} as const;
+export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
+
+// A log payload: a plain message string, or a structured record for machine-readable capture.
+export type LogData = string | Readonly<Record<string, unknown>>;
+
+// A bound logging context: a channel plus base fields merged into every entry emitted through it.
+// createLogContext returns an empty context to assign; createChildLogContext derives one. Consumed by
+// logWith and the *With wrappers.
+export interface LogContext extends LogEntity {
+  channel: string | null;
+  fields: Readonly<Record<string, unknown>>;
+}
+
+// A deferred log payload. The thunk is invoked only when the entry passes the level gate, so a
+// suppressed verbose call allocates nothing.
+export type LogDataProvider = () => LogData;
+
+// Renders an entry to a single line of text (JSON envelope or human-readable). Used by sinks and
+// transports.
+export type LogFormatter = (entry: Readonly<LogEntry>) => string;
+
+// A named tracing span — a plain value, inert until enterLogSpan. While active, its fields merge
+// into every emitted entry (lower priority than the entry's own fields).
+// `id` comes from the owning LogState and is what exitLogSpan matches on.
+export interface LogSpan extends LogEntity {
+  id: number;
+  name: string;
+  fields: Readonly<Record<string, unknown>>;
+  channel: string | null;
+}
+
+// A running timer started with startLogTimer. Pass to endLogTimer to record elapsed time.
+// `startedAt` is a high-resolution timestamp in milliseconds.
+export interface LogTimer {
+  label: string;
+  channel: string | null;
+  startedAt: number;
+}
+
+/** The FIFO admission result returned synchronously for one complete log line. */
+export type LogTransportWriteOutcome =
+  | { readonly reason: 'accepted' }
+  | { readonly reason: 'backpressure'; readonly retryAfterMs?: number }
+  | { readonly reason: 'destroyed' }
+  | { readonly reason: 'operation-failed'; readonly message: string };
+
+/** The strongest delivery boundary reached by every accepted line covered by a successful flush. */
+export type LogTransportDeliveryBoundary =
+  | 'process-buffer'
+  | 'operating-system'
+  | 'durable-storage'
+  | 'remote-acknowledged';
+
+/** The result of settling all lines accepted before the flush call against a named delivery boundary. */
+export type LogTransportFlushOutcome =
+  | { readonly reason: 'drained'; readonly delivery: LogTransportDeliveryBoundary }
+  | { readonly reason: 'destroyed' }
+  | { readonly reason: 'operation-failed'; readonly message: string };
+
+/** The terminal result of releasing a transport's owned resource. */
+export type LogTransportDestroyOutcome =
+  | { readonly reason: 'destroyed' }
+  | { readonly reason: 'already-destroyed' }
+  | { readonly reason: 'operation-failed'; readonly message: string };
+
+/**
+ * A configured, line-oriented destination owned by one FileLogSink.
+ *
+ * `write` is a synchronous admission method. An `accepted` result means the complete supplied line
+ * entered this transport's FIFO in call order; it does not claim persistence or any external delivery.
+ * Other results mean that line was not admitted. `flush` settles every line accepted before that call
+ * and names the strongest boundary reached without implying a stronger one. `destroy` is awaited,
+ * terminal, and idempotent; writes after teardown report `destroyed`.
+ */
+export interface LogTransport extends LogEntity {
+  write(line: string): LogTransportWriteOutcome;
+  flush(): Promise<LogTransportFlushOutcome>;
+  destroy(): Promise<LogTransportDestroyOutcome>;
+}
+
+// One emitted log entry. `channel` is a free categorization tag (for example 'batch', 'shader',
+// 'user') used to filter captured output; null when uncategorized. `timestampMs` is the caller's
+// clock reading at emit time, injected rather than sampled, so formatters and rate limits read it
+// instead of a hidden clock.
+export interface LogEntry {
+  level: LogLevel;
+  channel: string | null;
+  data: LogData;
+  timestampMs: number;
+}
+
+// Receives every emitted entry regardless of the console verbosity threshold. The capture harness
+// installs one to record structured output; tests install one to assert. A free function (not a
+// class) so it stays trivially swappable and portable. Installed via setLogSink in
+// @flighthq/log.
+export type LogSink = (entry: Readonly<LogEntry>) => void;
+
+// Log emission event entity. Enable delivery with enableLogSignals; the signals stay inert until
+// then. onLogEntry fires for every emitted entry; onLogError fires only for Error-level entries.
+export interface LogSignals extends LogEntity {
+  onLogEntry: Signal<Readonly<LogEntry>>;
+  onLogError: Signal<Readonly<LogEntry>>;
+}
+
+// Opaque token returned by createBufferedLogSink.
+export interface BufferedLogSink extends LogEntity {
+  readonly sink: LogSink;
+}
+
+/**
+ * Owned file-sink entity returned by createFileLogSink. Install `sink` with addLogSink and await
+ * destroyFileLogSink to stop admission, unregister it, flush its pinned transport, and release it.
+ */
+export interface FileLogSink extends LogEntity {
+  readonly sink: LogSink;
+}
+
+/** The preserved flush and destroy results for terminal FileLogSink teardown. */
+export interface FileLogSinkDestroyOutcome {
+  readonly reason: 'destroyed' | 'already-destroyed' | 'operation-failed';
+  readonly flush: LogTransportFlushOutcome;
+  readonly destroy: LogTransportDestroyOutcome;
+}
+
+// Opaque token returned by createMemoryLogSink. Carry it to read or clear the captured entries.
+// The sink field is the LogSink to install via addLogSink / setLogSink.
+export interface MemoryLogSink extends LogEntity {
+  readonly sink: LogSink;
+}
+
+// Opaque token returned by createRateLimitedLogSink.
+export interface RateLimitedLogSink extends LogEntity {
+  readonly sink: LogSink;
+}

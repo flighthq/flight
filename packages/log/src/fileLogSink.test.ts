@@ -1,3 +1,8 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
+import { createFileLogSink, destroyFileLogSink } from './fileLogSink.ts';
+import type { LogState } from './log.ts';
+import { addLogSink, createLogState, log, removeLogSink } from './log.ts';
 import type {
   FileLogSinkDestroyOutcome,
   LogData,
@@ -6,12 +11,8 @@ import type {
   LogTransportDestroyOutcome,
   LogTransportFlushOutcome,
   LogTransportWriteOutcome,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey, LogLevel } from '@flighthq/types/contract';
-
-import { createFileLogSink, destroyFileLogSink } from './fileLogSink.ts';
-import type { LogState } from './log.ts';
-import { addLogSink, createLogState, log, removeLogSink } from './log.ts';
+} from './types.ts';
+import { LogLevel } from './types.ts';
 
 function createTestLogTransport(
   overrides: Partial<Pick<LogTransport, 'destroy' | 'flush' | 'write'>> = {},

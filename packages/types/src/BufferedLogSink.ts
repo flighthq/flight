@@ -1,7 +1,5 @@
-import type { Entity } from './Entity.ts';
-import type { LogSink } from './Log.ts';
+// Log contracts are owned by `@flighthq/log`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-// Opaque token returned by createBufferedLogSink.
-export interface BufferedLogSink extends Entity {
-  readonly sink: LogSink;
-}
+/** @deprecated Import from `@flighthq/log/contract`. */
+export type { BufferedLogSink } from '@flighthq/log/contract';

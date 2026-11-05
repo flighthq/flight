@@ -1,8 +1,7 @@
-import type { LogEntry, LogFormatter, LogSink } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
-
 import type { LogState } from './log.ts';
 import { createTextLogFormatter, getLogLevelName } from './log.ts';
+import type { LogEntry, LogFormatter, LogSink } from './types.ts';
+import { LogLevel } from './types.ts';
 
 // The console write is a host API: TS `console[method]`, natively stdout/stderr. The Rust source
 // (crates/flight-log/src/console_log_sink.rs) is target-native for that reason, and this module is
