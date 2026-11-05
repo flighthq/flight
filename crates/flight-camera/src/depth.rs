@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 
 //! NDC-to-view-space depth conversion (TS `depth.ts`).
 
