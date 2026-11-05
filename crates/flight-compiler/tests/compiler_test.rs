@@ -18265,6 +18265,55 @@ mod regexp_construction {
         assert!(!output.contains("createRegExp"), "{output}");
     }
 
+    #[test]
+    fn lowers_statement_vec_extension_in_portable_tests_and_helpers() {
+        let source = r#"
+fn append_zeros(values: &mut Vec<f32>) {
+    values.extend_from_slice(&[0.0; 2]);
+}
+
+mod vectors {
+    use super::*;
+
+    #[test]
+    fn extends_in_source_order() {
+        let mut values = vec![1.0];
+        values.extend([2.0, 3.0]);
+        append_zeros(&mut values);
+        assert_eq!(values, vec![1.0, 2.0, 3.0, 0.0, 0.0]);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(output.contains("const source = new Array(2).fill(0);"), "{output}");
+        assert!(output.contains("const source = [2, 3];"), "{output}");
+        assert_eq!(output.matches("values.push(source[index]);").count(), 2, "{output}");
+        assert!(!output.contains("extendFromSlice"), "{output}");
+    }
+
+    #[test]
+    fn refuses_vec_extension_used_as_a_portable_test_value() {
+        let source = r#"
+mod vectors {
+    #[test]
+    fn cannot_read_the_unit_result() {
+        let mut values = vec![1];
+        let result = { values.extend_from_slice(&[2]) };
+        assert_eq!(result, ());
+    }
+}
+"#;
+
+        let error = compile_vitest(source, "@flighthq/example/contract").unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `.extend_from_slice()` is supported only as a statement"
+        );
+    }
+
     // A dependency factory result keeps its dependency struct owner, so identity-bearing public
     // fields can use pointer equality. Primitive fields still fail closed because `===` would compare
     // their values rather than their Rust allocations.

@@ -26649,7 +26649,7 @@ fn emit_entry_or_default_method(
     return Ok(true);
 }
 
-fn emit_vec_extend_statement(
+pub(super) fn emit_vec_extend_statement(
     out: &mut String,
     call: &syn::ExprMethodCall,
     entities: &HashSet<String>,

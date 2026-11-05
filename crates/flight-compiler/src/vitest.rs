@@ -12,7 +12,8 @@ use crate::typescript::{
     ProvenanceImportRule, begin_option_if, begin_option_while, emit_block_with_tail_returns,
     emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
     emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
-    emit_type, emit_type_parameters, export_name, frozen_object_name, function_expression_context,
+    emit_type, emit_type_parameters, emit_vec_extend_statement, export_name, frozen_object_name,
+    function_expression_context,
     insert_type_parameter_context, insert_vitest_helper_return_context,
     insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
     is_data_union_variant, is_lowered_cross_crate_type, is_lowered_cross_crate_value,
@@ -2802,6 +2803,11 @@ fn emit_statement(
             } else {
                 out.push_str("return;\n");
             }
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "extend" || call.method == "extend_from_slice" =>
+        {
+            emit_vec_extend_statement(out, call, context, indent)?;
         }
         Stmt::Expr(expression, _) => {
             write_indent(out, indent);
