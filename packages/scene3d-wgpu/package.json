@@ -64,6 +64,7 @@
   "devDependencies": {
     "@flighthq/meshgeometry": "*",
     "@flighthq/particleemitter": "*",
+    "@flighthq/shape": "*",
     "@flighthq/text": "*",
     "@flighthq/video": "*",
     "@webgpu/types": "*",

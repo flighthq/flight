@@ -18,7 +18,7 @@ import {
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import type { CanvasShapeCommand, Kind } from '@flighthq/types';
-import { Scale9ShapeKind } from '@flighthq/types';
+import { Scale9ShapeKind } from '@flighthq/shape';
 
 // REQUIRED WIRING for one nine-sliced vector shape, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

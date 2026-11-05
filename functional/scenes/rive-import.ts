@@ -3,7 +3,8 @@ import { martinezPathBooleanKernel } from '@flighthq/path-boolean';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d';
 import { createScene2DFromRiveDocument } from '@flighthq/scene2d-formats';
 import type { Bitmap } from '@flighthq/types';
-import { DisplayObjectKind, ShapeKind } from '@flighthq/types';
+import { ShapeKind } from '@flighthq/shape';
+import { DisplayObjectKind } from '@flighthq/types';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;

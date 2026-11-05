@@ -18,7 +18,7 @@ import {
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import type { CanvasShapeCommand, Kind } from '@flighthq/types';
-import { ShapeKind } from '@flighthq/types';
+import { ShapeKind } from '@flighthq/shape';
 
 // REQUIRED WIRING for a filled vector rectangle, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

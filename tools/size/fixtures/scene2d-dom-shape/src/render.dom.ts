@@ -15,7 +15,7 @@ import {
   renderDomScene2D,
 } from '@flighthq/scene2d-dom';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import { ShapeKind } from '@flighthq/types';
+import { ShapeKind } from '@flighthq/shape';
 
 const container = document.createElement('div');
 container.style.width = '400px';

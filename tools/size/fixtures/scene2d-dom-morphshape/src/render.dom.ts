@@ -16,7 +16,7 @@ import {
   renderDomScene2D,
 } from '@flighthq/scene2d-dom';
 import { appendMorphShapeBeginFill, appendMorphShapePath, createMorphShape } from '@flighthq/shape';
-import { MorphShapeKind } from '@flighthq/types';
+import { MorphShapeKind } from '@flighthq/shape';
 
 const container = document.createElement('div');
 container.style.width = '400px';

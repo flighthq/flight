@@ -26,7 +26,7 @@ import {
 import { glScale9ShapeRenderer, registerGlShapeRasterizer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 import { createGlSurface } from '@flighthq/surface';
-import { Scale9ShapeKind } from '@flighthq/types';
+import { Scale9ShapeKind } from '@flighthq/shape';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

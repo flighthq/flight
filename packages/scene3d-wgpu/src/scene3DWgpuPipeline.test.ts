@@ -1,6 +1,7 @@
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   AnimatedNormalModifierKind,
@@ -40,7 +41,6 @@ import {
   VertexDisplaceModifierKind,
   WireframeMaterialKind,
 } from '@flighthq/types/contract';
-import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { wgpuScene3DRenderPreset } from './scene3DWgpuPipeline.ts';

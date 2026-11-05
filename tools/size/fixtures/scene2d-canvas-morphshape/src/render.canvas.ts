@@ -19,7 +19,7 @@ import {
 import { appendMorphShapeBeginFill, appendMorphShapePath, appendShapeEndFill, createMorphShape } from '@flighthq/shape';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import type { CanvasShapeCommand, Kind } from '@flighthq/types';
-import { MorphShapeKind } from '@flighthq/types';
+import { MorphShapeKind } from '@flighthq/shape';
 
 // REQUIRED WIRING for one interpolated vector shape, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate
