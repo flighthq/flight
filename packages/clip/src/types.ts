@@ -1,9 +1,11 @@
-import type { EntityRaw } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import type { PathWinding as SharedPathWinding } from '@flighthq/path/contract';
 
 /** A hard geometric clip region, represented as a rectangle or flattened contours. */
 export interface ClipRegion extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   rect: Rectangle;
   contours: number[][] | null;
   winding: PathWinding;
