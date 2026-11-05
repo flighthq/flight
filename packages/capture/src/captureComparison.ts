@@ -30,9 +30,9 @@ export function compareCaptureFingerprints(a: string, b: string): number {
  * Environment-independent: it needs no committed baseline, only the two live fingerprints.
  */
 export function evaluateCaptureParity(a: string, b: string, tolerance?: number): CaptureCheckResult {
-  const tolerance_1 = tolerance ?? CAPTURE_PARITY_TOLERANCE;
+  tolerance = tolerance ?? CAPTURE_PARITY_TOLERANCE;
   const difference = compareCaptureFingerprints(a, b);
-  return { pass: difference <= tolerance_1, difference: difference, tolerance: tolerance_1 };
+  return { pass: difference <= tolerance, difference, tolerance };
 }
 
 /**
@@ -44,9 +44,9 @@ export function evaluateCaptureRegression(
   baselineFingerprint: string,
   tolerance?: number,
 ): CaptureCheckResult {
-  const tolerance_1 = tolerance ?? CAPTURE_REGRESSION_TOLERANCE;
+  tolerance = tolerance ?? CAPTURE_REGRESSION_TOLERANCE;
   const difference = compareCaptureFingerprints(fingerprint, baselineFingerprint);
-  return { pass: difference <= tolerance_1, difference: difference, tolerance: tolerance_1 };
+  return { pass: difference <= tolerance, difference, tolerance };
 }
 
 export const CAPTURE_PARITY_TOLERANCE = 15;
