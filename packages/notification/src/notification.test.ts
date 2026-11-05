@@ -1,11 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  HostNotificationCapabilities,
-  Notification,
-  HostNotificationClickCapability,
-  NotificationEventBackendAttachOutcome,
-} from '@flighthq/types/contract';
+import type { HostNotificationCapabilities } from '@flighthq/types/contract';
 
 import {
   attachNotificationActionSubscription,
@@ -45,6 +40,7 @@ import {
   scheduleNotification,
   showNotification,
 } from './notification.ts';
+import type { Notification, HostNotificationClickCapability, NotificationEventBackendAttachOutcome } from './types.ts';
 
 function host<const TCapabilities extends HostNotificationCapabilities>(notification: TCapabilities) {
   return { notification };

@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
+import type { Entity, EntityConstruction } from '@flighthq/types/contract';
+
 import type {
-  Entity,
   HostNotificationActionCapability,
   HostNotificationActiveListCapability,
   HostNotificationClickCapability,
@@ -37,8 +38,7 @@ import type {
   NotificationSubscriptionDetachOutcome,
   NotificationSubscriptionDisposeOutcome,
   ScheduledNotification,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export async function attachNotificationActionSubscription(
   hostNotificationAction: Readonly<HostNotificationActionCapability>,

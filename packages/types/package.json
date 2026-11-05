@@ -52,6 +52,7 @@
     "@flighthq/layout": "*",
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
+    "@flighthq/notification": "*",
     "@flighthq/path": "*",
     "@flighthq/path-boolean": "*",
     "@flighthq/permissions": "*",
