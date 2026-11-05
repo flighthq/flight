@@ -1,5 +1,6 @@
-import { EntityRuntimeKey, WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { WrappedDiffusePbrExtensionKind } from './contract.materials-types.ts';
 import {
   createWrappedDiffusePbrExtension,
   initializeWrappedDiffusePbrExtension,

@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Kind, Material, EntityConstruction } from '@flighthq/types/contract';
+import type { Kind, EntityConstruction } from '@flighthq/types/contract';
+
+import type { Material } from './contract.materials-types.ts';
 
 // Structural shallow clone of any material entity. Scalar fields and kind are copied by
 // value; Texture/map handle references are shared (they are not owned by the material).

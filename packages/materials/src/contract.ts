@@ -1,3 +1,4 @@
+export * from './contract.materials-types.ts';
 export * from './anisotropyPbrExtension.ts';
 export * from './classicMaterials.ts';
 export * from './clearcoatPbrExtension.ts';

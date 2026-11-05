@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AnisotropyPbrExtension, EntityConstruction } from '@flighthq/types/contract';
-import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
+import type { AnisotropyPbrExtension } from './contract.materials-types.ts';
+import { AnisotropyPbrExtensionKind } from './contract.materials-types.ts';
 import { isValidMaterialWeight } from './materialValidation.ts';
 import { isValidPbrUvSet } from './pbrExtension.ts';
 

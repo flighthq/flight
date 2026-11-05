@@ -53,7 +53,10 @@ describe('clampStandardPbrMaterialProperties', () => {
     expect(props.normalScale).toBe(5);
   });
   it('leaves a valid block unchanged', () => {
-    const props = createStandardPbrMaterialProperties({ metallic: 0.5, roughness: 0.3 });
+    const props = createStandardPbrMaterialProperties({
+      metallic: 0.5,
+      roughness: 0.3,
+    });
     clampStandardPbrMaterialProperties(props);
     expect(props.metallic).toBe(0.5);
     expect(props.roughness).toBe(0.3);

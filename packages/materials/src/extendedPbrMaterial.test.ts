@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
 import { createClearcoatPbrExtension } from './clearcoatPbrExtension.ts';
+import { ExtendedPbrMaterialKind } from './contract.materials-types.ts';
 import { createExtendedPbrMaterial } from './extendedPbrMaterial.ts';
 import { createStandardPbrMaterialProperties } from './pbrMaterials.ts';
 

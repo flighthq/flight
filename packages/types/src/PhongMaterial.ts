@@ -1,18 +1,3 @@
-import type { Material3D } from './Material3D.ts';
-import type { Texture } from './Texture.ts';
-
-// Classic Phong shading: diffuse plus a reflection-vector specular lobe. `diffuse`/`specular`
-// are packed sRgb-albedo RGBA (with their maps); `shininess` is the specular exponent;
-// `normalMap`/`normalScale` perturb the surface normal.
-export interface PhongMaterial extends Material3D {
-  readonly kind: typeof PhongMaterialKind;
-  diffuse: number;
-  diffuseMap: Texture | null;
-  normalMap: Texture | null;
-  normalScale: number;
-  shininess: number;
-  specular: number;
-  specularMap: Texture | null;
-}
-
+// Compatibility facade: materials owns these contracts.
 export const PhongMaterialKind = 'PhongMaterial';
+export type { PhongMaterial } from '@flighthq/materials/contract';

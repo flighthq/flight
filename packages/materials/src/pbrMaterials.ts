@@ -1,14 +1,14 @@
 import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
+
 import type {
   MaterialConversionExplanation,
   MaterialConversionGuard,
-  NonEntityCreateResult,
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterial,
   StandardPbrMaterialProperties,
-} from '@flighthq/types/contract';
-import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
-
+} from './contract.materials-types.ts';
+import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from './contract.materials-types.ts';
 import { explainSpecularGlossinessConversion } from './explainMaterialConversion.ts';
 import { createMaterial3D } from './material3d.ts';
 

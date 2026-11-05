@@ -40,7 +40,12 @@ describe('concatColorScaleBias', () => {
   it('composes two setColorScaleBiasIdentity transforms into setColorScaleBiasIdentity', () => {
     const a = createColorScaleBias();
     const b = createColorScaleBias();
-    const out = createColorScaleBias({ redScale: 0, greenScale: 0, blueScale: 0, alphaScale: 0 });
+    const out = createColorScaleBias({
+      redScale: 0,
+      greenScale: 0,
+      blueScale: 0,
+      alphaScale: 0,
+    });
     concatColorScaleBias(out, a, b);
     expect(out.redScale).toBe(1);
     expect(out.greenScale).toBe(1);
@@ -140,7 +145,12 @@ describe('concatColorScaleBias', () => {
 
 describe('copyColorScaleBias', () => {
   it('copies all fields from source to out', () => {
-    const source = createColorScaleBias({ redScale: 0.5, greenBias: 128, alphaScale: 0.8, blueBias: 64 });
+    const source = createColorScaleBias({
+      redScale: 0.5,
+      greenBias: 128,
+      alphaScale: 0.8,
+      blueBias: 64,
+    });
     const out = createColorScaleBias();
     copyColorScaleBias(out, source);
     expect(out.redScale).toBe(0.5);
@@ -281,7 +291,11 @@ describe('equalsColorScaleBiasScales', () => {
 
 describe('getColorScaleBiasBiasRgb', () => {
   it('packs red, green, blue biases into a single integer', () => {
-    const ct = createColorScaleBias({ redBias: 1, greenBias: 0x80 / 255, blueBias: 0x10 / 255 });
+    const ct = createColorScaleBias({
+      redBias: 1,
+      greenBias: 0x80 / 255,
+      blueBias: 0x10 / 255,
+    });
     const packed = getColorScaleBiasBiasRgb(ct);
     expect((packed >> 16) & 0xff).toBe(0xff);
     expect((packed >> 8) & 0xff).toBe(0x80);
@@ -336,7 +350,12 @@ describe('invertColorScaleBias', () => {
   });
 
   it('negates biases', () => {
-    const source = createColorScaleBias({ redBias: 64, greenBias: -32, blueBias: 128, alphaBias: -10 });
+    const source = createColorScaleBias({
+      redBias: 64,
+      greenBias: -32,
+      blueBias: 128,
+      alphaBias: -10,
+    });
     const out = createColorScaleBias();
     invertColorScaleBias(out, source);
     expect(out.redBias).toBe(-64);
@@ -435,7 +454,12 @@ describe('setColorScaleBiasBiasRgba', () => {
 });
 describe('setColorScaleBiasIdentity', () => {
   it('resets scales to 1 and biases to 0', () => {
-    const ct = createColorScaleBias({ redScale: 0.5, greenBias: 128, alphaScale: 0, blueBias: 64 });
+    const ct = createColorScaleBias({
+      redScale: 0.5,
+      greenBias: 128,
+      alphaScale: 0,
+      blueBias: 64,
+    });
     setColorScaleBiasIdentity(ct);
     expect(ct.redScale).toBe(1);
     expect(ct.greenScale).toBe(1);

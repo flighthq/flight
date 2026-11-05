@@ -1,24 +1,3 @@
-import type { Material3D } from './Material3D.ts';
-import type { Texture } from './Texture.ts';
-
-// Legacy specular-glossiness PBR workflow (converted to metallic-roughness at bind). `diffuse`
-// and `specular` are packed sRgb-albedo RGBA; `glossiness` is the inverse of roughness.
-// `specularGlossinessMap` packs specular in RGB and glossiness in A. `emissive`/`emissiveMap`,
-// `normalMap`/`normalScale`, and `occlusionMap`/`occlusionStrength` match the standard block.
-export interface SpecularGlossinessPbrMaterial extends Material3D {
-  readonly kind: typeof SpecularGlossinessPbrMaterialKind;
-  diffuse: number;
-  diffuseMap: Texture | null;
-  emissive: number;
-  emissiveMap: Texture | null;
-  emissiveStrength: number;
-  glossiness: number;
-  normalMap: Texture | null;
-  normalScale: number;
-  occlusionMap: Texture | null;
-  occlusionStrength: number;
-  specular: number;
-  specularGlossinessMap: Texture | null;
-}
-
+// Compatibility facade: materials owns these contracts.
 export const SpecularGlossinessPbrMaterialKind = 'SpecularGlossinessPbrMaterial';
+export type { SpecularGlossinessPbrMaterial } from '@flighthq/materials/contract';

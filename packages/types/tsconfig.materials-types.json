@@ -1,0 +1,64 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [
+      ".materials-types",
+      ".scene3d-wgpu-types",
+      ".render-wgpu-types",
+      ".app-types",
+      ".flow-types",
+      ".geometry-types",
+      ".font-types",
+      ".host-types",
+      ".menu-types",
+      ".midi-types",
+      ".notification-types",
+      ".path-boolean-types",
+      ".path-types",
+      ".permissions-types",
+      ".preferences-types",
+      ".scene2d-dom-types",
+      ".scene2d-formats-types",
+      ".scene2d-wgpu-types",
+      ".selection-types",
+      ".shape-formats-types",
+      ".shape-types",
+      ".spatial-types",
+      ".statechart-types",
+      ".text-types",
+      ".textlayout-types",
+      ".textshaper-types",
+      ".velocity-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.materials-types"
+  },
+  "references": [
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    }
+  ],
+  "files": [
+    "src/AlphaType.ts",
+    "src/Entity.ts",
+    "src/PixelFormat.ts",
+    "src/Sampler.ts",
+    "src/Texture.ts",
+    "src/TextureSource.ts",
+    "src/TextureSourceKind.ts",
+    "src/TextureUvTransform.ts",
+    "src/Vector2.ts",
+    "src/VoxelGrid.ts",
+    "src/contract.materials-types.ts"
+  ],
+  "include": []
+}

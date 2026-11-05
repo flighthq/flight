@@ -2,8 +2,7 @@ import type {
   ExtendedPbrMaterial,
   GlassExtendedPbrMaterialOptions,
   StandardPbrMaterial,
-} from '@flighthq/types/contract';
-
+} from './contract.materials-types.ts';
 import { createExtendedPbrMaterial } from './extendedPbrMaterial.ts';
 import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from './pbrMaterials.ts';
 import { createTransmissionVolumePbrExtension } from './transmissionVolumePbrExtension.ts';

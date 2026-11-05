@@ -18,13 +18,18 @@ describe('explainPhongConversion', () => {
   it('reports an empty list when there is nothing to lose', () => {
     // The case a caller has to be able to tell apart from the lossy one: a lossless conversion and a
     // lossy one must not read the same.
-    expect(explainPhongConversion(createPhongMaterial())).toEqual({ droppedMaps: [], reason: null });
+    expect(explainPhongConversion(createPhongMaterial())).toEqual({
+      droppedMaps: [],
+      reason: null,
+    });
   });
 });
 
 describe('explainSpecularGlossinessConversion', () => {
   it('names the packed map and why no assignment could have preserved it', () => {
-    const source = createSpecularGlossinessPbrMaterial({ specularGlossinessMap: texture });
+    const source = createSpecularGlossinessPbrMaterial({
+      specularGlossinessMap: texture,
+    });
     // incompatible-channel-semantics, not unsupported: the target HAS a texture slot, but assigning to
     // it would be wrong rather than lossy — specular/glossiness and metallic/roughness pack different
     // quantities. That distinction is what tells a caller to bake rather than to look for a copy.
@@ -42,7 +47,9 @@ describe('explainSpecularGlossinessConversion', () => {
   });
 
   it('retains nothing, so repeated queries agree', () => {
-    const source = createSpecularGlossinessPbrMaterial({ specularGlossinessMap: texture });
+    const source = createSpecularGlossinessPbrMaterial({
+      specularGlossinessMap: texture,
+    });
     expect(explainSpecularGlossinessConversion(source)).toEqual(explainSpecularGlossinessConversion(source));
   });
 });

@@ -1,6 +1,6 @@
 import type { Texture } from '@flighthq/types/contract';
-import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
+import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from './contract.materials-types.ts';
 import {
   convertSpecularGlossinessToStandardPbr,
   createSpecularGlossinessPbrMaterial,
@@ -18,19 +18,27 @@ describe('convertSpecularGlossinessToStandardPbr', () => {
     expect(out.roughness).toBeCloseTo(0.25, 5);
   });
   it('produces metallic=0 for a dielectric (black specular)', () => {
-    const source = createSpecularGlossinessPbrMaterial({ specular: 0x000000ff });
+    const source = createSpecularGlossinessPbrMaterial({
+      specular: 0x000000ff,
+    });
     const out = createStandardPbrMaterialProperties();
     convertSpecularGlossinessToStandardPbr(out, source);
     expect(out.metallic).toBe(0);
   });
   it('produces metallic=1 for a full metallic (white specular, white diffuse)', () => {
-    const source = createSpecularGlossinessPbrMaterial({ specular: 0xffffffff, diffuse: 0xffffffff });
+    const source = createSpecularGlossinessPbrMaterial({
+      specular: 0xffffffff,
+      diffuse: 0xffffffff,
+    });
     const out = createStandardPbrMaterialProperties();
     convertSpecularGlossinessToStandardPbr(out, source);
     expect(out.metallic).toBeCloseTo(1, 1);
   });
   it('forwards emissive, normalMap, and occlusionMap unchanged', () => {
-    const source = createSpecularGlossinessPbrMaterial({ emissive: 0xff000000, emissiveStrength: 2.5 });
+    const source = createSpecularGlossinessPbrMaterial({
+      emissive: 0xff000000,
+      emissiveStrength: 2.5,
+    });
     const out = createStandardPbrMaterialProperties();
     convertSpecularGlossinessToStandardPbr(out, source);
     expect(out.emissive).toBe(0xff000000);
@@ -39,8 +47,13 @@ describe('convertSpecularGlossinessToStandardPbr', () => {
   it('does not reinterpret a packed specular-glossiness map as metallic-roughness', () => {
     const packedMap = {} as Texture;
     const previousMap = {} as Texture;
-    const source = createSpecularGlossinessPbrMaterial({ specularGlossinessMap: packedMap });
-    const out = createStandardPbrMaterialProperties({ alphaMap: previousMap, metallicRoughnessMap: previousMap });
+    const source = createSpecularGlossinessPbrMaterial({
+      specularGlossinessMap: packedMap,
+    });
+    const out = createStandardPbrMaterialProperties({
+      alphaMap: previousMap,
+      metallicRoughnessMap: previousMap,
+    });
 
     convertSpecularGlossinessToStandardPbr(out, source);
 
@@ -50,7 +63,10 @@ describe('convertSpecularGlossinessToStandardPbr', () => {
     expect(source.specularGlossinessMap).toBe(packedMap);
   });
   it('is alias-safe when out is used as a different object from source', () => {
-    const source = createSpecularGlossinessPbrMaterial({ glossiness: 0.5, diffuse: 0xff0000ff });
+    const source = createSpecularGlossinessPbrMaterial({
+      glossiness: 0.5,
+      diffuse: 0xff0000ff,
+    });
     const out = createStandardPbrMaterialProperties();
     convertSpecularGlossinessToStandardPbr(out, source);
     // glossiness=0.5 → roughness=0.5

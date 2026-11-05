@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { WrappedDiffusePbrExtension, EntityConstruction } from '@flighthq/types/contract';
-import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
+import type { WrappedDiffusePbrExtension } from './contract.materials-types.ts';
+import { WrappedDiffusePbrExtensionKind } from './contract.materials-types.ts';
 import { isValidMaterialWeight } from './materialValidation.ts';
 import { isValidPbrUvSet } from './pbrExtension.ts';
 

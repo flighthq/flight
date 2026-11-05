@@ -1,6 +1,5 @@
-import type { ExtendedPbrMaterial } from '@flighthq/types/contract';
-import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
-
+import type { ExtendedPbrMaterial } from './contract.materials-types.ts';
+import { ExtendedPbrMaterialKind } from './contract.materials-types.ts';
 import { createMaterial3D } from './material3d.ts';
 import { createStandardPbrMaterialProperties } from './pbrMaterials.ts';
 

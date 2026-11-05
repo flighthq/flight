@@ -1,6 +1,5 @@
-import type { CustomShaderMaterial } from '@flighthq/types/contract';
-import { CustomShaderMaterialKind } from '@flighthq/types/contract';
-
+import type { CustomShaderMaterial } from './contract.materials-types.ts';
+import { CustomShaderMaterialKind } from './contract.materials-types.ts';
 import { createMaterial3D } from './material3d.ts';
 
 // User-authored shader material. `shaderKey` references backend-native source registered on the

@@ -1,18 +1,3 @@
-import type { PbrExtension, PbrUvSet } from './PbrExtension.ts';
-import type { Texture } from './Texture.ts';
-
-// Flight-specific wrapped diffuse contribution. This is deliberately not named "subsurface": it
-// widens direct diffuse lighting around the terminator but does not model subsurface transport.
-export interface WrappedDiffusePbrExtension extends PbrExtension {
-  readonly kind: 'WrappedDiffusePbrExtension';
-  thickness: number;
-  thicknessMap: Texture | null;
-  thicknessMapUvSet: PbrUvSet;
-  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer.
-  wrappedDiffuseColor: number;
-  wrappedDiffuseMap: Texture | null;
-  wrappedDiffuseMapUvSet: PbrUvSet;
-  wrappedDiffuseStrength: number;
-}
-
+// Compatibility facade: materials owns these contracts.
 export const WrappedDiffusePbrExtensionKind = 'WrappedDiffusePbrExtension';
+export type { WrappedDiffusePbrExtension } from '@flighthq/materials/contract';

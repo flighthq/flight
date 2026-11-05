@@ -1,6 +1,5 @@
-import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from '@flighthq/types/contract';
-
 import { createBlinnPhongMaterial, createLambertMaterial, createPhongMaterial } from './classicMaterials.ts';
+import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from './contract.materials-types.ts';
 
 describe('createBlinnPhongMaterial', () => {
   it('creates a white Blinn-Phong material with a shininess of 32', () => {
@@ -18,7 +17,10 @@ describe('createBlinnPhongMaterial', () => {
   });
 
   it('forwards the surface trailer so an alpha-mapped cutout is expressible through the constructor', () => {
-    const material = createBlinnPhongMaterial({ alphaCutoff: 0.3, alphaMode: 'mask' });
+    const material = createBlinnPhongMaterial({
+      alphaCutoff: 0.3,
+      alphaMode: 'mask',
+    });
     expect(material.alphaMode).toBe('mask');
     expect(material.alphaCutoff).toBe(0.3);
   });

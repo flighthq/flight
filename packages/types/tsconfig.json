@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".materials-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
       ".adjustments-types",
@@ -190,6 +191,9 @@
     },
     {
       "path": "../scene3d-wgpu/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

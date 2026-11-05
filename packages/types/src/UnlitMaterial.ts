@@ -1,15 +1,3 @@
-import type { Material3D } from './Material3D.ts';
-import type { Texture } from './Texture.ts';
-
-// Lighting-independent flat color. `baseColor` is packed sRgb-albedo RGBA; `baseColorMap`
-// tints it from any registered backing: still image, live video host handle, or render target.
-// The backend resolver decides whether to upload CPU-origin pixels or return a GPU-origin
-// attachment; the material has one sampling slot.
-export interface UnlitMaterial extends Material3D {
-  readonly kind: typeof UnlitMaterialKind;
-  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer.
-  baseColor: number;
-  baseColorMap: Texture | null;
-}
-
+// Compatibility facade: materials owns these contracts.
 export const UnlitMaterialKind = 'UnlitMaterial';
+export type { UnlitMaterial } from '@flighthq/materials/contract';

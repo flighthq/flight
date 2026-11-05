@@ -57,6 +57,7 @@
     "@flighthq/layout": "*",
     "@flighthq/log": "*",
     "@flighthq/math": "*",
+    "@flighthq/materials": "*",
     "@flighthq/menu": "*",
     "@flighthq/midi": "*",
     "@flighthq/notification": "*",

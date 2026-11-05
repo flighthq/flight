@@ -1,6 +1,6 @@
 import { getColorLuminance } from '@flighthq/color/contract';
-import type { PhongMaterial, StandardPbrMaterial, StandardPbrMaterialProperties } from '@flighthq/types/contract';
 
+import type { PhongMaterial, StandardPbrMaterial, StandardPbrMaterialProperties } from './contract.materials-types.ts';
 import { explainPhongConversion } from './explainMaterialConversion.ts';
 import { createStandardPbrMaterial, reportMaterialConversionDrop } from './pbrMaterials.ts';
 

@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".adjustments-types",
+      ".materials-types",
       ".app-types",
       ".clip-types",
       ".flow-types",
@@ -136,6 +137,9 @@
     },
     {
       "path": "../xml"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -153,7 +157,7 @@
     "src/AudioResource.ts",
     "src/AudioResourceReference.ts",
     "src/Bitmap.ts",
-    "src/BlendMode.ts",
+    "src/BlendMode.materials-types.ts",
     "src/Bone2D.ts",
     "src/ClipRegion.ts",
     "src/ColorAdjustmentRuntime.ts",
@@ -180,8 +184,8 @@
     "src/InteractionSignals.ts",
     "src/KeyboardEventData.ts",
     "src/Layout.ts",
-    "src/Material.ts",
-    "src/Material2D.ts",
+    "src/Material.materials-types.ts",
+    "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
     "src/Node.ts",
     "src/Node2D.ts",

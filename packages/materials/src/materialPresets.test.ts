@@ -2,8 +2,7 @@ import {
   ExtendedPbrMaterialKind,
   StandardPbrMaterialKind,
   TransmissionVolumePbrExtensionKind,
-} from '@flighthq/types/contract';
-
+} from './contract.materials-types.ts';
 import {
   createAluminumStandardPbrMaterial,
   createCarbonStandardPbrMaterial,

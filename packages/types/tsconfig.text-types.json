@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".adjustments-types", ".clip-types", ".geometry-types", ".path-types", ""],
+    "moduleSuffixes": [".adjustments-types", ".clip-types", ".materials-types", ".geometry-types", ".path-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.text-types"
   },
   "references": [
@@ -34,13 +34,16 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     }
   ],
   "files": [
     "src/Adjustment.ts",
     "src/AdjustmentKind.ts",
     "src/AlphaType.ts",
-    "src/BlendMode.ts",
+    "src/BlendMode.materials-types.ts",
     "src/ClipRegion.ts",
     "src/ColorAdjustmentRuntime.ts",
     "src/ColorScaleBias.ts",
@@ -55,8 +58,8 @@
     "src/HasTransform2D.ts",
     "src/InteractionSignals.ts",
     "src/KeyboardEventData.ts",
-    "src/Material.ts",
-    "src/Material2D.ts",
+    "src/Material.materials-types.ts",
+    "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
     "src/Node.ts",
     "src/Node2D.ts",

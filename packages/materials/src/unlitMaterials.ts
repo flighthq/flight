@@ -7,7 +7,7 @@ import type {
   UnlitMaterial,
   VertexColorMaterial,
   WireframeMaterial,
-} from '@flighthq/types/contract';
+} from './contract.materials-types.ts';
 import {
   DepthMaterialKind,
   EmissiveMaterialKind,
@@ -17,8 +17,7 @@ import {
   UnlitMaterialKind,
   VertexColorMaterialKind,
   WireframeMaterialKind,
-} from '@flighthq/types/contract';
-
+} from './contract.materials-types.ts';
 import { createMaterial3D } from './material3d.ts';
 
 // Depth-output pass material. `near`/`far` default to a unit range; the depth pass overrides

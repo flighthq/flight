@@ -11,6 +11,7 @@
       ".adjustments-types",
       ".app-types",
       ".clip-types",
+      ".materials-types",
       ".geometry-types",
       ".path-types",
       ".shape-types",
@@ -48,6 +49,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -56,7 +60,7 @@
     "src/AlphaType.ts",
     "src/BatchFormat.ts",
     "src/Bitmap.ts",
-    "src/BlendMode.ts",
+    "src/BlendMode.materials-types.ts",
     "src/CanvasShapeDrawState.ts",
     "src/CanvasShapeRegistry.ts",
     "src/CanvasSurface.ts",
@@ -80,8 +84,8 @@
     "src/ImageResource.ts",
     "src/InteractionSignals.ts",
     "src/KeyboardEventData.ts",
-    "src/Material.ts",
-    "src/Material2D.ts",
+    "src/Material.materials-types.ts",
+    "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
     "src/Node.ts",
     "src/Node2D.ts",

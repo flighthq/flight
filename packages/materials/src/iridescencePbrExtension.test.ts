@@ -8,7 +8,9 @@ import {
 
 describe('createIridescencePbrExtension', () => {
   it('creates an Entity with glTF thickness defaults and independent UV sets', () => {
-    const value = createIridescencePbrExtension({ iridescenceThicknessMapUvSet: 1 });
+    const value = createIridescencePbrExtension({
+      iridescenceThicknessMapUvSet: 1,
+    });
     expect(EntityRuntimeKey in value).toBe(true);
     expect(value.iridescenceIor).toBe(1.3);
     expect(value.iridescenceThicknessMin).toBe(100);
@@ -29,7 +31,10 @@ describe('isValidIridescencePbrExtension', () => {
     expect(isValidIridescencePbrExtension(createIridescencePbrExtension({ iridescenceIor: 0.5 }))).toBe(false);
     expect(
       isValidIridescencePbrExtension(
-        createIridescencePbrExtension({ iridescenceThicknessMax: 100, iridescenceThicknessMin: 200 }),
+        createIridescencePbrExtension({
+          iridescenceThicknessMax: 100,
+          iridescenceThicknessMin: 200,
+        }),
       ),
     ).toBe(false);
     const invalidUv = createIridescencePbrExtension();

@@ -1,0 +1,15 @@
+import type { Texture } from '@flighthq/types/contract';
+
+import type { Material3D } from './Material3D.ts';
+
+// Self-illuminating, lighting-independent. `emissive` is packed sRgb-albedo RGBA, `emissiveMap`
+// modulates it, and `emissiveStrength` scales linear radiance — values > 1 drive bloom on GPU
+// backends. Full fidelity on every backend.
+export interface EmissiveMaterial extends Material3D {
+  readonly kind: typeof EmissiveMaterialKind;
+  emissive: number;
+  emissiveMap: Texture | null;
+  emissiveStrength: number;
+}
+
+export const EmissiveMaterialKind = 'EmissiveMaterial';

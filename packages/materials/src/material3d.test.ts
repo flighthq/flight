@@ -1,5 +1,4 @@
-import { BlendMode } from '@flighthq/types/contract';
-
+import { BlendMode } from './contract.materials-types.ts';
 import {
   createMaterial3D,
   getMaterial3DAlphaMode,

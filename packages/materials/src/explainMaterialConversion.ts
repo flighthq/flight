@@ -2,7 +2,7 @@ import type {
   MaterialConversionExplanation,
   PhongMaterial,
   SpecularGlossinessPbrMaterial,
-} from '@flighthq/types/contract';
+} from './contract.materials-types.ts';
 
 // Explains what `convertPhongToStandardPbrMaterial` discards. Phong's `specularMap` modulates a
 // reflection-vector specular lobe; standard PBR has no slot for that quantity, and its nearest
@@ -13,7 +13,10 @@ import type {
 // query nor its strings.
 export function explainPhongConversion(source: Readonly<PhongMaterial>): MaterialConversionExplanation {
   if (source.specularMap === null) return { droppedMaps: [], reason: null };
-  return { droppedMaps: ['specularMap'], reason: 'unsupported-by-target-model' };
+  return {
+    droppedMaps: ['specularMap'],
+    reason: 'unsupported-by-target-model',
+  };
 }
 
 // Explains what `convertSpecularGlossinessToStandardPbr` discards. The conversion is factor-only by
@@ -29,5 +32,8 @@ export function explainSpecularGlossinessConversion(
   source: Readonly<SpecularGlossinessPbrMaterial>,
 ): MaterialConversionExplanation {
   if (source.specularGlossinessMap === null) return { droppedMaps: [], reason: null };
-  return { droppedMaps: ['specularGlossinessMap'], reason: 'incompatible-channel-semantics' };
+  return {
+    droppedMaps: ['specularGlossinessMap'],
+    reason: 'incompatible-channel-semantics',
+  };
 }

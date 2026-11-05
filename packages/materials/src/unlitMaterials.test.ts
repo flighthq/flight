@@ -7,8 +7,7 @@ import {
   UnlitMaterialKind,
   VertexColorMaterialKind,
   WireframeMaterialKind,
-} from '@flighthq/types/contract';
-
+} from './contract.materials-types.ts';
 import {
   createDepthMaterial,
   createEmissiveMaterial,

@@ -8,7 +8,9 @@ import {
 
 describe('createTransmissionVolumePbrExtension', () => {
   it('creates an Entity with glTF defaults and independent UV sets', () => {
-    const value = createTransmissionVolumePbrExtension({ transmissionMapUvSet: 1 });
+    const value = createTransmissionVolumePbrExtension({
+      transmissionMapUvSet: 1,
+    });
     expect(EntityRuntimeKey in value).toBe(true);
     expect(value.attenuationDistance).toBe(Infinity);
     expect(value.ior).toBe(1.5);

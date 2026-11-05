@@ -1,6 +1,5 @@
-import { StandardPbrMaterialKind } from '@flighthq/types/contract';
-
 import { createPhongMaterial } from './classicMaterials.ts';
+import { StandardPbrMaterialKind } from './contract.materials-types.ts';
 import {
   convertPhongToStandardPbrMaterial,
   getPbrMetallicFromPhongSpecular,
@@ -28,7 +27,10 @@ describe('convertPhongToStandardPbrMaterial', () => {
   });
   it('lets opts override a mapped field', () => {
     const phong = createPhongMaterial();
-    const pbr = convertPhongToStandardPbrMaterial(phong, { metallic: 1, roughness: 0.2 });
+    const pbr = convertPhongToStandardPbrMaterial(phong, {
+      metallic: 1,
+      roughness: 0.2,
+    });
     expect(pbr.metallic).toBe(1);
     expect(pbr.roughness).toBe(0.2);
   });

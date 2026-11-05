@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".materials-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
       ".adjustments-types",
@@ -83,6 +84,9 @@
     },
     {
       "path": "../velocity/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -93,7 +97,7 @@
     "src/AmbientLight.ts",
     "src/BatchFormat.ts",
     "src/Bitmap.ts",
-    "src/BlendMode.ts",
+    "src/BlendMode.materials-types.ts",
     "src/Camera3D.ts",
     "src/CanvasShapeDrawState.ts",
     "src/CanvasShapeRegistry.ts",
@@ -107,7 +111,7 @@
     "src/CompressedImageData.ts",
     "src/CompressedImageResource.ts",
     "src/Cursor.ts",
-    "src/CustomShaderMaterial.ts",
+    "src/CustomShaderMaterial.materials-types.ts",
     "src/DirectionalLight.ts",
     "src/Effect.ts",
     "src/EffectPadding.ts",
@@ -163,9 +167,9 @@
     "src/KeyboardEventData.ts",
     "src/Light.ts",
     "src/LightUnit.ts",
-    "src/Material.ts",
-    "src/Material2D.ts",
-    "src/Material3D.ts",
+    "src/Material.materials-types.ts",
+    "src/Material2D.materials-types.ts",
+    "src/Material3D.materials-types.ts",
     "src/Matrix.ts",
     "src/Matrix3.ts",
     "src/Matrix4.ts",
@@ -185,7 +189,7 @@
     "src/NodeInteractionState.ts",
     "src/NodeRenderer.ts",
     "src/NodeSignals.ts",
-    "src/PbrExtension.ts",
+    "src/PbrExtension.materials-types.ts",
     "src/PixelFormat.ts",
     "src/Plane.ts",
     "src/Platform.ts",
@@ -227,7 +231,7 @@
     "src/TextureSource.ts",
     "src/TextureSourceKind.ts",
     "src/TextureUvTransform.ts",
-    "src/TintMaterialData.ts",
+    "src/TintMaterialData.materials-types.ts",
     "src/Vector2.ts",
     "src/Vector3.ts",
     "src/Velocity.ts",

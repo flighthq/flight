@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { SpecularPbrExtension, EntityConstruction } from '@flighthq/types/contract';
-import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
+import type { SpecularPbrExtension } from './contract.materials-types.ts';
+import { SpecularPbrExtensionKind } from './contract.materials-types.ts';
 import { isValidMaterialWeight } from './materialValidation.ts';
 import { isValidPbrUvSet } from './pbrExtension.ts';
 

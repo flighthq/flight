@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { IridescencePbrExtension, EntityConstruction } from '@flighthq/types/contract';
-import { IridescencePbrExtensionKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
+import type { IridescencePbrExtension } from './contract.materials-types.ts';
+import { IridescencePbrExtensionKind } from './contract.materials-types.ts';
 import {
   isValidMaterialIor,
   isValidMaterialIridescenceThickness,

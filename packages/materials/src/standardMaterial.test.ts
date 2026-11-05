@@ -1,5 +1,4 @@
-import { StandardMaterialKind } from '@flighthq/types/contract';
-
+import { StandardMaterialKind } from './contract.materials-types.ts';
 import { createStandardMaterial, initializeStandardMaterial } from './standardMaterial.ts';
 
 describe('createStandardMaterial', () => {

@@ -1,5 +1,4 @@
-import { CustomShaderMaterialKind } from '@flighthq/types/contract';
-
+import { CustomShaderMaterialKind } from './contract.materials-types.ts';
 import { createCustomShaderMaterial } from './customShaderMaterial.ts';
 
 describe('createCustomShaderMaterial', () => {
@@ -13,7 +12,10 @@ describe('createCustomShaderMaterial', () => {
 
   it('applies overrides', () => {
     const uniforms = { u_time: 1.5, u_scale: [2, 3] };
-    const material = createCustomShaderMaterial({ shaderKey: 'myShader', uniforms });
+    const material = createCustomShaderMaterial({
+      shaderKey: 'myShader',
+      uniforms,
+    });
     expect(material.shaderKey).toBe('myShader');
     expect(material.uniforms).toBe(uniforms);
   });

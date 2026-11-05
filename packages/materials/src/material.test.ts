@@ -1,6 +1,5 @@
-import type { BlinnPhongMaterial, StandardPbrMaterial } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
-
+import type { BlinnPhongMaterial, StandardPbrMaterial } from './contract.materials-types.ts';
+import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from './contract.materials-types.ts';
 import {
   cloneMaterial,
   copyMaterial,
@@ -22,7 +21,10 @@ describe('cloneMaterial', () => {
     expect(clone.kind).toBe(TestMaterialKind);
   });
   it('copies scalar fields from a standard PBR material', () => {
-    const original = createStandardPbrMaterial({ metallic: 0.5, roughness: 0.25 });
+    const original = createStandardPbrMaterial({
+      metallic: 0.5,
+      roughness: 0.25,
+    });
     const clone = cloneMaterial(original);
     const clonePbr = clone as StandardPbrMaterial;
     expect(clonePbr.metallic).toBe(0.5);
