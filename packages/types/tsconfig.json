@@ -23,6 +23,7 @@
       ".app-types",
       ".clip-types",
       ".clipboard-types",
+      ".device-types",
       ".flow-types",
       ".geometry-types",
       ".font-types",
@@ -96,6 +97,9 @@
     },
     {
       "path": "../dialog"
+    },
+    {
+      "path": "../device/tsconfig.contract.json"
     },
     {
       "path": "../log"

@@ -1,10 +1,10 @@
 import type {
-  HostDeviceCapability,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
+  HostDeviceCapability,
   SafeAreaInsets,
-} from '@flighthq/types/contract';
+} from '@flighthq/device/contract';
 import {
   parseUserAgentArch,
   parseUserAgentFormFactor,

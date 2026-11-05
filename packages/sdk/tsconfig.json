@@ -85,7 +85,7 @@
       "path": "../debug"
     },
     {
-      "path": "../device"
+      "path": "../device/tsconfig.runtime.json"
     },
     {
       "path": "../dialog"

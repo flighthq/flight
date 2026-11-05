@@ -1,10 +1,5 @@
-import type {
-  DeviceCapabilities,
-  DeviceDisplayMetrics,
-  DeviceInfo,
-  SafeAreaInsets,
-  CapacitorApi,
-} from '@flighthq/types/contract';
+import type { DeviceCapabilities, DeviceDisplayMetrics, DeviceInfo, SafeAreaInsets } from '@flighthq/device/contract';
+import type { CapacitorApi } from '@flighthq/types/contract';
 
 import { capacitorHostDevice } from './capacitorDevice.ts';
 

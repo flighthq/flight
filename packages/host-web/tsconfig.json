@@ -21,7 +21,7 @@
       "path": "../bitmap/tsconfig.runtime.json"
     },
     {
-      "path": "../device"
+      "path": "../device/tsconfig.runtime.json"
     },
     {
       "path": "../dialog"

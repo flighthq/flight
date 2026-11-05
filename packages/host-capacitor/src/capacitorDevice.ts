@@ -1,12 +1,11 @@
 import type {
-  CapacitorApi,
-  CapacitorDeviceInfo,
-  HostDeviceCapability,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
+  HostDeviceCapability,
   SafeAreaInsets,
-} from '@flighthq/types/contract';
+} from '@flighthq/device/contract';
+import type { CapacitorApi, CapacitorDeviceInfo } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
 
 export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapability {

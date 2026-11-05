@@ -1,5 +1,6 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
+import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
@@ -11,7 +12,6 @@ import type {
   HostAudioCapabilities,
   HostBitmapCapabilities,
   HostConnectivityCapabilities,
-  HostDeviceCapabilities,
   HostDialogCapabilities,
   HostFileSystemCapabilities,
   HostFontCapabilities,

@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
-    "@flighthq/types": "*",
     "@flighthq/useragent": "*"
   },
   "devDependencies": {

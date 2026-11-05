@@ -1,55 +1,7 @@
-import type { DeviceCapabilities } from './DeviceCapabilities.ts';
-import type { DeviceDisplayMetrics } from './DeviceDisplayMetrics.ts';
-import type { DeviceFormFactor } from './DeviceFormFactor.ts';
-
-// Device identity and environment seam. Free functions in @flighthq/device delegate to the active
-// HostDeviceCapability (web default or a native host's). Snapshot reads fill an `out` value and return it;
-// unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
-export interface DeviceInfo {
-  arch: string;
-  availableMemory: number;
-  boardName: string;
-  colorGamut: string;
-  cpuCores: number;
-  fontScale: number;
-  formFactor: DeviceFormFactor;
-  gpuRenderer: string;
-  gpuVendor: string;
-  isHdr: boolean;
-  isJailbroken: boolean;
-  isLowEndDevice: boolean;
-  isRooted: boolean;
-  isVirtual: boolean;
-  manufacturer: string;
-  marketingName: string;
-  model: string;
-  osBuild: string;
-  osName: string;
-  osVersion: string;
-  platformString: string;
-  productName: string;
-  supportedAbis: readonly string[];
-  totalMemory: number;
-  webViewVersion: string;
-  // Battery state is not here — it is a live, event-bearing concern owned by @flighthq/power
-  // (PowerStatus.batteryLevel/isCharging + Power.onChange). DeviceInfo is a static identity snapshot.
-}
-
-// Edge insets, in CSS pixels, that keep content clear of notches, rounded corners, and system bars.
-export interface SafeAreaInsets {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
-}
-
-// The swappable backend behind @flighthq/device. Each read fills the caller's `out` value; unknown or
-// unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
-export interface HostDeviceCapability {
-  getCapabilities(out: DeviceCapabilities): void;
-  getDisplayMetrics(out: DeviceDisplayMetrics): void;
-  getId(): string;
-  getInfo(out: DeviceInfo): void;
-  getSafeAreaInsets(out: SafeAreaInsets): void;
-  refresh?(): void;
-}
+/** @deprecated Import device contracts from `@flighthq/device/contract`. */
+export type {
+  DeviceInfo,
+  HostDeviceCapabilities,
+  HostDeviceCapability,
+  SafeAreaInsets,
+} from '@flighthq/device/contract';

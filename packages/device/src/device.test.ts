@@ -1,10 +1,3 @@
-import type {
-  HostDeviceCapability,
-  DeviceCapabilities,
-  DeviceDisplayMetrics,
-  DeviceInfo,
-  SafeAreaInsets,
-} from '@flighthq/types/contract';
 import { DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
 
 import * as deviceContract from './device.ts';
@@ -20,6 +13,13 @@ import {
   getSafeAreaInsets,
   refreshDeviceInfo,
 } from './device.ts';
+import type {
+  DeviceCapabilities,
+  DeviceDisplayMetrics,
+  DeviceInfo,
+  HostDeviceCapability,
+  SafeAreaInsets,
+} from './types.ts';
 
 function fakeBackend(): HostDeviceCapability {
   return {

@@ -1,12 +1,13 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+import { DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
+
 import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
   HostDeviceCapability,
-  NonEntityCreateResult,
   SafeAreaInsets,
-} from '@flighthq/types/contract';
-import { DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
+} from './types.ts';
 
 export function createDeviceCapabilities(): NonEntityCreateResult<DeviceCapabilities, 'descriptor'> {
   return { hasKeyboard: false, hasMouse: false, hasStylus: false };

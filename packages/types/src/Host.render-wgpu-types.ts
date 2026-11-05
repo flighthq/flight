@@ -1,6 +1,7 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostAudioCodecCapability, HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
+import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
@@ -20,7 +21,6 @@ import type {
   HostConnectivityReachabilityCapability,
   HostConnectivityStatusCapability,
 } from './Connectivity.ts';
-import type { HostDeviceCapability } from './Device.ts';
 import type { Entity } from './Entity.ts';
 import type { HostFileSystemCapability } from './FileSystem.ts';
 import type { HostGeolocationCapability } from './Geolocation.ts';
@@ -227,10 +227,6 @@ export interface HostConnectivityCapabilities {
   readonly change?: HostConnectivityChangeCapability;
   readonly reachability?: HostConnectivityReachabilityCapability;
   readonly status?: HostConnectivityStatusCapability;
-}
-
-export interface HostDeviceCapabilities {
-  readonly info?: HostDeviceCapability;
 }
 
 export interface HostDialogCapabilities {

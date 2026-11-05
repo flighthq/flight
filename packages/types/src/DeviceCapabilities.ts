@@ -1,8 +1,2 @@
-// Input/hardware capability flags for the running device, filled by HostDeviceCapability.getCapabilities.
-// Only surfaces capabilities with no dedicated package owner; richer pointer/keyboard event handling
-// lives in @flighthq/input and @flighthq/interaction. Unknown capabilities resolve to false.
-export interface DeviceCapabilities {
-  hasKeyboard: boolean;
-  hasMouse: boolean;
-  hasStylus: boolean;
-}
+/** @deprecated Import device contracts from `@flighthq/device/contract`. */
+export type { DeviceCapabilities } from '@flighthq/device/contract';

@@ -47,6 +47,7 @@
     "@flighthq/clipboard": "*",
     "@flighthq/clock": "*",
     "@flighthq/compression": "*",
+    "@flighthq/device": "*",
     "@flighthq/dialog": "*",
     "@flighthq/entity": "*",
     "@flighthq/filesystem": "*",

@@ -1,5 +1,6 @@
 import type { MobileOsProfile } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
+import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 
 import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.ts';
 import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
@@ -7,7 +8,6 @@ import type { HostHapticsCapabilities } from './Haptics.ts';
 import type {
   Host,
   HostConnectivityCapabilities,
-  HostDeviceCapabilities,
   HostDialogCapabilities,
   HostFileSystemCapabilities,
   HostGeolocationCapabilities,
