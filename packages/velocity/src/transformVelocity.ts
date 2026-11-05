@@ -35,24 +35,23 @@ function visitTransformVelocity(field: VelocityField, node: Readonly<NodeRef>): 
       sample.velocity.x = world.tx - previous.tx;
       sample.velocity.y = world.ty - previous.ty;
     } else {
-      sample.velocity.x = 0.0;
-      sample.velocity.y = 0.0;
+      sample.velocity.x = 0;
+      sample.velocity.y = 0;
     }
     sample.lastFrameId = frameId;
   }
   if (sample.previousWorldTransform === null) {
-    sample.previousWorldTransform = createMatrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    sample.previousWorldTransform = createMatrix(1, 0, 0, 1, 0, 0);
   }
   if (sample.previousWorldTransform !== null) {
     const previous = sample.previousWorldTransform;
     copyMatrix(previous, world);
   }
   const count = getNodeChildCount(node);
-  for (let i = 0; i < count; i += 1) {
+  for (let i = 0; i < count; i++) {
     {
-      const $child = getNodeChildAt(node, i | 0);
-      if ($child !== null) {
-        const child = $child;
+      const child = getNodeChildAt(node, i | 0);
+      if (child !== null) {
         visitTransformVelocity(field, child);
       }
     }

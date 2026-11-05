@@ -20,39 +20,33 @@ export interface VelocityExplanation {
 }
 
 export function getVelocityReasonString(value: VelocityReason): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'no-sample':
-        return 'no-sample';
-      case 'stale':
-        return 'stale';
-      case 'explicit-zero':
-        return 'explicit-zero';
-      case 'derived-zero':
-        return 'derived-zero';
-      case 'ok':
-        return 'ok';
-    }
-  })();
+  switch (value) {
+    case 'no-sample':
+      return 'no-sample';
+    case 'stale':
+      return 'stale';
+    case 'explicit-zero':
+      return 'explicit-zero';
+    case 'derived-zero':
+      return 'derived-zero';
+    case 'ok':
+      return 'ok';
+  }
 }
 
 export function parseVelocityReason(value: string): VelocityReason | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'no-sample':
-        return 'no-sample';
-      case 'stale':
-        return 'stale';
-      case 'explicit-zero':
-        return 'explicit-zero';
-      case 'derived-zero':
-        return 'derived-zero';
-      case 'ok':
-        return 'ok';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'no-sample':
+      return 'no-sample';
+    case 'stale':
+      return 'stale';
+    case 'explicit-zero':
+      return 'explicit-zero';
+    case 'derived-zero':
+      return 'derived-zero';
+    case 'ok':
+      return 'ok';
+    default:
+      return undefined;
+  }
 }

@@ -31,7 +31,7 @@ export function clampVelocity(out: Velocity2D, velocity: Readonly<Velocity2D>, m
   const vy = velocity.y;
   const lenSq = vx * vx + vy * vy;
   const maxSq = maxLength * maxLength;
-  if (lenSq > maxSq && lenSq > 0.0) {
+  if (lenSq > maxSq && lenSq > 0) {
     const scale = maxLength / Math.sqrt(lenSq);
     out.x = vx * scale;
     out.y = vy * scale;
@@ -74,8 +74,8 @@ export function dampVelocity(
   const cy = current.y;
   const px = previous.x;
   const py = previous.y;
-  out.x = cx * factor + px * (1.0 - factor);
-  out.y = cy * factor + py * (1.0 - factor);
+  out.x = cx * factor + px * (1 - factor);
+  out.y = cy * factor + py * (1 - factor);
 }
 
 /**
@@ -83,8 +83,8 @@ export function dampVelocity(
  * Useful for skipping velocity-buffer writes on effectively-still objects.
  */
 export function isVelocityZero(velocity: Readonly<Velocity2D>, epsilon?: number): boolean {
-  const epsilon_1 = epsilon ?? 0.0;
-  return Math.abs(velocity.x) <= epsilon_1 && Math.abs(velocity.y) <= epsilon_1;
+  epsilon = epsilon ?? 0;
+  return Math.abs(velocity.x) <= epsilon && Math.abs(velocity.y) <= epsilon;
 }
 
 /**
@@ -115,13 +115,13 @@ export function normalizeVelocity(out: Velocity2D, source: Readonly<Velocity2D>)
   const sx = source.x;
   const sy = source.y;
   const len = Math.sqrt(sx * sx + sy * sy);
-  if (len > 0.0) {
-    const inv = 1.0 / len;
+  if (len > 0) {
+    const inv = 1 / len;
     out.x = sx * inv;
     out.y = sy * inv;
   } else {
-    out.x = 0.0;
-    out.y = 0.0;
+    out.x = 0;
+    out.y = 0;
   }
 }
 
@@ -152,6 +152,6 @@ export function subtractVelocity(out: Velocity2D, a: Readonly<Velocity2D>, b: Re
  * Sets both components to zero.
  */
 export function zeroVelocity(out: Velocity2D): void {
-  out.x = 0.0;
-  out.y = 0.0;
+  out.x = 0;
+  out.y = 0;
 }

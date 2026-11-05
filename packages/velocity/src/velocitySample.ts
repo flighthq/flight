@@ -23,7 +23,7 @@ export interface VelocitySample {
  * velocity, no previous transform, and `-1` (never touched) frame ids.
  */
 export function createVelocitySample(): NonEntityCreateResult<VelocitySample, 'descriptor'> {
-  return { previousWorldTransform: null, velocity: { x: 0.0, y: 0.0 }, lastFrameId: -1, explicitFrameId: -1 };
+  return { previousWorldTransform: null, velocity: { x: 0, y: 0 }, lastFrameId: -1, explicitFrameId: -1 };
 }
 
 /**
@@ -34,32 +34,18 @@ export function explainVelocitySample(sample: Readonly<VelocitySample> | null, f
   if (sample !== null) {
     const stored = sample;
     if (stored.lastFrameId !== frameId) {
-      return {
-        currentFrameId: frameId,
-        explicit: false,
-        lastFrameId: stored.lastFrameId,
-        reason: 'stale',
-        x: 0.0,
-        y: 0.0,
-      };
+      return { currentFrameId: frameId, explicit: false, lastFrameId: stored.lastFrameId, reason: 'stale', x: 0, y: 0 };
     }
     const explicit = stored.explicitFrameId === frameId;
     const x = stored.velocity.x;
     const y = stored.velocity.y;
-    if (x === 0.0 && y === 0.0) {
+    if (x === 0 && y === 0) {
       const reason = explicit ? 'explicit-zero' : 'derived-zero';
-      return {
-        currentFrameId: frameId,
-        explicit: explicit,
-        lastFrameId: stored.lastFrameId,
-        reason: reason,
-        x: 0.0,
-        y: 0.0,
-      };
+      return { currentFrameId: frameId, explicit, lastFrameId: stored.lastFrameId, reason, x: 0, y: 0 };
     }
-    return { currentFrameId: frameId, explicit: explicit, lastFrameId: stored.lastFrameId, reason: 'ok', x: x, y: y };
+    return { currentFrameId: frameId, explicit, lastFrameId: stored.lastFrameId, reason: 'ok', x, y };
   }
-  return { currentFrameId: frameId, explicit: false, lastFrameId: -1, reason: 'no-sample', x: 0.0, y: 0.0 };
+  return { currentFrameId: frameId, explicit: false, lastFrameId: -1, reason: 'no-sample', x: 0, y: 0 };
 }
 
 /**
@@ -90,8 +76,8 @@ export function getVelocitySampleAt(
     out.y = cy - py;
     return;
   }
-  out.x = 0.0;
-  out.y = 0.0;
+  out.x = 0;
+  out.y = 0;
 }
 
 /**
@@ -101,7 +87,7 @@ export function getVelocitySampleAt(
 export function isVelocitySampleNonzero(sample: Readonly<VelocitySample> | null, frameId: number): boolean {
   if (sample !== null) {
     const stored = sample;
-    return stored.lastFrameId === frameId && (stored.velocity.x !== 0.0 || stored.velocity.y !== 0.0);
+    return stored.lastFrameId === frameId && (stored.velocity.x !== 0 || stored.velocity.y !== 0);
   }
   return false;
 }
@@ -119,8 +105,8 @@ export function readVelocitySample(sample: Readonly<VelocitySample> | null, fram
       return;
     }
   }
-  out.x = 0.0;
-  out.y = 0.0;
+  out.x = 0;
+  out.y = 0;
 }
 
 /**

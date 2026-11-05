@@ -26,58 +26,58 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('addVelocity', () => {
   it('adds two velocity vectors', () => {
-    const a: Velocity2D = { x: 1.0, y: 2.0 };
-    const b: Velocity2D = { x: 3.0, y: 4.0 };
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
+    const a: Velocity2D = { x: 1, y: 2 };
+    const b: Velocity2D = { x: 3, y: 4 };
+    let out: Velocity2D = { x: 0, y: 0 };
     addVelocity(out, a, b);
-    expect(out.x).toEqual(4.0);
-    expect(out.y).toEqual(6.0);
+    expect(out.x).toEqual(4);
+    expect(out.y).toEqual(6);
   });
   it('is alias safe when out equals a', () => {
-    let a: Velocity2D = { x: 5.0, y: 3.0 };
+    let a: Velocity2D = { x: 5, y: 3 };
     const aClone = cloneVelocity2D(a);
-    addVelocity(a, aClone, { x: 1.0, y: 1.0 });
-    expect(a.x).toEqual(6.0);
-    expect(a.y).toEqual(4.0);
+    addVelocity(a, aClone, { x: 1, y: 1 });
+    expect(a.x).toEqual(6);
+    expect(a.y).toEqual(4);
   });
 });
 
 describe('clampVelocity', () => {
   it('returns velocity unchanged when length is within max length', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    clampVelocity(out, { x: 3.0, y: 0.0 }, 5.0);
-    expect(out.x).toEqual(3.0);
-    expect(out.y).toEqual(0.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    clampVelocity(out, { x: 3, y: 0 }, 5);
+    expect(out.x).toEqual(3);
+    expect(out.y).toEqual(0);
   });
   it('clamps to max length when length exceeds max length', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    clampVelocity(out, { x: 10.0, y: 0.0 }, 5.0);
-    assertApprox(out.x, 5.0);
-    assertApprox(out.y, 0.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    clampVelocity(out, { x: 10, y: 0 }, 5);
+    assertApprox(out.x, 5);
+    assertApprox(out.y, 0);
   });
   it('clamps a diagonal velocity to max length', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    clampVelocity(out, { x: 3.0, y: 4.0 }, 2.5);
+    let out: Velocity2D = { x: 0, y: 0 };
+    clampVelocity(out, { x: 3, y: 4 }, 2.5);
     assertApprox(lengthOfVelocity(out), 2.5);
   });
   it('is alias safe when out equals velocity', () => {
-    let v: Velocity2D = { x: 10.0, y: 0.0 };
+    let v: Velocity2D = { x: 10, y: 0 };
     const vClone = cloneVelocity2D(v);
-    clampVelocity(v, vClone, 5.0);
-    assertApprox(v.x, 5.0);
-    assertApprox(v.y, 0.0);
+    clampVelocity(v, vClone, 5);
+    assertApprox(v.x, 5);
+    assertApprox(v.y, 0);
   });
   it('handles zero length velocity without division error', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    clampVelocity(out, { x: 0.0, y: 0.0 }, 5.0);
-    expect(out.x).toEqual(0.0);
-    expect(out.y).toEqual(0.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    clampVelocity(out, { x: 0, y: 0 }, 5);
+    expect(out.x).toEqual(0);
+    expect(out.y).toEqual(0);
   });
 });
 
 describe('cloneVelocity2D', () => {
   it('creates a copy of a velocity', () => {
-    const v: Velocity2D = { x: 3.0, y: -7.0 };
+    const v: Velocity2D = { x: 3, y: -7 };
     const result = cloneVelocity2D(v);
     expect(result.x).toEqual(v.x);
     expect(result.y).toEqual(v.y);
@@ -86,163 +86,163 @@ describe('cloneVelocity2D', () => {
 
 describe('copyVelocity', () => {
   it('copies x and y', () => {
-    const source: Velocity2D = { x: 5.0, y: -3.0 };
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
+    const source: Velocity2D = { x: 5, y: -3 };
+    let out: Velocity2D = { x: 0, y: 0 };
     copyVelocity(out, source);
-    expect(out.x).toEqual(5.0);
-    expect(out.y).toEqual(-3.0);
+    expect(out.x).toEqual(5);
+    expect(out.y).toEqual(-3);
   });
   it('is alias safe when out equals source', () => {
-    let v: Velocity2D = { x: 7.0, y: 2.0 };
+    let v: Velocity2D = { x: 7, y: 2 };
     const vClone = cloneVelocity2D(v);
     copyVelocity(v, vClone);
-    expect(v.x).toEqual(7.0);
-    expect(v.y).toEqual(2.0);
+    expect(v.x).toEqual(7);
+    expect(v.y).toEqual(2);
   });
 });
 
 describe('dampVelocity', () => {
   it('returns current at factor one', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    dampVelocity(out, { x: 10.0, y: 5.0 }, { x: 0.0, y: 0.0 }, 1.0);
-    expect(out.x).toEqual(10.0);
-    expect(out.y).toEqual(5.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    dampVelocity(out, { x: 10, y: 5 }, { x: 0, y: 0 }, 1);
+    expect(out.x).toEqual(10);
+    expect(out.y).toEqual(5);
   });
   it('returns previous at factor zero', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    dampVelocity(out, { x: 10.0, y: 5.0 }, { x: 2.0, y: 3.0 }, 0.0);
-    expect(out.x).toEqual(2.0);
-    expect(out.y).toEqual(3.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    dampVelocity(out, { x: 10, y: 5 }, { x: 2, y: 3 }, 0);
+    expect(out.x).toEqual(2);
+    expect(out.y).toEqual(3);
   });
   it('blends at factor half', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    dampVelocity(out, { x: 10.0, y: 0.0 }, { x: 0.0, y: 0.0 }, 0.5);
-    expect(out.x).toEqual(5.0);
-    expect(out.y).toEqual(0.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    dampVelocity(out, { x: 10, y: 0 }, { x: 0, y: 0 }, 0.5);
+    expect(out.x).toEqual(5);
+    expect(out.y).toEqual(0);
   });
   it('is alias safe when out equals current', () => {
-    let current: Velocity2D = { x: 10.0, y: 0.0 };
+    let current: Velocity2D = { x: 10, y: 0 };
     const currentClone = cloneVelocity2D(current);
-    dampVelocity(current, currentClone, { x: 0.0, y: 0.0 }, 0.5);
-    expect(current.x).toEqual(5.0);
-    expect(current.y).toEqual(0.0);
+    dampVelocity(current, currentClone, { x: 0, y: 0 }, 0.5);
+    expect(current.x).toEqual(5);
+    expect(current.y).toEqual(0);
   });
 });
 
 describe('isVelocityZero', () => {
   it('returns true for exact zero', () => {
-    expect(isVelocityZero({ x: 0.0, y: 0.0 }, 0.0)).toEqual(true);
+    expect(isVelocityZero({ x: 0, y: 0 }, 0)).toEqual(true);
   });
   it('returns false for nonzero', () => {
-    expect(isVelocityZero({ x: 0.001, y: 0.0 }, 0.0)).toEqual(false);
+    expect(isVelocityZero({ x: 0.001, y: 0 }, 0)).toEqual(false);
   });
   it('uses the default epsilon of zero when none is given', () => {
-    expect(isVelocityZero({ x: 0.0, y: 0.0 }, undefined)).toEqual(true);
-    expect(isVelocityZero({ x: 0.0001, y: 0.0 }, undefined)).toEqual(false);
+    expect(isVelocityZero({ x: 0, y: 0 }, undefined)).toEqual(true);
+    expect(isVelocityZero({ x: 0.0001, y: 0 }, undefined)).toEqual(false);
   });
   it('respects epsilon', () => {
-    expect(isVelocityZero({ x: 0.001, y: 0.0 }, 0.01)).toEqual(true);
-    expect(isVelocityZero({ x: 0.1, y: 0.0 }, 0.01)).toEqual(false);
+    expect(isVelocityZero({ x: 0.001, y: 0 }, 0.01)).toEqual(true);
+    expect(isVelocityZero({ x: 0.1, y: 0 }, 0.01)).toEqual(false);
   });
 });
 
 describe('lengthOfVelocity', () => {
   it('returns the magnitude of the velocity vector', () => {
-    assertApprox(lengthOfVelocity({ x: 3.0, y: 4.0 }), 5.0);
+    assertApprox(lengthOfVelocity({ x: 3, y: 4 }), 5);
   });
   it('returns zero for zero vector', () => {
-    expect(lengthOfVelocity({ x: 0.0, y: 0.0 })).toEqual(0.0);
+    expect(lengthOfVelocity({ x: 0, y: 0 })).toEqual(0);
   });
 });
 
 describe('lerpVelocity', () => {
   it('returns a at t zero', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    lerpVelocity(out, { x: 1.0, y: 2.0 }, { x: 9.0, y: 8.0 }, 0.0);
-    expect(out.x).toEqual(1.0);
-    expect(out.y).toEqual(2.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    lerpVelocity(out, { x: 1, y: 2 }, { x: 9, y: 8 }, 0);
+    expect(out.x).toEqual(1);
+    expect(out.y).toEqual(2);
   });
   it('returns b at t one', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    lerpVelocity(out, { x: 1.0, y: 2.0 }, { x: 9.0, y: 8.0 }, 1.0);
-    expect(out.x).toEqual(9.0);
-    expect(out.y).toEqual(8.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    lerpVelocity(out, { x: 1, y: 2 }, { x: 9, y: 8 }, 1);
+    expect(out.x).toEqual(9);
+    expect(out.y).toEqual(8);
   });
   it('interpolates at t half', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    lerpVelocity(out, { x: 0.0, y: 0.0 }, { x: 10.0, y: 4.0 }, 0.5);
-    expect(out.x).toEqual(5.0);
-    expect(out.y).toEqual(2.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    lerpVelocity(out, { x: 0, y: 0 }, { x: 10, y: 4 }, 0.5);
+    expect(out.x).toEqual(5);
+    expect(out.y).toEqual(2);
   });
   it('is alias safe when out equals a', () => {
-    let a: Velocity2D = { x: 0.0, y: 0.0 };
+    let a: Velocity2D = { x: 0, y: 0 };
     const aClone = cloneVelocity2D(a);
-    lerpVelocity(a, aClone, { x: 10.0, y: 0.0 }, 0.5);
-    expect(a.x).toEqual(5.0);
-    expect(a.y).toEqual(0.0);
+    lerpVelocity(a, aClone, { x: 10, y: 0 }, 0.5);
+    expect(a.x).toEqual(5);
+    expect(a.y).toEqual(0);
   });
 });
 
 describe('normalizeVelocity', () => {
   it('returns unit vector for nonzero input', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    normalizeVelocity(out, { x: 3.0, y: 4.0 });
-    assertApprox(lengthOfVelocity(out), 1.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    normalizeVelocity(out, { x: 3, y: 4 });
+    assertApprox(lengthOfVelocity(out), 1);
     assertApprox(out.x, 0.6);
     assertApprox(out.y, 0.8);
   });
   it('returns zero vector for zero input', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    normalizeVelocity(out, { x: 0.0, y: 0.0 });
-    expect(out.x).toEqual(0.0);
-    expect(out.y).toEqual(0.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    normalizeVelocity(out, { x: 0, y: 0 });
+    expect(out.x).toEqual(0);
+    expect(out.y).toEqual(0);
   });
   it('is alias safe when out equals source', () => {
-    let v: Velocity2D = { x: 5.0, y: 0.0 };
+    let v: Velocity2D = { x: 5, y: 0 };
     const vClone = cloneVelocity2D(v);
     normalizeVelocity(v, vClone);
-    expect(v.x).toEqual(1.0);
-    expect(v.y).toEqual(0.0);
+    expect(v.x).toEqual(1);
+    expect(v.y).toEqual(0);
   });
 });
 
 describe('scaleVelocity', () => {
   it('scales by a factor', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    scaleVelocity(out, { x: 3.0, y: -2.0 }, 2.0);
-    expect(out.x).toEqual(6.0);
-    expect(out.y).toEqual(-4.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    scaleVelocity(out, { x: 3, y: -2 }, 2);
+    expect(out.x).toEqual(6);
+    expect(out.y).toEqual(-4);
   });
   it('is alias safe when out equals velocity', () => {
-    let v: Velocity2D = { x: 4.0, y: 2.0 };
+    let v: Velocity2D = { x: 4, y: 2 };
     const vClone = cloneVelocity2D(v);
     scaleVelocity(v, vClone, 0.5);
-    expect(v.x).toEqual(2.0);
-    expect(v.y).toEqual(1.0);
+    expect(v.x).toEqual(2);
+    expect(v.y).toEqual(1);
   });
 });
 
 describe('subtractVelocity', () => {
   it('subtracts b from a', () => {
-    let out: Velocity2D = { x: 0.0, y: 0.0 };
-    subtractVelocity(out, { x: 5.0, y: 3.0 }, { x: 2.0, y: 1.0 });
-    expect(out.x).toEqual(3.0);
-    expect(out.y).toEqual(2.0);
+    let out: Velocity2D = { x: 0, y: 0 };
+    subtractVelocity(out, { x: 5, y: 3 }, { x: 2, y: 1 });
+    expect(out.x).toEqual(3);
+    expect(out.y).toEqual(2);
   });
   it('is alias safe when out equals a', () => {
-    let a: Velocity2D = { x: 5.0, y: 3.0 };
+    let a: Velocity2D = { x: 5, y: 3 };
     const aClone = cloneVelocity2D(a);
-    subtractVelocity(a, aClone, { x: 2.0, y: 1.0 });
-    expect(a.x).toEqual(3.0);
-    expect(a.y).toEqual(2.0);
+    subtractVelocity(a, aClone, { x: 2, y: 1 });
+    expect(a.x).toEqual(3);
+    expect(a.y).toEqual(2);
   });
 });
 
 describe('zeroVelocity', () => {
   it('sets both components to zero', () => {
-    let v: Velocity2D = { x: 5.0, y: -3.0 };
+    let v: Velocity2D = { x: 5, y: -3 };
     zeroVelocity(v);
-    expect(v.x).toEqual(0.0);
-    expect(v.y).toEqual(0.0);
+    expect(v.x).toEqual(0);
+    expect(v.y).toEqual(0);
   });
 });
