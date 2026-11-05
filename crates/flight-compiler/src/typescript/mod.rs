@@ -1668,9 +1668,7 @@ fn external_struct_return(expression: &Expr, entities: &HashSet<String>) -> Opti
     }
     return unique_marker_suffix(
         entities,
-        &format!(
-            "{EXTERNAL_STRUCT_RETURN_MARKER}{first}::{function}{PROVENANCE_SEPARATOR}"
-        ),
+        &format!("{EXTERNAL_STRUCT_RETURN_MARKER}{first}::{function}{PROVENANCE_SEPARATOR}"),
     );
 }
 
@@ -23875,8 +23873,12 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         if !body.ends_with("\n\n") {
             body.push('\n');
         }
-        writeln!(body, "export type {{ {} }};", internal_type_exports.join(", "))
-            .expect("writing to a String cannot fail");
+        writeln!(
+            body,
+            "export type {{ {} }};",
+            internal_type_exports.join(", ")
+        )
+        .expect("writing to a String cannot fail");
     }
     match entity_runtime_state_store_imports(&body, &programs, &program_modules) {
         Ok(imports) => {
