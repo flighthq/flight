@@ -1,3 +1,6 @@
+// Generated from crates/flight-useragent/tests/user_agent_parse_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -144,9 +147,9 @@ describe('parseUserAgentOsVersion', () => {
     expect(parseUserAgentOsVersion('CustomBot/1.0')).toEqual('');
   });
   it('uses the js whitespace set and lazy ios scan', () => {
-    expect(parseUserAgentOsVersion('Android\u{a0}12')).toEqual('12');
-    expect(parseUserAgentOsVersion('Android\u{feff}12')).toEqual('12');
-    expect(parseUserAgentOsVersion('Android\u{85}12')).toEqual('');
+    expect(parseUserAgentOsVersion('Android 12')).toEqual('12');
+    expect(parseUserAgentOsVersion('Android﻿12')).toEqual('12');
+    expect(parseUserAgentOsVersion('Android\x8512')).toEqual('');
     expect(parseUserAgentOsVersion('iPhone; CPU iPhone OS 16_2 like Mac OS X 10_15')).toEqual('16.2');
     expect(parseUserAgentOsVersion('iPhone\nOS 16_2')).toEqual('');
   });

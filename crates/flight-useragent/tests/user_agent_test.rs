@@ -1,7 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use flight_useragent::contract::*;
 
 fn ios_prefix() -> &'static str {

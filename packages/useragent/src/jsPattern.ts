@@ -2,7 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 function asciiLower(value: number): number {
-  if (Array.from({ length: 0x005a - 0x0041 + 1 }, (_, index) => 0x0041 + index).includes(value)) {
+  if (value >= 0x0041 && value <= 0x005a) {
     return value + 0x0020;
   }
   return value;
@@ -10,38 +10,49 @@ function asciiLower(value: number): number {
 
 function asciiSliceToString(text: Readonly<number[]>, start: number, end: number): string {
   let out = '';
-  for (let i = start; i < end; i += 1) {
-    const value = (() => {
-      const matchValue = text[i];
-      switch (matchValue) {
-        case 0x002e:
-          return '.';
-        case 0x0030:
-          return '0';
-        case 0x0031:
-          return '1';
-        case 0x0032:
-          return '2';
-        case 0x0033:
-          return '3';
-        case 0x0034:
-          return '4';
-        case 0x0035:
-          return '5';
-        case 0x0036:
-          return '6';
-        case 0x0037:
-          return '7';
-        case 0x0038:
-          return '8';
-        case 0x0039:
-          return '9';
-        case 0x005f:
-          return '_';
-        default:
-          return '';
-      }
-    })();
+  for (let i = start; i < end; i++) {
+    let value;
+    switch (text[i]) {
+      case 0x002e:
+        value = '.';
+        break;
+      case 0x0030:
+        value = '0';
+        break;
+      case 0x0031:
+        value = '1';
+        break;
+      case 0x0032:
+        value = '2';
+        break;
+      case 0x0033:
+        value = '3';
+        break;
+      case 0x0034:
+        value = '4';
+        break;
+      case 0x0035:
+        value = '5';
+        break;
+      case 0x0036:
+        value = '6';
+        break;
+      case 0x0037:
+        value = '7';
+        break;
+      case 0x0038:
+        value = '8';
+        break;
+      case 0x0039:
+        value = '9';
+        break;
+      case 0x005f:
+        value = '_';
+        break;
+      default:
+        value = '';
+        break;
+    }
     out = `${out}${value}`;
   }
   return out;
@@ -125,7 +136,7 @@ function containsThenOnLine(text: Readonly<number[]>, first: string, second: str
       if (k >= text.length || isJsLineTerminator(text[k])) {
         return false;
       }
-      k += 1;
+      k++;
     }
   });
 }
@@ -144,7 +155,7 @@ function findFrom(text: Readonly<number[]>, from: number, needle: string): numbe
 }
 
 function isAsciiDigit(c: number): boolean {
-  return Array.from({ length: 0x0039 - 0x0030 + 1 }, (_, index) => 0x0030 + index).includes(c);
+  return c >= 0x0030 && c <= 0x0039;
 }
 
 /**
@@ -186,7 +197,7 @@ function isJsWhitespace(c: number): boolean {
     c === 0x0020 ||
     c === 0x00a0 ||
     c === 0x1680 ||
-    Array.from({ length: 0x200a - 0x2000 + 1 }, (_, index) => 0x2000 + index).includes(c) ||
+    (c >= 0x2000 && c <= 0x200a) ||
     c === 0x202f ||
     c === 0x205f ||
     c === 0x3000 ||
@@ -208,7 +219,7 @@ function matchesAt(text: Readonly<number[]>, at: number, needle: string): boolea
     if (i >= text.length || asciiLower(text[i]) !== p) {
       return false;
     }
-    i += 1;
+    i++;
   }
   return true;
 }
@@ -223,12 +234,11 @@ function positions(text: Readonly<number[]>, needle: string): number[] {
   for (;;) {
     const found = findFrom(text, from, needle);
     {
-      const matchValue = found;
-      if (matchValue !== undefined) {
-        const at = matchValue;
+      if (found !== undefined) {
+        const at = found;
         out.push(at);
         from = at + 1;
-      } else if (matchValue === undefined) {
+      } else {
         break;
       }
     }
@@ -243,7 +253,7 @@ function runLen(text: Readonly<number[]>, at: number, predicate: (arg0: number) 
   const start = Math.min(at, text.length);
   let end = start;
   while (end < text.length && predicate(text[end])) {
-    end += 1;
+    end++;
   }
   return end - start;
 }
@@ -253,7 +263,7 @@ function runLen(text: Readonly<number[]>, at: number, predicate: (arg0: number) 
  */
 function underscoresToDots(value: string): string {
   let units: number[] = Array.from({ length: value.length }, (_, index) => value.charCodeAt(index));
-  for (let i = 0; i < units.length; i += 1) {
+  for (let i = 0; i < units.length; i++) {
     if (units[i] === 0x005f) {
       units[i] = 0x002e;
     }

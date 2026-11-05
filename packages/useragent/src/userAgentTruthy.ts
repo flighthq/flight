@@ -6,83 +6,74 @@ function isTruthy(value?: unknown | undefined): boolean {
     return false;
   }
   {
-    const $b = (($downcast: unknown): boolean | undefined => (typeof $downcast === 'boolean' ? $downcast : undefined))(
+    const b = (($downcast: unknown): boolean | undefined => (typeof $downcast === 'boolean' ? $downcast : undefined))(
       value,
     );
-    if ($b !== undefined) {
-      const b = $b;
+    if (b !== undefined) {
       return b;
     }
   }
   {
-    const $s = (($downcast: unknown): string | undefined => (typeof $downcast === 'string' ? $downcast : undefined))(
+    const s = (($downcast: unknown): string | undefined => (typeof $downcast === 'string' ? $downcast : undefined))(
       value,
     );
-    if ($s !== undefined) {
-      const s = $s;
+    if (s !== undefined) {
       return s.length !== 0;
     }
   }
   {
-    const $s = (($downcast: unknown): string | undefined => (typeof $downcast === 'string' ? $downcast : undefined))(
+    const s = (($downcast: unknown): string | undefined => (typeof $downcast === 'string' ? $downcast : undefined))(
       value,
     );
-    if ($s !== undefined) {
-      const s = $s;
+    if (s !== undefined) {
       return s.length !== 0;
     }
   }
   {
-    const $n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
+    const n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
       value,
     );
-    if ($n !== undefined) {
-      const n = $n;
-      return n !== 0.0 && !Number.isNaN(n);
+    if (n !== undefined) {
+      return n !== 0 && !Number.isNaN(n);
     }
   }
   {
-    const $n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
+    const n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
       value,
     );
-    if ($n !== undefined) {
-      const n = $n;
-      return n !== 0.0 && !Number.isNaN(n);
+    if (n !== undefined) {
+      return n !== 0 && !Number.isNaN(n);
     }
   }
   {
-    const $n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
+    const n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
       value,
     );
-    if ($n !== undefined) {
-      const n = $n;
+    if (n !== undefined) {
       return n !== 0;
     }
   }
   {
-    const $n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
+    const n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
       value,
     );
-    if ($n !== undefined) {
-      const n = $n;
+    if (n !== undefined) {
       return n !== 0;
     }
   }
   {
-    const $n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
+    const n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
       value,
     );
-    if ($n !== undefined) {
-      const n = $n;
+    if (n !== undefined) {
       return n !== 0;
     }
   }
   {
-    const $n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
+    const n = (($downcast: unknown): number | undefined => (typeof $downcast === 'number' ? $downcast : undefined))(
       value,
     );
-    if ($n !== undefined) {
-      const n = $n;
+    if (n !== undefined) {
       return n !== 0;
     }
   }

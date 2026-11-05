@@ -42,11 +42,7 @@ export function detectEndianness(): PlatformEndianness {
  */
 function iX86(t: Readonly<number[]>): boolean {
   for (const at of positions(t, 'i')) {
-    if (
-      at + 3 < t.length &&
-      Array.from({ length: 0x0036 - 0x0033 + 1 }, (_, index) => 0x0033 + index).includes(t[at + 1]) &&
-      matchesAt(t, at + 2, '86')
-    ) {
+    if (at + 3 < t.length && t[at + 1] >= 0x0033 && t[at + 1] <= 0x0036 && matchesAt(t, at + 2, '86')) {
       return true;
     }
   }
@@ -95,7 +91,7 @@ export function parseUserAgentArch(ua: string, uadPlatform?: string): string {
               : contains(t, 'mips')
                 ? 'mips'
                 : '';
-  return String(arch);
+  return arch;
 }
 
 /**

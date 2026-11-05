@@ -91,10 +91,10 @@ function iosVersion(t: Readonly<number[]>): string | undefined {
         if (k >= t.length || isJsLineTerminator(t[k])) {
           break;
         }
-        k += 1;
+        k++;
       }
     }
-    at += 1;
+    at++;
   }
   return undefined;
 }
@@ -112,7 +112,7 @@ function linuxWithoutAndroid(t: Readonly<number[]>): boolean {
       if (k >= t.length || isJsLineTerminator(t[k])) {
         return true;
       }
-      k += 1;
+      k++;
     }
   });
 }
@@ -126,44 +126,44 @@ function linuxWithoutAndroid(t: Readonly<number[]>): boolean {
 export function parseUserAgentFormFactor(ua: string, maxTouchPoints: number): DeviceFormFactor {
   const t = charsOf(ua);
   if (containsAny(t, ['android auto', 'car browser', 'automotive'])) {
-    return String(DeviceFormFactorCar);
+    return DeviceFormFactorCar;
   }
   if (
     containsAny(t, ['smarttv', 'smart-tv', 'smart_tv', 'googletv', 'appletv', 'hbbtv', 'netcast', 'tv safari']) ||
     containsThenOnLine(t, 'webos', 'tv') ||
     containsThenOnLine(t, 'tizen', 'tv')
   ) {
-    return String(DeviceFormFactorTV);
+    return DeviceFormFactorTV;
   }
   if (watchThen(t) || contains(t, 'wearable')) {
-    return String(DeviceFormFactorWatch);
+    return DeviceFormFactorWatch;
   }
   if (contains(t, 'ipad')) {
-    return String(DeviceFormFactorTablet);
+    return DeviceFormFactorTablet;
   }
   if (contains(t, 'android') && !contains(t, 'mobile')) {
-    return String(DeviceFormFactorTablet);
+    return DeviceFormFactorTablet;
   }
   if (tabletPc(t) || containsAny(t, ['silk', 'kindle fire'])) {
-    return String(DeviceFormFactorTablet);
+    return DeviceFormFactorTablet;
   }
   if (
     containsAny(t, ['iphone', 'ipod', 'windows phone', 'blackberry', 'mobile safari']) ||
     containsThenOnLine(t, 'android', 'mobile') ||
     bbDigits(t)
   ) {
-    return String(DeviceFormFactorPhone);
+    return DeviceFormFactorPhone;
   }
   if (maxTouchPoints > 1 && containsAny(t, ['macintosh', 'mac os x'])) {
-    return String(DeviceFormFactorTablet);
+    return DeviceFormFactorTablet;
   }
   if (containsAny(t, ['winnt', 'windowsnt', 'macintosh', 'mac os x', 'x11']) || linuxWithoutAndroid(t)) {
-    return String(DeviceFormFactorDesktop);
+    return DeviceFormFactorDesktop;
   }
   if (maxTouchPoints === 0) {
-    return String(DeviceFormFactorDesktop);
+    return DeviceFormFactorDesktop;
   }
-  return String(DeviceFormFactorUnknown);
+  return DeviceFormFactorUnknown;
 }
 
 /**
@@ -193,7 +193,7 @@ export function parseUserAgentOsName(ua: string): string {
                     : contains(t, 'linux')
                       ? 'Linux'
                       : '';
-  return String(name);
+  return name;
 }
 
 /**

@@ -43,7 +43,7 @@ describe('parseUserAgentRuntime', () => {
     expect(parseUserAgentRuntime(crate.record([['__TAURI__', undefined]]))).toEqual('web');
     expect(parseUserAgentRuntime(crate.record([['Capacitor', crate.text('')]]))).toEqual('web');
     expect(parseUserAgentRuntime(crate.record([['Capacitor', false]]))).toEqual('web');
-    expect(parseUserAgentRuntime(crate.record([['Capacitor', 0.0]]))).toEqual('web');
+    expect(parseUserAgentRuntime(crate.record([['Capacitor', 0]]))).toEqual('web');
     expect(parseUserAgentRuntime(crate.record([['Capacitor', 1]]))).toEqual('capacitor');
     const stringVersions = crate.record([['process', crate.object([['versions', crate.text('x')]])]]);
     expect(parseUserAgentRuntime(stringVersions)).toEqual('web');
