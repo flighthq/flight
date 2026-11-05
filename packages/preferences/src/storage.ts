@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
   HostPreferencesChangeCapability,
   HostPreferencesCapability,
   StorageBooleanOrResult,
@@ -29,7 +30,7 @@ import type {
   StorageSetItemResult,
   StorageSetItemsResult,
   StorageSignals,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Starts raw provider change delivery into the caller-owned signal entity. Re-attaching first consumes
 // the exact unsubscribe returned by the prior provider, so a different provider can never redirect teardown.

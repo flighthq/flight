@@ -16,6 +16,7 @@
       ".menu-types",
       ".path-boolean-types",
       ".path-types",
+      ".preferences-types",
       ".selection-types",
       ".shape-formats-types",
       ".shape-types",
@@ -83,6 +84,9 @@
     },
     {
       "path": "../path-boolean/tsconfig.contract.json"
+    },
+    {
+      "path": "../preferences/tsconfig.contract.json"
     },
     {
       "path": "../registry"

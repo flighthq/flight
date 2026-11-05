@@ -1,15 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type {
-  EntityRuntimeKey,
-  HostPreferencesChangeCapability,
-  HostPreferencesCapability,
-  StorageChange,
-  StorageClearFailureReason,
-  StorageGetItemFailureReason,
-  StorageRemoveItemFailureReason,
-  StorageSetItemFailureReason,
-} from '@flighthq/types/contract';
+import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import { EntityRuntimeKey as EntityRuntimeKeyValue } from '@flighthq/types/contract';
 
 import {
@@ -51,6 +42,15 @@ import {
   setStorageJSON,
   setStorageNumber,
 } from './storage.ts';
+import type {
+  HostPreferencesChangeCapability,
+  HostPreferencesCapability,
+  StorageChange,
+  StorageClearFailureReason,
+  StorageGetItemFailureReason,
+  StorageRemoveItemFailureReason,
+  StorageSetItemFailureReason,
+} from './types.ts';
 
 interface MemoryStorageBackend extends HostPreferencesCapability {
   data: Record<string, string>;

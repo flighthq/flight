@@ -54,6 +54,7 @@
     "@flighthq/menu": "*",
     "@flighthq/path": "*",
     "@flighthq/path-boolean": "*",
+    "@flighthq/preferences": "*",
     "@flighthq/registry": "*",
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
