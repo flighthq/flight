@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use flight_entity::{FlightError, FlightErrorKind, get_entity_id};
