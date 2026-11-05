@@ -2,6 +2,7 @@ import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabil
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
+import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 import type { HostHapticsCapabilities } from './Haptics.ts';
 import type {
@@ -34,8 +35,6 @@ import type {
   HostSocketCapabilities,
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
-  HostCanvasCapabilities,
-  HostSurfaceCapabilities,
   HostVideoCapabilities,
 } from './Host.ts';
 

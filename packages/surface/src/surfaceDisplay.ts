@@ -1,4 +1,4 @@
-import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability, Surface } from '@flighthq/types/contract';
+import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability, Surface } from './types.ts';
 
 // Resizes a surface's backing store, in device pixels. The context or acquisition reads the new size
 // live, so nothing on the surface has to be updated alongside it.

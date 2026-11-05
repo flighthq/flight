@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".app-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [{ "path": "../app/tsconfig.contract.json" }, { "path": "../entity" }],
+  "include": ["src/contract.surface-types.ts", "src/types.ts"]
+}

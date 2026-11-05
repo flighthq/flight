@@ -34,7 +34,7 @@
       "path": "../render"
     },
     {
-      "path": "../surface"
+      "path": "../surface/tsconfig.runtime.json"
     },
     {
       "path": "../types"

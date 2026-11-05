@@ -19,6 +19,7 @@
       ".geometry-types",
       ".path-types",
       ".shape-types",
+      ".surface-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-dom-types"
@@ -59,6 +60,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
     },
     {
       "path": "../materials/tsconfig.contract.json"

@@ -59,7 +59,7 @@
       "path": "../signals"
     },
     {
-      "path": "../surface"
+      "path": "../surface/tsconfig.runtime.json"
     },
     {
       "path": "../text/tsconfig.runtime.json"

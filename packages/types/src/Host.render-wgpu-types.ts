@@ -5,6 +5,7 @@ import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
+import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
@@ -28,7 +29,6 @@ import type { HostAudioDeviceCapability } from './HostAudioDevice.ts';
 import type { HostAudioMixerCapability } from './HostAudioMixer.ts';
 import type { HostBitmapEncodeCapability } from './HostBitmapEncode.ts';
 import type { HostBitmapReadbackCapability } from './HostBitmapReadback.ts';
-import type { HostCanvasCapability } from './HostCanvas.ts';
 import type {
   HostDirectoryOpenDialogCapability,
   HostFileOpenDialogCapability,
@@ -41,7 +41,6 @@ import type { HostImageOpenDialogCapability } from './HostImageOpenDialog.ts';
 import type { HostMessageDialogCapability } from './HostMessageDialog.ts';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog.ts';
 import type { HostPromptDialogCapability } from './HostPromptDialog.ts';
-import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability } from './HostSurface.ts';
 import type { HostVideoCapability } from './HostVideo.ts';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog.ts';
 import type { HostImageCapability } from './ImageResource.ts';
@@ -257,10 +256,6 @@ export interface HostGeolocationCapabilities {
   readonly position?: HostGeolocationCapability;
 }
 
-export interface HostCanvasCapabilities {
-  readonly context?: HostCanvasCapability;
-}
-
 export interface HostGlCapabilities {
   readonly context?: HostGlCapability;
 }
@@ -395,11 +390,6 @@ export interface HostStatusBarCapabilities {
   readonly overlays?: HostStatusBarOverlaysCapability;
   readonly style?: HostStatusBarStyleCapability;
   readonly visibility?: HostStatusBarVisibilityCapability;
-}
-
-export interface HostSurfaceCapabilities {
-  readonly display?: HostSurfaceDisplayCapability;
-  readonly resize?: HostSurfaceResizeCapability;
 }
 
 export interface HostTextSegmentCapabilities {

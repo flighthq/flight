@@ -1,6 +1,7 @@
+import type { Surface } from '@flighthq/surface/contract';
+
 import type { Bitmap } from './Bitmap.ts';
 import type { HostImageSource } from './HostImageSource.ts';
-import type { Surface } from './Surface.ts';
 import type { TextureSource } from './TextureSource.ts';
 import type { ImageTextureSourceKind } from './TextureSourceKind.ts';
 

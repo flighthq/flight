@@ -21,6 +21,7 @@
       ".clip-types",
       ".geometry-types",
       ".path-types",
+      ".surface-types",
       ".shape-types",
       ".text-types",
       ".textlayout-types",
@@ -67,6 +68,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
     },
     {
       "path": "../text/tsconfig.contract.json"

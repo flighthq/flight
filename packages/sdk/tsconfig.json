@@ -394,7 +394,7 @@
       "path": "../statusbar"
     },
     {
-      "path": "../surface"
+      "path": "../surface/tsconfig.runtime.json"
     },
     {
       "path": "../swf"

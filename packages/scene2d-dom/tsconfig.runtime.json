@@ -53,7 +53,7 @@
       "path": "../shape/tsconfig.runtime.json"
     },
     {
-      "path": "../surface"
+      "path": "../surface/tsconfig.runtime.json"
     },
     {
       "path": "../signals"

@@ -1,3 +1,4 @@
+export * from './contract.surface-types.ts';
 export * from './canvasSurface.ts';
 export * from './glSurface.ts';
 export * from './surface.ts';

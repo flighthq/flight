@@ -1,14 +1,10 @@
 import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  GlContextOptions,
-  GlSurface,
-  HostGlCapability,
-  NativeSurfaceHandle,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { GlContextOptions, GlSurface, HostGlCapability } from '@flighthq/types/contract';
 
 import { allocateSurface } from './surface.ts';
+import type { NativeSurfaceHandle } from './types.ts';
 
 // Allocates a drawable in the given window, sized in device pixels, and acquires a GL context on it. The
 // window is what the host needs to make a drawable at all — the document on web, the SDL_Window on SDL —

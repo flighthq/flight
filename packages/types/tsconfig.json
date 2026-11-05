@@ -33,6 +33,7 @@
       ".path-types",
       ".permissions-types",
       ".preferences-types",
+      ".surface-types",
       ".scene2d-dom-types",
       ".scene2d-formats-types",
       ".scene2d-wgpu-types",
@@ -190,6 +191,9 @@
     },
     {
       "path": "../statechart/tsconfig.contract.json"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
     },
     {
       "path": "../text/tsconfig.contract.json"

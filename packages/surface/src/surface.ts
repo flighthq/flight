@@ -1,6 +1,7 @@
-import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
-import type { EntityConstruction, NativeSurfaceHandle, Surface, SurfaceRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { allocateEntity, createEntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { NativeSurfaceHandle, Surface, SurfaceRuntime } from './types.ts';
 
 // Allocates a surface entity around a drawable the host just created, before any context is acquired on
 // it. The handle goes on the runtime because it is a platform object that only the allocating host may

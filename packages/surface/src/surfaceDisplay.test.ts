@@ -1,15 +1,10 @@
 import { finishEntity } from '@flighthq/entity/contract';
-import type {
-  Entity,
-  HostSurfaceDisplayCapability,
-  HostSurfaceResizeCapability,
-  Surface,
-} from '@flighthq/types/contract';
 
 import { allocateSurface } from './surface.ts';
 import { resizeSurface, setSurfaceDisplaySize } from './surfaceDisplay.ts';
+import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability, Surface } from './types.ts';
 
-function capabilityOf<T>(fields: Omit<T, keyof Entity>): T {
+function capabilityOf<T>(fields: T): T {
   return finishEntity(Object.assign(allocateSurface<Surface>(null), fields) as never) as T;
 }
 

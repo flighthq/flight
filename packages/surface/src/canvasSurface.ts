@@ -1,13 +1,9 @@
 import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
-import type {
-  CanvasSurface,
-  EntityConstruction,
-  HostCanvasCapability,
-  NativeSurfaceHandle,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { allocateSurface } from './surface.ts';
+import type { CanvasSurface, HostCanvasCapability, NativeSurfaceHandle } from './types.ts';
 
 // Allocates a drawable in the given window, sized in device pixels, and acquires a 2D context on it.
 // Returns null when the host cannot rasterize 2D on it.

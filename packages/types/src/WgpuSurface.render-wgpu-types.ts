@@ -1,4 +1,5 @@
-import type { Surface } from './Surface.ts';
+import type { Surface } from '@flighthq/surface/contract';
+
 import type { WgpuHostAcquisition } from './WgpuHost.ts';
 
 // A WGPU rendering surface: a host-allocated drawable with an acquired WebGPU device and presentation

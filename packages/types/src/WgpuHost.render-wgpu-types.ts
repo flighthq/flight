@@ -68,6 +68,6 @@ export interface WgpuSurfaceAttachment {
   readonly format: GPUTextureFormat;
 }
 import type { AppWindow } from '@flighthq/app/contract';
+import type { NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
 
 import type { Entity } from './Entity.ts';
-import type { NativeSurfaceHandle, Surface } from './Surface.ts';

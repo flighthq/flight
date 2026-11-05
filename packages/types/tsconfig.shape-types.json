@@ -17,6 +17,7 @@
       ".materials-types",
       ".geometry-types",
       ".path-types",
+      ".surface-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.shape-types"
@@ -51,6 +52,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
     },
     {
       "path": "../materials/tsconfig.contract.json"
