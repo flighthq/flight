@@ -23604,12 +23604,9 @@ mod write_vector2_to_float32_array {
         assert!(output.contains("for (const [value, expected] of cases) {"));
         assert!(output.contains("let out = new Float32Array(2).fill(0);"));
         assert!(output.contains("expect(Array.from(out)).toEqual([1, 2]);"));
-        assert!(
-            output.contains(
-                "expect(Math.abs(out[0] - Math.fround(Math.sqrt(3) / 2)) < 5e-13).toBe(true);"
-            ),
-            "{output}"
-        );
+        assert!(output.contains(
+            "expect(Math.abs(out[0] - Math.fround(Math.sqrt(3) / 2)) < 5e-13).toBe(true);"
+        ),);
         assert!(output.contains("expect(Number.isNaN(Number.NaN)).toBe(true);"));
     }
 
@@ -27119,6 +27116,19 @@ pub fn same_cast(x: f64) -> u32 {
     assert!(
         output.contains("return data.length;\n"),
         "len() as u32 should elide >>> 0: {output}"
+    );
+    let len_as_i32_fn = output
+        .split("function lenAsI32")
+        .nth(1)
+        .and_then(|s| s.split("\n}\n").next())
+        .unwrap_or("");
+    assert!(
+        len_as_i32_fn.contains("return data.length;"),
+        "len() as i32 should elide | 0: {output}"
+    );
+    assert!(
+        !len_as_i32_fn.contains("| 0"),
+        "len() as i32 should not contain | 0: {output}"
     );
     assert!(
         output.contains("return 0;\n"),
