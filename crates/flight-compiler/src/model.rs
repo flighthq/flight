@@ -2403,7 +2403,10 @@ fn lower_test_local_collectors(file: &mut syn::File) -> Result<(), CompileError>
             ));
         };
         let name = item_static.ident.to_string();
-        if collectors.insert(name.clone(), vector_type.clone()).is_some() {
+        if collectors
+            .insert(name.clone(), vector_type.clone())
+            .is_some()
+        {
             return Err(compile_error(format!(
                 "duplicate portable test thread-local collector `{name}`"
             )));
@@ -2518,10 +2521,7 @@ impl VisitMut for TestLocalCollectorRewriter<'_> {
                 self.error = Some(test_local_collector_use_error(&name));
                 return;
             };
-            if closure.asyncness.is_some()
-                || binding.by_ref.is_some()
-                || binding.subpat.is_some()
-            {
+            if closure.asyncness.is_some() || binding.by_ref.is_some() || binding.subpat.is_some() {
                 self.error = Some(test_local_collector_use_error(&name));
                 return;
             }

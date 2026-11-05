@@ -62,10 +62,7 @@ mod evaluate_glsl_scalar_expression {
     #[test]
     fn throws_rather_than_modelling_an_operator_glsl_and_javascript_disagree_about() {
         let error = std::panic::catch_unwind(|| {
-            evaluate_glsl_scalar_expression(
-                "texture(u_texture0, uv).r",
-                &bindings(&[("uv", 0.0)]),
-            );
+            evaluate_glsl_scalar_expression("texture(u_texture0, uv).r", &bindings(&[("uv", 0.0)]));
         })
         .unwrap_err();
         let error = error.downcast_ref::<FlightError>().unwrap();
