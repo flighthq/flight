@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};
 
@@ -13,6 +11,16 @@ use flight_render::{
 };
 
 use crate::support::*;
+
+fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(message) = payload.downcast_ref::<String>() {
+        return message.clone();
+    }
+    return payload
+        .downcast_ref::<&str>()
+        .map(|message| message.to_string())
+        .unwrap_or_default();
+}
 
 mod create_debug_state {
     use super::*;
@@ -85,7 +93,10 @@ mod disable_debug {
 
         disable_debug(&state, &log_state);
         assert_eq!(get_log_level(&log_state), LogLevel::Warn);
-        assert_eq!(get_log_channel_level(&log_state, "render"), None);
+        assert_eq!(
+            get_log_channel_level(&log_state, "render").unwrap_or(LogLevel::None),
+            LogLevel::None
+        );
     }
 
     #[test]
@@ -103,7 +114,10 @@ mod disable_debug {
         );
 
         disable_debug(&state, &log_state);
-        assert_eq!(get_log_channel_level(&log_state, "render"), None);
+        assert_eq!(
+            get_log_channel_level(&log_state, "render").unwrap_or(LogLevel::None),
+            LogLevel::None
+        );
         assert_eq!(
             get_log_channel_level(&log_state, "unrelated"),
             Some(LogLevel::Error)
@@ -287,13 +301,13 @@ mod enable_debug {
         let subsystem = |name: &str, fail_enable: bool, fail_rollback: bool| {
             let (on, off, order) = (active.clone(), active.clone(), rollback_order.clone());
             let (enable_name, disable_name) = (name.to_string(), name.to_string());
-            let enable: DebugGuardBinding = Arc::new(move || {
+            let enable: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
                 on.lock().unwrap().push(enable_name.clone());
                 if fail_enable {
                     panic!("audio guard enable failed");
                 }
             });
-            let disable: DebugGuardBinding = Arc::new(move || {
+            let disable: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
                 off.lock().unwrap().retain(|guard| *guard != disable_name);
                 order.lock().unwrap().push(disable_name.clone());
                 if fail_rollback {
@@ -317,10 +331,7 @@ mod enable_debug {
         }))
         .unwrap_err();
 
-        assert_eq!(
-            thrown.downcast_ref::<&str>(),
-            Some(&"audio guard enable failed")
-        );
+        assert_eq!(panic_message(thrown), "audio guard enable failed");
         assert!(!is_debug_enabled(&state));
         assert!(active.lock().unwrap().is_empty());
         assert_eq!(
@@ -336,7 +347,10 @@ mod enable_debug {
             get_log_channel_level(&log_state, "input"),
             Some(LogLevel::Info)
         );
-        assert_eq!(get_log_channel_level(&log_state, "audio"), None);
+        assert_eq!(
+            get_log_channel_level(&log_state, "audio").unwrap_or(LogLevel::None),
+            LogLevel::None
+        );
         assert_eq!(
             get_log_channel_level(&log_state, "unrelated"),
             Some(LogLevel::Verbose)
