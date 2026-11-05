@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { HostLifecycleCapability } from '@flighthq/lifecycle/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction, HostLifecycleCapability } from '@flighthq/types/contract';
 
 import type {
   AppLoop,

@@ -1,15 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
+
 import type {
-  HostLifecycleCapability,
   AppLaunchKind,
   AppLifecycleState,
   AppMemoryPressure,
-  Entity,
+  HostLifecycleCapability,
   LifecycleOperation,
-} from '@flighthq/types/contract';
-
+} from './contract.lifecycle-types.ts';
 import {
   attachAppLifecycle,
   createAppLifecycle,

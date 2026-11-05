@@ -1,13 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { BackendOperationExplanation } from '@flighthq/host/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendOperationExplanation, LifecycleOperation, EntityConstruction } from '@flighthq/types/contract';
+
 import type {
   AppLaunchKind,
-  HostLifecycleCapability,
   AppLifecycle,
   AppLifecycleState,
   AppMemoryPressure,
-} from '@flighthq/types/contract';
+  HostLifecycleCapability,
+  LifecycleOperation,
+} from './contract.lifecycle-types.ts';
 
 // Begins delivering lifecycle changes to `app`'s signals by subscribing to the supplied provider. On
 // each change it reads the current state and emits onStateChange plus onResume when transitioning

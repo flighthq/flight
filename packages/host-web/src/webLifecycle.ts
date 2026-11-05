@@ -3,7 +3,7 @@ import type {
   AppLifecycleState,
   AppMemoryPressure,
   HostLifecycleCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/lifecycle/contract';
 
 function createWebLifecycleBackend(): HostLifecycleCapability {
   const out = {} as HostLifecycleCapability;

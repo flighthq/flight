@@ -25,6 +25,7 @@
       ".clip-types",
       ".clipboard-types",
       ".device-types",
+      ".lifecycle-types",
       ".flow-types",
       ".geometry-types",
       ".font-types",
@@ -102,6 +103,9 @@
     },
     {
       "path": "../device/tsconfig.contract.json"
+    },
+    {
+      "path": "../lifecycle/tsconfig.contract.json"
     },
     {
       "path": "../log"

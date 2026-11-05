@@ -1,5 +1,4 @@
-import type { AppLifecycleState, HostLifecycleCapability } from '@flighthq/types/contract';
-
+import type { AppLifecycleState, HostLifecycleCapability } from './contract.lifecycle-types.ts';
 import { getAppLaunchKind, getAppLifecycleState, isAppActive, isAppBackground, isAppInactive } from './lifecycle.ts';
 
 function hostWith(backend: Partial<HostLifecycleCapability>): {

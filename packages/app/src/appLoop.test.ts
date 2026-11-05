@@ -1,7 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { AppLifecycleState, HostLifecycleCapability } from '@flighthq/lifecycle/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { AppLifecycleState, HostLifecycleCapability } from '@flighthq/types/contract';
 
 import {
   attachAppLoopExit,

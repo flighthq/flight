@@ -12,3 +12,12 @@ export {
   isAppInactive,
   requestAppBack,
 } from './lifecycle.ts';
+export type {
+  AppLaunchKind,
+  AppLifecycle,
+  AppLifecycleState,
+  AppMemoryPressure,
+  HostLifecycleCapabilities,
+  HostLifecycleCapability,
+  LifecycleOperation,
+} from './contract.ts';

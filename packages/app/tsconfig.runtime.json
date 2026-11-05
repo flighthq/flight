@@ -7,11 +7,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".menu-types", ""],
+    "moduleSuffixes": [".lifecycle-types", ".menu-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
     { "path": "../entity" },
+    { "path": "../lifecycle/tsconfig.contract.json" },
     { "path": "../menu/tsconfig.contract.json" },
     { "path": "../signals" },
     { "path": "../types" },

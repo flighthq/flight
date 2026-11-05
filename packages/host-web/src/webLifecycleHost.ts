@@ -1,4 +1,4 @@
-import type { HostLifecycleCapabilities } from '@flighthq/types/contract';
+import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
 
 import { webHostLifecycle } from './webLifecycle.ts';
 

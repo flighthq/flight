@@ -1,4 +1,4 @@
-import type { AppLifecycleState, AppMemoryPressure } from '@flighthq/types/contract';
+import type { AppLifecycleState, AppMemoryPressure } from '@flighthq/lifecycle/contract';
 
 import { webHostLifecycle } from './webLifecycle.ts';
 

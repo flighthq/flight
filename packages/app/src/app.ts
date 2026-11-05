@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { HostLifecycleCapability } from '@flighthq/lifecycle/contract';
 import type { MenuItemTemplate } from '@flighthq/menu/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HostLifecycleCapability } from '@flighthq/types/contract';
 
 import type {
   AppEvents,

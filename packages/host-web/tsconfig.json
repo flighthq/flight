@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".menu-types", ""],
+    "moduleSuffixes": [".lifecycle-types", ".menu-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -57,7 +57,7 @@
       "path": "../input"
     },
     {
-      "path": "../lifecycle"
+      "path": "../lifecycle/tsconfig.contract.json"
     },
     {
       "path": "../media"

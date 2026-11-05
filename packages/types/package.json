@@ -64,6 +64,7 @@
     "@flighthq/input": "*",
     "@flighthq/interaction": "*",
     "@flighthq/layout": "*",
+    "@flighthq/lifecycle": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/math": "*",
