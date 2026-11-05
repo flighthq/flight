@@ -1,7 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Spring2D, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
-import { addSpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring.ts';
+import {
+  addSpringImpulse,
+  createSpring,
+  initializeSpring,
+  isSpringSettled,
+  resetSpring,
+  updateSpring,
+} from './spring.ts';
 
 // Add independent velocity impulses to both axes without allocating or changing either value.
 export function addSpringImpulse2D(spring2D: Spring2D, velocityX: number, velocityY: number): void {
@@ -16,12 +23,14 @@ export function createSpring2D(
   velocityY: number = 0,
 ): Spring2D {
   const out = allocateEntity<Spring2D>();
+  (out as EntityConstruction<Spring2D>).x = createSpring();
+  (out as EntityConstruction<Spring2D>).y = createSpring();
   initializeSpring2D(out, valueX, valueY, velocityX, velocityY);
   return finishEntity(out);
 }
 
-// Allocate a 2D spring as a pair of scalar springs, each at its `value*` (default 0) and `velocity*`
-// (default 0).
+// Write per-axis values (default 0) and velocities (default 0) into both existing axes in place;
+// `createSpring2D` allocates the axes once, so re-initializing never replaces them.
 export function initializeSpring2D(
   out: EntityConstruction<Spring2D>,
   valueX: number = 0,
@@ -29,8 +38,8 @@ export function initializeSpring2D(
   velocityX: number = 0,
   velocityY: number = 0,
 ): void {
-  out.x = createSpring(valueX, velocityX);
-  out.y = createSpring(valueY, velocityY);
+  initializeSpring(out.x, valueX, velocityX);
+  initializeSpring(out.y, valueY, velocityY);
 }
 
 // Report whether both axes of `spring2D` have settled at (`targetX`, `targetY`) — the per-component

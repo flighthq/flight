@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 
 use flight_spring::contract::*;
 

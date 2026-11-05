@@ -16,7 +16,7 @@ export interface SpringConfig {
 /**
  * Frozen plain-data preset: quick and underdamped for visible overshoot.
  */
-export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.35, frequency: 2.0 });
+export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.35, frequency: 2 });
 
 /**
  * A slower, well-damped profile for soft UI movement with only a restrained overshoot.
@@ -26,7 +26,7 @@ export const SpringPresetGentle: Readonly<SpringConfig> = Object.freeze({ dampin
 /**
  * A high-frequency critical profile for a fast response without overshoot.
  */
-export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 1.0, frequency: 4.0 });
+export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 1, frequency: 4 });
 
 /**
  * Builds a `SpringConfig` from the designer-intuitive `frequency` (Hz) and `dampingRatio`
@@ -47,7 +47,7 @@ export function createSpringConfig(frequency: number, dampingRatio: number): Spr
  */
 export function createSpringConfigFromPhysical(stiffness: number, damping: number, mass: number): SpringConfig {
   const frequency = Math.sqrt(stiffness / mass) / (Math.PI * 2);
-  const dampingRatio = damping / (2.0 * Math.sqrt(stiffness * mass));
+  const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
   return createSpringConfig(frequency, dampingRatio);
 }
 

@@ -1,7 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Spring3D, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
-import { addSpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring.ts';
+import {
+  addSpringImpulse,
+  createSpring,
+  initializeSpring,
+  isSpringSettled,
+  resetSpring,
+  updateSpring,
+} from './spring.ts';
 
 // Add independent velocity impulses to all three axes without allocating or changing their values.
 export function addSpringImpulse3D(spring3D: Spring3D, velocityX: number, velocityY: number, velocityZ: number): void {
@@ -19,12 +26,15 @@ export function createSpring3D(
   velocityZ: number = 0,
 ): Spring3D {
   const out = allocateEntity<Spring3D>();
+  (out as EntityConstruction<Spring3D>).x = createSpring();
+  (out as EntityConstruction<Spring3D>).y = createSpring();
+  (out as EntityConstruction<Spring3D>).z = createSpring();
   initializeSpring3D(out, valueX, valueY, valueZ, velocityX, velocityY, velocityZ);
   return finishEntity(out);
 }
 
-// Allocate a 3D spring as three scalar springs, each at its `value*` (default 0) and `velocity*`
-// (default 0).
+// Write per-axis values (default 0) and velocities (default 0) into all three existing axes in
+// place; `createSpring3D` allocates the axes once, so re-initializing never replaces them.
 export function initializeSpring3D(
   out: EntityConstruction<Spring3D>,
   valueX: number = 0,
@@ -34,9 +44,9 @@ export function initializeSpring3D(
   velocityY: number = 0,
   velocityZ: number = 0,
 ): void {
-  out.x = createSpring(valueX, velocityX);
-  out.y = createSpring(valueY, velocityY);
-  out.z = createSpring(valueZ, velocityZ);
+  initializeSpring(out.x, valueX, velocityX);
+  initializeSpring(out.y, valueY, velocityY);
+  initializeSpring(out.z, valueZ, velocityZ);
 }
 
 // Report whether all three axes of `spring3D` have settled at (`targetX`, `targetY`, `targetZ`) —
