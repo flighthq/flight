@@ -2994,7 +2994,7 @@ pub struct Capability {
     fn lowers_async_fn_to_async_function_with_promise_return() {
         assert_eq!(
             compile_typescript("pub async fn f() -> u32 { return 1; }\n", None).unwrap(),
-            "export async function f(): Promise<number> {\n  return 1 >>> 0;\n}\n"
+            "export async function f(): Promise<number> {\n  return 1;\n}\n"
         );
         assert_eq!(
             compile_typescript(
@@ -3497,7 +3497,7 @@ pub async fn spawn_later() -> i32 {
                 None
             )
             .unwrap(),
-            "export function f(): number {\n  const x = (async () => 42)();\n  return 0 >>> 0;\n}\n"
+            "export function f(): number {\n  const x = (async () => 42)();\n  return 0;\n}\n"
         );
         assert_eq!(
             compile_typescript(
@@ -3505,7 +3505,7 @@ pub async fn spawn_later() -> i32 {
                 None
             )
             .unwrap(),
-            "export interface Out {\n  ok: boolean;\n}\n\nexport function f(): number {\n  const x = (async () => ({ ok: true }))();\n  return 0 >>> 0;\n}\n"
+            "export interface Out {\n  ok: boolean;\n}\n\nexport function f(): number {\n  const x = (async () => ({ ok: true }))();\n  return 0;\n}\n"
         );
         assert_eq!(
             compile_typescript(

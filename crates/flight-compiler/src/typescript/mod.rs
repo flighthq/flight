@@ -11950,10 +11950,13 @@ fn emit_expression_value(
             }
             if expression_is_associated_path(&call.func, "AtomicU32", "new") && call.args.len() == 1
             {
-                return Ok(format!(
-                    "{{ value: {} >>> 0 }}",
-                    emit_expression(&call.args[0], entities)?
-                ));
+                let value = emit_expression(&call.args[0], entities)?;
+                let suffix = if integer_literal_fits_u32(&call.args[0]) {
+                    ""
+                } else {
+                    " >>> 0"
+                };
+                return Ok(format!("{{ value: {value}{suffix} }}"));
             }
             if expression_is_associated_path(&call.func, "char", "from_u32") && call.args.len() == 1
             {
@@ -26966,6 +26969,9 @@ fn expression_is_unsigned_result(expression: &Expr, entities: &HashSet<String>) 
             named_type(&cast.ty).as_deref(),
             Some("u8" | "u16" | "u32" | "usize")
         ),
+        Expr::Lit(lit) => {
+            matches!(&lit.lit, Lit::Int(int_lit) if int_lit.base10_parse::<u64>().ok().is_some_and(|v| v <= 4294967295))
+        }
         Expr::Paren(paren) => expression_is_unsigned_result(&paren.expr, entities),
         Expr::Group(group) => expression_is_unsigned_result(&group.expr, entities),
         Expr::Call(_) | Expr::MethodCall(_) => matches!(
@@ -27026,6 +27032,19 @@ fn integer_literal_fits_cast(expr: &Expr, ty: &Type) -> bool {
         "i32" | "isize" => (-2147483648..=2147483647i128).contains(&value),
         _ => false,
     };
+}
+
+fn integer_literal_fits_u32(expr: &Expr) -> bool {
+    let inner = peel_reference_and_paren(expr);
+    if let Expr::Lit(lit) = inner {
+        if let Lit::Int(int_lit) = &lit.lit {
+            return int_lit
+                .base10_parse::<u64>()
+                .ok()
+                .is_some_and(|v| v <= 4294967295);
+        }
+    }
+    return false;
 }
 
 fn inline_emitted_closure(emitted: &str, receiver: &str) -> Option<String> {
