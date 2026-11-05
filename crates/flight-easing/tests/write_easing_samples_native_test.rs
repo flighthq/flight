@@ -1,8 +1,5 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
-
 use flight_easing::*;
+use flight_entity::{FlightError, FlightErrorKind};
 
 mod write_easing_samples_native {
     use super::*;
@@ -29,8 +26,8 @@ mod write_easing_samples_native {
             write_easing_samples(&mut out, &ease);
         }))
         .unwrap_err();
-        let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
-        assert_eq!(error.kind, flight_entity::FlightErrorKind::Error);
+        let error = error.downcast_ref::<FlightError>().unwrap();
+        assert_eq!(error.kind, FlightErrorKind::Error);
         assert_eq!(
             error.message,
             "createEasingSamples: count must be a finite integer >= 1"
