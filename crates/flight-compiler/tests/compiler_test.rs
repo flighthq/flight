@@ -212,7 +212,7 @@ flight_entity::impl_entity!(Vector2);
 
         assert_eq!(
             output,
-            r#"import { allocateEntity } from '@flighthq/entity/contract';
+            r#"import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 
 export interface Vector2Raw extends EntityRaw {
@@ -223,7 +223,7 @@ export interface Vector2Raw extends EntityRaw {
 export function createVector2(x: number, y: number): Vector2Raw {
   let out: Vector2Raw = Object.assign(allocateEntity<Vector2Raw>(), { x: 0, y: 0 });
   initializeVector2(out, x, y);
-  return out;
+  return finishEntity(out);
 }
 
 export function initializeVector2(out: Vector2Raw, x: number, y: number): void {
@@ -243,6 +243,105 @@ export function addVector2(out: Vector2Raw, a: Readonly<Vector2Raw>, b: Readonly
         );
         assert!(!output.contains("Like"));
         assert!(!output.contains("add(other"));
+    }
+
+    #[test]
+    fn finishes_only_proven_entity_creation_lifecycles() {
+        let source = ModuleSource {
+            path: "crates/flight-layout/src/layout_state.rs",
+            source: r#"use flight_entity::allocate_entity;
+
+use crate::types::*;
+
+pub fn create_layout_state() -> LayoutState {
+    let mut out: LayoutState = allocate_entity();
+    initialize_layout_state(&mut out);
+    return out;
+}
+
+pub fn initialize_layout_state(out: &mut LayoutState) {
+    out.count = 0;
+}
+"#,
+        };
+        let visibility = [ModuleSource {
+            path: "crates/flight-layout/src/types.rs",
+            source: r#"use flight_entity::EntityRuntimeSlot;
+
+pub struct LayoutState {
+    runtime: EntityRuntimeSlot,
+    pub count: usize,
+}
+
+flight_entity::impl_entity!(LayoutState);
+"#,
+        }];
+
+        let output = compile_typescript_with_visibility_sources(
+            source,
+            Some("@flighthq/entity/contract"),
+            &[],
+            &[],
+            &visibility,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains(
+                "import { allocateEntity, finishEntity } from '@flighthq/entity/contract';"
+            ),
+            "{output}"
+        );
+        assert!(output.contains("return finishEntity(out);"), "{output}");
+
+        let ordinary = r#"use flight_entity::allocate_entity;
+
+#[derive(Default)]
+pub struct Record {
+    pub count: usize,
+}
+
+pub fn build_record() -> Record {
+    let mut out: Record = allocate_entity();
+    initialize_record(&mut out);
+    return out;
+}
+
+pub fn initialize_record(out: &mut Record) {
+    out.count = 0;
+}
+"#;
+        let output = compile_typescript(ordinary, Some("@flighthq/entity/contract")).unwrap();
+        assert!(output.contains("return out;"), "{output}");
+        assert!(!output.contains("finishEntity"), "{output}");
+
+        let shadowed_allocator = r#"use flight_entity::EntityRuntimeSlot;
+
+pub struct Marker {
+    runtime: EntityRuntimeSlot,
+    pub count: usize,
+}
+
+flight_entity::impl_entity!(Marker);
+
+pub fn allocate_entity() -> Marker {
+    return flight_entity::allocate_entity();
+}
+
+pub fn build_marker() -> Marker {
+    let mut out: Marker = allocate_entity();
+    initialize_marker(&mut out);
+    return out;
+}
+
+pub fn initialize_marker(out: &mut Marker) {
+    out.count = 0;
+}
+"#;
+        let output =
+            compile_typescript(shadowed_allocator, Some("@flighthq/entity/contract")).unwrap();
+        assert!(output.contains("return out;"), "{output}");
+        assert!(!output.contains("finishEntity"), "{output}");
     }
 
     #[test]
@@ -8846,7 +8945,7 @@ flight_entity::impl_entity!(RequirementSet);
 
         assert_eq!(
             output,
-            r#"import { allocateEntity } from '@flighthq/entity/contract';
+            r#"import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 
 export type RequirementFacet = 'sceneNodeKind';
@@ -8864,7 +8963,7 @@ export interface RequirementSetRaw extends EntityRaw {
 export function createRequirementSet(covers: RequirementFacet[], requirements: Requirement[]): RequirementSetRaw {
   let out: RequirementSetRaw = Object.assign(allocateEntity<RequirementSetRaw>(), { covers: [], requirements: [] });
   initializeRequirementSet(out, covers, requirements);
-  return out;
+  return finishEntity(out);
 }
 
 export function initializeRequirementSet(out: EntityConstruction<RequirementSetRaw>, covers: RequirementFacet[], requirements: Requirement[]): void {
@@ -9084,7 +9183,7 @@ pub fn is_lasso_selection_active(selection: &LassoSelection) -> bool {
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.starts_with(
-            "import { allocateEntity } from '@flighthq/entity/contract';\nimport type { EntityRaw } from '@flighthq/entity/contract';\n"
+            "import { allocateEntity, finishEntity } from '@flighthq/entity/contract';\nimport type { EntityRaw } from '@flighthq/entity/contract';\n"
         ));
         assert!(output.contains(
             "/**\n * Opaque freeform gesture state.\n */\nexport interface LassoSelectionRaw extends EntityRaw {\n}\n"

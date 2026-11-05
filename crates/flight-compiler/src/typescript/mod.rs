@@ -191,6 +191,11 @@ const ENTITY_RUNTIME_STATE_MARKER: &str = "@entity-runtime-state:";
 
 const ENTITY_RUNTIME_STATE_FIELD_MARKER: &str = "@entity-runtime-state-field:";
 
+// `{module}␟{Entity}` for an exact source entity declaration. Unlike the bare entity-name
+// context used while rendering `Raw` types, this remains unambiguous across sibling modules and is
+// suitable as evidence for lifecycle lowering.
+const ENTITY_TYPE_MARKER: &str = "@entity-type:";
+
 // An entity declared by a target-native sibling keeps the type name that sibling owns. Generated
 // entity declarations still reserve the unsuffixed name for their wrapper and emit `NameRaw`.
 const TARGET_NATIVE_ENTITY_MARKER: &str = "@target-native-entity:";
@@ -397,6 +402,10 @@ const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
 
 const RETURN_TYPE_MARKER: &str = "@return-type:";
+
+// The BindingId of the one local a proven Rust allocate/initialize/return entity factory finishes
+// at its TypeScript return boundary. This marker is function-local and never inherited by closures.
+const FINISH_ENTITY_RETURN_MARKER: &str = "@finish-entity-return:";
 
 pub(super) const RETURN_BINDING_FACT_MARKER: &str = "@return-binding-fact:";
 
@@ -2454,6 +2463,126 @@ fn initializes_resolved_readonly_entity(function: &ItemFn, context: &HashSet<Str
         return false;
     };
     return context.contains(&format!("{READONLY_ENTITY_MARKER}{identity}"));
+}
+
+// Whether this expression is the actual `flight_entity::allocate_entity` intrinsic. The ordinary
+// emitter also recognizes that intrinsic by its terminal spelling, but lifecycle completion needs a
+// stronger proof: a same-named local helper must not turn an ordinary constructor into an Entity
+// factory.
+fn is_flight_entity_allocation(expression: &Expr, context: &HashSet<String>) -> bool {
+    let Expr::Call(call) = expression else {
+        return false;
+    };
+    if !call.args.is_empty() {
+        return false;
+    }
+    let Expr::Path(function) = call.func.as_ref() else {
+        return false;
+    };
+    if function.qself.is_some() {
+        return false;
+    }
+    return resolve_type_path(&function.path, context).is_some_and(|resolved| {
+        matches!(
+            resolved
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            ["flight_entity", "allocate_entity"] | ["flight_entity", "entity", "allocate_entity"]
+        )
+    });
+}
+
+// The returned local of the canonical Rust Entity construction transaction:
+//
+// 1. allocate one exactly resolved Entity into an explicitly typed mutable local;
+// 2. immediately call a local `initialize_*` whose leading `&mut` parameter resolves to that Entity;
+// 3. return that same local.
+//
+// Every part is structural and source-qualified. Missing or ambiguous ownership, a non-Entity
+// result, a same-named allocation helper, a different initializer target, or any extra statement
+// declines the lowering and preserves the ordinary emitted return.
+fn entity_factory_finish_binding(
+    function: &ItemFn,
+    functions: &[ItemFn],
+    context: &HashSet<String>,
+) -> Option<String> {
+    let module = current_source(context)?;
+    let ReturnType::Type(_, return_type) = &function.sig.output else {
+        return None;
+    };
+    let entity = resolved_type_identity(context, &module, return_type)?;
+    if !context.contains(&format!("{ENTITY_TYPE_MARKER}{entity}")) {
+        return None;
+    }
+    let [
+        Stmt::Local(local),
+        Stmt::Expr(Expr::Call(initialize), _),
+        Stmt::Expr(Expr::Return(returned), _),
+    ] = function.block.stmts.as_slice()
+    else {
+        return None;
+    };
+    let Pat::Type(typed) = &local.pat else {
+        return None;
+    };
+    let Pat::Ident(binding) = typed.pat.as_ref() else {
+        return None;
+    };
+    if binding.by_ref.is_some() || binding.mutability.is_none() || binding.subpat.is_some() {
+        return None;
+    }
+    if resolved_type_identity(context, &module, &typed.ty).as_deref() != Some(entity.as_str()) {
+        return None;
+    }
+    let initializer = local.init.as_ref()?;
+    if initializer.diverge.is_some() || !is_flight_entity_allocation(&initializer.expr, context) {
+        return None;
+    }
+
+    let Expr::Path(initializer_path) = initialize.func.as_ref() else {
+        return None;
+    };
+    let initializer_name = initializer_path.path.get_ident()?.to_string();
+    if !initializer_name.starts_with("initialize_") {
+        return None;
+    }
+    let mut matching_initializers = functions
+        .iter()
+        .filter(|candidate| candidate.sig.ident == initializer_name.as_str());
+    let initializer_function = matching_initializers.next()?;
+    if matching_initializers.next().is_some() {
+        return None;
+    }
+    let FnArg::Typed(initializer_parameter) = initializer_function.sig.inputs.first()? else {
+        return None;
+    };
+    let Type::Reference(initializer_reference) = initializer_parameter.ty.as_ref() else {
+        return None;
+    };
+    if initializer_reference.mutability.is_none()
+        || resolved_type_identity(context, &module, &initializer_reference.elem).as_deref()
+            != Some(entity.as_str())
+    {
+        return None;
+    }
+    let Expr::Reference(argument) = initialize.args.first()? else {
+        return None;
+    };
+    let Expr::Path(argument_path) = argument.expr.as_ref() else {
+        return None;
+    };
+    if argument.mutability.is_none() || !argument_path.path.is_ident(&binding.ident) {
+        return None;
+    }
+    let Expr::Path(returned_path) = returned.expr.as_deref()? else {
+        return None;
+    };
+    if !returned_path.path.is_ident(&binding.ident) {
+        return None;
+    }
+    return Some(binding.ident.to_string());
 }
 
 // Whether a literal of the struct `identity`, built inside a `nullable-options` source (where `None` is
@@ -8402,6 +8531,12 @@ fn insert_visibility_collection_context(
                 &structure.ident.to_string(),
                 source_access_for_visibility(&structure.vis),
             ));
+            if program.entities.contains(&structure.ident.to_string()) {
+                context.insert(format!(
+                    "{ENTITY_TYPE_MARKER}{module}{PROVENANCE_SEPARATOR}{}",
+                    structure.ident
+                ));
+            }
             let identity = format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident);
             for field in &structure.fields {
                 let Some(field_name) = &field.ident else {
@@ -9003,6 +9138,12 @@ fn generation_context_with_types(
                 &structure.ident.to_string(),
                 source_access_for_visibility(&structure.vis),
             ));
+            if program.entities.contains(&structure.ident.to_string()) {
+                context.insert(format!(
+                    "{ENTITY_TYPE_MARKER}{module}{PROVENANCE_SEPARATOR}{}",
+                    structure.ident
+                ));
+            }
             if structure
                 .fields
                 .iter()
@@ -11059,6 +11200,7 @@ fn emit_closure_with_parameter_types(
         .filter(|marker| {
             !marker.starts_with(RETURN_TYPE_MARKER)
                 && !marker.starts_with(RETURNS_TYPED_ARRAY_MARKER)
+                && !marker.starts_with(FINISH_ENTITY_RETURN_MARKER)
                 && marker.as_str() != RETURNS_U32_MARKER
                 && marker.as_str() != RETURNS_NULLABLE_MARKER
         })
@@ -13770,6 +13912,7 @@ fn emit_function(
     aliases: &PreferredAliases,
     nullable_static_names: &HashSet<String>,
     entity_construction_parameter: bool,
+    finish_entity_return: Option<&str>,
 ) -> Result<(), CompileError> {
     reject_await_outside_async(function)?;
     emit_documentation(out, &function.attrs, 0);
@@ -13944,6 +14087,20 @@ fn emit_function(
     }
     let mut function_context = function_expression_context(function, &function_context);
     function_context.insert(format!("{RETURN_TYPE_MARKER}{inner_return_type}"));
+    if let Some(binding) = finish_entity_return {
+        let Stmt::Local(local) = function
+            .block
+            .stmts
+            .first()
+            .expect("a proven entity factory starts with its allocation local")
+        else {
+            unreachable!("a proven entity factory starts with its allocation local")
+        };
+        assert_eq!(local_pattern_name(&local.pat).as_deref(), Some(binding));
+        let id = local_pattern_binding_id(&function_context, &local.pat)
+            .expect("the lexical resolver recorded the proven allocation binding");
+        function_context.insert(format!("{FINISH_ENTITY_RETURN_MARKER}{id}"));
+    }
     if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if type_is_named(rust_type, "u32"))
     {
         function_context.insert(RETURNS_U32_MARKER.to_string());
@@ -13971,7 +14128,11 @@ fn emit_local_function(
     let rust_name = function.sig.ident.to_string();
     let name = snake_to_lower_camel(&rust_name);
     let type_parameters = emit_type_parameters(&function.sig.generics);
-    let mut signature_context = entities.clone();
+    let mut signature_context = entities
+        .iter()
+        .filter(|marker| !marker.starts_with(FINISH_ENTITY_RETURN_MARKER))
+        .cloned()
+        .collect::<HashSet<_>>();
     insert_type_parameter_context(&mut signature_context, &function.sig.generics);
     let parameters = function
         .sig
@@ -24371,7 +24532,15 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                 || initializes_resolved_readonly_entity(function, &expression_context);
         })
         .collect::<Vec<_>>();
+    let finish_entity_returns = program
+        .functions
+        .iter()
+        .map(|function| {
+            entity_factory_finish_binding(function, &program.functions, &expression_context)
+        })
+        .collect::<Vec<_>>();
     let uses_entity_construction = entity_construction_parameters.contains(&true);
+    let uses_finish_entity = finish_entity_returns.iter().any(Option::is_some);
     let mut source_context = expression_context.clone();
     if program.nullable_options {
         source_context.insert(NULLABLE_OPTIONS_MARKER.to_string());
@@ -24389,16 +24558,19 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         .collect::<HashSet<_>>();
     let mut out = String::new();
 
-    let entity_module =
-        if uses_allocate_entity || uses_entity_construction || !program.entities.is_empty() {
-            Some(entity_module.ok_or_else(|| {
+    let entity_module = if uses_allocate_entity
+        || uses_entity_construction
+        || uses_finish_entity
+        || !program.entities.is_empty()
+    {
+        Some(entity_module.ok_or_else(|| {
             compile_error(
                 "this Rust module uses entity runtime types; provide a TypeScript entity module",
             )
         })?)
-        } else {
-            None
-        };
+    } else {
+        None
+    };
     if uses_allocate_entity {
         value_imports
             .entry(
@@ -24408,6 +24580,16 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             )
             .or_default()
             .insert("allocateEntity".to_string());
+    }
+    if uses_finish_entity {
+        value_imports
+            .entry(
+                entity_module
+                    .expect("entity module was required")
+                    .to_string(),
+            )
+            .or_default()
+            .insert("finishEntity".to_string());
     }
     validate_dependency_export_name_bindings(
         &expression_context,
@@ -24645,6 +24827,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     }
     for (index, function) in program.functions.iter().enumerate() {
         let entity_construction_parameter = entity_construction_parameters[index];
+        let finish_entity_return = finish_entity_returns[index].as_deref();
         let function_start = body.len();
         let result = emit_function(
             &mut body,
@@ -24653,6 +24836,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             &aliases,
             &nullable_static_names,
             entity_construction_parameter,
+            finish_entity_return,
         );
         match result {
             Ok(()) => {
@@ -25456,7 +25640,9 @@ fn emit_statement(
             write_indent(out, indent);
             if let Some(value) = &return_expression.expr {
                 let returned = value.as_ref();
-                let mut value = if expression_is_path_call(value, "allocate_entity") {
+                let mut value = if expression_is_finished_entity_return(value, entities) {
+                    format!("finishEntity({})", emit_expression(value, entities)?)
+                } else if expression_is_path_call(value, "allocate_entity") {
                     let return_type = entities
                         .iter()
                         .find_map(|marker| marker.strip_prefix(RETURN_TYPE_MARKER))
@@ -28785,6 +28971,18 @@ pub(crate) fn expression_is_path(expression: &Expr, expected: &str) -> bool {
         return false;
     };
     return path.path.is_ident(expected);
+}
+
+fn expression_is_finished_entity_return(expression: &Expr, context: &HashSet<String>) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    if path.qself.is_some() || path.path.segments.len() != 1 {
+        return false;
+    }
+    let name = path.path.segments[0].ident.to_string();
+    return lexical_binding(context, &name)
+        .is_some_and(|id| context.contains(&format!("{FINISH_ENTITY_RETURN_MARKER}{id}")));
 }
 
 fn expression_is_path_call(expression: &Expr, expected: &str) -> bool {
