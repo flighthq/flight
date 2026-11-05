@@ -5,6 +5,7 @@ import {
   allocateEntity,
   attachEntityBinding,
   detachEntityBinding,
+  finishEntity,
   getEntityBindingAs,
 } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
@@ -96,16 +97,16 @@ export function attachSensors(hostSensors: Readonly<HostSensorsCapability>, sens
     undefined,
   );
   attachEntityBinding(sensors, {
-    absoluteOrientation: absoluteOrientation,
-    ambientLight: ambientLight,
-    barometer: barometer,
-    gravity: gravity,
-    linearAcceleration: linearAcceleration,
-    magnetometer: magnetometer,
-    motion: motion,
-    orientation: orientation,
-    proximity: proximity,
-    quaternion: quaternion,
+    absoluteOrientation,
+    ambientLight,
+    barometer,
+    gravity,
+    linearAcceleration,
+    magnetometer,
+    motion,
+    orientation,
+    proximity,
+    quaternion,
   });
 }
 
@@ -120,11 +121,11 @@ export function computeEulerFromQuaternion(out: OrientationReading, quaternion: 
   const interval = quaternion.interval;
   const timestamp = quaternion.timestamp;
   const accuracy = quaternion.accuracy;
-  const sinBeta = 2.0 * (w * x - y * z);
-  const beta = Math.abs(sinBeta) >= 1.0 ? Math.sign(sinBeta) * (Math.PI / 2) : Math.asin(sinBeta);
-  const alpha = Math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (x * x + z * z));
-  const gamma = Math.atan2(2.0 * (w * y + x * z), 1.0 - 2.0 * (x * x + y * y));
-  out.alpha = ((n: number, m: number): number => ((n % m) + m) % m)(alpha * RAD_TO_DEG, 360.0);
+  const sinBeta = 2 * (w * x - y * z);
+  const beta = Math.abs(sinBeta) >= 1 ? Math.sign(sinBeta) * (Math.PI / 2) : Math.asin(sinBeta);
+  const alpha = Math.atan2(2 * (w * z + x * y), 1 - 2 * (x * x + z * z));
+  const gamma = Math.atan2(2 * (w * y + x * z), 1 - 2 * (x * x + y * y));
+  out.alpha = (((alpha * RAD_TO_DEG) % 360) + 360) % 360;
   out.beta = beta * RAD_TO_DEG;
   out.gamma = gamma * RAD_TO_DEG;
   out.interval = interval;
@@ -203,22 +204,20 @@ export function computeRotationMatrixFromQuaternion(out: number[], quaternion: R
   const wy = w * y2;
   const wz = w * z2;
   if (out.length < 9) {
-    (<T>(items: T[], length: number, value: T): void => {
-      while (items.length < length) {
-        items.push(value);
-      }
-      items.length = length;
-    })(out, 9, 0.0);
+    while (out.length < 9) {
+      out.push(0);
+    }
+    out.length = 9;
   }
-  out[0] = 1.0 - (yy + zz);
+  out[0] = 1 - (yy + zz);
   out[1] = xy + wz;
   out[2] = xz - wy;
   out[3] = xy - wz;
-  out[4] = 1.0 - (xx + zz);
+  out[4] = 1 - (xx + zz);
   out[5] = yz + wx;
   out[6] = xz + wy;
   out[7] = yz - wx;
-  out[8] = 1.0 - (xx + yy);
+  out[8] = 1 - (xx + yy);
 }
 
 /**
@@ -268,16 +267,16 @@ export function computeWorldAccelerationFromDeviceAcceleration(
   const quaternionY = quaternion.y;
   const quaternionZ = quaternion.z;
   const quaternionW = quaternion.w;
-  const twiceW = 2.0 * quaternionW;
+  const twiceW = 2 * quaternionW;
   const crossX = quaternionY * accelerationZ - quaternionZ * accelerationY;
   const crossY = quaternionZ * accelerationX - quaternionX * accelerationZ;
   const crossZ = quaternionX * accelerationY - quaternionY * accelerationX;
   const crossCrossX = quaternionY * crossZ - quaternionZ * crossY;
   const crossCrossY = quaternionZ * crossX - quaternionX * crossZ;
   const crossCrossZ = quaternionX * crossY - quaternionY * crossX;
-  out.x = accelerationX + twiceW * crossX + 2.0 * crossCrossX;
-  out.y = accelerationY + twiceW * crossY + 2.0 * crossCrossY;
-  out.z = accelerationZ + twiceW * crossZ + 2.0 * crossCrossZ;
+  out.x = accelerationX + twiceW * crossX + 2 * crossCrossX;
+  out.y = accelerationY + twiceW * crossY + 2 * crossCrossY;
+  out.z = accelerationZ + twiceW * crossZ + 2 * crossCrossZ;
   out.interval = interval;
   out.timestamp = timestamp;
   out.accuracy = accuracy;
@@ -289,7 +288,7 @@ export function computeWorldAccelerationFromDeviceAcceleration(
 export function createAmbientLightReading(): AmbientLightReading {
   let out: AmbientLightReading = allocateEntity<AmbientLightReading>();
   initializeAmbientLightReading(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -298,7 +297,7 @@ export function createAmbientLightReading(): AmbientLightReading {
 export function createMotionReading(): MotionReading {
   let out: MotionReading = allocateEntity<MotionReading>();
   initializeMotionReading(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -307,7 +306,7 @@ export function createMotionReading(): MotionReading {
 export function createOrientationReading(): OrientationReading {
   let out: OrientationReading = allocateEntity<OrientationReading>();
   initializeOrientationReading(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -316,7 +315,7 @@ export function createOrientationReading(): OrientationReading {
 export function createPressureReading(): PressureReading {
   let out: PressureReading = allocateEntity<PressureReading>();
   initializePressureReading(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -325,7 +324,7 @@ export function createPressureReading(): PressureReading {
 export function createProximityReading(): ProximityReading {
   let out: ProximityReading = allocateEntity<ProximityReading>();
   initializeProximityReading(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -334,7 +333,7 @@ export function createProximityReading(): ProximityReading {
 export function createQuaternionReading(): QuaternionReading {
   let out: QuaternionReading = allocateEntity<QuaternionReading>();
   initializeQuaternionReading(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -343,7 +342,7 @@ export function createQuaternionReading(): QuaternionReading {
 export function createRotationRateReading(): RotationRateReading {
   let out: RotationRateReading = allocateEntity<RotationRateReading>();
   initializeRotationRateReading(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -352,7 +351,7 @@ export function createRotationRateReading(): RotationRateReading {
 export function createSensors(): Sensors {
   let out: Sensors = allocateEntity<Sensors>();
   initializeSensors(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -462,9 +461,9 @@ export function hasProximitySensor(hostSensors: Readonly<HostSensorsCapability>)
  */
 export function initializeAmbientLightReading(out: EntityConstruction<AmbientLightReading>): void {
   out.accuracy = 'unknown';
-  out.illuminance = 0.0;
-  out.interval = -1.0;
-  out.timestamp = -1.0;
+  out.illuminance = 0;
+  out.interval = -1;
+  out.timestamp = -1;
 }
 
 /**
@@ -472,11 +471,11 @@ export function initializeAmbientLightReading(out: EntityConstruction<AmbientLig
  */
 export function initializeMotionReading(out: EntityConstruction<MotionReading>): void {
   out.accuracy = 'unknown';
-  out.interval = -1.0;
-  out.timestamp = -1.0;
-  out.x = 0.0;
-  out.y = 0.0;
-  out.z = 0.0;
+  out.interval = -1;
+  out.timestamp = -1;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
 }
 
 /**
@@ -485,12 +484,12 @@ export function initializeMotionReading(out: EntityConstruction<MotionReading>):
 export function initializeOrientationReading(out: EntityConstruction<OrientationReading>): void {
   out.absolute = false;
   out.accuracy = 'unknown';
-  out.alpha = 0.0;
-  out.beta = 0.0;
-  out.gamma = 0.0;
-  out.heading = -1.0;
-  out.interval = -1.0;
-  out.timestamp = -1.0;
+  out.alpha = 0;
+  out.beta = 0;
+  out.gamma = 0;
+  out.heading = -1;
+  out.interval = -1;
+  out.timestamp = -1;
 }
 
 /**
@@ -498,10 +497,10 @@ export function initializeOrientationReading(out: EntityConstruction<Orientation
  */
 export function initializePressureReading(out: EntityConstruction<PressureReading>): void {
   out.accuracy = 'unknown';
-  out.altitude = -1.0;
-  out.interval = -1.0;
-  out.pressure = 0.0;
-  out.timestamp = -1.0;
+  out.altitude = -1;
+  out.interval = -1;
+  out.pressure = 0;
+  out.timestamp = -1;
 }
 
 /**
@@ -509,11 +508,11 @@ export function initializePressureReading(out: EntityConstruction<PressureReadin
  */
 export function initializeProximityReading(out: EntityConstruction<ProximityReading>): void {
   out.accuracy = 'unknown';
-  out.distance = -1.0;
-  out.interval = -1.0;
-  out.max = -1.0;
+  out.distance = -1;
+  out.interval = -1;
+  out.max = -1;
   out.near = false;
-  out.timestamp = -1.0;
+  out.timestamp = -1;
 }
 
 /**
@@ -521,12 +520,12 @@ export function initializeProximityReading(out: EntityConstruction<ProximityRead
  */
 export function initializeQuaternionReading(out: EntityConstruction<QuaternionReading>): void {
   out.accuracy = 'unknown';
-  out.interval = -1.0;
-  out.timestamp = -1.0;
-  out.w = 1.0;
-  out.x = 0.0;
-  out.y = 0.0;
-  out.z = 0.0;
+  out.interval = -1;
+  out.timestamp = -1;
+  out.w = 1;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
 }
 
 /**
@@ -534,11 +533,11 @@ export function initializeQuaternionReading(out: EntityConstruction<QuaternionRe
  */
 export function initializeRotationRateReading(out: EntityConstruction<RotationRateReading>): void {
   out.accuracy = 'unknown';
-  out.alpha = 0.0;
-  out.beta = 0.0;
-  out.gamma = 0.0;
-  out.interval = -1.0;
-  out.timestamp = -1.0;
+  out.alpha = 0;
+  out.beta = 0;
+  out.gamma = 0;
+  out.interval = -1;
+  out.timestamp = -1;
 }
 
 /**
