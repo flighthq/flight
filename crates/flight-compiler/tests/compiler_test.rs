@@ -950,6 +950,152 @@ export function fillStore(store: Store): boolean {
     }
 
     #[test]
+    fn lowers_hash_map_fields_proven_by_visibility_source_owners() {
+        let source = ModuleSource {
+            path: "crates/flight-layout/src/layout_state.rs",
+            source: r#"
+use crate::types::*;
+
+pub fn update(state: &mut LayoutState, key: &str, value: Option<i32>) {
+    match value {
+        None => {
+            state.values.remove(key);
+        }
+        Some(value) => {
+            state.values.insert(key.to_string(), value);
+        }
+    }
+}
+
+pub fn lookup(state: &LayoutState, key: &str) -> Option<i32> {
+    return state.values.get(key).copied();
+}
+
+pub fn take(state: &mut LayoutState, key: &str) -> Option<i32> {
+    return state.values.remove(key);
+}
+
+pub fn insert_queue_value(queue: &mut Queue, index: usize, value: i32) {
+    queue.values.insert(index, value);
+}
+"#,
+        };
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-layout/src/types.rs",
+            source: r#"
+use std::collections::HashMap;
+
+pub struct LayoutState {
+    pub values: HashMap<String, i32>,
+}
+
+pub struct Queue {
+    pub values: Vec<i32>,
+}
+"#,
+        }];
+
+        let output = compile_typescript_with_visibility_sources(
+            source,
+            None,
+            &[],
+            &[],
+            &visibility_sources,
+        )
+        .unwrap();
+
+        assert!(output.contains("state.values.delete(key);"), "{output}");
+        assert!(
+            output.contains("state.values.set(key, value);"),
+            "{output}"
+        );
+        assert!(output.contains("return state.values.get(key);"), "{output}");
+        assert!(
+            output.contains("const previous = entries.get(key); entries.delete(key); return previous;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("queue.values.splice(index, 0, value);"),
+            "{output}"
+        );
+        assert!(!output.contains("state.values.splice("), "{output}");
+    }
+
+    #[test]
+    fn preserves_custom_insert_delegation_and_refuses_ambiguous_insert_receivers() {
+        let custom = r#"
+pub struct Store {
+    pub value: i32,
+}
+
+pub fn insert_store_value(store: &mut Store, index: usize, value: i32) {
+    store.value = index as i32 + value;
+}
+
+impl Store {
+    pub fn insert(&mut self, index: usize, value: i32) {
+        insert_store_value(self, index, value);
+    }
+}
+
+pub fn update(store: &mut Store) {
+    store.insert(0, 1);
+}
+"#;
+        let custom_output = compile_typescript(custom, None).unwrap();
+        assert!(
+            custom_output.contains("insertStoreValue(store, 0, 1);"),
+            "{custom_output}"
+        );
+        assert!(!custom_output.contains("store.splice("), "{custom_output}");
+
+        let ambiguous = ModuleSource {
+            path: "crates/flight-layout/src/update.rs",
+            source: r#"
+use crate::alpha::*;
+use crate::beta::*;
+
+pub fn update(store: &mut Store) {
+    store.values.insert(0, 1);
+}
+"#,
+        };
+        let visibility_sources = [
+            ModuleSource {
+                path: "crates/flight-layout/src/alpha.rs",
+                source: r#"
+use std::collections::HashMap;
+
+pub struct Store {
+    pub values: HashMap<i32, i32>,
+}
+"#,
+            },
+            ModuleSource {
+                path: "crates/flight-layout/src/beta.rs",
+                source: r#"
+pub struct Store {
+    pub values: Vec<i32>,
+}
+"#,
+            },
+        ];
+
+        let error = compile_typescript_with_visibility_sources(
+            ambiguous,
+            None,
+            &[],
+            &[],
+            &visibility_sources,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "unsupported Rust method call `.insert()`; impl sugar is not a transpilation source"
+        );
+    }
+
+    #[test]
     fn lowers_hash_collections_to_sets_and_maps_on_proven_receivers() {
         let source = r#"
 use std::collections::{HashMap, HashSet};

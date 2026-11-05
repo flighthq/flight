@@ -8384,6 +8384,45 @@ pub(crate) fn generation_context(
     );
 }
 
+// Visibility-only siblings are not emitted or walked, but their declared struct owners and
+// collection-shaped fields are still type evidence for a generated source that imports them. Keep
+// this deliberately narrower than adding the siblings as alias programs: method dispatch may use
+// their exact declarations, while their bodies and unrelated generation directives stay inert.
+fn insert_visibility_collection_context(
+    context: &mut HashSet<String>,
+    programs: &[(&str, &Program)],
+) {
+    for (module, program) in programs {
+        let mut type_path_context = HashSet::new();
+        insert_program_type_path_context(&mut type_path_context, program);
+        for structure in &program.structs {
+            context.insert(owner_marker(
+                STRUCT_OWNER_MARKER,
+                module,
+                &structure.ident.to_string(),
+                source_access_for_visibility(&structure.vis),
+            ));
+            let identity = format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident);
+            for field in &structure.fields {
+                let Some(field_name) = &field.ident else {
+                    continue;
+                };
+                if let Some(kind) = hash_collection_type(&field.ty, &type_path_context) {
+                    context.insert(format!(
+                        "{HASH_COLLECTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                        binding_fact_marker(&kind)
+                    ));
+                }
+                if rust_type_is_sequence(&field.ty) {
+                    context.insert(format!(
+                        "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+                    ));
+                }
+            }
+        }
+    }
+}
+
 // External target-native contracts can designate the exact `Option` fields and returns whose
 // TypeScript companions store `null`. Carry only those declaration facts into a consumer: the
 // dependency remains target-native, while generated callers compare and assign its public surface
@@ -21416,10 +21455,14 @@ fn emit_method_call(
         "is_ge" if arguments.is_empty() => Ok(format!("({receiver} >= 0)")),
         "is_eq" if arguments.is_empty() => Ok(format!("({receiver} === 0)")),
         "is_ne" if arguments.is_empty() => Ok(format!("({receiver} !== 0)")),
-        "insert" if arguments.len() == 2 => Ok(format!(
-            "{receiver}.splice({}, 0, {})",
-            arguments[0], arguments[1]
-        )),
+        "insert"
+            if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "{receiver}.splice({}, 0, {})",
+                arguments[0], arguments[1]
+            ))
+        }
         "into" if arguments.is_empty() => Ok(receiver),
         "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
         "into_inner" if arguments.is_empty() => Ok(receiver),
@@ -24205,14 +24248,6 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     type_context.extend(external_shared_identity_fields.iter().cloned());
     insert_type_script_type_alias_context(&mut type_context, type_script_type_aliases);
     insert_internal_type_export_context(&mut type_context, internal_type_exports);
-    let mut expression_context = generation_context_with_types(
-        &program_sources,
-        external_record_structs,
-        &type_context,
-        None,
-        false,
-        visibility_programs,
-    )?;
     let visibility_modules = visibility_programs
         .iter()
         .enumerate()
@@ -24226,6 +24261,21 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             )
         })
         .collect::<Vec<_>>();
+    let mut expression_context = generation_context_with_types(
+        &program_sources,
+        external_record_structs,
+        &type_context,
+        None,
+        false,
+        visibility_programs,
+    )?;
+    insert_visibility_collection_context(
+        &mut expression_context,
+        &visibility_modules
+            .iter()
+            .map(|(module, program)| (module.as_str(), *program))
+            .collect::<Vec<_>>(),
+    );
     insert_type_script_array_parameter_context(
         &mut expression_context,
         program_sources.iter().copied().chain(
