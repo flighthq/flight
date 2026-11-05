@@ -22111,6 +22111,111 @@ fn calls_unit_helpers() {
     }
 
     #[test]
+    fn lowers_an_empty_thread_local_test_collector_to_module_state() {
+        let source = r#"
+use std::cell::RefCell;
+
+thread_local! {
+    static CALLS: RefCell<Vec<i32>> = RefCell::new(Vec::new());
+}
+
+fn record(value: i32) {
+    CALLS.with(|calls| calls.borrow_mut().push(value));
+}
+
+#[test]
+fn resets_and_reads_calls_in_order() {
+    CALLS.with(|calls| calls.borrow_mut().clear());
+    record(2);
+    record(1);
+    CALLS.with(|calls| {
+        let calls = calls.borrow();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0], 2);
+        assert_eq!(calls[1], 1);
+    });
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(
+            output.contains("const CALLS: number[] = [] as never[];"),
+            "{output}"
+        );
+        assert!(output.contains("calls.length = 0;"), "{output}");
+        assert!(output.contains("calls.push(value);"), "{output}");
+        assert!(output.contains("if (calls[0] !== 2)"), "{output}");
+        assert!(output.contains("if (calls[1] !== 1)"), "{output}");
+        assert!(!output.contains("thread_local"), "{output}");
+        assert!(!output.contains("RefCell"), "{output}");
+    }
+
+    #[test]
+    fn refuses_nonempty_or_value_position_thread_local_test_collectors() {
+        let nonempty = r#"
+use std::cell::RefCell;
+
+thread_local! {
+    static CALLS: RefCell<Vec<i32>> = RefCell::new(vec![1]);
+}
+
+#[test]
+fn reads_calls() {}
+"#;
+        let value_position = r#"
+use std::cell::RefCell;
+
+thread_local! {
+    static CALLS: RefCell<Vec<i32>> = RefCell::new(Vec::new());
+}
+
+#[test]
+fn reads_calls() {
+    let count = CALLS.with(|calls| calls.borrow().len());
+    assert_eq!(count, 0);
+}
+"#;
+        let direct_binding = r#"
+use std::cell::RefCell;
+
+thread_local! {
+    static CALLS: RefCell<Vec<i32>> = RefCell::new(Vec::new());
+}
+
+#[test]
+fn reads_calls() {
+    CALLS.with(|calls| {
+        let alias = calls;
+        assert_eq!(alias.borrow().len(), 0);
+    });
+}
+"#;
+
+        let nonempty_error = compile_vitest(nonempty, "@flighthq/example/contract")
+            .unwrap_err()
+            .to_string();
+        assert!(
+            nonempty_error.contains("exactly one empty `RefCell<Vec<T>>` collector"),
+            "{nonempty_error}"
+        );
+        let value_error = compile_vitest(value_position, "@flighthq/example/contract")
+            .unwrap_err()
+            .to_string();
+        assert!(
+            value_error.contains("may only be used by a statement-position `.with(|binding| ...)` call"),
+            "{value_error}"
+        );
+        let direct_error = compile_vitest(direct_binding, "@flighthq/example/contract")
+            .unwrap_err()
+            .to_string();
+        assert!(
+            direct_error.contains("may only be used through zero-argument `.borrow()` or `.borrow_mut()`"),
+            "{direct_error}"
+        );
+    }
+
+    #[test]
     fn initializes_nullable_struct_literal_fields_with_null() {
         let production = r#"
 //! flight-compiler: nullable-options

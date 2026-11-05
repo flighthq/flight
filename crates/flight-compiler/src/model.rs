@@ -2290,6 +2290,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
     if let Some(error) = test_cfg_rewriter.error {
         return Err(error);
     }
+    lower_test_local_collectors(&mut file)?;
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
     let mut constants = Vec::new();
     let mut helpers = Vec::new();
@@ -2375,6 +2376,254 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
         type_aliases,
         uses,
     });
+}
+
+// Portable tests may use one deliberately narrow `thread_local!` shape as a synchronous collector:
+// an empty `RefCell<Vec<T>>`, accessed only by statement-position `.with(|binding| ...)` calls. A
+// Vitest module runs those calls synchronously in source order, so the collector is the same module-
+// local array and each `.with` is an immediate closure call. No other thread-local behavior is
+// modeled here.
+fn lower_test_local_collectors(file: &mut syn::File) -> Result<(), CompileError> {
+    let mut collectors = BTreeMap::new();
+    for item in &mut file.items {
+        let Item::Macro(item_macro) = item else {
+            continue;
+        };
+        if !item_macro.mac.path.is_ident("thread_local") {
+            continue;
+        }
+        let item_static = syn::parse2::<ItemStatic>(item_macro.mac.tokens.clone()).map_err(|_| {
+            compile_error(
+                "portable test `thread_local!` supports exactly one empty `RefCell<Vec<T>>` collector",
+            )
+        })?;
+        let Some(vector_type) = empty_thread_local_vector_type(&item_static) else {
+            return Err(compile_error(
+                "portable test `thread_local!` supports exactly one empty `RefCell<Vec<T>>` collector",
+            ));
+        };
+        let name = item_static.ident.to_string();
+        if collectors.insert(name.clone(), vector_type.clone()).is_some() {
+            return Err(compile_error(format!(
+                "duplicate portable test thread-local collector `{name}`"
+            )));
+        }
+        let identifier = &item_static.ident;
+        let constant: ItemConst = syn::parse_quote! {
+            const #identifier: #vector_type = Vec::new();
+        };
+        *item = Item::Const(constant);
+    }
+    if collectors.is_empty() {
+        return Ok(());
+    }
+    let mut rewriter = TestLocalCollectorRewriter {
+        collectors: &collectors,
+        error: None,
+    };
+    rewriter.visit_file_mut(file);
+    if let Some(error) = rewriter.error {
+        return Err(error);
+    }
+    return Ok(());
+}
+
+fn empty_thread_local_vector_type(item: &ItemStatic) -> Option<Type> {
+    if !item.attrs.is_empty()
+        || !matches!(item.vis, Visibility::Inherited)
+        || !matches!(item.mutability, syn::StaticMutability::None)
+    {
+        return None;
+    }
+    let Type::Path(ref_cell) = item.ty.as_ref() else {
+        return None;
+    };
+    let [ref_cell] = ref_cell.path.segments.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    if ref_cell.ident != "RefCell" {
+        return None;
+    }
+    let PathArguments::AngleBracketed(arguments) = &ref_cell.arguments else {
+        return None;
+    };
+    let [GenericArgument::Type(vector_type)] = arguments.args.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    let Type::Path(vector) = vector_type else {
+        return None;
+    };
+    let [vector] = vector.path.segments.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    if vector.ident != "Vec" || !matches!(vector.arguments, PathArguments::AngleBracketed(_)) {
+        return None;
+    }
+    let Expr::Call(initializer) = item.expr.as_ref() else {
+        return None;
+    };
+    if !expression_is_associated_call(&initializer.func, "RefCell", "new")
+        || initializer.args.len() != 1
+    {
+        return None;
+    }
+    let Expr::Call(vector_initializer) = &initializer.args[0] else {
+        return None;
+    };
+    if !expression_is_associated_call(&vector_initializer.func, "Vec", "new")
+        || !vector_initializer.args.is_empty()
+    {
+        return None;
+    }
+    return Some(vector_type.clone());
+}
+
+fn expression_is_associated_call(expression: &Expr, owner: &str, member: &str) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    let [actual_owner, actual_member] = path.path.segments.iter().collect::<Vec<_>>()[..] else {
+        return false;
+    };
+    return path.qself.is_none()
+        && actual_owner.ident == owner
+        && actual_member.ident == member
+        && matches!(actual_owner.arguments, PathArguments::None)
+        && matches!(actual_member.arguments, PathArguments::None);
+}
+
+struct TestLocalCollectorRewriter<'a> {
+    collectors: &'a BTreeMap<String, Type>,
+    error: Option<CompileError>,
+}
+
+impl VisitMut for TestLocalCollectorRewriter<'_> {
+    fn visit_stmt_mut(&mut self, statement: &mut syn::Stmt) {
+        if self.error.is_some() {
+            return;
+        }
+        if let syn::Stmt::Expr(expression, Some(_)) = statement
+            && let Expr::MethodCall(call) = expression
+            && let Some((name, vector_type)) = test_local_collector(&call.receiver, self.collectors)
+        {
+            if call.method != "with" || call.args.len() != 1 {
+                self.error = Some(test_local_collector_use_error(&name));
+                return;
+            }
+            let Some(Expr::Closure(closure)) = call.args.first_mut() else {
+                self.error = Some(test_local_collector_use_error(&name));
+                return;
+            };
+            let [syn::Pat::Ident(binding)] = closure.inputs.iter().collect::<Vec<_>>()[..] else {
+                self.error = Some(test_local_collector_use_error(&name));
+                return;
+            };
+            if closure.asyncness.is_some()
+                || binding.by_ref.is_some()
+                || binding.subpat.is_some()
+            {
+                self.error = Some(test_local_collector_use_error(&name));
+                return;
+            }
+            let identifier = binding.ident.clone();
+            self.visit_expr_mut(&mut closure.body);
+            if self.error.is_some() {
+                return;
+            }
+            let mut borrow_rewriter = TestLocalCollectorBorrowRewriter {
+                binding: &identifier.to_string(),
+                error: false,
+            };
+            borrow_rewriter.visit_expr_mut(&mut closure.body);
+            if borrow_rewriter.error {
+                self.error = Some(compile_error(format!(
+                    "portable test thread-local collector binding `{identifier}` may only be used through zero-argument `.borrow()` or `.borrow_mut()`"
+                )));
+                return;
+            }
+            let body = closure.body.as_ref().clone();
+            let receiver = call.receiver.as_ref().clone();
+            *expression = syn::parse_quote! {{
+                let #identifier: #vector_type = #receiver;
+                #body;
+            }};
+            return;
+        }
+        visit_mut::visit_stmt_mut(self, statement);
+    }
+
+    fn visit_expr_path_mut(&mut self, path: &mut syn::ExprPath) {
+        if self.error.is_some() {
+            return;
+        }
+        if let Some((name, _)) = test_local_collector(&Expr::Path(path.clone()), self.collectors) {
+            self.error = Some(test_local_collector_use_error(&name));
+            return;
+        }
+        visit_mut::visit_expr_path_mut(self, path);
+    }
+}
+
+struct TestLocalCollectorBorrowRewriter<'a> {
+    binding: &'a str,
+    error: bool,
+}
+
+impl VisitMut for TestLocalCollectorBorrowRewriter<'_> {
+    fn visit_expr_mut(&mut self, expression: &mut Expr) {
+        if self.error {
+            return;
+        }
+        if let Expr::MethodCall(call) = expression
+            && matches!(call.method.to_string().as_str(), "borrow" | "borrow_mut")
+            && call.args.is_empty()
+            && expression_is_name(&call.receiver, self.binding)
+        {
+            *expression = call.receiver.as_ref().clone();
+            return;
+        }
+        visit_mut::visit_expr_mut(self, expression);
+    }
+
+    fn visit_expr_path_mut(&mut self, path: &mut syn::ExprPath) {
+        if path.qself.is_none()
+            && path.path.segments.len() == 1
+            && path.path.segments[0].ident == self.binding
+        {
+            self.error = true;
+            return;
+        }
+        visit_mut::visit_expr_path_mut(self, path);
+    }
+}
+
+fn expression_is_name(expression: &Expr, expected: &str) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    return path.qself.is_none()
+        && path.path.segments.len() == 1
+        && path.path.segments[0].ident == expected;
+}
+
+fn test_local_collector<'a>(
+    expression: &Expr,
+    collectors: &'a BTreeMap<String, Type>,
+) -> Option<(String, &'a Type)> {
+    let Expr::Path(path) = expression else {
+        return None;
+    };
+    if path.qself.is_some() || path.path.segments.len() != 1 {
+        return None;
+    }
+    let name = path.path.segments.first()?.ident.to_string();
+    return collectors.get(&name).map(|rust_type| (name, rust_type));
+}
+
+fn test_local_collector_use_error(name: &str) -> CompileError {
+    return compile_error(format!(
+        "portable test thread-local collector `{name}` may only be used by a statement-position `.with(|binding| ...)` call"
+    ));
 }
 
 // A portable test may compare a target-selected Rust value with the JavaScript environment only
