@@ -56,7 +56,7 @@ function textLayoutResult(): TextLayoutResult {
 describe('computeTextFormatFontString', () => {
   it('returns a css font string from format properties', () => {
     let format = emptyTextFormat();
-    format.size = 16.0;
+    format.size = 16;
     format.font = 'Arial';
     format.bold = false;
     format.italic = false;
@@ -64,7 +64,7 @@ describe('computeTextFormatFontString', () => {
   });
   it('includes bold and italic when set', () => {
     let format = emptyTextFormat();
-    format.size = 12.0;
+    format.size = 12;
     format.font = 'sans-serif';
     format.bold = true;
     format.italic = true;

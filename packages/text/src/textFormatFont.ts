@@ -6,7 +6,7 @@ import type { TextFormat } from '@flighthq/textformat/contract';
 export function computeTextFormatFontString(format: Readonly<TextFormat>): string {
   const style = (format.italic ?? false) ? 'italic' : 'normal';
   const weight = (format.bold ?? false) ? 'bold' : 'normal';
-  const size = format.size ?? 12.0;
+  const size = format.size ?? 12;
   const family = format.font ?? 'sans-serif';
   return `${style} ${weight} ${size}px ${family}`;
 }

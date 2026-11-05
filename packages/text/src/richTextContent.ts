@@ -29,16 +29,14 @@ function appendText(
   if (condenseWhite) {
     value = condenseWhitespace(value);
     if (out.text.length === 0 || stringEndsWith(out.text, ' ')) {
-      value = String(
-        ((text: string, matches: (character: string) => boolean): string => {
-          let offset = 0;
-          for (const character of text) {
-            if (!matches(character)) break;
-            offset += character.length;
-          }
-          return text.slice(offset);
-        })(value, isCondensedWhitespace),
-      );
+      value = ((text: string, matches: (character: string) => boolean): string => {
+        let offset = 0;
+        for (const character of text) {
+          if (!matches(character)) break;
+          offset += character.length;
+        }
+        return text.slice(offset);
+      })(value, isCondensedWhitespace);
     }
   }
   if (value.length === 0) {
@@ -64,7 +62,7 @@ function applyTextFormatRanges(out: RichTextContent, overrides: Readonly<TextFor
   }
   const textLength = utf16Len(out.text);
   const sourceRanges = out.formatRanges;
-  let ranges: TextFormatRangeRaw[] = [] as never[];
+  let ranges: TextFormatRangeRaw[] = [];
   for (const range of sourceRanges) {
     ranges.push(range);
   }
@@ -76,7 +74,7 @@ function applyTextFormatRanges(out: RichTextContent, overrides: Readonly<TextFor
       continue;
     }
     const overrideFormat = override.format!;
-    let next: TextFormatRangeRaw[] = [] as never[];
+    let next: TextFormatRangeRaw[] = [];
     for (const range of ranges) {
       const rangeFormat = range.format!;
       if (range.end <= start || range.start >= end) {
@@ -108,25 +106,26 @@ function clampRanges(ranges: TextFormatRangeRaw[], length: number): void {
   for (let __i = 0; __i < ranges.length; __i++) {
     ranges[__i].end = Math.min(ranges[__i].end, length);
   }
-  (<T>(items: T[], keep: (item: T) => boolean): void => {
+  {
+    const keep: (item: (typeof ranges)[number]) => boolean = (range) => range.start < length;
     let kept = 0;
-    let index = 0;
+    let retainIndex = 0;
     try {
-      for (; index < items.length; index += 1) {
-        const item = items[index];
+      for (; retainIndex < ranges.length; retainIndex++) {
+        const item = ranges[retainIndex];
         if (keep(item)) {
-          items[kept] = item;
-          kept += 1;
+          ranges[kept] = item;
+          kept++;
         }
       }
     } finally {
-      const length = items.length;
-      for (let rest = index; rest < length; rest += 1) {
-        items[kept + rest - index] = items[rest];
+      const retainLength = ranges.length;
+      for (let rest = retainIndex; rest < retainLength; rest++) {
+        ranges[kept + rest - retainIndex] = ranges[rest];
       }
-      items.length = kept + length - index;
+      ranges.length = kept + retainLength - retainIndex;
     }
-  })(ranges, (range) => range.start < length);
+  }
 }
 
 export function clearRichTextContent(runtime: RichTextRuntime): void {
@@ -204,7 +203,7 @@ function decodeEntityCodepoint(digits: string, radix: number): string | undefine
       let index = digits[0] === '+' ? 1 : 0;
       if (index === digits.length) return undefined;
       let value = 0;
-      for (; index < digits.length; index += 1) {
+      for (; index < digits.length; index++) {
         const code = digits.charCodeAt(index);
         const digit =
           code >= 48 && code <= 57
@@ -292,7 +291,7 @@ function isCondensedWhitespace(character: string): boolean {
 
 function repeatString(value: string, count: number): string {
   let out = '';
-  for (let _ = 0; _ < count; _ += 1) {
+  for (let _ = 0; _ < count; _++) {
     out = `${out}${value}`;
   }
   return out;
@@ -328,7 +327,7 @@ function takeUtf16Prefix(value: string, limit: number): string {
 }
 
 function utf16Len(value: string): number {
-  return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index)).length;
+  return value.length;
 }
 
 function writeFormatRange(
